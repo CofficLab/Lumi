@@ -1,10 +1,3 @@
-//
-//  ContentView.swift
-//  Lumi
-//
-//  Created by Colorfy on 2026/1/16.
-//
-
 import SwiftUI
 
 struct ContentView: View {
