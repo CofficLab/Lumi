@@ -1,10 +1,18 @@
 import AppKit
+import MagicKit
 import Foundation
+import OSLog
 import SwiftUI
 
 /// 插件提供者，管理插件的生命周期和UI贡献
 @MainActor
-final class PluginProvider: ObservableObject {
+final class PluginProvider: ObservableObject, SuperLog {
+    /// 日志标识符
+    nonisolated static let emoji = "🔌"
+
+    /// 是否启用详细日志输出
+    nonisolated static let verbose = false
+
     /// 已加载的插件列表
     @Published private(set) var plugins: [any SuperPlugin] = []
     
@@ -36,7 +44,9 @@ final class PluginProvider: ObservableObject {
                     object: self
                 )
                 
-                print("✅ PluginProvider: 已加载 \(loadedPlugins.count) 个插件")
+                if Self.verbose {
+                    os_log("\(self.t)已加载 \(loadedPlugins.count) 个插件")
+                }
             }
         }
     }

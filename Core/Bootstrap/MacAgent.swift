@@ -1,9 +1,15 @@
 import AppKit
+import MagicKit
+import OSLog
 import SwiftUI
 
 /// macOS应用代理，处理应用级别的生命周期事件和系统集成
 @MainActor
-class MacAgent: NSObject, NSApplicationDelegate {
+class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
+    static let emoji = "🍎"
+
+    static let verbose = false
+
     /// 系统状态栏项
     private var statusItem: NSStatusItem?
 
@@ -73,12 +79,16 @@ class MacAgent: NSObject, NSApplicationDelegate {
         // 先设置一个基础菜单（不含插件项）
         setupStatusBarMenu()
         
-        print("🍎 MacAgent: 状态栏已设置，等待插件加载...")
+        if Self.verbose {
+            os_log("\(self.t)状态栏已设置，等待插件加载...")
+        }
     }
 
     /// 处理插件加载完成通知
     @objc private func handlePluginsDidLoad() {
-        print("🍎 MacAgent: 收到插件加载完成通知，刷新菜单...")
+        if Self.verbose {
+            os_log("\(self.t)收到插件加载完成通知，刷新菜单...")
+        }
         refreshStatusBarMenu()
     }
     
@@ -99,7 +109,9 @@ class MacAgent: NSObject, NSApplicationDelegate {
         if let provider = pluginProvider {
             let pluginMenuItems = provider.getStatusBarMenuItems()
             
-            print("🍎 MacAgent: 获取到 \(pluginMenuItems.count) 个插件菜单项")
+            if Self.verbose {
+                os_log("\(self.t)获取到 \(pluginMenuItems.count) 个插件菜单项")
+            }
 
             if !pluginMenuItems.isEmpty {
                 // 添加插件菜单项
