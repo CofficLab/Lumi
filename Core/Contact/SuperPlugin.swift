@@ -55,13 +55,80 @@ protocol SuperPlugin {
     /// 添加系统菜单栏菜单项
     /// - Returns: 要添加到系统菜单栏的菜单项数组，如果不需要则返回nil
     func addStatusBarMenuItems() -> [NSMenuItem]?
+    
+    // MARK: - Lifecycle Hooks
+    
+    /// 插件注册完成后的回调
+    func onRegister()
+    
+    /// 插件被启用时的回调
+    func onEnable()
+    
+    /// 插件被禁用时的回调
+    func onDisable()
 }
 
 // MARK: - Default Implementation
 
 extension SuperPlugin {
+    /// 自动派生插件 ID（类名去掉 "Plugin" 后缀）
+    static var id: String {
+        String(describing: self)
+            .replacingOccurrences(of: "Plugin", with: "")
+    }
+    
+    /// 默认实例标签
+    var instanceLabel: String { Self.id }
+    
+    /// 默认显示名称
+    static var displayName: String { id }
+    
+    /// 默认描述
+    static var description: String { "" }
+    
+    /// 默认图标
+    static var iconName: String { "puzzlepiece" }
+    
+    /// 默认可配置
+    static var isConfigurable: Bool { false }
+    
+    /// 默认应该注册
+    static var shouldRegister: Bool { true }
+    
+    /// 默认实现：不提供工具栏前导视图
+    func addToolBarLeadingView() -> AnyView? { nil }
+    
+    /// 默认实现：不提供工具栏右侧视图
+    func addToolBarTrailingView() -> AnyView? { nil }
+    
+    /// 默认实现：不提供状态栏左侧视图
+    func addStatusBarLeadingView() -> AnyView? { nil }
+    
+    /// 默认实现：不提供状态栏右侧视图
+    func addStatusBarTrailingView() -> AnyView? { nil }
+    
+    /// 默认实现：不提供详情视图
+    func addDetailView() -> AnyView? { nil }
+    
+    /// 默认实现：不提供列表视图
+    func addListView(tab: String, project: Project?) -> AnyView? { nil }
+    
+    /// 默认实现：不提供侧边栏视图
+    func addSidebarView() -> AnyView? { nil }
+    
     /// 默认实现：不提供菜单项
     func addStatusBarMenuItems() -> [NSMenuItem]? { nil }
+    
+    // MARK: - Lifecycle Hooks Default Implementation
+    
+    /// 默认实现：注册完成后不执行任何操作
+    func onRegister() {}
+    
+    /// 默认实现：启用时不执行任何操作
+    func onEnable() {}
+    
+    /// 默认实现：禁用时不执行任何操作
+    func onDisable() {}
 }
 
 /// 项目模型的占位符（需要根据实际需求定义）

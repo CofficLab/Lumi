@@ -51,41 +51,6 @@ class ProjectInfoPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
 
     // MARK: - UI Contributions
 
-    /// 添加工具栏前导视图
-    /// - Returns: 工具栏前导视图
-    func addToolBarLeadingView() -> AnyView? {
-        guard isUserEnabled else { return nil }
-        return nil
-    }
-
-    /// 添加工具栏右侧视图
-    /// - Returns: 工具栏右侧视图
-    func addToolBarTrailingView() -> AnyView? {
-        guard isUserEnabled else { return nil }
-        return nil
-    }
-
-    /// 添加状态栏左侧视图
-    /// - Returns: 状态栏左侧视图
-    func addStatusBarLeadingView() -> AnyView? {
-        guard isUserEnabled else { return nil }
-        return nil
-    }
-
-    /// 添加状态栏右侧视图
-    /// - Returns: 状态栏右侧视图
-    func addStatusBarTrailingView() -> AnyView? {
-        guard isUserEnabled else { return nil }
-        return nil
-    }
-
-    /// 添加详情视图
-    /// - Returns: 详情视图
-    func addDetailView() -> AnyView? {
-        guard isUserEnabled else { return nil }
-        return nil
-    }
-
     /// 添加列表视图
     /// - Parameters:
     ///   - tab: 标签页
@@ -94,13 +59,6 @@ class ProjectInfoPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
     func addListView(tab: String, project: Project?) -> AnyView? {
         guard isUserEnabled else { return nil }
         return AnyView(ProjectInfoListView(tab: tab, project: project))
-    }
-
-    /// 添加侧边栏视图
-    /// - Returns: 要添加到侧边栏的视图，如果不需要则返回nil
-    func addSidebarView() -> AnyView? {
-        guard isUserEnabled else { return nil }
-        return nil
     }
 }
 

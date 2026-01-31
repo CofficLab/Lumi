@@ -50,45 +50,6 @@ class ActivityStatusPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
         guard isUserEnabled else { return nil }
         return AnyView(ActivityStatusTile())
     }
-
-    /// 添加工具栏前导视图
-    /// - Returns: 要添加到工具栏前导的视图，如果不需要则返回nil
-    func addToolBarLeadingView() -> AnyView? {
-        nil
-    }
-
-    /// 添加工具栏右侧视图
-    /// - Returns: 要添加到工具栏右侧的视图，如果不需要则返回nil
-    func addToolBarTrailingView() -> AnyView? {
-        nil
-    }
-
-    /// 添加状态栏右侧视图
-    /// - Returns: 要添加到状态栏右侧的视图，如果不需要则返回nil
-    func addStatusBarTrailingView() -> AnyView? {
-        nil
-    }
-
-    /// 添加详情视图
-    /// - Returns: 要添加的详情视图，如果不需要则返回nil
-    func addDetailView() -> AnyView? {
-        nil
-    }
-
-    /// 添加列表视图
-    /// - Parameters:
-    ///   - tab: 标签页
-    ///   - project: 项目对象
-    /// - Returns: 要添加的列表视图，如果不需要则返回nil
-    func addListView(tab: String, project: Project?) -> AnyView? {
-        nil
-    }
-
-    /// 添加侧边栏视图
-    /// - Returns: 要添加到侧边栏的视图，如果不需要则返回nil
-    func addSidebarView() -> AnyView? {
-        nil
-    }
 }
 
 // MARK: - PluginRegistrant
