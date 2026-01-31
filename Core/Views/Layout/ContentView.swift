@@ -31,6 +31,9 @@ struct ContentView: View {
 
     /// 设置视图是否显示
     @State private var showSettings = false
+    
+    /// 设置视图当前选中的标签
+    @State private var settingsTab: SettingView.SettingTab = .about
 
     /// 控制状态栏布局：true 为全宽（底部跨越左右栏），false 为旧布局（仅 detail 内部）
     var useFullWidthStatusBar: Bool = true
@@ -77,9 +80,16 @@ struct ContentView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .sheet(isPresented: $showSettings) {
-            SettingView()
+            SettingView(defaultTab: settingsTab)
         }
         .onOpenSettings(perform: openSettings)
+        .onOpenPluginSettings(perform: openPluginSettings)
+        .onReceive(NotificationCenter.default.publisher(for: .pluginSettingsChanged)) { _ in
+            if Self.verbose {
+                os_log("\(Self.emoji) ⚙️ Plugin settings changed, updating cached views")
+            }
+            updateCachedViews()
+        }
     }
 }
 
@@ -306,6 +316,12 @@ extension ContentView {
 
     /// 打开设置视图
     func openSettings() {
+        showSettings = true
+    }
+
+    /// 打开插件设置视图
+    func openPluginSettings() {
+        settingsTab = .plugins
         showSettings = true
     }
 }

@@ -1,18 +1,23 @@
 import Foundation
+import Combine
 
 /// 插件设置存储：管理插件的启用/禁用状态
-class PluginSettingsStore {
+class PluginSettingsStore: ObservableObject {
     static let shared = PluginSettingsStore()
 
     private let userDefaultsKey = "SwiftUI_Template_PluginSettings"
 
-    private init() {}
+    /// 发布设置变化，让订阅者能够实时响应
+    @Published private(set) var settings: [String: Bool] = [:]
+
+    private init() {
+        self.settings = loadSettings()
+    }
 
     /// 获取插件的启用状态
     /// - Parameter pluginId: 插件ID
     /// - Returns: true 表示启用，false 表示禁用
     func isPluginEnabled(_ pluginId: String) -> Bool {
-        let settings = loadSettings()
         // 如果没有设置，默认启用
         return settings[pluginId] ?? true
     }
@@ -22,9 +27,11 @@ class PluginSettingsStore {
     ///   - pluginId: 插件ID
     ///   - enabled: true 表示启用，false 表示禁用
     func setPluginEnabled(_ pluginId: String, enabled: Bool) {
-        var settings = loadSettings()
         settings[pluginId] = enabled
         saveSettings(settings)
+        
+        // 发送通知，通知 UI 更新
+        NotificationCenter.default.post(name: .pluginSettingsChanged, object: nil)
     }
 
     /// 加载所有插件设置

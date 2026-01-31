@@ -8,7 +8,7 @@ import SwiftUI
 class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     static let emoji = "🍎"
 
-    static let verbose = false
+    static let verbose = true
 
     /// 系统状态栏项
     private var statusItem: NSStatusItem?

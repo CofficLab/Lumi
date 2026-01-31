@@ -47,9 +47,6 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
     /// 插件单例实例
     static let shared = CaffeinatePlugin()
     
-    /// 动作处理者（用于处理菜单点击事件）
-    private let actionHandler = ActionHandler()
-
     /// 初始化方法
     init() {
         os_log("CaffeinatePlugin initialized")
@@ -66,18 +63,18 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
     /// 添加系统菜单栏菜单项
     /// - Returns: 系统菜单栏菜单项数组
     @MainActor func addStatusBarMenuItems() -> [NSMenuItem]? {
-
         let manager = CaffeinateManager.shared
         var items: [NSMenuItem] = []
-        let handler = actionHandler
+        let handler = CaffeinateActionHandler.shared
 
         // 防休眠开关菜单项
         let toggleItem = NSMenuItem(
             title: manager.isActive ? "停止阻止休眠" : "阻止系统休眠",
-            action: #selector(ActionHandler.toggleCaffeinate),
+            action: #selector(CaffeinateActionHandler.toggleCaffeinate(_:)),
             keyEquivalent: ""
         )
         toggleItem.target = handler
+        toggleItem.isEnabled = true // 强制启用
         items.append(toggleItem)
 
         // 如果已激活，显示停止子菜单
@@ -88,11 +85,12 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
             for durationOption in CaffeinateManager.commonDurations {
                 let item = NSMenuItem(
                     title: "切换时长: \(durationOption.displayName)",
-                    action: #selector(ActionHandler.activateWithDuration(_:)),
+                    action: #selector(CaffeinateActionHandler.activateWithDuration(_:)),
                     keyEquivalent: ""
                 )
                 item.tag = durationOption.hashValue
                 item.target = handler
+                item.isEnabled = true // 强制启用
                 items.append(item)
             }
         }
@@ -104,16 +102,23 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
 // MARK: - Action Handler
 
 /// 辅助类，用于处理菜单点击事件（因为 Actor 不能直接作为 Target）
-private class ActionHandler: NSObject {
+fileprivate class CaffeinateActionHandler: NSObject, NSMenuItemValidation {
+    /// 单例实例，确保生命周期
+    static let shared = CaffeinateActionHandler()
+
     /// 切换防休眠状态
-    @objc func toggleCaffeinate() {
+    @objc func toggleCaffeinate(_ sender: Any?) {
+        os_log("CaffeinateActionHandler: toggleCaffeinate called")
         CaffeinateManager.shared.toggle()
     }
 
     /// 使用指定时长激活防休眠
-    @objc func activateWithDuration(_ sender: NSMenuItem) {
+    @objc func activateWithDuration(_ sender: Any?) {
+        guard let menuItem = sender as? NSMenuItem else { return }
+        os_log("CaffeinateActionHandler: activateWithDuration called")
+        
         // 根据菜单项的 tag 找到对应的时长选项
-        if let option = CaffeinateManager.commonDurations.first(where: { $0.hashValue == sender.tag }) {
+        if let option = CaffeinateManager.commonDurations.first(where: { $0.hashValue == menuItem.tag }) {
             // 先停止当前的
             if CaffeinateManager.shared.isActive {
                 CaffeinateManager.shared.deactivate()
@@ -122,8 +127,12 @@ private class ActionHandler: NSObject {
             CaffeinateManager.shared.activate(duration: option.timeInterval)
         }
     }
+    
+    /// 验证菜单项是否可用
+    /// - Parameter menuItem: 菜单项
+    /// - Returns: 是否可用
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        os_log("CaffeinateActionHandler: Validating menu item '\(menuItem.title)'")
+        return true
+    }
 }
-
-// MARK: - PluginRegistrant
-
-

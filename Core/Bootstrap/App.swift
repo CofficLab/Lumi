@@ -52,6 +52,7 @@ struct CoreApp: App, SuperLog {
         .commands {
             DebugCommand()
             SettingsCommand()
+            ConfigCommand()
         }
     }
 }

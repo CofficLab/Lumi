@@ -4,6 +4,7 @@ import Foundation
 import OSLog
 import SwiftUI
 import ObjectiveC.runtime
+import Combine
 
 /// 插件提供者，管理插件的生命周期和UI贡献
 @MainActor
@@ -20,11 +21,24 @@ final class PluginProvider: ObservableObject, SuperLog {
     /// 插件是否已加载完成
     @Published private(set) var isLoaded: Bool = false
 
+    /// 插件设置存储
+    private let settingsStore = PluginSettingsStore.shared
+    
+    /// Combine 订阅集合
+    private var cancellables = Set<AnyCancellable>()
+
     /// 初始化插件提供者（自动发现并注册所有插件）
     init(autoDiscover: Bool = true) {
         if autoDiscover {
             autoDiscoverAndRegisterPlugins()
         }
+        
+        // 订阅设置变化，当设置改变时触发 UI 更新
+        settingsStore.$settings
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 
     /// 自动发现并注册所有插件
@@ -113,28 +127,52 @@ final class PluginProvider: ObservableObject, SuperLog {
         return initImpl(instance, initSelector) ?? instance
     }
 
+    /// 检查插件是否被用户启用
+    /// - Parameter plugin: 要检查的插件
+    /// - Returns: 如果插件被启用则返回true
+    func isPluginEnabled(_ plugin: any SuperPlugin) -> Bool {
+        let pluginType = type(of: plugin)
+        
+        // 如果不允许用户切换，则始终启用
+        if !pluginType.isConfigurable {
+            return true
+        }
+        
+        // 检查用户配置
+        let pluginId = plugin.instanceLabel
+        return settingsStore.isPluginEnabled(pluginId)
+    }
+
     /// 获取所有插件的工具栏右侧视图
     /// - Returns: 工具栏右侧视图数组
     func getToolbarTrailingViews() -> [AnyView] {
-        plugins.compactMap { $0.addToolBarTrailingView() }
+        plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addToolBarTrailingView() }
     }
 
     /// 获取所有插件的状态栏左侧视图
     /// - Returns: 状态栏左侧视图数组
     func getStatusBarLeadingViews() -> [AnyView] {
-        plugins.compactMap { $0.addStatusBarLeadingView() }
+        plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addStatusBarLeadingView() }
     }
 
     /// 获取所有插件的状态栏右侧视图
     /// - Returns: 状态栏右侧视图数组
     func getStatusBarTrailingViews() -> [AnyView] {
-        plugins.compactMap { $0.addStatusBarTrailingView() }
+        plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addStatusBarTrailingView() }
     }
 
     /// 获取所有插件的详情视图
     /// - Returns: 详情视图数组
     func getDetailViews() -> [AnyView] {
-        plugins.compactMap { $0.addDetailView() }
+        plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addDetailView() }
     }
 
     /// 获取指定标签页和项目的列表视图
@@ -143,13 +181,18 @@ final class PluginProvider: ObservableObject, SuperLog {
     ///   - project: 项目对象
     /// - Returns: 列表视图数组
     func getListViews(for tab: String, project: Project?) -> [AnyView] {
-        plugins.compactMap { $0.addListView(tab: tab, project: project) }
+        plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addListView(tab: tab, project: project) }
     }
 
     /// 获取所有插件提供的系统菜单栏菜单项
     /// - Returns: 系统菜单栏菜单项数组
     func getStatusBarMenuItems() -> [NSMenuItem] {
-        plugins.compactMap { $0.addStatusBarMenuItems() }.flatMap { $0 }
+        plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addStatusBarMenuItems() }
+            .flatMap { $0 }
     }
 
     /// 重新加载插件
