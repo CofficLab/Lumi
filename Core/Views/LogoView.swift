@@ -40,7 +40,7 @@ struct LogoView: View, SuperLog {
         return Image.makeCoffeeReelIcon(
             useDefaultBackground: false,
             // x版本指向x点钟方向
-            handleRotation: 0
+            handleRotation: 180
         )
         .infinite()
         .background(backgroundShapeView)
