@@ -4,7 +4,7 @@ import SwiftUI
 import OSLog
 
 /// 应用信息插件：在工具栏显示应用信息图标，点击后弹出应用详情
-class AppInfoPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
+class AppInfoPlugin: NSObject, SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     /// 日志标识符
@@ -30,6 +30,9 @@ class AppInfoPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
 
     /// 是否可配置
     static var isConfigurable: Bool = true
+    
+    /// 注册顺序
+    static var order: Int { 5 }
 
     // MARK: - Instance
 
@@ -41,8 +44,8 @@ class AppInfoPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
     /// 插件单例实例
     static let shared = AppInfoPlugin()
 
-    /// 私有初始化方法
-    private override init() {}
+    /// 初始化方法
+    override init() {}
 
     /// 检查插件是否被用户启用
     private var isUserEnabled: Bool {
@@ -59,21 +62,4 @@ class AppInfoPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
     }
 }
 
-// MARK: - PluginRegistrant
 
-extension AppInfoPlugin {
-    /// 注册插件到插件注册表
-    static func register() {
-        guard enable else { return }
-
-        Task {
-            if Self.verbose {
-                os_log("\(Self.t) 🚀 Register AppInfoPlugin")
-            }
-
-            await PluginRegistry.shared.register(id: id, order: 5) {
-                AppInfoPlugin.shared
-            }
-        }
-    }
-}

@@ -6,7 +6,7 @@ import MagicKit
 import OSLog
 
 /// 时间状态插件：在状态栏显示当前时间
-class TimeStatusPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
+class TimeStatusPlugin: NSObject, SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     /// 日志标识符
@@ -32,6 +32,9 @@ class TimeStatusPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
 
     /// 是否可配置
     static var isConfigurable: Bool = true
+    
+    /// 注册顺序
+    static var order: Int { 6 }
 
     // MARK: - Instance
 
@@ -43,8 +46,8 @@ class TimeStatusPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
     /// 插件单例实例
     static let shared = TimeStatusPlugin()
 
-    /// 私有初始化方法
-    private override init() {}
+    /// 初始化方法
+    override init() {}
 
     /// 检查插件是否被用户启用
     private var isUserEnabled: Bool {
@@ -61,17 +64,4 @@ class TimeStatusPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
     }
 }
 
-// MARK: - PluginRegistrant
 
-extension TimeStatusPlugin {
-    /// 注册插件到插件注册表
-    static func register() {
-        guard enable else { return }
-
-        Task {
-            await PluginRegistry.shared.register(id: id, order: 6) {
-                TimeStatusPlugin.shared
-            }
-        }
-    }
-}

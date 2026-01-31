@@ -4,7 +4,7 @@ import OSLog
 import SwiftUI
 
 /// 版本状态插件：在状态栏显示应用版本号
-class VersionStatusPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
+class VersionStatusPlugin: NSObject, SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     /// 日志标识符
@@ -30,6 +30,9 @@ class VersionStatusPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
 
     /// 是否可配置
     static var isConfigurable: Bool = true
+    
+    /// 注册顺序
+    static var order: Int { 7 }
 
     // MARK: - Instance
 
@@ -41,8 +44,8 @@ class VersionStatusPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
     /// 插件单例实例
     static let shared = VersionStatusPlugin()
 
-    /// 私有初始化方法
-    private override init() {}
+    /// 初始化方法
+    override init() {}
 
     /// 检查插件是否被用户启用
     private var isUserEnabled: Bool {
@@ -59,21 +62,4 @@ class VersionStatusPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
     }
 }
 
-// MARK: - PluginRegistrant
 
-extension VersionStatusPlugin {
-    /// 注册插件到插件注册表
-    static func register() {
-        guard enable else { return }
-
-        Task {
-            if Self.verbose {
-                os_log("\(Self.t) 🚀 Register VersionStatusPlugin")
-            }
-
-            await PluginRegistry.shared.register(id: id, order: 7) {
-                VersionStatusPlugin.shared
-            }
-        }
-    }
-}

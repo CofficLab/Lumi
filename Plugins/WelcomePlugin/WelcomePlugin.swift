@@ -4,7 +4,7 @@ import OSLog
 import SwiftUI
 
 /// 欢迎插件：提供欢迎界面作为详情视图
-class WelcomePlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
+class WelcomePlugin: NSObject, SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     /// 日志标识符
@@ -30,6 +30,9 @@ class WelcomePlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
 
     /// 是否可配置
     static var isConfigurable: Bool = true
+    
+    /// 注册顺序
+    static var order: Int { 0 }
 
     // MARK: - Instance
 
@@ -41,8 +44,8 @@ class WelcomePlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
     /// 插件单例实例
     static let shared = WelcomePlugin()
 
-    /// 私有初始化方法
-    private override init() {}
+    /// 初始化方法
+    override init() {}
 
     /// 检查插件是否被用户启用
     private var isUserEnabled: Bool {
@@ -59,21 +62,4 @@ class WelcomePlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
     }
 }
 
-// MARK: - PluginRegistrant
 
-extension WelcomePlugin {
-    /// 注册插件到插件注册表
-    static func register() {
-        guard enable else { return }
-
-        Task {
-            if Self.verbose {
-                os_log("\(Self.t) 🚀 Register WelcomePlugin")
-            }
-
-            await PluginRegistry.shared.register(id: id, order: 0) {
-                WelcomePlugin.shared
-            }
-        }
-    }
-}

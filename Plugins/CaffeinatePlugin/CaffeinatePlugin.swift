@@ -6,7 +6,7 @@ import Combine
 import OSLog
 
 /// 防休眠插件：阻止系统休眠，支持定时和手动控制
-class CaffeinatePlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
+class CaffeinatePlugin: NSObject, SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     /// 日志标识符
@@ -32,6 +32,9 @@ class CaffeinatePlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
 
     /// 是否可配置
     static var isConfigurable: Bool = true
+    
+    /// 注册顺序
+    static var order: Int { 7 }
 
     // MARK: - Instance
 
@@ -43,8 +46,8 @@ class CaffeinatePlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
     /// 插件单例实例
     static let shared = CaffeinatePlugin()
 
-    /// 私有初始化方法
-    private override init() {
+    /// 初始化方法
+    override init() {
         super.init()
         os_log("CaffeinatePlugin initialized")
     }
@@ -125,15 +128,4 @@ extension CaffeinatePlugin {
 
 // MARK: - PluginRegistrant
 
-extension CaffeinatePlugin {
-    /// 注册插件到插件注册表
-    static func register() {
-        guard enable else { return }
 
-        Task {
-            await PluginRegistry.shared.register(id: id, order: 7) {
-                CaffeinatePlugin.shared
-            }
-        }
-    }
-}

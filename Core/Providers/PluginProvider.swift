@@ -3,6 +3,7 @@ import MagicKit
 import Foundation
 import OSLog
 import SwiftUI
+import ObjectiveC.runtime
 
 /// 插件提供者，管理插件的生命周期和UI贡献
 @MainActor
@@ -22,32 +23,65 @@ final class PluginProvider: ObservableObject, SuperLog {
     /// 初始化插件提供者（自动发现并注册所有插件）
     init(autoDiscover: Bool = true) {
         if autoDiscover {
-            // 自动注册所有符合PluginRegistrant协议的插件类
-            autoRegisterPlugins()
-
-            // 加载所有已注册的插件
-            loadPlugins()
+            autoDiscoverAndRegisterPlugins()
         }
     }
 
-    /// 加载所有已注册的插件
-    private func loadPlugins() {
-        Task {
-            let loadedPlugins = await PluginRegistry.shared.buildAll()
-            await MainActor.run {
-                self.plugins = loadedPlugins
-                self.isLoaded = true
-                
-                // 发送插件加载完成通知
-                NotificationCenter.default.post(
-                    name: NSNotification.Name("PluginsDidLoad"),
-                    object: self
-                )
-                
-                if Self.verbose {
-                    os_log("\(self.t)已加载 \(loadedPlugins.count) 个插件")
+    /// 自动发现并注册所有插件
+    private func autoDiscoverAndRegisterPlugins() {
+        var count: UInt32 = 0
+        guard let classList = objc_copyClassList(&count) else { return }
+        defer { free(UnsafeMutableRawPointer(classList)) }
+        
+        let classes = UnsafeBufferPointer(start: classList, count: Int(count))
+        var discovered: [any SuperPlugin] = []
+        
+        for i in 0 ..< classes.count {
+            let cls: AnyClass = classes[i]
+            let className = NSStringFromClass(cls)
+            
+            // 筛选条件：Lumi 命名空间且以 Plugin 结尾的类
+            guard className.hasPrefix("Lumi."), className.hasSuffix("Plugin") else { continue }
+            
+            // 尝试转换为 NSObject 类型（以便实例化）
+            guard let pluginClass = cls as? NSObject.Type else { continue }
+            
+            // 实例化插件
+            let instance = pluginClass.init()
+            
+            // 检查是否符合 SuperPlugin 协议
+            if let plugin = instance as? any SuperPlugin {
+                // 检查是否应该注册
+                let pluginType = type(of: plugin)
+                if pluginType.shouldRegister {
+                    discovered.append(plugin)
+                    if Self.verbose {
+                        os_log("\(self.t)🔍 Discovered plugin: \(pluginType.id) (order: \(pluginType.order))")
+                    }
                 }
             }
+        }
+        
+        // 按顺序排序
+        let sortedPlugins = discovered.sorted { type(of: $0).order < type(of: $1).order }
+        
+        // 更新插件列表
+        self.plugins = sortedPlugins
+        self.isLoaded = true
+        
+        // 调用生命周期钩子
+        for plugin in sortedPlugins {
+            plugin.onRegister()
+        }
+        
+        // 发送通知
+        NotificationCenter.default.post(
+            name: NSNotification.Name("PluginsDidLoad"),
+            object: self
+        )
+        
+        if Self.verbose {
+            os_log("\(self.t)✅ Auto-discovery complete. Loaded \(sortedPlugins.count) plugins.")
         }
     }
 
@@ -93,7 +127,7 @@ final class PluginProvider: ObservableObject, SuperLog {
     /// 重新加载插件
     func reloadPlugins() {
         isLoaded = false
-        loadPlugins()
+        autoDiscoverAndRegisterPlugins()
     }
 }
 

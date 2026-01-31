@@ -4,7 +4,7 @@ import MagicKit
 import SwiftUI
 
 /// 状态栏活动状态插件：展示当前长耗时操作的状态文本。
-class ActivityStatusPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
+class ActivityStatusPlugin: NSObject, SuperPlugin, SuperLog {
     /// 日志标识符
     nonisolated static let emoji = "⌛️"
 
@@ -31,13 +31,16 @@ class ActivityStatusPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
 
     /// 插件是否可配置（是否在设置中由用户控制启用/停用）
     static var isConfigurable: Bool = false
+    
+    /// 注册顺序
+    static var order: Int { 10 }
 
     /// 插件实例标签（用于识别唯一实例）
     var instanceLabel: String {
         Self.id
     }
 
-    private override init() {}
+    override init() {}
 
     /// 检查插件是否被用户启用
     private var isUserEnabled: Bool {
@@ -54,22 +57,7 @@ class ActivityStatusPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
 
 // MARK: - PluginRegistrant
 
-extension ActivityStatusPlugin {
-    /// 注册插件到插件注册表
-    static func register() {
-        guard enable else { return }
 
-        Task {
-            if Self.verbose {
-                os_log("\(Self.t) 🚀 Register ActivityStatusPlugin")
-            }
-
-            await PluginRegistry.shared.register(id: Self.label, order: 10) {
-                ActivityStatusPlugin.shared
-            }
-        }
-    }
-}
 
 // MARK: - Preview
 

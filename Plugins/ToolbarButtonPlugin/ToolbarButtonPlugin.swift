@@ -4,7 +4,7 @@ import OSLog
 import SwiftUI
 
 /// 工具栏按钮插件：在工具栏显示可点击的按钮
-class ToolbarButtonPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
+class ToolbarButtonPlugin: NSObject, SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     /// 日志标识符
@@ -30,6 +30,9 @@ class ToolbarButtonPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
 
     /// 是否可配置
     static var isConfigurable: Bool = true
+    
+    /// 注册顺序
+    static var order: Int { 4 }
 
     // MARK: - Instance
 
@@ -41,8 +44,8 @@ class ToolbarButtonPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
     /// 插件单例实例
     static let shared = ToolbarButtonPlugin()
 
-    /// 私有初始化方法
-    private override init() {}
+    /// 初始化方法
+    override init() {}
 
     /// 检查插件是否被用户启用
     private var isUserEnabled: Bool {
@@ -59,24 +62,7 @@ class ToolbarButtonPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
     }
 }
 
-// MARK: - PluginRegistrant
 
-extension ToolbarButtonPlugin {
-    /// 注册插件到插件注册表
-    static func register() {
-        guard enable else { return }
-
-        Task {
-            if Self.verbose {
-                os_log("\(Self.t) 🚀 Register ToolbarButtonPlugin")
-            }
-
-            await PluginRegistry.shared.register(id: id, order: 4) {
-                ToolbarButtonPlugin.shared
-            }
-        }
-    }
-}
 
 // MARK: - Preview
 

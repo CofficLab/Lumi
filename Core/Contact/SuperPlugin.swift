@@ -66,6 +66,9 @@ protocol SuperPlugin {
     
     /// 插件被禁用时的回调
     func onDisable()
+    
+    /// 插件注册顺序（数字越小越先加载）
+    static var order: Int { get }
 }
 
 // MARK: - Default Implementation
@@ -129,6 +132,11 @@ extension SuperPlugin {
     
     /// 默认实现：禁用时不执行任何操作
     func onDisable() {}
+    
+    // MARK: - Configuration Defaults
+    
+    /// 默认注册顺序 (999)
+    static var order: Int { 999 }
 }
 
 /// 项目模型的占位符（需要根据实际需求定义）

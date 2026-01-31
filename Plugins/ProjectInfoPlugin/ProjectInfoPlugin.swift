@@ -4,7 +4,7 @@ import OSLog
 import SwiftUI
 
 /// 项目信息插件：在列表视图中显示当前项目详细信息
-class ProjectInfoPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
+class ProjectInfoPlugin: NSObject, SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     /// 日志标识符
@@ -30,6 +30,9 @@ class ProjectInfoPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
 
     /// 是否可配置
     static var isConfigurable: Bool = true
+    
+    /// 注册顺序
+    static var order: Int { 3 }
 
     // MARK: - Instance
 
@@ -41,8 +44,8 @@ class ProjectInfoPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
     /// 插件单例实例
     static let shared = ProjectInfoPlugin()
 
-    /// 私有初始化方法
-    private override init() {}
+    /// 初始化方法
+    override init() {}
 
     /// 检查插件是否被用户启用
     private var isUserEnabled: Bool {
@@ -62,21 +65,4 @@ class ProjectInfoPlugin: NSObject, SuperPlugin, PluginRegistrant, SuperLog {
     }
 }
 
-// MARK: - PluginRegistrant
 
-extension ProjectInfoPlugin {
-    /// 注册插件到插件注册表
-    static func register() {
-        guard enable else { return }
-
-        Task {
-            if Self.verbose {
-                os_log("\(Self.t) 🚀 Register ProjectInfoPlugin")
-            }
-
-            await PluginRegistry.shared.register(id: id, order: 3) {
-                ProjectInfoPlugin.shared
-            }
-        }
-    }
-}
