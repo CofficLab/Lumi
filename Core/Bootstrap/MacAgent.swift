@@ -2,9 +2,13 @@ import AppKit
 import SwiftUI
 
 /// macOS应用代理，处理应用级别的生命周期事件和系统集成
+@MainActor
 class MacAgent: NSObject, NSApplicationDelegate {
     /// 系统状态栏项
     private var statusItem: NSStatusItem?
+
+    /// 插件提供者，用于获取插件菜单项
+    private var pluginProvider: PluginProvider?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 应用启动完成时的处理逻辑
@@ -45,6 +49,9 @@ class MacAgent: NSObject, NSApplicationDelegate {
 
     /// 设置系统状态栏图标
     private func setupStatusBar() {
+        // 初始化插件提供者
+        pluginProvider = PluginProvider(autoDiscover: true)
+
         // 创建状态栏项
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
@@ -55,10 +62,26 @@ class MacAgent: NSObject, NSApplicationDelegate {
             button.image?.isTemplate = true  // 使用模板模式，图标会随系统主题变色
         }
 
-        // 设置点击菜单
+        // 监听插件加载完成通知
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handlePluginsDidLoad),
+            name: NSNotification.Name("PluginsDidLoad"),
+            object: nil
+        )
+        
+        // 先设置一个基础菜单（不含插件项）
         setupStatusBarMenu()
+        
+        print("🍎 MacAgent: 状态栏已设置，等待插件加载...")
     }
 
+    /// 处理插件加载完成通知
+    @objc private func handlePluginsDidLoad() {
+        print("🍎 MacAgent: 收到插件加载完成通知，刷新菜单...")
+        refreshStatusBarMenu()
+    }
+    
     /// 设置状态栏菜单
     private func setupStatusBarMenu() {
         let menu = NSMenu()
@@ -72,6 +95,22 @@ class MacAgent: NSObject, NSApplicationDelegate {
 
         menu.addItem(NSMenuItem.separator())
 
+        // 添加所有插件提供的菜单项
+        if let provider = pluginProvider {
+            let pluginMenuItems = provider.getStatusBarMenuItems()
+            
+            print("🍎 MacAgent: 获取到 \(pluginMenuItems.count) 个插件菜单项")
+
+            if !pluginMenuItems.isEmpty {
+                // 添加插件菜单项
+                for item in pluginMenuItems {
+                    menu.addItem(item)
+                }
+
+                menu.addItem(NSMenuItem.separator())
+            }
+        }
+
         // 退出应用
         menu.addItem(NSMenuItem(
             title: "退出",
@@ -80,6 +119,11 @@ class MacAgent: NSObject, NSApplicationDelegate {
         ))
 
         statusItem?.menu = menu
+    }
+    
+    /// 刷新状态栏菜单（插件加载后调用）
+    private func refreshStatusBarMenu() {
+        setupStatusBarMenu()
     }
 
     /// 显示主窗口
@@ -97,6 +141,9 @@ class MacAgent: NSObject, NSApplicationDelegate {
 
     /// 清理应用资源
     private func cleanupApplication() {
+        // 移除通知观察者
+        NotificationCenter.default.removeObserver(self)
+        
         // 移除状态栏图标
         if let statusItem = statusItem {
             NSStatusBar.system.removeStatusItem(statusItem)

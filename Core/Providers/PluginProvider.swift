@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import SwiftUI
 
@@ -6,6 +7,9 @@ import SwiftUI
 final class PluginProvider: ObservableObject {
     /// 已加载的插件列表
     @Published private(set) var plugins: [any SuperPlugin] = []
+    
+    /// 插件是否已加载完成
+    @Published private(set) var isLoaded: Bool = false
 
     /// 初始化插件提供者（自动发现并注册所有插件）
     init(autoDiscover: Bool = true) {
@@ -24,6 +28,15 @@ final class PluginProvider: ObservableObject {
             let loadedPlugins = await PluginRegistry.shared.buildAll()
             await MainActor.run {
                 self.plugins = loadedPlugins
+                self.isLoaded = true
+                
+                // 发送插件加载完成通知
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("PluginsDidLoad"),
+                    object: self
+                )
+                
+                print("✅ PluginProvider: 已加载 \(loadedPlugins.count) 个插件")
             }
         }
     }
@@ -61,8 +74,15 @@ final class PluginProvider: ObservableObject {
         plugins.compactMap { $0.addListView(tab: tab, project: project) }
     }
 
+    /// 获取所有插件提供的系统菜单栏菜单项
+    /// - Returns: 系统菜单栏菜单项数组
+    func getStatusBarMenuItems() -> [NSMenuItem] {
+        plugins.compactMap { $0.addStatusBarMenuItems() }.flatMap { $0 }
+    }
+
     /// 重新加载插件
     func reloadPlugins() {
+        isLoaded = false
         loadPlugins()
     }
 }

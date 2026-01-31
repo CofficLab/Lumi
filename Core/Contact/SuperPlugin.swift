@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// 插件协议，定义插件的基本接口和UI贡献方法
@@ -50,6 +51,17 @@ protocol SuperPlugin {
     /// 添加侧边栏视图
     /// - Returns: 要添加到侧边栏的视图，如果不需要则返回nil
     func addSidebarView() -> AnyView?
+
+    /// 添加系统菜单栏菜单项
+    /// - Returns: 要添加到系统菜单栏的菜单项数组，如果不需要则返回nil
+    func addStatusBarMenuItems() -> [NSMenuItem]?
+}
+
+// MARK: - Default Implementation
+
+extension SuperPlugin {
+    /// 默认实现：不提供菜单项
+    func addStatusBarMenuItems() -> [NSMenuItem]? { nil }
 }
 
 /// 项目模型的占位符（需要根据实际需求定义）

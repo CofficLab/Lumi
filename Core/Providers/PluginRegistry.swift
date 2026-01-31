@@ -24,7 +24,14 @@ actor PluginRegistry {
     ///   - order: 插件加载顺序（数字越小越先加载）
     ///   - factory: 插件工厂方法
     func register(id: String, order: Int = 0, factory: @escaping () -> any SuperPlugin) {
+        // 检查是否已经注册过，避免重复注册
+        if factoryItems.contains(where: { $0.id == id }) {
+            print("⚠️ PluginRegistry: 插件 '\(id)' 已注册，忽略重复注册")
+            return
+        }
+        
         factoryItems.append((id: id, order: order, factory: factory))
+        print("✅ PluginRegistry: 已注册插件 '\(id)' (order: \(order))")
     }
 
     /// 构建所有已注册的插件实例
