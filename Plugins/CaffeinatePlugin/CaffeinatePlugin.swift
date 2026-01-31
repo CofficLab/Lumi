@@ -60,6 +60,21 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
         return AnyView(CaffeinateStatusView())
     }
 
+    /// 提供导航入口
+    /// - Returns: 导航入口数组
+    @MainActor func addNavigationEntries() -> [NavigationEntry]? {
+        return [
+            NavigationEntry.create(
+                id: "\(Self.id).settings",
+                title: "防休眠设置",
+                icon: "bolt.fill",
+                pluginId: Self.id
+            ) {
+                CaffeinateSettingsView()
+            }
+        ]
+    }
+
     /// 添加系统菜单栏菜单项
     /// - Returns: 系统菜单栏菜单项数组
     @MainActor func addStatusBarMenuItems() -> [NSMenuItem]? {

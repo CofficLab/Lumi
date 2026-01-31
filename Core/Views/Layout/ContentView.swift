@@ -59,9 +59,6 @@ struct ContentView: View {
     /// 缓存工具栏后置视图的插件和视图对
     @State private var toolbarTrailingViews: [(plugin: SuperPlugin, view: AnyView)] = []
 
-    /// 缓存插件列表视图的插件和视图对
-    @State private var pluginListViews: [(plugin: SuperPlugin, view: AnyView)] = []
-
     var body: some View {
         Group {
             if useFullWidthStatusBar {
@@ -143,40 +140,18 @@ extension ContentView {
     /// - Returns: 详情内容视图
     @ViewBuilder
     private func detailContent(fullWidthStatusBar: Bool) -> some View {
-        if pluginListViews.isEmpty {
-            VStack(spacing: 0) {
-                mainContent
+        VStack(spacing: 0) {
+            // 显示当前选中的导航内容
+            app.getCurrentNavigationView()
 
-                if fullWidthStatusBar == false, statusBarVisibility {
-                    StatusBarView()
-                }
-            }
-            .frame(maxHeight: .infinity)
-        } else {
-            HSplitView {
-                VStack(spacing: 0) {
-                    ForEach(pluginListViews, id: \.plugin.instanceLabel) { item in
-                        item.view
-                    }
-                }
-                .frame(idealWidth: 200)
-                .frame(minWidth: 120)
-                .frame(maxWidth: 300)
-                .frame(maxHeight: .infinity)
-
-                VStack(spacing: 0) {
-                    mainContent
-
-                    if fullWidthStatusBar == false, statusBarVisibility {
-                        StatusBarView()
-                    }
-                }
-                .frame(maxHeight: .infinity)
+            if fullWidthStatusBar == false, statusBarVisibility {
+                StatusBarView()
             }
         }
+        .frame(maxHeight: .infinity)
     }
 
-    /// 主内容视图
+    /// 主内容视图（已废弃，使用导航系统）
     private var mainContent: some View {
         Group {
             if tab == "main" {
@@ -200,10 +175,10 @@ extension ContentView {
     private var defaultDetailView: some View {
         VStack(spacing: 20) {
             Spacer()
-            Text("欢迎使用 SwiftUI Template")
+            Text("欢迎使用 Lumi")
                 .font(.title)
                 .fontWeight(.bold)
-            Text("插件系统正在加载...")
+            Text("请从侧边栏选择一个导航入口")
                 .font(.body)
                 .foregroundColor(.secondary)
             Spacer()
@@ -237,16 +212,8 @@ extension ContentView {
             return nil
         }
 
-        // 更新插件列表视图
-        pluginListViews = pluginProvider.plugins.compactMap { plugin in
-            if let view = plugin.addListView(tab: tab, project: nil) {
-                return (plugin, view)
-            }
-            return nil
-        }
-
         if Self.verbose {
-            os_log("\(Self.emoji) ✅ Cached views updated: \(toolbarLeadingViews.count) leading, \(toolbarTrailingViews.count) trailing, \(pluginListViews.count) list views")
+            os_log("\(Self.emoji) ✅ Cached views updated: \(toolbarLeadingViews.count) leading, \(toolbarTrailingViews.count) trailing")
         }
     }
 

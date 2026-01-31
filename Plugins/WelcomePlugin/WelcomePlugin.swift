@@ -49,6 +49,22 @@ actor WelcomePlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
+    /// 提供导航入口
+    /// - Returns: 导航入口数组
+    @MainActor func addNavigationEntries() -> [NavigationEntry]? {
+        return [
+            NavigationEntry.create(
+                id: "\(Self.id).welcome",
+                title: "欢迎",
+                icon: "star.circle.fill",
+                pluginId: Self.id,
+                isDefault: true
+            ) {
+                WelcomeView()
+            }
+        ]
+    }
+
     /// 添加详情视图
     /// - Returns: 详情视图
     @MainActor func addDetailView() -> AnyView? {

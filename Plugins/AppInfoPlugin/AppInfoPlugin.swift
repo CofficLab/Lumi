@@ -54,6 +54,21 @@ actor AppInfoPlugin: SuperPlugin, SuperLog {
     @MainActor func addToolBarLeadingView() -> AnyView? {
         return AnyView(AppInfoIconButton())
     }
+
+    /// 提供导航入口
+    /// - Returns: 导航入口数组
+    @MainActor func addNavigationEntries() -> [NavigationEntry]? {
+        return [
+            NavigationEntry.create(
+                id: "\(Self.id).about",
+                title: "关于",
+                icon: "info.circle.fill",
+                pluginId: Self.id
+            ) {
+                AppInfoView()
+            }
+        ]
+    }
 }
 
 

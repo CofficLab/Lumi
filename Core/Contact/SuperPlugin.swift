@@ -41,32 +41,25 @@ protocol SuperPlugin: Actor {
     /// - Returns: 要添加的详情视图，如果不需要则返回nil
     @MainActor func addDetailView() -> AnyView?
 
-    /// 添加列表视图
-    /// - Parameters:
-    ///   - tab: 标签页
-    ///   - project: 项目对象
-    /// - Returns: 要添加的列表视图，如果不需要则返回nil
-    @MainActor func addListView(tab: String, project: Project?) -> AnyView?
-
-    /// 添加侧边栏视图
-    /// - Returns: 要添加到侧边栏的视图，如果不需要则返回nil
-    @MainActor func addSidebarView() -> AnyView?
+    /// 提供导航入口（用于侧边栏导航）
+    /// - Returns: 导航入口数组，如果不需要则返回nil
+    @MainActor func addNavigationEntries() -> [NavigationEntry]?
 
     /// 添加系统菜单栏菜单项
     /// - Returns: 要添加到系统菜单栏的菜单项数组，如果不需要则返回nil
     @MainActor func addStatusBarMenuItems() -> [NSMenuItem]?
-    
+
     // MARK: - Lifecycle Hooks
-    
+
     /// 插件注册完成后的回调
     nonisolated func onRegister()
-    
+
     /// 插件被启用时的回调
     nonisolated func onEnable()
-    
+
     /// 插件被禁用时的回调
     nonisolated func onDisable()
-    
+
     /// 插件注册顺序（数字越小越先加载）
     static var order: Int { get }
 }
@@ -112,13 +105,10 @@ extension SuperPlugin {
     
     /// 默认实现：不提供详情视图
     @MainActor func addDetailView() -> AnyView? { nil }
-    
-    /// 默认实现：不提供列表视图
-    @MainActor func addListView(tab: String, project: Project?) -> AnyView? { nil }
-    
-    /// 默认实现：不提供侧边栏视图
-    @MainActor func addSidebarView() -> AnyView? { nil }
-    
+
+    /// 默认实现：不提供导航入口
+    @MainActor func addNavigationEntries() -> [NavigationEntry]? { nil }
+
     /// 默认实现：不提供菜单项
     @MainActor func addStatusBarMenuItems() -> [NSMenuItem]? { nil }
     
@@ -134,16 +124,9 @@ extension SuperPlugin {
     nonisolated func onDisable() {}
     
     // MARK: - Configuration Defaults
-    
+
     /// 默认注册顺序 (999)
     static var order: Int { 999 }
-}
-
-/// 项目模型的占位符（需要根据实际需求定义）
-struct Project {
-    let id: String
-    let name: String
-    // 其他项目属性...
 }
 
 // MARK: - Preview

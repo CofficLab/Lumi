@@ -54,6 +54,21 @@ actor VersionStatusPlugin: SuperPlugin, SuperLog {
     @MainActor func addStatusBarLeadingView() -> AnyView? {
         return AnyView(VersionStatusView())
     }
+
+    /// 提供导航入口
+    /// - Returns: 导航入口数组
+    @MainActor func addNavigationEntries() -> [NavigationEntry]? {
+        return [
+            NavigationEntry.create(
+                id: "\(Self.id).info",
+                title: "版本信息",
+                icon: "number.circle.fill",
+                pluginId: Self.id
+            ) {
+                VersionInfoView()
+            }
+        ]
+    }
 }
 
 

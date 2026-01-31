@@ -175,23 +175,21 @@ final class PluginProvider: ObservableObject, SuperLog {
             .compactMap { $0.addDetailView() }
     }
 
-    /// 获取指定标签页和项目的列表视图
-    /// - Parameters:
-    ///   - tab: 标签页
-    ///   - project: 项目对象
-    /// - Returns: 列表视图数组
-    func getListViews(for tab: String, project: Project?) -> [AnyView] {
-        plugins
-            .filter { isPluginEnabled($0) }
-            .compactMap { $0.addListView(tab: tab, project: project) }
-    }
-
     /// 获取所有插件提供的系统菜单栏菜单项
     /// - Returns: 系统菜单栏菜单项数组
     func getStatusBarMenuItems() -> [NSMenuItem] {
         plugins
             .filter { isPluginEnabled($0) }
             .compactMap { $0.addStatusBarMenuItems() }
+            .flatMap { $0 }
+    }
+
+    /// 获取所有插件提供的导航入口
+    /// - Returns: 导航入口数组
+    func getNavigationEntries() -> [NavigationEntry] {
+        plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addNavigationEntries() }
             .flatMap { $0 }
     }
 
