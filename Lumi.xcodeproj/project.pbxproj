@@ -15,7 +15,7 @@
 /* Begin PBXFileReference section */
 		F53C3ECB2F1A3CB000929321 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F53C3ECD2F1A3CB000929321 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
-		F53C49142F1A42EC00929321 /* SwiftUI-Template.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "SwiftUI-Template.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		F53C49142F1A42EC00929321 /* Lumi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -57,16 +57,16 @@
 				F53C3ECB2F1A3CB000929321 /* Assets.xcassets */,
 				F54F8C802F1A3B6500AABB2A /* Core */,
 				0B559FC52F1A6A52005C6809 /* Plugins */,
-				F53C49142F1A42EC00929321 /* SwiftUI-Template.app */,
+				F53C49142F1A42EC00929321 /* Lumi.app */,
 			);
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		F54F8C7D2F1A3B6500AABB2A /* SwiftUI-Template */ = {
+		F54F8C7D2F1A3B6500AABB2A /* Lumi */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = F54F8C8A2F1A3B6600AABB2A /* Build configuration list for PBXNativeTarget "SwiftUI-Template" */;
+			buildConfigurationList = F54F8C8A2F1A3B6600AABB2A /* Build configuration list for PBXNativeTarget "Lumi" */;
 			buildPhases = (
 				F54F8C7A2F1A3B6500AABB2A /* Sources */,
 				F54F8C7B2F1A3B6500AABB2A /* Frameworks */,
@@ -81,13 +81,13 @@
 				0B55A3422F1B1AF2005C6809 /* AppStore */,
 				F54F8C802F1A3B6500AABB2A /* Core */,
 			);
-			name = "SwiftUI-Template";
+			name = Lumi;
 			packageProductDependencies = (
 				F53C41562F1A3E4E00929321 /* MagicKit */,
 				F53C41592F1A3E6500929321 /* Sparkle */,
 			);
 			productName = "SwiftUI-Template";
-			productReference = F53C49142F1A42EC00929321 /* SwiftUI-Template.app */;
+			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -105,7 +105,7 @@
 					};
 				};
 			};
-			buildConfigurationList = F54F8C792F1A3B6500AABB2A /* Build configuration list for PBXProject "SwiftUI-Template" */;
+			buildConfigurationList = F54F8C792F1A3B6500AABB2A /* Build configuration list for PBXProject "Lumi" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -123,7 +123,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				F54F8C7D2F1A3B6500AABB2A /* SwiftUI-Template */,
+				F54F8C7D2F1A3B6500AABB2A /* Lumi */,
 			);
 		};
 /* End PBXProject section */
@@ -301,13 +301,14 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Lumi;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.coffic.SwiftUI-Template";
+				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -342,13 +343,14 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Lumi;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.coffic.SwiftUI-Template";
+				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -359,7 +361,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		F54F8C792F1A3B6500AABB2A /* Build configuration list for PBXProject "SwiftUI-Template" */ = {
+		F54F8C792F1A3B6500AABB2A /* Build configuration list for PBXProject "Lumi" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				F54F8C882F1A3B6600AABB2A /* Debug */,
@@ -368,7 +370,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		F54F8C8A2F1A3B6600AABB2A /* Build configuration list for PBXNativeTarget "SwiftUI-Template" */ = {
+		F54F8C8A2F1A3B6600AABB2A /* Build configuration list for PBXNativeTarget "Lumi" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				F54F8C8B2F1A3B6600AABB2A /* Debug */,
