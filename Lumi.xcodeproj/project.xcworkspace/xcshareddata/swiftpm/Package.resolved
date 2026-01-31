@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/nookery/MagicAlert.git",
       "state" : {
-        "revision" : "73156d25eee668ed481df28e587538ceda2ce978",
-        "version" : "0.0.4"
+        "revision" : "c01ea99ac87530ecc804f082c9311d884bc53418",
+        "version" : "1.0.1"
       }
     },
     {
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/MagicKit",
       "state" : {
-        "revision" : "66c91fc8fba6fa32e3ccc9d267fd13f7e5d2244e",
-        "version" : "1.5.11"
+        "revision" : "cf3fe65bac9a3255693f37598701215b8b8e41ce",
+        "version" : "1.5.14"
       }
     },
     {
