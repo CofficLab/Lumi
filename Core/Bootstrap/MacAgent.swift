@@ -3,9 +3,13 @@ import SwiftUI
 
 /// macOS应用代理，处理应用级别的生命周期事件和系统集成
 class MacAgent: NSObject, NSApplicationDelegate {
+    /// 系统状态栏项
+    private var statusItem: NSStatusItem?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 应用启动完成时的处理逻辑
         setupApplication()
+        setupStatusBar()
 
         // 发送应用启动完成的通知
         NotificationCenter.postApplicationDidFinishLaunching()
@@ -39,8 +43,66 @@ class MacAgent: NSObject, NSApplicationDelegate {
         // 例如：设置窗口样式、注册全局快捷键等
     }
 
+    /// 设置系统状态栏图标
+    private func setupStatusBar() {
+        // 创建状态栏项
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+
+        // 设置图标
+        if let button = statusItem?.button {
+            // 使用 SF Symbol 作为图标
+            button.image = NSImage(systemSymbolName: "lightbulb.fill", accessibilityDescription: "Lumi")
+            button.image?.isTemplate = true  // 使用模板模式，图标会随系统主题变色
+        }
+
+        // 设置点击菜单
+        setupStatusBarMenu()
+    }
+
+    /// 设置状态栏菜单
+    private func setupStatusBarMenu() {
+        let menu = NSMenu()
+
+        // 显示主窗口
+        menu.addItem(NSMenuItem(
+            title: "打开 Lumi",
+            action: #selector(showMainWindow),
+            keyEquivalent: ""
+        ))
+
+        menu.addItem(NSMenuItem.separator())
+
+        // 退出应用
+        menu.addItem(NSMenuItem(
+            title: "退出",
+            action: #selector(quitApplication),
+            keyEquivalent: "q"
+        ))
+
+        statusItem?.menu = menu
+    }
+
+    /// 显示主窗口
+    @objc private func showMainWindow() {
+        NSApp.activate(ignoringOtherApps: true)
+        if let window = NSApp.windows.first {
+            window.makeKeyAndOrderFront(nil)
+        }
+    }
+
+    /// 退出应用
+    @objc private func quitApplication() {
+        NSApp.terminate(nil)
+    }
+
     /// 清理应用资源
     private func cleanupApplication() {
+        // 移除状态栏图标
+        if let statusItem = statusItem {
+            NSStatusBar.system.removeStatusItem(statusItem)
+            self.statusItem = nil
+        }
+
         // 执行应用退出前的清理工作
         // 例如：保存用户数据、断开连接等
     }
