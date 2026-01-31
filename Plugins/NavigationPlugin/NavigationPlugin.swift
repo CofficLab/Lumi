@@ -4,7 +4,7 @@ import SwiftUI
 import OSLog
 
 /// 导航插件：在侧边栏提供导航按钮
-class NavigationPlugin: NSObject, SuperPlugin, SuperLog {
+actor NavigationPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     /// 日志标识符
@@ -37,7 +37,7 @@ class NavigationPlugin: NSObject, SuperPlugin, SuperLog {
     // MARK: - Instance
 
     /// 插件实例标签（用于识别唯一实例）
-    var instanceLabel: String {
+    nonisolated var instanceLabel: String {
         Self.id
     }
 
@@ -45,19 +45,13 @@ class NavigationPlugin: NSObject, SuperPlugin, SuperLog {
     static let shared = NavigationPlugin()
 
     /// 初始化方法
-    override init() {}
-
-    /// 检查插件是否被用户启用
-    private var isUserEnabled: Bool {
-        PluginSettingsStore.shared.isPluginEnabled(Self.id)
-    }
+    init() {}
 
     // MARK: - UI Contributions
 
     /// 添加侧边栏视图
     /// - Returns: 要添加到侧边栏的视图
-    func addSidebarView() -> AnyView? {
-        guard isUserEnabled else { return nil }
+    @MainActor func addSidebarView() -> AnyView? {
         return AnyView(NavigationSidebarView())
     }
 }

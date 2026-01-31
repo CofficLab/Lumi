@@ -4,7 +4,7 @@ import OSLog
 import SwiftUI
 
 /// 工具栏按钮插件：在工具栏显示可点击的按钮
-class ToolbarButtonPlugin: NSObject, SuperPlugin, SuperLog {
+actor ToolbarButtonPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     /// 日志标识符
@@ -37,7 +37,7 @@ class ToolbarButtonPlugin: NSObject, SuperPlugin, SuperLog {
     // MARK: - Instance
 
     /// 插件实例标签（用于识别唯一实例）
-    var instanceLabel: String {
+    nonisolated var instanceLabel: String {
         Self.id
     }
 
@@ -45,7 +45,7 @@ class ToolbarButtonPlugin: NSObject, SuperPlugin, SuperLog {
     static let shared = ToolbarButtonPlugin()
 
     /// 初始化方法
-    override init() {}
+    init() {}
 
     /// 检查插件是否被用户启用
     private var isUserEnabled: Bool {
@@ -56,8 +56,7 @@ class ToolbarButtonPlugin: NSObject, SuperPlugin, SuperLog {
 
     /// 添加工具栏右侧视图
     /// - Returns: 工具栏右侧视图
-    func addToolBarTrailingView() -> AnyView? {
-        guard isUserEnabled else { return nil }
+    @MainActor func addToolBarTrailingView() -> AnyView? {
         return AnyView(ToolbarActionButton())
     }
 }

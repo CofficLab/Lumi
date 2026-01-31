@@ -4,7 +4,7 @@ import OSLog
 import SwiftUI
 
 /// 项目信息插件：在列表视图中显示当前项目详细信息
-class ProjectInfoPlugin: NSObject, SuperPlugin, SuperLog {
+actor ProjectInfoPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     /// 日志标识符
@@ -37,7 +37,7 @@ class ProjectInfoPlugin: NSObject, SuperPlugin, SuperLog {
     // MARK: - Instance
 
     /// 插件实例标签（用于识别唯一实例）
-    var instanceLabel: String {
+    nonisolated var instanceLabel: String {
         Self.id
     }
 
@@ -45,12 +45,7 @@ class ProjectInfoPlugin: NSObject, SuperPlugin, SuperLog {
     static let shared = ProjectInfoPlugin()
 
     /// 初始化方法
-    override init() {}
-
-    /// 检查插件是否被用户启用
-    private var isUserEnabled: Bool {
-        PluginSettingsStore.shared.isPluginEnabled(Self.id)
-    }
+    init() {}
 
     // MARK: - UI Contributions
 
@@ -59,8 +54,7 @@ class ProjectInfoPlugin: NSObject, SuperPlugin, SuperLog {
     ///   - tab: 标签页
     ///   - project: 项目对象
     /// - Returns: 列表视图
-    func addListView(tab: String, project: Project?) -> AnyView? {
-        guard isUserEnabled else { return nil }
+    @MainActor func addListView(tab: String, project: Project?) -> AnyView? {
         return AnyView(ProjectInfoListView(tab: tab, project: project))
     }
 }

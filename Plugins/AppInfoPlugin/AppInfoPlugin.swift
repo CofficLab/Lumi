@@ -4,7 +4,7 @@ import SwiftUI
 import OSLog
 
 /// 应用信息插件：在工具栏显示应用信息图标，点击后弹出应用详情
-class AppInfoPlugin: NSObject, SuperPlugin, SuperLog {
+actor AppInfoPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     /// 日志标识符
@@ -37,7 +37,7 @@ class AppInfoPlugin: NSObject, SuperPlugin, SuperLog {
     // MARK: - Instance
 
     /// 插件实例标签（用于识别唯一实例）
-    var instanceLabel: String {
+    nonisolated var instanceLabel: String {
         Self.id
     }
 
@@ -45,19 +45,13 @@ class AppInfoPlugin: NSObject, SuperPlugin, SuperLog {
     static let shared = AppInfoPlugin()
 
     /// 初始化方法
-    override init() {}
-
-    /// 检查插件是否被用户启用
-    private var isUserEnabled: Bool {
-        PluginSettingsStore.shared.isPluginEnabled(Self.id)
-    }
+    init() {}
 
     // MARK: - UI Contributions
 
     /// 添加工具栏前导视图
     /// - Returns: 工具栏前导视图
-    func addToolBarLeadingView() -> AnyView? {
-        guard isUserEnabled else { return nil }
+    @MainActor func addToolBarLeadingView() -> AnyView? {
         return AnyView(AppInfoIconButton())
     }
 }

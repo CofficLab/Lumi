@@ -4,7 +4,7 @@ import OSLog
 import SwiftUI
 
 /// 版本状态插件：在状态栏显示应用版本号
-class VersionStatusPlugin: NSObject, SuperPlugin, SuperLog {
+actor VersionStatusPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     /// 日志标识符
@@ -37,7 +37,7 @@ class VersionStatusPlugin: NSObject, SuperPlugin, SuperLog {
     // MARK: - Instance
 
     /// 插件实例标签（用于识别唯一实例）
-    var instanceLabel: String {
+    nonisolated var instanceLabel: String {
         Self.id
     }
 
@@ -45,19 +45,13 @@ class VersionStatusPlugin: NSObject, SuperPlugin, SuperLog {
     static let shared = VersionStatusPlugin()
 
     /// 初始化方法
-    override init() {}
-
-    /// 检查插件是否被用户启用
-    private var isUserEnabled: Bool {
-        PluginSettingsStore.shared.isPluginEnabled(Self.id)
-    }
+    init() {}
 
     // MARK: - UI Contributions
 
     /// 添加状态栏左侧视图
     /// - Returns: 状态栏左侧视图
-    func addStatusBarLeadingView() -> AnyView? {
-        guard isUserEnabled else { return nil }
+    @MainActor func addStatusBarLeadingView() -> AnyView? {
         return AnyView(VersionStatusView())
     }
 }

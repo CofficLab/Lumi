@@ -4,7 +4,7 @@ import OSLog
 import SwiftUI
 
 /// 欢迎插件：提供欢迎界面作为详情视图
-class WelcomePlugin: NSObject, SuperPlugin, SuperLog {
+actor WelcomePlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     /// 日志标识符
@@ -37,7 +37,7 @@ class WelcomePlugin: NSObject, SuperPlugin, SuperLog {
     // MARK: - Instance
 
     /// 插件实例标签（用于识别唯一实例）
-    var instanceLabel: String {
+    nonisolated var instanceLabel: String {
         Self.id
     }
 
@@ -45,19 +45,13 @@ class WelcomePlugin: NSObject, SuperPlugin, SuperLog {
     static let shared = WelcomePlugin()
 
     /// 初始化方法
-    override init() {}
-
-    /// 检查插件是否被用户启用
-    private var isUserEnabled: Bool {
-        PluginSettingsStore.shared.isPluginEnabled(Self.id)
-    }
+    init() {}
 
     // MARK: - UI Contributions
 
     /// 添加详情视图
     /// - Returns: 详情视图
-    func addDetailView() -> AnyView? {
-        guard isUserEnabled else { return nil }
+    @MainActor func addDetailView() -> AnyView? {
         return AnyView(WelcomeView())
     }
 }

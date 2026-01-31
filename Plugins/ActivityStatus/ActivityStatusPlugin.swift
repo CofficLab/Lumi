@@ -4,7 +4,7 @@ import MagicKit
 import SwiftUI
 
 /// 状态栏活动状态插件：展示当前长耗时操作的状态文本。
-class ActivityStatusPlugin: NSObject, SuperPlugin, SuperLog {
+actor ActivityStatusPlugin: SuperPlugin, SuperLog {
     /// 日志标识符
     nonisolated static let emoji = "⌛️"
 
@@ -36,21 +36,15 @@ class ActivityStatusPlugin: NSObject, SuperPlugin, SuperLog {
     static var order: Int { 10 }
 
     /// 插件实例标签（用于识别唯一实例）
-    var instanceLabel: String {
+    nonisolated var instanceLabel: String {
         Self.id
     }
 
-    override init() {}
-
-    /// 检查插件是否被用户启用
-    private var isUserEnabled: Bool {
-        PluginSettingsStore.shared.isPluginEnabled(Self.id)
-    }
+    init() {}
 
     /// 添加状态栏左侧视图
     /// - Returns: 要添加到状态栏左侧的视图，如果不需要则返回nil
-    func addStatusBarLeadingView() -> AnyView? {
-        guard isUserEnabled else { return nil }
+    @MainActor func addStatusBarLeadingView() -> AnyView? {
         return AnyView(ActivityStatusTile())
     }
 }

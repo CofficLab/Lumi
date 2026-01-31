@@ -4,7 +4,7 @@ import OSLog
 import SwiftUI
 
 /// 设置按钮插件：在状态栏右侧显示设置按钮
-class SettingsButtonPlugin: NSObject, SuperPlugin, SuperLog {
+actor SettingsButtonPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     /// 日志标识符
@@ -37,7 +37,7 @@ class SettingsButtonPlugin: NSObject, SuperPlugin, SuperLog {
     // MARK: - Instance
 
     /// 插件实例标签（用于识别唯一实例）
-    var instanceLabel: String {
+    nonisolated var instanceLabel: String {
         Self.id
     }
 
@@ -45,19 +45,13 @@ class SettingsButtonPlugin: NSObject, SuperPlugin, SuperLog {
     static let shared = SettingsButtonPlugin()
 
     /// 初始化方法
-    override init() {}
-
-    /// 检查插件是否被用户启用
-    private var isUserEnabled: Bool {
-        PluginSettingsStore.shared.isPluginEnabled(Self.id)
-    }
+    init() {}
 
     // MARK: - UI Contributions
 
     /// 添加状态栏右侧视图
     /// - Returns: 状态栏右侧视图
-    func addStatusBarTrailingView() -> AnyView? {
-        guard isUserEnabled else { return nil }
+    @MainActor func addStatusBarTrailingView() -> AnyView? {
         return AnyView(SettingsButtonView())
     }
 }

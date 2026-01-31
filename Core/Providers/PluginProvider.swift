@@ -34,7 +34,8 @@ final class PluginProvider: ObservableObject, SuperLog {
         defer { free(UnsafeMutableRawPointer(classList)) }
         
         let classes = UnsafeBufferPointer(start: classList, count: Int(count))
-        var discovered: [any SuperPlugin] = []
+        // 临时存储，包含 (实例, 类名, 顺序)
+        var discoveredItems: [(instance: any SuperPlugin, className: String, order: Int)] = []
         
         for i in 0 ..< classes.count {
             let cls: AnyClass = classes[i]
@@ -43,29 +44,26 @@ final class PluginProvider: ObservableObject, SuperLog {
             // 筛选条件：Lumi 命名空间且以 Plugin 结尾的类
             guard className.hasPrefix("Lumi."), className.hasSuffix("Plugin") else { continue }
             
-            // 尝试转换为 NSObject 类型（以便实例化）
-            guard let pluginClass = cls as? NSObject.Type else { continue }
+            // 尝试创建 Actor 实例
+            guard let instance = createActorInstance(cls: cls) as? any SuperPlugin else {
+                continue
+            }
             
-            // 实例化插件
-            let instance = pluginClass.init()
-            
-            // 检查是否符合 SuperPlugin 协议
-            if let plugin = instance as? any SuperPlugin {
-                // 检查是否应该注册
-                let pluginType = type(of: plugin)
-                if pluginType.shouldRegister {
-                    discovered.append(plugin)
-                    if Self.verbose {
-                        os_log("\(self.t)🔍 Discovered plugin: \(pluginType.id) (order: \(pluginType.order))")
-                    }
+            // 检查是否应该注册
+            let pluginType = type(of: instance)
+            if pluginType.shouldRegister {
+                discoveredItems.append((instance, className, pluginType.order))
+                if Self.verbose {
+                    os_log("\(self.t)🔍 Discovered plugin: \(pluginType.id) (order: \(pluginType.order))")
                 }
             }
         }
         
         // 按顺序排序
-        let sortedPlugins = discovered.sorted { type(of: $0).order < type(of: $1).order }
+        discoveredItems.sort { $0.order < $1.order }
         
         // 更新插件列表
+        let sortedPlugins = discoveredItems.map { $0.instance }
         self.plugins = sortedPlugins
         self.isLoaded = true
         
@@ -83,6 +81,36 @@ final class PluginProvider: ObservableObject, SuperLog {
         if Self.verbose {
             os_log("\(self.t)✅ Auto-discovery complete. Loaded \(sortedPlugins.count) plugins.")
         }
+    }
+    
+    /// 创建 actor 实例的辅助函数
+    /// 由于 actor 的特殊性，我们需要使用 Objective-C Runtime 来创建实例
+    private func createActorInstance(cls: AnyClass) -> AnyObject? {
+        // 尝试获取 alloc 方法
+        let allocSelector = NSSelectorFromString("alloc")
+        guard let allocMethod = class_getClassMethod(cls, allocSelector) else {
+            return nil
+        }
+        
+        // 调用 alloc
+        typealias AllocMethod = @convention(c) (AnyClass, Selector) -> AnyObject?
+        let allocImpl = unsafeBitCast(method_getImplementation(allocMethod), to: AllocMethod.self)
+        guard let instance = allocImpl(cls, allocSelector) else {
+            return nil
+        }
+        
+        // 尝试获取 init() 方法
+        let initSelector = NSSelectorFromString("init")
+        guard let initMethod = class_getInstanceMethod(cls, initSelector) else {
+            // 如果没有init方法，直接返回alloc的实例（虽然这通常不应该发生）
+            return instance
+        }
+        
+        // 调用 init
+        typealias InitMethod = @convention(c) (AnyObject, Selector) -> AnyObject?
+        let initImpl = unsafeBitCast(method_getImplementation(initMethod), to: InitMethod.self)
+        
+        return initImpl(instance, initSelector) ?? instance
     }
 
     /// 获取所有插件的工具栏右侧视图
