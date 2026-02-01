@@ -1,6 +1,6 @@
 import Foundation
-import OSLog
 import MagicKit
+import OSLog
 import SwiftUI
 
 /// 状态栏活动状态插件：展示当前长耗时操作的状态文本。
@@ -31,16 +31,9 @@ actor ActivityStatusPlugin: SuperPlugin, SuperLog {
 
     /// 插件是否可配置（是否在设置中由用户控制启用/停用）
     static var isConfigurable: Bool = false
-    
+
     /// 注册顺序
     static var order: Int { 10 }
-
-    /// 插件实例标签（用于识别唯一实例）
-    nonisolated var instanceLabel: String {
-        Self.id
-    }
-
-    init() {}
 
     /// 添加状态栏左侧视图
     /// - Returns: 要添加到状态栏左侧的视图，如果不需要则返回nil
@@ -51,23 +44,12 @@ actor ActivityStatusPlugin: SuperPlugin, SuperLog {
 
 // MARK: - PluginRegistrant
 
-
-
 // MARK: - Preview
 
-#Preview("App - Small Screen") {
+#Preview("App") {
     ContentLayout()
         .hideSidebar()
         .hideTabPicker()
         .inRootView()
-        .frame(width: 800)
-        .frame(height: 600)
-}
-
-#Preview("App - Big Screen") {
-    ContentLayout()
-        .hideSidebar()
-        .inRootView()
-        .frame(width: 1200)
-        .frame(height: 1200)
+        .withDebugBar()
 }

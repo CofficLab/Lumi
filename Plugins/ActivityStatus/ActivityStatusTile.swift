@@ -80,27 +80,10 @@ struct ActivityStatusTile: View {
 
 // MARK: - Preview
 
-#Preview("App - Small Screen") {
+#Preview("App") {
     ContentLayout()
         .hideSidebar()
         .hideTabPicker()
         .inRootView()
-        .frame(width: 800)
-        .frame(height: 600)
-}
-
-#Preview("App - Big Screen") {
-    ContentLayout()
-        .hideSidebar()
-        .inRootView()
-        .frame(width: 1200)
-        .frame(height: 1200)
-}
-
-#Preview("With Activity Status") {
-    ActivityStatusTile()
-        .onAppear {
-            // Preview中无法直接注入有状态的对象
-            // 此Preview仅展示布局，实际使用时会通过AppProvider注入
-        }
+        .withDebugBar()
 }
