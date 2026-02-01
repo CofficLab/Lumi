@@ -82,32 +82,52 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
         var items: [NSMenuItem] = []
         let handler = CaffeinateActionHandler.shared
 
-        // 防休眠开关菜单项
-        let toggleItem = NSMenuItem(
-            title: manager.isActive ? "停止阻止休眠" : "阻止系统休眠",
-            action: #selector(CaffeinateActionHandler.toggleCaffeinate(_:)),
+        if manager.isActive {
+            let stopItem = NSMenuItem(
+                title: "停止阻止休眠",
+                action: #selector(CaffeinateActionHandler.toggleCaffeinate(_:)),
+                keyEquivalent: ""
+            )
+            stopItem.target = handler
+            stopItem.isEnabled = true
+            items.append(stopItem)
+        }
+
+        items.append(NSMenuItem.separator())
+
+        let allowDisplayItem = NSMenuItem(
+            title: CaffeinateManager.SleepMode.systemOnly.displayName,
+            action: #selector(CaffeinateActionHandler.activateAllowDisplay(_:)),
             keyEquivalent: ""
         )
-        toggleItem.target = handler
-        toggleItem.isEnabled = true // 强制启用
-        items.append(toggleItem)
+        allowDisplayItem.target = handler
+        allowDisplayItem.isEnabled = true
+        allowDisplayItem.state = manager.mode == .systemOnly ? .on : .off
+        items.append(allowDisplayItem)
 
-        // 如果已激活，显示停止子菜单
-        if manager.isActive {
-            items.append(NSMenuItem.separator())
+        let preventDisplayItem = NSMenuItem(
+            title: CaffeinateManager.SleepMode.systemAndDisplay.displayName,
+            action: #selector(CaffeinateActionHandler.activatePreventDisplay(_:)),
+            keyEquivalent: ""
+        )
+        preventDisplayItem.target = handler
+        preventDisplayItem.isEnabled = true
+        preventDisplayItem.state = manager.mode == .systemAndDisplay ? .on : .off
+        items.append(preventDisplayItem)
 
-            // 常用时间选项
-            for durationOption in CaffeinateManager.commonDurations {
-                let item = NSMenuItem(
-                    title: "切换时长: \(durationOption.displayName)",
-                    action: #selector(CaffeinateActionHandler.activateWithDuration(_:)),
-                    keyEquivalent: ""
-                )
-                item.tag = durationOption.hashValue
-                item.target = handler
-                item.isEnabled = true // 强制启用
-                items.append(item)
-            }
+        items.append(NSMenuItem.separator())
+
+        for durationOption in CaffeinateManager.commonDurations {
+            let item = NSMenuItem(
+                title: "时长: \(durationOption.displayName)",
+                action: #selector(CaffeinateActionHandler.activateWithDuration(_:)),
+                keyEquivalent: ""
+            )
+            item.tag = durationOption.hashValue
+            item.target = handler
+            item.isEnabled = true
+            item.state = manager.isActive && manager.duration == durationOption.timeInterval ? .on : .off
+            items.append(item)
         }
 
         return items
@@ -127,6 +147,14 @@ fileprivate class CaffeinateActionHandler: NSObject, NSMenuItemValidation {
         CaffeinateManager.shared.toggle()
     }
 
+    @objc func activateAllowDisplay(_ sender: Any?) {
+        activate(mode: .systemOnly)
+    }
+
+    @objc func activatePreventDisplay(_ sender: Any?) {
+        activate(mode: .systemAndDisplay)
+    }
+
     /// 使用指定时长激活防休眠
     @objc func activateWithDuration(_ sender: Any?) {
         guard let menuItem = sender as? NSMenuItem else { return }
@@ -134,20 +162,35 @@ fileprivate class CaffeinateActionHandler: NSObject, NSMenuItemValidation {
         
         // 根据菜单项的 tag 找到对应的时长选项
         if let option = CaffeinateManager.commonDurations.first(where: { $0.hashValue == menuItem.tag }) {
-            // 先停止当前的
-            if CaffeinateManager.shared.isActive {
-                CaffeinateManager.shared.deactivate()
-            }
-            // 使用新时长激活
-            CaffeinateManager.shared.activate(duration: option.timeInterval)
+            activate(mode: CaffeinateManager.shared.mode, duration: option.timeInterval)
         }
+    }
+
+    private func activate(mode: CaffeinateManager.SleepMode, duration: TimeInterval = 0) {
+        if CaffeinateManager.shared.isActive {
+            CaffeinateManager.shared.deactivate()
+        }
+        CaffeinateManager.shared.activate(mode: mode, duration: duration)
     }
     
     /// 验证菜单项是否可用
     /// - Parameter menuItem: 菜单项
     /// - Returns: 是否可用
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
-        os_log("CaffeinateActionHandler: Validating menu item '\(menuItem.title)'")
+        let manager = CaffeinateManager.shared
+
+        if menuItem.action == #selector(CaffeinateActionHandler.activateAllowDisplay(_:)) {
+            menuItem.state = manager.mode == .systemOnly ? .on : .off
+        } else if menuItem.action == #selector(CaffeinateActionHandler.activatePreventDisplay(_:)) {
+            menuItem.state = manager.mode == .systemAndDisplay ? .on : .off
+        } else if menuItem.action == #selector(CaffeinateActionHandler.activateWithDuration(_:)) {
+            menuItem.state = manager.isActive && manager.duration == durationForTag(menuItem.tag) ? .on : .off
+        }
+
         return true
+    }
+
+    private func durationForTag(_ tag: Int) -> TimeInterval? {
+        CaffeinateManager.commonDurations.first(where: { $0.hashValue == tag })?.timeInterval
     }
 }

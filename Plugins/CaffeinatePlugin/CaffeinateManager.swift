@@ -21,6 +21,8 @@ class CaffeinateManager {
     /// 预设持续时间（秒），0 表示永久
     private(set) var duration: TimeInterval = 0
 
+    private(set) var mode: SleepMode = .systemAndDisplay
+
     /// IOKit 断言 ID
     private var assertionID: IOPMAssertionID = 0
 
@@ -42,11 +44,16 @@ class CaffeinateManager {
     /// 激活防休眠
     /// - Parameter duration: 持续时间（秒），0 表示永久
     func activate(duration: TimeInterval = 0) {
+        activate(mode: .systemAndDisplay, duration: duration)
+    }
+
+    func activate(mode: SleepMode, duration: TimeInterval = 0) {
         guard !isActive else {
             logger.info("Caffeinate already active, ignoring activation request")
             return
         }
 
+        self.mode = mode
         let reason = "User prevented sleep via Lumi" as NSString
 
         let systemResult = IOPMAssertionCreateWithName(
@@ -56,12 +63,17 @@ class CaffeinateManager {
             &assertionID
         )
 
-        let displayResult = IOPMAssertionCreateWithName(
-            kIOPMAssertionTypePreventUserIdleDisplaySleep as CFString,
-            IOPMAssertionLevel(kIOPMAssertionLevelOn),
-            reason,
-            &displayAssertionID
-        )
+        var displayResult: IOReturn = kIOReturnSuccess
+        if mode == .systemAndDisplay {
+            displayResult = IOPMAssertionCreateWithName(
+                kIOPMAssertionTypePreventUserIdleDisplaySleep as CFString,
+                IOPMAssertionLevel(kIOPMAssertionLevelOn),
+                reason,
+                &displayAssertionID
+            )
+        } else {
+            displayAssertionID = 0
+        }
 
         if systemResult == kIOReturnSuccess && displayResult == kIOReturnSuccess {
             isActive = true
@@ -81,6 +93,14 @@ class CaffeinateManager {
             if displayResult != kIOReturnSuccess {
                 logger.error("Failed to create display sleep assertion: \(displayResult)")
             }
+            if assertionID != 0 {
+                IOPMAssertionRelease(assertionID)
+                assertionID = 0
+            }
+            if displayAssertionID != 0 {
+                IOPMAssertionRelease(displayAssertionID)
+                displayAssertionID = 0
+            }
         }
     }
 
@@ -91,8 +111,8 @@ class CaffeinateManager {
             return
         }
 
-        let systemResult = IOPMAssertionRelease(assertionID)
-        let displayResult = IOPMAssertionRelease(displayAssertionID)
+        let systemResult = assertionID == 0 ? kIOReturnSuccess : IOPMAssertionRelease(assertionID)
+        let displayResult = displayAssertionID == 0 ? kIOReturnSuccess : IOPMAssertionRelease(displayAssertionID)
 
         if systemResult == kIOReturnSuccess && displayResult == kIOReturnSuccess {
             isActive = false
@@ -121,7 +141,7 @@ class CaffeinateManager {
         if isActive {
             deactivate()
         } else {
-            activate()
+            activate(mode: mode)
         }
     }
 
@@ -149,8 +169,12 @@ class CaffeinateManager {
     deinit {
         // 清理资源
         if isActive {
-            IOPMAssertionRelease(assertionID)
-            IOPMAssertionRelease(displayAssertionID)
+            if assertionID != 0 {
+                IOPMAssertionRelease(assertionID)
+            }
+            if displayAssertionID != 0 {
+                IOPMAssertionRelease(displayAssertionID)
+            }
         }
         timer?.invalidate()
     }
@@ -159,6 +183,20 @@ class CaffeinateManager {
 // MARK: - Duration Options
 
 extension CaffeinateManager {
+    enum SleepMode: String, CaseIterable {
+        case systemOnly
+        case systemAndDisplay
+
+        var displayName: String {
+            switch self {
+            case .systemOnly:
+                return "阻止休眠，允许关闭屏幕"
+            case .systemAndDisplay:
+                return "阻止休眠，禁止关闭屏幕"
+            }
+        }
+    }
+
     /// 预设的时间选项
     enum DurationOption: Hashable, Equatable {
         case indefinite
