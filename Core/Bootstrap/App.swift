@@ -1,6 +1,5 @@
 import MagicKit
 import OSLog
-import Sparkle
 import SwiftUI
 
 /// 主应用入口，负责应用生命周期管理和核心服务初始化
@@ -15,31 +14,11 @@ struct CoreApp: App, SuperLog {
     /// macOS 应用代理，处理应用级别的生命周期事件
     @NSApplicationDelegateAdaptor private var appDelegate: MacAgent
 
-    /// Sparkle 更新控制器，提供应用自动更新功能
-    private let updaterController: SPUStandardUpdaterController
-
     /// 应用提供者，管理应用状态和数据
     @StateObject private var appProvider = AppProvider()
 
     /// 插件提供者，管理插件生命周期
     @StateObject private var pluginProvider = PluginProvider()
-
-    init() {
-        // 初始化核心库和更新控制器
-        if Self.verbose {
-            os_log("\(Self.t)初始化应用...")
-        }
-
-        updaterController = SPUStandardUpdaterController(
-            startingUpdater: true,
-            updaterDelegate: nil,
-            userDriverDelegate: nil
-        )
-
-        if Self.verbose {
-            os_log("\(Self.t)应用初始化完成")
-        }
-    }
 
     var body: some Scene {
         WindowGroup {

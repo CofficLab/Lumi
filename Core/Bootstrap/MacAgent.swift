@@ -1,7 +1,9 @@
 import AppKit
 import MagicKit
 import OSLog
+import Sparkle
 import SwiftUI
+
 
 /// macOS应用代理，处理应用级别的生命周期事件和系统集成
 @MainActor
@@ -15,6 +17,13 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
 
     /// 插件提供者，用于获取插件菜单项
     private var pluginProvider: PluginProvider?
+    
+    /// Sparkle 更新控制器，提供应用自动更新功能
+    private let updaterController = SPUStandardUpdaterController(
+        startingUpdater: true,
+        updaterDelegate: nil,
+        userDriverDelegate: nil
+    )
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 应用启动完成时的处理逻辑
@@ -103,6 +112,12 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
             keyEquivalent: ""
         ))
 
+        menu.addItem(NSMenuItem(
+            title: "检查更新",
+            action: #selector(checkForUpdates),
+            keyEquivalent: ""
+        ))
+
         menu.addItem(NSMenuItem.separator())
 
         // 添加所有插件提供的菜单项
@@ -149,6 +164,11 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     /// 退出应用
     @objc private func quitApplication() {
         NSApp.terminate(nil)
+    }
+
+    /// 检查更新
+    @objc private func checkForUpdates() {
+        updaterController.checkForUpdates(nil)
     }
 
     /// 清理应用资源
