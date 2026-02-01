@@ -24,6 +24,8 @@ class CaffeinateManager {
     /// IOKit 断言 ID
     private var assertionID: IOPMAssertionID = 0
 
+    private var displayAssertionID: IOPMAssertionID = 0
+
     /// 定时器（用于定时模式）
     private var timer: Timer?
 
@@ -47,14 +49,21 @@ class CaffeinateManager {
 
         let reason = "User prevented sleep via Lumi" as NSString
 
-        let result = IOPMAssertionCreateWithName(
+        let systemResult = IOPMAssertionCreateWithName(
             kIOPMAssertionTypePreventUserIdleSystemSleep as CFString,
             IOPMAssertionLevel(kIOPMAssertionLevelOn),
             reason,
             &assertionID
         )
 
-        if result == kIOReturnSuccess {
+        let displayResult = IOPMAssertionCreateWithName(
+            kIOPMAssertionTypePreventUserIdleDisplaySleep as CFString,
+            IOPMAssertionLevel(kIOPMAssertionLevelOn),
+            reason,
+            &displayAssertionID
+        )
+
+        if systemResult == kIOReturnSuccess && displayResult == kIOReturnSuccess {
             isActive = true
             startTime = Date()
             self.duration = duration
@@ -66,7 +75,12 @@ class CaffeinateManager {
                 startTimer(duration: duration)
             }
         } else {
-            logger.error("Failed to create power assertion: \(result)")
+            if systemResult != kIOReturnSuccess {
+                logger.error("Failed to create system sleep assertion: \(systemResult)")
+            }
+            if displayResult != kIOReturnSuccess {
+                logger.error("Failed to create display sleep assertion: \(displayResult)")
+            }
         }
     }
 
@@ -77,13 +91,15 @@ class CaffeinateManager {
             return
         }
 
-        let result = IOPMAssertionRelease(assertionID)
+        let systemResult = IOPMAssertionRelease(assertionID)
+        let displayResult = IOPMAssertionRelease(displayAssertionID)
 
-        if result == kIOReturnSuccess {
+        if systemResult == kIOReturnSuccess && displayResult == kIOReturnSuccess {
             isActive = false
             startTime = nil
             duration = 0
             assertionID = 0
+            displayAssertionID = 0
 
             // 停止定时器
             timer?.invalidate()
@@ -91,7 +107,12 @@ class CaffeinateManager {
 
             logger.info("Caffeinate deactivated successfully")
         } else {
-            logger.error("Failed to release power assertion: \(result)")
+            if systemResult != kIOReturnSuccess {
+                logger.error("Failed to release system sleep assertion: \(systemResult)")
+            }
+            if displayResult != kIOReturnSuccess {
+                logger.error("Failed to release display sleep assertion: \(displayResult)")
+            }
         }
     }
 
@@ -129,6 +150,7 @@ class CaffeinateManager {
         // 清理资源
         if isActive {
             IOPMAssertionRelease(assertionID)
+            IOPMAssertionRelease(displayAssertionID)
         }
         timer?.invalidate()
     }
