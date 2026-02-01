@@ -11,6 +11,9 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     static let emoji = "🍎"
 
     static let verbose = true
+    
+    /// 系统状态栏项
+    private var statusItem: NSStatusItem?
 
     /// 插件提供者，用于获取插件菜单项
     private var pluginProvider: PluginProvider?
@@ -25,6 +28,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 应用启动完成时的处理逻辑
         setupApplication()
+        setupStatusBar()
 
         // 发送应用启动完成的通知
         NotificationCenter.postApplicationDidFinishLaunching()
@@ -60,6 +64,94 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
         // 初始化插件提供者
         pluginProvider = PluginProvider(autoDiscover: true)
     }
+    
+    /// 设置系统状态栏图标
+    private func setupStatusBar() {
+        // 创建状态栏项
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+
+        // 设置图标
+        if let button = statusItem?.button {
+            // 使用 SF Symbol 作为图标
+            button.image = NSImage(systemSymbolName: "lightbulb.fill", accessibilityDescription: "Lumi")
+            button.image?.isTemplate = true  // 使用模板模式，图标会随系统主题变色
+        }
+
+        // 监听插件加载完成通知
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handlePluginsDidLoad),
+            name: NSNotification.Name("PluginsDidLoad"),
+            object: nil
+        )
+        
+        // 先设置一个基础菜单（不含插件项）
+        setupStatusBarMenu()
+        
+        if Self.verbose {
+            os_log("\(self.t)状态栏已设置，等待插件加载...")
+        }
+    }
+    
+    /// 处理插件加载完成通知
+    @objc private func handlePluginsDidLoad() {
+        if Self.verbose {
+            os_log("\(self.t)收到插件加载完成通知，刷新菜单...")
+        }
+        refreshStatusBarMenu()
+    }
+    
+    /// 设置状态栏菜单
+    private func setupStatusBarMenu() {
+        let menu = NSMenu()
+
+        // 显示主窗口
+        menu.addItem(NSMenuItem(
+            title: "打开 Lumi",
+            action: #selector(showMainWindow),
+            keyEquivalent: ""
+        ))
+
+        menu.addItem(NSMenuItem(
+            title: "检查更新",
+            action: #selector(checkForUpdates),
+            keyEquivalent: ""
+        ))
+
+        menu.addItem(NSMenuItem.separator())
+
+        // 添加所有插件提供的菜单项
+        if let provider = pluginProvider {
+            let pluginMenuItems = provider.getStatusBarMenuItems()
+            
+            if Self.verbose {
+                os_log("\(self.t)获取到 \(pluginMenuItems.count) 个插件菜单项")
+            }
+
+            if !pluginMenuItems.isEmpty {
+                // 添加插件菜单项
+                for item in pluginMenuItems {
+                    menu.addItem(item)
+                }
+
+                menu.addItem(NSMenuItem.separator())
+            }
+        }
+
+        // 退出应用
+        menu.addItem(NSMenuItem(
+            title: "退出",
+            action: #selector(quitApplication),
+            keyEquivalent: "q"
+        ))
+
+        statusItem?.menu = menu
+    }
+    
+    /// 刷新状态栏菜单（插件加载后调用）
+    private func refreshStatusBarMenu() {
+        setupStatusBarMenu()
+    }
 
     /// 显示主窗口
     @objc private func showMainWindow() {
@@ -84,6 +176,12 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
         // 移除通知观察者
         NotificationCenter.default.removeObserver(self)
         
+        // 移除状态栏图标
+        if let statusItem = statusItem {
+            NSStatusBar.system.removeStatusItem(statusItem)
+            self.statusItem = nil
+        }
+
         // 执行应用退出前的清理工作
         // 例如：保存用户数据、断开连接等
     }
