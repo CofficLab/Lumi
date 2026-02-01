@@ -13,7 +13,7 @@ permissions:
 env:
   TAG: ${{ github.sha }}
   SCHEME: Lumi
-  REPO_LINK: "https://github.com/Coffic/Lumi"
+  REPO_LINK: "https://github.com/CofficLab/Lumi"
   DESTINATION: "generic/platform=macOS"
   ArchivePath: "./my-app"
   BuildPath: "./temp"
