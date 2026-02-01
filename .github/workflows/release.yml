@@ -18,6 +18,13 @@ env:
   ArchivePath: "./my-app"
   BuildPath: "./temp"
   IS_PRERELEASE: true
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+  BUILD_CERTIFICATE_P12_PASSWORD: ${{ secrets.BUILD_CERTIFICATE_P12_PASSWORD }}
+  APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
+  APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+  APP_STORE_CONNECT_KEY_ISSER_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ISSER_ID }}
+  SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY_GITOK }}
 
 jobs:
   build_with_signing:
@@ -34,11 +41,9 @@ jobs:
         with:
           xcode-version: "latest-stable"
       - name: 安装依赖
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl -fsSL \
-            --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+            --header 'authorization: Bearer ${{ env.GITHUB_TOKEN }}' \
             --header 'user-agent: Lumi-Release-Workflow' \
             https://raw.githubusercontent.com/nookery/servon/main/install.sh | bash
       - name: Verify Xcode version
@@ -61,12 +66,6 @@ jobs:
           fi
       - name: Setup macOS signing
         id: signing
-        env:
-          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
-          BUILD_CERTIFICATE_P12_PASSWORD: ${{ secrets.BUILD_CERTIFICATE_P12_PASSWORD }}
-          APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
-          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
-          APP_STORE_CONNECT_KEY_ISSER_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ISSER_ID }}
         run: |
           chmod +x ./scripts/setup-macos-signing.sh
           source ./scripts/setup-macos-signing.sh
@@ -92,8 +91,8 @@ jobs:
           file=$(find . -maxdepth 2 -type f -name "*.dmg" | head -n 1)
           xcrun notarytool submit "$file" \
             --key ${{ steps.signing.outputs.api_key_path }} \
-            --key-id=${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
-            --issuer ${{ secrets.APP_STORE_CONNECT_KEY_ISSER_ID }} \
+            --key-id=${{ env.APP_STORE_CONNECT_KEY_ID }} \
+            --issuer ${{ env.APP_STORE_CONNECT_KEY_ISSER_ID }} \
             --wait \
             --timeout 10m
           stapler staple "$file"
@@ -117,7 +116,7 @@ jobs:
           xcodebuild -resolvePackageDependencies
           cd $(ls -d ~/Library/Developer/Xcode/DerivedData/${{ env.SCHEME }}*/ | head -n 1)
           cd SourcePackages/artifacts/sparkle/Sparkle/bin
-          echo "${{ secrets.SPARKLE_PRIVATE_KEY_GITOK }}" | ./generate_appcast --ed-key-file - ${{ github.workspace }}/updates
+          echo "${{ env.SPARKLE_PRIVATE_KEY }}" | ./generate_appcast --ed-key-file - ${{ github.workspace }}/updates
       - name: make appcast.xml (production only)
         if: env.IS_PRERELEASE == 'false'
         run: |
