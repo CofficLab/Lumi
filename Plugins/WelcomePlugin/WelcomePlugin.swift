@@ -36,16 +36,8 @@ actor WelcomePlugin: SuperPlugin, SuperLog {
 
     // MARK: - Instance
 
-    /// 插件实例标签（用于识别唯一实例）
-    nonisolated var instanceLabel: String {
-        Self.id
-    }
-
     /// 插件单例实例
     static let shared = WelcomePlugin()
-
-    /// 初始化方法
-    init() {}
 
     // MARK: - UI Contributions
 
@@ -72,4 +64,11 @@ actor WelcomePlugin: SuperPlugin, SuperLog {
     }
 }
 
-
+#Preview("App - Small Screen") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .inRootView()
+        .frame(width: 800)
+        .frame(height: 600)
+}
