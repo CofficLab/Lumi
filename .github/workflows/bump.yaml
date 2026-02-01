@@ -56,15 +56,27 @@ jobs:
       - bump
     runs-on: ubuntu-latest
     steps:
-      - name: 拉取 pre 分支
+      - name: 拉取 main 分支
         uses: actions/checkout@v4
         with:
-          ref: pre
-      - name: 拉取 main 分支
-        run: git fetch origin main
+          ref: main
+          fetch-depth: 0
+      - name: 检查 pre 分支是否存在
+        id: check_pre
+        run: |
+          if git ls-remote --heads origin pre | grep -q pre; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+      - name: 拉取 pre 分支
+        if: steps.check_pre.outputs.exists == 'true'
+        run: git fetch origin pre
       - name: Rebase pre on main
         continue-on-error: true
+        if: steps.check_pre.outputs.exists == 'true'
         run: git rebase origin/main
       - name: Push the rebased pre branch
         continue-on-error: true
+        if: steps.check_pre.outputs.exists == 'true'
         run: git push origin pre
