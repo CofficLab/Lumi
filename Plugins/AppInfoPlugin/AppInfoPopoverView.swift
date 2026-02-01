@@ -65,10 +65,10 @@ struct AppInfoPopoverView: View {
                 .font(.subheadline)
                 .fontWeight(.semibold)
 
-            InfoRow(label: "应用名称", value: "SwiftUI Template")
-            InfoRow(label: "Bundle ID", value: "com.nookery.swiftui-template")
-            InfoRow(label: "开发团队", value: "Nookery")
-            InfoRow(label: "语言", value: "Swift / SwiftUI")
+            AppInfoRow(label: "应用名称", value: "SwiftUI Template")
+            AppInfoRow(label: "Bundle ID", value: "com.nookery.swiftui-template")
+            AppInfoRow(label: "开发团队", value: "Nookery")
+            AppInfoRow(label: "语言", value: "Swift / SwiftUI")
         }
     }
 
@@ -80,10 +80,10 @@ struct AppInfoPopoverView: View {
                 .font(.subheadline)
                 .fontWeight(.semibold)
 
-            InfoRow(label: "版本号", value: "1.0.0")
-            InfoRow(label: "构建号", value: "1")
-            InfoRow(label: "Swift 版本", value: "6.0")
-            InfoRow(label: "平台", value: "macOS 15.0+")
+            AppInfoRow(label: "版本号", value: "1.0.0")
+            AppInfoRow(label: "构建号", value: "1")
+            AppInfoRow(label: "Swift 版本", value: "6.0")
+            AppInfoRow(label: "平台", value: "macOS 15.0+")
         }
     }
 
@@ -117,27 +117,6 @@ struct AppInfoPopoverView: View {
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
-        }
-    }
-}
-
-/// 信息行视图
-private struct InfoRow: View {
-    let label: String
-    let value: String
-
-    var body: some View {
-        HStack {
-            Text(label)
-                .font(.caption)
-                .foregroundColor(.secondary)
-            Text(":")
-                .font(.caption)
-                .foregroundColor(.secondary)
-            Text(value)
-                .font(.caption)
-                .fontWeight(.medium)
-            Spacer()
         }
     }
 }

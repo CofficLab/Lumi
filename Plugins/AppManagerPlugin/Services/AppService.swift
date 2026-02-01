@@ -3,7 +3,6 @@ import AppKit
 import OSLog
 
 /// 应用服务
-@MainActor
 class AppService: ObservableObject {
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "AppService")
 
@@ -29,55 +28,70 @@ class AppService: ObservableObject {
         return paths
     }
 
-    /// 扫描已安装的应用
+    /// 扫描已安装的应用（在后台线程执行）
     func scanInstalledApps() async -> [AppModel] {
-        logger.info("开始扫描已安装应用")
+        return await withCheckedContinuation { continuation in
+            // 在后台队列执行文件操作
+            DispatchQueue.global(qos: .userInitiated).async {
+                do {
+                    self.logger.info("开始扫描已安装应用")
+                    var apps: [AppModel] = []
+                    let paths = self.getUserApplicationPaths()
 
-        var apps: [AppModel] = []
-        let paths = getUserApplicationPaths()
+                    for path in paths {
+                        let expandedPath = NSString(string: path).expandingTildeInPath
+                        guard let url = URL(string: "file://\(expandedPath)") else { continue }
 
-        for path in paths {
-            let expandedPath = NSString(string: path).expandingTildeInPath
-            guard let url = URL(string: "file://\(expandedPath)") else { continue }
+                        if let directoryContents = try? FileManager.default.contentsOfDirectory(
+                            at: url,
+                            includingPropertiesForKeys: nil,
+                            options: [.skipsHiddenFiles]
+                        ) {
+                            for appURL in directoryContents where appURL.pathExtension == "app" {
+                                let app = AppModel(bundleURL: appURL)
+                                apps.append(app)
+                            }
+                        }
+                    }
 
-            if let directoryContents = try? FileManager.default.contentsOfDirectory(
-                at: url,
-                includingPropertiesForKeys: nil,
-                options: [.skipsHiddenFiles]
-            ) {
-                for appURL in directoryContents where appURL.pathExtension == "app" {
-                    let app = AppModel(bundleURL: appURL)
-                    apps.append(app)
+                    let sortedApps = apps.sorted {
+                        $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
+                    }
+                    self.logger.info("扫描完成，共找到 \(sortedApps.count) 个应用")
+                    continuation.resume(returning: sortedApps)
                 }
             }
         }
-
-        logger.info("扫描完成，共找到 \(apps.count) 个应用")
-        return apps.sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
     }
 
-    /// 计算应用大小
+    /// 计算应用大小（在后台线程执行）
     func calculateAppSize(for app: AppModel) async -> Int64 {
-        guard FileManager.default.fileExists(atPath: app.bundleURL.path) else {
-            return 0
-        }
-
-        var totalSize: Int64 = 0
-
-        if let enumerator = FileManager.default.enumerator(
-            at: app.bundleURL,
-            includingPropertiesForKeys: [.fileSizeKey],
-            options: [.skipsHiddenFiles]
-        ) {
-            for case let fileURL as URL in enumerator {
-                if let resourceValues = try? fileURL.resourceValues(forKeys: [.fileSizeKey]),
-                   let fileSize = resourceValues.fileSize {
-                    totalSize += Int64(fileSize)
+        return await withCheckedContinuation { continuation in
+            // 在后台队列执行文件操作
+            DispatchQueue.global(qos: .userInitiated).async {
+                guard FileManager.default.fileExists(atPath: app.bundleURL.path) else {
+                    continuation.resume(returning: 0)
+                    return
                 }
+
+                var totalSize: Int64 = 0
+
+                if let enumerator = FileManager.default.enumerator(
+                    at: app.bundleURL,
+                    includingPropertiesForKeys: [.fileSizeKey],
+                    options: [.skipsHiddenFiles]
+                ) {
+                    for case let fileURL as URL in enumerator {
+                        if let resourceValues = try? fileURL.resourceValues(forKeys: [.fileSizeKey]),
+                           let fileSize = resourceValues.fileSize {
+                            totalSize += Int64(fileSize)
+                        }
+                    }
+                }
+
+                continuation.resume(returning: totalSize)
             }
         }
-
-        return totalSize
     }
 
     /// 卸载应用

@@ -40,17 +40,24 @@ class AppManagerViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
+            // 先扫描应用列表
             let apps = await appService.scanInstalledApps()
 
-            // 计算每个应用的大小
-            var appsWithSize: [AppModel] = []
-            for app in apps {
-                var sizedApp = app
-                sizedApp.size = await appService.calculateAppSize(for: app)
-                appsWithSize.append(sizedApp)
+            // 立即显示应用列表（不等待大小计算）
+            installedApps = apps
+            logger.info("应用列表加载完成，共 \(self.installedApps.count) 个应用")
+
+            // 在后台逐个计算大小，不阻塞 UI
+            for index in apps.indices {
+                var sizedApp = apps[index]
+                sizedApp.size = await appService.calculateAppSize(for: sizedApp)
+
+                // 更新单个应用的大小（主线程）
+                await MainActor.run {
+                    installedApps[index] = sizedApp
+                }
             }
 
-            installedApps = appsWithSize
             logger.info("应用扫描完成，共 \(self.installedApps.count) 个应用")
         } catch {
             logger.error("扫描应用失败: \(error.localizedDescription)")
