@@ -128,11 +128,25 @@ jobs:
           echo $u
           sed -i '' "s|\(enclosure url=\"\)[^\"]*|\1$u|" "appcast.xml"
           mv appcast.xml ../appcast.xml
+      - name: Generate Changelog
+        run: |
+          CURRENT_TAG=${{ env.TAG }}
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 ${CURRENT_TAG}^ 2>/dev/null || echo "")
+          if [ -z "$PREVIOUS_TAG" ]; then
+            NOTES="## Release $CURRENT_TAG\n\nInitial release"
+          else
+            NOTES="## Release $CURRENT_TAG\n\n### Changes since $PREVIOUS_TAG\n"
+            NOTES="$NOTES\n$(git log ${PREVIOUS_TAG}..${CURRENT_TAG} --no-merges --pretty=format:'- %s' | head -20)"
+          fi
+          echo -e "$NOTES" > changelog.md
+          echo "### 📋 Release Notes" >> $GITHUB_STEP_SUMMARY
+          echo -e "$NOTES" >> $GITHUB_STEP_SUMMARY
       - name: 发布 Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.TAG }}
           prerelease: ${{ env.IS_PRERELEASE }}
+          body_path: changelog.md
           files: |
             ./updates/*.dmg
             ./appcast.xml
