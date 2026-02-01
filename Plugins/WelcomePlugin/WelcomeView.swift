@@ -52,14 +52,13 @@ struct WelcomeView: View {
 
 #Preview("Welcome View") {
     WelcomeView()
-        .frame(width: 600, height: 600)
+        .withDebugBar()
 }
 
-#Preview("App - Small Screen") {
+#Preview("App") {
     ContentLayout()
         .hideSidebar()
         .hideTabPicker()
         .inRootView()
-        .frame(width: 800)
-        .frame(height: 600)
+        .withDebugBar()
 }

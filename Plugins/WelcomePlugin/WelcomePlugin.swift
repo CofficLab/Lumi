@@ -30,7 +30,7 @@ actor WelcomePlugin: SuperPlugin, SuperLog {
 
     /// 是否可配置
     static var isConfigurable: Bool = true
-    
+
     /// 注册顺序
     static var order: Int { 0 }
 
@@ -53,7 +53,7 @@ actor WelcomePlugin: SuperPlugin, SuperLog {
                 isDefault: true
             ) {
                 WelcomeView()
-            }
+            },
         ]
     }
 
@@ -64,11 +64,10 @@ actor WelcomePlugin: SuperPlugin, SuperLog {
     }
 }
 
-#Preview("App - Small Screen") {
+#Preview("App") {
     ContentLayout()
         .hideSidebar()
         .hideTabPicker()
         .inRootView()
-        .frame(width: 800)
-        .frame(height: 600)
+        .withDebugBar()
 }
