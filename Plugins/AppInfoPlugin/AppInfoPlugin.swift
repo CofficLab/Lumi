@@ -43,12 +43,6 @@ actor AppInfoPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    /// 添加工具栏前导视图
-    /// - Returns: 工具栏前导视图
-    @MainActor func addToolBarLeadingView() -> AnyView? {
-        return AnyView(AppInfoIconButton())
-    }
-
     /// 提供导航入口
     /// - Returns: 导航入口数组
     @MainActor func addNavigationEntries() -> [NavigationEntry]? {
