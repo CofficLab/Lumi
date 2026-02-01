@@ -18,6 +18,7 @@ struct WelcomeView: View {
             .padding(40)
             .infinite()
         }
+        .navigationTitle("")
     }
 
     // MARK: - 欢迎区域

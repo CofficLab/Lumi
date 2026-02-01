@@ -125,6 +125,7 @@ extension ContentView {
             app.getCurrentNavigationView(pluginProvider: pluginProvider)
         }
         .frame(maxHeight: .infinity)
+        .navigationTitle(app.getCurrentNavigationTitle(pluginProvider: pluginProvider))
     }
 
     /// 默认详情视图（当没有插件提供详情视图时显示）

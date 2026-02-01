@@ -89,6 +89,18 @@ final class AppProvider: ObservableObject {
         return selectedEntry.contentProvider()
     }
 
+    /// 获取当前导航的标题
+    /// - Parameter pluginProvider: 插件提供者
+    /// - Returns: 当前选中导航的标题
+    func getCurrentNavigationTitle(pluginProvider: PluginProvider) -> String {
+        guard let selectedId = selectedNavigationId else {
+            return ""
+        }
+
+        let entries = pluginProvider.getNavigationEntries()
+        return entries.first(where: { $0.id == selectedId })?.title ?? ""
+    }
+
     // MARK: - 数据访问
 
     /// 获取模型上下文
