@@ -231,7 +231,7 @@ struct AppInfoRow: View {
 
 #Preview("App Info View") {
     AppInfoView()
-        .frame(width: 600, height: 700)
+        .withDebugBar()
 }
 
 #Preview("App") {
