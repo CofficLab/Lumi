@@ -1,0 +1,14 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Lumi</title>
+        <item>
+            <title>1.0.6</title>
+            <pubDate>Sun, 01 Feb 2026 05:38:35 +0000</pubDate>
+            <sparkle:version>7</sparkle:version>
+            <sparkle:shortVersionString>1.0.6</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.5</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/Coffic/Lumi/releases/latest/download/Lumi-arm64-1_0_6.dmg" length="5030989" type="application/octet-stream"/>
+        </item>
+    </channel>
+</rss>
