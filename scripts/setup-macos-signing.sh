@@ -95,7 +95,7 @@ show_development_roadmap() {
 # 进行应用签名和公证。它不涉及具体的构建过程，只负责证书和签名环境的配置。
 #
 # 功能：
-# 1. 配置开发证书和描述文件
+# 1. 配置开发证书
 # 2. 设置临时钥匙串
 # 3. 配置 App Store Connect API
 # 4. 提供签名身份信息
@@ -104,7 +104,6 @@ show_development_roadmap() {
 # 1. 设置必要的环境变量：
 #    export BUILD_CERTIFICATE_BASE64="..."        # Base64 编码的证书文件
 #    export BUILD_CERTIFICATE_P12_PASSWORD="..."  # 证书密码
-#    export BUILD_PROVISION_PROFILE_BASE64="..."  # Base64 编码的描述文件
 #    export APP_STORE_CONNECT_KEY_BASE64="..."   # Base64 编码的 App Store Connect API 密钥
 #    export APP_STORE_CONNECT_KEY_ID="..."       # App Store Connect API 密钥 ID
 #    export APP_STORE_CONNECT_KEY_ISSER_ID="..." # App Store Connect API 发行者 ID
@@ -115,7 +114,7 @@ show_development_roadmap() {
 # 注意事项：
 # - 需要安装 Xcode 命令行工具
 # - 需要有效的 Apple 开发者账号
-# - 需要有效的应用签名证书和描述文件
+# - 需要有效的应用签名证书
 # - 使用 source 命令运行脚本，这样环境变量可以在当前 shell 中使用
 #
 # 输出：
@@ -132,7 +131,6 @@ check_required_env() {
     local required_vars=(
         "BUILD_CERTIFICATE_BASE64"
         "BUILD_CERTIFICATE_P12_PASSWORD"
-        "BUILD_PROVISION_PROFILE_BASE64"
         "APP_STORE_CONNECT_KEY_BASE64"
         "APP_STORE_CONNECT_KEY_ID"
         "APP_STORE_CONNECT_KEY_ISSER_ID"
@@ -153,13 +151,11 @@ setup_certificates() {
     # 创建临时文件路径
     local temp_dir="${RUNNER_TEMP:-/tmp}"
     CERTIFICATE_PATH="$temp_dir/build_certificate.p12"
-    PP_PATH="$temp_dir/build_pp.provisionprofile"
     KEYCHAIN_PATH="$temp_dir/app-signing.keychain-db"
     KEYCHAIN_PASSWORD="temporary_password"
 
-    # 解码证书和配置文件
+    # 解码证书
     echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o "$CERTIFICATE_PATH"
-    echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o "$PP_PATH"
 
     # 创建临时钥匙串
     security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
@@ -170,14 +166,8 @@ setup_certificates() {
     security import "$CERTIFICATE_PATH" -P "$BUILD_CERTIFICATE_P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
     security list-keychain -d user -s "$KEYCHAIN_PATH"
 
-    # 设置描述文件权限
-    chmod 644 "$PP_PATH"
-    echo "验证描述文件:"
-    ls -l "$PP_PATH"
-
     # 导出环境变量
     export KEYCHAIN_PATH
-    export PP_PATH
 }
 
 # 设置 App Store Connect API 密钥

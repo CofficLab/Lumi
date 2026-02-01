@@ -7,8 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0B0073C22F2F1ABF001B3789 /* MagicKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B0073C12F2F1ABF001B3789 /* MagicKit */; };
+		0B7243C02F2F1C7F00A88472 /* MagicKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B7243BF2F2F1C7F00A88472 /* MagicKit */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
-		F53C41572F1A3E4E00929321 /* MagicKit in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41562F1A3E4E00929321 /* MagicKit */; };
 		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
 /* End PBXBuildFile section */
 
@@ -41,8 +42,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F53C41572F1A3E4E00929321 /* MagicKit in Frameworks */,
+				0B7243C02F2F1C7F00A88472 /* MagicKit in Frameworks */,
 				F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */,
+				0B0073C22F2F1ABF001B3789 /* MagicKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -83,8 +85,9 @@
 			);
 			name = Lumi;
 			packageProductDependencies = (
-				F53C41562F1A3E4E00929321 /* MagicKit */,
 				F53C41592F1A3E6500929321 /* Sparkle */,
+				0B0073C12F2F1ABF001B3789 /* MagicKit */,
+				0B7243BF2F2F1C7F00A88472 /* MagicKit */,
 			);
 			productName = "SwiftUI-Template";
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -115,8 +118,8 @@
 			mainGroup = F54F8C752F1A3B6500AABB2A;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				F53C41552F1A3E4E00929321 /* XCRemoteSwiftPackageReference "MagicKit" */,
 				F53C41582F1A3E6500929321 /* XCRemoteSwiftPackageReference "Sparkle" */,
+				0B7243BE2F2F1C7F00A88472 /* XCRemoteSwiftPackageReference "MagicKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -384,12 +387,12 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		F53C41552F1A3E4E00929321 /* XCRemoteSwiftPackageReference "MagicKit" */ = {
+		0B7243BE2F2F1C7F00A88472 /* XCRemoteSwiftPackageReference "MagicKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/CofficLab/MagicKit";
+			repositoryURL = "https://github.com/nookery/MagicKit";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
+				minimumVersion = 1.5.15;
 			};
 		};
 		F53C41582F1A3E6500929321 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
@@ -403,9 +406,13 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		F53C41562F1A3E4E00929321 /* MagicKit */ = {
+		0B0073C12F2F1ABF001B3789 /* MagicKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = F53C41552F1A3E4E00929321 /* XCRemoteSwiftPackageReference "MagicKit" */;
+			productName = MagicKit;
+		};
+		0B7243BF2F2F1C7F00A88472 /* MagicKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B7243BE2F2F1C7F00A88472 /* XCRemoteSwiftPackageReference "MagicKit" */;
 			productName = MagicKit;
 		};
 		F53C41592F1A3E6500929321 /* Sparkle */ = {
