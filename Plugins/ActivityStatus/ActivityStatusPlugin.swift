@@ -34,12 +34,6 @@ actor ActivityStatusPlugin: SuperPlugin, SuperLog {
 
     /// 注册顺序
     static var order: Int { 10 }
-
-    /// 添加状态栏左侧视图
-    /// - Returns: 要添加到状态栏左侧的视图，如果不需要则返回nil
-    @MainActor func addStatusBarLeadingView() -> AnyView? {
-        return AnyView(ActivityStatusTile())
-    }
 }
 
 // MARK: - PluginRegistrant

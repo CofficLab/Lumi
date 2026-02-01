@@ -51,12 +51,6 @@ actor VersionStatusPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    /// 添加状态栏左侧视图
-    /// - Returns: 状态栏左侧视图
-    @MainActor func addStatusBarLeadingView() -> AnyView? {
-        return AnyView(VersionStatusView())
-    }
-
     /// 提供导航入口
     /// - Returns: 导航入口数组
     @MainActor func addNavigationEntries() -> [NavigationEntry]? {

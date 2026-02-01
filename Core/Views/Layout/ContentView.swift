@@ -17,9 +17,6 @@ struct ContentView: View {
     /// 当前选中的标签页
     @State private var tab: String = "main"
 
-    /// 状态栏是否可见
-    @State private var statusBarVisibility = true
-
     /// 工具栏是否可见
     @State private var toolbarVisibility = true
 
@@ -34,12 +31,6 @@ struct ContentView: View {
     
     /// 设置视图当前选中的标签
     @State private var settingsTab: SettingView.SettingTab = .about
-
-    /// 控制状态栏布局：true 为全宽（底部跨越左右栏），false 为旧布局（仅 detail 内部）
-    var useFullWidthStatusBar: Bool = true
-
-    /// 默认状态栏可见性
-    var defaultStatusBarVisibility: Bool? = nil
 
     /// 默认选中的标签页
     var defaultTab: String? = nil
@@ -64,19 +55,7 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            if useFullWidthStatusBar {
-                VStack(spacing: 0) {
-                    navigationSplitView(fullWidthStatusBar: true)
-
-                    if statusBarVisibility {
-                        Divider()
-                        StatusBarView()
-                            .frame(maxWidth: .infinity)
-                    }
-                }
-            } else {
-                navigationSplitView(fullWidthStatusBar: false)
-            }
+            navigationSplitView()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .sheet(isPresented: $showSettings) {
@@ -97,14 +76,13 @@ struct ContentView: View {
 
 extension ContentView {
     /// 创建导航分栏视图
-    /// - Parameter fullWidthStatusBar: 是否使用全宽状态栏
     /// - Returns: 配置好的导航分栏视图
-    private func navigationSplitView(fullWidthStatusBar: Bool) -> some View {
+    private func navigationSplitView() -> some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             Sidebar()
                 .navigationSplitViewColumnWidth(min: 200, ideal: 200, max: 300)
         } detail: {
-            detailContent(fullWidthStatusBar: fullWidthStatusBar)
+            detailContent()
         }
         .navigationTitle("")
         .onAppear(perform: onAppear)
@@ -139,17 +117,12 @@ extension ContentView {
     }
 
     /// 创建详情内容视图
-    /// - Parameter fullWidthStatusBar: 是否使用全宽状态栏
     /// - Returns: 详情内容视图
     @ViewBuilder
-    private func detailContent(fullWidthStatusBar: Bool) -> some View {
+    private func detailContent() -> some View {
         VStack(spacing: 0) {
             // 显示当前选中的导航内容
             app.getCurrentNavigationView(pluginProvider: pluginProvider)
-
-            if fullWidthStatusBar == false, statusBarVisibility {
-                StatusBarView()
-            }
         }
         .frame(maxHeight: .infinity)
     }
@@ -221,10 +194,6 @@ extension ContentView {
                 os_log("\(Self.emoji) No default tab provided, using 'main'")
             }
             self.tab = "main"
-        }
-
-        if let d = defaultStatusBarVisibility {
-            self.statusBarVisibility = d
         }
 
         if let d = defaultToolbarVisibility {

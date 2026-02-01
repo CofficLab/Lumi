@@ -23,10 +23,6 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
     
     // MARK: - UI Contributions
     
-    @MainActor func addStatusBarLeadingView() -> AnyView? {
-        return AnyView(NetworkStatusTile())
-    }
-    
     @MainActor func addNavigationEntries() -> [NavigationEntry]? {
         return [
             NavigationEntry.create(

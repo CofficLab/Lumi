@@ -50,12 +50,6 @@ actor TimeStatusPlugin: SuperPlugin, SuperLog {
     init() {}
 
     // MARK: - UI Contributions
-
-    /// 添加状态栏左侧视图
-    /// - Returns: 状态栏左侧视图
-    @MainActor func addStatusBarLeadingView() -> AnyView? {
-        return AnyView(TimeStatusView())
-    }
 }
 
 

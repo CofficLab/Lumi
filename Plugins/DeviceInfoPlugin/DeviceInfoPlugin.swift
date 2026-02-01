@@ -36,12 +36,6 @@ actor DeviceInfoPlugin: SuperPlugin {
             },
         ]
     }
-
-    @MainActor func addStatusBarMenuItems() -> [NSMenuItem]? {
-        let item = NSMenuItem(title: "设备概览", action: #selector(Helper.showDeviceWindow), keyEquivalent: "")
-        item.target = Helper.shared
-        return [item]
-    }
 }
 
 // Helper for Obj-C selector target

@@ -48,12 +48,6 @@ actor SettingsButtonPlugin: SuperPlugin, SuperLog {
     init() {}
 
     // MARK: - UI Contributions
-
-    /// 添加状态栏右侧视图
-    /// - Returns: 状态栏右侧视图
-    @MainActor func addStatusBarTrailingView() -> AnyView? {
-        return AnyView(SettingsButtonView())
-    }
 }
 
 
