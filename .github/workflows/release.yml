@@ -64,6 +64,13 @@ jobs:
           else
             echo "IS_PRERELEASE=false" >> $GITHUB_ENV
           fi
+
+          # 输出到 Summary
+          echo "## 🏷️ 版本标签信息" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag**: \`$tag\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Is Prerelease**: \`${{ env.IS_PRERELEASE }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: \`${{ github.event.workflow_run.head_branch }}\`" >> $GITHUB_STEP_SUMMARY
       - name: Setup macOS signing
         id: signing
         run: |
@@ -73,7 +80,17 @@ jobs:
           echo "team_id=$TEAM_ID" >> $GITHUB_OUTPUT
           echo "api_key_path=$API_KEY_PATH" >> $GITHUB_OUTPUT
       - name: Build App
-        run: servon xcode build --scheme ${{ env.SCHEME }} --arch arm64 --clean=false -v
+        run: |
+          # 读取 Xcode 项目版本
+          MARKETING_VERSION=$(xcodebuild -project ${{ env.SCHEME }}.xcodeproj -showBuildSettings | grep MARKETING_VERSION | awk '{print $3}')
+          CURRENT_VERSION=$(xcodebuild -project ${{ env.SCHEME }}.xcodeproj -showBuildSettings | grep CURRENT_PROJECT_VERSION | awk '{print $3}')
+
+          echo "## 📦 构建版本信息" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **MARKETING_VERSION**: \`$MARKETING_VERSION\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **CURRENT_PROJECT_VERSION**: \`$CURRENT_VERSION\`" >> $GITHUB_STEP_SUMMARY
+
+          servon xcode build --scheme ${{ env.SCHEME }} --arch arm64 --clean=false -v
       - name: Codesign App
         run: |
           servon xcode codesign --path ./temp/arm64/Build/Products/Release/${{ env.SCHEME }}.app \
@@ -85,6 +102,16 @@ jobs:
         run: |
           servon xcode package --path ./temp/arm64/Build/Products/Release/${{ env.SCHEME }}.app
           # servon xcode package --path ./temp/x86_64/Build/Products/Release/${{ env.SCHEME }}.app
+
+          # 查找生成的 DMG 文件
+          dmg_file=$(find ./temp -name "*.dmg" -type f | head -n 1)
+          if [ -n "$dmg_file" ]; then
+            dmg_basename=$(basename "$dmg_file")
+            echo "## 💿 DMG 文件信息" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **文件名**: \`$dmg_basename\`" >> $GITHUB_STEP_SUMMARY
+            ls -lh "$dmg_file" | awk '{print "- **文件大小**: " $5}' >> $GITHUB_STEP_SUMMARY
+          fi
       - name: Notary
         continue-on-error: true
         run: |
@@ -117,6 +144,18 @@ jobs:
           cd $(ls -d ~/Library/Developer/Xcode/DerivedData/${{ env.SCHEME }}*/ | head -n 1)
           cd SourcePackages/artifacts/sparkle/Sparkle/bin
           echo "${{ env.SPARKLE_PRIVATE_KEY }}" | ./generate_appcast --ed-key-file - ${{ github.workspace }}/updates
+
+          # 输出 appcast.xml 中的版本信息
+          cd ${{ github.workspace }}/updates
+          if [ -f appcast.xml ]; then
+            APPCAST_VERSION=$(xmllint --xpath "string(//rss/channel/item/sparkle:shortVersionString)" appcast.xml 2>/dev/null || echo "未知")
+            APPCAST_BUILD=$(xmllint --xpath "string(//rss/channel/item/sparkle:version)" appcast.xml 2>/dev/null || echo "未知")
+
+            echo "## 📡 Appcast 信息" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Appcast 版本**: \`$APPCAST_VERSION\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Appcast Build**: \`$APPCAST_BUILD\`" >> $GITHUB_STEP_SUMMARY
+          fi
       - name: make appcast.xml (production only)
         if: env.IS_PRERELEASE == 'false'
         run: |
@@ -141,6 +180,31 @@ jobs:
           echo -e "$NOTES" > changelog.md
           echo "### 📋 Release Notes" >> $GITHUB_STEP_SUMMARY
           echo -e "$NOTES" >> $GITHUB_STEP_SUMMARY
+
+          # 版本对比总结
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔍 版本一致性检查" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| 项目 | 值 |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-----|" >> $GITHUB_STEP_SUMMARY
+          echo "| Git Tag | \`${{ env.TAG }}\` |" >> $GITHUB_STEP_SUMMARY
+
+          # 如果能读取到构建时的版本信息，则添加对比
+          if [ -n "$MARKETING_VERSION" ]; then
+            echo "| Xcode MARKETING_VERSION | \`$MARKETING_VERSION\` |" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -n "$CURRENT_VERSION" ]; then
+            echo "| Xcode CURRENT_PROJECT_VERSION | \`$CURRENT_VERSION\` |" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -n "$dmg_basename" ]; then
+            echo "| DMG 文件名中的版本 | \`$(echo $dmg_basename | grep -o '[0-9_]\+' | head -1 | tr '_' '.')\` |" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f updates/appcast.xml ]; then
+            APPCAST_VERSION=$(xmllint --xpath "string(//rss/channel/item/sparkle:shortVersionString)" updates/appcast.xml 2>/dev/null || echo "未知")
+            echo "| Appcast 版本 | \`$APPCAST_VERSION\` |" >> $GITHUB_STEP_SUMMARY
+          fi
       - name: 发布 Release
         uses: softprops/action-gh-release@v1
         with:
