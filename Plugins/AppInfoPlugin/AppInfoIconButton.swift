@@ -24,23 +24,10 @@ struct AppInfoIconButton: View {
 
 // MARK: - Preview
 
-#Preview("App Info Icon Button") {
-    AppInfoIconButton()
-        .padding()
-}
-
-#Preview("App - Small Screen") {
+#Preview("App") {
     ContentLayout()
         .hideSidebar()
         .hideTabPicker()
         .inRootView()
-        .frame(width: 800, height: 600)
-}
-
-#Preview("App - Big Screen") {
-    ContentLayout()
-        .hideSidebar()
-        .hideTabPicker()
-        .inRootView()
-        .frame(width: 1200, height: 1200)
+        .withDebugBar()
 }

@@ -233,3 +233,11 @@ struct AppInfoRow: View {
     AppInfoView()
         .frame(width: 600, height: 700)
 }
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .inRootView()
+        .withDebugBar()
+}

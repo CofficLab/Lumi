@@ -127,3 +127,11 @@ struct AppInfoPopoverView: View {
     AppInfoPopoverView()
         .frame(width: 350, height: 500)
 }
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .inRootView()
+        .withDebugBar()
+}
