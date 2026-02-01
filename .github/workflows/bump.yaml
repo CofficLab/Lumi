@@ -1,0 +1,70 @@
+name: Bump
+
+on:
+  push:
+    branches:
+      - pre
+      - main
+
+permissions:
+  contents: write
+
+env:
+  tag: ${{ github.event.head_commit.id }}
+
+jobs:
+  bump:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: 更新版本号
+        run: |
+          version=$(grep -m1 "MARKETING_VERSION = " Lumi.xcodeproj/project.pbxproj | awk '{print $3}' | tr -d ';')
+          IFS='.' read -r major minor patch <<< "$version"
+          patch=$((patch + 1))
+          new_version="$major.$minor.$patch"
+          sed -i '' "s/MARKETING_VERSION = ${version};/MARKETING_VERSION = ${new_version};/g" Lumi.xcodeproj/project.pbxproj
+      - name: 更新构建号
+        run: agvtool next-version -all
+      - name: 生成标签（pre 分支）
+        if: github.ref == 'refs/heads/pre'
+        run: |
+          version=$(grep -m1 "MARKETING_VERSION = " Lumi.xcodeproj/project.pbxproj | awk '{print $3}' | tr -d ';')
+          echo "版本号->$version"
+          build=$(agvtool what-version -terse)
+          echo "tag=p$version($build)" >> $GITHUB_ENV
+      - name: 生成标签（main 分支）
+        if: github.ref == 'refs/heads/main'
+        run: |
+          version=$(grep -m1 "MARKETING_VERSION = " Lumi.xcodeproj/project.pbxproj | awk '{print $3}' | tr -d ';')
+          echo "版本号->$version"
+          echo "tag=v$version" >> $GITHUB_ENV
+      - name: 打标签并推送到仓库
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "👷 CI: bump a new version"
+          commit_user_name: GitHub Action
+          tagging_message: ${{ env.tag }}
+          push_options: "--tags"
+          branch: ${{ github.ref_name }}
+
+  rebase:
+    if: github.ref == 'refs/heads/main'
+    needs:
+      - bump
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取 pre 分支
+        uses: actions/checkout@v4
+        with:
+          ref: pre
+      - name: 拉取 main 分支
+        run: git fetch origin main
+      - name: Rebase pre on main
+        continue-on-error: true
+        run: git rebase origin/main
+      - name: Push the rebased pre branch
+        continue-on-error: true
+        run: git push origin pre
