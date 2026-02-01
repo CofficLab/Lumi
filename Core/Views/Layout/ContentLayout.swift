@@ -27,6 +27,9 @@ struct ContentLayout: View {
     /// 初始选中的标签页
     private(set) var initialTab: String?
 
+    /// 初始选中的导航 ID
+    private(set) var initialNavigationId: String?
+
     /// 初始化内容布局
     /// - Parameters:
     ///   - statusBarVisibility: 状态栏可见性
@@ -34,18 +37,21 @@ struct ContentLayout: View {
     ///   - toolbarVisibility: 工具栏可见性
     ///   - tabPickerVisibility: 标签页选择器可见性
     ///   - initialTab: 初始标签页
+    ///   - initialNavigationId: 初始导航 ID
     init(
         statusBarVisibility: Bool? = nil,
         initialColumnVisibility: NavigationSplitViewVisibility? = nil,
         toolbarVisibility: Bool? = nil,
         tabPickerVisibility: Bool? = nil,
-        initialTab: String? = nil
+        initialTab: String? = nil,
+        initialNavigationId: String? = nil
     ) {
         self.statusBarVisibility = statusBarVisibility
         self.toolbarVisibility = toolbarVisibility
         self.tabPickerVisibility = tabPickerVisibility
         self.columnVisibility = initialColumnVisibility
         self.initialTab = initialTab
+        self.initialNavigationId = initialNavigationId
     }
 
     /// 视图主体
@@ -54,7 +60,8 @@ struct ContentLayout: View {
             defaultStatusBarVisibility: statusBarVisibility,
             defaultTab: initialTab,
             defaultColumnVisibility: columnVisibility,
-            defaultTabVisibility: tabPickerVisibility
+            defaultTabVisibility: tabPickerVisibility,
+            defaultNavigationId: initialNavigationId
         )
     }
 }
@@ -70,7 +77,8 @@ extension ContentLayout {
             initialColumnVisibility: .detailOnly,
             toolbarVisibility: self.toolbarVisibility,
             tabPickerVisibility: self.tabPickerVisibility,
-            initialTab: self.initialTab
+            initialTab: self.initialTab,
+            initialNavigationId: self.initialNavigationId
         )
     }
 
@@ -82,7 +90,8 @@ extension ContentLayout {
             initialColumnVisibility: .all,
             toolbarVisibility: self.toolbarVisibility,
             tabPickerVisibility: self.tabPickerVisibility,
-            initialTab: self.initialTab
+            initialTab: self.initialTab,
+            initialNavigationId: self.initialNavigationId
         )
     }
 
@@ -94,7 +103,8 @@ extension ContentLayout {
             initialColumnVisibility: self.columnVisibility,
             toolbarVisibility: self.toolbarVisibility,
             tabPickerVisibility: self.tabPickerVisibility,
-            initialTab: self.initialTab
+            initialTab: self.initialTab,
+            initialNavigationId: self.initialNavigationId
         )
     }
 
@@ -106,7 +116,8 @@ extension ContentLayout {
             initialColumnVisibility: self.columnVisibility,
             toolbarVisibility: self.toolbarVisibility,
             tabPickerVisibility: self.tabPickerVisibility,
-            initialTab: self.initialTab
+            initialTab: self.initialTab,
+            initialNavigationId: self.initialNavigationId
         )
     }
 
@@ -118,7 +129,8 @@ extension ContentLayout {
             initialColumnVisibility: self.columnVisibility,
             toolbarVisibility: false,
             tabPickerVisibility: self.tabPickerVisibility,
-            initialTab: self.initialTab
+            initialTab: self.initialTab,
+            initialNavigationId: self.initialNavigationId
         )
     }
 
@@ -130,7 +142,8 @@ extension ContentLayout {
             initialColumnVisibility: self.columnVisibility,
             toolbarVisibility: true,
             tabPickerVisibility: self.tabPickerVisibility,
-            initialTab: self.initialTab
+            initialTab: self.initialTab,
+            initialNavigationId: self.initialNavigationId
         )
     }
 
@@ -142,7 +155,8 @@ extension ContentLayout {
             initialColumnVisibility: self.columnVisibility,
             toolbarVisibility: self.toolbarVisibility,
             tabPickerVisibility: false,
-            initialTab: self.initialTab
+            initialTab: self.initialTab,
+            initialNavigationId: self.initialNavigationId
         )
     }
 
@@ -154,7 +168,8 @@ extension ContentLayout {
             initialColumnVisibility: self.columnVisibility,
             toolbarVisibility: self.toolbarVisibility,
             tabPickerVisibility: true,
-            initialTab: self.initialTab
+            initialTab: self.initialTab,
+            initialNavigationId: self.initialNavigationId
         )
     }
 
@@ -167,7 +182,22 @@ extension ContentLayout {
             initialColumnVisibility: self.columnVisibility,
             toolbarVisibility: self.toolbarVisibility,
             tabPickerVisibility: self.tabPickerVisibility,
-            initialTab: tab
+            initialTab: tab,
+            initialNavigationId: self.initialNavigationId
+        )
+    }
+
+    /// 设置初始导航
+    /// - Parameter id: 要设置的初始导航 ID
+    /// - Returns: 一个新的 ContentLayout 实例，初始导航 ID 被设置
+    func withNavigation(_ id: String) -> ContentLayout {
+        return ContentLayout(
+            statusBarVisibility: self.statusBarVisibility,
+            initialColumnVisibility: self.columnVisibility,
+            toolbarVisibility: self.toolbarVisibility,
+            tabPickerVisibility: self.tabPickerVisibility,
+            initialTab: self.initialTab,
+            initialNavigationId: id
         )
     }
 }

@@ -53,6 +53,9 @@ struct ContentView: View {
     /// 默认标签页可见性
     var defaultTabVisibility: Bool? = nil
 
+    /// 默认选中的导航 ID
+    var defaultNavigationId: String? = nil
+
     /// 缓存工具栏前导视图的插件和视图对
     @State private var toolbarLeadingViews: [(plugin: SuperPlugin, view: AnyView)] = []
 
@@ -230,6 +233,13 @@ extension ContentView {
 
         if let d = defaultTabVisibility {
             self.tabPickerVisibility = d
+        }
+
+        if let d = defaultNavigationId {
+            if Self.verbose {
+                os_log("\(Self.emoji) Setting default navigation to: \(d)")
+            }
+            app.selectedNavigationId = d
         }
 
         // 初始化缓存的视图
