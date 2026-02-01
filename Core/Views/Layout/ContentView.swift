@@ -142,33 +142,13 @@ extension ContentView {
     private func detailContent(fullWidthStatusBar: Bool) -> some View {
         VStack(spacing: 0) {
             // 显示当前选中的导航内容
-            app.getCurrentNavigationView()
+            app.getCurrentNavigationView(pluginProvider: pluginProvider)
 
             if fullWidthStatusBar == false, statusBarVisibility {
                 StatusBarView()
             }
         }
         .frame(maxHeight: .infinity)
-    }
-
-    /// 主内容视图（已废弃，使用导航系统）
-    private var mainContent: some View {
-        Group {
-            if tab == "main" {
-                // 显示 Welcome 插件的详情视图
-                if let welcomePlugin = pluginProvider.plugins.first(where: { type(of: $0).id == "WelcomePlugin" }),
-                   let detailView = welcomePlugin.addDetailView() {
-                    detailView
-                } else {
-                    // 如果没有 Welcome 插件，显示默认内容
-                    defaultDetailView
-                }
-            } else if tab == "settings" {
-                SettingView()
-            } else {
-                defaultDetailView
-            }
-        }
     }
 
     /// 默认详情视图（当没有插件提供详情视图时显示）

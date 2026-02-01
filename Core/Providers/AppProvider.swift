@@ -18,11 +18,8 @@ final class AppProvider: ObservableObject {
 
     // MARK: - 导航状态
 
-    /// 所有可用的导航入口
-    @Published var navigationEntries: [NavigationEntry] = []
-
-    /// 当前选中的导航入口
-    @Published var selectedNavigationEntry: NavigationEntry?
+    /// 当前选中的导航入口 ID
+    @Published var selectedNavigationId: String?
 
     // MARK: - 数据状态
 
@@ -76,29 +73,20 @@ final class AppProvider: ObservableObject {
 
     // MARK: - 导航管理
 
-    /// 注册导航入口
-    /// - Parameter entries: 导航入口数组
-    func registerNavigationEntries(_ entries: [NavigationEntry]) {
-        navigationEntries.append(contentsOf: entries)
-
-        // 如果还没有选中的导航项，选择第一个标记为默认的，或第一个
-        if selectedNavigationEntry == nil, let defaultEntry = entries.first(where: { $0.isDefault }) {
-            selectedNavigationEntry = defaultEntry
-        } else if selectedNavigationEntry == nil, let firstEntry = entries.first {
-            selectedNavigationEntry = firstEntry
-        }
-    }
-
-    /// 选择导航入口
-    /// - Parameter entry: 要选择的导航入口
-    func selectNavigationEntry(_ entry: NavigationEntry) {
-        selectedNavigationEntry = entry
-    }
-
     /// 获取当前导航的内容视图
+    /// - Parameter pluginProvider: 插件提供者
     /// - Returns: 当前选中导航的内容视图
-    func getCurrentNavigationView() -> AnyView {
-        selectedNavigationEntry?.contentProvider() ?? AnyView(EmptyView())
+    func getCurrentNavigationView(pluginProvider: PluginProvider) -> AnyView {
+        guard let selectedId = selectedNavigationId else {
+            return AnyView(EmptyView())
+        }
+
+        let entries = pluginProvider.getNavigationEntries()
+        guard let selectedEntry = entries.first(where: { $0.id == selectedId }) else {
+            return AnyView(EmptyView())
+        }
+
+        return selectedEntry.contentProvider()
     }
 
     // MARK: - 数据访问

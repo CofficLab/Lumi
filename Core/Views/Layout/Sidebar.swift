@@ -8,27 +8,39 @@ struct Sidebar: View {
     /// 插件提供者环境对象
     @EnvironmentObject var pluginProvider: PluginProvider
 
+    private var entries: [NavigationEntry] {
+        pluginProvider.getNavigationEntries()
+    }
+
     var body: some View {
-        VStack(spacing: 0) {
+        Group {
             // 导航列表
-            if !appProvider.navigationEntries.isEmpty {
-                List(appProvider.navigationEntries, selection: $appProvider.selectedNavigationEntry) { entry in
-                    NavigationEntryRow(entry: entry)
-                        .tag(entry)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            appProvider.selectNavigationEntry(entry)
-                        }
+            if entries.isNotEmpty {
+                List(entries, selection: $appProvider.selectedNavigationId) { entry in
+                    HStack(spacing: 12) {
+                        // 图标
+                        Image(systemName: entry.icon)
+                            .font(.system(size: 16))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 24)
+
+                        // 标题
+                        Text(entry.title)
+                            .font(.body)
+
+                        Spacer()
+                    }
+                    .padding(.vertical, 4)
+                    .tag(entry.id)
                 }
-                .listStyle(.sidebar)
+                .listStyle(.automatic)
             } else {
                 // 空状态
                 emptyState
             }
         }
-        .frame(minWidth: 200, maxWidth: .infinity)
         .onAppear {
-            loadNavigationEntries()
+            initializeDefaultSelection()
         }
     }
 
@@ -50,37 +62,17 @@ struct Sidebar: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// 加载所有插件提供的导航入口
-    private func loadNavigationEntries() {
-        let entries = pluginProvider.getNavigationEntries()
-
-        // 只在导航入口为空时注册
-        if appProvider.navigationEntries.isEmpty {
-            appProvider.registerNavigationEntries(entries)
+    /// 初始化默认选中的导航项
+    private func initializeDefaultSelection() {
+        // 如果还没有选中项，选择默认的或第一个
+        if appProvider.selectedNavigationId == nil {
+            let entries = pluginProvider.getNavigationEntries()
+            if let defaultEntry = entries.first(where: { $0.isDefault }) {
+                appProvider.selectedNavigationId = defaultEntry.id
+            } else if let firstEntry = entries.first {
+                appProvider.selectedNavigationId = firstEntry.id
+            }
         }
-    }
-}
-
-/// 导航入口行视图
-struct NavigationEntryRow: View {
-    let entry: NavigationEntry
-
-    var body: some View {
-        HStack(spacing: 12) {
-            // 图标
-            Image(systemName: entry.icon)
-                .font(.system(size: 16))
-                .foregroundStyle(.secondary)
-                .frame(width: 24)
-
-            // 标题
-            Text(entry.title)
-                .font(.body)
-
-            Spacer()
-        }
-        .padding(.vertical, 4)
-        .contentShape(Rectangle())
     }
 }
 
