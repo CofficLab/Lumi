@@ -19,6 +19,8 @@ actor WelcomePlugin: SuperPlugin, SuperLog {
     /// 插件唯一标识符
     static var id: String = "WelcomePlugin"
 
+    static let navigationId = "\(id).welcome"
+
     /// 插件显示名称
     static var displayName: String = "欢迎页面"
 
@@ -46,7 +48,7 @@ actor WelcomePlugin: SuperPlugin, SuperLog {
     @MainActor func addNavigationEntries() -> [NavigationEntry]? {
         return [
             NavigationEntry.create(
-                id: "\(Self.id).welcome",
+                id: Self.navigationId,
                 title: "欢迎",
                 icon: "star.circle.fill",
                 pluginId: Self.id,

@@ -9,6 +9,7 @@ actor DatabaseManagerPlugin: SuperPlugin, SuperLog {
     nonisolated static let verbose = true
     
     static let id = "DatabaseManager"
+    static let navigationId = "database_manager"
     static let displayName = "Database Manager"
     static let description = "Manage SQLite, MySQL, and PostgreSQL databases"
     static let iconName = "server.rack"
@@ -25,7 +26,7 @@ actor DatabaseManagerPlugin: SuperPlugin, SuperLog {
     @MainActor func addNavigationEntries() -> [NavigationEntry]? {
         return [
             NavigationEntry.create(
-                id: "database_manager",
+                id: Self.navigationId,
                 title: Self.displayName,
                 icon: Self.iconName,
                 pluginId: Self.id

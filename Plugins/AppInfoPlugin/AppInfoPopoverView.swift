@@ -132,6 +132,7 @@ struct AppInfoPopoverView: View {
     ContentLayout()
         .hideSidebar()
         .hideTabPicker()
+        .withNavigation(AppInfoPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

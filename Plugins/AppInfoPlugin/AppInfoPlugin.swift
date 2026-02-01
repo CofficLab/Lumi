@@ -19,6 +19,8 @@ actor AppInfoPlugin: SuperPlugin, SuperLog {
     /// 插件唯一标识符
     static var id: String = "AppInfoPlugin"
 
+    static let navigationId = "\(id).about"
+
     /// 插件显示名称
     static var displayName: String = "应用信息"
 
@@ -52,7 +54,7 @@ actor AppInfoPlugin: SuperPlugin, SuperLog {
     @MainActor func addNavigationEntries() -> [NavigationEntry]? {
         return [
             NavigationEntry.create(
-                id: "\(Self.id).about",
+                id: Self.navigationId,
                 title: "关于",
                 icon: "info.circle.fill",
                 pluginId: Self.id
@@ -69,6 +71,7 @@ actor AppInfoPlugin: SuperPlugin, SuperLog {
     ContentLayout()
         .hideSidebar()
         .hideTabPicker()
+        .withNavigation(AppInfoPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

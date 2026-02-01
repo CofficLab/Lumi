@@ -9,6 +9,7 @@ actor XcodeCleanerPlugin: SuperPlugin, SuperLog {
     nonisolated static let verbose = true
     
     static let id = "XcodeCleaner"
+    static let navigationId = "xcode_cleaner"
     static let displayName = "Xcode 清理"
     static let description = "清理 Xcode 缓存、DerivedData 和旧的设备支持文件"
     static let iconName = "hammer"

@@ -9,6 +9,7 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
     nonisolated static let verbose = true
     
     static let id = "NetworkManager"
+    static let navigationId = "network_manager"
     static let displayName = "网络监控"
     static let description = "实时监控网络速度、流量和连接状态"
     static let iconName = "network"
@@ -29,7 +30,7 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
     @MainActor func addNavigationEntries() -> [NavigationEntry]? {
         return [
             NavigationEntry.create(
-                id: "network_manager",
+                id: Self.navigationId,
                 title: Self.displayName,
                 icon: Self.iconName,
                 pluginId: Self.id

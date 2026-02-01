@@ -19,6 +19,8 @@ actor VersionStatusPlugin: SuperPlugin, SuperLog {
     /// 插件唯一标识符
     static var id: String = "VersionStatusPlugin"
 
+    static let navigationId = "\(id).info"
+
     /// 插件显示名称
     static var displayName: String = "版本显示"
 
@@ -60,7 +62,7 @@ actor VersionStatusPlugin: SuperPlugin, SuperLog {
     @MainActor func addNavigationEntries() -> [NavigationEntry]? {
         return [
             NavigationEntry.create(
-                id: "\(Self.id).info",
+                id: Self.navigationId,
                 title: "版本信息",
                 icon: "number.circle.fill",
                 pluginId: Self.id

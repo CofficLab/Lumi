@@ -22,6 +22,8 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
     /// 插件唯一标识符
     static var id: String = "CaffeinatePlugin"
 
+    static let navigationId = "\(id).settings"
+
     /// 插件显示名称
     static var displayName: String = "防休眠"
 
@@ -65,7 +67,7 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
     @MainActor func addNavigationEntries() -> [NavigationEntry]? {
         return [
             NavigationEntry.create(
-                id: "\(Self.id).settings",
+                id: Self.navigationId,
                 title: "防休眠设置",
                 icon: "bolt.fill",
                 pluginId: Self.id
