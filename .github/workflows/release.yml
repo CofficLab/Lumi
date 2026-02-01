@@ -67,8 +67,8 @@ jobs:
       - name: Setup macOS signing
         id: signing
         run: |
-          chmod +x ./scripts/setup-macos-signing.sh
-          source ./scripts/setup-macos-signing.sh
+          chmod +x ./.github/scripts/setup-macos-signing.sh
+          source ./.github/scripts/setup-macos-signing.sh
           echo "signing_identity=$SIGNING_IDENTITY" >> $GITHUB_OUTPUT
           echo "team_id=$TEAM_ID" >> $GITHUB_OUTPUT
           echo "api_key_path=$API_KEY_PATH" >> $GITHUB_OUTPUT
