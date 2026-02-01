@@ -19,6 +19,8 @@ actor WelcomePlugin: SuperPlugin, SuperLog {
     /// 插件唯一标识符
     static var id: String = "WelcomePlugin"
 
+    static let navigationId = "\(id).welcome"
+
     /// 插件显示名称
     static var displayName: String = "欢迎页面"
 
@@ -30,22 +32,14 @@ actor WelcomePlugin: SuperPlugin, SuperLog {
 
     /// 是否可配置
     static var isConfigurable: Bool = true
-    
+
     /// 注册顺序
     static var order: Int { 0 }
 
     // MARK: - Instance
 
-    /// 插件实例标签（用于识别唯一实例）
-    nonisolated var instanceLabel: String {
-        Self.id
-    }
-
     /// 插件单例实例
     static let shared = WelcomePlugin()
-
-    /// 初始化方法
-    init() {}
 
     // MARK: - UI Contributions
 
@@ -54,14 +48,14 @@ actor WelcomePlugin: SuperPlugin, SuperLog {
     @MainActor func addNavigationEntries() -> [NavigationEntry]? {
         return [
             NavigationEntry.create(
-                id: "\(Self.id).welcome",
+                id: Self.navigationId,
                 title: "欢迎",
                 icon: "star.circle.fill",
                 pluginId: Self.id,
                 isDefault: true
             ) {
                 WelcomeView()
-            }
+            },
         ]
     }
 
@@ -72,4 +66,10 @@ actor WelcomePlugin: SuperPlugin, SuperLog {
     }
 }
 
-
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .inRootView()
+        .withDebugBar()
+}

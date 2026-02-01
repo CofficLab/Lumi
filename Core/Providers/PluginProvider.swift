@@ -151,37 +151,12 @@ final class PluginProvider: ObservableObject, SuperLog {
             .compactMap { $0.addToolBarTrailingView() }
     }
 
-    /// 获取所有插件的状态栏左侧视图
-    /// - Returns: 状态栏左侧视图数组
-    func getStatusBarLeadingViews() -> [AnyView] {
-        plugins
-            .filter { isPluginEnabled($0) }
-            .compactMap { $0.addStatusBarLeadingView() }
-    }
-
-    /// 获取所有插件的状态栏右侧视图
-    /// - Returns: 状态栏右侧视图数组
-    func getStatusBarTrailingViews() -> [AnyView] {
-        plugins
-            .filter { isPluginEnabled($0) }
-            .compactMap { $0.addStatusBarTrailingView() }
-    }
-
     /// 获取所有插件的详情视图
     /// - Returns: 详情视图数组
     func getDetailViews() -> [AnyView] {
         plugins
             .filter { isPluginEnabled($0) }
             .compactMap { $0.addDetailView() }
-    }
-
-    /// 获取所有插件提供的系统菜单栏菜单项
-    /// - Returns: 系统菜单栏菜单项数组
-    func getStatusBarMenuItems() -> [NSMenuItem] {
-        plugins
-            .filter { isPluginEnabled($0) }
-            .compactMap { $0.addStatusBarMenuItems() }
-            .flatMap { $0 }
     }
 
     /// 获取所有插件提供的导航入口

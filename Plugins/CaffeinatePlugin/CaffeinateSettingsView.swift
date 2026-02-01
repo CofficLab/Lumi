@@ -17,11 +17,14 @@ struct CaffeinateSettingsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 标题栏
-            headerView
+            // 顶部工具栏
+            toolbar
+
+            Divider()
 
             // 标签页选择器
             tabPicker
+                .padding(.vertical, 8)
 
             // 内容区域
             ScrollView {
@@ -40,59 +43,56 @@ struct CaffeinateSettingsView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.controlBackgroundColor))
+        .navigationTitle("防休眠设置")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button(action: {
+                    withAnimation(.spring(response: 0.3)) {
+                        if manager.isActive {
+                            manager.deactivate()
+                        } else {
+                            manager.activate()
+                        }
+                    }
+                }) {
+                    Image(systemName: manager.isActive ? "stop.fill" : "play.fill")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(manager.isActive ? .red : .green)
+            }
+        }
         .onAppear {
             updateTimer()
         }
     }
 
-    // MARK: - Header View
+    // MARK: - Toolbar
 
-    private var headerView: some View {
-        HStack(spacing: 16) {
-            Image(systemName: manager.isActive ? "bolt.fill" : "bolt")
-                .font(.system(size: 32))
-                .foregroundStyle(manager.isActive ? .yellow : .secondary)
-
+    private var toolbar: some View {
+        HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("防休眠设置")
-                    .font(.title2)
-                    .fontWeight(.bold)
+                HStack(spacing: 6) {
+                    Image(systemName: manager.isActive ? "bolt.fill" : "bolt")
+                        .foregroundStyle(manager.isActive ? .yellow : .secondary)
+                    Text(manager.isActive ? "已激活" : "未激活")
+                        .font(.headline)
+                        .foregroundStyle(manager.isActive ? .green : .secondary)
+                }
 
-                Text(manager.isActive ? "已激活" : "未激活")
-                    .font(.caption)
-                    .foregroundStyle(manager.isActive ? .green : .secondary)
+                if manager.isActive {
+                    Text("已运行: \(formatActiveDuration())")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("系统正常休眠")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
-
             Spacer()
-
-            // 大开关按钮
-            Button(action: {
-                withAnimation(.spring(response: 0.3)) {
-                    if manager.isActive {
-                        manager.deactivate()
-                    } else {
-                        manager.activate()
-                    }
-                }
-            }) {
-                HStack(spacing: 8) {
-                    Image(systemName: manager.isActive ? "stop.circle.fill" : "play.circle.fill")
-                        .font(.title3)
-                    Text(manager.isActive ? "停止" : "启动")
-                        .fontWeight(.semibold)
-                }
-                .foregroundStyle(manager.isActive ? .red : .green)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 10)
-                .background(
-                    Capsule()
-                        .fill((manager.isActive ? Color.red : Color.green).opacity(0.15))
-                )
-            }
-            .buttonStyle(.plain)
         }
-        .padding(20)
-        .background(Color(.controlBackgroundColor))
+        .padding()
+        .background(Color(nsColor: .controlBackgroundColor))
     }
 
     // MARK: - Tab Picker
@@ -132,7 +132,7 @@ struct CaffeinateSettingsView: View {
 
             LazyVGrid(columns: [
                 GridItem(.flexible()),
-                GridItem(.flexible())
+                GridItem(.flexible()),
             ], spacing: 12) {
                 ForEach(CaffeinateManager.commonDurations, id: \.hashValue) { option in
                     DurationButton(
@@ -163,7 +163,7 @@ struct CaffeinateSettingsView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
 
-                        Stepper(value: $customHours, in: 0...24) {
+                        Stepper(value: $customHours, in: 0 ... 24) {
                             Text("\(customHours) 小时")
                                 .font(.title3)
                                 .fontWeight(.semibold)
@@ -177,7 +177,7 @@ struct CaffeinateSettingsView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
 
-                        Stepper(value: $customMinutes, in: 0...59, step: 5) {
+                        Stepper(value: $customMinutes, in: 0 ... 59, step: 5) {
                             Text("\(customMinutes) 分钟")
                                 .font(.title3)
                                 .fontWeight(.semibold)
@@ -328,7 +328,7 @@ struct CaffeinateSettingsView: View {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(isSelected ?
                             Color.accentColor.opacity(0.15) :
-                                Color(.controlBackgroundColor)
+                            Color(.controlBackgroundColor)
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
@@ -429,4 +429,13 @@ struct CaffeinateSettingsView: View {
 #Preview {
     CaffeinateSettingsView()
         .frame(width: 600, height: 500)
+}
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .withNavigation(CaffeinatePlugin.navigationId)
+        .inRootView()
+        .withDebugBar()
 }

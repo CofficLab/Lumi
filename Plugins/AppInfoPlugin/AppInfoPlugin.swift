@@ -1,7 +1,7 @@
 import Foundation
 import MagicKit
-import SwiftUI
 import OSLog
+import SwiftUI
 
 /// 应用信息插件：在工具栏显示应用信息图标，点击后弹出应用详情
 actor AppInfoPlugin: SuperPlugin, SuperLog {
@@ -19,6 +19,8 @@ actor AppInfoPlugin: SuperPlugin, SuperLog {
     /// 插件唯一标识符
     static var id: String = "AppInfoPlugin"
 
+    static let navigationId = "\(id).about"
+
     /// 插件显示名称
     static var displayName: String = "应用信息"
 
@@ -30,45 +32,40 @@ actor AppInfoPlugin: SuperPlugin, SuperLog {
 
     /// 是否可配置
     static var isConfigurable: Bool = true
-    
+
     /// 注册顺序
     static var order: Int { 5 }
 
     // MARK: - Instance
 
-    /// 插件实例标签（用于识别唯一实例）
-    nonisolated var instanceLabel: String {
-        Self.id
-    }
-
     /// 插件单例实例
     static let shared = AppInfoPlugin()
 
-    /// 初始化方法
-    init() {}
-
     // MARK: - UI Contributions
-
-    /// 添加工具栏前导视图
-    /// - Returns: 工具栏前导视图
-    @MainActor func addToolBarLeadingView() -> AnyView? {
-        return AnyView(AppInfoIconButton())
-    }
 
     /// 提供导航入口
     /// - Returns: 导航入口数组
     @MainActor func addNavigationEntries() -> [NavigationEntry]? {
         return [
             NavigationEntry.create(
-                id: "\(Self.id).about",
+                id: Self.navigationId,
                 title: "关于",
                 icon: "info.circle.fill",
                 pluginId: Self.id
             ) {
                 AppInfoView()
-            }
+            },
         ]
     }
 }
 
+// MARK: - Preview
 
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .withNavigation(AppInfoPlugin.navigationId)
+        .inRootView()
+        .withDebugBar()
+}

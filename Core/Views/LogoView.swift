@@ -87,15 +87,16 @@ struct LogoView: View, SuperLog {
             .frame(width: 400, height: 250)
 
         LogoView(background: .green.opacity(0.2), backgroundShape: .roundedRectangle(cornerRadius: 20))
-            .frame(width: 400, height: 250)
+            .frame(width: 250, height: 250)
 
         LogoView(background: .orange.opacity(0.2), rotationSpeed: 0.5, backgroundShape: .capsule)
-            .frame(width: 400, height: 250)
+            .frame(width: 250, height: 250)
     }
     .frame(height: 800)
 }
 
 #Preview("LogoView - Snapshot") {
-    LogoView(background: .orange.opacity(0.8))
+    LogoView(background: .clear)
+        .background(LinearGradient.summer)
         .inMagicContainer(.init(width: 500, height: 500), scale: 1)
 }

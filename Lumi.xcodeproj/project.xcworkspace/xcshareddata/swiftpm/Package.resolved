@@ -1,5 +1,5 @@
 {
-  "originHash" : "2e3cc3a3be3d057b869987b4a27ed1c317ed1b6dfad675d7e3adb3cd99a9f075",
+  "originHash" : "c372c10d4cb8ab541ab358be096d9dcf487db21ff72565eeedd7bda23a0ae469",
   "pins" : [
     {
       "identity" : "id3tageditor",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/nookery/MagicKit",
       "state" : {
-        "revision" : "ff040c301d7c6bf5dcc9efb77109375cbc1e365a",
-        "version" : "1.5.15"
+        "revision" : "5567523ea86a1f84b36fdebe76ca661203812b25",
+        "version" : "1.5.16"
       }
     },
     {

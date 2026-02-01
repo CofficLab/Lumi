@@ -2,21 +2,16 @@ import SwiftUI
 
 struct XcodeCleanerView: View {
     @StateObject private var viewModel = XcodeCleanerViewModel()
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                VStack(alignment: .leading) {
-                    Text("Xcode 清理")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                    Text("释放磁盘空间，清理过时的构建文件和支持文件")
-                        .foregroundStyle(.secondary)
-                }
-                
+                Text("释放磁盘空间，清理过时的构建文件和支持文件")
+                    .foregroundStyle(.secondary)
+
                 Spacer()
-                
+
                 if viewModel.isScanning {
                     ProgressView()
                         .controlSize(.small)
@@ -32,9 +27,9 @@ struct XcodeCleanerView: View {
             }
             .padding()
             .background(Color(nsColor: .controlBackgroundColor))
-            
+
             Divider()
-            
+
             // Content
             if viewModel.itemsByCategory.isEmpty && !viewModel.isScanning {
                 emptyStateView
@@ -48,9 +43,9 @@ struct XcodeCleanerView: View {
                 }
                 .listStyle(.inset)
             }
-            
+
             Divider()
-            
+
             // Footer
             HStack {
                 VStack(alignment: .leading) {
@@ -60,15 +55,15 @@ struct XcodeCleanerView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                
+
                 Spacer()
-                
+
                 if let error = viewModel.errorMessage {
                     Text(error)
                         .foregroundStyle(.red)
                         .font(.caption)
                 }
-                
+
                 Button(action: {
                     Task { await viewModel.cleanSelected() }
                 }) {
@@ -84,8 +79,9 @@ struct XcodeCleanerView: View {
         .onAppear {
             Task { await viewModel.scanAll() }
         }
+        .navigationTitle("Xcode 清理")
     }
-    
+
     var emptyStateView: some View {
         VStack(spacing: 20) {
             Spacer()
@@ -109,15 +105,15 @@ struct CategorySection: View {
     let items: [XcodeCleanItem]
     @ObservedObject var viewModel: XcodeCleanerViewModel
     @State private var isExpanded = true
-    
+
     var selectedCount: Int {
         items.filter { $0.isSelected }.count
     }
-    
+
     var categorySize: Int64 {
         items.reduce(0) { $0 + $1.size }
     }
-    
+
     var body: some View {
         Section(header: headerView) {
             if isExpanded {
@@ -127,7 +123,7 @@ struct CategorySection: View {
             }
         }
     }
-    
+
     var headerView: some View {
         HStack {
             Button(action: { withAnimation { isExpanded.toggle() } }) {
@@ -136,10 +132,10 @@ struct CategorySection: View {
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
-            
+
             Image(systemName: category.iconName)
                 .foregroundStyle(.blue)
-            
+
             VStack(alignment: .leading) {
                 Text(category.rawValue)
                     .font(.headline)
@@ -147,13 +143,13 @@ struct CategorySection: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
-            
+
             Spacer()
-            
+
             Text(viewModel.formatBytes(categorySize))
                 .font(.monospacedDigit(.body)())
                 .foregroundStyle(.secondary)
-            
+
             // 全选/反选 Checkbox
             Toggle("", isOn: Binding(
                 get: { selectedCount == items.count && items.count > 0 },
@@ -174,13 +170,13 @@ struct CategorySection: View {
 struct ItemRow: View {
     let item: XcodeCleanItem
     @ObservedObject var viewModel: XcodeCleanerViewModel
-    
+
     var body: some View {
         HStack {
             Image(systemName: "doc")
                 .foregroundStyle(.secondary)
                 .padding(.leading, 24) // Indent
-            
+
             VStack(alignment: .leading) {
                 Text(item.name)
                     .lineLimit(1)
@@ -191,13 +187,13 @@ struct ItemRow: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
-            
+
             Spacer()
-            
+
             Text(viewModel.formatBytes(item.size))
                 .font(.monospacedDigit(.caption)())
                 .foregroundStyle(.secondary)
-            
+
             Toggle("", isOn: Binding(
                 get: { item.isSelected },
                 set: { _ in viewModel.toggleSelection(for: item) }
@@ -206,4 +202,13 @@ struct ItemRow: View {
         }
         .padding(.vertical, 4)
     }
+}
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .withNavigation(XcodeCleanerPlugin.navigationId)
+        .inRootView()
+        .withDebugBar()
 }

@@ -1,9 +1,9 @@
-import SwiftUI
 import Charts
+import SwiftUI
 
 struct DeviceInfoView: View {
     @StateObject private var data = DeviceData()
-    
+
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
@@ -12,7 +12,7 @@ struct DeviceInfoView: View {
                     Image(systemName: "macbook.and.iphone")
                         .font(.system(size: 32))
                         .foregroundStyle(.linearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
-                    
+
                     VStack(alignment: .leading) {
                         Text(data.deviceName)
                             .font(.title2)
@@ -26,7 +26,7 @@ struct DeviceInfoView: View {
                 .padding()
                 .background(Material.ultraThinMaterial)
                 .cornerRadius(12)
-                
+
                 // Grid
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                     DeviceInfoCard(title: "CPU", icon: "cpu", color: .blue) {
@@ -35,7 +35,7 @@ struct DeviceInfoView: View {
                                 .font(.caption)
                                 .lineLimit(1)
                                 .foregroundColor(.secondary)
-                            
+
                             HStack(alignment: .bottom) {
                                 Text("\(Int(data.cpuUsage))%")
                                     .font(.system(size: 24, weight: .bold, design: .rounded))
@@ -52,38 +52,38 @@ struct DeviceInfoView: View {
                             }
                         }
                     }
-                    
+
                     DeviceInfoCard(title: "Memory", icon: "memorychip", color: .green) {
                         VStack(alignment: .leading, spacing: 8) {
                             let used = ByteCountFormatter.string(fromByteCount: Int64(data.memoryUsed), countStyle: .memory)
                             let total = ByteCountFormatter.string(fromByteCount: Int64(data.memoryTotal), countStyle: .memory)
-                            
+
                             Text("\(used) / \(total)")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            
+
                             ProgressView(value: data.memoryUsage)
                                 .tint(.green)
                         }
                     }
-                    
+
                     DeviceInfoCard(title: "Disk", icon: "internaldrive", color: .orange) {
                         VStack(alignment: .leading, spacing: 8) {
                             let used = ByteCountFormatter.string(fromByteCount: data.diskUsed, countStyle: .file)
                             let total = ByteCountFormatter.string(fromByteCount: data.diskTotal, countStyle: .file)
-                            
+
                             Text("\(used) used")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            
-                            Gauge(value: Double(data.diskUsed), in: 0...Double(data.diskTotal)) {
+
+                            Gauge(value: Double(data.diskUsed), in: 0 ... Double(data.diskTotal)) {
                                 Text(total)
                             }
                             .gaugeStyle(.accessoryLinearCapacity)
                             .tint(.orange)
                         }
                     }
-                    
+
                     DeviceInfoCard(title: "Battery", icon: "battery.100", color: .pink) {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
@@ -96,13 +96,13 @@ struct DeviceInfoView: View {
                                         .foregroundColor(.yellow)
                                 }
                             }
-                            
+
                             ProgressView(value: data.batteryLevel)
                                 .tint(data.batteryLevel < 0.2 ? .red : .pink)
                         }
                     }
                 }
-                
+
                 // Uptime
                 HStack {
                     Image(systemName: "clock")
@@ -116,9 +116,8 @@ struct DeviceInfoView: View {
             }
             .padding()
         }
-        .frame(width: 350, height: 400)
     }
-    
+
     private func formatUptime(_ interval: TimeInterval) -> String {
         let formatter = DateComponentsFormatter()
         formatter.allowedUnits = [.day, .hour, .minute]
@@ -132,14 +131,14 @@ struct DeviceInfoCard<Content: View>: View {
     let icon: String
     let color: Color
     let content: Content
-    
+
     init(title: String, icon: String, color: Color, @ViewBuilder content: () -> Content) {
         self.title = title
         self.icon = icon
         self.color = color
         self.content = content()
     }
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -152,7 +151,7 @@ struct DeviceInfoCard<Content: View>: View {
                 }
                 Spacer()
             }
-            
+
             content
         }
         .padding()
@@ -163,4 +162,15 @@ struct DeviceInfoCard<Content: View>: View {
                 .stroke(Color.primary.opacity(0.05), lineWidth: 1)
         )
     }
+}
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .withNavigation(DeviceInfoPlugin.navigationId)
+        .inRootView()
+        .withDebugBar()
 }

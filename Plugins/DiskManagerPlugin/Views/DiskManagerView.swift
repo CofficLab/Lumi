@@ -57,6 +57,8 @@ struct DiskManagerView: View {
             
             Divider()
             
+            Spacer()
+            
             // Scanning Progress
             if viewModel.isScanning {
                 VStack {
@@ -85,6 +87,8 @@ struct DiskManagerView: View {
                 }
                 .listStyle(.inset)
             }
+            
+            Spacer()
         }
         .onAppear {
             viewModel.refreshDiskUsage()
@@ -185,4 +189,15 @@ struct LargeFileRow: View {
         }
         .padding(.vertical, 4)
     }
+}
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .withNavigation(DiskManagerPlugin.navigationId)
+        .inRootView()
+        .withDebugBar()
 }

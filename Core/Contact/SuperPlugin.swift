@@ -29,14 +29,6 @@ protocol SuperPlugin: Actor {
     /// - Returns: 要添加到工具栏右侧的视图，如果不需要则返回nil
     @MainActor func addToolBarTrailingView() -> AnyView?
 
-    /// 添加状态栏左侧视图
-    /// - Returns: 要添加到状态栏左侧的视图，如果不需要则返回nil
-    @MainActor func addStatusBarLeadingView() -> AnyView?
-
-    /// 添加状态栏右侧视图
-    /// - Returns: 要添加到状态栏右侧的视图，如果不需要则返回nil
-    @MainActor func addStatusBarTrailingView() -> AnyView?
-
     /// 添加详情视图
     /// - Returns: 要添加的详情视图，如果不需要则返回nil
     @MainActor func addDetailView() -> AnyView?
@@ -44,10 +36,6 @@ protocol SuperPlugin: Actor {
     /// 提供导航入口（用于侧边栏导航）
     /// - Returns: 导航入口数组，如果不需要则返回nil
     @MainActor func addNavigationEntries() -> [NavigationEntry]?
-
-    /// 添加系统菜单栏菜单项
-    /// - Returns: 要添加到系统菜单栏的菜单项数组，如果不需要则返回nil
-    @MainActor func addStatusBarMenuItems() -> [NSMenuItem]?
 
     // MARK: - Lifecycle Hooks
 
@@ -97,20 +85,11 @@ extension SuperPlugin {
     /// 默认实现：不提供工具栏右侧视图
     @MainActor func addToolBarTrailingView() -> AnyView? { nil }
     
-    /// 默认实现：不提供状态栏左侧视图
-    @MainActor func addStatusBarLeadingView() -> AnyView? { nil }
-    
-    /// 默认实现：不提供状态栏右侧视图
-    @MainActor func addStatusBarTrailingView() -> AnyView? { nil }
-    
     /// 默认实现：不提供详情视图
     @MainActor func addDetailView() -> AnyView? { nil }
 
     /// 默认实现：不提供导航入口
     @MainActor func addNavigationEntries() -> [NavigationEntry]? { nil }
-
-    /// 默认实现：不提供菜单项
-    @MainActor func addStatusBarMenuItems() -> [NSMenuItem]? { nil }
     
     // MARK: - Lifecycle Hooks Default Implementation
     
