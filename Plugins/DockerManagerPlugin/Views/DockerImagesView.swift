@@ -4,17 +4,17 @@ struct DockerImagesView: View {
     @StateObject private var viewModel = DockerManagerViewModel()
     @State private var showPullSheet = false
     @State private var pullImageName = ""
-    
+
     // Tagging
     @State private var showTagSheet = false
     @State private var newTag = ""
     @State private var imageToTag: DockerImage?
-    
+
     // Import/Export
     @State private var showFileImporter = false
     @State private var showFileExporter = false
     @State private var imageToExport: DockerImage?
-    
+
     var body: some View {
         HSplitView {
             // Sidebar List
@@ -23,7 +23,7 @@ struct DockerImagesView: View {
                 HStack {
                     TextField("搜索镜像...", text: $viewModel.searchText)
                         .textFieldStyle(.roundedBorder)
-                    
+
                     Menu {
                         Picker("排序", selection: $viewModel.sortOption) {
                             Text("创建时间").tag(DockerManagerViewModel.SortOption.created)
@@ -34,7 +34,7 @@ struct DockerImagesView: View {
                     } label: {
                         Image(systemName: "arrow.up.arrow.down")
                     }
-                    
+
                     Button(action: {
                         Task { await viewModel.refreshImages() }
                     }) {
@@ -43,9 +43,9 @@ struct DockerImagesView: View {
                 }
                 .padding(8)
                 .background(Color(nsColor: .controlBackgroundColor))
-                
+
                 Divider()
-                
+
                 List(viewModel.filteredImages, selection: Binding(
                     get: { viewModel.selectedImage },
                     set: { newSelection in
@@ -78,9 +78,9 @@ struct DockerImagesView: View {
                         }
                 }
                 .listStyle(.inset)
-                
+
                 Divider()
-                
+
                 // Footer
                 HStack {
                     Text("\(viewModel.filteredImages.count) 个镜像")
@@ -98,7 +98,7 @@ struct DockerImagesView: View {
                 .background(Color(nsColor: .controlBackgroundColor))
             }
             .frame(minWidth: 250, maxWidth: 400)
-            
+
             // Detail View
             if let selected = viewModel.selectedImage {
                 DockerImageDetailView(image: selected, detail: viewModel.selectedImageDetail, history: viewModel.selectedImageHistory, viewModel: viewModel)
@@ -122,11 +122,11 @@ struct DockerImagesView: View {
                 TextField("镜像名称 (例如: nginx:latest)", text: $pullImageName)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 300)
-                
+
                 if viewModel.isLoading {
                     ProgressView("Pulling...")
                 }
-                
+
                 HStack {
                     Button("取消") { showPullSheet = false }
                     Button("拉取") {
@@ -153,7 +153,7 @@ struct DockerImagesView: View {
                 TextField("新 Tag (例如: myrepo:v1)", text: $newTag)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 300)
-                
+
                 HStack {
                     Button("取消") { showTagSheet = false }
                     Button("确认") {
@@ -172,25 +172,26 @@ struct DockerImagesView: View {
         }
         .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.data]) { result in
             switch result {
-            case .success(let url):
+            case let .success(url):
                 Task { await viewModel.loadImage(from: url) }
-            case .failure(let error):
+            case let .failure(error):
                 print("Import failed: \(error.localizedDescription)")
             }
         }
         .fileExporter(isPresented: $showFileExporter, document: DockerImageDocument(image: imageToExport), contentType: .data, defaultFilename: imageToExport?.name.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-") ?? "image") { result in
             switch result {
-            case .success(let url):
+            case let .success(url):
                 if let img = imageToExport {
                     Task { await viewModel.exportImage(img, to: url) }
                 }
-            case .failure(let error):
+            case let .failure(error):
                 print("Export failed: \(error.localizedDescription)")
             }
         }
         .onAppear {
             Task { await viewModel.refreshImages() }
         }
+        .navigationTitle(DockerManagerPlugin.displayName)
     }
 }
 
@@ -198,17 +199,17 @@ import UniformTypeIdentifiers
 
 struct DockerImageDocument: FileDocument {
     static var readableContentTypes: [UTType] { [.data] }
-    
+
     var image: DockerImage?
-    
+
     init(image: DockerImage? = nil) {
         self.image = image
     }
-    
+
     init(configuration: ReadConfiguration) throws {
         // Not used for export
     }
-    
+
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
         return FileWrapper(regularFileWithContents: Data()) // Actual content is written by docker save command directly to file path, this is just a placeholder to trigger exporter
     }
@@ -216,7 +217,7 @@ struct DockerImageDocument: FileDocument {
 
 struct DockerImageRow: View {
     let image: DockerImage
-    
+
     var body: some View {
         HStack {
             Image(systemName: "cube")
@@ -249,7 +250,7 @@ struct DockerImageDetailView: View {
     let history: [DockerImageHistory]
     @ObservedObject var viewModel: DockerManagerViewModel
     @State private var showDeleteAlert = false
-    
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
@@ -271,14 +272,14 @@ struct DockerImageDetailView: View {
                         }
                     }
                     Spacer()
-                    
+
                     Button(action: {
                         Task { await viewModel.scanImage(image) }
                     }) {
                         Label("Scan", systemImage: "checkerboard.shield")
                     }
                     .buttonStyle(.bordered)
-                    
+
                     Button(action: { showDeleteAlert = true }) {
                         Label("删除", systemImage: "trash")
                             .foregroundStyle(.red)
@@ -288,13 +289,13 @@ struct DockerImageDetailView: View {
                 .padding()
                 .background(Color(nsColor: .controlBackgroundColor))
                 .cornerRadius(8)
-                
+
                 // Scan Result
                 if let scanResult = viewModel.scanResult {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Security Scan")
                             .font(.headline)
-                        
+
                         ScrollView([.horizontal, .vertical]) {
                             Text(scanResult)
                                 .font(.monospaced(.caption)())
@@ -308,7 +309,7 @@ struct DockerImageDetailView: View {
                     .background(Color(nsColor: .controlBackgroundColor))
                     .cornerRadius(8)
                 }
-                
+
                 // Info Grid
                 if let detail = detail {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
@@ -320,18 +321,18 @@ struct DockerImageDetailView: View {
                     .padding()
                     .background(Color(nsColor: .controlBackgroundColor))
                     .cornerRadius(8)
-                    
+
                     // Config
                     if let config = detail.Config {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Configuration")
                                 .font(.headline)
-                            
+
                             if let cmds = config.Cmd {
                                 Text("CMD: " + cmds.joined(separator: " "))
                                     .font(.monospaced(.caption)())
                             }
-                            
+
                             if let envs = config.Env {
                                 Text("ENV:")
                                     .font(.caption)
@@ -352,25 +353,25 @@ struct DockerImageDetailView: View {
                         .cornerRadius(8)
                     }
                 }
-                
+
                 // History/Layers
                 VStack(alignment: .leading, spacing: 8) {
                     Text("History / Layers")
                         .font(.headline)
-                    
+
                     ForEach(history) { layer in
                         HStack(alignment: .top) {
                             Text(layer.id.prefix(8))
                                 .font(.monospaced(.caption)())
                                 .foregroundStyle(.secondary)
                                 .frame(width: 60, alignment: .leading)
-                            
+
                             Text(layer.CreatedBy)
                                 .font(.monospaced(.caption)())
                                 .lineLimit(2)
-                            
+
                             Spacer()
-                            
+
                             Text(layer.Size)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -394,13 +395,14 @@ struct DockerImageDetailView: View {
         } message: {
             Text("确定要删除镜像 \(image.name) 吗？此操作不可撤销。")
         }
+        .navigationTitle(DockerManagerPlugin.displayName)
     }
 }
 
 struct InfoRow: View {
     let title: String
     let value: String
-    
+
     var body: some View {
         HStack {
             Text(title)
@@ -410,4 +412,13 @@ struct InfoRow: View {
                 .fontWeight(.medium)
         }
     }
+}
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .withNavigation(DockerManagerPlugin.navigationId)
+        .inRootView()
+        .withDebugBar()
 }

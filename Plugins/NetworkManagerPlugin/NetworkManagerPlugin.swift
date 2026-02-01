@@ -36,3 +36,12 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
         ]
     }
 }
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .withNavigation(NetworkManagerPlugin.navigationId)
+        .inRootView()
+        .withDebugBar()
+}

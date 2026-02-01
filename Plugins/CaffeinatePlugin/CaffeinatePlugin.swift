@@ -1,9 +1,9 @@
 import AppKit
+import Combine
 import Foundation
 import MagicKit
-import SwiftUI
-import Combine
 import OSLog
+import SwiftUI
 
 /// 防休眠插件：阻止系统休眠，支持定时和手动控制
 /// 防休眠插件：阻止系统休眠，支持定时和手动控制
@@ -35,7 +35,7 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
 
     /// 是否可配置
     static var isConfigurable: Bool = true
-    
+
     /// 注册顺序
     static var order: Int { 7 }
 
@@ -48,7 +48,7 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
 
     /// 插件单例实例
     static let shared = CaffeinatePlugin()
-    
+
     /// 初始化方法
     init() {
         os_log("CaffeinatePlugin initialized")
@@ -67,7 +67,7 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
                 pluginId: Self.id
             ) {
                 CaffeinateSettingsView()
-            }
+            },
         ]
     }
 }
@@ -105,7 +105,7 @@ fileprivate class CaffeinateActionHandler: NSObject, NSMenuItemValidation {
     @objc func activateWithDuration(_ sender: Any?) {
         guard let menuItem = sender as? NSMenuItem else { return }
         os_log("CaffeinateActionHandler: activateWithDuration called")
-        
+
         // 根据菜单项的 tag 找到对应的时长选项
         if let option = CaffeinateManager.commonDurations.first(where: { $0.hashValue == menuItem.tag }) {
             activate(mode: CaffeinateManager.shared.mode, duration: option.timeInterval)
@@ -118,7 +118,7 @@ fileprivate class CaffeinateActionHandler: NSObject, NSMenuItemValidation {
         }
         CaffeinateManager.shared.activate(mode: mode, duration: duration)
     }
-    
+
     /// 验证菜单项是否可用
     /// - Parameter menuItem: 菜单项
     /// - Returns: 是否可用
@@ -139,4 +139,15 @@ fileprivate class CaffeinateActionHandler: NSObject, NSMenuItemValidation {
     private func durationForTag(_ tag: Int) -> TimeInterval? {
         CaffeinateManager.commonDurations.first(where: { $0.hashValue == tag })?.timeInterval
     }
+}
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .withNavigation(CaffeinatePlugin.navigationId)
+        .inRootView()
+        .withDebugBar()
 }

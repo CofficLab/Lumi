@@ -174,6 +174,7 @@ struct PortRowView: View {
             }
         }
         .padding(.vertical, 8)
+        .navigationTitle(PortManagerPlugin.displayName)
     }
 }
 

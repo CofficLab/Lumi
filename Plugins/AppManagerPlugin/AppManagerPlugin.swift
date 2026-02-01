@@ -3,7 +3,7 @@ import MagicKit
 import SwiftUI
 
 /// 应用管理插件
-actor AppManagerPlugin: SuperPlugin, SuperLog {
+actor AppManagerPlugin: SuperPlugin {
     static let id = "com.coffic.lumi.plugin.appmanager"
     static let navigationId = "\(id).apps"
 
@@ -20,4 +20,15 @@ actor AppManagerPlugin: SuperPlugin, SuperLog {
             }
         ]
     }
+}
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .withNavigation(AppManagerPlugin.navigationId)
+        .inRootView()
+        .withDebugBar()
 }

@@ -29,6 +29,7 @@ struct AppInfoView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.controlBackgroundColor))
+        .navigationTitle(AppInfoPlugin.displayName)
     }
 
     // MARK: - Header Section

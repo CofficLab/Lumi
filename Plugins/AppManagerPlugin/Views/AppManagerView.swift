@@ -231,7 +231,13 @@ struct AppRow: View {
     }
 }
 
-#Preview {
-    AppManagerView()
-        .frame(width: 800, height: 600)
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .withNavigation(AppManagerPlugin.navigationId)
+        .inRootView()
+        .withDebugBar()
 }

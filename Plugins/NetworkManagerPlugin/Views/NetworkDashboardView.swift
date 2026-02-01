@@ -2,7 +2,7 @@ import SwiftUI
 
 struct NetworkDashboardView: View {
     @StateObject private var viewModel = NetworkManagerViewModel()
-    
+
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
@@ -16,7 +16,7 @@ struct NetworkDashboardView: View {
                         color: .green,
                         viewModel: viewModel
                     )
-                    
+
                     SpeedCard(
                         title: "上传",
                         speed: viewModel.networkState.uploadSpeed,
@@ -27,9 +27,9 @@ struct NetworkDashboardView: View {
                     )
                 }
                 .padding(.horizontal)
-                
+
                 Divider()
-                
+
                 // Info Grid
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                     NetworkInfoCard(title: "内网 IP", value: viewModel.networkState.localIP ?? "未知", icon: "pc")
@@ -44,6 +44,7 @@ struct NetworkDashboardView: View {
             .padding(.vertical)
         }
         .background(Color(nsColor: .controlBackgroundColor))
+        .navigationTitle(NetworkManagerPlugin.displayName)
     }
 }
 
@@ -54,7 +55,7 @@ struct SpeedCard: View {
     let icon: String
     let color: Color
     let viewModel: NetworkManagerViewModel
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -66,11 +67,11 @@ struct SpeedCard: View {
                     .foregroundStyle(.secondary)
                 Spacer()
             }
-            
+
             Text(viewModel.formatSpeed(speed))
                 .font(.system(size: 24, weight: .bold, design: .monospaced))
                 .foregroundStyle(.primary)
-            
+
             Text("总计: \(viewModel.formatBytes(total))")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -89,13 +90,13 @@ struct NetworkInfoCard: View {
     let title: String
     let value: String
     let icon: String
-    
+
     var body: some View {
         HStack {
             Image(systemName: icon)
                 .frame(width: 24)
                 .foregroundStyle(.secondary)
-            
+
             VStack(alignment: .leading) {
                 Text(title)
                     .font(.caption)
@@ -110,4 +111,13 @@ struct NetworkInfoCard: View {
         .background(Color.gray.opacity(0.05))
         .cornerRadius(8)
     }
+}
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .withNavigation(NetworkManagerPlugin.navigationId)
+        .inRootView()
+        .withDebugBar()
 }

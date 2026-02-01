@@ -115,6 +115,7 @@ struct DeviceInfoView: View {
                 .padding(.horizontal)
             }
             .padding()
+            .navigationTitle(DeviceInfoPlugin.displayName)
         }
     }
 
