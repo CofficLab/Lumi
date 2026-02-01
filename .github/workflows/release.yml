@@ -140,6 +140,6 @@ jobs:
         if: env.IS_PRERELEASE == 'false'
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: "👷 CI: update appcast.yml"
+          commit_message: "ci: update appcast.yml"
           commit_user_name: GitHub Action
           file_pattern: "appcast.xml"
