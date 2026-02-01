@@ -20,8 +20,19 @@
 | Developer ID Application 证书| 用于非商店分发 |
 | 证书私钥（p12） | CI 中使用 |
 | App Store Connect API Key | 用于 Notarization |
+| SPARKLE_PRIVATE_KEY | Sparkle使用，保存在 GitHub Actions 中 |
 
-## 三、本地一次性准备（最重要）
+为了实现自动检查更新，还需要确保`target - info`中有以下内容：
+
+| Key | Value |
+| --- | --- |
+| SUPublicEDKey | Sparkle 自动更新系统的公钥，配合私钥使用，私钥保存在 GitHub Actions |
+| SUFeedURL | https://raw.githubusercontent.com/CofficLab/Lumi/main/appcast.xml |
+| SUEnableInstallerLauncherService | true |
+
+`SPARKLE_PRIVATE_KEY` 和 `SUPublicEDKey` 最好每个APP都有一对。如果同一个组织下的多个APP共用一对，技术上可行，实践上不推荐。
+
+## 三、本地一次性准备
 
 ⚠️ 这一部分只能在自己的 Mac 上完成
 
