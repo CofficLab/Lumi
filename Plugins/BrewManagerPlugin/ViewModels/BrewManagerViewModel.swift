@@ -50,7 +50,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
     
     func refresh() async {
         if Self.verbose {
-            os_log("\(self.t) 🔄 开始刷新包列表")
+            os_log("\(self.t)🔄 开始刷新包列表")
         }
         isLoading = true
         errorMessage = nil
