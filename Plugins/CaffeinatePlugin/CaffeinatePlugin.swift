@@ -115,6 +115,15 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
         preventDisplayItem.state = manager.mode == .systemAndDisplay ? .on : .off
         items.append(preventDisplayItem)
 
+        let turnOffDisplayItem = NSMenuItem(
+            title: "阻止休眠，立刻关闭屏幕",
+            action: #selector(CaffeinateActionHandler.activateAndTurnOffDisplay(_:)),
+            keyEquivalent: ""
+        )
+        turnOffDisplayItem.target = handler
+        turnOffDisplayItem.isEnabled = true
+        items.append(turnOffDisplayItem)
+
         items.append(NSMenuItem.separator())
 
         for durationOption in CaffeinateManager.commonDurations {
@@ -153,6 +162,14 @@ fileprivate class CaffeinateActionHandler: NSObject, NSMenuItemValidation {
 
     @objc func activatePreventDisplay(_ sender: Any?) {
         activate(mode: .systemAndDisplay)
+    }
+
+    @objc func activateAndTurnOffDisplay(_ sender: Any?) {
+        if CaffeinateManager.shared.isActive {
+            CaffeinateManager.shared.deactivate()
+        }
+        // 默认使用永久时长，因为这是一个立即动作
+        CaffeinateManager.shared.activateAndTurnOffDisplay(duration: 0)
     }
 
     /// 使用指定时长激活防休眠

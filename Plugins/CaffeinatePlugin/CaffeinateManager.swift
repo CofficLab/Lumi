@@ -47,6 +47,26 @@ class CaffeinateManager {
         activate(mode: .systemAndDisplay, duration: duration)
     }
 
+    /// 激活防休眠并立即关闭屏幕
+    func activateAndTurnOffDisplay(duration: TimeInterval = 0) {
+        // 1. 激活防休眠（仅系统，允许屏幕关闭）
+        activate(mode: .systemOnly, duration: duration)
+        
+        // 2. 关闭屏幕
+        turnOffDisplay()
+    }
+    
+    private func turnOffDisplay() {
+        let task = Process()
+        task.launchPath = "/usr/bin/pmset"
+        task.arguments = ["displaysleepnow"]
+        do {
+            try task.run()
+        } catch {
+            logger.error("Failed to turn off display: \(error.localizedDescription)")
+        }
+    }
+
     func activate(mode: SleepMode, duration: TimeInterval = 0) {
         guard !isActive else {
             logger.info("Caffeinate already active, ignoring activation request")

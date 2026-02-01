@@ -23,7 +23,7 @@ struct ProjectInfoListView: View {
                     .font(.subheadline)
                     .fontWeight(.semibold)
 
-                InfoRow(label: "当前标签页", value: tab)
+                ProjectInfoRow(title: "当前标签页", value: tab)
             }
 
             // 项目信息
@@ -33,9 +33,9 @@ struct ProjectInfoListView: View {
                     .fontWeight(.semibold)
 
                 if let project = project {
-                    InfoRow(label: "项目名称", value: project.name)
-                    InfoRow(label: "项目ID", value: project.id)
-                    InfoRow(label: "状态", value: "活跃")
+                    ProjectInfoRow(title: "项目名称", value: project.name)
+                    ProjectInfoRow(title: "项目ID", value: project.id)
+                    ProjectInfoRow(title: "状态", value: "活跃")
                 } else {
                     Text("未选择项目")
                         .font(.caption)
@@ -51,8 +51,8 @@ struct ProjectInfoListView: View {
                     .font(.subheadline)
                     .fontWeight(.semibold)
 
-                InfoRow(label: "总标签页数", value: "1")
-                InfoRow(label: "总项目数", value: project != nil ? "1" : "0")
+                ProjectInfoRow(title: "总标签页数", value: "1")
+                ProjectInfoRow(title: "总项目数", value: project != nil ? "1" : "0")
             }
         }
         .padding()
@@ -60,13 +60,13 @@ struct ProjectInfoListView: View {
 }
 
 /// 信息行视图（私有辅助组件）
-private struct InfoRow: View {
-    let label: String
+private struct ProjectInfoRow: View {
+    let title: String
     let value: String
 
     var body: some View {
         HStack {
-            Text(label)
+            Text(title)
                 .font(.caption)
                 .foregroundColor(.secondary)
             Text(":")
