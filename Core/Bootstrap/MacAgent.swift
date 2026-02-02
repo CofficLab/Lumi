@@ -14,6 +14,9 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     
     /// 系统状态栏项
     private var statusItem: NSStatusItem?
+    
+    /// 活跃的插件源集合（用于决定状态栏图标颜色）
+    private var activeSources: Set<String> = []
 
     /// 插件提供者，用于获取插件菜单项
     private var pluginProvider: PluginProvider?
@@ -85,6 +88,14 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
             object: nil
         )
         
+        // 监听状态栏外观更新请求
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleStatusBarAppearanceUpdate(_:)),
+            name: .requestStatusBarAppearanceUpdate,
+            object: nil
+        )
+        
         // 先设置一个基础菜单（不含插件项）
         setupStatusBarMenu()
         
@@ -99,6 +110,81 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
             os_log("\(self.t)收到插件加载完成通知，刷新菜单...")
         }
         refreshStatusBarMenu()
+    }
+    
+    /// 处理状态栏外观更新请求
+    @objc private func handleStatusBarAppearanceUpdate(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let isActive = userInfo["isActive"] as? Bool,
+              let source = userInfo["source"] as? String else {
+            return
+        }
+        
+        if Self.verbose {
+            os_log("\(self.t)收到状态栏更新请求: source=\(source), isActive=\(isActive)")
+        }
+        
+        if isActive {
+            activeSources.insert(source)
+        } else {
+            activeSources.remove(source)
+        }
+        
+        updateStatusBarIconAppearance()
+    }
+    
+    /// 更新状态栏图标外观
+    private func updateStatusBarIconAppearance() {
+        guard let button = statusItem?.button else { return }
+        
+        // 每次都重新获取基础图标，确保状态一致
+        guard let baseImage = NSImage(systemSymbolName: "lightbulb.fill", accessibilityDescription: "Lumi") else {
+            return
+        }
+        
+        if !activeSources.isEmpty {
+            if Self.verbose {
+                os_log("\(self.t)激活状态栏高亮，当前源: \(self.activeSources)")
+            }
+            
+            // 使用手动着色方案，解决 contentTintColor 在部分系统/模式下失效变成黑色的问题
+            let color = NSColor.controlAccentColor
+            let coloredImage = tintedImage(baseImage, color: color)
+            button.image = coloredImage
+            
+            // 清除 tintColor，因为我们已经把颜色“烤”进图片里了
+            button.contentTintColor = nil
+        } else {
+            if Self.verbose {
+                os_log("\(self.t)取消状态栏高亮")
+            }
+            
+            // 恢复默认模板模式，跟随系统颜色（黑/白）
+            baseImage.isTemplate = true
+            button.image = baseImage
+            button.contentTintColor = nil
+        }
+    }
+    
+    /// 辅助方法：创建指定颜色的图片
+    /// 解决直接设置 contentTintColor 可能导致图标变黑的问题
+    private func tintedImage(_ image: NSImage, color: NSColor) -> NSImage {
+        let newImage = NSImage(size: image.size)
+        newImage.lockFocus()
+        
+        // 1. 绘制原图
+        image.draw(in: NSRect(origin: .zero, size: image.size))
+        
+        // 2. 设置颜色并混合
+        // sourceAtop: 在原图不透明的地方绘制颜色
+        color.set()
+        NSRect(origin: .zero, size: image.size).fill(using: .sourceAtop)
+        
+        newImage.unlockFocus()
+        
+        // 关键：必须关闭模板模式，否则系统会忽略像素颜色
+        newImage.isTemplate = false
+        return newImage
     }
     
     /// 设置状态栏菜单
