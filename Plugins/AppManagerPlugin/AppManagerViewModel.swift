@@ -1,11 +1,14 @@
 import Foundation
+import MagicKit
 import SwiftUI
 import OSLog
 
 /// 应用管理器视图模型
 @MainActor
-class AppManagerViewModel: ObservableObject {
-    private let logger = Logger(subsystem: "com.coffic.lumi", category: "AppManagerViewModel")
+class AppManagerViewModel: ObservableObject, SuperLog {
+    static let emoji = "📋"
+    static let verbose = true
+
     private let appService = AppService()
 
     @Published var installedApps: [AppModel] = []
@@ -40,7 +43,9 @@ class AppManagerViewModel: ObservableObject {
         let apps = await appService.scanInstalledApps(force: false)
         if !apps.isEmpty {
             installedApps = apps
-            logger.info("从缓存加载了 \(apps.count) 个应用")
+            if Self.verbose {
+                os_log("\(self.t)从缓存加载 \(apps.count) 个应用")
+            }
         }
     }
 
@@ -56,12 +61,14 @@ class AppManagerViewModel: ObservableObject {
 
             // 立即显示应用列表（不等待大小计算）
             installedApps = apps
-            logger.info("应用列表加载完成，共 \(self.installedApps.count) 个应用")
+            if Self.verbose {
+                os_log("\(self.t)App list loaded: \(self.installedApps.count) apps")
+            }
 
             // 在后台逐个计算大小，不阻塞 UI
             for index in apps.indices {
                 var sizedApp = apps[index]
-                
+
                 // 仅当大小为0（未缓存）时才计算
                 if sizedApp.size == 0 {
                     sizedApp.size = await appService.calculateAppSize(for: sizedApp)
@@ -75,13 +82,15 @@ class AppManagerViewModel: ObservableObject {
                     }
                 }
             }
-            
+
             // 扫描结束后保存缓存
             appService.saveCache()
 
-            logger.info("应用扫描完成，共 \(self.installedApps.count) 个应用")
+            if Self.verbose {
+                os_log("\(self.t)Scan complete: \(self.installedApps.count) apps")
+            }
         } catch {
-            logger.error("扫描应用失败: \(error.localizedDescription)")
+            os_log(.error, "\(self.t)Scan failed: \(error.localizedDescription)")
             errorMessage = "扫描失败: \(error.localizedDescription)"
         }
     }
@@ -101,10 +110,12 @@ class AppManagerViewModel: ObservableObject {
             // 从列表中移除
             installedApps.removeAll { $0.bundleURL.path == app.bundleURL.path }
 
-            logger.info("卸载成功: \(app.displayName)")
+            if Self.verbose {
+                os_log("\(self.t)Uninstall successful: \(app.displayName)")
+            }
             errorMessage = nil
         } catch {
-            logger.error("卸载失败: \(error.localizedDescription)")
+            os_log(.error, "\(self.t)Uninstall failed: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
         }
     }

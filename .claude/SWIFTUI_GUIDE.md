@@ -48,9 +48,14 @@ SwiftUI-Template 是一个现代的 SwiftUI 应用模板，采用插件化架构
 
 1. **代码组织** - 独立文件、相关目录
 2. **MARK 分组** - View → Action → Setter → Event Handler → Preview
-3. **SuperLog 协议** - emoji + verbose + self.t
+3. **SuperLog 协议** - emoji + verbose + self.t（详见 LOGGING_STANDARDS.md）
 4. **事件监听** - onXxx 扩展 + perform: 语法
 5. **预览代码** - 多尺寸、条件编译
+
+**日志规范：**
+
+- 所有 Manager/Service/ViewModel 必须遵循 SuperLog 协议
+- 详见 `.claude/LOGGING_STANDARDS.md` 文档
 
 ## 技术栈
 

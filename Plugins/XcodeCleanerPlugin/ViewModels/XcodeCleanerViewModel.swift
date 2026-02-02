@@ -1,25 +1,33 @@
 import Foundation
 import Combine
+import OSLog
+import MagicKit
 
 @MainActor
-class XcodeCleanerViewModel: ObservableObject {
+class XcodeCleanerViewModel: ObservableObject, SuperLog {
+    static let emoji = "🧹"
+    static let verbose = false
+
     @Published var itemsByCategory: [XcodeCleanCategory: [XcodeCleanItem]] = [:]
     @Published var isScanning = false
     @Published var isCleaning = false
     @Published var errorMessage: String?
-    
+
     // 统计
     var totalSize: Int64 {
         itemsByCategory.values.flatMap { $0 }.reduce(0) { $0 + $1.size }
     }
-    
+
     var selectedSize: Int64 {
         itemsByCategory.values.flatMap { $0 }.filter { $0.isSelected }.reduce(0) { $0 + $1.size }
     }
-    
+
     private let service = XcodeCleanService.shared
-    
+
     func scanAll() async {
+        if Self.verbose {
+            os_log("\(self.t)开始扫描 Xcode 缓存")
+        }
         isScanning = true
         errorMessage = nil
         itemsByCategory = [:]
@@ -31,17 +39,26 @@ class XcodeCleanerViewModel: ObservableObject {
                     return (category, items)
                 }
             }
-            
+
             for await (category, items) in group {
                 var processedItems = items
-                
+
                 // 应用智能选择策略
                 applyAutoSelection(for: category, items: &processedItems)
-                
+
                 self.itemsByCategory[category] = processedItems
+
+                if Self.verbose {
+                    let size = processedItems.reduce(0 as Int64) { $0 + $1.size }
+                    os_log("\(self.t)扫描 \(category.rawValue): \(processedItems.count) 项，\(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
+                }
             }
         }
-        
+
+        if Self.verbose {
+            os_log("\(self.t)扫描完成，总计: \(ByteCountFormatter.string(fromByteCount: self.totalSize, countStyle: .file))")
+        }
+
         isScanning = false
     }
     
@@ -73,15 +90,24 @@ class XcodeCleanerViewModel: ObservableObject {
     func cleanSelected() async {
         isCleaning = true
         let itemsToDelete = itemsByCategory.values.flatMap { $0 }.filter { $0.isSelected }
-        
+
+        if Self.verbose {
+            let size = itemsToDelete.reduce(0 as Int64) { $0 + $1.size }
+            os_log("\(self.t)开始清理 \(itemsToDelete.count) 项，总计 \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
+        }
+
         do {
             try await service.delete(items: itemsToDelete)
+            if Self.verbose {
+                os_log("\(self.t)清理成功")
+            }
             // 重新扫描或直接从列表中移除
             await scanAll()
         } catch {
+            os_log(.error, "\(self.t)清理失败: \(error.localizedDescription)")
             errorMessage = "清理失败: \(error.localizedDescription)"
         }
-        
+
         isCleaning = false
     }
     

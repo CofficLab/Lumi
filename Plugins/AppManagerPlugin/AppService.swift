@@ -1,11 +1,14 @@
 import Foundation
 import AppKit
+import MagicKit
 import OSLog
 import SwiftUI
 
 /// 应用服务
-class AppService: ObservableObject {
-    private let logger = Logger(subsystem: "com.coffic.lumi", category: "AppService")
+class AppService: SuperLog {
+    static let emoji = "📦"
+    static let verbose = false
+
     private let cacheManager = CacheManager.shared
 
     // 标准应用安装路径
@@ -37,7 +40,10 @@ class AppService: ObservableObject {
             // 在后台队列执行文件操作
             DispatchQueue.global(qos: .userInitiated).async {
                 do {
-                    self.logger.info("开始扫描已安装应用 (强制模式: \(force))")
+                    if Self.verbose {
+                        os_log("\(self.t)正在扫描已安装应用 (force: \(force))")
+                    }
+    
                     var apps: [AppModel] = []
                     var validPaths = Set<String>()
                     let paths = self.getUserApplicationPaths()
@@ -53,11 +59,11 @@ class AppService: ObservableObject {
                         ) {
                             for appURL in directoryContents where appURL.pathExtension == "app" {
                                 validPaths.insert(appURL.path)
-                                
+
                                 // 获取文件修改时间
                                 let resourceValues = try? appURL.resourceValues(forKeys: [.contentModificationDateKey])
                                 let modDate = resourceValues?.contentModificationDate ?? Date()
-                                
+
                                 // 尝试从缓存加载 (如果未强制刷新)
                                 if !force, let cachedItem = self.cacheManager.getCachedApp(at: appURL.path, currentModificationDate: modDate) {
                                     let app = AppModel(
@@ -80,14 +86,17 @@ class AppService: ObservableObject {
                     // 清理无效缓存并保存
                     self.cacheManager.cleanInvalidCache(keeping: validPaths)
                     self.cacheManager.saveCache()
-                    
+
                     let stats = self.cacheManager.getStats()
-                    self.logger.info("缓存统计: 命中 \(stats.hitCount), 未命中 \(stats.missCount), 命中率 \(String(format: "%.1f", stats.hitRate * 100))%")
+                    if Self.verbose {
+                        os_log("\(self.t)缓存统计: \(stats.hitCount) 次命中, \(stats.missCount) 次未命中, \(String(format: "%.1f", stats.hitRate * 100))% 命中率")
+                    }
 
                     let sortedApps = apps.sorted {
                         $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
                     }
-                    self.logger.info("扫描完成，共找到 \(sortedApps.count) 个应用")
+
+                    os_log("\(self.t)扫描完成: 发现 \(sortedApps.count) 个应用")
                     continuation.resume(returning: sortedApps)
                 }
             }
@@ -99,6 +108,10 @@ class AppService: ObservableObject {
         return await withCheckedContinuation { continuation in
             // 在后台队列执行文件操作
             DispatchQueue.global(qos: .userInitiated).async {
+                if Self.verbose {
+                    os_log("\(self.t)正在计算应用 \(app.displayName) 的大小")
+                }
+
                 guard FileManager.default.fileExists(atPath: app.bundleURL.path) else {
                     continuation.resume(returning: 0)
                     return
@@ -118,17 +131,21 @@ class AppService: ObservableObject {
                         }
                     }
                 }
-                
+
                 // 更新缓存
                 let resourceValues = try? app.bundleURL.resourceValues(forKeys: [.contentModificationDateKey])
                 let modDate = resourceValues?.contentModificationDate ?? Date()
                 self.cacheManager.updateCache(for: app, size: totalSize, modificationDate: modDate)
 
+                if Self.verbose {
+                    os_log("\(self.t)已计算 \(app.displayName) 的大小: \(ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file))")
+                }
+
                 continuation.resume(returning: totalSize)
             }
         }
     }
-    
+
     /// 保存缓存
     func saveCache() {
         cacheManager.saveCache()
@@ -136,26 +153,26 @@ class AppService: ObservableObject {
 
     /// 卸载应用
     func uninstallApp(_ app: AppModel) async throws {
-        logger.info("准备卸载应用: \(app.displayName)")
+        os_log("\(self.t)准备卸载: \(app.displayName)")
 
         let fileManager = FileManager.default
         let appPath = app.bundleURL.path
 
         // 检查应用是否存在
         guard fileManager.fileExists(atPath: appPath) else {
-            logger.error("应用不存在: \(appPath)")
+            os_log(.error, "\(self.t)应用不存在: \(appPath)")
             throw AppError.appNotFound
         }
 
         // 检查是否有写入权限
         guard fileManager.isWritableFile(atPath: appPath) else {
-            logger.error("没有写入权限: \(appPath)")
+            os_log(.error, "\(self.t)权限被拒绝: \(appPath)")
             throw AppError.permissionDenied
         }
 
         // 移到废纸篓
         try fileManager.trashItem(at: app.bundleURL, resultingItemURL: nil)
-        logger.info("应用已移到废纸篓: \(app.displayName)")
+        os_log("\(self.t)应用已移动到废纸篓: \(app.displayName)")
     }
 
     /// 在 Finder 中显示应用

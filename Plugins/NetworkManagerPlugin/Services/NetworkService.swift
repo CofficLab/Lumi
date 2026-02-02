@@ -1,16 +1,25 @@
 import Foundation
 import SystemConfiguration
 import Darwin
+import OSLog
+import MagicKit
 
-class NetworkService {
+class NetworkService: SuperLog {
+    static let emoji = "📡"
+    static let verbose = true
+
     static let shared = NetworkService()
-    
+
     // Previous data for speed calculation
     private var lastBytesIn: UInt64 = 0
     private var lastBytesOut: UInt64 = 0
     private var lastCheckTime: TimeInterval = 0
-    
+
     private init() {
+        if Self.verbose {
+            os_log("\(self.t)网络服务已初始化")
+        }
+
         // Initialize baseline
         let (In, Out) = getInterfaceCounters()
         lastBytesIn = In
