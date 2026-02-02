@@ -10,6 +10,42 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
 
     @Published var networkState = NetworkState()
     @Published var interfaces: [NetworkInterfaceInfo] = []
+    
+    // 进程监控相关
+    @Published var processes: [NetworkProcess] = []
+    @Published var showProcessMonitor = false {
+        didSet {
+            if showProcessMonitor {
+                startProcessMonitoring()
+            } else {
+                stopProcessMonitoring()
+            }
+        }
+    }
+    @Published var onlyActiveProcesses = true
+    @Published var processSearchText = ""
+    
+    var filteredProcesses: [NetworkProcess] {
+        var result = processes
+        
+        // 1. 活跃过滤 (> 0 bytes/s)
+        if onlyActiveProcesses {
+            result = result.filter { $0.totalSpeed > 0 }
+        }
+        
+        // 2. 搜索过滤
+        if !processSearchText.isEmpty {
+            result = result.filter { 
+                $0.name.localizedCaseInsensitiveContains(processSearchText) ||
+                String($0.id).contains(processSearchText)
+            }
+        }
+        
+        // 3. 排序 (默认按总速度降序)
+        result.sort { $0.totalSpeed > $1.totalSpeed }
+        
+        return result
+    }
 
     private var timer: Timer?
     private var cancellables = Set<AnyCancellable>()
@@ -19,6 +55,21 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
             os_log("\(self.t)网络管理视图模型已初始化")
         }
         startMonitoring()
+        
+        // 绑定服务回调
+        ProcessMonitorService.shared.onUpdate = { [weak self] newProcesses in
+            Task { @MainActor in
+                self?.processes = newProcesses
+            }
+        }
+    }
+    
+    func startProcessMonitoring() {
+        ProcessMonitorService.shared.startMonitoring()
+    }
+    
+    func stopProcessMonitoring() {
+        ProcessMonitorService.shared.stopMonitoring()
     }
 
     func startMonitoring() {
