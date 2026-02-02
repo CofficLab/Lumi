@@ -1,5 +1,6 @@
-import Foundation
 import AppKit
+import Foundation
+import SwiftUI
 
 /// 应用模型
 struct AppModel: Identifiable, Hashable {
@@ -24,8 +25,8 @@ struct AppModel: Identifiable, Hashable {
 
         let bundle = Bundle(url: bundleURL)
         self.bundleName = bundle?.object(forInfoDictionaryKey: "CFBundleName") as? String
-                     ?? bundle?.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
-                     ?? bundleURL.deletingPathExtension().lastPathComponent
+            ?? bundle?.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+            ?? bundleURL.deletingPathExtension().lastPathComponent
         self.bundleIdentifier = bundle?.bundleIdentifier
         self.version = bundle?.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
 
@@ -54,4 +55,15 @@ struct AppModel: Identifiable, Hashable {
     static func == (lhs: AppModel, rhs: AppModel) -> Bool {
         lhs.bundleURL.path == rhs.bundleURL.path
     }
+}
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .withNavigation(AppManagerPlugin.navigationId)
+        .inRootView()
+        .withDebugBar()
 }

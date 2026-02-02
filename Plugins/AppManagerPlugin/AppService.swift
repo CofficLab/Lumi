@@ -1,6 +1,7 @@
 import Foundation
 import AppKit
 import OSLog
+import SwiftUI
 
 /// 应用服务
 class AppService: ObservableObject {
@@ -160,4 +161,15 @@ enum AppError: LocalizedError {
             return "卸载失败: \(reason)"
         }
     }
+}
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .withNavigation(AppManagerPlugin.navigationId)
+        .inRootView()
+        .withDebugBar()
 }

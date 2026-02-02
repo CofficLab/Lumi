@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import OSLog
 
 /// 应用管理器视图模型
@@ -21,7 +22,7 @@ class AppManagerViewModel: ObservableObject {
         }
         return installedApps.filter { app in
             app.displayName.localizedCaseInsensitiveContains(searchText) ||
-            (app.bundleIdentifier?.localizedCaseInsensitiveContains(searchText) ?? false)
+                (app.bundleIdentifier?.localizedCaseInsensitiveContains(searchText) ?? false)
         }
     }
 
@@ -108,4 +109,15 @@ class AppManagerViewModel: ObservableObject {
         selectedApp = nil
         showUninstallConfirmation = false
     }
+}
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .withNavigation(AppManagerPlugin.navigationId)
+        .inRootView()
+        .withDebugBar()
 }
