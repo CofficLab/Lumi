@@ -1,6 +1,9 @@
+import AppKit
 import MagicKit
 import OSLog
 import SwiftUI
+
+// MARK: - Logo View
 
 struct LogoView: View {
     public enum Variant {
@@ -19,13 +22,19 @@ struct LogoView: View {
 
     var variant: Variant = .general
     var design: Design = .smartLight
+    var isActive: Bool = false // For statusBar variant only
 
     var body: some View {
         GeometryReader { _ in
             Group {
                 switch design {
                 case .smartLight:
-                    Logo1()
+                    // 状态栏激活时使用彩色，非激活或其他场景根据 variant 决定
+                    let useMonochrome = variant == .statusBar && !isActive
+                    Logo1(
+                        isMonochrome: useMonochrome,
+                        disableAnimation: variant == .statusBar
+                    )
                 case .elfAssistant:
                     Logo2()
                 case .multiFunction:
@@ -39,6 +48,8 @@ struct LogoView: View {
     }
 }
 
+// MARK: - Logo Variant Modifier
+
 struct LogoVariantModifier: ViewModifier {
     let variant: LogoView.Variant
 
@@ -50,10 +61,6 @@ struct LogoVariantModifier: ViewModifier {
                 .background(Color.black.opacity(0.8))
         case .statusBar:
             content
-                // Status bar optimized: higher contrast, no heavy shadows if possible
-                // Since the logos are complex views, we might just scale them slightly
-                // or trust the Logo implementation.
-                // For now, we apply minimal modification as the inner logos are self-contained.
                 .scaleEffect(0.9)
         case .about:
             content
@@ -64,29 +71,94 @@ struct LogoVariantModifier: ViewModifier {
     }
 }
 
-#Preview("LogoView") {
-    ScrollView {
-        VStack {
-            HStack {
-                LogoView(variant: .general, design: .smartLight)
-                    .frame(width: 250, height: 250)
+// MARK: - Status Bar Icon View Model
 
-                LogoView(variant: .appIcon, design: .smartLight)
-                    .frame(width: 250, height: 250)
+/// 状态栏图标视图模型
+class StatusBarIconViewModel: ObservableObject {
+    @Published var isActive: Bool = false
+    @Published var activeSources: Set<String> = []
+}
+
+// MARK: - Status Bar Icon View
+
+/// 状态栏图标视图（使用 LogoView 作为底层实现）
+struct StatusBarIconView: View {
+    @ObservedObject var viewModel: StatusBarIconViewModel
+
+    var body: some View {
+        GeometryReader { geometry in
+            let size = min(geometry.size.width, geometry.size.height)
+
+            ZStack {
+                LogoView(
+                    variant: .statusBar,
+                    design: .smartLight,
+                    isActive: viewModel.isActive
+                )
+                .infinite()
+            }
+            .frame(width: size, height: size)
+        }
+    }
+}
+
+// MARK: - Interactive Hosting View
+
+/// 能够穿透点击事件的 NSHostingView
+/// 用于状态栏图标，让点击事件穿透到下层的 NSStatusBarButton
+class InteractiveHostingView<Content: View>: NSHostingView<Content> {
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        // 返回 nil 让点击事件穿透到下层的 NSStatusBarButton
+        return nil
+    }
+}
+
+// MARK: - Previews
+
+#Preview("LogoView - All Variants") {
+    ScrollView {
+        VStack(spacing: 40) {
+            // General & App Icon
+            HStack(spacing: 30) {
+                VStack {
+                    LogoView(variant: .general, design: .smartLight)
+                        .frame(width: 120, height: 120)
+                    Text("General").font(.caption)
+                }
+
+                VStack {
+                    LogoView(variant: .appIcon, design: .smartLight)
+                        .frame(width: 120, height: 120)
+                    Text("App Icon").font(.caption)
+                }
+
+                VStack {
+                    LogoView(variant: .about, design: .smartLight)
+                        .frame(width: 120, height: 120)
+                    Text("About").font(.caption)
+                }
             }
 
-            HStack {
-                LogoView(variant: .about)
-                    .frame(width: 250, height: 250)
+            // Status Bar - Inactive
+            HStack(spacing: 30) {
+                VStack {
+                    LogoView(variant: .statusBar, design: .smartLight, isActive: false)
+                        .frame(width: 40, height: 40)
+                        .background(Color.black)
+                    Text("Status Bar (Inactive)").font(.caption)
+                }
 
-                LogoView(variant: .statusBar, design: .smartLight)
-                    .frame(width: 250, height: 250)
+                VStack {
+                    LogoView(variant: .statusBar, design: .smartLight, isActive: true)
+                        .frame(width: 40, height: 40)
+                        .background(Color.black)
+                    Text("Status Bar (Active)").font(.caption)
+                }
             }
         }
-        .infinite()
+        .padding()
     }
-    .frame(height: 800)
-    .frame(width: 600)
+    .frame(height: 600)
 }
 
 #Preview("LogoView - Snapshot") {
