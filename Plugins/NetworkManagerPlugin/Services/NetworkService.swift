@@ -3,12 +3,23 @@ import SystemConfiguration
 import Darwin
 import OSLog
 import MagicKit
+import Combine
 
-class NetworkService: SuperLog {
+class NetworkService: SuperLog, ObservableObject {
     static let emoji = "📡"
     static let verbose = true
 
     static let shared = NetworkService()
+
+    // Published properties for subscribers
+    @Published var downloadSpeed: Double = 0
+    @Published var uploadSpeed: Double = 0
+    @Published var totalDownload: UInt64 = 0
+    @Published var totalUpload: UInt64 = 0
+    
+    // Monitoring state
+    private var monitoringTimer: Timer?
+    private var subscribersCount = 0
 
     // Previous data for speed calculation
     private var lastBytesIn: UInt64 = 0
@@ -27,23 +38,48 @@ class NetworkService: SuperLog {
         lastCheckTime = Date().timeIntervalSince1970
     }
     
-    /// Get current network speeds (bytes/s) and total bytes
-    func getNetworkUsage() -> (downloadSpeed: Double, uploadSpeed: Double, totalDownload: UInt64, totalUpload: UInt64) {
+    func startMonitoring() {
+        subscribersCount += 1
+        if monitoringTimer == nil {
+            os_log("\(self.t)Starting network monitoring")
+            // Reset baseline to avoid huge spike if paused for long time
+            let (In, Out) = getInterfaceCounters()
+            lastBytesIn = In
+            lastBytesOut = Out
+            lastCheckTime = Date().timeIntervalSince1970
+            
+            monitoringTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+                self?.updateNetworkUsage()
+            }
+        }
+    }
+    
+    func stopMonitoring() {
+        subscribersCount = max(0, subscribersCount - 1)
+        if subscribersCount == 0 {
+            os_log("\(self.t)Stopping network monitoring")
+            monitoringTimer?.invalidate()
+            monitoringTimer = nil
+        }
+    }
+    
+    /// Internal update loop
+    private func updateNetworkUsage() {
         let currentTime = Date().timeIntervalSince1970
         let (currentIn, currentOut) = getInterfaceCounters()
         
         let timeDelta = currentTime - lastCheckTime
         
-        var downloadSpeed: Double = 0
-        var uploadSpeed: Double = 0
+        var dSpeed: Double = 0
+        var uSpeed: Double = 0
         
         if timeDelta > 0 {
             // Handle wrap-around or reset
             if currentIn >= lastBytesIn {
-                downloadSpeed = Double(currentIn - lastBytesIn) / timeDelta
+                dSpeed = Double(currentIn - lastBytesIn) / timeDelta
             }
             if currentOut >= lastBytesOut {
-                uploadSpeed = Double(currentOut - lastBytesOut) / timeDelta
+                uSpeed = Double(currentOut - lastBytesOut) / timeDelta
             }
         }
         
@@ -52,7 +88,27 @@ class NetworkService: SuperLog {
         lastBytesOut = currentOut
         lastCheckTime = currentTime
         
-        return (downloadSpeed, uploadSpeed, currentIn, currentOut)
+        // Publish updates
+        DispatchQueue.main.async {
+            self.downloadSpeed = dSpeed
+            self.uploadSpeed = uSpeed
+            self.totalDownload = currentIn
+            self.totalUpload = currentOut
+        }
+    }
+    
+    /// Get current network speeds (bytes/s) and total bytes (Legacy/Direct Access)
+    /// Note: Calling this manually might interfere with the automatic monitoring if not careful,
+    /// but we keep it for one-off checks if needed.
+    func getNetworkUsage() -> (downloadSpeed: Double, uploadSpeed: Double, totalDownload: UInt64, totalUpload: UInt64) {
+        // If monitoring is active, return cached values to avoid messing up the delta
+        if monitoringTimer != nil {
+            return (downloadSpeed, uploadSpeed, totalDownload, totalUpload)
+        }
+        
+        // Otherwise perform a manual check (which updates state)
+        updateNetworkUsage()
+        return (downloadSpeed, uploadSpeed, totalDownload, totalUpload)
     }
     
     /// Get aggregated bytes In/Out from all interfaces

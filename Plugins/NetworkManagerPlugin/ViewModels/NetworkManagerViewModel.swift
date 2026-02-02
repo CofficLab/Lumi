@@ -64,6 +64,11 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
         }
     }
     
+    deinit {
+        NetworkService.shared.stopMonitoring()
+        timer?.invalidate()
+    }
+    
     func startProcessMonitoring() {
         ProcessMonitorService.shared.startMonitoring()
     }
@@ -77,12 +82,19 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
             os_log("\(self.t)开始网络监控")
         }
 
-        // High frequency update for speed (1s)
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.updateStats()
+        // Subscribe to NetworkService updates
+        NetworkService.shared.startMonitoring()
+        
+        NetworkService.shared.$downloadSpeed
+            .combineLatest(NetworkService.shared.$uploadSpeed, NetworkService.shared.$totalDownload, NetworkService.shared.$totalUpload)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] (down, up, totalDown, totalUp) in
+                self?.networkState.downloadSpeed = down
+                self?.networkState.uploadSpeed = up
+                self?.networkState.totalDownload = totalDown
+                self?.networkState.totalUpload = totalUp
             }
-        }
+            .store(in: &cancellables)
 
         // Initial slow fetch
         Task {
@@ -90,20 +102,14 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
         }
 
         // Slower update for IP/WiFi/Ping (every 10s)
-        Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 await self?.updateSlowStats()
             }
         }
     }
     
-    private func updateStats() {
-        let (down, up, totalDown, totalUp) = NetworkService.shared.getNetworkUsage()
-        networkState.downloadSpeed = down
-        networkState.uploadSpeed = up
-        networkState.totalDownload = totalDown
-        networkState.totalUpload = totalUp
-    }
+    // Removed updateStats() as it is replaced by Combine subscription
     
     private func updateSlowStats() async {
         // WiFi
@@ -122,10 +128,6 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
         if networkState.publicIP == nil {
             networkState.publicIP = await NetworkService.shared.getPublicIP()
         }
-    }
-    
-    deinit {
-        timer?.invalidate()
     }
     
     // Formatting Helpers
