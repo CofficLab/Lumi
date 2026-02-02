@@ -21,6 +21,11 @@ struct AppModel: Identifiable, Hashable {
         ByteCountFormatter.string(fromByteCount: size, countStyle: .file)
     }
 
+    // 某些应用的图标文件可能存在问题，强制使用系统图标
+    private static let forceSystemIconBundleIDs: Set<String> = [
+        "com.apple.iBooksX"
+    ]
+
     init(bundleURL: URL) {
         self.bundleURL = bundleURL
 
@@ -35,7 +40,12 @@ struct AppModel: Identifiable, Hashable {
         self.iconFileName = iconFile
 
         // 获取应用图标
-        if let bundle = bundle,
+        var loadedIcon: NSImage?
+        
+        let shouldForceSystemIcon = bundleIdentifier.map { Self.forceSystemIconBundleIDs.contains($0) } ?? false
+        
+        if !shouldForceSystemIcon,
+           let bundle = bundle,
            let iconFile = iconFile {
             let iconPath = bundle.bundleURL.appendingPathComponent("Contents/Resources/\(iconFile)")
             // 处理带扩展名和不带扩展名的情况
@@ -45,10 +55,17 @@ struct AppModel: Identifiable, Hashable {
             } else {
                 finalIconPath = iconPath
             }
-            self.icon = NSImage(contentsOf: finalIconPath)
+            loadedIcon = NSImage(contentsOf: finalIconPath)
+        }
+        
+        if let icon = loadedIcon, icon.isValid, icon.size.width > 0 {
+            self.icon = icon
         } else {
             // 尝试从工作空间获取图标
-            self.icon = NSWorkspace.shared.icon(forFile: bundleURL.path)
+            let icon = NSWorkspace.shared.icon(forFile: bundleURL.path)
+            // 显式设置大小以获取更高清晰度的图标（如果可用）
+            icon.size = NSSize(width: 64, height: 64)
+            self.icon = icon
         }
     }
     
@@ -61,7 +78,11 @@ struct AppModel: Identifiable, Hashable {
         self.iconFileName = iconFileName
         self.size = size
         
-        if let iconFile = iconFileName {
+        var loadedIcon: NSImage?
+        
+        let shouldForceSystemIcon = identifier.map { Self.forceSystemIconBundleIDs.contains($0) } ?? false
+        
+        if !shouldForceSystemIcon, let iconFile = iconFileName {
             let iconPath = bundleURL.appendingPathComponent("Contents/Resources/\(iconFile)")
             let finalIconPath: URL
             if iconPath.pathExtension.isEmpty {
@@ -69,9 +90,15 @@ struct AppModel: Identifiable, Hashable {
             } else {
                 finalIconPath = iconPath
             }
-            self.icon = NSImage(contentsOf: finalIconPath)
+            loadedIcon = NSImage(contentsOf: finalIconPath)
+        }
+        
+        if let icon = loadedIcon, icon.isValid, icon.size.width > 0 {
+            self.icon = icon
         } else {
-            self.icon = NSWorkspace.shared.icon(forFile: bundleURL.path)
+            let icon = NSWorkspace.shared.icon(forFile: bundleURL.path)
+            icon.size = NSSize(width: 64, height: 64)
+            self.icon = icon
         }
     }
 
