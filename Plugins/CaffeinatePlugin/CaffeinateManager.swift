@@ -106,6 +106,9 @@ class CaffeinateManager {
             if duration > 0 {
                 startTimer(duration: duration)
             }
+            
+            // 通知系统更新状态栏外观
+            NotificationCenter.postRequestStatusBarAppearanceUpdate(isActive: true, source: "CaffeinatePlugin")
         } else {
             if systemResult != kIOReturnSuccess {
                 logger.error("Failed to create system sleep assertion: \(systemResult)")
@@ -146,6 +149,9 @@ class CaffeinateManager {
             timer = nil
 
             logger.info("Caffeinate deactivated successfully")
+            
+            // 通知系统恢复状态栏外观
+            NotificationCenter.postRequestStatusBarAppearanceUpdate(isActive: false, source: "CaffeinatePlugin")
         } else {
             if systemResult != kIOReturnSuccess {
                 logger.error("Failed to release system sleep assertion: \(systemResult)")

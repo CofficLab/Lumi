@@ -37,6 +37,10 @@ protocol SuperPlugin: Actor {
     /// - Returns: 导航入口数组，如果不需要则返回nil
     @MainActor func addNavigationEntries() -> [NavigationEntry]?
 
+    /// 添加系统菜单栏菜单项
+    /// - Returns: 要添加到系统菜单栏的菜单项数组，如果不需要则返回nil
+    @MainActor func addStatusBarMenuItems() -> [NSMenuItem]?
+
     // MARK: - Lifecycle Hooks
 
     /// 插件注册完成后的回调
@@ -90,6 +94,9 @@ extension SuperPlugin {
 
     /// 默认实现：不提供导航入口
     @MainActor func addNavigationEntries() -> [NavigationEntry]? { nil }
+
+    /// 默认实现：不提供菜单项
+    @MainActor func addStatusBarMenuItems() -> [NSMenuItem]? { nil }
     
     // MARK: - Lifecycle Hooks Default Implementation
     
