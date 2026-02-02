@@ -175,7 +175,7 @@ jobs:
             NOTES="## Release $CURRENT_TAG\n\nInitial release"
           else
             NOTES="## Release $CURRENT_TAG\n\n### Changes since $PREVIOUS_TAG\n"
-            NOTES="$NOTES\n$(git log ${PREVIOUS_TAG}..${CURRENT_TAG} --no-merges --pretty=format:'- %s' | head -20)"
+            NOTES="$NOTES\n$(git log ${PREVIOUS_TAG}..${CURRENT_TAG} --no-merges --pretty=format:'%s' | sort | uniq -c | sort -rn | awk '{print "- "$2}' | head -20)"
           fi
           echo -e "$NOTES" > changelog.md
           echo "### 📋 Release Notes" >> $GITHUB_STEP_SUMMARY
