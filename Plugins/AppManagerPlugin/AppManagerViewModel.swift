@@ -35,14 +35,24 @@ class AppManagerViewModel: ObservableObject {
         ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
     }
 
+    /// 从缓存加载应用列表（首次加载时调用）
+    func loadFromCache() async {
+        let apps = await appService.scanInstalledApps(force: false)
+        if !apps.isEmpty {
+            installedApps = apps
+            logger.info("从缓存加载了 \(apps.count) 个应用")
+        }
+    }
+
     /// 扫描应用
-    func scanApps() async {
+    /// - Parameter force: 是否强制重新扫描
+    func scanApps(force: Bool = false) async {
         isLoading = true
         defer { isLoading = false }
 
         do {
             // 先扫描应用列表
-            let apps = await appService.scanInstalledApps()
+            let apps = await appService.scanInstalledApps(force: force)
 
             // 立即显示应用列表（不等待大小计算）
             installedApps = apps
@@ -51,13 +61,23 @@ class AppManagerViewModel: ObservableObject {
             // 在后台逐个计算大小，不阻塞 UI
             for index in apps.indices {
                 var sizedApp = apps[index]
-                sizedApp.size = await appService.calculateAppSize(for: sizedApp)
+                
+                // 仅当大小为0（未缓存）时才计算
+                if sizedApp.size == 0 {
+                    sizedApp.size = await appService.calculateAppSize(for: sizedApp)
 
-                // 更新单个应用的大小（主线程）
-                await MainActor.run {
-                    installedApps[index] = sizedApp
+                    // 更新单个应用的大小（主线程）
+                    await MainActor.run {
+                        // 确保索引仍然有效（防止在扫描期间卸载应用导致崩溃）
+                        if index < installedApps.count && installedApps[index].id == sizedApp.id {
+                            installedApps[index] = sizedApp
+                        }
+                    }
                 }
             }
+            
+            // 扫描结束后保存缓存
+            appService.saveCache()
 
             logger.info("应用扫描完成，共 \(self.installedApps.count) 个应用")
         } catch {
@@ -69,7 +89,7 @@ class AppManagerViewModel: ObservableObject {
     /// 刷新应用列表
     func refresh() {
         Task {
-            await scanApps()
+            await scanApps(force: true)
         }
     }
 

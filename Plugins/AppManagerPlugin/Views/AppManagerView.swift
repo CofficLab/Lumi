@@ -25,7 +25,14 @@ struct AppManagerView: View {
         .searchable(text: $viewModel.searchText, prompt: "搜索应用")
         .onAppear {
             if viewModel.installedApps.isEmpty {
-                viewModel.refresh()
+                // 先尝试从缓存加载
+                Task {
+                    await viewModel.loadFromCache()
+                    // 如果缓存为空，则进行完整扫描
+                    if viewModel.installedApps.isEmpty {
+                        viewModel.refresh()
+                    }
+                }
             }
         }
         .alert("卸载确认", isPresented: $showUninstallAlert, presenting: viewModel.selectedApp) { app in

@@ -6,6 +6,7 @@ import SwiftUI
 /// 应用服务
 class AppService: ObservableObject {
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "AppService")
+    private let cacheManager = CacheManager.shared
 
     // 标准应用安装路径
     private let standardPaths = [
@@ -30,13 +31,15 @@ class AppService: ObservableObject {
     }
 
     /// 扫描已安装的应用（在后台线程执行）
-    func scanInstalledApps() async -> [AppModel] {
+    /// - Parameter force: 是否强制重新扫描（忽略缓存）
+    func scanInstalledApps(force: Bool = false) async -> [AppModel] {
         return await withCheckedContinuation { continuation in
             // 在后台队列执行文件操作
             DispatchQueue.global(qos: .userInitiated).async {
                 do {
-                    self.logger.info("开始扫描已安装应用")
+                    self.logger.info("开始扫描已安装应用 (强制模式: \(force))")
                     var apps: [AppModel] = []
+                    var validPaths = Set<String>()
                     let paths = self.getUserApplicationPaths()
 
                     for path in paths {
@@ -45,15 +48,41 @@ class AppService: ObservableObject {
 
                         if let directoryContents = try? FileManager.default.contentsOfDirectory(
                             at: url,
-                            includingPropertiesForKeys: nil,
+                            includingPropertiesForKeys: [.contentModificationDateKey],
                             options: [.skipsHiddenFiles]
                         ) {
                             for appURL in directoryContents where appURL.pathExtension == "app" {
-                                let app = AppModel(bundleURL: appURL)
-                                apps.append(app)
+                                validPaths.insert(appURL.path)
+                                
+                                // 获取文件修改时间
+                                let resourceValues = try? appURL.resourceValues(forKeys: [.contentModificationDateKey])
+                                let modDate = resourceValues?.contentModificationDate ?? Date()
+                                
+                                // 尝试从缓存加载 (如果未强制刷新)
+                                if !force, let cachedItem = self.cacheManager.getCachedApp(at: appURL.path, currentModificationDate: modDate) {
+                                    let app = AppModel(
+                                        bundleURL: appURL,
+                                        name: cachedItem.name,
+                                        identifier: cachedItem.identifier,
+                                        version: cachedItem.version,
+                                        iconFileName: cachedItem.iconFileName,
+                                        size: cachedItem.size
+                                    )
+                                    apps.append(app)
+                                } else {
+                                    let app = AppModel(bundleURL: appURL)
+                                    apps.append(app)
+                                }
                             }
                         }
                     }
+
+                    // 清理无效缓存并保存
+                    self.cacheManager.cleanInvalidCache(keeping: validPaths)
+                    self.cacheManager.saveCache()
+                    
+                    let stats = self.cacheManager.getStats()
+                    self.logger.info("缓存统计: 命中 \(stats.hitCount), 未命中 \(stats.missCount), 命中率 \(String(format: "%.1f", stats.hitRate * 100))%")
 
                     let sortedApps = apps.sorted {
                         $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
@@ -89,10 +118,20 @@ class AppService: ObservableObject {
                         }
                     }
                 }
+                
+                // 更新缓存
+                let resourceValues = try? app.bundleURL.resourceValues(forKeys: [.contentModificationDateKey])
+                let modDate = resourceValues?.contentModificationDate ?? Date()
+                self.cacheManager.updateCache(for: app, size: totalSize, modificationDate: modDate)
 
                 continuation.resume(returning: totalSize)
             }
         }
+    }
+    
+    /// 保存缓存
+    func saveCache() {
+        cacheManager.saveCache()
     }
 
     /// 卸载应用
