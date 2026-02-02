@@ -1,441 +1,306 @@
 import Observation
 import SwiftUI
+import Combine
 
 /// 防休眠设置视图
 struct CaffeinateSettingsView: View {
     @State private var manager = CaffeinateManager.shared
-    @State private var selectedTab: DisplayTab = .quick
     @State private var customHours: Int = 1
     @State private var customMinutes: Int = 0
-    @State private var isRunning: Bool = false
-
-    enum DisplayTab: String, CaseIterable {
-        case quick = "快速设置"
-        case custom = "自定义"
-        case status = "状态"
-    }
-
+    @State private var now = Date()
+    
+    // 定时器用于更新 UI
+    @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    
     var body: some View {
-        VStack(spacing: 0) {
-            // 顶部工具栏
-            toolbar
-
-            Divider()
-
-            // 标签页选择器
-            tabPicker
-                .padding(.vertical, 8)
-
-            // 内容区域
-            ScrollView {
-                VStack(spacing: 20) {
-                    switch selectedTab {
-                    case .quick:
-                        quickSettingsView
-                    case .custom:
-                        customSettingsView
-                    case .status:
-                        statusView
-                    }
-                }
-                .padding(20)
+        ScrollView {
+            VStack(spacing: 24) {
+                // 1. 状态卡片 (Hero Section)
+                statusCard
+                
+                // 2. 快速设置 (Grid)
+                quickSettingsSection
+                
+                // 3. 自定义时长 (Card)
+                customSettingsSection
+                
+                // 4. 说明信息
+                infoSection
             }
+            .padding(24)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.controlBackgroundColor))
-        .navigationTitle("防休眠设置")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button(action: {
-                    withAnimation(.spring(response: 0.3)) {
-                        if manager.isActive {
-                            manager.deactivate()
-                        } else {
-                            manager.activate()
-                        }
-                    }
-                }) {
-                    Image(systemName: manager.isActive ? "stop.fill" : "play.fill")
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(manager.isActive ? .red : .green)
+        .background(Color(nsColor: .windowBackgroundColor)) // 更好的背景色支持
+        .navigationTitle("防休眠控制")
+        .onReceive(timer) { input in
+            if manager.isActive {
+                now = input
             }
         }
         .onAppear {
-            updateTimer()
+            // 初始化自定义时间为默认值或上次记忆的值(如果有)
         }
     }
-
-    // MARK: - Toolbar
-
-    private var toolbar: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Image(systemName: manager.isActive ? "bolt.fill" : "bolt")
-                        .foregroundStyle(manager.isActive ? .yellow : .secondary)
-                    Text(manager.isActive ? "已激活" : "未激活")
-                        .font(.headline)
-                        .foregroundStyle(manager.isActive ? .green : .secondary)
+    
+    // MARK: - Status Card
+    
+    private var statusCard: some View {
+        VStack(spacing: 20) {
+            HStack {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label(manager.isActive ? "正在运行" : "已暂停",
+                          systemImage: manager.isActive ? "bolt.fill" : "moon.zzz.fill")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundStyle(manager.isActive ? .white : .primary)
+                    
+                    if manager.isActive {
+                        Text("已持续运行: \(formatActiveDuration())")
+                            .font(.system(.body, design: .monospaced))
+                            .foregroundStyle(manager.isActive ? .white.opacity(0.9) : .secondary)
+                        
+                        if manager.duration > 0 {
+                            Text("剩余时间: \(formatRemainingDuration())")
+                                .font(.caption)
+                                .foregroundStyle(manager.isActive ? .white.opacity(0.7) : .secondary)
+                        }
+                    } else {
+                        Text("系统将遵循默认电源策略")
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-
-                if manager.isActive {
-                    Text("已运行: \(formatActiveDuration())")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text("系统正常休眠")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            Spacer()
-        }
-        .padding()
-        .background(Color(nsColor: .controlBackgroundColor))
-    }
-
-    // MARK: - Tab Picker
-
-    private var tabPicker: some View {
-        HStack(spacing: 0) {
-            ForEach(DisplayTab.allCases, id: \.rawValue) { tab in
+                
+                Spacer()
+                
+                // 大开关按钮
                 Button(action: {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        selectedTab = tab
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                        manager.toggle()
                     }
                 }) {
-                    Text(tab.rawValue)
-                        .font(.subheadline)
-                        .fontWeight(selectedTab == tab ? .semibold : .regular)
-                        .foregroundStyle(selectedTab == tab ? .primary : .secondary)
+                    Image(systemName: manager.isActive ? "power" : "power")
+                        .font(.system(size: 32, weight: .bold))
+                        .foregroundStyle(manager.isActive ? .white : .green)
+                        .frame(width: 70, height: 70)
+                        .background(
+                            Circle()
+                                .fill(manager.isActive ? .white.opacity(0.2) : Color.accentColor.opacity(0.1))
+                        )
+                        .overlay(
+                            Circle()
+                                .stroke(manager.isActive ? .white : Color.accentColor, lineWidth: 2)
+                                .opacity(0.5)
+                        )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(manager.isActive ? "停止防休眠" : "启动防休眠")
+            }
+        }
+        .padding(24)
+        .background(
+            ZStack {
+                if manager.isActive {
+                    LinearGradient(
+                        colors: [Color.green.opacity(0.8), Color.blue.opacity(0.8)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                } else {
+                    Color(nsColor: .controlBackgroundColor)
+                }
+            }
+        )
+        .cornerRadius(20)
+        .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
+    }
+    
+    // MARK: - Quick Settings
+    
+    private var quickSettingsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Label("快速启动", systemImage: "bolt.badge.clock.fill")
+                .font(.headline)
+                .foregroundStyle(.secondary)
+            
+            LazyVGrid(columns: [
+                GridItem(.flexible()),
+                GridItem(.flexible())
+            ], spacing: 12) {
+                ForEach(CaffeinateManager.commonDurations, id: \.hashValue) { option in
+                    Button(action: {
+                        activateWithOption(option)
+                    }) {
+                        HStack {
+                            Image(systemName: iconForOption(option))
+                                .font(.title3)
+                            
+                            Text(option.displayName)
+                                .fontWeight(.medium)
+                            
+                            Spacer()
+                            
+                            if manager.isActive && manager.duration == option.timeInterval {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
+                            }
+                        }
+                        .padding()
+                        .background(Color(nsColor: .controlBackgroundColor))
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(manager.isActive && manager.duration == option.timeInterval ? Color.green : Color.clear, lineWidth: 2)
+                        )
+                        .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 2)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+    
+    // MARK: - Custom Settings
+    
+    private var customSettingsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Label("自定义时长", systemImage: "slider.horizontal.3")
+                .font(.headline)
+                .foregroundStyle(.secondary)
+            
+            VStack(spacing: 20) {
+                HStack(spacing: 20) {
+                    timeStepper(value: $customHours, range: 0...24, unit: "小时")
+                    Divider().frame(height: 40)
+                    timeStepper(value: $customMinutes, range: 0...59, step: 5, unit: "分钟")
+                }
+                
+                Button(action: activateWithCustomDuration) {
+                    Text("启动自定义倒计时")
+                        .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
-                        .background(
-                            selectedTab == tab ?
-                                Color.accentColor.opacity(0.1) : Color.clear
-                        )
+                        .background(Color.accentColor)
+                        .foregroundStyle(.white)
+                        .cornerRadius(10)
+                }
+                .buttonStyle(.plain)
+                .disabled(customHours == 0 && customMinutes == 0)
+                .opacity((customHours == 0 && customMinutes == 0) ? 0.6 : 1.0)
+            }
+            .padding(20)
+            .background(Color(nsColor: .controlBackgroundColor))
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+        }
+    }
+    
+    private func timeStepper(value: Binding<Int>, range: ClosedRange<Int>, step: Int = 1, unit: String) -> some View {
+        VStack(spacing: 4) {
+            Text(unit)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            
+            HStack {
+                Button(action: { if value.wrappedValue > range.lowerBound { value.wrappedValue -= step } }) {
+                    Image(systemName: "minus.circle.fill")
+                        .foregroundStyle(.secondary.opacity(0.5))
+                        .font(.title2)
+                }
+                .buttonStyle(.plain)
+                
+                Text("\(value.wrappedValue)")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .frame(minWidth: 40)
+                    .multilineTextAlignment(.center)
+                
+                Button(action: { if value.wrappedValue < range.upperBound { value.wrappedValue += step } }) {
+                    Image(systemName: "plus.circle.fill")
+                        .foregroundStyle(.secondary.opacity(0.5))
+                        .font(.title2)
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 20)
     }
-
-    // MARK: - Quick Settings View
-
-    private var quickSettingsView: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("选择预设时长")
-                .font(.headline)
-                .padding(.bottom, 8)
-
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-            ], spacing: 12) {
-                ForEach(CaffeinateManager.commonDurations, id: \.hashValue) { option in
-                    DurationButton(
-                        option: option,
-                        isSelected: manager.isActive && manager.duration == option.timeInterval,
-                        action: {
-                            activateWithOption(option)
-                        }
-                    )
-                }
-            }
+    
+    // MARK: - Info Section
+    
+    private var infoSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("关于防休眠", systemImage: "info.circle")
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundStyle(.secondary)
+            
+            Text("防休眠功能可以阻止系统在空闲时自动进入睡眠状态，适用于长时间下载、编译代码或演示等场景。当倒计时结束或手动停止后，系统将恢复正常的电源管理策略。")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .lineSpacing(4)
         }
+        .padding(.top, 10)
     }
-
-    // MARK: - Custom Settings View
-
-    private var customSettingsView: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            // 自定义时长输入
-            VStack(alignment: .leading, spacing: 12) {
-                Text("设置自定义时长")
-                    .font(.headline)
-
-                HStack(spacing: 16) {
-                    // 小时输入
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("小时")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-
-                        Stepper(value: $customHours, in: 0 ... 24) {
-                            Text("\(customHours) 小时")
-                                .font(.title3)
-                                .fontWeight(.semibold)
-                                .frame(minWidth: 80)
-                        }
-                    }
-
-                    // 分钟输入
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("分钟")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-
-                        Stepper(value: $customMinutes, in: 0 ... 59, step: 5) {
-                            Text("\(customMinutes) 分钟")
-                                .font(.title3)
-                                .fontWeight(.semibold)
-                                .frame(minWidth: 80)
-                        }
-                    }
-
-                    Spacer()
-                }
-                .padding()
-                .background(Color(.controlBackgroundColor))
-                .cornerRadius(12)
-            }
-
-            // 总时长显示
-            let totalSeconds = customHours * 3600 + customMinutes * 60
-            VStack(alignment: .leading, spacing: 8) {
-                Text("总计时长")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                Text(formatDuration(TimeInterval(totalSeconds)))
-                    .font(.title2)
-                    .fontWeight(.bold)
-            }
-            .padding()
-            .background(Color.accentColor.opacity(0.1))
-            .cornerRadius(12)
-
-            // 启动按钮
-            Button(action: {
-                activateWithCustomDuration()
-            }) {
-                HStack {
-                    Image(systemName: "play.fill")
-                    Text("启动防休眠")
-                }
-                .font(.headline)
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(
-                    LinearGradient(
-                        colors: [.blue, .purple],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .cornerRadius(12)
-            }
-            .buttonStyle(.plain)
-            .disabled(totalSeconds == 0)
-            .opacity(totalSeconds == 0 ? 0.5 : 1)
-        }
-    }
-
-    // MARK: - Status View
-
-    private var statusView: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            if manager.isActive {
-                // 激活状态卡片
-                VStack(alignment: .leading, spacing: 16) {
-                    HStack {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                        Text("防休眠已激活")
-                            .font(.headline)
-                    }
-
-                    Divider()
-
-                    if let startTime = manager.startTime {
-                        VStack(alignment: .leading, spacing: 8) {
-                            StatusRow(label: "开始时间", value: formatDate(startTime))
-                            StatusRow(label: "已运行时间", value: formatActiveDuration())
-                            StatusRow(label: "设定时长", value: formatDuration(manager.duration))
-                        }
-                    }
-                }
-                .padding()
-                .background(Color.green.opacity(0.1))
-                .cornerRadius(12)
-            } else {
-                // 未激活状态
-                VStack(spacing: 16) {
-                    Image(systemName: "moon.zzz")
-                        .font(.system(size: 48))
-                        .foregroundStyle(.secondary)
-
-                    Text("防休眠未激活")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-
-                    Text("系统将按照正常设置休眠")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(40)
-                .background(Color(.controlBackgroundColor))
-                .cornerRadius(12)
-            }
-
-            // 统计信息
-            VStack(alignment: .leading, spacing: 12) {
-                Text("会话信息")
-                    .font(.headline)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("防止系统进入空闲休眠状态，保持屏幕和系统运行。适用于长时间下载、渲染、编译等场景。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding()
-                .background(Color(.controlBackgroundColor))
-                .cornerRadius(12)
-            }
-        }
-    }
-
-    // MARK: - Helper Views
-
-    struct DurationButton: View {
-        let option: CaffeinateManager.DurationOption
-        let isSelected: Bool
-        let action: () -> Void
-
-        var body: some View {
-            Button(action: action) {
-                VStack(spacing: 12) {
-                    Text(option.icon)
-                        .font(.title)
-
-                    Text(option.displayName)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-
-                    if isSelected {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                            .font(.title3)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .padding(16)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(isSelected ?
-                            Color.accentColor.opacity(0.15) :
-                            Color(.controlBackgroundColor)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
-                        )
-                )
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    struct StatusRow: View {
-        let label: String
-        let value: String
-
-        var body: some View {
-            HStack {
-                Text(label)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Text(value)
-                    .fontWeight(.medium)
-            }
-            .font(.subheadline)
-        }
-    }
-
-    // MARK: - Helper Methods
-
+    
+    // MARK: - Helpers
+    
     private func activateWithOption(_ option: CaffeinateManager.DurationOption) {
-        if manager.isActive {
-            manager.deactivate()
+        withAnimation {
+            if manager.isActive {
+                manager.deactivate()
+            }
+            manager.activate(duration: option.timeInterval)
         }
-        manager.activate(duration: option.timeInterval)
     }
-
+    
     private func activateWithCustomDuration() {
         let totalSeconds = customHours * 3600 + customMinutes * 60
-        if manager.isActive {
-            manager.deactivate()
-        }
-        manager.activate(duration: TimeInterval(totalSeconds))
-        selectedTab = .status
-    }
-
-    private func formatDuration(_ duration: TimeInterval) -> String {
-        if duration == 0 {
-            return "永久"
-        }
-
-        let hours = Int(duration) / 3600
-        let minutes = Int(duration) / 60 % 60
-
-        if hours > 0 && minutes > 0 {
-            return "\(hours) 小时 \(minutes) 分钟"
-        } else if hours > 0 {
-            return "\(hours) 小时"
-        } else {
-            return "\(minutes) 分钟"
+        withAnimation {
+            if manager.isActive {
+                manager.deactivate()
+            }
+            manager.activate(duration: TimeInterval(totalSeconds))
         }
     }
-
-    private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .none
-        formatter.timeStyle = .medium
-        return formatter.string(from: date)
+    
+    private func iconForOption(_ option: CaffeinateManager.DurationOption) -> String {
+        switch option {
+        case .indefinite: return "infinity"
+        case .minutes: return "timer"
+        case .hours: return "hourglass"
+        }
     }
-
+    
     private func formatActiveDuration() -> String {
-        guard let activeDuration = manager.getActiveDuration() else {
-            return "0 秒"
-        }
-
-        let hours = Int(activeDuration) / 3600
-        let minutes = Int(activeDuration) / 60 % 60
-        let seconds = Int(activeDuration) % 60
-
+        guard let activeDuration = manager.getActiveDuration() else { return "00:00" }
+        return formatTimeInterval(activeDuration)
+    }
+    
+    private func formatRemainingDuration() -> String {
+        guard let startTime = manager.startTime else { return "" }
+        // 使用 now 确保视图刷新依赖
+        _ = now 
+        let elapsed = Date().timeIntervalSince(startTime)
+        let remaining = max(0, manager.duration - elapsed)
+        return formatTimeInterval(remaining)
+    }
+    
+    private func formatTimeInterval(_ interval: TimeInterval) -> String {
+        let hours = Int(interval) / 3600
+        let minutes = Int(interval) / 60 % 60
+        let seconds = Int(interval) % 60
+        
         if hours > 0 {
             return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
         } else {
             return String(format: "%02d:%02d", minutes, seconds)
         }
     }
-
-    private func updateTimer() {
-        // 每秒更新一次界面
-        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            if manager.isActive {
-                // 触发视图更新
-            }
-        }
-    }
 }
 
-// MARK: - Preview
+// MARK: - Previews
 
 #Preview {
     CaffeinateSettingsView()
-        .frame(width: 600, height: 500)
+        .frame(width: 400, height: 600)
 }
 
-#Preview("App") {
-    ContentLayout()
-        .hideSidebar()
-        .hideTabPicker()
-        .withNavigation(CaffeinatePlugin.navigationId)
-        .inRootView()
-        .withDebugBar()
-}
