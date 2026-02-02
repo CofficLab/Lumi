@@ -71,14 +71,6 @@ struct LogoVariantModifier: ViewModifier {
     }
 }
 
-// MARK: - Status Bar Icon View Model
-
-/// 状态栏图标视图模型
-class StatusBarIconViewModel: ObservableObject {
-    @Published var isActive: Bool = false
-    @Published var activeSources: Set<String> = []
-}
-
 // MARK: - Status Bar Icon View
 
 /// 状态栏图标视图（使用 LogoView 作为底层实现）
