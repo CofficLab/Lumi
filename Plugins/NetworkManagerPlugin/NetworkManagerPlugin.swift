@@ -21,6 +21,26 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
     
     init() {}
     
+    // MARK: - Lifecycle Hooks
+    
+    nonisolated func onRegister() {
+        Task { @MainActor in
+            NetworkStatusBarController.shared.start()
+        }
+    }
+    
+    nonisolated func onEnable() {
+        Task { @MainActor in
+            NetworkStatusBarController.shared.start()
+        }
+    }
+    
+    nonisolated func onDisable() {
+        Task { @MainActor in
+            NetworkStatusBarController.shared.stop()
+        }
+    }
+    
     // MARK: - UI Contributions
     
     @MainActor func addNavigationEntries() -> [NavigationEntry]? {

@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(git checkout:*)",
-      "mcp__web-search-prime__webSearchPrime",
-      "mcp__zread__search_doc"
-    ]
-  }
-}

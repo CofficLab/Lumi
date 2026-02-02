@@ -4,44 +4,52 @@ struct NetworkDashboardView: View {
     @StateObject private var viewModel = NetworkManagerViewModel()
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                // Header Stats
-                HStack(spacing: 20) {
-                    SpeedCard(
-                        title: "下载",
-                        speed: viewModel.networkState.downloadSpeed,
-                        total: viewModel.networkState.totalDownload,
-                        icon: "arrow.down.circle.fill",
-                        color: .green,
-                        viewModel: viewModel
-                    )
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Header Stats
+                    HStack(spacing: 20) {
+                        SpeedCard(
+                            title: "下载",
+                            speed: viewModel.networkState.downloadSpeed,
+                            total: viewModel.networkState.totalDownload,
+                            icon: "arrow.down.circle.fill",
+                            color: .green,
+                            viewModel: viewModel
+                        )
 
-                    SpeedCard(
-                        title: "上传",
-                        speed: viewModel.networkState.uploadSpeed,
-                        total: viewModel.networkState.totalUpload,
-                        icon: "arrow.up.circle.fill",
-                        color: .blue,
-                        viewModel: viewModel
-                    )
+                        SpeedCard(
+                            title: "上传",
+                            speed: viewModel.networkState.uploadSpeed,
+                            total: viewModel.networkState.totalUpload,
+                            icon: "arrow.up.circle.fill",
+                            color: .blue,
+                            viewModel: viewModel
+                        )
+                    }
+                    .padding(.horizontal)
+
+                    Divider()
+
+                    // Info Grid
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                        NetworkInfoCard(title: "内网 IP", value: viewModel.networkState.localIP ?? "未知", icon: "pc")
+                        NetworkInfoCard(title: "公网 IP", value: viewModel.networkState.publicIP ?? "获取中...", icon: "globe")
+                        NetworkInfoCard(title: "Wi-Fi", value: viewModel.networkState.wifiSSID ?? "未连接", icon: "wifi")
+                        NetworkInfoCard(title: "信号强度", value: "\(viewModel.networkState.wifiSignalStrength) dBm", icon: "antenna.radiowaves.left.and.right")
+                        NetworkInfoCard(title: "延迟 (Ping)", value: String(format: "%.1f ms", viewModel.networkState.ping), icon: "stopwatch")
+                        NetworkInfoCard(title: "接口", value: viewModel.networkState.interfaceName, icon: "cable.connector")
+                    }
+                    .padding(.horizontal)
                 }
-                .padding(.horizontal)
-
-                Divider()
-
-                // Info Grid
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                    NetworkInfoCard(title: "内网 IP", value: viewModel.networkState.localIP ?? "未知", icon: "pc")
-                    NetworkInfoCard(title: "公网 IP", value: viewModel.networkState.publicIP ?? "获取中...", icon: "globe")
-                    NetworkInfoCard(title: "Wi-Fi", value: viewModel.networkState.wifiSSID ?? "未连接", icon: "wifi")
-                    NetworkInfoCard(title: "信号强度", value: "\(viewModel.networkState.wifiSignalStrength) dBm", icon: "antenna.radiowaves.left.and.right")
-                    NetworkInfoCard(title: "延迟 (Ping)", value: String(format: "%.1f ms", viewModel.networkState.ping), icon: "stopwatch")
-                    NetworkInfoCard(title: "接口", value: viewModel.networkState.interfaceName, icon: "cable.connector")
-                }
-                .padding(.horizontal)
+                .padding(.vertical)
             }
-            .padding(.vertical)
+            .frame(minHeight: 200, maxHeight: 350) // 限制概览区域高度
+            
+            Divider()
+            
+            // 进程监控列表
+            ProcessNetworkListView(viewModel: viewModel)
         }
         .background(Color(nsColor: .controlBackgroundColor))
         .navigationTitle(NetworkManagerPlugin.displayName)

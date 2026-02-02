@@ -1,9 +1,14 @@
 import Foundation
 import SwiftUI
 import Combine
+import OSLog
+import MagicKit
 
 @MainActor
-class HostsManagerViewModel: ObservableObject {
+class HostsManagerViewModel: ObservableObject, SuperLog {
+    static let emoji = "🌐"
+    static let verbose = false
+
     @Published var entries: [HostEntry] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
@@ -72,27 +77,41 @@ class HostsManagerViewModel: ObservableObject {
     }
     
     func loadHosts() async {
+        if Self.verbose {
+            os_log("\(self.t)加载 hosts 文件")
+        }
         isLoading = true
         errorMessage = nil
         do {
             let content = try await HostsFileService.shared.readHosts()
             self.entries = HostsParser.parse(content: content)
+            if Self.verbose {
+                os_log("\(self.t)hosts 文件加载成功: \(self.entries.count) 个条目")
+            }
         } catch {
-            errorMessage = "Failed to load hosts: \(error.localizedDescription)"
+            os_log(.error, "\(self.t)加载 hosts 文件失败: \(error.localizedDescription)")
+            errorMessage = "加载失败: \(error.localizedDescription)"
         }
         isLoading = false
     }
-    
+
     func saveHosts() async {
+        if Self.verbose {
+            os_log("\(self.t)保存 hosts 文件")
+        }
         isLoading = true
         errorMessage = nil
         do {
             let content = HostsParser.serialize(entries: entries)
             try await HostsFileService.shared.saveHosts(content: content)
+            if Self.verbose {
+                os_log("\(self.t)hosts 文件保存成功")
+            }
             // Reload to reflect changes (and formatting)
             await loadHosts()
         } catch {
-            errorMessage = "Failed to save hosts: \(error.localizedDescription)"
+            os_log(.error, "\(self.t)保存 hosts 文件失败: \(error.localizedDescription)")
+            errorMessage = "保存失败: \(error.localizedDescription)"
         }
         isLoading = false
     }

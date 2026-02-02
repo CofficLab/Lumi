@@ -1,15 +1,20 @@
 import Foundation
 import Combine
+import OSLog
+import MagicKit
 
 @MainActor
-class DockerManagerViewModel: ObservableObject {
+class DockerManagerViewModel: ObservableObject, SuperLog {
+    static let emoji = "🐳"
+    static let verbose = false
+
     @Published var images: [DockerImage] = []
     @Published var filteredImages: [DockerImage] = []
     @Published var selectedImage: DockerImage?
     @Published var selectedImageDetail: DockerInspect?
     @Published var selectedImageHistory: [DockerImageHistory] = []
     @Published var scanResult: String?
-    
+
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var searchText: String = ""
@@ -44,21 +49,31 @@ class DockerManagerViewModel: ObservableObject {
     }
     
     func refreshImages() async {
+        if Self.verbose {
+            os_log("\(self.t)刷新镜像列表")
+        }
         isLoading = true
         errorMessage = nil
-        
+
         do {
             let fetched = try await service.listImages()
             self.images = fetched
             filterAndSortImages()
+            if Self.verbose {
+                os_log("\(self.t)镜像列表刷新成功: \(fetched.count) 个镜像")
+            }
         } catch {
+            os_log(.error, "\(self.t)刷新镜像列表失败: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
         }
-        
+
         isLoading = false
     }
-    
+
     func deleteImage(_ image: DockerImage, force: Bool = false) async {
+        if Self.verbose {
+            os_log("\(self.t)删除镜像: \(image.Repository)")
+        }
         do {
             try await service.removeImage(image.imageID, force: force)
             // Remove locally to update UI immediately
@@ -70,36 +85,49 @@ class DockerManagerViewModel: ObservableObject {
                 selectedImage = nil
                 selectedImageDetail = nil
             }
+            if Self.verbose {
+                os_log("\(self.t)镜像删除成功")
+            }
         } catch {
-            errorMessage = "Delete failed: \(error.localizedDescription)"
+            os_log(.error, "\(self.t)删除镜像失败: \(error.localizedDescription)")
+            errorMessage = "删除失败: \(error.localizedDescription)"
         }
     }
-    
+
     func pullImage(_ name: String) async {
+        if Self.verbose {
+            os_log("\(self.t)拉取镜像: \(name)")
+        }
         isLoading = true
         errorMessage = nil
         do {
             _ = try await service.pullImage(name)
             await refreshImages()
         } catch {
-            errorMessage = "Pull failed: \(error.localizedDescription)"
+            os_log(.error, "\(self.t)拉取镜像失败: \(error.localizedDescription)")
+            errorMessage = "拉取失败: \(error.localizedDescription)"
         }
         isLoading = false
     }
-    
+
     func selectImage(_ image: DockerImage) async {
         selectedImage = image
         scanResult = nil // Clear previous scan
+
+        if Self.verbose {
+            os_log("\(self.t)选中镜像: \(image.Repository)")
+        }
+
         // Fetch details in parallel
         async let detail = service.inspectImage(image.imageID)
         async let history = service.getImageHistory(image.imageID)
-        
+
         do {
             let (d, h) = try await (detail, history)
             self.selectedImageDetail = d
             self.selectedImageHistory = h
         } catch {
-            print("Failed to load details: \(error)")
+            os_log(.error, "\(self.t)加载镜像详情失败: \(error.localizedDescription)")
         }
     }
     

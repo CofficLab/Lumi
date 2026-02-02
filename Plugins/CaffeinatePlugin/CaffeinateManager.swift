@@ -1,11 +1,15 @@
 import Foundation
+import MagicKit
 import IOKit.pwr_mgt
 import Observation
 import OSLog
 
 /// 防休眠管理器：负责管理系统电源状态
 @Observable
-class CaffeinateManager {
+class CaffeinateManager: SuperLog {
+    static let emoji = "🍽️"
+    static let verbose: Bool = false
+    
     // MARK: - Singleton
 
     static let shared = CaffeinateManager()
@@ -31,12 +35,12 @@ class CaffeinateManager {
     /// 定时器（用于定时模式）
     private var timer: Timer?
 
-    private let logger = Logger(subsystem: "com.coffic.lumi", category: "CaffeinateManager")
-
     // MARK: - Initialization
 
     private init() {
-        logger.info("CaffeinateManager initialized")
+        if Self.verbose {
+            os_log("\(self.t)CaffeinateManager initialized")
+        }
     }
 
     // MARK: - Public Methods
@@ -63,13 +67,15 @@ class CaffeinateManager {
         do {
             try task.run()
         } catch {
-            logger.error("Failed to turn off display: \(error.localizedDescription)")
+            os_log(.error, "\(self.t)Failed to turn off display: \(error.localizedDescription)")
         }
     }
 
     func activate(mode: SleepMode, duration: TimeInterval = 0) {
         guard !isActive else {
-            logger.info("Caffeinate already active, ignoring activation request")
+            if Self.verbose {
+                os_log("\(self.t)Caffeinate already active, ignoring activation request")
+            }
             return
         }
 
@@ -100,7 +106,9 @@ class CaffeinateManager {
             startTime = Date()
             self.duration = duration
 
-            logger.info("Caffeinate activated successfully with duration: \(duration)s")
+            if Self.verbose {
+                os_log("\(self.t)Caffeinate activated successfully with duration: \(duration)s")
+            }
 
             // 如果设置了定时，启动定时器
             if duration > 0 {
@@ -111,10 +119,10 @@ class CaffeinateManager {
             NotificationCenter.postRequestStatusBarAppearanceUpdate(isActive: true, source: "CaffeinatePlugin")
         } else {
             if systemResult != kIOReturnSuccess {
-                logger.error("Failed to create system sleep assertion: \(systemResult)")
+                os_log(.error, "\(self.t)Failed to create system sleep assertion: \(systemResult)")
             }
             if displayResult != kIOReturnSuccess {
-                logger.error("Failed to create display sleep assertion: \(displayResult)")
+                os_log(.error, "\(self.t)Failed to create display sleep assertion: \(displayResult)")
             }
             if assertionID != 0 {
                 IOPMAssertionRelease(assertionID)
@@ -130,7 +138,9 @@ class CaffeinateManager {
     /// 停用防休眠
     func deactivate() {
         guard isActive else {
-            logger.info("Caffeinate not active, ignoring deactivation request")
+            if Self.verbose {
+                os_log("\(self.t)Caffeinate not active, ignoring deactivation request")
+            }
             return
         }
 
@@ -148,16 +158,18 @@ class CaffeinateManager {
             timer?.invalidate()
             timer = nil
 
-            logger.info("Caffeinate deactivated successfully")
+            if Self.verbose {
+                os_log("\(self.t)Caffeinate deactivated successfully")
+            }
             
             // 通知系统恢复状态栏外观
             NotificationCenter.postRequestStatusBarAppearanceUpdate(isActive: false, source: "CaffeinatePlugin")
         } else {
             if systemResult != kIOReturnSuccess {
-                logger.error("Failed to release system sleep assertion: \(systemResult)")
+                os_log(.error, "\(self.t)释放系统休眠断言失败: \(systemResult)")
             }
             if displayResult != kIOReturnSuccess {
-                logger.error("Failed to release display sleep assertion: \(displayResult)")
+                os_log(.error, "\(self.t)释放显示休眠断言失败: \(displayResult)")
             }
         }
     }
@@ -184,10 +196,14 @@ class CaffeinateManager {
     /// - Parameter duration: 持续时间（秒）
     private func startTimer(duration: TimeInterval) {
         timer = Timer.scheduledTimer(withTimeInterval: duration, repeats: false) { [weak self] _ in
-            self?.logger.info("Timer expired, deactivating caffeinate")
+            if Self.verbose {
+                os_log("\(Self.t)Timer expired, deactivating caffeinate")
+            }
             self?.deactivate()
         }
-        logger.info("Timer scheduled for \(duration)s")
+        if Self.verbose {
+            os_log("\(self.t)Timer scheduled for \(duration)s")
+        }
     }
 
     // MARK: - Cleanup

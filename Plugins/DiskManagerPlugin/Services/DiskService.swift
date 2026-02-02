@@ -1,11 +1,13 @@
 import Foundation
 import AppKit
+import OSLog
+import MagicKit
 
 struct DiskUsage {
     let total: Int64
     let used: Int64
     let available: Int64
-    
+
     var usedPercentage: Double {
         return total > 0 ? Double(used) / Double(total) : 0
     }
@@ -16,25 +18,38 @@ struct FileItem: Identifiable, Hashable {
     let url: URL
     let size: Int64
     let modificationDate: Date
-    
+
     var name: String { url.lastPathComponent }
     var path: String { url.path }
     var icon: NSImage { NSWorkspace.shared.icon(forFile: path) }
 }
 
-class DiskService {
+class DiskService: SuperLog {
+    static let emoji = "💽"
+    static let verbose = true
+
     static let shared = DiskService()
-    
+
+    private init() {
+        if Self.verbose {
+            os_log("\(self.t)磁盘服务已初始化")
+        }
+    }
+
     func getDiskUsage() -> DiskUsage? {
         let fileURL = URL(fileURLWithPath: "/")
         do {
             let values = try fileURL.resourceValues(forKeys: [.volumeTotalCapacityKey, .volumeAvailableCapacityKey])
             if let total = values.volumeTotalCapacity, let available = values.volumeAvailableCapacity {
                 let used = Int64(total) - Int64(available)
+                if Self.verbose {
+                    let percentage = Double(used) / Double(total) * 100
+                    os_log("\(self.t)获取磁盘使用情况: \(String(format: "%.1f", percentage))%")
+                }
                 return DiskUsage(total: Int64(total), used: used, available: Int64(available))
             }
         } catch {
-            print("Error retrieving disk usage: \(error)")
+            os_log(.error, "\(self.t)获取磁盘使用情况失败: \(error.localizedDescription)")
         }
         return nil
     }
