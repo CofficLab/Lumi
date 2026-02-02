@@ -35,7 +35,7 @@ struct AppManagerView: View {
                 }
             }
         }
-        .alert("卸载确认", isPresented: $showUninstallAlert, presenting: viewModel.selectedApp) { app in
+        .alert("卸载确认", isPresented: $viewModel.showUninstallConfirmation, presenting: viewModel.selectedApp) { app in
             Button("取消", role: .cancel) {
                 viewModel.cancelSelection()
             }
@@ -45,7 +45,7 @@ struct AppManagerView: View {
                 }
             }
         } message: { app in
-            Text("确定要卸载「\(app.displayName)」吗？\n\n应用将被移到废纸篓。")
+            Text("确定要卸载「\(app.displayName)」吗？\n\n应用及其关联文件将被移到废纸篓。")
         }
         .alert("错误", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("确定") {

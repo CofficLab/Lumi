@@ -109,7 +109,7 @@ class AppService: SuperLog {
             // 在后台队列执行文件操作
             DispatchQueue.global(qos: .userInitiated).async {
                 if Self.verbose {
-                    os_log("\(self.t)正在计算应用 \(app.displayName) 的大小")
+                    os_log("\(Self.t)正在计算应用 \(app.displayName) 的大小")
                 }
 
                 guard FileManager.default.fileExists(atPath: app.bundleURL.path) else {
@@ -153,7 +153,7 @@ class AppService: SuperLog {
 
     /// 卸载应用
     func uninstallApp(_ app: AppModel) async throws {
-        os_log("\(self.t)准备卸载: \(app.displayName)")
+        os_log("\(self.t)准备卸载应用: \(app.displayName)")
 
         let fileManager = FileManager.default
         let appPath = app.bundleURL.path
@@ -166,13 +166,13 @@ class AppService: SuperLog {
 
         // 检查是否有写入权限
         guard fileManager.isWritableFile(atPath: appPath) else {
-            os_log(.error, "\(self.t)权限被拒绝: \(appPath)")
+            os_log(.error, "\(self.t)权限不足: \(appPath)")
             throw AppError.permissionDenied
         }
 
         // 移到废纸篓
         try fileManager.trashItem(at: app.bundleURL, resultingItemURL: nil)
-        os_log("\(self.t)应用已移动到废纸篓: \(app.displayName)")
+        os_log("\(self.t)应用已移至废纸篓: \(app.displayName)")
     }
 
     /// 在 Finder 中显示应用

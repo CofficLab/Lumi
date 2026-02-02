@@ -76,6 +76,7 @@ struct AppRow: View {
 
                     Button(action: {
                         viewModel.selectedApp = app
+                        viewModel.showUninstallConfirmation = true
                     }) {
                         Image(systemName: "trash")
                     }
@@ -104,6 +105,7 @@ struct AppRow: View {
 
             Button("卸载", role: .destructive) {
                 viewModel.selectedApp = app
+                viewModel.showUninstallConfirmation = true
             }
         }
     }
