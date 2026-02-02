@@ -4,23 +4,26 @@ import OSLog
 import Sparkle
 import SwiftUI
 
-
 /// macOS应用代理，处理应用级别的生命周期事件和系统集成
 @MainActor
 class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
-    static let emoji = "🍎"
+    nonisolated static let emoji = "🍎"
 
     static let verbose = true
-    
+
     /// 系统状态栏项
     private var statusItem: NSStatusItem?
-    
+
     /// 活跃的插件源集合（用于决定状态栏图标颜色）
     private var activeSources: Set<String> = []
 
     /// 插件提供者，用于获取插件菜单项
     private var pluginProvider: PluginProvider?
-    
+
+    // 状态栏图标相关
+    private var iconViewModel = StatusBarIconViewModel()
+    private var iconHostingView: InteractiveHostingView<StatusBarIconView>?
+
     /// Sparkle 更新控制器，提供应用自动更新功能
     private let updaterController = SPUStandardUpdaterController(
         startingUpdater: true,
@@ -63,22 +66,40 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     private func setupApplication() {
         // 配置应用启动时的设置
         // 例如：设置窗口样式、注册全局快捷键等
-        
+
         // 初始化插件提供者
         pluginProvider = PluginProvider(autoDiscover: true)
     }
-    
+
     /// 设置系统状态栏图标
     private func setupStatusBar() {
-        // 创建状态栏项
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        // 创建状态栏项，使用 squareLength 确保有足够的正方形空间
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 
-        // 设置图标
-        if let button = statusItem?.button {
-            // 使用 SF Symbol 作为图标
-            button.image = NSImage(systemSymbolName: "lightbulb.fill", accessibilityDescription: "Lumi")
-            button.image?.isTemplate = true  // 使用模板模式，图标会随系统主题变色
-        }
+        guard let button = statusItem?.button else { return }
+
+        // 1. 初始化 SwiftUI 视图
+        let iconView = StatusBarIconView(viewModel: iconViewModel)
+        let hostingView = InteractiveHostingView(rootView: iconView)
+        // 增加一点宽度，确保旋转时边角不被裁切
+        hostingView.frame = NSRect(x: 0, y: 0, width: 22, height: 22)
+        hostingView.translatesAutoresizingMaskIntoConstraints = false
+        self.iconHostingView = hostingView
+
+        // 2. 将 SwiftUI 视图添加到状态栏按钮中
+        // 清除原有图片
+        button.image = nil
+        button.subviews.forEach { $0.removeFromSuperview() }
+        button.addSubview(hostingView)
+
+        // 3. 设置布局约束，确保视图居中且尺寸合适
+        NSLayoutConstraint.activate([
+            hostingView.centerXAnchor.constraint(equalTo: button.centerXAnchor),
+            hostingView.centerYAnchor.constraint(equalTo: button.centerYAnchor),
+            // 使用 20x20 的尺寸，留出一点安全边距（标准状态栏高度约 22pt）
+            hostingView.widthAnchor.constraint(equalToConstant: 20),
+            hostingView.heightAnchor.constraint(equalToConstant: 20),
+        ])
 
         // 监听插件加载完成通知
         NotificationCenter.default.addObserver(
@@ -87,7 +108,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
             name: NSNotification.Name("PluginsDidLoad"),
             object: nil
         )
-        
+
         // 监听状态栏外观更新请求
         NotificationCenter.default.addObserver(
             self,
@@ -95,15 +116,15 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
             name: .requestStatusBarAppearanceUpdate,
             object: nil
         )
-        
+
         // 先设置一个基础菜单（不含插件项）
         setupStatusBarMenu()
-        
+
         if Self.verbose {
             os_log("\(self.t)状态栏已设置，等待插件加载...")
         }
     }
-    
+
     /// 处理插件加载完成通知
     @objc private func handlePluginsDidLoad() {
         if Self.verbose {
@@ -111,7 +132,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
         }
         refreshStatusBarMenu()
     }
-    
+
     /// 处理状态栏外观更新请求
     @objc private func handleStatusBarAppearanceUpdate(_ notification: Notification) {
         guard let userInfo = notification.userInfo,
@@ -119,74 +140,57 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
               let source = userInfo["source"] as? String else {
             return
         }
-        
+
         if Self.verbose {
             os_log("\(self.t)收到状态栏更新请求: source=\(source), isActive=\(isActive)")
         }
-        
+
         if isActive {
             activeSources.insert(source)
         } else {
             activeSources.remove(source)
         }
-        
+
         updateStatusBarIconAppearance()
     }
-    
+
     /// 更新状态栏图标外观
     private func updateStatusBarIconAppearance() {
-        guard let button = statusItem?.button else { return }
-        
-        // 每次都重新获取基础图标，确保状态一致
-        guard let baseImage = NSImage(systemSymbolName: "lightbulb.fill", accessibilityDescription: "Lumi") else {
-            return
-        }
-        
-        if !activeSources.isEmpty {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            let isActive = !self.activeSources.isEmpty
+
             if Self.verbose {
-                os_log("\(self.t)激活状态栏高亮，当前源: \(self.activeSources)")
+                os_log("\(self.t)更新图标状态: isActive=\(isActive), sources=\(self.activeSources)")
             }
-            
-            // 使用手动着色方案，解决 contentTintColor 在部分系统/模式下失效变成黑色的问题
-            let color = NSColor.controlAccentColor
-            let coloredImage = tintedImage(baseImage, color: color)
-            button.image = coloredImage
-            
-            // 清除 tintColor，因为我们已经把颜色“烤”进图片里了
-            button.contentTintColor = nil
-        } else {
-            if Self.verbose {
-                os_log("\(self.t)取消状态栏高亮")
-            }
-            
-            // 恢复默认模板模式，跟随系统颜色（黑/白）
-            baseImage.isTemplate = true
-            button.image = baseImage
-            button.contentTintColor = nil
+
+            // 更新 ViewModel，触发 SwiftUI 刷新
+            self.iconViewModel.isActive = isActive
+            self.iconViewModel.activeSources = self.activeSources
         }
     }
-    
+
     /// 辅助方法：创建指定颜色的图片
     /// 解决直接设置 contentTintColor 可能导致图标变黑的问题
     private func tintedImage(_ image: NSImage, color: NSColor) -> NSImage {
         let newImage = NSImage(size: image.size)
         newImage.lockFocus()
-        
+
         // 1. 绘制原图
         image.draw(in: NSRect(origin: .zero, size: image.size))
-        
+
         // 2. 设置颜色并混合
         // sourceAtop: 在原图不透明的地方绘制颜色
         color.set()
         NSRect(origin: .zero, size: image.size).fill(using: .sourceAtop)
-        
+
         newImage.unlockFocus()
-        
+
         // 关键：必须关闭模板模式，否则系统会忽略像素颜色
         newImage.isTemplate = false
         return newImage
     }
-    
+
     /// 设置状态栏菜单
     private func setupStatusBarMenu() {
         let menu = NSMenu()
@@ -209,7 +213,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
         // 添加所有插件提供的菜单项
         if let provider = pluginProvider {
             let pluginMenuItems = provider.getStatusBarMenuItems()
-            
+
             if Self.verbose {
                 os_log("\(self.t)获取到 \(pluginMenuItems.count) 个插件菜单项")
             }
@@ -233,7 +237,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
 
         statusItem?.menu = menu
     }
-    
+
     /// 刷新状态栏菜单（插件加载后调用）
     private func refreshStatusBarMenu() {
         setupStatusBarMenu()
@@ -261,7 +265,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     private func cleanupApplication() {
         // 移除通知观察者
         NotificationCenter.default.removeObserver(self)
-        
+
         // 移除状态栏图标
         if let statusItem = statusItem {
             NSStatusBar.system.removeStatusItem(statusItem)
@@ -275,18 +279,10 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
 
 // MARK: - Preview
 
-#Preview("App - Small Screen") {
+#Preview("App") {
     ContentLayout()
         .hideSidebar()
         .hideTabPicker()
         .inRootView()
-        .frame(width: 800, height: 600)
-}
-
-#Preview("App - Big Screen") {
-    ContentLayout()
-        .hideSidebar()
-        .hideTabPicker()
-        .inRootView()
-        .frame(width: 1200, height: 1200)
+        .withDebugBar()
 }
