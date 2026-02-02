@@ -17,12 +17,12 @@ struct StatusBarIconView: View {
 
             ZStack {
                 if viewModel.isActive {
-                    LogoView()
+                    LogoView(variant: .statusBar, design: .smartLight)
                     .background(.blue.opacity(0.7))
                     .roundedFull()
                     .frame(width: size - 2, height: size - 2)
                 } else {
-                    LogoView()
+                    LogoView(variant: .statusBar, design: .smartLight)
                     .background(.blue.opacity(0.7))
                     .roundedFull()
                     .frame(width: size - 2, height: size - 2)
