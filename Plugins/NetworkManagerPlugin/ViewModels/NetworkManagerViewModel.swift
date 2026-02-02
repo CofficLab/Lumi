@@ -77,6 +77,10 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
         ProcessMonitorService.shared.stopMonitoring()
     }
 
+    func updateProcesses(_ processes: [NetworkProcess]) {
+        self.processes = processes
+    }
+
     func startMonitoring() {
         if Self.verbose {
             os_log("\(self.t)开始网络监控")

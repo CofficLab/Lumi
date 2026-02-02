@@ -38,9 +38,15 @@ class NetworkStatusBarController {
                 hostingView.trailingAnchor.constraint(equalTo: button.trailingAnchor),
             ])
 
-            // Allow clicks to pass through if needed, or handle click
-            // For now, let standard button behavior handle clicks (e.g. menu)
+            // 点击事件处理
+            button.action = #selector(statusBarButtonClicked)
+            button.target = self
         }
+    }
+
+    @objc private func statusBarButtonClicked() {
+        guard let button = statusItem?.button else { return }
+        NetworkPopoverController.shared.showPopover(from: button)
     }
 
     func stop() {
