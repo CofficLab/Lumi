@@ -8,6 +8,8 @@ struct NetworkStatusBarView: View {
             speedText(formatSpeed(networkService.uploadSpeed))
             speedText(formatSpeed(networkService.downloadSpeed))
         }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 2)
     }
 
     private func speedText(_ text: String) -> some View {
