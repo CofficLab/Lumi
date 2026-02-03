@@ -30,14 +30,8 @@ struct AboutView: View {
                 // 系统信息卡片
                 systemInfoCard
 
-                // 系统要求卡片
-                systemRequirementsCard
-
                 // 更新信息卡片
                 updateInfoCard
-
-                // 技术栈卡片
-                techStackCard
 
                 Spacer()
             }
@@ -119,15 +113,6 @@ struct AboutView: View {
         }
     }
 
-    private var systemRequirementsCard: some View {
-        InfoCard(title: "系统要求", icon: "cpu") {
-            AboutInfoRow(label: "操作系统", value: "macOS \(versionInfo.minimumOSVersion) 或更高")
-            AboutInfoRow(label: "架构", value: versionInfo.architecture)
-            AboutInfoRow(label: "磁盘空间", value: "约 100 MB")
-            AboutInfoRow(label: "内存", value: "建议 4 GB 以上")
-        }
-    }
-
     private var updateInfoCard: some View {
         InfoCard(title: "更新信息", icon: "arrow.down.circle.fill") {
             VStack(alignment: .leading, spacing: 12) {
@@ -141,15 +126,6 @@ struct AboutView: View {
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             }
-        }
-    }
-
-    private var techStackCard: some View {
-        InfoCard(title: "技术栈", icon: "hammer.fill") {
-            AboutInfoRow(label: "语言", value: "Swift")
-            AboutInfoRow(label: "UI 框架", value: "SwiftUI")
-            AboutInfoRow(label: "最低系统", value: "macOS 15.0+")
-            AboutInfoRow(label: "架构模式", value: "MVVM + Plugin")
         }
     }
 }
