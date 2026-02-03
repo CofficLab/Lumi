@@ -1,5 +1,5 @@
-import SwiftUI
 import MagicKit
+import SwiftUI
 
 /// 状态栏弹窗视图
 struct StatusBarPopupView: View {
@@ -98,25 +98,6 @@ struct StatusBarPopupView: View {
 
     private var menuItemsSection: some View {
         VStack(spacing: 0) {
-            // 打开 Lumi
-            MenuItemRow(
-                icon: "window.rectangle",
-                title: "打开 Lumi",
-                subtitle: "显示主窗口",
-                action: onShowMainWindow
-            )
-
-            Divider()
-                .padding(.horizontal, 8)
-
-            // 检查更新
-            MenuItemRow(
-                icon: "arrow.down.circle",
-                title: "检查更新",
-                subtitle: "获取最新版本",
-                action: onCheckForUpdates
-            )
-
             if !pluginMenuItems.isEmpty {
                 Divider()
                     .padding(.horizontal, 8)
@@ -133,20 +114,32 @@ struct StatusBarPopupView: View {
                     }
                 }
             }
+            
+            // 打开 Lumi
+            MenuItemRow(
+                title: "打开 Lumi",
+                action: onShowMainWindow
+            )
+
+            Divider()
+                .padding(.horizontal, 8)
+
+            // 检查更新
+            MenuItemRow(
+                title: "检查更新",
+                action: onCheckForUpdates
+            )
 
             Divider()
                 .padding(.horizontal, 8)
 
             // 退出应用
             MenuItemRow(
-                icon: "power",
                 title: "退出 Lumi",
-                subtitle: "完全退出应用",
                 color: .red,
                 action: onQuit
             )
         }
-        .padding(.vertical, 8)
     }
 
     // MARK: - Helpers
@@ -159,36 +152,23 @@ struct StatusBarPopupView: View {
 // MARK: - Menu Item Row
 
 struct MenuItemRow: View {
-    let icon: String
     let title: String
-    let subtitle: String
     var color: Color = .primary
     let action: () -> Void
-    
+
     @State private var isHovering = false
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.system(size: 14))
+                Text(title)
+                    .font(.system(size: 13))
                     .foregroundColor(isHovering ? .white : color)
-                    .frame(width: 24)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.system(size: 13))
-                        .foregroundColor(isHovering ? .white : color)
-
-                    Text(subtitle)
-                        .font(.system(size: 11))
-                        .foregroundColor(isHovering ? .white.opacity(0.8) : .secondary)
-                }
 
                 Spacer()
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.vertical, 10)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -216,17 +196,6 @@ struct PluginMenuItemRow: View {
             }
         }) {
             HStack(spacing: 12) {
-                if let image = menuItem.image {
-                    Image(nsImage: image)
-                        .resizable()
-                        .renderingMode(.template)
-                        .frame(width: 16, height: 16)
-                        .foregroundColor(isHovering ? .white : .primary)
-                } else {
-                    Spacer()
-                        .frame(width: 24, height: 1)
-                }
-
                 Text(menuItem.title)
                     .font(.system(size: 13))
                     .foregroundColor(isHovering ? .white : .primary)

@@ -34,3 +34,14 @@ actor CPUManagerPlugin: SuperPlugin, SuperLog {
         return AnyView(CPUStatusBarPopupView())
     }
 }
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .withNavigation(CaffeinatePlugin.navigationId)
+        .inRootView()
+        .withDebugBar()
+}

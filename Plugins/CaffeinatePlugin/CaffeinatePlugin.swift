@@ -49,12 +49,13 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
     /// 插件单例实例
     static let shared = CaffeinatePlugin()
 
-    /// 初始化方法
-    init() {
-        os_log("CaffeinatePlugin initialized")
-    }
-
     // MARK: - UI Contributions
+
+    /// 添加状态栏弹窗视图
+    /// - Returns: 要添加到状态栏弹窗的视图，如果不需要则返回nil
+    @MainActor func addStatusBarPopupView() -> AnyView? {
+        AnyView(CaffeinateStatusBarPopupView())
+    }
 
     /// 提供导航入口
     /// - Returns: 导航入口数组
