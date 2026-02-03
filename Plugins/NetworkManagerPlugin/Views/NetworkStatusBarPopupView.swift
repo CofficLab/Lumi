@@ -1,50 +1,25 @@
-import SwiftUI
 import MagicKit
+import SwiftUI
 
 /// 网络管理插件的状态栏弹窗视图
 struct NetworkStatusBarPopupView: View {
     // MARK: - Properties
 
     @StateObject private var viewModel = NetworkManagerViewModel()
-    @State private var isHovering = false
-    @State private var hideWorkItem: DispatchWorkItem?
+    @ObservedObject private var historyService = NetworkHistoryService.shared
 
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: 12) {
-            // 标题栏
-            headerView
+        HoverableContainerView(detailView: NetworkHistoryDetailView()) {
+            VStack(spacing: 0) {
+                // 实时速度显示
+                liveSpeedView
 
-            // 实时速度显示
-            liveSpeedView
-                .background(Color.clear) // Ensure hit testing works
-                .onHover { hovering in
-                    updateHoverState(hovering: hovering)
-                }
-                .popover(isPresented: $isHovering, arrowEdge: .leading) {
-                    NetworkHistoryDetailView()
-                        .onHover { hovering in
-                            updateHoverState(hovering: hovering)
-                        }
-                }
+                // 历史趋势图（最近60秒）
+                miniTrendView
+            }
         }
-    }
-
-    // MARK: - Header View
-
-    private var headerView: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "network")
-                .font(.system(size: 14))
-                .foregroundColor(.blue)
-
-            Text("网络监控")
-                .font(.system(size: 13, weight: .semibold))
-
-            Spacer()
-        }
-        .padding(.horizontal)
     }
 
     // MARK: - Live Speed View
@@ -57,14 +32,8 @@ struct NetworkStatusBarPopupView: View {
                     .font(.system(size: 12))
                     .foregroundColor(.green)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("下载")
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
-
-                    Text(SpeedFormatter.formatForStatusBar(viewModel.networkState.downloadSpeed))
-                        .font(.system(size: 14, weight: .medium))
-                }
+                Text(SpeedFormatter.formatForStatusBar(viewModel.networkState.downloadSpeed))
+                    .font(.system(size: 14, weight: .medium))
             }
 
             Spacer()
@@ -80,37 +49,130 @@ struct NetworkStatusBarPopupView: View {
                     .font(.system(size: 12))
                     .foregroundColor(.red)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("上传")
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
-
-                    Text(SpeedFormatter.formatForStatusBar(viewModel.networkState.uploadSpeed))
-                        .font(.system(size: 14, weight: .medium))
-                }
+                Text(SpeedFormatter.formatForStatusBar(viewModel.networkState.uploadSpeed))
+                    .font(.system(size: 14, weight: .medium))
             }
         }
         .padding(10)
-        .background(.background.opacity(0.5))
     }
-    
-    private func updateHoverState(hovering: Bool) {
-        // Cancel any pending hide action
-        hideWorkItem?.cancel()
-        hideWorkItem = nil
-        
-        if hovering {
-            // If mouse enters either view, keep showing
-            isHovering = true
-        } else {
-            // If mouse leaves, wait a bit before hiding
-            // This gives time to move between the source view and the popover
-            let workItem = DispatchWorkItem {
-                isHovering = false
+
+    // MARK: - Mini Trend View
+
+    private var miniTrendView: some View {
+        let recentData = Array(historyService.recentHistory.suffix(60))
+        let maxSpeed = max(
+            recentData.map(\.downloadSpeed).max() ?? 0,
+            recentData.map(\.uploadSpeed).max() ?? 0,
+            1024 // Minimum scale
+        )
+
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 4) {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .font(.system(size: 10))
+                    .foregroundColor(.secondary)
+
+                Text("最近60秒")
+                    .font(.system(size: 10))
+                    .foregroundColor(.secondary)
+
+                Spacer()
+
+                // 图例
+                HStack(spacing: 6) {
+                    HStack(spacing: 3) {
+                        Circle()
+                            .fill(Color.green.opacity(0.8))
+                            .frame(width: 5, height: 5)
+                        Text("下载")
+                            .font(.system(size: 9))
+                            .foregroundColor(.secondary)
+                    }
+
+                    HStack(spacing: 3) {
+                        Circle()
+                            .fill(Color.red.opacity(0.8))
+                            .frame(width: 5, height: 5)
+                        Text("上传")
+                            .font(.system(size: 9))
+                            .foregroundColor(.secondary)
+                    }
+                }
             }
-            hideWorkItem = workItem
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: workItem)
+            .padding(.horizontal, 12)
+
+            // 迷你图表
+            GeometryReader { geometry in
+                ZStack {
+                    // 背景网格线
+                    ForEach(0 ..< 3) { i in
+                        let y = CGFloat(i) * geometry.size.height / 2
+                        Path { path in
+                            path.move(to: CGPoint(x: 0, y: y))
+                            path.addLine(to: CGPoint(x: geometry.size.width, y: y))
+                        }
+                        .stroke(Color.secondary.opacity(0.1), lineWidth: 1)
+                    }
+
+                    // 下载区域（绿色）
+                    if !recentData.isEmpty {
+                        MiniGraphArea(
+                            data: recentData.map(\.downloadSpeed),
+                            maxValue: maxSpeed
+                        )
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.green.opacity(0.4),
+                                    Color.green.opacity(0.05),
+                                ]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+
+                        // 下载线条
+                        MiniGraphLine(
+                            data: recentData.map(\.downloadSpeed),
+                            maxValue: maxSpeed
+                        )
+                        .stroke(Color.green.opacity(0.8), lineWidth: 1.2)
+
+                        // 上传区域（红色）
+                        MiniGraphArea(
+                            data: recentData.map(\.uploadSpeed),
+                            maxValue: maxSpeed
+                        )
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.red.opacity(0.4),
+                                    Color.red.opacity(0.05),
+                                ]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+
+                        // 上传线条
+                        MiniGraphLine(
+                            data: recentData.map(\.uploadSpeed),
+                            maxValue: maxSpeed
+                        )
+                        .stroke(Color.red.opacity(0.8), lineWidth: 1.2)
+                    } else {
+                        Text("收集中...")
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                }
+            }
+            .frame(height: 40)
+            .padding(.horizontal, 12)
         }
+        .padding(.vertical, 8)
+        .background(.background.opacity(0.3))
     }
 }
 
@@ -181,5 +243,6 @@ struct ProcessRowView: View {
 
 #Preview("Network Status Bar Popup") {
     NetworkStatusBarPopupView()
-        .frame(width: 260)
+        .frame(width: 300)
+        .frame(height: 400)
 }

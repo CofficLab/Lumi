@@ -234,3 +234,11 @@ struct VisualEffectBlur: NSViewRepresentable {
         visualEffectView.state = state
     }
 }
+
+// MARK: - Preview
+
+#Preview("Network Status Bar Popup") {
+    NetworkStatusBarPopupView()
+        .frame(width: 300)
+        .frame(height: 400)
+}

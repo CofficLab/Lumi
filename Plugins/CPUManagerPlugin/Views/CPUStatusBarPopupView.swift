@@ -1,112 +1,146 @@
-import SwiftUI
 import MagicKit
+import SwiftUI
 
 struct CPUStatusBarPopupView: View {
     // MARK: - Properties
 
     @StateObject private var viewModel = CPUManagerViewModel()
-    @State private var isHovering = false
-    @State private var hideWorkItem: DispatchWorkItem?
+    @ObservedObject private var historyService = CPUHistoryService.shared
 
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: 12) {
-            // 标题栏
-            headerView
+        HoverableContainerView(detailView: CPUHistoryDetailView()) {
+            VStack(spacing: 0) {
+                // 实时负载显示
+                liveLoadView
 
-            // 实时负载显示
-            liveLoadView
-                .background(Color.clear) // Ensure hit testing works
-                .onHover { hovering in
-                    updateHoverState(hovering: hovering)
-                }
-                .popover(isPresented: $isHovering, arrowEdge: .leading) {
-                    CPUHistoryDetailView()
-                        .onHover { hovering in
-                            updateHoverState(hovering: hovering)
-                        }
-                }
+                // 历史趋势图（最近60秒）
+                miniTrendView
+            }
         }
-    }
-
-    // MARK: - Header View
-
-    private var headerView: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "cpu")
-                .font(.system(size: 14))
-                .foregroundColor(.blue)
-
-            Text("CPU 监控")
-                .font(.system(size: 13, weight: .semibold))
-
-            Spacer()
-        }.padding(.horizontal)
     }
 
     // MARK: - Live Load View
 
     private var liveLoadView: some View {
-        HStack(spacing: 16) {
-            // 进度环
-            ZStack {
-                Circle()
-                    .stroke(Color.secondary.opacity(0.2), lineWidth: 4)
-                
-                Circle()
-                    .trim(from: 0, to: CGFloat(viewModel.cpuUsage / 100.0))
-                    .stroke(
-                        AngularGradient(
-                            gradient: Gradient(colors: [.blue, .purple]),
-                            center: .center,
-                            startAngle: .degrees(0),
-                            endAngle: .degrees(360)
-                        ),
-                        style: StrokeStyle(lineWidth: 4, lineCap: .round)
-                    )
-                    .rotationEffect(.degrees(-90))
-                    .animation(.linear(duration: 0.5), value: viewModel.cpuUsage)
-                
-                Text("\(Int(viewModel.cpuUsage))%")
-                    .font(.system(size: 10, weight: .bold))
-            }
-            .frame(width: 40, height: 40)
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text("当前使用率")
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("CPU 使用率")
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
-                
-                Text(String(format: "%.1f%%", viewModel.cpuUsage))
-                    .font(.system(size: 16, weight: .medium))
+
+                Spacer()
+
+                Text("\(Int(viewModel.cpuUsage))%")
+                    .font(.system(size: 12, weight: .medium))
             }
-            
-            Spacer()
+
+            // 进度条
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    // 背景条
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.secondary.opacity(0.2))
+
+                    // 进度条
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [.blue, .purple]),
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: geometry.size.width * CGFloat(viewModel.cpuUsage / 100.0))
+                }
+            }
+            .frame(height: 6)
         }
-        .padding(10)
-        .background(.background.opacity(0.5))
+        .padding(12)
     }
-    
-    // MARK: - Hover Logic
-    
-    private func updateHoverState(hovering: Bool) {
-        // Cancel any pending hide action
-        hideWorkItem?.cancel()
-        hideWorkItem = nil
-        
-        if hovering {
-            // If mouse enters either view, keep showing
-            isHovering = true
-        } else {
-            // If mouse leaves, wait a bit before hiding
-            // This gives time to move between the source view and the popover
-            let workItem = DispatchWorkItem {
-                isHovering = false
+
+    // MARK: - Mini Trend View
+
+    private var miniTrendView: some View {
+        let recentData = Array(historyService.recentHistory.suffix(60))
+        let maxValue = 100.0 // CPU usage is always 0-100%
+
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 4) {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .font(.system(size: 10))
+                    .foregroundColor(.secondary)
+
+                Text("最近60秒")
+                    .font(.system(size: 10))
+                    .foregroundColor(.secondary)
+
+                Spacer()
+
+                // 图例
+                HStack(spacing: 6) {
+                    HStack(spacing: 3) {
+                        Circle()
+                            .fill(Color.blue.opacity(0.8))
+                            .frame(width: 5, height: 5)
+                        Text("使用率")
+                            .font(.system(size: 9))
+                            .foregroundColor(.secondary)
+                    }
+                }
             }
-            hideWorkItem = workItem
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: workItem)
+            .padding(.horizontal, 12)
+
+            // 迷你图表
+            GeometryReader { geometry in
+                ZStack {
+                    // 背景网格线
+                    ForEach(0 ..< 3) { i in
+                        let y = CGFloat(i) * geometry.size.height / 2
+                        Path { path in
+                            path.move(to: CGPoint(x: 0, y: y))
+                            path.addLine(to: CGPoint(x: geometry.size.width, y: y))
+                        }
+                        .stroke(Color.secondary.opacity(0.1), lineWidth: 1)
+                    }
+
+                    // CPU 使用率区域
+                    if !recentData.isEmpty {
+                        MiniGraphArea(
+                            data: recentData.map { $0.usage },
+                            maxValue: maxValue
+                        )
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.blue.opacity(0.4),
+                                    Color.purple.opacity(0.05),
+                                ]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+
+                        // CPU 使用率线条
+                        MiniGraphLine(
+                            data: recentData.map { $0.usage },
+                            maxValue: maxValue
+                        )
+                        .stroke(Color.blue.opacity(0.8), lineWidth: 1.2)
+                    } else {
+                        Text("收集中...")
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                }
+            }
+            .frame(height: 40)
+            .padding(.horizontal, 12)
         }
+        .padding(.vertical, 8)
+        .background(.background.opacity(0.3))
     }
 }
 

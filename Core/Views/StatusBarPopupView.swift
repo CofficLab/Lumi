@@ -81,7 +81,6 @@ struct StatusBarPopupView: View {
                 pluginPopupViews[index]
                     .frame(maxWidth: .infinity)
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.vertical)
 
                 if index < pluginPopupViews.count - 1 {
                     Divider()
@@ -103,7 +102,6 @@ struct StatusBarPopupView: View {
             )
 
             Divider()
-                .padding(.horizontal, 8)
 
             // 检查更新
             MenuItemRow(
@@ -112,7 +110,6 @@ struct StatusBarPopupView: View {
             )
 
             Divider()
-                .padding(.horizontal, 8)
 
             // 退出应用
             MenuItemRow(
@@ -145,18 +142,17 @@ struct MenuItemRow: View {
                 Text(title)
                     .font(.system(size: 13))
                     .foregroundColor(isHovering ? .white : color)
+                    .padding(.horizontal)
 
                 Spacer()
             }
-            .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .background(
-            RoundedRectangle(cornerRadius: 4)
+            Rectangle()
                 .fill(isHovering ? Color(nsColor: .selectedContentBackgroundColor) : Color.clear)
-                .padding(.horizontal, 4)
         )
         .onHover { hovering in
             isHovering = hovering

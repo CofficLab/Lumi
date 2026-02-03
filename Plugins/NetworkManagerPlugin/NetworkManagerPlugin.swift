@@ -20,9 +20,8 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
     static let shared = NetworkManagerPlugin()
 
     init() {
-        Task { @MainActor in
-            _ = NetworkHistoryService.shared
-        }
+        // 确保在初始化时同步创建 HistoryService
+        _ = NetworkHistoryService.shared
     }
 
     // MARK: - Lifecycle Hooks

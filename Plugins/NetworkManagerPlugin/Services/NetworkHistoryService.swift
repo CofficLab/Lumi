@@ -28,6 +28,7 @@ enum TimeRange: String, CaseIterable, Identifiable {
     }
 }
 
+@MainActor
 class NetworkHistoryService: ObservableObject, SuperLog {
     static let shared = NetworkHistoryService()
     static let emoji = "📊"
