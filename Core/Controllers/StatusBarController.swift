@@ -42,16 +42,14 @@ class StatusBarController: NSObject, SuperLog {
     func setupStatusBar(pluginProvider: PluginProvider?) {
         self.pluginProvider = pluginProvider
 
-        // 创建状态栏项，使用 squareLength 确保有足够的正方形空间
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        // 创建状态栏项，使用 variableLength 以便根据内容动态调整宽度
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         guard let button = statusItem?.button else { return }
 
         // 1. 初始化 SwiftUI 视图
         let iconView = StatusBarIconView(viewModel: iconViewModel)
         let hostingView = InteractiveHostingView(rootView: iconView)
-        // 增加一点宽度，确保旋转时边角不被裁切
-        hostingView.frame = NSRect(x: 0, y: 0, width: 22, height: 22)
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         self.iconHostingView = hostingView
 
@@ -61,12 +59,12 @@ class StatusBarController: NSObject, SuperLog {
         button.subviews.forEach { $0.removeFromSuperview() }
         button.addSubview(hostingView)
 
-        // 3. 设置布局约束，确保视图居中且尺寸合适
+        // 3. 设置布局约束，让视图根据内容自动确定宽度
         NSLayoutConstraint.activate([
-            hostingView.centerXAnchor.constraint(equalTo: button.centerXAnchor),
+            hostingView.leadingAnchor.constraint(equalTo: button.leadingAnchor),
+            hostingView.trailingAnchor.constraint(equalTo: button.trailingAnchor),
             hostingView.centerYAnchor.constraint(equalTo: button.centerYAnchor),
-            // 使用 20x20 的尺寸，留出一点安全边距（标准状态栏高度约 22pt）
-            hostingView.widthAnchor.constraint(equalToConstant: 20),
+            // 固定高度为状态栏标准高度
             hostingView.heightAnchor.constraint(equalToConstant: 20),
         ])
 
@@ -98,6 +96,14 @@ class StatusBarController: NSObject, SuperLog {
             object: nil
         )
 
+        // 如果插件已经加载（通知可能在监听器设置之前发送），立即更新
+        if pluginProvider?.isLoaded == true {
+            if Self.verbose {
+                os_log("\(self.t)插件已加载，立即更新状态栏内容视图")
+            }
+            updateStatusBarContentViews()
+        }
+
         if Self.verbose {
             os_log("\(self.t)状态栏已设置")
         }
@@ -107,6 +113,26 @@ class StatusBarController: NSObject, SuperLog {
     func refreshStatusBarMenu() {
         // 如果弹窗正在显示，关闭它以便重新加载
         closePopover()
+
+        // 更新状态栏内容视图
+        updateStatusBarContentViews()
+    }
+
+    /// 更新状态栏内容视图
+    private func updateStatusBarContentViews() {
+        let views = pluginProvider?.getStatusBarContentViews() ?? []
+        iconViewModel.contentViews = views
+
+        if Self.verbose {
+            os_log("\(self.t)更新状态栏内容视图: \(views.count) 个")
+            // 打印插件信息
+            if let plugins = pluginProvider?.plugins {
+                for plugin in plugins {
+                    let hasContent = plugin.addStatusBarContentView() != nil
+                    os_log("\(self.t)  - \(type(of: plugin).id): 状态栏内容=\(hasContent)")
+                }
+            }
+        }
     }
 
     /// 清理状态栏资源

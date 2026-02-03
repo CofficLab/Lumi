@@ -73,24 +73,28 @@ struct LogoVariantModifier: ViewModifier {
 
 // MARK: - Status Bar Icon View
 
-/// 状态栏图标视图（使用 LogoView 作为底层实现）
+/// 状态栏图标视图
+/// 显示 Logo 图标和插件提供的内容视图
 struct StatusBarIconView: View {
     @ObservedObject var viewModel: StatusBarIconViewModel
 
     var body: some View {
-        GeometryReader { geometry in
-            let size = min(geometry.size.width, geometry.size.height)
+        HStack(spacing: 4) {
+            // Logo 图标
+            LogoView(
+                variant: .statusBar,
+                design: .smartLight,
+                isActive: viewModel.isActive
+            )
+            .infinite()
+            .frame(width: 16, height: 16)
 
-            ZStack {
-                LogoView(
-                    variant: .statusBar,
-                    design: .smartLight,
-                    isActive: viewModel.isActive
-                )
-                .infinite()
+            // 插件提供的内容视图
+            ForEach(viewModel.contentViews.indices, id: \.self) { index in
+                viewModel.contentViews[index]
             }
-            .frame(width: size, height: size)
         }
+        .frame(height: 20)
     }
 }
 

@@ -33,6 +33,10 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
         AnyView(NetworkStatusBarPopupView())
     }
 
+    @MainActor func addStatusBarContentView() -> AnyView? {
+        AnyView(NetworkStatusBarContentView())
+    }
+
     @MainActor func addNavigationEntries() -> [NavigationEntry]? {
         return [
             NavigationEntry.create(

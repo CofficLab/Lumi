@@ -167,6 +167,14 @@ final class PluginProvider: ObservableObject, SuperLog {
             .compactMap { $0.addStatusBarPopupView() }
     }
 
+    /// 获取所有插件提供的状态栏内容视图
+    /// - Returns: 状态栏内容视图数组
+    func getStatusBarContentViews() -> [AnyView] {
+        plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addStatusBarContentView() }
+    }
+
     /// 获取所有插件提供的导航入口
     /// - Returns: 导航入口数组
     func getNavigationEntries() -> [NavigationEntry] {

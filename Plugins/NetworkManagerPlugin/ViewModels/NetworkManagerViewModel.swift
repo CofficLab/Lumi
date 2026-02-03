@@ -94,7 +94,7 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
 
         // Subscribe to NetworkService updates
         NetworkService.shared.startMonitoring()
-        
+
         NetworkService.shared.$downloadSpeed
             .combineLatest(NetworkService.shared.$uploadSpeed, NetworkService.shared.$totalDownload, NetworkService.shared.$totalUpload)
             .receive(on: DispatchQueue.main)
