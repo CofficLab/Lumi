@@ -44,7 +44,11 @@ struct HoverableContainerView<Content: View, Detail: View>: View {
             .popover(isPresented: $isHovering, arrowEdge: .leading) {
                 detailView
                     .onHover { hovering in
-                        updateHoverState(hovering: hovering)
+                        // 只处理离开事件，不处理进入事件
+                        // 这样可以避免 popover 捕获鼠标移动到其他区块的事件
+                        if !hovering {
+                            updateHoverState(hovering: hovering)
+                        }
                     }
             }
     }
