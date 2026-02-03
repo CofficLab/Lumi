@@ -37,7 +37,6 @@ struct NetworkStatusBarPopupView: View {
             }
         }
         .padding(12)
-        .frame(minHeight: 80)
     }
 
     // MARK: - Header View
@@ -84,12 +83,16 @@ struct NetworkStatusBarPopupView: View {
                         .foregroundColor(.secondary)
 
                     Text(formatSpeed(viewModel.networkState.downloadSpeed))
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                 }
             }
 
+            Spacer()
+
             Divider()
                 .frame(height: 24)
+
+            Spacer()
 
             // 上传速度
             HStack(spacing: 6) {
@@ -103,12 +106,13 @@ struct NetworkStatusBarPopupView: View {
                         .foregroundColor(.secondary)
 
                     Text(formatSpeed(viewModel.networkState.uploadSpeed))
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                 }
             }
-
-            Spacer()
         }
+        .padding(10)
+        .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
+        .cornerRadius(8)
     }
 
     // MARK: - Process List View

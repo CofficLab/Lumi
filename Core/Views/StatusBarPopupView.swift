@@ -39,7 +39,7 @@ struct StatusBarPopupView: View {
             // 第三部分：菜单项
             menuItemsSection
         }
-        .frame(width: 280)
+        .frame(width: 300)
         .background(Color(nsColor: .windowBackgroundColor))
     }
 
@@ -53,20 +53,20 @@ struct StatusBarPopupView: View {
                 if let appIcon = NSApp.applicationIconImage {
                     Image(nsImage: appIcon)
                         .resizable()
-                        .frame(width: 48, height: 48)
+                        .frame(width: 40, height: 40)
                 }
 
                 // 应用信息
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text("Lumi")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
 
                     Text("系统工具箱")
-                        .font(.system(size: 12))
+                        .font(.system(size: 11))
                         .foregroundColor(.secondary)
 
                     Text("v\(appVersion)")
-                        .font(.system(size: 11))
+                        .font(.system(size: 10))
                         .foregroundColor(.secondary)
                 }
 
@@ -90,8 +90,7 @@ struct StatusBarPopupView: View {
                 Spacer()
             }
         }
-        .padding(16)
-        .background(Color(nsColor: .controlBackgroundColor))
+        .padding(12)
     }
 
     // MARK: - Plugin Views Section
@@ -100,10 +99,12 @@ struct StatusBarPopupView: View {
         VStack(spacing: 0) {
             ForEach(pluginPopupViews.indices, id: \.self) { index in
                 pluginPopupViews[index]
+                    .frame(maxWidth: .infinity)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 if index < pluginPopupViews.count - 1 {
                     Divider()
-                        .padding(.horizontal, 8)
+                        .padding(.horizontal, 12)
                 }
             }
         }
