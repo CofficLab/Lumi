@@ -4,41 +4,89 @@ import Foundation
 
 extension Double {
     /// 格式化网络速度为人类可读的字符串
-    /// - Returns: 格式化后的网速字符串，如 "500 KB/s", "2.5 MB/s"
+    /// - Returns: 格式化后的网速字符串，如 "500 KB/s", "2.5 MB/s", "0 KB/s"
     func formattedNetworkSpeed() -> String {
+        // 处理 0 值的情况，避免显示 "Zero KB/s"
+        if self == 0 {
+            return "0 KB/s"
+        }
+
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useKB, .useMB, .useGB]
         formatter.countStyle = .binary
-        return formatter.string(fromByteCount: Int64(self)) + "/s"
+        var result = formatter.string(fromByteCount: Int64(self))
+
+        // 替换可能出现的 "Zero KB" 为 "0 KB"
+        if result.contains("Zero") {
+            result = result.replacingOccurrences(of: "Zero", with: "0")
+        }
+
+        return result + "/s"
     }
 
     /// 格式化网络流量（不包含 /s 后缀）
-    /// - Returns: 格式化后的流量字符串，如 "500 KB", "2.5 MB"
+    /// - Returns: 格式化后的流量字符串，如 "500 KB", "2.5 MB", "0 KB"
     func formattedBytes() -> String {
+        // 处理 0 值的情况
+        if self == 0 {
+            return "0 KB"
+        }
+
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useGB, .useMB, .useKB]
         formatter.countStyle = .binary
-        return formatter.string(fromByteCount: Int64(self))
+        var result = formatter.string(fromByteCount: Int64(self))
+
+        // 替换可能出现的 "Zero KB" 为 "0 KB"
+        if result.contains("Zero") {
+            result = result.replacingOccurrences(of: "Zero", with: "0")
+        }
+
+        return result
     }
 }
 
 extension Int64 {
     /// 格式化网络速度为人类可读的字符串
-    /// - Returns: 格式化后的网速字符串，如 "500 KB/s", "2.5 MB/s"
+    /// - Returns: 格式化后的网速字符串，如 "500 KB/s", "2.5 MB/s", "0 KB/s"
     func formattedNetworkSpeed() -> String {
+        // 处理 0 值的情况
+        if self == 0 {
+            return "0 KB/s"
+        }
+
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useKB, .useMB, .useGB]
         formatter.countStyle = .binary
-        return formatter.string(fromByteCount: self) + "/s"
+        var result = formatter.string(fromByteCount: self)
+
+        // 替换可能出现的 "Zero KB" 为 "0 KB"
+        if result.contains("Zero") {
+            result = result.replacingOccurrences(of: "Zero", with: "0")
+        }
+
+        return result + "/s"
     }
 
     /// 格式化网络流量（不包含 /s 后缀）
-    /// - Returns: 格式化后的流量字符串，如 "500 KB", "2.5 MB"
+    /// - Returns: 格式化后的流量字符串，如 "500 KB", "2.5 MB", "0 KB"
     func formattedBytes() -> String {
+        // 处理 0 值的情况
+        if self == 0 {
+            return "0 KB"
+        }
+
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useGB, .useMB, .useKB]
         formatter.countStyle = .binary
-        return formatter.string(fromByteCount: self)
+        var result = formatter.string(fromByteCount: self)
+
+        // 替换可能出现的 "Zero KB" 为 "0 KB"
+        if result.contains("Zero") {
+            result = result.replacingOccurrences(of: "Zero", with: "0")
+        }
+
+        return result
     }
 }
 
