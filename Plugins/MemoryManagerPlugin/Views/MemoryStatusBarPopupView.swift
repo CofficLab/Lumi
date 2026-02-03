@@ -22,7 +22,6 @@ struct MemoryStatusBarPopupView: View {
                         }
                 }
         }
-        .padding(12)
     }
     
     private var headerView: some View {
@@ -35,7 +34,7 @@ struct MemoryStatusBarPopupView: View {
                 .font(.system(size: 13, weight: .semibold))
             
             Spacer()
-        }
+        }.padding(.horizontal)
     }
     
     private var liveStatsView: some View {
@@ -74,14 +73,9 @@ struct MemoryStatusBarPopupView: View {
             }
             
             Spacer()
-            
-            Image(systemName: "chevron.right")
-                .font(.system(size: 10))
-                .foregroundColor(.secondary.opacity(0.5))
         }
         .padding(10)
-        .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
-        .cornerRadius(8)
+        .background(.background.opacity(0.5))
     }
     
     private func updateHoverState(hovering: Bool) {
@@ -98,4 +92,12 @@ struct MemoryStatusBarPopupView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: workItem)
         }
     }
+}
+
+// MARK: - Preview
+
+#Preview("App") {
+    MemoryStatusBarPopupView()
+        .inRootView()
+        .withDebugBar()
 }

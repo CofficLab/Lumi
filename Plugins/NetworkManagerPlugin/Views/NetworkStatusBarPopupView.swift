@@ -6,7 +6,6 @@ struct NetworkStatusBarPopupView: View {
     // MARK: - Properties
 
     @StateObject private var viewModel = NetworkManagerViewModel()
-    @State private var isExpanded = false
     @State private var isHovering = false
     @State private var hideWorkItem: DispatchWorkItem?
 
@@ -29,14 +28,7 @@ struct NetworkStatusBarPopupView: View {
                             updateHoverState(hovering: hovering)
                         }
                 }
-
-            // 进程列表
-            if isExpanded {
-                processListView
-                    .transition(.opacity.combined(with: .slide))
-            }
         }
-        .padding(12)
     }
 
     // MARK: - Header View
@@ -51,20 +43,8 @@ struct NetworkStatusBarPopupView: View {
                 .font(.system(size: 13, weight: .semibold))
 
             Spacer()
-
-            // 展开/收起按钮
-            Button(action: {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    isExpanded.toggle()
-                }
-            }) {
-                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.secondary)
-                    .rotationEffect(.degrees(isExpanded ? 180 : 0))
-            }
-            .buttonStyle(.plain)
         }
+        .padding(.horizontal)
     }
 
     // MARK: - Live Speed View
@@ -111,30 +91,7 @@ struct NetworkStatusBarPopupView: View {
             }
         }
         .padding(10)
-        .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
-        .cornerRadius(8)
-    }
-
-    // MARK: - Process List View
-
-    private var processListView: some View {
-        VStack(spacing: 0) {
-            if viewModel.filteredProcesses.isEmpty {
-                Text("暂无活跃进程")
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
-                    .padding(.vertical, 8)
-            } else {
-                ForEach(viewModel.filteredProcesses.prefix(5)) { process in
-                    ProcessRowView(process: process)
-
-                    if process.id != viewModel.filteredProcesses.prefix(5).last?.id {
-                        Divider()
-                            .padding(.horizontal, 8)
-                    }
-                }
-            }
-        }
+        .background(.background.opacity(0.5))
     }
 
     // MARK: - Helpers

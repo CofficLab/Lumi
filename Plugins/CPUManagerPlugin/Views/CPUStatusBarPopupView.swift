@@ -27,13 +27,7 @@ struct CPUStatusBarPopupView: View {
                             updateHoverState(hovering: hovering)
                         }
                 }
-            
-            Divider()
-            
-            // 系统负载
-            systemLoadView
         }
-        .padding(12)
     }
 
     // MARK: - Header View
@@ -48,7 +42,7 @@ struct CPUStatusBarPopupView: View {
                 .font(.system(size: 13, weight: .semibold))
 
             Spacer()
-        }
+        }.padding(.horizontal)
     }
 
     // MARK: - Live Load View
@@ -89,28 +83,9 @@ struct CPUStatusBarPopupView: View {
             }
             
             Spacer()
-            
-            Image(systemName: "chevron.right")
-                .font(.system(size: 10))
-                .foregroundColor(.secondary.opacity(0.5))
         }
         .padding(10)
-        .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
-        .cornerRadius(8)
-    }
-    
-    // MARK: - System Load View
-    
-    private var systemLoadView: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("系统负载 (1m / 5m / 15m)")
-                .font(.system(size: 10))
-                .foregroundColor(.secondary)
-            
-            Text(viewModel.formattedLoadAverage)
-                .font(.system(size: 12, design: .monospaced))
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.background.opacity(0.5))
     }
     
     // MARK: - Hover Logic
@@ -133,4 +108,12 @@ struct CPUStatusBarPopupView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: workItem)
         }
     }
+}
+
+// MARK: - Preview
+
+#Preview("App") {
+    CPUStatusBarPopupView()
+        .inRootView()
+        .withDebugBar()
 }

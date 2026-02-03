@@ -81,14 +81,15 @@ struct StatusBarPopupView: View {
                 pluginPopupViews[index]
                     .frame(maxWidth: .infinity)
                     .fixedSize(horizontal: false, vertical: true)
+                    .padding(.vertical)
 
                 if index < pluginPopupViews.count - 1 {
                     Divider()
-                        .padding(.horizontal, 12)
+                        .padding(.horizontal, 0)
                 }
             }
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 0)
     }
 
     // MARK: - Menu Items Section
@@ -172,4 +173,5 @@ struct MenuItemRow: View {
         onCheckForUpdates: {},
         onQuit: {}
     )
+    .inRootView()
 }

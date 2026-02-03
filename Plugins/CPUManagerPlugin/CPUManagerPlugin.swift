@@ -41,7 +41,6 @@ actor CPUManagerPlugin: SuperPlugin, SuperLog {
     ContentLayout()
         .hideSidebar()
         .hideTabPicker()
-        .withNavigation(CaffeinatePlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }
