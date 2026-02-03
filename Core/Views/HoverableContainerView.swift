@@ -20,42 +20,45 @@ struct HoverableContainerView<Content: View, Detail: View>: View {
     /// 内容视图构建器
     let content: Content
 
+    /// 唯一标识符，用于区分不同的悬停容器
+    let id: String
+
     // MARK: - State
 
-    @State private var isHovering = false
+    @ObservedObject private var hoverStateManager = HoverStateManager.shared
     @State private var hideWorkItem: DispatchWorkItem?
 
     // MARK: - Initializer
 
-    init(detailView: Detail, @ViewBuilder content: () -> Content) {
+    init(detailView: Detail, id: String = UUID().uuidString, @ViewBuilder content: () -> Content) {
         self.detailView = detailView
+        self.id = id
         self.content = content()
     }
 
     // MARK: - Body
 
     var body: some View {
-        content
-            .background(background())
+        let isHovering = hoverStateManager.isHovering(id: id)
+
+        return content
+            .background(background(isHovering: isHovering))
             .animation(.easeInOut(duration: 0.2), value: isHovering)
             .onHover { hovering in
-                updateHoverState(hovering: hovering)
+                hoverStateManager.registerHover(id: id, isHovering: hovering, isPopover: false)
             }
-            .popover(isPresented: $isHovering, arrowEdge: .leading) {
+            .popover(isPresented: .constant(isHovering), arrowEdge: .leading) {
                 detailView
                     .onHover { hovering in
-                        // 只处理离开事件，不处理进入事件
-                        // 这样可以避免 popover 捕获鼠标移动到其他区块的事件
-                        if !hovering {
-                            updateHoverState(hovering: hovering)
-                        }
+                        // Popover 内部悬停：保持显示
+                        hoverStateManager.registerHover(id: id, isHovering: true, isPopover: true)
                     }
             }
     }
 
     // MARK: - Private Methods
 
-    private func background() -> some View {
+    private func background(isHovering: Bool) -> some View {
         ZStack {
             if isHovering {
                 Rectangle()
@@ -65,32 +68,13 @@ struct HoverableContainerView<Content: View, Detail: View>: View {
             }
         }
     }
-
-    private func updateHoverState(hovering: Bool) {
-        // Cancel any pending hide action
-        hideWorkItem?.cancel()
-        hideWorkItem = nil
-
-        if hovering {
-            // If mouse enters either view, keep showing
-            isHovering = true
-        } else {
-            // If mouse leaves, wait a bit before hiding
-            // This gives time to move between the source view and the popover
-            let workItem = DispatchWorkItem {
-                isHovering = false
-            }
-            hideWorkItem = workItem
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: workItem)
-        }
-    }
 }
 
 // MARK: - Preview
 
 #Preview("Hoverable Container") {
     VStack(spacing: 20) {
-        HoverableContainerView(detailView: Text("详情内容")) {
+        HoverableContainerView(detailView: Text("详情内容"), id: "preview1") {
             VStack(spacing: 12) {
                 HStack {
                     Image(systemName: "network")
