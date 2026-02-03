@@ -133,13 +133,6 @@ class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
 
         if Self.verbose {
             os_log("\(self.t)更新状态栏内容视图: \(views.count) 个")
-            // 打印插件信息
-            if let plugins = pluginProvider?.plugins {
-                for plugin in plugins {
-                    let hasContent = plugin.addStatusBarContentView() != nil
-                    os_log("\(self.t)  - \(type(of: plugin).id): 状态栏内容=\(hasContent)")
-                }
-            }
         }
     }
 
@@ -254,59 +247,23 @@ class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
         // 先移除旧的监听器
         removeGlobalEventMonitor()
 
-        // 监听应用内的点击事件（用于检测点击 popover 外部）
-        let localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
-            guard let self = self,
-                  let popover = self.popover,
-                  popover.isShown else {
-                return event
-            }
-
-            // 获取 popover 的窗口
-            guard let popoverWindow = popover.contentViewController?.view.window else {
-                return event
-            }
-
-            // 检查点击是否在 popover 窗口内
-            let clickLocation = event.locationInWindow
-            let isInPopover = popoverWindow.frame.contains(popoverWindow.convertFromScreen(NSRect(origin: clickLocation, size: .zero)).origin)
-
-            // 检查点击是否在状态栏按钮内
-            let isClickInStatusBarButton = self.statusItem?.button?.bounds.contains(
-                self.statusItem?.button?.convert(event.locationInWindow, from: nil) ?? .zero
-            ) ?? false
-
-            // 如果点击在外部，关闭 popover
-            if !isInPopover && !isClickInStatusBarButton {
-                Task { @MainActor in
-                    self.closePopover()
-                }
-            }
-
-            return event
-        }
-
-        // 监听全局点击事件（用于检测点击其他应用）
+        // 只监听全局点击事件（用于检测点击其他应用）
+        // .transient 行为已经可以处理应用内的点击外部关闭
         let globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
             Task { @MainActor in
                 self?.closePopover()
             }
         }
 
-        // 保存两个监听器
-        self.eventMonitor = [localMonitor, globalMonitor]
+        self.eventMonitor = globalMonitor
     }
 
     /// 移除全局事件监听
     private func removeGlobalEventMonitor() {
-        if let monitors = eventMonitor as? [Any] {
-            for monitor in monitors {
-                NSEvent.removeMonitor(monitor)
-            }
-        } else if let monitor = eventMonitor {
+        if let monitor = eventMonitor {
             NSEvent.removeMonitor(monitor)
+            eventMonitor = nil
         }
-        eventMonitor = nil
     }
 
     // MARK: - NSPopoverDelegate

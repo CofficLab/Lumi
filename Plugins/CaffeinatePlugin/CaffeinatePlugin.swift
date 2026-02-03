@@ -56,21 +56,6 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
     @MainActor func addStatusBarPopupView() -> AnyView? {
         AnyView(CaffeinateStatusBarPopupView())
     }
-
-    /// 提供导航入口
-    /// - Returns: 导航入口数组
-    @MainActor func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId,
-                title: "防休眠设置",
-                icon: "bolt.fill",
-                pluginId: Self.id
-            ) {
-                CaffeinateSettingsView()
-            },
-        ]
-    }
 }
 
 // MARK: - Preview
