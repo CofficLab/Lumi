@@ -14,11 +14,13 @@ struct SettingView: View {
 
     /// 设置标签枚举
     enum SettingTab: String, CaseIterable {
+        case general = "通用"
         case plugins = "插件管理"
         case about = "关于"
 
         var icon: String {
             switch self {
+            case .general: return "gearshape"
             case .plugins: return "puzzlepiece.extension"
             case .about: return "info.circle"
             }
@@ -60,6 +62,8 @@ struct SettingView: View {
                 // 内容区域
                 Group {
                     switch selectedTab {
+                    case .general:
+                        GeneralSettingView()
                     case .plugins:
                         PluginSettingsView()
                     case .about:
