@@ -164,23 +164,25 @@ struct MenuItemRow: View {
     let subtitle: String
     var color: Color = .primary
     let action: () -> Void
+    
+    @State private var isHovering = false
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
                     .font(.system(size: 14))
-                    .foregroundColor(color)
+                    .foregroundColor(isHovering ? .white : color)
                     .frame(width: 24)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.system(size: 13))
-                        .foregroundColor(color)
+                        .foregroundColor(isHovering ? .white : color)
 
                     Text(subtitle)
                         .font(.system(size: 11))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(isHovering ? .white.opacity(0.8) : .secondary)
                 }
 
                 Spacer()
@@ -191,11 +193,12 @@ struct MenuItemRow: View {
         }
         .buttonStyle(.plain)
         .background(
-            Color(nsColor: .controlAccentColor)
-                .opacity(0.0001) // 几乎透明，但可以接收点击
+            RoundedRectangle(cornerRadius: 4)
+                .fill(isHovering ? Color(nsColor: .selectedContentBackgroundColor) : Color.clear)
+                .padding(.horizontal, 4)
         )
         .onHover { hovering in
-            // TODO: 添加 hover 效果
+            isHovering = hovering
         }
     }
 }
@@ -204,6 +207,7 @@ struct MenuItemRow: View {
 
 struct PluginMenuItemRow: View {
     let menuItem: NSMenuItem
+    @State private var isHovering = false
 
     var body: some View {
         Button(action: {
@@ -215,7 +219,9 @@ struct PluginMenuItemRow: View {
                 if let image = menuItem.image {
                     Image(nsImage: image)
                         .resizable()
+                        .renderingMode(.template)
                         .frame(width: 16, height: 16)
+                        .foregroundColor(isHovering ? .white : .primary)
                 } else {
                     Spacer()
                         .frame(width: 24, height: 1)
@@ -223,6 +229,7 @@ struct PluginMenuItemRow: View {
 
                 Text(menuItem.title)
                     .font(.system(size: 13))
+                    .foregroundColor(isHovering ? .white : .primary)
 
                 Spacer()
 
@@ -230,7 +237,7 @@ struct PluginMenuItemRow: View {
                 if !keyEquivalent.isEmpty {
                     Text(keyEquivalent.uppercased())
                         .font(.system(size: 11))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(isHovering ? .white.opacity(0.8) : .secondary)
                 }
             }
             .padding(.horizontal, 12)
@@ -239,6 +246,16 @@ struct PluginMenuItemRow: View {
         }
         .buttonStyle(.plain)
         .disabled(!menuItem.isEnabled)
+        .background(
+            RoundedRectangle(cornerRadius: 4)
+                .fill(isHovering && menuItem.isEnabled ? Color(nsColor: .selectedContentBackgroundColor) : Color.clear)
+                .padding(.horizontal, 4)
+        )
+        .onHover { hovering in
+            if menuItem.isEnabled {
+                isHovering = hovering
+            }
+        }
     }
 }
 
