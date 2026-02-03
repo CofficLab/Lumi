@@ -62,7 +62,7 @@ struct NetworkStatusBarPopupView: View {
                         .font(.system(size: 10))
                         .foregroundColor(.secondary)
 
-                    Text(formatSpeed(viewModel.networkState.downloadSpeed))
+                    Text(SpeedFormatter.formatForStatusBar(viewModel.networkState.downloadSpeed))
                         .font(.system(size: 14, weight: .medium))
                 }
             }
@@ -85,29 +85,13 @@ struct NetworkStatusBarPopupView: View {
                         .font(.system(size: 10))
                         .foregroundColor(.secondary)
 
-                    Text(formatSpeed(viewModel.networkState.uploadSpeed))
+                    Text(SpeedFormatter.formatForStatusBar(viewModel.networkState.uploadSpeed))
                         .font(.system(size: 14, weight: .medium))
                 }
             }
         }
         .padding(10)
         .background(.background.opacity(0.5))
-    }
-
-    // MARK: - Helpers
-
-    private func formatSpeed(_ bytesPerSecond: Double) -> String {
-        let formatter = ByteCountFormatter()
-        formatter.allowedUnits = [.useKB, .useMB]
-        formatter.countStyle = .memory
-        let formatted = formatter.string(fromByteCount: Int64(bytesPerSecond))
-
-        // 移除小数点后的字节，保留 KB/MB
-        if formatted.contains("KB") || formatted.contains("MB") {
-            return formatted.replacingOccurrences(of: " bytes", with: "")
-        }
-
-        return formatted
     }
     
     private func updateHoverState(hovering: Bool) {
@@ -170,7 +154,7 @@ struct ProcessRowView: View {
                             .font(.system(size: 8))
                             .foregroundColor(.green)
 
-                        Text(formatSpeed(Int64(process.downloadSpeed)))
+                        Text(SpeedFormatter.formatForStatusBar(process.downloadSpeed))
                             .font(.system(size: 10))
                     }
                 }
@@ -182,7 +166,7 @@ struct ProcessRowView: View {
                             .font(.system(size: 8))
                             .foregroundColor(.red)
 
-                        Text(formatSpeed(Int64(process.uploadSpeed)))
+                        Text(SpeedFormatter.formatForStatusBar(process.uploadSpeed))
                             .font(.system(size: 10))
                     }
                 }
@@ -190,27 +174,6 @@ struct ProcessRowView: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
-    }
-
-    private func formatSpeed(_ bytesPerSecond: Int64) -> String {
-        let formatter = ByteCountFormatter()
-        formatter.allowedUnits = [.useKB, .useMB]
-        formatter.countStyle = .memory
-
-        let formatted = formatter.string(fromByteCount: bytesPerSecond)
-
-        // 简化显示：只显示数字和单位
-        if formatted.contains("KB") {
-            return formatted.replacingOccurrences(of: " KB", with: "K")
-        } else if formatted.contains("MB") {
-            return formatted.replacingOccurrences(of: " MB", with: "M")
-        } else if formatted.contains("GB") {
-            return formatted.replacingOccurrences(of: " GB", with: "G")
-        } else if formatted.contains("bytes") {
-            return formatted.replacingOccurrences(of: " bytes", with: "B")
-        }
-
-        return formatted
     }
 }
 
