@@ -101,11 +101,8 @@ struct SettingView: View {
             Spacer().frame(height: 20)
 
             // App 图标
-            Image(systemName: "app.badge")
-                .resizable()
+            LogoView(variant: .about, design: .smartLight)
                 .frame(width: 64, height: 64)
-                .cornerRadius(14)
-                .shadow(radius: 3)
 
             // App 名称
             Text(appInfo.name)

@@ -14,12 +14,9 @@ struct AboutView: View {
 
                 // App 图标和名称
                 VStack(spacing: 16) {
-                    // App 图标 (暂时用系统图标替代)
-                    Image(systemName: "app.badge")
-                        .resizable()
+                    // App 图标
+                    LogoView(variant: .about, design: .smartLight)
                         .frame(width: 128, height: 128)
-                        .cornerRadius(20)
-                        .shadow(radius: 5)
 
                     // App 名称
                     Text(appInfo.name)
