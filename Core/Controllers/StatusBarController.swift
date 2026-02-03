@@ -3,7 +3,7 @@ import MagicKit
 import OSLog
 import SwiftUI
 
-/// 状态栏控制器，负责状态栏图标和菜单的管理
+/// 状态栏控制器，负责状态栏图标和弹窗的管理
 @MainActor
 class StatusBarController: NSObject, SuperLog {
     nonisolated static let emoji = "📊"
@@ -20,6 +20,9 @@ class StatusBarController: NSObject, SuperLog {
     /// 状态栏图标相关
     private var iconViewModel = StatusBarIconViewModel()
     private var iconHostingView: InteractiveHostingView<StatusBarIconView>?
+
+    /// 弹窗
+    private var popover: NSPopover?
 
     /// 插件提供者，用于获取插件菜单项
     private weak var pluginProvider: PluginProvider?
@@ -67,6 +70,10 @@ class StatusBarController: NSObject, SuperLog {
             hostingView.heightAnchor.constraint(equalToConstant: 20),
         ])
 
+        // 4. 设置点击动作
+        button.action = #selector(statusBarButtonClicked)
+        button.target = self
+
         // 监听插件加载完成通知
         NotificationCenter.default.addObserver(
             self,
@@ -83,21 +90,29 @@ class StatusBarController: NSObject, SuperLog {
             object: nil
         )
 
-        // 先设置一个基础菜单（不含插件项）
-        setupStatusBarMenu()
+        // 监听应用失去焦点，关闭弹窗
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleApplicationResignedActive),
+            name: NSApplication.didResignActiveNotification,
+            object: nil
+        )
 
         if Self.verbose {
-            os_log("\(self.t)状态栏已设置，等待插件加载...")
+            os_log("\(self.t)状态栏已设置")
         }
     }
 
-    /// 刷新状态栏菜单（插件加载后调用）
+    /// 刷新状态栏弹窗（插件加载后调用）
     func refreshStatusBarMenu() {
-        setupStatusBarMenu()
+        // 如果弹窗正在显示，关闭它以便重新加载
+        closePopover()
     }
 
     /// 清理状态栏资源
     func cleanup() {
+        closePopover()
+
         // 移除通知观察者
         NotificationCenter.default.removeObserver(self)
 
@@ -117,7 +132,7 @@ class StatusBarController: NSObject, SuperLog {
     /// 处理插件加载完成通知
     @objc private func handlePluginsDidLoad() {
         if Self.verbose {
-            os_log("\(self.t)收到插件加载完成通知，刷新菜单...")
+            os_log("\(self.t)收到插件加载完成通知")
         }
         refreshStatusBarMenu()
     }
@@ -143,6 +158,70 @@ class StatusBarController: NSObject, SuperLog {
         updateStatusBarIconAppearance()
     }
 
+    /// 处理应用失去焦点
+    @objc private func handleApplicationResignedActive() {
+        closePopover()
+    }
+
+    // MARK: - Status Bar Actions
+
+    /// 状态栏按钮点击事件
+    @objc private func statusBarButtonClicked() {
+        if let popover = popover, popover.isShown {
+            closePopover()
+        } else {
+            showPopover()
+        }
+    }
+
+    /// 显示弹窗
+    private func showPopover() {
+        guard let button = statusItem?.button else { return }
+
+        // 如果弹窗不存在，创建它
+        if popover == nil {
+            popover = NSPopover()
+            popover?.contentSize = NSSize(width: 280, height: 400)
+            popover?.behavior = .transient
+            popover?.animates = true
+            popover?.contentViewController = NSHostingController(
+                rootView: createPopupView()
+            )
+        }
+
+        // 显示弹窗
+        popover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+
+        if Self.verbose {
+            os_log("\(self.t)显示弹窗")
+        }
+    }
+
+    /// 关闭弹窗
+    private func closePopover() {
+        popover?.performClose(nil)
+    }
+
+    /// 创建弹窗视图
+    private func createPopupView() -> StatusBarPopupView {
+        let pluginItems = pluginProvider?.getStatusBarMenuItems() ?? []
+
+        return StatusBarPopupView(
+            pluginMenuItems: pluginItems,
+            onShowMainWindow: { [weak self] in
+                self?.showMainWindow()
+                self?.closePopover()
+            },
+            onCheckForUpdates: { [weak self] in
+                self?.checkForUpdates()
+                self?.closePopover()
+            },
+            onQuit: { [weak self] in
+                self?.quitApplication()
+            }
+        )
+    }
+
     // MARK: - Private Methods
 
     /// 更新状态栏图标外观
@@ -158,57 +237,10 @@ class StatusBarController: NSObject, SuperLog {
         iconViewModel.activeSources = self.activeSources
     }
 
-    /// 设置状态栏菜单
-    private func setupStatusBarMenu() {
-        let menu = NSMenu()
-
-        // 显示主窗口
-        menu.addItem(NSMenuItem(
-            title: "打开 Lumi",
-            action: #selector(showMainWindow),
-            keyEquivalent: ""
-        ))
-
-        menu.addItem(NSMenuItem(
-            title: "检查更新",
-            action: #selector(checkForUpdates),
-            keyEquivalent: ""
-        ))
-
-        menu.addItem(NSMenuItem.separator())
-
-        // 添加所有插件提供的菜单项
-        if let provider = pluginProvider {
-            let pluginMenuItems = provider.getStatusBarMenuItems()
-
-            if Self.verbose {
-                os_log("\(self.t)获取到 \(pluginMenuItems.count) 个插件菜单项")
-            }
-
-            if !pluginMenuItems.isEmpty {
-                // 添加插件菜单项
-                for item in pluginMenuItems {
-                    menu.addItem(item)
-                }
-
-                menu.addItem(NSMenuItem.separator())
-            }
-        }
-
-        // 退出应用
-        menu.addItem(NSMenuItem(
-            title: "退出",
-            action: #selector(quitApplication),
-            keyEquivalent: "q"
-        ))
-
-        statusItem?.menu = menu
-    }
-
     // MARK: - Menu Actions
 
     /// 显示主窗口
-    @objc private func showMainWindow() {
+    private func showMainWindow() {
         NSApp.activate(ignoringOtherApps: true)
         if let window = NSApp.windows.first {
             window.makeKeyAndOrderFront(nil)
@@ -216,12 +248,12 @@ class StatusBarController: NSObject, SuperLog {
     }
 
     /// 退出应用
-    @objc private func quitApplication() {
+    private func quitApplication() {
         NSApp.terminate(nil)
     }
 
     /// 检查更新
-    @objc private func checkForUpdates() {
+    private func checkForUpdates() {
         NotificationCenter.default.post(name: .checkForUpdates, object: nil)
     }
 }
