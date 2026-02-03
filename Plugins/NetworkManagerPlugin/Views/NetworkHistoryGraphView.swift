@@ -143,17 +143,8 @@ struct TooltipView: View {
     private func formatSpeed(_ bytesPerSecond: Int64) -> String {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useKB, .useMB, .useGB]
-        formatter.countStyle = .memory
-        let formatted = formatter.string(fromByteCount: bytesPerSecond)
-        
-        if formatted.contains("KB") {
-            return formatted.replacingOccurrences(of: " KB", with: "K")
-        } else if formatted.contains("MB") {
-            return formatted.replacingOccurrences(of: " MB", with: "M")
-        } else if formatted.contains("GB") {
-            return formatted.replacingOccurrences(of: " GB", with: "G")
-        }
-        return formatted
+        formatter.countStyle = .binary
+        return formatter.string(fromByteCount: bytesPerSecond) + "/s"
     }
 }
 
