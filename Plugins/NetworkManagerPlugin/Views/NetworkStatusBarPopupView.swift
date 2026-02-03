@@ -34,7 +34,9 @@ struct NetworkStatusBarPopupView: View {
 
                 Text(SpeedFormatter.formatForStatusBar(viewModel.networkState.downloadSpeed))
                     .font(.system(size: 14, weight: .medium))
+                    .frame(width: 60, alignment: .leading)
             }
+            .frame(width: 100, alignment: .leading)
 
             Spacer()
 
@@ -51,7 +53,9 @@ struct NetworkStatusBarPopupView: View {
 
                 Text(SpeedFormatter.formatForStatusBar(viewModel.networkState.uploadSpeed))
                     .font(.system(size: 14, weight: .medium))
+                    .frame(width: 60, alignment: .leading)
             }
+            .frame(width: 100, alignment: .leading)
         }
         .padding(10)
     }
@@ -243,6 +247,6 @@ struct ProcessRowView: View {
 
 #Preview("Network Status Bar Popup") {
     NetworkStatusBarPopupView()
-        .frame(width: 300)
+        .frame(width: 400)
         .frame(height: 400)
 }
