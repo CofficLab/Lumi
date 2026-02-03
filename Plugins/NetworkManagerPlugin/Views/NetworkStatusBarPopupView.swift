@@ -7,6 +7,8 @@ struct NetworkStatusBarPopupView: View {
 
     @StateObject private var viewModel = NetworkManagerViewModel()
     @State private var isExpanded = false
+    @State private var isHovering = false
+    @State private var hideWorkItem: DispatchWorkItem?
 
     // MARK: - Body
 
@@ -17,6 +19,16 @@ struct NetworkStatusBarPopupView: View {
 
             // 实时速度显示
             liveSpeedView
+                .background(Color.clear) // Ensure hit testing works
+                .onHover { hovering in
+                    updateHoverState(hovering: hovering)
+                }
+                .popover(isPresented: $isHovering, arrowEdge: .leading) {
+                    NetworkHistoryDetailView()
+                        .onHover { hovering in
+                            updateHoverState(hovering: hovering)
+                        }
+                }
 
             // 进程列表
             if isExpanded {
@@ -135,6 +147,25 @@ struct NetworkStatusBarPopupView: View {
         }
 
         return formatted
+    }
+    
+    private func updateHoverState(hovering: Bool) {
+        // Cancel any pending hide action
+        hideWorkItem?.cancel()
+        hideWorkItem = nil
+        
+        if hovering {
+            // If mouse enters either view, keep showing
+            isHovering = true
+        } else {
+            // If mouse leaves, wait a bit before hiding
+            // This gives time to move between the source view and the popover
+            let workItem = DispatchWorkItem {
+                isHovering = false
+            }
+            hideWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: workItem)
+        }
     }
 }
 
