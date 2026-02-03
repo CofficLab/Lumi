@@ -110,14 +110,14 @@ struct TooltipView: View {
             HStack(spacing: 8) {
                 HStack(spacing: 4) {
                     Circle().fill(Color.green).frame(width: 6, height: 6)
-                    Text(formatSpeed(Int64(point.downloadSpeed)))
+                    Text(point.downloadSpeed.formattedNetworkSpeed())
                         .font(.system(size: 11, weight: .bold))
                         .monospacedDigit()
                 }
-                
+
                 HStack(spacing: 4) {
                     Circle().fill(Color.red).frame(width: 6, height: 6)
-                    Text(formatSpeed(Int64(point.uploadSpeed)))
+                    Text(point.uploadSpeed.formattedNetworkSpeed())
                         .font(.system(size: 11, weight: .bold))
                         .monospacedDigit()
                 }
@@ -138,13 +138,6 @@ struct TooltipView: View {
             formatter.dateFormat = "MM-dd HH:mm"
         }
         return formatter.string(from: date)
-    }
-    
-    private func formatSpeed(_ bytesPerSecond: Int64) -> String {
-        let formatter = ByteCountFormatter()
-        formatter.allowedUnits = [.useKB, .useMB, .useGB]
-        formatter.countStyle = .binary
-        return formatter.string(fromByteCount: bytesPerSecond) + "/s"
     }
 }
 

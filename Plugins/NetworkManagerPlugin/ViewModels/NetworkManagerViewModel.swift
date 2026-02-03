@@ -139,22 +139,8 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
             networkState.publicIP = await NetworkService.shared.getPublicIP()
         }
     }
-    
-    // Formatting Helpers
-    func formatSpeed(_ bytesPerSec: Double) -> String {
-        let formatter = ByteCountFormatter()
-        formatter.allowedUnits = [.useGB, .useMB, .useKB]
-        formatter.countStyle = .binary
-        return formatter.string(fromByteCount: Int64(bytesPerSec)) + "/s"
-    }
-    
-    func formatBytes(_ bytes: UInt64) -> String {
-        let formatter = ByteCountFormatter()
-        formatter.allowedUnits = [.useGB, .useMB, .useKB]
-        formatter.countStyle = .binary
-        return formatter.string(fromByteCount: Int64(bytes))
-    }
 
+    // Formatting Helpers
     func formatUptime(_ seconds: TimeInterval) -> String {
         let days = Int(seconds) / 86400
         let hours = Int(seconds) / 3600 % 24
