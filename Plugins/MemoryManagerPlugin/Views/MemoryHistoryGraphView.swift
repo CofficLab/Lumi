@@ -72,6 +72,7 @@ struct MemoryHistoryGraphView: View {
             xAxisView
                 .frame(height: xAxisHeight)
         }
+        .padding()
     }
 
     // MARK: - Y Axis View
@@ -247,4 +248,13 @@ struct MemoryTooltipView: View {
         }
         return formatter.string(from: date)
     }
+}
+
+// MARK: - Preview
+
+#Preview("App") {
+    MemoryStatusBarPopupView()
+        .inRootView()
+        .frame(width: 400)
+        .frame(height: 400)
 }

@@ -79,6 +79,7 @@ struct CPUHistoryGraphView: View {
             xAxisView
                 .frame(height: xAxisHeight)
         }
+        .padding()
     }
 
     // MARK: - Y Axis View
@@ -280,4 +281,13 @@ struct CPUTooltipView: View {
 
         return formatter.string(from: date)
     }
+}
+
+// MARK: - Preview
+
+#Preview("App") {
+    CPUStatusBarPopupView()
+        .inRootView()
+        .frame(width: 300)
+        .frame(height: 300)
 }

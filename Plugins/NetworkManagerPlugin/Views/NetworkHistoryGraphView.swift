@@ -90,6 +90,7 @@ struct NetworkHistoryGraphView: View {
             xAxisView
                 .frame(height: xAxisHeight)
         }
+        .padding()
     }
 
     // MARK: - Y Axis View
