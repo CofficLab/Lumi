@@ -25,8 +25,7 @@ struct HoverableContainerView<Content: View, Detail: View>: View {
 
     // MARK: - State
 
-    @StateObject private var hoverStateManager = HoverStateManager.shared
-    @State private var hideWorkItem: DispatchWorkItem?
+    @State private var hovering = false
 
     // MARK: - Initializer
 
@@ -39,35 +38,14 @@ struct HoverableContainerView<Content: View, Detail: View>: View {
     // MARK: - Body
 
     var body: some View {
-        let isHovering = hoverStateManager.isHovering(id: id)
-
         return content
-            .background(background(isHovering: isHovering))
-            .animation(.easeInOut(duration: 0.2), value: isHovering)
+            .background(background(isHovering: self.hovering))
+            .animation(.easeInOut(duration: 0.2), value: self.hovering)
             .onHover { hovering in
-                // ✅ 关键修复：只在 popover 未显示时处理主内容区的离开事件
-                // 当 popover 显示时，鼠标进入 popover 会触发主内容区的 onHover(false)
-                // 但这是正常的，不应该隐藏 popover
-                if hovering {
-                    // 鼠标进入：总是处理
-                    print("[HoverableContainerView[\(id.prefix(10))]] Main content onHover: \(hovering)")
-                    hoverStateManager.registerHover(id: id, isHovering: hovering, isPopover: false)
-                } else if !isHovering {
-                    // 鼠标离开且 popover 未显示：处理
-                    print("[HoverableContainerView[\(id.prefix(10))]] Main content onHover: \(hovering)")
-                    hoverStateManager.registerHover(id: id, isHovering: hovering, isPopover: false)
-                } else {
-                    // 鼠标离开但 popover 正在显示：忽略
-                    print("[HoverableContainerView[\(id.prefix(10))]] Main content onHover: \(hovering) - ignored (popover is showing)")
-                }
+                self.hovering = hovering
             }
-            .popover(isPresented: .constant(isHovering), arrowEdge: .leading) {
+            .popover(isPresented: $hovering, arrowEdge: .leading) {
                 detailView
-                    .onHover { hovering in
-                        print("[HoverableContainerView[\(id.prefix(10))]] Popover onHover: \(hovering)")
-                        // Popover 内部悬停：保持显示
-                        hoverStateManager.registerHover(id: id, isHovering: true, isPopover: true)
-                    }
             }
     }
 
