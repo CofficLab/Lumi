@@ -29,6 +29,7 @@ struct NetworkStatusBarContentView: View {
                 .lineLimit(1)
                 .fixedSize()
         }
+        .frame(width: 38)
     }
 }
 
@@ -45,5 +46,4 @@ struct NetworkStatusBarContentView: View {
         NetworkStatusBarContentView()
     }
     .padding()
-    .background(Color.black)
 }
