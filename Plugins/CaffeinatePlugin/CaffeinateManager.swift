@@ -1,6 +1,6 @@
 import Foundation
-import MagicKit
 import IOKit.pwr_mgt
+import MagicKit
 import Observation
 import OSLog
 
@@ -9,7 +9,7 @@ import OSLog
 class CaffeinateManager: SuperLog {
     static let emoji = "🍽️"
     static let verbose: Bool = false
-    
+
     // MARK: - Singleton
 
     static let shared = CaffeinateManager()
@@ -55,11 +55,11 @@ class CaffeinateManager: SuperLog {
     func activateAndTurnOffDisplay(duration: TimeInterval = 0) {
         // 1. 激活防休眠（仅系统，允许屏幕关闭）
         activate(mode: .systemOnly, duration: duration)
-        
+
         // 2. 关闭屏幕
         turnOffDisplay()
     }
-    
+
     private func turnOffDisplay() {
         let task = Process()
         task.launchPath = "/usr/bin/pmset"
@@ -114,7 +114,7 @@ class CaffeinateManager: SuperLog {
             if duration > 0 {
                 startTimer(duration: duration)
             }
-            
+
             // 通知系统更新状态栏外观
             NotificationCenter.postRequestStatusBarAppearanceUpdate(isActive: true, source: "CaffeinatePlugin")
         } else {
@@ -161,7 +161,7 @@ class CaffeinateManager: SuperLog {
             if Self.verbose {
                 os_log("\(self.t)Caffeinate deactivated successfully")
             }
-            
+
             // 通知系统恢复状态栏外观
             NotificationCenter.postRequestStatusBarAppearanceUpdate(isActive: false, source: "CaffeinatePlugin")
         } else {
@@ -249,9 +249,9 @@ extension CaffeinateManager {
             switch self {
             case .indefinite:
                 return "永久"
-            case .minutes(let m):
+            case let .minutes(m):
                 return "\(m) 分钟"
-            case .hours(let h):
+            case let .hours(h):
                 return "\(h) 小时"
             }
         }
@@ -260,21 +260,10 @@ extension CaffeinateManager {
             switch self {
             case .indefinite:
                 return 0
-            case .minutes(let m):
+            case let .minutes(m):
                 return TimeInterval(m * 60)
-            case .hours(let h):
+            case let .hours(h):
                 return TimeInterval(h * 3600)
-            }
-        }
-
-        var icon: String {
-            switch self {
-            case .indefinite:
-                return "∞"
-            case .minutes:
-                return "🕐"
-            case .hours:
-                return "📅"
             }
         }
     }
@@ -286,6 +275,6 @@ extension CaffeinateManager {
         .minutes(30),
         .hours(1),
         .hours(2),
-        .hours(5)
+        .hours(5),
     ]
 }
