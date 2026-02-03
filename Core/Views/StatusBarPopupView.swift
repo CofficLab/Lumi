@@ -72,23 +72,6 @@ struct StatusBarPopupView: View {
 
                 Spacer()
             }
-
-            // 运行状态信息
-            HStack(spacing: 16) {
-                SystemStatusItem(
-                    icon: "cpu.fill",
-                    label: "CPU",
-                    value: getCPUUsage()
-                )
-
-                SystemStatusItem(
-                    icon: "memorychip.fill",
-                    label: "内存",
-                    value: getMemoryUsage()
-                )
-
-                Spacer()
-            }
         }
         .padding(12)
     }
@@ -170,93 +153,6 @@ struct StatusBarPopupView: View {
 
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
-    }
-
-    private func getCPUUsage() -> String {
-        // 简单的 CPU 使用率获取
-        var totalUsageOfCPU: Double = 0
-        var threadsList: thread_act_array_t?
-        var threadsCount = mach_msg_type_number_t(0)
-        let threadsResult = withUnsafeMutablePointer(to: &threadsList) {
-            return $0.withMemoryRebound(to: thread_act_array_t?.self, capacity: 1) {
-                task_threads(mach_task_self_, $0, &threadsCount)
-            }
-        }
-
-        if threadsResult == KERN_SUCCESS, let threadsList = threadsList {
-            for index in 0..<threadsCount {
-                var threadInfo = thread_basic_info()
-                var threadInfoCount = mach_msg_type_number_t(THREAD_INFO_MAX)
-                let infoResult = withUnsafeMutablePointer(to: &threadInfo) {
-                    $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
-                        thread_info(threadsList[Int(index)], thread_flavor_t(THREAD_BASIC_INFO), $0, &threadInfoCount)
-                    }
-                }
-
-                guard infoResult == KERN_SUCCESS else {
-                    break
-                }
-
-                let threadBasicInfo = threadInfo as thread_basic_info
-                if threadBasicInfo.flags & TH_FLAGS_IDLE == 0 {
-                    totalUsageOfCPU += (Double(threadBasicInfo.cpu_usage) / Double(TH_USAGE_SCALE)) * 100.0
-                }
-            }
-
-            vm_deallocate(mach_task_self_, vm_address_t(UInt(bitPattern: threadsList)), vm_size_t(Int(threadsCount) * MemoryLayout<thread_t>.stride))
-        }
-
-        return String(format: "%.0f%%", totalUsageOfCPU)
-    }
-
-    private func getMemoryUsage() -> String {
-        // 获取内存使用情况
-        var stats = vm_statistics64()
-        var count = mach_msg_type_number_t(MemoryLayout<vm_statistics64>.size / MemoryLayout<integer_t>.size)
-
-        let result = withUnsafeMutablePointer(to: &stats) {
-            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
-                host_statistics64(mach_host_self(), HOST_VM_INFO64, $0, &count)
-            }
-        }
-
-        guard result == KERN_SUCCESS else {
-            return "N/A"
-        }
-
-        let pageSize = vm_kernel_page_size
-        let usedMemory = UInt64(stats.active_count) * UInt64(pageSize)
-        let totalMemory = ProcessInfo.processInfo.physicalMemory
-
-        let usedGB = Double(usedMemory) / 1_073_741_824.0
-        let totalGB = Double(totalMemory) / 1_073_741_824.0
-
-        return String(format: "%.1f / %.0f GB", usedGB, totalGB)
-    }
-}
-
-// MARK: - System Status Item
-
-struct SystemStatusItem: View {
-    let icon: String
-    let label: String
-    let value: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.system(size: 9))
-                    .foregroundColor(.secondary)
-
-                Text(label)
-                    .font(.system(size: 9))
-                    .foregroundColor(.secondary)
-            }
-
-            Text(value)
-                .font(.system(size: 11, weight: .medium))
-        }
     }
 }
 
