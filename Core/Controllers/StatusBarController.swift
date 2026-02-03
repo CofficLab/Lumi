@@ -5,7 +5,7 @@ import SwiftUI
 
 /// 状态栏控制器，负责状态栏图标和弹窗的管理
 @MainActor
-class StatusBarController: NSObject, SuperLog {
+class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
     nonisolated static let emoji = "📊"
     static let verbose = true
 
@@ -93,6 +93,14 @@ class StatusBarController: NSObject, SuperLog {
             self,
             selector: #selector(handleApplicationResignedActive),
             name: NSApplication.didResignActiveNotification,
+            object: nil
+        )
+
+        // 监听窗口焦点变化，关闭弹窗
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleWindowChanged),
+            name: NSWindow.didBecomeKeyNotification,
             object: nil
         )
 
@@ -189,6 +197,17 @@ class StatusBarController: NSObject, SuperLog {
         closePopover()
     }
 
+    /// 处理窗口焦点变化
+    @objc private func handleWindowChanged(_ notification: Notification) {
+        guard let popover = popover, popover.isShown,
+              let popoverWindow = popover.contentViewController?.view.window else { return }
+
+        // 如果成为keyWindow的不是popover窗口，关闭popover
+        if let keyWindow = NSApp.keyWindow, keyWindow != popoverWindow {
+            closePopover()
+        }
+    }
+
     // MARK: - Status Bar Actions
 
     /// 状态栏按钮点击事件
@@ -210,6 +229,7 @@ class StatusBarController: NSObject, SuperLog {
             popover?.contentSize = NSSize(width: 280, height: 400)
             popover?.behavior = .transient
             popover?.animates = true
+            popover?.delegate = self
             popover?.contentViewController = NSHostingController(
                 rootView: createPopupView()
             )
@@ -218,14 +238,96 @@ class StatusBarController: NSObject, SuperLog {
         // 显示弹窗
         popover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
 
+        // 添加全局事件监听器，检测点击外部区域
+        addGlobalEventMonitor()
+
         if Self.verbose {
             os_log("\(self.t)显示弹窗")
+        }
+    }
+
+    /// 全局事件监听器
+    private var eventMonitor: Any?
+
+    /// 添加全局事件监听
+    private func addGlobalEventMonitor() {
+        // 先移除旧的监听器
+        removeGlobalEventMonitor()
+
+        // 监听应用内的点击事件（用于检测点击 popover 外部）
+        let localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
+            guard let self = self,
+                  let popover = self.popover,
+                  popover.isShown else {
+                return event
+            }
+
+            // 获取 popover 的窗口
+            guard let popoverWindow = popover.contentViewController?.view.window else {
+                return event
+            }
+
+            // 检查点击是否在 popover 窗口内
+            let clickLocation = event.locationInWindow
+            let isInPopover = popoverWindow.frame.contains(popoverWindow.convertFromScreen(NSRect(origin: clickLocation, size: .zero)).origin)
+
+            // 检查点击是否在状态栏按钮内
+            let isClickInStatusBarButton = self.statusItem?.button?.bounds.contains(
+                self.statusItem?.button?.convert(event.locationInWindow, from: nil) ?? .zero
+            ) ?? false
+
+            // 如果点击在外部，关闭 popover
+            if !isInPopover && !isClickInStatusBarButton {
+                Task { @MainActor in
+                    self.closePopover()
+                }
+            }
+
+            return event
+        }
+
+        // 监听全局点击事件（用于检测点击其他应用）
+        let globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+            Task { @MainActor in
+                self?.closePopover()
+            }
+        }
+
+        // 保存两个监听器
+        self.eventMonitor = [localMonitor, globalMonitor]
+    }
+
+    /// 移除全局事件监听
+    private func removeGlobalEventMonitor() {
+        if let monitors = eventMonitor as? [Any] {
+            for monitor in monitors {
+                NSEvent.removeMonitor(monitor)
+            }
+        } else if let monitor = eventMonitor {
+            NSEvent.removeMonitor(monitor)
+        }
+        eventMonitor = nil
+    }
+
+    // MARK: - NSPopoverDelegate
+
+    func popoverShouldClose(_ popover: NSPopover) -> Bool {
+        if Self.verbose {
+            os_log("\(self.t)Popover 应该关闭")
+        }
+        return true
+    }
+
+    func popoverDidClose(_ notification: Notification) {
+        if Self.verbose {
+            os_log("\(self.t)Popover 已关闭")
         }
     }
 
     /// 关闭弹窗
     private func closePopover() {
         popover?.performClose(nil)
+        removeGlobalEventMonitor()
     }
 
     /// 创建弹窗视图
