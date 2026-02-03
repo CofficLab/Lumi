@@ -41,6 +41,10 @@ protocol SuperPlugin: Actor {
     /// - Returns: 要添加到系统菜单栏的菜单项数组，如果不需要则返回nil
     @MainActor func addStatusBarMenuItems() -> [NSMenuItem]?
 
+    /// 添加状态栏弹窗视图
+    /// - Returns: 要添加到状态栏弹窗的视图，如果不需要则返回nil
+    @MainActor func addStatusBarPopupView() -> AnyView?
+
     // MARK: - Lifecycle Hooks
 
     /// 插件注册完成后的回调
@@ -97,7 +101,10 @@ extension SuperPlugin {
 
     /// 默认实现：不提供菜单项
     @MainActor func addStatusBarMenuItems() -> [NSMenuItem]? { nil }
-    
+
+    /// 默认实现：不提供弹窗视图
+    @MainActor func addStatusBarPopupView() -> AnyView? { nil }
+
     // MARK: - Lifecycle Hooks Default Implementation
     
     /// 默认实现：注册完成后不执行任何操作

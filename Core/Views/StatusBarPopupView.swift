@@ -5,6 +5,9 @@ import MagicKit
 struct StatusBarPopupView: View {
     // MARK: - Properties
 
+    /// 插件提供的弹窗视图
+    let pluginPopupViews: [AnyView]
+
     /// 插件菜单项
     let pluginMenuItems: [NSMenuItem]
 
@@ -26,7 +29,14 @@ struct StatusBarPopupView: View {
 
             Divider()
 
-            // 第二部分：菜单项
+            // 第二部分：插件提供的视图（如果有）
+            if !pluginPopupViews.isEmpty {
+                pluginViewsSection
+
+                Divider()
+            }
+
+            // 第三部分：菜单项
             menuItemsSection
         }
         .frame(width: 280)
@@ -82,6 +92,22 @@ struct StatusBarPopupView: View {
         }
         .padding(16)
         .background(Color(nsColor: .controlBackgroundColor))
+    }
+
+    // MARK: - Plugin Views Section
+
+    private var pluginViewsSection: some View {
+        VStack(spacing: 0) {
+            ForEach(pluginPopupViews.indices, id: \.self) { index in
+                pluginPopupViews[index]
+
+                if index < pluginPopupViews.count - 1 {
+                    Divider()
+                        .padding(.horizontal, 8)
+                }
+            }
+        }
+        .padding(.vertical, 8)
     }
 
     // MARK: - Menu Items Section
@@ -323,6 +349,7 @@ struct PluginMenuItemRow: View {
 
 #Preview("StatusBar Popup") {
     StatusBarPopupView(
+        pluginPopupViews: [],
         pluginMenuItems: [],
         onShowMainWindow: {},
         onCheckForUpdates: {},

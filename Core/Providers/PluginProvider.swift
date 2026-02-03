@@ -168,6 +168,14 @@ final class PluginProvider: ObservableObject, SuperLog {
             .flatMap { $0 }
     }
 
+    /// 获取所有插件提供的状态栏弹窗视图
+    /// - Returns: 状态栏弹窗视图数组
+    func getStatusBarPopupViews() -> [AnyView] {
+        plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addStatusBarPopupView() }
+    }
+
     /// 获取所有插件提供的导航入口
     /// - Returns: 导航入口数组
     func getNavigationEntries() -> [NavigationEntry] {
