@@ -55,7 +55,7 @@ struct HoverableContainerView<Content: View, Detail: View>: View {
         ZStack {
             if isHovering {
                 Rectangle()
-                    .fill(Color(nsColor: .selectedContentBackgroundColor).opacity(0.3))
+                    .fill(Color(nsColor: .selectedContentBackgroundColor).opacity(0.2))
             } else {
                 EmptyView()
             }

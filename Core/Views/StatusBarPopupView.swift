@@ -58,10 +58,6 @@ struct StatusBarPopupView: View {
                     Text("Lumi")
                         .font(.system(size: 15, weight: .semibold))
 
-                    Text("系统工具箱")
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
-
                     Text("v\(appVersion)")
                         .font(.system(size: 10))
                         .foregroundColor(.secondary)
