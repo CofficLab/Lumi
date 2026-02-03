@@ -18,6 +18,9 @@ extension Notification.Name {
     /// 请求更新状态栏外观的通知
     /// userInfo: ["isActive": Bool, "source": String]
     static let requestStatusBarAppearanceUpdate = Notification.Name("requestStatusBarAppearanceUpdate")
+
+    /// 检查应用更新的通知
+    static let checkForUpdates = Notification.Name("checkForUpdates")
 }
 
 // MARK: - NotificationCenter Extension
@@ -58,6 +61,12 @@ extension NotificationCenter {
             userInfo: ["isActive": isActive, "source": source]
         )
     }
+
+    /// 发送检查应用更新的通知
+    /// - Parameter object: 可选的对象参数
+    static func postCheckForUpdates(object: Any? = nil) {
+        NotificationCenter.default.post(name: .checkForUpdates, object: object)
+    }
 }
 
 // MARK: - View Extensions for Application Events
@@ -95,6 +104,15 @@ extension View {
     /// - Returns: 修改后的视图
     func onApplicationDidResignActive(perform action: @escaping () -> Void) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .applicationDidResignActive)) { _ in
+            action()
+        }
+    }
+
+    /// 监听检查应用更新的事件
+    /// - Parameter action: 事件处理闭包
+    /// - Returns: 修改后的视图
+    func onCheckForUpdates(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .checkForUpdates)) { _ in
             action()
         }
     }
