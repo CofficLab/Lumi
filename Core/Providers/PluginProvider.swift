@@ -159,15 +159,6 @@ final class PluginProvider: ObservableObject, SuperLog {
             .compactMap { $0.addDetailView() }
     }
 
-    /// 获取所有插件提供的系统菜单栏菜单项
-    /// - Returns: 系统菜单栏菜单项数组
-    func getStatusBarMenuItems() -> [NSMenuItem] {
-        plugins
-            .filter { isPluginEnabled($0) }
-            .compactMap { $0.addStatusBarMenuItems() }
-            .flatMap { $0 }
-    }
-
     /// 获取所有插件提供的状态栏弹窗视图
     /// - Returns: 状态栏弹窗视图数组
     func getStatusBarPopupViews() -> [AnyView] {

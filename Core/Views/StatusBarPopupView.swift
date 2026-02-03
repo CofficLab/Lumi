@@ -8,9 +8,6 @@ struct StatusBarPopupView: View {
     /// 插件提供的弹窗视图
     let pluginPopupViews: [AnyView]
 
-    /// 插件菜单项
-    let pluginMenuItems: [NSMenuItem]
-
     /// 显示主窗口
     let onShowMainWindow: () -> Void
 
@@ -98,23 +95,6 @@ struct StatusBarPopupView: View {
 
     private var menuItemsSection: some View {
         VStack(spacing: 0) {
-            if !pluginMenuItems.isEmpty {
-                Divider()
-                    .padding(.horizontal, 8)
-
-                // 插件菜单项
-                ForEach(pluginMenuItems.indices, id: \.self) { index in
-                    let item = pluginMenuItems[index]
-
-                    PluginMenuItemRow(menuItem: item)
-
-                    if index < pluginMenuItems.count - 1 {
-                        Divider()
-                            .padding(.horizontal, 8)
-                    }
-                }
-            }
-            
             // 打开 Lumi
             MenuItemRow(
                 title: "打开 Lumi",
@@ -183,57 +163,11 @@ struct MenuItemRow: View {
     }
 }
 
-// MARK: - Plugin Menu Item Row
-
-struct PluginMenuItemRow: View {
-    let menuItem: NSMenuItem
-    @State private var isHovering = false
-
-    var body: some View {
-        Button(action: {
-            if let action = menuItem.action {
-                _ = menuItem.target?.perform(action, with: menuItem)
-            }
-        }) {
-            HStack(spacing: 12) {
-                Text(menuItem.title)
-                    .font(.system(size: 13))
-                    .foregroundColor(isHovering ? .white : .primary)
-
-                Spacer()
-
-                let keyEquivalent = menuItem.keyEquivalent
-                if !keyEquivalent.isEmpty {
-                    Text(keyEquivalent.uppercased())
-                        .font(.system(size: 11))
-                        .foregroundColor(isHovering ? .white.opacity(0.8) : .secondary)
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(!menuItem.isEnabled)
-        .background(
-            RoundedRectangle(cornerRadius: 4)
-                .fill(isHovering && menuItem.isEnabled ? Color(nsColor: .selectedContentBackgroundColor) : Color.clear)
-                .padding(.horizontal, 4)
-        )
-        .onHover { hovering in
-            if menuItem.isEnabled {
-                isHovering = hovering
-            }
-        }
-    }
-}
-
 // MARK: - Preview
 
 #Preview("StatusBar Popup") {
     StatusBarPopupView(
         pluginPopupViews: [],
-        pluginMenuItems: [],
         onShowMainWindow: {},
         onCheckForUpdates: {},
         onQuit: {}

@@ -204,12 +204,10 @@ class StatusBarController: NSObject, SuperLog {
 
     /// 创建弹窗视图
     private func createPopupView() -> StatusBarPopupView {
-        let pluginItems = pluginProvider?.getStatusBarMenuItems() ?? []
         let pluginViews = pluginProvider?.getStatusBarPopupViews() ?? []
 
         return StatusBarPopupView(
             pluginPopupViews: pluginViews,
-            pluginMenuItems: pluginItems,
             onShowMainWindow: { [weak self] in
                 self?.showMainWindow()
                 self?.closePopover()
