@@ -25,7 +25,7 @@ struct HoverableContainerView<Content: View, Detail: View>: View {
 
     // MARK: - State
 
-    @ObservedObject private var hoverStateManager = HoverStateManager.shared
+    @StateObject private var hoverStateManager = HoverStateManager.shared
     @State private var hideWorkItem: DispatchWorkItem?
 
     // MARK: - Initializer
@@ -45,11 +45,13 @@ struct HoverableContainerView<Content: View, Detail: View>: View {
             .background(background(isHovering: isHovering))
             .animation(.easeInOut(duration: 0.2), value: isHovering)
             .onHover { hovering in
+                print("[HoverableContainerView[\(id.prefix(10))]] Main content onHover: \(hovering)")
                 hoverStateManager.registerHover(id: id, isHovering: hovering, isPopover: false)
             }
             .popover(isPresented: .constant(isHovering), arrowEdge: .leading) {
                 detailView
                     .onHover { hovering in
+                        print("[HoverableContainerView[\(id.prefix(10))]] Popover onHover: \(hovering)")
                         // Popover 内部悬停：保持显示
                         hoverStateManager.registerHover(id: id, isHovering: true, isPopover: true)
                     }

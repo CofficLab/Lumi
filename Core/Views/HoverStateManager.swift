@@ -8,14 +8,25 @@ class HoverStateManager: ObservableObject {
     static let shared = HoverStateManager()
 
     /// 当前活跃的悬停 ID
-    @Published private(set) var activeHoverID: String?
+    @Published private(set) var activeHoverID: String? {
+        didSet {
+            if Self.verbose {
+                print("[HoverStateManager] activeHoverID changed: \(oldValue?.description ?? "nil") -> \(activeHoverID?.description ?? "nil")")
+            }
+        }
+    }
 
     /// 当前悬停的 popover 是否应该保持显示
     @Published private(set) var popoverVisible: Bool = false
 
     private var hideWorkItem: DispatchWorkItem?
+    static let verbose = true
 
-    private init() {}
+    private init() {
+        if Self.verbose {
+            print("[HoverStateManager] Initialized")
+        }
+    }
 
     /// 注册悬停事件
     /// - Parameters:
@@ -28,23 +39,37 @@ class HoverStateManager: ObservableObject {
         hideWorkItem = nil
 
         if isHovering {
-            if isPopover {
-                // Popover 内部悬停：只更新可见性状态
-                popoverVisible = true
-            } else {
-                // 主内容区悬停：设置为活跃 ID
+            // 鼠标进入：设置活跃 ID
+            if activeHoverID != id {
+                if Self.verbose {
+                    print("[HoverStateManager] Mouse entered \(id), setting as active")
+                }
                 activeHoverID = id
-                popoverVisible = true
             }
+            popoverVisible = true
         } else {
+            // 鼠标离开
             if isPopover {
-                // Popover 内部离开：不立即处理，等待主内容区的状态
-                // 这里不做任何操作，让主内容区控制
+                // Popover 内部离开：不做处理，因为主内容区可能还在 hover
+                if Self.verbose {
+                    print("[HoverStateManager] Mouse left popover of \(id), ignoring")
+                }
             } else {
-                // 主内容区离开：延迟隐藏，给用户时间移动到其他区块
+                // 主内容区离开：延迟隐藏，给用户时间移动到 popover
+                if Self.verbose {
+                    print("[HoverStateManager] Mouse left main content of \(id), scheduling hide in 0.3s")
+                }
+
                 let workItem = DispatchWorkItem { [weak self] in
-                    self?.activeHoverID = nil
-                    self?.popoverVisible = false
+                    guard let self = self else { return }
+                    // 只有当没有其他区块活跃时才隐藏
+                    if self.activeHoverID == id {
+                        if Self.verbose {
+                            print("[HoverStateManager] Hiding \(id)")
+                        }
+                        self.activeHoverID = nil
+                        self.popoverVisible = false
+                    }
                 }
                 hideWorkItem = workItem
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: workItem)
@@ -54,6 +79,10 @@ class HoverStateManager: ObservableObject {
 
     /// 检查指定 ID 是否处于悬停状态
     func isHovering(id: String) -> Bool {
-        activeHoverID == id
+        let result = activeHoverID == id
+        if Self.verbose {
+            print("[HoverStateManager] Checking hover for \(id): \(result)")
+        }
+        return result
     }
 }
