@@ -18,6 +18,13 @@ extension Notification.Name {
     /// 请求更新状态栏外观的通知
     /// userInfo: ["isActive": Bool, "source": String]
     static let requestStatusBarAppearanceUpdate = Notification.Name("requestStatusBarAppearanceUpdate")
+
+    /// 请求更新状态栏网速显示的通知
+    /// userInfo: ["uploadSpeed": Double, "downloadSpeed": Double, "source": String]
+    static let requestStatusBarSpeedUpdate = Notification.Name("requestStatusBarSpeedUpdate")
+
+    /// 检查应用更新的通知
+    static let checkForUpdates = Notification.Name("checkForUpdates")
 }
 
 // MARK: - NotificationCenter Extension
@@ -58,6 +65,25 @@ extension NotificationCenter {
             userInfo: ["isActive": isActive, "source": source]
         )
     }
+
+    /// 发送状态栏网速更新请求
+    /// - Parameters:
+    ///   - uploadSpeed: 上传速度（字节/秒）
+    ///   - downloadSpeed: 下载速度（字节/秒）
+    ///   - source: 请求源标识符
+    static func postRequestStatusBarSpeedUpdate(uploadSpeed: Double, downloadSpeed: Double, source: String) {
+        NotificationCenter.default.post(
+            name: .requestStatusBarSpeedUpdate,
+            object: nil,
+            userInfo: ["uploadSpeed": uploadSpeed, "downloadSpeed": downloadSpeed, "source": source]
+        )
+    }
+
+    /// 发送检查应用更新的通知
+    /// - Parameter object: 可选的对象参数
+    static func postCheckForUpdates(object: Any? = nil) {
+        NotificationCenter.default.post(name: .checkForUpdates, object: object)
+    }
 }
 
 // MARK: - View Extensions for Application Events
@@ -96,6 +122,29 @@ extension View {
     func onApplicationDidResignActive(perform action: @escaping () -> Void) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .applicationDidResignActive)) { _ in
             action()
+        }
+    }
+
+    /// 监听检查应用更新的事件
+    /// - Parameter action: 事件处理闭包
+    /// - Returns: 修改后的视图
+    func onCheckForUpdates(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .checkForUpdates)) { _ in
+            action()
+        }
+    }
+
+    /// 监听状态栏网速更新的事件
+    /// - Parameter action: 事件处理闭包，参数为 (uploadSpeed: Double, downloadSpeed: Double)
+    /// - Returns: 修改后的视图
+    func onStatusBarSpeedUpdate(perform action: @escaping (_ uploadSpeed: Double, _ downloadSpeed: Double) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .requestStatusBarSpeedUpdate)) { notification in
+            guard let userInfo = notification.userInfo,
+                  let upload = userInfo["uploadSpeed"] as? Double,
+                  let download = userInfo["downloadSpeed"] as? Double else {
+                return
+            }
+            action(upload, download)
         }
     }
 }

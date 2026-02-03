@@ -22,7 +22,26 @@ struct ProcessNetworkListView: View {
             }
             .padding(10)
             .background(Color(nsColor: .controlBackgroundColor))
-            
+
+            // 系统信息区块
+            HStack {
+                HStack(spacing: 6) {
+                    Image(systemName: "power")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                    Text("运行时间")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                    Text(viewModel.systemUptime)
+                        .font(.system(size: 12, weight: .medium))
+                }
+
+                Spacer()
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color(nsColor: .controlBackgroundColor).opacity(0.3))
+
             // 表头
             HStack(spacing: 10) {
                 Text("应用")

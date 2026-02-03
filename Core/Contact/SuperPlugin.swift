@@ -37,9 +37,14 @@ protocol SuperPlugin: Actor {
     /// - Returns: 导航入口数组，如果不需要则返回nil
     @MainActor func addNavigationEntries() -> [NavigationEntry]?
 
-    /// 添加系统菜单栏菜单项
-    /// - Returns: 要添加到系统菜单栏的菜单项数组，如果不需要则返回nil
-    @MainActor func addStatusBarMenuItems() -> [NSMenuItem]?
+    /// 添加状态栏弹窗视图
+    /// - Returns: 要添加到状态栏弹窗的视图，如果不需要则返回nil
+    @MainActor func addStatusBarPopupView() -> AnyView?
+
+    /// 添加状态栏内容视图
+    /// - Returns: 要显示在状态栏图标位置的视图，如果不需要则返回nil
+    /// - Note: 插件可以提供自定义的状态栏内容视图，内核会将其组合显示
+    @MainActor func addStatusBarContentView() -> AnyView?
 
     // MARK: - Lifecycle Hooks
 
@@ -95,9 +100,12 @@ extension SuperPlugin {
     /// 默认实现：不提供导航入口
     @MainActor func addNavigationEntries() -> [NavigationEntry]? { nil }
 
-    /// 默认实现：不提供菜单项
-    @MainActor func addStatusBarMenuItems() -> [NSMenuItem]? { nil }
-    
+    /// 默认实现：不提供弹窗视图
+    @MainActor func addStatusBarPopupView() -> AnyView? { nil }
+
+    /// 默认实现：不提供状态栏内容视图
+    @MainActor func addStatusBarContentView() -> AnyView? { nil }
+
     // MARK: - Lifecycle Hooks Default Implementation
     
     /// 默认实现：注册完成后不执行任何操作

@@ -13,35 +13,65 @@ struct Sidebar: View {
     }
 
     var body: some View {
-        Group {
-            // 导航列表
-            if entries.isNotEmpty {
-                List(entries, selection: $appProvider.selectedNavigationId) { entry in
-                    HStack(spacing: 12) {
-                        // 图标
-                        Image(systemName: entry.icon)
-                            .font(.system(size: 16))
-                            .foregroundStyle(.secondary)
-                            .frame(width: 24)
+        VStack(spacing: 0) {
+            // 导航列表区域
+            Group {
+                if entries.isNotEmpty {
+                    List(entries, selection: $appProvider.selectedNavigationId) { entry in
+                        HStack(spacing: 12) {
+                            // 图标
+                            Image(systemName: entry.icon)
+                                .font(.system(size: 16))
+                                .foregroundStyle(.secondary)
+                                .frame(width: 24)
 
-                        // 标题
-                        Text(entry.title)
-                            .font(.body)
+                            // 标题
+                            Text(entry.title)
+                                .font(.body)
 
-                        Spacer()
+                            Spacer()
+                        }
+                        .padding(.vertical, 4)
+                        .tag(entry.id)
                     }
-                    .padding(.vertical, 4)
-                    .tag(entry.id)
+                    .listStyle(.automatic)
+                } else {
+                    // 空状态
+                    emptyState
                 }
-                .listStyle(.automatic)
-            } else {
-                // 空状态
-                emptyState
             }
+
+            Spacer()
+
+            // 底部设置按钮
+            settingsButton
         }
         .onAppear {
             initializeDefaultSelection()
         }
+    }
+
+    /// 底部设置按钮
+    private var settingsButton: some View {
+        Button {
+            NotificationCenter.postOpenSettings()
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 16))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24)
+
+                Text("设置")
+                    .font(.body)
+
+                Spacer()
+            }
+            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     /// 空状态视图

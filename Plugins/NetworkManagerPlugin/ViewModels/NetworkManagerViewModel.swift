@@ -24,7 +24,13 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
     }
     @Published var onlyActiveProcesses = true
     @Published var processSearchText = ""
-    
+
+    // 系统启动时间
+    var systemUptime: String {
+        let uptime = ProcessInfo.processInfo.systemUptime
+        return formatUptime(uptime)
+    }
+
     var filteredProcesses: [NetworkProcess] {
         var result = processes
         
@@ -77,6 +83,10 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
         ProcessMonitorService.shared.stopMonitoring()
     }
 
+    func updateProcesses(_ processes: [NetworkProcess]) {
+        self.processes = processes
+    }
+
     func startMonitoring() {
         if Self.verbose {
             os_log("\(self.t)开始网络监控")
@@ -84,7 +94,7 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
 
         // Subscribe to NetworkService updates
         NetworkService.shared.startMonitoring()
-        
+
         NetworkService.shared.$downloadSpeed
             .combineLatest(NetworkService.shared.$uploadSpeed, NetworkService.shared.$totalDownload, NetworkService.shared.$totalUpload)
             .receive(on: DispatchQueue.main)
@@ -143,5 +153,19 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
         formatter.allowedUnits = [.useGB, .useMB, .useKB]
         formatter.countStyle = .binary
         return formatter.string(fromByteCount: Int64(bytes))
+    }
+
+    func formatUptime(_ seconds: TimeInterval) -> String {
+        let days = Int(seconds) / 86400
+        let hours = Int(seconds) / 3600 % 24
+        let minutes = Int(seconds) / 60 % 60
+
+        if days > 0 {
+            return "\(days)天 \(hours)小时 \(minutes)分钟"
+        } else if hours > 0 {
+            return "\(hours)小时 \(minutes)分钟"
+        } else {
+            return "\(minutes)分钟"
+        }
     }
 }
