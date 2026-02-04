@@ -105,7 +105,8 @@ struct HoverableContainerView<Content: View, Detail: View>: View {
                     .onHover { hovering in
                         coordinator.onHover(id: self.id, isHovering: hovering)
                     }
-                    .frame(width: 400)
+                    .padding(12)
+                    .frame(width: 600)
             }
             .onReceive(coordinator.$visibleID) { visibleID in
                 let shouldShow = (visibleID == self.id)

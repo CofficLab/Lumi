@@ -3,11 +3,12 @@ import SwiftUI
 
 struct NetworkHistoryDetailView: View {
     @ObservedObject private var historyService = NetworkHistoryService.shared
+    @StateObject private var viewModel = NetworkManagerViewModel()
     @State private var selectedRange: TimeRange = .hour1
 
     var body: some View {
-        VStack(spacing: 12) {
-            // Header with Picker
+        VStack(spacing: 0) {
+            // Header with Picker (History Trend)
             HStack {
                 Text("历史趋势")
                     .font(.system(size: 12, weight: .semibold))
@@ -23,10 +24,9 @@ struct NetworkHistoryDetailView: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .controlSize(.mini)
-                .frame(width: 300)
+                .infiniteWidth()
             }
-            .padding(.horizontal, 12)
-            .padding(.top, 12)
+            .padding(12)
 
             // Graph
             NetworkHistoryGraphView(
@@ -38,11 +38,23 @@ struct NetworkHistoryDetailView: View {
             .roundedMedium()
             .padding(.horizontal, 12)
             .padding(.bottom, 12)
+
+            Divider()
+
+            // Process Monitor
+            ProcessNetworkListView(viewModel: viewModel)
         }
+        .frame(minHeight: 600)
     }
+}
+
+#Preview("Network Status Bar Popup") {
+    NetworkStatusBarPopupView()
+        .frame(width: 400)
+        .frame(height: 400)
 }
 
 #Preview {
     NetworkHistoryDetailView()
-        .frame(width: 500, height: 400)
+        .frame(width: 500, height: 700)
 }

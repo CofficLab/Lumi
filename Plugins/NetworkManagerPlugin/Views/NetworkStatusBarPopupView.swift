@@ -34,7 +34,7 @@ struct NetworkStatusBarPopupView: View {
 
                 Text(SpeedFormatter.formatForStatusBar(viewModel.networkState.downloadSpeed))
                     .font(.system(size: 14, weight: .medium))
-                    .frame(width: .infinity, alignment: .leading)
+                    .frame(alignment: .leading)
             }
             .frame(width: 100, alignment: .leading)
 
@@ -53,7 +53,7 @@ struct NetworkStatusBarPopupView: View {
 
                 Text(SpeedFormatter.formatForStatusBar(viewModel.networkState.uploadSpeed))
                     .font(.system(size: 14, weight: .medium))
-                    .frame(width: .infinity, alignment: .leading)
+                    .frame(alignment: .leading)
             }
             .frame(width: 100, alignment: .leading)
         }

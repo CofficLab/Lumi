@@ -6,7 +6,7 @@ import MagicKit
 @MainActor
 class NetworkManagerViewModel: ObservableObject, SuperLog {
     static let emoji = "🌐"
-    static let verbose = false
+    static let verbose = true
 
     @Published var networkState = NetworkState()
     @Published var interfaces: [NetworkInterfaceInfo] = []
@@ -62,12 +62,16 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
         }
         startMonitoring()
         
-        // 绑定服务回调
-        ProcessMonitorService.shared.onUpdate = { [weak self] newProcesses in
-            Task { @MainActor in
-                self?.processes = newProcesses
+        // 绑定服务数据
+        ProcessMonitorService.shared.$processes
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] processes in
+                if Self.verbose {
+                    os_log("\(self?.t ?? "")收到进程更新: \(processes.count) 个")
+                }
+                self?.processes = processes
             }
-        }
+            .store(in: &cancellables)
     }
     
     deinit {

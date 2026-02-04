@@ -56,8 +56,7 @@ struct CPUStatusBarPopupView: View {
                 }
             }
             .frame(height: 6)
-        }
-        .padding(12)
+        }.padding()
     }
 
     // MARK: - Mini Trend View
