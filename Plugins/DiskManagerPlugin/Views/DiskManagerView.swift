@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DiskManagerView: View {
     @StateObject private var viewModel = DiskManagerViewModel()
+    @State private var selectedViewMode = 0
     
     var body: some View {
         VStack(spacing: 0) {
@@ -52,46 +53,99 @@ struct DiskManagerView: View {
                 .background(Color(nsColor: .controlBackgroundColor))
             } else {
                 ProgressView()
-                    .onAppear { viewModel.refreshDiskUsage() }
+                // .onAppear 移到底部
             }
             
             Divider()
             
+            // View Mode Picker
+            Picker("视图模式", selection: $selectedViewMode) {
+                Text("大文件").tag(0)
+                Text("目录分析").tag(1)
+                Text("系统清理").tag(2)
+                Text("系统监控").tag(3)
+                Text("应用卸载").tag(4)
+                Text("项目清理").tag(5)
+            }
+            .pickerStyle(.segmented)
+            .padding()
+            
+            // Content
+            VStack {
+                if selectedViewMode == 0 {
+                    LargeFilesListView(viewModel: viewModel)
+                } else if selectedViewMode == 1 {
+                    DirectoryTreeView(entries: viewModel.rootEntries)
+                } else if selectedViewMode == 2 {
+                    CacheCleanerView()
+                } else if selectedViewMode == 3 {
+                    SystemMonitorView()
+                } else if selectedViewMode == 4 {
+                    AppUninstallerView()
+                } else {
+                    ProjectCleanerView()
+                }
+            }
+            
             Spacer()
             
             // Scanning Progress
-            if viewModel.isScanning {
-                VStack {
+            if viewModel.isScanning && selectedViewMode != 2 && selectedViewMode != 3 && selectedViewMode != 4 && selectedViewMode != 5 {
+                VStack(spacing: 8) {
                     ProgressView()
                         .scaleEffect(0.8)
-                    Text("正在扫描: \(viewModel.currentScanningPath)")
-                        .font(.caption)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal)
+                    
+                    if let progress = viewModel.scanProgress {
+                        VStack(spacing: 4) {
+                            Text("正在扫描: \(progress.currentPath)")
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                            
+                            HStack {
+                                Text("\(progress.scannedFiles) 个文件")
+                                Text("•")
+                                Text(viewModel.formatBytes(progress.scannedBytes))
+                            }
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        Text("正在准备扫描...")
+                    }
                 }
+                .font(.caption)
+                .foregroundStyle(.secondary)
                 .padding()
                 .frame(maxWidth: .infinity)
                 .background(Color.gray.opacity(0.05))
             }
             
-            // Large Files List
-            if viewModel.largeFiles.isEmpty && !viewModel.isScanning {
-                ContentUnavailableView("无大文件", systemImage: "doc.text.magnifyingglass", description: Text("点击扫描按钮开始查找大文件"))
-            } else {
-                List {
-                    ForEach(viewModel.largeFiles) { file in
-                        LargeFileRow(item: file, viewModel: viewModel)
-                    }
-                }
-                .listStyle(.inset)
+            // Error Message
+            if let error = viewModel.errorMessage {
+                Text(error)
+                    .foregroundStyle(.red)
+                    .padding()
             }
-            
-            Spacer()
         }
         .onAppear {
             viewModel.refreshDiskUsage()
+        }
+    }
+}
+
+struct LargeFilesListView: View {
+    @ObservedObject var viewModel: DiskManagerViewModel
+    
+    var body: some View {
+        if viewModel.largeFiles.isEmpty && !viewModel.isScanning {
+            ContentUnavailableView("无大文件", systemImage: "doc.text.magnifyingglass", description: Text("点击扫描按钮开始查找大文件"))
+        } else {
+            List {
+                ForEach(viewModel.largeFiles) { file in
+                    LargeFileRow(item: file, viewModel: viewModel)
+                }
+            }
+            .listStyle(.inset)
         }
     }
 }
@@ -130,7 +184,7 @@ struct DiskUsageRingView: View {
 }
 
 struct LargeFileRow: View {
-    let item: FileItem
+    let item: LargeFileEntry
     @ObservedObject var viewModel: DiskManagerViewModel
     @State private var showDeleteConfirm = false
     
@@ -154,9 +208,18 @@ struct LargeFileRow: View {
             
             Spacer()
             
-            Text(viewModel.formatBytes(item.size))
-                .font(.monospacedDigit(.body)())
-                .foregroundStyle(.secondary)
+            VStack(alignment: .trailing) {
+                Text(viewModel.formatBytes(item.size))
+                    .font(.monospacedDigit(.body)())
+                    .foregroundStyle(.secondary)
+                
+                Text(item.fileType.rawValue.capitalized)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .padding(.horizontal, 4)
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(4)
+            }
             
             HStack(spacing: 12) {
                 Button(action: {

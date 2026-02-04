@@ -9,13 +9,23 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
     static let verbose = false
 
     @Published var diskUsage: DiskUsage?
-    @Published var largeFiles: [FileItem] = []
+    @Published var largeFiles: [LargeFileEntry] = []
+    @Published var rootEntries: [DirectoryEntry] = [] // 目录树根节点
     @Published var isScanning = false
     @Published var scanPath: String = FileManager.default.homeDirectoryForCurrentUser.path
-    @Published var currentScanningPath: String = ""
+    @Published var scanProgress: ScanProgress?
     @Published var errorMessage: String?
 
     private var scanTask: Task<Void, Never>?
+    private var cancellables = Set<AnyCancellable>()
+
+    init() {
+        // 订阅 Service 的进度
+        DiskService.shared.$currentScan
+            .receive(on: RunLoop.main)
+            .assign(to: \.scanProgress, on: self)
+            .store(in: &cancellables)
+    }
 
     func refreshDiskUsage() {
         if Self.verbose {
@@ -38,26 +48,30 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(self.t)开始扫描大文件: \(url.path)")
+            os_log("\(self.t)开始扫描: \(url.path)")
         }
 
         isScanning = true
         largeFiles = []
+        rootEntries = []
         errorMessage = nil
 
         scanTask = Task {
-            let files = await DiskService.shared.scanLargeFiles(in: url) { [weak self] path in
-                Task { @MainActor in
-                    self?.currentScanningPath = path
+            do {
+                let result = try await DiskService.shared.scan(url.path)
+                
+                if !Task.isCancelled {
+                    self.largeFiles = result.largeFiles
+                    self.rootEntries = result.entries
+                    self.isScanning = false
+                    if Self.verbose {
+                        os_log("\(self.t)扫描完成，找到 \(result.largeFiles.count) 个大文件")
+                    }
                 }
-            }
-
-            if !Task.isCancelled {
-                self.largeFiles = files
-                self.isScanning = false
-                self.currentScanningPath = ""
-                if Self.verbose {
-                    os_log("\(self.t)扫描完成，找到 \(files.count) 个大文件")
+            } catch {
+                if !Task.isCancelled {
+                    self.errorMessage = error.localizedDescription
+                    self.isScanning = false
                 }
             }
         }
@@ -68,16 +82,17 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
             os_log("\(self.t)停止扫描")
         }
         scanTask?.cancel()
+        DiskService.shared.cancelScan()
         isScanning = false
-        currentScanningPath = ""
     }
 
-    func deleteFile(_ item: FileItem) {
+    func deleteFile(_ item: LargeFileEntry) {
         if Self.verbose {
             os_log("\(self.t)删除文件: \(item.name)")
         }
         do {
-            try DiskService.shared.deleteFile(at: item.url)
+            let url = URL(fileURLWithPath: item.path)
+            try DiskService.shared.deleteFile(at: url)
             largeFiles.removeAll { $0.id == item.id }
             refreshDiskUsage()
         } catch {
@@ -86,8 +101,9 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
         }
     }
     
-    func revealInFinder(_ item: FileItem) {
-        DiskService.shared.revealInFinder(url: item.url)
+    func revealInFinder(_ item: LargeFileEntry) {
+        let url = URL(fileURLWithPath: item.path)
+        DiskService.shared.revealInFinder(url: url)
     }
     
     func formatBytes(_ bytes: Int64) -> String {
