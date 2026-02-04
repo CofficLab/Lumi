@@ -76,11 +76,11 @@ struct SpeedCard: View {
                 Spacer()
             }
 
-            Text(viewModel.formatSpeed(speed))
+            Text(speed.formattedNetworkSpeed())
                 .font(.system(size: 24, weight: .bold, design: .monospaced))
                 .foregroundStyle(.primary)
 
-            Text("总计: \(viewModel.formatBytes(total))")
+            Text("总计: \(Double(total).formattedBytes())")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

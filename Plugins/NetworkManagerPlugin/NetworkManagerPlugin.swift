@@ -24,8 +24,6 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
         _ = NetworkHistoryService.shared
     }
 
-    // MARK: - Lifecycle Hooks
-
     // MARK: - UI Contributions
 
     @MainActor func addStatusBarPopupView() -> AnyView? {

@@ -12,12 +12,12 @@ struct NetworkProcess: Identifiable, Equatable {
     
     // 用于排序和显示的辅助属性
     var totalSpeed: Double { downloadSpeed + uploadSpeed }
-    
-    // 格式化输出
-    var formattedDownload: String { ByteCountFormatter.string(fromByteCount: Int64(downloadSpeed), countStyle: .memory) + "/s" }
-    var formattedUpload: String { ByteCountFormatter.string(fromByteCount: Int64(uploadSpeed), countStyle: .memory) + "/s" }
-    var formattedTotal: String { ByteCountFormatter.string(fromByteCount: Int64(totalSpeed), countStyle: .memory) + "/s" }
-    
+
+    // 格式化输出（使用扩展方法）
+    var formattedDownload: String { downloadSpeed.formattedNetworkSpeed() }
+    var formattedUpload: String { uploadSpeed.formattedNetworkSpeed() }
+    var formattedTotal: String { totalSpeed.formattedNetworkSpeed() }
+
     static func == (lhs: NetworkProcess, rhs: NetworkProcess) -> Bool {
         return lhs.id == rhs.id && lhs.downloadSpeed == rhs.downloadSpeed && lhs.uploadSpeed == rhs.uploadSpeed
     }

@@ -39,6 +39,14 @@ struct CPUHistoryDetailView: View {
             .padding(.horizontal, 12)
             .padding(.bottom, 12)
         }
-        .frame(width: 320)
     }
+}
+
+// MARK: - Preview
+
+#Preview("App") {
+    CPUStatusBarPopupView()
+        .inRootView()
+        .frame(width: 300)
+        .frame(height: 300)
 }

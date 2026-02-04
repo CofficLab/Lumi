@@ -41,13 +41,6 @@ class NetworkPopoverController {
 
             // 启动进程监控
             ProcessMonitorService.shared.startMonitoring()
-
-            // 设置回调
-            ProcessMonitorService.shared.onUpdate = { [weak self] processes in
-                Task { @MainActor in
-                    self?.viewModel?.updateProcesses(processes)
-                }
-            }
         }
     }
 

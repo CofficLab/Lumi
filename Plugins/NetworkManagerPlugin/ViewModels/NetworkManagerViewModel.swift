@@ -6,7 +6,7 @@ import MagicKit
 @MainActor
 class NetworkManagerViewModel: ObservableObject, SuperLog {
     static let emoji = "🌐"
-    static let verbose = false
+    static let verbose = true
 
     @Published var networkState = NetworkState()
     @Published var interfaces: [NetworkInterfaceInfo] = []
@@ -62,12 +62,16 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
         }
         startMonitoring()
         
-        // 绑定服务回调
-        ProcessMonitorService.shared.onUpdate = { [weak self] newProcesses in
-            Task { @MainActor in
-                self?.processes = newProcesses
+        // 绑定服务数据
+        ProcessMonitorService.shared.$processes
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] processes in
+                if Self.verbose {
+                    os_log("\(self?.t ?? "")收到进程更新: \(processes.count) 个")
+                }
+                self?.processes = processes
             }
-        }
+            .store(in: &cancellables)
     }
     
     deinit {
@@ -139,22 +143,8 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
             networkState.publicIP = await NetworkService.shared.getPublicIP()
         }
     }
-    
-    // Formatting Helpers
-    func formatSpeed(_ bytesPerSec: Double) -> String {
-        let formatter = ByteCountFormatter()
-        formatter.allowedUnits = [.useGB, .useMB, .useKB]
-        formatter.countStyle = .binary
-        return formatter.string(fromByteCount: Int64(bytesPerSec)) + "/s"
-    }
-    
-    func formatBytes(_ bytes: UInt64) -> String {
-        let formatter = ByteCountFormatter()
-        formatter.allowedUnits = [.useGB, .useMB, .useKB]
-        formatter.countStyle = .binary
-        return formatter.string(fromByteCount: Int64(bytes))
-    }
 
+    // Formatting Helpers
     func formatUptime(_ seconds: TimeInterval) -> String {
         let days = Int(seconds) / 86400
         let hours = Int(seconds) / 3600 % 24

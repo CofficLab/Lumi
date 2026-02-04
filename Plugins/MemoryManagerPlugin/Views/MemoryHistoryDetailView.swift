@@ -39,6 +39,5 @@ struct MemoryHistoryDetailView: View {
             .padding(.horizontal, 12)
             .padding(.bottom, 12)
         }
-        .frame(width: 320)
     }
 }

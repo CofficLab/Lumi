@@ -1,9 +1,10 @@
 import Foundation
 import AppKit
+import Combine
 import OSLog
 import MagicKit
 
-class ProcessMonitorService: SuperLog {
+class ProcessMonitorService: ObservableObject, SuperLog {
     static let shared = ProcessMonitorService()
     static let emoji = "🕵️‍♂️"
     
@@ -19,26 +20,31 @@ class ProcessMonitorService: SuperLog {
     
     // 运行状态
     private var isRunning = false
+    private var refCount = 0
     private var task: Process?
     private var outputPipe: Pipe?
     
-    // 数据更新回调
-    var onUpdate: (([NetworkProcess]) -> Void)?
+    // 数据发布
+    @Published var processes: [NetworkProcess] = []
     
     private init() {}
     
     func startMonitoring() {
-        guard !isRunning else { return }
-        isRunning = true
-        
-        startNettop()
+        refCount += 1
+        if refCount == 1 {
+            isRunning = true
+            startNettop()
+        }
     }
     
     func stopMonitoring() {
-        isRunning = false
-        task?.terminate()
-        task = nil
-        historyBuffer.removeAll()
+        refCount = max(0, refCount - 1)
+        if refCount == 0 {
+            isRunning = false
+            task?.terminate()
+            task = nil
+            historyBuffer.removeAll()
+        }
     }
     
     private func startNettop() {
@@ -233,8 +239,9 @@ class ProcessMonitorService: SuperLog {
         if !resultProcesses.isEmpty {
             os_log("\(self.t)Published \(resultProcesses.count) processes")
         }
+        
         DispatchQueue.main.async {
-            self.onUpdate?(resultProcesses)
+            self.processes = resultProcesses
         }
     }
     
