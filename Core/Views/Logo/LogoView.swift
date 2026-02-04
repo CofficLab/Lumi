@@ -58,7 +58,7 @@ struct LogoVariantModifier: ViewModifier {
         case .appIcon:
             content
                 .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
-                .background(Color.black.opacity(0.8))
+                .background(Color.black)
         case .statusBar:
             content
                 .scaleEffect(0.9)
