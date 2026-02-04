@@ -45,7 +45,7 @@ struct AboutView: View {
     private var headerSection: some View {
         HStack(spacing: 20) {
             // 应用图标
-            LogoView(variant: .about, design: .smartLight)
+            LogoView(variant: .about)
                 .frame(width: 80, height: 80)
                 .cornerRadius(18)
                 .shadow(radius: 5)

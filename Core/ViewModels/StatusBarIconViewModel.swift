@@ -11,6 +11,6 @@ class StatusBarIconViewModel: ObservableObject {
 }
 
 #Preview("LogoView - Snapshot") {
-    LogoView(variant: .appIcon, design: .smartLight)
+    LogoView(variant: .appIcon)
         .inMagicContainer(.init(width: 500, height: 500), scale: 1)
 }

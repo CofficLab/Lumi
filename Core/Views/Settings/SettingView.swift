@@ -101,7 +101,7 @@ struct SettingView: View {
             Spacer().frame(height: 20)
 
             // App 图标
-            LogoView(variant: .about, design: .smartLight)
+            LogoView(variant: .about)
                 .frame(width: 64, height: 64)
 
             // App 名称
