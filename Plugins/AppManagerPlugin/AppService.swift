@@ -51,68 +51,69 @@ class AppService: SuperLog {
             // 在后台队列执行文件操作
             let paths = self.getUserApplicationPaths()
             let t = self.t
-            
+            let cacheManager = self.cacheManager  // 在 Task 外捕获
+
             DispatchQueue.global(qos: .userInitiated).async {
-                do {
-                    if Self.verbose {
-                        os_log("\(t)正在扫描已安装应用 (force: \(force))")
-                    }
-    
-                    var apps: [AppModel] = []
-                    var validPaths = Set<String>()
+                Task {
+                    do {
+                        if Self.verbose {
+                            os_log("\(t)正在扫描已安装应用 (force: \(force))")
+                        }
 
-                    for path in paths {
-                        let expandedPath = NSString(string: path).expandingTildeInPath
-                        guard let url = URL(string: "file://\(expandedPath)") else { continue }
+                        var apps: [AppModel] = []
+                        var validPaths = Set<String>()
 
-                        if let directoryContents = try? FileManager.default.contentsOfDirectory(
-                            at: url,
-                            includingPropertiesForKeys: [.contentModificationDateKey],
-                            options: [.skipsHiddenFiles]
-                        ) {
-                            for appURL in directoryContents where appURL.pathExtension == "app" {
-                                validPaths.insert(appURL.path)
+                        for path in paths {
+                            let expandedPath = NSString(string: path).expandingTildeInPath
+                            guard let url = URL(string: "file://\(expandedPath)") else { continue }
 
-                                // 获取文件修改时间
-                                let resourceValues = try? appURL.resourceValues(forKeys: [.contentModificationDateKey])
-                                let modDate = resourceValues?.contentModificationDate ?? Date()
+                            if let directoryContents = try? FileManager.default.contentsOfDirectory(
+                                at: url,
+                                includingPropertiesForKeys: [.contentModificationDateKey],
+                                options: [.skipsHiddenFiles]
+                            ) {
+                                for appURL in directoryContents where appURL.pathExtension == "app" {
+                                    validPaths.insert(appURL.path)
 
-                                // 尝试从缓存加载 (如果未强制刷新)
-                                if !force, let cachedItem = self.cacheManager.getCachedApp(at: appURL.path, currentModificationDate: modDate) {
-                                    let app = AppModel(
-                                        bundleURL: appURL,
-                                        name: cachedItem.name,
-                                        identifier: cachedItem.identifier,
-                                        version: cachedItem.version,
-                                        iconFileName: cachedItem.iconFileName,
-                                        size: cachedItem.size
-                                    )
-                                    apps.append(app)
-                                } else {
-                                    let app = AppModel(bundleURL: appURL)
-                                    apps.append(app)
+                                    // 获取文件修改时间
+                                    let resourceValues = try? appURL.resourceValues(forKeys: [.contentModificationDateKey])
+                                    let modDate = resourceValues?.contentModificationDate ?? Date()
+
+                                    // 尝试从缓存加载 (如果未强制刷新)
+                                    if !force, let cachedItem = await cacheManager.getCachedApp(at: appURL.path, currentModificationDate: modDate) {
+                                        let app = AppModel(
+                                            bundleURL: appURL,
+                                            name: cachedItem.name,
+                                            identifier: cachedItem.identifier,
+                                            version: cachedItem.version,
+                                            iconFileName: cachedItem.iconFileName,
+                                            size: cachedItem.size
+                                        )
+                                        apps.append(app)
+                                    } else {
+                                        let app = AppModel(bundleURL: appURL)
+                                        apps.append(app)
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    // 清理无效缓存并保存
-                    Task { @MainActor in
-                         self.cacheManager.cleanInvalidCache(keeping: validPaths)
-                         self.cacheManager.saveCache()
-                         
-                         let stats = self.cacheManager.getStats()
-                         if Self.verbose {
-                             os_log("\(t)缓存统计: \(stats.hitCount) 次命中, \(stats.missCount) 次未命中, \(String(format: "%.1f", stats.hitRate * 100))% 命中率")
-                         }
-                    }
+                        // 清理无效缓存并保存
+                        await cacheManager.cleanInvalidCache(keeping: validPaths)
+                        await cacheManager.saveCache()
 
-                    let sortedApps = apps.sorted {
-                        $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
-                    }
+                        let stats = await cacheManager.getStats()
+                        if Self.verbose {
+                            os_log("\(t)缓存统计: \(stats.hitCount) 次命中, \(stats.missCount) 次未命中, \(String(format: "%.1f", stats.hitRate * 100))% 命中率")
+                        }
 
-                    os_log("\(t)扫描完成: 发现 \(sortedApps.count) 个应用")
-                    continuation.resume(returning: sortedApps)
+                        let sortedApps = apps.sorted {
+                            $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
+                        }
+
+                        os_log("\(t)扫描完成: 发现 \(sortedApps.count) 个应用")
+                        continuation.resume(returning: sortedApps)
+                    }
                 }
             }
         }
@@ -157,12 +158,12 @@ class AppService: SuperLog {
     /// 计算应用大小（在后台线程执行）
     func calculateAppSize(for app: AppModel) async -> Int64 {
         let size = await calculateSize(for: app.bundleURL)
-        
+
         // 更新缓存
         let resourceValues = try? app.bundleURL.resourceValues(forKeys: [.contentModificationDateKey])
         let modDate = resourceValues?.contentModificationDate ?? Date()
-        self.cacheManager.updateCache(for: app, size: size, modificationDate: modDate)
-        
+        await cacheManager.updateCache(for: app, size: size, modificationDate: modDate)
+
         return size
     }
     
@@ -256,8 +257,8 @@ class AppService: SuperLog {
     }
 
     /// 保存缓存
-    func saveCache() {
-        cacheManager.saveCache()
+    func saveCache() async {
+        await cacheManager.saveCache()
     }
 
     /// 卸载应用

@@ -17,21 +17,21 @@ actor WelcomePlugin: SuperPlugin, SuperLog {
     nonisolated static let verbose = true
 
     /// 插件唯一标识符
-    static var id: String = "WelcomePlugin"
+    static let id: String = "WelcomePlugin"
 
     static let navigationId = "\(id).welcome"
 
     /// 插件显示名称
-    static var displayName: String = "欢迎页面"
+    static let displayName: String = "欢迎页面"
 
     /// 插件功能描述
-    static var description: String = "显示应用欢迎界面和使用指南"
+    static let description: String = "显示应用欢迎界面和使用指南"
 
     /// 插件图标名称
-    static var iconName: String = "star.circle.fill"
+    static let iconName: String = "star.circle.fill"
 
     /// 是否可配置
-    static var isConfigurable: Bool = true
+    static let isConfigurable: Bool = true
 
     /// 注册顺序
     static var order: Int { 0 }

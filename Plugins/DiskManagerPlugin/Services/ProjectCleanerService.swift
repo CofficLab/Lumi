@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 class ProjectCleanerService {
     static let shared = ProjectCleanerService()
     private let fileManager = FileManager.default

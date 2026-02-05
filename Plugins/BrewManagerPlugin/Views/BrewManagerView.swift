@@ -1,11 +1,7 @@
-import MagicKit
 import OSLog
 import SwiftUI
 
-struct BrewManagerView: View, SuperLog {
-    static let emoji = "🍺"
-    static let verbose = true
-
+struct BrewManagerView: View {
     @StateObject private var viewModel = BrewManagerViewModel()
     @State private var selectedTab: BrewTab = .installed
 
@@ -121,9 +117,6 @@ struct BrewManagerView: View, SuperLog {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button(action: {
-                    if Self.verbose {
-                        os_log("\(self.t) 🚀 开始刷新")
-                    }
                     Task { await viewModel.refresh() }
                 }) {
                     Label("刷新", systemImage: "arrow.clockwise")

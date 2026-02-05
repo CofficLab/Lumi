@@ -92,14 +92,20 @@ class DiskService: ObservableObject, SuperLog {
         return await Task.detached(priority: .userInitiated) {
             let fileManager = FileManager.default
             var size: Int64 = 0
-            
+
             guard let enumerator = fileManager.enumerator(
                 at: url,
                 includingPropertiesForKeys: [.fileSizeKey],
                 options: [.skipsHiddenFiles, .skipsPackageDescendants]
             ) else { return 0 }
-            
-            for case let fileURL as URL in enumerator {
+
+            // Collect URLs synchronously to avoid non-Sendable enumerator in async context
+            var fileURLs: [URL] = []
+            while let fileURL = enumerator.nextObject() as? URL {
+                fileURLs.append(fileURL)
+            }
+
+            for fileURL in fileURLs {
                 if let resources = try? fileURL.resourceValues(forKeys: [.fileSizeKey]),
                    let fileSize = resources.fileSize {
                     size += Int64(fileSize)
@@ -237,10 +243,10 @@ actor ScanCoordinator {
                     includingPropertiesForKeys: resourceKeys,
                     options: [.skipsHiddenFiles, .skipsPackageDescendants, .skipsSubdirectoryDescendants]
                 ) else { return nil }
-                
+
                 // 收集子项
                 var childURLs: [URL] = []
-                for case let childURL as URL in enumerator {
+                while let childURL = enumerator.nextObject() as? URL {
                     childURLs.append(childURL)
                 }
                 
@@ -338,18 +344,18 @@ actor ScanCoordinator {
                     var children: [DirectoryEntry] = []
                     var dirSize: Int64 = 0
                     var dirLFs: [LargeFileEntry] = []
-                    
+
                     guard let enumerator = fileManager.enumerator(
                         at: url,
                         includingPropertiesForKeys: resourceKeys,
                         options: [.skipsHiddenFiles, .skipsPackageDescendants, .skipsSubdirectoryDescendants]
                     ) else { return (nil, []) }
-                    
+
                     var childURLs: [URL] = []
-                    for case let childURL as URL in enumerator {
+                    while let childURL = enumerator.nextObject() as? URL {
                         childURLs.append(childURL)
                     }
-                    
+
                     // 限制并发深度
                     if depth < 2 {
                         await withTaskGroup(of: (DirectoryEntry?, [LargeFileEntry]).self) { group in
@@ -505,18 +511,18 @@ actor ScanCoordinator {
                     var children: [DirectoryEntry] = []
                     var dirSize: Int64 = 0
                     var dirLFs: [LargeFileEntry] = []
-                    
+
                     guard let enumerator = fileManager.enumerator(
                         at: url,
                         includingPropertiesForKeys: resourceKeys,
                         options: [.skipsHiddenFiles, .skipsPackageDescendants, .skipsSubdirectoryDescendants]
                     ) else { return (nil, []) }
-                    
+
                     var childURLs: [URL] = []
-                    for case let childURL as URL in enumerator {
+                    while let childURL = enumerator.nextObject() as? URL {
                         childURLs.append(childURL)
                     }
-                    
+
                     if depth < 2 {
                         await withTaskGroup(of: (DirectoryEntry?, [LargeFileEntry]).self) { group in
                             for childURL in childURLs {

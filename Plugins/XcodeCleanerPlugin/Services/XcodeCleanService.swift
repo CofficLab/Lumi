@@ -2,9 +2,10 @@ import Foundation
 import OSLog
 import MagicKit
 
+@MainActor
 class XcodeCleanService: SuperLog {
-    static let emoji = "🧼"
-    static let verbose = false
+    nonisolated static let emoji = "🧼"
+    nonisolated static let verbose = false
 
     static let shared = XcodeCleanService()
     private let fileManager = FileManager.default

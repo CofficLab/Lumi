@@ -17,19 +17,19 @@ actor NavigationPlugin: SuperPlugin, SuperLog {
     nonisolated static let verbose = true
 
     /// 插件唯一标识符
-    static var id: String = "NavigationPlugin"
+    static let id: String = "NavigationPlugin"
 
     /// 插件显示名称
-    static var displayName: String = "导航"
+    static let displayName: String = "导航"
 
     /// 插件功能描述
-    static var description: String = "在侧边栏提供主导航按钮"
+    static let description: String = "在侧边栏提供主导航按钮"
 
     /// 插件图标名称
-    static var iconName: String = "sidebar.left"
+    static let iconName: String = "sidebar.left"
 
     /// 是否可配置
-    static var isConfigurable: Bool = false
+    static let isConfigurable: Bool = false
     
     /// 注册顺序
     static var order: Int { -1 }

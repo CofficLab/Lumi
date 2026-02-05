@@ -2,11 +2,12 @@ import SwiftUI
 import Combine
 
 /// 悬停协调器，用于管理多个悬停容器之间的互斥状态
+@MainActor
 class HoverCoordinator: ObservableObject {
     static let shared = HoverCoordinator()
-    
+
     @Published var visibleID: String?
-    
+
     private var hideWorkItem: DispatchWorkItem?
     
     /// 报告悬停状态变化
@@ -14,43 +15,38 @@ class HoverCoordinator: ObservableObject {
     ///   - id: 容器 ID
     ///   - isHovering: 是否处于悬停状态
     func onHover(id: String, isHovering: Bool) {
-        // 确保在主线程执行
-        DispatchQueue.main.async {
-            if isHovering {
-                // 如果是新的悬停，取消之前的隐藏任务
-                self.hideWorkItem?.cancel()
-                self.hideWorkItem = nil
-                
-                // 立即显示当前 ID（互斥：这会隐式关闭其他 ID）
-                if self.visibleID != id {
-                    self.visibleID = id
-                }
-            } else {
-                // 如果离开的是当前显示的 ID，则启动延迟隐藏
-                // 注意：这里我们只关心当前显示的 ID 丢失了悬停。
-                // 如果离开的是非当前 ID（例如已经被互斥关闭了），则忽略。
-                if self.visibleID == id {
-                    let item = DispatchWorkItem { [weak self] in
-                        // 再次检查是否仍然是这个 ID（防止竞态）
-                        if self?.visibleID == id {
-                            self?.visibleID = nil
-                        }
+        if isHovering {
+            // 如果是新的悬停，取消之前的隐藏任务
+            hideWorkItem?.cancel()
+            hideWorkItem = nil
+
+            // 立即显示当前 ID（互斥：这会隐式关闭其他 ID）
+            if visibleID != id {
+                visibleID = id
+            }
+        } else {
+            // 如果离开的是当前显示的 ID，则启动延迟隐藏
+            // 注意：这里我们只关心当前显示的 ID 丢失了悬停。
+            // 如果离开的是非当前 ID（例如已经被互斥关闭了），则忽略。
+            if visibleID == id {
+                let item = DispatchWorkItem { [weak self] in
+                    // 再次检查是否仍然是这个 ID（防止竞态）
+                    if self?.visibleID == id {
+                        self?.visibleID = nil
                     }
-                    self.hideWorkItem = item
-                    // 延迟 0.3s 隐藏，给予用户从内容移动到 popover 的时间，
-                    // 以及给予 popover 出现并捕获鼠标的时间。
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: item)
                 }
+                hideWorkItem = item
+                // 延迟 0.3s 隐藏，给予用户从内容移动到 popover 的时间，
+                // 以及给予 popover 出现并捕获鼠标的时间。
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: item)
             }
         }
     }
-    
+
     /// 强制关闭指定 ID 的悬停
     func close(id: String) {
-        DispatchQueue.main.async {
-            if self.visibleID == id {
-                self.visibleID = nil
-            }
+        if visibleID == id {
+            visibleID = nil
         }
     }
 }

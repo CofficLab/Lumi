@@ -6,7 +6,7 @@ import OSLog
 @MainActor
 class MemoryHistoryService: ObservableObject, SuperLog {
     static let shared = MemoryHistoryService()
-    static let emoji = "📈"
+    nonisolated static let emoji = "📈"
     
     // High resolution buffer (1s interval) - Keep last 1 hour
     @Published var recentHistory: [MemoryDataPoint] = []

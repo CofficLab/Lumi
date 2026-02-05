@@ -26,15 +26,14 @@ struct CacheStats {
 }
 
 /// 缓存管理器
-class CacheManager: SuperLog {
-    static let emoji = "💾"
-    static let verbose = false
+actor CacheManager: SuperLog {
+    nonisolated static let emoji = "💾"
+    nonisolated static let verbose = false
 
     static let shared = CacheManager()
 
     private let cacheFileName = "app_cache.json"
     private var cache: [String: AppCacheItem] = [:]
-    private let lock = NSLock()
     private let fileManager = FileManager.default
 
     private(set) var stats = CacheStats()
@@ -49,14 +48,18 @@ class CacheManager: SuperLog {
     }
 
     private init() {
-        if Self.verbose {
-            os_log("\(self.t)CacheManager initialized")
-        }
-        createCacheDirectoryIfNeeded()
-        loadCache()
+        // Actor init 不能访问实例方法，延迟到首次使用时初始化
     }
 
-    private func createCacheDirectoryIfNeeded() {
+    /// 确保缓存已初始化（首次访问时调用）
+    private func ensureInitialized() async {
+        if cache.isEmpty {
+            await createCacheDirectoryIfNeeded()
+            await loadCache()
+        }
+    }
+
+    private func createCacheDirectoryIfNeeded() async {
         guard let cacheDirectory = cacheDirectory else { return }
         if !fileManager.fileExists(atPath: cacheDirectory.path) {
             do {
@@ -71,10 +74,7 @@ class CacheManager: SuperLog {
     }
 
     /// 加载缓存
-    private func loadCache() {
-        lock.lock()
-        defer { lock.unlock() }
-
+    private func loadCache() async {
         guard let url = cacheFileURL,
               fileManager.fileExists(atPath: url.path),
               let data = try? Data(contentsOf: url) else {
@@ -98,10 +98,7 @@ class CacheManager: SuperLog {
     }
 
     /// 保存缓存
-    func saveCache() {
-        lock.lock()
-        defer { lock.unlock() }
-
+    func saveCache() async {
         guard let url = cacheFileURL else { return }
 
         do {
@@ -121,10 +118,8 @@ class CacheManager: SuperLog {
     ///   - path: 应用路径
     ///   - currentModificationDate: 当前文件修改时间
     /// - Returns: 缓存项（如果有效）
-    func getCachedApp(at path: String, currentModificationDate: Date) -> AppCacheItem? {
-        lock.lock()
-        defer { lock.unlock() }
-
+    func getCachedApp(at path: String, currentModificationDate: Date) async -> AppCacheItem? {
+        await ensureInitialized()
         guard let item = cache[path] else {
             stats.missCount += 1
             if Self.verbose {
@@ -152,10 +147,8 @@ class CacheManager: SuperLog {
     }
 
     /// 更新缓存
-    func updateCache(for app: AppModel, size: Int64, modificationDate: Date) {
-        lock.lock()
-        defer { lock.unlock() }
-
+    func updateCache(for app: AppModel, size: Int64, modificationDate: Date) async {
+        await ensureInitialized()
         let item = AppCacheItem(
             bundlePath: app.bundleURL.path,
             lastModified: modificationDate.timeIntervalSince1970,
@@ -174,10 +167,7 @@ class CacheManager: SuperLog {
 
     /// 清理无效缓存
     /// - Parameter validPaths: 当前有效的应用路径列表
-    func cleanInvalidCache(keeping validPaths: Set<String>) {
-        lock.lock()
-        defer { lock.unlock() }
-
+    func cleanInvalidCache(keeping validPaths: Set<String>) async {
         let initialCount = cache.count
         cache = cache.filter { validPaths.contains($0.key) }
         let removedCount = initialCount - cache.count
@@ -191,9 +181,6 @@ class CacheManager: SuperLog {
 
     /// 清空所有缓存
     func clearAll() {
-        lock.lock()
-        defer { lock.unlock() }
-
         cache.removeAll()
         let oldStats = stats
         stats = CacheStats()
@@ -208,9 +195,7 @@ class CacheManager: SuperLog {
     }
 
     /// 获取当前统计信息
-    func getStats() -> CacheStats {
-        lock.lock()
-        defer { lock.unlock() }
+    func getStats() async -> CacheStats {
         return stats
     }
 }

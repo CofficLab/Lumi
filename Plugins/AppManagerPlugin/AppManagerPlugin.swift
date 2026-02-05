@@ -7,7 +7,7 @@ actor AppManagerPlugin: SuperPlugin {
     static let id = "com.coffic.lumi.plugin.appmanager"
     static let navigationId = "\(id).apps"
 
-    func addNavigationEntries() -> [NavigationEntry]? {
+    @MainActor func addNavigationEntries() -> [NavigationEntry]? {
         return [
             NavigationEntry.create(
                 id: Self.navigationId,

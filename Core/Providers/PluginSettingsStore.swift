@@ -2,6 +2,7 @@ import Foundation
 import Combine
 
 /// 插件设置存储：管理插件的启用/禁用状态
+@MainActor
 class PluginSettingsStore: ObservableObject {
     static let shared = PluginSettingsStore()
 

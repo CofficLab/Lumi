@@ -5,10 +5,11 @@ import Observation
 import OSLog
 
 /// 防休眠管理器：负责管理系统电源状态
+@MainActor
 @Observable
 class CaffeinateManager: SuperLog {
-    static let emoji = "🍽️"
-    static let verbose: Bool = false
+    nonisolated static let emoji = "🍽️"
+    nonisolated static let verbose: Bool = false
 
     // MARK: - Singleton
 
@@ -196,10 +197,13 @@ class CaffeinateManager: SuperLog {
     /// - Parameter duration: 持续时间（秒）
     private func startTimer(duration: TimeInterval) {
         timer = Timer.scheduledTimer(withTimeInterval: duration, repeats: false) { [weak self] _ in
-            if Self.verbose {
-                os_log("\(Self.t)Timer expired, deactivating caffeinate")
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                if Self.verbose {
+                    os_log("\(Self.t)Timer expired, deactivating caffeinate")
+                }
+                self.deactivate()
             }
-            self?.deactivate()
         }
         if Self.verbose {
             os_log("\(self.t)Timer scheduled for \(duration)s")
@@ -209,16 +213,17 @@ class CaffeinateManager: SuperLog {
     // MARK: - Cleanup
 
     deinit {
-        // 清理资源
-        if isActive {
-            if assertionID != 0 {
-                IOPMAssertionRelease(assertionID)
-            }
-            if displayAssertionID != 0 {
-                IOPMAssertionRelease(displayAssertionID)
-            }
-        }
-        timer?.invalidate()
+        // 注意：作为 @MainActor 类，deinit 在主线程执行
+        // 但 deinit 不能访问 actor-isolated 属性
+        //
+        // 正常情况下，资源应该通过 deactivate() 清理
+        // deactivate() 已经清理了：
+        //   - IOKit 断言 (assertionID, displayAssertionID)
+        //   - Timer
+        //
+        // 如果对象在没有 deactivate 的情况下被释放，
+        // 系统会自动清理 IOKit 断言（进程结束时）
+        // Timer 也会被自动释放
     }
 }
 

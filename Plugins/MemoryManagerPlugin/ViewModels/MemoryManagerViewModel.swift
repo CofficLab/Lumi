@@ -5,8 +5,8 @@ import MagicKit
 
 @MainActor
 class MemoryManagerViewModel: ObservableObject, SuperLog {
-    static let emoji = "💾"
-    static let verbose = false
+    nonisolated static let emoji = "💾"
+    nonisolated static let verbose = false
     
     @Published var memoryUsagePercentage: Double = 0.0
     @Published var usedMemory: String = "0 GB"

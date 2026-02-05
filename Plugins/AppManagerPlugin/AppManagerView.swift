@@ -33,6 +33,14 @@ struct AppManagerView: View {
         .infinite()
         .navigationTitle("应用管理")
         .searchable(text: $viewModel.searchText, prompt: "搜索应用")
+        .onChange(of: viewModel.selectedApp) { _, newApp in
+            if let app = newApp {
+                viewModel.scanRelatedFiles(for: app)
+            } else {
+                viewModel.relatedFiles = []
+                viewModel.selectedFileIds = []
+            }
+        }
         .onAppear {
             if viewModel.installedApps.isEmpty {
                 // 先尝试从缓存加载

@@ -17,19 +17,19 @@ actor SettingsButtonPlugin: SuperPlugin, SuperLog {
     nonisolated static let verbose = true
 
     /// 插件唯一标识符
-    static var id: String = "SettingsButtonPlugin"
+    static let id: String = "SettingsButtonPlugin"
 
     /// 插件显示名称
-    static var displayName: String = "设置按钮"
+    static let displayName: String = "设置按钮"
 
     /// 插件功能描述
-    static var description: String = "在状态栏右侧显示设置按钮，点击打开设置界面"
+    static let description: String = "在状态栏右侧显示设置按钮，点击打开设置界面"
 
     /// 插件图标名称
-    static var iconName: String = "gearshape"
+    static let iconName: String = "gearshape"
 
     /// 是否可配置
-    static var isConfigurable: Bool = false
+    static let isConfigurable: Bool = false
     
     /// 注册顺序
     static var order: Int { 100 }

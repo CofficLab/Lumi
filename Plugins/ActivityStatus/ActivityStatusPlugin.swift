@@ -9,31 +9,31 @@ actor ActivityStatusPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "⌛️"
 
     /// 是否启用该插件
-    static let enable = true
+    nonisolated(unsafe) static let enable = true
 
     /// 是否启用详细日志输出
     nonisolated static let verbose = true
 
-    static let shared = ActivityStatusPlugin()
-    static let label = "ActivityStatus"
+    nonisolated(unsafe) static let shared = ActivityStatusPlugin()
+    nonisolated(unsafe) static let label = "ActivityStatus"
 
     /// 插件的唯一标识符，用于设置管理
-    static var id: String = "ActivityStatus"
+    nonisolated(unsafe) static var id: String = "ActivityStatus"
 
     /// 插件显示名称
-    static var displayName: String = "ActivityStatus"
+    nonisolated(unsafe) static var displayName: String = "ActivityStatus"
 
     /// 插件描述
-    static var description: String = "在状态栏显示当前长耗时操作的状态"
+    nonisolated(unsafe) static var description: String = "在状态栏显示当前长耗时操作的状态"
 
     /// 插件图标名称
-    static var iconName: String = "hourglass"
+    nonisolated(unsafe) static var iconName: String = "hourglass"
 
     /// 插件是否可配置（是否在设置中由用户控制启用/停用）
-    static var isConfigurable: Bool = false
+    nonisolated(unsafe) static var isConfigurable: Bool = false
 
     /// 注册顺序
-    static var order: Int { 10 }
+    nonisolated(unsafe) static var order: Int { 10 }
 }
 
 // MARK: - PluginRegistrant

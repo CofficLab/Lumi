@@ -14,26 +14,7 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     @Published var installedApps: [AppModel] = []
     @Published var isLoading = false
     @Published var searchText = ""
-    @Published var selectedApp: AppModel? {
-        didSet {
-            guard selectedApp != oldValue else { return }
-            
-            let app = selectedApp
-            
-            // 使用 DispatchQueue.main.async 确保在视图更新周期结束后执行副作用
-            // 解决 "Publishing changes from within view updates is not allowed" 警告
-            DispatchQueue.main.async { [weak self] in
-                guard let self = self else { return }
-                if let app = app {
-                    self.scanRelatedFiles(for: app)
-                } else {
-                    self.relatedFiles = []
-                    self.selectedFileIds = []
-                }
-            }
-        }
-    }
-
+    @Published var selectedApp: AppModel? = nil
     @Published var relatedFiles: [RelatedFile] = []
     @Published var selectedFileIds: Set<UUID> = []
     @Published var isScanningFiles = false
@@ -111,7 +92,7 @@ class AppManagerViewModel: ObservableObject, SuperLog {
         }
 
         // 扫描结束后保存缓存
-        appService.saveCache()
+        await appService.saveCache()
 
         if Self.verbose {
             os_log("\(self.t)Scan complete: \(self.installedApps.count) apps")

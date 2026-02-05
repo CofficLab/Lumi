@@ -17,19 +17,19 @@ actor ProjectInfoPlugin: SuperPlugin, SuperLog {
     nonisolated static let verbose = true
 
     /// 插件唯一标识符
-    static var id: String = "ProjectInfoPlugin"
+    static let id: String = "ProjectInfoPlugin"
 
     /// 插件显示名称
-    static var displayName: String = "项目信息"
+    static let displayName: String = "项目信息"
 
     /// 插件功能描述
-    static var description: String = "在列表视图中显示当前标签页和项目的详细信息"
+    static let description: String = "在列表视图中显示当前标签页和项目的详细信息"
 
     /// 插件图标名称
-    static var iconName: String = "info.bubble"
+    static let iconName: String = "info.bubble"
 
     /// 是否可配置
-    static var isConfigurable: Bool = true
+    static let isConfigurable: Bool = true
     
     /// 注册顺序
     static var order: Int { 3 }

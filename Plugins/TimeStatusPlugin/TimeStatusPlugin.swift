@@ -19,19 +19,19 @@ actor TimeStatusPlugin: SuperPlugin, SuperLog {
     nonisolated static let verbose = true
 
     /// 插件唯一标识符
-    static var id: String = "TimeStatusPlugin"
+    static let id: String = "TimeStatusPlugin"
 
     /// 插件显示名称
-    static var displayName: String = "时间显示"
+    static let displayName: String = "时间显示"
 
     /// 插件功能描述
-    static var description: String = "在状态栏显示当前时间"
+    static let description: String = "在状态栏显示当前时间"
 
     /// 插件图标名称
-    static var iconName: String = "clock"
+    static let iconName: String = "clock"
 
     /// 是否可配置
-    static var isConfigurable: Bool = true
+    static let isConfigurable: Bool = true
     
     /// 注册顺序
     static var order: Int { 6 }

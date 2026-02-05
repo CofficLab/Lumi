@@ -2,6 +2,7 @@ import Foundation
 import Combine
 import SwiftUI
 
+@MainActor
 class SystemMonitorViewModel: ObservableObject {
     @Published var metrics: SystemMetrics = .empty
     private var cancellables = Set<AnyCancellable>()
