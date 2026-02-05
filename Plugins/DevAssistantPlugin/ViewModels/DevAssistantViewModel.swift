@@ -10,8 +10,21 @@ class DevAssistantViewModel: ObservableObject {
     @Published var errorMessage: String?
     
     // Config
-    @AppStorage("DevAssistant_ApiKey") var apiKey: String = ""
-    @AppStorage("DevAssistant_Model") var model: String = "claude-3-5-sonnet-20240620"
+    @AppStorage("DevAssistant_SelectedProvider") var selectedProvider: LLMProvider = .anthropic
+    
+    // Anthropic
+    @AppStorage("DevAssistant_ApiKey_Anthropic") var apiKeyAnthropic: String = ""
+    @AppStorage("DevAssistant_Model_Anthropic") var modelAnthropic: String = "claude-3-5-sonnet-20240620"
+    
+    // OpenAI
+    @AppStorage("DevAssistant_ApiKey_OpenAI") var apiKeyOpenAI: String = ""
+    @AppStorage("DevAssistant_Model_OpenAI") var modelOpenAI: String = "gpt-4o"
+    @AppStorage("DevAssistant_BaseURL_OpenAI") var baseURLOpenAI: String = "https://api.openai.com/v1/chat/completions"
+    
+    // DeepSeek
+    @AppStorage("DevAssistant_ApiKey_DeepSeek") var apiKeyDeepSeek: String = ""
+    @AppStorage("DevAssistant_Model_DeepSeek") var modelDeepSeek: String = "deepseek-chat"
+    @AppStorage("DevAssistant_BaseURL_DeepSeek") var baseURLDeepSeek: String = "https://api.deepseek.com/chat/completions"
     
     private let llmService = LLMService.shared
     private let shellService = ShellService.shared
@@ -48,7 +61,7 @@ class DevAssistantViewModel: ObservableObject {
         
         Task {
             do {
-                let config = LLMConfig(apiKey: apiKey, model: model, provider: .anthropic)
+                let config = getCurrentConfig()
                 
                 // 1. Get LLM Response
                 let responseText = try await llmService.sendMessage(messages: messages, config: config)
@@ -108,7 +121,7 @@ class DevAssistantViewModel: ObservableObject {
     
     private func continueConversationWithOutput() async {
         do {
-             let config = LLMConfig(apiKey: apiKey, model: model, provider: .anthropic)
+             let config = getCurrentConfig()
              let responseText = try await llmService.sendMessage(messages: messages, config: config)
              let assistantMsg = ChatMessage(role: .assistant, content: responseText)
              messages.append(assistantMsg)
@@ -120,5 +133,34 @@ class DevAssistantViewModel: ObservableObject {
     
     func clearHistory() {
         messages = [ChatMessage(role: .system, content: systemPrompt)]
+    }
+    
+    private func getCurrentConfig() -> LLMConfig {
+        switch selectedProvider {
+        case .anthropic:
+            return LLMConfig(apiKey: apiKeyAnthropic, model: modelAnthropic, provider: .anthropic)
+        case .openai:
+            return LLMConfig(apiKey: apiKeyOpenAI, model: modelOpenAI, provider: .openai, baseURL: baseURLOpenAI)
+        case .deepseek:
+            return LLMConfig(apiKey: apiKeyDeepSeek, model: modelDeepSeek, provider: .deepseek, baseURL: baseURLDeepSeek)
+        }
+    }
+    
+    // Helpers for View Binding
+    var currentModel: String {
+        get {
+            switch selectedProvider {
+            case .anthropic: return modelAnthropic
+            case .openai: return modelOpenAI
+            case .deepseek: return modelDeepSeek
+            }
+        }
+        set {
+            switch selectedProvider {
+            case .anthropic: modelAnthropic = newValue
+            case .openai: modelOpenAI = newValue
+            case .deepseek: modelDeepSeek = newValue
+            }
+        }
     }
 }

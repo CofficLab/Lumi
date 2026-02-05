@@ -72,6 +72,29 @@ struct DevAssistantView: View {
                             // TextEditor doesn't support onSubmit naturally like TextField
                         }
                     
+                    // Provider Selector
+                    VStack(spacing: 0) {
+                        Menu {
+                            Picker("Provider", selection: $viewModel.selectedProvider) {
+                                ForEach(LLMProvider.allCases) { provider in
+                                    Text(provider.rawValue).tag(provider)
+                                }
+                            }
+                            Divider()
+                            // Quick model edit? Or just show current
+                            Text("Model: \(viewModel.currentModel)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        } label: {
+                            Image(systemName: "globe")
+                                .font(.system(size: 20))
+                                .foregroundColor(.secondary)
+                        }
+                        .menuStyle(.borderlessButton)
+                        .frame(width: 30, height: 30)
+                    }
+                    .padding(.horizontal, 4)
+                    
                     Button(action: {
                         viewModel.sendMessage()
                     }) {

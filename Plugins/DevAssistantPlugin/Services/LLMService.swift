@@ -14,10 +14,59 @@ actor LLMService {
         switch config.provider {
         case .anthropic:
             return try await sendToAnthropic(messages: messages, apiKey: config.apiKey, model: config.model)
-        case .openai:
-            // Placeholder for OpenAI
-            throw NSError(domain: "LLMService", code: 501, userInfo: [NSLocalizedDescriptionKey: "OpenAI not implemented yet"])
+        case .openai, .deepseek:
+            return try await sendToOpenAICompatible(messages: messages, config: config)
         }
+    }
+    
+    private func sendToOpenAICompatible(messages: [ChatMessage], config: LLMConfig) async throws -> String {
+        guard let urlString = config.baseURL, let url = URL(string: urlString) else {
+            throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL"])
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        // Convert ChatMessage to OpenAI format
+        // System prompt is just another message with role "system"
+        let conversationMessages = messages.map { msg -> [String: String] in
+            return [
+                "role": msg.role.rawValue,
+                "content": msg.content
+            ]
+        }
+        
+        let body: [String: Any] = [
+            "model": config.model,
+            "messages": conversationMessages,
+            "stream": false
+        ]
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
+            logger.error("OpenAI/DeepSeek API Error: \(errorStr)")
+            throw NSError(domain: "LLMService", code: (response as? HTTPURLResponse)?.statusCode ?? 500, userInfo: [NSLocalizedDescriptionKey: "API Error: \(errorStr)"])
+        }
+        
+        // Parse OpenAI response
+        struct OpenAIResponse: Decodable {
+            struct Choice: Decodable {
+                struct Message: Decodable {
+                    let content: String
+                }
+                let message: Message
+            }
+            let choices: [Choice]
+        }
+        
+        let result = try JSONDecoder().decode(OpenAIResponse.self, from: data)
+        return result.choices.first?.message.content ?? ""
     }
     
     private func sendToAnthropic(messages: [ChatMessage], apiKey: String, model: String) async throws -> String {
