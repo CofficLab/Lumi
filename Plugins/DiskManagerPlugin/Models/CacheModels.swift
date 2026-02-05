@@ -8,15 +8,29 @@ struct CacheCategory: Identifiable, Hashable {
     let name: String
     let description: String
     let icon: String
-    var paths: [CachePath]
+    var paths: [CachePath] {
+        didSet {
+            recalculateTotals()
+        }
+    }
     let safetyLevel: SafetyLevel
-
-    var totalSize: Int64 {
-        paths.reduce(0) { $0 + $1.size }
+    
+    private(set) var totalSize: Int64 = 0
+    private(set) var fileCount: Int = 0
+    
+    init(id: String, name: String, description: String, icon: String, paths: [CachePath], safetyLevel: SafetyLevel) {
+        self.id = id
+        self.name = name
+        self.description = description
+        self.icon = icon
+        self.paths = paths
+        self.safetyLevel = safetyLevel
+        recalculateTotals()
     }
     
-    var fileCount: Int {
-        paths.reduce(0) { $0 + $1.fileCount }
+    private mutating func recalculateTotals() {
+        totalSize = paths.reduce(0) { $0 + $1.size }
+        fileCount = paths.reduce(0) { $0 + $1.fileCount }
     }
 
     enum SafetyLevel: Int, Comparable {

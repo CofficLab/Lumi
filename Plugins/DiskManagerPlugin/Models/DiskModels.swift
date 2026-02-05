@@ -3,7 +3,7 @@ import AppKit
 
 // MARK: - 磁盘使用情况
 
-struct DiskUsage: Codable {
+struct DiskUsage: Codable, Sendable {
     let total: Int64
     let used: Int64
     let available: Int64
@@ -16,7 +16,7 @@ struct DiskUsage: Codable {
 
 // MARK: - 目录扫描模型
 
-struct DirectoryEntry: Identifiable, Hashable, Codable {
+struct DirectoryEntry: Identifiable, Hashable, Codable, Sendable {
     let id: String
     let name: String
     let path: String
@@ -42,7 +42,7 @@ struct DirectoryEntry: Identifiable, Hashable, Codable {
 
 // MARK: - 大文件模型
 
-struct LargeFileEntry: Identifiable, Hashable, Codable, Comparable {
+struct LargeFileEntry: Identifiable, Hashable, Codable, Comparable, Sendable {
     let id: String
     let name: String
     let path: String
@@ -59,7 +59,7 @@ struct LargeFileEntry: Identifiable, Hashable, Codable, Comparable {
         NSWorkspace.shared.icon(forFile: path)
     }
     
-    enum FileType: String, Codable {
+    enum FileType: String, Codable, Sendable {
         case document, image, video, audio, archive, code, other
         
         static func from(extension ext: String) -> FileType {
@@ -84,7 +84,7 @@ struct LargeFileEntry: Identifiable, Hashable, Codable, Comparable {
 
 // MARK: - 扫描结果
 
-struct ScanResult {
+struct ScanResult: Sendable {
     let entries: [DirectoryEntry]
     let largeFiles: [LargeFileEntry]
     let totalSize: Int64
@@ -95,7 +95,7 @@ struct ScanResult {
 
 // MARK: - 扫描进度
 
-struct ScanProgress {
+struct ScanProgress: Sendable {
     let path: String
     let currentPath: String
     let scannedFiles: Int
@@ -114,7 +114,7 @@ struct ScanProgress {
 
 // MARK: - 最大堆 (用于 Top N 大文件)
 
-struct MaxHeap<Element: Hashable & Comparable> {
+struct MaxHeap<Element: Hashable & Comparable & Sendable>: Sendable {
     private var heap: [Element] = []
     private let capacity: Int
     

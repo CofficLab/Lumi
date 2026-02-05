@@ -31,18 +31,22 @@ class DiskService: ObservableObject, SuperLog {
     
     // MARK: - Public API
 
-    func getDiskUsage() -> DiskUsage? {
-        let fileURL = URL(fileURLWithPath: "/")
-        do {
-            let values = try fileURL.resourceValues(forKeys: [.volumeTotalCapacityKey, .volumeAvailableCapacityKey])
-            if let total = values.volumeTotalCapacity, let available = values.volumeAvailableCapacity {
-                let used = Int64(total) - Int64(available)
-                return DiskUsage(total: Int64(total), used: used, available: Int64(available))
+    func getDiskUsage() async -> DiskUsage? {
+        return await Task.detached(priority: .userInitiated) {
+            let fileURL = URL(fileURLWithPath: "/")
+            do {
+                let values = try fileURL.resourceValues(forKeys: [.volumeTotalCapacityKey, .volumeAvailableCapacityKey])
+                if let total = values.volumeTotalCapacity, let available = values.volumeAvailableCapacity {
+                    let used = Int64(total) - Int64(available)
+                    return DiskUsage(total: Int64(total), used: used, available: Int64(available))
+                }
+            } catch {
+                // Since we are in a detached task, we can't easily access 'self.t' or 'os_log' if they are actor-isolated or non-sendable.
+                // But os_log is generally thread-safe. We'll use a simplified log or capture necessary info.
+                // For now, return nil on error.
             }
-        } catch {
-            os_log(.error, "\(self.t)获取磁盘使用情况失败: \(error.localizedDescription)")
-        }
-        return nil
+            return nil
+        }.value
     }
 
     /// 扫描指定路径
@@ -78,8 +82,10 @@ class DiskService: ObservableObject, SuperLog {
     }
     
     /// 删除文件
-    func deleteFile(at url: URL) throws {
-        try FileManager.default.removeItem(at: url)
+    func deleteFile(at url: URL) async throws {
+        try await Task.detached(priority: .utility) {
+            try FileManager.default.removeItem(at: url)
+        }.value
     }
     
     /// 在 Finder 中显示

@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import MagicKit
 import OSLog
 import SwiftUI
@@ -12,6 +13,7 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     nonisolated(unsafe) private let appService = AppService()
 
     @Published var installedApps: [AppModel] = []
+    @Published var filteredApps: [AppModel] = []
     @Published var isLoading = false
     @Published var searchText = ""
     @Published var selectedApp: AppModel? = nil
@@ -21,21 +23,28 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     @Published var isDeleting = false
     @Published var errorMessage: String?
     @Published var showUninstallConfirmation = false
+    
+    private var scanTask: Task<Void, Never>?
+    private var cancellables = Set<AnyCancellable>()
 
+    init() {
+        // Setup search debounce
+        $searchText
+            .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
+            .combineLatest($installedApps)
+            .map { (text, apps) -> [AppModel] in
+                if text.isEmpty { return apps }
+                return apps.filter { app in
+                    app.displayName.localizedCaseInsensitiveContains(text) ||
+                    (app.bundleIdentifier?.localizedCaseInsensitiveContains(text) ?? false)
+                }
+            }
+            .assign(to: \.filteredApps, on: self)
+            .store(in: &cancellables)
+    }
     var totalSelectedSize: Int64 {
         relatedFiles.filter { selectedFileIds.contains($0.id) }
             .reduce(0) { $0 + $1.size }
-    }
-
-    /// 过滤后的应用列表
-    var filteredApps: [AppModel] {
-        if searchText.isEmpty {
-            return installedApps
-        }
-        return installedApps.filter { app in
-            app.displayName.localizedCaseInsensitiveContains(searchText) ||
-                (app.bundleIdentifier?.localizedCaseInsensitiveContains(searchText) ?? false)
-        }
     }
 
     /// 总大小
@@ -43,8 +52,14 @@ class AppManagerViewModel: ObservableObject, SuperLog {
         installedApps.reduce(0) { $0 + $1.size }
     }
 
+    private static let byteFormatter: ByteCountFormatter = {
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        return formatter
+    }()
+
     var formattedTotalSize: String {
-        ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
+        Self.byteFormatter.string(fromByteCount: totalSize)
     }
 
     /// 从缓存加载应用列表（首次加载时调用）
@@ -61,11 +76,29 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     /// 扫描应用
     /// - Parameter force: 是否强制重新扫描
     func scanApps(force: Bool = false) async {
+        // Cancel previous task if any
+        scanTask?.cancel()
+        
+        // Wrap in TaskService for global tracking
+        scanTask = Task {
+            try? await TaskService.shared.run(title: "扫描应用列表", priority: .userInitiated) { progressCallback in
+                await self.performScan(force: force, progressCallback: progressCallback)
+            }
+        }
+        await scanTask?.value
+    }
+
+    private func performScan(force: Bool, progressCallback: @escaping @Sendable (Double) -> Void) async {
         isLoading = true
         defer { isLoading = false }
+        
+        progressCallback(0.1)
 
         // 先扫描应用列表
         let apps = await appService.scanInstalledApps(force: force)
+        if Task.isCancelled { return }
+        
+        progressCallback(0.3)
 
         // 立即显示应用列表（不等待大小计算）
         installedApps = apps
@@ -74,12 +107,16 @@ class AppManagerViewModel: ObservableObject, SuperLog {
         }
 
         // 在后台逐个计算大小，不阻塞 UI
+        let total = Double(apps.count)
         for index in apps.indices {
+            if Task.isCancelled { break }
             var sizedApp = apps[index]
 
             // 仅当大小为0（未缓存）时才计算
             if sizedApp.size == 0 {
                 sizedApp.size = await appService.calculateAppSize(for: sizedApp)
+                
+                if Task.isCancelled { break }
 
                 // 更新单个应用的大小（主线程）
                 await MainActor.run {
@@ -89,10 +126,17 @@ class AppManagerViewModel: ObservableObject, SuperLog {
                     }
                 }
             }
+            // Update progress (from 0.3 to 1.0)
+            let currentProgress = 0.3 + (0.7 * Double(index + 1) / total)
+            progressCallback(currentProgress)
         }
+        
+        progressCallback(1.0)
 
         // 扫描结束后保存缓存
-        await appService.saveCache()
+        if !Task.isCancelled {
+            await appService.saveCache()
+        }
 
         if Self.verbose {
             os_log("\(self.t)Scan complete: \(self.installedApps.count) apps")
