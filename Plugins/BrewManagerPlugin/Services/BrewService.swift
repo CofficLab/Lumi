@@ -13,10 +13,14 @@ actor BrewService {
     private var brewPath: String?
     
     init() {
-        self.brewPath = findBrewPath()
+        // Actor-isolated init cannot call non-isolated methods directly that access self,
+        // but findBrewPath is a pure helper.
+        // To satisfy Swift 6 strict concurrency, we can make findBrewPath static or non-isolated.
+        // Here we call a static helper.
+        self.brewPath = BrewService.findBrewPathStatic()
     }
     
-    private func findBrewPath() -> String? {
+    private static func findBrewPathStatic() -> String? {
         let possiblePaths = ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"]
         for path in possiblePaths {
             if FileManager.default.fileExists(atPath: path) {
@@ -24,6 +28,11 @@ actor BrewService {
             }
         }
         return nil
+    }
+    
+    // Legacy instance method, kept if needed but unused by init
+    private func findBrewPath() -> String? {
+        return Self.findBrewPathStatic()
     }
     
     func checkInstalled() -> Bool {

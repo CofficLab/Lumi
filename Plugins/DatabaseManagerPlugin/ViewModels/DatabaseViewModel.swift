@@ -5,8 +5,8 @@ import MagicKit
 
 @MainActor
 class DatabaseViewModel: ObservableObject, SuperLog {
-    static let emoji = "🗄️"
-    static let verbose = false
+    nonisolated static let emoji = "🗄️"
+    nonisolated static let verbose = false
 
     @Published var configs: [DatabaseConfig] = []
     @Published var selectedConfig: DatabaseConfig?
@@ -20,7 +20,7 @@ class DatabaseViewModel: ObservableObject, SuperLog {
 
     init() {
         if Self.verbose {
-            os_log("\(self.t)初始化数据库视图模型")
+            os_log("\(Self.t)初始化数据库视图模型")
         }
         // Load mock config
         configs.append(DatabaseConfig(name: "Demo SQLite", type: .sqlite, database: ":memory:")) // In-memory DB

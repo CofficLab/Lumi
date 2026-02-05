@@ -1,5 +1,5 @@
-import SwiftUI
 import ServiceManagement
+import SwiftUI
 
 /// 通用设置视图
 struct GeneralSettingView: View {
@@ -36,15 +36,8 @@ struct GeneralSettingView: View {
 
     /// 检查当前开机启动状态
     private func checkLaunchAtLoginStatus() {
-        if #available(macOS 13.0, *) {
-            // 使用新 API
-            if let job = try? SMAppService.mainApp.status {
-                launchAtLogin = (job == .enabled)
-            }
-        } else {
-            // macOS 12 及更早版本不支持程序化设置
-            launchAtLogin = false
-        }
+        let job = SMAppService.mainApp.status
+        launchAtLogin = (job == .enabled)
     }
 
     /// 更新开机启动状态

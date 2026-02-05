@@ -6,7 +6,7 @@ import OSLog
 @MainActor
 class CPUHistoryService: ObservableObject, SuperLog {
     static let shared = CPUHistoryService()
-    static let emoji = "📈"
+    nonisolated static let emoji = "📈"
     
     // High resolution buffer (1s interval) - Keep last 1 hour
     @Published var recentHistory: [CPUDataPoint] = []
@@ -97,13 +97,15 @@ class CPUHistoryService: ObservableObject, SuperLog {
     private func saveHistory() {
         // Only save long term history to disk
         // Run on background thread
-        DispatchQueue.global(qos: .background).async { [weak self] in
-            guard let self = self else { return }
+        let historyToSave = longTermHistory // Capture on MainActor
+        let t = self.t
+        
+        Task.detached(priority: .background) {
             do {
-                let data = try JSONEncoder().encode(self.longTermHistory)
+                let data = try JSONEncoder().encode(historyToSave)
                 UserDefaults.standard.set(data, forKey: self.storageKey)
             } catch {
-                os_log(.error, "\(self.t)Failed to save history: \(error.localizedDescription)")
+                os_log(.error, "\(t)Failed to save history: \(error.localizedDescription)")
             }
         }
     }

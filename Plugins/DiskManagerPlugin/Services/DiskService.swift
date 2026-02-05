@@ -7,8 +7,8 @@ import MagicKit
 
 @MainActor
 class DiskService: ObservableObject, SuperLog {
-    static let emoji = "💽"
-    static let verbose = true
+    nonisolated static let emoji = "💽"
+    nonisolated static let verbose = true
     static let shared = DiskService()
 
     @Published var currentScan: ScanProgress?
@@ -23,7 +23,7 @@ class DiskService: ObservableObject, SuperLog {
         
         // 绑定 Coordinator 的进度更新
         Task {
-            for await progress in await coordinator.progressStream {
+            for await progress in coordinator.progressStream {
                 self.currentScan = progress
             }
         }

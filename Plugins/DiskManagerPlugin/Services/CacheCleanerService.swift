@@ -175,19 +175,25 @@ class CacheCleanerService: ObservableObject, SuperLog {
         // 简单起见，使用 Enumerator
         
         return await Task.detached {
-            var size: Int64 = 0
-            var count = 0
+            var localSize: Int64 = 0
+            var localCount = 0
             
             guard let enumerator = fileManager.enumerator(atPath: path) else { return nil }
             
-            for _ in enumerator {
+            // FileManager.DirectoryEnumerator is not thread-safe and not Sendable,
+            // but we are inside a detached Task with a local instance created on that thread (if fileManager is thread safe).
+            // Actually FileManager.default is thread-safe.
+            // However, makeIterator() availability in async context is the issue.
+            // We can iterate using while loop with nextObject() which is the ObjC way and avoids Sequence conformance issues in async
+            
+            while let _ = enumerator.nextObject() {
                 if let fileAttrs = enumerator.fileAttributes,
                    let fileSize = fileAttrs[.size] as? Int64 {
-                    size += fileSize
-                    count += 1
+                    localSize += fileSize
+                    localCount += 1
                 }
             }
-            return (size, count)
+            return (localSize, localCount)
         }.value
     }
 }

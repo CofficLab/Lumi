@@ -7,8 +7,8 @@ import MagicKit
 @MainActor
 class CPUService: ObservableObject, SuperLog {
     static let shared = CPUService()
-    static let emoji = "🧠"
-    static let verbose = false
+    nonisolated static let emoji = "🧠"
+    nonisolated static let verbose = false
     
     // MARK: - Published Properties
     
@@ -41,7 +41,9 @@ class CPUService: ObservableObject, SuperLog {
             updateCPUUsage()
             
             monitoringTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-                self?.updateCPUUsage()
+                Task { @MainActor [weak self] in
+                    self?.updateCPUUsage()
+                }
             }
         }
     }

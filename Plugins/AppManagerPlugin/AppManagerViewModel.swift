@@ -6,8 +6,8 @@ import SwiftUI
 /// 应用管理器视图模型
 @MainActor
 class AppManagerViewModel: ObservableObject, SuperLog {
-    static let emoji = "📋"
-    static let verbose = true
+    nonisolated static let emoji = "📋"
+    nonisolated static let verbose = true
 
     private let appService = AppService()
 

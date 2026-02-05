@@ -4,7 +4,7 @@ import OSLog
 import MagicKit
 
 @MainActor
-class CPUManagerViewModel: ObservableObject, SuperLog {
+class CPUManagerViewModel: ObservableObject {
     static let emoji = "🧠"
     static let verbose = false
     

@@ -114,7 +114,7 @@ struct HoverableContainerView<Content: View, Detail: View>: View {
                     isPresented = shouldShow
                 }
             }
-            .onChange(of: isPresented) { newValue in
+            .onChange(of: isPresented) { _, newValue in
                 // 如果是用户手动关闭（例如点击外部），则通知协调器
                 if !newValue && coordinator.visibleID == self.id {
                     coordinator.close(id: self.id)

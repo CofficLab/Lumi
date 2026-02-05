@@ -49,15 +49,17 @@ class AppService: SuperLog {
     func scanInstalledApps(force: Bool = false) async -> [AppModel] {
         return await withCheckedContinuation { continuation in
             // 在后台队列执行文件操作
+            let paths = self.getUserApplicationPaths()
+            let t = self.t
+            
             DispatchQueue.global(qos: .userInitiated).async {
                 do {
                     if Self.verbose {
-                        os_log("\(self.t)正在扫描已安装应用 (force: \(force))")
+                        os_log("\(t)正在扫描已安装应用 (force: \(force))")
                     }
     
                     var apps: [AppModel] = []
                     var validPaths = Set<String>()
-                    let paths = self.getUserApplicationPaths()
 
                     for path in paths {
                         let expandedPath = NSString(string: path).expandingTildeInPath
@@ -95,19 +97,21 @@ class AppService: SuperLog {
                     }
 
                     // 清理无效缓存并保存
-                    self.cacheManager.cleanInvalidCache(keeping: validPaths)
-                    self.cacheManager.saveCache()
-
-                    let stats = self.cacheManager.getStats()
-                    if Self.verbose {
-                        os_log("\(self.t)缓存统计: \(stats.hitCount) 次命中, \(stats.missCount) 次未命中, \(String(format: "%.1f", stats.hitRate * 100))% 命中率")
+                    Task { @MainActor in
+                         self.cacheManager.cleanInvalidCache(keeping: validPaths)
+                         self.cacheManager.saveCache()
+                         
+                         let stats = self.cacheManager.getStats()
+                         if Self.verbose {
+                             os_log("\(t)缓存统计: \(stats.hitCount) 次命中, \(stats.missCount) 次未命中, \(String(format: "%.1f", stats.hitRate * 100))% 命中率")
+                         }
                     }
 
                     let sortedApps = apps.sorted {
                         $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
                     }
 
-                    os_log("\(self.t)扫描完成: 发现 \(sortedApps.count) 个应用")
+                    os_log("\(t)扫描完成: 发现 \(sortedApps.count) 个应用")
                     continuation.resume(returning: sortedApps)
                 }
             }
