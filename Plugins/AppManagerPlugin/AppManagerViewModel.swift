@@ -17,14 +17,18 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     @Published var selectedApp: AppModel? {
         didSet {
             guard selectedApp != oldValue else { return }
-
-            // 使用 Task 异步执行，避免在视图更新周期内修改其他 @Published 属性
-            Task {
-                if let app = selectedApp {
-                    scanRelatedFiles(for: app)
+            
+            let app = selectedApp
+            
+            // 使用 DispatchQueue.main.async 确保在视图更新周期结束后执行副作用
+            // 解决 "Publishing changes from within view updates is not allowed" 警告
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                if let app = app {
+                    self.scanRelatedFiles(for: app)
                 } else {
-                    relatedFiles = []
-                    selectedFileIds = []
+                    self.relatedFiles = []
+                    self.selectedFileIds = []
                 }
             }
         }

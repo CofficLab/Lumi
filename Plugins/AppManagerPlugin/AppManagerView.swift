@@ -53,7 +53,10 @@ struct AppManagerView: View {
         } message: {
             Text("确定要删除选中的文件吗？此操作不可撤销。")
         }
-        .alert("错误", isPresented: .constant(viewModel.errorMessage != nil)) {
+        .alert("错误", isPresented: Binding<Bool>(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
             Button("确定") {
                 viewModel.errorMessage = nil
             }
