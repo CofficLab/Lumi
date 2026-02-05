@@ -17,11 +17,13 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
 
     nonisolated var instanceLabel: String { Self.id }
 
-    static let shared = NetworkManagerPlugin()
+    nonisolated static let shared = NetworkManagerPlugin()
 
     init() {
         // 确保在初始化时同步创建 HistoryService
-        _ = NetworkHistoryService.shared
+        Task { @MainActor in
+            _ = NetworkHistoryService.shared
+        }
     }
 
     // MARK: - UI Contributions

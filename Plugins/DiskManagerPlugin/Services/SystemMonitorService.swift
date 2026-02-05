@@ -2,14 +2,36 @@ import Foundation
 import Combine
 import Darwin
 
+private final class MonitorState: @unchecked Sendable {
+    var timer: Timer?
+    var cpuInfo: processor_info_array_t?
+    var numCpuInfo: mach_msg_type_number_t = 0
+    var prevCpuInfo: processor_info_array_t?
+    var prevNumCpuInfo: mach_msg_type_number_t = 0
+    
+    deinit {
+        timer?.invalidate()
+        
+        if let info = cpuInfo {
+            let size = Int(numCpuInfo) * MemoryLayout<integer_t>.size
+            let ptr = UnsafeMutableRawPointer(info)
+            vm_deallocate(mach_task_self_, vm_address_t(Int(bitPattern: ptr)), vm_size_t(size))
+        }
+        if let info = prevCpuInfo {
+            let size = Int(prevNumCpuInfo) * MemoryLayout<integer_t>.size
+            let ptr = UnsafeMutableRawPointer(info)
+            vm_deallocate(mach_task_self_, vm_address_t(Int(bitPattern: ptr)), vm_size_t(size))
+        }
+    }
+}
+
 @MainActor
 class SystemMonitorService: ObservableObject {
     static let shared = SystemMonitorService()
     
     @Published var currentMetrics: SystemMetrics = .empty
 
-    private var timer: Timer?
-    private var refCount = 0
+    private nonisolated let state = MonitorState()
     
     // Previous states for delta calculation
     private var prevNetworkIn: UInt64 = 0
@@ -28,35 +50,13 @@ class SystemMonitorService: ObservableObject {
     
     // CPU load info
     private var numCPUs: natural_t = 0
-    private var cpuInfo: processor_info_array_t?
-    private var numCpuInfo: mach_msg_type_number_t = 0
-    private var prevCpuInfo: processor_info_array_t?
-    private var prevNumCpuInfo: mach_msg_type_number_t = 0
+    private var refCount = 0
     
     private init() {
         // Initialize CPU count
         var mib = [CTL_HW, HW_NCPU]
         var sizeOfNumCPUs = MemoryLayout<natural_t>.size
         sysctl(&mib, 2, &numCPUs, &sizeOfNumCPUs, nil, 0)
-    }
-
-    deinit {
-        // Deinit 不能是 async，直接清理资源
-        // 注意：由于这是 @MainActor 类，deinit 在主线程上执行
-        timer?.invalidate()
-        timer = nil
-
-        // 清理 CPU 内存
-        if let info = cpuInfo {
-            let size = Int(numCpuInfo) * MemoryLayout<integer_t>.size
-            let ptr = UnsafeMutableRawPointer(info)
-            vm_deallocate(mach_task_self_, vm_address_t(Int(bitPattern: ptr)), vm_size_t(size))
-        }
-        if let info = prevCpuInfo {
-            let size = Int(prevNumCpuInfo) * MemoryLayout<integer_t>.size
-            let ptr = UnsafeMutableRawPointer(info)
-            vm_deallocate(mach_task_self_, vm_address_t(Int(bitPattern: ptr)), vm_size_t(size))
-        }
     }
     
     func startMonitoring() {
@@ -79,18 +79,19 @@ class SystemMonitorService: ObservableObject {
     }
     
     private func startTimer() {
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+        let timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.updateMetrics()
             }
         }
+        state.timer = timer
         // Trigger immediately
         updateMetrics()
     }
 
     private func stopTimer() {
-        timer?.invalidate()
-        timer = nil
+        state.timer?.invalidate()
+        state.timer = nil
     }
     
     private func updateMetrics() {
@@ -162,7 +163,7 @@ class SystemMonitorService: ObservableObject {
         if result == KERN_SUCCESS {
             var totalUsage: Double = 0
             
-            if let prevCpuInfo = prevCpuInfo {
+            if let prevCpuInfo = state.prevCpuInfo {
                 for i in 0..<Int32(numCPUs) {
                     var inUse: Int32 = 0
                     var total: Int32 = 0
@@ -188,14 +189,14 @@ class SystemMonitorService: ObservableObject {
             }
             
             // Clean up previous
-            if let prevInfo = prevCpuInfo {
-                let size = Int(prevNumCpuInfo) * MemoryLayout<integer_t>.size
+            if let prevInfo = state.prevCpuInfo {
+                let size = Int(state.prevNumCpuInfo) * MemoryLayout<integer_t>.size
                 let ptr = UnsafeMutableRawPointer(prevInfo)
                 vm_deallocate(mach_task_self_, vm_address_t(Int(bitPattern: ptr)), vm_size_t(size))
             }
             
-            prevCpuInfo = cpuInfoU
-            prevNumCpuInfo = numCpuInfoU
+            state.prevCpuInfo = cpuInfoU
+            state.prevNumCpuInfo = numCpuInfoU
             
             return totalUsage
         }

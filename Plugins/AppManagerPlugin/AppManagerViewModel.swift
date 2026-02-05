@@ -9,7 +9,7 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📋"
     nonisolated static let verbose = true
 
-    private let appService = AppService()
+    nonisolated(unsafe) private let appService = AppService()
 
     @Published var installedApps: [AppModel] = []
     @Published var isLoading = false

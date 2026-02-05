@@ -6,8 +6,8 @@ import MagicKit
 
 @MainActor
 class HostsManagerViewModel: ObservableObject, SuperLog {
-    static let emoji = "🌐"
-    static let verbose = false
+    nonisolated static let emoji = "🌐"
+    nonisolated static let verbose = false
 
     @Published var entries: [HostEntry] = []
     @Published var isLoading = false

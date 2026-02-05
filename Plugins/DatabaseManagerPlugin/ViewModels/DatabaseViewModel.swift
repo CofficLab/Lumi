@@ -87,7 +87,7 @@ class DatabaseViewModel: ObservableObject, SuperLog {
                 }
             } else {
                 let affected = try await connection.execute(queryText, params: nil)
-                queryResult = QueryResult(columns: ["Result"], rows: [[ "Success. Rows affected: \(affected)" ]], rowsAffected: affected)
+                queryResult = QueryResult(columns: ["Result"], rows: [[.string("Success. Rows affected: \(affected)")]], rowsAffected: affected)
                 if Self.verbose {
                     os_log("\(self.t)执行成功，影响 \(affected) 行")
                 }
@@ -102,7 +102,7 @@ class DatabaseViewModel: ObservableObject, SuperLog {
     private func initDemoData(configId: UUID) async throws {
         guard let connection = await manager.getConnection(for: configId) else { return }
         _ = try await connection.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, email TEXT)", params: nil)
-        _ = try await connection.execute("INSERT INTO users (name, email) VALUES (?, ?)", params: ["Alice", "alice@example.com"])
-        _ = try await connection.execute("INSERT INTO users (name, email) VALUES (?, ?)", params: ["Bob", "bob@example.com"])
+        _ = try await connection.execute("INSERT INTO users (name, email) VALUES (?, ?)", params: [.string("Alice"), .string("alice@example.com")])
+        _ = try await connection.execute("INSERT INTO users (name, email) VALUES (?, ?)", params: [.string("Bob"), .string("bob@example.com")])
     }
 }

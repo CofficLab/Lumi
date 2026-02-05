@@ -5,8 +5,13 @@ import IOKit.ps
 import SwiftUI
 
 // Helper class to hold timer avoiding actor isolation issues
-private class TimerHolder {
+private final class TimerHolder: @unchecked Sendable {
     var timer: Timer?
+    
+    func invalidate() {
+        timer?.invalidate()
+        timer = nil
+    }
 }
 
 /// 设备信息数据模型
@@ -33,7 +38,7 @@ class DeviceData: ObservableObject {
 
     // MARK: - Private Properties
 
-    private let timerHolder = TimerHolder()
+    private nonisolated let timerHolder = TimerHolder()
 
     // MARK: - Initialization
 
@@ -56,7 +61,7 @@ class DeviceData: ObservableObject {
     }
 
     deinit {
-        timerHolder.timer?.invalidate()
+        timerHolder.invalidate()
     }
 
     // MARK: - Monitoring
@@ -71,8 +76,7 @@ class DeviceData: ObservableObject {
     }
 
     func stopMonitoring() {
-        timerHolder.timer?.invalidate()
-        timerHolder.timer = nil
+        timerHolder.invalidate()
     }
 
     // MARK: - Data Fetching

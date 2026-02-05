@@ -5,8 +5,8 @@ import MagicKit
 
 @MainActor
 class NetworkManagerViewModel: ObservableObject, SuperLog {
-    static let emoji = "🌐"
-    static let verbose = true
+    nonisolated static let emoji = "🌐"
+    nonisolated static let verbose = true
 
     @Published var networkState = NetworkState()
     @Published var interfaces: [NetworkInterfaceInfo] = []
@@ -74,9 +74,11 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
             .store(in: &cancellables)
     }
     
-    deinit {
-        NetworkService.shared.stopMonitoring()
-        timer?.invalidate()
+    nonisolated deinit {
+        Task { @MainActor [weak self] in
+            self?.timer?.invalidate()
+            NetworkService.shared.stopMonitoring()
+        }
     }
     
     func startProcessMonitoring() {

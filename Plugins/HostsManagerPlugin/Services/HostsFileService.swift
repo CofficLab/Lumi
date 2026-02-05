@@ -3,9 +3,10 @@ import OSLog
 import AppKit
 import MagicKit
 
+@MainActor
 class HostsFileService: SuperLog {
-    static let emoji = "📝"
-    static let verbose = false
+    nonisolated static let emoji = "📝"
+    nonisolated static let verbose = false
 
     static let shared = HostsFileService()
     private let hostsPath = "/etc/hosts"

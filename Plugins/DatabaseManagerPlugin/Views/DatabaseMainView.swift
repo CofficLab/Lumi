@@ -138,12 +138,15 @@ struct QueryResultView: View {
         }
     }
     
-    func content(for value: Any?) -> String {
-        guard let value = value else { return "NULL" }
-        if let data = value as? Data {
-            return "<BLOB \(data.count) bytes>"
+    func content(for value: DatabaseValue) -> String {
+        switch value {
+        case .integer(let v): return String(v)
+        case .double(let v): return String(v)
+        case .string(let v): return v
+        case .bool(let v): return String(v)
+        case .data(let v): return "<BLOB \(v.count) bytes>"
+        case .null: return "NULL"
         }
-        return "\(value)"
     }
 }
 

@@ -4,9 +4,10 @@ import Combine
 import OSLog
 import MagicKit
 
+@MainActor
 class ProcessMonitorService: ObservableObject, SuperLog {
     static let shared = ProcessMonitorService()
-    static let emoji = "🕵️‍♂️"
+    nonisolated static let emoji = "🕵️‍♂️"
     
     // 采样间隔
     private let interval: TimeInterval = 1.0

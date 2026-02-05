@@ -1,6 +1,6 @@
 import Foundation
 
-class SQLiteDriver: DatabaseDriver {
+final class SQLiteDriver: DatabaseDriver, Sendable {
     var type: DatabaseType { .sqlite }
     
     func connect(config: DatabaseConfig) async throws -> DatabaseConnection {

@@ -1,13 +1,13 @@
-import Foundation
 import AppKit
+import Foundation
 import MagicKit
 import OSLog
 import SwiftUI
 
 /// 应用服务
-class AppService: SuperLog {
-    static let emoji = "📦"
-    static let verbose = false
+final class AppService: @unchecked Sendable, SuperLog {
+    nonisolated static let emoji = "📦"
+    nonisolated static let verbose = false
 
     private let cacheManager = CacheManager.shared
 
@@ -32,7 +32,7 @@ class AppService: SuperLog {
 
         return paths
     }
-    
+
     private let libraryPaths = [
         "Library/Application Support",
         "Library/Caches",
@@ -41,7 +41,7 @@ class AppService: SuperLog {
         "Library/Containers",
         "Library/Logs",
         "Library/Cookies",
-        "Library/WebKit"
+        "Library/WebKit",
     ]
 
     /// 扫描已安装的应用（在后台线程执行）
@@ -51,7 +51,7 @@ class AppService: SuperLog {
             // 在后台队列执行文件操作
             let paths = self.getUserApplicationPaths()
             let t = self.t
-            let cacheManager = self.cacheManager  // 在 Task 外捕获
+            let cacheManager = self.cacheManager // 在 Task 外捕获
 
             DispatchQueue.global(qos: .userInitiated).async {
                 Task {
@@ -120,14 +120,14 @@ class AppService: SuperLog {
     }
 
     /// 计算任意路径的大小
-    func calculateSize(for url: URL) async -> Int64 {
+    static func calculateSize(for url: URL) async -> Int64 {
         return await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 guard FileManager.default.fileExists(atPath: url.path) else {
                     continuation.resume(returning: 0)
                     return
                 }
-                
+
                 // 如果是文件，直接返回大小
                 if let resourceValues = try? url.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey]),
                    let isDirectory = resourceValues.isDirectory, !isDirectory,
@@ -135,7 +135,7 @@ class AppService: SuperLog {
                     continuation.resume(returning: Int64(fileSize))
                     return
                 }
-                
+
                 // 如果是目录，递归计算
                 var totalSize: Int64 = 0
                 if let enumerator = FileManager.default.enumerator(
@@ -157,7 +157,7 @@ class AppService: SuperLog {
 
     /// 计算应用大小（在后台线程执行）
     func calculateAppSize(for app: AppModel) async -> Int64 {
-        let size = await calculateSize(for: app.bundleURL)
+        let size = await Self.calculateSize(for: app.bundleURL)
 
         // 更新缓存
         let resourceValues = try? app.bundleURL.resourceValues(forKeys: [.contentModificationDateKey])
@@ -166,78 +166,79 @@ class AppService: SuperLog {
 
         return size
     }
-    
+
     /// 扫描应用的关联文件
     func scanRelatedFiles(for app: AppModel) async -> [RelatedFile] {
         guard let bundleId = app.bundleIdentifier else { return [] }
         let home = NSHomeDirectory()
         var relatedFiles: [RelatedFile] = []
-        let fileManager = FileManager.default
-        
+
         // 1. 添加 App 本身
         // 注意：AppModel 可能还没有计算大小，或者已经计算了。为了准确，这里重新获取（或者直接用 AppModel 的如果已存在）
         // 这里为了确保一致性，我们重新计算或直接使用 app.size
-        let appSize = app.size > 0 ? app.size : await calculateSize(for: app.bundleURL)
+        let appSize = app.size > 0 ? app.size : await Self.calculateSize(for: app.bundleURL)
         relatedFiles.append(RelatedFile(path: app.bundleURL.path, size: appSize, type: .app))
-        
+
         // 2. 扫描 Library
         await withTaskGroup(of: RelatedFile?.self) { group in
             for libSubPath in libraryPaths {
                 let fullPath = "\(home)/\(libSubPath)"
-                
-                group.addTask {
+                let bundleName = app.bundleName
+
+                group.addTask { [libSubPath, fullPath, bundleName, bundleId] in
+                    let fileManager = FileManager.default
+
                     // 策略 A: 精确匹配 Bundle ID
                     let candidatePath1 = "\(fullPath)/\(bundleId)"
                     if fileManager.fileExists(atPath: candidatePath1) {
-                        let size = await self.calculateSize(for: URL(fileURLWithPath: candidatePath1))
-                        return RelatedFile(path: candidatePath1, size: size, type: self.getType(from: libSubPath))
+                        let size = await AppService.calculateSize(for: URL(fileURLWithPath: candidatePath1))
+                        return RelatedFile(path: candidatePath1, size: size, type: AppService.getType(from: libSubPath))
                     }
-                    
+
                     // 策略 B: 匹配 App Name (主要针对 Application Support)
                     if libSubPath.contains("Application Support") {
                         // 使用 app.displayName 可能不准确，尽量用 bundleName
-                        let name = app.bundleName // 这是从 Info.plist 读出来的
-                        let candidatePath2 = "\(fullPath)/\(name)"
+                        let candidatePath2 = "\(fullPath)/\(bundleName)"
                         if fileManager.fileExists(atPath: candidatePath2) {
-                             // 简单匹配
-                             let size = await self.calculateSize(for: URL(fileURLWithPath: candidatePath2))
-                             return RelatedFile(path: candidatePath2, size: size, type: self.getType(from: libSubPath))
+                            // 简单匹配
+                            let size = await AppService.calculateSize(for: URL(fileURLWithPath: candidatePath2))
+                            return RelatedFile(path: candidatePath2, size: size, type: AppService.getType(from: libSubPath))
                         }
                     }
-                    
+
                     // 策略 C: Preferences plist
                     if libSubPath.contains("Preferences") {
                         let plistPath = "\(fullPath)/\(bundleId).plist"
                         if fileManager.fileExists(atPath: plistPath) {
-                            let size = await self.calculateSize(for: URL(fileURLWithPath: plistPath))
+                            let size = await AppService.calculateSize(for: URL(fileURLWithPath: plistPath))
                             return RelatedFile(path: plistPath, size: size, type: .preferences)
                         }
                     }
-                    
+
                     // 策略 D: Saved State
                     if libSubPath.contains("Saved Application State") {
-                         let statePath = "\(fullPath)/\(bundleId).savedState"
-                         if fileManager.fileExists(atPath: statePath) {
-                             let size = await self.calculateSize(for: URL(fileURLWithPath: statePath))
-                             return RelatedFile(path: statePath, size: size, type: .state)
-                         }
+                        let statePath = "\(fullPath)/\(bundleId).savedState"
+                        if fileManager.fileExists(atPath: statePath) {
+                            let size = await AppService.calculateSize(for: URL(fileURLWithPath: statePath))
+                            return RelatedFile(path: statePath, size: size, type: .state)
+                        }
                     }
-                    
+
                     return nil
                 }
             }
-            
+
             for await result in group {
                 if let file = result {
                     relatedFiles.append(file)
                 }
             }
         }
-        
+
         return relatedFiles
     }
-    
-    private func getType(from path: String) -> RelatedFile.RelatedFileType {
+
+    private static func getType(from path: String) -> RelatedFile.RelatedFileType {
         if path.contains("Application Support") { return .support }
         if path.contains("Caches") { return .cache }
         if path.contains("Preferences") { return .preferences }
@@ -246,7 +247,7 @@ class AppService: SuperLog {
         if path.contains("Logs") { return .log }
         return .other
     }
-    
+
     /// 删除指定的文件列表
     func deleteFiles(_ files: [RelatedFile]) async throws {
         let fileManager = FileManager.default
@@ -323,7 +324,7 @@ enum AppError: LocalizedError {
             return "应用不存在"
         case .permissionDenied:
             return "没有权限卸载此应用"
-        case .uninstallFailed(let reason):
+        case let .uninstallFailed(reason):
             return "卸载失败: \(reason)"
         }
     }

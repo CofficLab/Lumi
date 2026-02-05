@@ -5,9 +5,10 @@ import OSLog
 import MagicKit
 import Combine
 
+@MainActor
 class NetworkService: SuperLog, ObservableObject {
-    static let emoji = "📡"
-    static let verbose = true
+    nonisolated static let emoji = "📡"
+    nonisolated static let verbose = true
 
     static let shared = NetworkService()
 
@@ -87,14 +88,12 @@ class NetworkService: SuperLog, ObservableObject {
         lastBytesIn = currentIn
         lastBytesOut = currentOut
         lastCheckTime = currentTime
-        
+
         // Publish updates
-        DispatchQueue.main.async {
-            self.downloadSpeed = dSpeed
-            self.uploadSpeed = uSpeed
-            self.totalDownload = currentIn
-            self.totalUpload = currentOut
-        }
+        downloadSpeed = dSpeed
+        uploadSpeed = uSpeed
+        totalDownload = currentIn
+        totalUpload = currentOut
     }
     
     /// Get current network speeds (bytes/s) and total bytes (Legacy/Direct Access)

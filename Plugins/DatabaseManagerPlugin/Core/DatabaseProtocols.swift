@@ -41,31 +41,58 @@ enum DatabaseError: Error, LocalizedError {
     }
 }
 
+/// Database Value Type (Sendable)
+public enum DatabaseValue: Sendable, Equatable, CustomStringConvertible {
+    case integer(Int)
+    case double(Double)
+    case string(String)
+    case data(Data)
+    case bool(Bool)
+    case null
+    
+    public var description: String {
+        switch self {
+        case .integer(let v): return String(v)
+        case .double(let v): return String(v)
+        case .string(let v): return v
+        case .data(let v): return "\(v.count) bytes"
+        case .bool(let v): return String(v)
+        case .null: return "NULL"
+        }
+    }
+}
+
 /// Query Result Structure
-struct QueryResult {
-    var columns: [String]
-    var rows: [[Any?]]
-    var rowsAffected: Int
+public struct QueryResult: Sendable {
+    public var columns: [String]
+    public var rows: [[DatabaseValue]]
+    public var rowsAffected: Int
+    
+    public init(columns: [String], rows: [[DatabaseValue]], rowsAffected: Int) {
+        self.columns = columns
+        self.rows = rows
+        self.rowsAffected = rowsAffected
+    }
 }
 
 /// Protocol for Database Drivers (Factory)
-protocol DatabaseDriver {
+protocol DatabaseDriver: Sendable {
     var type: DatabaseType { get }
     func connect(config: DatabaseConfig) async throws -> DatabaseConnection
 }
 
 /// Protocol for an active Database Connection
-protocol DatabaseConnection {
-    func execute(_ sql: String, params: [Any]?) async throws -> Int // Returns rows affected
-    func query(_ sql: String, params: [Any]?) async throws -> QueryResult
+protocol DatabaseConnection: Sendable {
+    func execute(_ sql: String, params: [DatabaseValue]?) async throws -> Int // Returns rows affected
+    func query(_ sql: String, params: [DatabaseValue]?) async throws -> QueryResult
     func beginTransaction() async throws -> DatabaseTransaction
     func close() async
     func isAlive() async -> Bool
 }
 
 /// Protocol for Database Transactions
-protocol DatabaseTransaction {
+protocol DatabaseTransaction: Sendable {
     func commit() async throws
     func rollback() async throws
-    func execute(_ sql: String, params: [Any]?) async throws -> Int
+    func execute(_ sql: String, params: [DatabaseValue]?) async throws -> Int
 }

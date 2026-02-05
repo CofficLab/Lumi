@@ -2,7 +2,8 @@ import Foundation
 import Combine
 import SwiftUI
 
-class ProjectCleanerViewModel: ObservableObject {
+@MainActor
+final class ProjectCleanerViewModel: ObservableObject {
     @Published var projects: [ProjectInfo] = []
     @Published var selectedItemIds: Set<UUID> = []
     
