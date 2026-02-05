@@ -64,7 +64,6 @@ struct DiskManagerView: View {
                 Text("目录分析").tag(1)
                 Text("系统清理").tag(2)
                 Text("系统监控").tag(3)
-                Text("应用卸载").tag(4)
                 Text("项目清理").tag(5)
             }
             .pickerStyle(.segmented)
@@ -80,8 +79,6 @@ struct DiskManagerView: View {
                     CacheCleanerView()
                 } else if selectedViewMode == 3 {
                     SystemMonitorView()
-                } else if selectedViewMode == 4 {
-                    AppUninstallerView()
                 } else {
                     ProjectCleanerView()
                 }
@@ -90,7 +87,7 @@ struct DiskManagerView: View {
             Spacer()
             
             // Scanning Progress
-            if viewModel.isScanning && selectedViewMode != 2 && selectedViewMode != 3 && selectedViewMode != 4 && selectedViewMode != 5 {
+            if viewModel.isScanning && selectedViewMode != 2 && selectedViewMode != 3 && selectedViewMode != 5 {
                 VStack(spacing: 8) {
                     ProgressView()
                         .scaleEffect(0.8)

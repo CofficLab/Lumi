@@ -27,15 +27,6 @@ class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
     /// 插件提供者，用于获取插件菜单项
     private weak var pluginProvider: PluginProvider?
 
-    // MARK: - Initialization
-
-    override init() {
-        super.init()
-        if Self.verbose {
-            os_log("\(self.t)状态栏控制器已初始化")
-        }
-    }
-
     // MARK: - Public Methods
 
     /// 设置状态栏

@@ -14,9 +14,27 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     @Published var installedApps: [AppModel] = []
     @Published var isLoading = false
     @Published var searchText = ""
-    @Published var selectedApp: AppModel?
+    @Published var selectedApp: AppModel? {
+        didSet {
+            if let app = selectedApp {
+                scanRelatedFiles(for: app)
+            } else {
+                relatedFiles = []
+                selectedFileIds = []
+            }
+        }
+    }
+    @Published var relatedFiles: [RelatedFile] = []
+    @Published var selectedFileIds: Set<UUID> = []
+    @Published var isScanningFiles = false
+    @Published var isDeleting = false
     @Published var errorMessage: String?
     @Published var showUninstallConfirmation = false
+
+    var totalSelectedSize: Int64 {
+        relatedFiles.filter { selectedFileIds.contains($0.id) }
+            .reduce(0) { $0 + $1.size }
+    }
 
     /// 过滤后的应用列表
     var filteredApps: [AppModel] {
@@ -101,22 +119,75 @@ class AppManagerViewModel: ObservableObject, SuperLog {
             await scanApps(force: true)
         }
     }
-
-    /// 卸载应用
-    func uninstallApp(_ app: AppModel) async {
-        do {
-            try await appService.uninstallApp(app)
-
-            // 从列表中移除
-            installedApps.removeAll { $0.bundleURL.path == app.bundleURL.path }
-
-            if Self.verbose {
-                os_log("\(self.t)Uninstall successful: \(app.displayName)")
+    
+    /// 扫描关联文件
+    func scanRelatedFiles(for app: AppModel) {
+        isScanningFiles = true
+        Task {
+            let files = await appService.scanRelatedFiles(for: app)
+            await MainActor.run {
+                self.relatedFiles = files
+                // 默认全选
+                self.selectedFileIds = Set(files.map { $0.id })
+                self.isScanningFiles = false
             }
-            errorMessage = nil
-        } catch {
-            os_log(.error, "\(self.t)Uninstall failed: \(error.localizedDescription)")
-            errorMessage = error.localizedDescription
+        }
+    }
+    
+    func toggleFileSelection(_ id: UUID) {
+        if selectedFileIds.contains(id) {
+            selectedFileIds.remove(id)
+        } else {
+            selectedFileIds.insert(id)
+        }
+    }
+
+    /// 删除选中的文件
+    func deleteSelectedFiles() {
+        guard !selectedFileIds.isEmpty else { return }
+        isDeleting = true
+        
+        let filesToDelete = relatedFiles.filter { selectedFileIds.contains($0.id) }
+        
+        Task {
+            do {
+                try await appService.deleteFiles(filesToDelete)
+                
+                await MainActor.run {
+                    self.isDeleting = false
+                    self.showUninstallConfirmation = false
+                    
+                    // 检查主 App 是否被删除
+                    if let app = self.selectedApp, self.selectedFileIds.contains(where: { id in
+                        if let file = self.relatedFiles.first(where: { $0.id == id }) {
+                            return file.type == .app
+                        }
+                        return false
+                    }) {
+                        // 如果删除了 App 本体，则从列表中移除 App
+                        self.installedApps.removeAll { $0.bundleURL.path == app.bundleURL.path }
+                        self.selectedApp = nil
+                        self.relatedFiles = []
+                        
+                        if Self.verbose {
+                            os_log("\(self.t)App uninstalled: \(app.displayName)")
+                        }
+                    } else {
+                        // 仅移除了部分文件，重新扫描以刷新状态（或者手动从 relatedFiles 移除）
+                        if let app = self.selectedApp {
+                            self.scanRelatedFiles(for: app)
+                        }
+                    }
+                    
+                    self.errorMessage = nil
+                }
+            } catch {
+                await MainActor.run {
+                    self.isDeleting = false
+                    os_log(.error, "\(self.t)Uninstall failed: \(error.localizedDescription)")
+                    self.errorMessage = error.localizedDescription
+                }
+            }
         }
     }
 

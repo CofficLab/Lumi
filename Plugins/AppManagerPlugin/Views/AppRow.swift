@@ -73,15 +73,6 @@ struct AppRow: View {
                     }
                     .buttonStyle(.bordered)
                     .help("打开应用")
-
-                    Button(action: {
-                        viewModel.selectedApp = app
-                        viewModel.showUninstallConfirmation = true
-                    }) {
-                        Image(systemName: "trash")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .help("卸载应用")
                 }
                 .transition(.opacity)
             }
@@ -99,13 +90,6 @@ struct AppRow: View {
 
             Button("打开") {
                 viewModel.openApp(app)
-            }
-
-            Divider()
-
-            Button("卸载", role: .destructive) {
-                viewModel.selectedApp = app
-                viewModel.showUninstallConfirmation = true
             }
         }
     }

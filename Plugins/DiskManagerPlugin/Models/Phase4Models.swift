@@ -1,62 +1,6 @@
 import Foundation
 import AppKit
 
-// MARK: - 应用卸载模型
-
-struct ApplicationInfo: Identifiable, Hashable {
-    let id = UUID()
-    let name: String
-    let path: String
-    let bundleId: String?
-    let icon: NSImage?
-    let size: Int64
-    let lastAccessed: Date?
-    
-    // 用于 Hashable 和 Equatable
-    static func == (lhs: ApplicationInfo, rhs: ApplicationInfo) -> Bool {
-        lhs.path == rhs.path
-    }
-    
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(path)
-    }
-}
-
-struct RelatedFile: Identifiable, Hashable {
-    let id = UUID()
-    let path: String
-    let size: Int64
-    let type: RelatedFileType
-    
-    var name: String {
-        (path as NSString).lastPathComponent
-    }
-    
-    enum RelatedFileType: String, Codable {
-        case app
-        case support
-        case cache
-        case preferences
-        case state
-        case container
-        case log
-        case other
-        
-        var displayName: String {
-            switch self {
-            case .app: return "Application"
-            case .support: return "Application Support"
-            case .cache: return "Caches"
-            case .preferences: return "Preferences"
-            case .state: return "Saved State"
-            case .container: return "Containers"
-            case .log: return "Logs"
-            case .other: return "Other"
-            }
-        }
-    }
-}
-
 // MARK: - 项目清理模型
 
 struct ProjectInfo: Identifiable, Hashable {
