@@ -17,7 +17,7 @@ struct GeneralSettingView: View {
                         .font(.headline)
 
                     Toggle("开机启动", isOn: $launchAtLogin)
-                        .onChange(of: launchAtLogin) { newValue in
+                        .onChange(of: launchAtLogin) { _, newValue in
                             updateLaunchAtLogin(newValue)
                         }
                 }

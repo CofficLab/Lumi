@@ -1,7 +1,7 @@
 import Foundation
 import MagicKit
-import SwiftUI
 import OSLog
+import SwiftUI
 
 /// 应用管理器视图模型
 @MainActor
@@ -16,14 +16,20 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     @Published var searchText = ""
     @Published var selectedApp: AppModel? {
         didSet {
-            if let app = selectedApp {
-                scanRelatedFiles(for: app)
-            } else {
-                relatedFiles = []
-                selectedFileIds = []
+            guard selectedApp != oldValue else { return }
+
+            // 使用 Task 异步执行，避免在视图更新周期内修改其他 @Published 属性
+            Task {
+                if let app = selectedApp {
+                    scanRelatedFiles(for: app)
+                } else {
+                    relatedFiles = []
+                    selectedFileIds = []
+                }
             }
         }
     }
+
     @Published var relatedFiles: [RelatedFile] = []
     @Published var selectedFileIds: Set<UUID> = []
     @Published var isScanningFiles = false
@@ -73,43 +79,38 @@ class AppManagerViewModel: ObservableObject, SuperLog {
         isLoading = true
         defer { isLoading = false }
 
-        do {
-            // 先扫描应用列表
-            let apps = await appService.scanInstalledApps(force: force)
+        // 先扫描应用列表
+        let apps = await appService.scanInstalledApps(force: force)
 
-            // 立即显示应用列表（不等待大小计算）
-            installedApps = apps
-            if Self.verbose {
-                os_log("\(self.t)App list loaded: \(self.installedApps.count) apps")
-            }
+        // 立即显示应用列表（不等待大小计算）
+        installedApps = apps
+        if Self.verbose {
+            os_log("\(self.t)App list loaded: \(self.installedApps.count) apps")
+        }
 
-            // 在后台逐个计算大小，不阻塞 UI
-            for index in apps.indices {
-                var sizedApp = apps[index]
+        // 在后台逐个计算大小，不阻塞 UI
+        for index in apps.indices {
+            var sizedApp = apps[index]
 
-                // 仅当大小为0（未缓存）时才计算
-                if sizedApp.size == 0 {
-                    sizedApp.size = await appService.calculateAppSize(for: sizedApp)
+            // 仅当大小为0（未缓存）时才计算
+            if sizedApp.size == 0 {
+                sizedApp.size = await appService.calculateAppSize(for: sizedApp)
 
-                    // 更新单个应用的大小（主线程）
-                    await MainActor.run {
-                        // 确保索引仍然有效（防止在扫描期间卸载应用导致崩溃）
-                        if index < installedApps.count && installedApps[index].id == sizedApp.id {
-                            installedApps[index] = sizedApp
-                        }
+                // 更新单个应用的大小（主线程）
+                await MainActor.run {
+                    // 确保索引仍然有效（防止在扫描期间卸载应用导致崩溃）
+                    if index < installedApps.count && installedApps[index].id == sizedApp.id {
+                        installedApps[index] = sizedApp
                     }
                 }
             }
+        }
 
-            // 扫描结束后保存缓存
-            appService.saveCache()
+        // 扫描结束后保存缓存
+        appService.saveCache()
 
-            if Self.verbose {
-                os_log("\(self.t)Scan complete: \(self.installedApps.count) apps")
-            }
-        } catch {
-            os_log(.error, "\(self.t)Scan failed: \(error.localizedDescription)")
-            errorMessage = "扫描失败: \(error.localizedDescription)"
+        if Self.verbose {
+            os_log("\(self.t)Scan complete: \(self.installedApps.count) apps")
         }
     }
 
@@ -119,11 +120,13 @@ class AppManagerViewModel: ObservableObject, SuperLog {
             await scanApps(force: true)
         }
     }
-    
+
     /// 扫描关联文件
     func scanRelatedFiles(for app: AppModel) {
-        isScanningFiles = true
         Task {
+            await MainActor.run {
+                isScanningFiles = true
+            }
             let files = await appService.scanRelatedFiles(for: app)
             await MainActor.run {
                 self.relatedFiles = files
@@ -133,7 +136,7 @@ class AppManagerViewModel: ObservableObject, SuperLog {
             }
         }
     }
-    
+
     func toggleFileSelection(_ id: UUID) {
         if selectedFileIds.contains(id) {
             selectedFileIds.remove(id)
@@ -146,17 +149,17 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     func deleteSelectedFiles() {
         guard !selectedFileIds.isEmpty else { return }
         isDeleting = true
-        
+
         let filesToDelete = relatedFiles.filter { selectedFileIds.contains($0.id) }
-        
+
         Task {
             do {
                 try await appService.deleteFiles(filesToDelete)
-                
+
                 await MainActor.run {
                     self.isDeleting = false
                     self.showUninstallConfirmation = false
-                    
+
                     // 检查主 App 是否被删除
                     if let app = self.selectedApp, self.selectedFileIds.contains(where: { id in
                         if let file = self.relatedFiles.first(where: { $0.id == id }) {
@@ -168,7 +171,7 @@ class AppManagerViewModel: ObservableObject, SuperLog {
                         self.installedApps.removeAll { $0.bundleURL.path == app.bundleURL.path }
                         self.selectedApp = nil
                         self.relatedFiles = []
-                        
+
                         if Self.verbose {
                             os_log("\(self.t)App uninstalled: \(app.displayName)")
                         }
@@ -178,7 +181,7 @@ class AppManagerViewModel: ObservableObject, SuperLog {
                             self.scanRelatedFiles(for: app)
                         }
                     }
-                    
+
                     self.errorMessage = nil
                 }
             } catch {
