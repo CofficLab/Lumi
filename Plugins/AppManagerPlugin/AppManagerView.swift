@@ -106,11 +106,8 @@ struct AppManagerView: View {
             ForEach(viewModel.filteredApps) { app in
                 AppRow(app: app, viewModel: viewModel)
                     .tag(app)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
             }
         }
-        .listStyle(.inset)
-        .infinite()
     }
     
     private var detailView: some View {

@@ -54,34 +54,6 @@ struct AppRow: View {
             }
 
             Spacer()
-
-            // 操作按钮（悬停时显示）
-            if isHovering {
-                HStack(spacing: 8) {
-                    Button(action: {
-                        viewModel.revealInFinder(app)
-                    }) {
-                        Image(systemName: "folder")
-                    }
-                    .buttonStyle(.bordered)
-                    .help("在 Finder 中显示")
-
-                    Button(action: {
-                        viewModel.openApp(app)
-                    }) {
-                        Image.play
-                    }
-                    .buttonStyle(.bordered)
-                    .help("打开应用")
-                }
-                .transition(.opacity)
-            }
-        }
-        .padding(12)
-        .background(.background)
-        .roundedMedium()
-        .onHover { hovering in
-            isHovering = hovering
         }
         .contextMenu {
             Button("在 Finder 中显示") {
