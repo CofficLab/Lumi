@@ -176,44 +176,47 @@ extension ContentView {
 
     /// 视图出现时的事件处理
     func onAppear() {
-        // 如果提供了默认的，则使用默认的
-        // 否则使用存储的
+        // Delay state updates to avoid "Publishing changes during view update" warning
+        DispatchQueue.main.async {
+            // 如果提供了默认的，则使用默认的
+            // 否则使用存储的
 
-        if let d = defaultColumnVisibility {
-            self.columnVisibility = d
-        } else {
-            self.columnVisibility = sidebarVisibility ? .all : .detailOnly
-        }
-
-        if let d = defaultTab {
-            if Self.verbose {
-                os_log("\(Self.emoji) Setting default tab to: \(d)")
+            if let d = defaultColumnVisibility {
+                self.columnVisibility = d
+            } else {
+                self.columnVisibility = sidebarVisibility ? .all : .detailOnly
             }
-            self.tab = d
-        } else {
-            if Self.verbose {
-                os_log("\(Self.emoji) No default tab provided, using 'main'")
+
+            if let d = defaultTab {
+                if Self.verbose {
+                    os_log("\(Self.emoji) Setting default tab to: \(d)")
+                }
+                self.tab = d
+            } else {
+                if Self.verbose {
+                    os_log("\(Self.emoji) No default tab provided, using 'main'")
+                }
+                self.tab = "main"
             }
-            self.tab = "main"
-        }
 
-        if let d = defaultToolbarVisibility {
-            self.toolbarVisibility = d
-        }
-
-        if let d = defaultTabVisibility {
-            self.tabPickerVisibility = d
-        }
-
-        if let d = defaultNavigationId {
-            if Self.verbose {
-                os_log("\(Self.emoji) Setting default navigation to: \(d)")
+            if let d = defaultToolbarVisibility {
+                self.toolbarVisibility = d
             }
-            app.selectedNavigationId = d
-        }
 
-        // 初始化缓存的视图
-        updateCachedViews()
+            if let d = defaultTabVisibility {
+                self.tabPickerVisibility = d
+            }
+
+            if let d = defaultNavigationId {
+                if Self.verbose {
+                    os_log("\(Self.emoji) Setting default navigation to: \(d)")
+                }
+                app.selectedNavigationId = d
+            }
+
+            // 初始化缓存的视图
+            updateCachedViews()
+        }
     }
 
     /// 处理标签页变更事件

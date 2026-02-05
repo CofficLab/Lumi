@@ -47,7 +47,10 @@ struct Sidebar: View {
             settingsButton
         }
         .onAppear {
-            initializeDefaultSelection()
+            // Delay to avoid "Publishing changes during view update" warning
+            DispatchQueue.main.async {
+                initializeDefaultSelection()
+            }
         }
     }
 
