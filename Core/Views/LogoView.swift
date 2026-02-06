@@ -105,7 +105,6 @@ struct LogoVariantModifier: ViewModifier {
         switch variant {
         case .appIcon:
             content
-                .padding()
                 .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
                 .background(.black)
         case .statusBar:
