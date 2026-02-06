@@ -107,7 +107,7 @@ struct LogoVariantModifier: ViewModifier {
             content
                 .padding()
                 .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
-                .background(.green)
+                .background(.black)
         case .statusBar:
             content
                 .scaleEffect(0.9)
