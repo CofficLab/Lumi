@@ -84,6 +84,10 @@ final class PluginProvider: ObservableObject, SuperLog {
         // 调用生命周期钩子
         for plugin in sortedPlugins {
             plugin.onRegister()
+            // 如果插件被启用，调用 onEnable
+            if self.isPluginEnabled(plugin) {
+                plugin.onEnable()
+            }
         }
         
         // 发送通知
