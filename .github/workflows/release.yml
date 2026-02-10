@@ -132,43 +132,23 @@ jobs:
           cp -r "./temp/${{ env.SCHEME }}.xcarchive/Products/Applications/${{ env.SCHEME }}.app" "./temp/${{ env.SCHEME }}.app"
           APP_PATH="./temp/${{ env.SCHEME }}.app"
           IDENTITY="${{ steps.signing.outputs.signing_identity }}"
-
-          echo "🧹 Cleaning attributes..."
-          xattr -cr "$APP_PATH"
-
-          echo "📝 Signing Frameworks and Nested Components..."
-          if [ -d "$APP_PATH/Contents/Frameworks" ]; then
-             # 1. Sign dylibs and libraries
-             echo "  - Signing dylibs..."
-             find "$APP_PATH/Contents/Frameworks" -type f \( -name "*.dylib" -o -name "*.so" \) -exec codesign --force --verbose --sign "$IDENTITY" --options runtime {} \;
-
-             # 2. Sign XPC Services and Helper Apps (deepest first)
-             # Note: Sparkle has XPC Services and Updater.app inside.
-             # We search for .xpc, .app, .bundle inside Frameworks
-             echo "  - Signing nested bundles (apps, xpc, bundles)..."
-             find "$APP_PATH/Contents/Frameworks" -depth -type d \( -name "*.app" -o -name "*.xpc" -o -name "*.bundle" \) -exec codesign --force --verbose --sign "$IDENTITY" --options runtime --preserve-metadata=entitlements {} \;
-
-             # 3. Sign Frameworks (deepest first)
-             echo "  - Signing frameworks..."
-             find "$APP_PATH/Contents/Frameworks" -depth -type d -name "*.framework" -exec codesign --force --verbose --sign "$IDENTITY" --options runtime {} \;
-          fi
-
-          echo "📝 Signing Extensions..."
-          if [ -d "$APP_PATH/Contents/PlugIns" ]; then
-            find "$APP_PATH/Contents/PlugIns" -depth -type d -name "*.appex" -exec codesign --force --verbose --sign "$IDENTITY" --options runtime --entitlements "${{ env.ENTITLEMENTS_PATH }}" {} \;
-          fi
-
-          echo "📝 Signing Main App..."
-          codesign --force --verbose --sign "$IDENTITY" --options runtime --entitlements "${{ env.ENTITLEMENTS_PATH }}" "$APP_PATH"
-
-          echo "✅ Code Signing Completed."
+          
+          # 使用脚本进行深度签名
+          chmod +x .github/scripts/sign_app.sh
+          .github/scripts/sign_app.sh "$APP_PATH" "$IDENTITY" "${{ env.ENTITLEMENTS_PATH }}"
 
       - name: Create DMG
         run: |
           STAGING_DIR="./temp/dmg_staging"
           mkdir -p "$STAGING_DIR"
           cp -r "./temp/${{ env.SCHEME }}.app" "$STAGING_DIR/"
+          
+          # 创建 Applications 软链接
           ln -s /Applications "$STAGING_DIR/Applications"
+          
+          # 验证软链接是否存在
+          echo "Checking Staging Dir:"
+          ls -la "$STAGING_DIR"
           
           VOL_NAME="${{ env.SCHEME }}"
           DMG_NAME="./temp/${{ env.SCHEME }}.dmg"
@@ -176,7 +156,6 @@ jobs:
           hdiutil create -volname "$VOL_NAME" -srcfolder "$STAGING_DIR" -ov -format UDZO "$DMG_NAME"
 
       - name: Notary
-        continue-on-error: true
         run: |
           file=$(find ./temp -name "*.dmg" -type f | head -n 1)
           if [ -z "$file" ]; then echo "DMG not found"; exit 1; fi
@@ -190,7 +169,6 @@ jobs:
           stapler staple "$file"
 
       - name: Validate Notarization
-        continue-on-error: true
         run: |
           file=$(find ./temp -name "*.dmg" -type f | head -n 1)
           stapler validate "$file"
@@ -206,7 +184,6 @@ jobs:
       # =================================================================================================
       - name: Generate Appcast
         if: env.IS_PRERELEASE == 'false'
-        continue-on-error: true
         run: |
           # 解决依赖以获取 Sparkle 工具
           xcodebuild -resolvePackageDependencies
@@ -216,12 +193,12 @@ jobs:
             cd "$SPARKLE_BIN"
             echo "${{ env.SPARKLE_PRIVATE_KEY }}" | ./generate_appcast --ed-key-file - ${{ github.workspace }}/updates
           else
-            echo "⚠️ Sparkle bin not found, skipping appcast generation."
+            echo "❌ Sparkle bin not found"
+            exit 1
           fi
 
       - name: Update Appcast Link
         if: env.IS_PRERELEASE == 'false'
-        continue-on-error: true
         run: |
           cd updates
           if [ -f appcast.xml ]; then
@@ -232,6 +209,9 @@ jobs:
               # 移动到根目录以便提交
               mv appcast.xml ../appcast.xml
             fi
+          else
+             echo "❌ appcast.xml generation failed"
+             exit 1
           fi
 
       # =================================================================================================
