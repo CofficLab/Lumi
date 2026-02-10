@@ -115,7 +115,15 @@
 				F53C49142F1A42EC00929321 /* Lumi.app */,
 				0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */,
 				0B2F7D622F3A301C00AD7E94 /* LumiFinder */,
+				F5F4DFC92F3ABECF00C76EA0 /* Frameworks */,
 			);
+			sourceTree = "<group>";
+		};
+		F5F4DFC92F3ABECF00C76EA0 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

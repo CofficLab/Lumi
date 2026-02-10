@@ -56,4 +56,30 @@ class RClickConfigManager: ObservableObject {
             config.items[index].isEnabled.toggle()
         }
     }
+    
+    // MARK: - Template Management
+    
+    func toggleTemplate(_ template: NewFileTemplate) {
+        if let index = config.fileTemplates.firstIndex(where: { $0.id == template.id }) {
+            config.fileTemplates[index].isEnabled.toggle()
+        }
+    }
+    
+    func addTemplate(_ template: NewFileTemplate) {
+        config.fileTemplates.append(template)
+    }
+    
+    func deleteTemplate(at offsets: IndexSet) {
+        config.fileTemplates.remove(atOffsets: offsets)
+    }
+    
+    func updateTemplate(_ template: NewFileTemplate) {
+        if let index = config.fileTemplates.firstIndex(where: { $0.id == template.id }) {
+            config.fileTemplates[index] = template
+        }
+    }
+    
+    func resetToDefaults() {
+        self.config = RClickConfig.default
+    }
 }
