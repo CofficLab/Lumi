@@ -46,13 +46,13 @@ jobs:
           # 读取更新前的版本
           OLD_MARKETING_VERSION=$(agvtool what-marketing-version -terse)
 
-          # 更新 MARKETING_VERSION - 使用 xcodebuild 确保正确更新
-          xcodebuild -project Lumi.xcodeproj -scheme Lumi -versionInfo ||
-          agvtool new-marketing-version -all ${{ env.new_version }} ||
-          (
-            # 如果上面都失败，手动编辑项目文件
-            sed -i '' "s/MARKETING_VERSION = [^;]*/MARKETING_VERSION = ${{ env.new_version }}/" Lumi.xcodeproj/project.pbxproj
-          )
+          # 更新 MARKETING_VERSION
+          # 1. 尝试使用 agvtool 更新所有 target
+          agvtool new-marketing-version -all ${{ env.new_version }}
+
+          # 2. 强制使用 sed 更新所有 target 的 MARKETING_VERSION 配置，作为双重保险
+          # 这确保了即使 agvtool 遗漏了某些 target，它们也会被更新
+          sed -i '' "s/MARKETING_VERSION = [^;]*/MARKETING_VERSION = ${{ env.new_version }}/" Lumi.xcodeproj/project.pbxproj
 
           # 验证更新
           NEW_MARKETING_VERSION=$(agvtool what-marketing-version -terse)
@@ -68,13 +68,7 @@ jobs:
           # 检查是否更新成功
           if [ "$NEW_MARKETING_VERSION" != "${{ env.new_version }}" ]; then
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "⚠️ **警告**: MARKETING_VERSION 更新失败！" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "尝试手动修复..." >> $GITHUB_STEP_SUMMARY
-            # 最后的手段：直接编辑文件
-            sed -i '' "s/MARKETING_VERSION = [^;]*/MARKETING_VERSION = ${{ env.new_version }}/" Lumi.xcodeproj/project.pbxproj
-            NEW_MARKETING_VERSION=$(agvtool what-marketing-version -terse)
-            echo "| 手动修复后 | \`$NEW_MARKETING_VERSION\` |" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ **警告**: agvtool 显示的版本可能不匹配，但 sed 应该已经强制更新了文件。" >> $GITHUB_STEP_SUMMARY
           fi
       - name: 更新构建号
         run: |
@@ -84,8 +78,12 @@ jobs:
           # 更新 CURRENT_PROJECT_VERSION
           agvtool next-version -all
 
-          # 验证更新
+          # 获取新的构建号并强制同步
           NEW_BUILD_VERSION=$(agvtool what-version -terse)
+          
+          # 强制使用 sed 同步所有 target 的 CURRENT_PROJECT_VERSION
+          # 这确保了所有 target 的构建号都与主 target 一致
+          sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*/CURRENT_PROJECT_VERSION = $NEW_BUILD_VERSION/" Lumi.xcodeproj/project.pbxproj
 
           echo "## 🔢 CURRENT_PROJECT_VERSION 更新" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
