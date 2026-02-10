@@ -206,10 +206,6 @@ jobs:
         run: |
           mkdir updates
           cp ./temp/*.dmg updates/
-          # 复制现有的 appcast.xml 以便增量更新
-          if [ -f appcast.xml ]; then
-            cp appcast.xml updates/
-          fi
           ls -alh updates
 
       # =================================================================================================
@@ -250,11 +246,6 @@ jobs:
               # 替换 url 属性：查找 url="文件名" 并替换为 url="完整链接"
               # 这里假设 generate_appcast 生成的是文件名作为 url
               sed -i '' "s|url=\"$dmg_url_encoded\"|url=\"$DOWNLOAD_URL\"|g" "appcast.xml"
-              
-              # 如果上面的替换没有生效（可能是因为 generate_appcast 生成了绝对路径或其他形式），
-              # 尝试更通用的替换，但限制在最新的 item 内（这比较难用 sed 实现）。
-              # 考虑到 generate_appcast 默认行为，上面的替换应该是最安全的。
-              # 作为后备，如果 url 还是文件名（没有 http 前缀），则强制替换。
               
               # 移动到根目录以便提交
               mv appcast.xml ../appcast.xml
