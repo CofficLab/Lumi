@@ -49,6 +49,10 @@ find "$APP_PATH" -depth \
     
     # Execute signing
     # We use eval to handle the quoted Identity string correctly
+    # Note: Sparkle.framework requires deep signing
+    if [[ "$item" == *.framework ]]; then
+       OPTS="$OPTS --deep"
+    fi
     eval codesign $OPTS "\"$item\""
 done
 
