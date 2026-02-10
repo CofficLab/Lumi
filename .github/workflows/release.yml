@@ -142,7 +142,8 @@ jobs:
         run: |
           STAGING_DIR="./temp/dmg_staging"
           mkdir -p "$STAGING_DIR"
-          cp -r "./temp/${{ env.SCHEME }}.app" "$STAGING_DIR/"
+          # 使用 ditto 替代 cp -r 以完整保留 Bundle 结构、符号链接和元数据
+          ditto "./temp/${{ env.SCHEME }}.app" "$STAGING_DIR/${{ env.SCHEME }}.app"
           
           # 创建 Applications 软链接
           ln -s /Applications "$STAGING_DIR/Applications"

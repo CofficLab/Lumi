@@ -36,7 +36,8 @@ find "$APP_PATH" -depth \
     
     # Determine options based on file type
     # Add --timestamp for Notarization requirement
-    OPTS="--force --verbose --timestamp --sign \"$IDENTITY\" --options runtime"
+    # Add --preserve-metadata=identifier,entitlements,flags to keep original attributes (vital for Sparkle/Extensions)
+    OPTS="--force --verbose --timestamp --sign \"$IDENTITY\" --options runtime --preserve-metadata=identifier,entitlements,flags"
     
     # Attempt to extract existing entitlements
     ENTITLEMENTS_FILE="temp_entitlements.plist"
