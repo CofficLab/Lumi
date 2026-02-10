@@ -84,41 +84,47 @@ jobs:
           echo "- **MARKETING_VERSION**: \`$MARKETING_VERSION\`" >> $GITHUB_STEP_SUMMARY
           echo "- **CURRENT_PROJECT_VERSION**: \`$CURRENT_VERSION\`" >> $GITHUB_STEP_SUMMARY
 
-          # 使用原生 xcodebuild 命令构建，使用 Ad-hoc 签名以绕过 Profile 检查
-          xcodebuild build \
+          # 使用 xcodebuild archive 构建，确保产物是 Release 版本且去除了调试符号
+          xcodebuild archive \
             -scheme ${{ env.SCHEME }} \
-            -arch arm64 \
+            -archivePath ./temp/${{ env.SCHEME }}.xcarchive \
             -configuration Release \
-            -derivedDataPath ./temp/arm64 \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="-" \
             DEVELOPMENT_TEAM="${{ steps.signing.outputs.team_id }}" \
             PROVISIONING_PROFILE_SPECIFIER="" \
-            CODE_SIGNING_REQUIRED=NO
+            CODE_SIGNING_REQUIRED=NO \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES
 
       - name: Codesign App
         run: |
-          APP_PATH="./temp/arm64/Build/Products/Release/${{ env.SCHEME }}.app"
+          # 从 xcarchive 中提取 App
+          cp -r "./temp/${{ env.SCHEME }}.xcarchive/Products/Applications/${{ env.SCHEME }}.app" "./temp/${{ env.SCHEME }}.app"
+          APP_PATH="./temp/${{ env.SCHEME }}.app"
           IDENTITY="${{ steps.signing.outputs.signing_identity }}"
-          
-          echo "Signing Extensions..."
-          if [ -d "$APP_PATH/Contents/PlugIns" ]; then
-            find "$APP_PATH/Contents/PlugIns" -name "*.appex" -exec codesign --force --verbose --sign "$IDENTITY" --options runtime {} \;
-          fi
           
           echo "Signing Frameworks..."
           if [ -d "$APP_PATH/Contents/Frameworks" ]; then
-             find "$APP_PATH/Contents/Frameworks" -type f -name "*.framework" -exec codesign --force --verbose --sign "$IDENTITY" --options runtime {} \; || true
+             # 先签 dylib
              find "$APP_PATH/Contents/Frameworks" -type f -name "*.dylib" -exec codesign --force --verbose --sign "$IDENTITY" --options runtime {} \; || true
+             # 再签 framework (包含里面的 dylib)
+             find "$APP_PATH/Contents/Frameworks" -type d -name "*.framework" -exec codesign --force --verbose --sign "$IDENTITY" --options runtime {} \; || true
+          fi
+
+          echo "Signing Extensions..."
+          if [ -d "$APP_PATH/Contents/PlugIns" ]; then
+            # 递归签名 Extension
+            find "$APP_PATH/Contents/PlugIns" -name "*.appex" -exec codesign --force --verbose --sign "$IDENTITY" --options runtime {} \;
           fi
 
           echo "Signing Main App..."
+          # 主 App 必须带 Entitlements (App Groups 等权限)
           codesign --force --verbose --sign "$IDENTITY" --options runtime --entitlements LumiApp/App.entitlements "$APP_PATH"
 
       - name: Create DMG
         run: |
           # 使用 hdiutil 创建 DMG
-          SRC_FOLDER="./temp/arm64/Build/Products/Release/${{ env.SCHEME }}.app"
+          SRC_FOLDER="./temp/${{ env.SCHEME }}.app"
           VOL_NAME="${{ env.SCHEME }}"
           DMG_NAME="./temp/${{ env.SCHEME }}.dmg"
 
@@ -196,7 +202,7 @@ jobs:
             NOTES="## Release $CURRENT_TAG\n\nInitial release"
           else
             NOTES="## Release $CURRENT_TAG\n\n### Changes since $PREVIOUS_TAG\n"
-            NOTES="$NOTES\n$(git log ${PREVIOUS_TAG}..${CURRENT_TAG} --no-merges --pretty=format:'%s' | sort | uniq -c | sort -rn | awk '{print "- "$2}' | head -20)"
+            NOTES="$NOTES\n$(git log ${PREVIOUS_TAG}..${CURRENT_TAG} --no-merges --pretty=format:'- %s' | sort | uniq | head -20)"
           fi
           echo -e "$NOTES" > changelog.md
           echo "### 📋 Release Notes" >> $GITHUB_STEP_SUMMARY
