@@ -47,8 +47,8 @@ jobs:
           OLD_MARKETING_VERSION=$(agvtool what-marketing-version -terse)
 
           # 更新 MARKETING_VERSION
-          # 1. 尝试使用 agvtool 更新所有 target
-          agvtool new-marketing-version -all ${{ env.new_version }}
+          # 1. 尝试使用 agvtool 更新所有 target (注意：new-marketing-version 不支持 -all 参数)
+          agvtool new-marketing-version ${{ env.new_version }}
 
           # 2. 强制使用 sed 更新所有 target 的 MARKETING_VERSION 配置，作为双重保险
           # 这确保了即使 agvtool 遗漏了某些 target，它们也会被更新
