@@ -38,22 +38,30 @@ find "$APP_PATH" -depth \
     # Add --timestamp for Notarization requirement
     OPTS="--force --verbose --timestamp --sign \"$IDENTITY\" --options runtime"
     
-    # Only apply entitlements to App Extensions (and the main app later)
-    # For Sparkle components (Updater.app, XPC), we use default entitlements (no flag)
-    # We DO NOT preserve metadata to ensure a clean signature with our Team ID
-    if [[ "$item" == *.appex ]]; then
-        if [ -n "$ENTITLEMENTS" ]; then
-            OPTS="$OPTS --entitlements \"$ENTITLEMENTS\""
+    # Attempt to extract existing entitlements
+    ENTITLEMENTS_FILE="temp_entitlements.plist"
+    rm -f "$ENTITLEMENTS_FILE"
+    
+    # Try to dump entitlements to a file
+    if codesign -d --entitlements - --xml "$item" > "$ENTITLEMENTS_FILE" 2>/dev/null; then
+        # Check if file is not empty (it might be empty if no entitlements)
+        if [ -s "$ENTITLEMENTS_FILE" ]; then
+             echo "   Reuse existing entitlements for $(basename "$item")"
+             OPTS="$OPTS --entitlements \"$ENTITLEMENTS_FILE\""
         fi
     fi
     
+    # Note: Sparkle.framework requires deep signing if we want to be safe, 
+    # but strictly speaking we should sign inside-out.
+    # Since we are using find -depth, we are signing inside-out.
+    # We REMOVE --deep to avoid double-signing or overwriting inner signatures with wrong flags.
+    
     # Execute signing
     # We use eval to handle the quoted Identity string correctly
-    # Note: Sparkle.framework requires deep signing
-    if [[ "$item" == *.framework ]]; then
-       OPTS="$OPTS --deep"
-    fi
     eval codesign $OPTS "\"$item\""
+    
+    # Clean up
+    rm -f "$ENTITLEMENTS_FILE"
 done
 
 # 3. Sign the Main App
