@@ -66,7 +66,7 @@ done
 
 # 3. Sign the Main App
 echo "✍️  Signing Main App..."
-OPTS="--force --verbose --timestamp=none --sign \"$IDENTITY\" --options runtime"
+OPTS="--force --verbose --timestamp --sign \"$IDENTITY\" --options runtime"
 if [ -n "$ENTITLEMENTS" ]; then
     OPTS="$OPTS --entitlements \"$ENTITLEMENTS\""
 fi
