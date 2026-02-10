@@ -6,14 +6,14 @@
 # appropriate version increment (major, minor, or patch) following
 # Semantic Versioning 2.0.0 and Conventional Commits specifications.
 #
-# Usage: ./scripts/bump-version.sh
+# Usage: ./bump-version.sh
 # Output: major|minor|patch
 #
 
 set -euo pipefail
 
-# Get the most recent tag, or default to 0.0.0 if no tags exist
-LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
+# Get the most recent tag starting with 'v', or default to v0.0.0 if no tags exist
+LAST_TAG=$(git describe --tags --match "v*" --abbrev=0 2>/dev/null || echo "v0.0.0")
 
 # Get all commit messages since the last tag
 COMMITS=$(git log ${LAST_TAG}..HEAD --pretty=format:%s 2>/dev/null || echo "")
