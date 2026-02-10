@@ -98,7 +98,7 @@ class FinderSync: FIFinderSync, SuperLog {
                 }
 
             case .openInTerminal:
-                let termItem = menu.addItem(withTitle: item.customTitle ?? "在终端中打开6", action: #selector(openInTerminal(_:)), keyEquivalent: "")
+                let termItem = menu.addItem(withTitle: item.customTitle ?? "在终端中打开", action: #selector(openInTerminal(_:)), keyEquivalent: "")
                 if showIcons {
                     termItem.image = NSImage(systemSymbolName: "apple.terminal", accessibilityDescription: "Terminal")
                 }
