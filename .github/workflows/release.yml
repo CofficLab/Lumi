@@ -12,11 +12,11 @@ permissions:
 env:
   # 基础环境变量
   SCHEME: Lumi
-  REPO_LINK: 'https://github.com/CofficLab/Lumi'
-  DESTINATION: 'generic/platform=macOS'
-  ENTITLEMENTS_PATH: 'LumiApp/App.entitlements'
-  ArchivePath: './my-app'
-  BuildPath: './temp'
+  REPO_LINK: "https://github.com/CofficLab/Lumi"
+  DESTINATION: "generic/platform=macOS"
+  ENTITLEMENTS_PATH: "LumiApp/App.entitlements"
+  ArchivePath: "./my-app"
+  BuildPath: "./temp"
 
   # Secrets
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -40,7 +40,7 @@ jobs:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: 'latest-stable'
+          xcode-version: "latest-stable"
 
       # =================================================================================================
       # 1. 版本计算与项目更新
@@ -159,7 +159,7 @@ jobs:
 
           VOL_NAME="${{ env.SCHEME }}"
           DMG_NAME="./temp/${{ env.SCHEME }}_${{ env.new_version }}.dmg"
-          
+
           hdiutil create -volname "$VOL_NAME" -srcfolder "$STAGING_DIR" -ov -format UDZO "$DMG_NAME"
 
       - name: Notary
@@ -236,12 +236,7 @@ jobs:
               # 对文件名进行 URL 编码处理（简单处理空格）
               dmg_url_encoded=$(echo "$dmg_file" | sed 's/ /%20/g')
               
-              # 构建新的下载链接
-              # 注意：Sparkle 生成的 appcast 中 url 属性通常是文件名
-              # 我们需要将其替换为 GitHub Releases 的完整下载链接
-              # 使用特定匹配模式以避免误伤历史版本
-              
-              DOWNLOAD_URL="${{ env.REPO_LINK }}/releases/download/${{ env.tag }}/$dmg_url_encoded"
+              DOWNLOAD_URL="${{ env.REPO_LINK }}/releases/latest/download/$dmg_url_encoded"
               
               # 替换 url 属性：查找 url="文件名" 并替换为 url="完整链接"
               # 这里假设 generate_appcast 生成的是文件名作为 url
@@ -265,12 +260,12 @@ jobs:
         if: success()
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: 'ci: bump to ${{ env.new_version }}'
+          commit_message: "ci: bump to ${{ env.new_version }}"
           commit_user_name: GitHub Action
           tagging_message: ${{ env.tag }}
-          push_options: '--follow-tags'
+          push_options: "--follow-tags"
           # 仅提交项目文件和appcast
-          file_pattern: 'Lumi.xcodeproj/project.pbxproj appcast.xml'
+          file_pattern: "Lumi.xcodeproj/project.pbxproj appcast.xml"
 
       # =================================================================================================
       # 5. 发布 Release
