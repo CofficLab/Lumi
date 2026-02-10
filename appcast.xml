@@ -3,20 +3,12 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>1.5.4</title>
-            <pubDate>Tue, 10 Feb 2026 10:18:16 +0000</pubDate>
-            <sparkle:version>29</sparkle:version>
-            <sparkle:shortVersionString>1.5.4</sparkle:shortVersionString>
+            <title>1.6.0</title>
+            <pubDate>Tue, 10 Feb 2026 14:29:22 +0000</pubDate>
+            <sparkle:version>31</sparkle:version>
+            <sparkle:shortVersionString>1.6.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>15.5</sparkle:minimumSystemVersion>
-            <enclosure url="https://raw.githubusercontent.com/CofficLab/Lumi/main/Lumi_1.5.4.dmg" length="16649264" type="application/octet-stream" sparkle:edSignature="FkkARH3do7pElzYGbpmUEmWIUwVA0qxSLLSmDidN9tS3Joz7I2RIso8tU2eGlzStrI0mwjdGVn/GlihxYNi8CQ=="/>
-        </item>
-        <item>
-            <title>1.4.3</title>
-            <pubDate>Tue, 10 Feb 2026 05:10:44 +0000</pubDate>
-            <sparkle:version>22</sparkle:version>
-            <sparkle:shortVersionString>1.4.3</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>15.5</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/latest/download/Lumi.dmg" length="18356480" type="application/octet-stream" sparkle:edSignature="BU9xyBWd/vFMHGx3nok4MUUPybwsuRKxGTGvODmmYpfpmtwV61cqPEAYvGVfOzaoszL4yi3w2vM33b4IIrv4Dw=="/>
+            <enclosure url="https://raw.githubusercontent.com/CofficLab/Lumi/main/Lumi_1.6.0.dmg" length="16654620" type="application/octet-stream" sparkle:edSignature="Z5LC4X+3wNEO7jJOvQZD/c6IE02VwIjEtR556rhVfZCJtPlC+ih8DwF17WJK1jR+MEzMgcYkp588njHjAR+5CQ=="/>
         </item>
     </channel>
 </rss>
