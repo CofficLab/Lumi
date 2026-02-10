@@ -34,7 +34,8 @@ find "$APP_PATH" -depth \
     echo "✍️  Signing component: $item"
     
     # Determine options based on file type
-    OPTS="--force --verbose --sign \"$IDENTITY\" --options runtime"
+    # Add --timestamp for Notarization requirement
+    OPTS="--force --verbose --timestamp --sign \"$IDENTITY\" --options runtime"
     
     # Only apply entitlements to App Extensions (and the main app later)
     # For Sparkle components (Updater.app, XPC), we use default entitlements (no flag)
@@ -52,7 +53,7 @@ done
 
 # 3. Sign the Main App
 echo "✍️  Signing Main App..."
-OPTS="--force --verbose --sign \"$IDENTITY\" --options runtime"
+OPTS="--force --verbose --timestamp=none --sign \"$IDENTITY\" --options runtime"
 if [ -n "$ENTITLEMENTS" ]; then
     OPTS="$OPTS --entitlements \"$ENTITLEMENTS\""
 fi

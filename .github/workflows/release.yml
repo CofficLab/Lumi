@@ -161,12 +161,34 @@ jobs:
           file=$(find ./temp -name "*.dmg" -type f | head -n 1)
           if [ -z "$file" ]; then echo "DMG not found"; exit 1; fi
           
+          # Run submit and capture output
+          set +e
           xcrun notarytool submit "$file" \
             --key ${{ steps.signing.outputs.api_key_path }} \
             --key-id=${{ env.APP_STORE_CONNECT_KEY_ID }} \
             --issuer ${{ env.APP_STORE_CONNECT_KEY_ISSUER_ID }} \
             --wait \
-            --timeout 10m
+            --timeout 10m > notary_result.txt 2>&1
+          
+          EXIT_CODE=$?
+          # Output result for debugging
+          cat notary_result.txt
+          
+          if [ $EXIT_CODE -ne 0 ]; then
+             echo "❌ Notarization failed. Retrieving logs..."
+             # Extract ID from the output file
+             SUBMISSION_ID=$(grep "id:" notary_result.txt | head -n 1 | awk '{print $2}' | tr -d ' ')
+             if [ -n "$SUBMISSION_ID" ]; then
+                echo "Fetching log for Submission ID: $SUBMISSION_ID"
+                xcrun notarytool log "$SUBMISSION_ID" \
+                  --key ${{ steps.signing.outputs.api_key_path }} \
+                  --key-id=${{ env.APP_STORE_CONNECT_KEY_ID }} \
+                  --issuer ${{ env.APP_STORE_CONNECT_KEY_ISSUER_ID }} 
+             fi
+             exit $EXIT_CODE
+          fi
+          set -e
+          
           stapler staple "$file"
 
       - name: Validate Notarization
