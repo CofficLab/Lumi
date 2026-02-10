@@ -40,12 +40,6 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: "latest-stable"
-      - name: 安装依赖
-        run: |
-          curl -fsSL \
-            --header 'authorization: Bearer ${{ env.GITHUB_TOKEN }}' \
-            --header 'user-agent: Lumi-Release-Workflow' \
-            https://raw.githubusercontent.com/nookery/servon/main/install.sh | bash
       - name: Verify Xcode version
         run: |
           echo "Current Xcode version:"
@@ -90,18 +84,30 @@ jobs:
           echo "- **MARKETING_VERSION**: \`$MARKETING_VERSION\`" >> $GITHUB_STEP_SUMMARY
           echo "- **CURRENT_PROJECT_VERSION**: \`$CURRENT_VERSION\`" >> $GITHUB_STEP_SUMMARY
 
-          servon xcode build --scheme ${{ env.SCHEME }} --arch arm64 --clean=false -v
+          # 使用原生 xcodebuild 命令构建
+          xcodebuild build \
+            -scheme ${{ env.SCHEME }} \
+            -arch arm64 \
+            -configuration Release \
+            -derivedDataPath ./temp/arm64 \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="${{ steps.signing.outputs.signing_identity }}" \
+            DEVELOPMENT_TEAM="${{ steps.signing.outputs.team_id }}" \
+            PROVISIONING_PROFILE_SPECIFIER=""
+
       - name: Codesign App
         run: |
-          servon xcode codesign --path ./temp/arm64/Build/Products/Release/${{ env.SCHEME }}.app \
-            --identity ${{ steps.signing.outputs.signing_identity }} 
+          # 手动签名
+          codesign --force --verbose --sign "${{ steps.signing.outputs.signing_identity }}" --deep --options runtime ./temp/arm64/Build/Products/Release/${{ env.SCHEME }}.app
 
-          # servon xcode codesign --path ./temp/x86_64/Build/Products/Release/${{ env.SCHEME }}.app \
-          #   --identity ${{ steps.signing.outputs.signing_identity }}
       - name: Create DMG
         run: |
-          servon xcode package --path ./temp/arm64/Build/Products/Release/${{ env.SCHEME }}.app
-          # servon xcode package --path ./temp/x86_64/Build/Products/Release/${{ env.SCHEME }}.app
+          # 使用 hdiutil 创建 DMG
+          SRC_FOLDER="./temp/arm64/Build/Products/Release/${{ env.SCHEME }}.app"
+          VOL_NAME="${{ env.SCHEME }}"
+          DMG_NAME="./temp/${{ env.SCHEME }}.dmg"
+
+          hdiutil create -volname "$VOL_NAME" -srcfolder "$SRC_FOLDER" -ov -format UDZO "$DMG_NAME"
 
           # 查找生成的 DMG 文件
           dmg_file=$(find ./temp -name "*.dmg" -type f | head -n 1)
