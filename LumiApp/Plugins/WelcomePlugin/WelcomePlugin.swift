@@ -3,53 +3,53 @@ import MagicKit
 import OSLog
 import SwiftUI
 
-/// 欢迎插件：提供欢迎界面作为详情视图
+/// Welcome Plugin: Provides a welcome screen as a detail view
 actor WelcomePlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
-    /// 日志标识符
+    /// Log identifier
     nonisolated static let emoji = "⭐️"
 
-    /// 是否启用该插件
+    /// Whether to enable this plugin
     static let enable = true
 
-    /// 是否启用详细日志输出
+    /// Whether to enable verbose log output
     nonisolated static let verbose = true
 
-    /// 插件唯一标识符
+    /// Plugin unique identifier
     static let id: String = "WelcomePlugin"
 
     static let navigationId = "\(id).welcome"
 
-    /// 插件显示名称
-    static let displayName: String = "欢迎页面"
+    /// Plugin display name
+    static let displayName: String = "Welcome"
 
-    /// 插件功能描述
-    static let description: String = "显示应用欢迎界面和使用指南"
+    /// Plugin functional description
+    static let description: String = "Displays the app's welcome interface and user guide"
 
-    /// 插件图标名称
+    /// Plugin icon name
     static let iconName: String = "star.circle.fill"
 
-    /// 是否可配置
+    /// Whether it is configurable
     static let isConfigurable: Bool = true
 
-    /// 注册顺序
+    /// Registration order
     static var order: Int { 0 }
 
     // MARK: - Instance
 
-    /// 插件单例实例
+    /// Plugin singleton instance
     static let shared = WelcomePlugin()
 
     // MARK: - UI Contributions
 
-    /// 提供导航入口
-    /// - Returns: 导航入口数组
+    /// Provide navigation entries
+    /// - Returns: Array of navigation entries
     @MainActor func addNavigationEntries() -> [NavigationEntry]? {
         return [
             NavigationEntry.create(
                 id: Self.navigationId,
-                title: "欢迎",
+                title: "Welcome",
                 icon: "star.circle.fill",
                 pluginId: Self.id,
                 isDefault: true
@@ -59,8 +59,8 @@ actor WelcomePlugin: SuperPlugin, SuperLog {
         ]
     }
 
-    /// 添加详情视图
-    /// - Returns: 详情视图
+    /// Add detail view
+    /// - Returns: Detail view
     @MainActor func addDetailView() -> AnyView? {
         return AnyView(WelcomeView())
     }

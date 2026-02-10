@@ -9,7 +9,7 @@ struct CPUHistoryDetailView: View {
         VStack(spacing: 12) {
             // Header with Picker
             HStack {
-                Text("CPU 负载趋势")
+                Text("CPU Load Trend")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(.secondary)
                 

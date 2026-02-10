@@ -10,8 +10,8 @@ struct HostsManagerView: View {
             // Toolbar
             HStack {
                 // Group Filter
-                Picker("分组", selection: $viewModel.selectedGroup) {
-                    Text("所有").tag(String?.none)
+                Picker("Group", selection: $viewModel.selectedGroup) {
+                    Text("All").tag(String?.none)
                     ForEach(viewModel.groups, id: \.self) { group in
                         Text(group).tag(String?.some(group))
                     }
@@ -24,7 +24,7 @@ struct HostsManagerView: View {
                 HStack {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(.secondary)
-                    TextField("搜索 Host", text: $viewModel.searchText)
+                    TextField("Search Host", text: $viewModel.searchText)
                         .textFieldStyle(.plain)
                 }
                 .padding(6)
@@ -34,22 +34,22 @@ struct HostsManagerView: View {
                 
                 // Actions
                 Button(action: { showAddSheet = true }) {
-                    Label("新增", systemImage: "plus")
+                    Label("Add", systemImage: "plus")
                 }
                 
                 Menu {
-                    Button("刷新") {
+                    Button("Refresh") {
                         Task { await viewModel.loadHosts() }
                     }
                     Divider()
-                    Button("导出备份...") {
+                    Button("Export Backup...") {
                         exportHosts()
                     }
-                    Button("导入备份...") {
+                    Button("Import Backup...") {
                         importHosts()
                     }
                 } label: {
-                    Label("更多", systemImage: "ellipsis.circle")
+                    Label("More", systemImage: "ellipsis.circle")
                 }
             }
             .padding()
@@ -63,11 +63,11 @@ struct HostsManagerView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = viewModel.errorMessage {
                 ContentUnavailableView {
-                    Label("发生错误", systemImage: "exclamationmark.triangle")
+                    Label("An error occurred", systemImage: "exclamationmark.triangle")
                 } description: {
                     Text(error)
                 } actions: {
-                    Button("重试") {
+                    Button("Retry") {
                         Task { await viewModel.loadHosts() }
                     }
                 }
@@ -196,34 +196,34 @@ struct HostAddView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            Text("新增 Host 记录")
+            Text("Add Host Entry")
                 .font(.headline)
             
             Form {
-                TextField("IP 地址", text: $ip)
+                TextField("IP Address", text: $ip)
                     .onChange(of: ip) { _, newValue in
                         // Simple validation feedback
                     }
                 if showIPError {
-                    Text("IP 地址格式无效")
+                    Text("Invalid IP address format")
                         .foregroundStyle(.red)
                         .font(.caption)
                 }
                 
-                TextField("域名 (例如: dev.example.com)", text: $domain)
+                TextField("Domain (e.g., dev.example.com)", text: $domain)
                 
-                TextField("备注 (可选)", text: $comment)
+                TextField("Comment (Optional)", text: $comment)
                 
-                TextField("分组 (可选)", text: $group)
+                TextField("Group (Optional)", text: $group)
             }
             .formStyle(.grouped)
             
             HStack {
-                Button("取消") {
+                Button("Cancel") {
                     isPresented = false
                 }
                 
-                Button("保存") {
+                Button("Save") {
                     if viewModel.isValidIP(ip) && !domain.isEmpty {
                         viewModel.addEntry(ip: ip, domain: domain, comment: comment.isEmpty ? nil : comment, group: group.isEmpty ? nil : group)
                         isPresented = false

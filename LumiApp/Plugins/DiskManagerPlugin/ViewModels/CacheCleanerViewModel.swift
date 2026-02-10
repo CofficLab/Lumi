@@ -48,7 +48,7 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
     func scan() {
         Task {
             await CacheCleanerService.shared.scanCaches()
-            // 默认全选 Safe 级别
+            // Select all Safe level by default
             selectAllSafe()
         }
     }
@@ -73,9 +73,9 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
                 let freed = try await CacheCleanerService.shared.cleanup(paths: pathsToClean)
                 self.lastFreedSpace = freed
                 self.showCleanupComplete = true
-                self.selection.removeAll() // 清空选择
+                self.selection.removeAll() // Clear selection
             } catch {
-                self.alertMessage = "清理出错: \(error.localizedDescription)"
+                self.alertMessage = "Cleanup error: \(error.localizedDescription)"
             }
             self.isCleaning = false
         }

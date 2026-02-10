@@ -3,8 +3,8 @@ import MagicKit
 
 actor RClickPlugin: SuperPlugin {
     nonisolated static let id = "RClick"
-    nonisolated static let displayName = "右键菜单"
-    nonisolated static let description = "自定义 Finder 右键菜单动作"
+    nonisolated static let displayName = "Right Click"
+    nonisolated static let description = "Customize Finder right-click menu actions"
     nonisolated static let iconName = "cursorarrow.click.2"
     static var order: Int { 50 }
     

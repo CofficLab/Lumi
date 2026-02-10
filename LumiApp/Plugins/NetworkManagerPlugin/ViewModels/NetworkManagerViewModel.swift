@@ -11,7 +11,7 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
     @Published var networkState = NetworkState()
     @Published var interfaces: [NetworkInterfaceInfo] = []
     
-    // 进程监控相关
+    // Process monitoring related
     @Published var processes: [NetworkProcess] = []
     @Published var showProcessMonitor = false {
         didSet {
@@ -25,7 +25,7 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
     @Published var onlyActiveProcesses = true
     @Published var processSearchText = ""
 
-    // 系统启动时间
+    // System boot time
     var systemUptime: String {
         let uptime = ProcessInfo.processInfo.systemUptime
         return formatUptime(uptime)
@@ -34,12 +34,12 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
     var filteredProcesses: [NetworkProcess] {
         var result = processes
         
-        // 1. 活跃过滤 (> 0 bytes/s)
+        // 1. Activity filtering (> 0 bytes/s)
         if onlyActiveProcesses {
             result = result.filter { $0.totalSpeed > 0 }
         }
         
-        // 2. 搜索过滤
+        // 2. Search filtering
         if !processSearchText.isEmpty {
             result = result.filter { 
                 $0.name.localizedCaseInsensitiveContains(processSearchText) ||
@@ -47,7 +47,7 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
             }
         }
         
-        // 3. 排序 (默认按总速度降序)
+        // 3. Sorting (Default by total speed descending)
         result.sort { $0.totalSpeed > $1.totalSpeed }
         
         return result
@@ -58,16 +58,16 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
 
     init() {
         if Self.verbose {
-            os_log("\(self.t)网络管理视图模型已初始化")
+            os_log("\(self.t)NetworkManagerViewModel initialized")
         }
         startMonitoring()
         
-        // 绑定服务数据
+        // Bind service data
         ProcessMonitorService.shared.$processes
             .receive(on: DispatchQueue.main)
             .sink { [weak self] processes in
                 if Self.verbose {
-                    os_log("\(self?.t ?? "")收到进程更新: \(processes.count) 个")
+                    os_log("\(self?.t ?? "")Received process updates: \(processes.count)")
                 }
                 self?.processes = processes
             }
@@ -95,7 +95,7 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
 
     func startMonitoring() {
         if Self.verbose {
-            os_log("\(self.t)开始网络监控")
+            os_log("\(self.t)Starting network monitoring")
         }
 
         // Subscribe to NetworkService updates
@@ -147,17 +147,20 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
     }
 
     // Formatting Helpers
+    /// Format uptime duration
+    /// - Parameter seconds: Duration in seconds
+    /// - Returns: Formatted string
     func formatUptime(_ seconds: TimeInterval) -> String {
         let days = Int(seconds) / 86400
         let hours = Int(seconds) / 3600 % 24
         let minutes = Int(seconds) / 60 % 60
 
         if days > 0 {
-            return "\(days)天 \(hours)小时 \(minutes)分钟"
+            return "\(days)d \(hours)h \(minutes)m"
         } else if hours > 0 {
-            return "\(hours)小时 \(minutes)分钟"
+            return "\(hours)h \(minutes)m"
         } else {
-            return "\(minutes)分钟"
+            return "\(minutes)m"
         }
     }
 }

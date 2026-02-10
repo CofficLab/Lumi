@@ -1,7 +1,7 @@
 import Foundation
 import AppKit
 
-// MARK: - 缓存清理模型
+// MARK: - Cache Cleanup Models
 
 struct CacheCategory: Identifiable, Hashable {
     let id: String
@@ -34,9 +34,9 @@ struct CacheCategory: Identifiable, Hashable {
     }
 
     enum SafetyLevel: Int, Comparable {
-        case safe = 0      // 可安全删除
-        case medium = 1    // 需要用户确认
-        case risky = 2     // 可能影响系统
+        case safe = 0      // Safe to delete
+        case medium = 1    // Requires user confirmation
+        case risky = 2     // May affect system
         
         static func < (lhs: SafetyLevel, rhs: SafetyLevel) -> Bool {
             lhs.rawValue < rhs.rawValue
@@ -52,9 +52,9 @@ struct CacheCategory: Identifiable, Hashable {
         
         var label: String {
             switch self {
-            case .safe: return "安全"
-            case .medium: return "谨慎"
-            case .risky: return "风险"
+            case .safe: return "Safe"
+            case .medium: return "Medium"
+            case .risky: return "Risky"
             }
         }
     }
@@ -70,7 +70,7 @@ struct CachePath: Identifiable, Hashable {
     let canDelete: Bool
     let icon: NSImage?
     
-    // 用于 UI 选中状态
+    // Used for UI selection state
     var isSelected: Bool = true
     
     func hash(into hasher: inout Hasher) {

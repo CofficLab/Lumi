@@ -21,10 +21,10 @@ struct MemoryHistoryGraphView: View {
                 yAxisView
                     .frame(width: yAxisWidth)
 
-                // 主图表
+                // Main chart
                 GeometryReader { geometry in
                     ZStack(alignment: .topLeading) {
-                        // 背景网格
+                        // Background grid
                         gridLines(for: geometry.size)
 
                         if !dataPoints.isEmpty {
@@ -36,7 +36,7 @@ struct MemoryHistoryGraphView: View {
                             MemoryGraphLine(data: dataPoints.map { $0.usagePercentage }, maxValue: maxValue)
                                 .stroke(Color.purple, lineWidth: 1.5)
                         } else {
-                            Text("收集数据中...")
+                            Text("Collecting data...")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)

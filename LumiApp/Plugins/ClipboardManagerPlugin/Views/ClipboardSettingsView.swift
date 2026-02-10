@@ -7,8 +7,8 @@ struct ClipboardSettingsView: View {
     
     var body: some View {
         Form {
-            Section("通用") {
-                Toggle("启用剪贴板监听", isOn: $isMonitoringEnabled)
+            Section("General") {
+                Toggle("Enable Clipboard Monitoring", isOn: $isMonitoringEnabled)
                     .onChange(of: isMonitoringEnabled) { newValue in
                         if newValue {
                             monitor.startMonitoring()
@@ -17,23 +17,23 @@ struct ClipboardSettingsView: View {
                         }
                     }
                 
-                Picker("历史记录数量", selection: $historySize) {
+                Picker("History Size", selection: $historySize) {
                     Text("100").tag(100)
                     Text("500").tag(500)
                     Text("1000").tag(1000)
-                    Text("无限制").tag(Int.max)
+                    Text("Unlimited").tag(Int.max)
                 }
             }
             
-            Section("数据") {
-                Button("清空所有历史记录") {
+            Section("Data") {
+                Button("Clear All History") {
                     Task {
                         await ClipboardStorage.shared.clear()
                     }
                 }
                 .foregroundColor(.red)
                 
-                Text("所有数据仅存储在本地，不会上传到任何服务器。")
+                Text("All data is stored locally and will not be uploaded to any server.")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }

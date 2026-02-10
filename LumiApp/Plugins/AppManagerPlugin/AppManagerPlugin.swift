@@ -11,7 +11,7 @@ actor AppManagerPlugin: SuperPlugin {
         return [
             NavigationEntry.create(
                 id: Self.navigationId,
-                title: "应用管理",
+                title: "App Manager",
                 icon: "apps.ipad",
                 pluginId: Self.id,
                 isDefault: false

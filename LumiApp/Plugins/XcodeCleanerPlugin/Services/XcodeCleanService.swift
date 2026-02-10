@@ -15,7 +15,7 @@ class XcodeCleanService: SuperLog {
 
     private init() {
         if Self.verbose {
-            os_log("\(self.t)Xcode 清理服务已初始化")
+            os_log("\(self.t)Xcode cleaning service initialized")
         }
     }
     
@@ -58,14 +58,14 @@ class XcodeCleanService: SuperLog {
         guard let url = getPath(for: category) else { return [] }
 
         if Self.verbose {
-            os_log("\(self.t)扫描 \(category.rawValue): \(url.path)")
+            os_log("\(self.t)Scanning \(category.rawValue): \(url.path)")
         }
 
-        // 如果目录不存在，直接返回空
+        // If directory doesn't exist, return empty
         var isDir: ObjCBool = false
         guard fileManager.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue else {
             if Self.verbose {
-                os_log("\(self.t)目录不存在: \(url.path)")
+                os_log("\(self.t)Directory does not exist: \(url.path)")
             }
             return []
         }
@@ -76,10 +76,10 @@ class XcodeCleanService: SuperLog {
             var items: [XcodeCleanItem] = []
 
             for itemURL in contents {
-                // 对于 Archives，Xcode 会按日期 (YYYY-MM-DD) 创建子文件夹，我们需要递归进去看，或者就以日期文件夹为单位？
-                // 通常 Archives 结构是 Archives/YYYY-MM-DD/AppName.xcarchive
-                // 为了简单起见，我们列出 Archives 下的日期文件夹，或者如果用户希望更细粒度，我们需要扫描所有 .xcarchive。
-                // DevCleaner 通常按日期展示。这里我们先按一级子目录（即日期或项目名）展示。
+                // For Archives, Xcode creates subfolders by date (YYYY-MM-DD). We need to recurse or use the date folder as a unit.
+                // Usually Archives structure is Archives/YYYY-MM-DD/AppName.xcarchive
+                // For simplicity, we list the date folders under Archives.
+                // DevCleaner usually shows by date. Here we show by top-level subdirectories (date or project name).
 
                 let size = calculateSize(of: itemURL)
                 let attributes = try itemURL.resourceValues(forKeys: [.contentModificationDateKey])
@@ -87,7 +87,7 @@ class XcodeCleanService: SuperLog {
 
                 var version: String? = nil
                 if category == .iOSDeviceSupport || category == .watchOSDeviceSupport || category == .tvOSDeviceSupport {
-                    // 尝试从文件夹名称解析版本，例如 "15.2 (19C56)"
+                    // Try to parse version from folder name, e.g., "15.2 (19C56)"
                     version = itemURL.lastPathComponent
                 }
 
@@ -104,7 +104,7 @@ class XcodeCleanService: SuperLog {
 
             return items
         } catch {
-            os_log(.error, "\(self.t)扫描失败: \(category.rawValue) - \(error.localizedDescription)")
+            os_log(.error, "\(self.t)Scan failed: \(category.rawValue) - \(error.localizedDescription)")
             return []
         }
     }
@@ -112,8 +112,8 @@ class XcodeCleanService: SuperLog {
     // MARK: - Helpers
     
     private func calculateSize(of url: URL) -> Int64 {
-        // 简单递归计算大小
-        // 注意：这可能很慢，生产环境可能需要优化或使用 URL resource keys
+        // Simple recursive size calculation
+        // Note: This might be slow, production environment may need optimization or use URL resource keys
         guard let enumerator = fileManager.enumerator(at: url, includingPropertiesForKeys: [.fileSizeKey, .totalFileAllocatedSizeKey]) else {
             return 0
         }
@@ -138,18 +138,18 @@ class XcodeCleanService: SuperLog {
 
     func delete(items: [XcodeCleanItem]) async throws {
         if Self.verbose {
-            os_log("\(self.t)开始删除 \(items.count) 个项目")
+            os_log("\(self.t)Starting deletion of \(items.count) items")
         }
 
         for item in items {
             if Self.verbose {
-                os_log("\(self.t)删除: \(item.name)")
+                os_log("\(self.t)Deleting: \(item.name)")
             }
             try fileManager.removeItem(at: item.path)
         }
 
         if Self.verbose {
-            os_log("\(self.t)删除完成")
+            os_log("\(self.t)Deletion complete")
         }
     }
 }

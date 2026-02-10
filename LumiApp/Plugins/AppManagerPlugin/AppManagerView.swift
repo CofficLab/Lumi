@@ -31,8 +31,8 @@ struct AppManagerView: View {
                 .infiniteHeight()
         }
         .infinite()
-        .navigationTitle("应用管理")
-        .searchable(text: $viewModel.searchText, prompt: "搜索应用")
+        .navigationTitle("App Manager")
+        .searchable(text: $viewModel.searchText, prompt: "Search Apps")
         .onChange(of: viewModel.selectedApp) { _, newApp in
             if let app = newApp {
                 viewModel.scanRelatedFiles(for: app)
@@ -53,19 +53,19 @@ struct AppManagerView: View {
                 }
             }
         }
-        .alert("确认卸载", isPresented: $viewModel.showUninstallConfirmation) {
-            Button("取消", role: .cancel) { }
-            Button("卸载", role: .destructive) {
+        .alert("Confirm Uninstall", isPresented: $viewModel.showUninstallConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Uninstall", role: .destructive) {
                 viewModel.deleteSelectedFiles()
             }
         } message: {
-            Text("确定要删除选中的文件吗？此操作不可撤销。")
+            Text("Are you sure you want to delete the selected files? This action cannot be undone.")
         }
-        .alert("错误", isPresented: Binding<Bool>(
+        .alert("Error", isPresented: Binding<Bool>(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
         )) {
-            Button("确定") {
+            Button("OK") {
                 viewModel.errorMessage = nil
             }
         } message: {
@@ -78,11 +78,11 @@ struct AppManagerView: View {
     private var toolbar: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("\(viewModel.installedApps.count) 个应用")
+                Text("\(viewModel.installedApps.count) Apps")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 
-                Text("总大小: \(viewModel.formattedTotalSize)")
+                Text("Total Size: \(viewModel.formattedTotalSize)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -94,7 +94,7 @@ struct AppManagerView: View {
             }) {
                 HStack(spacing: 4) {
                     Image(systemName: "arrow.clockwise")
-                    Text("刷新")
+                    Text("Refresh")
                 }
             }
             .buttonStyle(.borderedProminent)
@@ -158,7 +158,7 @@ struct AppManagerView: View {
                     // Related Files List
                     if viewModel.isScanningFiles {
                         Spacer()
-                        ProgressView("正在扫描关联文件...")
+                        ProgressView("Scanning related files...")
                         Spacer()
                     } else {
                         List {
@@ -195,7 +195,7 @@ struct AppManagerView: View {
                     
                     // Footer Action
                     HStack {
-                        Text("已选: \(formatBytes(viewModel.totalSelectedSize))")
+                        Text("Selected: \(formatBytes(viewModel.totalSelectedSize))")
                             .font(.headline)
                         
                         Spacer()
@@ -203,7 +203,7 @@ struct AppManagerView: View {
                         Button(role: .destructive) {
                             viewModel.showUninstallConfirmation = true
                         } label: {
-                            Text("卸载选中项")
+                            Text("Uninstall Selected")
                                 .padding(.horizontal, 8)
                         }
                         .controlSize(.large)
@@ -213,7 +213,7 @@ struct AppManagerView: View {
                     .padding()
                 }
             } else {
-                ContentUnavailableView("选择应用", systemImage: "hand.tap")
+                ContentUnavailableView("Select an App", systemImage: "hand.tap")
             }
         }
     }

@@ -81,7 +81,7 @@ class AppManagerViewModel: ObservableObject, SuperLog {
         
         // Wrap in TaskService for global tracking
         scanTask = Task {
-            try? await TaskService.shared.run(title: "扫描应用列表", priority: .userInitiated) { progressCallback in
+            try? await TaskService.shared.run(title: "Scanning app list", priority: .userInitiated) { progressCallback in
                 await self.performScan(force: force, progressCallback: progressCallback)
             }
         }

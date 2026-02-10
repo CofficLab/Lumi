@@ -8,8 +8,8 @@ actor DeviceInfoPlugin: SuperPlugin {
 
     static let id: String = "DeviceInfoPlugin"
     static let navigationId = "\(id).dashboard"
-    static let displayName: String = "设备信息"
-    static let description: String = "展示 CPU、内存、磁盘、电池等系统状态"
+    static let displayName: String = "Device Info"
+    static let description: String = "Show system status like CPU, Memory, Disk, Battery, etc."
     static let iconName: String = "macbook.and.iphone"
     static let isConfigurable: Bool = false
     static var order: Int { 10 }
@@ -28,7 +28,7 @@ actor DeviceInfoPlugin: SuperPlugin {
         return [
             NavigationEntry.create(
                 id: Self.navigationId,
-                title: "设备概览",
+                title: "Overview",
                 icon: "macbook.and.iphone",
                 pluginId: Self.id
             ) {

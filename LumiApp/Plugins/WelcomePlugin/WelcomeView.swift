@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 欢迎视图：显示应用欢迎界面和使用指南
+/// Welcome View: Displays the app's welcome interface and user guide
 struct WelcomeView: View {
     @EnvironmentObject var app: AppProvider
 
@@ -10,7 +10,7 @@ struct WelcomeView: View {
                 Spacer()
                     .frame(height: 40)
 
-                // 主要欢迎内容
+                // Main welcome content
                 welcomeSection
 
                 Spacer()
@@ -21,7 +21,7 @@ struct WelcomeView: View {
         .navigationTitle("")
     }
 
-    // MARK: - 欢迎区域
+    // MARK: - Welcome Section
 
     private var welcomeSection: some View {
         VStack(spacing: 16) {
@@ -36,11 +36,11 @@ struct WelcomeView: View {
                     )
                 )
 
-            Text("欢迎使用 Lumi")
+            Text("Welcome to Lumi")
                 .font(.title)
                 .fontWeight(.bold)
 
-            Text("简洁高效的助理软件")
+            Text("A simple and efficient assistant app")
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)

@@ -1,43 +1,43 @@
 import SwiftUI
 
-/// 项目信息列表视图
+/// Project info list view
 struct ProjectInfoListView: View {
     let tab: String
     let project: Project?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // 标题
+            // Title
             HStack {
                 Image(systemName: ProjectInfoPlugin.iconName)
                     .foregroundColor(.blue)
-                Text("项目信息")
+                Text("Project Info")
                     .font(.headline)
             }
 
             Divider()
 
-            // 标签页信息
+            // Tab Information
             VStack(alignment: .leading, spacing: 8) {
-                Text("标签页信息")
+                Text("Tab Information")
                     .font(.subheadline)
                     .fontWeight(.semibold)
 
-                ProjectInfoRow(title: "当前标签页", value: tab)
+                ProjectInfoRow(title: "Current Tab", value: tab)
             }
 
-            // 项目信息
+            // Project Information
             VStack(alignment: .leading, spacing: 8) {
-                Text("项目信息")
+                Text("Project Information")
                     .font(.subheadline)
                     .fontWeight(.semibold)
 
                 if let project = project {
-                    ProjectInfoRow(title: "项目名称", value: project.name)
-                    ProjectInfoRow(title: "项目ID", value: project.id)
-                    ProjectInfoRow(title: "状态", value: "活跃")
+                    ProjectInfoRow(title: "Project Name", value: project.name)
+                    ProjectInfoRow(title: "Project ID", value: project.id)
+                    ProjectInfoRow(title: "Status", value: "Active")
                 } else {
-                    Text("未选择项目")
+                    Text("No project selected")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -45,21 +45,21 @@ struct ProjectInfoListView: View {
 
             Divider()
 
-            // 统计信息
+            // Statistics
             VStack(alignment: .leading, spacing: 8) {
-                Text("统计信息")
+                Text("Statistics")
                     .font(.subheadline)
                     .fontWeight(.semibold)
 
-                ProjectInfoRow(title: "总标签页数", value: "1")
-                ProjectInfoRow(title: "总项目数", value: project != nil ? "1" : "0")
+                ProjectInfoRow(title: "Total Tabs", value: "1")
+                ProjectInfoRow(title: "Total Projects", value: project != nil ? "1" : "0")
             }
         }
         .padding()
     }
 }
 
-/// 信息行视图（私有辅助组件）
+/// Information row view (Private helper component)
 private struct ProjectInfoRow: View {
     let title: String
     let value: String
@@ -84,7 +84,7 @@ private struct ProjectInfoRow: View {
 #Preview("With Project") {
     ProjectInfoListView(
         tab: "main",
-        project: Project(id: "123", name: "示例项目")
+        project: Project(id: "123", name: "Example Project")
     )
     .frame(width: 400, height: 400)
 }

@@ -21,16 +21,16 @@ struct DockerImagesView: View {
             VStack(spacing: 0) {
                 // Toolbar
                 HStack {
-                    TextField("搜索镜像...", text: $viewModel.searchText)
+                    TextField("Search images...", text: $viewModel.searchText)
                         .textFieldStyle(.roundedBorder)
 
                     Menu {
-                        Picker("排序", selection: $viewModel.sortOption) {
-                            Text("创建时间").tag(DockerManagerViewModel.SortOption.created)
-                            Text("名称").tag(DockerManagerViewModel.SortOption.name)
-                            Text("大小").tag(DockerManagerViewModel.SortOption.size)
+                        Picker("Sort", selection: $viewModel.sortOption) {
+                            Text("Created").tag(DockerManagerViewModel.SortOption.created)
+                            Text("Name").tag(DockerManagerViewModel.SortOption.name)
+                            Text("Size").tag(DockerManagerViewModel.SortOption.size)
                         }
-                        Toggle("降序", isOn: $viewModel.sortDescending)
+                        Toggle("Descending", isOn: $viewModel.sortDescending)
                     } label: {
                         Image(systemName: "arrow.up.arrow.down")
                     }
@@ -83,15 +83,15 @@ struct DockerImagesView: View {
 
                 // Footer
                 HStack {
-                    Text("\(viewModel.filteredImages.count) 个镜像")
+                    Text("\(viewModel.filteredImages.count) images")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
                     Button(action: { showFileImporter = true }) {
-                        Label("导入", systemImage: "square.and.arrow.down")
+                        Label("Import", systemImage: "square.and.arrow.down")
                     }
                     Button(action: { showPullSheet = true }) {
-                        Label("拉取", systemImage: "arrow.down.circle")
+                        Label("Pull", systemImage: "arrow.down.circle")
                     }
                 }
                 .padding(8)
@@ -107,7 +107,7 @@ struct DockerImagesView: View {
                     Image(systemName: "cube.box")
                         .font(.system(size: 48))
                         .foregroundStyle(.secondary)
-                    Text("选择一个镜像查看详情")
+                    Text("Select an image to view details")
                         .font(.title2)
                         .foregroundStyle(.secondary)
                 }
@@ -117,9 +117,9 @@ struct DockerImagesView: View {
         }
         .sheet(isPresented: $showPullSheet) {
             VStack(spacing: 20) {
-                Text("拉取新镜像")
+                Text("Pull New Image")
                     .font(.headline)
-                TextField("镜像名称 (例如: nginx:latest)", text: $pullImageName)
+                TextField("Image name (e.g., nginx:latest)", text: $pullImageName)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 300)
 
@@ -128,8 +128,8 @@ struct DockerImagesView: View {
                 }
 
                 HStack {
-                    Button("取消") { showPullSheet = false }
-                    Button("拉取") {
+                    Button("Cancel") { showPullSheet = false }
+                    Button("Pull") {
                         Task {
                             await viewModel.pullImage(pullImageName)
                             showPullSheet = false
@@ -143,20 +143,20 @@ struct DockerImagesView: View {
         }
         .sheet(isPresented: $showTagSheet) {
             VStack(spacing: 20) {
-                Text("Tag 镜像")
+                Text("Tag Image")
                     .font(.headline)
                 if let img = imageToTag {
-                    Text("源: \(img.name)")
+                    Text("Source: \(img.name)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                TextField("新 Tag (例如: myrepo:v1)", text: $newTag)
+                TextField("New Tag (e.g., myrepo:v1)", text: $newTag)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 300)
 
                 HStack {
-                    Button("取消") { showTagSheet = false }
-                    Button("确认") {
+                    Button("Cancel") { showTagSheet = false }
+                    Button("Confirm") {
                         if let img = imageToTag {
                             Task {
                                 await viewModel.tagImage(img, newTag: newTag)
@@ -281,7 +281,7 @@ struct DockerImageDetailView: View {
                     .buttonStyle(.bordered)
 
                     Button(action: { showDeleteAlert = true }) {
-                        Label("删除", systemImage: "trash")
+                        Label("Delete", systemImage: "trash")
                             .foregroundStyle(.red)
                     }
                     .buttonStyle(.bordered)
@@ -387,13 +387,13 @@ struct DockerImageDetailView: View {
             .padding()
         }
         .background(Color(nsColor: .windowBackgroundColor))
-        .alert("确认删除", isPresented: $showDeleteAlert) {
-            Button("取消", role: .cancel) { }
-            Button("删除", role: .destructive) {
+        .alert("Confirm Delete", isPresented: $showDeleteAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
                 Task { await viewModel.deleteImage(image) }
             }
         } message: {
-            Text("确定要删除镜像 \(image.name) 吗？此操作不可撤销。")
+            Text("Are you sure you want to delete image \(image.name)? This action cannot be undone.")
         }
         .navigationTitle(DockerManagerPlugin.displayName)
     }

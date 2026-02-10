@@ -41,16 +41,16 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                 await refresh()
             } else {
                 if Self.verbose {
-                    os_log("\(self.t) ❌ 未检测到 Homebrew")
+                    os_log("\(self.t) ❌ Homebrew not detected")
                 }
-                errorMessage = "未检测到 Homebrew，请先安装 Homebrew。"
+                errorMessage = "Homebrew not detected, please install Homebrew first."
             }
         }
     }
     
     func refresh() async {
         if Self.verbose {
-            os_log("\(self.t)🔄 开始刷新包列表")
+            os_log("\(self.t)🔄 Starting to refresh package list")
         }
         isLoading = true
         errorMessage = nil
@@ -62,16 +62,16 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
             let (installedList, outdatedList) = try await (installed, outdated)
             
             if Self.verbose {
-                os_log("\(self.t) ✅ 刷新完成: 已安装 \(installedList.count) 个, 待更新 \(outdatedList.count) 个")
+                os_log("\(self.t) ✅ Refresh complete: \(installedList.count) installed, \(outdatedList.count) outdated")
             }
             
             self.installedPackages = installedList
             self.outdatedPackages = outdatedList
         } catch {
             if Self.verbose {
-                os_log("\(self.t) ❌ 刷新失败: \(error.localizedDescription)")
+                os_log("\(self.t) ❌ Refresh failed: \(error.localizedDescription)")
             }
-            self.errorMessage = "刷新失败: \(error.localizedDescription)"
+            self.errorMessage = "Refresh failed: \(error.localizedDescription)"
         }
         
         isLoading = false

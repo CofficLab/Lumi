@@ -144,7 +144,7 @@ class SystemMonitorService: ObservableObject {
 
     // MARK: - Helper Methods
 
-    /// 获取内核页面大小（使用系统 API）
+    /// Get kernel page size (using system API)
     private nonisolated func getKernelPageSize() -> UInt64 {
         var pageSize: vm_size_t = 0
         let result = host_page_size(mach_host_self(), &pageSize)
@@ -239,7 +239,7 @@ class SystemMonitorService: ObservableObject {
         
         var ptr = ifaddr
         while ptr != nil {
-            // let name = String(cString: ptr!.pointee.ifa_name)  // 未使用，已注释
+            // let name = String(cString: ptr!.pointee.ifa_name)  // Unused, commented out
             // Filter out loopback and non-active
             if (ptr!.pointee.ifa_flags & UInt32(IFF_LOOPBACK)) == 0 && (ptr!.pointee.ifa_flags & UInt32(IFF_UP)) != 0 {
                 if let data = ptr!.pointee.ifa_data {

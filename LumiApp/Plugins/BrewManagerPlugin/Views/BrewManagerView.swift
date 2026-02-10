@@ -6,9 +6,9 @@ struct BrewManagerView: View {
     @State private var selectedTab: BrewTab = .installed
 
     enum BrewTab: String, CaseIterable, Identifiable {
-        case installed = "已安装"
-        case updates = "更新"
-        case search = "搜索"
+        case installed = "Installed"
+        case updates = "Updates"
+        case search = "Search"
 
         var id: String { rawValue }
         var icon: String {
@@ -23,7 +23,7 @@ struct BrewManagerView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Tab Picker
-            Picker("视图", selection: $selectedTab) {
+            Picker("View", selection: $selectedTab) {
                 ForEach(BrewTab.allCases) { tab in
                     Label(tab.rawValue, systemImage: tab.icon).tag(tab)
                 }
@@ -37,8 +37,8 @@ struct BrewManagerView: View {
                 case .installed:
                     BrewListView(
                         packages: viewModel.installedPackages,
-                        emptyMessage: "没有安装任何包",
-                        actionButtonTitle: "卸载",
+                        emptyMessage: "No packages installed",
+                        actionButtonTitle: "Uninstall",
                         actionButtonColor: .red
                     ) { package in
                         Task { await viewModel.uninstall(package: package) }
@@ -49,7 +49,7 @@ struct BrewManagerView: View {
                         if !viewModel.outdatedPackages.isEmpty {
                             HStack {
                                 Spacer()
-                                Button("全部更新") {
+                                Button("Update All") {
                                     Task { await viewModel.upgradeAll() }
                                 }
                                 .padding()
@@ -58,8 +58,8 @@ struct BrewManagerView: View {
 
                         BrewListView(
                             packages: viewModel.outdatedPackages,
-                            emptyMessage: "所有包都是最新的",
-                            actionButtonTitle: "更新",
+                            emptyMessage: "All packages are up to date",
+                            actionButtonTitle: "Update",
                             actionButtonColor: .blue
                         ) { package in
                             Task { await viewModel.upgrade(package: package) }
@@ -69,7 +69,7 @@ struct BrewManagerView: View {
                 case .search:
                     VStack {
                         HStack {
-                            TextField("搜索 Homebrew 包...", text: $viewModel.searchText)
+                            TextField("Search Homebrew packages...", text: $viewModel.searchText)
                                 .textFieldStyle(.roundedBorder)
                                 .onSubmit {
                                     viewModel.performSearch()
@@ -84,8 +84,8 @@ struct BrewManagerView: View {
 
                         BrewListView(
                             packages: viewModel.searchResults,
-                            emptyMessage: viewModel.searchText.isEmpty ? "输入关键词开始搜索" : "未找到相关包",
-                            actionButtonTitle: "安装",
+                            emptyMessage: viewModel.searchText.isEmpty ? "Enter keywords to start searching" : "No related packages found",
+                            actionButtonTitle: "Install",
                             actionButtonColor: .green,
                             showInstalledStatus: true
                         ) { package in
@@ -100,17 +100,17 @@ struct BrewManagerView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay {
             if viewModel.isLoading && selectedTab != .search {
-                ProgressView("处理中...")
+                ProgressView("Processing...")
                     .padding()
                     .background(.regularMaterial)
                     .cornerRadius(8)
             }
         }
-        .alert("错误", isPresented: Binding(
+        .alert("Error", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
         )) {
-            Button("确定", role: .cancel) { }
+            Button("OK", role: .cancel) { }
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
@@ -119,7 +119,7 @@ struct BrewManagerView: View {
                 Button(action: {
                     Task { await viewModel.refresh() }
                 }) {
-                    Label("刷新", systemImage: "arrow.clockwise")
+                    Label("Refresh", systemImage: "arrow.clockwise")
                 }
             }
         }
@@ -182,7 +182,7 @@ struct BrewPackageRow: View {
 
                     if showInstalledStatus {
                         if package.installedVersion != nil {
-                            Text("已安装")
+                            Text("Installed")
                                 .font(.caption)
                                 .foregroundColor(.green)
                         }
@@ -197,12 +197,12 @@ struct BrewPackageRow: View {
                 }
 
                 HStack(spacing: 8) {
-                    Text("版本: \(package.version)")
+                    Text("Version: \(package.version)")
                         .font(.caption2)
                         .foregroundColor(.secondary)
 
                     if let installedVer = package.installedVersion, installedVer != package.version {
-                        Text("已装: \(installedVer)")
+                        Text("Installed: \(installedVer)")
                             .font(.caption2)
                             .foregroundColor(.secondary)
                     }

@@ -7,7 +7,7 @@ actor ClipboardManagerPlugin: SuperPlugin {
     
     static let id = "ClipboardManager"
     static let navigationId = "clipboard_manager"
-    static let displayName = "剪贴板管理"
+    static let displayName = "Clipboard"
     static let description = "Manage clipboard history and snippets"
     static let iconName = "doc.on.clipboard"
     static var order: Int { 70 }

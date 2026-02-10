@@ -56,11 +56,11 @@ struct AppRow: View {
             Spacer()
         }
         .contextMenu {
-            Button("在 Finder 中显示") {
+            Button("Show in Finder") {
                 viewModel.revealInFinder(app)
             }
 
-            Button("打开") {
+            Button("Open") {
                 viewModel.openApp(app)
             }
         }

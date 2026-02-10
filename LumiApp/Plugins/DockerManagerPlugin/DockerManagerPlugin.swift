@@ -10,8 +10,8 @@ actor DockerManagerPlugin: SuperPlugin, SuperLog {
 
     static let id = "DockerManager"
     static let navigationId = "docker_manager"
-    static let displayName = "Docker 管理"
-    static let description = "本地 Docker 镜像管理与监控"
+    static let displayName = "Docker"
+    static let description = "Local Docker image management and monitoring"
     static let iconName = "shippingbox"
     static var order: Int { 50 }
 

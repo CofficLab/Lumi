@@ -1,10 +1,10 @@
 import Foundation
 
 enum CPUTimeRange: String, CaseIterable, Identifiable {
-    case hour1 = "1小时"
-    case hour4 = "4小时"
-    case hour24 = "24小时"
-    case month1 = "30天"
+    case hour1 = "1 Hour"
+    case hour4 = "4 Hours"
+    case hour24 = "24 Hours"
+    case month1 = "30 Days"
 
     var id: String { rawValue }
 

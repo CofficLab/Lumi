@@ -10,7 +10,7 @@ struct ClipboardHistoryView: View {
             HStack {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(.secondary)
-                TextField("搜索剪贴板历史...", text: $viewModel.searchText)
+                TextField("Search clipboard history...", text: $viewModel.searchText)
                     .textFieldStyle(.plain)
                     .onChange(of: viewModel.searchText) { _ in
                         viewModel.filterItems()
@@ -34,7 +34,7 @@ struct ClipboardHistoryView: View {
                     Image(systemName: "doc.on.clipboard")
                         .font(.system(size: 40))
                         .foregroundColor(.secondary)
-                    Text("暂无剪贴板记录")
+                    Text("No clipboard records")
                         .font(.headline)
                         .foregroundColor(.secondary)
                 }
@@ -45,14 +45,14 @@ struct ClipboardHistoryView: View {
                         ClipboardItemRow(item: item)
                             .tag(item.id)
                             .contextMenu {
-                                Button("复制") {
+                                Button("Copy") {
                                     viewModel.copyToClipboard(item)
                                 }
-                                Button(item.isPinned ? "取消置顶" : "置顶") {
+                                Button(item.isPinned ? "Unpin" : "Pin") {
                                     viewModel.togglePin(id: item.id)
                                 }
                                 Divider()
-                                Button("删除") {
+                                Button("Delete") {
                                     viewModel.delete(id: item.id)
                                 }
                             }
@@ -66,7 +66,7 @@ struct ClipboardHistoryView: View {
             
             // Footer
             HStack {
-                Text("\(viewModel.items.count) 个项目")
+                Text("\(viewModel.items.count) items")
                     .font(.caption)
                     .foregroundColor(.secondary)
                 Spacer()
@@ -74,7 +74,7 @@ struct ClipboardHistoryView: View {
                     Image(systemName: "trash")
                 }
                 .buttonStyle(.borderless)
-                .help("清空历史")
+                .help("Clear History")
             }
             .padding(8)
             .background(Color(nsColor: .windowBackgroundColor))

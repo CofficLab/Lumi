@@ -1,7 +1,7 @@
 import Foundation
 import AppKit
 
-// MARK: - 项目清理模型
+// MARK: - Project Cleanup Models
 
 struct ProjectInfo: Identifiable, Hashable {
     let id = UUID()

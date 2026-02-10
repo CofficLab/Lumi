@@ -29,7 +29,7 @@ class NetworkService: SuperLog, ObservableObject {
 
     private init() {
         if Self.verbose {
-            os_log("\(self.t)网络服务已初始化")
+            os_log("\(self.t)NetworkService initialized")
         }
 
         // Initialize baseline

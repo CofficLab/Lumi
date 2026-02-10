@@ -3,48 +3,48 @@ import MagicKit
 import OSLog
 import SwiftUI
 
-/// 设置按钮插件：在状态栏右侧显示设置按钮
+/// Settings Button Plugin: Displays a settings button on the right side of the status bar
 actor SettingsButtonPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
-    /// 日志标识符
+    /// Log identifier
     nonisolated static let emoji = "⚙️"
 
-    /// 是否启用该插件
+    /// Whether to enable this plugin
     static let enable = true
 
-    /// 是否启用详细日志输出
+    /// Whether to enable verbose log output
     nonisolated static let verbose = true
 
-    /// 插件唯一标识符
+    /// Plugin unique identifier
     static let id: String = "SettingsButtonPlugin"
 
-    /// 插件显示名称
-    static let displayName: String = "设置按钮"
+    /// Plugin display name
+    static let displayName: String = "Settings Button"
 
-    /// 插件功能描述
-    static let description: String = "在状态栏右侧显示设置按钮，点击打开设置界面"
+    /// Plugin functional description
+    static let description: String = "Displays a settings button on the right side of the status bar, click to open the settings interface"
 
-    /// 插件图标名称
+    /// Plugin icon name
     static let iconName: String = "gearshape"
 
-    /// 是否可配置
+    /// Whether it is configurable
     static let isConfigurable: Bool = false
     
-    /// 注册顺序
+    /// Registration order
     static var order: Int { 100 }
 
     // MARK: - Instance
 
-    /// 插件实例标签（用于识别唯一实例）
+    /// Plugin instance label (used to identify unique instances)
     nonisolated var instanceLabel: String {
         Self.id
     }
 
-    /// 插件单例实例
+    /// Plugin singleton instance
     static let shared = SettingsButtonPlugin()
 
-    /// 初始化方法
+    /// Initialization method
     init() {}
 
     // MARK: - UI Contributions

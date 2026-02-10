@@ -10,7 +10,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
 
     @Published var diskUsage: DiskUsage?
     @Published var largeFiles: [LargeFileEntry] = []
-    @Published var rootEntries: [DirectoryEntry] = [] // 目录树根节点
+    @Published var rootEntries: [DirectoryEntry] = [] // Directory tree root nodes
     @Published var isScanning = false
     @Published var scanPath: String = FileManager.default.homeDirectoryForCurrentUser.path
     @Published var scanProgress: ScanProgress?
@@ -20,7 +20,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
     private var cancellables = Set<AnyCancellable>()
 
     init() {
-        // 订阅 Service 的进度
+        // Subscribe to service progress
         DiskService.shared.$currentScan
             .receive(on: RunLoop.main)
             .assign(to: \.scanProgress, on: self)
@@ -29,7 +29,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
 
     func refreshDiskUsage() {
         if Self.verbose {
-            os_log("\(self.t)刷新磁盘使用情况")
+            os_log("\(self.t)Refresh disk usage")
         }
         Task {
             self.diskUsage = await DiskService.shared.getDiskUsage()
@@ -50,7 +50,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(self.t)开始扫描: \(url.path)")
+            os_log("\(self.t)Start scan: \(url.path)")
         }
 
         isScanning = true
@@ -59,7 +59,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
         errorMessage = nil
 
         scanTask = Task {
-            try? await TaskService.shared.run(title: "磁盘扫描: \(url.lastPathComponent)", priority: .userInitiated) { progressCallback in
+            try? await TaskService.shared.run(title: "Disk Scan: \(url.lastPathComponent)", priority: .userInitiated) { progressCallback in
                 // Create a separate task to monitor DiskService progress and update TaskService
                 let monitorTask = Task { @MainActor in
                     for await progress in DiskService.shared.$currentScan.values {
@@ -81,7 +81,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
                             self.rootEntries = result.entries
                             self.isScanning = false
                             if Self.verbose {
-                                os_log("\(self.t)扫描完成，找到 \(result.largeFiles.count) 个大文件")
+                                os_log("\(self.t)Scan completed, found \(result.largeFiles.count) large files")
                             }
                         }
                     }
@@ -101,7 +101,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
 
     func stopScan() {
         if Self.verbose {
-            os_log("\(self.t)停止扫描")
+            os_log("\(self.t)Stop scan")
         }
         scanTask?.cancel()
         DiskService.shared.cancelScan()
@@ -110,7 +110,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
 
     func deleteFile(_ item: LargeFileEntry) {
         if Self.verbose {
-            os_log("\(self.t)删除文件: \(item.name)")
+            os_log("\(self.t)Delete file: \(item.name)")
         }
         Task {
             do {
@@ -122,8 +122,8 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
                 }
             } catch {
                 await MainActor.run {
-                    os_log(.error, "\(self.t)删除文件失败: \(error.localizedDescription)")
-                    self.errorMessage = "删除失败: \(error.localizedDescription)"
+                    os_log(.error, "\(self.t)Failed to delete file: \(error.localizedDescription)")
+                    self.errorMessage = "Delete failed: \(error.localizedDescription)"
                 }
             }
         }

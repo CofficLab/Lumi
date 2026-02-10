@@ -1,13 +1,13 @@
 import SwiftUI
 
-/// 关于页面视图，显示应用详细信息
+/// About view, displays app details
 struct AboutView: View {
-    /// 应用信息
+    /// App info
     private var appInfo: AppInfo {
         AppInfo()
     }
 
-    /// 版本信息
+    /// Version info
     private var versionInfo: VersionInfo {
         VersionInfo()
     }
@@ -15,36 +15,36 @@ struct AboutView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                // 应用图标和标题
+                // App icon and title
                 headerSection
 
-                // 应用信息卡片
+                // App info card
                 appInfoCard
 
-                // 版本信息卡片
+                // Version info card
                 versionInfoCard
 
-                // 构建历史卡片
+                // Build history card
                 buildHistoryCard
 
-                // 系统信息卡片
+                // System info card
                 systemInfoCard
 
-                // 更新信息卡片
+                // Update info card
                 updateInfoCard
 
                 Spacer()
             }
             .padding(32)
         }
-        .navigationTitle("关于")
+        .navigationTitle("About")
     }
 
     // MARK: - Header Section
 
     private var headerSection: some View {
         HStack(spacing: 20) {
-            // 应用图标
+            // App icon
             LogoView(variant: .about)
                 .frame(width: 80, height: 80)
                 .cornerRadius(18)
@@ -78,51 +78,51 @@ struct AboutView: View {
     // MARK: - Info Cards
 
     private var appInfoCard: some View {
-        InfoCard(title: "应用信息", icon: "info.circle.fill") {
-            AboutInfoRow(label: "应用名称", value: appInfo.name)
+        InfoCard(title: "App Information", icon: "info.circle.fill") {
+            AboutInfoRow(label: "App Name", value: appInfo.name)
             AboutInfoRow(label: "Bundle ID", value: appInfo.bundleIdentifier)
             if let description = appInfo.description {
-                AboutInfoRow(label: "描述", value: description)
+                AboutInfoRow(label: "Description", value: description)
             }
         }
     }
 
     private var versionInfoCard: some View {
-        InfoCard(title: "版本信息", icon: "number.circle.fill") {
-            AboutInfoRow(label: "版本号", value: appInfo.version ?? "Unknown")
-            AboutInfoRow(label: "构建号", value: appInfo.build ?? "Unknown")
-            AboutInfoRow(label: "构建类型", value: versionInfo.buildConfiguration)
-            AboutInfoRow(label: "构建时间", value: versionInfo.buildDate)
+        InfoCard(title: "Version Information", icon: "number.circle.fill") {
+            AboutInfoRow(label: "Version", value: appInfo.version ?? "Unknown")
+            AboutInfoRow(label: "Build", value: appInfo.build ?? "Unknown")
+            AboutInfoRow(label: "Build Configuration", value: versionInfo.buildConfiguration)
+            AboutInfoRow(label: "Build Date", value: versionInfo.buildDate)
         }
     }
 
     private var buildHistoryCard: some View {
-        InfoCard(title: "构建历史", icon: "clock.arrow.circlepath") {
-            AboutInfoRow(label: "最低支持", value: "macOS \(versionInfo.minimumOSVersion)")
-            AboutInfoRow(label: "SDK 版本", value: versionInfo.sdkVersion)
-            AboutInfoRow(label: "Swift 版本", value: versionInfo.swiftVersion)
-            AboutInfoRow(label: "Xcode 版本", value: versionInfo.xcodeVersion)
+        InfoCard(title: "Build History", icon: "clock.arrow.circlepath") {
+            AboutInfoRow(label: "Minimum Support", value: "macOS \(versionInfo.minimumOSVersion)")
+            AboutInfoRow(label: "SDK Version", value: versionInfo.sdkVersion)
+            AboutInfoRow(label: "Swift Version", value: versionInfo.swiftVersion)
+            AboutInfoRow(label: "Xcode Version", value: versionInfo.xcodeVersion)
         }
     }
 
     private var systemInfoCard: some View {
-        InfoCard(title: "系统信息", icon: "desktopcomputer") {
-            AboutInfoRow(label: "操作系统", value: versionInfo.systemVersion)
-            AboutInfoRow(label: "架构", value: versionInfo.architecture)
-            AboutInfoRow(label: "应用路径", value: versionInfo.appPath)
+        InfoCard(title: "System Information", icon: "desktopcomputer") {
+            AboutInfoRow(label: "OS", value: versionInfo.systemVersion)
+            AboutInfoRow(label: "Architecture", value: versionInfo.architecture)
+            AboutInfoRow(label: "App Path", value: versionInfo.appPath)
         }
     }
 
     private var updateInfoCard: some View {
-        InfoCard(title: "更新信息", icon: "arrow.down.circle.fill") {
+        InfoCard(title: "Update Information", icon: "arrow.down.circle.fill") {
             VStack(alignment: .leading, spacing: 12) {
-                Text("当前版本是最新稳定版本")
+                Text("Current version is the latest stable version")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
 
                 Divider()
 
-                Text("Lumi 使用 Sparkle 框架进行自动更新。当有新版本可用时，应用会自动提示您更新。")
+                Text("Lumi uses the Sparkle framework for automatic updates. When a new version is available, the app will automatically prompt you to update.")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             }
@@ -169,18 +169,18 @@ struct VersionInfo {
     init() {
         let bundle = Bundle.main
 
-        // 基本信息
+        // Basic info
         self.shortVersion = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
         self.buildVersion = bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
 
-        // 构建配置
+        // Build configuration
         #if DEBUG
         self.buildConfiguration = "Debug"
         #else
         self.buildConfiguration = "Release"
         #endif
 
-        // 构建时间
+        // Build date
         if let buildDateString = bundle.object(forInfoDictionaryKey: "BuildDate") as? String {
             self.buildDate = buildDateString
         } else {
@@ -190,19 +190,19 @@ struct VersionInfo {
             self.buildDate = formatter.string(from: Date())
         }
 
-        // 系统信息
+        // System info
         self.minimumOSVersion = bundle.object(forInfoDictionaryKey: "LSMinimumSystemVersion") as? String ?? "15.0"
 
-        // SDK 信息
+        // SDK info
         self.sdkVersion = "macOS 26.2"
 
-        // Swift 版本
+        // Swift version
         self.swiftVersion = "6.0"
 
-        // Xcode 版本
+        // Xcode version
         self.xcodeVersion = "17.2"
 
-        // 架构
+        // Architecture
         var systemInfo = utsname()
         uname(&systemInfo)
         let machine = withUnsafePointer(to: &systemInfo.machine) {
@@ -212,11 +212,11 @@ struct VersionInfo {
         }
         self.architecture = machine
 
-        // 系统版本
+        // System version
         let processInfo = ProcessInfo.processInfo
         self.systemVersion = processInfo.operatingSystemVersionString
 
-        // 应用路径
+        // App path
         self.appPath = bundle.bundlePath
     }
 }
@@ -230,7 +230,7 @@ struct InfoCard<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // 卡片标题
+            // Card title
             HStack(spacing: 8) {
                 Image(systemName: icon)
                     .foregroundStyle(.blue)
@@ -239,7 +239,7 @@ struct InfoCard<Content: View>: View {
                 Spacer()
             }
 
-            // 卡片内容
+            // Card content
             VStack(alignment: .leading, spacing: 8) {
                 content
             }

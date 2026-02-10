@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 应用管理器加载状态视图
 struct AppManagerLoadingView: View {
-    var message: String = "正在扫描应用..."
+    var message: String = "Scanning applications..."
 
     var body: some View {
         VStack(spacing: 16) {
@@ -24,7 +24,7 @@ struct AppManagerLoadingView: View {
 }
 
 #Preview("AppManagerLoadingView - Custom Message") {
-    AppManagerLoadingView(message: "正在加载应用列表...")
+    AppManagerLoadingView(message: "Loading application list...")
         .frame(width: 400, height: 300)
 }
 

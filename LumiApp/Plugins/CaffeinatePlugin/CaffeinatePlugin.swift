@@ -25,10 +25,10 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
     static let navigationId = "\(id).settings"
 
     /// 插件显示名称
-    nonisolated(unsafe) static var displayName: String = "防休眠"
+    nonisolated(unsafe) static var displayName: String = "Anti-Sleep"
 
     /// 插件功能描述
-    nonisolated(unsafe) static var description: String = "阻止系统休眠，支持定时和手动控制"
+    nonisolated(unsafe) static var description: String = "Prevent system sleep with timer and manual control"
 
     /// 插件图标名称
     nonisolated(unsafe) static var iconName: String = "bolt"

@@ -1,7 +1,7 @@
 import Foundation
 import AppKit
 
-/// 进程网络信息模型
+/// Network process information model
 struct NetworkProcess: Identifiable, Equatable {
     let id: Int // PID
     let name: String
@@ -10,10 +10,10 @@ struct NetworkProcess: Identifiable, Equatable {
     var uploadSpeed: Double // Bytes/s
     let timestamp: Date
     
-    // 用于排序和显示的辅助属性
+    // Helper properties for sorting and display
     var totalSpeed: Double { downloadSpeed + uploadSpeed }
 
-    // 格式化输出（使用扩展方法）
+    // Formatted output
     var formattedDownload: String { downloadSpeed.formattedNetworkSpeed() }
     var formattedUpload: String { uploadSpeed.formattedNetworkSpeed() }
     var formattedTotal: String { totalSpeed.formattedNetworkSpeed() }

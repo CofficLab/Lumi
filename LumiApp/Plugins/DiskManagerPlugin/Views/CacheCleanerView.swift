@@ -9,10 +9,10 @@ struct CacheCleanerView: View {
             // Header
             HStack {
                 VStack(alignment: .leading) {
-                    Text("系统清理")
+                    Text("System Cleanup")
                         .font(.title2)
                         .fontWeight(.bold)
-                    Text("扫描并清理系统缓存、日志和垃圾文件")
+                    Text("Scan and clean system caches, logs, and junk files")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -28,7 +28,7 @@ struct CacheCleanerView: View {
                             .foregroundStyle(.secondary)
                     }
                 } else {
-                    Button("重新扫描") {
+                    Button("Rescan") {
                         viewModel.scan()
                     }
                     .buttonStyle(.bordered)
@@ -41,7 +41,7 @@ struct CacheCleanerView: View {
             
             // Content
             if viewModel.categories.isEmpty && !viewModel.isScanning {
-                ContentUnavailableView("准备就绪", systemImage: "sparkles", description: Text("点击扫描开始分析系统垃圾"))
+                ContentUnavailableView("Ready", systemImage: "sparkles", description: Text("Click scan to start analyzing system junk"))
                     .frame(maxHeight: .infinity)
             } else {
                 List {
@@ -57,9 +57,9 @@ struct CacheCleanerView: View {
             // Footer Action
             HStack {
                 VStack(alignment: .leading) {
-                    Text("选中: \(viewModel.formatBytes(viewModel.totalSelectedSize))")
+                    Text("Selected: \(viewModel.formatBytes(viewModel.totalSelectedSize))")
                         .font(.headline)
-                    Text("\(viewModel.selection.count) 个项目")
+                    Text("\(viewModel.selection.count) items")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -69,7 +69,7 @@ struct CacheCleanerView: View {
                 Button(action: {
                     showCleanConfirmation = true
                 }) {
-                    Label(viewModel.isCleaning ? "正在清理..." : "立即清理", systemImage: "trash")
+                    Label(viewModel.isCleaning ? "Cleaning..." : "Clean Now", systemImage: "trash")
                         .frame(minWidth: 100)
                 }
                 .buttonStyle(.borderedProminent)
@@ -84,18 +84,18 @@ struct CacheCleanerView: View {
                 viewModel.scan()
             }
         }
-        .alert("确认清理", isPresented: $showCleanConfirmation) {
-            Button("清理", role: .destructive) {
+        .alert("Confirm Cleanup", isPresented: $showCleanConfirmation) {
+            Button("Clean", role: .destructive) {
                 viewModel.cleanSelected()
             }
-            Button("取消", role: .cancel) {}
+            Button("Cancel", role: .cancel) {}
         } message: {
-            Text("确定要清理选中的 \(viewModel.formatBytes(viewModel.totalSelectedSize)) 文件吗？此操作不可撤销。")
+            Text("Are you sure you want to clean the selected \(viewModel.formatBytes(viewModel.totalSelectedSize)) files? This action cannot be undone.")
         }
-        .alert("清理完成", isPresented: $viewModel.showCleanupComplete) {
-            Button("确定", role: .cancel) {}
+        .alert("Cleanup Complete", isPresented: $viewModel.showCleanupComplete) {
+            Button("OK", role: .cancel) {}
         } message: {
-            Text("成功释放了 \(viewModel.formatBytes(viewModel.lastFreedSpace)) 空间。")
+            Text("Successfully freed \(viewModel.formatBytes(viewModel.lastFreedSpace)) space.")
         }
     }
 }

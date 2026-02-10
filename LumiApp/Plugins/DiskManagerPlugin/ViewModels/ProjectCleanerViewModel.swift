@@ -31,7 +31,7 @@ final class ProjectCleanerViewModel: ObservableObject {
             await MainActor.run {
                 self.projects = result
                 self.isScanning = false
-                // 默认全选所有可清理项
+                // Select all cleanable items by default
                 for project in result {
                     for item in project.cleanableItems {
                         self.selectedItemIds.insert(item.id)
@@ -69,7 +69,7 @@ final class ProjectCleanerViewModel: ObservableObject {
                 await MainActor.run {
                     self.isCleaning = false
                     self.showCleanConfirmation = false
-                    self.scanProjects() // 重新扫描以更新状态
+                    self.scanProjects() // Rescan to update status
                 }
             } catch {
                 await MainActor.run {

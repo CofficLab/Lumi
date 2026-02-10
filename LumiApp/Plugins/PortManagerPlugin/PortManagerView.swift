@@ -25,7 +25,7 @@ struct PortManagerView: View {
             HStack {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
-                TextField("搜索端口、PID 或进程名", text: $searchText)
+                TextField("Search port, PID, or process name", text: $searchText)
                     .textFieldStyle(.plain)
                     .padding(8)
                     .background(Color.gray.opacity(0.1))
@@ -36,7 +36,7 @@ struct PortManagerView: View {
                 Button(action: {
                     Task { await refresh() }
                 }) {
-                    Label("刷新", systemImage: "arrow.clockwise")
+                    Label("Refresh", systemImage: "arrow.clockwise")
                 }
                 .disabled(isLoading)
             }
@@ -51,13 +51,13 @@ struct PortManagerView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if ports.isEmpty {
                 if #available(macOS 14.0, *) {
-                    ContentUnavailableView("暂无监听端口", systemImage: "network.slash", description: Text("未发现任何正在监听的端口。"))
+                    ContentUnavailableView("No Listening Ports", systemImage: "network.slash", description: Text("No listening ports found."))
                 } else {
                     VStack {
                         Image(systemName: "network.slash")
                             .font(.largeTitle)
                             .foregroundStyle(.secondary)
-                        Text("暂无监听端口")
+                        Text("No Listening Ports")
                             .font(.headline)
                             .foregroundStyle(.secondary)
                     }
@@ -79,10 +79,10 @@ struct PortManagerView: View {
         .task {
             await refresh()
         }
-        .alert("错误", isPresented: $showError, actions: {
-            Button("确定", role: .cancel) {}
+        .alert("Error", isPresented: $showError, actions: {
+            Button("OK", role: .cancel) {}
         }, message: {
-            Text(errorMessage ?? "未知错误")
+            Text(errorMessage ?? "Unknown error")
         })
     }
 
@@ -99,7 +99,7 @@ struct PortManagerView: View {
             try? await Task.sleep(nanoseconds: 500000000) // Wait 0.5s
             await refresh()
         } catch {
-            errorMessage = "无法结束进程: \(error.localizedDescription)"
+            errorMessage = "Failed to kill process: \(error.localizedDescription)"
             showError = true
         }
     }
@@ -163,14 +163,14 @@ struct PortRowView: View {
                     .font(.title2)
             }
             .buttonStyle(.borderless)
-            .help("结束进程")
-            .confirmationDialog("确定要结束进程 \(port.command) (PID: \(port.pid)) 吗？", isPresented: $showConfirm) {
-                Button("结束进程", role: .destructive) {
+            .help("Kill Process")
+            .confirmationDialog("Are you sure you want to kill process \(port.command) (PID: \(port.pid))?", isPresented: $showConfirm) {
+                Button("Kill Process", role: .destructive) {
                     onKill()
                 }
-                Button("取消", role: .cancel) {}
+                Button("Cancel", role: .cancel) {}
             } message: {
-                Text("此操作将强制结束进程，可能导致未保存的数据丢失。")
+                Text("This action will force terminate the process, which may lead to data loss.")
             }
         }
         .padding(.vertical, 8)

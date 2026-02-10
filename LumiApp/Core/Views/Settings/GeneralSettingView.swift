@@ -1,9 +1,9 @@
 import ServiceManagement
 import SwiftUI
 
-/// 通用设置视图
+/// General settings view
 struct GeneralSettingView: View {
-    /// 是否开机启动
+    /// Whether to launch at login
     @State private var launchAtLogin = false
 
     var body: some View {
@@ -11,12 +11,12 @@ struct GeneralSettingView: View {
             VStack(alignment: .leading, spacing: 24) {
                 Spacer().frame(height: 40)
 
-                // 开机启动
+                // Launch at Login
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("启动选项")
+                    Text("Startup Options")
                         .font(.headline)
 
-                    Toggle("开机启动", isOn: $launchAtLogin)
+                    Toggle("Launch at Login", isOn: $launchAtLogin)
                         .onChange(of: launchAtLogin) { _, newValue in
                             updateLaunchAtLogin(newValue)
                         }
@@ -26,7 +26,7 @@ struct GeneralSettingView: View {
                 Spacer()
             }
         }
-        .navigationTitle("通用")
+        .navigationTitle("General")
         .onAppear {
             checkLaunchAtLoginStatus()
         }
@@ -34,34 +34,34 @@ struct GeneralSettingView: View {
 
     // MARK: - Launch at Login
 
-    /// 检查当前开机启动状态
+    /// Check current launch at login status
     private func checkLaunchAtLoginStatus() {
         let job = SMAppService.mainApp.status
         launchAtLogin = (job == .enabled)
     }
 
-    /// 更新开机启动状态
-    /// - Parameter enabled: 是否启用
+    /// Update launch at login status
+    /// - Parameter enabled: Whether to enable
     private func updateLaunchAtLogin(_ enabled: Bool) {
         if #available(macOS 13.0, *) {
-            // 使用新 API
+            // Use new API
             do {
                 if enabled {
                     try SMAppService.mainApp.register()
-                    print("✅ 开机启动已启用")
+                    print("✅ Launch at login enabled")
                 } else {
                     try SMAppService.mainApp.unregister()
-                    print("❌ 开机启动已禁用")
+                    print("❌ Launch at login disabled")
                 }
             } catch {
-                print("❌ 更新开机启动失败: \(error.localizedDescription)")
-                // 恢复开关状态
+                print("❌ Failed to update launch at login: \(error.localizedDescription)")
+                // Restore toggle state
                 launchAtLogin.toggle()
             }
         } else {
-            // macOS 12 及更早版本
-            print("⚠️ 开机启动功能需要 macOS 13.0 或更高版本")
-            // 恢复开关状态
+            // macOS 12 and earlier
+            print("⚠️ Launch at login requires macOS 13.0 or later")
+            // Restore toggle state
             launchAtLogin.toggle()
         }
     }

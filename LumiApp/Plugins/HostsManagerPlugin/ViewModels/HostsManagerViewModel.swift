@@ -78,7 +78,7 @@ class HostsManagerViewModel: ObservableObject, SuperLog {
     
     func loadHosts() async {
         if Self.verbose {
-            os_log("\(self.t)加载 hosts 文件")
+            os_log("\(self.t)Loading hosts file")
         }
         isLoading = true
         errorMessage = nil
@@ -86,18 +86,18 @@ class HostsManagerViewModel: ObservableObject, SuperLog {
             let content = try await HostsFileService.shared.readHosts()
             self.entries = HostsParser.parse(content: content)
             if Self.verbose {
-                os_log("\(self.t)hosts 文件加载成功: \(self.entries.count) 个条目")
+                os_log("\(self.t)Hosts file loaded successfully: \(self.entries.count) entries")
             }
         } catch {
-            os_log(.error, "\(self.t)加载 hosts 文件失败: \(error.localizedDescription)")
-            errorMessage = "加载失败: \(error.localizedDescription)"
+            os_log(.error, "\(self.t)Failed to load hosts file: \(error.localizedDescription)")
+            errorMessage = "Load failed: \(error.localizedDescription)"
         }
         isLoading = false
     }
 
     func saveHosts() async {
         if Self.verbose {
-            os_log("\(self.t)保存 hosts 文件")
+            os_log("\(self.t)Saving hosts file")
         }
         isLoading = true
         errorMessage = nil
@@ -105,13 +105,13 @@ class HostsManagerViewModel: ObservableObject, SuperLog {
             let content = HostsParser.serialize(entries: entries)
             try await HostsFileService.shared.saveHosts(content: content)
             if Self.verbose {
-                os_log("\(self.t)hosts 文件保存成功")
+                os_log("\(self.t)Hosts file saved successfully")
             }
             // Reload to reflect changes (and formatting)
             await loadHosts()
         } catch {
-            os_log(.error, "\(self.t)保存 hosts 文件失败: \(error.localizedDescription)")
-            errorMessage = "保存失败: \(error.localizedDescription)"
+            os_log(.error, "\(self.t)Failed to save hosts file: \(error.localizedDescription)")
+            errorMessage = "Save failed: \(error.localizedDescription)"
         }
         isLoading = false
     }

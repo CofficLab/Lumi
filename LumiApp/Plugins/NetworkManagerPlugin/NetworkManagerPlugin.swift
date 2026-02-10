@@ -10,8 +10,8 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
 
     static let id = "NetworkManager"
     static let navigationId = "network_manager"
-    static let displayName = "网络监控"
-    static let description = "实时监控网络速度、流量和连接状态"
+    static let displayName = "Network Monitor"
+    static let description = "Real-time monitoring of network speed, traffic, and connection status"
     static let iconName = "network"
     static var order: Int { 30 }
 
@@ -20,7 +20,7 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
     nonisolated static let shared = NetworkManagerPlugin()
 
     init() {
-        // 确保在初始化时同步创建 HistoryService
+        // Ensure HistoryService is created synchronously on initialization
         Task { @MainActor in
             _ = NetworkHistoryService.shared
         }

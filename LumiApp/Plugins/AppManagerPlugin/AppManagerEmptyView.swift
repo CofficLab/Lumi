@@ -10,12 +10,12 @@ struct AppManagerEmptyView: View {
                 .font(.system(size: 64))
                 .foregroundStyle(.secondary)
 
-            Text("没有找到应用")
+            Text("No applications found")
                 .font(.title3)
                 .foregroundStyle(.secondary)
 
             if !searchText.isEmpty {
-                Text("请尝试其他搜索关键词")
+                Text("Try other search keywords")
                     .foregroundStyle(.secondary)
             }
         }
@@ -31,7 +31,7 @@ struct AppManagerEmptyView: View {
 }
 
 #Preview("AppManagerLoadingView - Custom Message") {
-    AppManagerLoadingView(message: "正在加载应用列表...")
+    AppManagerLoadingView(message: "Loading application list...")
         .frame(width: 400, height: 300)
 }
 

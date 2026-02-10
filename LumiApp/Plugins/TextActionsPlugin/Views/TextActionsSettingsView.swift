@@ -7,8 +7,8 @@ struct TextActionsSettingsView: View {
     
     var body: some View {
         Form {
-            Section("通用设置") {
-                Toggle("启用划词菜单", isOn: $isEnabled)
+            Section("General Settings") {
+                Toggle("Enable Text Selection Menu", isOn: $isEnabled)
                     .onChange(of: isEnabled) { newValue in
                         if newValue {
                             manager.startMonitoring()
@@ -23,10 +23,10 @@ struct TextActionsSettingsView: View {
                     HStack {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundColor(.yellow)
-                        Text("需要辅助功能权限才能检测文本选择")
+                        Text("Accessibility permission is required to detect text selection")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        Button("打开系统设置") {
+                        Button("Open System Settings") {
                             let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
                             NSWorkspace.shared.open(url)
                         }
@@ -35,7 +35,7 @@ struct TextActionsSettingsView: View {
                 }
             }
             
-            Section("支持的操作") {
+            Section("Supported Actions") {
                 ForEach(TextActionType.allCases) { action in
                     HStack {
                         Image(systemName: action.icon)

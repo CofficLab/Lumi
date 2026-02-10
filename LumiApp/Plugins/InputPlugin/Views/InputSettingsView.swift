@@ -5,7 +5,7 @@ struct InputSettingsView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Toggle("启用输入法自动切换", isOn: Binding(
+            Toggle("Enable Auto Input Source Switching", isOn: Binding(
                 get: { viewModel.isEnabled },
                 set: { _ in viewModel.toggleEnabled() }
             ))
@@ -14,22 +14,22 @@ struct InputSettingsView: View {
             Divider()
             
             HStack {
-                Text("新增规则")
+                Text("Add New Rule")
                     .font(.headline)
                 Spacer()
             }
             
             HStack {
-                Picker("应用", selection: $viewModel.selectedApp) {
-                    Text("选择应用").tag(nil as NSRunningApplication?)
+                Picker("Application", selection: $viewModel.selectedApp) {
+                    Text("Select Application").tag(nil as NSRunningApplication?)
                     ForEach(viewModel.runningApps, id: \.bundleIdentifier) { app in
                         Text(app.localizedName ?? "Unknown").tag(app as NSRunningApplication?)
                     }
                 }
                 .frame(width: 200)
                 
-                Picker("输入法", selection: $viewModel.selectedSourceID) {
-                    Text("选择输入法").tag("")
+                Picker("Input Source", selection: $viewModel.selectedSourceID) {
+                    Text("Select Input Source").tag("")
                     ForEach(viewModel.availableSources) { source in
                         Text(source.name).tag(source.id)
                     }

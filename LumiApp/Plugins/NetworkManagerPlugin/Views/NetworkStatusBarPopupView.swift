@@ -1,7 +1,7 @@
 import MagicKit
 import SwiftUI
 
-/// 网络管理插件的状态栏弹窗视图
+/// Status bar popup view for Network Manager plugin
 struct NetworkStatusBarPopupView: View {
     // MARK: - Properties
 
@@ -13,10 +13,10 @@ struct NetworkStatusBarPopupView: View {
     var body: some View {
         HoverableContainerView(detailView: NetworkHistoryDetailView()) {
             VStack(spacing: 0) {
-                // 实时速度显示
+                // Real-time speed display
                 liveSpeedView
 
-                // 历史趋势图（最近60秒）
+                // History trend chart (last 60 seconds)
                 miniTrendView
             }
         }
@@ -26,7 +26,7 @@ struct NetworkStatusBarPopupView: View {
 
     private var liveSpeedView: some View {
         HStack(spacing: 16) {
-            // 下载速度
+            // Download speed
             HStack(spacing: 6) {
                 Image(systemName: "arrow.down.circle.fill")
                     .font(.system(size: 12))
@@ -45,7 +45,7 @@ struct NetworkStatusBarPopupView: View {
 
             Spacer()
 
-            // 上传速度
+            // Upload speed
             HStack(spacing: 6) {
                 Image(systemName: "arrow.up.circle.fill")
                     .font(.system(size: 12))
@@ -76,19 +76,19 @@ struct NetworkStatusBarPopupView: View {
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
 
-                Text("最近60秒")
+                Text("Last 60 seconds")
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
 
                 Spacer()
 
-                // 图例
+                // Legend
                 HStack(spacing: 6) {
                     HStack(spacing: 3) {
                         Circle()
                             .fill(Color.green.opacity(0.8))
                             .frame(width: 5, height: 5)
-                        Text("下载")
+                        Text("Down")
                             .font(.system(size: 9))
                             .foregroundColor(.secondary)
                     }
@@ -97,7 +97,7 @@ struct NetworkStatusBarPopupView: View {
                         Circle()
                             .fill(Color.red.opacity(0.8))
                             .frame(width: 5, height: 5)
-                        Text("上传")
+                        Text("Up")
                             .font(.system(size: 9))
                             .foregroundColor(.secondary)
                     }
@@ -105,10 +105,10 @@ struct NetworkStatusBarPopupView: View {
             }
             .padding(.horizontal, 12)
 
-            // 迷你图表
+            // Mini chart
             GeometryReader { geometry in
                 ZStack {
-                    // 背景网格线
+                    // Background grid lines
                     ForEach(0 ..< 3) { i in
                         let y = CGFloat(i) * geometry.size.height / 2
                         Path { path in
@@ -118,7 +118,7 @@ struct NetworkStatusBarPopupView: View {
                         .stroke(Color.secondary.opacity(0.1), lineWidth: 1)
                     }
 
-                    // 下载区域（绿色）
+                    // Download area
                     if !recentData.isEmpty {
                         MiniGraphArea(
                             data: recentData.map(\.downloadSpeed),
@@ -135,14 +135,14 @@ struct NetworkStatusBarPopupView: View {
                             )
                         )
 
-                        // 下载线条
+                        // Download line
                         MiniGraphLine(
                             data: recentData.map(\.downloadSpeed),
                             maxValue: maxSpeed
                         )
                         .stroke(Color.green.opacity(0.8), lineWidth: 1.2)
 
-                        // 上传区域（红色）
+                        // Upload area
                         MiniGraphArea(
                             data: recentData.map(\.uploadSpeed),
                             maxValue: maxSpeed
@@ -158,14 +158,14 @@ struct NetworkStatusBarPopupView: View {
                             )
                         )
 
-                        // 上传线条
+                        // Upload line
                         MiniGraphLine(
                             data: recentData.map(\.uploadSpeed),
                             maxValue: maxSpeed
                         )
                         .stroke(Color.red.opacity(0.8), lineWidth: 1.2)
                     } else {
-                        Text("收集中...")
+                        Text("Collecting...")
                             .font(.system(size: 10))
                             .foregroundColor(.secondary)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -187,7 +187,7 @@ struct ProcessRowView: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            // 进程图标
+            // Process icon
             if let icon = process.icon {
                 Image(nsImage: icon)
                     .resizable()
@@ -198,7 +198,7 @@ struct ProcessRowView: View {
                     .foregroundColor(.secondary)
             }
 
-            // 进程名称
+            // Process name
             VStack(alignment: .leading, spacing: 2) {
                 Text(process.name)
                     .font(.system(size: 11))
@@ -211,9 +211,9 @@ struct ProcessRowView: View {
 
             Spacer()
 
-            // 速度
+            // Speed
             HStack(spacing: 4) {
-                // 下载
+                // Download
                 if process.downloadSpeed > 0 {
                     HStack(spacing: 2) {
                         Image(systemName: "arrow.down.circle.fill")
@@ -225,7 +225,7 @@ struct ProcessRowView: View {
                     }
                 }
 
-                // 上传
+                // Upload
                 if process.uploadSpeed > 0 {
                     HStack(spacing: 2) {
                         Image(systemName: "arrow.up.circle.fill")

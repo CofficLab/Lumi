@@ -7,11 +7,11 @@ struct ProcessRow: View {
     var body: some View {
         let horizontalPadding: CGFloat = 8
         let scrollBarWidth: CGFloat = 16
-        // 计算可用宽度：总宽度 - 左右Padding - 滚动条预留
+        // Calculate available width: Total - Left/Right Padding - Scrollbar
         let availableWidth = max(0, containerWidth - (horizontalPadding * 2) - scrollBarWidth)
         
         HStack(spacing: 0) {
-            // 图标与名称
+            // Icon and Name
             HStack(spacing: 8) {
                 if let icon = process.icon {
                     Image(nsImage: icon)
@@ -37,7 +37,7 @@ struct ProcessRow: View {
 
             Spacer()
 
-            // 速度列
+            // Speed columns
             SpeedText(speed: process.downloadSpeed, text: process.formattedDownload)
                 .frame(width: availableWidth * 0.25, alignment: .trailing)
 
@@ -45,14 +45,10 @@ struct ProcessRow: View {
                 .frame(width: availableWidth * 0.25, alignment: .trailing)
         }
         .padding(.horizontal, horizontalPadding)
-        // 注意：列表行通常不需要手动添加 scrollBarWidth 的 padding，
-        // 因为内容会自动避开滚动条，或者滚动条覆盖在内容之上。
-        // 但为了防止内容被覆盖，且与表头对齐，这里不加额外的 padding，而是依靠 availableWidth 的缩减来限制内容宽度。
-        // 关键点：HStack 默认居中。我们需要它靠左吗？不，padding horizontal 保证了位置。
-        // 如果 availableWidth 变小了，Spacer 会吸收多余空间。
-        // 为了确保右对齐的文字不贴边，我们需要让 HStack 填满 containerWidth - scrollBarWidth 吗？
-        // 不，最好的办法是给 HStack 一个明确的 frame，或者加 trailing padding。
-        .padding(.trailing, scrollBarWidth) // 加上这个以确保文字不会被滚动条遮挡，并与表头对齐
+        // Note: List rows usually don't need manual scrollBarWidth padding,
+        // because content automatically avoids scrollbar or it overlays.
+        // But to align with header, we use availableWidth and trailing padding.
+        .padding(.trailing, scrollBarWidth) // Ensure text doesn't hit scrollbar and aligns with header
         .padding(.vertical, 4)
     }
 }

@@ -18,10 +18,10 @@ class DiskService: ObservableObject, SuperLog {
     
     private init() {
         if Self.verbose {
-            os_log("\(self.t)磁盘服务已初始化")
+            os_log("\(self.t)Disk service initialized")
         }
         
-        // 绑定 Coordinator 的进度更新
+        // Bind coordinator's progress update
         Task {
             for await progress in coordinator.progressStream {
                 self.currentScan = progress
@@ -49,51 +49,51 @@ class DiskService: ObservableObject, SuperLog {
         }.value
     }
 
-    /// 扫描指定路径
+    /// Scan specified path
     func scan(_ path: String, forceRefresh: Bool = true) async throws -> ScanResult {
         if Self.verbose {
-            os_log("\(self.t)请求扫描路径: \(path) (forceRefresh: \(forceRefresh))")
+            os_log("\(self.t)Request scanning path: \(path) (forceRefresh: \(forceRefresh))")
         }
         
-        // 尝试读取缓存
+        // Try to read cache
         if !forceRefresh {
             if let cached = await ScanCacheService.shared.load(for: path) {
                 if Self.verbose {
-                    os_log("\(self.t)命中缓存")
+                    os_log("\(self.t)Cache hit")
                 }
                 return cached
             }
         }
         
-        // 执行扫描
+        // Execute scan
         let result = await coordinator.scan(path)
         
-        // 保存缓存
+        // Save cache
         await ScanCacheService.shared.save(result, for: path)
         
         return result
     }
 
-    /// 取消当前扫描
+    /// Cancel current scan
     func cancelScan() {
         Task {
             await coordinator.cancelCurrentScan()
         }
     }
     
-    /// 删除文件
+    /// Delete file
     func deleteFile(at url: URL) async throws {
         try await Task.detached(priority: .utility) {
             try FileManager.default.removeItem(at: url)
         }.value
     }
     
-    /// 在 Finder 中显示
+    /// Reveal in Finder
     func revealInFinder(url: URL) {
         NSWorkspace.shared.activateFileViewerSelecting([url])
     }
     
-    /// 计算指定目录的大小（不生成目录树，仅统计总大小）
+    /// Calculate the size of the specified directory (does not generate directory tree, only counts total size)
     func calculateSize(for url: URL) async -> Int64 {
         return await Task.detached(priority: .userInitiated) {
             let fileManager = FileManager.default
@@ -146,7 +146,7 @@ actor ScanCoordinator {
     }
 
     func scan(_ path: String) async -> ScanResult {
-        // 取消之前的任务
+        // Cancel previous task
         activeTask?.cancel()
         
         let task = Task {
@@ -155,7 +155,7 @@ actor ScanCoordinator {
         activeTask = task
         let result = await task.value
         
-        // 扫描完成后清除进度
+        // Clear progress after scan completion
         currentProgress = nil
         return result
     }

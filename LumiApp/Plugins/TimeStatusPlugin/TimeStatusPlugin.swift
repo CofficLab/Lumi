@@ -5,48 +5,48 @@ import Combine
 import MagicKit
 import OSLog
 
-/// 时间状态插件：在状态栏显示当前时间
+/// Time Status Plugin: Displays the current time in the status bar
 actor TimeStatusPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
-    /// 日志标识符
+    /// Log identifier
     nonisolated static let emoji = "🕐"
 
-    /// 是否启用该插件
+    /// Whether to enable this plugin
     static let enable = true
 
-    /// 是否启用详细日志输出
+    /// Whether to enable verbose log output
     nonisolated static let verbose = true
 
-    /// 插件唯一标识符
+    /// Plugin unique identifier
     static let id: String = "TimeStatusPlugin"
 
-    /// 插件显示名称
-    static let displayName: String = "时间显示"
+    /// Plugin display name
+    static let displayName: String = "Time Status"
 
-    /// 插件功能描述
-    static let description: String = "在状态栏显示当前时间"
+    /// Plugin functional description
+    static let description: String = "Displays the current time in the status bar"
 
-    /// 插件图标名称
+    /// Plugin icon name
     static let iconName: String = "clock"
 
-    /// 是否可配置
+    /// Whether it is configurable
     static let isConfigurable: Bool = true
     
-    /// 注册顺序
+    /// Registration order
     static var order: Int { 6 }
 
     // MARK: - Instance
 
-    /// 插件实例标签（用于识别唯一实例）
+    /// Plugin instance label (used to identify unique instances)
     nonisolated var instanceLabel: String {
         Self.id
     }
 
-    /// 插件单例实例
+    /// Plugin singleton instance
     static let shared = TimeStatusPlugin()
 
-    /// 初始化方法
+    /// Initialization method
     init() {}
 
     // MARK: - UI Contributions

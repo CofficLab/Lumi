@@ -5,7 +5,7 @@ struct DirectoryTreeView: View {
     
     var body: some View {
         if entries.isEmpty {
-            ContentUnavailableView("无数据", systemImage: "folder", description: Text("扫描后将显示目录结构"))
+            ContentUnavailableView("No Data", systemImage: "folder", description: Text("Directory structure will be displayed after scanning"))
         } else {
             List(entries, children: \.children) { entry in
                 HStack {
@@ -18,7 +18,7 @@ struct DirectoryTreeView: View {
                     
                     Spacer()
                     
-                    // 简单的进度条表示相对大小（可选，暂不实现）
+                    // Simple progress bar for relative size (optional, not implemented yet)
                     
                     Text(formatBytes(entry.size))
                         .font(.monospacedDigit(.caption)())

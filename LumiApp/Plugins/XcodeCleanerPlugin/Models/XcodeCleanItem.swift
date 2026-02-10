@@ -9,7 +9,7 @@ enum XcodeCleanCategory: String, CaseIterable, Identifiable {
     case tvOSDeviceSupport = "tvOS Device Support"
     case simulatorCaches = "Simulator Caches"
     case logs = "Logs"
-    // case documentation = "Documentation Cache" // 可选
+    // case documentation = "Documentation Cache" // Optional
     
     var id: String { rawValue }
     
@@ -27,13 +27,13 @@ enum XcodeCleanCategory: String, CaseIterable, Identifiable {
     
     var description: String {
         switch self {
-        case .derivedData: return "构建过程中的中间文件和索引，可安全删除。"
-        case .archives: return "应用打包归档文件。"
-        case .iOSDeviceSupport: return "连接设备调试时生成的符号文件。"
-        case .watchOSDeviceSupport: return "Apple Watch 调试符号文件。"
-        case .tvOSDeviceSupport: return "Apple TV 调试符号文件。"
-        case .simulatorCaches: return "模拟器运行时缓存。"
-        case .logs: return "旧的模拟器日志和调试记录。"
+        case .derivedData: return "Intermediate files and indices from the build process, safe to delete."
+        case .archives: return "App packaging archive files."
+        case .iOSDeviceSupport: return "Symbol files generated when debugging connected devices."
+        case .watchOSDeviceSupport: return "Apple Watch debug symbol files."
+        case .tvOSDeviceSupport: return "Apple TV debug symbol files."
+        case .simulatorCaches: return "Simulator runtime cache."
+        case .logs: return "Old simulator logs and debug records."
         }
     }
 }
@@ -47,6 +47,6 @@ struct XcodeCleanItem: Identifiable, Equatable {
     let modificationDate: Date
     var isSelected: Bool = false
     
-    // 用于辅助排序或显示的额外信息，例如 DeviceSupport 的版本号
+    // Additional info for sorting or display, e.g., version number for DeviceSupport
     var version: String?
 }

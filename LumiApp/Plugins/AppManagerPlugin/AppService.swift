@@ -300,14 +300,14 @@ final class AppService: @unchecked Sendable, SuperLog {
     func getAppInfo(_ app: AppModel) -> String {
         var info = [String]()
 
-        info.append("名称: \(app.displayName)")
+        info.append("Name: \(app.displayName)")
         if let identifier = app.bundleIdentifier {
             info.append("Bundle ID: \(identifier)")
         }
         if let version = app.version {
-            info.append("版本: \(version)")
+            info.append("Version: \(version)")
         }
-        info.append("路径: \(app.bundleURL.path)")
+        info.append("Path: \(app.bundleURL.path)")
 
         return info.joined(separator: "\n")
     }
@@ -321,11 +321,11 @@ enum AppError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .appNotFound:
-            return "应用不存在"
+            return "App not found"
         case .permissionDenied:
-            return "没有权限卸载此应用"
+            return "Permission denied to uninstall this app"
         case let .uninstallFailed(reason):
-            return "卸载失败: \(reason)"
+            return "Uninstall failed: \(reason)"
         }
     }
 }

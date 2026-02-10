@@ -7,7 +7,7 @@ struct XcodeCleanerView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text("释放磁盘空间，清理过时的构建文件和支持文件")
+                Text("Free up disk space by cleaning obsolete build and support files")
                     .foregroundStyle(.secondary)
 
                 Spacer()
@@ -15,13 +15,13 @@ struct XcodeCleanerView: View {
                 if viewModel.isScanning {
                     ProgressView()
                         .controlSize(.small)
-                    Text("扫描中...")
+                    Text("Scanning...")
                         .foregroundStyle(.secondary)
                 } else {
                     Button(action: {
                         Task { await viewModel.scanAll() }
                     }) {
-                        Label("重新扫描", systemImage: "arrow.clockwise")
+                        Label("Rescan", systemImage: "arrow.clockwise")
                     }
                 }
             }
@@ -49,9 +49,9 @@ struct XcodeCleanerView: View {
             // Footer
             HStack {
                 VStack(alignment: .leading) {
-                    Text("选中: \(viewModel.formatBytes(viewModel.selectedSize))")
+                    Text("Selected: \(viewModel.formatBytes(viewModel.selectedSize))")
                         .font(.headline)
-                    Text("总计: \(viewModel.formatBytes(viewModel.totalSize))")
+                    Text("Total: \(viewModel.formatBytes(viewModel.totalSize))")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -67,7 +67,7 @@ struct XcodeCleanerView: View {
                 Button(action: {
                     Task { await viewModel.cleanSelected() }
                 }) {
-                    Text("立即清理")
+                    Text("Clean Now")
                         .frame(minWidth: 100)
                 }
                 .buttonStyle(.borderedProminent)
@@ -79,7 +79,7 @@ struct XcodeCleanerView: View {
         .onAppear {
             Task { await viewModel.scanAll() }
         }
-        .navigationTitle("Xcode 清理")
+        .navigationTitle("Xcode Cleaner")
     }
 
     var emptyStateView: some View {
@@ -88,11 +88,11 @@ struct XcodeCleanerView: View {
             Image(systemName: "checkmark.circle")
                 .font(.system(size: 64))
                 .foregroundStyle(.green)
-            Text("未发现可清理项目")
+            Text("No items to clean")
                 .font(.title2)
-            Text("您的 Xcode 环境非常干净！")
+            Text("Your Xcode environment is clean!")
                 .foregroundStyle(.secondary)
-            Button("重新扫描") {
+            Button("Rescan") {
                 Task { await viewModel.scanAll() }
             }
             Spacer()

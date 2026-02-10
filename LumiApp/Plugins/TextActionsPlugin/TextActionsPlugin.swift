@@ -7,7 +7,7 @@ actor TextActionsPlugin: SuperPlugin {
     
     static let id = "TextActions"
     static let navigationId = "text_actions"
-    static let displayName = "划词操作"
+    static let displayName = "Text Actions"
     static let description = "Selected text actions menu"
     static let iconName = "cursorarrow.click.2"
     static var order: Int { 60 }

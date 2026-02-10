@@ -2,7 +2,7 @@ import Foundation
 import OSLog
 import MagicKit
 
-// MARK: - 缓存模型
+// MARK: - Cache Model
 
 struct ScanCache: Codable {
     let path: String
@@ -12,13 +12,13 @@ struct ScanCache: Codable {
     let totalSize: Int64
     let totalFiles: Int
     
-    // 简单校验：1小时过期
+    // Simple validation: expires in 1 hour
     var isExpired: Bool {
         Date().timeIntervalSince(timestamp) > 3600
     }
 }
 
-// MARK: - 缓存服务
+// MARK: - Cache Service
 
 actor ScanCacheService: SuperLog {
     static let shared = ScanCacheService()
@@ -28,11 +28,11 @@ actor ScanCacheService: SuperLog {
     private let decoder = JSONDecoder()
     
     init() {
-        // 使用 App 的 Caches 目录
+        // Use App's Caches directory
         let cacheBase = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
         self.cacheDirectory = cacheBase.appendingPathComponent("DiskManagerPlugin/ScanCache")
         
-        // 确保目录存在
+        // Ensure directory exists
         try? FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
     }
     
@@ -92,7 +92,7 @@ actor ScanCacheService: SuperLog {
     }
     
     private func cacheFileURL(for path: String) -> URL {
-        // 使用 path 的 hash 或 base64 作为文件名
+        // Use path hash or base64 as filename
         let safeName = path.data(using: .utf8)?.base64EncodedString() ?? "unknown"
         return cacheDirectory.appendingPathComponent("\(safeName).json")
     }

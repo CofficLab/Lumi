@@ -3,7 +3,7 @@ import Combine
 import OSLog
 import MagicKit
 
-/// 内存监控服务
+/// Memory monitoring service
 @MainActor
 class MemoryService: ObservableObject, SuperLog {
     static let shared = MemoryService()
@@ -12,16 +12,16 @@ class MemoryService: ObservableObject, SuperLog {
     
     // MARK: - Published Properties
     
-    /// 内存使用率 (0.0 - 100.0)
+    /// Memory usage percentage (0.0 - 100.0)
     @Published var memoryUsagePercentage: Double = 0.0
     
-    /// 已用内存 (Bytes)
+    /// Used memory (Bytes)
     @Published var usedMemory: UInt64 = 0
     
-    /// 总内存 (Bytes)
+    /// Total memory (Bytes)
     @Published var totalMemory: UInt64 = 0
     
-    /// 内存压力 (Optional)
+    /// Memory pressure (Optional)
     @Published var memoryPressure: String = "Normal"
     
     // MARK: - Private Properties
@@ -65,12 +65,12 @@ class MemoryService: ObservableObject, SuperLog {
     
     // MARK: - Private Methods
 
-    /// 获取内核页面大小（使用系统 API 而非全局变量）
+    /// Get kernel page size using host_page_size API
     private nonisolated func getKernelPageSize() -> UInt64 {
-        // 使用 host_page_size API 而非直接访问全局变量
+        // Use host_page_size API instead of direct access to global variables
         var pageSize: vm_size_t = 0
         let result = host_page_size(mach_host_self(), &pageSize)
-        return result == KERN_SUCCESS ? UInt64(pageSize) : 4096 // 默认 4KB
+        return result == KERN_SUCCESS ? UInt64(pageSize) : 4096 // Default 4KB
     }
 
     private func updateMemoryUsage() {

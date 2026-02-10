@@ -10,7 +10,7 @@ struct MemoryStatusBarPopupView: View {
             VStack(spacing: 0) {
                 liveStatsView
 
-                // 历史趋势图（最近60秒）
+                // History trend chart (last 60 seconds)
                 miniTrendView
             }
         }
@@ -19,7 +19,7 @@ struct MemoryStatusBarPopupView: View {
     private var liveStatsView: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("内存")
+                Text("Memory")
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
 
@@ -29,14 +29,14 @@ struct MemoryStatusBarPopupView: View {
                     .font(.system(size: 12, weight: .medium))
             }
 
-            // 进度条
+            // Progress bar
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
-                    // 背景条
+                    // Background bar
                     RoundedRectangle(cornerRadius: 3)
                         .fill(Color.secondary.opacity(0.2))
 
-                    // 进度条
+                    // Progress bar
                     RoundedRectangle(cornerRadius: 3)
                         .fill(
                             LinearGradient(
@@ -64,19 +64,19 @@ struct MemoryStatusBarPopupView: View {
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
 
-                Text("最近60秒")
+                Text("Last 60 seconds")
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
 
                 Spacer()
 
-                // 图例
+                // Legend
                 HStack(spacing: 6) {
                     HStack(spacing: 3) {
                         Circle()
                             .fill(Color.purple.opacity(0.8))
                             .frame(width: 5, height: 5)
-                        Text("使用率")
+                        Text("Usage")
                             .font(.system(size: 9))
                             .foregroundColor(.secondary)
                     }
@@ -84,10 +84,10 @@ struct MemoryStatusBarPopupView: View {
             }
             .padding(.horizontal, 12)
 
-            // 迷你图表
+            // Mini chart
             GeometryReader { geometry in
                 ZStack {
-                    // 背景网格线
+                    // Background grid lines
                     ForEach(0 ..< 3) { i in
                         let y = CGFloat(i) * geometry.size.height / 2
                         Path { path in
@@ -97,7 +97,7 @@ struct MemoryStatusBarPopupView: View {
                         .stroke(Color.secondary.opacity(0.1), lineWidth: 1)
                     }
 
-                    // 内存使用率区域
+                    // Memory usage area
                     if !recentData.isEmpty {
                         MiniGraphArea(
                             data: recentData.map { $0.usagePercentage },
@@ -114,14 +114,14 @@ struct MemoryStatusBarPopupView: View {
                             )
                         )
 
-                        // 内存使用率线条
+                        // Memory usage line
                         MiniGraphLine(
                             data: recentData.map { $0.usagePercentage },
                             maxValue: maxValue
                         )
                         .stroke(Color.purple.opacity(0.8), lineWidth: 1.2)
                     } else {
-                        Text("收集中...")
+                        Text("Collecting...")
                             .font(.system(size: 10))
                             .foregroundColor(.secondary)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)

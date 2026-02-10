@@ -374,6 +374,15 @@
         }
       }
     },
+    "A simple and efficient assistant app" : {
+
+    },
+    "About" : {
+
+    },
+    "Accessibility permission is required to detect text selection" : {
+
+    },
     "Active Only" : {
 
     },
@@ -1024,6 +1033,9 @@
     "Created" : {
 
     },
+    "Current version is the latest stable version" : {
+
+    },
     "Data" : {
 
     },
@@ -1199,6 +1211,9 @@
     "Enable Clipboard Monitoring" : {
 
     },
+    "Enable Text Selection Menu" : {
+
+    },
     "ENV:" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1282,6 +1297,9 @@
         }
       }
     },
+    "Free up disk space by cleaning obsolete build and support files" : {
+
+    },
     "General" : {
 
     },
@@ -1300,6 +1318,9 @@
           }
         }
       }
+    },
+    "General Settings" : {
+
     },
     "Get API Key" : {
       "localizations" : {
@@ -1577,6 +1598,9 @@
         }
       }
     },
+    "Launch at Login" : {
+
+    },
     "Lumi" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1593,7 +1617,11 @@
         }
       }
     },
+    "Lumi uses the Sparkle framework for automatic updates. When a new version is available, the app will automatically prompt you to update." : {
+
+    },
     "Lumi 使用 Sparkle 框架进行自动更新。当有新版本可用时，应用会自动提示您更新。" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1777,6 +1805,9 @@
         }
       }
     },
+    "No items to clean" : {
+
+    },
     "No Large Files" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1881,6 +1912,9 @@
           }
         }
       }
+    },
+    "Open System Settings" : {
+
     },
     "OpenAI" : {
       "localizations" : {
@@ -2306,6 +2340,9 @@
         }
       }
     },
+    "Scanning..." : {
+
+    },
     "Search Apps" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2509,6 +2546,9 @@
     "Source: %@" : {
 
     },
+    "Startup Options" : {
+
+    },
     "state=" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2623,6 +2663,9 @@
           }
         }
       }
+    },
+    "Supported Actions" : {
+
     },
     "SwiftUI Template" : {
       "localizations" : {
@@ -2946,7 +2989,14 @@
         }
       }
     },
+    "Welcome to Lumi" : {
+
+    },
+    "Xcode Cleaner" : {
+
+    },
     "Xcode 清理" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2961,6 +3011,9 @@
           }
         }
       }
+    },
+    "Your Xcode environment is clean!" : {
+
     },
     "专辑封面" : {
       "localizations" : {
@@ -3011,6 +3064,7 @@
       }
     },
     "关于" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3059,6 +3113,7 @@
       }
     },
     "启动选项" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3075,6 +3130,7 @@
       }
     },
     "启用划词菜单" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3171,6 +3227,7 @@
       }
     },
     "开机启动" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3187,6 +3244,7 @@
       }
     },
     "当前版本是最新稳定版本" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3219,6 +3277,7 @@
       }
     },
     "总计: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3251,6 +3310,7 @@
       }
     },
     "您的 Xcode 环境非常干净！" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3331,6 +3391,7 @@
       }
     },
     "打开系统设置" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3347,6 +3408,7 @@
       }
     },
     "扫描中..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3411,6 +3473,7 @@
       }
     },
     "支持的操作" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3507,6 +3570,7 @@
       }
     },
     "未发现可清理项目" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3619,6 +3683,7 @@
       }
     },
     "立即清理" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3635,6 +3700,7 @@
       }
     },
     "简洁高效的助理软件" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3747,6 +3813,7 @@
       }
     },
     "选中: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3779,6 +3846,7 @@
       }
     },
     "通用" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3795,6 +3863,7 @@
       }
     },
     "通用设置" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3827,6 +3896,7 @@
       }
     },
     "释放磁盘空间，清理过时的构建文件和支持文件" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3859,6 +3929,7 @@
       }
     },
     "重新扫描" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3891,6 +3962,7 @@
       }
     },
     "需要辅助功能权限才能检测文本选择" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

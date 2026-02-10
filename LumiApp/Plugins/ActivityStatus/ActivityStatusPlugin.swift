@@ -24,7 +24,7 @@ actor ActivityStatusPlugin: SuperPlugin, SuperLog {
     nonisolated(unsafe) static var displayName: String = "ActivityStatus"
 
     /// 插件描述
-    nonisolated(unsafe) static var description: String = "在状态栏显示当前长耗时操作的状态"
+    nonisolated(unsafe) static var description: String = "Display the status of long-running operations in the status bar"
 
     /// 插件图标名称
     nonisolated(unsafe) static var iconName: String = "hourglass"

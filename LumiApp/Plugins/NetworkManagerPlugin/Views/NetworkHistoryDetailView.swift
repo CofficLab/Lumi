@@ -10,7 +10,7 @@ struct NetworkHistoryDetailView: View {
         VStack(spacing: 0) {
             // Header with Picker (History Trend)
             HStack {
-                Text("历史趋势")
+                Text("History Trend")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(.secondary)
 
@@ -18,7 +18,7 @@ struct NetworkHistoryDetailView: View {
 
                 Picker("Time Range", selection: $selectedRange) {
                     ForEach(TimeRange.allCases) { range in
-                        Text(range.rawValue).tag(range)
+                        Text(range.localizedName).tag(range)
                     }
                 }
                 .pickerStyle(.segmented)

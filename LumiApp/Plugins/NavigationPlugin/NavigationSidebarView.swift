@@ -1,12 +1,12 @@
 import SwiftUI
 
-/// 导航侧边栏视图：提供主导航按钮
+/// Navigation Sidebar View: Provides main navigation buttons
 struct NavigationSidebarView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // 应用标题区域
+            // App Title Area
             VStack(alignment: .leading, spacing: 8) {
-                Text("SwiftUI Template")
+                Text("Lumi")
                     .font(.title2)
                     .fontWeight(.bold)
                     .padding(.horizontal)
@@ -14,19 +14,19 @@ struct NavigationSidebarView: View {
                 Divider()
             }
 
-            // 导航列表
+            // Navigation List
             List {
-                Section(header: Text("导航")) {
+                Section(header: Text("Navigation")) {
                     Button(action: {
-                        // 主页即显示详情视图，这里可以触发特定行为
+                        // Home shows detail view, specific actions can be triggered here
                     }) {
-                        Label("主页", systemImage: .iconHome)
+                        Label("Home", systemImage: .iconHome)
                     }
 
                     Button(action: {
                         NotificationCenter.postOpenSettings()
                     }) {
-                        Label("设置", systemImage: "gear")
+                        Label("Settings", systemImage: "gear")
                     }
                 }
             }

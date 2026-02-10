@@ -5,7 +5,7 @@ class ProjectCleanerService {
     static let shared = ProjectCleanerService()
     private let fileManager = FileManager.default
     
-    // 常见开发目录
+    // Common development directories
     private let defaultScanPaths = [
         "\(NSHomeDirectory())/Code",
         "\(NSHomeDirectory())/Projects",
@@ -40,15 +40,15 @@ class ProjectCleanerService {
         var projects: [ProjectInfo] = []
         let url = URL(fileURLWithPath: path)
         
-        // 1. 检查当前目录是否是项目
+        // 1. Check if the current directory is a project
         if let project = await detectProject(at: url) {
             projects.append(project)
-            // 如果是项目，通常不再深入扫描其子目录（除非是 Monorepo，这里简化处理：找到项目即止）
-            // 如果需要支持 Monorepo，可以继续扫描
+            // If it's a project, usually we don't scan its subdirectories further (unless it's a Monorepo, here simplified: stop at project)
+            // If Monorepo support is needed, scanning can continue
             return projects
         }
         
-        // 2. 如果不是项目，继续递归
+        // 2. If it's not a project, continue recursively
         guard let contents = try? fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]) else {
             return []
         }
@@ -56,7 +56,7 @@ class ProjectCleanerService {
         for contentUrl in contents {
             var isDir: ObjCBool = false
             if fileManager.fileExists(atPath: contentUrl.path, isDirectory: &isDir), isDir.boolValue {
-                // 并行递归可能导致任务过多，这里用串行递归控制并发度
+                // Parallel recursion might lead to too many tasks, here using serial recursion to control concurrency
                 let subProjects = await scanDirectory(contentUrl.path, depth: depth + 1, maxDepth: maxDepth)
                 projects.append(contentsOf: subProjects)
             }
@@ -123,7 +123,7 @@ class ProjectCleanerService {
                 cleanableItems.append(CleanableItem(path: dotVenv.path, name: ".venv", size: size))
             }
             
-            // __pycache__ 比较分散，这里暂不处理深层 pycache
+            // __pycache__ is scattered, deep pycache not handled for now
         }
         
         if let projectType = type, !cleanableItems.isEmpty {

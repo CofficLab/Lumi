@@ -26,7 +26,7 @@ struct CPUStatusBarPopupView: View {
     private var liveLoadView: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("CPU 使用率")
+                Text("CPU Usage")
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
 
@@ -71,7 +71,7 @@ struct CPUStatusBarPopupView: View {
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
 
-                Text("最近60秒")
+                Text("Last 60 Seconds")
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
 
@@ -83,7 +83,7 @@ struct CPUStatusBarPopupView: View {
                         Circle()
                             .fill(Color.blue.opacity(0.8))
                             .frame(width: 5, height: 5)
-                        Text("使用率")
+                        Text("Usage")
                             .font(.system(size: 9))
                             .foregroundColor(.secondary)
                     }

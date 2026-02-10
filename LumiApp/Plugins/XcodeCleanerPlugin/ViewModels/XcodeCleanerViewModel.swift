@@ -13,7 +13,7 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
     @Published var isCleaning = false
     @Published var errorMessage: String?
 
-    // 统计
+    // Statistics
     var totalSize: Int64 {
         itemsByCategory.values.flatMap { $0 }.reduce(0) { $0 + $1.size }
     }
@@ -26,7 +26,7 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
 
     func scanAll() async {
         if Self.verbose {
-            os_log("\(self.t)开始扫描 Xcode 缓存")
+            os_log("\(self.t)Starting scan of Xcode cache")
         }
         isScanning = true
         errorMessage = nil
@@ -43,20 +43,20 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
             for await (category, items) in group {
                 var processedItems = items
 
-                // 应用智能选择策略
+                // Apply smart selection policy
                 applyAutoSelection(for: category, items: &processedItems)
 
                 self.itemsByCategory[category] = processedItems
 
                 if Self.verbose {
                     let size = processedItems.reduce(0 as Int64) { $0 + $1.size }
-                    os_log("\(self.t)扫描 \(category.rawValue): \(processedItems.count) 项，\(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
+                    os_log("\(self.t)Scanned \(category.rawValue): \(processedItems.count) items, \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
                 }
             }
         }
 
         if Self.verbose {
-            os_log("\(self.t)扫描完成，总计: \(ByteCountFormatter.string(fromByteCount: self.totalSize, countStyle: .file))")
+            os_log("\(self.t)Scan complete, total: \(ByteCountFormatter.string(fromByteCount: self.totalSize, countStyle: .file))")
         }
 
         isScanning = false
@@ -93,19 +93,19 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
 
         if Self.verbose {
             let size = itemsToDelete.reduce(0 as Int64) { $0 + $1.size }
-            os_log("\(self.t)开始清理 \(itemsToDelete.count) 项，总计 \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
+            os_log("\(self.t)Starting cleanup of \(itemsToDelete.count) items, total \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
         }
 
         do {
             try await service.delete(items: itemsToDelete)
             if Self.verbose {
-                os_log("\(self.t)清理成功")
+                os_log("\(self.t)Cleanup successful")
             }
-            // 重新扫描或直接从列表中移除
+            // Rescan or remove from list directly
             await scanAll()
         } catch {
-            os_log(.error, "\(self.t)清理失败: \(error.localizedDescription)")
-            errorMessage = "清理失败: \(error.localizedDescription)"
+            os_log(.error, "\(self.t)Cleanup failed: \(error.localizedDescription)")
+            errorMessage = "Cleanup failed: \(error.localizedDescription)"
         }
 
         isCleaning = false
@@ -116,31 +116,31 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
     private func applyAutoSelection(for category: XcodeCleanCategory, items: inout [XcodeCleanItem]) {
         switch category {
         case .derivedData, .simulatorCaches, .logs:
-            // 默认全选
+            // Select all by default
             for i in 0..<items.count {
                 items[i].isSelected = true
             }
             
         case .iOSDeviceSupport, .watchOSDeviceSupport, .tvOSDeviceSupport:
-            // 保留最新版本，其余选中
-            // 排序：版本号从高到低
-            // 简单解析：假设名称开头是版本号
+            // Keep the latest version, select others
+            // Sort: Version from high to low
+            // Simple parsing: Assume the name starts with the version number
             
             let sortedIndices = items.indices.sorted { (i, j) -> Bool in
                 let v1 = items[i].name
                 let v2 = items[j].name
-                return v1.compare(v2, options: .numeric) == .orderedDescending // 降序
+                return v1.compare(v2, options: .numeric) == .orderedDescending // Descending
             }
             
-            // 选中除了第一个（最新）之外的所有
+            // Select all except the first one (latest)
             for (rank, index) in sortedIndices.enumerated() {
-                if rank > 0 { // 0 是最新的
+                if rank > 0 { // 0 is the latest
                     items[index].isSelected = true
                 }
             }
             
         case .archives:
-            // 默认不选
+            // Deselect all by default
             break
         }
     }

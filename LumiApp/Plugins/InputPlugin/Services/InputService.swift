@@ -27,7 +27,7 @@ class InputService: ObservableObject, SuperLog {
 
     private init() {
         if Self.verbose {
-            os_log("\(Self.t)输入源服务已初始化")
+            os_log("\(Self.t)Input source service initialized")
         }
 
         // Load config
@@ -43,7 +43,7 @@ class InputService: ObservableObject, SuperLog {
         self.currentInputSource = InputSource.current()
 
         if Self.verbose {
-            os_log("\(self.t)加载了 \(self.availableInputSources.count) 个输入源")
+            os_log("\(self.t)Loaded \(self.availableInputSources.count) input sources")
         }
 
         startMonitoring()
@@ -73,13 +73,13 @@ class InputService: ObservableObject, SuperLog {
 
         if let rule = config.rules.first(where: { $0.appBundleID == bundleID }) {
             if Self.verbose {
-                os_log("\(self.t)切换到输入源: \(rule.inputSourceID) 用于应用 \(app.localizedName ?? bundleID)")
+                os_log("\(self.t)Switching to input source: \(rule.inputSourceID) for app \(app.localizedName ?? bundleID)")
             }
             switchInputSource(to: rule.inputSourceID)
         } else if let defaultID = config.defaultInputSourceID {
             // Optional: Switch to default if no rule exists
             // if Self.verbose {
-            //     os_log("\(self.t)切换到默认输入源: \(defaultID)")
+            //     os_log("\(self.t)Switching to default input source: \(defaultID)")
             // }
             // switchInputSource(to: defaultID)
         }
@@ -87,13 +87,13 @@ class InputService: ObservableObject, SuperLog {
 
     func switchInputSource(to sourceID: String) {
         guard let source = availableInputSources.first(where: { $0.id == sourceID }) else {
-            os_log(.error, "\(self.t)输入源未找到: \(sourceID)")
+            os_log(.error, "\(self.t)Input source not found: \(sourceID)")
             return
         }
         source.select()
         currentInputSource = source
         if Self.verbose {
-            os_log("\(self.t)已切换到输入源: \(source.id)")
+            os_log("\(self.t)Switched to input source: \(source.id)")
         }
     }
 
@@ -108,14 +108,14 @@ class InputService: ObservableObject, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(self.t)添加输入源规则: \(bundleID) -> \(sourceID)")
+            os_log("\(self.t)Added input source rule: \(bundleID) -> \(sourceID)")
         }
     }
 
     func removeRule(id: String) {
         config.rules.removeAll(where: { $0.id == id })
         if Self.verbose {
-            os_log("\(self.t)移除输入源规则: \(id)")
+            os_log("\(self.t)Removed input source rule: \(id)")
         }
     }
 
@@ -128,7 +128,7 @@ class InputService: ObservableObject, SuperLog {
     func refreshSources() {
         self.availableInputSources = InputSource.getAll().filter { $0.category == "TISCategoryKeyboardInputSource" && $0.isSelectable }
         if Self.verbose {
-            os_log("\(self.t)刷新输入源列表: \(self.availableInputSources.count) 个可用")
+            os_log("\(self.t)Refreshed input source list: \(self.availableInputSources.count) available")
         }
     }
 }

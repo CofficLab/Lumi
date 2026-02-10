@@ -3,7 +3,7 @@ import SwiftUI
 struct RClickSettingsView: View {
     @StateObject private var configManager = RClickConfigManager.shared
     @State private var showingAddTemplateSheet = false
-    
+
     var body: some View {
         Form {
             Section(header: Text("General Actions")) {
@@ -22,10 +22,10 @@ struct RClickSettingsView: View {
                     }
                 }
             }
-            
+
             Section(header: Text("New File Menu")) {
                 if let newFileItem = configManager.config.items.first(where: { $0.type == .newFile }) {
-                     HStack {
+                    HStack {
                         Image(systemName: newFileItem.type.iconName)
                             .frame(width: 20)
                         Text("Enable 'New File' Submenu")
@@ -36,7 +36,7 @@ struct RClickSettingsView: View {
                         ))
                     }
                 }
-                
+
                 if configManager.config.items.first(where: { $0.type == .newFile })?.isEnabled == true {
                     List {
                         ForEach(configManager.config.fileTemplates) { template in
@@ -59,19 +59,19 @@ struct RClickSettingsView: View {
                         }
                     }
                     .frame(minHeight: 100)
-                    
+
                     Button(action: { showingAddTemplateSheet = true }) {
                         Label("Add Template", systemImage: "plus")
                     }
                 }
             }
-            
+
             Section {
                 Button("Reset to Defaults") {
                     configManager.resetToDefaults()
                 }
                 .foregroundColor(.red)
-                
+
                 HStack {
                     Image(systemName: "info.circle")
                     Text("Changes require the Finder extension to be enabled in System Settings.")
@@ -94,19 +94,19 @@ struct RClickSettingsView: View {
 struct AddTemplateView: View {
     @Binding var isPresented: Bool
     var onAdd: (String, String, String) -> Void
-    
+
     @State private var name = ""
     @State private var ext = ""
     @State private var content = ""
-    
+
     var body: some View {
         VStack(spacing: 20) {
             Text("Add New Template").font(.headline)
-            
+
             Form {
                 TextField("Name (e.g. Python Script)", text: $name)
                 TextField("Extension (e.g. py)", text: $ext)
-                
+
                 Section(header: Text("Default Content")) {
                     TextEditor(text: $content)
                         .frame(height: 100)
@@ -115,7 +115,7 @@ struct AddTemplateView: View {
                 }
             }
             .formStyle(.grouped)
-            
+
             HStack {
                 Button("Cancel") { isPresented = false }
                 Spacer()

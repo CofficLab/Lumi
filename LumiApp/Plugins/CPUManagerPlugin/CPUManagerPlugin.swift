@@ -10,8 +10,8 @@ actor CPUManagerPlugin: SuperPlugin, SuperLog {
     nonisolated static let verbose = true
     
     static let id = "CPUManager"
-    static let displayName = "CPU 监控"
-    static let description = "实时监控 CPU 使用率和负载"
+    static let displayName = "CPU Monitor"
+    static let description = "Real-time CPU usage and load monitoring"
     static let iconName = "cpu"
     static var order: Int { 31 }
     

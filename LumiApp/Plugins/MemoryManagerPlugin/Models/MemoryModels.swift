@@ -1,10 +1,10 @@
 import Foundation
 
 enum MemoryTimeRange: String, CaseIterable, Identifiable {
-    case hour1 = "1小时"
-    case hour4 = "4小时"
-    case hour24 = "24小时"
-    case month1 = "30天"
+    case hour1 = "1h"
+    case hour4 = "4h"
+    case hour24 = "24h"
+    case month1 = "30d"
 
     var id: String { rawValue }
 

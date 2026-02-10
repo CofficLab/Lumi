@@ -9,7 +9,7 @@ struct MemoryHistoryDetailView: View {
         VStack(spacing: 12) {
             // Header
             HStack {
-                Text("内存使用趋势")
+                Text("Memory Usage Trend")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(.secondary)
                 

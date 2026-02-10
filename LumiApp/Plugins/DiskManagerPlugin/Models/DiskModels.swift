@@ -1,7 +1,7 @@
 import Foundation
 import AppKit
 
-// MARK: - 磁盘使用情况
+// MARK: - Disk Usage
 
 struct DiskUsage: Codable, Sendable {
     let total: Int64
@@ -14,7 +14,7 @@ struct DiskUsage: Codable, Sendable {
     }
 }
 
-// MARK: - 目录扫描模型
+// MARK: - Directory Scan Model
 
 struct DirectoryEntry: Identifiable, Hashable, Codable, Sendable {
     let id: String
@@ -24,7 +24,7 @@ struct DirectoryEntry: Identifiable, Hashable, Codable, Sendable {
     let isDirectory: Bool
     let lastAccessed: Date
     let modificationDate: Date
-    var children: [DirectoryEntry]?  // nil 表示未扫描或非目录
+    var children: [DirectoryEntry]?  // nil means not scanned or not a directory
     
     var isScanned: Bool { children != nil }
     var depth: Int { path.components(separatedBy: "/").count }
@@ -40,7 +40,7 @@ struct DirectoryEntry: Identifiable, Hashable, Codable, Sendable {
     }
 }
 
-// MARK: - 大文件模型
+// MARK: - Large File Model
 
 struct LargeFileEntry: Identifiable, Hashable, Codable, Comparable, Sendable {
     let id: String
@@ -82,7 +82,7 @@ struct LargeFileEntry: Identifiable, Hashable, Codable, Comparable, Sendable {
     }
 }
 
-// MARK: - 扫描结果
+// MARK: - Scan Result
 
 struct ScanResult: Sendable {
     let entries: [DirectoryEntry]
@@ -93,7 +93,7 @@ struct ScanResult: Sendable {
     let scannedAt: Date
 }
 
-// MARK: - 扫描进度
+// MARK: - Scan Progress
 
 struct ScanProgress: Sendable {
     let path: String
@@ -112,7 +112,7 @@ struct ScanProgress: Sendable {
     }
 }
 
-// MARK: - 最大堆 (用于 Top N 大文件)
+// MARK: - Max Heap (for Top N large files)
 
 struct MaxHeap<Element: Hashable & Comparable & Sendable>: Sendable {
     private var heap: [Element] = []
@@ -125,36 +125,36 @@ struct MaxHeap<Element: Hashable & Comparable & Sendable>: Sendable {
     mutating func insert(_ element: Element) {
         if heap.count < capacity {
             heap.append(element)
-            // 如果使用最小堆来维护Top N最大的元素（堆顶是最小的，新元素比堆顶大则替换），这里应该是最小堆逻辑？
-            // 实际上，如果我们要维护 Top N *最大* 的文件，我们需要一个能够快速访问 *当前Top N中最小元素* 的结构。
-            // 如果新元素比这个最小元素大，就替换它。
-            // 所以我们需要一个 *最小堆* (MinHeap) 来存储 Top N 个最大的元素。
-            // 堆顶是这 N 个里最小的。任何比堆顶大的元素都有资格进入 Top N。
+            // If using a min-heap to maintain Top N largest elements (root is the smallest, replace if new element is larger), this should be min-heap logic.
+            // In fact, if we want to maintain Top N *largest* files, we need a structure that allows fast access to the *smallest element currently in Top N*.
+            // If the new element is larger than this smallest element, replace it.
+            // So we need a *Min Heap* (MinHeap) to store Top N largest elements.
+            // The root is the smallest among these N. Any element larger than the root is eligible to enter Top N.
             
-            // 但是 ROADMAP 里写的是 MaxHeap。这可能是笔误，或者是想用 MaxHeap 存所有元素然后取 Top N？
-            // 考虑到内存效率，维护一个固定大小的 MinHeap 是标准的 Top K 问题解法。
-            // 这里我将实现一个固定容量的容器，保留最大的 N 个元素。
-            // 为了方便，可以直接用数组排序，对于 N=100 来说性能足够好。
-            // 或者严格实现 MinHeap。
+            // However, the ROADMAP says MaxHeap. This might be a typo, or intended to store all elements in a MaxHeap and then take Top N?
+            // Considering memory efficiency, maintaining a fixed-size MinHeap is the standard solution for the Top K problem.
+            // Here I will implement a fixed-capacity container that keeps the largest N elements.
+            // For convenience, we can directly use array sorting, performance is good enough for N=100.
+            // Or strictly implement MinHeap.
             
-            // 让我们修正为：维护 Top N Largest Items -> 需要 Min Heap 剔除最小的。
-            // 但为了简单和正确性，对于 N=100，直接 append 然后 sort dropLast 也是可以的，或者插入排序。
-            // 这里为了遵循 ROADMAP 的精神，我用简单高效的方式：插入并保持有序。
+            // Let's correct it to: Maintain Top N Largest Items -> Need Min Heap to evict the smallest.
+            // But for simplicity and correctness, for N=100, directly append then sort dropLast is also fine, or insertion sort.
+            // To follow the spirit of the ROADMAP, I use a simple and efficient way: insert and keep sorted.
             
             heap.append(element)
-            heap.sort() // 升序，last 是最大的
+            heap.sort() // Ascending, last is the largest
             if heap.count > capacity {
-                heap.removeFirst() // 移除最小的
+                heap.removeFirst() // Remove the smallest
             }
         } else {
             // heap is full.
             // heap.first is the smallest of the top N.
             if let min = heap.first, element > min {
                 heap[0] = element
-                heap.sort() // 重新排序
+                heap.sort() // Re-sort
             }
         }
     }
 
-    var elements: [Element] { heap.sorted(by: >) } // 返回降序
+    var elements: [Element] { heap.sorted(by: >) } // Return descending
 }

@@ -18,10 +18,10 @@ struct DiskManagerView: View {
                             .fontWeight(.bold)
                         
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("总空间: \(viewModel.formatBytes(usage.total))")
-                            Text("已用: \(viewModel.formatBytes(usage.used))")
+                            Text("Total: \(viewModel.formatBytes(usage.total))")
+                            Text("Used: \(viewModel.formatBytes(usage.used))")
                                 .foregroundStyle(.secondary)
-                            Text("可用: \(viewModel.formatBytes(usage.available))")
+                            Text("Available: \(viewModel.formatBytes(usage.available))")
                                 .foregroundStyle(.green)
                         }
                         .font(.subheadline)
@@ -37,14 +37,14 @@ struct DiskManagerView: View {
                                 viewModel.startScan()
                             }
                         }) {
-                            Label(viewModel.isScanning ? "停止扫描" : "扫描大文件", systemImage: viewModel.isScanning ? "stop.circle" : "magnifyingglass.circle")
+                            Label(viewModel.isScanning ? "Stop Scan" : "Scan Large Files", systemImage: viewModel.isScanning ? "stop.circle" : "magnifyingglass.circle")
                                 .font(.headline)
                                 .padding()
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(viewModel.isScanning ? .red : .blue)
                         
-                        Text("扫描目录: 用户主目录")
+                        Text("Scan Directory: User Home")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -53,18 +53,18 @@ struct DiskManagerView: View {
                 .background(Color(nsColor: .controlBackgroundColor))
             } else {
                 ProgressView()
-                // .onAppear 移到底部
+                // .onAppear moved to bottom
             }
             
             Divider()
             
             // View Mode Picker
-            Picker("视图模式", selection: $selectedViewMode) {
-                Text("大文件").tag(0)
-                Text("目录分析").tag(1)
-                Text("系统清理").tag(2)
-                Text("系统监控").tag(3)
-                Text("项目清理").tag(5)
+            Picker("View Mode", selection: $selectedViewMode) {
+                Text("Large Files").tag(0)
+                Text("Directory Analysis").tag(1)
+                Text("System Cleanup").tag(2)
+                Text("System Monitor").tag(3)
+                Text("Project Cleanup").tag(5)
             }
             .pickerStyle(.segmented)
             .padding()
@@ -94,12 +94,12 @@ struct DiskManagerView: View {
                     
                     if let progress = viewModel.scanProgress {
                         VStack(spacing: 4) {
-                            Text("正在扫描: \(progress.currentPath)")
+                            Text("Scanning: \(progress.currentPath)")
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                             
                             HStack {
-                                Text("\(progress.scannedFiles) 个文件")
+                                Text("\(progress.scannedFiles) files")
                                 Text("•")
                                 Text(viewModel.formatBytes(progress.scannedBytes))
                             }
@@ -107,7 +107,7 @@ struct DiskManagerView: View {
                             .foregroundStyle(.secondary)
                         }
                     } else {
-                        Text("正在准备扫描...")
+                        Text("Preparing scan...")
                     }
                 }
                 .font(.caption)
@@ -135,7 +135,7 @@ struct LargeFilesListView: View {
     
     var body: some View {
         if viewModel.largeFiles.isEmpty && !viewModel.isScanning {
-            ContentUnavailableView("无大文件", systemImage: "doc.text.magnifyingglass", description: Text("点击扫描按钮开始查找大文件"))
+            ContentUnavailableView("No Large Files", systemImage: "doc.text.magnifyingglass", description: Text("Click scan button to start finding large files"))
         } else {
             List {
                 ForEach(viewModel.largeFiles) { file in
@@ -172,7 +172,7 @@ struct DiskUsageRingView: View {
                 Text("\(Int(percentage * 100))%")
                     .font(.title3)
                     .fontWeight(.bold)
-                Text("已用")
+                Text("Used")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -226,7 +226,7 @@ struct LargeFileRow: View {
                         .foregroundStyle(.blue)
                 }
                 .buttonStyle(.plain)
-                .help("在 Finder 中显示")
+                .help("Reveal in Finder")
                 
                 Button(action: {
                     showDeleteConfirm = true
@@ -235,14 +235,14 @@ struct LargeFileRow: View {
                         .foregroundStyle(.red)
                 }
                 .buttonStyle(.plain)
-                .help("删除文件")
-                .confirmationDialog("确定要删除此文件吗？", isPresented: $showDeleteConfirm) {
-                    Button("删除", role: .destructive) {
+                .help("Delete File")
+                .confirmationDialog("Are you sure you want to delete this file?", isPresented: $showDeleteConfirm) {
+                    Button("Delete", role: .destructive) {
                         viewModel.deleteFile(item)
                     }
-                    Button("取消", role: .cancel) {}
+                    Button("Cancel", role: .cancel) {}
                 } message: {
-                    Text("文件 \"\(item.name)\" 将被永久删除。")
+                    Text("File \"\(item.name)\" will be permanently deleted.")
                 }
             }
             .padding(.leading, 8)

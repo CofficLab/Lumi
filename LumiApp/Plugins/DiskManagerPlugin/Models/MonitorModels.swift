@@ -1,6 +1,6 @@
 import Foundation
 
-// MARK: - 监控数据模型
+// MARK: - Monitoring Data Models
 
 struct SystemMetrics: Identifiable, Equatable {
     let id = UUID()
@@ -24,7 +24,7 @@ struct SystemMetrics: Identifiable, Equatable {
 struct ResourceUsage: Equatable {
     let percentage: Double // 0.0 - 1.0
     let description: String // e.g., "4.5 GB / 16 GB" or "15%"
-    let history: [Double] // 用于绘制图表 (0.0 - 1.0)
+    let history: [Double] // For drawing charts (0.0 - 1.0)
     
     static var empty: ResourceUsage {
         ResourceUsage(percentage: 0, description: "--", history: [])
@@ -69,7 +69,7 @@ struct DiskMetrics: Equatable {
     }
 }
 
-// MARK: - 进程监控模型
+// MARK: - Process Monitoring Models
 
 struct ProcessMetric: Identifiable, Hashable {
     let id: Int32 // PID

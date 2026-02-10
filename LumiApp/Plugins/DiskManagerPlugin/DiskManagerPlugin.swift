@@ -10,8 +10,8 @@ actor DiskManagerPlugin: SuperPlugin, SuperLog {
 
     static let id = "DiskManager"
     static let navigationId = "disk_manager"
-    static let displayName = "磁盘管理"
-    static let description = "磁盘空间分析与大文件清理"
+    static let displayName = "Disk Manager"
+    static let description = "Disk space analysis and large file cleaning"
     static let iconName = "internaldrive"
     static var order: Int { 22 }
 

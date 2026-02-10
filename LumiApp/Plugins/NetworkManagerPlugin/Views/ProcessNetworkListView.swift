@@ -5,47 +5,47 @@ struct ProcessNetworkListView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 工具栏
+            // Toolbar
             HStack {
-                Text("进程监控")
+                Text("Process Monitor")
                     .font(.headline)
 
                 Spacer()
 
-                Toggle("仅显示活跃", isOn: $viewModel.onlyActiveProcesses)
+                Toggle("Active Only", isOn: $viewModel.onlyActiveProcesses)
                     .toggleStyle(.switch)
                     .controlSize(.small)
 
-                TextField("搜索进程...", text: $viewModel.processSearchText)
+                TextField("Search...", text: $viewModel.processSearchText)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 120)
             }
             .padding(10)
             .background(Color(nsColor: .controlBackgroundColor))
 
-            // 表头
+            // Table Header
             GeometryReader { geometry in
                 let horizontalPadding: CGFloat = 8
                 let scrollBarWidth: CGFloat = 16
-                // 计算可用宽度：总宽度 - 左右Padding - 滚动条预留
+                // Calculate available width: Total - Left/Right Padding - Scrollbar
                 let availableWidth = max(0, geometry.size.width - (horizontalPadding * 2) - scrollBarWidth)
                 
                 HStack(spacing: 0) {
-                    Text("应用")
+                    Text("App")
                         .frame(width: availableWidth * 0.50, alignment: .leading)
 
                     Spacer()
 
-                    Text("下载")
+                    Text("Down")
                         .frame(width: availableWidth * 0.2, alignment: .trailing)
 
-                    Text("上传")
+                    Text("Up")
                         .frame(width: availableWidth * 0.2, alignment: .trailing)
                 }
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .padding(.horizontal, horizontalPadding)
-                .padding(.trailing, scrollBarWidth) // 表头额外增加右侧Padding以对齐列表内容（避开滚动条）
+                .padding(.trailing, scrollBarWidth) // Extra padding to align with list (avoid scrollbar)
                 .padding(.vertical, 6)
                 .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
             }
@@ -53,11 +53,11 @@ struct ProcessNetworkListView: View {
 
             Divider()
 
-            // 列表
+            // List
             if viewModel.filteredProcesses.isEmpty {
                 VStack {
                     Spacer()
-                    Text("无活跃进程")
+                    Text("No active processes")
                         .foregroundColor(.secondary)
                     Spacer()
                 }
@@ -67,7 +67,7 @@ struct ProcessNetworkListView: View {
                     List {
                         ForEach(viewModel.filteredProcesses) { process in
                             ProcessRow(process: process, containerWidth: geometry.size.width)
-                                .listRowInsets(EdgeInsets()) // 移除系统默认边距
+                                .listRowInsets(EdgeInsets()) // Remove default system insets
                         }
                     }
                     .listStyle(.plain)

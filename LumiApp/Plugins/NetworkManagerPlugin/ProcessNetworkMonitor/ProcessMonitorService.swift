@@ -9,23 +9,23 @@ class ProcessMonitorService: ObservableObject, SuperLog {
     static let shared = ProcessMonitorService()
     nonisolated static let emoji = "🕵️‍♂️"
     
-    // 采样间隔
+    // Sampling interval
     private let interval: TimeInterval = 1.0
     
-    // 3点滑动平均队列
+    // 3-point moving average queue
     private var historyBuffer: [String: [(Double, Double)]] = [:] // Name -> [(In, Out)]
     private let smoothingWindow = 3
     
-    // 进程信息缓存
+    // Process info cache
     private var processDetails: [Int: (name: String, icon: NSImage?)] = [:]
     
-    // 运行状态
+    // Runtime status
     private var isRunning = false
     private var refCount = 0
     private var task: Process?
     private var outputPipe: Pipe?
     
-    // 数据发布
+    // Data publishing
     @Published var processes: [NetworkProcess] = []
     
     private init() {}
@@ -66,7 +66,7 @@ class ProcessMonitorService: ObservableObject, SuperLog {
         
         pipe.fileHandleForReading.waitForDataInBackgroundAndNotify()
         
-        // 监听数据输出
+        // Listen for data output
         NotificationCenter.default.addObserver(forName: NSNotification.Name.NSFileHandleDataAvailable, object: pipe.fileHandleForReading, queue: nil) { [weak self] notification in
             guard let self = self, self.isRunning else { return }
             
@@ -91,7 +91,7 @@ class ProcessMonitorService: ObservableObject, SuperLog {
         #endif
     }
     
-    // 缓冲相关
+    // Buffering related
     private var rawDataBuffer: [RawProcessData] = []
     private var bufferTimer: Timer?
     private var partialLine = ""
@@ -109,20 +109,20 @@ class ProcessMonitorService: ObservableObject, SuperLog {
         }
         
         for line in lines.dropLast() {
-            // 跳过 Header 或空行
+            // Skip Header or empty lines
             if line.contains("bytes_in") || line.isEmpty { continue }
             
             let components = line.components(separatedBy: ",")
             
-            // nettop -P -L 0 -J bytes_in,bytes_out -d -x 输出格式:
+            // nettop -P -L 0 -J bytes_in,bytes_out -d -x Output format:
             // process.pid,bytes_in,bytes_out,
-            // 注意末尾可能有逗号导致空字符串
+            // Note: There might be a trailing comma leading to empty string
             
             if components.count >= 3 {
                 let namePart = components[0]
                 guard !namePart.isEmpty else { continue }
                 
-                // 尝试解析
+                // Try parsing
                 // components[1] -> bytes_in
                 // components[2] -> bytes_out
                 
@@ -138,7 +138,7 @@ class ProcessMonitorService: ObservableObject, SuperLog {
             }
         }
         
-        // 重置防抖 Timer
+        // Reset debounce timer
         bufferTimer?.invalidate()
         bufferTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: false) { [weak self] _ in
             self?.flushBuffer()
@@ -159,12 +159,12 @@ class ProcessMonitorService: ObservableObject, SuperLog {
     }
     
     private func aggregateAndPublish(_ rawData: [RawProcessData]) {
-        // 1. 聚合多实例 (按名称聚合)
-        // 需求：若同一进程名出现多实例，自动折叠为一条记录，带宽累加
-        // 但我们需要保留 PID 吗？如果是聚合后的，PID 可以是其中一个的主 PID 或者 -1
-        // 用户需求里说 "表格列：进程图标、进程名、PID..."，如果聚合了，PID 显示什么？
-        // 通常显示 "多实例" 或者主进程 PID。
-        // 这里我们按 (Name) 聚合，PID 取最大的那个（通常是最近启动的）或者第一个。
+        // 1. Aggregate multi-instances (by name)
+        // Requirement: If multiple instances of the same process name appear, fold them into one record and accumulate bandwidth
+        // But do we need to keep PID? If aggregated, PID can be the main PID or -1.
+        // User requirements say "Table columns: icon, name, PID...", if aggregated, what to show for PID?
+        // Usually show "Multi-instance" or main process PID.
+        // Here we aggregate by Name, and take the largest PID (usually the latest started) or the first one.
         
         var aggregated: [String: (pid: Int, bytesIn: Double, bytesOut: Double)] = [:]
         
@@ -175,7 +175,7 @@ class ProcessMonitorService: ObservableObject, SuperLog {
                 aggregated[item.name] = (item.pid, item.bytesIn, item.bytesOut)
             }
             
-            // 缓存图标
+            // Cache icon
             if processDetails[item.pid] == nil {
                 let icon = NSRunningApplication(processIdentifier: pid_t(item.pid))?.icon 
                     ?? NSWorkspace.shared.icon(forFile: "/bin/bash") // Fallback
@@ -183,19 +183,19 @@ class ProcessMonitorService: ObservableObject, SuperLog {
             }
         }
         
-        // 2. 滑动平均 (SMA - Simple Moving Average)
+        // 2. Simple Moving Average (SMA)
         var resultProcesses: [NetworkProcess] = []
         
         for (name, data) in aggregated {
             let pid = data.pid
             
-            // 获取历史数据
+            // Get history data
             var history = historyBuffer[name] ?? []
             
-            // 添加新数据点
+            // Add new data point
             history.append((data.bytesIn, data.bytesOut))
             
-            // 保持窗口大小
+            // Maintain window size
             if history.count > smoothingWindow {
                 history.removeFirst()
             }
