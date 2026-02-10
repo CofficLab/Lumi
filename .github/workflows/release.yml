@@ -1,24 +1,24 @@
 name: Release
 
 on:
-  workflow_run:
-    workflows:
-      - "Bump"
-    types:
-      - completed
+  push:
+    branches:
+      - pre
+      - main
 
 permissions:
   contents: write
 
 env:
-  TAG: ${{ github.sha }}
+  # 基础环境变量
   SCHEME: Lumi
   REPO_LINK: "https://github.com/CofficLab/Lumi"
   DESTINATION: "generic/platform=macOS"
-  ENTITLEMENTS_PATH: "LumiApp/App.entitlements" # 主 App 权限文件路径
+  ENTITLEMENTS_PATH: "LumiApp/App.entitlements"
   ArchivePath: "./my-app"
   BuildPath: "./temp"
-  IS_PRERELEASE: true
+  
+  # Secrets
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
   BUILD_CERTIFICATE_P12_PASSWORD: ${{ secrets.BUILD_CERTIFICATE_P12_PASSWORD }}
@@ -28,44 +28,82 @@ env:
   SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY_GITOK }}
 
 jobs:
-  build_with_signing:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+  release_pipeline:
     runs-on: macos-15
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
-          ref: ${{ github.event.workflow_run.head_branch }}
+
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: "latest-stable"
-      - name: Verify Xcode version
-        run: |
-          echo "Current Xcode version:"
-          xcodebuild -version
-          echo "Swift version:"
-          xcrun swift --version
-          echo "Xcode path:"
-          xcode-select -p
-      - name: 获取最新 tag
-        id: get_tag
-        run: |
-          tag=$(git describe --tags --abbrev=0)
-          echo "TAG=$tag" >> $GITHUB_ENV
-          if [[ $tag == p* ]]; then
-            echo "IS_PRERELEASE=true" >> $GITHUB_ENV
-          else
-            echo "IS_PRERELEASE=false" >> $GITHUB_ENV
-          fi
 
-          # 输出到 Summary
-          echo "## 🏷️ 版本标签信息" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Tag**: \`$tag\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Is Prerelease**: \`${{ env.IS_PRERELEASE }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Branch**: \`${{ github.event.workflow_run.head_branch }}\`" >> $GITHUB_STEP_SUMMARY
+      # =================================================================================================
+      # 1. 版本计算与项目更新
+      # =================================================================================================
+      - name: Calculate Next Version
+        id: version
+        run: |
+          chmod +x .github/scripts/bump-version.sh
+          chmod +x .github/scripts/calculate-version.sh
+
+          # 获取当前版本 (仅用于显示)
+          LAST_TAG=$(git describe --tags --match "v*" --abbrev=0 2>/dev/null || echo "v0.0.0")
+          LAST_TAG="${LAST_TAG#v}"
+
+          # 计算新版本
+          NEW_VERSION=$(.github/scripts/calculate-version.sh)
+          echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
+          
+          # 输出摘要
+          echo "## 📊 版本计算" >> $GITHUB_STEP_SUMMARY
+          echo "- **上一个版本**: \`$LAST_TAG\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **新版本**: \`$NEW_VERSION\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Update Xcode Project Version
+        run: |
+          # 更新 MARKETING_VERSION
+          agvtool new-marketing-version ${{ env.new_version }}
+          # 强制使用 sed 更新所有 target 的 MARKETING_VERSION 配置
+          sed -i '' "s/MARKETING_VERSION = [^;]*/MARKETING_VERSION = ${{ env.new_version }}/" Lumi.xcodeproj/project.pbxproj
+          
+          # 验证
+          NEW_MARKETING_VERSION=$(agvtool what-marketing-version -terse)
+          echo "Updated Marketing Version: $NEW_MARKETING_VERSION"
+
+      - name: Update Build Number
+        run: |
+          # 更新 CURRENT_PROJECT_VERSION
+          agvtool next-version -all
+          NEW_BUILD_VERSION=$(agvtool what-version -terse)
+          
+          # 强制使用 sed 同步所有 target 的 CURRENT_PROJECT_VERSION
+          sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*/CURRENT_PROJECT_VERSION = $NEW_BUILD_VERSION/" Lumi.xcodeproj/project.pbxproj
+          
+          echo "Updated Build Version: $NEW_BUILD_VERSION"
+
+      - name: Determine Tag and Prerelease Status
+        run: |
+          BUILD_VERSION=$(agvtool what-version -terse)
+          
+          if [[ "${{ github.ref }}" == "refs/heads/pre" ]]; then
+            echo "tag=p${{ env.new_version }}($BUILD_VERSION)" >> $GITHUB_ENV
+            echo "IS_PRERELEASE=true" >> $GITHUB_ENV
+            echo "## 🏷️ Tag Info (Pre-release)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "tag=v${{ env.new_version }}" >> $GITHUB_ENV
+            echo "IS_PRERELEASE=false" >> $GITHUB_ENV
+            echo "## 🏷️ Tag Info (Release)" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "- **Tag**: \`${{ env.tag }}\`" >> $GITHUB_STEP_SUMMARY
+
+      # =================================================================================================
+      # 2. 构建与签名
+      # =================================================================================================
       - name: Setup macOS signing
         id: signing
         run: |
@@ -74,18 +112,9 @@ jobs:
           echo "signing_identity=$SIGNING_IDENTITY" >> $GITHUB_OUTPUT
           echo "team_id=$TEAM_ID" >> $GITHUB_OUTPUT
           echo "api_key_path=$API_KEY_PATH" >> $GITHUB_OUTPUT
-      - name: Build App
+
+      - name: Build App (Archive)
         run: |
-          # 读取 Xcode 项目版本
-          MARKETING_VERSION=$(xcodebuild -project ${{ env.SCHEME }}.xcodeproj -showBuildSettings | grep MARKETING_VERSION | awk '{print $3}')
-          CURRENT_VERSION=$(xcodebuild -project ${{ env.SCHEME }}.xcodeproj -showBuildSettings | grep CURRENT_PROJECT_VERSION | awk '{print $3}')
-
-          echo "## 📦 构建版本信息" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **MARKETING_VERSION**: \`$MARKETING_VERSION\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **CURRENT_PROJECT_VERSION**: \`$CURRENT_VERSION\`" >> $GITHUB_STEP_SUMMARY
-
-          # 使用 xcodebuild archive 构建，确保产物是 Release 版本且去除了调试符号
           xcodebuild archive \
             -scheme ${{ env.SCHEME }} \
             -archivePath ./temp/${{ env.SCHEME }}.xcarchive \
@@ -103,62 +132,55 @@ jobs:
           cp -r "./temp/${{ env.SCHEME }}.xcarchive/Products/Applications/${{ env.SCHEME }}.app" "./temp/${{ env.SCHEME }}.app"
           APP_PATH="./temp/${{ env.SCHEME }}.app"
           IDENTITY="${{ steps.signing.outputs.signing_identity }}"
-          
-          echo "Signing Frameworks..."
+
+          echo "🧹 Cleaning attributes..."
+          xattr -cr "$APP_PATH"
+
+          echo "📝 Signing Frameworks and Nested Components..."
           if [ -d "$APP_PATH/Contents/Frameworks" ]; then
-             # 先签 dylib
-             find "$APP_PATH/Contents/Frameworks" -type f -name "*.dylib" -exec codesign --force --verbose --sign "$IDENTITY" --options runtime {} \; || true
-             
-             # 特殊处理 Sparkle 等包含嵌套 App 的 Framework
-             find "$APP_PATH/Contents/Frameworks" -type d -name "*.app" -exec codesign --force --verbose --sign "$IDENTITY" --options runtime {} \; || true
-             
-             # 再签 framework (包含里面的 dylib 和 app)
-             find "$APP_PATH/Contents/Frameworks" -type d -name "*.framework" -exec codesign --force --verbose --sign "$IDENTITY" --options runtime {} \; || true
+             # 1. Sign dylibs and libraries
+             echo "  - Signing dylibs..."
+             find "$APP_PATH/Contents/Frameworks" -type f \( -name "*.dylib" -o -name "*.so" \) -exec codesign --force --verbose --sign "$IDENTITY" --options runtime {} \;
+
+             # 2. Sign XPC Services and Helper Apps (deepest first)
+             # Note: Sparkle has XPC Services and Updater.app inside.
+             # We search for .xpc, .app, .bundle inside Frameworks
+             echo "  - Signing nested bundles (apps, xpc, bundles)..."
+             find "$APP_PATH/Contents/Frameworks" -depth -type d \( -name "*.app" -o -name "*.xpc" -o -name "*.bundle" \) -exec codesign --force --verbose --sign "$IDENTITY" --options runtime --preserve-metadata=entitlements {} \;
+
+             # 3. Sign Frameworks (deepest first)
+             echo "  - Signing frameworks..."
+             find "$APP_PATH/Contents/Frameworks" -depth -type d -name "*.framework" -exec codesign --force --verbose --sign "$IDENTITY" --options runtime {} \;
           fi
 
-          echo "Signing Extensions..."
+          echo "📝 Signing Extensions..."
           if [ -d "$APP_PATH/Contents/PlugIns" ]; then
-            # 递归签名 Extension，显式复用主 App 的 Entitlements (主要是 App Groups)
-            # 注意：如果 Extension 需要沙盒但主 App 不需要，这里可能需要区分。目前假设一致或兼容。
-            find "$APP_PATH/Contents/PlugIns" -name "*.appex" -exec codesign --force --verbose --sign "$IDENTITY" --options runtime --entitlements "${{ env.ENTITLEMENTS_PATH }}" {} \;
+            find "$APP_PATH/Contents/PlugIns" -depth -type d -name "*.appex" -exec codesign --force --verbose --sign "$IDENTITY" --options runtime --entitlements "${{ env.ENTITLEMENTS_PATH }}" {} \;
           fi
 
-          echo "Signing Main App..."
-          # 主 App 必须带 Entitlements (App Groups 等权限)
+          echo "📝 Signing Main App..."
           codesign --force --verbose --sign "$IDENTITY" --options runtime --entitlements "${{ env.ENTITLEMENTS_PATH }}" "$APP_PATH"
+
+          echo "✅ Code Signing Completed."
 
       - name: Create DMG
         run: |
-          # 准备 DMG 内容暂存目录
-          # 使用暂存目录可以避免 hdiutil 直接处理 /Applications 软链接时的遍历问题，提高打包速度
           STAGING_DIR="./temp/dmg_staging"
           mkdir -p "$STAGING_DIR"
-          
-          # 复制 App 到暂存目录
           cp -r "./temp/${{ env.SCHEME }}.app" "$STAGING_DIR/"
-          
-          # 在暂存目录中创建指向 /Applications 的软链接
           ln -s /Applications "$STAGING_DIR/Applications"
           
           VOL_NAME="${{ env.SCHEME }}"
           DMG_NAME="./temp/${{ env.SCHEME }}.dmg"
-
-          # 对暂存目录进行打包
+          
           hdiutil create -volname "$VOL_NAME" -srcfolder "$STAGING_DIR" -ov -format UDZO "$DMG_NAME"
 
-          # 查找生成的 DMG 文件
-          dmg_file=$(find ./temp -name "*.dmg" -type f | head -n 1)
-          if [ -n "$dmg_file" ]; then
-            dmg_basename=$(basename "$dmg_file")
-            echo "## 💿 DMG 文件信息" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "- **文件名**: \`$dmg_basename\`" >> $GITHUB_STEP_SUMMARY
-            ls -lh "$dmg_file" | awk '{print "- **文件大小**: " $5}' >> $GITHUB_STEP_SUMMARY
-          fi
       - name: Notary
         continue-on-error: true
         run: |
-          file=$(find . -maxdepth 2 -type f -name "*.dmg" | head -n 1)
+          file=$(find ./temp -name "*.dmg" -type f | head -n 1)
+          if [ -z "$file" ]; then echo "DMG not found"; exit 1; fi
+          
           xcrun notarytool submit "$file" \
             --key ${{ steps.signing.outputs.api_key_path }} \
             --key-id=${{ env.APP_STORE_CONNECT_KEY_ID }} \
@@ -166,99 +188,123 @@ jobs:
             --wait \
             --timeout 10m
           stapler staple "$file"
-      - name: 公证结果
+
+      - name: Validate Notarization
         continue-on-error: true
         run: |
-          file=$(find . -maxdepth 2 -type f -name "*.dmg" | head -n 1)
+          file=$(find ./temp -name "*.dmg" -type f | head -n 1)
           stapler validate "$file"
-      - name: Check
+
+      - name: Prepare Updates Directory
         run: |
-          ls -alh
           mkdir updates
           cp ./temp/*.dmg updates/
-          echo "the updates is in ${{ github.workspace }}/updates"
           ls -alh updates
-      - name: generate appcast (production only)
+
+      # =================================================================================================
+      # 3. Appcast 生成 (仅 Release 分支)
+      # =================================================================================================
+      - name: Generate Appcast
         if: env.IS_PRERELEASE == 'false'
         continue-on-error: true
         run: |
+          # 解决依赖以获取 Sparkle 工具
           xcodebuild -resolvePackageDependencies
-          cd $(ls -d ~/Library/Developer/Xcode/DerivedData/${{ env.SCHEME }}*/ | head -n 1)
-          cd SourcePackages/artifacts/sparkle/Sparkle/bin
-          echo "${{ env.SPARKLE_PRIVATE_KEY }}" | ./generate_appcast --ed-key-file - ${{ github.workspace }}/updates
-
-          # 输出 appcast.xml 中的版本信息
-          cd ${{ github.workspace }}/updates
-          if [ -f appcast.xml ]; then
-            APPCAST_VERSION=$(xmllint --xpath "string(//rss/channel/item/sparkle:shortVersionString)" appcast.xml 2>/dev/null || echo "未知")
-            APPCAST_BUILD=$(xmllint --xpath "string(//rss/channel/item/sparkle:version)" appcast.xml 2>/dev/null || echo "未知")
-
-            echo "## 📡 Appcast 信息" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "- **Appcast 版本**: \`$APPCAST_VERSION\`" >> $GITHUB_STEP_SUMMARY
-            echo "- **Appcast Build**: \`$APPCAST_BUILD\`" >> $GITHUB_STEP_SUMMARY
+          SPARKLE_BIN=$(ls -d ~/Library/Developer/Xcode/DerivedData/${{ env.SCHEME }}*/SourcePackages/artifacts/sparkle/Sparkle/bin | head -n 1)
+          
+          if [ -d "$SPARKLE_BIN" ]; then
+            cd "$SPARKLE_BIN"
+            echo "${{ env.SPARKLE_PRIVATE_KEY }}" | ./generate_appcast --ed-key-file - ${{ github.workspace }}/updates
+          else
+            echo "⚠️ Sparkle bin not found, skipping appcast generation."
           fi
-      - name: make appcast.xml (production only)
+
+      - name: Update Appcast Link
         if: env.IS_PRERELEASE == 'false'
+        continue-on-error: true
         run: |
           cd updates
-          dmg_file=$(ls *.dmg 2>/dev/null | head -n 1)
-          echo $dmg_file
-          u="${{ env.REPO_LINK }}/releases/latest/download/$dmg_file" 
-          echo $u
-          sed -i '' "s|\(enclosure url=\"\)[^\"]*|\1$u|" "appcast.xml"
-          mv appcast.xml ../appcast.xml
+          if [ -f appcast.xml ]; then
+            dmg_file=$(ls *.dmg 2>/dev/null | head -n 1)
+            if [ -n "$dmg_file" ]; then
+              u="${{ env.REPO_LINK }}/releases/latest/download/$dmg_file"
+              sed -i '' "s|\(enclosure url=\"\)[^\"]*|\1$u|" "appcast.xml"
+              # 移动到根目录以便提交
+              mv appcast.xml ../appcast.xml
+            fi
+          fi
+
+      # =================================================================================================
+      # 4. 提交更改与推送
+      # =================================================================================================
+      - name: Commit and Push Changes
+        if: success()
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "ci: bump to ${{ env.new_version }}"
+          commit_user_name: GitHub Action
+          tagging_message: ${{ env.tag }}
+          push_options: "--tags"
+          # 仅提交项目文件和appcast
+          file_pattern: "Lumi.xcodeproj/project.pbxproj appcast.xml"
+
+      # =================================================================================================
+      # 5. 发布 Release
+      # =================================================================================================
       - name: Generate Changelog
+        if: success()
         run: |
-          CURRENT_TAG=${{ env.TAG }}
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 ${CURRENT_TAG}^ 2>/dev/null || echo "")
+          # 获取前一个 tag 用于生成日志
+          # 注意：此时当前 commit 刚刚被打上 tag（或即将被 release 使用），git describe 可能需要 carefully handle
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          
           if [ -z "$PREVIOUS_TAG" ]; then
-            NOTES="## Release $CURRENT_TAG\n\nInitial release"
+            NOTES="## Release ${{ env.tag }}\n\nInitial release"
           else
-            NOTES="## Release $CURRENT_TAG\n\n### Changes since $PREVIOUS_TAG\n"
-            NOTES="$NOTES\n$(git log ${PREVIOUS_TAG}..${CURRENT_TAG} --no-merges --pretty=format:'- %s' | sort | uniq | head -20)"
+            NOTES="## Release ${{ env.tag }}\n\n### Changes since $PREVIOUS_TAG\n"
+            NOTES="$NOTES\n$(git log ${PREVIOUS_TAG}..HEAD --no-merges --pretty=format:'- %s' | sort | uniq | head -20)"
           fi
+          
           echo -e "$NOTES" > changelog.md
-          echo "### 📋 Release Notes" >> $GITHUB_STEP_SUMMARY
-          echo -e "$NOTES" >> $GITHUB_STEP_SUMMARY
+          cat changelog.md >> $GITHUB_STEP_SUMMARY
 
-          # 版本对比总结
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "---" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 🔍 版本一致性检查" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| 项目 | 值 |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|-----|" >> $GITHUB_STEP_SUMMARY
-          echo "| Git Tag | \`${{ env.TAG }}\` |" >> $GITHUB_STEP_SUMMARY
-
-          # 如果能读取到构建时的版本信息，则添加对比
-          if [ -n "$MARKETING_VERSION" ]; then
-            echo "| Xcode MARKETING_VERSION | \`$MARKETING_VERSION\` |" >> $GITHUB_STEP_SUMMARY
-          fi
-          if [ -n "$CURRENT_VERSION" ]; then
-            echo "| Xcode CURRENT_PROJECT_VERSION | \`$CURRENT_VERSION\` |" >> $GITHUB_STEP_SUMMARY
-          fi
-          if [ -n "$dmg_basename" ]; then
-            echo "| DMG 文件名中的版本 | \`$(echo $dmg_basename | grep -o '[0-9_]\+' | head -1 | tr '_' '.')\` |" >> $GITHUB_STEP_SUMMARY
-          fi
-          if [ -f updates/appcast.xml ]; then
-            APPCAST_VERSION=$(xmllint --xpath "string(//rss/channel/item/sparkle:shortVersionString)" updates/appcast.xml 2>/dev/null || echo "未知")
-            echo "| Appcast 版本 | \`$APPCAST_VERSION\` |" >> $GITHUB_STEP_SUMMARY
-          fi
-      - name: 发布 Release
+      - name: Create GitHub Release
+        if: success()
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ env.TAG }}
+          tag_name: ${{ env.tag }}
           prerelease: ${{ env.IS_PRERELEASE }}
           body_path: changelog.md
           files: |
             ./updates/*.dmg
             ./appcast.xml
-      - name: 推送到仓库 (pro)
-        if: env.IS_PRERELEASE == 'false'
-        uses: stefanzweifel/git-auto-commit-action@v4
+
+  rebase:
+    if: github.ref == 'refs/heads/main'
+    needs:
+      - release_pipeline
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
         with:
-          commit_message: "ci: update appcast.yml"
-          commit_user_name: GitHub Action
-          file_pattern: "appcast.xml"
+          ref: main
+          fetch-depth: 0
+      - name: Check pre branch
+        id: check_pre
+        run: |
+          if git ls-remote --heads origin pre | grep -q pre; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Rebase pre on main
+        if: steps.check_pre.outputs.exists == 'true'
+        continue-on-error: true
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git fetch origin pre
+          git checkout pre
+          git rebase origin/main
+          git push origin pre --force-with-lease
