@@ -31,7 +31,7 @@ class AppCleanerHelper {
         let appName = app.bundleName
         let bundleID = app.bundleIdentifier ?? ""
         
-        logger.info("开始扫描应用关联文件: \(appName), BundleID: \(bundleID)")
+        os_log("开始扫描应用关联文件: %s, BundleID: %s", appName, bundleID)
         
         // 1. 扫描 Application Support 和 Caches
         let userLibURL = fileManager.urls(for: .libraryDirectory, in: .userDomainMask).first!
@@ -81,7 +81,7 @@ class AppCleanerHelper {
         
         // 去重
         let uniqueFiles = Array(Set(relatedFiles))
-        logger.info("扫描完成，找到 \(uniqueFiles.count) 个关联文件/文件夹")
+        os_log("扫描完成，找到 %d 个关联文件/文件夹", uniqueFiles.count)
         return uniqueFiles
     }
     

@@ -25,13 +25,13 @@ class ClipboardMonitor: ObservableObject {
                 self?.checkForChanges()
             }
         }
-        logger.info("Clipboard monitoring started")
+        os_log("Clipboard monitoring started")
     }
     
     func stopMonitoring() {
         timer?.invalidate()
         timer = nil
-        logger.info("Clipboard monitoring stopped")
+        os_log("Clipboard monitoring stopped")
     }
     
     private func checkForChanges() {
@@ -55,7 +55,7 @@ class ClipboardMonitor: ObservableObject {
                     NotificationCenter.default.post(name: .clipboardHistoryDidUpdate, object: nil)
                 }
             }
-            logger.info("Captured text clipboard item")
+            os_log("Captured text clipboard item")
         }
         // Add more types later (Image, File, etc.)
     }

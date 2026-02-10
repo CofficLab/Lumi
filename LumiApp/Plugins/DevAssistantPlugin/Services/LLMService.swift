@@ -50,7 +50,7 @@ actor LLMService {
         
         guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
             let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
-            logger.error("OpenAI/DeepSeek API Error: \(errorStr)")
+            os_log(.error, "OpenAI/DeepSeek API Error: %s", errorStr)
             throw NSError(domain: "LLMService", code: (response as? HTTPURLResponse)?.statusCode ?? 500, userInfo: [NSLocalizedDescriptionKey: "API Error: \(errorStr)"])
         }
         
@@ -100,7 +100,7 @@ actor LLMService {
         
         guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
             let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
-            logger.error("Anthropic API Error: \(errorStr)")
+            os_log(.error, "Anthropic API Error: %s", errorStr)
             throw NSError(domain: "LLMService", code: (response as? HTTPURLResponse)?.statusCode ?? 500, userInfo: [NSLocalizedDescriptionKey: "API Error: \(errorStr)"])
         }
         

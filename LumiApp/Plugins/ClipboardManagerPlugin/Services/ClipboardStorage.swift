@@ -67,7 +67,7 @@ actor ClipboardStorage {
             let data = try JSONEncoder().encode(items)
             try data.write(to: fileURL)
         } catch {
-            logger.error("Failed to save history: \(error.localizedDescription)")
+            os_log(.error, "Failed to save history: %s", error.localizedDescription)
         }
     }
     
@@ -76,9 +76,9 @@ actor ClipboardStorage {
         do {
             let data = try Data(contentsOf: fileURL)
             items = try JSONDecoder().decode([ClipboardItem].self, from: data)
-            logger.info("Loaded \(self.items.count) items")
+            os_log(.info, "Loaded %d items", self.items.count) 
         } catch {
-            logger.error("Failed to load history: \(error.localizedDescription)")
+            os_log(.error, "Failed to load history: %s", error.localizedDescription)
         }
     }
 }

@@ -57,7 +57,10 @@ jobs:
           # 计算新版本
           NEW_VERSION=$(.github/scripts/calculate-version.sh)
           echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
-          
+
+          # 保存上一个标签供 changelog 生成使用
+          echo "previous_tag=$LAST_TAG" >> $GITHUB_ENV
+
           # 输出摘要
           echo "## 📊 版本计算" >> $GITHUB_STEP_SUMMARY
           echo "- **上一个版本**: \`$LAST_TAG\`" >> $GITHUB_STEP_SUMMARY
@@ -66,19 +69,19 @@ jobs:
       - name: Update Xcode Project Version
         run: |
           # 更新 MARKETING_VERSION
-          agvtool new-marketing-version ${{ env.new_version }}
+          agvtool new-marketing-version ${{ env.new_version }} 2>/dev/null || true
           # 强制使用 sed 更新所有 target 的 MARKETING_VERSION 配置
           sed -i '' "s/MARKETING_VERSION = [^;]*/MARKETING_VERSION = ${{ env.new_version }}/" Lumi.xcodeproj/project.pbxproj
-          
-          # 验证
-          NEW_MARKETING_VERSION=$(agvtool what-marketing-version -terse)
+
+          # 验证（使用 xcodebuild 而非 agvtool）
+          NEW_MARKETING_VERSION=$(xcodebuild -project ${{ env.SCHEME }}.xcodeproj -showBuildSettings 2>/dev/null | grep -E "MARKETING_VERSION" | grep -v "CURRENT" | head -1 | awk -F'= ' '{print $2}')
           echo "Updated Marketing Version: $NEW_MARKETING_VERSION"
 
       - name: Update Build Number
         run: |
           # 更新 CURRENT_PROJECT_VERSION
-          agvtool next-version -all
-          NEW_BUILD_VERSION=$(agvtool what-version -terse)
+          agvtool next-version -all 2>/dev/null || true
+          NEW_BUILD_VERSION=$(xcodebuild -project ${{ env.SCHEME }}.xcodeproj -showBuildSettings 2>/dev/null | grep "CURRENT_PROJECT_VERSION" | awk '{print $3}')
           
           # 强制使用 sed 同步所有 target 的 CURRENT_PROJECT_VERSION
           sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*/CURRENT_PROJECT_VERSION = $NEW_BUILD_VERSION/" Lumi.xcodeproj/project.pbxproj
@@ -87,7 +90,7 @@ jobs:
 
       - name: Determine Tag and Prerelease Status
         run: |
-          BUILD_VERSION=$(agvtool what-version -terse)
+          BUILD_VERSION=$(xcodebuild -project ${{ env.SCHEME }}.xcodeproj -showBuildSettings 2>/dev/null | grep "CURRENT_PROJECT_VERSION" | awk '{print $3}')
           
           if [[ "${{ github.ref }}" == "refs/heads/pre" ]]; then
             echo "tag=p${{ env.new_version }}($BUILD_VERSION)" >> $GITHUB_ENV
@@ -258,17 +261,17 @@ jobs:
       - name: Generate Changelog
         if: success()
         run: |
-          # 获取前一个 tag 用于生成日志
-          # 注意：此时当前 commit 刚刚被打上 tag（或即将被 release 使用），git describe 可能需要 carefully handle
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          
-          if [ -z "$PREVIOUS_TAG" ]; then
+          # 使用在 workflow 开始时保存的上一个标签
+          # 这样可以避免 git-auto-commit-action 创建新 commit 后导致的标签混乱
+          PREVIOUS_TAG="${{ env.previous_tag }}"
+
+          if [ -z "$PREVIOUS_TAG" ] || [ "$PREVIOUS_TAG" = "0.0.0" ]; then
             NOTES="## Release ${{ env.tag }}\n\nInitial release"
           else
-            NOTES="## Release ${{ env.tag }}\n\n### Changes since $PREVIOUS_TAG\n"
-            NOTES="$NOTES\n$(git log ${PREVIOUS_TAG}..HEAD --no-merges --pretty=format:'- %s' | sort | uniq | head -20)"
+            NOTES="## Release ${{ env.tag }}\n\n### Changes since v$PREVIOUS_TAG\n"
+            NOTES="$NOTES\n$(git log v${PREVIOUS_TAG}..HEAD --no-merges --pretty=format:'- %s' | sort | uniq | head -20)"
           fi
-          
+
           echo -e "$NOTES" > changelog.md
           cat changelog.md >> $GITHUB_STEP_SUMMARY
 

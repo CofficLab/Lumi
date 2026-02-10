@@ -40,7 +40,7 @@ final class PortScanner: Sendable {
                         continuation.resume(returning: [])
                     }
                 } catch {
-                    self.logger.error("Failed to scan ports: \(error.localizedDescription)")
+                    os_log(.error, "Failed to scan ports: %s", error.localizedDescription)
                     continuation.resume(returning: [])
                 }
             }
@@ -96,7 +96,7 @@ final class PortScanner: Sendable {
                     try task.run()
                     continuation.resume(returning: ())
                 } catch {
-                    self.logger.error("Failed to kill process \(pid): \(error.localizedDescription)")
+                    os_log(.error, "Failed to kill process %s: %s", pid, error.localizedDescription)
                     continuation.resume(throwing: error)
                 }
             }

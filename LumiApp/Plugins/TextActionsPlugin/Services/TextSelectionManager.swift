@@ -36,7 +36,7 @@ class TextSelectionManager: ObservableObject {
                     self?.handleMouseUp(event)
                 }
             }
-            logger.info("Started monitoring text selection")
+            os_log("Started monitoring text selection")
         }
     }
     
@@ -46,7 +46,7 @@ class TextSelectionManager: ObservableObject {
                 NSEvent.removeMonitor(monitor)
                 self.monitor = nil
             }
-            logger.info("Stopped monitoring text selection")
+            os_log("Stopped monitoring text selection")
         }
     }
     
@@ -61,7 +61,7 @@ class TextSelectionManager: ObservableObject {
                 if let (text, rect) = result, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     self.selectedText = text
                     self.selectionRect = rect
-                    self.logger.info("Detected selection: \(text.prefix(20))...")
+                    os_log("Detected selection: \(text.prefix(20))...")
                 } else {
                     // Hide menu if clicking elsewhere
                     self.selectedText = nil
