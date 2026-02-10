@@ -23,6 +23,21 @@ LAST_TAG=$(git describe --tags --match "v*" --abbrev=0 2>/dev/null || echo "v0.0
 # Strip 'v' prefix if present
 LAST_TAG="${LAST_TAG#v}"
 
+# Get the current version from Xcode project
+# xcodebuild provides more reliable output than agvtool
+XCODE_VERSION=$(xcodebuild -project Lumi.xcodeproj -showBuildSettings 2>/dev/null | grep -E "MARKETING_VERSION" | grep -v "CURRENT" | head -1 | awk -F'= ' '{print $2}' || echo "0.0.0")
+
+# Compare versions and use the higher one
+# sort -V does version-aware sorting (e.g., 1.10 > 1.9)
+BASE_VERSION=$(echo -e "${LAST_TAG}\n${XCODE_VERSION}" | sort -V | tail -n 1)
+
+echo "Git tag version: ${LAST_TAG}" >&2
+echo "Xcode version: ${XCODE_VERSION}" >&2
+echo "Using base version: ${BASE_VERSION}" >&2
+
+# Use the base version for calculation
+LAST_TAG="${BASE_VERSION}"
+
 # Parse the version components
 IFS='.' read -r MAJOR MINOR PATCH <<< "$LAST_TAG"
 
