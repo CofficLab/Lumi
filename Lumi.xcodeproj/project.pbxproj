@@ -40,9 +40,7 @@
 
 /* Begin PBXFileReference section */
 		0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LumiFinder.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		0BC0A5632F2F365C00BFB262 /* Lumi-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Lumi-Info.plist"; sourceTree = "<group>"; };
 		F53C3ECB2F1A3CB000929321 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		F53C3ECD2F1A3CB000929321 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		F53C49142F1A42EC00929321 /* Lumi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -53,6 +51,13 @@
 				Info.plist,
 			);
 			target = 0B2F7D602F3A301C00AD7E94 /* LumiFinder */;
+		};
+		F5F4E1E82F3ACC6600C76EA0 /* Exceptions for "LumiApp" folder in "Lumi" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"Lumi-Info.plist",
+			);
+			target = F54F8C7D2F1A3B6500AABB2A /* Lumi */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -65,19 +70,12 @@
 			path = LumiFinder;
 			sourceTree = "<group>";
 		};
-		0B559FC52F1A6A52005C6809 /* Plugins */ = {
+		F5F4DFD42F3ACC5100C76EA0 /* LumiApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Plugins;
-			sourceTree = "<group>";
-		};
-		0B55A3422F1B1AF2005C6809 /* AppStore */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = AppStore;
-			sourceTree = "<group>";
-		};
-		F54F8C802F1A3B6500AABB2A /* Core */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Core;
+			exceptions = (
+				F5F4E1E82F3ACC6600C76EA0 /* Exceptions for "LumiApp" folder in "Lumi" target */,
+			);
+			path = LumiApp;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -106,15 +104,11 @@
 		F54F8C752F1A3B6500AABB2A = {
 			isa = PBXGroup;
 			children = (
-				0BC0A5632F2F365C00BFB262 /* Lumi-Info.plist */,
-				F53C3ECD2F1A3CB000929321 /* App.entitlements */,
-				0B55A3422F1B1AF2005C6809 /* AppStore */,
 				F53C3ECB2F1A3CB000929321 /* Assets.xcassets */,
-				F54F8C802F1A3B6500AABB2A /* Core */,
-				0B559FC52F1A6A52005C6809 /* Plugins */,
+				F5F4DFD42F3ACC5100C76EA0 /* LumiApp */,
+				0B2F7D622F3A301C00AD7E94 /* LumiFinder */,
 				F53C49142F1A42EC00929321 /* Lumi.app */,
 				0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */,
-				0B2F7D622F3A301C00AD7E94 /* LumiFinder */,
 				F5F4DFC92F3ABECF00C76EA0 /* Frameworks */,
 			);
 			sourceTree = "<group>";
@@ -166,9 +160,7 @@
 				0B2F7D672F3A301D00AD7E94 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				0B559FC52F1A6A52005C6809 /* Plugins */,
-				0B55A3422F1B1AF2005C6809 /* AppStore */,
-				F54F8C802F1A3B6500AABB2A /* Core */,
+				F5F4DFD42F3ACC5100C76EA0 /* LumiApp */,
 			);
 			name = Lumi;
 			packageProductDependencies = (
@@ -461,7 +453,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = App.entitlements;
+				CODE_SIGN_ENTITLEMENTS = LumiApp/App.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -484,7 +476,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "Lumi-Info.plist";
+				INFOPLIST_FILE = "LumiApp/Lumi-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Lumi;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_SUEnableInstallerLauncherService = YES;
@@ -507,7 +499,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = App.entitlements;
+				CODE_SIGN_ENTITLEMENTS = LumiApp/App.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -530,7 +522,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "Lumi-Info.plist";
+				INFOPLIST_FILE = "LumiApp/Lumi-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Lumi;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_SUEnableInstallerLauncherService = YES;
