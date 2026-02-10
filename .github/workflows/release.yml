@@ -15,6 +15,7 @@ env:
   SCHEME: Lumi
   REPO_LINK: "https://github.com/CofficLab/Lumi"
   DESTINATION: "generic/platform=macOS"
+  ENTITLEMENTS_PATH: "LumiApp/App.entitlements" # 主 App 权限文件路径
   ArchivePath: "./my-app"
   BuildPath: "./temp"
   IS_PRERELEASE: true
@@ -23,7 +24,7 @@ env:
   BUILD_CERTIFICATE_P12_PASSWORD: ${{ secrets.BUILD_CERTIFICATE_P12_PASSWORD }}
   APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
   APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
-  APP_STORE_CONNECT_KEY_ISSER_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ISSER_ID }}
+  APP_STORE_CONNECT_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ISSER_ID }}
   SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY_GITOK }}
 
 jobs:
@@ -119,26 +120,31 @@ jobs:
           if [ -d "$APP_PATH/Contents/PlugIns" ]; then
             # 递归签名 Extension，显式复用主 App 的 Entitlements (主要是 App Groups)
             # 注意：如果 Extension 需要沙盒但主 App 不需要，这里可能需要区分。目前假设一致或兼容。
-            find "$APP_PATH/Contents/PlugIns" -name "*.appex" -exec codesign --force --verbose --sign "$IDENTITY" --options runtime --entitlements LumiApp/App.entitlements {} \;
+            find "$APP_PATH/Contents/PlugIns" -name "*.appex" -exec codesign --force --verbose --sign "$IDENTITY" --options runtime --entitlements "${{ env.ENTITLEMENTS_PATH }}" {} \;
           fi
 
           echo "Signing Main App..."
           # 主 App 必须带 Entitlements (App Groups 等权限)
-          codesign --force --verbose --sign "$IDENTITY" --options runtime --entitlements LumiApp/App.entitlements "$APP_PATH"
+          codesign --force --verbose --sign "$IDENTITY" --options runtime --entitlements "${{ env.ENTITLEMENTS_PATH }}" "$APP_PATH"
 
       - name: Create DMG
         run: |
-          # 使用 hdiutil 创建 DMG
-          SRC_FOLDER="./temp/${{ env.SCHEME }}.app"
+          # 准备 DMG 内容暂存目录
+          # 使用暂存目录可以避免 hdiutil 直接处理 /Applications 软链接时的遍历问题，提高打包速度
+          STAGING_DIR="./temp/dmg_staging"
+          mkdir -p "$STAGING_DIR"
           
-          # 创建 Applications 软链接以方便用户安装
-          ln -s /Applications ./temp/Applications
+          # 复制 App 到暂存目录
+          cp -r "./temp/${{ env.SCHEME }}.app" "$STAGING_DIR/"
+          
+          # 在暂存目录中创建指向 /Applications 的软链接
+          ln -s /Applications "$STAGING_DIR/Applications"
           
           VOL_NAME="${{ env.SCHEME }}"
           DMG_NAME="./temp/${{ env.SCHEME }}.dmg"
 
-          # 将 App 和 Applications 链接都放入 DMG
-          hdiutil create -volname "$VOL_NAME" -srcfolder "$SRC_FOLDER" -srcfolder "./temp/Applications" -ov -format UDZO "$DMG_NAME"
+          # 对暂存目录进行打包
+          hdiutil create -volname "$VOL_NAME" -srcfolder "$STAGING_DIR" -ov -format UDZO "$DMG_NAME"
 
           # 查找生成的 DMG 文件
           dmg_file=$(find ./temp -name "*.dmg" -type f | head -n 1)
@@ -156,7 +162,7 @@ jobs:
           xcrun notarytool submit "$file" \
             --key ${{ steps.signing.outputs.api_key_path }} \
             --key-id=${{ env.APP_STORE_CONNECT_KEY_ID }} \
-            --issuer ${{ env.APP_STORE_CONNECT_KEY_ISSER_ID }} \
+            --issuer ${{ env.APP_STORE_CONNECT_KEY_ISSUER_ID }} \
             --wait \
             --timeout 10m
           stapler staple "$file"
@@ -176,7 +182,6 @@ jobs:
         if: env.IS_PRERELEASE == 'false'
         continue-on-error: true
         run: |
-          pwd
           xcodebuild -resolvePackageDependencies
           cd $(ls -d ~/Library/Developer/Xcode/DerivedData/${{ env.SCHEME }}*/ | head -n 1)
           cd SourcePackages/artifacts/sparkle/Sparkle/bin
@@ -196,7 +201,6 @@ jobs:
       - name: make appcast.xml (production only)
         if: env.IS_PRERELEASE == 'false'
         run: |
-          pwd
           cd updates
           dmg_file=$(ls *.dmg 2>/dev/null | head -n 1)
           echo $dmg_file
