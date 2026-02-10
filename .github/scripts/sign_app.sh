@@ -24,9 +24,11 @@ xattr -cr "$APP_PATH"
 echo "🔍 Scanning for components to sign..."
 
 # Use find with -depth (BSD/macOS) to ensure children are processed before parents
+# We exclude symlinks (-type l) to avoid signing the same component multiple times via different paths
 find "$APP_PATH" -depth \
     \( -name "*.framework" -o -name "*.app" -o -name "*.xpc" -o -name "*.bundle" -o -name "*.appex" -o -name "*.dylib" -o -name "*.so" \) \
     ! -path "$APP_PATH" \
+    ! -type l \
     | while read -r item; do
     
     echo "✍️  Signing component: $item"

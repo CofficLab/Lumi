@@ -128,8 +128,9 @@ jobs:
 
       - name: Codesign App
         run: |
-          # 从 xcarchive 中提取 App
-          cp -r "./temp/${{ env.SCHEME }}.xcarchive/Products/Applications/${{ env.SCHEME }}.app" "./temp/${{ env.SCHEME }}.app"
+          # 从 xcarchive 中提取 App (使用 ditto 保持符号链接和元数据)
+          ditto "./temp/${{ env.SCHEME }}.xcarchive/Products/Applications/${{ env.SCHEME }}.app" "./temp/${{ env.SCHEME }}.app"
+          
           APP_PATH="./temp/${{ env.SCHEME }}.app"
           IDENTITY="${{ steps.signing.outputs.signing_identity }}"
           
