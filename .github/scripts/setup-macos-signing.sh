@@ -28,7 +28,7 @@ NC='\033[0m' # No Color
 #    export BUILD_CERTIFICATE_P12_PASSWORD="..."  # 证书密码
 #    export APP_STORE_CONNECT_KEY_BASE64="..."   # Base64 编码的 App Store Connect API 密钥
 #    export APP_STORE_CONNECT_KEY_ID="..."       # App Store Connect API 密钥 ID
-#    export APP_STORE_CONNECT_KEY_ISSER_ID="..." # App Store Connect API 发行者 ID
+#    export APP_STORE_CONNECT_KEY_ISSUER_ID="..." # App Store Connect API 发行者 ID
 #
 # 2. 运行脚本：
 #    source ./scripts/setup-macos-signing.sh
@@ -55,7 +55,7 @@ check_required_env() {
         "BUILD_CERTIFICATE_P12_PASSWORD"
         "APP_STORE_CONNECT_KEY_BASE64"
         "APP_STORE_CONNECT_KEY_ID"
-        "APP_STORE_CONNECT_KEY_ISSER_ID"
+        "APP_STORE_CONNECT_KEY_ISSUER_ID"
     )
 
     for var in "${required_vars[@]}"; do
