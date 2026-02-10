@@ -10,6 +10,9 @@ class FinderSync: FIFinderSync, SuperLog {
     let appGroupId = "group.com.coffic.lumi"
     let configKey = "RClickConfig"
 
+    /// 缓存模板列表，用于通过 tag 索引（representedObject 在 Extension 中不可靠）
+    var cachedTemplates: [NewFileTemplate] = []
+
     override init() {
         super.init()
 
@@ -95,7 +98,7 @@ class FinderSync: FIFinderSync, SuperLog {
                 }
 
             case .openInTerminal:
-                let termItem = menu.addItem(withTitle: item.customTitle ?? "在终端中打开", action: #selector(openInTerminal(_:)), keyEquivalent: "")
+                let termItem = menu.addItem(withTitle: item.customTitle ?? "在终端中打开6", action: #selector(openInTerminal(_:)), keyEquivalent: "")
                 if showIcons {
                     termItem.image = NSImage(systemSymbolName: "apple.terminal", accessibilityDescription: "Terminal")
                 }
@@ -120,9 +123,12 @@ class FinderSync: FIFinderSync, SuperLog {
                     NewFileTemplate(id: "t2", name: "Markdown", extensionName: "md", content: "", isEnabled: true),
                 ]
 
-                for template in templates {
+                // 缓存模板，通过 tag 索引
+                self.cachedTemplates = templates
+
+                for (index, template) in templates.enumerated() {
                     let tItem = newFileMenu.addItem(withTitle: "\(template.name) (.\(template.extensionName))", action: #selector(createNewFileFromTemplate(_:)), keyEquivalent: "")
-                    tItem.representedObject = ["name": template.name, "ext": template.extensionName, "content": template.content]
+                    tItem.tag = index
                     if showIcons {
                         tItem.image = NSImage(systemSymbolName: "doc.text", accessibilityDescription: "File")
                     }
@@ -209,26 +215,20 @@ class FinderSync: FIFinderSync, SuperLog {
             return
         }
 
-        guard let data = item.representedObject as? [String: String] else {
+        let index = item.tag
+        guard index >= 0, index < cachedTemplates.count else {
             if Self.verbose {
-                os_log("\(Self.t)representedObject 无效或为空")
+                os_log("\(Self.t)模板索引无效: \(index)，缓存数量: \(self.cachedTemplates.count)")
             }
             return
         }
 
-        guard let name = data["name"],
-              let ext = data["ext"],
-              let content = data["content"] else {
-            if Self.verbose {
-                os_log("\(Self.t)representedObject 缺少数据")
-            }
-            return
-        }
+        let template = cachedTemplates[index]
 
         if Self.verbose {
-            os_log("\(Self.t)创建文件 - 名称: \(name), 扩展名: \(ext)")
+            os_log("\(Self.t)创建文件 - 名称: \(template.name), 扩展名: \(template.extensionName)")
         }
-        createNewFile(extension: ext, content: content, namePrefix: name)
+        createNewFile(extension: template.extensionName, content: template.content, namePrefix: template.name)
     }
 
     @IBAction func copyPath(_ sender: AnyObject?) {

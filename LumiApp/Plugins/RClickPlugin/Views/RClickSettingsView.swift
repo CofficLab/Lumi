@@ -6,6 +6,46 @@ struct RClickSettingsView: View {
 
     var body: some View {
         Form {
+            // MARK: - Finder Extension 启用引导
+
+            Section {
+                VStack(spacing: 12) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "puzzlepiece.extension")
+                            .font(.system(size: 28))
+                            .foregroundStyle(.blue)
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("启用 Finder 扩展")
+                                .font(.headline)
+                            Text("右键菜单功能需要在系统设置中启用 Finder 扩展后才能使用。")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+                    }
+
+                    HStack(spacing: 12) {
+                        Button {
+                            openFinderExtensionSettings()
+                        } label: {
+                            Label("打开系统设置", systemImage: "gear")
+                        }
+                        .buttonStyle(.borderedProminent)
+
+                        Spacer()
+
+                        Text("系统设置 → 隐私与安全性 → 扩展 → 添加的扩展")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+
+            // MARK: - General Actions
+
             Section(header: Text("General Actions")) {
                 ForEach(configManager.config.items) { item in
                     if item.type != .newFile {
@@ -22,6 +62,8 @@ struct RClickSettingsView: View {
                     }
                 }
             }
+
+            // MARK: - New File Menu
 
             Section(header: Text("New File Menu")) {
                 if let newFileItem = configManager.config.items.first(where: { $0.type == .newFile }) {
@@ -66,18 +108,13 @@ struct RClickSettingsView: View {
                 }
             }
 
+            // MARK: - Reset
+
             Section {
                 Button("Reset to Defaults") {
                     configManager.resetToDefaults()
                 }
                 .foregroundColor(.red)
-
-                HStack {
-                    Image(systemName: "info.circle")
-                    Text("Changes require the Finder extension to be enabled in System Settings.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
             }
         }
         .formStyle(.grouped)
@@ -87,6 +124,15 @@ struct RClickSettingsView: View {
                 let template = NewFileTemplate(name: name, extensionName: ext, content: content)
                 configManager.addTemplate(template)
             }
+        }
+    }
+
+    // MARK: - Private
+
+    private func openFinderExtensionSettings() {
+        // macOS 13+ 使用新的系统设置 URL
+        if let url = URL(string: "x-apple.systempreferences:com.apple.ExtensionsPreferences") {
+            NSWorkspace.shared.open(url)
         }
     }
 }

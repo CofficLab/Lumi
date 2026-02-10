@@ -751,6 +751,7 @@
       }
     },
     "Changes require the Finder extension to be enabled in System Settings." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3112,6 +3113,9 @@
         }
       }
     },
+    "右键菜单功能需要在系统设置中启用 Finder 扩展后才能使用。" : {
+
+    },
     "启动选项" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3128,6 +3132,9 @@
           }
         }
       }
+    },
+    "启用 Finder 扩展" : {
+
     },
     "启用划词菜单" : {
       "extractionState" : "stale",
@@ -3391,7 +3398,6 @@
       }
     },
     "打开系统设置" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3715,6 +3721,9 @@
           }
         }
       }
+    },
+    "系统设置 → 隐私与安全性 → 扩展 → 添加的扩展" : {
+
     },
     "自动获取专辑封面" : {
       "localizations" : {
