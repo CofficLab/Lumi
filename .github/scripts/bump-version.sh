@@ -13,7 +13,8 @@
 set -euo pipefail
 
 # Get the most recent tag starting with 'v', or default to v0.0.0 if no tags exist
-LAST_TAG=$(git describe --tags --match "v*" --abbrev=0 2>/dev/null || echo "v0.0.0")
+# Use sort -V to find the highest version number regardless of git history reachability
+LAST_TAG=$(git tag -l "v*" | sort -V | tail -n 1 2>/dev/null || echo "v0.0.0")
 
 # Get all commit messages since the last tag
 COMMITS=$(git log ${LAST_TAG}..HEAD --pretty=format:%s 2>/dev/null || echo "")
