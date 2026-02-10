@@ -107,14 +107,19 @@ jobs:
           if [ -d "$APP_PATH/Contents/Frameworks" ]; then
              # 先签 dylib
              find "$APP_PATH/Contents/Frameworks" -type f -name "*.dylib" -exec codesign --force --verbose --sign "$IDENTITY" --options runtime {} \; || true
-             # 再签 framework (包含里面的 dylib)
+             
+             # 特殊处理 Sparkle 等包含嵌套 App 的 Framework
+             find "$APP_PATH/Contents/Frameworks" -type d -name "*.app" -exec codesign --force --verbose --sign "$IDENTITY" --options runtime {} \; || true
+             
+             # 再签 framework (包含里面的 dylib 和 app)
              find "$APP_PATH/Contents/Frameworks" -type d -name "*.framework" -exec codesign --force --verbose --sign "$IDENTITY" --options runtime {} \; || true
           fi
 
           echo "Signing Extensions..."
           if [ -d "$APP_PATH/Contents/PlugIns" ]; then
-            # 递归签名 Extension
-            find "$APP_PATH/Contents/PlugIns" -name "*.appex" -exec codesign --force --verbose --sign "$IDENTITY" --options runtime {} \;
+            # 递归签名 Extension，显式复用主 App 的 Entitlements (主要是 App Groups)
+            # 注意：如果 Extension 需要沙盒但主 App 不需要，这里可能需要区分。目前假设一致或兼容。
+            find "$APP_PATH/Contents/PlugIns" -name "*.appex" -exec codesign --force --verbose --sign "$IDENTITY" --options runtime --entitlements LumiApp/App.entitlements {} \;
           fi
 
           echo "Signing Main App..."
@@ -125,10 +130,15 @@ jobs:
         run: |
           # 使用 hdiutil 创建 DMG
           SRC_FOLDER="./temp/${{ env.SCHEME }}.app"
+          
+          # 创建 Applications 软链接以方便用户安装
+          ln -s /Applications ./temp/Applications
+          
           VOL_NAME="${{ env.SCHEME }}"
           DMG_NAME="./temp/${{ env.SCHEME }}.dmg"
 
-          hdiutil create -volname "$VOL_NAME" -srcfolder "$SRC_FOLDER" -ov -format UDZO "$DMG_NAME"
+          # 将 App 和 Applications 链接都放入 DMG
+          hdiutil create -volname "$VOL_NAME" -srcfolder "$SRC_FOLDER" -srcfolder "./temp/Applications" -ov -format UDZO "$DMG_NAME"
 
           # 查找生成的 DMG 文件
           dmg_file=$(find ./temp -name "*.dmg" -type f | head -n 1)
