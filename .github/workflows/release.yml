@@ -174,7 +174,7 @@ jobs:
           # Output result for debugging
           cat notary_result.txt
           
-          if [ $EXIT_CODE -ne 0 ]; then
+          if [ $EXIT_CODE -ne 0 ] || grep -q "status: Invalid" notary_result.txt; then
              echo "❌ Notarization failed. Retrieving logs..."
              # Extract ID from the output file
              SUBMISSION_ID=$(grep "id:" notary_result.txt | head -n 1 | awk '{print $2}' | tr -d ' ')
@@ -185,7 +185,7 @@ jobs:
                   --key-id=${{ env.APP_STORE_CONNECT_KEY_ID }} \
                   --issuer ${{ env.APP_STORE_CONNECT_KEY_ISSUER_ID }} 
              fi
-             exit $EXIT_CODE
+             exit 1
           fi
           set -e
           
