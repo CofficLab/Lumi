@@ -1,0 +1,68 @@
+name: Bump Version
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Calculate New Version
+        id: version
+        run: |
+          chmod +x .github/scripts/calculate-version.sh
+          chmod +x .github/scripts/bump-version.sh
+          
+          NEW_VERSION=$(./.github/scripts/calculate-version.sh)
+          
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "📦 New Version: $NEW_VERSION" >> $GITHUB_STEP_SUMMARY
+
+      - name: Increment Build Number
+        id: build
+        run: |
+          projectFile=$(find $(pwd) -type f -name "*.pbxproj" | head -n 1)
+          CURRENT_BUILD=$(grep -o 'CURRENT_PROJECT_VERSION = [0-9]\+' "$projectFile" | head -n 1 | grep -o '[0-9]\+')
+          NEW_BUILD=$((CURRENT_BUILD + 1))
+          
+          # Update all build numbers
+          sed -i '' -E "s/CURRENT_PROJECT_VERSION = [0-9]+/CURRENT_PROJECT_VERSION = $NEW_BUILD/g" "$projectFile"
+          
+          echo "build=$NEW_BUILD" >> $GITHUB_OUTPUT
+          echo "➕ Build Number: $CURRENT_BUILD → $NEW_BUILD" >> $GITHUB_STEP_SUMMARY
+
+      - name: Create Version Tag
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          # Add changes
+          git add Lumi.xcodeproj/project.pbxproj
+          
+          # Commit with conventional commit format
+          git commit -m "chore: bump version to v${{ steps.version.outputs.version }}"
+          
+          # Create and push tag
+          git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}"
+          git push
+          git push origin "v${{ steps.version.outputs.version }}"
+
+      - name: Generate Release Notes
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          
+          if [ -n "$PREV_TAG" ]; then
+            echo "## 🚀 What's Changed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            git log ${PREV_TAG}..HEAD --pretty=format:"- %s" >> $GITHUB_STEP_SUMMARY
+          fi

@@ -8,42 +8,93 @@
 
 /* Begin PBXBuildFile section */
 		0B0073C22F2F1ABF001B3789 /* MagicKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B0073C12F2F1ABF001B3789 /* MagicKit */; };
-		0B7243C02F2F1C7F00A88472 /* MagicKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B7243BF2F2F1C7F00A88472 /* MagicKit */; };
+		0B2F7D682F3A301D00AD7E94 /* LumiFinder.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
+		F5674BB02F3ACE7500A237DD /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = F5674BAF2F3ACE7500A237DD /* Localizable.xcstrings */; };
+		F5826C862F35731C0079B285 /* MagicKit in Frameworks */ = {isa = PBXBuildFile; productRef = F5826C852F35731C0079B285 /* MagicKit */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		0B2F7D662F3A301D00AD7E94 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F54F8C762F1A3B6500AABB2A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0B2F7D602F3A301C00AD7E94;
+			remoteInfo = LumiFinder;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		0B11F83D2F3A156D00B9B857 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				0B2F7D682F3A301D00AD7E94 /* LumiFinder.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
-		0BC0A5632F2F365C00BFB262 /* Lumi-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Lumi-Info.plist"; sourceTree = "<group>"; };
+		0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LumiFinder.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F53C3ECB2F1A3CB000929321 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		F53C3ECD2F1A3CB000929321 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		F53C49142F1A42EC00929321 /* Lumi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumi.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F5674BAF2F3ACE7500A237DD /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		0B2F7D692F3A301D00AD7E94 /* Exceptions for "LumiFinder" folder in "LumiFinder" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 0B2F7D602F3A301C00AD7E94 /* LumiFinder */;
+		};
+		F5F4E1E82F3ACC6600C76EA0 /* Exceptions for "LumiApp" folder in "Lumi" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"Lumi-Info.plist",
+			);
+			target = F54F8C7D2F1A3B6500AABB2A /* Lumi */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		0B559FC52F1A6A52005C6809 /* Plugins */ = {
+		0B2F7D622F3A301C00AD7E94 /* LumiFinder */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Plugins;
+			exceptions = (
+				0B2F7D692F3A301D00AD7E94 /* Exceptions for "LumiFinder" folder in "LumiFinder" target */,
+			);
+			path = LumiFinder;
 			sourceTree = "<group>";
 		};
-		0B55A3422F1B1AF2005C6809 /* AppStore */ = {
+		F5F4DFD42F3ACC5100C76EA0 /* LumiApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = AppStore;
-			sourceTree = "<group>";
-		};
-		F54F8C802F1A3B6500AABB2A /* Core */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Core;
+			exceptions = (
+				F5F4E1E82F3ACC6600C76EA0 /* Exceptions for "LumiApp" folder in "Lumi" target */,
+			);
+			path = LumiApp;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		0B2F7D5E2F3A301C00AD7E94 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F54F8C7B2F1A3B6500AABB2A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0B7243C02F2F1C7F00A88472 /* MagicKit in Frameworks */,
+				F5826C862F35731C0079B285 /* MagicKit in Frameworks */,
 				F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */,
 				0B0073C22F2F1ABF001B3789 /* MagicKit in Frameworks */,
 			);
@@ -55,19 +106,48 @@
 		F54F8C752F1A3B6500AABB2A = {
 			isa = PBXGroup;
 			children = (
-				0BC0A5632F2F365C00BFB262 /* Lumi-Info.plist */,
-				F53C3ECD2F1A3CB000929321 /* App.entitlements */,
-				0B55A3422F1B1AF2005C6809 /* AppStore */,
+				F5674BAF2F3ACE7500A237DD /* Localizable.xcstrings */,
 				F53C3ECB2F1A3CB000929321 /* Assets.xcassets */,
-				F54F8C802F1A3B6500AABB2A /* Core */,
-				0B559FC52F1A6A52005C6809 /* Plugins */,
+				F5F4DFD42F3ACC5100C76EA0 /* LumiApp */,
+				0B2F7D622F3A301C00AD7E94 /* LumiFinder */,
 				F53C49142F1A42EC00929321 /* Lumi.app */,
+				0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */,
+				F5F4DFC92F3ABECF00C76EA0 /* Frameworks */,
 			);
+			sourceTree = "<group>";
+		};
+		F5F4DFC92F3ABECF00C76EA0 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		0B2F7D602F3A301C00AD7E94 /* LumiFinder */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0B2F7D6A2F3A301D00AD7E94 /* Build configuration list for PBXNativeTarget "LumiFinder" */;
+			buildPhases = (
+				0B2F7D5D2F3A301C00AD7E94 /* Sources */,
+				0B2F7D5E2F3A301C00AD7E94 /* Frameworks */,
+				0B2F7D5F2F3A301C00AD7E94 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				0B2F7D622F3A301C00AD7E94 /* LumiFinder */,
+			);
+			name = LumiFinder;
+			packageProductDependencies = (
+			);
+			productName = LumiFinder;
+			productReference = 0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		F54F8C7D2F1A3B6500AABB2A /* Lumi */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = F54F8C8A2F1A3B6600AABB2A /* Build configuration list for PBXNativeTarget "Lumi" */;
@@ -75,21 +155,21 @@
 				F54F8C7A2F1A3B6500AABB2A /* Sources */,
 				F54F8C7B2F1A3B6500AABB2A /* Frameworks */,
 				F54F8C7C2F1A3B6500AABB2A /* Resources */,
+				0B11F83D2F3A156D00B9B857 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				0B2F7D672F3A301D00AD7E94 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				0B559FC52F1A6A52005C6809 /* Plugins */,
-				0B55A3422F1B1AF2005C6809 /* AppStore */,
-				F54F8C802F1A3B6500AABB2A /* Core */,
+				F5F4DFD42F3ACC5100C76EA0 /* LumiApp */,
 			);
 			name = Lumi;
 			packageProductDependencies = (
 				F53C41592F1A3E6500929321 /* Sparkle */,
 				0B0073C12F2F1ABF001B3789 /* MagicKit */,
-				0B7243BF2F2F1C7F00A88472 /* MagicKit */,
+				F5826C852F35731C0079B285 /* MagicKit */,
 			);
 			productName = "SwiftUI-Template";
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -102,9 +182,12 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1640;
+				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
+					0B2F7D602F3A301C00AD7E94 = {
+						CreatedOnToolsVersion = 26.2;
+					};
 					F54F8C7D2F1A3B6500AABB2A = {
 						CreatedOnToolsVersion = 16.4;
 					};
@@ -116,12 +199,14 @@
 			knownRegions = (
 				en,
 				Base,
+				"zh-Hans",
+				"zh-HK",
 			);
 			mainGroup = F54F8C752F1A3B6500AABB2A;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				F53C41582F1A3E6500929321 /* XCRemoteSwiftPackageReference "Sparkle" */,
-				0B7243BE2F2F1C7F00A88472 /* XCRemoteSwiftPackageReference "MagicKit" */,
+				F5826C842F35731C0079B285 /* XCRemoteSwiftPackageReference "MagicKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -129,15 +214,24 @@
 			projectRoot = "";
 			targets = (
 				F54F8C7D2F1A3B6500AABB2A /* Lumi */,
+				0B2F7D602F3A301C00AD7E94 /* LumiFinder */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		0B2F7D5F2F3A301C00AD7E94 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F54F8C7C2F1A3B6500AABB2A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F5674BB02F3ACE7500A237DD /* Localizable.xcstrings in Resources */,
 				F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -145,6 +239,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		0B2F7D5D2F3A301C00AD7E94 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F54F8C7A2F1A3B6500AABB2A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -154,7 +255,81 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		0B2F7D672F3A301D00AD7E94 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0B2F7D602F3A301C00AD7E94 /* LumiFinder */;
+			targetProxy = 0B2F7D662F3A301D00AD7E94 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		0B2F7D6B2F3A301D00AD7E94 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 9;
+				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = LumiFinder/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = LumiFinder;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0.8;
+				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.LumiFinder;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		0B2F7D6C2F3A301D00AD7E94 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 9;
+				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = LumiFinder/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = LumiFinder;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0.8;
+				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.LumiFinder;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		F54F8C882F1A3B6600AABB2A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -217,6 +392,7 @@
 				SDKROOT = macosx;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
@@ -276,6 +452,7 @@
 				SDKROOT = macosx;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 			};
 			name = Release;
 		};
@@ -284,8 +461,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = App.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_ENTITLEMENTS = LumiApp/App.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 18;
@@ -307,7 +484,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "Lumi-Info.plist";
+				INFOPLIST_FILE = "LumiApp/Lumi-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Lumi;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_SUEnableInstallerLauncherService = YES;
@@ -321,7 +498,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
@@ -330,8 +507,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = App.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_ENTITLEMENTS = LumiApp/App.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 18;
@@ -353,7 +530,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "Lumi-Info.plist";
+				INFOPLIST_FILE = "LumiApp/Lumi-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Lumi;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_SUEnableInstallerLauncherService = YES;
@@ -367,13 +544,22 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		0B2F7D6A2F3A301D00AD7E94 /* Build configuration list for PBXNativeTarget "LumiFinder" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0B2F7D6B2F3A301D00AD7E94 /* Debug */,
+				0B2F7D6C2F3A301D00AD7E94 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		F54F8C792F1A3B6500AABB2A /* Build configuration list for PBXProject "Lumi" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -395,20 +581,20 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		0B7243BE2F2F1C7F00A88472 /* XCRemoteSwiftPackageReference "MagicKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/nookery/MagicKit";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.5.15;
-			};
-		};
 		F53C41582F1A3E6500929321 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sparkle-project/Sparkle";
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 2.8.1;
+			};
+		};
+		F5826C842F35731C0079B285 /* XCRemoteSwiftPackageReference "MagicKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/CofficLab/MagicKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.5.22;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -418,15 +604,15 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = MagicKit;
 		};
-		0B7243BF2F2F1C7F00A88472 /* MagicKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0B7243BE2F2F1C7F00A88472 /* XCRemoteSwiftPackageReference "MagicKit" */;
-			productName = MagicKit;
-		};
 		F53C41592F1A3E6500929321 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F53C41582F1A3E6500929321 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		F5826C852F35731C0079B285 /* MagicKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F5826C842F35731C0079B285 /* XCRemoteSwiftPackageReference "MagicKit" */;
+			productName = MagicKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -3,33 +3,42 @@
 # calculate-version.sh - Calculate the next semantic version
 #
 # This script calculates the next version number based on the
-# increment type determined by bump-version.sh
+# increment type determined by bump-version.sh and updates
+# the Xcode project file.
 #
-# Usage: ./calculate-version.sh
+# Usage: ./.github/scripts/calculate-version.sh
 # Output: <version> (e.g., 1.2.3)
 #
 
 set -euo pipefail
 
-# Get the directory of the current script
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Get the increment type (major, minor, or patch)
-INCREMENT_TYPE=$("${SCRIPT_DIR}/bump-version.sh")
+INCREMENT_TYPE=$("$SCRIPT_DIR/bump-version.sh")
 
-# Get the last tag starting with 'v'
-LAST_TAG=$(git describe --tags --match "v*" --abbrev=0 2>/dev/null || echo "v0.0.0")
+# Find the Xcode project file (exclude .build directory)
+PROJECT_FILE=$(find $(pwd) -type f -name "*.pbxproj" -not -path "*/.build/*" | head -n 1)
 
-# Strip 'v' prefix if present
-LAST_TAG="${LAST_TAG#v}"
+if [ -z "$PROJECT_FILE" ]; then
+  echo "Error: Cannot find .pbxproj file" >&2
+  exit 1
+fi
+
+# Get current version from MARKETING_VERSION (use main app version)
+CURRENT_VERSION=$(grep -o 'MARKETING_VERSION = [^"]*' "$PROJECT_FILE" | head -n 1 | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' || echo "1.0.0")
+
+if [ -z "$CURRENT_VERSION" ]; then
+  echo "Error: Cannot find MARKETING_VERSION in project file" >&2
+  exit 1
+fi
+
+echo "📦 Current Version: $CURRENT_VERSION" >&2
+echo "📊 Increment Type: $INCREMENT_TYPE" >&2
 
 # Parse the version components
-IFS='.' read -r MAJOR MINOR PATCH <<< "$LAST_TAG"
-
-# Handle case where version parsing failed or returned empty
-MAJOR=${MAJOR:-0}
-MINOR=${MINOR:-0}
-PATCH=${PATCH:-0}
+IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
 
 # Calculate new version based on increment type
 case $INCREMENT_TYPE in
@@ -51,4 +60,26 @@ case $INCREMENT_TYPE in
     ;;
 esac
 
+echo "🆕 New Version: $NEW_VERSION" >&2
+
+# Update ALL MARKETING_VERSION entries in the Xcode project file
+# This ensures both main app and widget extension are updated
+# Matches both x.y and x.y.z version formats
+sed -i '' -E "s/MARKETING_VERSION = [0-9]+\.[0-9]+(\.[0-9]+)?/MARKETING_VERSION = $NEW_VERSION/g" "$PROJECT_FILE"
+
+# Verify the update - check all occurrences
+VERSION_COUNT=$(grep -c "MARKETING_VERSION = $NEW_VERSION" "$PROJECT_FILE")
+echo "✅ Updated $VERSION_COUNT version entries in project file" >&2
+
+# Verify at least one entry was updated
+UPDATED_VERSION=$(grep -o 'MARKETING_VERSION = [^"]*' "$PROJECT_FILE" | head -n 1 | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')
+
+if [ "$UPDATED_VERSION" != "$NEW_VERSION" ]; then
+  echo "Error: Failed to update version in project file" >&2
+  exit 1
+fi
+
+echo "✅ All versions updated successfully" >&2
+
+# Output the new version
 echo "$NEW_VERSION"
