@@ -5,6 +5,11 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Specific version (e.g., 1.2.3)'
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -17,18 +22,22 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Calculate New Version
+      - name: Calculate Version
         id: version
         run: |
           chmod +x .github/scripts/calculate-version.sh
           chmod +x .github/scripts/bump-version.sh
           
-          NEW_VERSION=$(./.github/scripts/calculate-version.sh)
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            NEW_VERSION="${{ github.event.inputs.version }}"
+          else
+            NEW_VERSION=$(./.github/scripts/calculate-version.sh)
+          fi
           
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "📦 New Version: $NEW_VERSION" >> $GITHUB_STEP_SUMMARY
 
-      - name: Increment Build Number
+      - name: Update Build Number
         id: build
         run: |
           projectFile=$(find $(pwd) -type f -name "*.pbxproj" | head -n 1)
@@ -41,28 +50,16 @@ jobs:
           echo "build=$NEW_BUILD" >> $GITHUB_OUTPUT
           echo "➕ Build Number: $CURRENT_BUILD → $NEW_BUILD" >> $GITHUB_STEP_SUMMARY
 
-      - name: Create Version Tag
+      - name: Commit Changes
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           
-          # Add changes
           git add Lumi.xcodeproj/project.pbxproj
-          
-          # Commit with conventional commit format
-          git commit -m "chore: bump version to v${{ steps.version.outputs.version }}"
-          
-          # Create and push tag
+          git commit -m "chore: bump version to v${{ steps.version.outputs.version }} (build ${{ steps.build.outputs.build }})"
+
+      - name: Create Tag
+        run: |
           git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}"
           git push
           git push origin "v${{ steps.version.outputs.version }}"
-
-      - name: Generate Release Notes
-        run: |
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          
-          if [ -n "$PREV_TAG" ]; then
-            echo "## 🚀 What's Changed" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            git log ${PREV_TAG}..HEAD --pretty=format:"- %s" >> $GITHUB_STEP_SUMMARY
-          fi
