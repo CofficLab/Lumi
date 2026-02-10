@@ -244,7 +244,20 @@
       }
     },
     "%lld images" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 张图片"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 張圖片"
+          }
+        }
+      }
     },
     "%lld items" : {
       "localizations" : {
@@ -375,16 +388,68 @@
       }
     },
     "A simple and efficient assistant app" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一个简单高效的助手应用"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一個簡單高效的助手應用"
+          }
+        }
+      }
     },
     "About" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关于"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關於"
+          }
+        }
+      }
     },
     "Accessibility permission is required to detect text selection" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要辅助功能权限以检测文本选择"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要輔助功能權限以檢測文本選擇"
+          }
+        }
+      }
     },
     "Active Only" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅活跃"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "僅活躍"
+          }
+        }
+      }
     },
     "Add" : {
       "localizations" : {
@@ -419,7 +484,20 @@
       }
     },
     "Add Host Entry" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加 Host 记录"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增 Host 記錄"
+          }
+        }
+      }
     },
     "Add New Rule" : {
       "localizations" : {
@@ -486,10 +564,36 @@
       }
     },
     "All" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部"
+          }
+        }
+      }
     },
     "All data is stored locally and will not be uploaded to any server." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有数据均存储在本地，不会上传到任何服务器。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有資料均存儲在本地，不會上傳到任何伺服器。"
+          }
+        }
+      }
     },
     "All Statuses (%lld)" : {
       "localizations" : {
@@ -508,7 +612,20 @@
       }
     },
     "An error occurred" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发生错误"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "發生錯誤"
+          }
+        }
+      }
     },
     "Anthropic (Claude)" : {
       "localizations" : {
@@ -543,7 +660,20 @@
       }
     },
     "App" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "應用"
+          }
+        }
+      }
     },
     "App Manager" : {
       "localizations" : {
@@ -594,7 +724,20 @@
       }
     },
     "Are you sure you want to delete image %@? This action cannot be undone." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定要删除镜像 %@ 吗？此操作无法撤销。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確定要刪除映像檔 %@ 嗎？此操作無法復原。"
+          }
+        }
+      }
     },
     "Are you sure you want to delete the selected build artifacts (node_modules, target, etc)?\nThis will free up space but require rebuilding projects." : {
       "localizations" : {
@@ -746,23 +889,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cask"
-          }
-        }
-      }
-    },
-    "Changes require the Finder extension to be enabled in System Settings." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更改需要在系统设置中启用 Finder 扩展。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更改需要在系統設定中啟用 Finder 擴充功能。"
           }
         }
       }
@@ -1212,6 +1338,9 @@
     "Enable Clipboard Monitoring" : {
 
     },
+    "Enable Finder Extension" : {
+
+    },
     "Enable Text Selection Menu" : {
 
     },
@@ -1620,23 +1749,6 @@
     },
     "Lumi uses the Sparkle framework for automatic updates. When a new version is available, the app will automatically prompt you to update." : {
 
-    },
-    "Lumi 使用 Sparkle 框架进行自动更新。当有新版本可用时，应用会自动提示您更新。" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi 使用 Sparkle 框架进行自动更新。当有新版本可用时，应用会自动提示您更新。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi 使用 Sparkle 框架进行自动更新。當有新版本可用時，應用會自动提示您更新。"
-          }
-        }
-      }
     },
     "Macintosh HD" : {
       "localizations" : {
@@ -2716,6 +2828,9 @@
         }
       }
     },
+    "System Settings → Privacy & Security → Extensions → Added Extensions" : {
+
+    },
     "Tab Information" : {
 
     },
@@ -2737,6 +2852,9 @@
           }
         }
       }
+    },
+    "The right-click menu functionality requires the Finder extension to be enabled in System Settings." : {
+
     },
     "This action will force terminate the process, which may lead to data loss." : {
 
@@ -2996,23 +3114,6 @@
     "Xcode Cleaner" : {
 
     },
-    "Xcode 清理" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Xcode 清理"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Xcode 清理"
-          }
-        }
-      }
-    },
     "Your Xcode environment is clean!" : {
 
     },
@@ -3064,23 +3165,6 @@
         }
       }
     },
-    "关于" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "关于"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
-          }
-        }
-      }
-    },
     "加载中…" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3109,46 +3193,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "載入產品"
-          }
-        }
-      }
-    },
-    "右键菜单功能需要在系统设置中启用 Finder 扩展后才能使用。" : {
-
-    },
-    "启动选项" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启动选项"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟動選項"
-          }
-        }
-      }
-    },
-    "启用 Finder 扩展" : {
-
-    },
-    "启用划词菜单" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用划词菜单"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用划词選單"
           }
         }
       }
@@ -3233,40 +3277,6 @@
         }
       }
     },
-    "开机启动" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "开机启动"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "開机啟動"
-          }
-        }
-      }
-    },
-    "当前版本是最新稳定版本" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前版本是最新稳定版本"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "目前版本是最新稳定版本"
-          }
-        }
-      }
-    },
     "当插件标记为可配置时，会在此处显示" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3283,23 +3293,6 @@
         }
       }
     },
-    "总计: %@" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "总计: %@"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "總計: %@"
-          }
-        }
-      }
-    },
     "恢复购买" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3312,23 +3305,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "還原購買"
-          }
-        }
-      }
-    },
-    "您的 Xcode 环境非常干净！" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "您的 Xcode 环境非常干净！"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "您的 Xcode 环境非常干净！"
           }
         }
       }
@@ -3398,6 +3374,7 @@
       }
     },
     "打开系统设置" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3409,23 +3386,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "打開系統設定"
-          }
-        }
-      }
-    },
-    "扫描中..." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "扫描中..."
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "掃描中..."
           }
         }
       }
@@ -3474,23 +3434,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "外掛管理..."
-          }
-        }
-      }
-    },
-    "支持的操作" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支持的操作"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支援的操作"
           }
         }
       }
@@ -3571,23 +3514,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "更新訂閱狀態"
-          }
-        }
-      }
-    },
-    "未发现可清理项目" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未发现可清理项目"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未发现可清理項目"
           }
         }
       }
@@ -3688,43 +3614,6 @@
         }
       }
     },
-    "立即清理" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "立即清理"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "立即清理"
-          }
-        }
-      }
-    },
-    "简洁高效的助理软件" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "简洁高效的助理软件"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "简洁高效的助理軟件"
-          }
-        }
-      }
-    },
-    "系统设置 → 隐私与安全性 → 扩展 → 添加的扩展" : {
-
-    },
     "自动获取专辑封面" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3821,23 +3710,6 @@
         }
       }
     },
-    "选中: %@" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选中: %@"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已選取: %@"
-          }
-        }
-      }
-    },
     "选择标签" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3850,40 +3722,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "選擇標籤"
-          }
-        }
-      }
-    },
-    "通用" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通用"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一般"
-          }
-        }
-      }
-    },
-    "通用设置" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通用设置"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一般設定"
           }
         }
       }
@@ -3904,23 +3742,6 @@
         }
       }
     },
-    "释放磁盘空间，清理过时的构建文件和支持文件" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "释放磁盘空间，清理过时的构建文件和支持文件"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "釋放磁碟空間，清理过時的建構檔案和支援檔案"
-          }
-        }
-      }
-    },
     "重启应用才能完全生效" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3937,23 +3758,6 @@
         }
       }
     },
-    "重新扫描" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新扫描"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新掃描"
-          }
-        }
-      }
-    },
     "隐私政策" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3966,23 +3770,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "隱私政策"
-          }
-        }
-      }
-    },
-    "需要辅助功能权限才能检测文本选择" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "需要辅助功能权限才能检测文本选择"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "需要辅助功能權限才能检测文本選擇"
           }
         }
       }

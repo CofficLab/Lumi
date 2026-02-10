@@ -145,6 +145,12 @@ class FinderSync: FIFinderSync, SuperLog {
                 if showIcons {
                     hideItem.image = NSImage(systemSymbolName: "eye.slash", accessibilityDescription: "Hide")
                 }
+
+            case .showHiddenFiles:
+                let showHiddenFilesItem = menu.addItem(withTitle: item.customTitle ?? "显示隐藏文件", action: #selector(showHiddenFiles(_:)), keyEquivalent: "")
+                if showIcons {
+                    showHiddenFilesItem.image = NSImage(systemSymbolName: "eye", accessibilityDescription: "Show Hidden")
+                }
             }
         }
 
@@ -306,6 +312,45 @@ class FinderSync: FIFinderSync, SuperLog {
                 if Self.verbose {
                     os_log("\(Self.t)隐藏失败: \(url.path)，错误: \(error.localizedDescription)")
                 }
+            }
+        }
+    }
+
+    @IBAction func showHiddenFiles(_ sender: AnyObject?) {
+        if Self.verbose {
+            os_log("\(Self.t)触发「显示隐藏文件」操作")
+        }
+        guard let currentDir = getCurrentDirectoryURL() else {
+            if Self.verbose {
+                os_log("\(Self.t)未获取到当前目录")
+            }
+            return
+        }
+
+        // 使用 AppleScript 来显示隐藏文件
+        let script = """
+        tell application "Finder"
+            if (count of windows) > 0 then
+                set folderPath to "\(currentDir.path)" as alias
+                set every file of folderPath whose name starts with "." to visible
+            end if
+        end tell
+        """
+
+        if Self.verbose {
+            os_log("\(Self.t)执行 AppleScript 显示隐藏文件")
+        }
+
+        var error: NSDictionary?
+        NSAppleScript(source: script)?.executeAndReturnError(&error)
+
+        if let error = error {
+            if Self.verbose {
+                os_log("\(Self.t)执行 AppleScript 失败: \(error)")
+            }
+        } else {
+            if Self.verbose {
+                os_log("\(Self.t)成功显示隐藏文件")
             }
         }
     }
