@@ -12,12 +12,12 @@ permissions:
 env:
   # 基础环境变量
   SCHEME: Lumi
-  REPO_LINK: "https://github.com/CofficLab/Lumi"
-  DESTINATION: "generic/platform=macOS"
-  ENTITLEMENTS_PATH: "LumiApp/App.entitlements"
-  ArchivePath: "./my-app"
-  BuildPath: "./temp"
-  
+  REPO_LINK: 'https://github.com/CofficLab/Lumi'
+  DESTINATION: 'generic/platform=macOS'
+  ENTITLEMENTS_PATH: 'LumiApp/App.entitlements'
+  ArchivePath: './my-app'
+  BuildPath: './temp'
+
   # Secrets
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
@@ -40,7 +40,7 @@ jobs:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: "latest-stable"
+          xcode-version: 'latest-stable'
 
       # =================================================================================================
       # 1. 版本计算与项目更新
@@ -83,27 +83,28 @@ jobs:
           # 更新 CURRENT_PROJECT_VERSION
           agvtool next-version -all 2>/dev/null || true
           NEW_BUILD_VERSION=$(xcodebuild -project ${{ env.SCHEME }}.xcodeproj -showBuildSettings 2>/dev/null | grep "CURRENT_PROJECT_VERSION" | awk '{print $3}')
-          
+
           # 强制使用 sed 同步所有 target 的 CURRENT_PROJECT_VERSION
           sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*/CURRENT_PROJECT_VERSION = $NEW_BUILD_VERSION/" Lumi.xcodeproj/project.pbxproj
-          
+
           echo "Updated Build Version: $NEW_BUILD_VERSION"
 
       - name: Determine Tag and Prerelease Status
         run: |
           BUILD_VERSION=$(xcodebuild -project ${{ env.SCHEME }}.xcodeproj -showBuildSettings 2>/dev/null | grep "CURRENT_PROJECT_VERSION" | awk '{print $3}')
-          
+
           if [[ "${{ github.ref }}" == "refs/heads/pre" ]]; then
-            echo "tag=p${{ env.new_version }}($BUILD_VERSION)" >> $GITHUB_ENV
+            TAG_NAME="p${{ env.new_version }}($BUILD_VERSION)"
             echo "IS_PRERELEASE=true" >> $GITHUB_ENV
             echo "## 🏷️ Tag Info (Pre-release)" >> $GITHUB_STEP_SUMMARY
           else
-            echo "tag=v${{ env.new_version }}" >> $GITHUB_ENV
+            TAG_NAME="v${{ env.new_version }}"
             echo "IS_PRERELEASE=false" >> $GITHUB_ENV
             echo "## 🏷️ Tag Info (Release)" >> $GITHUB_STEP_SUMMARY
           fi
-          
-          echo "- **Tag**: \`${{ env.tag }}\`" >> $GITHUB_STEP_SUMMARY
+
+          echo "tag=$TAG_NAME" >> $GITHUB_ENV
+          echo "- **Tag**: \`$TAG_NAME\`" >> $GITHUB_STEP_SUMMARY
 
       # =================================================================================================
       # 2. 构建与签名
@@ -134,10 +135,10 @@ jobs:
         run: |
           # 从 xcarchive 中提取 App (使用 ditto 保持符号链接和元数据)
           ditto "./temp/${{ env.SCHEME }}.xcarchive/Products/Applications/${{ env.SCHEME }}.app" "./temp/${{ env.SCHEME }}.app"
-          
+
           APP_PATH="./temp/${{ env.SCHEME }}.app"
           IDENTITY="${{ steps.signing.outputs.signing_identity }}"
-          
+
           # 使用脚本进行深度签名
           chmod +x .github/scripts/sign_app.sh
           .github/scripts/sign_app.sh "$APP_PATH" "$IDENTITY" "${{ env.ENTITLEMENTS_PATH }}"
@@ -148,16 +149,16 @@ jobs:
           mkdir -p "$STAGING_DIR"
           # 使用 ditto 替代 cp -r 以完整保留 Bundle 结构、符号链接和元数据
           ditto "./temp/${{ env.SCHEME }}.app" "$STAGING_DIR/${{ env.SCHEME }}.app"
-          
+
           # 创建 Applications 软链接
           ln -s /Applications "$STAGING_DIR/Applications"
-          
+
           # 验证软链接是否存在
           echo "Checking Staging Dir:"
           ls -la "$STAGING_DIR"
-          
+
           VOL_NAME="${{ env.SCHEME }}"
-          DMG_NAME="./temp/${{ env.SCHEME }}.dmg"
+          DMG_NAME="./temp/${{ env.SCHEME }}_${{ env.new_version }}.dmg"
           
           hdiutil create -volname "$VOL_NAME" -srcfolder "$STAGING_DIR" -ov -format UDZO "$DMG_NAME"
 
@@ -165,7 +166,7 @@ jobs:
         run: |
           file=$(find ./temp -name "*.dmg" -type f | head -n 1)
           if [ -z "$file" ]; then echo "DMG not found"; exit 1; fi
-          
+
           # Run submit and capture output
           set +e
           xcrun notarytool submit "$file" \
@@ -174,11 +175,11 @@ jobs:
             --issuer ${{ env.APP_STORE_CONNECT_KEY_ISSUER_ID }} \
             --wait \
             --timeout 10m > notary_result.txt 2>&1
-          
+
           EXIT_CODE=$?
           # Output result for debugging
           cat notary_result.txt
-          
+
           if [ $EXIT_CODE -ne 0 ] || grep -q "status: Invalid" notary_result.txt; then
              echo "❌ Notarization failed. Retrieving logs..."
              # Extract ID from the output file
@@ -193,7 +194,7 @@ jobs:
              exit 1
           fi
           set -e
-          
+
           stapler staple "$file"
 
       - name: Validate Notarization
@@ -220,7 +221,7 @@ jobs:
           # 解决依赖以获取 Sparkle 工具
           xcodebuild -resolvePackageDependencies
           SPARKLE_BIN=$(ls -d ~/Library/Developer/Xcode/DerivedData/${{ env.SCHEME }}*/SourcePackages/artifacts/sparkle/Sparkle/bin | head -n 1)
-          
+
           if [ -d "$SPARKLE_BIN" ]; then
             cd "$SPARKLE_BIN"
             echo "${{ env.SPARKLE_PRIVATE_KEY }}" | ./generate_appcast --ed-key-file - ${{ github.workspace }}/updates
@@ -273,12 +274,12 @@ jobs:
         if: success()
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: "ci: bump to ${{ env.new_version }}"
+          commit_message: 'ci: bump to ${{ env.new_version }}'
           commit_user_name: GitHub Action
           tagging_message: ${{ env.tag }}
-          push_options: "--tags"
+          push_options: '--follow-tags'
           # 仅提交项目文件和appcast
-          file_pattern: "Lumi.xcodeproj/project.pbxproj appcast.xml"
+          file_pattern: 'Lumi.xcodeproj/project.pbxproj appcast.xml'
 
       # =================================================================================================
       # 5. 发布 Release
