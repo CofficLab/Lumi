@@ -84,21 +84,36 @@ jobs:
           echo "- **MARKETING_VERSION**: \`$MARKETING_VERSION\`" >> $GITHUB_STEP_SUMMARY
           echo "- **CURRENT_PROJECT_VERSION**: \`$CURRENT_VERSION\`" >> $GITHUB_STEP_SUMMARY
 
-          # 使用原生 xcodebuild 命令构建
+          # 使用原生 xcodebuild 命令构建，使用 Ad-hoc 签名以绕过 Profile 检查
           xcodebuild build \
             -scheme ${{ env.SCHEME }} \
             -arch arm64 \
             -configuration Release \
             -derivedDataPath ./temp/arm64 \
             CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="${{ steps.signing.outputs.signing_identity }}" \
+            CODE_SIGN_IDENTITY="-" \
             DEVELOPMENT_TEAM="${{ steps.signing.outputs.team_id }}" \
-            PROVISIONING_PROFILE_SPECIFIER=""
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            CODE_SIGNING_REQUIRED=NO
 
       - name: Codesign App
         run: |
-          # 手动签名
-          codesign --force --verbose --sign "${{ steps.signing.outputs.signing_identity }}" --deep --options runtime ./temp/arm64/Build/Products/Release/${{ env.SCHEME }}.app
+          APP_PATH="./temp/arm64/Build/Products/Release/${{ env.SCHEME }}.app"
+          IDENTITY="${{ steps.signing.outputs.signing_identity }}"
+          
+          echo "Signing Extensions..."
+          if [ -d "$APP_PATH/Contents/PlugIns" ]; then
+            find "$APP_PATH/Contents/PlugIns" -name "*.appex" -exec codesign --force --verbose --sign "$IDENTITY" --options runtime {} \;
+          fi
+          
+          echo "Signing Frameworks..."
+          if [ -d "$APP_PATH/Contents/Frameworks" ]; then
+             find "$APP_PATH/Contents/Frameworks" -type f -name "*.framework" -exec codesign --force --verbose --sign "$IDENTITY" --options runtime {} \; || true
+             find "$APP_PATH/Contents/Frameworks" -type f -name "*.dylib" -exec codesign --force --verbose --sign "$IDENTITY" --options runtime {} \; || true
+          fi
+
+          echo "Signing Main App..."
+          codesign --force --verbose --sign "$IDENTITY" --options runtime --entitlements LumiApp/App.entitlements "$APP_PATH"
 
       - name: Create DMG
         run: |
