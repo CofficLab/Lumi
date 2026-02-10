@@ -6,7 +6,7 @@ struct RClickSettingsView: View {
 
     var body: some View {
         Form {
-            // MARK: - Finder Extension 启用引导
+            // MARK: - Finder Extension Setup Guide
 
             Section {
                 VStack(spacing: 12) {
@@ -16,9 +16,9 @@ struct RClickSettingsView: View {
                             .foregroundStyle(.blue)
 
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("启用 Finder 扩展")
+                            Text("Enable Finder Extension")
                                 .font(.headline)
-                            Text("右键菜单功能需要在系统设置中启用 Finder 扩展后才能使用。")
+                            Text("The right-click menu functionality requires the Finder extension to be enabled in System Settings.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -30,13 +30,13 @@ struct RClickSettingsView: View {
                         Button {
                             openFinderExtensionSettings()
                         } label: {
-                            Label("打开系统设置", systemImage: "gear")
+                            Label("Open System Settings", systemImage: "gear")
                         }
                         .buttonStyle(.borderedProminent)
 
                         Spacer()
 
-                        Text("系统设置 → 隐私与安全性 → 扩展 → 添加的扩展")
+                        Text("System Settings → Privacy & Security → Extensions → Added Extensions")
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
                     }
@@ -130,7 +130,7 @@ struct RClickSettingsView: View {
     // MARK: - Private
 
     private func openFinderExtensionSettings() {
-        // macOS 13+ 使用新的系统设置 URL
+        // macOS 13+ use new System Settings URL
         if let url = URL(string: "x-apple.systempreferences:com.apple.ExtensionsPreferences") {
             NSWorkspace.shared.open(url)
         }

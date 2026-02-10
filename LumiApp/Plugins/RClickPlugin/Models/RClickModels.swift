@@ -7,9 +7,10 @@ public enum RClickActionType: String, Codable, CaseIterable, Identifiable, Senda
     case openInVSCode = "openInVSCode"
     case deleteFile = "deleteFile"
     case hideFile = "hideFile"
-    
+    case showHiddenFiles = "showHiddenFiles"
+
     public var id: String { rawValue }
-    
+
     public var title: String {
         switch self {
         case .newFile: return "New File"
@@ -18,9 +19,10 @@ public enum RClickActionType: String, Codable, CaseIterable, Identifiable, Senda
         case .openInVSCode: return "Open in VS Code"
         case .deleteFile: return "Delete File"
         case .hideFile: return "Hide File"
+        case .showHiddenFiles: return "Show Hidden Files"
         }
     }
-    
+
     public var iconName: String {
         switch self {
         case .newFile: return "doc.badge.plus"
@@ -29,6 +31,7 @@ public enum RClickActionType: String, Codable, CaseIterable, Identifiable, Senda
         case .openInVSCode: return "chevron.left.forwardslash.chevron.right"
         case .deleteFile: return "trash"
         case .hideFile: return "eye.slash"
+        case .showHiddenFiles: return "eye"
         }
     }
 }
@@ -78,7 +81,8 @@ public struct RClickConfig: Codable, Equatable, Sendable {
             RClickMenuItem(type: .copyPath),
             RClickMenuItem(type: .newFile),
             RClickMenuItem(type: .deleteFile, isEnabled: false),
-            RClickMenuItem(type: .hideFile, isEnabled: false)
+            RClickMenuItem(type: .hideFile, isEnabled: false),
+            RClickMenuItem(type: .showHiddenFiles, isEnabled: false)
         ],
         fileTemplates: [
             NewFileTemplate(name: "Text File", extensionName: "txt"),

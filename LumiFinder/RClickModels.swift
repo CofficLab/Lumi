@@ -10,6 +10,7 @@ enum RClickActionType: String, Codable {
     case openInVSCode = "openInVSCode"
     case deleteFile = "deleteFile"
     case hideFile = "hideFile"
+    case showHiddenFiles = "showHiddenFiles"
 }
 
 /// 右键菜单项配置
