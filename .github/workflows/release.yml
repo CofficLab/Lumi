@@ -235,17 +235,19 @@ jobs:
             if [ -n "$dmg_file" ]; then
               # 对文件名进行 URL 编码处理（简单处理空格）
               dmg_url_encoded=$(echo "$dmg_file" | sed 's/ /%20/g')
-              
-              DOWNLOAD_URL="${{ env.REPO_LINK }}/releases/latest/download/$dmg_url_encoded"
-              
-              # 替换 url 属性：查找 url="文件名" 并替换为 url="完整链接"
-              # 这里假设 generate_appcast 生成的是文件名作为 url
-              sed -i '' "s|url=\"$dmg_url_encoded\"|url=\"$DOWNLOAD_URL\"|g" "appcast.xml"
-              
+
+              # 构建正确的下载链接（使用具体 tag 而不是 latest，确保永久有效）
+              DOWNLOAD_URL="${{ env.REPO_LINK }}/releases/download/${{ env.tag }}/$dmg_url_encoded"
+
+              # 替换 enclosure 标签中的 url 属性，无论当前 URL 是什么
+              # 匹配 url="任意内容" 并替换为正确的链接
+              sed -i '' 's|url="[^"]*"|url="'"$DOWNLOAD_URL"'"|g' "appcast.xml"
+
               # 移动到根目录以便提交
               mv appcast.xml ../appcast.xml
-              
-              echo "Appcast updated with link: $DOWNLOAD_URL"
+
+              echo "✅ Appcast updated with link: $DOWNLOAD_URL"
+              echo "📝 Preview:"
               cat ../appcast.xml | head -n 20
             fi
           else
