@@ -29,37 +29,6 @@ final class AppProvider: ObservableObject {
     /// 活动状态文本
     @Published var activityStatus: String? = nil
 
-    // MARK: - SwiftData
-
-    /// SwiftData模型上下文
-    private let modelContext: ModelContext
-
-    // MARK: - 初始化
-
-    /// 初始化应用提供者
-    private init(modelContext: ModelContext? = nil) {
-        // 初始化SwiftData上下文
-        if let context = modelContext {
-            self.modelContext = context
-        } else {
-            // 使用共享容器中的上下文
-            self.modelContext = AppConfig.getContainer().mainContext
-        }
-
-        setupServices()
-    }
-
-    /// 设置应用服务
-    private func setupServices() {
-        // 初始化应用级别的服务
-        loadInitialData()
-    }
-
-    /// 加载初始数据
-    private func loadInitialData() {
-        // 加载应用启动时需要的数据
-    }
-
     // MARK: - 错误处理
 
     /// 显示错误信息
@@ -102,14 +71,6 @@ final class AppProvider: ObservableObject {
 
         let entries = pluginProvider.getNavigationEntries()
         return entries.first(where: { $0.id == selectedId })?.title ?? ""
-    }
-
-    // MARK: - 数据访问
-
-    /// 获取模型上下文
-    /// - Returns: SwiftData模型上下文
-    func getModelContext() -> ModelContext {
-        modelContext
     }
 }
 
