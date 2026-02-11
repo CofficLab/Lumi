@@ -177,18 +177,7 @@ struct ThemeOptionCard: View {
     }
 
     private var themeIcon: some View {
-        Group {
-            switch variant {
-            case .midnight:
-                Image(systemName: "moon.stars.fill")
-            case .aurora:
-                Image(systemName: "sparkles")
-            case .nebula:
-                Image(systemName: "cloud.moon.fill")
-            case .void:
-                Image(systemName: "circle.fill")
-            }
-        }
+        Image(systemName: variant.theme.iconName)
     }
 
     @ViewBuilder private var cardBackground: some View {
@@ -242,18 +231,7 @@ struct ThemeOptionButton: View {
     }
 
     private var themeIcon: some View {
-        Group {
-            switch variant {
-            case .midnight:
-                Image(systemName: "moon.stars.fill")
-            case .aurora:
-                Image(systemName: "sparkles")
-            case .nebula:
-                Image(systemName: "cloud.moon.fill")
-            case .void:
-                Image(systemName: "circle.fill")
-            }
-        }
+        Image(systemName: variant.theme.iconName)
     }
 }
 
@@ -296,7 +274,19 @@ struct PreviewCard: View {
 extension Themes.Variant {
     /// 所有主题变体
     static var allCases: [Themes.Variant] {
-        [.midnight, .aurora, .nebula, .void]
+        [
+            .midnight,
+            .aurora,
+            .nebula,
+            .void,
+            .spring,
+            .summer,
+            .autumn,
+            .winter,
+            .orchard,
+            .mountain,
+            .river
+        ]
     }
 
     // MARK: - 持久化
@@ -318,6 +308,13 @@ extension Themes.Variant {
         case "aurora": return .aurora
         case "nebula": return .nebula
         case "void": return .void
+        case "spring": return .spring
+        case "summer": return .summer
+        case "autumn": return .autumn
+        case "winter": return .winter
+        case "orchard": return .orchard
+        case "mountain": return .mountain
+        case "river": return .river
         default: return .midnight
         }
     }

@@ -12,6 +12,13 @@ enum Themes {
         case aurora     // 极光紫
         case nebula     // 星云粉
         case void       // 虚空深黑
+        case spring     // 春芽绿
+        case summer     // 盛夏蓝
+        case autumn     // 秋枫橙
+        case winter     // 霜冬白
+        case orchard    // 果园红
+        case mountain   // 山岚灰
+        case river      // 河流青
 
         /// 获取主题实例
         var theme: ThemeProtocol {
@@ -20,6 +27,13 @@ enum Themes {
             case .aurora: return AuroraTheme()
             case .nebula: return NebulaTheme()
             case .void: return VoidTheme()
+            case .spring: return SpringTheme()
+            case .summer: return SummerTheme()
+            case .autumn: return AutumnTheme()
+            case .winter: return WinterTheme()
+            case .orchard: return OrchardTheme()
+            case .mountain: return MountainTheme()
+            case .river: return RiverTheme()
             }
         }
 
@@ -260,7 +274,7 @@ class MystiqueThemeManager: ObservableObject {
 #Preview("主题变体") {
     ScrollView(.vertical) {
         VStack(spacing: DesignTokens.Spacing.lg) {
-            ForEach([Themes.Variant.midnight, .aurora, .nebula, .void], id: \.self) { variant in
+            ForEach(Themes.Variant.allCases, id: \.self) { variant in
                 MystiqueGlassCard {
                     HStack {
                         // 使用每个主题的特定颜色
@@ -319,5 +333,12 @@ private func variantName(for variant: Themes.Variant) -> String {
     case .aurora: return "极光紫"
     case .nebula: return "星云粉"
     case .void: return "虚空深黑"
+    case .spring: return "春芽绿"
+    case .summer: return "盛夏蓝"
+    case .autumn: return "秋枫橙"
+    case .winter: return "霜冬白"
+    case .orchard: return "果园红"
+    case .mountain: return "山岚灰"
+    case .river: return "河流青"
     }
 }
