@@ -142,20 +142,21 @@ struct CachePathRow: View {
     let path: CachePath
     let isSelected: Bool
     let toggleAction: () -> Void
-    
+
+    // 在 UI 层计算图标（避免在 Sendable 模型中存储 NSImage）
+    private var icon: NSImage {
+        NSWorkspace.shared.icon(forFile: path.path)
+    }
+
     var body: some View {
         HStack {
             Toggle("", isOn: Binding(get: { isSelected }, set: { _ in toggleAction() }))
                 .labelsHidden()
-            
-            if let icon = path.icon {
-                Image(nsImage: icon)
-                    .resizable()
-                    .frame(width: 24, height: 24)
-            } else {
-                Image(systemName: "doc")
-            }
-            
+
+            Image(nsImage: icon)
+                .resizable()
+                .frame(width: 24, height: 24)
+
             VStack(alignment: .leading) {
                 Text(path.name)
                     .lineLimit(1)
@@ -166,16 +167,16 @@ struct CachePathRow: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
-            
+
             Spacer()
-            
+
             Text(formatBytes(path.size))
                 .font(.monospacedDigit(.caption)())
                 .foregroundStyle(.secondary)
         }
         .padding(.vertical, 2)
     }
-    
+
     private func formatBytes(_ bytes: Int64) -> String {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useGB, .useMB, .useKB]

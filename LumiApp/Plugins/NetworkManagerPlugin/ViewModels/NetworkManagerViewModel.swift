@@ -74,7 +74,7 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
             .store(in: &cancellables)
     }
     
-    nonisolated deinit {
+    deinit {
         Task { @MainActor [weak self] in
             self?.timer?.invalidate()
             NetworkService.shared.stopMonitoring()

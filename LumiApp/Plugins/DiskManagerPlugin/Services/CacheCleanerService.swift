@@ -106,8 +106,7 @@ class CacheCleanerService: ObservableObject, SuperLog {
                         description: path,
                         size: info.size,
                         fileCount: info.count,
-                        canDelete: true,
-                        icon: NSWorkspace.shared.icon(forFile: path)
+                        canDelete: true
                     ))
                 }
             }
@@ -143,8 +142,7 @@ class CacheCleanerService: ObservableObject, SuperLog {
                     description: "App Cache",
                     size: info.size,
                     fileCount: info.count,
-                    canDelete: true,
-                    icon: NSWorkspace.shared.icon(forFile: content.path)
+                    canDelete: true
                 ))
             }
         }

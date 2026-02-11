@@ -1,6 +1,6 @@
 import Foundation
 
-struct RelatedFile: Identifiable, Hashable {
+struct RelatedFile: Identifiable, Hashable, Sendable {
     let id = UUID()
     let path: String
     let size: Int64

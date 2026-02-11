@@ -50,7 +50,9 @@ class NetworkService: SuperLog, ObservableObject {
             lastCheckTime = Date().timeIntervalSince1970
             
             monitoringTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-                self?.updateNetworkUsage()
+                Task { @MainActor in
+                    self?.updateNetworkUsage()
+                }
             }
         }
     }

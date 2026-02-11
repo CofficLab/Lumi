@@ -3,7 +3,7 @@ import Foundation
 import SwiftUI
 
 /// 应用模型
-struct AppModel: Identifiable, Hashable {
+struct AppModel: Identifiable, Hashable, @unchecked Sendable {
     let id: String = UUID().uuidString
     let bundleURL: URL
     let bundleName: String

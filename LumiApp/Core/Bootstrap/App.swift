@@ -52,6 +52,10 @@ extension CoreApp {
 
 // MARK: - Preview
 
+#Preview("Test") {
+    Text("Hello")
+}
+
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
