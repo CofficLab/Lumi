@@ -30,3 +30,14 @@ actor InputPlugin: SuperPlugin {
         ]
     }
 }
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .withNavigation(InputPlugin.navigationId)
+        .inRootView()
+        .withDebugBar()
+}

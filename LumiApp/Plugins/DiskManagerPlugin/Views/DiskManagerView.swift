@@ -71,7 +71,7 @@ struct DiskManagerView: View {
                 .pickerStyle(.segmented)
             }
             .padding(.horizontal)
-            .padding(.bottom)
+            .padding(.vertical)
             
             // Content
             VStack {

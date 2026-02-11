@@ -6,7 +6,6 @@ actor TextActionsPlugin: SuperPlugin {
     nonisolated static let verbose = true
     
     static let id = "TextActions"
-    static let navigationId = "text_actions"
     static let displayName = String(localized: "Text Actions")
     static let description = String(localized: "Selected text actions menu")
     static let iconName = "cursorarrow.click.2"
@@ -44,7 +43,7 @@ actor TextActionsPlugin: SuperPlugin {
     func addNavigationEntries() -> [NavigationEntry]? {
         return [
             NavigationEntry.create(
-                id: Self.navigationId,
+                id: Self.id,
                 title: Self.displayName,
                 icon: Self.iconName,
                 pluginId: Self.id
@@ -53,4 +52,15 @@ actor TextActionsPlugin: SuperPlugin {
             }
         ]
     }
+}
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .withNavigation(TextActionsPlugin.id)
+        .inRootView()
+        .withDebugBar()
 }

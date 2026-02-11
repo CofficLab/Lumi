@@ -139,7 +139,6 @@ struct RClickSettingsView: View {
                 }
             }
             .formStyle(.grouped)
-            .padding()
             .sheet(isPresented: $showingAddTemplateSheet) {
                 AddTemplateView(isPresented: $showingAddTemplateSheet) { name, ext, content in
                     let template = NewFileTemplate(name: name, extensionName: ext, content: content)
@@ -163,6 +162,7 @@ struct RClickSettingsView: View {
 
 #Preview("App") {
     ContentLayout()
+        .withNavigation(RClickPlugin.id)
         .hideSidebar()
         .hideTabPicker()
         .inRootView()

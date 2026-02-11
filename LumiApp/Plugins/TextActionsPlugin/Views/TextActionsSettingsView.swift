@@ -56,7 +56,6 @@ struct TextActionsSettingsView: View {
                 }
             }
             .formStyle(.grouped)
-            .padding()
         }
         .onAppear {
             manager.checkPermission()
@@ -160,6 +159,7 @@ struct MockActionMenu: View {
 
 #Preview("App") {
     ContentLayout()
+        .withNavigation(TextActionsPlugin.id)
         .hideSidebar()
         .hideTabPicker()
         .inRootView()

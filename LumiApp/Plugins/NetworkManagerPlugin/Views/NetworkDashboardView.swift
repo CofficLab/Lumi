@@ -4,7 +4,7 @@ struct NetworkDashboardView: View {
     @StateObject private var viewModel = NetworkManagerViewModel()
 
     var body: some View {
-        VStack(spacing: 0) {
+        VSplitView {
             ScrollView {
                 VStack(spacing: 20) {
                     // Header Stats
@@ -44,14 +44,13 @@ struct NetworkDashboardView: View {
                 }
                 .padding(.vertical)
             }
-            .frame(minHeight: 200, maxHeight: 350) // Limit overview area height
+            .frame(minHeight: 200) // Limit overview area height
             
             Divider()
             
             // Process monitor list
             ProcessNetworkListView(viewModel: viewModel)
         }
-        .background(Color(nsColor: .controlBackgroundColor))
         .navigationTitle(NetworkManagerPlugin.displayName)
     }
 }
