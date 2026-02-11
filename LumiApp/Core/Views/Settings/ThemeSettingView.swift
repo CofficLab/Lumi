@@ -6,27 +6,33 @@ struct ThemeSettingView: View {
     @EnvironmentObject private var themeManager: MystiqueThemeManager
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xl) {
-                Spacer().frame(height: 40)
+        ZStack {
+            // 背景
+            Color.clear
+                .mystiqueBackground()
+                .ignoresSafeArea()
 
-                // 页面标题
-                header
+            ScrollView {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xl) {
+                    // 页面标题
+                    header
 
-                // 主题选择器
-                themeSelector
+                    // 主题选择器
+                    themeSelector
 
-                // 当前主题信息
-                currentThemeInfo
+                    // 当前主题信息
+                    currentThemeInfo
 
-                // 主题效果说明
-                themeGuide
+                    // 主题效果说明
+                    themeGuide
 
-                Spacer()
+                    Spacer()
+                }
+                .padding(DesignTokens.Spacing.lg)
             }
-            .padding(.horizontal, DesignTokens.Spacing.lg)
         }
         .navigationTitle("主题风格")
+        .colorScheme(.dark) // 强制使用深色模式，确保 DesignTokens 颜色显示正确
     }
 
     // MARK: - 页面标题
@@ -53,12 +59,12 @@ struct ThemeSettingView: View {
 
     private var themeSelector: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-            Text("选择主题")
+            Text("选择主题风格")
                 .font(DesignTokens.Typography.title3)
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
             // 主题选择器
-            ThemeSelectorView(displayMode: .full, showPreview: true)
+            ThemeSelectorView(displayMode: .full, showHeader: false, showPreview: true)
                 .environmentObject(themeManager)
         }
     }

@@ -10,6 +10,7 @@ struct ThemeSelectorView: View {
 
     // MARK: - 配置
     var displayMode: DisplayMode = .full
+    var showHeader: Bool = true
     var showPreview: Bool = true
 
     // MARK: - 显示模式
@@ -23,7 +24,7 @@ struct ThemeSelectorView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
             // 标题
-            if displayMode == .full {
+            if showHeader && displayMode == .full {
                 header
             }
 
@@ -35,7 +36,6 @@ struct ThemeSelectorView: View {
                 themePreview
             }
         }
-        .padding(DesignTokens.Spacing.md)
     }
 
     // MARK: - 标题
