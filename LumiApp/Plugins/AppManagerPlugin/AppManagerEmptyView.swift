@@ -10,12 +10,12 @@ struct AppManagerEmptyView: View {
                 .font(.system(size: 64))
                 .foregroundStyle(.secondary)
 
-            Text("No applications found")
+            Text(String(localized: "No applications found"))
                 .font(.title3)
                 .foregroundStyle(.secondary)
 
             if !searchText.isEmpty {
-                Text("Try other search keywords")
+                Text(String(localized: "Try other search keywords"))
                     .foregroundStyle(.secondary)
             }
         }

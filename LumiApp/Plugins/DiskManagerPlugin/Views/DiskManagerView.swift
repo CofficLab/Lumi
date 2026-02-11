@@ -63,7 +63,6 @@ struct DiskManagerView: View {
                 Text("Large Files").tag(0)
                 Text("Directory Analysis").tag(1)
                 Text("System Cleanup").tag(2)
-                Text("System Monitor").tag(3)
                 Text("Xcode Cleanup").tag(4)
                 Text("Project Cleanup").tag(5)
             }
@@ -78,11 +77,9 @@ struct DiskManagerView: View {
                     DirectoryTreeView(entries: viewModel.rootEntries)
                 } else if selectedViewMode == 2 {
                     CacheCleanerView()
-                } else if selectedViewMode == 3 {
-                    SystemMonitorView()
                 } else if selectedViewMode == 4 {
                     XcodeCleanerView()
-                } else {
+                } else if selectedViewMode == 5 {
                     ProjectCleanerView()
                 }
             }
@@ -90,7 +87,7 @@ struct DiskManagerView: View {
             Spacer()
             
             // Scanning Progress
-            if viewModel.isScanning && selectedViewMode != 2 && selectedViewMode != 3 && selectedViewMode != 5 {
+            if viewModel.isScanning && selectedViewMode != 2 && selectedViewMode != 5 {
                 VStack(spacing: 8) {
                     ProgressView()
                         .scaleEffect(0.8)
