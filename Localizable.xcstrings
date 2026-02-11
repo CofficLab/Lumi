@@ -18,6 +18,7 @@
       }
     },
     "  • %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -98,6 +99,7 @@
       }
     },
     "(%lld 个订阅)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -130,6 +132,7 @@
       }
     },
     "%@ (%lld)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -212,6 +215,7 @@
       }
     },
     "%lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -372,6 +376,7 @@
       }
     },
     "2个订阅选项" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -724,6 +729,7 @@
       }
     },
     "All Statuses (%lld)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1052,6 +1058,7 @@
       }
     },
     "Cars (%lld)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1084,6 +1091,7 @@
       }
     },
     "Cisum Pro" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2253,6 +2261,7 @@
       }
     },
     "Highest Product:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2269,6 +2278,7 @@
       }
     },
     "Highest Product: 无" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2285,6 +2295,7 @@
       }
     },
     "Highest Status:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2301,6 +2312,7 @@
       }
     },
     "Highest Status: 无" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2413,6 +2425,7 @@
       }
     },
     "iCloud 云同步" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2429,6 +2442,7 @@
       }
     },
     "ID: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2445,6 +2459,7 @@
       }
     },
     "ID: CISUM001" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2669,6 +2684,7 @@
       }
     },
     "iOS 完美适配" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2877,6 +2893,7 @@
       }
     },
     "macOS 上也精彩" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3406,6 +3423,7 @@
       }
     },
     "NonRenewables (%lld)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3742,6 +3760,7 @@
       }
     },
     "Products" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3902,6 +3921,7 @@
       }
     },
     "Purchased" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4751,6 +4771,7 @@
       }
     },
     "state=" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4767,6 +4788,7 @@
       }
     },
     "state=%lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4815,6 +4837,7 @@
       }
     },
     "Subscription Groups (%lld)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4831,6 +4854,7 @@
       }
     },
     "Subscription Status" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4847,6 +4871,7 @@
       }
     },
     "Subscriptions (%lld)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4895,6 +4920,7 @@
       }
     },
     "SwiftUI Template" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5618,6 +5644,7 @@
       }
     },
     "专辑封面" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5666,6 +5693,7 @@
       }
     },
     "加载中…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5682,6 +5710,7 @@
       }
     },
     "加载产品" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5714,6 +5743,7 @@
       }
     },
     "如果您之前在其他设备上购买过订阅,可以通过点击下方的\"恢复购买\"按钮来恢复您的订阅。请确保您使用的是购买时所用的Apple ID 账号。" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5746,6 +5776,7 @@
       }
     },
     "完美支持 iCloud" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5762,6 +5793,7 @@
       }
     },
     "尚未加载产品" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5794,6 +5826,7 @@
       }
     },
     "恢复购买" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5986,6 +6019,7 @@
       }
     },
     "更新订阅状态" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6002,6 +6036,7 @@
       }
     },
     "极简设计" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6034,6 +6069,7 @@
       }
     },
     "测试已购" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6050,6 +6086,7 @@
       }
     },
     "清空" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6066,6 +6103,7 @@
       }
     },
     "现代化的 SwiftUI 应用模板" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6082,6 +6120,7 @@
       }
     },
     "空" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6098,6 +6137,7 @@
       }
     },
     "自动获取专辑封面" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6114,6 +6154,7 @@
       }
     },
     "许可协议" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6242,6 +6283,7 @@
       }
     },
     "隐私政策" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
