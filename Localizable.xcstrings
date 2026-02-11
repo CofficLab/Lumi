@@ -707,6 +707,22 @@
         }
       }
     },
+    "All packages are up to date" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有软件包都是最新版本"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有軟件包都是最新版本"
+          }
+        }
+      }
+    },
     "All Statuses (%lld)" : {
       "localizations" : {
         "zh-Hans" : {
@@ -966,6 +982,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "基础 URL"
+          }
+        }
+      }
+    },
+    "Batch update failed: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "批量更新失败: %@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "批量更新失敗: %@"
           }
         }
       }
@@ -1964,6 +1996,22 @@
         }
       }
     },
+    "Enter keywords to start searching" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入关键词开始搜索"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入關鍵詞開始搜尋"
+          }
+        }
+      }
+    },
     "ENV:" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2332,6 +2380,22 @@
         }
       }
     },
+    "Homebrew not detected, please install Homebrew first." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未检测到 Homebrew，请先安装 Homebrew。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未檢測到 Homebrew，請先安裝 Homebrew。"
+          }
+        }
+      }
+    },
     "Hosts Manager" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2488,6 +2552,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "输入源"
+          }
+        }
+      }
+    },
+    "Install" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "安装"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "安裝"
+          }
+        }
+      }
+    },
+    "Installation failed: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "安装失败: %@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "安裝失敗: %@"
           }
         }
       }
@@ -3245,6 +3341,22 @@
         }
       }
     },
+    "No packages installed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未安装任何软件包"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未安裝任何軟件包"
+          }
+        }
+      }
+    },
     "No project selected" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3257,6 +3369,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未選擇項目"
+          }
+        }
+      }
+    },
+    "No related packages found" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未找到相关软件包"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未找到相關軟件包"
           }
         }
       }
@@ -3885,6 +4013,22 @@
         }
       }
     },
+    "Refresh failed: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刷新失败: %@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刷新失敗: %@"
+          }
+        }
+      }
+    },
     "Rescan" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4185,6 +4329,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "搜尋剪貼板歷史..."
+          }
+        }
+      }
+    },
+    "Search failed: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索失败: %@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜尋失敗: %@"
           }
         }
       }
@@ -5056,6 +5216,22 @@
         }
       }
     },
+    "Uninstallation failed: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卸载失败: %@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卸載失敗: %@"
+          }
+        }
+      }
+    },
     "Unknown" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5120,6 +5296,22 @@
         }
       }
     },
+    "Update" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新"
+          }
+        }
+      }
+    },
     "Update All" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5132,6 +5324,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "全部更新"
+          }
+        }
+      }
+    },
+    "Update failed: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新失败: %@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新失敗: %@"
+          }
+        }
+      }
+    },
+    "Updates" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新"
           }
         }
       }

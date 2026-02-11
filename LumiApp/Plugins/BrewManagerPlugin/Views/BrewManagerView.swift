@@ -11,6 +11,15 @@ struct BrewManagerView: View {
         case search = "Search"
 
         var id: String { rawValue }
+
+        var localizedName: String {
+            switch self {
+            case .installed: return String(localized: "Installed")
+            case .updates: return String(localized: "Updates")
+            case .search: return String(localized: "Search")
+            }
+        }
+
         var icon: String {
             switch self {
             case .installed: return "list.bullet"
@@ -23,13 +32,16 @@ struct BrewManagerView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Tab Picker
-            Picker("View", selection: $selectedTab) {
-                ForEach(BrewTab.allCases) { tab in
-                    Label(tab.rawValue, systemImage: tab.icon).tag(tab)
+            GlassCard(padding: 16, cornerRadius: 16) {
+                Picker("View", selection: $selectedTab) {
+                    ForEach(BrewTab.allCases) { tab in
+                        Label(tab.localizedName, systemImage: tab.icon).tag(tab)
+                    }
                 }
+                .pickerStyle(.segmented)
             }
-            .pickerStyle(.segmented)
-            .padding()
+            .padding(.horizontal)
+            .padding(.top)
 
             // Content
             Group {
@@ -37,8 +49,8 @@ struct BrewManagerView: View {
                 case .installed:
                     BrewListView(
                         packages: viewModel.installedPackages,
-                        emptyMessage: "No packages installed",
-                        actionButtonTitle: "Uninstall",
+                        emptyMessage: String(localized: "No packages installed"),
+                        actionButtonTitle: String(localized: "Uninstall"),
                         actionButtonColor: .red
                     ) { package in
                         Task { await viewModel.uninstall(package: package) }
@@ -49,7 +61,7 @@ struct BrewManagerView: View {
                         if !viewModel.outdatedPackages.isEmpty {
                             HStack {
                                 Spacer()
-                                Button("Update All") {
+                                Button(String(localized: "Update All")) {
                                     Task { await viewModel.upgradeAll() }
                                 }
                                 .padding()
@@ -58,8 +70,8 @@ struct BrewManagerView: View {
 
                         BrewListView(
                             packages: viewModel.outdatedPackages,
-                            emptyMessage: "All packages are up to date",
-                            actionButtonTitle: "Update",
+                            emptyMessage: String(localized: "All packages are up to date"),
+                            actionButtonTitle: String(localized: "Update"),
                             actionButtonColor: .blue
                         ) { package in
                             Task { await viewModel.upgrade(package: package) }
@@ -68,24 +80,29 @@ struct BrewManagerView: View {
 
                 case .search:
                     VStack {
-                        HStack {
-                            TextField("Search Homebrew packages...", text: $viewModel.searchText)
-                                .textFieldStyle(.roundedBorder)
-                                .onSubmit {
-                                    viewModel.performSearch()
-                                }
+                        GlassCard(padding: 16) {
+                            HStack {
+                                TextField(String(localized: "Search Homebrew packages..."), text: $viewModel.searchText)
+                                    .textFieldStyle(.plain)
+                                    .padding(8)
+                                    .background(Color.white.opacity(0.1))
+                                    .cornerRadius(8)
+                                    .onSubmit {
+                                        viewModel.performSearch()
+                                    }
 
-                            if viewModel.isLoading {
-                                ProgressView()
-                                    .controlSize(.small)
+                                if viewModel.isLoading {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                }
                             }
                         }
                         .padding(.horizontal)
 
                         BrewListView(
                             packages: viewModel.searchResults,
-                            emptyMessage: viewModel.searchText.isEmpty ? "Enter keywords to start searching" : "No related packages found",
-                            actionButtonTitle: "Install",
+                            emptyMessage: viewModel.searchText.isEmpty ? String(localized: "Enter keywords to start searching") : String(localized: "No related packages found"),
+                            actionButtonTitle: String(localized: "Install"),
                             actionButtonColor: .green,
                             showInstalledStatus: true
                         ) { package in
@@ -100,17 +117,17 @@ struct BrewManagerView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay {
             if viewModel.isLoading && selectedTab != .search {
-                ProgressView("Processing...")
+                ProgressView(String(localized: "Processing..."))
                     .padding()
                     .background(.regularMaterial)
                     .cornerRadius(8)
             }
         }
-        .alert("Error", isPresented: Binding(
+        .alert(String(localized: "Error"), isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
         )) {
-            Button("OK", role: .cancel) { }
+            Button(String(localized: "OK"), role: .cancel) { }
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
@@ -119,7 +136,7 @@ struct BrewManagerView: View {
                 Button(action: {
                     Task { await viewModel.refresh() }
                 }) {
-                    Label("Refresh", systemImage: "arrow.clockwise")
+                    Label(String(localized: "Refresh"), systemImage: "arrow.clockwise")
                 }
             }
         }
@@ -171,7 +188,7 @@ struct BrewPackageRow: View {
                         .font(.headline)
 
                     if package.isCask {
-                        Text("Cask")
+                        Text(String(localized: "Cask"))
                             .font(.caption)
                             .padding(.horizontal, 4)
                             .padding(.vertical, 2)
@@ -182,7 +199,7 @@ struct BrewPackageRow: View {
 
                     if showInstalledStatus {
                         if package.installedVersion != nil {
-                            Text("Installed")
+                            Text(String(localized: "Installed"))
                                 .font(.caption)
                                 .foregroundColor(.green)
                         }
@@ -197,12 +214,12 @@ struct BrewPackageRow: View {
                 }
 
                 HStack(spacing: 8) {
-                    Text("Version: \(package.version)")
+                    Text(String(localized: "Version: \(package.version)"))
                         .font(.caption2)
                         .foregroundColor(.secondary)
 
                     if let installedVer = package.installedVersion, installedVer != package.version {
-                        Text("Installed: \(installedVer)")
+                        Text(String(localized: "Installed: \(installedVer)"))
                             .font(.caption2)
                             .foregroundColor(.secondary)
                     }
