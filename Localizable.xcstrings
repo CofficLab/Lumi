@@ -531,6 +531,22 @@
         }
       }
     },
+    "Activity Status" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "活动状态"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "活動狀態"
+          }
+        }
+      }
+    },
     "Add" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1752,6 +1768,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "磁碟空間分析和大檔案清理"
+          }
+        }
+      }
+    },
+    "Display the status of long-running operations in the status bar" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在状态栏中显示长耗时操作的状态"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在狀態欄中顯示長耗時操作的狀態"
+          }
+        }
+      }
+    },
+    "Displays the app's welcome interface and user guide" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示应用的欢迎界面和用户指南"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示應用的歡迎介面和用戶指南"
+          }
+        }
+      }
+    },
+    "Displays the current time in the status bar" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在状态栏中显示当前时间"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在狀態欄中顯示當前時間"
           }
         }
       }
@@ -3758,7 +3822,20 @@
       }
     },
     "Real-time Monitor" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "实时监控"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "實時監控"
+          }
+        }
+      }
     },
     "Real-time monitoring of network speed, traffic, and connection status" : {
       "localizations" : {
@@ -4866,6 +4943,22 @@
         }
       }
     },
+    "Time Status" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "时间状态"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "時間狀態"
+          }
+        }
+      }
+    },
     "Total Size:" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5216,6 +5309,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "查看模式"
+          }
+        }
+      }
+    },
+    "Welcome" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "欢迎"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歡迎"
           }
         }
       }

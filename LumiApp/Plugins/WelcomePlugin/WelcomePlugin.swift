@@ -22,10 +22,10 @@ actor WelcomePlugin: SuperPlugin, SuperLog {
     static let navigationId = "\(id).welcome"
 
     /// Plugin display name
-    static let displayName: String = "Welcome"
+    static let displayName: String = String(localized: "Welcome")
 
     /// Plugin functional description
-    static let description: String = "Displays the app's welcome interface and user guide"
+    static let description: String = String(localized: "Displays the app's welcome interface and user guide")
 
     /// Plugin icon name
     static let iconName: String = "star.circle.fill"
@@ -49,7 +49,7 @@ actor WelcomePlugin: SuperPlugin, SuperLog {
         return [
             NavigationEntry.create(
                 id: Self.navigationId,
-                title: "Welcome",
+                title: String(localized: "Welcome"),
                 icon: "star.circle.fill",
                 pluginId: Self.id,
                 isDefault: true
