@@ -182,3 +182,13 @@ struct AddConnectionView: View {
         .frame(width: 400)
     }
 }
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .inRootView()
+        .withDebugBar()
+}

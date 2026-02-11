@@ -239,3 +239,13 @@ struct HostAddView: View {
         .frame(width: 400, height: 350)
     }
 }
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .inRootView()
+        .withDebugBar()
+}

@@ -155,3 +155,13 @@ struct MockActionMenu: View {
         .shadow(radius: 4)
     }
 }
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .inRootView()
+        .withDebugBar()
+}

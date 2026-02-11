@@ -50,3 +50,13 @@ struct DevAssistantSettingsView: View {
         .frame(minWidth: 400, minHeight: 400)
     }
 }
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .inRootView()
+        .withDebugBar()
+}

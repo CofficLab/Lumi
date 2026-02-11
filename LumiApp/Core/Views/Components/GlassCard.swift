@@ -6,7 +6,7 @@ struct GlassCard<Content: View>: View {
     var cornerRadius: CGFloat = 16
     var material: Material = .ultraThinMaterial
     var hasBorder: Bool = true
-    
+
     init(padding: CGFloat = 16, cornerRadius: CGFloat = 16, material: Material = .ultraThinMaterial, hasBorder: Bool = true, @ViewBuilder content: () -> Content) {
         self.padding = padding
         self.cornerRadius = cornerRadius
@@ -14,7 +14,7 @@ struct GlassCard<Content: View>: View {
         self.hasBorder = hasBorder
         self.content = content()
     }
-    
+
     var body: some View {
         content
             .padding(padding)
@@ -23,7 +23,7 @@ struct GlassCard<Content: View>: View {
                     // 毛玻璃背景
                     RoundedRectangle(cornerRadius: cornerRadius)
                         .fill(material)
-                    
+
                     // 额外的半透明白色层，增加亮度，模拟玻璃质感
                     RoundedRectangle(cornerRadius: cornerRadius)
                         .fill(Color.white.opacity(0.05))
@@ -39,7 +39,7 @@ struct GlassCard<Content: View>: View {
                                     colors: [
                                         .white.opacity(0.3),
                                         .white.opacity(0.1),
-                                        .black.opacity(0.05)
+                                        .black.opacity(0.05),
                                     ],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
@@ -63,4 +63,14 @@ struct GlassCard<Content: View>: View {
         .padding()
         .frame(width: 300, height: 200)
     }
+}
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .inRootView()
+        .withDebugBar()
 }
