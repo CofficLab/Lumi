@@ -129,7 +129,7 @@ extension ContentView {
             GeometryReader { proxy in
                 // 主光晕
                 Circle()
-                    .fill(MystiqueTheme.Gradients.mysticGlow)
+                    .fill(Themes.Gradients.mysticGlow)
                     .frame(width: 600, height: 600)
                     .blur(radius: 120)
                     .offset(x: -200, y: -200)
@@ -139,8 +139,8 @@ extension ContentView {
                     .fill(
                         RadialGradient(
                             colors: [
-                                MystiqueTheme.Colors.glow.intense,
-                                MystiqueTheme.Colors.glow.medium,
+                                Themes.Colors.glow.intense,
+                                Themes.Colors.glow.medium,
                                 SwiftUI.Color.clear
                             ],
                             center: .center,

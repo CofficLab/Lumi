@@ -76,21 +76,21 @@ struct ThemeSettingView: View {
                     // 主题图标
                     ZStack {
                         Circle()
-                            .fill(themeManager.currentVariant.iconColor.opacity(0.2))
+                            .fill(themeManager.currentVariant.theme.iconColor.opacity(0.2))
                             .frame(width: 48, height: 48)
 
-                        Image(systemName: themeManager.currentVariant.iconName)
+                        Image(systemName: themeManager.currentVariant.theme.iconName)
                             .font(.system(size: 20))
-                            .foregroundColor(themeManager.currentVariant.iconColor)
+                            .foregroundColor(themeManager.currentVariant.theme.iconColor)
                     }
 
                     // 主题信息
                     VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-                        Text(themeManager.currentVariant.displayName(for: .full))
+                        Text(themeManager.currentVariant.theme.displayName)
                             .font(DesignTokens.Typography.bodyEmphasized)
                             .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
-                        Text(themeManager.currentVariant.description)
+                        Text(themeManager.currentVariant.theme.description)
                             .font(DesignTokens.Typography.caption1)
                             .foregroundColor(DesignTokens.Color.semantic.textTertiary)
 
@@ -101,7 +101,7 @@ struct ThemeSettingView: View {
                                 .foregroundColor(DesignTokens.Color.semantic.textTertiary)
 
                             Circle()
-                                .fill(themeManager.currentVariant.iconColor)
+                                .fill(themeManager.currentVariant.theme.iconColor)
                                 .frame(width: 12, height: 12)
 
                             Label("光晕", systemImage: "sparkles")
