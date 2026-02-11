@@ -4,7 +4,7 @@ actor InputPlugin: SuperPlugin {
     nonisolated static let id = "input-manager"
     nonisolated static let name = "Input Manager"
     nonisolated static let iconName = "keyboard"
-    nonisolated static let displayName = "Input Manager"
+    nonisolated static let displayName = String(localized: "Input Manager")
     nonisolated static let navigationId = "InputManager"
     static var order: Int { 70 }
     

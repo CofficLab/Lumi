@@ -5,124 +5,146 @@ struct RClickSettingsView: View {
     @State private var showingAddTemplateSheet = false
 
     var body: some View {
-        Form {
-            // MARK: - Finder Extension Setup Guide
+        HStack(spacing: 0) {
+            // Preview Section
+            ZStack {
+                Color(nsColor: .controlBackgroundColor)
+                    .ignoresSafeArea()
 
-            Section {
-                VStack(spacing: 12) {
-                    HStack(spacing: 12) {
-                        Image(systemName: "puzzlepiece.extension")
-                            .font(.system(size: 28))
-                            .foregroundStyle(.blue)
+                VStack(spacing: 20) {
+                    Text("Preview")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
 
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Enable Finder Extension")
-                                .font(.headline)
-                            Text("The right-click menu functionality requires the Finder extension to be enabled in System Settings.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Spacer()
-                    }
-
-                    HStack(spacing: 12) {
-                        Button {
-                            openFinderExtensionSettings()
-                        } label: {
-                            Label("Open System Settings", systemImage: "gear")
-                        }
-                        .buttonStyle(.borderedProminent)
-
-                        Spacer()
-
-                        Text("System Settings → Privacy & Security → Extensions → Added Extensions")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                    }
+                    RClickPreviewView(config: configManager.config)
+                        .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 6)
                 }
-                .padding(.vertical, 4)
+                .padding()
             }
+            .frame(width: 260)
 
-            // MARK: - General Actions
+            Divider()
 
-            Section(header: Text("General Actions")) {
-                ForEach(configManager.config.items) { item in
-                    if item.type != .newFile {
-                        HStack {
-                            Image(systemName: item.type.iconName)
-                                .frame(width: 20)
-                            Text(item.title)
+            // Settings Form
+            Form {
+                // MARK: - Finder Extension Setup Guide
+
+                Section {
+                    VStack(spacing: 12) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "puzzlepiece.extension")
+                                .font(.system(size: 28))
+                                .foregroundStyle(.blue)
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Enable Finder Extension")
+                                    .font(.headline)
+                                Text("The right-click menu functionality requires the Finder extension to be enabled in System Settings.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+
                             Spacer()
-                            Toggle("", isOn: Binding(
-                                get: { item.isEnabled },
-                                set: { _ in configManager.toggleItem(item) }
-                            ))
+                        }
+
+                        HStack(spacing: 12) {
+                            Button {
+                                openFinderExtensionSettings()
+                            } label: {
+                                Label("Open System Settings", systemImage: "gear")
+                            }
+                            .buttonStyle(.borderedProminent)
+
+                            Spacer()
+
+                            Text("System Settings → Privacy & Security → Extensions → Added Extensions")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
                         }
                     }
-                }
-            }
-
-            // MARK: - New File Menu
-
-            Section(header: Text("New File Menu")) {
-                if let newFileItem = configManager.config.items.first(where: { $0.type == .newFile }) {
-                    HStack {
-                        Image(systemName: newFileItem.type.iconName)
-                            .frame(width: 20)
-                        Text("Enable 'New File' Submenu")
-                        Spacer()
-                        Toggle("", isOn: Binding(
-                            get: { newFileItem.isEnabled },
-                            set: { _ in configManager.toggleItem(newFileItem) }
-                        ))
-                    }
+                    .padding(.vertical, 4)
                 }
 
-                if configManager.config.items.first(where: { $0.type == .newFile })?.isEnabled == true {
-                    List {
-                        ForEach(configManager.config.fileTemplates) { template in
+                // MARK: - General Actions
+
+                Section(header: Text("General Actions")) {
+                    ForEach(configManager.config.items) { item in
+                        if item.type != .newFile {
                             HStack {
-                                VStack(alignment: .leading) {
-                                    Text(template.name)
-                                    Text(".\(template.extensionName)")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
+                                Image(systemName: item.type.iconName)
+                                    .frame(width: 20)
+                                Text(item.title)
                                 Spacer()
                                 Toggle("", isOn: Binding(
-                                    get: { template.isEnabled },
-                                    set: { _ in configManager.toggleTemplate(template) }
+                                    get: { item.isEnabled },
+                                    set: { _ in configManager.toggleItem(item) }
                                 ))
                             }
                         }
-                        .onDelete { indexSet in
-                            configManager.deleteTemplate(at: indexSet)
+                    }
+                }
+
+                // MARK: - New File Menu
+
+                Section(header: Text("New File Menu")) {
+                    if let newFileItem = configManager.config.items.first(where: { $0.type == .newFile }) {
+                        HStack {
+                            Image(systemName: newFileItem.type.iconName)
+                                .frame(width: 20)
+                            Text("Enable 'New File' Submenu")
+                            Spacer()
+                            Toggle("", isOn: Binding(
+                                get: { newFileItem.isEnabled },
+                                set: { _ in configManager.toggleItem(newFileItem) }
+                            ))
                         }
                     }
-                    .frame(minHeight: 100)
 
-                    Button(action: { showingAddTemplateSheet = true }) {
-                        Label("Add Template", systemImage: "plus")
+                    if configManager.config.items.first(where: { $0.type == .newFile })?.isEnabled == true {
+                        List {
+                            ForEach(configManager.config.fileTemplates) { template in
+                                HStack {
+                                    VStack(alignment: .leading) {
+                                        Text(template.name)
+                                        Text(".\(template.extensionName)")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    Spacer()
+                                    Toggle("", isOn: Binding(
+                                        get: { template.isEnabled },
+                                        set: { _ in configManager.toggleTemplate(template) }
+                                    ))
+                                }
+                            }
+                            .onDelete { indexSet in
+                                configManager.deleteTemplate(at: indexSet)
+                            }
+                        }
+                        .frame(minHeight: 100)
+
+                        Button(action: { showingAddTemplateSheet = true }) {
+                            Label("Add Template", systemImage: "plus")
+                        }
                     }
                 }
-            }
 
-            // MARK: - Reset
+                // MARK: - Reset
 
-            Section {
-                Button("Reset to Defaults") {
-                    configManager.resetToDefaults()
+                Section {
+                    Button("Reset to Defaults") {
+                        configManager.resetToDefaults()
+                    }
+                    .foregroundColor(.red)
                 }
-                .foregroundColor(.red)
             }
-        }
-        .formStyle(.grouped)
-        .padding()
-        .sheet(isPresented: $showingAddTemplateSheet) {
-            AddTemplateView(isPresented: $showingAddTemplateSheet) { name, ext, content in
-                let template = NewFileTemplate(name: name, extensionName: ext, content: content)
-                configManager.addTemplate(template)
+            .formStyle(.grouped)
+            .padding()
+            .sheet(isPresented: $showingAddTemplateSheet) {
+                AddTemplateView(isPresented: $showingAddTemplateSheet) { name, ext, content in
+                    let template = NewFileTemplate(name: name, extensionName: ext, content: content)
+                    configManager.addTemplate(template)
+                }
             }
         }
     }
@@ -137,44 +159,12 @@ struct RClickSettingsView: View {
     }
 }
 
-struct AddTemplateView: View {
-    @Binding var isPresented: Bool
-    var onAdd: (String, String, String) -> Void
+// MARK: - Preview
 
-    @State private var name = ""
-    @State private var ext = ""
-    @State private var content = ""
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Text("Add New Template").font(.headline)
-
-            Form {
-                TextField("Name (e.g. Python Script)", text: $name)
-                TextField("Extension (e.g. py)", text: $ext)
-
-                Section(header: Text("Default Content")) {
-                    TextEditor(text: $content)
-                        .frame(height: 100)
-                        .font(.monospaced(.body)())
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.2)))
-                }
-            }
-            .formStyle(.grouped)
-
-            HStack {
-                Button("Cancel") { isPresented = false }
-                Spacer()
-                Button("Add") {
-                    onAdd(name, ext, content)
-                    isPresented = false
-                }
-                .disabled(name.isEmpty || ext.isEmpty)
-                .buttonStyle(.borderedProminent)
-            }
-            .padding()
-        }
-        .frame(width: 400, height: 450)
-        .padding()
-    }
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .inRootView()
+        .withDebugBar()
 }
