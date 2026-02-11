@@ -63,7 +63,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
                 // Create a separate task to monitor DiskService progress and update TaskService
                 let monitorTask = Task { @MainActor in
                     for await progress in DiskService.shared.$currentScan.values {
-                        if let p = progress {
+                        if progress != nil {
                             // Estimate progress based on some heuristic or just keep it active
                             progressCallback(0.5) // Indeterminate
                         }

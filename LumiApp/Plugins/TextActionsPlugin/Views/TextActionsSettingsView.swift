@@ -16,7 +16,7 @@ struct TextActionsSettingsView: View {
             Form {
                 Section("General Settings") {
                     Toggle("Enable Text Selection Menu", isOn: $isEnabled)
-                        .onChange(of: isEnabled) { newValue in
+                        .onChange(of: isEnabled) { _, newValue in
                             if newValue {
                                 manager.startMonitoring()
                                 // Ensure window controller is initialized

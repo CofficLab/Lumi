@@ -66,9 +66,9 @@ class TerminalNSTextView: NSTextView {
     // Override keyDown to capture input
     override func keyDown(with event: NSEvent) {
         guard let chars = event.characters else { return }
-        
+
         // Handle special keys
-        if let specialKey = event.specialKey {
+        if event.specialKey != nil {
             // Arrow keys, etc.
             // Need to map to ANSI sequences (e.g. Up -> ESC [ A)
             // For MVP, just handle basic text

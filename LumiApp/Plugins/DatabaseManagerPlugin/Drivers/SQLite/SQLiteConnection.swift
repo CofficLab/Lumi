@@ -154,7 +154,7 @@ actor SQLiteConnection: DatabaseConnection {
         case .bool(let boolValue):
             sqlite3_bind_int(statement, Int32(index), boolValue ? 1 : 0)
         case .data(let dataValue):
-            dataValue.withUnsafeBytes { ptr in
+            _ = dataValue.withUnsafeBytes { ptr in
                 sqlite3_bind_blob(statement, Int32(index), ptr.baseAddress, Int32(dataValue.count), nil)
             }
         case .null:

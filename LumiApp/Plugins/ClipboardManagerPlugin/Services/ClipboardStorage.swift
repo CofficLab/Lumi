@@ -24,7 +24,6 @@ actor ClipboardStorage {
         // Deduplicate: if same content as first item, update timestamp (or ignore)
         if let first = items.first, first.content == item.content, first.type == item.type {
             // Move to top
-            var updated = first
             // specific to Swift structs, we need to create new one or just move existing
             // Here we just remove and insert new one to update timestamp
             items.removeFirst()

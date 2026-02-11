@@ -40,7 +40,7 @@ struct DevAssistantView: View {
                     }
                     .padding()
                 }
-                .onChange(of: viewModel.messages) { _ in
+                .onChange(of: viewModel.messages) { _, _ in
                     if let lastId = viewModel.messages.last?.id {
                         withAnimation {
                             proxy.scrollTo(lastId, anchor: .bottom)

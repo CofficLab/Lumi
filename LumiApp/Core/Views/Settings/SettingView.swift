@@ -111,11 +111,11 @@ struct SettingView: View {
 
             // 版本和 Build 信息
             VStack(alignment: .center, spacing: 2) {
-                Text("v\(appInfo.version)")
+                Text("v\(appInfo.version ?? "Unknown")")
                     .font(.caption2)
                     .foregroundColor(.secondary)
 
-                Text("Build \(appInfo.build)")
+                Text("Build \(appInfo.build ?? "Unknown")")
                     .font(.caption2)
                     .foregroundColor(.secondary)
             }

@@ -12,7 +12,7 @@ struct ClipboardHistoryView: View {
                     .foregroundColor(.secondary)
                 TextField("Search clipboard history...", text: $viewModel.searchText)
                     .textFieldStyle(.plain)
-                    .onChange(of: viewModel.searchText) { _ in
+                    .onChange(of: viewModel.searchText) { _, _ in
                         viewModel.filterItems()
                     }
                 

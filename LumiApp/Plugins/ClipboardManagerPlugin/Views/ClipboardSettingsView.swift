@@ -9,7 +9,7 @@ struct ClipboardSettingsView: View {
         Form {
             Section("General") {
                 Toggle("Enable Clipboard Monitoring", isOn: $isMonitoringEnabled)
-                    .onChange(of: isMonitoringEnabled) { newValue in
+                    .onChange(of: isMonitoringEnabled) { _, newValue in
                         if newValue {
                             monitor.startMonitoring()
                         } else {

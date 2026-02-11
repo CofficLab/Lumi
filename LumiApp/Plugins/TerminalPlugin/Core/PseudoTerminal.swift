@@ -62,7 +62,7 @@ class PseudoTerminal: @unchecked Sendable {
         
         // 5. Set Window Size (Optional, default 80x24)
         var winSize = winsize(ws_row: 24, ws_col: 80, ws_xpixel: 0, ws_ypixel: 0)
-        ioctl(masterFD, TIOCSWINSZ, &winSize)
+        _ = ioctl(masterFD, TIOCSWINSZ, &winSize)
     }
     
     private func startReading() {
@@ -85,7 +85,7 @@ class PseudoTerminal: @unchecked Sendable {
     func resize(rows: UInt16, cols: UInt16) {
         guard let fd = masterFileHandle?.fileDescriptor else { return }
         var winSize = winsize(ws_row: rows, ws_col: cols, ws_xpixel: 0, ws_ypixel: 0)
-        ioctl(fd, TIOCSWINSZ, &winSize)
+        _ = ioctl(fd, TIOCSWINSZ, &winSize)
     }
     
     func terminate() {

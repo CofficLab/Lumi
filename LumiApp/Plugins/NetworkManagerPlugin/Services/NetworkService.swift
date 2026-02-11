@@ -158,13 +158,13 @@ class NetworkService: SuperLog, ObservableObject {
             let addrFamily = interface.ifa_addr.pointee.sa_family
             
             if addrFamily == UInt8(AF_INET) || addrFamily == UInt8(AF_INET6) {
-                let name = String(cString: interface.ifa_name)
+                let name = String(validatingCString: interface.ifa_name) ?? ""
                 if name == "en0" { // Usually Wi-Fi
                     var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
                     getnameinfo(interface.ifa_addr, socklen_t(interface.ifa_addr.pointee.sa_len),
                                 &hostname, socklen_t(hostname.count),
                                 nil, socklen_t(0), NI_NUMERICHOST)
-                    return String(cString: hostname)
+                    return String(validatingCString: hostname) ?? ""
                 }
             }
             ptr = interface.ifa_next
