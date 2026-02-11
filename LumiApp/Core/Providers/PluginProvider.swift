@@ -9,6 +9,9 @@ import Combine
 /// 插件提供者，管理插件的生命周期和UI贡献
 @MainActor
 final class PluginProvider: ObservableObject, SuperLog {
+    /// 全局单例
+    static let shared = PluginProvider()
+
     /// 日志标识符
     nonisolated static let emoji = "🔌"
 
@@ -28,7 +31,7 @@ final class PluginProvider: ObservableObject, SuperLog {
     private var cancellables = Set<AnyCancellable>()
 
     /// 初始化插件提供者（自动发现并注册所有插件）
-    init(autoDiscover: Bool = true) {
+    private init(autoDiscover: Bool = true) {
         if autoDiscover {
             autoDiscoverAndRegisterPlugins()
         }

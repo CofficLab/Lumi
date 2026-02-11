@@ -5,6 +5,9 @@ import SwiftUI
 /// 应用级服务提供者，管理应用状态和全局服务
 @MainActor
 final class AppProvider: ObservableObject {
+    /// 全局单例
+    static let shared = AppProvider()
+
     // MARK: - 应用状态
 
     /// 当前选中的设置标签
@@ -34,7 +37,7 @@ final class AppProvider: ObservableObject {
     // MARK: - 初始化
 
     /// 初始化应用提供者
-    init(modelContext: ModelContext? = nil) {
+    private init(modelContext: ModelContext? = nil) {
         // 初始化SwiftData上下文
         if let context = modelContext {
             self.modelContext = context

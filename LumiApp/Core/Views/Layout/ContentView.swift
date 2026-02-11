@@ -280,15 +280,8 @@ extension ContentView {
 
 // MARK: - Preview
 
-#Preview("App - Small Screen") {
+#Preview("App") {
     ContentLayout()
         .hideSidebar()
         .inRootView()
-        .frame(width: 800, height: 600)
-}
-
-#Preview("App - Big Screen") {
-    ContentView()
-        .inRootView()
-        .frame(width: 1200, height: 1200)
 }
