@@ -29,7 +29,7 @@ struct MemoryHistoryDetailView: View {
             .padding(.top, 12)
             
             // Graph
-            GlassCard(padding: 0, cornerRadius: 6) {
+            MystiqueGlassCard(cornerRadius: 6, padding: EdgeInsets()) {
                 MemoryHistoryGraphView(
                     dataPoints: historyService.getData(for: selectedRange),
                     timeRange: selectedRange

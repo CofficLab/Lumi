@@ -9,6 +9,7 @@ extension View {
         self
             .environmentObject(AppProvider.shared)
             .environmentObject(PluginProvider.shared)
+            .environmentObject(MystiqueThemeManager()) // 注册主题管理器
     }
 }
 

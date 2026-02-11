@@ -32,7 +32,7 @@ struct BrewManagerView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Tab Picker
-            GlassCard(padding: 16, cornerRadius: 16) {
+            MystiqueGlassCard(cornerRadius: 16, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
                 Picker("View", selection: $selectedTab) {
                     ForEach(BrewTab.allCases) { tab in
                         Label(tab.localizedName, systemImage: tab.icon).tag(tab)
@@ -80,7 +80,7 @@ struct BrewManagerView: View {
 
                 case .search:
                     VStack {
-                        GlassCard(padding: 16) {
+                        MystiqueGlassCard(padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
                             HStack {
                                 TextField(String(localized: "Search Homebrew packages..."), text: $viewModel.searchText)
                                     .textFieldStyle(.plain)
@@ -186,7 +186,7 @@ struct BrewPackageRow: View {
     let action: () -> Void
     
     var body: some View {
-        GlassCard(padding: 8, cornerRadius: 12) {
+        MystiqueGlassCard(cornerRadius: 12, padding: EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
@@ -198,7 +198,7 @@ struct BrewPackageRow: View {
                                 .font(.caption)
                                 .padding(.horizontal, 4)
                                 .padding(.vertical, 2)
-                                .background(AppTheme.Colors.gradient(for: .orange).opacity(0.2))
+                                .background(DesignTokens.Color.gradients.energyGradient.opacity(0.2))
                                 .foregroundColor(.orange)
                                 .cornerRadius(4)
                         }
@@ -207,7 +207,7 @@ struct BrewPackageRow: View {
                             if package.installedVersion != nil {
                                 Text(String(localized: "Installed"))
                                     .font(.caption)
-                                    .foregroundStyle(AppTheme.Colors.gradient(for: .green))
+                                    .foregroundStyle(DesignTokens.Color.gradients.energyGradient)
                             }
                         }
                     }

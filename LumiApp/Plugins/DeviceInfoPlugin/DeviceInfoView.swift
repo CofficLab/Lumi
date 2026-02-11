@@ -10,16 +10,16 @@ struct DeviceInfoView: View {
                 // Section 1: Overview
                 VStack(spacing: 16) {
                     // Header
-                    GlassCard(padding: 20, cornerRadius: 20) {
+                    MystiqueGlassCard(cornerRadius: 20, padding: EdgeInsets(top: 20, leading: 20, bottom: 20, trailing: 20)) {
                         HStack(spacing: 16) {
                             ZStack {
                                 Circle()
-                                    .fill(AppTheme.Colors.gradient(for: .primary).opacity(0.1))
+                                    .fill(DesignTokens.Color.gradients.primaryGradient.opacity(0.1))
                                     .frame(width: 60, height: 60)
                                 
                                 Image(systemName: "macbook.and.iphone")
                                     .font(.system(size: 32))
-                                    .foregroundStyle(AppTheme.Colors.gradient(for: .primary))
+                                    .foregroundStyle(DesignTokens.Color.gradients.primaryGradient)
                             }
 
                             VStack(alignment: .leading, spacing: 4) {
@@ -49,11 +49,11 @@ struct DeviceInfoView: View {
                                     Spacer()
                                     // Simple bar chart representation
                                     Capsule()
-                                        .fill(AppTheme.Colors.gradient(for: .blue).opacity(0.2))
+                                        .fill(DesignTokens.Color.gradients.oceanGradient.opacity(0.2))
                                         .frame(width: 40, height: 6)
                                         .overlay(alignment: .leading) {
                                             Capsule()
-                                                .fill(AppTheme.Colors.gradient(for: .blue))
+                                                .fill(DesignTokens.Color.gradients.oceanGradient)
                                                 .frame(width: 40 * (data.cpuUsage / 100.0), height: 6)
                                         }
                                 }
@@ -70,7 +70,7 @@ struct DeviceInfoView: View {
                                     .foregroundColor(.secondary)
 
                                 ProgressView(value: data.memoryUsage)
-                                    .tint(AppTheme.Colors.gradient(for: .green))
+                                    .tint(DesignTokens.Color.gradients.energyGradient)
                             }
                         }
 
@@ -87,7 +87,7 @@ struct DeviceInfoView: View {
                                     Text(total)
                                 }
                                 .gaugeStyle(.accessoryLinearCapacity)
-                                .tint(AppTheme.Colors.gradient(for: .orange))
+                                .tint(DesignTokens.Color.gradients.energyGradient)
                             }
                         }
 
@@ -105,7 +105,7 @@ struct DeviceInfoView: View {
                                 }
 
                                 ProgressView(value: data.batteryLevel)
-                                    .tint(AppTheme.Colors.gradient(for: .purple))
+                                    .tint(DesignTokens.Color.semantic.primary)
                             }
                         }
                     }
@@ -159,7 +159,7 @@ struct DeviceInfoCard<Content: View>: View {
     }
 
     var body: some View {
-        GlassCard(padding: 16, cornerRadius: 16) {
+        MystiqueGlassCard(cornerRadius: 16, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Label {

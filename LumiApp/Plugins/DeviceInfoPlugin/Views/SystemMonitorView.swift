@@ -60,7 +60,7 @@ struct MonitorCard<Content: View>: View {
     let content: () -> Content
     
     var body: some View {
-        GlassCard(padding: 16, cornerRadius: 16) {
+        MystiqueGlassCard(cornerRadius: 16, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Text(title)

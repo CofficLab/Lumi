@@ -121,20 +121,33 @@ extension ContentView {
     @ViewBuilder
     private func detailContent() -> some View {
         ZStack {
-            // 背景
-            AppTheme.Colors.background
+            // 背景 - 使用新的设计系统
+            DesignTokens.Color.basePalette.deepBackground
                 .ignoresSafeArea()
-            
-            // 装饰性光晕
+
+            // 装饰性光晕 - 使用神秘主题的光晕效果
             GeometryReader { proxy in
+                // 主光晕
                 Circle()
-                    .fill(AppTheme.Colors.gradient(for: .blue).opacity(0.1))
+                    .fill(MystiqueTheme.Gradients.mysticGlow)
                     .frame(width: 600, height: 600)
                     .blur(radius: 120)
                     .offset(x: -200, y: -200)
-                
+
+                // 次光晕
                 Circle()
-                    .fill(AppTheme.Colors.gradient(for: .purple).opacity(0.1))
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                MystiqueTheme.Colors.glow.intense,
+                                MystiqueTheme.Colors.glow.medium,
+                                SwiftUI.Color.clear
+                            ],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 250
+                        )
+                    )
                     .frame(width: 500, height: 500)
                     .blur(radius: 120)
                     .position(x: proxy.size.width, y: proxy.size.height)
@@ -284,4 +297,5 @@ extension ContentView {
     ContentLayout()
         .hideSidebar()
         .inRootView()
+        .withDebugBar()
 }

@@ -64,27 +64,28 @@ struct SpeedCard: View {
     let viewModel: NetworkManagerViewModel
 
     var body: some View {
-        GlassCard(padding: 16, cornerRadius: 16) {
-            VStack(alignment: .leading, spacing: 12) {
+        MystiqueGlassCard(cornerRadius: DesignTokens.Radius.md, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
                 HStack {
                     Image(systemName: icon)
                         .font(.title2)
                         .foregroundStyle(color)
                     Text(title)
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
+                        .font(DesignTokens.Typography.bodyEmphasized)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     Spacer()
                 }
 
                 Text(speed.formattedNetworkSpeed())
                     .font(.system(size: 24, weight: .bold, design: .monospaced))
-                    .foregroundStyle(.primary)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
                 Text(String(localized: "Total: \(Double(total).formattedBytes())"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(DesignTokens.Typography.caption1)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
             }
         }
+        .mystiqueGlow(intensity: 0.2)
     }
 }
 
@@ -94,23 +95,23 @@ struct NetworkInfoCard: View {
     let icon: String
 
     var body: some View {
-        GlassCard(padding: 0, cornerRadius: 8) {
-            HStack {
+        MystiqueGlassCard(cornerRadius: DesignTokens.Radius.sm) {
+            HStack(spacing: DesignTokens.Spacing.sm) {
                 Image(systemName: icon)
-                    .frame(width: 24)
-                    .foregroundStyle(.secondary)
-                
-                VStack(alignment: .leading) {
+                    .frame(width: 24, height: 24)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
                     Text(title)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(DesignTokens.Typography.caption1)
+                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     Text(value)
-                        .font(.body)
-                        .fontWeight(.medium)
+                        .font(DesignTokens.Typography.body)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 }
                 Spacer()
             }
-            .padding()
+            .padding(DesignTokens.Spacing.sm)
         }
     }
 }

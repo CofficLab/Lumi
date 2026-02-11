@@ -15,12 +15,14 @@ struct SettingView: View {
     /// 设置标签枚举
     enum SettingTab: String, CaseIterable {
         case general = "通用"
+        case theme = "主题"
         case plugins = "插件管理"
         case about = "关于"
 
         var icon: String {
             switch self {
             case .general: return "gearshape"
+            case .theme: return "paintbrush.fill"
             case .plugins: return "puzzlepiece.extension"
             case .about: return "info.circle"
             }
@@ -64,6 +66,8 @@ struct SettingView: View {
                     switch selectedTab {
                     case .general:
                         GeneralSettingView()
+                    case .theme:
+                        ThemeSettingView()
                     case .plugins:
                         PluginSettingsView()
                     case .about:
@@ -133,18 +137,10 @@ struct SettingView: View {
         .inRootView()
 }
 
-#Preview("App - Small Screen") {
+#Preview("App") {
     ContentLayout()
         .hideSidebar()
         .hideTabPicker()
         .inRootView()
-        .frame(width: 800, height: 600)
-}
-
-#Preview("App - Big Screen") {
-    ContentLayout()
-        .hideSidebar()
-        .hideTabPicker()
-        .inRootView()
-        .frame(width: 1200, height: 1200)
+        .withDebugBar()
 }

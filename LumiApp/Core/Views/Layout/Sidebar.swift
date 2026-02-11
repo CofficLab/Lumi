@@ -53,7 +53,7 @@ struct Sidebar: View {
                 ZStack {
                     if isSelected {
                         Circle()
-                            .fill(AppTheme.Colors.gradient(for: .primary))
+                            .fill(DesignTokens.Color.gradients.primaryGradient)
                     } else {
                         Circle()
                             .fill(Color.secondary.opacity(0.1))

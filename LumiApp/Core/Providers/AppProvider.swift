@@ -19,6 +19,11 @@ final class AppProvider: ObservableObject {
     /// 应用错误信息
     @Published var errorMessage: String?
 
+    // MARK: - 主题管理
+
+    /// 主题管理器
+    let themeManager = MystiqueThemeManager()
+
     // MARK: - 导航状态
 
     /// 当前选中的导航入口 ID

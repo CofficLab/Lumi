@@ -29,7 +29,7 @@ struct CPUHistoryDetailView: View {
             .padding(.top, 12)
             
             // Graph
-            GlassCard(padding: 0, cornerRadius: 6) {
+            MystiqueGlassCard(cornerRadius: 6, padding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)) {
                 CPUHistoryGraphView(
                     dataPoints: historyService.getData(for: selectedRange),
                     timeRange: selectedRange

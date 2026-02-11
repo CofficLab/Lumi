@@ -8,7 +8,7 @@ struct DiskManagerView: View {
         VStack(spacing: 0) {
             // Header / Dashboard
             if let usage = viewModel.diskUsage {
-                GlassCard(padding: 20) {
+                MystiqueGlassCard(padding: EdgeInsets(top: 20, leading: 20, bottom: 20, trailing: 20)) {
                     HStack(spacing: 40) {
                         DiskUsageRingView(percentage: usage.usedPercentage)
                             .frame(width: 100, height: 100)
@@ -60,7 +60,7 @@ struct DiskManagerView: View {
             Divider()
             
             // View Mode Picker
-            GlassCard(padding: 16) {
+            MystiqueGlassCard(padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
                 Picker("View Mode", selection: $selectedViewMode) {
                     Text("Large Files").tag(0)
                     Text("Directory Analysis").tag(1)
