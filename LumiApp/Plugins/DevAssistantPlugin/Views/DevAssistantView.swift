@@ -11,14 +11,11 @@ struct DevAssistantView: View {
             HStack {
                 Text("Dev Assistant")
                     .font(.headline)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 Spacer()
-                Button(action: {
+                GlassButton(title: "Settings", style: .ghost) {
                     isSettingsPresented = true
-                }) {
-                    Image(systemName: "gearshape")
-                        .foregroundColor(.secondary)
                 }
-                .buttonStyle(.plain)
                 .help("Settings")
                 .popover(isPresented: $isSettingsPresented, arrowEdge: .bottom) {
                     DevAssistantSettingsView()
@@ -26,8 +23,8 @@ struct DevAssistantView: View {
                 }
             }
             .padding(10)
-            .background(Color(nsColor: .controlBackgroundColor))
-            .overlay(Divider(), alignment: .bottom)
+            .background(DesignTokens.Material.glass)
+            .overlay(GlassDivider(), alignment: .bottom)
             
             // Chat History
             ScrollViewReader { proxy in
@@ -51,7 +48,7 @@ struct DevAssistantView: View {
             
             // Input Area
             VStack(spacing: 0) {
-                Divider()
+                GlassDivider()
                 HStack(alignment: .bottom) {
                     if viewModel.isProcessing {
                         ProgressView()
@@ -65,7 +62,7 @@ struct DevAssistantView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .overlay(
                             RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+                                .stroke(DesignTokens.Color.semantic.textTertiary.opacity(0.2), lineWidth: 1)
                         )
                         .focused($isInputFocused)
                         .onSubmit {
@@ -80,33 +77,28 @@ struct DevAssistantView: View {
                                     Text(provider.rawValue).tag(provider)
                                 }
                             }
-                            Divider()
+                            GlassDivider()
                             // Quick model edit? Or just show current
                             Text("Model: \(viewModel.currentModel)")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         } label: {
                             Image(systemName: "globe")
                                 .font(.system(size: 20))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         }
                         .menuStyle(.borderlessButton)
                         .frame(width: 30, height: 30)
                     }
                     .padding(.horizontal, 4)
                     
-                    Button(action: {
+                    GlassButton(title: "Send", style: .primary) {
                         viewModel.sendMessage()
-                    }) {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.system(size: 24))
-                            .foregroundColor(.blue)
                     }
-                    .buttonStyle(.plain)
                     .disabled(viewModel.currentInput.isEmpty || viewModel.isProcessing)
                 }
                 .padding(12)
-                .background(Color(nsColor: .controlBackgroundColor))
+                .background(DesignTokens.Material.glass)
             }
         }
         .onAppear {
@@ -126,9 +118,9 @@ struct ChatBubble: View {
             } else {
                 Image(systemName: "cpu")
                     .font(.system(size: 16))
-                    .foregroundColor(.purple)
+                    .foregroundColor(DesignTokens.Color.semantic.primary)
                     .frame(width: 24, height: 24)
-                    .background(Color.purple.opacity(0.1))
+                    .background(DesignTokens.Color.semantic.primary.opacity(0.1))
                     .clipShape(Circle())
             }
             
@@ -137,7 +129,7 @@ struct ChatBubble: View {
                 if message.role == .assistant {
                     Text("Dev Assistant")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
                 
                 Text(message.content)
@@ -154,9 +146,9 @@ struct ChatBubble: View {
             } else {
                 Image(systemName: "person.fill")
                     .font(.system(size: 16))
-                    .foregroundColor(.blue)
+                    .foregroundColor(DesignTokens.Color.semantic.info)
                     .frame(width: 24, height: 24)
-                    .background(Color.blue.opacity(0.1))
+                    .background(DesignTokens.Color.semantic.info.opacity(0.1))
                     .clipShape(Circle())
             }
         }
@@ -164,20 +156,20 @@ struct ChatBubble: View {
     
     var bubbleColor: Color {
         if message.isError {
-            return Color.red.opacity(0.1)
+            return DesignTokens.Color.semantic.error.opacity(0.1)
         }
         switch message.role {
-        case .user: return Color.blue.opacity(0.1)
-        case .assistant: return Color(nsColor: .controlBackgroundColor)
-        default: return Color.gray.opacity(0.1)
+        case .user: return DesignTokens.Color.semantic.info.opacity(0.1)
+        case .assistant: return DesignTokens.Color.semantic.textTertiary.opacity(0.12)
+        default: return DesignTokens.Color.semantic.textTertiary.opacity(0.1)
         }
     }
     
     var textColor: Color {
         if message.isError {
-            return .red
+            return DesignTokens.Color.semantic.error
         }
-        return .primary
+        return DesignTokens.Color.semantic.textPrimary
     }
 }
 

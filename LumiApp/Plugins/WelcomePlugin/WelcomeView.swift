@@ -28,21 +28,16 @@ struct WelcomeView: View {
             Image(systemName: WelcomePlugin.iconName)
                 .resizable()
                 .frame(width: 100, height: 100)
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [.blue, .purple],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+                .foregroundStyle(DesignTokens.Color.gradients.auroraGradient)
 
             Text("Welcome to Lumi")
                 .font(.title)
                 .fontWeight(.bold)
+                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
             Text("A simple and efficient assistant app")
                 .font(.body)
-                .foregroundColor(.secondary)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
         }

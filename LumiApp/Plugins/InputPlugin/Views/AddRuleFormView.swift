@@ -34,7 +34,8 @@ struct AddRuleFormView: View {
             // 标题
             HStack {
                 Text("Add New Rule")
-                    .font(.headline)
+                    .font(DesignTokens.Typography.title3)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 Spacer()
             }
 
@@ -59,9 +60,8 @@ struct AddRuleFormView: View {
                 .frame(width: 200)
 
                 // 添加按钮
-                Button(action: onAddRule) {
-                    Image(systemName: "plus")
-                }
+                GlassButton(title: "添加", style: .secondary, action: onAddRule)
+                    .frame(width: 80)
                 .disabled(!canAddRule)
             }
         }

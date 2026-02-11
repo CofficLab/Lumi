@@ -159,27 +159,26 @@ struct ThemeSettingView: View {
         title: String,
         description: String
     ) -> some View {
-        HStack(spacing: DesignTokens.Spacing.sm) {
-            Image(systemName: icon)
-                .font(.system(size: 16))
-                .foregroundColor(DesignTokens.Color.semantic.primary)
-                .frame(width: 24)
+        MystiqueGlassCard(cornerRadius: DesignTokens.Radius.sm, padding: DesignTokens.Spacing.compactPadding) {
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                Image(systemName: icon)
+                    .font(.system(size: 16))
+                    .foregroundColor(DesignTokens.Color.semantic.primary)
+                    .frame(width: 24)
 
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-                Text(title)
-                    .font(DesignTokens.Typography.bodyEmphasized)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
+                    Text(title)
+                        .font(DesignTokens.Typography.bodyEmphasized)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
-                Text(description)
-                    .font(DesignTokens.Typography.caption1)
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                    Text(description)
+                        .font(DesignTokens.Typography.caption1)
+                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                }
+
+                Spacer()
             }
-
-            Spacer()
         }
-        .padding(DesignTokens.Spacing.md)
-        .background(DesignTokens.Material.glass)
-        .cornerRadius(DesignTokens.Radius.sm)
     }
 }
 

@@ -12,9 +12,10 @@ struct CacheCleanerView: View {
                     Text("System Cleanup")
                         .font(.title2)
                         .fontWeight(.bold)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                     Text("Scan and clean system caches, logs, and junk files")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
                 
                 Spacer()
@@ -25,19 +26,18 @@ struct CacheCleanerView: View {
                             .scaleEffect(0.5)
                         Text(viewModel.scanProgress)
                             .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     }
                 } else {
-                    Button("Rescan") {
+                    GlassButton(title: "Rescan", style: .secondary) {
                         viewModel.scan()
                     }
-                    .buttonStyle(.bordered)
                 }
             }
             .padding()
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(DesignTokens.Material.glass)
             
-            Divider()
+            GlassDivider()
             
             // Content
             if viewModel.categories.isEmpty && !viewModel.isScanning {
@@ -52,32 +52,28 @@ struct CacheCleanerView: View {
                 .listStyle(.sidebar) // Or .insetGrouped
             }
             
-            Divider()
+            GlassDivider()
             
             // Footer Action
             HStack {
                 VStack(alignment: .leading) {
                     Text("Selected: \(viewModel.formatBytes(viewModel.totalSelectedSize))")
                         .font(.headline)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                     Text("\(viewModel.selection.count) items")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
                 
                 Spacer()
                 
-                Button(action: {
+                GlassButton(title: viewModel.isCleaning ? "Cleaning..." : "Clean Now", style: .primary) {
                     showCleanConfirmation = true
-                }) {
-                    Label(viewModel.isCleaning ? "Cleaning..." : "Clean Now", systemImage: "trash")
-                        .frame(minWidth: 100)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
                 .disabled(viewModel.selection.isEmpty || viewModel.isCleaning || viewModel.isScanning)
             }
             .padding()
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(DesignTokens.Material.glass)
         }
         .onAppear {
             if viewModel.categories.isEmpty {
@@ -117,6 +113,7 @@ struct CacheCategorySection: View {
                 Image(systemName: category.icon)
                 Text(category.name)
                     .font(.headline)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 
                 Spacer()
                 
@@ -125,13 +122,13 @@ struct CacheCategorySection: View {
                     .font(.caption2)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(Color(category.safetyLevel.color).opacity(0.2))
-                    .foregroundStyle(Color(category.safetyLevel.color))
+                    .background(DesignTokens.Color.semantic.warning.opacity(0.2))
+                    .foregroundColor(DesignTokens.Color.semantic.warning)
                     .cornerRadius(4)
                 
                 Text(viewModel.formatBytes(category.totalSize))
                     .font(.monospacedDigit(.caption)())
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
             .padding(.vertical, 4)
         }
@@ -161,9 +158,10 @@ struct CachePathRow: View {
                 Text(path.name)
                     .lineLimit(1)
                     .truncationMode(.middle)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 Text(path.path)
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
@@ -172,7 +170,7 @@ struct CachePathRow: View {
 
             Text(formatBytes(path.size))
                 .font(.monospacedDigit(.caption)())
-                .foregroundStyle(.secondary)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
         }
         .padding(.vertical, 2)
     }

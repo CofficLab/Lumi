@@ -10,7 +10,9 @@ struct AddTemplateView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("Add New Template").font(.headline)
+            Text("Add New Template")
+                .font(.headline)
+                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
             Form {
                 TextField("Name (e.g. Python Script)", text: $name)
@@ -20,20 +22,19 @@ struct AddTemplateView: View {
                     TextEditor(text: $content)
                         .frame(height: 100)
                         .font(.monospaced(.body)())
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.2)))
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(DesignTokens.Color.semantic.textTertiary.opacity(0.3)))
                 }
             }
             .formStyle(.grouped)
 
             HStack {
-                Button("Cancel") { isPresented = false }
+                GlassButton(title: "Cancel", style: .ghost) { isPresented = false }
                 Spacer()
-                Button("Add") {
+                GlassButton(title: "Add", style: .primary) {
                     onAdd(name, ext, content)
                     isPresented = false
                 }
                 .disabled(name.isEmpty || ext.isEmpty)
-                .buttonStyle(.borderedProminent)
             }
             .padding()
         }

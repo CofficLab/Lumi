@@ -10,6 +10,7 @@ struct DatabaseMainView: View {
             VStack(alignment: .leading) {
                 Text("Connections")
                     .font(.headline)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                     .padding(.horizontal)
                     .padding(.top)
                 
@@ -20,7 +21,7 @@ struct DatabaseMainView: View {
                         Spacer()
                         if viewModel.selectedConfig?.id == config.id && viewModel.isConnected {
                             Circle()
-                                .fill(Color.green)
+                                .fill(DesignTokens.Color.semantic.success)
                                 .frame(width: 8, height: 8)
                         }
                     }
@@ -33,8 +34,8 @@ struct DatabaseMainView: View {
                 }
                 .listStyle(.sidebar)
                 
-                Button(action: { showAddConfigSheet = true }) {
-                    Label("Add Connection", systemImage: "plus")
+                GlassButton(title: "Add Connection", style: .primary) {
+                    showAddConfigSheet = true
                 }
                 .padding()
             }
@@ -49,7 +50,7 @@ struct DatabaseMainView: View {
                             .font(.monospaced(.body)())
                             .padding(8)
                             .frame(minHeight: 100, maxHeight: 200)
-                            .border(Color.gray.opacity(0.2))
+                            .border(DesignTokens.Color.semantic.textTertiary.opacity(0.2))
                         
                         // Toolbar
                         HStack {
@@ -58,27 +59,27 @@ struct DatabaseMainView: View {
                                 ProgressView()
                                     .scaleEffect(0.5)
                             }
-                            Button(action: { Task { await viewModel.executeQuery() } }) {
-                                Label("Run", systemImage: "play.fill")
+                            GlassButton(title: "Run", style: .primary) {
+                                Task { await viewModel.executeQuery() }
                             }
                             .keyboardShortcut(.return, modifiers: .command)
                         }
                         .padding(8)
-                        .background(Color(nsColor: .controlBackgroundColor))
+                        .background(DesignTokens.Material.glass)
                         
-                        Divider()
+                        GlassDivider()
                         
                         // Results
                         if let error = viewModel.errorMessage {
                             Text(error)
-                                .foregroundColor(.red)
+                                .foregroundColor(DesignTokens.Color.semantic.error)
                                 .padding()
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         } else if let result = viewModel.queryResult {
                             QueryResultView(result: result)
                         } else {
                             Text("No results")
-                                .foregroundColor(.secondary)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
                     }
@@ -86,10 +87,10 @@ struct DatabaseMainView: View {
                     VStack {
                         Image(systemName: "database")
                             .font(.system(size: 48))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         Text("Select a database to connect")
                             .font(.title2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
@@ -112,12 +113,13 @@ struct QueryResultView: View {
                     ForEach(result.columns, id: \.self) { col in
                         Text(col)
                             .font(.headline)
+                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                             .padding(8)
                             .frame(width: 120, alignment: .leading)
-                            .border(Color.gray.opacity(0.2))
+                            .border(DesignTokens.Color.semantic.textTertiary.opacity(0.2))
                     }
                 }
-                .background(Color(nsColor: .controlBackgroundColor))
+                .background(DesignTokens.Material.glass)
                 
                 // Rows
                 LazyVStack(spacing: 0) {
@@ -127,9 +129,10 @@ struct QueryResultView: View {
                             ForEach(0..<row.count, id: \.self) { colIndex in
                                 Text(content(for: row[colIndex]))
                                     .font(.monospaced(.body)())
+                                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                                     .padding(8)
                                     .frame(width: 120, alignment: .leading)
-                                    .border(Color.gray.opacity(0.1))
+                                    .border(DesignTokens.Color.semantic.textTertiary.opacity(0.1))
                             }
                         }
                     }
@@ -160,17 +163,19 @@ struct AddConnectionView: View {
     var body: some View {
         VStack(spacing: 20) {
             Text("Add SQLite Connection")
-                .font(.headline)
+                .font(DesignTokens.Typography.title2)
+                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
             
-            TextField("Connection Name", text: $name)
-                .textFieldStyle(.roundedBorder)
-            
-            TextField("Database Path (or :memory:)", text: $path)
-                .textFieldStyle(.roundedBorder)
+            MystiqueGlassCard {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                    GlassTextField(title: "Connection Name", text: $name, placeholder: "My Database")
+                    GlassTextField(title: "Database Path", text: $path, placeholder: "/path/to/db.sqlite")
+                }
+            }
             
             HStack {
-                Button("Cancel") { isPresented = false }
-                Button("Add") {
+                GlassButton(title: "Cancel", style: .ghost) { isPresented = false }
+                GlassButton(title: "Add", style: .primary) {
                     let config = DatabaseConfig(name: name, type: .sqlite, database: path)
                     viewModel.configs.append(config)
                     isPresented = false

@@ -11,7 +11,7 @@ struct MemoryHistoryDetailView: View {
             HStack {
                 Text("Memory Usage Trend")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                 
                 Spacer()
                 

@@ -21,11 +21,11 @@ struct DockerImagesView: View {
             VStack(spacing: 0) {
                 // Toolbar
                 HStack {
-                    TextField("Search images...", text: $viewModel.searchText)
-                        .textFieldStyle(.plain)
-                        .padding(6)
-                        .background(Color.white.opacity(0.1))
-                        .cornerRadius(6)
+                    GlassTextField(
+                        title: "搜索",
+                        text: $viewModel.searchText,
+                        placeholder: "Search images..."
+                    )
 
                     Menu {
                         Picker("Sort", selection: $viewModel.sortOption) {
@@ -35,19 +35,21 @@ struct DockerImagesView: View {
                         }
                         Toggle("Descending", isOn: $viewModel.sortDescending)
                     } label: {
-                        Image(systemName: "arrow.up.arrow.down")
+                        GlassRow {
+                            Label("Sort", systemImage: "arrow.up.arrow.down")
+                                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        }
+                        .frame(width: 90)
                     }
 
-                    Button(action: {
+                    GlassButton(title: "Refresh", style: .secondary) {
                         Task { await viewModel.refreshImages() }
-                    }) {
-                        Image(systemName: "arrow.clockwise")
                     }
                 }
                 .padding(8)
-                .background(.ultraThinMaterial)
+                .background(DesignTokens.Material.glass)
 
-                Divider()
+                GlassDivider()
 
                 List(viewModel.filteredImages, selection: Binding(
                     get: { viewModel.selectedImage },
@@ -82,23 +84,23 @@ struct DockerImagesView: View {
                 }
                 .listStyle(.inset)
 
-                Divider()
+                GlassDivider()
 
                 // Footer
                 HStack {
                     Text("\(viewModel.filteredImages.count) images")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     Spacer()
-                    Button(action: { showFileImporter = true }) {
-                        Label("Import", systemImage: "square.and.arrow.down")
+                    GlassButton(title: "Import", style: .secondary) {
+                        showFileImporter = true
                     }
-                    Button(action: { showPullSheet = true }) {
-                        Label("Pull", systemImage: "arrow.down.circle")
+                    GlassButton(title: "Pull", style: .primary) {
+                        showPullSheet = true
                     }
                 }
                 .padding(8)
-                .background(.ultraThinMaterial)
+                .background(DesignTokens.Material.glass)
             }
             .frame(minWidth: 250, maxWidth: 400)
 
@@ -109,36 +111,39 @@ struct DockerImagesView: View {
                 VStack {
                     Image(systemName: "cube.box")
                         .font(.system(size: 48))
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     Text("Select an image to view details")
                         .font(.title2)
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color(nsColor: .textBackgroundColor))
+                .background(DesignTokens.Material.glass)
             }
         }
         .sheet(isPresented: $showPullSheet) {
             VStack(spacing: 20) {
                 Text("Pull New Image")
-                    .font(.headline)
-                TextField("Image name (e.g., nginx:latest)", text: $pullImageName)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 300)
+                    .font(DesignTokens.Typography.title2)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                GlassTextField(
+                    title: "Image",
+                    text: $pullImageName,
+                    placeholder: "nginx:latest"
+                )
+                .frame(width: 320)
 
                 if viewModel.isLoading {
                     ProgressView("Pulling...")
                 }
 
                 HStack {
-                    Button("Cancel") { showPullSheet = false }
-                    Button("Pull") {
+                    GlassButton(title: "Cancel", style: .ghost) { showPullSheet = false }
+                    GlassButton(title: "Pull", style: .primary) {
                         Task {
                             await viewModel.pullImage(pullImageName)
                             showPullSheet = false
                         }
                     }
-                    .buttonStyle(.borderedProminent)
                     .disabled(pullImageName.isEmpty || viewModel.isLoading)
                 }
             }
@@ -147,19 +152,23 @@ struct DockerImagesView: View {
         .sheet(isPresented: $showTagSheet) {
             VStack(spacing: 20) {
                 Text("Tag Image")
-                    .font(.headline)
+                    .font(DesignTokens.Typography.title2)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 if let img = imageToTag {
                     Text("Source: \(img.name)")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
-                TextField("New Tag (e.g., myrepo:v1)", text: $newTag)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 300)
+                GlassTextField(
+                    title: "New Tag",
+                    text: $newTag,
+                    placeholder: "myrepo:v1"
+                )
+                .frame(width: 320)
 
                 HStack {
-                    Button("Cancel") { showTagSheet = false }
-                    Button("Confirm") {
+                    GlassButton(title: "Cancel", style: .ghost) { showTagSheet = false }
+                    GlassButton(title: "Confirm", style: .primary) {
                         if let img = imageToTag {
                             Task {
                                 await viewModel.tagImage(img, newTag: newTag)
@@ -167,7 +176,6 @@ struct DockerImagesView: View {
                             }
                         }
                     }
-                    .buttonStyle(.borderedProminent)
                     .disabled(newTag.isEmpty || viewModel.isLoading)
                 }
             }
@@ -224,23 +232,25 @@ struct DockerImageRow: View {
     var body: some View {
         HStack {
             Image(systemName: "cube")
-                .foregroundStyle(.blue)
+                .foregroundColor(DesignTokens.Color.semantic.info)
             VStack(alignment: .leading) {
                 Text(image.name)
                     .font(.body)
                     .fontWeight(.medium)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 Text(image.shortID)
                     .font(.caption)
                     .fontDesign(.monospaced)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
             Spacer()
             VStack(alignment: .trailing) {
                 Text(image.Size)
                     .font(.caption)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 Text(image.CreatedSince)
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
         }
         .padding(.vertical, 4)
@@ -263,34 +273,30 @@ struct DockerImageDetailView: View {
                         Text(image.Repository)
                             .font(.title)
                             .fontWeight(.bold)
+                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                         HStack {
                             Text(image.Tag)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background(Color.blue.opacity(0.1))
+                                .background(DesignTokens.Color.semantic.info.opacity(0.1))
                                 .cornerRadius(4)
                             Text(image.imageID)
                                 .font(.monospaced(.caption)())
-                                .foregroundStyle(.secondary)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         }
                     }
                     Spacer()
 
-                    Button(action: {
+                    GlassButton(title: "Scan", style: .secondary) {
                         Task { await viewModel.scanImage(image) }
-                    }) {
-                        Label("Scan", systemImage: "checkerboard.shield")
                     }
-                    .buttonStyle(.bordered)
 
-                    Button(action: { showDeleteAlert = true }) {
-                        Label("Delete", systemImage: "trash")
-                            .foregroundStyle(.red)
+                    GlassButton(title: "Delete", style: .danger) {
+                        showDeleteAlert = true
                     }
-                    .buttonStyle(.bordered)
                 }
                 .padding()
-                .background(Color(nsColor: .controlBackgroundColor))
+                .background(DesignTokens.Material.glass)
                 .cornerRadius(8)
 
                 // Scan Result
@@ -298,18 +304,20 @@ struct DockerImageDetailView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Security Scan")
                             .font(.headline)
+                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
                         ScrollView([.horizontal, .vertical]) {
                             Text(scanResult)
                                 .font(.monospaced(.caption)())
+                                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                                 .padding()
                         }
                         .frame(maxHeight: 200)
-                        .background(Color(nsColor: .textBackgroundColor))
+                        .background(DesignTokens.Material.glass)
                         .cornerRadius(4)
                     }
                     .padding()
-                    .background(Color(nsColor: .controlBackgroundColor))
+                    .background(DesignTokens.Material.glass)
                     .cornerRadius(8)
                 }
 
@@ -322,7 +330,7 @@ struct DockerImageDetailView: View {
                         InfoRow(title: "Virtual Size", value: ByteCountFormatter.string(fromByteCount: detail.VirtualSize ?? 0, countStyle: .file))
                     }
                     .padding()
-                    .background(Color(nsColor: .controlBackgroundColor))
+                    .background(DesignTokens.Material.glass)
                     .cornerRadius(8)
 
                     // Config
@@ -330,6 +338,7 @@ struct DockerImageDetailView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Configuration")
                                 .font(.headline)
+                                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
                             if let cmds = config.Cmd {
                                 Text("CMD: " + cmds.joined(separator: " "))
@@ -340,19 +349,21 @@ struct DockerImageDetailView: View {
                                 Text("ENV:")
                                     .font(.caption)
                                     .fontWeight(.bold)
+                                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                                 ForEach(envs.prefix(5), id: \.self) { env in
                                     Text(env)
                                         .font(.monospaced(.caption)())
-                                        .foregroundStyle(.secondary)
+                                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                                 }
                                 if envs.count > 5 {
                                     Text("... (+ \(envs.count - 5) more)")
                                         .font(.caption)
+                                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                                 }
                             }
                         }
                         .padding()
-                        .background(Color(nsColor: .controlBackgroundColor))
+                        .background(DesignTokens.Material.glass)
                         .cornerRadius(8)
                     }
                 }
@@ -361,35 +372,37 @@ struct DockerImageDetailView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("History / Layers")
                         .font(.headline)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
                     ForEach(history) { layer in
                         HStack(alignment: .top) {
                             Text(layer.id.prefix(8))
                                 .font(.monospaced(.caption)())
-                                .foregroundStyle(.secondary)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                                 .frame(width: 60, alignment: .leading)
 
                             Text(layer.CreatedBy)
                                 .font(.monospaced(.caption)())
                                 .lineLimit(2)
+                                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
                             Spacer()
 
                             Text(layer.Size)
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         }
                         .padding(.vertical, 4)
-                        Divider()
+                        GlassDivider()
                     }
                 }
                 .padding()
-                .background(Color(nsColor: .controlBackgroundColor))
+                .background(DesignTokens.Material.glass)
                 .cornerRadius(8)
             }
             .padding()
         }
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(DesignTokens.Material.glass)
         .alert("Confirm Delete", isPresented: $showDeleteAlert) {
             Button("Cancel", role: .cancel) { }
             Button("Delete", role: .destructive) {
@@ -409,10 +422,11 @@ struct InfoRow: View {
     var body: some View {
         HStack {
             Text(title)
-                .foregroundStyle(.secondary)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             Spacer()
             Text(value)
                 .fontWeight(.medium)
+                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
         }
     }
 }

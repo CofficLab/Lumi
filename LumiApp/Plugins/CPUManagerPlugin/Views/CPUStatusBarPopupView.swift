@@ -28,7 +28,7 @@ struct CPUStatusBarPopupView: View {
             HStack {
                 Text("CPU Usage")
                     .font(.system(size: 11))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
 
                 Spacer()
 
@@ -41,13 +41,13 @@ struct CPUStatusBarPopupView: View {
                 ZStack(alignment: .leading) {
                     // 背景条
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.secondary.opacity(0.2))
+                        .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.2))
 
                     // 进度条
                     RoundedRectangle(cornerRadius: 3)
                         .fill(
                             LinearGradient(
-                                gradient: Gradient(colors: [.blue, .purple]),
+                                gradient: Gradient(colors: [DesignTokens.Color.semantic.info, DesignTokens.Color.semantic.primary]),
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -69,11 +69,11 @@ struct CPUStatusBarPopupView: View {
             HStack(spacing: 4) {
                 Image(systemName: "chart.line.uptrend.xyaxis")
                     .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
 
                 Text("Last 60 Seconds")
                     .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
 
                 Spacer()
 
@@ -81,11 +81,11 @@ struct CPUStatusBarPopupView: View {
                 HStack(spacing: 6) {
                     HStack(spacing: 3) {
                         Circle()
-                            .fill(Color.blue.opacity(0.8))
+                            .fill(DesignTokens.Color.semantic.info.opacity(0.8))
                             .frame(width: 5, height: 5)
                         Text("Usage")
                             .font(.system(size: 9))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     }
                 }
             }
@@ -101,7 +101,7 @@ struct CPUStatusBarPopupView: View {
                             path.move(to: CGPoint(x: 0, y: y))
                             path.addLine(to: CGPoint(x: geometry.size.width, y: y))
                         }
-                        .stroke(Color.secondary.opacity(0.1), lineWidth: 1)
+                        .stroke(DesignTokens.Color.semantic.textTertiary.opacity(0.1), lineWidth: 1)
                     }
 
                     // CPU 使用率区域
@@ -113,8 +113,8 @@ struct CPUStatusBarPopupView: View {
                         .fill(
                             LinearGradient(
                                 gradient: Gradient(colors: [
-                                    Color.blue.opacity(0.4),
-                                    Color.purple.opacity(0.05),
+                                    DesignTokens.Color.semantic.info.opacity(0.4),
+                                    DesignTokens.Color.semantic.primary.opacity(0.05),
                                 ]),
                                 startPoint: .top,
                                 endPoint: .bottom
@@ -126,11 +126,11 @@ struct CPUStatusBarPopupView: View {
                             data: recentData.map { $0.usage },
                             maxValue: maxValue
                         )
-                        .stroke(Color.blue.opacity(0.8), lineWidth: 1.2)
+                        .stroke(DesignTokens.Color.semantic.info.opacity(0.8), lineWidth: 1.2)
                     } else {
                         Text("收集中...")
                             .font(.system(size: 10))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 }
@@ -139,7 +139,7 @@ struct CPUStatusBarPopupView: View {
             .padding(.horizontal, 12)
         }
         .padding(.vertical, 8)
-        .background(.background.opacity(0.3))
+        .background(DesignTokens.Material.glass.opacity(0.3))
     }
 }
 

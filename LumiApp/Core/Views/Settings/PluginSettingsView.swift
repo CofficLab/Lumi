@@ -22,49 +22,52 @@ struct PluginSettingsView: View {
 
                 Text("启用或禁用应用的插件功能")
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     .padding(.bottom, 8)
 
                 Text("重启应用才能完全生效")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     .padding(.bottom, 24)
 
                 // 插件列表
                 ForEach(configurablePlugins) { plugin in
-                    PluginToggleRow(
-                        plugin: plugin,
-                        isEnabled: Binding(
-                            get: { pluginStates[plugin.id, default: true] },
-                            set: { newValue in
-                                pluginStates[plugin.id] = newValue
-                                settingsStore.setPluginEnabled(plugin.id, enabled: newValue)
-                                print("Plugin '\(plugin.id)' is now \(newValue ? "enabled" : "disabled")")
-                            }
+                    GlassRow {
+                        PluginToggleRow(
+                            plugin: plugin,
+                            isEnabled: Binding(
+                                get: { pluginStates[plugin.id, default: true] },
+                                set: { newValue in
+                                    pluginStates[plugin.id] = newValue
+                                    settingsStore.setPluginEnabled(plugin.id, enabled: newValue)
+                                    print("Plugin '\(plugin.id)' is now \(newValue ? "enabled" : "disabled")")
+                                }
+                            )
                         )
-                    )
+                    }
 
                     if plugin.id != configurablePlugins.last?.id {
-                        Divider()
-                            .padding(.leading, 16)
+                        GlassDivider()
                     }
                 }
 
                 // 如果没有可配置的插件
                 if configurablePlugins.isEmpty {
-                    VStack(spacing: 12) {
-                        Image(systemName: "puzzlepiece.extension")
-                            .font(.system(size: 48))
-                            .foregroundColor(.secondary)
-                        Text("暂无可配置的插件")
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                        Text("当插件标记为可配置时，会在此处显示")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                    MystiqueGlassCard {
+                        VStack(spacing: 12) {
+                            Image(systemName: "puzzlepiece.extension")
+                                .font(.system(size: 48))
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            Text("暂无可配置的插件")
+                                .font(.body)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            Text("当插件标记为可配置时，会在此处显示")
+                                .font(.caption)
+                                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 24)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 48)
                 }
 
                 Spacer()
@@ -113,9 +116,9 @@ struct PluginToggleRow: View {
             // 图标
             Image(systemName: plugin.icon)
                 .font(.system(size: 20))
-                .foregroundColor(.blue)
+                .foregroundColor(DesignTokens.Color.semantic.primary)
                 .frame(width: 32, height: 32)
-                .background(Color.blue.opacity(0.1))
+                .background(DesignTokens.Color.semantic.primary.opacity(0.1))
                 .cornerRadius(8)
 
             // 信息
@@ -123,10 +126,11 @@ struct PluginToggleRow: View {
                 Text(plugin.name)
                     .font(.body)
                     .fontWeight(.medium)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
                 Text(plugin.description)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
             }
 
             Spacer()

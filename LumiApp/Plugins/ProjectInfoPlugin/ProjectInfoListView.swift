@@ -10,12 +10,13 @@ struct ProjectInfoListView: View {
             // Title
             HStack {
                 Image(systemName: ProjectInfoPlugin.iconName)
-                    .foregroundColor(.blue)
+                    .foregroundColor(DesignTokens.Color.semantic.info)
                 Text("Project Info")
                     .font(.headline)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
             }
 
-            Divider()
+            GlassDivider()
 
             // Tab Information
             VStack(alignment: .leading, spacing: 8) {
@@ -39,11 +40,11 @@ struct ProjectInfoListView: View {
                 } else {
                     Text("No project selected")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
             }
 
-            Divider()
+            GlassDivider()
 
             // Statistics
             VStack(alignment: .leading, spacing: 8) {
@@ -68,12 +69,13 @@ private struct ProjectInfoRow: View {
         HStack {
             Text(title)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             Text(":")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             Text(value)
                 .font(.caption)
+                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
             Spacer()
         }
     }

@@ -14,7 +14,7 @@ struct NetworkDashboardView: View {
                             speed: viewModel.networkState.downloadSpeed,
                             total: viewModel.networkState.totalDownload,
                             icon: "arrow.down.circle.fill",
-                            color: .green,
+                            color: DesignTokens.Color.semantic.success,
                             viewModel: viewModel
                         )
 
@@ -23,13 +23,13 @@ struct NetworkDashboardView: View {
                             speed: viewModel.networkState.uploadSpeed,
                             total: viewModel.networkState.totalUpload,
                             icon: "arrow.up.circle.fill",
-                            color: .blue,
+                            color: DesignTokens.Color.semantic.info,
                             viewModel: viewModel
                         )
                     }
                     .padding(.horizontal)
 
-                    Divider()
+                    GlassDivider()
 
                     // Info Grid
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
@@ -46,7 +46,7 @@ struct NetworkDashboardView: View {
             }
             .frame(minHeight: 200) // Limit overview area height
             
-            Divider()
+            GlassDivider()
             
             // Process monitor list
             ProcessNetworkListView(viewModel: viewModel)

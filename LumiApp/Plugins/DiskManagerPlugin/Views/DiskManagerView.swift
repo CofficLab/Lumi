@@ -21,9 +21,9 @@ struct DiskManagerView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Total: \(viewModel.formatBytes(usage.total))")
                                 Text("Used: \(viewModel.formatBytes(usage.used))")
-                                    .foregroundStyle(.secondary)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                                 Text("Available: \(viewModel.formatBytes(usage.available))")
-                                    .foregroundStyle(.green)
+                                .foregroundColor(DesignTokens.Color.semantic.success)
                             }
                             .font(.subheadline)
                         }
@@ -43,11 +43,11 @@ struct DiskManagerView: View {
                                     .padding()
                             }
                             .buttonStyle(.borderedProminent)
-                            .tint(viewModel.isScanning ? .red : .blue)
+                            .tint(viewModel.isScanning ? DesignTokens.Color.semantic.error : DesignTokens.Color.semantic.info)
                             
                             Text("Scan Directory: User Home")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         }
                     }
                 }
@@ -57,7 +57,7 @@ struct DiskManagerView: View {
                 // .onAppear moved to bottom
             }
             
-            Divider()
+            GlassDivider()
             
             // View Mode Picker
             MystiqueGlassCard(padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
@@ -108,23 +108,23 @@ struct DiskManagerView: View {
                                 Text(viewModel.formatBytes(progress.scannedBytes))
                             }
                             .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         }
                     } else {
                         Text("Preparing scan...")
                     }
                 }
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 .padding()
                 .frame(maxWidth: .infinity)
-                .background(Color.gray.opacity(0.05))
+                .background(DesignTokens.Material.glass.opacity(0.2))
             }
             
             // Error Message
             if let error = viewModel.errorMessage {
                 Text(error)
-                    .foregroundStyle(.red)
+                    .foregroundColor(DesignTokens.Color.semantic.error)
                     .padding()
             }
         }
@@ -157,13 +157,13 @@ struct DiskUsageRingView: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.gray.opacity(0.2), lineWidth: 10)
+                .stroke(DesignTokens.Color.semantic.textTertiary.opacity(0.2), lineWidth: 10)
             
             Circle()
                 .trim(from: 0, to: percentage)
                 .stroke(
                     AngularGradient(
-                        gradient: Gradient(colors: [.blue, .purple]),
+                        gradient: Gradient(colors: [DesignTokens.Color.semantic.info, DesignTokens.Color.semantic.primary]),
                         center: .center,
                         startAngle: .degrees(-90),
                         endAngle: .degrees(-90 + 360 * percentage)
@@ -176,9 +176,10 @@ struct DiskUsageRingView: View {
                 Text("\(Int(percentage * 100))%")
                     .font(.title3)
                     .fontWeight(.bold)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 Text("Used")
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
         }
     }
@@ -200,9 +201,10 @@ struct LargeFileRow: View {
                     .font(.headline)
                     .lineLimit(1)
                     .truncationMode(.middle)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 Text(item.path)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
@@ -212,13 +214,13 @@ struct LargeFileRow: View {
             VStack(alignment: .trailing) {
                 Text(viewModel.formatBytes(item.size))
                     .font(.monospacedDigit(.body)())
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 
                 Text(item.fileType.rawValue.capitalized)
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     .padding(.horizontal, 4)
-                    .background(Color.gray.opacity(0.1))
+                    .background(DesignTokens.Color.semantic.textTertiary.opacity(0.1))
                     .cornerRadius(4)
             }
             
@@ -227,7 +229,7 @@ struct LargeFileRow: View {
                     viewModel.revealInFinder(item)
                 }) {
                     Image(systemName: "folder")
-                        .foregroundStyle(.blue)
+                        .foregroundColor(DesignTokens.Color.semantic.info)
                 }
                 .buttonStyle(.plain)
                 .help("Reveal in Finder")
@@ -236,7 +238,7 @@ struct LargeFileRow: View {
                     showDeleteConfirm = true
                 }) {
                     Image(systemName: "trash")
-                        .foregroundStyle(.red)
+                        .foregroundColor(DesignTokens.Color.semantic.error)
                 }
                 .buttonStyle(.plain)
                 .help("Delete File")

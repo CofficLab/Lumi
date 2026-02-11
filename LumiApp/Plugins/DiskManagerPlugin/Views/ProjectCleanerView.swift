@@ -10,11 +10,10 @@ struct ProjectCleanerView: View {
                 Text("Project Cleaner")
                     .font(.title2)
                     .fontWeight(.bold)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 Spacer()
-                Button {
+                GlassButton(title: "Rescan", style: .secondary) {
                     viewModel.scanProjects()
-                } label: {
-                    Label("Rescan", systemImage: "arrow.clockwise")
                 }
                 .disabled(viewModel.isScanning)
             }
@@ -42,14 +41,15 @@ struct ProjectCleanerView: View {
                                     .labelsHidden()
                                     
                                     Image(systemName: "folder.fill")
-                                        .foregroundStyle(.yellow)
+                                        .foregroundColor(DesignTokens.Color.semantic.warning)
                                     
                                     VStack(alignment: .leading) {
                                         Text(item.name)
                                             .font(.body)
+                                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                                         Text(item.path)
                                             .font(.caption2)
-                                            .foregroundStyle(.secondary)
+                                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                                             .lineLimit(1)
                                             .truncationMode(.middle)
                                     }
@@ -58,6 +58,7 @@ struct ProjectCleanerView: View {
                                     
                                     Text(formatBytes(item.size))
                                         .font(.monospacedDigit(.body)())
+                                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                                 }
                             }
                         } header: {
@@ -65,12 +66,13 @@ struct ProjectCleanerView: View {
                                 Image(systemName: project.type.icon)
                                 Text(project.name)
                                     .font(.headline)
+                                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                                 Spacer()
                                 Text(project.type.rawValue)
                                     .font(.caption)
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
-                                    .background(Color.secondary.opacity(0.2))
+                                    .background(DesignTokens.Color.semantic.textTertiary.opacity(0.2))
                                     .clipShape(Capsule())
                             }
                         }
@@ -85,26 +87,23 @@ struct ProjectCleanerView: View {
                     VStack(alignment: .leading) {
                         Text("Selected for cleanup")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         Text(formatBytes(viewModel.totalSelectedSize))
                             .font(.title2)
                             .fontWeight(.bold)
+                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                     }
                     
                     Spacer()
                     
-                    Button(role: .destructive) {
+                    GlassButton(title: "Clean Selected", style: .danger) {
                         viewModel.showCleanConfirmation = true
-                    } label: {
-                        Text("Clean Selected")
-                            .frame(minWidth: 100)
                     }
-                    .buttonStyle(.borderedProminent)
                     .disabled(viewModel.selectedItemIds.isEmpty || viewModel.isCleaning)
                 }
                 .padding()
             }
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(DesignTokens.Material.glass)
         }
         .onAppear {
             if viewModel.projects.isEmpty {

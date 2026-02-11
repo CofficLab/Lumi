@@ -11,7 +11,7 @@ struct AppManagerView: View {
                 // 顶部工具栏
                 toolbar
                 
-                Divider()
+                GlassDivider()
                 
                 // 应用列表
                 if viewModel.isLoading {
@@ -80,28 +80,22 @@ struct AppManagerView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(String(localized: "\(viewModel.installedApps.count) Apps"))
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
                 Text(String(localized: "Total Size: \(viewModel.formattedTotalSize)"))
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
             
             Spacer()
             
-            Button(action: {
+            GlassButton(title: LocalizedStringKey("Refresh"), style: .secondary) {
                 viewModel.refresh()
-            }) {
-                HStack(spacing: 4) {
-                    Image(systemName: "arrow.clockwise")
-                    Text(String(localized: "Refresh"))
-                }
             }
-            .buttonStyle(.borderedProminent)
             .disabled(viewModel.isLoading)
         }
         .padding()
-        .background(Color(nsColor: .controlBackgroundColor))
+        .background(DesignTokens.Material.glass)
     }
     
     private var loadingView: some View {
@@ -135,25 +129,26 @@ struct AppManagerView: View {
                             Image(systemName: "app.fill")
                                 .resizable()
                                 .frame(width: 64, height: 64)
-                                .foregroundStyle(.secondary)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         }
                         
                         VStack(alignment: .leading) {
                             Text(app.displayName)
                                 .font(.title)
+                                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                             Text(app.bundleIdentifier ?? "Unknown Bundle ID")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                             Text(app.bundleURL.path)
                                 .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                         }
                     }
                     .padding()
                     
-                    Divider()
+                    GlassDivider()
                     
                     // Related Files List
                     if viewModel.isScanningFiles {
@@ -174,9 +169,10 @@ struct AppManagerView: View {
                                     VStack(alignment: .leading) {
                                         Text(file.type.displayName)
                                             .font(.caption)
-                                            .foregroundStyle(.secondary)
+                                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                                         Text(file.path)
                                             .font(.caption2)
+                                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                                             .lineLimit(1)
                                             .truncationMode(.middle)
                                     }
@@ -185,29 +181,26 @@ struct AppManagerView: View {
                                     
                                     Text(formatBytes(file.size))
                                         .font(.monospacedDigit(.caption)())
-                                        .foregroundStyle(.secondary)
+                                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                                 }
                             }
                         }
                     }
                     
-                    Divider()
+                    GlassDivider()
                     
                     // Footer Action
                     HStack {
                         Text(String(localized: "Selected: \(formatBytes(viewModel.totalSelectedSize))"))
                             .font(.headline)
+                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
                         Spacer()
 
-                        Button(role: .destructive) {
+                        GlassButton(title: LocalizedStringKey("Uninstall Selected"), style: .danger) {
                             viewModel.showUninstallConfirmation = true
-                        } label: {
-                            Text(String(localized: "Uninstall Selected"))
-                                .padding(.horizontal, 8)
                         }
                         .controlSize(.large)
-                        .buttonStyle(.borderedProminent)
                         .disabled(viewModel.selectedFileIds.isEmpty || viewModel.isDeleting)
                     }
                     .padding()

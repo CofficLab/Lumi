@@ -22,7 +22,7 @@ struct Sidebar: View {
                         }
                         .listStyle(.sidebar)
                         .scrollContentBackground(.hidden)
-                        .background(.ultraThinMaterial)
+                        .background(DesignTokens.Material.glass)
                 } else {
                     // 空状态
                     emptyState
@@ -34,7 +34,7 @@ struct Sidebar: View {
             // 底部设置按钮
             settingsButton
         }
-        .background(.ultraThinMaterial)
+        .background(DesignTokens.Material.glass)
         .onAppear {
             // Delay to avoid "Publishing changes during view update" warning
             DispatchQueue.main.async {
@@ -56,20 +56,20 @@ struct Sidebar: View {
                             .fill(DesignTokens.Color.gradients.primaryGradient)
                     } else {
                         Circle()
-                            .fill(Color.secondary.opacity(0.1))
+                            .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.15))
                     }
                 }
                 .frame(width: 32, height: 32)
                 .overlay(
                     Image(systemName: entry.icon)
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(isSelected ? .white : .secondary)
+                        .foregroundColor(isSelected ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
                 )
 
                 // 标题
                 Text(entry.title)
                     .font(.system(size: 14, weight: isSelected ? .semibold : .regular))
-                    .foregroundStyle(isSelected ? .primary : .secondary)
+                    .foregroundColor(isSelected ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
 
                 Spacer()
             }
@@ -84,20 +84,20 @@ struct Sidebar: View {
         Button {
             NotificationCenter.postOpenSettings()
         } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "gearshape")
-                    .font(.system(size: 16))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 24)
+            GlassRow {
+                HStack(spacing: 12) {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 16))
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .frame(width: 24)
 
-                Text("设置")
-                    .font(.body)
+                    Text("设置")
+                        .font(DesignTokens.Typography.body)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
-                Spacer()
+                    Spacer()
+                }
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 16)
-            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -107,15 +107,15 @@ struct Sidebar: View {
         VStack(spacing: 12) {
             Image(systemName: "tray")
                 .font(.system(size: 48))
-                .foregroundStyle(.secondary)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
             Text("暂无导航")
                 .font(.headline)
-                .foregroundStyle(.secondary)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
             Text("插件未提供导航入口")
                 .font(.caption)
-                .foregroundStyle(.tertiary)
+                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

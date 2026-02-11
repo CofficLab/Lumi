@@ -115,6 +115,9 @@
         }
       }
     },
+    "/path/to/db.sqlite" : {
+
+    },
     "# %@" : {
       "localizations" : {
         "zh-Hans" : {
@@ -439,6 +442,9 @@
           }
         }
       }
+    },
+    "127.0.0.1" : {
+
     },
     "500" : {
       "localizations" : {
@@ -1187,6 +1193,12 @@
         }
       }
     },
+    "Clear" : {
+
+    },
+    "Clear All" : {
+
+    },
     "Clear All History" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1299,7 +1311,11 @@
         }
       }
     },
+    "Comment" : {
+
+    },
     "Comment (Optional)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1603,7 +1619,11 @@
         }
       }
     },
+    "Database Path" : {
+
+    },
     "Database Path (or :memory:)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1714,6 +1734,9 @@
           }
         }
       }
+    },
+    "dev.example.com" : {
+
     },
     "Device Info" : {
       "localizations" : {
@@ -1876,7 +1899,11 @@
         }
       }
     },
+    "Domain" : {
+
+    },
     "Domain (e.g., dev.example.com)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2229,6 +2256,7 @@
       }
     },
     "Group (Optional)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2475,7 +2503,11 @@
         }
       }
     },
+    "Image" : {
+
+    },
     "Image name (e.g., nginx:latest)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3087,6 +3119,12 @@
         }
       }
     },
+    "My Database" : {
+
+    },
+    "myrepo:v1" : {
+
+    },
     "Name" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3183,7 +3221,11 @@
         }
       }
     },
+    "New Tag" : {
+
+    },
     "New Tag (e.g., myrepo:v1)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3198,6 +3240,9 @@
           }
         }
       }
+    },
+    "nginx:latest" : {
+
     },
     "No active processes" : {
       "localizations" : {
@@ -3551,6 +3596,9 @@
           }
         }
       }
+    },
+    "Optional" : {
+
     },
     "Overview" : {
       "localizations" : {
@@ -4065,6 +4113,9 @@
           }
         }
       }
+    },
+    "Reset" : {
+
     },
     "Reset to Defaults" : {
       "localizations" : {
@@ -4626,6 +4677,9 @@
           }
         }
       }
+    },
+    "Send" : {
+
     },
     "Settings" : {
       "localizations" : {
@@ -5974,6 +6028,9 @@
         }
       }
     },
+    "搜索" : {
+
+    },
     "收集中..." : {
       "localizations" : {
         "zh-Hans" : {
@@ -6107,6 +6164,9 @@
           }
         }
       }
+    },
+    "添加" : {
+
     },
     "添加应用和对应的输入源，切换应用时自动切换输入法" : {
 

@@ -22,7 +22,7 @@ struct DirectoryTreeView: View {
                     
                     Text(formatBytes(entry.size))
                         .font(.monospacedDigit(.caption)())
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
                 .padding(.vertical, 2)
             }

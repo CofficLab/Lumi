@@ -24,20 +24,20 @@ struct StatusBarPopupView: View {
             // 第一部分：应用基本信息
             appInfoSection
 
-            Divider()
+            GlassDivider()
 
             // 第二部分：插件提供的视图（如果有）
             if !pluginPopupViews.isEmpty {
                 pluginViewsSection
 
-                Divider()
+                GlassDivider()
             }
 
             // 第三部分：菜单项
             menuItemsSection
         }
         .frame(width: 300)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(DesignTokens.Material.glass)
     }
 
     // MARK: - App Info Section
@@ -57,10 +57,11 @@ struct StatusBarPopupView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Lumi")
                         .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
                     Text("v\(appVersion)")
                         .font(.system(size: 10))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                 }
 
                 Spacer()
@@ -79,8 +80,7 @@ struct StatusBarPopupView: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 if index < pluginPopupViews.count - 1 {
-                    Divider()
-                        .padding(.horizontal, 0)
+                    GlassDivider()
                 }
             }
         }
@@ -97,7 +97,7 @@ struct StatusBarPopupView: View {
                 action: onShowMainWindow
             )
 
-            Divider()
+            GlassDivider()
 
             // 检查更新
             MenuItemRow(
@@ -105,12 +105,12 @@ struct StatusBarPopupView: View {
                 action: onCheckForUpdates
             )
 
-            Divider()
+            GlassDivider()
 
             // 退出应用
             MenuItemRow(
                 title: "退出 Lumi",
-                color: .red,
+                color: DesignTokens.Color.semantic.error,
                 action: onQuit
             )
         }
@@ -130,29 +130,20 @@ struct MenuItemRow: View {
     var color: Color = .primary
     let action: () -> Void
 
-    @State private var isHovering = false
-
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
-                Text(title)
-                    .font(.system(size: 13))
-                    .foregroundColor(isHovering ? .white : color)
-                    .padding(.horizontal)
+            GlassRow {
+                HStack(spacing: 12) {
+                    Text(title)
+                        .font(DesignTokens.Typography.body)
+                        .foregroundColor(color)
+                        .padding(.horizontal, DesignTokens.Spacing.sm)
 
-                Spacer()
+                    Spacer()
+                }
             }
-            .padding(.vertical, 10)
-            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .background(
-            Rectangle()
-                .fill(isHovering ? Color(nsColor: .selectedContentBackgroundColor) : Color.clear)
-        )
-        .onHover { hovering in
-            isHovering = hovering
-        }
     }
 }
 

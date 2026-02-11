@@ -8,7 +8,7 @@ struct XcodeCleanerView: View {
             // Header
             HStack {
                 Text("Free up disk space by cleaning obsolete build and support files")
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
                 Spacer()
 
@@ -16,19 +16,17 @@ struct XcodeCleanerView: View {
                     ProgressView()
                         .controlSize(.small)
                     Text("Scanning...")
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 } else {
-                    Button(action: {
+                    GlassButton(title: "Rescan", style: .secondary) {
                         Task { await viewModel.scanAll() }
-                    }) {
-                        Label("Rescan", systemImage: "arrow.clockwise")
                     }
                 }
             }
             .padding()
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(DesignTokens.Material.glass)
 
-            Divider()
+            GlassDivider()
 
             // Content
             if viewModel.itemsByCategory.isEmpty && !viewModel.isScanning {
@@ -44,37 +42,34 @@ struct XcodeCleanerView: View {
                 .listStyle(.inset)
             }
 
-            Divider()
+            GlassDivider()
 
             // Footer
             HStack {
                 VStack(alignment: .leading) {
                     Text("Selected: \(viewModel.formatBytes(viewModel.selectedSize))")
                         .font(.headline)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                     Text("Total: \(viewModel.formatBytes(viewModel.totalSize))")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
 
                 Spacer()
 
                 if let error = viewModel.errorMessage {
                     Text(error)
-                        .foregroundStyle(.red)
+                        .foregroundColor(DesignTokens.Color.semantic.error)
                         .font(.caption)
                 }
 
-                Button(action: {
+                GlassButton(title: "Clean Now", style: .primary) {
                     Task { await viewModel.cleanSelected() }
-                }) {
-                    Text("Clean Now")
-                        .frame(minWidth: 100)
                 }
-                .buttonStyle(.borderedProminent)
                 .disabled(viewModel.selectedSize == 0 || viewModel.isCleaning)
             }
             .padding()
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(DesignTokens.Material.glass)
         }
         .onAppear {
             Task { await viewModel.scanAll() }
@@ -86,12 +81,13 @@ struct XcodeCleanerView: View {
             Spacer()
             Image(systemName: "checkmark.circle")
             .font(.system(size: 64))
-            .foregroundStyle(.green)
+            .foregroundColor(DesignTokens.Color.semantic.success)
             Text("No items to clean")
             .font(.title2)
+            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
             Text("Your Xcode environment is clean!")
-            .foregroundStyle(.secondary)
-            Button("Rescan") {
+            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            GlassButton(title: "Rescan", style: .secondary) {
                 Task { await viewModel.scanAll() }
             }
             Spacer()
@@ -128,26 +124,27 @@ struct CategorySection: View {
             Button(action: { withAnimation { isExpanded.toggle() } }) {
                 Image(systemName: "chevron.right")
                     .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
             .buttonStyle(.plain)
 
             Image(systemName: category.iconName)
-                .foregroundStyle(.blue)
+                .foregroundColor(DesignTokens.Color.semantic.info)
 
             VStack(alignment: .leading) {
                 Text(category.rawValue)
                     .font(.headline)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 Text(category.description)
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
 
             Spacer()
 
             Text(viewModel.formatBytes(categorySize))
                 .font(.monospacedDigit(.body)())
-                .foregroundStyle(.secondary)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
             // 全选/反选 Checkbox
             Toggle("", isOn: Binding(
@@ -173,16 +170,17 @@ struct ItemRow: View {
     var body: some View {
         HStack {
             Image(systemName: "doc")
-                .foregroundStyle(.secondary)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 .padding(.leading, 24) // Indent
 
             VStack(alignment: .leading) {
                 Text(item.name)
                     .lineLimit(1)
                     .truncationMode(.middle)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 Text(item.path.path)
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
@@ -191,7 +189,7 @@ struct ItemRow: View {
 
             Text(viewModel.formatBytes(item.size))
                 .font(.monospacedDigit(.caption)())
-                .foregroundStyle(.secondary)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
             Toggle("", isOn: Binding(
                 get: { item.isSelected },

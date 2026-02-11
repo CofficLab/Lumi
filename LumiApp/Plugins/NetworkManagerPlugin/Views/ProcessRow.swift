@@ -20,17 +20,18 @@ struct ProcessRow: View {
                 } else {
                     Image(systemName: "gearshape")
                         .frame(width: 24, height: 24)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(process.name)
                         .font(.system(size: 12, weight: .medium))
                         .lineLimit(1)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
                     Text(String(localized: "PID: \(process.id)"))
                         .font(.system(size: 10))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
             }
             .frame(width: availableWidth * 0.50, alignment: .leading)
@@ -63,11 +64,11 @@ struct SpeedText: View {
 
     var color: Color {
         if speed >= thresholdRed {
-            return .red
+            return DesignTokens.Color.semantic.error
         } else if speed >= thresholdOrange {
-            return .orange
+            return DesignTokens.Color.semantic.warning
         } else {
-            return .primary
+            return DesignTokens.Color.semantic.textPrimary
         }
     }
 

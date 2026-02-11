@@ -48,7 +48,7 @@ struct SettingView: View {
                 // 应用信息头部
                 sidebarHeader
 
-                Divider()
+                GlassDivider()
 
                 // 设置列表
                 List(SettingTab.allCases, id: \.self, selection: $selectedTab) { tab in
@@ -77,18 +77,18 @@ struct SettingView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 // 底部完成按钮
-                Divider()
+                GlassDivider()
                 HStack {
                     Spacer()
-                    Button("完成") {
+                    GlassButton(title: "完成", style: .primary) {
                         // 关闭设置视图
                         NotificationCenter.postDismissSettings()
                     }
                     .keyboardShortcut(.defaultAction)
-                    .padding(.vertical, 12)
-                    .padding(.horizontal, 24)
+                    .frame(width: 120)
                 }
-                .background(Color(NSColor.windowBackgroundColor))
+                .padding(DesignTokens.Spacing.sm)
+                .background(DesignTokens.Material.glass)
             }
         }
         .frame(width: 700, height: 800)

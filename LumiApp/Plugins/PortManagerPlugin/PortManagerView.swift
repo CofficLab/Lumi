@@ -24,26 +24,23 @@ struct PortManagerView: View {
             // Toolbar / Header
             HStack {
                 Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
-                TextField("Search port, PID, or process name", text: $searchText)
-                    .textFieldStyle(.plain)
-                    .padding(8)
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                GlassTextField(
+                    title: "Search port, PID, or process name",
+                    text: $searchText
+                )
 
                 Spacer()
 
-                Button(action: {
+                GlassButton(title: "Refresh", style: .secondary) {
                     Task { await refresh() }
-                }) {
-                    Label("Refresh", systemImage: "arrow.clockwise")
                 }
                 .disabled(isLoading)
             }
             .padding()
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(DesignTokens.Material.glass)
 
-            Divider()
+            GlassDivider()
 
             // Content
             if isLoading && ports.isEmpty {
@@ -56,10 +53,10 @@ struct PortManagerView: View {
                     VStack {
                         Image(systemName: "network.slash")
                             .font(.largeTitle)
-                            .foregroundStyle(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         Text("No Listening Ports")
                             .font(.headline)
-                            .foregroundStyle(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
@@ -117,11 +114,12 @@ struct PortRowView: View {
                     Text(port.port)
                         .font(.title3)
                         .fontWeight(.bold)
-                        .foregroundStyle(.blue)
+                        .foregroundColor(DesignTokens.Color.semantic.info)
                         .frame(minWidth: 50, alignment: .leading)
 
                     Text(port.command)
                         .font(.headline)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
                     Spacer()
                 }
@@ -134,23 +132,23 @@ struct PortRowView: View {
                         .monospaced()
 
                     Text("•")
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
                     Text("PID: \(port.pid)")
                         .font(.caption)
                         .monospacedDigit()
                         .padding(.horizontal, 4)
-                        .background(Color.gray.opacity(0.1))
+                        .background(DesignTokens.Color.semantic.textTertiary.opacity(0.2))
                         .cornerRadius(4)
 
                     Text("•")
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
                     Text(port.user)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
-                .foregroundStyle(.secondary)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
 
             Spacer()
@@ -159,7 +157,7 @@ struct PortRowView: View {
                 showConfirm = true
             }) {
                 Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.red.opacity(0.8))
+                    .foregroundColor(DesignTokens.Color.semantic.error.opacity(0.8))
                     .font(.title2)
             }
             .buttonStyle(.borderless)

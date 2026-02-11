@@ -17,23 +17,24 @@ struct InputRuleRowView: View {
             // 应用名称
             Text(rule.appName)
                 .fontWeight(.medium)
+                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
             Spacer()
 
             // 分隔箭头
             Image(systemName: "arrow.right")
-                .foregroundColor(.secondary)
+                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
 
             Spacer()
 
             // 输入源名称
             if let source = availableSources.first(where: { $0.id == rule.inputSourceID }) {
                 Text(source.name)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             } else {
                 // 输入源不存在时显示 ID（红色警告）
                 Text(rule.inputSourceID)
-                    .foregroundColor(.red)
+                    .foregroundColor(DesignTokens.Color.semantic.error)
             }
         }
     }

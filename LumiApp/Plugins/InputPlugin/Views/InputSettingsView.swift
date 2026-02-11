@@ -11,24 +11,28 @@ struct InputSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             // 启用开关
-            Toggle("Enable Auto Input Source Switching", isOn: Binding(
-                get: { viewModel.isEnabled },
-                set: { _ in viewModel.toggleEnabled() }
-            ))
-            .toggleStyle(.switch)
+            MystiqueGlassCard {
+                Toggle("Enable Auto Input Source Switching", isOn: Binding(
+                    get: { viewModel.isEnabled },
+                    set: { _ in viewModel.toggleEnabled() }
+                ))
+                .toggleStyle(.switch)
+            }
 
-            Divider()
+            GlassDivider()
 
             // 添加新规则表单
-            AddRuleFormView(
-                selectedApp: $viewModel.selectedApp,
-                selectedSourceID: $viewModel.selectedSourceID,
-                runningApps: viewModel.runningApps,
-                availableSources: viewModel.availableSources,
-                onAddRule: viewModel.addRule
-            )
+            MystiqueGlassCard {
+                AddRuleFormView(
+                    selectedApp: $viewModel.selectedApp,
+                    selectedSourceID: $viewModel.selectedSourceID,
+                    runningApps: viewModel.runningApps,
+                    availableSources: viewModel.availableSources,
+                    onAddRule: viewModel.addRule
+                )
+            }
 
-            Divider()
+            GlassDivider()
 
             // 规则列表或空状态
             rulesContent

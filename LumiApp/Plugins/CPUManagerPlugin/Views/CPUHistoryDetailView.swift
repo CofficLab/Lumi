@@ -11,7 +11,7 @@ struct CPUHistoryDetailView: View {
             HStack {
                 Text("CPU Load Trend")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                 
                 Spacer()
                 

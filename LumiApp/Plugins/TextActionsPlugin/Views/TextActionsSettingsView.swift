@@ -7,55 +7,76 @@ struct TextActionsSettingsView: View {
     
     var body: some View {
         HStack(spacing: 0) {
-            // Preview Section
             TextActionPreviewView(isEnabled: isEnabled)
-            
-            Divider()
-            
-            // Settings Form
-            Form {
-                Section("General Settings") {
-                    Toggle("Enable Text Selection Menu", isOn: $isEnabled)
-                        .onChange(of: isEnabled) { _, newValue in
-                            if newValue {
-                                manager.startMonitoring()
-                                // Ensure window controller is initialized
-                                _ = TextActionMenuController.shared
-                            } else {
-                                manager.stopMonitoring()
+
+            GlassDivider()
+                .frame(width: 1, height: 360)
+                .rotationEffect(.degrees(90))
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                    MystiqueGlassCard {
+                        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                            Text("General Settings")
+                                .font(DesignTokens.Typography.title3)
+                                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+
+                            Toggle("Enable Text Selection Menu", isOn: $isEnabled)
+                                .onChange(of: isEnabled) { _, newValue in
+                                    if newValue {
+                                        manager.startMonitoring()
+                                        _ = TextActionMenuController.shared
+                                    } else {
+                                        manager.stopMonitoring()
+                                    }
+                                }
+
+                            if !manager.isPermissionGranted {
+                                HStack(spacing: DesignTokens.Spacing.sm) {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .foregroundColor(DesignTokens.Color.semantic.warning)
+                                    Text("Accessibility permission is required to detect text selection")
+                                        .font(DesignTokens.Typography.caption1)
+                                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                    GlassButton(title: "Open System Settings", style: .secondary) {
+                                        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
+                                        NSWorkspace.shared.open(url)
+                                    }
+                                    .frame(maxWidth: 180)
+                                }
+                                .padding(.top, DesignTokens.Spacing.xs)
                             }
                         }
-                    
-                    if !manager.isPermissionGranted {
-                        HStack {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundColor(.yellow)
-                            Text("Accessibility permission is required to detect text selection")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Button("Open System Settings") {
-                                let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
-                                NSWorkspace.shared.open(url)
+                    }
+
+                    MystiqueGlassCard {
+                        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                            Text("Supported Actions")
+                                .font(DesignTokens.Typography.title3)
+                                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+
+                            VStack(spacing: DesignTokens.Spacing.xs) {
+                                ForEach(TextActionType.allCases) { action in
+                                    GlassRow {
+                                        HStack {
+                                            Image(systemName: action.icon)
+                                                .frame(width: 20)
+                                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                            Text(action.title)
+                                                .font(DesignTokens.Typography.body)
+                                                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                                            Spacer()
+                                            Image(systemName: "checkmark")
+                                                .foregroundColor(DesignTokens.Color.semantic.primary)
+                                        }
+                                    }
+                                }
                             }
                         }
-                        .padding(.top, 4)
                     }
                 }
-                
-                Section("Supported Actions") {
-                    ForEach(TextActionType.allCases) { action in
-                        HStack {
-                            Image(systemName: action.icon)
-                                .frame(width: 20)
-                            Text(action.title)
-                            Spacer()
-                            Image(systemName: "checkmark")
-                                .foregroundColor(.blue)
-                        }
-                    }
-                }
+                .padding(DesignTokens.Spacing.md)
             }
-            .formStyle(.grouped)
         }
         .onAppear {
             manager.checkPermission()
@@ -72,41 +93,40 @@ struct TextActionPreviewView: View {
     
     var body: some View {
         ZStack {
-            Color(nsColor: .controlBackgroundColor)
+            DesignTokens.Color.basePalette.surfaceBackground
                 .ignoresSafeArea()
             
             VStack(spacing: 20) {
                 Text("Preview")
                     .font(.headline)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 
                 ZStack {
                     // Document background
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(nsColor: .textBackgroundColor))
-                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                        .fill(DesignTokens.Material.glass)
                         .frame(width: 220, height: 160)
                     
                     // Mock content
                     VStack(alignment: .leading, spacing: 4) {
                         RoundedRectangle(cornerRadius: 2)
-                            .fill(Color.gray.opacity(0.2))
+                            .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.2))
                             .frame(width: 180, height: 8)
                         
                         RoundedRectangle(cornerRadius: 2)
-                            .fill(Color.gray.opacity(0.2))
+                            .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.2))
                             .frame(width: 160, height: 8)
                         
                         HStack(spacing: 0) {
                             Text("Select ")
                                 .font(.system(size: 12))
-                                .foregroundStyle(.secondary)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                             
                             Text("this text")
                                 .font(.system(size: 12))
                                 .padding(.horizontal, 2)
-                                .background(isEnabled ? Color.accentColor.opacity(0.3) : Color.clear)
-                                .foregroundStyle(isEnabled ? Color.accentColor : .secondary)
+                                .background(isEnabled ? DesignTokens.Color.semantic.primary.opacity(0.3) : SwiftUI.Color.clear)
+                                .foregroundColor(isEnabled ? DesignTokens.Color.semantic.primary : DesignTokens.Color.semantic.textSecondary)
                                 .overlay(
                                     GeometryReader { geo in
                                         if isEnabled {
@@ -118,11 +138,11 @@ struct TextActionPreviewView: View {
                             
                             Text(" to see.")
                                 .font(.system(size: 12))
-                                .foregroundStyle(.secondary)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         }
                         
                         RoundedRectangle(cornerRadius: 2)
-                            .fill(Color.gray.opacity(0.2))
+                            .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.2))
                             .frame(width: 140, height: 8)
                     }
                 }
@@ -142,16 +162,16 @@ struct MockActionMenu: View {
                         .font(.system(size: 14))
                     Text(action.title)
                         .font(.caption2)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 }
                 .frame(width: 44, height: 44)
-                .background(Color(nsColor: .controlBackgroundColor))
-                .cornerRadius(6)
+                .background(DesignTokens.Material.glass)
+                .cornerRadius(DesignTokens.Radius.sm)
             }
         }
-        .padding(6)
-        .background(.regularMaterial)
-        .cornerRadius(10)
-        .shadow(radius: 4)
+        .padding(DesignTokens.Spacing.xs)
+        .background(DesignTokens.Material.glass)
+        .cornerRadius(DesignTokens.Radius.md)
     }
 }
 

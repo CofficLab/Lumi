@@ -30,15 +30,15 @@ struct MemoryHistoryGraphView: View {
                         if !dataPoints.isEmpty {
                             // Area
                             MemoryGraphArea(data: dataPoints.map { $0.usagePercentage }, maxValue: maxValue)
-                                .fill(LinearGradient(gradient: Gradient(colors: [Color.purple.opacity(0.5), Color.purple.opacity(0.1)]), startPoint: .top, endPoint: .bottom))
+                                .fill(LinearGradient(gradient: Gradient(colors: [DesignTokens.Color.semantic.primary.opacity(0.5), DesignTokens.Color.semantic.primary.opacity(0.1)]), startPoint: .top, endPoint: .bottom))
 
                             // Line
                             MemoryGraphLine(data: dataPoints.map { $0.usagePercentage }, maxValue: maxValue)
-                                .stroke(Color.purple, lineWidth: 1.5)
+                                .stroke(DesignTokens.Color.semantic.primary, lineWidth: 1.5)
                         } else {
                             Text("Collecting data...")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
 
@@ -48,7 +48,7 @@ struct MemoryHistoryGraphView: View {
                                 path.move(to: CGPoint(x: hoverLocation.x, y: 0))
                                 path.addLine(to: CGPoint(x: hoverLocation.x, y: geometry.size.height))
                             }
-                            .stroke(Color.primary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                            .stroke(DesignTokens.Color.semantic.textPrimary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
 
                             MemoryTooltipView(point: point, timeRange: timeRange)
                                 .position(x: clampedX(hoverLocation.x, width: geometry.size.width), y: 40)
@@ -87,7 +87,7 @@ struct MemoryHistoryGraphView: View {
                     if index > 0 {
                         Text(formatYValue(for: index))
                             .font(.system(size: 9))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                             .frame(height: geometry.size.height / 5, alignment: .trailing)
                     }
                 }
@@ -95,7 +95,7 @@ struct MemoryHistoryGraphView: View {
                 // 底部 0 标签
                 Text("0")
                     .font(.system(size: 9))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
             }
             .padding(.trailing, 4)
         }
@@ -113,7 +113,7 @@ struct MemoryHistoryGraphView: View {
                     if let firstPoint = dataPoints.first {
                         Text(formatXAxisDate(firstPoint.timestamp))
                             .font(.system(size: 9))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     }
 
                     Spacer()
@@ -122,7 +122,7 @@ struct MemoryHistoryGraphView: View {
                     if let lastPoint = dataPoints.last {
                         Text(formatXAxisDate(lastPoint.timestamp))
                             .font(.system(size: 9))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     }
                 }
                 .padding(.horizontal, 8)
@@ -141,7 +141,7 @@ struct MemoryHistoryGraphView: View {
                     path.move(to: CGPoint(x: 0, y: y))
                     path.addLine(to: CGPoint(x: size.width, y: y))
                 }
-                .stroke(Color.gray.opacity(0.15), lineWidth: 0.5)
+                .stroke(DesignTokens.Color.semantic.textTertiary.opacity(0.15), lineWidth: 0.5)
             }
         }
     }
@@ -224,17 +224,17 @@ struct MemoryTooltipView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(formatDate(point.timestamp))
                 .font(.system(size: 10, weight: .bold))
-                .foregroundColor(.primary)
+                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
             
             HStack(spacing: 4) {
-                Circle().fill(Color.purple).frame(width: 6, height: 6)
+                Circle().fill(DesignTokens.Color.semantic.primary).frame(width: 6, height: 6)
                 Text("\(ByteCountFormatter.string(fromByteCount: Int64(point.usedBytes), countStyle: .memory)) (\(Int(point.usagePercentage))%)")
                     .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
         }
         .padding(6)
-        .background(VisualEffectBlur(material: .popover, blendingMode: .withinWindow))
+        .background(DesignTokens.Material.glass)
         .cornerRadius(6)
         .shadow(radius: 2)
     }

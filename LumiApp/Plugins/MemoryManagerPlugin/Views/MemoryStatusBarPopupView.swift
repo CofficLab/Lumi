@@ -21,7 +21,7 @@ struct MemoryStatusBarPopupView: View {
             HStack {
                 Text("Memory")
                     .font(.system(size: 11))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
 
                 Spacer()
 
@@ -34,13 +34,13 @@ struct MemoryStatusBarPopupView: View {
                 ZStack(alignment: .leading) {
                     // Background bar
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.secondary.opacity(0.2))
+                        .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.2))
 
                     // Progress bar
                     RoundedRectangle(cornerRadius: 3)
                         .fill(
                             LinearGradient(
-                                gradient: Gradient(colors: [.purple, .blue]),
+                                gradient: Gradient(colors: [DesignTokens.Color.semantic.primary, DesignTokens.Color.semantic.info]),
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -62,11 +62,11 @@ struct MemoryStatusBarPopupView: View {
             HStack(spacing: 4) {
                 Image(systemName: "chart.line.uptrend.xyaxis")
                     .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
 
                 Text("Last 60 seconds")
                     .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
 
                 Spacer()
 
@@ -74,11 +74,11 @@ struct MemoryStatusBarPopupView: View {
                 HStack(spacing: 6) {
                     HStack(spacing: 3) {
                         Circle()
-                            .fill(Color.purple.opacity(0.8))
+                            .fill(DesignTokens.Color.semantic.primary.opacity(0.8))
                             .frame(width: 5, height: 5)
                         Text("Usage")
                             .font(.system(size: 9))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     }
                 }
             }
@@ -94,7 +94,7 @@ struct MemoryStatusBarPopupView: View {
                             path.move(to: CGPoint(x: 0, y: y))
                             path.addLine(to: CGPoint(x: geometry.size.width, y: y))
                         }
-                        .stroke(Color.secondary.opacity(0.1), lineWidth: 1)
+                        .stroke(DesignTokens.Color.semantic.textTertiary.opacity(0.1), lineWidth: 1)
                     }
 
                     // Memory usage area
@@ -106,8 +106,8 @@ struct MemoryStatusBarPopupView: View {
                         .fill(
                             LinearGradient(
                                 gradient: Gradient(colors: [
-                                    Color.purple.opacity(0.4),
-                                    Color.blue.opacity(0.05),
+                                    DesignTokens.Color.semantic.primary.opacity(0.4),
+                                    DesignTokens.Color.semantic.info.opacity(0.05),
                                 ]),
                                 startPoint: .top,
                                 endPoint: .bottom
@@ -119,11 +119,11 @@ struct MemoryStatusBarPopupView: View {
                             data: recentData.map { $0.usagePercentage },
                             maxValue: maxValue
                         )
-                        .stroke(Color.purple.opacity(0.8), lineWidth: 1.2)
+                        .stroke(DesignTokens.Color.semantic.primary.opacity(0.8), lineWidth: 1.2)
                     } else {
                         Text("Collecting...")
                             .font(.system(size: 10))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 }
@@ -132,7 +132,7 @@ struct MemoryStatusBarPopupView: View {
             .padding(.horizontal, 12)
         }
         .padding(.vertical, 8)
-        .background(.background.opacity(0.3))
+        .background(DesignTokens.Material.glass.opacity(0.3))
     }
 }
 

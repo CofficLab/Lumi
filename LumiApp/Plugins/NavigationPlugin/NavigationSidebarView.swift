@@ -10,8 +10,9 @@ struct NavigationSidebarView: View {
                     .font(.title2)
                     .fontWeight(.bold)
                     .padding(.horizontal)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
-                Divider()
+                GlassDivider()
             }
 
             // Navigation List

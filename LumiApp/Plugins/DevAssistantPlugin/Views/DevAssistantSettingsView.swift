@@ -19,29 +19,33 @@ struct DevAssistantSettingsView: View {
         Form {
             Section("Anthropic (Claude)") {
                 SecureField("API Key", text: $apiKeyAnthropic)
-                    .textFieldStyle(.roundedBorder)
-                TextField("Model", text: $modelAnthropic)
-                    .textFieldStyle(.roundedBorder)
+                    .textFieldStyle(.plain)
+                    .padding(8)
+                    .background(DesignTokens.Material.glass)
+                    .cornerRadius(8)
+                GlassTextField(title: LocalizedStringKey("Model"), text: $modelAnthropic, placeholder: LocalizedStringKey(modelAnthropic))
                 Link("Get API Key", destination: URL(string: "https://console.anthropic.com/")!)
                     .font(.caption)
             }
             
             Section("OpenAI") {
                 SecureField("API Key", text: $apiKeyOpenAI)
-                    .textFieldStyle(.roundedBorder)
-                TextField("Model", text: $modelOpenAI)
-                    .textFieldStyle(.roundedBorder)
-                TextField("Base URL", text: $baseURLOpenAI)
-                    .textFieldStyle(.roundedBorder)
+                    .textFieldStyle(.plain)
+                    .padding(8)
+                    .background(DesignTokens.Material.glass)
+                    .cornerRadius(8)
+                GlassTextField(title: LocalizedStringKey("Model"), text: $modelOpenAI, placeholder: LocalizedStringKey(modelOpenAI))
+                GlassTextField(title: LocalizedStringKey("Base URL"), text: $baseURLOpenAI, placeholder: LocalizedStringKey(baseURLOpenAI))
             }
             
             Section("DeepSeek") {
                 SecureField("API Key", text: $apiKeyDeepSeek)
-                    .textFieldStyle(.roundedBorder)
-                TextField("Model", text: $modelDeepSeek)
-                    .textFieldStyle(.roundedBorder)
-                TextField("Base URL", text: $baseURLDeepSeek)
-                    .textFieldStyle(.roundedBorder)
+                    .textFieldStyle(.plain)
+                    .padding(8)
+                    .background(DesignTokens.Material.glass)
+                    .cornerRadius(8)
+                GlassTextField(title: LocalizedStringKey("Model"), text: $modelDeepSeek, placeholder: LocalizedStringKey(modelDeepSeek))
+                GlassTextField(title: LocalizedStringKey("Base URL"), text: $baseURLDeepSeek, placeholder: LocalizedStringKey(baseURLDeepSeek))
                 Link("Get API Key", destination: URL(string: "https://platform.deepseek.com/")!)
                     .font(.caption)
             }

@@ -18,14 +18,15 @@ struct ActionMenuView: View {
                             .font(.system(size: 12))
                         Text(action.title)
                             .font(.caption)
+                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                     }
                     .frame(width: 50, height: 25)
                     .contentShape(Rectangle())
-                    .background(hoveredAction == action ? Color.accentColor.opacity(0.2) : Color.clear)
+                    .background(hoveredAction == action ? DesignTokens.Color.semantic.primary.opacity(0.2) : SwiftUI.Color.clear)
                 }
                 .buttonStyle(.plain)
-                .background(.background.opacity(0.8))
-                .cornerRadius(4)
+                .background(DesignTokens.Material.glass)
+                .cornerRadius(DesignTokens.Radius.sm)
                 .onHover { isHovering in
                     hoveredAction = isHovering ? action : nil
                     if isHovering {
@@ -37,8 +38,8 @@ struct ActionMenuView: View {
             }
         }
         .padding(4)
-        .background(.regularMaterial)
-        .cornerRadius(4)
+        .background(DesignTokens.Material.glass)
+        .cornerRadius(DesignTokens.Radius.sm)
     }
 }
 

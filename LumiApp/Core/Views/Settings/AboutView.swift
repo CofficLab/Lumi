@@ -54,18 +54,20 @@ struct AboutView: View {
                 Text(appInfo.name)
                     .font(.title)
                     .fontWeight(.bold)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
                 Text(appInfo.bundleIdentifier)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
 
                 if let version = appInfo.version {
                     HStack(spacing: 4) {
                         Image(systemName: "tag.fill")
                             .font(.caption2)
+                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                         Text(version)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     }
                 }
             }
@@ -118,13 +120,13 @@ struct AboutView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Current version is the latest stable version")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-                Divider()
+                GlassDivider()
 
                 Text("Lumi uses the Sparkle framework for automatic updates. When a new version is available, the app will automatically prompt you to update.")
                     .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
             }
         }
     }
@@ -229,28 +231,22 @@ struct InfoCard<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Card title
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .foregroundStyle(.blue)
-                Text(title)
-                    .font(.headline)
-                Spacer()
-            }
+        MystiqueGlassCard(cornerRadius: DesignTokens.Radius.md, padding: DesignTokens.Spacing.cardPadding) {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                HStack(spacing: DesignTokens.Spacing.xs) {
+                    Image(systemName: icon)
+                        .foregroundColor(DesignTokens.Color.semantic.primary)
+                    Text(title)
+                        .font(DesignTokens.Typography.bodyEmphasized)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    Spacer()
+                }
 
-            // Card content
-            VStack(alignment: .leading, spacing: 8) {
-                content
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
+                    content
+                }
             }
         }
-        .padding()
-        .background(Color(.controlBackgroundColor))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-        )
     }
 }
 
@@ -264,15 +260,16 @@ struct AboutInfoRow: View {
         HStack(alignment: .top) {
             Text(label)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 .frame(width: 100, alignment: .leading)
 
             Text(":")
-                .foregroundStyle(.secondary)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
             Text(value)
                 .font(.subheadline)
                 .fontWeight(.medium)
+                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 .textSelection(.enabled)
 
             Spacer()
