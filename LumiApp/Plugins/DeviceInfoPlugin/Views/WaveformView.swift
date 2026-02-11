@@ -54,3 +54,13 @@ struct WaveformView: View {
         }
     }
 }
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .inRootView()
+        .withDebugBar()
+}

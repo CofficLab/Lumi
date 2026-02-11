@@ -9,8 +9,8 @@ enum TextActionType: String, CaseIterable, Identifiable, Codable, Sendable {
     
     var title: String {
         switch self {
-        case .copy: return "Copy"
-        case .search: return "Search"
+        case .copy: return String(localized: "Copy")
+        case .search: return String(localized: "Search")
         }
     }
     

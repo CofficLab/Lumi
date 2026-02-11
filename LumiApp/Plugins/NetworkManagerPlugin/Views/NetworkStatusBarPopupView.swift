@@ -76,7 +76,7 @@ struct NetworkStatusBarPopupView: View {
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
 
-                Text("Last 60 seconds")
+                Text(String(localized: "Last 60 seconds"))
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
 
@@ -88,7 +88,7 @@ struct NetworkStatusBarPopupView: View {
                         Circle()
                             .fill(Color.green.opacity(0.8))
                             .frame(width: 5, height: 5)
-                        Text("Down")
+                        Text(String(localized: "Down"))
                             .font(.system(size: 9))
                             .foregroundColor(.secondary)
                     }
@@ -97,7 +97,7 @@ struct NetworkStatusBarPopupView: View {
                         Circle()
                             .fill(Color.red.opacity(0.8))
                             .frame(width: 5, height: 5)
-                        Text("Up")
+                        Text(String(localized: "Up"))
                             .font(.system(size: 9))
                             .foregroundColor(.secondary)
                     }
@@ -165,7 +165,7 @@ struct NetworkStatusBarPopupView: View {
                         )
                         .stroke(Color.red.opacity(0.8), lineWidth: 1.2)
                     } else {
-                        Text("Collecting...")
+                        Text(String(localized: "Collecting..."))
                             .font(.system(size: 10))
                             .foregroundColor(.secondary)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -204,7 +204,7 @@ struct ProcessRowView: View {
                     .font(.system(size: 11))
                     .lineLimit(1)
 
-                Text("PID: \(process.id)")
+                Text(String(localized: "PID: \(process.id)"))
                     .font(.system(size: 9))
                     .foregroundColor(.secondary)
             }

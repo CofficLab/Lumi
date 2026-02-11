@@ -29,15 +29,25 @@ struct MemoryHistoryDetailView: View {
             .padding(.top, 12)
             
             // Graph
-            MemoryHistoryGraphView(
-                dataPoints: historyService.getData(for: selectedRange),
-                timeRange: selectedRange
-            )
+            GlassCard(padding: 0, cornerRadius: 6) {
+                MemoryHistoryGraphView(
+                    dataPoints: historyService.getData(for: selectedRange),
+                    timeRange: selectedRange
+                )
+            }
             .frame(height: 140)
-            .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
-            .cornerRadius(6)
             .padding(.horizontal, 12)
             .padding(.bottom, 12)
         }
     }
+}
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .inRootView()
+        .withDebugBar()
 }

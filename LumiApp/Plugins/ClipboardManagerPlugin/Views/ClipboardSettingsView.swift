@@ -41,3 +41,13 @@ struct ClipboardSettingsView: View {
         .padding()
     }
 }
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .inRootView()
+        .withDebugBar()
+}

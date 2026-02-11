@@ -16,11 +16,11 @@ struct CaffeinateStatusBarPopupView: View {
     @State private var activeAction: QuickActionType? = nil
 
     private let quickDurations: [(title: String, value: TimeInterval)] = [
-        ("Indefinite", 0),
-        ("10 Min", 600),
-        ("1 Hour", 3600),
-        ("2 Hours", 7200),
-        ("5 Hours", 18000),
+        (String(localized: "Indefinite"), 0),
+        (String(localized: "10 Min"), 600),
+        (String(localized: "1 Hour"), 3600),
+        (String(localized: "2 Hours"), 7200),
+        (String(localized: "5 Hours"), 18000),
     ]
 
     var body: some View {
@@ -70,7 +70,7 @@ struct CaffeinateStatusBarPopupView: View {
     private var quickActionsSection: some View {
         VStack(spacing: 0) {
             QuickActionMenuItem(
-                title: "Prevent sleep & Keep screen on",
+                title: String(localized: "Prevent sleep & Keep screen on"),
                 icon: "sun.max.fill",
                 color: .orange,
                 isSelected: activeAction == .systemAndDisplay,
@@ -83,7 +83,7 @@ struct CaffeinateStatusBarPopupView: View {
                 .padding(.leading, 36)
 
             QuickActionMenuItem(
-                title: "Prevent sleep & Allow screen off",
+                title: String(localized: "Prevent sleep & Allow screen off"),
                 icon: "moon.fill",
                 color: .blue,
                 isSelected: activeAction == .systemOnly,
@@ -96,7 +96,7 @@ struct CaffeinateStatusBarPopupView: View {
                 .padding(.leading, 36)
 
             QuickActionMenuItem(
-                title: "Prevent sleep & Turn off screen",
+                title: String(localized: "Prevent sleep & Turn off screen"),
                 icon: "power",
                 color: .purple,
                 showCheckmark: false, // 瞬时操作，不显示对号

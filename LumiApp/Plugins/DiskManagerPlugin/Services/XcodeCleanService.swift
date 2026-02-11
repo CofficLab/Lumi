@@ -2,8 +2,7 @@ import Foundation
 import OSLog
 import MagicKit
 
-@MainActor
-class XcodeCleanService: SuperLog {
+actor XcodeCleanService: SuperLog {
     nonisolated static let emoji = "🧼"
     nonisolated static let verbose = false
 

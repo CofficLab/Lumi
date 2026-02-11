@@ -128,3 +128,13 @@ struct ProjectCleanerView: View {
         return formatter.string(fromByteCount: bytes)
     }
 }
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .inRootView()
+        .withDebugBar()
+}

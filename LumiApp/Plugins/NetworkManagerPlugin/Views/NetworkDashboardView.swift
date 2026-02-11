@@ -10,7 +10,7 @@ struct NetworkDashboardView: View {
                     // Header Stats
                     HStack(spacing: 20) {
                         SpeedCard(
-                            title: "Download",
+                            title: String(localized: "Download"),
                             speed: viewModel.networkState.downloadSpeed,
                             total: viewModel.networkState.totalDownload,
                             icon: "arrow.down.circle.fill",
@@ -19,7 +19,7 @@ struct NetworkDashboardView: View {
                         )
 
                         SpeedCard(
-                            title: "Upload",
+                            title: String(localized: "Upload"),
                             speed: viewModel.networkState.uploadSpeed,
                             total: viewModel.networkState.totalUpload,
                             icon: "arrow.up.circle.fill",
@@ -33,12 +33,12 @@ struct NetworkDashboardView: View {
 
                     // Info Grid
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                        NetworkInfoCard(title: "Local IP", value: viewModel.networkState.localIP ?? "Unknown", icon: "pc")
-                        NetworkInfoCard(title: "Public IP", value: viewModel.networkState.publicIP ?? "Fetching...", icon: "globe")
-                        NetworkInfoCard(title: "Wi-Fi", value: viewModel.networkState.wifiSSID ?? "Not Connected", icon: "wifi")
-                        NetworkInfoCard(title: "Signal", value: "\(viewModel.networkState.wifiSignalStrength) dBm", icon: "antenna.radiowaves.left.and.right")
-                        NetworkInfoCard(title: "Latency (Ping)", value: String(format: "%.1f ms", viewModel.networkState.ping), icon: "stopwatch")
-                        NetworkInfoCard(title: "Interface", value: viewModel.networkState.interfaceName, icon: "cable.connector")
+                        NetworkInfoCard(title: String(localized: "Local IP"), value: viewModel.networkState.localIP ?? String(localized: "Unknown"), icon: "pc")
+                        NetworkInfoCard(title: String(localized: "Public IP"), value: viewModel.networkState.publicIP ?? String(localized: "Fetching..."), icon: "globe")
+                        NetworkInfoCard(title: String(localized: "Wi-Fi"), value: viewModel.networkState.wifiSSID ?? String(localized: "Not Connected"), icon: "wifi")
+                        NetworkInfoCard(title: String(localized: "Signal"), value: "\(viewModel.networkState.wifiSignalStrength) dBm", icon: "antenna.radiowaves.left.and.right")
+                        NetworkInfoCard(title: String(localized: "Latency (Ping)"), value: String(format: "%.1f ms", viewModel.networkState.ping), icon: "stopwatch")
+                        NetworkInfoCard(title: String(localized: "Interface"), value: viewModel.networkState.interfaceName, icon: "cable.connector")
                     }
                     .padding(.horizontal)
                 }
@@ -65,32 +65,27 @@ struct SpeedCard: View {
     let viewModel: NetworkManagerViewModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundStyle(color)
-                Text(title)
-                    .font(.headline)
+        GlassCard(padding: 16, cornerRadius: 16) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: icon)
+                        .font(.title2)
+                        .foregroundStyle(color)
+                    Text(title)
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+
+                Text(speed.formattedNetworkSpeed())
+                    .font(.system(size: 24, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.primary)
+
+                Text(String(localized: "Total: \(Double(total).formattedBytes())"))
+                    .font(.caption)
                     .foregroundStyle(.secondary)
-                Spacer()
             }
-
-            Text(speed.formattedNetworkSpeed())
-                .font(.system(size: 24, weight: .bold, design: .monospaced))
-                .foregroundStyle(.primary)
-
-            Text("Total: \(Double(total).formattedBytes())")
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
-        .padding()
-        .background(Color(nsColor: .controlBackgroundColor))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
-        )
     }
 }
 
@@ -100,24 +95,24 @@ struct NetworkInfoCard: View {
     let icon: String
 
     var body: some View {
-        HStack {
-            Image(systemName: icon)
-                .frame(width: 24)
-                .foregroundStyle(.secondary)
-
-            VStack(alignment: .leading) {
-                Text(title)
-                    .font(.caption)
+        GlassCard(padding: 0, cornerRadius: 8) {
+            HStack {
+                Image(systemName: icon)
+                    .frame(width: 24)
                     .foregroundStyle(.secondary)
-                Text(value)
-                    .font(.body)
-                    .fontWeight(.medium)
+                
+                VStack(alignment: .leading) {
+                    Text(title)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(value)
+                        .font(.body)
+                        .fontWeight(.medium)
+                }
+                Spacer()
             }
-            Spacer()
+            .padding()
         }
-        .padding()
-        .background(Color.gray.opacity(0.05))
-        .cornerRadius(8)
     }
 }
 

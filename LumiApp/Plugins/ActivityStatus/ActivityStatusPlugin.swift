@@ -21,10 +21,10 @@ actor ActivityStatusPlugin: SuperPlugin, SuperLog {
     nonisolated(unsafe) static var id: String = "ActivityStatus"
 
     /// 插件显示名称
-    nonisolated(unsafe) static var displayName: String = "ActivityStatus"
+    nonisolated(unsafe) static var displayName: String = String(localized: "Activity Status")
 
     /// 插件描述
-    nonisolated(unsafe) static var description: String = "Display the status of long-running operations in the status bar"
+    nonisolated(unsafe) static var description: String = String(localized: "Display the status of long-running operations in the status bar")
 
     /// 插件图标名称
     nonisolated(unsafe) static var iconName: String = "hourglass"

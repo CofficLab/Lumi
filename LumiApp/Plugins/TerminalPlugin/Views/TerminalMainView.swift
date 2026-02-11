@@ -113,10 +113,20 @@ class TerminalManagerViewModel: ObservableObject {
             let session = sessions[index]
             session.terminate()
             sessions.remove(at: index)
-            
+
             if selectedSessionId == id {
                 selectedSessionId = sessions.last?.id
             }
         }
     }
+}
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .inRootView()
+        .withDebugBar()
 }

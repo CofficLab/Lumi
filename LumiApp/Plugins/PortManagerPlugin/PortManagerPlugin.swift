@@ -10,8 +10,8 @@ actor PortManagerPlugin: SuperPlugin, SuperLog {
 
     static let id = "PortManager"
     static let navigationId = "port_manager"
-    static let displayName = "Port Manager"
-    static let description = "View and manage port usage"
+    static let displayName = String(localized: "Port Manager")
+    static let description = String(localized: "View and manage port usage")
     static let iconName = "network"
     static var order: Int { 20 }
 

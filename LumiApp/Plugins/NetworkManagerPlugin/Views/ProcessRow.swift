@@ -28,7 +28,7 @@ struct ProcessRow: View {
                         .font(.system(size: 12, weight: .medium))
                         .lineLimit(1)
 
-                    Text("PID: \(process.id)")
+                    Text(String(localized: "PID: \(process.id)"))
                         .font(.system(size: 10))
                         .foregroundColor(.secondary)
                 }

@@ -4,26 +4,30 @@ import AppKit
 struct ActionMenuView: View {
     let text: String
     let onAction: (TextActionType) -> Void
-    
+
+    @State private var hoveredAction: TextActionType? = nil
+
     var body: some View {
         HStack(spacing: 8) {
             ForEach(TextActionType.allCases) { action in
                 Button(action: {
                     onAction(action)
                 }) {
-                    VStack(spacing: 4) {
+                    HStack(spacing: 4) {
                         Image(systemName: action.icon)
-                            .font(.system(size: 16))
+                            .font(.system(size: 12))
                         Text(action.title)
                             .font(.caption)
                     }
-                    .frame(width: 50, height: 50)
+                    .frame(width: 50, height: 25)
                     .contentShape(Rectangle())
+                    .background(hoveredAction == action ? Color.accentColor.opacity(0.2) : Color.clear)
                 }
                 .buttonStyle(.plain)
-                .background(Color(nsColor: .controlBackgroundColor).opacity(0.8))
-                .cornerRadius(8)
+                .background(.background.opacity(0.8))
+                .cornerRadius(4)
                 .onHover { isHovering in
+                    hoveredAction = isHovering ? action : nil
                     if isHovering {
                         NSCursor.pointingHand.push()
                     } else {
@@ -32,28 +36,12 @@ struct ActionMenuView: View {
                 }
             }
         }
-        .padding(8)
-        .background(EffectView(material: .popover, blendingMode: .behindWindow))
-        .cornerRadius(12)
-        .shadow(radius: 5)
+        .padding(4)
+        .background(.regularMaterial)
+        .cornerRadius(4)
     }
 }
 
-// Helper for visual effect background
-struct EffectView: NSViewRepresentable {
-    let material: NSVisualEffectView.Material
-    let blendingMode: NSVisualEffectView.BlendingMode
-    
-    func makeNSView(context: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.material = material
-        view.blendingMode = blendingMode
-        view.state = .active
-        return view
-    }
-    
-    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
-        nsView.material = material
-        nsView.blendingMode = blendingMode
-    }
+#Preview {
+    ActionMenuView(text: "测试", onAction: {_ in })
 }

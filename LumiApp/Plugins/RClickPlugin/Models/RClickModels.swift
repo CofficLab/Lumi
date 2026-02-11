@@ -13,13 +13,13 @@ public enum RClickActionType: String, Codable, CaseIterable, Identifiable, Senda
 
     public var title: String {
         switch self {
-        case .newFile: return "New File"
-        case .copyPath: return "Copy Path"
-        case .openInTerminal: return "Open in Terminal"
-        case .openInVSCode: return "Open in VS Code"
-        case .deleteFile: return "Delete File"
-        case .hideFile: return "Hide File"
-        case .showHiddenFiles: return "Show Hidden Files"
+        case .newFile: return String(localized: "New File")
+        case .copyPath: return String(localized: "Copy Path")
+        case .openInTerminal: return String(localized: "Open in Terminal")
+        case .openInVSCode: return String(localized: "Open in VS Code")
+        case .deleteFile: return String(localized: "Delete File")
+        case .hideFile: return String(localized: "Hide File")
+        case .showHiddenFiles: return String(localized: "Show Hidden Files")
         }
     }
 

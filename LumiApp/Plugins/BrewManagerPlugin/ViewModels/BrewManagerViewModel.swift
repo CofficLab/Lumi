@@ -43,7 +43,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                 if Self.verbose {
                     os_log("\(self.t) ❌ Homebrew not detected")
                 }
-                errorMessage = "Homebrew not detected, please install Homebrew first."
+                errorMessage = String(localized: "Homebrew not detected, please install Homebrew first.")
             }
         }
     }
@@ -71,7 +71,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
             if Self.verbose {
                 os_log("\(self.t) ❌ Refresh failed: \(error.localizedDescription)")
             }
-            self.errorMessage = "Refresh failed: \(error.localizedDescription)"
+            self.errorMessage = String(localized: "Refresh failed: \(error.localizedDescription)")
         }
         
         isLoading = false
@@ -111,7 +111,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                     if Self.verbose {
                         os_log("\(self.t) ❌ 搜索失败: \(error.localizedDescription)")
                     }
-                    self.errorMessage = "搜索失败: \(error.localizedDescription)"
+                    self.errorMessage = String(localized: "Search failed: \(error.localizedDescription)")
                     self.isLoading = false
                 }
             }
@@ -133,7 +133,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
             if Self.verbose {
                 os_log("\(self.t) ❌ 安装失败: \(error.localizedDescription)")
             }
-            errorMessage = "安装失败: \(error.localizedDescription)"
+            errorMessage = String(localized: "Installation failed: \(error.localizedDescription)")
         }
         isLoading = false
     }
@@ -153,7 +153,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
             if Self.verbose {
                 os_log("\(self.t) ❌ 卸载失败: \(error.localizedDescription)")
             }
-            errorMessage = "卸载失败: \(error.localizedDescription)"
+            errorMessage = String(localized: "Uninstallation failed: \(error.localizedDescription)")
         }
         isLoading = false
     }
@@ -173,7 +173,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
             if Self.verbose {
                 os_log("\(self.t) ❌ 更新失败: \(error.localizedDescription)")
             }
-            errorMessage = "更新失败: \(error.localizedDescription)"
+            errorMessage = String(localized: "Update failed: \(error.localizedDescription)")
         }
         isLoading = false
     }
@@ -199,7 +199,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
             if Self.verbose {
                 os_log("\(self.t) ❌ 批量更新失败: \(error.localizedDescription)")
             }
-            errorMessage = "批量更新失败: \(error.localizedDescription)"
+            errorMessage = String(localized: "Batch update failed: \(error.localizedDescription)")
         }
         isLoading = false
     }

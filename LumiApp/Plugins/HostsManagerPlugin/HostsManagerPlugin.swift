@@ -10,8 +10,8 @@ actor HostsManagerPlugin: SuperPlugin, SuperLog {
 
     static let id = "HostsManager"
     static let navigationId = "hosts_manager"
-    static let displayName = "Hosts Manager"
-    static let description = "Manage system hosts file configuration"
+    static let displayName = String(localized: "Hosts Manager")
+    static let description = String(localized: "Manage system hosts file configuration")
     static let iconName = "list.bullet.rectangle"
     static var order: Int { 21 }
 

@@ -8,49 +8,50 @@ struct DiskManagerView: View {
         VStack(spacing: 0) {
             // Header / Dashboard
             if let usage = viewModel.diskUsage {
-                HStack(spacing: 40) {
-                    DiskUsageRingView(percentage: usage.usedPercentage)
-                        .frame(width: 100, height: 100)
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Macintosh HD")
-                            .font(.title2)
-                            .fontWeight(.bold)
+                GlassCard(padding: 20) {
+                    HStack(spacing: 40) {
+                        DiskUsageRingView(percentage: usage.usedPercentage)
+                            .frame(width: 100, height: 100)
                         
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Total: \(viewModel.formatBytes(usage.total))")
-                            Text("Used: \(viewModel.formatBytes(usage.used))")
-                                .foregroundStyle(.secondary)
-                            Text("Available: \(viewModel.formatBytes(usage.available))")
-                                .foregroundStyle(.green)
-                        }
-                        .font(.subheadline)
-                    }
-                    
-                    Spacer()
-                    
-                    VStack {
-                        Button(action: {
-                            if viewModel.isScanning {
-                                viewModel.stopScan()
-                            } else {
-                                viewModel.startScan()
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Macintosh HD")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Total: \(viewModel.formatBytes(usage.total))")
+                                Text("Used: \(viewModel.formatBytes(usage.used))")
+                                    .foregroundStyle(.secondary)
+                                Text("Available: \(viewModel.formatBytes(usage.available))")
+                                    .foregroundStyle(.green)
                             }
-                        }) {
-                            Label(viewModel.isScanning ? "Stop Scan" : "Scan Large Files", systemImage: viewModel.isScanning ? "stop.circle" : "magnifyingglass.circle")
-                                .font(.headline)
-                                .padding()
+                            .font(.subheadline)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(viewModel.isScanning ? .red : .blue)
                         
-                        Text("Scan Directory: User Home")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        Spacer()
+                        
+                        VStack {
+                            Button(action: {
+                                if viewModel.isScanning {
+                                    viewModel.stopScan()
+                                } else {
+                                    viewModel.startScan()
+                                }
+                            }) {
+                                Label(viewModel.isScanning ? "Stop Scan" : "Scan Large Files", systemImage: viewModel.isScanning ? "stop.circle" : "magnifyingglass.circle")
+                                    .font(.headline)
+                                    .padding()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(viewModel.isScanning ? .red : .blue)
+                            
+                            Text("Scan Directory: User Home")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
                 .padding()
-                .background(Color(nsColor: .controlBackgroundColor))
             } else {
                 ProgressView()
                 // .onAppear moved to bottom
@@ -59,15 +60,18 @@ struct DiskManagerView: View {
             Divider()
             
             // View Mode Picker
-            Picker("View Mode", selection: $selectedViewMode) {
-                Text("Large Files").tag(0)
-                Text("Directory Analysis").tag(1)
-                Text("System Cleanup").tag(2)
-                Text("System Monitor").tag(3)
-                Text("Project Cleanup").tag(5)
+            GlassCard(padding: 16) {
+                Picker("View Mode", selection: $selectedViewMode) {
+                    Text("Large Files").tag(0)
+                    Text("Directory Analysis").tag(1)
+                    Text("System Cleanup").tag(2)
+                    Text("Xcode Cleanup").tag(4)
+                    Text("Project Cleanup").tag(5)
+                }
+                .pickerStyle(.segmented)
             }
-            .pickerStyle(.segmented)
-            .padding()
+            .padding(.horizontal)
+            .padding(.bottom)
             
             // Content
             VStack {
@@ -77,9 +81,9 @@ struct DiskManagerView: View {
                     DirectoryTreeView(entries: viewModel.rootEntries)
                 } else if selectedViewMode == 2 {
                     CacheCleanerView()
-                } else if selectedViewMode == 3 {
-                    SystemMonitorView()
-                } else {
+                } else if selectedViewMode == 4 {
+                    XcodeCleanerView()
+                } else if selectedViewMode == 5 {
                     ProjectCleanerView()
                 }
             }
@@ -87,7 +91,7 @@ struct DiskManagerView: View {
             Spacer()
             
             // Scanning Progress
-            if viewModel.isScanning && selectedViewMode != 2 && selectedViewMode != 3 && selectedViewMode != 5 {
+            if viewModel.isScanning && selectedViewMode != 2 && selectedViewMode != 5 {
                 VStack(spacing: 8) {
                     ProgressView()
                         .scaleEffect(0.8)

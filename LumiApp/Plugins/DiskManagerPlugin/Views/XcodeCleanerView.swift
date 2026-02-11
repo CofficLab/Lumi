@@ -79,19 +79,18 @@ struct XcodeCleanerView: View {
         .onAppear {
             Task { await viewModel.scanAll() }
         }
-        .navigationTitle("Xcode Cleaner")
     }
 
     var emptyStateView: some View {
         VStack(spacing: 20) {
             Spacer()
             Image(systemName: "checkmark.circle")
-                .font(.system(size: 64))
-                .foregroundStyle(.green)
+            .font(.system(size: 64))
+            .foregroundStyle(.green)
             Text("No items to clean")
-                .font(.title2)
+            .font(.title2)
             Text("Your Xcode environment is clean!")
-                .foregroundStyle(.secondary)
+            .foregroundStyle(.secondary)
             Button("Rescan") {
                 Task { await viewModel.scanAll() }
             }
@@ -208,7 +207,6 @@ struct ItemRow: View {
     ContentLayout()
         .hideSidebar()
         .hideTabPicker()
-        .withNavigation(XcodeCleanerPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }
