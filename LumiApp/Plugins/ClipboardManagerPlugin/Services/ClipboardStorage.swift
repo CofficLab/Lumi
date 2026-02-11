@@ -1,7 +1,8 @@
 import Foundation
+import MagicKit
 import OSLog
 
-actor ClipboardStorage {
+actor ClipboardStorage: SuperLog {
     static let shared = ClipboardStorage()
     
     private var items: [ClipboardItem] = []
@@ -75,9 +76,9 @@ actor ClipboardStorage {
         do {
             let data = try Data(contentsOf: fileURL)
             items = try JSONDecoder().decode([ClipboardItem].self, from: data)
-            os_log(.info, "Loaded %d items", self.items.count) 
+            os_log("\(Self.t)Loaded \(self.items.count) items")
         } catch {
-            os_log(.error, "Failed to load history: %s", error.localizedDescription)
+            os_log(.error, "\(Self.t)Failed to load history: \(error.localizedDescription)")
         }
     }
 }

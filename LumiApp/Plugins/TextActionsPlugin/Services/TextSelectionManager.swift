@@ -1,11 +1,12 @@
 import Foundation
+import MagicKit
 import AppKit
 import ApplicationServices
 import Combine
 import OSLog
 
 @MainActor
-class TextSelectionManager: ObservableObject {
+class TextSelectionManager: ObservableObject, SuperLog {
     static let shared = TextSelectionManager()
     
     @Published var selectedText: String?
@@ -36,7 +37,7 @@ class TextSelectionManager: ObservableObject {
                     self?.handleMouseUp(event)
                 }
             }
-            os_log("Started monitoring text selection")
+            os_log("\(Self.t)Started monitoring text selection")
         }
     }
     
@@ -46,7 +47,7 @@ class TextSelectionManager: ObservableObject {
                 NSEvent.removeMonitor(monitor)
                 self.monitor = nil
             }
-            os_log("Stopped monitoring text selection")
+            os_log("\(Self.t)Stopped monitoring text selection")
         }
     }
     
@@ -61,7 +62,7 @@ class TextSelectionManager: ObservableObject {
                 if let (text, rect) = result, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     self.selectedText = text
                     self.selectionRect = rect
-                    os_log("Detected selection: \(text.prefix(20))...")
+                    os_log("\(Self.t)Detected selection: \(text.prefix(20))...")
                 } else {
                     // Hide menu if clicking elsewhere
                     self.selectedText = nil
