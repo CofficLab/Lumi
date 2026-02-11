@@ -22,7 +22,10 @@ struct DockerImagesView: View {
                 // Toolbar
                 HStack {
                     TextField("Search images...", text: $viewModel.searchText)
-                        .textFieldStyle(.roundedBorder)
+                        .textFieldStyle(.plain)
+                        .padding(6)
+                        .background(Color.white.opacity(0.1))
+                        .cornerRadius(6)
 
                     Menu {
                         Picker("Sort", selection: $viewModel.sortOption) {
@@ -42,7 +45,7 @@ struct DockerImagesView: View {
                     }
                 }
                 .padding(8)
-                .background(Color(nsColor: .controlBackgroundColor))
+                .background(.ultraThinMaterial)
 
                 Divider()
 
@@ -95,7 +98,7 @@ struct DockerImagesView: View {
                     }
                 }
                 .padding(8)
-                .background(Color(nsColor: .controlBackgroundColor))
+                .background(.ultraThinMaterial)
             }
             .frame(minWidth: 250, maxWidth: 400)
 

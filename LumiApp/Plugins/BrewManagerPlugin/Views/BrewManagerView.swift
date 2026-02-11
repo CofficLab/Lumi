@@ -160,14 +160,19 @@ struct BrewListView: View {
                 Spacer()
             }
         } else {
-            List(packages) { package in
-                BrewPackageRow(
-                    package: package,
-                    actionButtonTitle: actionButtonTitle,
-                    actionButtonColor: actionButtonColor,
-                    showInstalledStatus: showInstalledStatus,
-                    action: { action(package) }
-                )
+            ScrollView {
+                LazyVStack(spacing: 12) {
+                    ForEach(packages) { package in
+                        BrewPackageRow(
+                            package: package,
+                            actionButtonTitle: actionButtonTitle,
+                            actionButtonColor: actionButtonColor,
+                            showInstalledStatus: showInstalledStatus,
+                            action: { action(package) }
+                        )
+                    }
+                }
+                .padding()
             }
         }
     }
@@ -179,68 +184,80 @@ struct BrewPackageRow: View {
     let actionButtonColor: Color
     let showInstalledStatus: Bool
     let action: () -> Void
-
+    
     var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text(package.name)
-                        .font(.headline)
-
-                    if package.isCask {
-                        Text(String(localized: "Cask"))
-                            .font(.caption)
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 2)
-                            .background(Color.orange.opacity(0.2))
-                            .foregroundColor(.orange)
-                            .cornerRadius(4)
-                    }
-
-                    if showInstalledStatus {
-                        if package.installedVersion != nil {
-                            Text(String(localized: "Installed"))
+        GlassCard(padding: 8, cornerRadius: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text(package.name)
+                            .font(.headline)
+                        
+                        if package.isCask {
+                            Text(String(localized: "Cask"))
                                 .font(.caption)
-                                .foregroundColor(.green)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 2)
+                                .background(AppTheme.Colors.gradient(for: .orange).opacity(0.2))
+                                .foregroundColor(.orange)
+                                .cornerRadius(4)
+                        }
+                        
+                        if showInstalledStatus {
+                            if package.installedVersion != nil {
+                                Text(String(localized: "Installed"))
+                                    .font(.caption)
+                                    .foregroundStyle(AppTheme.Colors.gradient(for: .green))
+                            }
+                        }
+                    }
+                    
+                    if let desc = package.desc {
+                        Text(desc)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .lineLimit(2)
+                    }
+                    
+                    HStack(spacing: 8) {
+                        Text(String(localized: "Version: \(package.version)"))
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        
+                        if let installedVer = package.installedVersion, installedVer != package.version {
+                            Text(String(localized: "Installed: \(installedVer)"))
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
                         }
                     }
                 }
-
-                if let desc = package.desc {
-                    Text(desc)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                }
-
-                HStack(spacing: 8) {
-                    Text(String(localized: "Version: \(package.version)"))
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-
-                    if let installedVer = package.installedVersion, installedVer != package.version {
-                        Text(String(localized: "Installed: \(installedVer)"))
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
+                
+                Spacer()
+                
+                if showInstalledStatus && package.installedVersion != nil {
+                    // 如果是搜索结果且已安装，显示已安装状态，不显示操作按钮
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                } else {
+                    Button(action: action) {
+                        Text(actionButtonTitle)
+                            .fontWeight(.medium)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(
+                                Capsule()
+                                    .fill(actionButtonColor.opacity(0.1))
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(actionButtonColor, lineWidth: 1)
+                                    )
+                            )
                     }
+                    .buttonStyle(.plain)
+                    .foregroundColor(actionButtonColor)
                 }
             }
-
-            Spacer()
-
-            if showInstalledStatus && package.installedVersion != nil {
-                // 如果是搜索结果且已安装，显示已安装状态，不显示操作按钮
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(.green)
-            } else {
-                Button(action: action) {
-                    Text(actionButtonTitle)
-                        .padding(.horizontal, 8)
-                }
-                .buttonStyle(.bordered)
-                .tint(actionButtonColor)
-            }
+            .padding(.vertical, 4)
         }
-        .padding(.vertical, 4)
     }
 }

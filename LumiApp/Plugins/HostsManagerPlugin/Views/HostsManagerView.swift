@@ -28,7 +28,7 @@ struct HostsManagerView: View {
                         .textFieldStyle(.plain)
                 }
                 .padding(6)
-                .background(Color.gray.opacity(0.1))
+                .background(Color.white.opacity(0.1))
                 .cornerRadius(6)
                 .frame(width: 200)
                 
@@ -53,7 +53,7 @@ struct HostsManagerView: View {
                 }
             }
             .padding()
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(.ultraThinMaterial)
             
             Divider()
             

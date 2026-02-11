@@ -10,24 +10,29 @@ struct DeviceInfoView: View {
                 // Section 1: Overview
                 VStack(spacing: 16) {
                     // Header
-                    HStack {
-                        Image(systemName: "macbook.and.iphone")
-                            .font(.system(size: 32))
-                            .foregroundStyle(.linearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    GlassCard(padding: 20, cornerRadius: 20) {
+                        HStack(spacing: 16) {
+                            ZStack {
+                                Circle()
+                                    .fill(AppTheme.Colors.gradient(for: .primary).opacity(0.1))
+                                    .frame(width: 60, height: 60)
+                                
+                                Image(systemName: "macbook.and.iphone")
+                                    .font(.system(size: 32))
+                                    .foregroundStyle(AppTheme.Colors.gradient(for: .primary))
+                            }
 
-                        VStack(alignment: .leading) {
-                            Text(data.deviceName)
-                                .font(.title2)
-                                .fontWeight(.bold)
-                            Text(data.osVersion)
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(data.deviceName)
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                Text(data.osVersion)
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                            Spacer()
                         }
-                        Spacer()
                     }
-                    .padding()
-                    .background(Material.ultraThinMaterial)
-                    .cornerRadius(12)
 
                     // Grid
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
@@ -44,11 +49,11 @@ struct DeviceInfoView: View {
                                     Spacer()
                                     // Simple bar chart representation
                                     Capsule()
-                                        .fill(Color.blue.opacity(0.2))
+                                        .fill(AppTheme.Colors.gradient(for: .blue).opacity(0.2))
                                         .frame(width: 40, height: 6)
                                         .overlay(alignment: .leading) {
                                             Capsule()
-                                                .fill(Color.blue)
+                                                .fill(AppTheme.Colors.gradient(for: .blue))
                                                 .frame(width: 40 * (data.cpuUsage / 100.0), height: 6)
                                         }
                                 }
@@ -65,7 +70,7 @@ struct DeviceInfoView: View {
                                     .foregroundColor(.secondary)
 
                                 ProgressView(value: data.memoryUsage)
-                                    .tint(.green)
+                                    .tint(AppTheme.Colors.gradient(for: .green))
                             }
                         }
 
@@ -82,7 +87,7 @@ struct DeviceInfoView: View {
                                     Text(total)
                                 }
                                 .gaugeStyle(.accessoryLinearCapacity)
-                                .tint(.orange)
+                                .tint(AppTheme.Colors.gradient(for: .orange))
                             }
                         }
 
@@ -100,6 +105,7 @@ struct DeviceInfoView: View {
                                 }
 
                                 ProgressView(value: data.batteryLevel)
+                                    .tint(AppTheme.Colors.gradient(for: .purple))
                             }
                         }
                     }
@@ -153,27 +159,33 @@ struct DeviceInfoCard<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Label {
-                    Text(title)
-                        .fontWeight(.medium)
-                } icon: {
-                    Image(systemName: icon)
-                        .foregroundColor(color)
+        GlassCard(padding: 16, cornerRadius: 16) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Label {
+                        Text(title)
+                            .fontWeight(.medium)
+                            .foregroundStyle(.secondary)
+                    } icon: {
+                        Image(systemName: icon)
+                            .foregroundStyle(
+                                AppTheme.Colors.gradient(for: mapColor(color))
+                            )
+                    }
+                    Spacer()
                 }
-                Spacer()
-            }
 
-            content
+                content
+            }
         }
-        .padding()
-        .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-        )
+    }
+    
+    func mapColor(_ color: Color) -> AppTheme.GradientType {
+        if color == .blue { return .blue }
+        if color == .green { return .green }
+        if color == .orange { return .orange }
+        if color == .pink { return .purple }
+        return .primary
     }
 }
 

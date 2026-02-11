@@ -17,40 +17,65 @@ struct Sidebar: View {
             // 导航列表区域
             Group {
                 if entries.isNotEmpty {
-                    List(entries, selection: $appProvider.selectedNavigationId) { entry in
-                        HStack(spacing: 12) {
-                            // 图标
-                            Image(systemName: entry.icon)
-                                .font(.system(size: 16))
-                                .foregroundStyle(.secondary)
-                                .frame(width: 24)
-
-                            // 标题
-                            Text(entry.title)
-                                .font(.body)
-
-                            Spacer()
+                        List(entries, selection: $appProvider.selectedNavigationId) { entry in
+                            SidebarRow(entry: entry, isSelected: appProvider.selectedNavigationId == entry.id)
                         }
-                        .padding(.vertical, 4)
-                        .tag(entry.id)
-                    }
-                    .listStyle(.automatic)
+                        .listStyle(.sidebar)
+                        .scrollContentBackground(.hidden)
+                        .background(.ultraThinMaterial)
                 } else {
                     // 空状态
                     emptyState
                 }
             }
-
+            
             Spacer()
 
             // 底部设置按钮
             settingsButton
         }
+        .background(.ultraThinMaterial)
         .onAppear {
             // Delay to avoid "Publishing changes during view update" warning
             DispatchQueue.main.async {
                 initializeDefaultSelection()
             }
+        }
+    }
+    
+    struct SidebarRow: View {
+        let entry: NavigationEntry
+        let isSelected: Bool
+        
+        var body: some View {
+            HStack(spacing: 12) {
+                // 图标背景
+                ZStack {
+                    if isSelected {
+                        Circle()
+                            .fill(AppTheme.Colors.gradient(for: .primary))
+                    } else {
+                        Circle()
+                            .fill(Color.secondary.opacity(0.1))
+                    }
+                }
+                .frame(width: 32, height: 32)
+                .overlay(
+                    Image(systemName: entry.icon)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(isSelected ? .white : .secondary)
+                )
+
+                // 标题
+                Text(entry.title)
+                    .font(.system(size: 14, weight: isSelected ? .semibold : .regular))
+                    .foregroundStyle(isSelected ? .primary : .secondary)
+
+                Spacer()
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 4)
+            .contentShape(Rectangle())
         }
     }
 

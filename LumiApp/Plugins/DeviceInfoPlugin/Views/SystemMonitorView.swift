@@ -60,29 +60,24 @@ struct MonitorCard<Content: View>: View {
     let content: () -> Content
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(title)
-                    .font(.headline)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Text(value)
-                    .font(.system(.body, design: .monospaced))
-                    .fontWeight(.medium)
-                    .foregroundStyle(color)
+        GlassCard(padding: 16, cornerRadius: 16) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text(value)
+                        .font(.system(.body, design: .monospaced))
+                        .fontWeight(.medium)
+                        .foregroundStyle(color)
+                }
+                
+                content()
+                    .frame(height: 100)
+                    .background(Color.black.opacity(0.05))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
             }
-            
-            content()
-                .frame(height: 100)
-                .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
         }
-        .padding()
-        .background(Color(nsColor: .controlBackgroundColor))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
-        )
     }
 }

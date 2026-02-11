@@ -65,32 +65,27 @@ struct SpeedCard: View {
     let viewModel: NetworkManagerViewModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundStyle(color)
-                Text(title)
-                    .font(.headline)
+        GlassCard(padding: 16, cornerRadius: 16) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: icon)
+                        .font(.title2)
+                        .foregroundStyle(color)
+                    Text(title)
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+
+                Text(speed.formattedNetworkSpeed())
+                    .font(.system(size: 24, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.primary)
+
+                Text(String(localized: "Total: \(Double(total).formattedBytes())"))
+                    .font(.caption)
                     .foregroundStyle(.secondary)
-                Spacer()
             }
-
-            Text(speed.formattedNetworkSpeed())
-                .font(.system(size: 24, weight: .bold, design: .monospaced))
-                .foregroundStyle(.primary)
-
-            Text(String(localized: "Total: \(Double(total).formattedBytes())"))
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
-        .padding()
-        .background(Color(nsColor: .controlBackgroundColor))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
-        )
     }
 }
 
@@ -100,24 +95,24 @@ struct NetworkInfoCard: View {
     let icon: String
 
     var body: some View {
-        HStack {
-            Image(systemName: icon)
-                .frame(width: 24)
-                .foregroundStyle(.secondary)
-
-            VStack(alignment: .leading) {
-                Text(title)
-                    .font(.caption)
+        GlassCard(padding: 0, cornerRadius: 8) {
+            HStack {
+                Image(systemName: icon)
+                    .frame(width: 24)
                     .foregroundStyle(.secondary)
-                Text(value)
-                    .font(.body)
-                    .fontWeight(.medium)
+                
+                VStack(alignment: .leading) {
+                    Text(title)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(value)
+                        .font(.body)
+                        .fontWeight(.medium)
+                }
+                Spacer()
             }
-            Spacer()
+            .padding()
         }
-        .padding()
-        .background(Color.gray.opacity(0.05))
-        .cornerRadius(8)
     }
 }
 

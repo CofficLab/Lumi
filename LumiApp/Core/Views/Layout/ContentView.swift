@@ -120,9 +120,31 @@ extension ContentView {
     /// - Returns: 详情内容视图
     @ViewBuilder
     private func detailContent() -> some View {
-        VStack(spacing: 0) {
-            // 显示当前选中的导航内容
-            app.getCurrentNavigationView(pluginProvider: pluginProvider)
+        ZStack {
+            // 背景
+            AppTheme.Colors.background
+                .ignoresSafeArea()
+            
+            // 装饰性光晕
+            GeometryReader { proxy in
+                Circle()
+                    .fill(AppTheme.Colors.gradient(for: .blue).opacity(0.1))
+                    .frame(width: 600, height: 600)
+                    .blur(radius: 120)
+                    .offset(x: -200, y: -200)
+                
+                Circle()
+                    .fill(AppTheme.Colors.gradient(for: .purple).opacity(0.1))
+                    .frame(width: 500, height: 500)
+                    .blur(radius: 120)
+                    .position(x: proxy.size.width, y: proxy.size.height)
+            }
+            .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                // 显示当前选中的导航内容
+                app.getCurrentNavigationView(pluginProvider: pluginProvider)
+            }
         }
         .frame(maxHeight: .infinity)
         .navigationTitle(app.getCurrentNavigationTitle(pluginProvider: pluginProvider))
