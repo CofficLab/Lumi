@@ -1053,6 +1053,7 @@
       }
     },
     "Clean Xcode cache, DerivedData, and old device support files" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1713,13 +1714,29 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "下移"
+            "value" : "下载"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "下移"
+          }
+        }
+      }
+    },
+    "Download" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下载"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下載"
           }
         }
       }
@@ -1880,6 +1897,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "副檔名（例如：py）"
+          }
+        }
+      }
+    },
+    "Fetching..." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "获取中..."
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "獲取中..."
           }
         }
       }
@@ -2364,6 +2397,22 @@
         }
       }
     },
+    "Interface" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接口"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "介面"
+          }
+        }
+      }
+    },
     "Invalid IP address format" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2476,6 +2525,22 @@
         }
       }
     },
+    "Latency (Ping)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "延迟"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "延遲"
+          }
+        }
+      }
+    },
     "Launch at Login" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2504,6 +2569,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "本地 Docker 映像管理和監控"
+          }
+        }
+      }
+    },
+    "Local IP" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本地 IP"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本地 IP"
           }
         }
       }
@@ -3052,6 +3133,22 @@
         }
       }
     },
+    "Not Connected" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未连接"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未連線"
+          }
+        }
+      }
+    },
     "OK" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3160,6 +3257,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "套件管理"
+          }
+        }
+      }
+    },
+    "PID:" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PID："
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PID："
           }
         }
       }
@@ -3419,6 +3533,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "提供商"
+          }
+        }
+      }
+    },
+    "Public IP" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "公网 IP"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "公網 IP"
           }
         }
       }
@@ -4146,6 +4276,22 @@
         }
       }
     },
+    "Signal" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "信号"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "信號"
+          }
+        }
+      }
+    },
     "Size" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4565,6 +4711,23 @@
         }
       }
     },
+    "Total:" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "总计："
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "總計："
+          }
+        }
+      }
+    },
     "Total: %@" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4629,6 +4792,22 @@
         }
       }
     },
+    "Unknown" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知"
+          }
+        }
+      }
+    },
     "Unlimited" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4666,7 +4845,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "上移"
+            "value" : "上传"
           }
         },
         "zh-HK" : {
@@ -4689,6 +4868,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "全部更新"
+          }
+        }
+      }
+    },
+    "Upload" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上传"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上傳"
           }
         }
       }
@@ -4853,6 +5048,22 @@
         }
       }
     },
+    "Wi-Fi" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wi-Fi"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wi-Fi"
+          }
+        }
+      }
+    },
     "Xcode Cleaner" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4868,6 +5079,9 @@
           }
         }
       }
+    },
+    "Xcode Cleanup" : {
+
     },
     "Your Xcode environment is clean!" : {
       "localizations" : {

@@ -7,7 +7,7 @@ struct ProcessNetworkListView: View {
         VStack(spacing: 0) {
             // Toolbar
             HStack {
-                Text("Process Monitor")
+                Text(String(localized: "Process Monitor"))
                     .font(.headline)
 
                 Spacer()
@@ -31,15 +31,15 @@ struct ProcessNetworkListView: View {
                 let availableWidth = max(0, geometry.size.width - (horizontalPadding * 2) - scrollBarWidth)
                 
                 HStack(spacing: 0) {
-                    Text("App")
+                    Text(String(localized: "App"))
                         .frame(width: availableWidth * 0.50, alignment: .leading)
 
                     Spacer()
 
-                    Text("Down")
+                    Text(String(localized: "Down"))
                         .frame(width: availableWidth * 0.2, alignment: .trailing)
 
-                    Text("Up")
+                    Text(String(localized: "Up"))
                         .frame(width: availableWidth * 0.2, alignment: .trailing)
                 }
                 .font(.caption)
@@ -57,7 +57,7 @@ struct ProcessNetworkListView: View {
             if viewModel.filteredProcesses.isEmpty {
                 VStack {
                     Spacer()
-                    Text("No active processes")
+                    Text(String(localized: "No active processes"))
                         .foregroundColor(.secondary)
                     Spacer()
                 }

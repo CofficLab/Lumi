@@ -10,7 +10,7 @@ struct NetworkHistoryDetailView: View {
         VStack(spacing: 0) {
             // Header with Picker (History Trend)
             HStack {
-                Text("History Trend")
+                Text(String(localized: "History Trend"))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(.secondary)
 

@@ -64,6 +64,7 @@ struct DiskManagerView: View {
                 Text("Directory Analysis").tag(1)
                 Text("System Cleanup").tag(2)
                 Text("System Monitor").tag(3)
+                Text("Xcode Cleanup").tag(4)
                 Text("Project Cleanup").tag(5)
             }
             .pickerStyle(.segmented)
@@ -79,6 +80,8 @@ struct DiskManagerView: View {
                     CacheCleanerView()
                 } else if selectedViewMode == 3 {
                     SystemMonitorView()
+                } else if selectedViewMode == 4 {
+                    XcodeCleanerView()
                 } else {
                     ProjectCleanerView()
                 }
