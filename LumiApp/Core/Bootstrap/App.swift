@@ -10,8 +10,10 @@ struct CoreApp: App {
         WindowGroup {
             ContentLayout()
                 .inRootView()
+                .ignoresSafeArea()
         }
-        .windowStyle(.titleBar)
+        .windowStyle(.hiddenTitleBar)
+        .windowToolbarStyle(.unified(showsTitle: false))
         .commands {
             DebugCommand()
             SettingsCommand()

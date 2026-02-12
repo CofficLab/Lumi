@@ -21,7 +21,7 @@ struct ContentView: View {
     @State private var tab: String = "main"
 
     /// 工具栏是否可见
-    @State private var toolbarVisibility = true
+    @State private var toolbarVisibility = false
 
     /// 标签页选择器是否可见
     @State private var tabPickerVisibility = false
@@ -58,7 +58,7 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            navigationSplitView()
+            contentLayout()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .sheet(isPresented: $showSettings) {
@@ -78,16 +78,51 @@ struct ContentView: View {
 // MARK: - View
 
 extension ContentView {
-    /// 创建导航分栏视图
-    /// - Returns: 配置好的导航分栏视图
-    private func navigationSplitView() -> some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
-            Sidebar()
-                .navigationSplitViewColumnWidth(min: 200, ideal: 200, max: 300)
-        } detail: {
+    /// 创建主布局视图
+    /// - Returns: 配置好的主布局视图
+    private func contentLayout() -> some View {
+        HStack(spacing: 0) {
+            // 侧边栏
+            if sidebarVisibility {
+                Sidebar()
+                    .frame(width: 220)
+            }
+            
+            // 内容区域
             detailContent()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .navigationTitle("")
+        .background(DesignTokens.Color.adaptive.deepBackground(for: colorScheme))
+        // 全局背景光晕效果
+        .background {
+            GeometryReader { proxy in
+                // 主光晕
+                Circle()
+                    .fill(Themes.Gradients.mysticGlow)
+                    .frame(width: 600, height: 600)
+                    .blur(radius: 120)
+                    .offset(x: -200, y: -200)
+
+                // 次光晕
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                Themes.Colors.glow.intense,
+                                Themes.Colors.glow.medium,
+                                SwiftUI.Color.clear
+                            ],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 250
+                        )
+                    )
+                    .frame(width: 500, height: 500)
+                    .blur(radius: 120)
+                    .position(x: proxy.size.width, y: proxy.size.height)
+            }
+            .ignoresSafeArea()
+        }
         .onAppear(perform: onAppear)
         .onChange(of: tab, onChangeOfTab)
         .onChange(of: columnVisibility, onChangeColumnVisibility)
@@ -123,47 +158,11 @@ extension ContentView {
     /// - Returns: 详情内容视图
     @ViewBuilder
     private func detailContent() -> some View {
-        ZStack {
-            // 背景 - 使用响应式颜色系统，根据配色方案自动调整
-            DesignTokens.Color.adaptive.deepBackground(for: colorScheme)
-                .ignoresSafeArea()
-
-            // 装饰性光晕 - 使用神秘主题的光晕效果，根据模式调整强度
-            GeometryReader { proxy in
-                // 主光晕
-                Circle()
-                    .fill(Themes.Gradients.mysticGlow)
-                    .frame(width: 600, height: 600)
-                    .blur(radius: 120)
-                    .offset(x: -200, y: -200)
-
-                // 次光晕
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [
-                                Themes.Colors.glow.intense,
-                                Themes.Colors.glow.medium,
-                                SwiftUI.Color.clear
-                            ],
-                            center: .center,
-                            startRadius: 0,
-                            endRadius: 250
-                        )
-                    )
-                    .frame(width: 500, height: 500)
-                    .blur(radius: 120)
-                    .position(x: proxy.size.width, y: proxy.size.height)
-            }
-            .ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                // 显示当前选中的导航内容
-                app.getCurrentNavigationView(pluginProvider: pluginProvider)
-            }
+        VStack(spacing: 0) {
+            // 显示当前选中的导航内容
+            app.getCurrentNavigationView(pluginProvider: pluginProvider)
         }
         .frame(maxHeight: .infinity)
-        .navigationTitle(app.getCurrentNavigationTitle(pluginProvider: pluginProvider))
     }
 
     /// 默认详情视图（当没有插件提供详情视图时显示）
@@ -214,6 +213,12 @@ extension ContentView {
 
     /// 视图出现时的事件处理
     func onAppear() {
+        // 配置窗口样式
+        if let window = NSApplication.shared.windows.first {
+            window.titlebarAppearsTransparent = true
+            window.titleVisibility = .hidden
+        }
+        
         // Delay state updates to avoid "Publishing changes during view update" warning
         DispatchQueue.main.async {
             // 如果提供了默认的，则使用默认的
