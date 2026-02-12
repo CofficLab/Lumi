@@ -34,4 +34,51 @@ struct WinterTheme: ThemeProtocol {
             intense: SwiftUI.Color(hex: "A5B4FC").opacity(0.7)
         )
     }
+
+    func makeGlobalBackground(proxy: GeometryProxy) -> AnyView {
+        AnyView(
+            ZStack {
+                backgroundGradient()
+                    .ignoresSafeArea()
+
+                // 冰霜白 (顶部覆盖)
+                Ellipse()
+                    .fill(accentColors().secondary.opacity(0.2))
+                    .frame(width: proxy.size.width * 1.5, height: 600)
+                    .blur(radius: 120)
+                    .position(x: proxy.size.width / 2, y: 0)
+
+                // 寒冬蓝 (左下)
+                Circle()
+                    .fill(accentColors().primary.opacity(0.25))
+                    .frame(width: 500, height: 500)
+                    .blur(radius: 100)
+                    .position(x: 0, y: proxy.size.height)
+                
+                // 极寒紫 (右侧)
+                Circle()
+                    .fill(accentColors().tertiary.opacity(0.2))
+                    .frame(width: 400, height: 400)
+                    .blur(radius: 80)
+                    .position(x: proxy.size.width, y: proxy.size.height * 0.6)
+                
+                // 背景图标点缀
+                ZStack {
+                    Image(systemName: "snowflake")
+                        .font(.system(size: 350))
+                        .foregroundStyle(accentColors().secondary.opacity(0.06))
+                        .rotationEffect(.degrees(15))
+                        .offset(x: proxy.size.width * 0.2, y: -proxy.size.height * 0.15)
+                        .blur(radius: 4)
+                    
+                    Image(systemName: "thermometer.snowflake")
+                        .font(.system(size: 150))
+                        .foregroundStyle(accentColors().primary.opacity(0.08))
+                        .rotationEffect(.degrees(-10))
+                        .offset(x: -proxy.size.width * 0.25, y: proxy.size.height * 0.25)
+                        .blur(radius: 3)
+                }
+            }
+        )
+    }
 }

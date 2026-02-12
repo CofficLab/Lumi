@@ -51,4 +51,54 @@ struct NebulaTheme: ThemeProtocol {
             intense: SwiftUI.Color(hex: "C084FC").opacity(0.7)
         )
     }
+
+    func makeGlobalBackground(proxy: GeometryProxy) -> AnyView {
+        AnyView(
+            ZStack {
+                backgroundGradient()
+                    .ignoresSafeArea()
+
+                // 星云云团 1 (粉色)
+                Circle()
+                    .fill(accentColors().primary.opacity(0.2))
+                    .frame(width: 500, height: 500)
+                    .blur(radius: 80)
+                    .offset(x: -150, y: 100)
+                    .overlay(
+                        Circle()
+                            .stroke(accentColors().primary.opacity(0.1), lineWidth: 50)
+                            .blur(radius: 50)
+                    )
+
+                // 星云云团 2 (紫色)
+                Circle()
+                    .fill(accentColors().tertiary.opacity(0.25))
+                    .frame(width: 600, height: 600)
+                    .blur(radius: 100)
+                    .position(x: proxy.size.width * 0.8, y: proxy.size.height * 0.3)
+
+                // 星云云团 3 (玫瑰红)
+                Circle()
+                    .fill(accentColors().secondary.opacity(0.15))
+                    .frame(width: 400, height: 400)
+                    .blur(radius: 60)
+                    .position(x: proxy.size.width * 0.2, y: proxy.size.height * 0.8)
+                
+                // 背景图标点缀
+                ZStack {
+                    Image(systemName: "cloud.fill")
+                        .font(.system(size: 350))
+                        .foregroundStyle(accentColors().primary.opacity(0.03))
+                        .offset(x: -proxy.size.width * 0.1, y: -proxy.size.height * 0.15)
+                        .blur(radius: 8)
+                    
+                    Image(systemName: "sparkle")
+                        .font(.system(size: 150))
+                        .foregroundStyle(accentColors().tertiary.opacity(0.08))
+                        .offset(x: proxy.size.width * 0.35, y: proxy.size.height * 0.25)
+                        .blur(radius: 2)
+                }
+            }
+        )
+    }
 }

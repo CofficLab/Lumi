@@ -43,4 +43,48 @@ struct VoidTheme: ThemeProtocol {
             intense: SwiftUI.Color(hex: "EC4899").opacity(0.7)
         )
     }
+
+    func makeGlobalBackground(proxy: GeometryProxy) -> AnyView {
+        AnyView(
+            ZStack {
+                // 极简深黑背景
+                Color.black
+                    .ignoresSafeArea()
+                
+                // 虚空微光 (中心极微弱)
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                accentColors().primary.opacity(0.15),
+                                SwiftUI.Color.clear
+                            ],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 300
+                        )
+                    )
+                    .frame(width: 600, height: 600)
+                    .blur(radius: 100)
+                    .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+
+                // 边缘微光
+                Circle()
+                    .fill(accentColors().secondary.opacity(0.05))
+                    .frame(width: 800, height: 800)
+                    .blur(radius: 150)
+                    .offset(x: 400, y: 400)
+                
+                // 背景图标点缀
+                ZStack {
+                    Image(systemName: "circle.dotted")
+                        .font(.system(size: 500))
+                        .foregroundStyle(accentColors().primary.opacity(0.02))
+                        .rotationEffect(.degrees(45))
+                        .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+                        .blur(radius: 2)
+                }
+            }
+        )
+    }
 }

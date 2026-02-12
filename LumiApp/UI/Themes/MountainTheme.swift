@@ -34,4 +34,49 @@ struct MountainTheme: ThemeProtocol {
             intense: SwiftUI.Color(hex: "22C55E").opacity(0.7)
         )
     }
+
+    func makeGlobalBackground(proxy: GeometryProxy) -> AnyView {
+        AnyView(
+            ZStack {
+                backgroundGradient()
+                    .ignoresSafeArea()
+
+                // 远山灰 (底部大面积)
+                Ellipse()
+                    .fill(accentColors().primary.opacity(0.3))
+                    .frame(width: proxy.size.width * 1.5, height: 800)
+                    .blur(radius: 150)
+                    .position(x: proxy.size.width / 2, y: proxy.size.height + 200)
+
+                // 云雾白 (顶部)
+                Ellipse()
+                    .fill(accentColors().secondary.opacity(0.15))
+                    .frame(width: proxy.size.width * 1.2, height: 500)
+                    .blur(radius: 120)
+                    .position(x: proxy.size.width / 2, y: -100)
+                
+                // 松林绿 (右下角点缀)
+                Circle()
+                    .fill(accentColors().tertiary.opacity(0.2))
+                    .frame(width: 400, height: 400)
+                    .blur(radius: 100)
+                    .position(x: proxy.size.width, y: proxy.size.height)
+                
+                // 背景图标点缀
+                ZStack {
+                    Image(systemName: "mountain.2.fill")
+                        .font(.system(size: 400))
+                        .foregroundStyle(accentColors().primary.opacity(0.05))
+                        .offset(x: 0, y: proxy.size.width * 0.1) // 稍微下沉
+                        .blur(radius: 6)
+                    
+                    Image(systemName: "cloud.fill")
+                        .font(.system(size: 200))
+                        .foregroundStyle(accentColors().secondary.opacity(0.08))
+                        .offset(x: -proxy.size.width * 0.3, y: -proxy.size.height * 0.25)
+                        .blur(radius: 8)
+                }
+            }
+        )
+    }
 }

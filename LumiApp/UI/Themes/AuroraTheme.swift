@@ -51,4 +51,54 @@ struct AuroraTheme: ThemeProtocol {
             intense: SwiftUI.Color(hex: "34D399").opacity(0.7)
         )
     }
+
+    func makeGlobalBackground(proxy: GeometryProxy) -> AnyView {
+        AnyView(
+            ZStack {
+                // 极光深色背景
+                backgroundGradient()
+                    .ignoresSafeArea()
+
+                // 极光带 1 (绿色)
+                Capsule()
+                    .fill(accentColors().tertiary.opacity(0.25))
+                    .frame(width: 800, height: 300)
+                    .rotationEffect(.degrees(-30))
+                    .blur(radius: 80)
+                    .offset(x: -100, y: -200)
+
+                // 极光带 2 (紫色)
+                Capsule()
+                    .fill(accentColors().primary.opacity(0.3))
+                    .frame(width: 900, height: 400)
+                    .rotationEffect(.degrees(-15))
+                    .blur(radius: 100)
+                    .offset(x: 200, y: 100)
+                
+                // 极光带 3 (蓝色)
+                Capsule()
+                    .fill(accentColors().secondary.opacity(0.2))
+                    .frame(width: 700, height: 250)
+                    .rotationEffect(.degrees(-45))
+                    .blur(radius: 90)
+                    .position(x: proxy.size.width, y: proxy.size.height - 100)
+                
+                // 背景图标点缀
+                ZStack {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 400))
+                        .foregroundStyle(accentColors().tertiary.opacity(0.05))
+                        .rotationEffect(.degrees(20))
+                        .offset(x: proxy.size.width * 0.2, y: proxy.size.height * 0.1)
+                        .blur(radius: 10)
+                    
+                    Image(systemName: "rays")
+                        .font(.system(size: 250))
+                        .foregroundStyle(accentColors().primary.opacity(0.03))
+                        .offset(x: -proxy.size.width * 0.25, y: -proxy.size.height * 0.25)
+                        .blur(radius: 5)
+                }
+            }
+        )
+    }
 }

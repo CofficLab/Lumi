@@ -48,6 +48,13 @@ protocol ThemeProtocol {
 
     /// 边框渐变
     func borderGradient() -> LinearGradient
+
+    // MARK: - 全局背景视图
+    
+    /// 创建全局背景视图
+    /// - Parameter proxy: 几何代理，用于适配屏幕尺寸
+    /// - Returns: 类型擦除的视图
+    func makeGlobalBackground(proxy: GeometryProxy) -> AnyView
 }
 
 // MARK: - 主题协议默认实现
@@ -94,6 +101,38 @@ extension ThemeProtocol {
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
+        )
+    }
+
+    /// 默认全局背景视图实现
+    func makeGlobalBackground(proxy: GeometryProxy) -> AnyView {
+        AnyView(
+            ZStack {
+                // 主光晕
+                Circle()
+                    .fill(glowGradient())
+                    .frame(width: 600, height: 600)
+                    .blur(radius: 120)
+                    .offset(x: -200, y: -200)
+
+                // 次光晕
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                glowColors().intense,
+                                glowColors().medium,
+                                SwiftUI.Color.clear
+                            ],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 250
+                        )
+                    )
+                    .frame(width: 500, height: 500)
+                    .blur(radius: 120)
+                    .position(x: proxy.size.width, y: proxy.size.height)
+            }
         )
     }
 }
