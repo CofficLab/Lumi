@@ -1,70 +1,74 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "Cask": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cask"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Cask" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cask"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cask"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cask"
           }
         }
       }
     },
-    "Homebrew not detected, please install Homebrew first.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未检测到 Homebrew，请先安装 Homebrew。"
+    "Homebrew not detected, please install Homebrew first." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未检测到 Homebrew，请先安装 Homebrew。"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未檢測到 Homebrew，請先安裝 Homebrew。"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未檢測到 Homebrew，請先安裝 Homebrew。"
           }
         }
       }
     },
-    "Manage Homebrew packages and casks": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "管理 Homebrew 包和 cask"
+    "Manage Homebrew packages and casks" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理 Homebrew 包和 cask"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "管理 Homebrew 套件和 cask"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理 Homebrew 套件和 cask"
           }
         }
       }
     },
-    "Search Homebrew packages...": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "搜索 Homebrew 软件包..."
+    "Search Homebrew packages..." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索 Homebrew 软件包..."
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "搜尋 Homebrew 軟件包..."
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜尋 Homebrew 軟件包..."
           }
         }
       }
     }
   },
-  "version": "1.1"
+  "version" : "1.1"
 }

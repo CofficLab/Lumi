@@ -1,167 +1,176 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "Click scan to start analyzing system junk": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "点击扫描开始分析系统垃圾"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Click scan to start analyzing system junk" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点击扫描开始分析系统垃圾"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "點擊掃描開始分析系統垃圾"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊掃描開始分析系統垃圾"
           }
         }
       }
     },
-    "Device Info": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "设备信息"
+    "Device Info" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设备信息"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "設備信息"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設備信息"
           }
         }
       }
     },
-    "Manage system hosts file configuration": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "管理系统 hosts 文件配置"
+    "Manage system hosts file configuration" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理系统 hosts 文件配置"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "管理系統 hosts 檔案設定"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理系統 hosts 檔案設定"
           }
         }
       }
     },
-    "Open System Settings": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "打开系统设置"
+    "Open System Settings" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开系统设置"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "打開系統設定"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打開系統設定"
           }
         }
       }
     },
-    "Real-time monitoring of system memory usage": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "实时监控系统内存使用情况"
+    "Real-time monitoring of system memory usage" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "实时监控系统内存使用情况"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "實時監控系統記憶體使用情況"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "實時監控系統記憶體使用情況"
           }
         }
       }
     },
-    "Scan and clean system caches, logs, and junk files": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "扫描并清理系统缓存、日志和垃圾文件"
+    "Scan and clean system caches, logs, and junk files" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "扫描并清理系统缓存、日志和垃圾文件"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "掃描並清理系統快取、日誌和垃圾檔案"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "掃描並清理系統快取、日誌和垃圾檔案"
           }
         }
       }
     },
-    "System Cleanup": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "系统清理"
+    "System Cleanup" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系统清理"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "系統清理"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系統清理"
           }
         }
       }
     },
-    "System Monitor": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "系统监控"
+    "System Monitor" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系统监控"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "系統監控"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系統監控"
           }
         }
       }
     },
-    "System Settings → Privacy & Security → Extensions → Added Extensions": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "系统设置 → 隐私与安全性 → 扩展 → 已添加的扩展"
+    "System Settings → Privacy & Security → Extensions → Added Extensions" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系统设置 → 隐私与安全性 → 扩展 → 已添加的扩展"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "系統設定 → 隱私與安全性 → 擴充功能 → 已新增的擴充功能"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系統設定 → 隱私與安全性 → 擴充功能 → 已新增的擴充功能"
           }
         }
       }
     },
-    "The right-click menu functionality requires the Finder extension to be enabled in System Settings.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "右键菜单功能需要在系统设置中启用 Finder 扩展。"
+    "The right-click menu functionality requires the Finder extension to be enabled in System Settings." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "右键菜单功能需要在系统设置中启用 Finder 扩展。"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "右鍵選單功能需要在系統設定中啟用 Finder 擴充功能。"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "右鍵選單功能需要在系統設定中啟用 Finder 擴充功能。"
           }
         }
       }
     }
   },
-  "version": "1.1"
+  "version" : "1.1"
 }

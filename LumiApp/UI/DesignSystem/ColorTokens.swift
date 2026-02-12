@@ -12,14 +12,21 @@ import SwiftUI
 ///
 /// 定义应用中所有颜色相关的设计令牌。
 /// 包括基础色板、语义化颜色和渐变色。
+/// 现在支持浅色/深色模式自动适配。
 ///
 extension DesignTokens {
     enum Color {
-        // MARK: - 基础色板
+        // MARK: - 响应式颜色（支持浅色/深色模式）
+        /// 响应式语义化颜色 - 根据 ColorScheme 自动适配
+        /// 使用 @Environment(\.colorScheme) 获取当前配色方案
+        static let adaptive = AdaptiveSemanticColors()
+
+        // MARK: - 基础色板（保持向后兼容）
         /// 基础色调（神秘深色）
         static let basePalette = BasePalette()
 
-        /// 语义化颜色
+        /// 语义化颜色（静态，仅用于深色模式）
+        /// ⚠️ 建议使用 adaptive 替代
         static let semantic = SemanticColors()
 
         /// 渐变色
@@ -122,6 +129,188 @@ extension DesignTokens {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
+        }
+    }
+
+    // MARK: - 响应式语义化颜色
+    /// 响应式语义化颜色 - 根据 ColorScheme 自动适配
+    /// 提供动态颜色选择，支持浅色和深色模式
+    struct AdaptiveSemanticColors {
+        // MARK: - 环境依赖的颜色计算
+
+        /// 主要文本色（根据配色方案动态调整）
+        func textPrimary(for scheme: ColorScheme) -> SwiftUI.Color {
+            switch scheme {
+            case .light:
+                SwiftUI.Color(hex: "1C1C1E")  // 深色文本（浅色模式）
+            case .dark:
+                SwiftUI.Color(hex: "FFFFFF")  // 白色文本（深色模式）
+            @unknown default:
+                SwiftUI.Color(hex: "FFFFFF")
+            }
+        }
+
+        /// 次要文本色
+        func textSecondary(for scheme: ColorScheme) -> SwiftUI.Color {
+            switch scheme {
+            case .light:
+                SwiftUI.Color(hex: "6B6B7B")  // 中灰文本（浅色模式）
+            case .dark:
+                SwiftUI.Color(hex: "EBEBF5")  // 浅白文本（深色模式）
+            @unknown default:
+                SwiftUI.Color(hex: "EBEBF5")
+            }
+        }
+
+        /// 三级文本色
+        func textTertiary(for scheme: ColorScheme) -> SwiftUI.Color {
+            switch scheme {
+            case .light, .dark:
+                SwiftUI.Color(hex: "98989E")  // 紫灰文本（两种模式都可用）
+            @unknown default:
+                SwiftUI.Color(hex: "98989E")
+            }
+        }
+
+        /// 禁用文本色
+        func textDisabled(for scheme: ColorScheme) -> SwiftUI.Color {
+            switch scheme {
+            case .light:
+                SwiftUI.Color(hex: "BDBDBD")  // 浅灰（浅色模式）
+            case .dark:
+                SwiftUI.Color(hex: "48484F")  // 深灰（深色模式）
+            @unknown default:
+                SwiftUI.Color(hex: "48484F")
+            }
+        }
+
+        // MARK: - 背景色
+
+        /// 深色背景色
+        func deepBackground(for scheme: ColorScheme) -> SwiftUI.Color {
+            switch scheme {
+            case .light:
+                SwiftUI.Color(hex: "F5F5F7")  // 浅灰紫背景（浅色模式）
+            case .dark:
+                SwiftUI.Color(hex: "050508")  // 深色背景（深色模式）
+            @unknown default:
+                SwiftUI.Color(hex: "050508")
+            }
+        }
+
+        /// 卡片表面背景色
+        func surfaceBackground(for scheme: ColorScheme) -> SwiftUI.Color {
+            switch scheme {
+            case .light:
+                SwiftUI.Color(hex: "FFFFFF")  // 纯白卡片（浅色模式）
+            case .dark:
+                SwiftUI.Color(hex: "0D0D12")  // 深色卡片（深色模式）
+            @unknown default:
+                SwiftUI.Color(hex: "0D0D12")
+            }
+        }
+
+        /// 悬浮表面背景色
+        func elevatedSurface(for scheme: ColorScheme) -> SwiftUI.Color {
+            switch scheme {
+            case .light:
+                SwiftUI.Color(hex: "FFFFFF")  // 纯白（浅色模式）
+            case .dark:
+                SwiftUI.Color(hex: "14141A")  // 悬浮深色（深色模式）
+            @unknown default:
+                SwiftUI.Color(hex: "14141A")
+            }
+        }
+
+        /// 叠加层背景色
+        func overlayBackground(for scheme: ColorScheme) -> SwiftUI.Color {
+            switch scheme {
+            case .light:
+                SwiftUI.Color(hex: "E5E5EA")  // 浅灰叠加（浅色模式）
+            case .dark:
+                SwiftUI.Color(hex: "1A1A22")  // 深色叠加（深色模式）
+            @unknown default:
+                SwiftUI.Color(hex: "1A1A22")
+            }
+        }
+
+        /// 分隔线颜色
+        func divider(for scheme: ColorScheme) -> SwiftUI.Color {
+            switch scheme {
+            case .light:
+                SwiftUI.Color(hex: "E5E5EA").opacity(0.5)  // 浅灰分隔线
+            case .dark:
+                SwiftUI.Color(hex: "FFFFFF").opacity(0.15)  // 白色分隔线
+            @unknown default:
+                SwiftUI.Color(hex: "FFFFFF").opacity(0.15)
+            }
+        }
+
+        // MARK: - 主题色（保持不变）
+
+        /// 主色调（两种模式保持一致）
+        let primary = SwiftUI.Color(hex: "7C6FFF")
+        let primarySecondary = SwiftUI.Color(hex: "A99CFF")
+
+        /// 主渐变（两种模式保持一致）
+        func primaryGradient(for scheme: ColorScheme) -> LinearGradient {
+            // 两种模式使用相同的主题渐变，保持品牌一致性
+            LinearGradient(
+                colors: [
+                    SwiftUI.Color(hex: "7C6FFF"),
+                    SwiftUI.Color(hex: "B4A5FF")
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+
+        // 状态色
+        let success = SwiftUI.Color(hex: "30D158")
+        let successGlow = SwiftUI.Color(hex: "7CFFB5")
+        let warning = SwiftUI.Color(hex: "FF9F0A")
+        let warningGlow = SwiftUI.Color(hex: "FFD57F")
+        let error = SwiftUI.Color(hex: "FF453A")
+        let errorGlow = SwiftUI.Color(hex: "FF7A73")
+        let info = SwiftUI.Color(hex: "0A84FF")
+        let infoGlow = SwiftUI.Color(hex: "7AB8FF")
+
+        // MARK: - 材质效果
+
+        /// 神秘氛围材质（根据模式调整透明度）
+        func mysticGlassMaterial(for scheme: ColorScheme) -> some ShapeStyle {
+            switch scheme {
+            case .light:
+                SwiftUI.Color.white.opacity(0.7)  // 浅色模式：白色半透明
+            case .dark:
+                SwiftUI.Color.black.opacity(0.3)  // 深色模式：黑色半透明
+            @unknown default:
+                SwiftUI.Color.black.opacity(0.3)
+            }
+        }
+
+        /// 光晕强度（根据模式调整）
+        func glowIntensity(for scheme: ColorScheme) -> Double {
+            switch scheme {
+            case .light:
+                return 0.06  // 浅色模式：较弱的光晕（避免过度曝光）
+            case .dark:
+                return 0.15  // 深色模式：正常光晕
+            @unknown default:
+                return 0.15
+            }
+        }
+
+        /// 边框透明度
+        func borderOpacity(for scheme: ColorScheme) -> Double {
+            switch scheme {
+            case .light:
+                return 0.3  // 浅色模式：较淡的边框
+            case .dark:
+                return 0.15  // 深色模式：标准边框
+            @unknown default:
+                return 0.15
+            }
         }
     }
 }

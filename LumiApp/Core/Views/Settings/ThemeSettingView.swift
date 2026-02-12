@@ -5,6 +5,9 @@ struct ThemeSettingView: View {
     /// 主题管理器
     @EnvironmentObject private var themeManager: MystiqueThemeManager
 
+    /// 当前配色方案（用于预览展示）
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         ZStack {
             // 背景
@@ -32,7 +35,7 @@ struct ThemeSettingView: View {
             }
         }
         .navigationTitle("主题风格")
-        .colorScheme(.dark) // 强制使用深色模式，确保 DesignTokens 颜色显示正确
+        // 移除强制深色模式，现在支持自动适配浅色/深色
     }
 
     // MARK: - 页面标题
@@ -42,16 +45,16 @@ struct ThemeSettingView: View {
             HStack(spacing: DesignTokens.Spacing.sm) {
                 Image(systemName: "paintbrush.fill")
                     .font(.system(size: 28))
-                    .foregroundColor(DesignTokens.Color.semantic.primary)
+                    .foregroundColor(DesignTokens.Color.adaptive.primary)
 
                 Text("主题风格")
                     .font(DesignTokens.Typography.title2)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(DesignTokens.Color.adaptive.textPrimary(for: colorScheme))
             }
 
             Text("选择你喜欢的神秘主题风格，打造独特的视觉体验")
                 .font(DesignTokens.Typography.body)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(DesignTokens.Color.adaptive.textSecondary(for: colorScheme))
         }
     }
 

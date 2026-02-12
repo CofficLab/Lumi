@@ -8,6 +8,9 @@ struct Sidebar: View {
     /// 插件提供者环境对象
     @EnvironmentObject var pluginProvider: PluginProvider
 
+    /// 当前配色方案（浅色/深色模式）
+    @Environment(\.colorScheme) private var colorScheme
+
     private var entries: [NavigationEntry] {
         pluginProvider.getNavigationEntries()
     }
@@ -46,30 +49,33 @@ struct Sidebar: View {
     struct SidebarRow: View {
         let entry: NavigationEntry
         let isSelected: Bool
-        
+
+        /// 当前配色方案
+        @Environment(\.colorScheme) private var colorScheme
+
         var body: some View {
             HStack(spacing: 12) {
                 // 图标背景
                 ZStack {
                     if isSelected {
                         Circle()
-                            .fill(DesignTokens.Color.gradients.primaryGradient)
+                            .fill(DesignTokens.Color.adaptive.primaryGradient(for: colorScheme))
                     } else {
                         Circle()
-                            .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.15))
+                            .fill(DesignTokens.Color.adaptive.textTertiary(for: colorScheme).opacity(0.15))
                     }
                 }
                 .frame(width: 32, height: 32)
                 .overlay(
                     Image(systemName: entry.icon)
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(isSelected ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(isSelected ? DesignTokens.Color.adaptive.textPrimary(for: colorScheme) : DesignTokens.Color.adaptive.textSecondary(for: colorScheme))
                 )
 
                 // 标题
                 Text(entry.title)
                     .font(.system(size: 14, weight: isSelected ? .semibold : .regular))
-                    .foregroundColor(isSelected ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(isSelected ? DesignTokens.Color.adaptive.textPrimary(for: colorScheme) : DesignTokens.Color.adaptive.textSecondary(for: colorScheme))
 
                 Spacer()
             }
@@ -88,12 +94,12 @@ struct Sidebar: View {
                 HStack(spacing: 12) {
                     Image(systemName: "gearshape")
                         .font(.system(size: 16))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(DesignTokens.Color.adaptive.textSecondary(for: colorScheme))
                         .frame(width: 24)
 
                     Text("设置")
                         .font(DesignTokens.Typography.body)
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .foregroundColor(DesignTokens.Color.adaptive.textPrimary(for: colorScheme))
 
                     Spacer()
                 }
@@ -107,15 +113,15 @@ struct Sidebar: View {
         VStack(spacing: 12) {
             Image(systemName: "tray")
                 .font(.system(size: 48))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(DesignTokens.Color.adaptive.textSecondary(for: colorScheme))
 
             Text("暂无导航")
                 .font(.headline)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(DesignTokens.Color.adaptive.textSecondary(for: colorScheme))
 
             Text("插件未提供导航入口")
                 .font(.caption)
-                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                .foregroundColor(DesignTokens.Color.adaptive.textTertiary(for: colorScheme))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

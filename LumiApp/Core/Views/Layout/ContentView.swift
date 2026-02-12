@@ -11,6 +11,9 @@ struct ContentView: View {
     @EnvironmentObject var app: AppProvider
     @EnvironmentObject var pluginProvider: PluginProvider
 
+    /// 当前配色方案（浅色/深色模式）
+    @Environment(\.colorScheme) private var colorScheme
+
     /// 导航分栏视图的列可见性状态
     @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
 
@@ -121,11 +124,11 @@ extension ContentView {
     @ViewBuilder
     private func detailContent() -> some View {
         ZStack {
-            // 背景 - 使用新的设计系统
-            DesignTokens.Color.basePalette.deepBackground
+            // 背景 - 使用响应式颜色系统，根据配色方案自动调整
+            DesignTokens.Color.adaptive.deepBackground(for: colorScheme)
                 .ignoresSafeArea()
 
-            // 装饰性光晕 - 使用神秘主题的光晕效果
+            // 装饰性光晕 - 使用神秘主题的光晕效果，根据模式调整强度
             GeometryReader { proxy in
                 // 主光晕
                 Circle()
