@@ -37,7 +37,7 @@ struct DeviceInfoView: View {
 
                     // Grid
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                        DeviceInfoCard(title: String(localized: "CPU"), icon: "cpu", color: DesignTokens.Color.semantic.info) {
+                        DeviceInfoCard(title: "CPU", icon: "cpu", color: DesignTokens.Color.semantic.info) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(data.processorName)
                                     .font(.caption)
@@ -61,7 +61,7 @@ struct DeviceInfoView: View {
                             }
                         }
 
-                        DeviceInfoCard(title: String(localized: "Memory"), icon: "memorychip", color: DesignTokens.Color.semantic.success) {
+                        DeviceInfoCard(title: "Memory", icon: "memorychip", color: DesignTokens.Color.semantic.success) {
                             VStack(alignment: .leading, spacing: 8) {
                                 let used = ByteCountFormatter.string(fromByteCount: Int64(data.memoryUsed), countStyle: .memory)
                                 let total = ByteCountFormatter.string(fromByteCount: Int64(data.memoryTotal), countStyle: .memory)
@@ -116,7 +116,7 @@ struct DeviceInfoView: View {
                     HStack {
                         Image(systemName: "clock")
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        Text(String(localized: "Uptime: \(formatUptime(data.uptime))"))
+                        Text("Uptime: \(formatUptime(data.uptime))")
                             .font(.footnote)
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         Spacer()
@@ -148,12 +148,12 @@ struct DeviceInfoView: View {
 }
 
 struct DeviceInfoCard<Content: View>: View {
-    let title: String
+    let title: LocalizedStringKey
     let icon: String
     let color: Color
     let content: Content
 
-    init(title: String, icon: String, color: Color, @ViewBuilder content: () -> Content) {
+    init(title: LocalizedStringKey, icon: String, color: Color, @ViewBuilder content: () -> Content) {
         self.title = title
         self.icon = icon
         self.color = color

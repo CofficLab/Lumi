@@ -54,7 +54,7 @@ struct SystemMonitorView: View {
 }
 
 struct MonitorCard<Content: View>: View {
-    let title: String
+    let title: LocalizedStringKey
     let value: String
     let color: Color
     let content: () -> Content
