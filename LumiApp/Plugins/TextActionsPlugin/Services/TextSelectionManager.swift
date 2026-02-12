@@ -23,7 +23,8 @@ class TextSelectionManager: ObservableObject, SuperLog {
     func checkPermission() {
         // AXIsProcessTrustedWithOptions and kAXTrustedCheckOptionPrompt usage
         // usage of kAXTrustedCheckOptionPrompt directly causes concurrency error (shared mutable state)
-        let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
+        // Check silently (don't force prompt on app launch)
+        let options = ["AXTrustedCheckOptionPrompt": false] as CFDictionary
         isPermissionGranted = AXIsProcessTrustedWithOptions(options)
     }
     

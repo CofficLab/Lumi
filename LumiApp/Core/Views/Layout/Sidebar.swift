@@ -44,7 +44,7 @@ struct Sidebar: View {
                 .padding(.horizontal, DesignTokens.Spacing.sm)
                 .padding(.bottom, DesignTokens.Spacing.md)
         }
-        .background(sidebarBackground)
+        .background(SwiftUI.Color.clear)
         .onAppear {
             // Delay to avoid "Publishing changes during view update" warning
             DispatchQueue.main.async {
@@ -62,15 +62,15 @@ struct Sidebar: View {
         @Environment(\.colorScheme) private var colorScheme
 
         var body: some View {
-            HStack(spacing: 10) {
+            HStack(spacing: 12) {
                 Image(systemName: icon)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(isSelected ? DesignTokens.Color.adaptive.textPrimary(for: colorScheme) : DesignTokens.Color.adaptive.textSecondary(for: colorScheme))
-                    .frame(width: 18)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(isSelected ? .white : .white.opacity(0.7))
+                    .frame(width: 20)
 
                 Text(title)
-                    .font(isSelected ? DesignTokens.Typography.bodyEmphasized : DesignTokens.Typography.body)
-                    .foregroundColor(isSelected ? DesignTokens.Color.adaptive.textPrimary(for: colorScheme) : DesignTokens.Color.adaptive.textSecondary(for: colorScheme))
+                    .font(isSelected ? .system(size: 13, weight: .medium) : .system(size: 13, weight: .regular))
+                    .foregroundColor(isSelected ? .white : .white.opacity(0.7))
 
                 Spacer()
             }
@@ -84,9 +84,8 @@ struct Sidebar: View {
         @ViewBuilder private var selectionBackground: some View {
             if isSelected {
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
-                    .fill(DesignTokens.Color.adaptive.primaryGradient(for: colorScheme))
-                    .opacity(0.2)
-                    .shadow(color: DesignTokens.Color.adaptive.primarySecondary.opacity(0.2), radius: 6, x: 0, y: 3)
+                    .fill(SwiftUI.Color.white.opacity(0.15))
+                    .shadow(color: SwiftUI.Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
             } else {
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
                     .fill(SwiftUI.Color.clear)

@@ -86,13 +86,18 @@ extension ContentView {
             if sidebarVisibility {
                 Sidebar()
                     .frame(width: 220)
+                
+                // 侧边栏与内容区的微妙分隔线
+                Rectangle()
+                    .fill(SwiftUI.Color.white.opacity(0.1))
+                    .frame(width: 1)
+                    .ignoresSafeArea()
             }
             
             // 内容区域
             detailContent()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .background(DesignTokens.Color.adaptive.deepBackground(for: colorScheme))
         // 全局背景光晕效果
         .background {
             GeometryReader { proxy in
