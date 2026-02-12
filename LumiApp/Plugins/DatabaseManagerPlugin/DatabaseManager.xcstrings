@@ -1,0 +1,90 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "/path/to/db.sqlite": {},
+    "Add SQLite Connection": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加 SQLite 连接"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新增 SQLite 連接"
+          }
+        }
+      }
+    },
+    "Database": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "数据库"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料庫"
+          }
+        }
+      }
+    },
+    "Database Path": {},
+    "Database Path (or :memory:)": {
+      "extractionState": "stale",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "数据库路径（或 :memory:）"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料庫路徑（或 :memory:）"
+          }
+        }
+      }
+    },
+    "Manage SQLite, MySQL, and PostgreSQL databases": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理 SQLite、MySQL 和 PostgreSQL 数据库"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理 SQLite、MySQL 和 PostgreSQL 資料庫"
+          }
+        }
+      }
+    },
+    "My Database": {},
+    "Select a database to connect": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择要连接的数据库"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇要連接的資料庫"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.1"
+}
