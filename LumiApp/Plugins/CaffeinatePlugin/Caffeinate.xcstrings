@@ -69,6 +69,23 @@
         }
       }
     },
+    "Indefinite" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无限期"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無限期"
+          }
+        }
+      }
+    },
     "Prevent sleep & Allow screen off" : {
       "extractionState" : "stale",
       "localizations" : {

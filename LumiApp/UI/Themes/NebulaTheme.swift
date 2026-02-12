@@ -23,32 +23,32 @@ struct NebulaTheme: ThemeProtocol {
     let iconName = "cloud.moon.fill"
 
     var iconColor: SwiftUI.Color {
-        SwiftUI.Color(hex: "F472B6")
+        SwiftUI.Color.adaptive(light: "DB2777", dark: "F472B6")
     }
 
     // MARK: - 颜色配置
 
     func accentColors() -> (primary: SwiftUI.Color, secondary: SwiftUI.Color, tertiary: SwiftUI.Color) {
         (
-            primary: SwiftUI.Color(hex: "F472B6"),  // 星云粉
-            secondary: SwiftUI.Color(hex: "FB7185"), // 玫瑰红
-            tertiary: SwiftUI.Color(hex: "C084FC")  // 星云紫
+            primary: SwiftUI.Color.adaptive(light: "DB2777", dark: "F472B6"),  // 星云粉 (浅色稍深)
+            secondary: SwiftUI.Color.adaptive(light: "E11D48", dark: "FB7185"), // 玫瑰红
+            tertiary: SwiftUI.Color.adaptive(light: "9333EA", dark: "C084FC")   // 星云紫
         )
     }
 
     func atmosphereColors() -> (deep: SwiftUI.Color, medium: SwiftUI.Color, light: SwiftUI.Color) {
         (
-            deep: SwiftUI.Color(hex: "10050A"),     // 星云深邃
-            medium: SwiftUI.Color(hex: "1F0A15"),   // 星云中层
-            light: SwiftUI.Color(hex: "301020")     // 星云浅层
+            deep: SwiftUI.Color.adaptive(light: "FFF0F5", dark: "10050A"),      // 背景：浅粉白 vs 深红黑
+            medium: SwiftUI.Color.adaptive(light: "FFFFFF", dark: "1F0A15"),     // 卡片
+            light: SwiftUI.Color.adaptive(light: "FFE4E9", dark: "301020")       // 高光
         )
     }
 
     func glowColors() -> (subtle: SwiftUI.Color, medium: SwiftUI.Color, intense: SwiftUI.Color) {
         (
-            subtle: SwiftUI.Color(hex: "F472B6").opacity(0.3),
-            medium: SwiftUI.Color(hex: "FB7185").opacity(0.5),
-            intense: SwiftUI.Color(hex: "C084FC").opacity(0.7)
+            subtle: SwiftUI.Color.adaptive(light: "DB2777", dark: "F472B6").opacity(0.3),
+            medium: SwiftUI.Color.adaptive(light: "E11D48", dark: "FB7185").opacity(0.5),
+            intense: SwiftUI.Color.adaptive(light: "9333EA", dark: "C084FC").opacity(0.7)
         )
     }
 

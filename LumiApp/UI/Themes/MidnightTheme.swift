@@ -23,32 +23,32 @@ struct MidnightTheme: ThemeProtocol {
     let iconName = "moon.stars.fill"
 
     var iconColor: SwiftUI.Color {
-        SwiftUI.Color(hex: "5B4FCF")
+        SwiftUI.Color.adaptive(light: "5B4FCF", dark: "5B4FCF")
     }
 
     // MARK: - 颜色配置
 
     func accentColors() -> (primary: SwiftUI.Color, secondary: SwiftUI.Color, tertiary: SwiftUI.Color) {
         (
-            primary: SwiftUI.Color(hex: "5B4FCF"),  // 午夜蓝紫
-            secondary: SwiftUI.Color(hex: "7C6FFF"), // 紫罗兰
-            tertiary: SwiftUI.Color(hex: "00D4FF")   // 赛博蓝
+            primary: SwiftUI.Color.adaptive(light: "5B4FCF", dark: "5B4FCF"),  // 午夜蓝紫
+            secondary: SwiftUI.Color.adaptive(light: "7C6FFF", dark: "7C6FFF"), // 紫罗兰
+            tertiary: SwiftUI.Color.adaptive(light: "00B4D8", dark: "00D4FF")   // 赛博蓝 (浅色模式稍深以增加对比度)
         )
     }
 
     func atmosphereColors() -> (deep: SwiftUI.Color, medium: SwiftUI.Color, light: SwiftUI.Color) {
         (
-            deep: SwiftUI.Color(hex: "050510"),     // 深邃午夜
-            medium: SwiftUI.Color(hex: "0A0A1F"),   // 中层夜色
-            light: SwiftUI.Color(hex: "151530")     // 浅层夜光
+            deep: SwiftUI.Color.adaptive(light: "F5F5FA", dark: "050510"),     // 背景：浅色 vs 深色
+            medium: SwiftUI.Color.adaptive(light: "FFFFFF", dark: "0A0A1F"),    // 卡片：纯白 vs 深蓝
+            light: SwiftUI.Color.adaptive(light: "E8E8F2", dark: "151530")      // 高光：浅灰紫 vs 浅夜光
         )
     }
 
     func glowColors() -> (subtle: SwiftUI.Color, medium: SwiftUI.Color, intense: SwiftUI.Color) {
         (
-            subtle: SwiftUI.Color(hex: "7C6FFF").opacity(0.3),
-            medium: SwiftUI.Color(hex: "7C6FFF").opacity(0.5),
-            intense: SwiftUI.Color(hex: "00D4FF").opacity(0.7)
+            subtle: SwiftUI.Color.adaptive(light: "7C6FFF", dark: "7C6FFF").opacity(0.3),
+            medium: SwiftUI.Color.adaptive(light: "7C6FFF", dark: "7C6FFF").opacity(0.5),
+            intense: SwiftUI.Color.adaptive(light: "00B4D8", dark: "00D4FF").opacity(0.7)
         )
     }
 

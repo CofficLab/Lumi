@@ -8,30 +8,30 @@ struct RiverTheme: ThemeProtocol {
     let iconName = "drop.fill"
 
     var iconColor: SwiftUI.Color {
-        SwiftUI.Color(hex: "0EA5E9")
+        SwiftUI.Color.adaptive(light: "0284C7", dark: "0EA5E9")
     }
 
     func accentColors() -> (primary: SwiftUI.Color, secondary: SwiftUI.Color, tertiary: SwiftUI.Color) {
         (
-            primary: SwiftUI.Color(hex: "0EA5E9"),
-            secondary: SwiftUI.Color(hex: "22D3EE"),
-            tertiary: SwiftUI.Color(hex: "10B981")
+            primary: SwiftUI.Color.adaptive(light: "0284C7", dark: "0EA5E9"),  // 河流蓝 (浅色更深)
+            secondary: SwiftUI.Color.adaptive(light: "0891B2", dark: "22D3EE"), // 清澈青 (浅色更深)
+            tertiary: SwiftUI.Color.adaptive(light: "059669", dark: "10B981")   // 岸边绿 (浅色更深)
         )
     }
 
     func atmosphereColors() -> (deep: SwiftUI.Color, medium: SwiftUI.Color, light: SwiftUI.Color) {
         (
-            deep: SwiftUI.Color(hex: "04111A"),
-            medium: SwiftUI.Color(hex: "0A1E2B"),
-            light: SwiftUI.Color(hex: "0F2A3A")
+            deep: SwiftUI.Color.adaptive(light: "F0F9FF", dark: "04111A"),     // 浅色背景：淡水蓝
+            medium: SwiftUI.Color.adaptive(light: "E0F2FE", dark: "0A1E2B"),
+            light: SwiftUI.Color.adaptive(light: "BAE6FD", dark: "0F2A3A")
         )
     }
 
     func glowColors() -> (subtle: SwiftUI.Color, medium: SwiftUI.Color, intense: SwiftUI.Color) {
         (
-            subtle: SwiftUI.Color(hex: "0EA5E9").opacity(0.3),
-            medium: SwiftUI.Color(hex: "22D3EE").opacity(0.5),
-            intense: SwiftUI.Color(hex: "10B981").opacity(0.7)
+            subtle: SwiftUI.Color.adaptive(light: "0284C7", dark: "0EA5E9").opacity(0.3),
+            medium: SwiftUI.Color.adaptive(light: "0891B2", dark: "22D3EE").opacity(0.5),
+            intense: SwiftUI.Color.adaptive(light: "059669", dark: "10B981").opacity(0.7)
         )
     }
 

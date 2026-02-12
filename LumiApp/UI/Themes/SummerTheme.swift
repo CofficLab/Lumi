@@ -8,30 +8,32 @@ struct SummerTheme: ThemeProtocol {
     let iconName = "sun.max.fill"
 
     var iconColor: SwiftUI.Color {
-        SwiftUI.Color(hex: "38BDF8")
+        SwiftUI.Color.adaptive(light: "0284C7", dark: "38BDF8")
     }
+
+    // MARK: - 颜色配置
 
     func accentColors() -> (primary: SwiftUI.Color, secondary: SwiftUI.Color, tertiary: SwiftUI.Color) {
         (
-            primary: SwiftUI.Color(hex: "38BDF8"),
-            secondary: SwiftUI.Color(hex: "FACC15"),
-            tertiary: SwiftUI.Color(hex: "34D399")
+            primary: SwiftUI.Color.adaptive(light: "0284C7", dark: "38BDF8"),  // 盛夏蓝 (浅色稍深)
+            secondary: SwiftUI.Color.adaptive(light: "CA8A04", dark: "FACC15"), // 烈阳黄
+            tertiary: SwiftUI.Color.adaptive(light: "059669", dark: "34D399")   // 清凉绿
         )
     }
 
     func atmosphereColors() -> (deep: SwiftUI.Color, medium: SwiftUI.Color, light: SwiftUI.Color) {
         (
-            deep: SwiftUI.Color(hex: "041018"),
-            medium: SwiftUI.Color(hex: "082030"),
-            light: SwiftUI.Color(hex: "0F2F3F")
+            deep: SwiftUI.Color.adaptive(light: "F0F9FF", dark: "041018"),      // 背景：浅蓝白 vs 深蓝黑
+            medium: SwiftUI.Color.adaptive(light: "FFFFFF", dark: "082030"),     // 卡片
+            light: SwiftUI.Color.adaptive(light: "E0F2FE", dark: "0F2F3F")       // 高光
         )
     }
 
     func glowColors() -> (subtle: SwiftUI.Color, medium: SwiftUI.Color, intense: SwiftUI.Color) {
         (
-            subtle: SwiftUI.Color(hex: "38BDF8").opacity(0.3),
-            medium: SwiftUI.Color(hex: "FACC15").opacity(0.5),
-            intense: SwiftUI.Color(hex: "34D399").opacity(0.7)
+            subtle: SwiftUI.Color.adaptive(light: "0284C7", dark: "38BDF8").opacity(0.3),
+            medium: SwiftUI.Color.adaptive(light: "CA8A04", dark: "FACC15").opacity(0.5),
+            intense: SwiftUI.Color.adaptive(light: "059669", dark: "34D399").opacity(0.7)
         )
     }
 

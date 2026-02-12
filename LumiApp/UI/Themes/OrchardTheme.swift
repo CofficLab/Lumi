@@ -8,30 +8,32 @@ struct OrchardTheme: ThemeProtocol {
     let iconName = "apple.logo"
 
     var iconColor: SwiftUI.Color {
-        SwiftUI.Color(hex: "F43F5E")
+        SwiftUI.Color.adaptive(light: "E11D48", dark: "F43F5E")
     }
+
+    // MARK: - 颜色配置
 
     func accentColors() -> (primary: SwiftUI.Color, secondary: SwiftUI.Color, tertiary: SwiftUI.Color) {
         (
-            primary: SwiftUI.Color(hex: "F43F5E"),
-            secondary: SwiftUI.Color(hex: "F97316"),
-            tertiary: SwiftUI.Color(hex: "84CC16")
+            primary: SwiftUI.Color.adaptive(light: "E11D48", dark: "F43F5E"),  // 果园红 (浅色稍深)
+            secondary: SwiftUI.Color.adaptive(light: "EA580C", dark: "F97316"), // 活力橙
+            tertiary: SwiftUI.Color.adaptive(light: "65A30D", dark: "84CC16")   // 青柠绿
         )
     }
 
     func atmosphereColors() -> (deep: SwiftUI.Color, medium: SwiftUI.Color, light: SwiftUI.Color) {
         (
-            deep: SwiftUI.Color(hex: "14070B"),
-            medium: SwiftUI.Color(hex: "1F0D12"),
-            light: SwiftUI.Color(hex: "2B1118")
+            deep: SwiftUI.Color.adaptive(light: "FFF5F7", dark: "14070B"),      // 背景：浅红白 vs 深红黑
+            medium: SwiftUI.Color.adaptive(light: "FFFFFF", dark: "1F0D12"),     // 卡片
+            light: SwiftUI.Color.adaptive(light: "FFE4E6", dark: "2B1118")       // 高光
         )
     }
 
     func glowColors() -> (subtle: SwiftUI.Color, medium: SwiftUI.Color, intense: SwiftUI.Color) {
         (
-            subtle: SwiftUI.Color(hex: "F43F5E").opacity(0.3),
-            medium: SwiftUI.Color(hex: "F97316").opacity(0.5),
-            intense: SwiftUI.Color(hex: "84CC16").opacity(0.7)
+            subtle: SwiftUI.Color.adaptive(light: "E11D48", dark: "F43F5E").opacity(0.3),
+            medium: SwiftUI.Color.adaptive(light: "EA580C", dark: "F97316").opacity(0.5),
+            intense: SwiftUI.Color.adaptive(light: "65A30D", dark: "84CC16").opacity(0.7)
         )
     }
 

@@ -15,32 +15,32 @@ struct VoidTheme: ThemeProtocol {
     let iconName = "circle.fill"
 
     var iconColor: SwiftUI.Color {
-        SwiftUI.Color(hex: "6366F1")
+        SwiftUI.Color.adaptive(light: "4F46E5", dark: "6366F1")
     }
 
     // MARK: - 颜色配置
 
     func accentColors() -> (primary: SwiftUI.Color, secondary: SwiftUI.Color, tertiary: SwiftUI.Color) {
         (
-            primary: SwiftUI.Color(hex: "6366F1"),  // 虚空靛
-            secondary: SwiftUI.Color(hex: "8B5CF6"), // 虚空紫
-            tertiary: SwiftUI.Color(hex: "EC4899")  // 虚空粉
+            primary: SwiftUI.Color.adaptive(light: "4F46E5", dark: "6366F1"),  // 虚空靛 (浅色稍深)
+            secondary: SwiftUI.Color.adaptive(light: "7C3AED", dark: "8B5CF6"), // 虚空紫
+            tertiary: SwiftUI.Color.adaptive(light: "DB2777", dark: "EC4899")   // 虚空粉
         )
     }
 
     func atmosphereColors() -> (deep: SwiftUI.Color, medium: SwiftUI.Color, light: SwiftUI.Color) {
         (
-            deep: SwiftUI.Color(hex: "020205"),     // 虚空之深
-            medium: SwiftUI.Color(hex: "080810"),   // 虚空中层
-            light: SwiftUI.Color(hex: "101018")     // 虚空浅层
+            deep: SwiftUI.Color.adaptive(light: "F9FAFB", dark: "020205"),      // 背景：浅灰 vs 深黑
+            medium: SwiftUI.Color.adaptive(light: "FFFFFF", dark: "080810"),     // 卡片
+            light: SwiftUI.Color.adaptive(light: "E5E7EB", dark: "101018")       // 高光
         )
     }
 
     func glowColors() -> (subtle: SwiftUI.Color, medium: SwiftUI.Color, intense: SwiftUI.Color) {
         (
-            subtle: SwiftUI.Color(hex: "6366F1").opacity(0.3),
-            medium: SwiftUI.Color(hex: "8B5CF6").opacity(0.5),
-            intense: SwiftUI.Color(hex: "EC4899").opacity(0.7)
+            subtle: SwiftUI.Color.adaptive(light: "4F46E5", dark: "6366F1").opacity(0.3),
+            medium: SwiftUI.Color.adaptive(light: "7C3AED", dark: "8B5CF6").opacity(0.5),
+            intense: SwiftUI.Color.adaptive(light: "DB2777", dark: "EC4899").opacity(0.7)
         )
     }
 
@@ -48,7 +48,7 @@ struct VoidTheme: ThemeProtocol {
         AnyView(
             ZStack {
                 // 极简深黑背景
-                Color.black
+                atmosphereColors().deep
                     .ignoresSafeArea()
                 
                 // 虚空微光 (中心极微弱)

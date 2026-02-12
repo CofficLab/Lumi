@@ -8,30 +8,32 @@ struct WinterTheme: ThemeProtocol {
     let iconName = "snowflake"
 
     var iconColor: SwiftUI.Color {
-        SwiftUI.Color(hex: "60A5FA")
+        SwiftUI.Color.adaptive(light: "2563EB", dark: "60A5FA")
     }
+
+    // MARK: - 颜色配置
 
     func accentColors() -> (primary: SwiftUI.Color, secondary: SwiftUI.Color, tertiary: SwiftUI.Color) {
         (
-            primary: SwiftUI.Color(hex: "60A5FA"),
-            secondary: SwiftUI.Color(hex: "E0F2FE"),
-            tertiary: SwiftUI.Color(hex: "A5B4FC")
+            primary: SwiftUI.Color.adaptive(light: "2563EB", dark: "60A5FA"),  // 霜冬蓝 (浅色稍深)
+            secondary: SwiftUI.Color.adaptive(light: "93C5FD", dark: "E0F2FE"), // 冰霜白
+            tertiary: SwiftUI.Color.adaptive(light: "6366F1", dark: "A5B4FC")   // 极寒紫
         )
     }
 
     func atmosphereColors() -> (deep: SwiftUI.Color, medium: SwiftUI.Color, light: SwiftUI.Color) {
         (
-            deep: SwiftUI.Color(hex: "060B16"),
-            medium: SwiftUI.Color(hex: "0D1424"),
-            light: SwiftUI.Color(hex: "16203A")
+            deep: SwiftUI.Color.adaptive(light: "F8FAFC", dark: "060B16"),      // 背景：浅灰白 vs 深蓝黑
+            medium: SwiftUI.Color.adaptive(light: "FFFFFF", dark: "0D1424"),     // 卡片
+            light: SwiftUI.Color.adaptive(light: "F1F5F9", dark: "16203A")       // 高光
         )
     }
 
     func glowColors() -> (subtle: SwiftUI.Color, medium: SwiftUI.Color, intense: SwiftUI.Color) {
         (
-            subtle: SwiftUI.Color(hex: "60A5FA").opacity(0.3),
-            medium: SwiftUI.Color(hex: "E0F2FE").opacity(0.5),
-            intense: SwiftUI.Color(hex: "A5B4FC").opacity(0.7)
+            subtle: SwiftUI.Color.adaptive(light: "2563EB", dark: "60A5FA").opacity(0.3),
+            medium: SwiftUI.Color.adaptive(light: "93C5FD", dark: "E0F2FE").opacity(0.5),
+            intense: SwiftUI.Color.adaptive(light: "6366F1", dark: "A5B4FC").opacity(0.7)
         )
     }
 

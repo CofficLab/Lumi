@@ -65,12 +65,12 @@ struct Sidebar: View {
             HStack(spacing: 12) {
                 Image(systemName: icon)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(isSelected ? .white : .white.opacity(0.7))
+                    .foregroundColor(isSelected ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
                     .frame(width: 20)
 
                 Text(title)
                     .font(isSelected ? .system(size: 13, weight: .medium) : .system(size: 13, weight: .regular))
-                    .foregroundColor(isSelected ? .white : .white.opacity(0.7))
+                    .foregroundColor(isSelected ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
 
                 Spacer()
             }
@@ -84,7 +84,7 @@ struct Sidebar: View {
         @ViewBuilder private var selectionBackground: some View {
             if isSelected {
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
-                    .fill(SwiftUI.Color.white.opacity(0.15))
+                    .fill(DesignTokens.Color.semantic.primary.opacity(0.15))
                     .shadow(color: SwiftUI.Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
             } else {
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
@@ -95,7 +95,7 @@ struct Sidebar: View {
         @ViewBuilder private var selectionBorder: some View {
             if isSelected {
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
-                    .stroke(SwiftUI.Color.white.opacity(0.2), lineWidth: 1)
+                    .stroke(DesignTokens.Color.semantic.primary.opacity(0.3), lineWidth: 1)
             }
         }
     }

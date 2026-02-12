@@ -55,24 +55,24 @@ extension DesignTokens {
         /// 语义化颜色 - 具有特定含义的颜色
         struct SemanticColors {
             // 主色调
-            let primary = SwiftUI.Color(hex: "7C6FFF")             // 主紫
-            let primarySecondary = SwiftUI.Color(hex: "A99CFF")    // 次紫
+            let primary = SwiftUI.Color.adaptive(light: "7C6FFF", dark: "7C6FFF")             // 主紫
+            let primarySecondary = SwiftUI.Color.adaptive(light: "A99CFF", dark: "A99CFF")    // 次紫
 
             // 状态色
-            let success = SwiftUI.Color(hex: "30D158")             // 成功绿
-            let successGlow = SwiftUI.Color(hex: "7CFFB5")         // 成功光晕
-            let warning = SwiftUI.Color(hex: "FF9F0A")             // 警告橙
-            let warningGlow = SwiftUI.Color(hex: "FFD57F")         // 警告光晕
-            let error = SwiftUI.Color(hex: "FF453A")               // 错误红
-            let errorGlow = SwiftUI.Color(hex: "FF7A73")           // 错误光晕
-            let info = SwiftUI.Color(hex: "0A84FF")                // 信息蓝
-            let infoGlow = SwiftUI.Color(hex: "7AB8FF")            // 信息光晕
+            let success = SwiftUI.Color.adaptive(light: "30D158", dark: "30D158")             // 成功绿
+            let successGlow = SwiftUI.Color.adaptive(light: "7CFFB5", dark: "7CFFB5")         // 成功光晕
+            let warning = SwiftUI.Color.adaptive(light: "FF9F0A", dark: "FF9F0A")             // 警告橙
+            let warningGlow = SwiftUI.Color.adaptive(light: "FFD57F", dark: "FFD57F")         // 警告光晕
+            let error = SwiftUI.Color.adaptive(light: "FF453A", dark: "FF453A")               // 错误红
+            let errorGlow = SwiftUI.Color.adaptive(light: "FF7A73", dark: "FF7A73")           // 错误光晕
+            let info = SwiftUI.Color.adaptive(light: "0A84FF", dark: "0A84FF")                // 信息蓝
+            let infoGlow = SwiftUI.Color.adaptive(light: "7AB8FF", dark: "7AB8FF")            // 信息光晕
 
             // 文本色（确保 WCAG AA 对比度 ≥ 4.5:1）
-            let textPrimary = SwiftUI.Color(hex: "FFFFFF")         // 主要文本 100%
-            let textSecondary = SwiftUI.Color(hex: "EBEBF5")       // 次要文本 92%
-            let textTertiary = SwiftUI.Color(hex: "98989E")        // 三级文本 60%
-            let textDisabled = SwiftUI.Color(hex: "48484F")        // 禁用文本 28%
+            let textPrimary = SwiftUI.Color.adaptive(light: "1C1C1E", dark: "FFFFFF")         // 主要文本
+            let textSecondary = SwiftUI.Color.adaptive(light: "6B6B7B", dark: "EBEBF5")       // 次要文本
+            let textTertiary = SwiftUI.Color.adaptive(light: "98989E", dark: "98989E")        // 三级文本
+            let textDisabled = SwiftUI.Color.adaptive(light: "BDBDBD", dark: "48484F")        // 禁用文本
         }
 
         // MARK: - 渐变色

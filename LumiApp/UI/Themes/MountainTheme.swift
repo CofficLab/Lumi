@@ -8,30 +8,30 @@ struct MountainTheme: ThemeProtocol {
     let iconName = "mountain.2.fill"
 
     var iconColor: SwiftUI.Color {
-        SwiftUI.Color(hex: "64748B")
+        SwiftUI.Color.adaptive(light: "475569", dark: "64748B")
     }
 
     func accentColors() -> (primary: SwiftUI.Color, secondary: SwiftUI.Color, tertiary: SwiftUI.Color) {
         (
-            primary: SwiftUI.Color(hex: "64748B"),
-            secondary: SwiftUI.Color(hex: "94A3B8"),
-            tertiary: SwiftUI.Color(hex: "22C55E")
+            primary: SwiftUI.Color.adaptive(light: "475569", dark: "64748B"),  // 山岚灰 (浅色更深)
+            secondary: SwiftUI.Color.adaptive(light: "64748B", dark: "94A3B8"), // 雾凇白 (浅色转深灰)
+            tertiary: SwiftUI.Color.adaptive(light: "16A34A", dark: "22C55E")   // 松针绿 (浅色更深)
         )
     }
 
     func atmosphereColors() -> (deep: SwiftUI.Color, medium: SwiftUI.Color, light: SwiftUI.Color) {
         (
-            deep: SwiftUI.Color(hex: "0A0C10"),
-            medium: SwiftUI.Color(hex: "12161D"),
-            light: SwiftUI.Color(hex: "1C2230")
+            deep: SwiftUI.Color.adaptive(light: "F1F5F9", dark: "0A0C10"),     // 浅色背景：云雾白
+            medium: SwiftUI.Color.adaptive(light: "E2E8F0", dark: "12161D"),
+            light: SwiftUI.Color.adaptive(light: "CBD5E1", dark: "1C2230")
         )
     }
 
     func glowColors() -> (subtle: SwiftUI.Color, medium: SwiftUI.Color, intense: SwiftUI.Color) {
         (
-            subtle: SwiftUI.Color(hex: "64748B").opacity(0.3),
-            medium: SwiftUI.Color(hex: "94A3B8").opacity(0.5),
-            intense: SwiftUI.Color(hex: "22C55E").opacity(0.7)
+            subtle: SwiftUI.Color.adaptive(light: "475569", dark: "64748B").opacity(0.3),
+            medium: SwiftUI.Color.adaptive(light: "64748B", dark: "94A3B8").opacity(0.5),
+            intense: SwiftUI.Color.adaptive(light: "16A34A", dark: "22C55E").opacity(0.7)
         )
     }
 

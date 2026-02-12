@@ -23,32 +23,32 @@ struct AuroraTheme: ThemeProtocol {
     let iconName = "sparkles"
 
     var iconColor: SwiftUI.Color {
-        SwiftUI.Color(hex: "A78BFA")
+        SwiftUI.Color.adaptive(light: "8B5CF6", dark: "A78BFA")
     }
 
     // MARK: - 颜色配置
 
     func accentColors() -> (primary: SwiftUI.Color, secondary: SwiftUI.Color, tertiary: SwiftUI.Color) {
         (
-            primary: SwiftUI.Color(hex: "A78BFA"),  // 极光紫
-            secondary: SwiftUI.Color(hex: "38BDF8"), // 天空蓝
-            tertiary: SwiftUI.Color(hex: "34D399")  // 极光绿
+            primary: SwiftUI.Color.adaptive(light: "8B5CF6", dark: "A78BFA"),  // 极光紫 (浅色模式稍深)
+            secondary: SwiftUI.Color.adaptive(light: "0EA5E9", dark: "38BDF8"), // 天空蓝
+            tertiary: SwiftUI.Color.adaptive(light: "10B981", dark: "34D399")  // 极光绿
         )
     }
 
     func atmosphereColors() -> (deep: SwiftUI.Color, medium: SwiftUI.Color, light: SwiftUI.Color) {
         (
-            deep: SwiftUI.Color(hex: "0A0515"),     // 极光深邃
-            medium: SwiftUI.Color(hex: "120A20"),   // 极光中层
-            light: SwiftUI.Color(hex: "1F1535")     // 极光浅层
+            deep: SwiftUI.Color.adaptive(light: "F8F5FF", dark: "0A0515"),     // 背景：浅紫白 vs 深紫黑
+            medium: SwiftUI.Color.adaptive(light: "FFFFFF", dark: "120A20"),    // 卡片
+            light: SwiftUI.Color.adaptive(light: "F3E8FF", dark: "1F1535")      // 高光
         )
     }
 
     func glowColors() -> (subtle: SwiftUI.Color, medium: SwiftUI.Color, intense: SwiftUI.Color) {
         (
-            subtle: SwiftUI.Color(hex: "A78BFA").opacity(0.3),
-            medium: SwiftUI.Color(hex: "38BDF8").opacity(0.5),
-            intense: SwiftUI.Color(hex: "34D399").opacity(0.7)
+            subtle: SwiftUI.Color.adaptive(light: "8B5CF6", dark: "A78BFA").opacity(0.3),
+            medium: SwiftUI.Color.adaptive(light: "0EA5E9", dark: "38BDF8").opacity(0.5),
+            intense: SwiftUI.Color.adaptive(light: "10B981", dark: "34D399").opacity(0.7)
         )
     }
 

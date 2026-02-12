@@ -54,4 +54,23 @@ extension Color {
             opacity: Double(a) / 255
         )
     }
+
+    /// 创建自适应颜色（支持浅色/深色模式）
+    /// - Parameters:
+    ///   - light: 浅色模式下的 Hex 颜色字符串
+    ///   - dark: 深色模式下的 Hex 颜色字符串
+    init(light: String, dark: String) {
+        self.init(nsColor: NSColor(name: nil) { appearance in
+            if appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua {
+                return NSColor(Color(hex: dark))
+            } else {
+                return NSColor(Color(hex: light))
+            }
+        })
+    }
+    
+    /// 创建自适应颜色（支持浅色/深色模式）的静态方法
+    static func adaptive(light: String, dark: String) -> Color {
+        return Color(light: light, dark: dark)
+    }
 }
