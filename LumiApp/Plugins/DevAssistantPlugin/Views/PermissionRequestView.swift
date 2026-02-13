@@ -16,9 +16,9 @@ struct PermissionRequestView: View {
                 VStack(spacing: 16) {
                     // MARK: - Header
                     HStack {
-                        Image(systemName: "exclamationmark.shield.fill")
+                        Image(systemName: request.riskLevel.iconName)
                             .font(.title2)
-                            .foregroundColor(.orange)
+                            .foregroundColor(request.riskLevel.iconColor)
                         Text("Permission Request")
                             .font(.headline)
                         Spacer()
@@ -30,7 +30,7 @@ struct PermissionRequestView: View {
                             .font(.body)
                             .fontWeight(.medium)
 
-                        Text("The assistant is trying to perform a sensitive action.")
+                        Text("The assistant is trying to perform a \(request.riskLevel.displayName) action.")
                             .font(.caption)
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
@@ -45,6 +45,19 @@ struct PermissionRequestView: View {
                             .frame(height: 100)
                             .background(Color.black.opacity(0.1))
                             .cornerRadius(8)
+                        }
+
+                        // 风险提示（如果有）
+                        if let reason = request.riskLevel.reason {
+                            HStack(spacing: 4) {
+                                Image(systemName: "info.circle.fill")
+                                    .font(.caption)
+                                    .foregroundColor(.blue)
+                                Text(reason)
+                                    .font(.caption)
+                                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            }
+                            .padding(.top, 4)
                         }
                     }
 
@@ -69,12 +82,26 @@ struct PermissionRequestView: View {
 
 // MARK: - Preview
 
-#Preview("Permission Request") {
+#Preview("Permission Request - High Risk") {
     PermissionRequestView(
         request: PermissionRequest(
-            toolName: "write_file",
-            argumentsString: "{\"path\": \"/tmp/test.txt\", \"content\": \"Hello World\"}",
-            toolCallID: "call_123"
+            toolName: "run_command",
+            argumentsString: "{\"command\": \"rm -rf /tmp\"}",
+            toolCallID: "call_123",
+            riskLevel: .high
+        ),
+        onAllow: {},
+        onDeny: {}
+    )
+}
+
+#Preview("Permission Request - Low Risk") {
+    PermissionRequestView(
+        request: PermissionRequest(
+            toolName: "run_command",
+            argumentsString: "{\"command\": \"ls -la\"}",
+            toolCallID: "call_456",
+            riskLevel: .low
         ),
         onAllow: {},
         onDeny: {}

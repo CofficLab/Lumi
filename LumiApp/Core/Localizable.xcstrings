@@ -4501,7 +4501,7 @@
         }
       }
     },
-    "The assistant is trying to perform a sensitive action." : {
+    "The assistant is trying to perform a %@ action." : {
 
     },
     "The right-click menu functionality requires the Finder extension to be enabled in System Settings." : {

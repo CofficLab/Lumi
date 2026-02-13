@@ -5,7 +5,8 @@ struct PermissionRequest: Identifiable, Sendable {
     let toolName: String
     let argumentsString: String
     let toolCallID: String
-    
+    let riskLevel: CommandRiskLevel
+
     var arguments: [String: Any] {
         if let data = argumentsString.data(using: .utf8),
            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
@@ -13,7 +14,7 @@ struct PermissionRequest: Identifiable, Sendable {
         }
         return [:]
     }
-    
+
     var summary: String {
         let args = arguments
         switch toolName {
@@ -30,19 +31,8 @@ struct PermissionRequest: Identifiable, Sendable {
         }
         return "Execute \(toolName)"
     }
-    
+
     var details: String {
         return argumentsString
-    }
-}
-
-final class PermissionService: Sendable {
-    static let shared = PermissionService()
-    
-    // Tools that require permission
-    private let sensitiveTools = ["run_command", "write_file"]
-    
-    func requiresPermission(toolName: String) -> Bool {
-        return sensitiveTools.contains(toolName)
     }
 }

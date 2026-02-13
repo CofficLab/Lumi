@@ -305,6 +305,15 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
 
     // MARK: - 权限处理
 
+    /// 解析工具调用参数
+    private func parseArguments(_ argumentsString: String) -> [String: Any] {
+        if let data = argumentsString.data(using: .utf8),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            return json
+        }
+        return [:]
+    }
+
     func respondToPermissionRequest(allowed: Bool) {
         guard let request = pendingPermissionRequest else { return }
 
@@ -366,11 +375,28 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
 
     private func handleToolCall(_ toolCall: ToolCall) async {
         // 检查权限
-        if PermissionService.shared.requiresPermission(toolName: toolCall.name) {
+        if PermissionService.shared.requiresPermission(toolName: toolCall.name, arguments: parseArguments(toolCall.arguments)) {
+            // 评估命令风险
+            let riskLevel: CommandRiskLevel
+
+            if toolCall.name == "run_command" {
+                let args = parseArguments(toolCall.arguments)
+                if let command = args["command"] as? String {
+                    riskLevel = PermissionService.shared.evaluateCommandRisk(command: command)
+                } else {
+                    // 默认中风险
+                    riskLevel = .medium
+                }
+            } else {
+                // 默认中风险
+                riskLevel = .medium
+            }
+
             pendingPermissionRequest = PermissionRequest(
                 toolName: toolCall.name,
                 argumentsString: toolCall.arguments,
-                toolCallID: toolCall.id
+                toolCallID: toolCall.id,
+                riskLevel: riskLevel
             )
             return
         }
