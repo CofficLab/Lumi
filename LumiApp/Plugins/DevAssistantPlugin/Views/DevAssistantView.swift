@@ -5,6 +5,7 @@ struct DevAssistantView: View {
     @StateObject private var viewModel = DevAssistantViewModel()
     @State private var isInputFocused: Bool = false
     @State private var isSettingsPresented = false
+    @State private var isModelSelectorPresented = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -34,24 +35,26 @@ struct DevAssistantView: View {
                 HStack(alignment: .bottom) {
                     // 供应商选择器
                     VStack(spacing: 0) {
-                        Menu {
-                            Picker("Provider", selection: $viewModel.selectedProvider) {
-                                ForEach(LLMProvider.allCases) { provider in
-                                    Text(provider.rawValue).tag(provider)
-                                }
+                        Spacer()
+                        Button(action: {
+                            isModelSelectorPresented = true
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "globe")
+                                    .font(.system(size: 16))
+                                Text(viewModel.currentModel)
+                                    .font(.caption)
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
                             }
-                            GlassDivider()
-                            // 快速模型编辑？或者只显示当前模型
-                            Text("Model: \(viewModel.currentModel)")
-                                .font(.caption)
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        } label: {
-                            Image(systemName: "globe")
-                                .font(.system(size: 20))
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .padding(4)
                         }
-                        .menuStyle(.borderlessButton)
-                        .frame(width: 30, height: 30)
+                        .buttonStyle(.plain)
+                        .popover(isPresented: $isModelSelectorPresented, arrowEdge: .top) {
+                            ModelSelectorView(viewModel: viewModel)
+                        }
+                        Spacer()
                     }
                     .padding(.horizontal, 4)
 
@@ -86,6 +89,7 @@ struct DevAssistantView: View {
                 .padding(12)
                 .background(DesignTokens.Material.glass)
             }
+            .frame(height: 56)
         }
         .onAppear {
             isInputFocused = true
