@@ -4,6 +4,12 @@
     "Add": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -21,6 +27,12 @@
     "Add New Template": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add New Template"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -38,6 +50,12 @@
     "Add Template": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Template"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -55,6 +73,12 @@
     "Cancel": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -72,6 +96,12 @@
     "Copy Path": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Path"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -81,7 +111,7 @@
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "複製路徑"
+            "value": "拷貝路徑"
           }
         }
       }
@@ -89,6 +119,12 @@
     "Customize Finder right-click menu actions": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Customize Finder right-click menu actions"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -98,7 +134,7 @@
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "自定義 Finder 右鍵選單操作"
+            "value": "自訂 Finder 右鍵菜单操作"
           }
         }
       }
@@ -106,6 +142,12 @@
     "Default Content": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default Content"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -115,7 +157,7 @@
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "預設內容"
+            "value": "默認內容"
           }
         }
       }
@@ -123,6 +165,12 @@
     "Delete File": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete File"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -140,6 +188,12 @@
     "Enable 'New File' Submenu": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable 'New File' Submenu"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -149,7 +203,7 @@
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "啟用「新建檔案」子選單"
+            "value": "啟用“新建檔案”子選單"
           }
         }
       }
@@ -157,6 +211,12 @@
     "Enable Finder Extension": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable Finder Extension"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -166,7 +226,7 @@
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "啟用 Finder 擴充功能"
+            "value": "啟用 Finder 擴充"
           }
         }
       }
@@ -174,16 +234,22 @@
     "Extension (e.g. py)": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extension (e.g. py)"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "扩展名 (例如 py)"
+            "value": "后缀名 (例如 py)"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "副檔名 (例如 py)"
+            "value": "后缀名 (例如 py)"
           }
         }
       }
@@ -191,6 +257,12 @@
     "General Actions": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General Actions"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -208,6 +280,12 @@
     "Hide File": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide File"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -217,41 +295,7 @@
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "隱藏檔案"
-          }
-        }
-      }
-    },
-    "JSON": {
-      "extractionState": "manual",
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "JSON"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "JSON"
-          }
-        }
-      }
-    },
-    "Markdown": {
-      "extractionState": "manual",
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Markdown"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Markdown"
+            "value": "隐藏檔案"
           }
         }
       }
@@ -259,16 +303,22 @@
     "Name (e.g. Python Script)": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name (e.g. Python Script)"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "名称 (例如 Python 脚本)"
+            "value": "名称 (例如 Python Script)"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "名稱 (例如 Python 腳本)"
+            "value": "名称 (例如 Python Script)"
           }
         }
       }
@@ -276,6 +326,12 @@
     "New File": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New File"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -293,6 +349,12 @@
     "New File Menu": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New File Menu"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -302,7 +364,7 @@
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "新建檔案選單"
+            "value": "新建檔案菜单"
           }
         }
       }
@@ -310,6 +372,12 @@
     "Open in Terminal": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open in Terminal"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -319,7 +387,7 @@
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "在終端機中開啟"
+            "value": "在終端中打开"
           }
         }
       }
@@ -327,6 +395,12 @@
     "Open in VS Code": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open in VS Code"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -336,7 +410,7 @@
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "在 VS Code 中開啟"
+            "value": "在 VS Code 中打开"
           }
         }
       }
@@ -344,6 +418,12 @@
     "Open System Settings": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open System Settings"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -353,7 +433,7 @@
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "開啟系統設定"
+            "value": "打开系統設定"
           }
         }
       }
@@ -361,6 +441,12 @@
     "Preview": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preview"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -378,6 +464,12 @@
     "Reset": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -395,6 +487,12 @@
     "Reset to Defaults": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset to Defaults"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -404,7 +502,7 @@
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "恢復預設設定"
+            "value": "恢复默認設定"
           }
         }
       }
@@ -412,6 +510,12 @@
     "Right Click": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Right Click"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -421,7 +525,7 @@
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "右鍵選單"
+            "value": "右鍵菜单"
           }
         }
       }
@@ -429,6 +533,12 @@
     "Show Hidden Files": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Hidden Files"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -438,7 +548,7 @@
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "顯示隱藏檔案"
+            "value": "顯示隐藏檔案"
           }
         }
       }
@@ -446,6 +556,12 @@
     "System Settings → Privacy & Security → Extensions → Added Extensions": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System Settings → Privacy & Security → Extensions → Added Extensions"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -455,24 +571,7 @@
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "系統設定 → 隱私與安全性 → 擴充功能 → 已新增的擴充功能"
-          }
-        }
-      }
-    },
-    "Text File": {
-      "extractionState": "manual",
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "文本文件"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "文字檔案"
+            "value": "系統設定 → 隐私与安全性 → 擴充 → 已新增的擴充"
           }
         }
       }
@@ -480,16 +579,22 @@
     "The right-click menu functionality requires the Finder extension to be enabled in System Settings.": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The right-click menu functionality requires the Finder extension to be enabled in System Settings."
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "右键菜单功能需要在系统设置中启用 Finder 扩展。"
+            "value": "右键菜单功能需要先在系统设置中启用 Finder 扩展。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "右鍵選單功能需要在系統設定中啟用 Finder 擴充功能。"
+            "value": "右鍵菜单功能需要先在系統設定中啟用 Finder 擴充。"
           }
         }
       }

@@ -1,301 +1,324 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "Accessibility permission is required to detect text selection": {
+    "Are you sure you want to kill process %1$@ (PID: %2$@)?": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Accessibility permission is required to detect text selection"
+            "value": "Are you sure you want to kill process %1$@ (PID: %2$@)?"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "检测文本选择需要辅助功能权限"
+            "value": "确定要结束进程 %1$@ (PID: %2$@) 吗？"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "檢測文本選擇需要辅助功能權限"
+            "value": "確定要結束進程 %1$@ (PID: %2$@) 吗？"
           }
         }
       }
     },
-    "Copy": {
+    "Cancel": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Copy"
+            "value": "Cancel"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "复制"
+            "value": "取消"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "拷貝"
+            "value": "取消"
           }
         }
       }
     },
-    "Enable Text Selection Menu": {
+    "Error": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enable Text Selection Menu"
+            "value": "Error"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "启用文本选择菜单"
+            "value": "错误"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "啟用文本選擇菜单"
+            "value": "錯誤"
           }
         }
       }
     },
-    "General Settings": {
+    "Failed to kill process: %@": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "General Settings"
+            "value": "Failed to kill process: %@"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "通用设置"
+            "value": "结束进程失败：%@"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "通用設定"
+            "value": "結束進程失敗：%@"
           }
         }
       }
     },
-    "Open System Settings": {
+    "Kill Process": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open System Settings"
+            "value": "Kill Process"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "打开系统设置"
+            "value": "结束进程"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "打开系統設定"
+            "value": "結束進程"
           }
         }
       }
     },
-    "Preview": {
+    "No Listening Ports": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Preview"
+            "value": "No Listening Ports"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "预览"
+            "value": "没有监听中的端口"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "預覽"
+            "value": "没有監聽中的端口"
           }
         }
       }
     },
-    "Search": {
+    "No listening ports found.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search"
+            "value": "No listening ports found."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "搜索"
+            "value": "未发现监听中的端口。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "搜尋"
+            "value": "未發現監聽中的端口。"
           }
         }
       }
     },
-    "Select ": {
+    "OK": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Select "
+            "value": "OK"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "选择"
+            "value": "确定"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "選擇"
+            "value": "確定"
           }
         }
       }
     },
-    "Selected text actions menu": {
+    "Port Manager": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Selected text actions menu"
+            "value": "Port Manager"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "选中文本操作菜单"
+            "value": "端口管理"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "選取文本操作菜单"
+            "value": "端口管理"
           }
         }
       }
     },
-    "Supported Actions": {
+    "Refresh": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Supported Actions"
+            "value": "Refresh"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "支持的操作"
+            "value": "刷新"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "支援的操作"
+            "value": "重新整理"
           }
         }
       }
     },
-    "Text Actions": {
+    "Search port, PID, or process name": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Text Actions"
+            "value": "Search port, PID, or process name"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "文本操作"
+            "value": "搜索端口、PID 或进程名"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "文本操作"
+            "value": "搜尋端口、PID 或進程名"
           }
         }
       }
     },
-    " to see.": {
+    "This action will force terminate the process, which may lead to data loss.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": " to see."
+            "value": "This action will force terminate the process, which may lead to data loss."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "以查看效果。"
+            "value": "此操作将强制终止进程，可能会导致数据丢失。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "以查看效果。"
+            "value": "此操作将强制终止進程，可能会导致数据丢失。"
           }
         }
       }
     },
-    "this text": {
+    "Unknown error": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "this text"
+            "value": "Unknown error"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "这段文字"
+            "value": "未知错误"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "这段文字"
+            "value": "未知錯誤"
+          }
+        }
+      }
+    },
+    "View and manage port usage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View and manage port usage"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看并管理端口占用情况"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看并管理端口占用情况"
           }
         }
       }
