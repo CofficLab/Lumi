@@ -2,7 +2,6 @@
   "sourceLanguage" : "en",
   "strings" : {
     "%@ (%ld lines)..." : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -306,7 +305,6 @@
       }
     },
     "Tool Output" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
