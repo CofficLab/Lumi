@@ -104,7 +104,7 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
             // 默认不设置项目根目录，等待用户选择
             await loadProjectSettings()
 
-            let fullSystemPrompt = buildSystemPrompt()
+            let fullSystemPrompt = await buildSystemPrompt()
 
             messages.append(ChatMessage(role: .system, content: fullSystemPrompt))
 
@@ -200,8 +200,7 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
         addToRecentProjects(name: rootURL.lastPathComponent, path: path)
         
         // 刷新上下文
-        let context = await ContextService.shared.getContextPrompt()
-        let fullSystemPrompt = systemPrompt + "\n\n" + context
+        let fullSystemPrompt = await buildSystemPrompt()
         
         // 重建消息历史
         messages = [ChatMessage(role: .system, content: fullSystemPrompt)]
@@ -592,7 +591,7 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
 
     func clearHistory() {
         Task {
-            let fullSystemPrompt = buildSystemPrompt()
+            let fullSystemPrompt = await buildSystemPrompt()
             messages = [ChatMessage(role: .system, content: fullSystemPrompt)]
         }
     }
@@ -619,7 +618,7 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
     }
 
     /// 构建系统提示（包含语言偏好）
-    func buildSystemPrompt() -> String {
+    func buildSystemPrompt() async -> String {
         var prompt = systemPrompt
 
         // 添加语言偏好信息
@@ -627,10 +626,8 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
 
         // 如果有项目，添加项目上下文
         if isProjectSelected {
-            Task {
-                let context = await ContextService.shared.getContextPrompt()
-                prompt += "\n\n" + context
-            }
+            let context = await ContextService.shared.getContextPrompt()
+            prompt += "\n\n" + context
         }
 
         return prompt
@@ -640,9 +637,31 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
     private func getWelcomeMessage() -> String {
         switch languagePreference {
         case .chinese:
-            return "你好！我是你的开发助手。有什么可以帮你的吗？"
+            if isProjectSelected {
+                return """
+                👋 欢迎回来！
+
+                **当前项目**: \(currentProjectName)
+                **项目路径**: \(currentProjectPath)
+
+                有什么可以帮你的吗？
+                """
+            } else {
+                return "你好！我是你的开发助手。有什么可以帮你的吗？"
+            }
         case .english:
-            return "Hello! I am your Dev Assistant. How can I help you today?"
+            if isProjectSelected {
+                return """
+                👋 Welcome back!
+
+                **Current Project**: \(currentProjectName)
+                **Path**: \(currentProjectPath)
+
+                How can I help you today?
+                """
+            } else {
+                return "Hello! I am your Dev Assistant. How can I help you today?"
+            }
         }
     }
 
@@ -658,7 +677,7 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
 
         // 更新系统消息
         Task {
-            let fullSystemPrompt = buildSystemPrompt()
+            let fullSystemPrompt = await buildSystemPrompt()
 
             // 查找并更新系统消息
             if let systemIndex = messages.firstIndex(where: { $0.role == .system }) {

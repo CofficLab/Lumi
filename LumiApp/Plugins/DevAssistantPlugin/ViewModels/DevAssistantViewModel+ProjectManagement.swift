@@ -38,7 +38,7 @@ extension DevAssistantViewModel {
             await ContextService.shared.setProjectRoot(projectURL)
 
             // 刷新系统提示
-            let fullSystemPrompt = buildSystemPrompt()
+            let fullSystemPrompt = await buildSystemPrompt()
 
             // 更新第一条系统消息
             if !messages.isEmpty, messages[0].role == .system {
