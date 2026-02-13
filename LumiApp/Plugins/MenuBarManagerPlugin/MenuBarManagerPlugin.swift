@@ -75,7 +75,6 @@ actor MenuBarManagerPlugin: SuperPlugin, SuperLog {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(MenuBarManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()

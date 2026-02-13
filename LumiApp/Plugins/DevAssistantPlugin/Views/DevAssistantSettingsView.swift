@@ -188,7 +188,6 @@ struct DevAssistantSettingsView: View {
     ContentLayout()
         .hideSidebar()
         .withNavigation(DevAssistantPlugin.navigationId)
-        .hideTabPicker()
         .inRootView()
         .withDebugBar()
 }

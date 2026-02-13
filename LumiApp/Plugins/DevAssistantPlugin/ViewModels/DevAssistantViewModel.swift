@@ -325,7 +325,6 @@ class DevAssistantViewModel: ObservableObject {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(DevAssistantPlugin.navigationId)
         .inRootView()
         .withDebugBar()

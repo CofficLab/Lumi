@@ -97,6 +97,5 @@ struct ThemeSettingView: View {
 #Preview("主题设置 - 完整应用") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
 }

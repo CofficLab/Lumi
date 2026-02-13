@@ -272,7 +272,6 @@ struct LargeFileRow: View {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(DiskManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()

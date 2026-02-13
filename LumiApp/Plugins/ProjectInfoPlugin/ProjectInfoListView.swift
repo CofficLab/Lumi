@@ -102,7 +102,6 @@ private struct ProjectInfoRow: View {
 #Preview("App - Small Screen") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .frame(width: 800)
         .frame(height: 600)

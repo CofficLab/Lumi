@@ -41,7 +41,6 @@ struct RelatedFile: Identifiable, Hashable, Sendable {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(AppManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()

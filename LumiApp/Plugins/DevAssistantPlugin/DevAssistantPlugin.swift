@@ -58,7 +58,6 @@ actor DevAssistantPlugin: SuperPlugin {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(DevAssistantPlugin.navigationId)
         .inRootView()
         .withDebugBar()

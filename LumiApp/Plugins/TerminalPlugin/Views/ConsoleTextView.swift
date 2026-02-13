@@ -122,7 +122,6 @@ class TerminalNSTextView: NSTextView {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .withDebugBar()
 }

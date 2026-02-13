@@ -12,10 +12,8 @@ struct CoreApp: App {
                 .inRootView()
                 .ignoresSafeArea()
         }
-        #if !DEBUG
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
-        #endif
         .commands {
             DebugCommand()
             SettingsCommand()
@@ -28,8 +26,6 @@ struct CoreApp: App {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .withDebugBar()
 }

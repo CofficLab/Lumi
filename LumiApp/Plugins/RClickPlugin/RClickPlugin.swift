@@ -41,7 +41,6 @@ actor RClickPlugin: SuperPlugin {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(RClickPlugin.id)
         .inRootView()
         .withDebugBar()

@@ -36,7 +36,6 @@ actor DatabaseManagerPlugin: SuperPlugin, SuperLog {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(DatabaseManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()

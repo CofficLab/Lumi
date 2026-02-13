@@ -334,7 +334,6 @@ struct AnyCodable: Decodable {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(DevAssistantPlugin.navigationId)
         .inRootView()
         .withDebugBar()

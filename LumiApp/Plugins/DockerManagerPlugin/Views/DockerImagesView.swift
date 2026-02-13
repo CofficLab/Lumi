@@ -434,7 +434,6 @@ struct InfoRow: View {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(DockerManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()

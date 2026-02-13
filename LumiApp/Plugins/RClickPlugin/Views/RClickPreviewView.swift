@@ -28,7 +28,6 @@ struct RClickPreviewView: View {
     ContentLayout()
         .withNavigation(RClickPlugin.id)
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .withDebugBar()
 }

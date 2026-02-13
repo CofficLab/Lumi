@@ -43,7 +43,6 @@ actor DeviceInfoPlugin: SuperPlugin {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(DeviceInfoPlugin.navigationId)
         .inRootView()
         .withDebugBar()

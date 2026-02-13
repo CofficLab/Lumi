@@ -335,7 +335,6 @@ enum AppError: LocalizedError {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(AppManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()

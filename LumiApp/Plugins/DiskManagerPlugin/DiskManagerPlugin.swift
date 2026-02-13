@@ -40,7 +40,6 @@ actor DiskManagerPlugin: SuperPlugin, SuperLog {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(DiskManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()

@@ -106,7 +106,6 @@ enum LLMProvider: String, Codable, Sendable, CaseIterable, Identifiable {
     ContentLayout()
         .hideSidebar()
         .withNavigation(DevAssistantPlugin.navigationId)
-        .hideTabPicker()
         .inRootView()
         .withDebugBar()
 }

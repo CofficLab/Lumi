@@ -69,7 +69,6 @@ struct InputSettingsView: View {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(InputPlugin.navigationId)
         .inRootView()
         .withDebugBar()

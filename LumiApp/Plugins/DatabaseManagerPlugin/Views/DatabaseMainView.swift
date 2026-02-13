@@ -354,7 +354,6 @@ struct AddConnectionView: View {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .withDebugBar()
 }

@@ -96,7 +96,6 @@ struct TextActionsSettingsView: View {
 #Preview("App") {
     ContentLayout()
         .withNavigation(TextActionsPlugin.id)
-        .hideTabPicker()
         .inRootView()
         .withDebugBar()
 }

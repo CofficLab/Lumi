@@ -186,7 +186,6 @@ struct RClickSettingsView: View {
     ContentLayout()
         .withNavigation(RClickPlugin.id)
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .withDebugBar()
 }

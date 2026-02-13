@@ -36,7 +36,6 @@ actor InputPlugin: SuperPlugin {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(InputPlugin.navigationId)
         .inRootView()
         .withDebugBar()

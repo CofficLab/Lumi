@@ -62,7 +62,6 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(CaffeinatePlugin.navigationId)
         .inRootView()
         .withDebugBar()

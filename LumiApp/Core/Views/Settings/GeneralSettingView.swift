@@ -100,6 +100,5 @@ struct GeneralSettingView: View {
 #Preview("通用设置 - 完整应用") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
 }

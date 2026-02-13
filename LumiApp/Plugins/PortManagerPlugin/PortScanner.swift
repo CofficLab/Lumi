@@ -109,7 +109,6 @@ final class PortScanner: Sendable {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(PortManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()

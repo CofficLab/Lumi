@@ -64,7 +64,6 @@ actor ClipboardManagerPlugin: SuperPlugin {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(ClipboardManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()

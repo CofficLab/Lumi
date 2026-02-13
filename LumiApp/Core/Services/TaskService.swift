@@ -129,7 +129,6 @@ class TaskService: ObservableObject {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .withDebugBar()
 }

@@ -73,7 +73,6 @@ struct AppRow: View {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(AppManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()

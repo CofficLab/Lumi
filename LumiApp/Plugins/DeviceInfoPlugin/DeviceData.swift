@@ -169,7 +169,6 @@ class DeviceData: ObservableObject {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(DeviceInfoPlugin.navigationId)
         .inRootView()
         .withDebugBar()

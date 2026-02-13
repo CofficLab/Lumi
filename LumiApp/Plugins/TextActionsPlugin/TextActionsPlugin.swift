@@ -59,7 +59,6 @@ actor TextActionsPlugin: SuperPlugin {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(TextActionsPlugin.id)
         .inRootView()
         .withDebugBar()

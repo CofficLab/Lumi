@@ -116,7 +116,6 @@ struct AppModel: Identifiable, Hashable, @unchecked Sendable {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(AppManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()

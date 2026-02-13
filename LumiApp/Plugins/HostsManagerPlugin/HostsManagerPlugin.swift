@@ -40,7 +40,6 @@ actor HostsManagerPlugin: SuperPlugin, SuperLog {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(HostsManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()

@@ -42,7 +42,6 @@ actor DockerManagerPlugin: SuperPlugin, SuperLog {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(DockerManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()
