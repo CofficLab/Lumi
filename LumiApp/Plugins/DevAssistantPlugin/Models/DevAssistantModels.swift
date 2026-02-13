@@ -39,7 +39,6 @@ struct LLMConfig: Codable, Sendable, Equatable {
     var apiKey: String
     var model: String
     var provider: LLMProvider
-    var baseURL: String? // For OpenAI compatible providers
 
     static let `default` = LLMConfig(apiKey: "", model: "claude-3-5-sonnet-20240620", provider: .anthropic)
 }
@@ -57,7 +56,7 @@ enum LLMProvider: String, Codable, Sendable, CaseIterable, Identifiable {
         case .anthropic: return "https://api.anthropic.com/v1/messages"
         case .openai: return "https://api.openai.com/v1/chat/completions"
         case .deepseek: return "https://api.deepseek.com/chat/completions"
-        case .zhipu: return "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+        case .zhipu: return "https://open.bigmodel.cn/api/anthropic/v1/messages"
         }
     }
 
@@ -84,7 +83,7 @@ enum LLMProvider: String, Codable, Sendable, CaseIterable, Identifiable {
             ]
         case .zhipu:
             return [
-                "GLM-4.7",
+                "glm-4",
             ]
         }
     }

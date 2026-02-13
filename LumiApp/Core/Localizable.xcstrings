@@ -1473,6 +1473,9 @@
         }
       }
     },
+    "Current" : {
+
+    },
     "Current Registry" : {
 
     },
@@ -2833,6 +2836,7 @@
       }
     },
     "Model: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3542,6 +3546,7 @@
       }
     },
     "Provider" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4188,6 +4193,9 @@
           }
         }
       }
+    },
+    "Select Model" : {
+
     },
     "Selected for cleanup" : {
       "localizations" : {

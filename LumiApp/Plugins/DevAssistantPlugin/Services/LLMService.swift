@@ -13,9 +13,9 @@ actor LLMService {
         }
 
         switch config.provider {
-        case .anthropic:
-            return try await sendToAnthropic(messages: messages, apiKey: config.apiKey, model: config.model, tools: tools)
-        case .openai, .deepseek, .zhipu:
+        case .anthropic, .zhipu:
+            return try await sendToAnthropic(messages: messages, config: config, tools: tools)
+        case .openai, .deepseek:
             return try await sendToOpenAICompatible(messages: messages, config: config, tools: tools)
         }
     }
@@ -23,8 +23,8 @@ actor LLMService {
     // MARK: - OpenAI / DeepSeek
 
     private func sendToOpenAICompatible(messages: [ChatMessage], config: LLMConfig, tools: [AgentTool]?) async throws -> ChatMessage {
-        guard let urlString = config.baseURL, let url = URL(string: urlString) else {
-            throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL"])
+        guard let urlString = config.provider.defaultBaseURL, let url = URL(string: urlString) else {
+            throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL for provider \(config.provider.rawValue)"])
         }
 
         var request = URLRequest(url: url)
@@ -116,8 +116,15 @@ actor LLMService {
 
         guard let httpResponse = response as? HTTPURLResponse, (200 ... 299).contains(httpResponse.statusCode) else {
             let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
-            os_log(.error, "OpenAI API Error: %s", errorStr)
-            throw NSError(domain: "LLMService", code: (response as? HTTPURLResponse)?.statusCode ?? 500, userInfo: [NSLocalizedDescriptionKey: "API Error: \(errorStr)"])
+            
+            // Debug info
+            let urlString = request.url?.absoluteString ?? "Unknown URL"
+            let bodyString = request.httpBody.flatMap { String(data: $0, encoding: .utf8) } ?? "No Body"
+            
+            let errorMessage = "OpenAI API Error: \(errorStr)\nURL: \(urlString)\nBody: \(bodyString)"
+            
+            os_log(.error, "%{public}@", errorMessage)
+            throw NSError(domain: "LLMService", code: (response as? HTTPURLResponse)?.statusCode ?? 500, userInfo: [NSLocalizedDescriptionKey: errorMessage])
         }
 
         struct OpenAIResponse: Decodable {
@@ -161,11 +168,14 @@ actor LLMService {
 
     // MARK: - Anthropic
 
-    private func sendToAnthropic(messages: [ChatMessage], apiKey: String, model: String, tools: [AgentTool]?) async throws -> ChatMessage {
-        let url = URL(string: "https://api.anthropic.com/v1/messages")!
+    private func sendToAnthropic(messages: [ChatMessage], config: LLMConfig, tools: [AgentTool]?) async throws -> ChatMessage {
+        guard let urlString = config.provider.defaultBaseURL, let url = URL(string: urlString) else {
+            throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL for provider \(config.provider.rawValue)"])
+        }
+        
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.addValue(apiKey, forHTTPHeaderField: "x-api-key")
+        request.addValue(config.apiKey, forHTTPHeaderField: "x-api-key")
         request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
 
@@ -219,7 +229,7 @@ actor LLMService {
         }
 
         var body: [String: Any] = [
-            "model": model,
+            "model": config.model,
             "max_tokens": 4096,
             "system": systemMessage,
             "messages": conversationMessages,
@@ -241,8 +251,15 @@ actor LLMService {
 
         guard let httpResponse = response as? HTTPURLResponse, (200 ... 299).contains(httpResponse.statusCode) else {
             let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
-            os_log(.error, "Anthropic API Error: %s", errorStr)
-            throw NSError(domain: "LLMService", code: (response as? HTTPURLResponse)?.statusCode ?? 500, userInfo: [NSLocalizedDescriptionKey: "API Error: \(errorStr)"])
+            
+            // Debug info
+            let urlString = request.url?.absoluteString ?? "Unknown URL"
+            let bodyString = request.httpBody.flatMap { String(data: $0, encoding: .utf8) } ?? "No Body"
+            
+            let errorMessage = "Anthropic API Error: \(errorStr)\nURL: \(urlString)\nBody: \(bodyString)"
+            
+            os_log(.error, "%{public}@", errorMessage)
+            throw NSError(domain: "LLMService", code: (response as? HTTPURLResponse)?.statusCode ?? 500, userInfo: [NSLocalizedDescriptionKey: errorMessage])
         }
 
         // Parse Anthropic Response

@@ -74,16 +74,17 @@ struct DevAssistantView: View {
                                 .stroke(DesignTokens.Color.semantic.textTertiary.opacity(0.2), lineWidth: 1)
                         )
 
-                    if viewModel.isProcessing {
-                        ProgressView()
-                            .controlSize(.small)
-                            .padding(.trailing, 4)
+                    ZStack {
+                        if viewModel.isProcessing {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            GlassButton(systemImage: "paperplane.fill", style: .primary) {
+                                viewModel.sendMessage()
+                            }
+                            .disabled(viewModel.currentInput.isEmpty)
+                        }
                     }
-
-                    GlassButton(systemImage: "paperplane.fill", style: .primary) {
-                        viewModel.sendMessage()
-                    }
-                    .disabled(viewModel.currentInput.isEmpty || viewModel.isProcessing)
                     .frame(width: 44, height: 44)
                 }
                 .padding(12)

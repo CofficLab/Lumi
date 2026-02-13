@@ -4,22 +4,19 @@ struct DevAssistantSettingsView: View {
     // Anthropic
     @AppStorage("DevAssistant_ApiKey_Anthropic") var apiKeyAnthropic: String = ""
     @AppStorage("DevAssistant_Model_Anthropic") var modelAnthropic: String = "claude-3-5-sonnet-20240620"
-    
+
     // OpenAI
     @AppStorage("DevAssistant_ApiKey_OpenAI") var apiKeyOpenAI: String = ""
     @AppStorage("DevAssistant_Model_OpenAI") var modelOpenAI: String = "gpt-4o"
-    @AppStorage("DevAssistant_BaseURL_OpenAI") var baseURLOpenAI: String = "https://api.openai.com/v1/chat/completions"
-    
+
     // DeepSeek
     @AppStorage("DevAssistant_ApiKey_DeepSeek") var apiKeyDeepSeek: String = ""
     @AppStorage("DevAssistant_Model_DeepSeek") var modelDeepSeek: String = "deepseek-chat"
-    @AppStorage("DevAssistant_BaseURL_DeepSeek") var baseURLDeepSeek: String = "https://api.deepseek.com/chat/completions"
-    
+
     // Zhipu AI
     @AppStorage("DevAssistant_ApiKey_Zhipu") var apiKeyZhipu: String = ""
     @AppStorage("DevAssistant_Model_Zhipu") var modelZhipu: String = "glm-4"
-    @AppStorage("DevAssistant_BaseURL_Zhipu") var baseURLZhipu: String = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
-    
+
     var body: some View {
         Form {
             Section("Anthropic (Claude)") {
@@ -32,7 +29,7 @@ struct DevAssistantSettingsView: View {
                 Link("Get API Key", destination: URL(string: "https://console.anthropic.com/")!)
                     .font(.caption)
             }
-            
+
             Section("OpenAI") {
                 SecureField("API Key", text: $apiKeyOpenAI)
                     .textFieldStyle(.plain)
@@ -40,9 +37,8 @@ struct DevAssistantSettingsView: View {
                     .background(DesignTokens.Material.glass)
                     .cornerRadius(8)
                 GlassTextField(title: LocalizedStringKey("Model"), text: $modelOpenAI, placeholder: LocalizedStringKey(modelOpenAI))
-                GlassTextField(title: LocalizedStringKey("Base URL"), text: $baseURLOpenAI, placeholder: LocalizedStringKey(baseURLOpenAI))
             }
-            
+
             Section("DeepSeek") {
                 SecureField("API Key", text: $apiKeyDeepSeek)
                     .textFieldStyle(.plain)
@@ -50,11 +46,10 @@ struct DevAssistantSettingsView: View {
                     .background(DesignTokens.Material.glass)
                     .cornerRadius(8)
                 GlassTextField(title: LocalizedStringKey("Model"), text: $modelDeepSeek, placeholder: LocalizedStringKey(modelDeepSeek))
-                GlassTextField(title: LocalizedStringKey("Base URL"), text: $baseURLDeepSeek, placeholder: LocalizedStringKey(baseURLDeepSeek))
                 Link("Get API Key", destination: URL(string: "https://platform.deepseek.com/")!)
                     .font(.caption)
             }
-            
+
             Section("Zhipu AI") {
                 SecureField("API Key", text: $apiKeyZhipu)
                     .textFieldStyle(.plain)
@@ -62,7 +57,6 @@ struct DevAssistantSettingsView: View {
                     .background(DesignTokens.Material.glass)
                     .cornerRadius(8)
                 GlassTextField(title: LocalizedStringKey("Model"), text: $modelZhipu, placeholder: LocalizedStringKey(modelZhipu))
-                GlassTextField(title: LocalizedStringKey("Base URL"), text: $baseURLZhipu, placeholder: LocalizedStringKey(baseURLZhipu))
                 Link("Get API Key", destination: URL(string: "https://bigmodel.cn/")!)
                     .font(.caption)
             }
@@ -74,9 +68,14 @@ struct DevAssistantSettingsView: View {
 
 // MARK: - Preview
 
+#Preview("Settings") {
+    DevAssistantSettingsView()
+}
+
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
+        .withNavigation(DevAssistantPlugin.navigationId)
         .hideTabPicker()
         .inRootView()
         .withDebugBar()
