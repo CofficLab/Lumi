@@ -1,39 +1,8 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "MenuBarManagerPlugin" : {
-      "comment" : "Plugin name",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "菜单栏管理"
-          }
-        }
-      }
-    },
-    "Manage your menu bar items" : {
-      "comment" : "Plugin description",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "管理你的菜单栏图标，支持隐藏/显示"
-          }
-        }
-      }
-    },
-    "Hidden Items" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隐藏的图标"
-          }
-        }
-      }
-    },
     "Always Hidden" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -43,15 +12,51 @@
         }
       }
     },
-    "Show/Hide" : {
-        "localizations" : {
-            "zh-Hans" : {
-                "stringUnit" : {
-                    "state" : "translated",
-                    "value" : "显示/隐藏"
-                }
-            }
+    "Hidden Items" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏的图标"
+          }
         }
+      }
+    },
+    "Manage your menu bar items" : {
+      "comment" : "Plugin description",
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理你的菜单栏图标，支持隐藏/显示"
+          }
+        }
+      }
+    },
+    "MenuBarManagerPlugin" : {
+      "comment" : "Plugin name",
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "菜单栏管理"
+          }
+        }
+      }
+    },
+    "Show/Hide" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示/隐藏"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

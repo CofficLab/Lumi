@@ -11,6 +11,16 @@ actor DatabaseManager {
         // Register default drivers
         let sqlite = SQLiteDriver()
         drivers[sqlite.type] = sqlite
+        
+        // Register extended drivers
+        let mysql = MySQLDriver()
+        drivers[mysql.type] = mysql
+        
+        let pg = PostgreSQLDriver()
+        drivers[pg.type] = pg
+        
+        let redis = RedisDriver()
+        drivers[redis.type] = redis
     }
     
     func register(driver: DatabaseDriver) {
@@ -52,5 +62,12 @@ actor DatabaseManager {
         let pool = ConnectionPool(config: config, driver: driver)
         pools[config.id] = pool
         return pool
+    }
+    
+    /// 连接探测：建立临时连接并立即关闭，不缓存到活动连接
+    func probe(config: DatabaseConfig) async throws {
+        let driver = try getDriver(for: config.type)
+        let connection = try await driver.connect(config: config)
+        await connection.close()
     }
 }

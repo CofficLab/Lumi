@@ -1,38 +1,42 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "Database": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "数据库"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Database" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "数据库"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "資料庫"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "資料庫"
           }
         }
       }
     },
-    "Manage SQLite, MySQL, and PostgreSQL databases": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "管理 SQLite、MySQL 和 PostgreSQL 数据库"
+    "Manage SQLite, MySQL, and PostgreSQL databases" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理 SQLite、MySQL 和 PostgreSQL 数据库"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "管理 SQLite、MySQL 和 PostgreSQL 資料庫"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理 SQLite、MySQL 和 PostgreSQL 資料庫"
           }
         }
       }
+    },
+    "Manage SQLite, MySQL, PostgreSQL, and Redis" : {
+
     }
   },
-  "version": "1.1"
+  "version" : "1.1"
 }

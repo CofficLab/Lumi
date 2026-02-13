@@ -21,9 +21,3 @@ struct CoreApp: App {
         }
     }
 }
-
-// MARK: - Preview
-
-#Preview("Test") {
-    Text("Hello")
-}

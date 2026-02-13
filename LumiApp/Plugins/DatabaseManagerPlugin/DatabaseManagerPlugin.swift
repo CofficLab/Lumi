@@ -11,7 +11,7 @@ actor DatabaseManagerPlugin: SuperPlugin, SuperLog {
     static let id = "DatabaseManager"
     static let navigationId = "database_manager"
     static let displayName = String(localized: "Database", table: "DatabaseManager")
-    static let description = String(localized: "Manage SQLite, MySQL, and PostgreSQL databases", table: "DatabaseManager")
+    static let description = String(localized: "Manage SQLite, MySQL, PostgreSQL, and Redis", table: "DatabaseManager")
     static let iconName = "server.rack"
     static var order: Int { 50 }
 
