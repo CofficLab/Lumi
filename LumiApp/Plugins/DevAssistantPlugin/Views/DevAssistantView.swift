@@ -34,6 +34,39 @@ struct DevAssistantView: View {
 
                     Spacer()
 
+                    // 语言选择器
+                    Menu {
+                        ForEach(LanguagePreference.allCases) { lang in
+                            Button(action: {
+                                withAnimation {
+                                    viewModel.languagePreference = lang
+                                }
+                            }) {
+                                HStack {
+                                    Text(lang.displayName)
+                                    if viewModel.languagePreference == lang {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "globe")
+                                .font(.system(size: 12))
+                            Text(viewModel.languagePreference.displayName)
+                                .font(DesignTokens.Typography.caption2)
+                                .fontWeight(.medium)
+                        }
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.black.opacity(0.05))
+                        .cornerRadius(6)
+                    }
+                    .menuStyle(.borderlessButton)
+                    .frame(width: 70)
+
                     // 项目管理按钮
                     Button(action: {
                         isProjectSelectorPresented = true

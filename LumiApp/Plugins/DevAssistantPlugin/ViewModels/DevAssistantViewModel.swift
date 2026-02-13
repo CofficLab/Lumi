@@ -24,6 +24,22 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
     @Published var currentProjectPath: String = ""
     @Published var isProjectSelected: Bool = false
 
+    // MARK: - 语言偏好
+
+    @Published var languagePreference: LanguagePreference = .chinese {
+        didSet {
+            if Self.verbose {
+                os_log("\(self.t)切换语言偏好: \(self.languagePreference.displayName)")
+            }
+            // 保存到 UserDefaults
+            if let encoded = try? JSONEncoder().encode(self.languagePreference) {
+                UserDefaults.standard.set(encoded, forKey: "DevAssistant_LanguagePreference")
+            }
+            // 通知语言切换
+            notifyLanguageChange()
+        }
+    }
+
     // MARK: - 供应商选择
 
     @Published var selectedProviderId: String = "anthropic" {
@@ -80,20 +96,23 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
             ShellTool(shellService: .shared),
         ]
 
+        // 加载语言偏好
+        loadLanguagePreference()
+
         // 初始化上下文和历史
         Task {
             // 默认不设置项目根目录，等待用户选择
             await loadProjectSettings()
-            
-            let fullSystemPrompt = systemPrompt
+
+            let fullSystemPrompt = buildSystemPrompt()
 
             messages.append(ChatMessage(role: .system, content: fullSystemPrompt))
-            
+
             // 如果未选择项目，显示引导消息
             if !isProjectSelected {
                 showProjectSelectionPrompt()
             } else {
-                messages.append(ChatMessage(role: .assistant, content: "Hello! I am your Dev Assistant. How can I help you today?"))
+                messages.append(ChatMessage(role: .assistant, content: getWelcomeMessage()))
             }
         }
 
@@ -519,9 +538,76 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
 
     func clearHistory() {
         Task {
-            let context = await ContextService.shared.getContextPrompt()
-            let fullSystemPrompt = systemPrompt + "\n\n" + context
+            let fullSystemPrompt = buildSystemPrompt()
             messages = [ChatMessage(role: .system, content: fullSystemPrompt)]
+        }
+    }
+
+    // MARK: - 语言偏好管理
+
+    /// 加载语言偏好
+    private func loadLanguagePreference() {
+        guard let data = UserDefaults.standard.data(forKey: "DevAssistant_LanguagePreference"),
+              let decoded = try? JSONDecoder().decode(LanguagePreference.self, from: data) else {
+            // 使用系统语言作为默认值
+            let systemLanguage = Locale.current.language.languageCode?.identifier ?? "zh"
+            self.languagePreference = systemLanguage.hasPrefix("zh") ? .chinese : .english
+            return
+        }
+        self.languagePreference = decoded
+    }
+
+    /// 构建系统提示（包含语言偏好）
+    func buildSystemPrompt() -> String {
+        var prompt = systemPrompt
+
+        // 添加语言偏好信息
+        prompt += "\n\n" + languagePreference.systemPromptDescription
+
+        // 如果有项目，添加项目上下文
+        if isProjectSelected {
+            Task {
+                let context = await ContextService.shared.getContextPrompt()
+                prompt += "\n\n" + context
+            }
+        }
+
+        return prompt
+    }
+
+    /// 获取欢迎消息
+    private func getWelcomeMessage() -> String {
+        switch languagePreference {
+        case .chinese:
+            return "你好！我是你的开发助手。有什么可以帮你的吗？"
+        case .english:
+            return "Hello! I am your Dev Assistant. How can I help you today?"
+        }
+    }
+
+    /// 通知语言切换
+    private func notifyLanguageChange() {
+        let message: String
+        switch languagePreference {
+        case .chinese:
+            message = "✅ 已切换到中文模式\n\n我将使用中文与您交流。"
+        case .english:
+            message = "✅ Switched to English mode\n\nI'll communicate in English from now on."
+        }
+
+        // 更新系统消息
+        Task {
+            let fullSystemPrompt = buildSystemPrompt()
+
+            // 查找并更新系统消息
+            if let systemIndex = messages.firstIndex(where: { $0.role == .system }) {
+                messages[systemIndex] = ChatMessage(role: .system, content: fullSystemPrompt)
+            } else {
+                messages.insert(ChatMessage(role: .system, content: fullSystemPrompt), at: 0)
+            }
+
+            // 添加语言切换通知
+            messages.append(ChatMessage(role: .assistant, content: message))
         }
     }
 }

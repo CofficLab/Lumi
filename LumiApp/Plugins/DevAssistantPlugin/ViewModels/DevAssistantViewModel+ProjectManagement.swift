@@ -11,6 +11,7 @@ extension DevAssistantViewModel {
 
         self.currentProjectName = projectName
         self.currentProjectPath = path
+        self.isProjectSelected = true
 
         // 保存到最近使用列表
         saveRecentProject(name: projectName, path: path)
@@ -26,8 +27,7 @@ extension DevAssistantViewModel {
             await ContextService.shared.setProjectRoot(projectURL)
 
             // 刷新系统提示
-            let context = await ContextService.shared.getContextPrompt()
-            let fullSystemPrompt = systemPrompt + "\n\n" + context
+            let fullSystemPrompt = buildSystemPrompt()
 
             // 更新第一条系统消息
             if !messages.isEmpty, messages[0].role == .system {
@@ -36,11 +36,28 @@ extension DevAssistantViewModel {
                 messages.insert(ChatMessage(role: .system, content: fullSystemPrompt), at: 0)
             }
 
-            // 添加切换项目通知
-            messages.append(ChatMessage(
-                role: .assistant,
-                content: "已切换到项目：**\(projectName)**\n\n路径：`\(path)`\n\n使用模型：\(config.model.isEmpty ? "默认" : config.model)（\(config.providerId)）"
-            ))
+            // 添加切换项目通知（根据语言偏好）
+            let switchMessage: String
+            switch languagePreference {
+            case .chinese:
+                switchMessage = """
+                ✅ 已切换到项目
+
+                **项目名称**: \(projectName)
+                **项目路径**: \(path)
+                **使用模型**: \(config.model.isEmpty ? "默认" : config.model) (\(config.providerId))
+                """
+            case .english:
+                switchMessage = """
+                ✅ Switched to project
+
+                **Project**: \(projectName)
+                **Path**: \(path)
+                **Model**: \(config.model.isEmpty ? "Default" : config.model) (\(config.providerId))
+                """
+            }
+
+            messages.append(ChatMessage(role: .assistant, content: switchMessage))
 
             if Self.verbose {
                 os_log("\(self.t)已切换到项目: \(projectName) (\(path))")
