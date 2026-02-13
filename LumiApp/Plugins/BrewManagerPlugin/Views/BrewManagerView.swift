@@ -182,7 +182,7 @@ struct BrewPackageRow: View {
     let actionButtonColor: Color
     let showInstalledStatus: Bool
     let action: () -> Void
-    
+
     var body: some View {
         MystiqueGlassCard(cornerRadius: 12, padding: EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)) {
             HStack {
@@ -190,9 +190,9 @@ struct BrewPackageRow: View {
                     HStack {
                         Text(package.name)
                             .font(.headline)
-                        
+
                         if package.isCask {
-                            Text(String(localized: "Cask", tableName: "BrewManager"))
+                            Text(String(localized: "Cask"))
                                 .font(.caption)
                                 .padding(.horizontal, 4)
                                 .padding(.vertical, 2)
@@ -200,23 +200,23 @@ struct BrewPackageRow: View {
                                 .foregroundColor(DesignTokens.Color.semantic.warning)
                                 .cornerRadius(4)
                         }
-                        
+
                         if showInstalledStatus {
                             if package.installedVersion != nil {
-                                Text(String(localized: "Installed", tableName: "BrewManager"))
+                                Text("Installed", tableName: "BrewManager")
                                     .font(.caption)
                                     .foregroundStyle(DesignTokens.Color.gradients.energyGradient)
                             }
                         }
                     }
-                    
+
                     if let desc = package.desc {
                         Text(desc)
                             .font(.caption)
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                             .lineLimit(2)
                     }
-                    
+
                     HStack(spacing: 8) {
                         Text(String(localized: "Version: \(package.version)", table: "BrewManager"))
                             .font(.caption2)
@@ -229,9 +229,9 @@ struct BrewPackageRow: View {
                         }
                     }
                 }
-                
+
                 Spacer()
-                
+
                 if showInstalledStatus && package.installedVersion != nil {
                     // 如果是搜索结果且已安装，显示已安装状态，不显示操作按钮
                     Image(systemName: "checkmark.circle.fill")

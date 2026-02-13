@@ -15,8 +15,16 @@ struct GlassButton: View {
     }
 
     let title: LocalizedStringKey
+    let tableName: String?
     let style: Style
     let action: () -> Void
+
+    init(title: LocalizedStringKey, tableName: String? = nil, style: Style, action: @escaping () -> Void) {
+        self.title = title
+        self.tableName = tableName
+        self.style = style
+        self.action = action
+    }
 
     @State private var isHovering = false
     @State private var isPressing = false
@@ -34,7 +42,7 @@ struct GlassButton: View {
     }
 
     private var buttonLabel: some View {
-        Text(title)
+        Text(title, tableName: tableName)
             .font(buttonFont)
             .foregroundColor(buttonForegroundColor)
             .frame(maxWidth: .infinity)

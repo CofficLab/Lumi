@@ -1,18 +1,19 @@
 import Foundation
 import OSLog
+import SwiftUI
 
 /// 应用清理助手，用于扫描和清理应用的关联文件
 class AppCleanerHelper {
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "AppCleanerHelper")
     private let fileManager = FileManager.default
-    
+
     // 常见的关联文件搜索路径
     private let searchPaths: [FileManager.SearchPathDirectory] = [
         .applicationSupportDirectory,
         .cachesDirectory,
         .libraryDirectory, // 用于 Preferences, Logs, Saved Application State 等
     ]
-    
+
     // 具体的子目录名称
     private let subDirectories = [
         "Preferences",
@@ -20,9 +21,9 @@ class AppCleanerHelper {
         "Logs",
         "WebKit",
         "Containers",
-        "Group Containers"
+        "Group Containers",
     ]
-    
+
     /// 扫描应用的关联文件
     /// - Parameter app: 目标应用
     /// - Returns: 关联文件的 URL 列表
@@ -30,12 +31,12 @@ class AppCleanerHelper {
         var relatedFiles: [URL] = []
         let appName = app.bundleName
         let bundleID = app.bundleIdentifier ?? ""
-        
+
         os_log("开始扫描应用关联文件: %s, BundleID: %s", appName, bundleID)
-        
+
         // 1. 扫描 Application Support 和 Caches
         let userLibURL = fileManager.urls(for: .libraryDirectory, in: .userDomainMask).first!
-        
+
         let targetDirs: [String] = [
             "Application Support",
             "Caches",
@@ -43,13 +44,13 @@ class AppCleanerHelper {
             "Preferences",
             "Saved Application State",
             "WebKit",
-            "Containers"
+            "Containers",
         ]
-        
+
         for dirName in targetDirs {
             let dirURL = userLibURL.appendingPathComponent(dirName)
             guard fileManager.fileExists(atPath: dirURL.path) else { continue }
-            
+
             // 尝试直接匹配 Bundle ID
             if !bundleID.isEmpty {
                 // 精确匹配 Bundle ID
@@ -57,7 +58,7 @@ class AppCleanerHelper {
                 if fileManager.fileExists(atPath: exactMatchURL.path) {
                     relatedFiles.append(exactMatchURL)
                 }
-                
+
                 // Preferences 通常是 com.example.app.plist
                 if dirName == "Preferences" {
                     let plistURL = dirURL.appendingPathComponent("\(bundleID).plist")
@@ -66,7 +67,7 @@ class AppCleanerHelper {
                     }
                 }
             }
-            
+
             // 尝试匹配应用名称 (通常用于 Application Support)
             if !appName.isEmpty {
                 let nameMatchURL = dirURL.appendingPathComponent(appName)
@@ -78,13 +79,13 @@ class AppCleanerHelper {
                 }
             }
         }
-        
+
         // 去重
         let uniqueFiles = Array(Set(relatedFiles))
         os_log("扫描完成，找到 %d 个关联文件/文件夹", uniqueFiles.count)
         return uniqueFiles
     }
-    
+
     /// 验证是否为合法的删除目标，防止误删系统文件
     private func isValidDeletionTarget(_ url: URL) -> Bool {
         let path = url.path
@@ -98,4 +99,15 @@ class AppCleanerHelper {
         }
         return true
     }
+}
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .hideTabPicker()
+        .withNavigation(AppManagerPlugin.navigationId)
+        .inRootView()
+        .withDebugBar()
 }
