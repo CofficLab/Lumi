@@ -265,6 +265,30 @@ extension DesignTokens {
             )
         }
 
+        /// 错误红（根据配色方案调整）
+        func error(for scheme: ColorScheme) -> SwiftUI.Color {
+            switch scheme {
+            case .light:
+                SwiftUI.Color(hex: "FF3B30")  // 浅色模式：更醒目的红色
+            case .dark:
+                SwiftUI.Color(hex: "FF453A")  // 深色模式：系统错误红
+            @unknown default:
+                SwiftUI.Color(hex: "FF453A")
+            }
+        }
+
+        /// 错误色背景（用于危险按钮等）
+        func errorBackground(for scheme: ColorScheme) -> SwiftUI.Color {
+            switch scheme {
+            case .light:
+                SwiftUI.Color(hex: "FF3B30").opacity(0.1)  // 浅色模式：浅红背景
+            case .dark:
+                SwiftUI.Color(hex: "FF453A").opacity(0.2)  // 深色模式：深红背景
+            @unknown default:
+                SwiftUI.Color(hex: "FF453A").opacity(0.2)
+            }
+        }
+
         // 状态色
         let success = SwiftUI.Color(hex: "30D158")
         let successGlow = SwiftUI.Color(hex: "7CFFB5")

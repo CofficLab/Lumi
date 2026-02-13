@@ -5,6 +5,7 @@ import SwiftUI
 /// 玻璃态按钮，提供优雅的交互反馈。
 ///
 struct GlassButton: View {
+    @Environment(\.colorScheme) private var colorScheme
     // MARK: - 配置
     enum Style {
         case primary
@@ -63,7 +64,7 @@ struct GlassButton: View {
         case .ghost:
             return DesignTokens.Color.semantic.textSecondary
         case .danger:
-            return DesignTokens.Color.semantic.error
+            return DesignTokens.Color.adaptive.error(for: colorScheme)
         }
     }
 
@@ -81,8 +82,8 @@ struct GlassButton: View {
                 .fill(DesignTokens.Material.glass)
                 .opacity(isHovering ? 0.1 : 0.05)
         case .danger:
-            DesignTokens.Color.semantic.error
-                .opacity(isPressing ? 0.8 : (isHovering ? 0.9 : 0.7))
+            DesignTokens.Color.adaptive.errorBackground(for: colorScheme)
+                .opacity(isPressing ? 1.0 : (isHovering ? 0.8 : 0.6))
         }
     }
 

@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct RClickSettingsView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @StateObject private var configManager = RClickConfigManager.shared
     @State private var showingAddTemplateSheet = false
 
@@ -149,7 +150,7 @@ struct RClickSettingsView: View {
                         HStack {
                             Text("Reset to Defaults")
                                 .font(DesignTokens.Typography.bodyEmphasized)
-                                .foregroundColor(DesignTokens.Color.semantic.error)
+                                .foregroundColor(DesignTokens.Color.adaptive.error(for: colorScheme))
                             Spacer()
                             GlassButton(title: "Reset", style: .danger) {
                                 configManager.resetToDefaults()

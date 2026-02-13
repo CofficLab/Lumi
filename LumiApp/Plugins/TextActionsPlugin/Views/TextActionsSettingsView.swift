@@ -1,17 +1,18 @@
-import SwiftUI
 import AppKit
+import SwiftUI
 
 struct TextActionsSettingsView: View {
     @StateObject private var manager = TextSelectionManager.shared
     @AppStorage("TextActionsEnabled") private var isEnabled = false
-    
+
     var body: some View {
-        HStack(spacing: 0) {
+        VStack(spacing: 0) {
             TextActionPreviewView(isEnabled: isEnabled)
+                .frame(maxWidth: .infinity)
+                .frame(height: 200)
 
             GlassDivider()
-                .frame(width: 1, height: 360)
-                .rotationEffect(.degrees(90))
+                .frame(maxWidth: .infinity, maxHeight: 1)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
@@ -88,99 +89,11 @@ struct TextActionsSettingsView: View {
     }
 }
 
-struct TextActionPreviewView: View {
-    let isEnabled: Bool
-    
-    var body: some View {
-        ZStack {
-            DesignTokens.Color.basePalette.surfaceBackground
-                .ignoresSafeArea()
-            
-            VStack(spacing: 20) {
-                Text("Preview")
-                    .font(.headline)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                
-                ZStack {
-                    // Document background
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(DesignTokens.Material.glass)
-                        .frame(width: 220, height: 160)
-                    
-                    // Mock content
-                    VStack(alignment: .leading, spacing: 4) {
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.2))
-                            .frame(width: 180, height: 8)
-                        
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.2))
-                            .frame(width: 160, height: 8)
-                        
-                        HStack(spacing: 0) {
-                            Text("Select ")
-                                .font(.system(size: 12))
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                            
-                            Text("this text")
-                                .font(.system(size: 12))
-                                .padding(.horizontal, 2)
-                                .background(isEnabled ? DesignTokens.Color.semantic.primary.opacity(0.3) : SwiftUI.Color.clear)
-                                .foregroundColor(isEnabled ? DesignTokens.Color.semantic.primary : DesignTokens.Color.semantic.textSecondary)
-                                .overlay(
-                                    GeometryReader { geo in
-                                        if isEnabled {
-                                            MockActionMenu()
-                                                .offset(x: -20, y: -60)
-                                        }
-                                    }
-                                )
-                            
-                            Text(" to see.")
-                                .font(.system(size: 12))
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        }
-                        
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.2))
-                            .frame(width: 140, height: 8)
-                    }
-                }
-            }
-            .padding()
-        }
-        .frame(width: 260)
-    }
-}
-
-struct MockActionMenu: View {
-    var body: some View {
-        HStack(spacing: 8) {
-            ForEach(TextActionType.allCases) { action in
-                VStack(spacing: 4) {
-                    Image(systemName: action.icon)
-                        .font(.system(size: 14))
-                    Text(action.title)
-                        .font(.caption2)
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                }
-                .frame(width: 44, height: 44)
-                .background(DesignTokens.Material.glass)
-                .cornerRadius(DesignTokens.Radius.sm)
-            }
-        }
-        .padding(DesignTokens.Spacing.xs)
-        .background(DesignTokens.Material.glass)
-        .cornerRadius(DesignTokens.Radius.md)
-    }
-}
-
 // MARK: - Preview
 
 #Preview("App") {
     ContentLayout()
         .withNavigation(TextActionsPlugin.id)
-        .hideSidebar()
         .hideTabPicker()
         .inRootView()
         .withDebugBar()
