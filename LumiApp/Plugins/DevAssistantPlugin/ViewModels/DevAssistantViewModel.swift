@@ -490,6 +490,28 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
         }
     }
 
+    /// 保存当前模型到项目配置
+    func saveCurrentModelToProjectConfig() {
+        guard isProjectSelected, !currentProjectPath.isEmpty else {
+            return
+        }
+
+        // 获取或创建项目配置
+        let config = ProjectConfigStore.shared.getOrCreateConfig(for: currentProjectPath)
+
+        // 更新配置
+        var updatedConfig = config
+        updatedConfig.providerId = selectedProviderId
+        updatedConfig.model = currentModel
+
+        // 保存
+        ProjectConfigStore.shared.saveConfig(updatedConfig)
+
+        if Self.verbose {
+            os_log("\(self.t)保存模型到项目配置: \(self.currentProjectName) -> \(self.currentModel)")
+        }
+    }
+
     /// 获取指定供应商的 API Key
     func getApiKey(for providerId: String) -> String {
         guard let providerType = registry.providerType(forId: providerId) else {

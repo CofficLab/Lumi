@@ -87,6 +87,10 @@ struct ModelSelectorView: View {
     private func selectModel(providerId: String, model: String) {
         viewModel.selectedProviderId = providerId
         viewModel.updateSelectedModel(model)
+
+        // 保存到当前项目配置
+        viewModel.saveCurrentModelToProjectConfig()
+
         dismiss()
     }
 
