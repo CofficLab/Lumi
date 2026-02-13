@@ -65,13 +65,19 @@ struct ChatBubble: View {
                     .cornerRadius(8)
                 } else {
                     // 普通消息
-                    Text(.init(message.content)) // Markdown 支持
-                        .font(.system(.body, design: .monospaced))
-                        .padding(10)
-                        .background(bubbleColor)
-                        .foregroundColor(textColor)
-                        .cornerRadius(12)
-                        .textSelection(.enabled)
+                    Group {
+                        if let attributedString = try? AttributedString(markdown: message.content) {
+                            Text(attributedString)
+                        } else {
+                            Text(message.content)
+                        }
+                    }
+                    .font(.system(.body, design: .monospaced))
+                    .padding(10)
+                    .background(bubbleColor)
+                    .foregroundColor(textColor)
+                    .cornerRadius(12)
+                    .textSelection(.enabled)
                 }
             }
 
