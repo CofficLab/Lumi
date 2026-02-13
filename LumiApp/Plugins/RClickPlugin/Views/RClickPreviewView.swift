@@ -21,3 +21,14 @@ struct RClickPreviewView: View {
         )
     }
 }
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .withNavigation(RClickPlugin.id)
+        .hideSidebar()
+        .hideTabPicker()
+        .inRootView()
+        .withDebugBar()
+}

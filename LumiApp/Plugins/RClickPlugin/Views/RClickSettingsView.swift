@@ -6,20 +6,16 @@ struct RClickSettingsView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            ZStack {
-                DesignTokens.Color.basePalette.surfaceBackground
-                    .ignoresSafeArea()
+            VStack(spacing: 20) {
+                Text("Preview")
+                    .font(.headline)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-                VStack(spacing: 20) {
-                    Text("Preview")
-                        .font(.headline)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-
-                    RClickPreviewView(config: configManager.config)
-                        .shadow(color: DesignTokens.Shadow.subtle.opacity(0.6), radius: DesignTokens.Shadow.subtleRadius, x: 0, y: DesignTokens.Shadow.subtleOffset)
-                }
-                .padding()
+                RClickPreviewView(config: configManager.config)
+                    .shadow(color: DesignTokens.Shadow.subtle.opacity(0.6), radius: DesignTokens.Shadow.subtleRadius, x: 0, y: DesignTokens.Shadow.subtleOffset)
             }
+            .padding()
+
             .frame(width: 260)
 
             GlassDivider()
