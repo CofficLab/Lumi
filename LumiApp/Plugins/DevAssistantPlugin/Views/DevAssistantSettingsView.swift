@@ -65,6 +65,10 @@ struct DevAssistantSettingsView: View {
         .onChange(of: selectedProviderId) { _, _ in
             loadSettings()
         }
+        .onChange(of: apiKey) { _, _ in
+            // 自动保存 API Key
+            saveApiKey()
+        }
     }
 
     // MARK: - View Components
@@ -144,29 +148,19 @@ struct DevAssistantSettingsView: View {
 
             // API Key 输入框
             HStack(spacing: DesignTokens.Spacing.sm) {
-                Group {
-                    if showApiKey {
-                        TextField("输入 API Key", text: $apiKey)
-                            .textFieldStyle(.plain)
-                    } else {
-                        TextField("输入 API Key", text: $apiKey)
-                            .textFieldStyle(.plain)
-                            .textContentType(.password)
-                            .onSubmit {
-                                saveApiKey()
-                            }
-                    }
-                }
-                .font(DesignTokens.Typography.body)
-                .padding(DesignTokens.Spacing.sm)
-                .background(
-                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                        .fill(DesignTokens.Material.glass)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                        )
-                )
+                TextField("输入 API Key", text: $apiKey)
+                    .textFieldStyle(.plain)
+                    .textContentType(.password)
+                    .font(DesignTokens.Typography.body)
+                    .padding(DesignTokens.Spacing.sm)
+                    .background(
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                            .fill(DesignTokens.Material.glass)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                            )
+                    )
 
                 // 显示/隐藏按钮
                 Button(action: { showApiKey.toggle() }) {
