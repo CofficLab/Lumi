@@ -59,7 +59,7 @@ actor DevAssistantPlugin: SuperPlugin {
     ContentLayout()
         .hideSidebar()
         .hideTabPicker()
-        .withNavigation(DatabaseManagerPlugin.navigationId)
+        .withNavigation(DevAssistantPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

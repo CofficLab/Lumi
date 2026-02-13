@@ -577,6 +577,7 @@
       }
     },
     "Anthropic (Claude)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1312,6 +1313,9 @@
         }
       }
     },
+    "Configure your LLM providers and API keys" : {
+
+    },
     "Confirm" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1545,6 +1549,7 @@
 
     },
     "DeepSeek" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2832,6 +2837,9 @@
         }
       }
     },
+    "Model Settings" : {
+
+    },
     "Model: %@" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3318,6 +3326,7 @@
       }
     },
     "OpenAI" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4350,6 +4359,9 @@
         }
       }
     },
+    "sk-..." : {
+
+    },
     "Sort" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5087,9 +5099,6 @@
           }
         }
       }
-    },
-    "Zhipu AI" : {
-
     },
     "主页" : {
       "localizations" : {

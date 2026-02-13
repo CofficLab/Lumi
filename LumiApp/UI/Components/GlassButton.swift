@@ -14,14 +14,24 @@ struct GlassButton: View {
         case danger
     }
 
-    let title: LocalizedStringKey
+    let title: LocalizedStringKey?
+    let systemImage: String?
     let tableName: String?
     let style: Style
     let action: () -> Void
 
     init(title: LocalizedStringKey, tableName: String? = nil, style: Style, action: @escaping () -> Void) {
         self.title = title
+        self.systemImage = nil
         self.tableName = tableName
+        self.style = style
+        self.action = action
+    }
+
+    init(systemImage: String, style: Style, action: @escaping () -> Void) {
+        self.title = nil
+        self.systemImage = systemImage
+        self.tableName = nil
         self.style = style
         self.action = action
     }
@@ -42,8 +52,15 @@ struct GlassButton: View {
     }
 
     private var buttonLabel: some View {
-        Text(title, tableName: tableName)
-            .font(buttonFont)
+        Group {
+            if let systemImage = systemImage {
+                Image(systemName: systemImage)
+                    .font(buttonFont.bold())
+            } else if let title = title {
+                Text(title, tableName: tableName)
+                    .font(buttonFont)
+            }
+        }
             .foregroundColor(buttonForegroundColor)
             .frame(maxWidth: .infinity)
             .padding(DesignTokens.Spacing.sm)
