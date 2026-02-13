@@ -70,7 +70,9 @@ struct ChatBubble: View {
                         if showRawMessage {
                             Text(message.content)
                         } else {
-                            if let attributedString = try? AttributedString(markdown: message.content) {
+                            // 预处理 Markdown 内容
+                            let processedContent = preprocessMarkdown(message.content)
+                            if let attributedString = try? AttributedString(markdown: processedContent) {
                                 Text(attributedString)
                             } else {
                                 Text(message.content)
@@ -114,6 +116,41 @@ struct ChatBubble: View {
     }
 
     // MARK: - Helper Methods
+
+    /// 预处理 Markdown 内容，优化显示效果
+    private func preprocessMarkdown(_ content: String) -> String {
+        // 1. 标准化换行符
+        let normalized = content.replacingOccurrences(of: "\r\n", with: "\n")
+                                .replacingOccurrences(of: "\r", with: "\n")
+
+        // 2. 保护代码块：通过 ``` 分割
+        // 偶数索引部分是普通文本，奇数索引部分是代码块
+        var parts = normalized.components(separatedBy: "```")
+
+        for i in stride(from: 0, to: parts.count, by: 2) {
+            var text = parts[i]
+
+            // 3. 确保列表和标题前有双换行，从而正确分段
+            // 查找前面不是换行符的 标题、列表标记
+            text = text.replacingOccurrences(
+                of: "([^\\n])\\n(#{1,6}\\s|[-*+]\\s|\\d+\\.\\s)",
+                with: "$1\n\n$2",
+                options: .regularExpression
+            )
+
+            // 4. 将剩余的单换行转换为 Markdown 硬换行 (两个空格 + 换行)
+            // 排除连在一起的换行符（即保留段落间距）
+            text = text.replacingOccurrences(
+                of: "(?<!\\n)\\n(?!\\n)",
+                with: "  \n",
+                options: .regularExpression
+            )
+
+            parts[i] = text
+        }
+
+        return parts.joined(separator: "```")
+    }
 
     /// 生成工具输出的摘要文本
     private func summaryForToolOutput(_ content: String) -> String {
