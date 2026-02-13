@@ -10,6 +10,8 @@ import SwiftUI
 /// - 柔和阴影
 ///
 struct MystiqueGlassCard<Content: View>: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     // MARK: - 配置
     var cornerRadius: CGFloat = DesignTokens.Radius.md
     var padding: EdgeInsets = DesignTokens.Spacing.cardPadding
@@ -44,7 +46,7 @@ struct MystiqueGlassCard<Content: View>: View {
             .fill(DesignTokens.Material.glass)
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(DesignTokens.Material.mysticGlass(opacity: 0.4))
+                    .fill(DesignTokens.Material.mysticGlass(for: colorScheme))
             )
     }
 

@@ -26,13 +26,5 @@ extension DesignTokens {
                 SwiftUI.Color.black.opacity(0.3)
             }
         }
-
-        /// 神秘氛围材质（带深色叠加）- 保持向后兼容
-        /// - Parameter opacity: 透明度
-        /// - Returns: 形状样式
-        /// ⚠️ 建议使用 mysticGlass(for:) 替代
-        static func mysticGlass(opacity: Double = 0.3) -> some ShapeStyle {
-            SwiftUI.Color.black.opacity(opacity)
-        }
     }
 }
