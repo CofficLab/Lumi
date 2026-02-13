@@ -10,61 +10,91 @@ struct DevAssistantView: View {
     var body: some View {
         VStack(spacing: 0) {
             // MARK: - Header
-            HStack(spacing: 12) {
-                Image(systemName: "hammer.fill")
-                    .font(.system(size: 18))
-                    .foregroundColor(.accentColor)
-                    .frame(width: 36, height: 36)
-                    .background(Color.accentColor.opacity(0.1))
-                    .clipShape(Circle())
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(viewModel.currentProjectName.isEmpty ? "Dev Assistant" : viewModel.currentProjectName)
-                        .font(DesignTokens.Typography.body)
-                        .fontWeight(.medium)
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                    
-                    Text(viewModel.currentProjectPath.isEmpty ? "Ready to help" : viewModel.currentProjectPath)
-                        .font(DesignTokens.Typography.caption1)
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                }
-                
-                Spacer()
-
-                // 项目管理按钮
-                Button(action: {
-                    isProjectSelectorPresented = true
-                }) {
-                    Image(systemName: "folder.badge.gearshape")
-                        .font(.system(size: 14))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        .frame(width: 28, height: 28)
-                        .background(Color.black.opacity(0.05))
+            VStack(spacing: 0) {
+                HStack(spacing: 12) {
+                    Image(systemName: "hammer.fill")
+                        .font(.system(size: 18))
+                        .foregroundColor(.accentColor)
+                        .frame(width: 36, height: 36)
+                        .background(Color.accentColor.opacity(0.1))
                         .clipShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .popover(isPresented: $isProjectSelectorPresented, arrowEdge: .top) {
-                    ProjectSelectorView(viewModel: viewModel, isPresented: $isProjectSelectorPresented)
-                        .frame(width: 400, height: 500)
-                }
 
-                // 设置按钮
-                Button(action: {
-                    NotificationCenter.postOpenSettings()
-                }) {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 14))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        .frame(width: 28, height: 28)
-                        .background(Color.black.opacity(0.05))
-                        .clipShape(Circle())
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(viewModel.currentProjectName.isEmpty ? "Dev Assistant" : viewModel.currentProjectName)
+                            .font(DesignTokens.Typography.body)
+                            .fontWeight(.medium)
+                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+
+                        Text(viewModel.currentProjectPath.isEmpty ? "Ready to help" : viewModel.currentProjectPath)
+                            .font(DesignTokens.Typography.caption1)
+                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+
+                    Spacer()
+
+                    // 项目管理按钮
+                    Button(action: {
+                        isProjectSelectorPresented = true
+                    }) {
+                        Image(systemName: "folder.badge.gearshape")
+                            .font(.system(size: 14))
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .frame(width: 28, height: 28)
+                            .background(Color.black.opacity(0.05))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .popover(isPresented: $isProjectSelectorPresented, arrowEdge: .top) {
+                        ProjectSelectorView(viewModel: viewModel, isPresented: $isProjectSelectorPresented)
+                            .frame(width: 400, height: 500)
+                    }
+
+                    // 设置按钮
+                    Button(action: {
+                        NotificationCenter.postOpenSettings()
+                    }) {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 14))
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .frame(width: 28, height: 28)
+                            .background(Color.black.opacity(0.05))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+
+                // 项目选择提示
+                if !viewModel.isProjectSelected {
+                    HStack(spacing: 8) {
+                        Image(systemName: "info.circle.fill")
+                            .font(.system(size: 12))
+                            .foregroundColor(.orange)
+
+                        Text("请先选择一个项目才能开始对话")
+                            .font(DesignTokens.Typography.caption1)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+
+                        Spacer()
+
+                        Button(action: {
+                            isProjectSelectorPresented = true
+                        }) {
+                            Text("选择项目")
+                                .font(DesignTokens.Typography.caption1)
+                                .fontWeight(.medium)
+                                .foregroundColor(.accentColor)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Color.orange.opacity(0.05))
+                }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
             .background(DesignTokens.Material.glassThick)
             .overlay(
                 Rectangle()
@@ -146,7 +176,7 @@ struct DevAssistantView: View {
                             GlassButton(systemImage: "paperplane.fill", style: .primary) {
                                 viewModel.sendMessage()
                             }
-                            .disabled(viewModel.currentInput.isEmpty)
+                            .disabled(viewModel.currentInput.isEmpty || !viewModel.isProjectSelected)
                         }
                     }
                     .frame(width: 44, height: 44)

@@ -10,7 +10,7 @@ actor ContextService {
     // Limits
     private let maxContextTokens = 100_000 // Approximate
     
-    func setProjectRoot(_ url: URL) {
+    func setProjectRoot(_ url: URL?) {
         self.projectRoot = url
     }
     

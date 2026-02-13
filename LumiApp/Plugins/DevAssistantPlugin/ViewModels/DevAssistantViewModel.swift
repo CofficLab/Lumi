@@ -22,6 +22,7 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
 
     @Published var currentProjectName: String = ""
     @Published var currentProjectPath: String = ""
+    @Published var isProjectSelected: Bool = false
 
     // MARK: - 供应商选择
 
@@ -59,7 +60,7 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
     1. Always analyze the request first.
     2. Use tools to gather information (ls, read_file).
     3. Formulate a plan if the task is complex.
-    4. Execute the plan using tools.
+    4. Execute the plan to tools.
 
     The user is on macOS.
     """
@@ -81,18 +82,19 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
 
         // 初始化上下文和历史
         Task {
-            // 设置项目根目录
-            let rootURL = URL(fileURLWithPath: "/Users/colorfy/Code/CofficLab/Lumi")
-            await ContextService.shared.setProjectRoot(rootURL)
-
-            self.currentProjectName = rootURL.lastPathComponent
-            self.currentProjectPath = rootURL.path
-
-            let context = await ContextService.shared.getContextPrompt()
-            let fullSystemPrompt = systemPrompt + "\n\n" + context
+            // 默认不设置项目根目录，等待用户选择
+            await loadProjectSettings()
+            
+            let fullSystemPrompt = systemPrompt
 
             messages.append(ChatMessage(role: .system, content: fullSystemPrompt))
-            messages.append(ChatMessage(role: .assistant, content: "Hello! I am your Dev Assistant. How can I help you today?"))
+            
+            // 如果未选择项目，显示引导消息
+            if !isProjectSelected {
+                showProjectSelectionPrompt()
+            } else {
+                messages.append(ChatMessage(role: .assistant, content: "Hello! I am your Dev Assistant. How can I help you today?"))
+            }
         }
 
         if Self.verbose {
@@ -100,10 +102,153 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
         }
     }
 
+    // MARK: - 项目选择提示
+
+    private func showProjectSelectionPrompt() {
+        let prompt = """
+        👋 Welcome to Dev Assistant!
+
+        Before we start, please select a project to work on. You can:
+
+        1. **Open Project Settings** (点击右上角齿轮图标) → Select a project
+        2. **Choose from recent projects** if you've used this assistant before
+        3. **Browse** to select a new project folder
+
+        Once a project is selected, I'll be able to:
+        - Read and analyze your code
+        - Navigate the project structure
+        - Execute build commands
+        - Help with debugging and refactoring
+
+        ---
+        当前项目：**未选择**
+        项目路径：**未设置**
+        """
+        messages.append(ChatMessage(role: .assistant, content: prompt))
+    }
+
+    // MARK: - 项目管理
+
+    private func loadProjectSettings() async {
+        // 从 UserDefaults 加载上次选择的项目
+        if let savedPath = UserDefaults.standard.string(forKey: "DevAssistant_SelectedProject"),
+           !savedPath.isEmpty {
+            let rootURL = URL(fileURLWithPath: savedPath)
+            
+            // 验证项目路径是否仍然有效
+            var isDirectory: ObjCBool = false
+            if FileManager.default.fileExists(atPath: savedPath, isDirectory: &isDirectory) && isDirectory.boolValue {
+                await ContextService.shared.setProjectRoot(rootURL)
+                self.currentProjectName = rootURL.lastPathComponent
+                self.currentProjectPath = savedPath
+                self.isProjectSelected = true
+                
+                if Self.verbose {
+                    os_log("\(self.t)已加载项目: \(self.currentProjectName)")
+                }
+            } else {
+                // 项目路径无效，清除设置
+                clearProjectSettings()
+            }
+        }
+    }
+
+    func switchProject(to path: String) async {
+        let rootURL = URL(fileURLWithPath: path)
+        
+        // 验证路径是否存在
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory), isDirectory.boolValue else {
+            self.errorMessage = "项目路径无效: \(path)"
+            return
+        }
+        
+        await ContextService.shared.setProjectRoot(rootURL)
+        self.currentProjectName = rootURL.lastPathComponent
+        self.currentProjectPath = path
+        self.isProjectSelected = true
+        
+        // 保存到 UserDefaults
+        UserDefaults.standard.set(path, forKey: "DevAssistant_SelectedProject")
+        
+        // 添加到最近项目列表
+        addToRecentProjects(name: rootURL.lastPathComponent, path: path)
+        
+        // 刷新上下文
+        let context = await ContextService.shared.getContextPrompt()
+        let fullSystemPrompt = systemPrompt + "\n\n" + context
+        
+        // 重建消息历史
+        messages = [ChatMessage(role: .system, content: fullSystemPrompt)]
+        messages.append(ChatMessage(role: .assistant, content: """
+        ✅ 项目已切换
+
+        **项目名称**: \(currentProjectName)
+        **项目路径**: \(currentProjectPath)
+
+        Context loaded successfully. How can I help you with this project?
+        """))
+        
+        if Self.verbose {
+            os_log("\(self.t)已切换到项目: \(self.currentProjectName)")
+        }
+    }
+
+    func clearProjectSettings() {
+        UserDefaults.standard.removeObject(forKey: "DevAssistant_SelectedProject")
+        self.currentProjectName = ""
+        self.currentProjectPath = ""
+        self.isProjectSelected = false
+        
+        Task {
+            await ContextService.shared.setProjectRoot(nil)
+        }
+    }
+
+    private func addToRecentProjects(name: String, path: String) {
+        var recentProjects: [RecentProject] = []
+        
+        // 加载现有最近项目
+        if let data = UserDefaults.standard.data(forKey: "RecentProjects"),
+           let decoded = try? JSONDecoder().decode([RecentProject].self, from: data) {
+            recentProjects = decoded
+        }
+        
+        // 移除重复项
+        recentProjects.removeAll { $0.path == path }
+        
+        // 添加新项目到开头
+        let newProject = RecentProject(name: name, path: path, lastUsed: Date())
+        recentProjects.insert(newProject, at: 0)
+        
+        // 只保留最近 5 个
+        recentProjects = Array(recentProjects.prefix(5))
+        
+        // 保存
+        if let encoded = try? JSONEncoder().encode(recentProjects) {
+            UserDefaults.standard.set(encoded, forKey: "RecentProjects")
+        }
+    }
+
     // MARK: - 消息发送
 
     func sendMessage() {
         guard !currentInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        
+        // 检查是否已选择项目
+        if !isProjectSelected {
+            let warningMsg = ChatMessage(
+                role: .assistant,
+                content: """
+                ⚠️ 请先选择一个项目
+
+                还没有选择项目。请点击右上角的齿轮图标，选择一个项目后我们才能开始工作。
+                """,
+                isError: true
+            )
+            messages.append(warningMsg)
+            return
+        }
 
         let input = currentInput
         currentInput = ""
