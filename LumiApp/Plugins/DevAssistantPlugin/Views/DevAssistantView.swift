@@ -5,6 +5,7 @@ struct DevAssistantView: View {
     @StateObject private var viewModel = DevAssistantViewModel()
     @State private var isInputFocused: Bool = false
     @State private var isModelSelectorPresented = false
+    @State private var isProjectSelectorPresented = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -31,7 +32,25 @@ struct DevAssistantView: View {
                 }
                 
                 Spacer()
-                
+
+                // 项目管理按钮
+                Button(action: {
+                    isProjectSelectorPresented = true
+                }) {
+                    Image(systemName: "folder.badge.gearshape")
+                        .font(.system(size: 14))
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .frame(width: 28, height: 28)
+                        .background(Color.black.opacity(0.05))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .popover(isPresented: $isProjectSelectorPresented, arrowEdge: .top) {
+                    ProjectSelectorView(viewModel: viewModel, isPresented: $isProjectSelectorPresented)
+                        .frame(width: 400, height: 500)
+                }
+
+                // 设置按钮
                 Button(action: {
                     NotificationCenter.postOpenSettings()
                 }) {

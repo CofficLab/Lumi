@@ -51,7 +51,7 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
 
     // MARK: - 系统提示
 
-    private let systemPrompt = """
+    let systemPrompt = """
     You are an expert software engineer and agentic coding tool (DevAssistant).
     You have access to a set of tools to explore the codebase, read files, and execute commands.
 
