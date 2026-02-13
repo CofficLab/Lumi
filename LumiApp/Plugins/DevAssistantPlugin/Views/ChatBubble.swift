@@ -4,6 +4,7 @@ import SwiftUI
 struct ChatBubble: View {
     let message: ChatMessage
     @State private var isToolOutputExpanded: Bool = false
+    @State private var showRawMessage: Bool = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
@@ -66,18 +67,36 @@ struct ChatBubble: View {
                 } else {
                     // 普通消息
                     Group {
-                        if let attributedString = try? AttributedString(markdown: message.content) {
-                            Text(attributedString)
-                        } else {
+                        if showRawMessage {
                             Text(message.content)
+                        } else {
+                            if let attributedString = try? AttributedString(markdown: message.content) {
+                                Text(attributedString)
+                            } else {
+                                Text(message.content)
+                            }
                         }
                     }
                     .font(.system(.body, design: .monospaced))
                     .padding(10)
+                    .padding(.trailing, message.role == .assistant ? 20 : 0) // 为按钮预留空间
                     .background(bubbleColor)
                     .foregroundColor(textColor)
                     .cornerRadius(12)
                     .textSelection(.enabled)
+                    .overlay(alignment: .topTrailing) {
+                        if message.role == .assistant {
+                            Button(action: { showRawMessage.toggle() }) {
+                                Image(systemName: showRawMessage ? "text.bubble.fill" : "curlybraces")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(textColor.opacity(0.6))
+                                    .padding(6)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .padding([.top, .trailing], 2)
+                        }
+                    }
                 }
             }
 
@@ -100,9 +119,11 @@ struct ChatBubble: View {
     private func summaryForToolOutput(_ content: String) -> String {
         let lines = content.components(separatedBy: .newlines)
         if lines.count > 1 {
-            return String(localized: "%@ (%ld lines)...", table: "DevAssistant")
+            let firstLine = String(lines.first?.prefix(50) ?? "")
+            let format = String(localized: "%@ (%ld lines)...", table: "DevAssistant")
+            return String(format: format, firstLine, lines.count)
         } else {
-            return content.prefix(50) + (content.count > 50 ? "..." : "")
+            return String(content.prefix(50)) + (content.count > 50 ? "..." : "")
         }
     }
 
