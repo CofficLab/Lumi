@@ -551,10 +551,17 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
               let decoded = try? JSONDecoder().decode(LanguagePreference.self, from: data) else {
             // 使用系统语言作为默认值
             let systemLanguage = Locale.current.language.languageCode?.identifier ?? "zh"
-            self.languagePreference = systemLanguage.hasPrefix("zh") ? .chinese : .english
+            let preferredLanguage: LanguagePreference = systemLanguage.hasPrefix("zh") ? .chinese : .english
+            // 只在值不同时才设置，避免触发不必要的 didSet
+            if self.languagePreference != preferredLanguage {
+                self.languagePreference = preferredLanguage
+            }
             return
         }
-        self.languagePreference = decoded
+        // 只在值不同时才设置，避免触发不必要的 didSet
+        if self.languagePreference != decoded {
+            self.languagePreference = decoded
+        }
     }
 
     /// 构建系统提示（包含语言偏好）
