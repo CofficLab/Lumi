@@ -1,70 +1,223 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "%@ (%ld lines)...": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ (%ld 行)..."
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@ (%ld lines)..." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ (%ld 行)..."
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ (%ld 行)..."
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ (%ld 行)..."
           }
         }
       }
     },
-    "Agentic coding assistant": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "智能编程助手"
+    "Agentic coding assistant" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能编程助手"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "智慧程式設計助手"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智慧程式設計助手"
           }
         }
       }
     },
-    "Dev Assistant": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "开发助手"
+    "API Key 将安全存储在系统钥匙串中" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API Key 将安全存储在系统钥匙串中"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開發助手"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API Key 將安全儲存在系統鑰匙圈中"
           }
         }
       }
     },
-    "Tool Output": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "工具输出"
+    "API 密钥" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API 密钥"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "工具輸出"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API 金鑰"
+          }
+        }
+      }
+    },
+    "Dev Assistant" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开发助手"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開發助手"
+          }
+        }
+      }
+    },
+    "LLM 供应商" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LLM 供应商"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LLM 供應商"
+          }
+        }
+      }
+    },
+    "Tool Output" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具输出"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具輸出"
+          }
+        }
+      }
+    },
+    "可用模型" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可用模型"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可用模型"
+          }
+        }
+      }
+    },
+    "开发助手" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开发助手"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開發助手"
+          }
+        }
+      }
+    },
+    "未知供应商" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知供应商"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知供應商"
+          }
+        }
+      }
+    },
+    "设置" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定"
+          }
+        }
+      }
+    },
+    "输入 API Key" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入 API Key"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入 API Key"
+          }
+        }
+      }
+    },
+    "默认" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "默认"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預設"
           }
         }
       }
     }
   },
-  "version": "1.1"
+  "version" : "1.1"
 }
