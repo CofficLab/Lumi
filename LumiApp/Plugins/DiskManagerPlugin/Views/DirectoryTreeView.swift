@@ -5,7 +5,11 @@ struct DirectoryTreeView: View {
     
     var body: some View {
         if entries.isEmpty {
-            ContentUnavailableView("No Data", systemImage: "folder", description: Text("Directory structure will be displayed after scanning"))
+            ContentUnavailableView(
+                label: { Text("No Data", tableName: "DiskManager") },
+                description: { Text("Directory structure will be displayed after scanning", tableName: "DiskManager") },
+                actions: { EmptyView() }
+            )
         } else {
             List(entries, children: \.children) { entry in
                 HStack {

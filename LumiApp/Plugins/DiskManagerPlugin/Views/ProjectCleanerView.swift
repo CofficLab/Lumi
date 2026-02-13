@@ -5,126 +5,172 @@ struct ProjectCleanerView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack {
-                Text("Project Cleaner")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                Spacer()
-                GlassButton(title: "Rescan", style: .secondary) {
-                    viewModel.scanProjects()
-                }
-                .disabled(viewModel.isScanning)
-            }
-            .padding()
+            headerView
             
-            // Content
-            if viewModel.isScanning {
-                Spacer()
-                ProgressView("Scanning projects in common directories...")
-                Spacer()
-            } else if viewModel.projects.isEmpty {
-                ContentUnavailableView("No Cleanable Projects Found", 
-                                     systemImage: "folder.badge.questionmark",
-                                     description: Text("Scanned: Code, Projects, Developer, etc."))
-            } else {
-                List {
-                    ForEach(viewModel.projects) { project in
-                        Section {
-                            ForEach(project.cleanableItems) { item in
-                                HStack {
-                                    Toggle("", isOn: Binding(
-                                        get: { viewModel.selectedItemIds.contains(item.id) },
-                                        set: { _ in viewModel.toggleSelection(item.id) }
-                                    ))
-                                    .labelsHidden()
-                                    
-                                    Image(systemName: "folder.fill")
-                                        .foregroundColor(DesignTokens.Color.semantic.warning)
-                                    
-                                    VStack(alignment: .leading) {
-                                        Text(item.name)
-                                            .font(.body)
-                                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                                        Text(item.path)
-                                            .font(.caption2)
-                                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                                            .lineLimit(1)
-                                            .truncationMode(.middle)
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    Text(formatBytes(item.size))
-                                        .font(.monospacedDigit(.body)())
-                                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                                }
-                            }
-                        } header: {
-                            HStack {
-                                Image(systemName: project.type.icon)
-                                Text(project.name)
-                                    .font(.headline)
-                                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                                Spacer()
-                                Text(project.type.rawValue)
-                                    .font(.caption)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(DesignTokens.Color.semantic.textTertiary.opacity(0.2))
-                                    .clipShape(Capsule())
-                            }
-                        }
-                    }
-                }
-            }
+            contentView
             
-            // Footer
-            VStack {
-                Divider()
-                HStack {
-                    VStack(alignment: .leading) {
-                        Text("Selected for cleanup")
-                            .font(.caption)
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        Text(formatBytes(viewModel.totalSelectedSize))
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                    }
-                    
-                    Spacer()
-                    
-                    GlassButton(title: "Clean Selected", style: .danger) {
-                        viewModel.showCleanConfirmation = true
-                    }
-                    .disabled(viewModel.selectedItemIds.isEmpty || viewModel.isCleaning)
-                }
-                .padding()
-            }
-            .background(DesignTokens.Material.glass)
+            footerView
         }
         .onAppear {
             if viewModel.projects.isEmpty {
                 viewModel.scanProjects()
             }
         }
-        .alert("Confirm Cleanup", isPresented: $viewModel.showCleanConfirmation) {
-            Button("Cancel", role: .cancel) { }
-            Button("Clean", role: .destructive) {
+        .alert(Text("Confirm Cleanup", tableName: "DiskManager"), isPresented: $viewModel.showCleanConfirmation) {
+            Button(role: .cancel) { } label: {
+                Text("Cancel", tableName: "DiskManager")
+            }
+            Button(role: .destructive) {
                 viewModel.cleanSelected()
+            } label: {
+                Text("Clean", tableName: "DiskManager")
             }
         } message: {
-            Text("Are you sure you want to delete the selected build artifacts (node_modules, target, etc)?\nThis will free up space but require rebuilding projects.")
+            Text("Are you sure you want to delete the selected build artifacts (node_modules, target, etc)?\nThis will free up space but require rebuilding projects.", tableName: "DiskManager")
         }
     }
     
-    private func formatBytes(_ bytes: Int64) -> String {
-        let formatter = ByteCountFormatter()
-        formatter.allowedUnits = [.useAll]
-        formatter.countStyle = .file
-        return formatter.string(fromByteCount: bytes)
+    // MARK: - Subviews
+    
+    private var headerView: some View {
+        HStack {
+            Text("Project Cleaner", tableName: "DiskManager")
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+            Spacer()
+            GlassButton(title: LocalizedStringKey("Rescan"), tableName: "DiskManager", style: .secondary) {
+                viewModel.scanProjects()
+            }
+            .disabled(viewModel.isScanning)
+        }
+        .padding()
+    }
+    
+    @ViewBuilder
+    private var contentView: some View {
+        if viewModel.isScanning {
+            scanningView
+        } else if viewModel.projects.isEmpty {
+            emptyView
+        } else {
+            projectListView
+        }
+    }
+    
+    private var scanningView: some View {
+        VStack {
+            Spacer()
+            ProgressView {
+                Text("Scanning projects in common directories...", tableName: "DiskManager")
+            }
+            Spacer()
+        }
+    }
+    
+    private var emptyView: some View {
+        ContentUnavailableView(
+            label: { Text("No Cleanable Projects Found", tableName: "DiskManager") },
+            description: { Text("Scanned: Code, Projects, Developer, etc.", tableName: "DiskManager") },
+            actions: { EmptyView() }
+        )
+    }
+    
+    private var projectListView: some View {
+        List {
+            ForEach(viewModel.projects) { project in
+                Section {
+                    ForEach(project.cleanableItems) { item in
+                        ProjectItemRow(item: item, viewModel: viewModel)
+                    }
+                } header: {
+                    ProjectSectionHeader(project: project)
+                }
+            }
+        }
+    }
+    
+    private var footerView: some View {
+        VStack {
+            Divider()
+            HStack {
+                VStack(alignment: .leading) {
+                    Text("Selected for cleanup", tableName: "DiskManager")
+                        .font(.caption)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    Text(viewModel.formatBytes(viewModel.totalSelectedSize))
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                }
+                
+                Spacer()
+                
+                GlassButton(title: viewModel.isCleaning ? LocalizedStringKey("Cleaning...") : LocalizedStringKey("Clean Now"), tableName: "DiskManager", style: .primary) {
+                    viewModel.cleanSelected()
+                }
+                .disabled(viewModel.selectedItemIds.isEmpty || viewModel.isCleaning || viewModel.isScanning)
+            }
+            .padding()
+        }
+        .background(DesignTokens.Material.glass)
+    }
+}
+
+// MARK: - Helper Views
+
+struct ProjectItemRow: View {
+    let item: CleanableItem
+    @ObservedObject var viewModel: ProjectCleanerViewModel
+    
+    var body: some View {
+        HStack {
+            Toggle("", isOn: Binding(
+                get: { viewModel.selectedItemIds.contains(item.id) },
+                set: { _ in viewModel.toggleSelection(item.id) }
+            ))
+            .labelsHidden()
+            
+            Image(systemName: "folder.fill")
+                .foregroundColor(DesignTokens.Color.semantic.warning)
+            
+            VStack(alignment: .leading) {
+                Text(item.name)
+                    .font(.body)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                Text(item.path)
+                    .font(.caption2)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            
+            Spacer()
+            
+            Text(viewModel.formatBytes(item.size))
+                .font(.monospacedDigit(.body)())
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+        }
+    }
+}
+
+struct ProjectSectionHeader: View {
+    let project: ProjectInfo
+    
+    var body: some View {
+        HStack {
+            Image(systemName: project.type.icon)
+            Text(project.name)
+                .font(.headline)
+                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+            Spacer()
+            Text(project.type.displayName)
+                .font(.caption)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(DesignTokens.Color.semantic.textTertiary.opacity(0.2))
+                .clipShape(Capsule())
+        }
     }
 }
 

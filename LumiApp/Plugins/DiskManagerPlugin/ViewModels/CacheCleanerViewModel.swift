@@ -75,7 +75,7 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
                 self.showCleanupComplete = true
                 self.selection.removeAll() // Clear selection
             } catch {
-                self.alertMessage = "Cleanup error: \(error.localizedDescription)"
+                self.alertMessage = String(localized: "Cleanup error: \(error.localizedDescription)", table: "DiskManager")
             }
             self.isCleaning = false
         }

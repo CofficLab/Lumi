@@ -59,7 +59,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
         errorMessage = nil
 
         scanTask = Task {
-            try? await TaskService.shared.run(title: "Disk Scan: \(url.lastPathComponent)", priority: .userInitiated) { progressCallback in
+            try? await TaskService.shared.run(title: String(localized: "Disk Scan: \(url.lastPathComponent)", table: "DiskManager"), priority: .userInitiated) { progressCallback in
                 // Create a separate task to monitor DiskService progress and update TaskService
                 let monitorTask = Task { @MainActor in
                     for await progress in DiskService.shared.$currentScan.values {
@@ -123,7 +123,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
             } catch {
                 await MainActor.run {
                     os_log(.error, "\(self.t)Failed to delete file: \(error.localizedDescription)")
-                    self.errorMessage = "Delete failed: \(error.localizedDescription)"
+                    self.errorMessage = String(localized: "Delete failed: \(error.localizedDescription)", table: "DiskManager")
                 }
             }
         }

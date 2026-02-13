@@ -9,11 +9,11 @@ struct CacheCleanerView: View {
             // Header
             HStack {
                 VStack(alignment: .leading) {
-                    Text("System Cleanup")
+                    Text("System Cleanup", tableName: "DiskManager")
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                    Text("Scan and clean system caches, logs, and junk files")
+                    Text("Scan and clean system caches, logs, and junk files", tableName: "DiskManager")
                         .font(.caption)
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
@@ -29,7 +29,7 @@ struct CacheCleanerView: View {
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     }
                 } else {
-                    GlassButton(title: "Rescan", style: .secondary) {
+                    GlassButton(title: LocalizedStringKey("Rescan"), tableName: "DiskManager", style: .secondary) {
                         viewModel.scan()
                     }
                 }
@@ -41,8 +41,12 @@ struct CacheCleanerView: View {
             
             // Content
             if viewModel.categories.isEmpty && !viewModel.isScanning {
-                ContentUnavailableView("Ready", systemImage: "sparkles", description: Text("Click scan to start analyzing system junk"))
-                    .frame(maxHeight: .infinity)
+                ContentUnavailableView(
+                    label: { Text("Ready", tableName: "DiskManager") },
+                    description: { Text("Click scan to start analyzing system junk", tableName: "DiskManager") },
+                    actions: { EmptyView() }
+                )
+                .frame(maxHeight: .infinity)
             } else {
                 List {
                     ForEach(viewModel.categories) { category in
@@ -57,17 +61,17 @@ struct CacheCleanerView: View {
             // Footer Action
             HStack {
                 VStack(alignment: .leading) {
-                    Text("Selected: \(viewModel.formatBytes(viewModel.totalSelectedSize))")
+                    Text("Selected: \(viewModel.formatBytes(viewModel.totalSelectedSize))", tableName: "DiskManager")
                         .font(.headline)
                         .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                    Text("\(viewModel.selection.count) items")
+                    Text("\(viewModel.selection.count) items", tableName: "DiskManager")
                         .font(.caption)
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
                 
                 Spacer()
                 
-                GlassButton(title: viewModel.isCleaning ? "Cleaning..." : "Clean Now", style: .primary) {
+                GlassButton(title: viewModel.isCleaning ? LocalizedStringKey("Cleaning...") : LocalizedStringKey("Clean Now"), tableName: "DiskManager", style: .primary) {
                     showCleanConfirmation = true
                 }
                 .disabled(viewModel.selection.isEmpty || viewModel.isCleaning || viewModel.isScanning)
@@ -80,18 +84,24 @@ struct CacheCleanerView: View {
                 viewModel.scan()
             }
         }
-        .alert("Confirm Cleanup", isPresented: $showCleanConfirmation) {
-            Button("Clean", role: .destructive) {
+        .alert(Text("Confirm Cleanup", tableName: "DiskManager"), isPresented: $showCleanConfirmation) {
+            Button(role: .destructive) {
                 viewModel.cleanSelected()
+            } label: {
+                Text("Clean", tableName: "DiskManager")
             }
-            Button("Cancel", role: .cancel) {}
+            Button(role: .cancel) {} label: {
+                Text("Cancel", tableName: "DiskManager")
+            }
         } message: {
-            Text("Are you sure you want to clean the selected \(viewModel.formatBytes(viewModel.totalSelectedSize)) files? This action cannot be undone.")
+            Text("Are you sure you want to clean the selected \(viewModel.formatBytes(viewModel.totalSelectedSize)) files? This action cannot be undone.", tableName: "DiskManager")
         }
-        .alert("Cleanup Complete", isPresented: $viewModel.showCleanupComplete) {
-            Button("OK", role: .cancel) {}
+        .alert(Text("Cleanup Complete", tableName: "DiskManager"), isPresented: $viewModel.showCleanupComplete) {
+            Button(role: .cancel) {} label: {
+                Text("OK", tableName: "DiskManager")
+            }
         } message: {
-            Text("Successfully freed \(viewModel.formatBytes(viewModel.lastFreedSpace)) space.")
+            Text("Successfully freed \(viewModel.formatBytes(viewModel.lastFreedSpace)) space.", tableName: "DiskManager")
         }
     }
 }

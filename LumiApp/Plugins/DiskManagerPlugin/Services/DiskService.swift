@@ -179,7 +179,7 @@ actor ScanCoordinator {
                 let (files, size) = counter.current
                 self.currentProgress = ScanProgress(
                     path: path,
-                    currentPath: "Scanning...",
+                    currentPath: String(localized: "Scanning...", table: "DiskManager"),
                     scannedFiles: files,
                     scannedDirectories: 0,
                     scannedBytes: size,
