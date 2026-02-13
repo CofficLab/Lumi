@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// 开发助手设置视图
-/// 采用 macOS 系统设置风格，左侧为供应商选择，右侧为详细配置
+/// 采用扁平化设计，避免嵌套侧边栏
 struct DevAssistantSettingsView: View {
     // MARK: - State
 
@@ -41,14 +41,24 @@ struct DevAssistantSettingsView: View {
     // MARK: - Body
 
     var body: some View {
-        NavigationSplitView {
-            // 左侧：供应商列表
-            providerSidebar
-        } detail: {
-            // 右侧：详细配置
-            providerDetailView
+        ScrollView {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xl) {
+                // 供应商选择器
+                providerSelector
+
+                // 供应商信息卡片
+                providerInfoCard
+
+                // API Key 配置
+                apiKeySection
+
+                // 模型选择
+                modelSection
+
+                Spacer()
+            }
+            .padding(DesignTokens.Spacing.lg)
         }
-        .navigationSplitViewColumnWidth(min: 180, ideal: 220)
         .onAppear {
             loadSettings()
         }
@@ -59,53 +69,34 @@ struct DevAssistantSettingsView: View {
 
     // MARK: - View Components
 
-    /// 供应商侧边栏
-    private var providerSidebar: some View {
-        List(selection: $selectedProviderId) {
-            Section("LLM 供应商") {
+    /// 供应商选择器 - 使用分段控制器样式
+    private var providerSelector: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+            Text("LLM 供应商")
+                .font(DesignTokens.Typography.callout)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+
+            HStack(spacing: DesignTokens.Spacing.sm) {
                 ForEach(registry.allProviders()) { provider in
-                    ProviderRow(
+                    ProviderButton(
                         provider: provider,
                         isSelected: selectedProviderId == provider.id
-                    )
-                    .tag(provider.id)
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedProviderId = provider.id
+                        }
+                    }
                 }
             }
         }
-        .listStyle(.sidebar)
-        .navigationTitle("开发助手")
     }
 
-    /// 供应商详细配置视图
-    private var providerDetailView: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
-                // 供应商头部信息
-                providerHeader
-
-                Divider()
-
-                // API Key 配置
-                apiKeySection
-
-                Divider()
-
-                // 模型选择
-                modelSection
-
-                Spacer()
-            }
-            .padding(DesignTokens.Spacing.lg)
-        }
-        .navigationTitle(selectedProvider?.displayName ?? "设置")
-    }
-
-    /// 供应商头部信息
-    private var providerHeader: some View {
+    /// 供应商信息卡片
+    private var providerInfoCard: some View {
         HStack(spacing: DesignTokens.Spacing.md) {
             // 供应商图标
             Image(systemName: selectedProvider?.iconName ?? "dot.square")
-                .font(.system(size: 32))
+                .font(.system(size: 28))
                 .foregroundStyle(
                     LinearGradient(
                         colors: [DesignTokens.Color.semantic.primary, DesignTokens.Color.semantic.primarySecondary],
@@ -113,36 +104,43 @@ struct DevAssistantSettingsView: View {
                         endPoint: .bottomTrailing
                     )
                 )
-                .frame(width: 48, height: 48)
+                .frame(width: 44, height: 44)
                 .background(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: 10)
                         .fill(DesignTokens.Color.semantic.primary.opacity(0.1))
                 )
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 // 供应商名称
                 Text(selectedProvider?.displayName ?? "未知供应商")
-                    .font(DesignTokens.Typography.title3)
+                    .font(DesignTokens.Typography.callout)
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
                 // 供应商描述
                 Text(selectedProvider?.description ?? "")
-                    .font(DesignTokens.Typography.subheadline)
+                    .font(DesignTokens.Typography.caption1)
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
 
             Spacer()
         }
-        .padding(.bottom, DesignTokens.Spacing.sm)
+        .padding(DesignTokens.Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                .fill(DesignTokens.Material.glass)
+                .overlay(
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                )
+        )
     }
 
     /// API Key 配置区域
     private var apiKeySection: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-            // 区域标题
             Text("API 密钥")
                 .font(DesignTokens.Typography.callout)
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
             // API Key 输入框
             HStack(spacing: DesignTokens.Spacing.sm) {
@@ -194,10 +192,9 @@ struct DevAssistantSettingsView: View {
     /// 模型选择区域
     private var modelSection: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-            // 区域标题
             Text("可用模型")
                 .font(DesignTokens.Typography.callout)
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
             // 模型列表
             VStack(spacing: DesignTokens.Spacing.xs) {
@@ -250,40 +247,31 @@ struct DevAssistantSettingsView: View {
     }
 }
 
-// MARK: - Provider Row
+// MARK: - Provider Button
 
-/// 供应商列表行
-private struct ProviderRow: View {
+/// 供应商选择按钮
+private struct ProviderButton: View {
     let provider: ProviderInfo
     let isSelected: Bool
+    let action: () -> Void
 
     var body: some View {
-        HStack(spacing: DesignTokens.Spacing.sm) {
-            // 供应商图标
-            Image(systemName: provider.iconName)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(
-                    isSelected
-                        ? AnyShapeStyle(
-                            LinearGradient(
-                                colors: [DesignTokens.Color.semantic.primary, DesignTokens.Color.semantic.primarySecondary],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        : AnyShapeStyle(DesignTokens.Color.semantic.textSecondary)
-                )
-                .frame(width: 24)
-
-            // 供应商名称
-            Text(provider.displayName)
-                .font(DesignTokens.Typography.body)
-                .foregroundColor(isSelected ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
-
-            Spacer()
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: provider.iconName)
+                    .font(.system(size: 12, weight: .medium))
+                Text(provider.displayName)
+                    .font(DesignTokens.Typography.caption1)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(isSelected ? DesignTokens.Color.semantic.primary : Color.white.opacity(0.05))
+            )
+            .foregroundColor(isSelected ? .white : DesignTokens.Color.semantic.textSecondary)
         }
-        .padding(.vertical, DesignTokens.Spacing.xs)
-        .contentShape(Rectangle())
+        .buttonStyle(.plain)
     }
 }
 
@@ -346,7 +334,7 @@ private struct ModelRow: View {
 
 #Preview("Settings") {
     DevAssistantSettingsView()
-        .frame(width: 700, height: 500)
+        .frame(width: 500, height: 600)
 }
 
 #Preview("App") {
