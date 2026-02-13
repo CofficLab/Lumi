@@ -22,43 +22,63 @@ struct ModelSelectorView: View {
             
             Divider()
             
-            // List of Providers
+            // List of Providers and Models
             List {
                 ForEach(LLMProvider.allCases) { provider in
-                    Button(action: {
-                        selectProvider(provider)
-                    }) {
+                    Section(header: 
                         HStack {
-                            VStack(alignment: .leading) {
-                                Text(provider.rawValue)
-                                    .font(.body)
-                                Text(provider.defaultModel)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            
+                            Text(provider.rawValue)
+                                .font(.headline)
+                                .foregroundColor(.primary)
                             Spacer()
-                            
-                            if viewModel.selectedProvider == provider {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(.accentColor)
-                            }
                         }
                         .padding(.vertical, 4)
-                        .contentShape(Rectangle())
+                    ) {
+                        ForEach(provider.availableModels, id: \.self) { model in
+                            Button(action: {
+                                selectModel(provider: provider, model: model)
+                            }) {
+                                HStack {
+                                    VStack(alignment: .leading) {
+                                        Text(model)
+                                            .font(.body)
+                                        if model == provider.defaultModel {
+                                            Text("Default")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    if isSelected(provider: provider, model: model) {
+                                        Image(systemName: "checkmark")
+                                            .foregroundColor(.accentColor)
+                                    }
+                                }
+                                .padding(.vertical, 4)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
-                    .buttonStyle(.plain)
                 }
             }
             .listStyle(.sidebar)
         }
-        .frame(width: 300, height: 300)
+        .frame(width: 350, height: 400)
         .background(DesignTokens.Material.glass)
     }
     
-    private func selectProvider(_ provider: LLMProvider) {
+    private func selectModel(provider: LLMProvider, model: String) {
         viewModel.selectedProvider = provider
+        viewModel.updateSelectedModel(model, for: provider)
         dismiss()
+    }
+    
+    private func isSelected(provider: LLMProvider, model: String) -> Bool {
+        // Check if this is the currently active provider and model
+        return viewModel.selectedProvider == provider && viewModel.currentModel == model
     }
 }
 

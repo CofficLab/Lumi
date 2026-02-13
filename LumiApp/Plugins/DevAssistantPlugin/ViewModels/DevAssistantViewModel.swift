@@ -33,6 +33,12 @@ class DevAssistantViewModel: ObservableObject {
     // Zhipu AI
     @AppStorage("DevAssistant_ApiKey_Zhipu") var apiKeyZhipu: String = ""
 
+    // Selected Models
+    @AppStorage("DevAssistant_Model_Anthropic") var selectedModelAnthropic: String = LLMProvider.anthropic.defaultModel
+    @AppStorage("DevAssistant_Model_OpenAI") var selectedModelOpenAI: String = LLMProvider.openai.defaultModel
+    @AppStorage("DevAssistant_Model_DeepSeek") var selectedModelDeepSeek: String = LLMProvider.deepseek.defaultModel
+    @AppStorage("DevAssistant_Model_Zhipu") var selectedModelZhipu: String = LLMProvider.zhipu.defaultModel
+    
     private let llmService = LLMService.shared
 
     // Tools
@@ -306,19 +312,33 @@ class DevAssistantViewModel: ObservableObject {
     private func getCurrentConfig() -> LLMConfig {
         switch selectedProvider {
         case .anthropic:
-            return LLMConfig(apiKey: apiKeyAnthropic, model: selectedProvider.defaultModel, provider: .anthropic)
+            return LLMConfig(apiKey: apiKeyAnthropic, model: selectedModelAnthropic, provider: .anthropic)
         case .openai:
-            return LLMConfig(apiKey: apiKeyOpenAI, model: selectedProvider.defaultModel, provider: .openai)
+            return LLMConfig(apiKey: apiKeyOpenAI, model: selectedModelOpenAI, provider: .openai)
         case .deepseek:
-            return LLMConfig(apiKey: apiKeyDeepSeek, model: selectedProvider.defaultModel, provider: .deepseek)
+            return LLMConfig(apiKey: apiKeyDeepSeek, model: selectedModelDeepSeek, provider: .deepseek)
         case .zhipu:
-            return LLMConfig(apiKey: apiKeyZhipu, model: selectedProvider.defaultModel, provider: .zhipu)
+            return LLMConfig(apiKey: apiKeyZhipu, model: selectedModelZhipu, provider: .zhipu)
         }
     }
 
     // Helpers for View Binding
     var currentModel: String {
-        return selectedProvider.defaultModel
+        switch selectedProvider {
+        case .anthropic: return selectedModelAnthropic
+        case .openai: return selectedModelOpenAI
+        case .deepseek: return selectedModelDeepSeek
+        case .zhipu: return selectedModelZhipu
+        }
+    }
+    
+    func updateSelectedModel(_ model: String, for provider: LLMProvider) {
+        switch provider {
+        case .anthropic: selectedModelAnthropic = model
+        case .openai: selectedModelOpenAI = model
+        case .deepseek: selectedModelDeepSeek = model
+        case .zhipu: selectedModelZhipu = model
+        }
     }
 }
 

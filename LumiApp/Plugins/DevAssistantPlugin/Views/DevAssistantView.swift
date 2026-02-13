@@ -4,7 +4,6 @@ import SwiftUI
 struct DevAssistantView: View {
     @StateObject private var viewModel = DevAssistantViewModel()
     @State private var isInputFocused: Bool = false
-    @State private var isSettingsPresented = false
     @State private var isModelSelectorPresented = false
 
     var body: some View {
@@ -34,7 +33,7 @@ struct DevAssistantView: View {
                 Spacer()
                 
                 Button(action: {
-                    isSettingsPresented = true
+                    NotificationCenter.postOpenSettings()
                 }) {
                     Image(systemName: "gearshape")
                         .font(.system(size: 14))
@@ -44,9 +43,6 @@ struct DevAssistantView: View {
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .sheet(isPresented: $isSettingsPresented) {
-                    DevAssistantSettingsView()
-                }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)

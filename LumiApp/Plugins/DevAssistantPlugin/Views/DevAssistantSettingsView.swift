@@ -16,52 +16,39 @@ struct DevAssistantSettingsView: View {
     @State private var selectedProvider: LLMProvider = .anthropic
 
     var body: some View {
-        HStack(spacing: 0) {
-            // Sidebar
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Providers")
-                    .font(DesignTokens.Typography.caption1)
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 4)
-
-                ForEach(LLMProvider.allCases) { provider in
-                    Button(action: {
-                        selectedProvider = provider
-                    }) {
-                        HStack(spacing: 8) {
-                            Image(systemName: iconName(for: provider))
-                                .font(.system(size: 14))
-                                .frame(width: 20, height: 20)
-                            
-                            Text(provider.rawValue)
-                                .font(DesignTokens.Typography.body)
-                            
-                            Spacer()
-                            
-                            if provider == selectedProvider {
-                                Image(systemName: "chevron.right")
-                                    .font(.caption)
-                                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+        VStack(spacing: 0) {
+            // Provider Selector (Horizontal)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(LLMProvider.allCases) { provider in
+                        Button(action: {
+                            selectedProvider = provider
+                        }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: iconName(for: provider))
+                                    .font(.system(size: 14))
+                                
+                                Text(provider.rawValue)
+                                    .font(DesignTokens.Typography.caption1)
                             }
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(provider == selectedProvider ? Color.accentColor.opacity(0.1) : Color.clear)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(provider == selectedProvider ? Color.accentColor.opacity(0.3) : Color.clear, lineWidth: 1)
+                            )
                         }
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 12)
-                        .contentShape(Rectangle())
+                        .buttonStyle(.plain)
+                        .foregroundColor(provider == selectedProvider ? Color.accentColor : DesignTokens.Color.semantic.textSecondary)
                     }
-                    .buttonStyle(.plain)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(provider == selectedProvider ? Color.accentColor.opacity(0.1) : Color.clear)
-                    )
-                    .foregroundColor(provider == selectedProvider ? Color.accentColor : DesignTokens.Color.semantic.textPrimary)
                 }
-                
-                Spacer()
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
             }
-            .padding(.vertical, 20)
-            .padding(.horizontal, 10)
-            .frame(width: 200)
             .background(DesignTokens.Material.glassThick)
             
             Divider()
@@ -100,30 +87,40 @@ struct DevAssistantSettingsView: View {
                                 isSecure: true
                             )
                             
-                            // Model Display (Hardcoded)
+                            // Supported Models
                             VStack(alignment: .leading, spacing: 8) {
-                                Text("Model")
+                                Text("Supported Models")
                                     .font(DesignTokens.Typography.caption1)
                                     .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                                 
-                                HStack {
-                                    Text(selectedProvider.defaultModel)
-                                        .font(DesignTokens.Typography.body)
-                                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                                    
-                                    Spacer()
-                                    
-                                    Image(systemName: "lock.fill")
-                                        .font(.caption)
-                                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                                VStack(spacing: 8) {
+                                    ForEach(selectedProvider.availableModels, id: \.self) { model in
+                                        HStack {
+                                            Text(model)
+                                                .font(DesignTokens.Typography.body)
+                                                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                                            
+                                            Spacer()
+                                            
+                                            if model == selectedProvider.defaultModel {
+                                                Text("Default")
+                                                    .font(.caption2)
+                                                    .padding(.horizontal, 6)
+                                                    .padding(.vertical, 2)
+                                                    .background(Color.accentColor.opacity(0.1))
+                                                    .foregroundColor(.accentColor)
+                                                    .cornerRadius(4)
+                                            }
+                                        }
+                                        .padding(DesignTokens.Spacing.sm)
+                                        .background(DesignTokens.Material.glass)
+                                        .cornerRadius(DesignTokens.Radius.sm)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                                                .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
+                                        )
+                                    }
                                 }
-                                .padding(DesignTokens.Spacing.sm)
-                                .background(DesignTokens.Material.glass)
-                                .cornerRadius(DesignTokens.Radius.sm)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                                        .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
-                                )
                             }
                         }
                     }
@@ -144,10 +141,9 @@ struct DevAssistantSettingsView: View {
                     
                     Spacer()
                 }
-                .padding(32)
+                .padding(20)
             }
         }
-        .frame(width: 700, height: 450)
     }
     
     // MARK: - Helpers
@@ -182,6 +178,7 @@ struct DevAssistantSettingsView: View {
 
 #Preview("Settings") {
     DevAssistantSettingsView()
+        .frame(width: 400, height: 500)
 }
 
 #Preview("App") {
