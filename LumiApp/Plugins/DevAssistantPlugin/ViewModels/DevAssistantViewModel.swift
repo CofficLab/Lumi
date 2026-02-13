@@ -153,17 +153,23 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
         if let savedPath = UserDefaults.standard.string(forKey: "DevAssistant_SelectedProject"),
            !savedPath.isEmpty {
             let rootURL = URL(fileURLWithPath: savedPath)
-            
+
             // 验证项目路径是否仍然有效
             var isDirectory: ObjCBool = false
             if FileManager.default.fileExists(atPath: savedPath, isDirectory: &isDirectory) && isDirectory.boolValue {
-                await ContextService.shared.setProjectRoot(rootURL)
                 self.currentProjectName = rootURL.lastPathComponent
                 self.currentProjectPath = savedPath
                 self.isProjectSelected = true
-                
+
+                // 获取并应用项目配置（包括模型选择）
+                let config = ProjectConfigStore.shared.getOrCreateConfig(for: savedPath)
+                applyProjectConfig(config)
+
+                await ContextService.shared.setProjectRoot(rootURL)
+
                 if Self.verbose {
                     os_log("\(self.t)已加载项目: \(self.currentProjectName)")
+                    os_log("\(self.t)项目配置: 供应商=\(config.providerId), 模型=\(config.model)")
                 }
             } else {
                 // 项目路径无效，清除设置

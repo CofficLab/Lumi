@@ -7,11 +7,22 @@ extension DevAssistantViewModel {
     /// 切换到指定项目
     func switchProject(to path: String) {
         let projectURL = URL(fileURLWithPath: path)
+
+        // 验证路径是否存在
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory), isDirectory.boolValue else {
+            self.errorMessage = "项目路径无效: \(path)"
+            return
+        }
+
         let projectName = projectURL.lastPathComponent
 
         self.currentProjectName = projectName
         self.currentProjectPath = path
         self.isProjectSelected = true
+
+        // 保存到 UserDefaults（记住上次选择的项目）
+        UserDefaults.standard.set(path, forKey: "DevAssistant_SelectedProject")
 
         // 保存到最近使用列表
         saveRecentProject(name: projectName, path: path)
@@ -67,7 +78,7 @@ extension DevAssistantViewModel {
     }
 
     /// 应用项目配置
-    private func applyProjectConfig(_ config: ProjectConfig) {
+    func applyProjectConfig(_ config: ProjectConfig) {
         // 切换供应商
         if !config.providerId.isEmpty {
             selectedProviderId = config.providerId
