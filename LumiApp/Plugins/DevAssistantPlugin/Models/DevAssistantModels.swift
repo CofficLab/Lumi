@@ -60,6 +60,15 @@ enum LLMProvider: String, Codable, Sendable, CaseIterable, Identifiable {
         }
     }
 
+    var defaultModel: String {
+        switch self {
+        case .anthropic: return "claude-3-5-sonnet-20240620"
+        case .openai: return "gpt-4o"
+        case .deepseek: return "deepseek-chat"
+        case .zhipu: return "glm-4.7"
+        }
+    }
+
     var availableModels: [String] {
         switch self {
         case .anthropic:
@@ -83,7 +92,9 @@ enum LLMProvider: String, Codable, Sendable, CaseIterable, Identifiable {
             ]
         case .zhipu:
             return [
-                "glm-4",
+                "glm-4.7",
+                "glm-4.6",
+                "glm-4.5-air",
             ]
         }
     }

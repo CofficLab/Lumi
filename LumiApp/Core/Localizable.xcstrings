@@ -577,6 +577,7 @@
       }
     },
     "Anthropic (Claude)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -880,6 +881,7 @@
       }
     },
     "Base URL" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1312,6 +1314,9 @@
         }
       }
     },
+    "Configure API settings for %@" : {
+
+    },
     "Confirm" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1473,9 +1478,6 @@
         }
       }
     },
-    "Current" : {
-
-    },
     "Current Registry" : {
 
     },
@@ -1548,6 +1550,7 @@
 
     },
     "DeepSeek" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2253,6 +2256,7 @@
       }
     },
     "Get API Key" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2267,6 +2271,9 @@
           }
         }
       }
+    },
+    "Get it here" : {
+
     },
     "Grant Permission" : {
 
@@ -2948,6 +2955,9 @@
         }
       }
     },
+    "Need an API Key?" : {
+
+    },
     "Netto Firewall" : {
 
     },
@@ -3322,6 +3332,7 @@
       }
     },
     "OpenAI" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3561,6 +3572,9 @@
           }
         }
       }
+    },
+    "Providers" : {
+
     },
     "Public IP" : {
       "localizations" : {
@@ -4359,6 +4373,9 @@
         }
       }
     },
+    "sk-..." : {
+
+    },
     "Sort" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5093,9 +5110,6 @@
           }
         }
       }
-    },
-    "Zhipu AI" : {
-
     },
     "主页" : {
       "localizations" : {

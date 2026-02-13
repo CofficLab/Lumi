@@ -14,24 +14,24 @@ class DevAssistantViewModel: ObservableObject {
     private var pendingToolCalls: [ToolCall] = [] // Queue for remaining tools if we handle one by one
     private var currentDepth: Int = 0
 
+    // Project Info
+    @Published var currentProjectName: String = ""
+    @Published var currentProjectPath: String = ""
+
     // Config
     @AppStorage("DevAssistant_SelectedProvider") var selectedProvider: LLMProvider = .anthropic
 
     // Anthropic
     @AppStorage("DevAssistant_ApiKey_Anthropic") var apiKeyAnthropic: String = ""
-    @AppStorage("DevAssistant_Model_Anthropic") var modelAnthropic: String = "claude-3-5-sonnet-20240620"
 
     // OpenAI
     @AppStorage("DevAssistant_ApiKey_OpenAI") var apiKeyOpenAI: String = ""
-    @AppStorage("DevAssistant_Model_OpenAI") var modelOpenAI: String = "gpt-4o"
 
     // DeepSeek
     @AppStorage("DevAssistant_ApiKey_DeepSeek") var apiKeyDeepSeek: String = ""
-    @AppStorage("DevAssistant_Model_DeepSeek") var modelDeepSeek: String = "deepseek-chat"
 
     // Zhipu AI
     @AppStorage("DevAssistant_ApiKey_Zhipu") var apiKeyZhipu: String = ""
-    @AppStorage("DevAssistant_Model_Zhipu") var modelZhipu: String = "glm-4"
 
     private let llmService = LLMService.shared
 
@@ -65,7 +65,11 @@ class DevAssistantViewModel: ObservableObject {
         Task {
             // Try to set project root to common location for development
             // In production, this should be passed from the host app
-            await ContextService.shared.setProjectRoot(URL(fileURLWithPath: "/Users/colorfy/Code/CofficLab/Lumi"))
+            let rootURL = URL(fileURLWithPath: "/Users/colorfy/Code/CofficLab/Lumi")
+            await ContextService.shared.setProjectRoot(rootURL)
+            
+            self.currentProjectName = rootURL.lastPathComponent
+            self.currentProjectPath = rootURL.path
 
             let context = await ContextService.shared.getContextPrompt()
             let fullSystemPrompt = systemPrompt + "\n\n" + context
@@ -302,34 +306,19 @@ class DevAssistantViewModel: ObservableObject {
     private func getCurrentConfig() -> LLMConfig {
         switch selectedProvider {
         case .anthropic:
-            return LLMConfig(apiKey: apiKeyAnthropic, model: modelAnthropic, provider: .anthropic)
+            return LLMConfig(apiKey: apiKeyAnthropic, model: selectedProvider.defaultModel, provider: .anthropic)
         case .openai:
-            return LLMConfig(apiKey: apiKeyOpenAI, model: modelOpenAI, provider: .openai)
+            return LLMConfig(apiKey: apiKeyOpenAI, model: selectedProvider.defaultModel, provider: .openai)
         case .deepseek:
-            return LLMConfig(apiKey: apiKeyDeepSeek, model: modelDeepSeek, provider: .deepseek)
+            return LLMConfig(apiKey: apiKeyDeepSeek, model: selectedProvider.defaultModel, provider: .deepseek)
         case .zhipu:
-            return LLMConfig(apiKey: apiKeyZhipu, model: modelZhipu, provider: .zhipu)
+            return LLMConfig(apiKey: apiKeyZhipu, model: selectedProvider.defaultModel, provider: .zhipu)
         }
     }
 
     // Helpers for View Binding
     var currentModel: String {
-        get {
-            switch selectedProvider {
-            case .anthropic: return modelAnthropic
-            case .openai: return modelOpenAI
-            case .deepseek: return modelDeepSeek
-            case .zhipu: return modelZhipu
-            }
-        }
-        set {
-            switch selectedProvider {
-            case .anthropic: modelAnthropic = newValue
-            case .openai: modelOpenAI = newValue
-            case .deepseek: modelDeepSeek = newValue
-            case .zhipu: modelZhipu = newValue
-            }
-        }
+        return selectedProvider.defaultModel
     }
 }
 

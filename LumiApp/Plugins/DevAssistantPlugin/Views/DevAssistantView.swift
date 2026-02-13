@@ -9,6 +9,55 @@ struct DevAssistantView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // MARK: - Header
+            HStack(spacing: 12) {
+                Image(systemName: "hammer.fill")
+                    .font(.system(size: 18))
+                    .foregroundColor(.accentColor)
+                    .frame(width: 36, height: 36)
+                    .background(Color.accentColor.opacity(0.1))
+                    .clipShape(Circle())
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(viewModel.currentProjectName.isEmpty ? "Dev Assistant" : viewModel.currentProjectName)
+                        .font(DesignTokens.Typography.body)
+                        .fontWeight(.medium)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    
+                    Text(viewModel.currentProjectPath.isEmpty ? "Ready to help" : viewModel.currentProjectPath)
+                        .font(DesignTokens.Typography.caption1)
+                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                
+                Spacer()
+                
+                Button(action: {
+                    isSettingsPresented = true
+                }) {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 14))
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .frame(width: 28, height: 28)
+                        .background(Color.black.opacity(0.05))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .sheet(isPresented: $isSettingsPresented) {
+                    DevAssistantSettingsView()
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(DesignTokens.Material.glassThick)
+            .overlay(
+                Rectangle()
+                    .frame(height: 1)
+                    .foregroundColor(Color.black.opacity(0.05)),
+                alignment: .bottom
+            )
+
             // MARK: - Chat History
             ScrollViewReader { proxy in
                 ScrollView {
