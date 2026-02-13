@@ -1,5 +1,13 @@
 import SwiftUI
 
+// MARK: - Settings Window Identifier
+
+/// 设置窗口的标识符常量
+enum SettingsWindowID {
+    /// 默认设置窗口 ID
+    static let settings = "settings"
+}
+
 // MARK: - Notification Extension
 
 extension Notification.Name {

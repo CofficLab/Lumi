@@ -1,11 +1,8 @@
 import SwiftUI
 
 /// 设置界面视图，包含侧边栏导航和详情区域
-/// 支持 sheet 展示，可通过 dismiss 环境变量关闭
+/// 在独立窗口中显示
 struct SettingView: View {
-    /// dismiss 环境，用于关闭 sheet
-    @Environment(\.dismiss) private var dismiss
-
     /// 插件提供者
     @ObservedObject private var pluginProvider = PluginProvider.shared
 
@@ -49,7 +46,7 @@ struct SettingView: View {
     private var appInfo: AppInfo {
         AppInfo()
     }
-    
+
     /// 插件设置视图列表
     private var pluginSettings: [(id: String, name: String, icon: String, view: AnyView)] {
         pluginProvider.getPluginSettingsViews()
@@ -73,7 +70,7 @@ struct SettingView: View {
                             }
                         }
                     }
-                    
+
                     if !pluginSettings.isEmpty {
                         Section("插件设置") {
                             ForEach(pluginSettings, id: \.id) { item in
@@ -88,55 +85,34 @@ struct SettingView: View {
             .navigationSplitViewColumnWidth(min: 150, ideal: 200)
         } detail: {
             // 详情区域
-            VStack(spacing: 0) {
-                // 内容区域
-                Group {
-                    if let sel = selection {
-                        switch sel {
-                        case .core(let tab):
-                            switch tab {
-                            case .general:
-                                GeneralSettingView()
-                            case .theme:
-                                ThemeSettingView()
-                            case .plugins:
-                                PluginSettingsView()
-                            case .about:
-                                AboutView()
-                            }
-                        case .plugin(let id):
-                            if let item = pluginSettings.first(where: { $0.id == id }) {
-                                item.view
-                            } else {
-                                Text("插件未找到或已禁用")
-                                    .foregroundColor(.secondary)
-                            }
+            Group {
+                if let sel = selection {
+                    switch sel {
+                    case .core(let tab):
+                        switch tab {
+                        case .general:
+                            GeneralSettingView()
+                        case .theme:
+                            ThemeSettingView()
+                        case .plugins:
+                            PluginSettingsView()
+                        case .about:
+                            AboutView()
                         }
-                    } else {
-                        Text("请选择设置项")
-                            .foregroundColor(.secondary)
+                    case .plugin(let id):
+                        if let item = pluginSettings.first(where: { $0.id == id }) {
+                            item.view
+                        } else {
+                            Text("插件未找到或已禁用")
+                                .foregroundColor(.secondary)
+                        }
                     }
+                } else {
+                    Text("请选择设置项")
+                        .foregroundColor(.secondary)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                // 底部完成按钮
-                GlassDivider()
-                HStack {
-                    Spacer()
-                    GlassButton(title: "完成", style: .primary) {
-                        // 关闭设置视图
-                        NotificationCenter.postDismissSettings()
-                    }
-                    .keyboardShortcut(.defaultAction)
-                    .frame(width: 120)
-                }
-                .padding(DesignTokens.Spacing.sm)
-                .background(DesignTokens.Material.glass)
             }
-        }
-        .frame(width: 700, height: 800)
-        .onDismissSettings{
-            dismiss()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 

@@ -7,6 +7,7 @@ struct CoreApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: MacAgent
 
     var body: some Scene {
+        // 主窗口
         WindowGroup {
             ContentLayout()
                 .inRootView()
@@ -19,6 +20,14 @@ struct CoreApp: App {
             SettingsCommand()
             ConfigCommand()
         }
+
+        // 独立的设置窗口
+        Window("设置", id: SettingsWindowID.settings) {
+            SettingView()
+        }
+        .windowStyle(.hiddenTitleBar)
+        .windowToolbarStyle(.unifiedCompact)
+        .defaultSize(width: 780, height: 600)
     }
 }
 

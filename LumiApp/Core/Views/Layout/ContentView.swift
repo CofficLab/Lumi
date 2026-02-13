@@ -12,6 +12,9 @@ struct ContentView: View {
     @EnvironmentObject var pluginProvider: PluginProvider
     @EnvironmentObject var themeManager: MystiqueThemeManager
 
+    /// 打开窗口的环境变量
+    @Environment(\.openWindow) private var openWindow
+
     /// 当前配色方案（浅色/深色模式）
     @Environment(\.colorScheme) private var colorScheme
 
@@ -21,9 +24,6 @@ struct ContentView: View {
     /// 侧边栏是否可见
     @State private var sidebarVisibility = true
 
-    /// 设置视图是否显示
-    @State private var showSettings = false
-    
     /// 默认选中的导航 ID
     var defaultNavigationId: String? = nil
 
@@ -35,9 +35,6 @@ struct ContentView: View {
             contentLayout()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sheet(isPresented: $showSettings) {
-            SettingView()
-        }
         .onOpenSettings(perform: openSettings)
         .onOpenPluginSettings(perform: openPluginSettings)
     }
@@ -54,14 +51,14 @@ extension ContentView {
             if sidebarVisibility {
                 Sidebar()
                     .frame(width: 220)
-                
+
                 // 侧边栏与内容区的微妙分隔线
                 Rectangle()
                     .fill(SwiftUI.Color.white.opacity(0.1))
                     .frame(width: 1)
                     .ignoresSafeArea()
             }
-            
+
             // 内容区域
             detailContent()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -114,7 +111,7 @@ extension ContentView {
             window.titlebarAppearsTransparent = true
             window.styleMask.insert(.fullSizeContentView)
         }
-        
+
         // 应用默认配置
         if let defaultNavigationId = defaultNavigationId {
             if Self.verbose {
@@ -122,7 +119,7 @@ extension ContentView {
             }
             app.selectedNavigationId = defaultNavigationId
         }
-        
+
         if let defaultSidebarVisibility = defaultSidebarVisibility {
             sidebarVisibility = defaultSidebarVisibility
         }
@@ -137,14 +134,14 @@ extension ContentView {
         }
     }
 
-    /// 打开设置视图
+    /// 打开设置视图（在独立窗口中）
     func openSettings() {
-        showSettings = true
+        openWindow(id: SettingsWindowID.settings)
     }
 
-    /// 打开插件设置视图
+    /// 打开插件设置视图（在独立窗口中）
     func openPluginSettings() {
-        showSettings = true
+        openWindow(id: SettingsWindowID.settings)
     }
 }
 
