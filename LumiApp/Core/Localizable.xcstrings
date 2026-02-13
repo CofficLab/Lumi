@@ -560,6 +560,7 @@
       }
     },
     "API Key" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -574,6 +575,12 @@
           }
         }
       }
+    },
+    "API Key 将安全存储在系统钥匙串中" : {
+
+    },
+    "API 密钥" : {
+
     },
     "App" : {
       "localizations" : {
@@ -812,9 +819,6 @@
           }
         }
       }
-    },
-    "Available Models for %@" : {
-
     },
     "Available: %@" : {
       "localizations" : {
@@ -2552,6 +2556,9 @@
           }
         }
       }
+    },
+    "LLM 供应商" : {
+
     },
     "Load" : {
 
@@ -4984,6 +4991,9 @@
         }
       }
     },
+    "可用模型" : {
+
+    },
     "启动选项" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5017,6 +5027,7 @@
       }
     },
     "完成" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5342,6 +5353,9 @@
         }
       }
     },
+    "设置" : {
+
+    },
     "设置..." : {
       "localizations" : {
         "zh-Hans" : {
@@ -5392,6 +5406,9 @@
           }
         }
       }
+    },
+    "输入 API Key" : {
+
     },
     "这是主题效果的示例" : {
       "localizations" : {
@@ -5504,6 +5521,9 @@
           }
         }
       }
+    },
+    "默认" : {
+
     }
   },
   "version" : "1.1"

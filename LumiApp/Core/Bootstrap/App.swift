@@ -24,6 +24,7 @@ struct CoreApp: App {
         // 独立的设置窗口
         Window("设置", id: SettingsWindowID.settings) {
             SettingView()
+                .inRootView()
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unifiedCompact)
