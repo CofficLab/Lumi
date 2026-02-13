@@ -6,14 +6,23 @@ struct SettingView: View {
     /// dismiss 环境，用于关闭 sheet
     @Environment(\.dismiss) private var dismiss
 
+    /// 插件提供者
+    @ObservedObject private var pluginProvider = PluginProvider.shared
+
     /// 默认显示的标签
     var defaultTab: SettingTab = .about
 
-    /// 当前选中的标签
-    @State private var selectedTab: SettingTab
+    /// 设置选择枚举
+    enum SettingsSelection: Hashable {
+        case core(SettingTab)
+        case plugin(String)
+    }
+
+    /// 当前选中的项
+    @State private var selection: SettingsSelection?
 
     /// 设置标签枚举
-    enum SettingTab: String, CaseIterable {
+    enum SettingTab: String, CaseIterable, Hashable {
         case general = "通用"
         case theme = "主题"
         case plugins = "插件管理"
@@ -33,12 +42,17 @@ struct SettingView: View {
     /// - Parameter defaultTab: 默认选中的标签
     init(defaultTab: SettingTab = .about) {
         self.defaultTab = defaultTab
-        self._selectedTab = State(initialValue: defaultTab)
+        self._selection = State(initialValue: .core(defaultTab))
     }
 
     /// 应用信息
     private var appInfo: AppInfo {
         AppInfo()
+    }
+    
+    /// 插件设置视图列表
+    private var pluginSettings: [(id: String, name: String, icon: String, view: AnyView)] {
+        pluginProvider.getPluginSettingsViews()
     }
 
     var body: some View {
@@ -51,9 +65,23 @@ struct SettingView: View {
                 GlassDivider()
 
                 // 设置列表
-                List(SettingTab.allCases, id: \.self, selection: $selectedTab) { tab in
-                    NavigationLink(value: tab) {
-                        Label(tab.rawValue, systemImage: tab.icon)
+                List(selection: $selection) {
+                    Section {
+                        ForEach(SettingTab.allCases, id: \.self) { tab in
+                            NavigationLink(value: SettingsSelection.core(tab)) {
+                                Label(tab.rawValue, systemImage: tab.icon)
+                            }
+                        }
+                    }
+                    
+                    if !pluginSettings.isEmpty {
+                        Section("插件设置") {
+                            ForEach(pluginSettings, id: \.id) { item in
+                                NavigationLink(value: SettingsSelection.plugin(item.id)) {
+                                    Label(item.name, systemImage: item.icon)
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -63,15 +91,30 @@ struct SettingView: View {
             VStack(spacing: 0) {
                 // 内容区域
                 Group {
-                    switch selectedTab {
-                    case .general:
-                        GeneralSettingView()
-                    case .theme:
-                        ThemeSettingView()
-                    case .plugins:
-                        PluginSettingsView()
-                    case .about:
-                        AboutView()
+                    if let sel = selection {
+                        switch sel {
+                        case .core(let tab):
+                            switch tab {
+                            case .general:
+                                GeneralSettingView()
+                            case .theme:
+                                ThemeSettingView()
+                            case .plugins:
+                                PluginSettingsView()
+                            case .about:
+                                AboutView()
+                            }
+                        case .plugin(let id):
+                            if let item = pluginSettings.first(where: { $0.id == id }) {
+                                item.view
+                            } else {
+                                Text("插件未找到或已禁用")
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    } else {
+                        Text("请选择设置项")
+                            .foregroundColor(.secondary)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

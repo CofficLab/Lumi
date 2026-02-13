@@ -15,6 +15,11 @@ struct DevAssistantSettingsView: View {
     @AppStorage("DevAssistant_Model_DeepSeek") var modelDeepSeek: String = "deepseek-chat"
     @AppStorage("DevAssistant_BaseURL_DeepSeek") var baseURLDeepSeek: String = "https://api.deepseek.com/chat/completions"
     
+    // Zhipu AI
+    @AppStorage("DevAssistant_ApiKey_Zhipu") var apiKeyZhipu: String = ""
+    @AppStorage("DevAssistant_Model_Zhipu") var modelZhipu: String = "glm-4"
+    @AppStorage("DevAssistant_BaseURL_Zhipu") var baseURLZhipu: String = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+    
     var body: some View {
         Form {
             Section("Anthropic (Claude)") {
@@ -47,6 +52,18 @@ struct DevAssistantSettingsView: View {
                 GlassTextField(title: LocalizedStringKey("Model"), text: $modelDeepSeek, placeholder: LocalizedStringKey(modelDeepSeek))
                 GlassTextField(title: LocalizedStringKey("Base URL"), text: $baseURLDeepSeek, placeholder: LocalizedStringKey(baseURLDeepSeek))
                 Link("Get API Key", destination: URL(string: "https://platform.deepseek.com/")!)
+                    .font(.caption)
+            }
+            
+            Section("Zhipu AI") {
+                SecureField("API Key", text: $apiKeyZhipu)
+                    .textFieldStyle(.plain)
+                    .padding(8)
+                    .background(DesignTokens.Material.glass)
+                    .cornerRadius(8)
+                GlassTextField(title: LocalizedStringKey("Model"), text: $modelZhipu, placeholder: LocalizedStringKey(modelZhipu))
+                GlassTextField(title: LocalizedStringKey("Base URL"), text: $baseURLZhipu, placeholder: LocalizedStringKey(baseURLZhipu))
+                Link("Get API Key", destination: URL(string: "https://bigmodel.cn/")!)
                     .font(.caption)
             }
         }

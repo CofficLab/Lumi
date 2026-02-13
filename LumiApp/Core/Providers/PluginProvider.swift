@@ -181,6 +181,18 @@ final class PluginProvider: ObservableObject, SuperLog {
             .filter { isPluginEnabled($0) }
             .compactMap { $0.addStatusBarContentView() }
     }
+    
+    /// 获取所有插件的设置视图信息
+    /// - Returns: 包含插件ID、名称、图标和视图的元组数组
+    func getPluginSettingsViews() -> [(id: String, name: String, icon: String, view: AnyView)] {
+        plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { plugin -> (String, String, String, AnyView)? in
+                guard let view = plugin.addSettingsView() else { return nil }
+                let type = type(of: plugin)
+                return (type.id, type.displayName, type.iconName, view)
+            }
+    }
 
     /// 获取所有插件提供的导航入口
     /// - Returns: 导航入口数组

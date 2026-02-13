@@ -104,17 +104,84 @@ struct DevAssistantView: View {
         .onAppear {
             isInputFocused = true
         }
+        .overlay {
+            if let request = viewModel.pendingPermissionRequest {
+                ZStack {
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+                    
+                    GlassCard {
+                        VStack(spacing: 16) {
+                            HStack {
+                                Image(systemName: "exclamationmark.shield.fill")
+                                    .font(.title2)
+                                    .foregroundColor(.orange)
+                                Text("Permission Request")
+                                    .font(.headline)
+                                Spacer()
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(request.summary)
+                                    .font(.body)
+                                    .fontWeight(.medium)
+                                
+                                Text("The assistant is trying to perform a sensitive action.")
+                                    .font(.caption)
+                                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                
+                                DisclosureGroup("Details") {
+                                    ScrollView {
+                                        Text(request.details)
+                                            .font(.system(.caption, design: .monospaced))
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(8)
+                                    }
+                                    .frame(height: 100)
+                                    .background(Color.black.opacity(0.1))
+                                    .cornerRadius(8)
+                                }
+                            }
+                            
+                            HStack(spacing: 12) {
+                                GlassButton(title: "Deny", style: .ghost) {
+                                    viewModel.respondToPermissionRequest(allowed: false)
+                                }
+                                
+                                GlassButton(title: "Allow", style: .primary) {
+                                    viewModel.respondToPermissionRequest(allowed: true)
+                                }
+                            }
+                        }
+                        .padding(20)
+                        .frame(width: 400)
+                    }
+                }
+                .transition(.opacity)
+            }
+        }
     }
 }
 
 struct ChatBubble: View {
     let message: ChatMessage
+    @State private var isToolOutputExpanded: Bool = false
     
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             // Avatar
             if message.role == .user {
-                Spacer()
+                if message.toolCallID == nil {
+                    Spacer()
+                } else {
+                    // Tool output avatar (System/Tool)
+                    Image(systemName: "gearshape.2.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                        .frame(width: 24, height: 24)
+                        .background(DesignTokens.Color.semantic.textTertiary.opacity(0.1))
+                        .clipShape(Circle())
+                }
             } else {
                 Image(systemName: "cpu")
                     .font(.system(size: 16))
@@ -130,18 +197,47 @@ struct ChatBubble: View {
                     Text("Dev Assistant")
                         .font(.caption)
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                } else if message.toolCallID != nil {
+                    Text("Tool Output")
+                        .font(.caption)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
                 
-                Text(message.content)
-                    .font(.system(.body, design: .monospaced))
+                if message.toolCallID != nil {
+                    // Tool Output View
+                    DisclosureGroup(
+                        isExpanded: $isToolOutputExpanded,
+                        content: {
+                            Text(message.content)
+                                .font(.system(.caption, design: .monospaced))
+                                .padding(.top, 8)
+                                .textSelection(.enabled)
+                        },
+                        label: {
+                            HStack {
+                                Text(summaryForToolOutput(message.content))
+                                    .font(.system(.caption, design: .monospaced))
+                                    .lineLimit(1)
+                                Spacer()
+                            }
+                        }
+                    )
                     .padding(10)
                     .background(bubbleColor)
-                    .foregroundColor(textColor)
-                    .cornerRadius(12)
-                    .textSelection(.enabled)
+                    .cornerRadius(8)
+                } else {
+                    // Normal Message
+                    Text(.init(message.content)) // Markdown support
+                        .font(.system(.body, design: .monospaced))
+                        .padding(10)
+                        .background(bubbleColor)
+                        .foregroundColor(textColor)
+                        .cornerRadius(12)
+                        .textSelection(.enabled)
+                }
             }
             
-            if message.role == .assistant {
+            if message.role == .assistant || message.toolCallID != nil {
                 Spacer()
             } else {
                 Image(systemName: "person.fill")
@@ -154,9 +250,21 @@ struct ChatBubble: View {
         }
     }
     
+    private func summaryForToolOutput(_ content: String) -> String {
+        let lines = content.components(separatedBy: .newlines)
+        if lines.count > 1 {
+            return "Output (\(lines.count) lines)..."
+        } else {
+            return content.prefix(50) + (content.count > 50 ? "..." : "")
+        }
+    }
+    
     var bubbleColor: Color {
         if message.isError {
             return DesignTokens.Color.semantic.error.opacity(0.1)
+        }
+        if message.toolCallID != nil {
+            return DesignTokens.Color.semantic.textTertiary.opacity(0.05)
         }
         switch message.role {
         case .user: return DesignTokens.Color.semantic.info.opacity(0.1)

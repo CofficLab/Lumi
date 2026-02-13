@@ -33,6 +33,10 @@ protocol SuperPlugin: Actor {
     /// - Returns: 要添加的详情视图，如果不需要则返回nil
     @MainActor func addDetailView() -> AnyView?
 
+    /// 添加设置视图
+    /// - Returns: 要添加的设置视图，如果不需要则返回nil
+    @MainActor func addSettingsView() -> AnyView?
+    
     /// 提供导航入口（用于侧边栏导航）
     /// - Returns: 导航入口数组，如果不需要则返回nil
     @MainActor func addNavigationEntries() -> [NavigationEntry]?
@@ -96,6 +100,9 @@ extension SuperPlugin {
     
     /// 默认实现：不提供详情视图
     @MainActor func addDetailView() -> AnyView? { nil }
+
+    /// 默认实现：不提供设置视图
+    @MainActor func addSettingsView() -> AnyView? { nil }
 
     /// 默认实现：不提供导航入口
     @MainActor func addNavigationEntries() -> [NavigationEntry]? { nil }

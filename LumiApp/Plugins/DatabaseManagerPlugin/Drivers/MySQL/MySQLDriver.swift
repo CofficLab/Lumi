@@ -24,7 +24,7 @@ final class MySQLDriver: DatabaseDriver, Sendable {
         }
         // 密码可以为空（例如使用无密码的本地调试），此处不强制
         #if canImport(MySQLNIO)
-        return try MySQLConnection(host: host, port: port, username: user, password: config.password, database: config.database)
+        return try await MySQLConnection(host: host, port: port, username: user, password: config.password, database: config.database)
         #else
         throw DatabaseError.notImplemented
         #endif

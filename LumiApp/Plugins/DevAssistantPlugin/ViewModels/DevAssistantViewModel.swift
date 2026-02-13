@@ -9,6 +9,11 @@ class DevAssistantViewModel: ObservableObject {
     @Published var isProcessing: Bool = false
     @Published var errorMessage: String?
     
+    // Permission Handling
+    @Published var pendingPermissionRequest: PermissionRequest?
+    private var pendingToolCalls: [ToolCall] = [] // Queue for remaining tools if we handle one by one
+    private var currentDepth: Int = 0
+    
     // Config
     @AppStorage("DevAssistant_SelectedProvider") var selectedProvider: LLMProvider = .anthropic
     
@@ -26,113 +31,275 @@ class DevAssistantViewModel: ObservableObject {
     @AppStorage("DevAssistant_Model_DeepSeek") var modelDeepSeek: String = "deepseek-chat"
     @AppStorage("DevAssistant_BaseURL_DeepSeek") var baseURLDeepSeek: String = "https://api.deepseek.com/chat/completions"
     
+    // Zhipu AI
+    @AppStorage("DevAssistant_ApiKey_Zhipu") var apiKeyZhipu: String = ""
+    @AppStorage("DevAssistant_Model_Zhipu") var modelZhipu: String = "glm-4"
+    @AppStorage("DevAssistant_BaseURL_Zhipu") var baseURLZhipu: String = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+    
     private let llmService = LLMService.shared
-    private let shellService = ShellService.shared
+    
+    // Tools
+    private let tools: [AgentTool]
     
     // System Prompt
     private let systemPrompt = """
-    You are Claude Code, an expert software engineer and agentic coding tool.
-    You can help the user with coding tasks, file exploration, and command execution.
+    You are an expert software engineer and agentic coding tool (DevAssistant).
+    You have access to a set of tools to explore the codebase, read files, and execute commands.
     
-    When you need to execute a terminal command, wrap it in <execute> tags.
-    Example: <execute>ls -la</execute>
+    Your goal is to help the user complete tasks efficiently.
+    1. Always analyze the request first.
+    2. Use tools to gather information (ls, read_file).
+    3. Formulate a plan if the task is complex.
+    4. Execute the plan using tools.
     
-    When you need to read a file, use <read>path/to/file</read> (not implemented yet, treat as command cat).
-    
-    Be concise and helpful. Use markdown for code blocks.
     The user is on macOS.
     """
     
     init() {
-        // Initialize with system prompt
-        messages.append(ChatMessage(role: .system, content: systemPrompt))
-        // Welcome message
-        messages.append(ChatMessage(role: .assistant, content: "Hello! I am your Dev Assistant. How can I help you today?"))
+        // Initialize Tools
+        self.tools = [
+            ListDirectoryTool(),
+            ReadFileTool(),
+            WriteFileTool(),
+            ShellTool(shellService: .shared)
+        ]
+        
+        // Initialize Context and History
+        Task {
+            // Try to set project root to common location for development
+            // In production, this should be passed from the host app
+            await ContextService.shared.setProjectRoot(URL(fileURLWithPath: "/Users/colorfy/Code/CofficLab/Lumi"))
+            
+            let context = await ContextService.shared.getContextPrompt()
+            let fullSystemPrompt = systemPrompt + "\n\n" + context
+            
+            messages.append(ChatMessage(role: .system, content: fullSystemPrompt))
+            messages.append(ChatMessage(role: .assistant, content: "Hello! I am your Dev Assistant. How can I help you today?"))
+        }
     }
     
     func sendMessage() {
         guard !currentInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         
-        let userMsg = ChatMessage(role: .user, content: currentInput)
-        messages.append(userMsg)
+        let input = currentInput
         currentInput = ""
         isProcessing = true
         errorMessage = nil
         
-        Task {
-            do {
-                let config = getCurrentConfig()
-                
-                // 1. Get LLM Response
-                let responseText = try await llmService.sendMessage(messages: messages, config: config)
-                
-                // 2. Parse and display assistant message
-                let assistantMsg = ChatMessage(role: .assistant, content: responseText)
-                messages.append(assistantMsg)
-                
-                // 3. Check for commands
-                await processCommands(in: responseText)
-                
-            } catch {
-                errorMessage = error.localizedDescription
-                messages.append(ChatMessage(role: .assistant, content: "Error: \(error.localizedDescription)", isError: true))
+        // Check for Slash Command
+        if input.hasPrefix("/") {
+            Task {
+                let result = await SlashCommandService.shared.handle(input: input, viewModel: self)
+                switch result {
+                case .handled:
+                    isProcessing = false
+                case .error(let msg):
+                    messages.append(ChatMessage(role: .assistant, content: "Command Error: \(msg)", isError: true))
+                    isProcessing = false
+                case .notHandled:
+                    // Fallback to normal chat if not handled (shouldn't happen with hasPrefix check unless logic changes)
+                    await processUserMessage(input)
+                }
             }
+            return
+        }
+        
+        Task {
+            await processUserMessage(input)
+        }
+    }
+    
+    private func processUserMessage(_ content: String) async {
+        let userMsg = ChatMessage(role: .user, content: content)
+        messages.append(userMsg)
+        
+        await processTurn()
+    }
+    
+    // MARK: - API for SlashCommandService
+    
+    func appendSystemMessage(_ content: String) {
+        messages.append(ChatMessage(role: .assistant, content: content))
+    }
+    
+    func triggerPlanningMode(task: String) {
+        let planPrompt = """
+        ACT AS: Architect / Planner
+        TASK: \(task)
+        
+        Please generate a detailed implementation plan in Markdown.
+        Structure:
+        1. Analysis
+        2. Implementation Steps
+        3. Verification
+        
+        Do not write code yet, just the plan.
+        """
+        
+        // We simulate a user asking for a plan with this specific prompt
+        Task {
+            await processUserMessage(planPrompt)
+        }
+    }
+    
+    // MARK: - Permission Handling
+    
+    func respondToPermissionRequest(allowed: Bool) {
+        guard let request = pendingPermissionRequest else { return }
+        
+        pendingPermissionRequest = nil
+        
+        Task {
+            if allowed {
+                // Execute the tool
+                await executePendingTool(request: request)
+            } else {
+                // Deny execution
+                messages.append(ChatMessage(
+                    role: .user,
+                    content: "Tool execution denied by user.",
+                    toolCallID: request.toolCallID
+                ))
+                
+                // Continue with remaining tools or next turn
+                await processPendingTools()
+            }
+        }
+    }
+    
+    private func executePendingTool(request: PermissionRequest) async {
+        guard let tool = tools.first(where: { $0.name == request.toolName }) else {
+            messages.append(ChatMessage(
+                role: .user,
+                content: "Error: Tool '\(request.toolName)' not found.",
+                toolCallID: request.toolCallID
+            ))
+            await processPendingTools()
+            return
+        }
+        
+        do {
+            let result = try await tool.execute(arguments: request.arguments)
+            
+            messages.append(ChatMessage(
+                role: .user,
+                content: result,
+                toolCallID: request.toolCallID
+            ))
+            
+            await processPendingTools()
+        } catch {
+            messages.append(ChatMessage(
+                role: .user,
+                content: "Error executing tool: \(error.localizedDescription)",
+                toolCallID: request.toolCallID
+            ))
+            await processPendingTools()
+        }
+    }
+    
+    private func processPendingTools() async {
+        if !pendingToolCalls.isEmpty {
+            let nextToolCall = pendingToolCalls.removeFirst()
+            await handleToolCall(nextToolCall)
+        } else {
+            // All tools in this batch handled, continue recursion
+            await processTurn(depth: currentDepth + 1)
+        }
+    }
+    
+    private func handleToolCall(_ toolCall: ToolCall) async {
+        // Check Permission
+        if PermissionService.shared.requiresPermission(toolName: toolCall.name) {
+            pendingPermissionRequest = PermissionRequest(
+                toolName: toolCall.name,
+                argumentsString: toolCall.arguments,
+                toolCallID: toolCall.id
+            )
+            // Wait for user interaction (via UI binding to pendingPermissionRequest)
+            return
+        }
+        
+        // Parse arguments
+        var arguments: [String: Any] = [:]
+        if let data = toolCall.arguments.data(using: .utf8),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            arguments = json
+        }
+        
+        // Execute directly if no permission needed
+        guard let tool = tools.first(where: { $0.name == toolCall.name }) else {
+            messages.append(ChatMessage(
+                role: .user,
+                content: "Error: Tool '\(toolCall.name)' not found.",
+                toolCallID: toolCall.id
+            ))
+            await processPendingTools()
+            return
+        }
+        
+        do {
+            let result = try await tool.execute(arguments: arguments)
+            
+            messages.append(ChatMessage(
+                role: .user,
+                content: result,
+                toolCallID: toolCall.id
+            ))
+            
+            await processPendingTools()
+        } catch {
+            messages.append(ChatMessage(
+                role: .user,
+                content: "Error executing tool: \(error.localizedDescription)",
+                toolCallID: toolCall.id
+            ))
+            await processPendingTools()
+        }
+    }
+
+    private func processTurn(depth: Int = 0) async {
+        guard depth < 10 else {
+            errorMessage = "Max recursion depth reached."
+            isProcessing = false
+            return
+        }
+        
+        self.currentDepth = depth
+        
+        do {
+            let config = getCurrentConfig()
+            
+            // 1. Get LLM Response
+            let responseMsg = try await llmService.sendMessage(messages: messages, config: config, tools: tools)
+            messages.append(responseMsg)
+            
+            // 2. Check for Tool Calls
+            if let toolCalls = responseMsg.toolCalls, !toolCalls.isEmpty {
+                self.pendingToolCalls = toolCalls
+                
+                // Start processing the first tool
+                let firstTool = self.pendingToolCalls.removeFirst()
+                await handleToolCall(firstTool)
+                
+            } else {
+                // No tool calls, turn finished
+                isProcessing = false
+            }
+            
+        } catch {
+            errorMessage = error.localizedDescription
+            messages.append(ChatMessage(role: .assistant, content: "Error: \(error.localizedDescription)", isError: true))
             isProcessing = false
         }
     }
     
-    private func processCommands(in text: String) async {
-        // Regex to find <execute>...</execute>
-        let pattern = "<execute>(.*?)</execute>"
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.dotMatchesLineSeparators]) else { return }
-        
-        let nsString = text as NSString
-        let results = regex.matches(in: text, options: [], range: NSRange(location: 0, length: nsString.length))
-        
-        for result in results {
-            if let range = Range(result.range(at: 1), in: text) {
-                let command = String(text[range]).trimmingCharacters(in: .whitespacesAndNewlines)
-                
-                // Auto-execute for now (or ask user?)
-                // For MVP, we'll append a message saying "Executing..." and then the result
-                
-                messages.append(ChatMessage(role: .assistant, content: "Executing: `\(command)`..."))
-                
-                do {
-                    let output = try await shellService.execute(command)
-                    messages.append(ChatMessage(role: .user, content: "Command Output:\n```\n\(output)\n```"))
-                    
-                    // Recursively send the output back to LLM? 
-                    // For now, let's stop here to avoid infinite loops, or user can prompt "continue"
-                    // Ideally, we should feed this back to LLM automatically.
-                    
-                    // Let's trigger one more turn automatically to let AI analyze the output
-                    // But prevent deep recursion
-                    if messages.filter({ $0.role == .user && $0.content.starts(with: "Command Output:") }).count < 5 {
-                         await continueConversationWithOutput()
-                    }
-                    
-                } catch {
-                    messages.append(ChatMessage(role: .assistant, content: "Execution Failed: \(error.localizedDescription)", isError: true))
-                }
-            }
-        }
-    }
-    
-    private func continueConversationWithOutput() async {
-        do {
-             let config = getCurrentConfig()
-             let responseText = try await llmService.sendMessage(messages: messages, config: config)
-             let assistantMsg = ChatMessage(role: .assistant, content: responseText)
-             messages.append(assistantMsg)
-             await processCommands(in: responseText)
-        } catch {
-            // Ignore errors in auto-continuation
-        }
-    }
-    
     func clearHistory() {
-        messages = [ChatMessage(role: .system, content: systemPrompt)]
+        Task {
+            let context = await ContextService.shared.getContextPrompt()
+            let fullSystemPrompt = systemPrompt + "\n\n" + context
+            messages = [ChatMessage(role: .system, content: fullSystemPrompt)]
+        }
     }
     
     private func getCurrentConfig() -> LLMConfig {
@@ -143,6 +310,8 @@ class DevAssistantViewModel: ObservableObject {
             return LLMConfig(apiKey: apiKeyOpenAI, model: modelOpenAI, provider: .openai, baseURL: baseURLOpenAI)
         case .deepseek:
             return LLMConfig(apiKey: apiKeyDeepSeek, model: modelDeepSeek, provider: .deepseek, baseURL: baseURLDeepSeek)
+        case .zhipu:
+            return LLMConfig(apiKey: apiKeyZhipu, model: modelZhipu, provider: .zhipu, baseURL: baseURLZhipu)
         }
     }
     
@@ -153,6 +322,7 @@ class DevAssistantViewModel: ObservableObject {
             case .anthropic: return modelAnthropic
             case .openai: return modelOpenAI
             case .deepseek: return modelDeepSeek
+            case .zhipu: return modelZhipu
             }
         }
         set {
@@ -160,6 +330,7 @@ class DevAssistantViewModel: ObservableObject {
             case .anthropic: modelAnthropic = newValue
             case .openai: modelOpenAI = newValue
             case .deepseek: modelDeepSeek = newValue
+            case .zhipu: modelZhipu = newValue
             }
         }
     }

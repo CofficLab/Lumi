@@ -557,6 +557,9 @@
         }
       }
     },
+    "Allow" : {
+
+    },
     "An error occurred" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1621,6 +1624,9 @@
         }
       }
     },
+    "Deny" : {
+
+    },
     "Derived Data" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1652,6 +1658,9 @@
           }
         }
       }
+    },
+    "Details" : {
+
     },
     "Dev Assistant" : {
       "extractionState" : "manual",
@@ -3343,6 +3352,9 @@
     "Password" : {
 
     },
+    "Permission Request" : {
+
+    },
     "Permission Required" : {
 
     },
@@ -4631,6 +4643,9 @@
         }
       }
     },
+    "The assistant is trying to perform a sensitive action." : {
+
+    },
     "The right-click menu functionality requires the Finder extension to be enabled in System Settings." : {
       "localizations" : {
         "zh-Hans" : {
@@ -4694,6 +4709,9 @@
           }
         }
       }
+    },
+    "Tool Output" : {
+
     },
     "Total: %@" : {
       "localizations" : {
@@ -5070,6 +5088,9 @@
         }
       }
     },
+    "Zhipu AI" : {
+
+    },
     "主页" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5262,6 +5283,9 @@
         }
       }
     },
+    "插件未找到或已禁用" : {
+
+    },
     "插件未提供导航入口" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5309,6 +5333,9 @@
           }
         }
       }
+    },
+    "插件设置" : {
+
     },
     "搜索" : {
       "localizations" : {
@@ -5533,6 +5560,9 @@
           }
         }
       }
+    },
+    "请选择设置项" : {
+
     },
     "调试" : {
       "localizations" : {

@@ -13,13 +13,25 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     let timestamp: Date
     var isError: Bool = false
     
-    init(role: MessageRole, content: String, isError: Bool = false) {
+    // Tool Use Support
+    var toolCalls: [ToolCall]?
+    var toolCallID: String? // If this message is a tool_result, this links to the request
+    
+    init(role: MessageRole, content: String, isError: Bool = false, toolCalls: [ToolCall]? = nil, toolCallID: String? = nil) {
         self.id = UUID()
         self.role = role
         self.content = content
         self.timestamp = Date()
         self.isError = isError
+        self.toolCalls = toolCalls
+        self.toolCallID = toolCallID
     }
+}
+
+struct ToolCall: Codable, Sendable, Equatable {
+    let id: String
+    let name: String
+    let arguments: String // JSON string
 }
 
 struct LLMConfig: Codable, Sendable, Equatable {
@@ -35,6 +47,7 @@ enum LLMProvider: String, Codable, Sendable, CaseIterable, Identifiable {
     case anthropic = "Anthropic"
     case openai = "OpenAI"
     case deepseek = "DeepSeek"
+    case zhipu = "Zhipu AI"
     
     var id: String { rawValue }
     
@@ -43,6 +56,7 @@ enum LLMProvider: String, Codable, Sendable, CaseIterable, Identifiable {
         case .anthropic: return "https://api.anthropic.com/v1/messages"
         case .openai: return "https://api.openai.com/v1/chat/completions"
         case .deepseek: return "https://api.deepseek.com/chat/completions"
+        case .zhipu: return "https://open.bigmodel.cn/api/paas/v4/chat/completions"
         }
     }
 }
