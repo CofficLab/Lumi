@@ -1,5 +1,38 @@
 {
   "sourceLanguage": "en",
-  "strings": {},
+  "strings": {
+    "Memory Monitor": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "内存监控"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記憶體監控"
+          }
+        }
+      }
+    },
+    "Real-time monitoring of system memory usage": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "实时监控系统内存使用情况"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "即時監控系統記憶體使用情況"
+          }
+        }
+      }
+    }
+  },
   "version": "1.1"
 }

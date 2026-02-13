@@ -1,5 +1,38 @@
 {
   "sourceLanguage": "en",
-  "strings": {},
+  "strings": {
+    "CPU Monitor": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU 监控"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU 監控"
+          }
+        }
+      }
+    },
+    "Real-time CPU usage and load monitoring": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "实时 CPU 使用率和负载监控"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "即時 CPU 使用率和負載監控"
+          }
+        }
+      }
+    }
+  },
   "version": "1.1"
 }

@@ -1,5 +1,22 @@
 {
   "sourceLanguage": "en",
-  "strings": {},
+  "strings": {
+    "Input Manager": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "输入管理器"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入管理器"
+          }
+        }
+      }
+    }
+  },
   "version": "1.1"
 }

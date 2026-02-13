@@ -81,7 +81,22 @@
         }
       }
     },
-    "/path/to/db.sqlite": {},
+    "/path/to/db.sqlite": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "/path/to/db.sqlite"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "/path/to/db.sqlite"
+          }
+        }
+      }
+    },
     "# %@": {
       "localizations": {
         "zh-Hans": {
@@ -154,22 +169,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ 已使用"
-          }
-        }
-      }
-    },
-    "%lld Apps": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld 个应用"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld 個應用"
           }
         }
       }
@@ -270,10 +269,6 @@
         }
       }
     },
-    "1 Hour": {},
-    "2 Hours": {},
-    "5 Hours": {},
-    "10 Min": {},
     "100": {
       "localizations": {
         "zh-Hans": {
@@ -290,7 +285,22 @@
         }
       }
     },
-    "127.0.0.1": {},
+    "127.0.0.1": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "127.0.0.1"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "127.0.0.1"
+          }
+        }
+      }
+    },
     "500": {
       "localizations": {
         "zh-Hans": {
@@ -339,7 +349,22 @@
         }
       }
     },
-    "Accessibility permission is required to detect text selection": {},
+    "Accessibility permission is required to detect text selection": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要辅助功能权限才能检测文本选择"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要輔助功能權限才能檢測文字選擇"
+          }
+        }
+      }
+    },
     "Active Only": {
       "localizations": {
         "zh-Hans": {
@@ -388,8 +413,38 @@
         }
       }
     },
-    "Add Connection": {},
-    "Add Host Entry": {},
+    "Add Connection": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加连接"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加連線"
+          }
+        }
+      }
+    },
+    "Add Host Entry": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加 Host 条目"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新增 Host 記錄"
+          }
+        }
+      }
+    },
     "Add New Rule": {
       "localizations": {
         "zh-Hans": {
@@ -422,7 +477,22 @@
         }
       }
     },
-    "Add SQLite Connection": {},
+    "Add SQLite Connection": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加 SQLite 连接"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新增 SQLite 連線"
+          }
+        }
+      }
+    },
     "Add Template": {
       "localizations": {
         "zh-Hans": {
@@ -439,7 +509,6 @@
         }
       }
     },
-    "Agentic coding assistant": {},
     "All": {
       "localizations": {
         "zh-Hans": {
@@ -468,22 +537,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "所有資料均存儲在本地，不會上傳到任何伺服器。"
-          }
-        }
-      }
-    },
-    "All packages are up to date": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "所有软件包都是最新版本"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "所有軟件包都是最新版本"
           }
         }
       }
@@ -536,7 +589,38 @@
         }
       }
     },
-    "App": {},
+    "App": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "应用"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "應用"
+          }
+        }
+      }
+    },
+    "App Cache": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "应用缓存"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "應用快取"
+          }
+        }
+      }
+    },
     "App Manager": {
       "extractionState": "manual",
       "localizations": {
@@ -554,7 +638,86 @@
         }
       }
     },
-    "Application": {},
+    "App packaging archive files.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "应用打包归档文件。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "應用打包封存檔案。"
+          }
+        }
+      }
+    },
+    "Apple TV debug symbol files.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple TV 调试符号文件。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple TV 除錯符號檔案。"
+          }
+        }
+      }
+    },
+    "Apple Watch debug symbol files.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Watch 调试符号文件。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Watch 除錯符號檔案。"
+          }
+        }
+      }
+    },
+    "Application": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "应用程序"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "應用程式"
+          }
+        }
+      }
+    },
+    "Archives": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "归档"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "封存檔案"
+          }
+        }
+      }
+    },
     "Are you sure you want to clean the selected %@ files? This action cannot be undone.": {
       "localizations": {
         "zh-Hans": {
@@ -587,7 +750,22 @@
         }
       }
     },
-    "Are you sure you want to delete the selected build artifacts (node_modules, target, etc)?\nThis will free up space but require rebuilding projects.": {},
+    "Are you sure you want to delete the selected build artifacts (node_modules, target, etc)?\\nThis will free up space but require rebuilding projects.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定要删除所选的构建产物（node_modules、target 等）吗？\\n这将释放空间但需要重新构建项目。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "確定要刪除所選的構建產物（node_modules、target 等）嗎？\\n這將釋放空間但需要重新構建項目。"
+          }
+        }
+      }
+    },
     "Are you sure you want to delete the selected files? This action cannot be undone.": {
       "localizations": {
         "zh-Hans": {
@@ -691,22 +869,6 @@
         }
       }
     },
-    "Batch update failed: %@": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "批量更新失败: %@"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "批量更新失敗: %@"
-          }
-        }
-      }
-    },
     "Battery": {
       "localizations": {
         "zh-Hans": {
@@ -719,6 +881,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "電池"
+          }
+        }
+      }
+    },
+    "Browser Cache": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "浏览器缓存"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "瀏覽器快取"
           }
         }
       }
@@ -755,14 +933,150 @@
         }
       }
     },
-    "Cask": {},
-    "Clean": {},
-    "Clean Now": {},
-    "Clean Selected": {},
-    "Cleaning...": {},
-    "Cleanup Complete": {},
-    "Clear": {},
-    "Clear All": {},
+    "Cask": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cask"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cask"
+          }
+        }
+      }
+    },
+    "Clean": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清理"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清理"
+          }
+        }
+      }
+    },
+    "Clean Now": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立即清理"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立即清理"
+          }
+        }
+      }
+    },
+    "Cleaning...": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清理中..."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清理中..."
+          }
+        }
+      }
+    },
+    "Cleanup Complete": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清理完成"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清理完成"
+          }
+        }
+      }
+    },
+    "Cleanup error: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清理错误：%@"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清理錯誤：%@"
+          }
+        }
+      }
+    },
+    "Cleanup failed: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清理失败：%@"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清理失敗：%@"
+          }
+        }
+      }
+    },
+    "Clear": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除"
+          }
+        }
+      }
+    },
+    "Clear All": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部清除"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部清除"
+          }
+        }
+      }
+    },
     "Clear All History": {
       "localizations": {
         "zh-Hans": {
@@ -775,6 +1089,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "清空全部歷史"
+          }
+        }
+      }
+    },
+    "Clear Chrome, Safari, Firefox and other browser caches": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除 Chrome、Safari、Firefox 和其他浏览器缓存"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除 Chrome、Safari、Firefox 和其他瀏覽器快取"
           }
         }
       }
@@ -795,6 +1125,54 @@
         }
       }
     },
+    "Clear system runtime log files": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除系统运行时日志文件"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除系統執行時日誌檔案"
+          }
+        }
+      }
+    },
+    "Clear temporary files generated by applications": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除应用程序生成的临时文件"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除應用程式產生的暫存檔案"
+          }
+        }
+      }
+    },
+    "Clear Xcode DerivedData, Archives, and package manager caches": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除 Xcode DerivedData、归档和包管理器缓存"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除 Xcode DerivedData、封存檔案和套件管理器快取"
+          }
+        }
+      }
+    },
     "Click scan button to start finding large files": {
       "localizations": {
         "zh-Hans": {
@@ -811,7 +1189,22 @@
         }
       }
     },
-    "Click scan to start analyzing system junk": {},
+    "Click scan to start analyzing system junk": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点击扫描开始分析系统垃圾"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊掃描開始分析系統垃圾"
+          }
+        }
+      }
+    },
     "Clipboard": {
       "extractionState": "manual",
       "localizations": {
@@ -861,7 +1254,22 @@
         }
       }
     },
-    "Comment": {},
+    "Comment": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "备注"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "備註"
+          }
+        }
+      }
+    },
     "Configuration": {
       "localizations": {
         "zh-Hans": {
@@ -894,7 +1302,22 @@
         }
       }
     },
-    "Confirm Cleanup": {},
+    "Confirm Cleanup": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确认清理"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "確認清理"
+          }
+        }
+      }
+    },
     "Confirm Delete": {
       "localizations": {
         "zh-Hans": {
@@ -911,9 +1334,38 @@
         }
       }
     },
-    "Confirm Uninstall": {},
-    "Connection Name": {},
-    "Connections": {},
+    "Connection Name": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接名称"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "連線名稱"
+          }
+        }
+      }
+    },
+    "Connections": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "連線"
+          }
+        }
+      }
+    },
     "Copy": {
       "localizations": {
         "zh-Hans": {
@@ -926,22 +1378,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "拷貝"
-          }
-        }
-      }
-    },
-    "Copy Path": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "拷贝路径"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "拷貝路徑"
           }
         }
       }
@@ -963,9 +1399,38 @@
         }
       }
     },
-    "CPU Load Trend": {},
-    "CPU Monitor": {},
-    "CPU Usage": {},
+    "CPU Load Trend": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU 负载趋势"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU 負載趨勢"
+          }
+        }
+      }
+    },
+    "CPU Usage": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU 使用率"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU 使用率"
+          }
+        }
+      }
+    },
     "Created": {
       "localizations": {
         "zh-Hans": {
@@ -994,22 +1459,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "目前版本為最新穩定版本"
-          }
-        }
-      }
-    },
-    "Customize Finder right-click menu actions": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自定义 Finder 右键菜单操作"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自訂 Finder 右鍵選單操作"
           }
         }
       }
@@ -1047,7 +1496,22 @@
         }
       }
     },
-    "Database Path": {},
+    "Database Path": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "数据库路径"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料庫路徑"
+          }
+        }
+      }
+    },
     "DeepSeek": {
       "localizations": {
         "zh-Hans": {
@@ -1096,6 +1560,22 @@
         }
       }
     },
+    "Delete failed: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除失败：%@"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刪除失敗：%@"
+          }
+        }
+      }
+    },
     "Delete File": {
       "localizations": {
         "zh-Hans": {
@@ -1108,6 +1588,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "刪除檔案"
+          }
+        }
+      }
+    },
+    "Derived Data": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "派生数据"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "衍生資料"
           }
         }
       }
@@ -1145,7 +1641,38 @@
         }
       }
     },
-    "dev.example.com": {},
+    "dev.example.com": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "dev.example.com"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "dev.example.com"
+          }
+        }
+      }
+    },
+    "Developer Tool Cache": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开发者工具缓存"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開發者工具快取"
+          }
+        }
+      }
+    },
     "Device Info": {
       "extractionState": "manual",
       "localizations": {
@@ -1246,7 +1773,38 @@
         }
       }
     },
-    "Disk space analysis and large file cleaning": {},
+    "Disk Scan: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "磁盘扫描：%@"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "磁碟掃描：%@"
+          }
+        }
+      }
+    },
+    "Disk space analysis and large file cleaning": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "磁盘空间分析和大文件清理"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "磁碟空間分析和大型檔案清理"
+          }
+        }
+      }
+    },
     "Display the status of long-running operations in the status bar": {
       "localizations": {
         "zh-Hans": {
@@ -1263,7 +1821,6 @@
         }
       }
     },
-    "Displays the current time in the status bar": {},
     "Docker": {
       "extractionState": "manual",
       "localizations": {
@@ -1281,7 +1838,22 @@
         }
       }
     },
-    "Domain": {},
+    "Domain": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "域名"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "域名"
+          }
+        }
+      }
+    },
     "Down": {
       "localizations": {
         "zh-Hans": {
@@ -1314,6 +1886,22 @@
         }
       }
     },
+    "Empty files in the trash": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "废纸篓中的空文件"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "垃圾桶中的空檔案"
+          }
+        }
+      }
+    },
     "Enable 'New File' Submenu": {
       "localizations": {
         "zh-Hans": {
@@ -1330,8 +1918,38 @@
         }
       }
     },
-    "Enable Auto Input Source Switching": {},
-    "Enable Clipboard Monitoring": {},
+    "Enable Auto Input Source Switching": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用自动输入源切换"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟用自動輸入源切換"
+          }
+        }
+      }
+    },
+    "Enable Clipboard Monitoring": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用剪贴板监控"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟用剪貼簿監控"
+          }
+        }
+      }
+    },
     "Enable Finder Extension": {
       "localizations": {
         "zh-Hans": {
@@ -1348,19 +1966,18 @@
         }
       }
     },
-    "Enable Text Selection Menu": {},
-    "Enter keywords to start searching": {
+    "Enable Text Selection Menu": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "输入关键词开始搜索"
+            "value": "启用文本选择菜单"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "輸入關鍵詞開始搜尋"
+            "value": "啟用文字選擇選單"
           }
         }
       }
@@ -1397,8 +2014,38 @@
         }
       }
     },
-    "Export Backup...": {},
-    "Export...": {},
+    "Export Backup...": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导出备份..."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯出備份..."
+          }
+        }
+      }
+    },
+    "Export...": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导出..."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯出..."
+          }
+        }
+      }
+    },
     "Extension (e.g. py)": {
       "localizations": {
         "zh-Hans": {
@@ -1481,7 +2128,22 @@
         }
       }
     },
-    "Free up disk space by cleaning obsolete build and support files": {},
+    "Free up disk space by cleaning obsolete build and support files": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通过清理过期的构建和支持文件来释放磁盘空间"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "透過清理過期的構建和支援檔案來釋放磁碟空間"
+          }
+        }
+      }
+    },
     "General": {
       "localizations": {
         "zh-Hans": {
@@ -1530,6 +2192,22 @@
         }
       }
     },
+    "Generic": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通用"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通用"
+          }
+        }
+      }
+    },
     "Get API Key": {
       "localizations": {
         "zh-Hans": {
@@ -1558,22 +2236,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "群組"
-          }
-        }
-      }
-    },
-    "Hide File": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "隐藏文件"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "隱藏檔案"
           }
         }
       }
@@ -1642,7 +2304,6 @@
         }
       }
     },
-    "Homebrew not detected, please install Homebrew first.": {},
     "Hosts Manager": {
       "extractionState": "manual",
       "localizations": {
@@ -1660,21 +2321,66 @@
         }
       }
     },
-    "Image": {},
-    "Import": {},
-    "Import Backup...": {},
-    "Indefinite": {
+    "Image": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "无限期"
+            "value": "镜像"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "無限期"
+            "value": "映像"
+          }
+        }
+      }
+    },
+    "Import": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯入"
+          }
+        }
+      }
+    },
+    "Import Backup...": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入备份..."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯入備份..."
+          }
+        }
+      }
+    },
+    "Initializing...": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "初始化中..."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "初始化中..."
           }
         }
       }
@@ -1696,72 +2402,22 @@
         }
       }
     },
-    "Input Source": {},
-    "Install": {
+    "Input Source": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "安装"
+            "value": "输入源"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "安裝"
+            "value": "輸入源"
           }
         }
       }
     },
-    "Installation failed: %@": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "安装失败: %@"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "安裝失敗: %@"
-          }
-        }
-      }
-    },
-    "Installed": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已安装"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已安裝"
-          }
-        }
-      }
-    },
-    "Installed: %@": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已安装：%@"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已安裝：%@"
-          }
-        }
-      }
-    },
-    "Interactive terminal emulator": {},
     "Interface": {
       "localizations": {
         "zh-Hans": {
@@ -1778,6 +2434,22 @@
         }
       }
     },
+    "Intermediate files and indices from the build process, safe to delete.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "构建过程中的中间文件和索引，可以安全删除。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "構建過程中的中間檔案和索引，可以安全刪除。"
+          }
+        }
+      }
+    },
     "Invalid IP address format": {
       "localizations": {
         "zh-Hans": {
@@ -1790,6 +2462,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "無效的 IP 位址格式"
+          }
+        }
+      }
+    },
+    "iOS Device Support": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS 设备支持"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS 裝置支援"
           }
         }
       }
@@ -1907,7 +2595,6 @@
         }
       }
     },
-    "Local Docker image management and monitoring": {},
     "Local IP": {
       "localizations": {
         "zh-Hans": {
@@ -1920,6 +2607,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "本地 IP"
+          }
+        }
+      }
+    },
+    "Logs": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "日志"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "日誌"
           }
         }
       }
@@ -1940,7 +2643,22 @@
         }
       }
     },
-    "Lumi uses the Sparkle framework for automatic updates. When a new version is available, the app will automatically prompt you to update.": {},
+    "Lumi uses the Sparkle framework for automatic updates. When a new version is available, the app will automatically prompt you to update.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 使用 Sparkle 框架进行自动更新。当有新版本可用时，应用会自动提示您更新。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 使用 Sparkle 框架進行自動更新。當有新版本可用時，應用會自動提示您更新。"
+          }
+        }
+      }
+    },
     "Macintosh HD": {
       "localizations": {
         "zh-Hans": {
@@ -1957,10 +2675,22 @@
         }
       }
     },
-    "Manage clipboard history and snippets": {},
-    "Manage Homebrew packages and casks": {},
-    "Manage SQLite, MySQL, and PostgreSQL databases": {},
-    "Manage system hosts file configuration": {},
+    "Manage clipboard history and snippets": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理剪贴板历史和片段"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理剪貼簿歷史和片段"
+          }
+        }
+      }
+    },
     "Markdown": {
       "extractionState": "manual",
       "localizations": {
@@ -1974,6 +2704,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Markdown"
+          }
+        }
+      }
+    },
+    "Medium": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中等"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中等"
           }
         }
       }
@@ -1995,8 +2741,22 @@
         }
       }
     },
-    "Memory Monitor": {},
-    "Memory Usage Trend": {},
+    "Memory Usage Trend": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "内存使用趋势"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記憶體使用趨勢"
+          }
+        }
+      }
+    },
     "Model": {
       "localizations": {
         "zh-Hans": {
@@ -2045,8 +2805,38 @@
         }
       }
     },
-    "My Database": {},
-    "myrepo:v1": {},
+    "My Database": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "我的数据库"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "我的資料庫"
+          }
+        }
+      }
+    },
+    "myrepo:v1": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "myrepo:v1"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "myrepo:v1"
+          }
+        }
+      }
+    },
     "Name": {
       "localizations": {
         "zh-Hans": {
@@ -2129,22 +2919,6 @@
         }
       }
     },
-    "New File": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新建文件"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新建檔案"
-          }
-        }
-      }
-    },
     "New File Menu": {
       "localizations": {
         "zh-Hans": {
@@ -2161,8 +2935,38 @@
         }
       }
     },
-    "New Tag": {},
-    "nginx:latest": {},
+    "New Tag": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建标签"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建標籤"
+          }
+        }
+      }
+    },
+    "nginx:latest": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nginx:latest"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nginx:latest"
+          }
+        }
+      }
+    },
     "No active processes": {
       "localizations": {
         "zh-Hans": {
@@ -2179,9 +2983,54 @@
         }
       }
     },
-    "No applications found": {},
-    "No Cleanable Projects Found": {},
-    "No clipboard records": {},
+    "No applications found": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到应用程序"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到應用程式"
+          }
+        }
+      }
+    },
+    "No Cleanable Projects Found": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到可清理的项目"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到可清理的項目"
+          }
+        }
+      }
+    },
+    "No clipboard records": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有剪贴板记录"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有剪貼簿記錄"
+          }
+        }
+      }
+    },
     "No Data": {
       "localizations": {
         "zh-Hans": {
@@ -2198,7 +3047,22 @@
         }
       }
     },
-    "No items to clean": {},
+    "No items to clean": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有可清理的项目"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有可清理的項目"
+          }
+        }
+      }
+    },
     "No Large Files": {
       "localizations": {
         "zh-Hans": {
@@ -2247,36 +3111,34 @@
         }
       }
     },
-    "No open terminals": {},
-    "No packages installed": {
+    "No open terminals": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "未安装任何软件包"
+            "value": "没有打开的终端"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "未安裝任何軟件包"
+            "value": "沒有打開的終端機"
           }
         }
       }
     },
-    "No project selected": {},
-    "No related packages found": {
+    "No project selected": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "未找到相关软件包"
+            "value": "未选择项目"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "未找到相關軟件包"
+            "value": "未選擇項目"
           }
         }
       }
@@ -2293,6 +3155,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "无結果"
+          }
+        }
+      }
+    },
+    "Node.js": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Node.js"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Node.js"
           }
         }
       }
@@ -2329,6 +3207,22 @@
         }
       }
     },
+    "Old simulator logs and debug records.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "旧的模拟器日志和调试记录。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "舊的模擬器日誌和除錯記錄。"
+          }
+        }
+      }
+    },
     "Open": {
       "localizations": {
         "zh-Hans": {
@@ -2341,38 +3235,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "打開"
-          }
-        }
-      }
-    },
-    "Open in Terminal": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在终端中打开"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在終端中打开"
-          }
-        }
-      }
-    },
-    "Open in VS Code": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 VS Code 中打开"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 VS Code 中打開"
           }
         }
       }
@@ -2409,35 +3271,18 @@
         }
       }
     },
-    "Optional": {},
-    "Overview": {
+    "Optional": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "总览"
+            "value": "可选"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "概覽"
-          }
-        }
-      }
-    },
-    "Package Management": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "包管理器"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "套件管理"
+            "value": "可選"
           }
         }
       }
@@ -2523,9 +3368,6 @@
         }
       }
     },
-    "Prevent sleep & Allow screen off": {},
-    "Prevent sleep & Keep screen on": {},
-    "Prevent sleep & Turn off screen": {},
     "Preview": {
       "localizations": {
         "zh-Hans": {
@@ -2558,26 +3400,70 @@
         }
       }
     },
-    "Processing...": {
+    "Project Cleaner": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "处理中..."
+            "value": "项目清理器"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "處理中..."
+            "value": "項目清理器"
           }
         }
       }
     },
-    "Project Cleaner": {},
-    "Project Cleanup": {},
-    "Project Info": {},
-    "Project Information": {},
+    "Project Cleanup": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "项目清理"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "項目清理"
+          }
+        }
+      }
+    },
+    "Project Info": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "项目信息"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "項目資訊"
+          }
+        }
+      }
+    },
+    "Project Information": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "项目详细信息"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "項目詳細資訊"
+          }
+        }
+      }
+    },
     "Provider": {
       "localizations": {
         "zh-Hans": {
@@ -2626,7 +3512,22 @@
         }
       }
     },
-    "Pull New Image": {},
+    "Pull New Image": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拉取新镜像"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拉取新映像"
+          }
+        }
+      }
+    },
     "Pulling...": {
       "localizations": {
         "zh-Hans": {
@@ -2639,6 +3540,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "拉取中..."
+          }
+        }
+      }
+    },
+    "Python": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Python"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Python"
           }
         }
       }
@@ -2659,7 +3576,6 @@
         }
       }
     },
-    "Real-time CPU usage and load monitoring": {},
     "Real-time Monitor": {
       "extractionState": "manual",
       "localizations": {
@@ -2677,8 +3593,6 @@
         }
       }
     },
-    "Real-time monitoring of network speed, traffic, and connection status": {},
-    "Real-time monitoring of system memory usage": {},
     "Refresh": {
       "localizations": {
         "zh-Hans": {
@@ -2691,22 +3605,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "重新整理"
-          }
-        }
-      }
-    },
-    "Refresh failed: %@": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "刷新失败: %@"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "刷新失敗: %@"
           }
         }
       }
@@ -2808,6 +3706,22 @@
         }
       }
     },
+    "Risky": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "有风险"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "有風險"
+          }
+        }
+      }
+    },
     "Run": {
       "localizations": {
         "zh-Hans": {
@@ -2820,6 +3734,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "執行"
+          }
+        }
+      }
+    },
+    "Rust": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rust"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rust"
+          }
+        }
+      }
+    },
+    "Safe": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安全"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安全"
           }
         }
       }
@@ -2856,7 +3802,22 @@
         }
       }
     },
-    "Scan and clean system caches, logs, and junk files": {},
+    "Scan and clean system caches, logs, and junk files": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "扫描并清理系统缓存、日志和垃圾文件"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "掃描並清理系統快取、日誌和垃圾檔案"
+          }
+        }
+      }
+    },
     "Scan Directory: User Home": {
       "localizations": {
         "zh-Hans": {
@@ -2889,20 +3850,50 @@
         }
       }
     },
-    "Scanned: Code, Projects, Developer, etc.": {},
-    "Scanning projects in common directories...": {},
-    "Scanning related files...": {
+    "Scanned: Code, Projects, Developer, etc.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "正在扫描相关文件..."
+            "value": "已扫描：代码、项目、开发者等"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "正在掃描相關檔案..."
+            "value": "已掃描：代碼、項目、開發者等"
+          }
+        }
+      }
+    },
+    "Scanning %@...": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在扫描 %@..."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在掃描 %@..."
+          }
+        }
+      }
+    },
+    "Scanning projects in common directories...": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在扫描常用目录中的项目..."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在掃描常用目錄中的項目..."
           }
         }
       }
@@ -2939,55 +3930,66 @@
         }
       }
     },
-    "Search": {
+    "Search clipboard history...": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "搜索"
+            "value": "搜索剪贴板历史..."
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "搜尋"
+            "value": "搜尋剪貼簿歷史..."
           }
         }
       }
     },
-    "Search Apps": {},
-    "Search clipboard history...": {},
-    "Search failed: %@": {
+    "Search Homebrew packages...": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "搜索失败: %@"
+            "value": "搜索 Homebrew 包..."
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "搜尋失敗: %@"
+            "value": "搜尋 Homebrew 套件..."
           }
         }
       }
     },
-    "Search Homebrew packages...": {},
-    "Search Host": {},
-    "Search images...": {},
-    "Search port, PID, or process name": {
+    "Search Host": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "搜索端口、PID 或进程名"
+            "value": "搜索 Host"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "搜尋端口、PID 或進程名"
+            "value": "搜尋 Host"
+          }
+        }
+      }
+    },
+    "Search images...": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索镜像..."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋映像..."
           }
         }
       }
@@ -3040,13 +4042,86 @@
         }
       }
     },
-    "Select a database to connect": {},
-    "Select an App": {},
-    "Select an image to view details": {},
-    "Select Application": {},
-    "Select Input Source": {},
-    "Selected for cleanup": {},
-    "Selected text actions menu": {},
+    "Select a database to connect": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择要连接的数据库"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇要連線的資料庫"
+          }
+        }
+      }
+    },
+    "Select an image to view details": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择镜像以查看详细信息"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇映像以查看詳細資訊"
+          }
+        }
+      }
+    },
+    "Select Application": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择应用程序"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇應用程式"
+          }
+        }
+      }
+    },
+    "Select Input Source": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择输入源"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇輸入源"
+          }
+        }
+      }
+    },
+    "Selected for cleanup": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已选择清理"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已選擇清理"
+          }
+        }
+      }
+    },
     "Selected: %@": {
       "localizations": {
         "zh-Hans": {
@@ -3063,7 +4138,22 @@
         }
       }
     },
-    "Send": {},
+    "Send": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "发送"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "發送"
+          }
+        }
+      }
+    },
     "Settings": {
       "localizations": {
         "zh-Hans": {
@@ -3076,22 +4166,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "設定"
-          }
-        }
-      }
-    },
-    "Show Hidden Files": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "显示隐藏文件"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "顯示隱藏檔案"
           }
         }
       }
@@ -3141,6 +4215,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "信號"
+          }
+        }
+      }
+    },
+    "Simulator Caches": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模拟器缓存"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模擬器快取"
+          }
+        }
+      }
+    },
+    "Simulator runtime cache.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模拟器运行时缓存。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模擬器執行時快取。"
           }
         }
       }
@@ -3241,8 +4347,86 @@
         }
       }
     },
-    "Supported Actions": {},
-    "System Cleanup": {},
+    "Supported Actions": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持的操作"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支援的操作"
+          }
+        }
+      }
+    },
+    "Swift/Xcode": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swift/Xcode"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swift/Xcode"
+          }
+        }
+      }
+    },
+    "Symbol files generated when debugging connected devices.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "调试连接设备时生成的符号文件。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "除錯連接裝置時生成的符號檔案。"
+          }
+        }
+      }
+    },
+    "System Cleanup": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统清理"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系統清理"
+          }
+        }
+      }
+    },
+    "System Logs": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统日志"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系統日誌"
+          }
+        }
+      }
+    },
     "System Settings → Privacy & Security → Extensions → Added Extensions": {
       "localizations": {
         "zh-Hans": {
@@ -3275,7 +4459,22 @@
         }
       }
     },
-    "Tag Image": {},
+    "Tag Image": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "标记镜像"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "標記映像"
+          }
+        }
+      }
+    },
     "Tag...": {
       "localizations": {
         "zh-Hans": {
@@ -3375,21 +4574,34 @@
         }
       }
     },
-    "this text": {},
-    "Time Range": {},
-    "Time Status": {},
-    "Total Size: %@": {
+    "this text": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "总大小：%@"
+            "value": "这段文本"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "总大小：%@"
+            "value": "這段文字"
+          }
+        }
+      }
+    },
+    "Time Range": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "时间范围"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "時間範圍"
           }
         }
       }
@@ -3410,6 +4622,22 @@
         }
       }
     },
+    "Trash": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "废纸篓"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "垃圾桶"
+          }
+        }
+      }
+    },
     "Try other search keywords": {
       "localizations": {
         "zh-Hans": {
@@ -3426,20 +4654,34 @@
         }
       }
     },
-    "Uninstall": {},
-    "Uninstall Selected": {},
-    "Uninstallation failed: %@": {
+    "tvOS Device Support": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "卸载失败: %@"
+            "value": "tvOS 设备支持"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "卸載失敗: %@"
+            "value": "tvOS 裝置支援"
+          }
+        }
+      }
+    },
+    "Uninstall Selected": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "卸载选中项"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "解除安裝選中項"
           }
         }
       }
@@ -3525,22 +4767,6 @@
         }
       }
     },
-    "Update": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "更新"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "更新"
-          }
-        }
-      }
-    },
     "Update All": {
       "localizations": {
         "zh-Hans": {
@@ -3553,38 +4779,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "全部更新"
-          }
-        }
-      }
-    },
-    "Update failed: %@": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "更新失败: %@"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "更新失敗: %@"
-          }
-        }
-      }
-    },
-    "Updates": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "更新"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "更新"
           }
         }
       }
@@ -3685,22 +4879,6 @@
         }
       }
     },
-    "Version: %@": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "版本：%@"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "版本：%@"
-          }
-        }
-      }
-    },
     "View": {
       "localizations": {
         "zh-Hans": {
@@ -3717,7 +4895,6 @@
         }
       }
     },
-    "View and manage port usage": {},
     "View Mode": {
       "localizations": {
         "zh-Hans": {
@@ -3730,6 +4907,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "查看模式"
+          }
+        }
+      }
+    },
+    "watchOS Device Support": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "watchOS 设备支持"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "watchOS 裝置支援"
           }
         }
       }
@@ -3750,8 +4943,38 @@
         }
       }
     },
-    "Xcode Cleanup": {},
-    "Your Xcode environment is clean!": {},
+    "Xcode Cleanup": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode 清理"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode 清理"
+          }
+        }
+      }
+    },
+    "Your Xcode environment is clean!": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您的 Xcode 环境是干净的！"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您的 Xcode 環境是乾淨的！"
+          }
+        }
+      }
+    },
     "主页": {
       "localizations": {
         "zh-Hans": {
@@ -3768,8 +4991,38 @@
         }
       }
     },
-    "主题": {},
-    "主题风格": {},
+    "主题": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主题"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主題"
+          }
+        }
+      }
+    },
+    "主题风格": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主题风格"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主題風格"
+          }
+        }
+      }
+    },
     "偏好设置...": {
       "localizations": {
         "zh-Hans": {
@@ -3786,7 +5039,22 @@
         }
       }
     },
-    "启动选项": {},
+    "启动选项": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启动选项"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟動選項"
+          }
+        }
+      }
+    },
     "启用或禁用应用的插件功能": {
       "localizations": {
         "zh-Hans": {
@@ -3835,7 +5103,22 @@
         }
       }
     },
-    "打开App Support目录": {},
+    "打开App Support目录": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开 App Support 目录"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開 App Support 目錄"
+          }
+        }
+      }
+    },
     "打开容器目录": {
       "localizations": {
         "zh-Hans": {
@@ -3932,7 +5215,22 @@
         }
       }
     },
-    "搜索": {},
+    "搜索": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋"
+          }
+        }
+      }
+    },
     "收集中...": {
       "localizations": {
         "zh-Hans": {
@@ -3997,7 +5295,22 @@
         }
       }
     },
-    "暂无输入源切换规则": {},
+    "暂无输入源切换规则": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂无输入源切换规则"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫無輸入源切換規則"
+          }
+        }
+      }
+    },
     "欢迎使用 Lumi": {
       "localizations": {
         "zh-Hans": {
@@ -4014,10 +5327,70 @@
         }
       }
     },
-    "添加": {},
-    "添加应用和对应的输入源，切换应用时自动切换输入法": {},
-    "登录时启动": {},
-    "管理应用启动行为": {},
+    "添加": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加"
+          }
+        }
+      }
+    },
+    "添加应用和对应的输入源，切换应用时自动切换输入法": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加应用和对应的输入源，切换应用时自动切换输入法"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加應用和對應的輸入源，切換應用時自動切換輸入法"
+          }
+        }
+      }
+    },
+    "登录时启动": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登录时启动"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登入時啟動"
+          }
+        }
+      }
+    },
+    "管理应用启动行为": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理应用启动行为"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理應用啟動行為"
+          }
+        }
+      }
+    },
     "设置": {
       "localizations": {
         "zh-Hans": {
@@ -4082,8 +5455,38 @@
         }
       }
     },
-    "这是主题效果的示例": {},
-    "选择你喜欢的神秘主题风格": {},
+    "这是主题效果的示例": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这是主题效果的示例"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這是主題效果的示例"
+          }
+        }
+      }
+    },
+    "选择你喜欢的神秘主题风格": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择你喜欢的神秘主题风格"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇你喜歡的神秘主題風格"
+          }
+        }
+      }
+    },
     "选择标签": {
       "localizations": {
         "zh-Hans": {
@@ -4100,7 +5503,22 @@
         }
       }
     },
-    "通用设置": {},
+    "通用设置": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通用设置"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通用設置"
+          }
+        }
+      }
+    },
     "配置": {
       "localizations": {
         "zh-Hans": {
@@ -4133,8 +5551,38 @@
         }
       }
     },
-    "预览效果": {},
-    "预览文本": {}
+    "预览效果": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "预览效果"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "預覽效果"
+          }
+        }
+      }
+    },
+    "预览文本": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "预览文本"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "預覽文字"
+          }
+        }
+      }
+    }
   },
   "version": "1.1"
 }

@@ -1,5 +1,38 @@
 {
   "sourceLanguage": "en",
-  "strings": {},
+  "strings": {
+    "Database": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "数据库"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料庫"
+          }
+        }
+      }
+    },
+    "Manage SQLite, MySQL, and PostgreSQL databases": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理 SQLite、MySQL 和 PostgreSQL 数据库"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理 SQLite、MySQL 和 PostgreSQL 資料庫"
+          }
+        }
+      }
+    }
+  },
   "version": "1.1"
 }
