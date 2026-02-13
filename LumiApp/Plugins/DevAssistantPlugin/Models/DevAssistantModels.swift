@@ -1,11 +1,15 @@
 import Foundation
 import SwiftUI
 
+// MARK: - Message Role
+
 enum MessageRole: String, Codable, Sendable {
     case user
     case assistant
     case system
 }
+
+// MARK: - Chat Message
 
 struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     let id: UUID
@@ -16,7 +20,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
 
     // Tool Use Support
     var toolCalls: [ToolCall]?
-    var toolCallID: String? // If this message is a tool_result, this links to the request
+    var toolCallID: String?
 
     init(role: MessageRole, content: String, isError: Bool = false, toolCalls: [ToolCall]? = nil, toolCallID: String? = nil) {
         self.id = UUID()
@@ -29,75 +33,22 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     }
 }
 
+// MARK: - Tool Call
+
 struct ToolCall: Codable, Sendable, Equatable {
     let id: String
     let name: String
-    let arguments: String // JSON string
+    let arguments: String
 }
+
+// MARK: - LLM Config
 
 struct LLMConfig: Codable, Sendable, Equatable {
     var apiKey: String
     var model: String
-    var provider: LLMProvider
+    var providerId: String
 
-    static let `default` = LLMConfig(apiKey: "", model: "claude-3-5-sonnet-20240620", provider: .anthropic)
-}
-
-enum LLMProvider: String, Codable, Sendable, CaseIterable, Identifiable {
-    case anthropic = "Anthropic"
-    case openai = "OpenAI"
-    case deepseek = "DeepSeek"
-    case zhipu = "Zhipu AI"
-
-    var id: String { rawValue }
-
-    var defaultBaseURL: String? {
-        switch self {
-        case .anthropic: return "https://api.anthropic.com/v1/messages"
-        case .openai: return "https://api.openai.com/v1/chat/completions"
-        case .deepseek: return "https://api.deepseek.com/chat/completions"
-        case .zhipu: return "https://open.bigmodel.cn/api/anthropic/v1/messages"
-        }
-    }
-
-    var defaultModel: String {
-        switch self {
-        case .anthropic: return "claude-3-5-sonnet-20240620"
-        case .openai: return "gpt-4o"
-        case .deepseek: return "deepseek-chat"
-        case .zhipu: return "glm-4.7"
-        }
-    }
-
-    var availableModels: [String] {
-        switch self {
-        case .anthropic:
-            return [
-                "claude-3-5-sonnet-20240620",
-                "claude-3-opus-20240229",
-                "claude-3-sonnet-20240229",
-                "claude-3-haiku-20240307",
-            ]
-        case .openai:
-            return [
-                "gpt-4o",
-                "gpt-4-turbo",
-                "gpt-4",
-                "gpt-3.5-turbo",
-            ]
-        case .deepseek:
-            return [
-                "deepseek-chat",
-                "deepseek-coder",
-            ]
-        case .zhipu:
-            return [
-                "glm-4.7",
-                "glm-4.6",
-                "glm-4.5-air",
-            ]
-        }
-    }
+    static let `default` = LLMConfig(apiKey: "", model: "claude-sonnet-4-20250514", providerId: "anthropic")
 }
 
 // MARK: - Preview

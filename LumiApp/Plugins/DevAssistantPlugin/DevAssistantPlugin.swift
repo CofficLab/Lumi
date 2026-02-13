@@ -21,7 +21,10 @@ actor DevAssistantPlugin: SuperPlugin {
     }
 
     nonisolated func onEnable() {
-        // Init services if needed
+        // 初始化供应商注册表
+        Task {
+            await ProviderRegistry.shared.registerAllProviders()
+        }
     }
 
     nonisolated func onDisable() {

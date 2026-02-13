@@ -1,5 +1,5 @@
-import SwiftUI
 import AppKit
+import SwiftUI
 
 struct MacEditorView: NSViewRepresentable {
     @Binding var text: String
@@ -26,7 +26,7 @@ struct MacEditorView: NSViewRepresentable {
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
         textView.allowsUndo = true
-        
+
         // 设置文本容器
         textView.textContainer?.widthTracksTextView = true
         textView.textContainer?.containerSize = NSSize(width: scrollView.contentSize.width, height: CGFloat.greatestFiniteMagnitude)
@@ -38,11 +38,11 @@ struct MacEditorView: NSViewRepresentable {
 
     func updateNSView(_ nsView: NSScrollView, context: Context) {
         guard let textView = nsView.documentView as? NSTextView else { return }
-        
+
         if textView.string != text {
             textView.string = text
         }
-        
+
         if isFocused {
             DispatchQueue.main.async {
                 if let window = nsView.window, window.firstResponder != textView {
