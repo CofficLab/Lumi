@@ -7,8 +7,8 @@ actor DevAssistantPlugin: SuperPlugin {
     
     static let id = "DevAssistant"
     static let navigationId = "dev_assistant"
-    static let displayName = String(localized: "Dev Assistant")
-    static let description = String(localized: "Agentic coding assistant")
+    static let displayName = String(localized: "Dev Assistant", table: "DevAssistant")
+    static let description = String(localized: "Agentic coding assistant", table: "DevAssistant")
     static let iconName = "terminal.fill"
     static var order: Int { 80 }
     

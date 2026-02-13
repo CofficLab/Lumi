@@ -31,8 +31,8 @@ struct AppManagerView: View {
                 .infiniteHeight()
         }
         .infinite()
-        .navigationTitle(String(localized: "App Manager"))
-        .searchable(text: $viewModel.searchText, prompt: String(localized: "Search Apps"))
+        .navigationTitle(String(localized: "App Manager", table: "AppManager"))
+        .searchable(text: $viewModel.searchText, prompt: String(localized: "Search Apps", table: "AppManager"))
         .onChange(of: viewModel.selectedApp) { _, newApp in
             if let app = newApp {
                 viewModel.scanRelatedFiles(for: app)
@@ -53,19 +53,19 @@ struct AppManagerView: View {
                 }
             }
         }
-        .alert(String(localized: "Confirm Uninstall"), isPresented: $viewModel.showUninstallConfirmation) {
-            Button(String(localized: "Cancel"), role: .cancel) { }
-            Button(String(localized: "Uninstall"), role: .destructive) {
+        .alert(String(localized: "Confirm Uninstall", table: "AppManager"), isPresented: $viewModel.showUninstallConfirmation) {
+            Button(String(localized: "Cancel", table: "AppManager"), role: .cancel) { }
+            Button(String(localized: "Uninstall", table: "AppManager"), role: .destructive) {
                 viewModel.deleteSelectedFiles()
             }
         } message: {
             Text(String(localized: "Are you sure you want to delete the selected files? This action cannot be undone."))
         }
-        .alert(String(localized: "Error"), isPresented: Binding<Bool>(
+        .alert(String(localized: "Error", table: "AppManager"), isPresented: Binding<Bool>(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
         )) {
-            Button(String(localized: "OK")) {
+            Button(String(localized: "OK", table: "AppManager")) {
                 viewModel.errorMessage = nil
             }
         } message: {
@@ -78,11 +78,11 @@ struct AppManagerView: View {
     private var toolbar: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(String(localized: "\(viewModel.installedApps.count) Apps"))
+                Text(String(localized: "\(viewModel.installedApps.count) Apps", table: "AppManager"))
                     .font(.subheadline)
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-                Text(String(localized: "Total Size: \(viewModel.formattedTotalSize)"))
+                Text(String(localized: "Total Size: \(viewModel.formattedTotalSize)", table: "AppManager"))
                     .font(.caption)
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
@@ -153,7 +153,7 @@ struct AppManagerView: View {
                     // Related Files List
                     if viewModel.isScanningFiles {
                         Spacer()
-                        ProgressView(String(localized: "Scanning related files..."))
+                        ProgressView(String(localized: "Scanning related files...", table: "AppManager"))
                         Spacer()
                     } else {
                         List {
@@ -191,7 +191,7 @@ struct AppManagerView: View {
                     
                     // Footer Action
                     HStack {
-                        Text(String(localized: "Selected: \(formatBytes(viewModel.totalSelectedSize))"))
+                        Text(String(localized: "Selected: \(formatBytes(viewModel.totalSelectedSize))", table: "AppManager"))
                             .font(.headline)
                             .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
@@ -206,7 +206,7 @@ struct AppManagerView: View {
                     .padding()
                 }
             } else {
-                ContentUnavailableView(String(localized: "Select an App"), systemImage: "hand.tap")
+                ContentUnavailableView(String(localized: "Select an App", table: "AppManager"), systemImage: "hand.tap")
             }
         }
     }

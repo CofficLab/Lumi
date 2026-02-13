@@ -10,15 +10,15 @@ struct AddTemplateView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("Add New Template", tableName: "RClick")
+            Text("Add New Template")
                 .font(.headline)
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
             Form {
-                TextField(LocalizedStringKey(String(localized: "Name (e.g. Python Script)", table: "RClick")), text: $name)
-                TextField(LocalizedStringKey(String(localized: "Extension (e.g. py)", table: "RClick")), text: $ext)
+                TextField(LocalizedStringKey(String(localized: "Name (e.g. Python Script)")), text: $name)
+                TextField(LocalizedStringKey(String(localized: "Extension (e.g. py)")), text: $ext)
 
-                Section(header: Text("Default Content", tableName: "RClick")) {
+                Section(header: Text("Default Content")) {
                     TextEditor(text: $content)
                         .frame(height: 100)
                         .font(.monospaced(.body)())
@@ -28,11 +28,11 @@ struct AddTemplateView: View {
             .formStyle(.grouped)
 
             HStack {
-                GlassButton(title: LocalizedStringKey(String(localized: "Cancel", table: "RClick")), style: .ghost) {
+                GlassButton(title: LocalizedStringKey(String(localized: "Cancel")), style: .ghost) {
                     isPresented = false
                 }
                 Spacer()
-                GlassButton(title: LocalizedStringKey(String(localized: "Add", table: "RClick")), style: .primary) {
+                GlassButton(title: LocalizedStringKey(String(localized: "Add")), style: .primary) {
                     onAdd(name, ext, content)
                     isPresented = false
                 }

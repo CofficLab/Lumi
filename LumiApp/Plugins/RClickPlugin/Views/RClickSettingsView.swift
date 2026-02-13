@@ -8,7 +8,7 @@ struct RClickSettingsView: View {
     var body: some View {
         HStack(spacing: 0) {
             VStack(spacing: 20) {
-                Text("Preview", tableName: "RClick")
+                Text("Preview")
                     .font(.headline)
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
@@ -33,10 +33,10 @@ struct RClickSettingsView: View {
                                     .foregroundColor(DesignTokens.Color.semantic.primary)
 
                                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-                                    Text("Enable Finder Extension", tableName: "RClick")
+                                    Text("Enable Finder Extension")
                                         .font(DesignTokens.Typography.title3)
                                         .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                                    Text("The right-click menu functionality requires the Finder extension to be enabled in System Settings.", tableName: "RClick")
+                                    Text("The right-click menu functionality requires the Finder extension to be enabled in System Settings.")
                                         .font(DesignTokens.Typography.caption1)
                                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                                 }
@@ -45,14 +45,14 @@ struct RClickSettingsView: View {
                             }
 
                             HStack(spacing: DesignTokens.Spacing.sm) {
-                                GlassButton(title: LocalizedStringKey(String(localized: "Open System Settings", table: "RClick")), style: .primary) {
+                                GlassButton(title: LocalizedStringKey(String(localized: "Open System Settings")), style: .primary) {
                                     openFinderExtensionSettings()
                                 }
                                 .frame(width: 180)
 
                                 Spacer()
 
-                                Text("System Settings → Privacy & Security → Extensions → Added Extensions", tableName: "RClick")
+                                Text("System Settings → Privacy & Security → Extensions → Added Extensions")
                                     .font(DesignTokens.Typography.caption2)
                                     .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                             }
@@ -61,7 +61,7 @@ struct RClickSettingsView: View {
 
                     MystiqueGlassCard {
                         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                            Text("General Actions", tableName: "RClick")
+                            Text("General Actions")
                                 .font(DesignTokens.Typography.title3)
                                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
@@ -91,7 +91,7 @@ struct RClickSettingsView: View {
 
                     MystiqueGlassCard {
                         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                            Text("New File Menu", tableName: "RClick")
+                            Text("New File Menu")
                                 .font(DesignTokens.Typography.title3)
                                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
@@ -101,7 +101,7 @@ struct RClickSettingsView: View {
                                         Image(systemName: newFileItem.type.iconName)
                                             .frame(width: 20)
                                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                                        Text("Enable 'New File' Submenu", tableName: "RClick")
+                                        Text("Enable 'New File' Submenu")
                                             .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                                         Spacer()
                                         Toggle("", isOn: Binding(
@@ -138,7 +138,7 @@ struct RClickSettingsView: View {
                                 }
                                 .frame(minHeight: 100)
 
-                                GlassButton(title: LocalizedStringKey(String(localized: "Add Template", table: "RClick")), style: .secondary) {
+                                GlassButton(title: LocalizedStringKey(String(localized: "Add Template")), style: .secondary) {
                                     showingAddTemplateSheet = true
                                 }
                                 .frame(width: 140)
@@ -148,11 +148,11 @@ struct RClickSettingsView: View {
 
                     MystiqueGlassCard {
                         HStack {
-                            Text("Reset to Defaults", tableName: "RClick")
+                            Text("Reset to Defaults")
                                 .font(DesignTokens.Typography.bodyEmphasized)
                                 .foregroundColor(DesignTokens.Color.adaptive.error(for: colorScheme))
                             Spacer()
-                            GlassButton(title: LocalizedStringKey(String(localized: "Reset", table: "RClick")), style: .danger) {
+                            GlassButton(title: LocalizedStringKey(String(localized: "Reset")), style: .danger) {
                                 configManager.resetToDefaults()
                             }
                             .frame(width: 100)

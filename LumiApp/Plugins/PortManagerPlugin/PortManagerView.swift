@@ -49,16 +49,16 @@ struct PortManagerView: View {
             } else if ports.isEmpty {
                 if #available(macOS 14.0, *) {
                     ContentUnavailableView(
-                        LocalizedStringKey(String(localized: "No Listening Ports", table: "PortManager")),
+                        LocalizedStringKey(String(localized: "No Listening Ports")),
                         systemImage: "network.slash",
-                        description: Text("No listening ports found.", tableName: "PortManager")
+                        description: Text("No listening ports found.")
                     )
                 } else {
                     VStack {
                         Image(systemName: "network.slash")
                             .font(.largeTitle)
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        Text("No Listening Ports", tableName: "PortManager")
+                        Text("No Listening Ports")
                             .font(.headline)
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     }
@@ -80,13 +80,13 @@ struct PortManagerView: View {
         .task {
             await refresh()
         }
-        .alert(Text("Error", tableName: "PortManager"), isPresented: $showError, actions: {
+        .alert(Text("Error"), isPresented: $showError, actions: {
             Button(role: .cancel) {
             } label: {
-                Text("OK", tableName: "PortManager")
+                Text("OK")
             }
         }, message: {
-            Text(errorMessage ?? String(localized: "Unknown error", table: "PortManager"))
+            Text(errorMessage ?? String(localized: "Unknown error"))
         })
     }
 
@@ -103,7 +103,7 @@ struct PortManagerView: View {
             try? await Task.sleep(nanoseconds: 500000000) // Wait 0.5s
             await refresh()
         } catch {
-            errorMessage = String(localized: "Failed to kill process: \(error.localizedDescription)", table: "PortManager")
+            errorMessage = String(localized: "Failed to kill process: \(error.localizedDescription)")
             showError = true
         }
     }
@@ -168,22 +168,22 @@ struct PortRowView: View {
                     .font(.title2)
             }
             .buttonStyle(.borderless)
-            .help(Text("Kill Process", tableName: "PortManager"))
+            .help(Text("Kill Process"))
             .confirmationDialog(
-                Text("Are you sure you want to kill process \(port.command) (PID: \(port.pid))?", tableName: "PortManager"),
+                Text("Are you sure you want to kill process \(port.command) (PID: \(port.pid))?"),
                 isPresented: $showConfirm
             ) {
                 Button(role: .destructive) {
                     onKill()
                 } label: {
-                    Text("Kill Process", tableName: "PortManager")
+                    Text("Kill Process")
                 }
                 Button(role: .cancel) {
                 } label: {
-                    Text("Cancel", tableName: "PortManager")
+                    Text("Cancel")
                 }
             } message: {
-                Text("This action will force terminate the process, which may lead to data loss.", tableName: "PortManager")
+                Text("This action will force terminate the process, which may lead to data loss.")
             }
         }
         .padding(.vertical, 8)

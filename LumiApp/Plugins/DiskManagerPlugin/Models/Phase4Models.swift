@@ -23,11 +23,11 @@ struct ProjectInfo: Identifiable, Hashable {
         
         var displayName: String {
             switch self {
-            case .node: return String(localized: "Node.js", table: "DiskManager")
-            case .rust: return String(localized: "Rust", table: "DiskManager")
-            case .swift: return String(localized: "Swift/Xcode", table: "DiskManager")
-            case .python: return String(localized: "Python", table: "DiskManager")
-            case .generic: return String(localized: "Generic", table: "DiskManager")
+            case .node: return String(localized: "Node.js")
+            case .rust: return String(localized: "Rust")
+            case .swift: return String(localized: "Swift/Xcode")
+            case .python: return String(localized: "Python")
+            case .generic: return String(localized: "Generic")
             }
         }
 

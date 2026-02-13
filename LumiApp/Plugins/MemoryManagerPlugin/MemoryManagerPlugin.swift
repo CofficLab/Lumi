@@ -10,8 +10,8 @@ actor MemoryManagerPlugin: SuperPlugin, SuperLog {
     nonisolated static let verbose = true
     
     static let id = "MemoryManager"
-    static let displayName = String(localized: "Memory Monitor")
-    static let description = String(localized: "Real-time monitoring of system memory usage")
+    static let displayName = String(localized: "Memory Monitor", table: "MemoryManager")
+    static let description = String(localized: "Real-time monitoring of system memory usage", table: "MemoryManager")
     static let iconName = "memorychip"
     static var order: Int { 32 }
     

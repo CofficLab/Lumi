@@ -7,8 +7,8 @@ actor TerminalPlugin: SuperPlugin {
     
     static let id = "Terminal"
     static let navigationId = "terminal"
-    static let displayName = String(localized: "Terminal")
-    static let description = String(localized: "Interactive terminal emulator")
+    static let displayName = String(localized: "Terminal", table: "Terminal")
+    static let description = String(localized: "Interactive terminal emulator", table: "Terminal")
     static let iconName = "terminal"
     static var order: Int { 90 }
     

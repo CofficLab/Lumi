@@ -29,7 +29,7 @@ struct ProcessRow: View {
                         .lineLimit(1)
                         .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
-                    Text(String(localized: "PID: \(process.id)"))
+                    Text(String(localized: "PID: \(process.id)", table: "NetworkManager"))
                         .font(.system(size: 10))
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }

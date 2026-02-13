@@ -44,9 +44,9 @@ struct CacheCategory: Identifiable, Hashable, Sendable {
 
         var label: String {
             switch self {
-            case .safe: return String(localized: "Safe", table: "DiskManager")
-            case .medium: return String(localized: "Medium", table: "DiskManager")
-            case .risky: return String(localized: "Risky", table: "DiskManager")
+            case .safe: return String(localized: "Safe")
+            case .medium: return String(localized: "Medium")
+            case .risky: return String(localized: "Risky")
             }
         }
     }

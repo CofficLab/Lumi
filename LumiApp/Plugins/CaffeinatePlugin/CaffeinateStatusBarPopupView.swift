@@ -16,11 +16,11 @@ struct CaffeinateStatusBarPopupView: View {
     @State private var activeAction: QuickActionType? = nil
 
     private let quickDurations: [(title: String, value: TimeInterval)] = [
-        (String(localized: "Indefinite"), 0),
-        (String(localized: "10 Min"), 600),
-        (String(localized: "1 Hour"), 3600),
-        (String(localized: "2 Hours"), 7200),
-        (String(localized: "5 Hours"), 18000),
+        (String(localized: "Indefinite", table: "Caffeinate"), 0),
+        (String(localized: "10 Min", table: "Caffeinate"), 600),
+        (String(localized: "1 Hour", table: "Caffeinate"), 3600),
+        (String(localized: "2 Hours", table: "Caffeinate"), 7200),
+        (String(localized: "5 Hours", table: "Caffeinate"), 18000),
     ]
 
     var body: some View {
@@ -70,7 +70,7 @@ struct CaffeinateStatusBarPopupView: View {
     private var quickActionsSection: some View {
         VStack(spacing: 0) {
             QuickActionMenuItem(
-                title: String(localized: "Prevent sleep & Keep screen on"),
+                title: String(localized: "Prevent sleep & Keep screen on", table: "Caffeinate"),
                 icon: "sun.max.fill",
                 color: DesignTokens.Color.semantic.warning,
                 isSelected: activeAction == .systemAndDisplay,
@@ -83,7 +83,7 @@ struct CaffeinateStatusBarPopupView: View {
                 .padding(.leading, 36)
 
             QuickActionMenuItem(
-                title: String(localized: "Prevent sleep & Allow screen off"),
+                title: String(localized: "Prevent sleep & Allow screen off", table: "Caffeinate"),
                 icon: "moon.fill",
                 color: DesignTokens.Color.semantic.info,
                 isSelected: activeAction == .systemOnly,
@@ -96,7 +96,7 @@ struct CaffeinateStatusBarPopupView: View {
                 .padding(.leading, 36)
 
             QuickActionMenuItem(
-                title: String(localized: "Prevent sleep & Turn off screen"),
+                title: String(localized: "Prevent sleep & Turn off screen", table: "Caffeinate"),
                 icon: "power",
                 color: DesignTokens.Color.semantic.primary,
                 showCheckmark: false, // 瞬时操作，不显示对号

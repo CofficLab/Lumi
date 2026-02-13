@@ -16,17 +16,17 @@ struct ProjectCleanerView: View {
                 viewModel.scanProjects()
             }
         }
-        .alert(Text("Confirm Cleanup", tableName: "DiskManager"), isPresented: $viewModel.showCleanConfirmation) {
+        .alert(Text("Confirm Cleanup"), isPresented: $viewModel.showCleanConfirmation) {
             Button(role: .cancel) { } label: {
-                Text("Cancel", tableName: "DiskManager")
+                Text("Cancel")
             }
             Button(role: .destructive) {
                 viewModel.cleanSelected()
             } label: {
-                Text("Clean", tableName: "DiskManager")
+                Text("Clean")
             }
         } message: {
-            Text("Are you sure you want to delete the selected build artifacts (node_modules, target, etc)?\nThis will free up space but require rebuilding projects.", tableName: "DiskManager")
+            Text("Are you sure you want to delete the selected build artifacts (node_modules, target, etc)?\nThis will free up space but require rebuilding projects.")
         }
     }
     
@@ -34,12 +34,12 @@ struct ProjectCleanerView: View {
     
     private var headerView: some View {
         HStack {
-            Text("Project Cleaner", tableName: "DiskManager")
+            Text("Project Cleaner")
                 .font(.title2)
                 .fontWeight(.bold)
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
             Spacer()
-            GlassButton(title: LocalizedStringKey("Rescan"), tableName: "DiskManager", style: .secondary) {
+            GlassButton(title: LocalizedStringKey("Rescan"), style: .secondary) {
                 viewModel.scanProjects()
             }
             .disabled(viewModel.isScanning)
@@ -62,7 +62,7 @@ struct ProjectCleanerView: View {
         VStack {
             Spacer()
             ProgressView {
-                Text("Scanning projects in common directories...", tableName: "DiskManager")
+                Text("Scanning projects in common directories...")
             }
             Spacer()
         }
@@ -70,8 +70,8 @@ struct ProjectCleanerView: View {
     
     private var emptyView: some View {
         ContentUnavailableView(
-            label: { Text("No Cleanable Projects Found", tableName: "DiskManager") },
-            description: { Text("Scanned: Code, Projects, Developer, etc.", tableName: "DiskManager") },
+            label: { Text("No Cleanable Projects Found") },
+            description: { Text("Scanned: Code, Projects, Developer, etc.") },
             actions: { EmptyView() }
         )
     }
@@ -95,7 +95,7 @@ struct ProjectCleanerView: View {
             Divider()
             HStack {
                 VStack(alignment: .leading) {
-                    Text("Selected for cleanup", tableName: "DiskManager")
+                    Text("Selected for cleanup")
                         .font(.caption)
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     Text(viewModel.formatBytes(viewModel.totalSelectedSize))
@@ -106,7 +106,7 @@ struct ProjectCleanerView: View {
                 
                 Spacer()
                 
-                GlassButton(title: viewModel.isCleaning ? LocalizedStringKey("Cleaning...") : LocalizedStringKey("Clean Now"), tableName: "DiskManager", style: .primary) {
+                GlassButton(title: viewModel.isCleaning ? LocalizedStringKey("Cleaning...") : LocalizedStringKey("Clean Now"), style: .primary) {
                     viewModel.cleanSelected()
                 }
                 .disabled(viewModel.selectedItemIds.isEmpty || viewModel.isCleaning || viewModel.isScanning)

@@ -7,7 +7,7 @@ struct XcodeCleanerView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text("Free up disk space by cleaning obsolete build and support files", tableName: "DiskManager")
+                Text("Free up disk space by cleaning obsolete build and support files")
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
                 Spacer()
@@ -15,10 +15,10 @@ struct XcodeCleanerView: View {
                 if viewModel.isScanning {
                     ProgressView()
                         .controlSize(.small)
-                    Text("Scanning...", tableName: "DiskManager")
+                    Text("Scanning...")
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 } else {
-                    GlassButton(title: LocalizedStringKey("Rescan"), tableName: "DiskManager", style: .secondary) {
+                    GlassButton(title: LocalizedStringKey("Rescan"), style: .secondary) {
                         Task { await viewModel.scanAll() }
                     }
                 }
@@ -47,10 +47,10 @@ struct XcodeCleanerView: View {
             // Footer
             HStack {
                 VStack(alignment: .leading) {
-                    Text("Selected: \(viewModel.formatBytes(viewModel.selectedSize))", tableName: "DiskManager")
+                    Text("Selected: \(viewModel.formatBytes(viewModel.selectedSize))")
                         .font(.headline)
                         .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                    Text("Total: \(viewModel.formatBytes(viewModel.totalSize))", tableName: "DiskManager")
+                    Text("Total: \(viewModel.formatBytes(viewModel.totalSize))")
                         .font(.caption)
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
@@ -63,7 +63,7 @@ struct XcodeCleanerView: View {
                         .font(.caption)
                 }
 
-                GlassButton(title: LocalizedStringKey("Clean Now"), tableName: "DiskManager", style: .primary) {
+                GlassButton(title: LocalizedStringKey("Clean Now"), style: .primary) {
                     Task { await viewModel.cleanSelected() }
                 }
                 .disabled(viewModel.selectedSize == 0 || viewModel.isCleaning)
@@ -82,12 +82,12 @@ struct XcodeCleanerView: View {
             Image(systemName: "checkmark.circle")
                 .font(.system(size: 64))
                 .foregroundColor(DesignTokens.Color.semantic.success)
-            Text("No items to clean", tableName: "DiskManager")
+            Text("No items to clean")
                 .font(.title2)
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-            Text("Your Xcode environment is clean!", tableName: "DiskManager")
+            Text("Your Xcode environment is clean!")
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-            GlassButton(title: LocalizedStringKey("Rescan"), tableName: "DiskManager", style: .secondary) {
+            GlassButton(title: LocalizedStringKey("Rescan"), style: .secondary) {
                 Task { await viewModel.scanAll() }
             }
             Spacer()

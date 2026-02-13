@@ -14,15 +14,15 @@ struct DiskManagerView: View {
                             .frame(width: 100, height: 100)
                         
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Macintosh HD", tableName: "DiskManager")
+                            Text("Macintosh HD")
                                 .font(.title2)
                                 .fontWeight(.bold)
                             
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("Total: \(viewModel.formatBytes(usage.total))", tableName: "DiskManager")
-                                Text("Used: \(viewModel.formatBytes(usage.used))", tableName: "DiskManager")
+                                Text("Total: \(viewModel.formatBytes(usage.total))")
+                                Text("Used: \(viewModel.formatBytes(usage.used))")
                                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                                Text("Available: \(viewModel.formatBytes(usage.available))", tableName: "DiskManager")
+                                Text("Available: \(viewModel.formatBytes(usage.available))")
                                 .foregroundColor(DesignTokens.Color.semantic.success)
                             }
                             .font(.subheadline)
@@ -39,7 +39,7 @@ struct DiskManagerView: View {
                                 }
                             }) {
                                 Label {
-                                    Text(viewModel.isScanning ? "Stop Scan" : "Scan Large Files", tableName: "DiskManager")
+                                    Text(viewModel.isScanning ? "Stop Scan" : "Scan Large Files")
                                 } icon: {
                                     Image(systemName: viewModel.isScanning ? "stop.circle" : "magnifyingglass.circle")
                                 }
@@ -49,7 +49,7 @@ struct DiskManagerView: View {
                             .buttonStyle(.borderedProminent)
                             .tint(viewModel.isScanning ? DesignTokens.Color.semantic.error : DesignTokens.Color.semantic.info)
                             
-                            Text("Scan Directory: User Home", tableName: "DiskManager")
+                            Text("Scan Directory: User Home")
                                 .font(.caption)
                                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         }
@@ -66,13 +66,13 @@ struct DiskManagerView: View {
             // View Mode Picker
             MystiqueGlassCard(padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
                 Picker(selection: $selectedViewMode) {
-                    Text("Large Files", tableName: "DiskManager").tag(0)
-                    Text("Directory Analysis", tableName: "DiskManager").tag(1)
-                    Text("System Cleanup", tableName: "DiskManager").tag(2)
-                    Text("Xcode Cleanup", tableName: "DiskManager").tag(4)
-                    Text("Project Cleanup", tableName: "DiskManager").tag(5)
+                    Text("Large Files").tag(0)
+                    Text("Directory Analysis").tag(1)
+                    Text("System Cleanup").tag(2)
+                    Text("Xcode Cleanup").tag(4)
+                    Text("Project Cleanup").tag(5)
                 } label: {
-                    Text("View Mode", tableName: "DiskManager")
+                    Text("View Mode")
                 }
                 .pickerStyle(.segmented)
             }
@@ -104,12 +104,12 @@ struct DiskManagerView: View {
                     
                     if let progress = viewModel.scanProgress {
                         VStack(spacing: 4) {
-                            Text("Scanning: \(progress.currentPath)", tableName: "DiskManager")
+                            Text("Scanning: \(progress.currentPath)")
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                             
                             HStack {
-                                Text("\(progress.scannedFiles) files", tableName: "DiskManager")
+                                Text("\(progress.scannedFiles) files")
                                 Text("•")
                                 Text(viewModel.formatBytes(progress.scannedBytes))
                             }
@@ -117,7 +117,7 @@ struct DiskManagerView: View {
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         }
                     } else {
-                        Text("Preparing scan...", tableName: "DiskManager")
+                        Text("Preparing scan...")
                     }
                 }
                 .font(.caption)
@@ -146,9 +146,9 @@ struct LargeFilesListView: View {
     var body: some View {
         if viewModel.largeFiles.isEmpty && !viewModel.isScanning {
             ContentUnavailableView {
-                Text("No Large Files", tableName: "DiskManager")
+                Text("No Large Files")
             } description: {
-                Text("Click scan button to start finding large files", tableName: "DiskManager")
+                Text("Click scan button to start finding large files")
             }
         } else {
             List {

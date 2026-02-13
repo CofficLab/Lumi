@@ -6,8 +6,8 @@ struct DirectoryTreeView: View {
     var body: some View {
         if entries.isEmpty {
             ContentUnavailableView(
-                label: { Text("No Data", tableName: "DiskManager") },
-                description: { Text("Directory structure will be displayed after scanning", tableName: "DiskManager") },
+                label: { Text("No Data") },
+                description: { Text("Directory structure will be displayed after scanning") },
                 actions: { EmptyView() }
             )
         } else {

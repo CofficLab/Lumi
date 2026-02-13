@@ -6,7 +6,7 @@ struct TextActionPreviewView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("Preview", tableName: "TextActions")
+            Text("Preview")
                 .font(.headline)
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
@@ -27,11 +27,11 @@ struct TextActionPreviewView: View {
                         .frame(width: 160, height: 8)
 
                     HStack(spacing: 0) {
-                        Text("Select ", tableName: "TextActions")
+                        Text("Select ")
                             .font(.system(size: 12))
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-                        Text("this text", tableName: "TextActions")
+                        Text("this text")
                             .font(.system(size: 12))
                             .padding(.horizontal, 2)
                             .background(isEnabled ? DesignTokens.Color.semantic.primary.opacity(0.3) : SwiftUI.Color.clear)
@@ -45,7 +45,7 @@ struct TextActionPreviewView: View {
                                 }
                             )
 
-                        Text(" to see.", tableName: "TextActions")
+                        Text(" to see.")
                             .font(.system(size: 12))
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     }
