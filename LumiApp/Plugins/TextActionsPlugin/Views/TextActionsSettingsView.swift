@@ -18,11 +18,13 @@ struct TextActionsSettingsView: View {
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
                     MystiqueGlassCard {
                         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                            Text("General Settings")
+                            Text("General Settings", tableName: "TextActions")
                                 .font(DesignTokens.Typography.title3)
                                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
-                            Toggle("Enable Text Selection Menu", isOn: $isEnabled)
+                            Toggle(isOn: $isEnabled) {
+                                Text("Enable Text Selection Menu", tableName: "TextActions")
+                            }
                                 .onChange(of: isEnabled) { _, newValue in
                                     if newValue {
                                         manager.startMonitoring()
@@ -36,10 +38,10 @@ struct TextActionsSettingsView: View {
                                 HStack(spacing: DesignTokens.Spacing.sm) {
                                     Image(systemName: "exclamationmark.triangle.fill")
                                         .foregroundColor(DesignTokens.Color.semantic.warning)
-                                    Text("Accessibility permission is required to detect text selection")
+                                    Text("Accessibility permission is required to detect text selection", tableName: "TextActions")
                                         .font(DesignTokens.Typography.caption1)
                                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                                    GlassButton(title: "Open System Settings", style: .secondary) {
+                                    GlassButton(title: LocalizedStringKey(String(localized: "Open System Settings", table: "TextActions")), style: .secondary) {
                                         let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
                                         NSWorkspace.shared.open(url)
                                     }
@@ -52,7 +54,7 @@ struct TextActionsSettingsView: View {
 
                     MystiqueGlassCard {
                         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                            Text("Supported Actions")
+                            Text("Supported Actions", tableName: "TextActions")
                                 .font(DesignTokens.Typography.title3)
                                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 

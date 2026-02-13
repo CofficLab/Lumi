@@ -80,13 +80,13 @@ struct XcodeCleanerView: View {
         VStack(spacing: 20) {
             Spacer()
             Image(systemName: "checkmark.circle")
-            .font(.system(size: 64))
-            .foregroundColor(DesignTokens.Color.semantic.success)
+                .font(.system(size: 64))
+                .foregroundColor(DesignTokens.Color.semantic.success)
             Text("No items to clean")
-            .font(.title2)
-            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .font(.title2)
+                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
             Text("Your Xcode environment is clean!")
-            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             GlassButton(title: "Rescan", style: .secondary) {
                 Task { await viewModel.scanAll() }
             }

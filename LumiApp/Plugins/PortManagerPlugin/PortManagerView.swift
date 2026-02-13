@@ -26,13 +26,13 @@ struct PortManagerView: View {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 GlassTextField(
-                    title: "Search port, PID, or process name",
+                    title: LocalizedStringKey(String(localized: "Search port, PID, or process name", table: "PortManager")),
                     text: $searchText
                 )
 
                 Spacer()
 
-                GlassButton(title: "Refresh", style: .secondary) {
+                GlassButton(title: LocalizedStringKey(String(localized: "Refresh", table: "PortManager")), style: .secondary) {
                     Task { await refresh() }
                 }
                 .disabled(isLoading)
@@ -48,13 +48,17 @@ struct PortManagerView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if ports.isEmpty {
                 if #available(macOS 14.0, *) {
-                    ContentUnavailableView("No Listening Ports", systemImage: "network.slash", description: Text("No listening ports found."))
+                    ContentUnavailableView(
+                        LocalizedStringKey(String(localized: "No Listening Ports", table: "PortManager")),
+                        systemImage: "network.slash",
+                        description: Text("No listening ports found.", tableName: "PortManager")
+                    )
                 } else {
                     VStack {
                         Image(systemName: "network.slash")
                             .font(.largeTitle)
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        Text("No Listening Ports")
+                        Text("No Listening Ports", tableName: "PortManager")
                             .font(.headline)
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     }
@@ -76,10 +80,13 @@ struct PortManagerView: View {
         .task {
             await refresh()
         }
-        .alert("Error", isPresented: $showError, actions: {
-            Button("OK", role: .cancel) {}
+        .alert(Text("Error", tableName: "PortManager"), isPresented: $showError, actions: {
+            Button(role: .cancel) {
+            } label: {
+                Text("OK", tableName: "PortManager")
+            }
         }, message: {
-            Text(errorMessage ?? "Unknown error")
+            Text(errorMessage ?? String(localized: "Unknown error", table: "PortManager"))
         })
     }
 
@@ -96,7 +103,7 @@ struct PortManagerView: View {
             try? await Task.sleep(nanoseconds: 500000000) // Wait 0.5s
             await refresh()
         } catch {
-            errorMessage = "Failed to kill process: \(error.localizedDescription)"
+            errorMessage = String(localized: "Failed to kill process: \(error.localizedDescription)", table: "PortManager")
             showError = true
         }
     }
@@ -161,14 +168,22 @@ struct PortRowView: View {
                     .font(.title2)
             }
             .buttonStyle(.borderless)
-            .help("Kill Process")
-            .confirmationDialog("Are you sure you want to kill process \(port.command) (PID: \(port.pid))?", isPresented: $showConfirm) {
-                Button("Kill Process", role: .destructive) {
+            .help(Text("Kill Process", tableName: "PortManager"))
+            .confirmationDialog(
+                Text("Are you sure you want to kill process \(port.command) (PID: \(port.pid))?", tableName: "PortManager"),
+                isPresented: $showConfirm
+            ) {
+                Button(role: .destructive) {
                     onKill()
+                } label: {
+                    Text("Kill Process", tableName: "PortManager")
                 }
-                Button("Cancel", role: .cancel) {}
+                Button(role: .cancel) {
+                } label: {
+                    Text("Cancel", tableName: "PortManager")
+                }
             } message: {
-                Text("This action will force terminate the process, which may lead to data loss.")
+                Text("This action will force terminate the process, which may lead to data loss.", tableName: "PortManager")
             }
         }
         .padding(.vertical, 8)

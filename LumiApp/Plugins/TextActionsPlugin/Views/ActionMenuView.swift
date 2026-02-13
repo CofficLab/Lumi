@@ -18,8 +18,8 @@ struct ActionMenuView: View {
                             .font(.system(size: 12))
                         Text(action.title)
                             .font(.caption)
-                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                     }
+                    .foregroundColor(hoveredAction == action ? DesignTokens.Color.semantic.primary : DesignTokens.Color.semantic.textPrimary)
                     .frame(width: 50, height: 25)
                     .contentShape(Rectangle())
                     .background(hoveredAction == action ? DesignTokens.Color.semantic.primary.opacity(0.2) : SwiftUI.Color.clear)
