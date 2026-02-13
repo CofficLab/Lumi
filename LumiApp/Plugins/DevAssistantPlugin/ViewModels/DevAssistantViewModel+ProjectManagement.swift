@@ -15,6 +15,12 @@ extension DevAssistantViewModel {
         // 保存到最近使用列表
         saveRecentProject(name: projectName, path: path)
 
+        // 获取或创建项目配置
+        let config = ProjectConfigStore.shared.getOrCreateConfig(for: path)
+
+        // 应用项目配置
+        applyProjectConfig(config)
+
         // 更新 ContextService
         Task {
             await ContextService.shared.setProjectRoot(projectURL)
@@ -33,12 +39,26 @@ extension DevAssistantViewModel {
             // 添加切换项目通知
             messages.append(ChatMessage(
                 role: .assistant,
-                content: "已切换到项目：**\(projectName)**\n\n路径：`\(path)`"
+                content: "已切换到项目：**\(projectName)**\n\n路径：`\(path)`\n\n使用模型：\(config.model.isEmpty ? "默认" : config.model)（\(config.providerId)）"
             ))
 
             if Self.verbose {
                 os_log("\(self.t)已切换到项目: \(projectName) (\(path))")
+                os_log("\(self.t)项目配置: 供应商=\(config.providerId), 模型=\(config.model)")
             }
+        }
+    }
+
+    /// 应用项目配置
+    private func applyProjectConfig(_ config: ProjectConfig) {
+        // 切换供应商
+        if !config.providerId.isEmpty {
+            selectedProviderId = config.providerId
+        }
+
+        // 切换模型
+        if !config.model.isEmpty {
+            updateSelectedModel(config.model)
         }
     }
 

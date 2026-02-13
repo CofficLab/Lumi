@@ -17,6 +17,12 @@ struct DevAssistantSettingsView: View {
     /// 是否显示 API Key
     @State private var showApiKey: Bool = false
 
+    /// 项目配置列表
+    @State private var projectConfigs: [ProjectConfig] = []
+
+    /// 选中的项目配置
+    @State private var selectedProjectConfig: ProjectConfig?
+
     // MARK: - Environment
 
     /// 当前配色方案
@@ -25,6 +31,7 @@ struct DevAssistantSettingsView: View {
     // MARK: - Dependencies
 
     private let registry = ProviderRegistry.shared
+    private let configStore = ProjectConfigStore.shared
 
     // MARK: - Computed Properties
 
@@ -43,17 +50,13 @@ struct DevAssistantSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.xl) {
-                // 供应商选择器
-                providerSelector
+                // 全局默认配置
+                globalConfigSection
 
-                // 供应商信息卡片
-                providerInfoCard
+                Divider()
 
-                // API Key 配置
-                apiKeySection
-
-                // 模型选择
-                modelSection
+                // 项目配置管理
+                projectConfigSection
 
                 Spacer()
             }
@@ -61,13 +64,19 @@ struct DevAssistantSettingsView: View {
         }
         .onAppear {
             loadSettings()
+            loadProjectConfigs()
         }
         .onChange(of: selectedProviderId) { _, _ in
             loadSettings()
+            saveProjectConfig()
+        }
+        .onChange(of: selectedModel) { _, _ in
+            saveProjectConfig()
         }
         .onChange(of: apiKey) { _, _ in
             // 自动保存 API Key
             saveApiKey()
+            saveProjectConfig()
         }
     }
 
@@ -239,6 +248,103 @@ struct DevAssistantSettingsView: View {
         }
         UserDefaults.standard.set(selectedModel, forKey: providerType.modelStorageKey)
     }
+
+    /// 加载项目配置列表
+    private func loadProjectConfigs() {
+        projectConfigs = configStore.getAllConfigs()
+    }
+
+    /// 保存项目配置
+    private func saveProjectConfig() {
+        guard let projectConfig = selectedProjectConfig else {
+            return
+        }
+
+        var updated = projectConfig
+        updated.providerId = selectedProviderId
+        updated.model = selectedModel
+
+        configStore.saveConfig(updated)
+        loadProjectConfigs()
+    }
+
+    /// 选择项目配置
+    private func selectProjectConfig(_ config: ProjectConfig) {
+        selectedProjectConfig = config
+        selectedProviderId = config.providerId
+        selectedModel = config.model
+        loadSettings()
+    }
+}
+
+// MARK: - View Components
+
+extension DevAssistantSettingsView {
+    /// 全局默认配置区域
+    private var globalConfigSection: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+            Text("全局默认配置")
+                .font(DesignTokens.Typography.callout)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+
+            // 供应商选择器
+            providerSelector
+
+            // 供应商信息卡片
+            providerInfoCard
+
+            // API Key 配置
+            apiKeySection
+
+            // 模型选择
+            modelSection
+        }
+    }
+
+    /// 项目配置管理区域
+    private var projectConfigSection: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+            Text("项目配置")
+                .font(DesignTokens.Typography.callout)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+
+            if projectConfigs.isEmpty {
+                // 空状态
+                VStack(spacing: DesignTokens.Spacing.md) {
+                    Image(systemName: "folder.badge.questionmark")
+                        .font(.system(size: 40))
+                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                    Text("暂无项目配置")
+                        .font(DesignTokens.Typography.body)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    Text("打开项目后将自动创建配置")
+                        .font(DesignTokens.Typography.caption1)
+                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(DesignTokens.Spacing.xl)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
+                        .fill(Color.white.opacity(0.05))
+                )
+            } else {
+                // 项目列表
+                VStack(spacing: DesignTokens.Spacing.sm) {
+                    ForEach(projectConfigs) { config in
+                        ProjectConfigRow(
+                            config: config,
+                            isSelected: selectedProjectConfig?.id == config.id,
+                            registry: registry
+                        ) {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                selectProjectConfig(config)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 // MARK: - Provider Button
@@ -308,6 +414,84 @@ private struct ModelRow: View {
                 }
             }
             .padding(DesignTokens.Spacing.sm)
+            .background(
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                    .fill(isSelected ? DesignTokens.Color.semantic.primary.opacity(0.08) : Color.white.opacity(0.05))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                            .stroke(
+                                isSelected ? DesignTokens.Color.semantic.primary : Color.white.opacity(0.1),
+                                lineWidth: isSelected ? 1.5 : 1
+                            )
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Project Config Row
+
+/// 项目配置行
+private struct ProjectConfigRow: View {
+    let config: ProjectConfig
+    let isSelected: Bool
+    let registry: ProviderRegistry
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: DesignTokens.Spacing.md) {
+                // 项目图标
+                Image(systemName: "folder.fill")
+                    .font(.system(size: 16))
+                    .foregroundColor(.accentColor)
+                    .frame(width: 32, height: 32)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.accentColor.opacity(0.1))
+                    )
+
+                VStack(alignment: .leading, spacing: 2) {
+                    // 项目名称
+                    Text(config.projectName)
+                        .font(DesignTokens.Typography.body)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+
+                    // 项目路径
+                    Text(config.projectPath)
+                        .font(DesignTokens.Typography.caption1)
+                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+
+                    // 模型信息
+                    if let provider = registry.allProviders().first(where: { $0.id == config.providerId }) {
+                        HStack(spacing: 4) {
+                            Text(provider.displayName)
+                                .font(DesignTokens.Typography.caption2)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+
+                            Text("•")
+                                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+
+                            Text(config.model.isEmpty ? "使用默认" : config.model)
+                                .font(DesignTokens.Typography.caption2)
+                                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                        }
+                    }
+                }
+
+                Spacer()
+
+                // 选中指示器
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 18))
+                        .foregroundColor(DesignTokens.Color.semantic.primary)
+                }
+            }
+            .padding(DesignTokens.Spacing.md)
             .background(
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
                     .fill(isSelected ? DesignTokens.Color.semantic.primary.opacity(0.08) : Color.white.opacity(0.05))

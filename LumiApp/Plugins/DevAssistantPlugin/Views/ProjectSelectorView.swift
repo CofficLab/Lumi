@@ -221,7 +221,7 @@ struct ProjectSelectorView: View {
 
     private func selectProject(_ project: RecentProject) {
         Task { @MainActor in
-            await viewModel.switchProject(to: project.path)
+            viewModel.switchProject(to: project.path)
             isPresented = false
         }
     }
@@ -244,7 +244,7 @@ struct ProjectSelectorView: View {
 
                 let path = url.path
                 Task { @MainActor in
-                    await viewModel.switchProject(to: path)
+                    viewModel.switchProject(to: path)
                     isPresented = false
                     // Reload recent projects
                     loadRecentProjects()
@@ -285,7 +285,11 @@ struct RecentProject: Codable, Identifiable, Equatable {
     let name: String
     let path: String
     let lastUsed: Date
-    
+
+    enum CodingKeys: String, CodingKey {
+        case name, path, lastUsed
+    }
+
     init(name: String, path: String, lastUsed: Date = Date()) {
         self.name = name
         self.path = path
