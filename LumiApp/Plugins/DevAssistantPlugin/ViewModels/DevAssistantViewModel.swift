@@ -17,6 +17,12 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
     @Published var isProcessing: Bool = false
     @Published var errorMessage: String?
     @Published var pendingPermissionRequest: PermissionRequest?
+    @Published var depthWarning: DepthWarning?
+
+    // MARK: - 工具队列
+
+    private var pendingToolCalls: [ToolCall] = []
+    private var currentDepth: Int = 0
 
     // MARK: - 项目信息
 
@@ -76,11 +82,6 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
     var availableProviders: [ProviderInfo] {
         registry.allProviders()
     }
-
-    // MARK: - 工具队列
-
-    private var pendingToolCalls: [ToolCall] = []
-    private var currentDepth: Int = 0
 
     // MARK: - 提示词服务
 
@@ -257,6 +258,13 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
     func sendMessage() {
         guard !currentInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
 
+        if Self.verbose {
+            os_log("\(self.t)用户发送消息")
+        }
+
+        // 清除之前的深度警告
+        depthWarning = nil
+
         // 检查是否已选择项目
         if !isProjectSelected {
             Task {
@@ -369,8 +377,14 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
     private func processPendingTools() async {
         if !pendingToolCalls.isEmpty {
             let nextTool = pendingToolCalls.removeFirst()
+            if Self.verbose {
+                os_log("\(self.t)继续处理下一个工具: \(nextTool.name)")
+            }
             await handleToolCall(nextTool)
         } else {
+            if Self.verbose {
+                os_log("\(self.t)所有工具处理完成，继续对话")
+            }
             await processTurn(depth: currentDepth + 1)
         }
     }
@@ -447,16 +461,30 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
     // MARK: - 对话轮次处理
 
     private func processTurn(depth: Int = 0) async {
-        guard depth < 10 else {
+        let maxDepth = 10
+
+        guard depth < maxDepth else {
             errorMessage = "Max recursion depth reached."
             isProcessing = false
+            depthWarning = DepthWarning(currentDepth: depth, maxDepth: maxDepth, warningType: .reached)
+            os_log(.error, "\(self.t)达到最大递归深度 (\(maxDepth))，对话终止")
             return
         }
 
         currentDepth = depth
+        if Self.verbose {
+            os_log("\(self.t)开始处理对话轮次 (深度: \(depth))")
+        }
+
+        // 更新深度警告状态
+        updateDepthWarning(currentDepth: depth, maxDepth: maxDepth)
 
         do {
             let config = getCurrentConfig()
+
+            if Self.verbose {
+                os_log("\(self.t)调用 LLM (供应商: \(config.providerId), 模型: \(config.model))")
+            }
 
             // 1. 获取 LLM 响应
             let responseMsg = try await llmService.sendMessage(messages: messages, config: config, tools: tools)
@@ -464,6 +492,9 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
 
             // 2. 检查工具调用
             if let toolCalls = responseMsg.toolCalls, !toolCalls.isEmpty {
+                if Self.verbose {
+                    os_log("\(self.t)收到 \(toolCalls.count) 个工具调用，开始执行")
+                }
                 pendingToolCalls = toolCalls
 
                 // 开始处理第一个工具
@@ -472,12 +503,36 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
             } else {
                 // 无工具调用，轮次结束
                 isProcessing = false
+                if Self.verbose {
+                    os_log("\(self.t)对话轮次已完成（无工具调用）")
+                }
             }
         } catch {
             errorMessage = error.localizedDescription
             messages.append(ChatMessage(role: .assistant, content: "Error: \(error.localizedDescription)", isError: true))
             isProcessing = false
+            depthWarning = nil  // 清除深度警告
+            os_log(.error, "\(self.t)对话处理失败: \(error.localizedDescription)")
         }
+    }
+
+    // MARK: - 深度警告管理
+
+    /// 更新深度警告状态
+    /// 更新深度警告状态
+    private func updateDepthWarning(currentDepth: Int, maxDepth: Int) {
+        if currentDepth >= maxDepth - 1 {
+            depthWarning = DepthWarning(currentDepth: currentDepth, maxDepth: maxDepth, warningType: .critical)
+        } else if currentDepth >= 7 {
+            depthWarning = DepthWarning(currentDepth: currentDepth, maxDepth: maxDepth, warningType: .approaching)
+        } else {
+            depthWarning = nil  // 清除警告
+        }
+    }
+
+    /// 清除深度警告（用户手动关闭）
+    func dismissDepthWarning() {
+        depthWarning = nil
     }
 
     // MARK: - 配置管理

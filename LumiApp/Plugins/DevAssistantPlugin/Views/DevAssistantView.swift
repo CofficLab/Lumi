@@ -153,6 +153,21 @@ struct DevAssistantView: View {
                 alignment: .bottom
             )
 
+            // MARK: - Depth Warning Banner
+            if let warning = viewModel.depthWarning {
+                DepthWarningBanner(
+                    warning: warning,
+                    onDismiss: {
+                        withAnimation {
+                            viewModel.depthWarning = nil
+                        }
+                    }
+                )
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+
             // MARK: - Chat History
             ScrollViewReader { proxy in
                 ScrollView {

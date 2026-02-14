@@ -38,7 +38,7 @@ struct ShellTool: AgentTool, SuperLog {
         // 评估命令风险
         let riskLevel = Self.evaluateCommandRisk(command: command)
         if Self.verbose {
-            os_log("命令风险评估 \(command) -> \(riskLevel.displayName)")
+            os_log("\(Self.t)命令风险评估 \(command) -> \(riskLevel.displayName)")
         }
 
         // 检查权限（由外部 PermissionService 调用）
