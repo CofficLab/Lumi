@@ -66,20 +66,9 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
     private var pendingToolCalls: [ToolCall] = []
     private var currentDepth: Int = 0
 
-    // MARK: - 系统提示
+    // MARK: - 提示词服务
 
-    let systemPrompt = """
-    You are an expert software engineer and agentic coding tool (DevAssistant).
-    You have access to a set of tools to explore the codebase, read files, and execute commands.
-
-    Your goal is to help the user complete tasks efficiently.
-    1. Always analyze the request first.
-    2. Use tools to gather information (ls, read_file).
-    3. Formulate a plan if the task is complex.
-    4. Execute the plan to tools.
-
-    The user is on macOS.
-    """
+    let promptService = PromptService.shared
 
     // MARK: - 工具
 
@@ -104,7 +93,10 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
             // 默认不设置项目根目录，等待用户选择
             await loadProjectSettings()
 
-            let fullSystemPrompt = await buildSystemPrompt()
+            let fullSystemPrompt = await promptService.buildSystemPrompt(
+                languagePreference: languagePreference,
+                includeContext: isProjectSelected
+            )
 
             messages.append(ChatMessage(role: .system, content: fullSystemPrompt))
 
@@ -112,7 +104,12 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
             if !isProjectSelected {
                 showProjectSelectionPrompt()
             } else {
-                messages.append(ChatMessage(role: .assistant, content: getWelcomeMessage()))
+                let welcomeMsg = await promptService.getWelcomeBackMessage(
+                    projectName: currentProjectName,
+                    projectPath: currentProjectPath,
+                    language: languagePreference
+                )
+                messages.append(ChatMessage(role: .assistant, content: welcomeMsg))
             }
         }
 
@@ -124,26 +121,10 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
     // MARK: - 项目选择提示
 
     private func showProjectSelectionPrompt() {
-        let prompt = """
-        👋 Welcome to Dev Assistant!
-
-        Before we start, please select a project to work on. You can:
-
-        1. **Open Project Settings** (点击右上角齿轮图标) → Select a project
-        2. **Choose from recent projects** if you've used this assistant before
-        3. **Browse** to select a new project folder
-
-        Once a project is selected, I'll be able to:
-        - Read and analyze your code
-        - Navigate the project structure
-        - Execute build commands
-        - Help with debugging and refactoring
-
-        ---
-        当前项目：**未选择**
-        项目路径：**未设置**
-        """
-        messages.append(ChatMessage(role: .assistant, content: prompt))
+        Task {
+            let prompt = await promptService.getWelcomeMessage()
+            messages.append(ChatMessage(role: .assistant, content: prompt))
+        }
     }
 
     // MARK: - 项目管理
@@ -198,21 +179,21 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
         
         // 添加到最近项目列表
         addToRecentProjects(name: rootURL.lastPathComponent, path: path)
-        
+
         // 刷新上下文
-        let fullSystemPrompt = await buildSystemPrompt()
-        
+        let fullSystemPrompt = await promptService.buildSystemPrompt(
+            languagePreference: languagePreference,
+            includeContext: true
+        )
+
         // 重建消息历史
         messages = [ChatMessage(role: .system, content: fullSystemPrompt)]
-        messages.append(ChatMessage(role: .assistant, content: """
-        ✅ 项目已切换
+        let switchMsg = await promptService.getProjectSwitchedMessage(
+            projectName: currentProjectName,
+            projectPath: currentProjectPath
+        )
+        messages.append(ChatMessage(role: .assistant, content: switchMsg))
 
-        **项目名称**: \(currentProjectName)
-        **项目路径**: \(currentProjectPath)
-
-        Context loaded successfully. How can I help you with this project?
-        """))
-        
         if Self.verbose {
             os_log("\(self.t)已切换到项目: \(self.currentProjectName)")
         }
@@ -261,16 +242,15 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
         
         // 检查是否已选择项目
         if !isProjectSelected {
-            let warningMsg = ChatMessage(
-                role: .assistant,
-                content: """
-                ⚠️ 请先选择一个项目
-
-                还没有选择项目。请点击右上角的齿轮图标，选择一个项目后我们才能开始工作。
-                """,
-                isError: true
-            )
-            messages.append(warningMsg)
+            Task {
+                let warningContent = await promptService.getProjectNotSelectedWarningMessage()
+                let warningMsg = ChatMessage(
+                    role: .assistant,
+                    content: warningContent,
+                    isError: true
+                )
+                messages.append(warningMsg)
+            }
             return
         }
 
@@ -569,20 +549,8 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
     }
 
     func triggerPlanningMode(task: String) {
-        let planPrompt = """
-        ACT AS: Architect / Planner
-        TASK: \(task)
-
-        Please generate a detailed implementation plan in Markdown.
-        Structure:
-        1. Analysis
-        2. Implementation Steps
-        3. Verification
-
-        Do not write code yet, just the plan.
-        """
-
         Task {
+            let planPrompt = await promptService.getPlanningModePrompt(task: task)
             await processUserMessage(planPrompt)
         }
     }
@@ -591,7 +559,10 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
 
     func clearHistory() {
         Task {
-            let fullSystemPrompt = await buildSystemPrompt()
+            let fullSystemPrompt = await promptService.buildSystemPrompt(
+                languagePreference: languagePreference,
+                includeContext: isProjectSelected
+            )
             messages = [ChatMessage(role: .system, content: fullSystemPrompt)]
         }
     }
@@ -617,67 +588,14 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
         }
     }
 
-    /// 构建系统提示（包含语言偏好）
-    func buildSystemPrompt() async -> String {
-        var prompt = systemPrompt
-
-        // 添加语言偏好信息
-        prompt += "\n\n" + languagePreference.systemPromptDescription
-
-        // 如果有项目，添加项目上下文
-        if isProjectSelected {
-            let context = await ContextService.shared.getContextPrompt()
-            prompt += "\n\n" + context
-        }
-
-        return prompt
-    }
-
-    /// 获取欢迎消息
-    private func getWelcomeMessage() -> String {
-        switch languagePreference {
-        case .chinese:
-            if isProjectSelected {
-                return """
-                👋 欢迎回来！
-
-                **当前项目**: \(currentProjectName)
-                **项目路径**: \(currentProjectPath)
-
-                有什么可以帮你的吗？
-                """
-            } else {
-                return "你好！我是你的开发助手。有什么可以帮你的吗？"
-            }
-        case .english:
-            if isProjectSelected {
-                return """
-                👋 Welcome back!
-
-                **Current Project**: \(currentProjectName)
-                **Path**: \(currentProjectPath)
-
-                How can I help you today?
-                """
-            } else {
-                return "Hello! I am your Dev Assistant. How can I help you today?"
-            }
-        }
-    }
-
     /// 通知语言切换
     private func notifyLanguageChange() {
-        let message: String
-        switch languagePreference {
-        case .chinese:
-            message = "✅ 已切换到中文模式\n\n我将使用中文与您交流。"
-        case .english:
-            message = "✅ Switched to English mode\n\nI'll communicate in English from now on."
-        }
-
-        // 更新系统消息
         Task {
-            let fullSystemPrompt = await buildSystemPrompt()
+            let message = await promptService.getLanguageSwitchedMessage(language: languagePreference)
+            let fullSystemPrompt = await promptService.buildSystemPrompt(
+                languagePreference: languagePreference,
+                includeContext: isProjectSelected
+            )
 
             // 查找并更新系统消息
             if let systemIndex = messages.firstIndex(where: { $0.role == .system }) {
