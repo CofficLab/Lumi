@@ -23,12 +23,20 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
     @Published var currentProjectName: String = ""
     @Published var currentProjectPath: String = ""
     @Published var isProjectSelected: Bool = false
-    
+
     // MARK: - 风险控制
-    
-    @Published var autoApproveRisk: Bool = false {
+
+    @Published var autoApproveRisk: Bool = {
+        // 从 UserDefaults 加载保存的值
+        let saved = UserDefaults.standard.bool(forKey: "DevAssistant_AutoApproveRisk")
+        // 如果不存在，默认为 false
+        return saved
+    }() {
         didSet {
             UserDefaults.standard.set(autoApproveRisk, forKey: "DevAssistant_AutoApproveRisk")
+            if Self.verbose {
+                os_log("\(self.t)自动批准风险已更改: \(self.autoApproveRisk)")
+            }
         }
     }
 
@@ -123,6 +131,7 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
 
         if Self.verbose {
             os_log("\(self.t)DevAssistant 视图模型已初始化")
+            os_log("\(self.t)自动批准风险设置: \(self.autoApproveRisk)")
         }
     }
 
@@ -169,22 +178,22 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
 
     func switchProject(to path: String) async {
         let rootURL = URL(fileURLWithPath: path)
-        
+
         // 验证路径是否存在
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory), isDirectory.boolValue else {
             self.errorMessage = "项目路径无效: \(path)"
             return
         }
-        
+
         await ContextService.shared.setProjectRoot(rootURL)
         self.currentProjectName = rootURL.lastPathComponent
         self.currentProjectPath = path
         self.isProjectSelected = true
-        
+
         // 保存到 UserDefaults
         UserDefaults.standard.set(path, forKey: "DevAssistant_SelectedProject")
-        
+
         // 添加到最近项目列表
         addToRecentProjects(name: rootURL.lastPathComponent, path: path)
 
@@ -212,7 +221,7 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
         self.currentProjectName = ""
         self.currentProjectPath = ""
         self.isProjectSelected = false
-        
+
         Task {
             await ContextService.shared.setProjectRoot(nil)
         }
@@ -220,23 +229,23 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
 
     private func addToRecentProjects(name: String, path: String) {
         var recentProjects: [RecentProject] = []
-        
+
         // 加载现有最近项目
         if let data = UserDefaults.standard.data(forKey: "RecentProjects"),
            let decoded = try? JSONDecoder().decode([RecentProject].self, from: data) {
             recentProjects = decoded
         }
-        
+
         // 移除重复项
         recentProjects.removeAll { $0.path == path }
-        
+
         // 添加新项目到开头
         let newProject = RecentProject(name: name, path: path, lastUsed: Date())
         recentProjects.insert(newProject, at: 0)
-        
+
         // 只保留最近 5 个
         recentProjects = Array(recentProjects.prefix(5))
-        
+
         // 保存
         if let encoded = try? JSONEncoder().encode(recentProjects) {
             UserDefaults.standard.set(encoded, forKey: "RecentProjects")
@@ -247,7 +256,7 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
 
     func sendMessage() {
         guard !currentInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        
+
         // 检查是否已选择项目
         if !isProjectSelected {
             Task {
@@ -370,7 +379,7 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
         // 检查权限
         // 如果开启了自动批准，或者工具不需要权限
         let requiresPermission = PermissionService.shared.requiresPermission(toolName: toolCall.name, arguments: parseArguments(toolCall.arguments))
-        
+
         if requiresPermission && !autoApproveRisk {
             // 评估命令风险
             let riskLevel: CommandRiskLevel

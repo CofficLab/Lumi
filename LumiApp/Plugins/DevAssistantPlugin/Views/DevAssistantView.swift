@@ -6,7 +6,6 @@ struct DevAssistantView: View {
     @State private var isInputFocused: Bool = false
     @State private var isModelSelectorPresented = false
     @State private var isProjectSelectorPresented = false
-    @State private var showQuickPhrases: Bool = true
 
     var body: some View {
         VStack(spacing: 0) {
@@ -177,7 +176,7 @@ struct DevAssistantView: View {
             // MARK: - Input Area
             VStack(spacing: 0) {
                 // 快捷短语区域
-                if showQuickPhrases && viewModel.isProjectSelected {
+                if viewModel.isProjectSelected {
                     QuickPhrasesView(
                         onPhraseSelected: { prompt in
                             viewModel.currentInput = prompt
@@ -187,52 +186,11 @@ struct DevAssistantView: View {
                         projectPath: $viewModel.currentProjectPath,
                         isProjectSelected: $viewModel.isProjectSelected
                     )
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .padding(.top, 8)
                 }
 
-                GlassDivider()
-
-                HStack(alignment: .bottom) {
-                    // 供应商选择器
-                    VStack(spacing: 0) {
-                        Spacer()
-
-                        // 快捷短语显示切换按钮
-                        Button(action: {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                showQuickPhrases.toggle()
-                            }
-                        }) {
-                            Image(systemName: showQuickPhrases ? "chevron.up" : "chevron.down")
-                                .font(.system(size: 10))
-                                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                        }
-                        .buttonStyle(.plain)
-                        .help(showQuickPhrases ? "隐藏快捷短语" : "显示快捷短语")
-                        .padding(.bottom, 4)
-
-                        Button(action: {
-                            isModelSelectorPresented = true
-                        }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "globe")
-                                    .font(.system(size: 16))
-                                Text(viewModel.currentModel)
-                                    .font(.caption)
-                                    .lineLimit(1)
-                                    .truncationMode(.middle)
-                            }
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                            .padding(4)
-                        }
-                        .buttonStyle(.plain)
-                        .popover(isPresented: $isModelSelectorPresented, arrowEdge: .top) {
-                            ModelSelectorView(viewModel: viewModel)
-                        }
-                        Spacer()
-                    }
-                    .padding(.horizontal, 4)
-
+                // 输入框容器
+                VStack(spacing: 0) {
                     MacEditorView(
                         text: $viewModel.currentInput,
                         onSubmit: {
@@ -240,33 +198,73 @@ struct DevAssistantView: View {
                         },
                         isFocused: $isInputFocused
                     )
-                        .background(Color(nsColor: .textBackgroundColor))
-                        .cornerRadius(8)
-                        .frame(minHeight: 40, maxHeight: 120)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(DesignTokens.Color.semantic.textTertiary.opacity(0.2), lineWidth: 1)
-                        )
-
-                    ZStack {
+                    .frame(height: 32)
+                    .padding(.horizontal, 4)
+                    .padding(.top, 8)
+                    
+                    // 工具栏
+                    HStack(alignment: .center, spacing: 8) {
+                        // 模型选择器
+                        Button(action: {
+                            isModelSelectorPresented = true
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "globe")
+                                    .font(.system(size: 14))
+                                Text(viewModel.currentModel)
+                                    .font(.system(size: 12))
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                                Image(systemName: "chevron.up")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.secondary)
+                            }
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.black.opacity(0.05))
+                            .cornerRadius(6)
+                        }
+                        .buttonStyle(.plain)
+                        .popover(isPresented: $isModelSelectorPresented, arrowEdge: .bottom) {
+                            ModelSelectorView(viewModel: viewModel)
+                        }
+                        
+                        Spacer()
+                        
+                        // 发送按钮
                         if viewModel.isProcessing {
                             ProgressView()
                                 .controlSize(.small)
+                                .frame(width: 28, height: 28)
                         } else {
-                            GlassButton(systemImage: "paperplane.fill", style: .primary) {
+                            Button(action: {
                                 viewModel.sendMessage()
+                            }) {
+                                Image(systemName: "paperplane.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.white)
+                                    .frame(width: 28, height: 28)
+                                    .background(viewModel.currentInput.isEmpty || !viewModel.isProjectSelected ? Color.gray.opacity(0.5) : Color.accentColor)
+                                    .clipShape(Circle())
                             }
+                            .buttonStyle(.plain)
                             .disabled(viewModel.currentInput.isEmpty || !viewModel.isProjectSelected)
                         }
                     }
-                    .frame(width: 44, height: 44)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 8)
                 }
-                .padding(12)
-                .background(DesignTokens.Material.glass)
+                .background(Color(nsColor: .controlBackgroundColor))
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.black.opacity(0.1), lineWidth: 1)
+                )
+                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
+                .padding(16)
             }
-            .frame(height: showQuickPhrases ? 110 : 56)
-            .animation(.easeInOut(duration: 0.2), value: showQuickPhrases)
+            .background(DesignTokens.Material.glass)
         }
         .onAppear {
             isInputFocused = true
