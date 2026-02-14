@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0B0073C22F2F1ABF001B3789 /* MagicKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B0073C12F2F1ABF001B3789 /* MagicKit */; };
 		0B2F7D682F3A301D00AD7E94 /* LumiFinder.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		0BE03A892F4013D60028FDF4 /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE03A882F4013D60028FDF4 /* Markdown */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
 		F5826C862F35731C0079B285 /* MagicKit in Frameworks */ = {isa = PBXBuildFile; productRef = F5826C852F35731C0079B285 /* MagicKit */; };
@@ -136,6 +137,7 @@
 				F5A640842F3ED7060039A761 /* _ConnectionPoolTestUtils in Frameworks */,
 				F5A640822F3ED7060039A761 /* _ConnectionPoolModule in Frameworks */,
 				F5A640872F3ED72C0039A761 /* MySQLNIO in Frameworks */,
+				0BE03A892F4013D60028FDF4 /* Markdown in Frameworks */,
 				F5A640802F3ED7060039A761 /* PostgresNIO in Frameworks */,
 				F5826C862F35731C0079B285 /* MagicKit in Frameworks */,
 				F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */,
@@ -229,6 +231,7 @@
 				F5A640812F3ED7060039A761 /* _ConnectionPoolModule */,
 				F5A640832F3ED7060039A761 /* _ConnectionPoolTestUtils */,
 				F5A640862F3ED72C0039A761 /* MySQLNIO */,
+				0BE03A882F4013D60028FDF4 /* Markdown */,
 			);
 			productName = "SwiftUI-Template";
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -293,6 +296,7 @@
 				F5826C842F35731C0079B285 /* XCRemoteSwiftPackageReference "MagicKit" */,
 				F5A6407E2F3ED7060039A761 /* XCRemoteSwiftPackageReference "postgres-nio" */,
 				F5A640852F3ED72C0039A761 /* XCRemoteSwiftPackageReference "mysql-nio" */,
+				0BE03A872F4013D60028FDF4 /* XCRemoteSwiftPackageReference "swift-markdown" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -791,6 +795,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		0BE03A872F4013D60028FDF4 /* XCRemoteSwiftPackageReference "swift-markdown" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/swiftlang/swift-markdown";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.7.3;
+			};
+		};
 		F53C41582F1A3E6500929321 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sparkle-project/Sparkle";
@@ -829,6 +841,11 @@
 		0B0073C12F2F1ABF001B3789 /* MagicKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = MagicKit;
+		};
+		0BE03A882F4013D60028FDF4 /* Markdown */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0BE03A872F4013D60028FDF4 /* XCRemoteSwiftPackageReference "swift-markdown" */;
+			productName = Markdown;
 		};
 		F53C41592F1A3E6500929321 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;
