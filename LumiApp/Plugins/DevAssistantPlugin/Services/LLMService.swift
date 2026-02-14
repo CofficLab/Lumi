@@ -65,8 +65,18 @@ class LLMService: SuperLog {
             throw error
         }
 
+        // 输出工具列表（调试用）
         if Self.verbose {
             os_log("\(self.t)发送请求到 \(config.providerId): \(config.model)")
+
+            if let tools = tools, !tools.isEmpty {
+                os_log("\(self.t)📦 发送工具列表 (\(tools.count) 个):")
+                for tool in tools {
+                    os_log("\(self.t)  - \(tool.name): \(tool.description)")
+                }
+            } else {
+                os_log("\(self.t)📦 无工具")
+            }
         }
 
         // 使用 LLM API 服务发送请求

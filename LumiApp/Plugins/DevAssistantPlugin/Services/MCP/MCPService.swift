@@ -8,13 +8,18 @@ import MagicKit
 
 @MainActor
 class MCPService: ObservableObject, SuperLog {
+    nonisolated static let verbose = true
+    
     static let shared = MCPService()
     
     @Published var configs: [MCPServerConfig] = []
     @Published var connectedClients: [String: Client] = [:]
     @Published var tools: [AgentTool] = []
     @Published var connectionErrors: [String: String] = [:]
-    
+
+    // 缓存已获取的工具列表，避免重复调用 listTools()
+    private var cachedTools: [String: [MCP.Tool]] = [:]
+
     private let storageKey = "MCPService_Configs"
     
     private init() {
@@ -58,11 +63,14 @@ class MCPService: ObservableObject, SuperLog {
     func removeConfig(name: String) {
         configs.removeAll { $0.name == name }
         saveConfigs()
-        
-        // Remove client and update tools
+
+        // Remove client, cache and update tools
         if connectedClients[name] != nil {
             connectedClients.removeValue(forKey: name)
-            updateTools()
+            cachedTools.removeValue(forKey: name)  // 清理缓存
+            Task {
+                await updateToolsFromCache()
+            }
         }
     }
     
@@ -115,12 +123,19 @@ class MCPService: ObservableObject, SuperLog {
             try await client.connect(transport: transport)
             connectedClients[config.name] = client
             os_log("\(Self.t)Connected to MCP server: \(config.name)")
-            
-            // List tools
+
+            // List tools and cache them
             let (mcpTools, _) = try await client.listTools()
+            cachedTools[config.name] = mcpTools  // 缓存工具列表
             os_log("\(Self.t)Found \(mcpTools.count) tools for \(config.name)")
-            
-            updateTools()
+            if Self.verbose {
+                for tool in mcpTools {
+                    os_log("\(Self.t)  - \(tool.name): \(tool.description ?? "无描述")")
+                }
+            }
+
+            // 立即更新工具列表（使用缓存，不重复调用 listTools）
+            await updateToolsFromCache()
             
         } catch {
             let errorMsg = error.localizedDescription
@@ -129,17 +144,62 @@ class MCPService: ObservableObject, SuperLog {
         }
     }
     
-    func updateTools() {
-        Task {
-            var newTools: [AgentTool] = []
-            for (serverName, client) in connectedClients {
-                if let (mcpTools, _) = try? await client.listTools() {
-                    let adapters = mcpTools.map { MCPToolAdapter(client: client, tool: $0, serverName: serverName) }
-                    newTools.append(contentsOf: adapters)
-                }
+    func updateTools() async {
+        os_log("\(Self.t)🔄 开始更新工具列表，当前已连接服务器: \(self.connectedClients.count) 个")
+
+        var newTools: [AgentTool] = []
+
+        for (serverName, client) in connectedClients {
+            os_log("\(Self.t)  正在获取 \(serverName) 的工具列表...")
+            do {
+                let (mcpTools, _) = try await client.listTools()
+                os_log("\(Self.t)  \(serverName) 返回 \(mcpTools.count) 个工具")
+
+                let adapters = mcpTools.map { MCPToolAdapter(client: client, tool: $0, serverName: serverName) }
+                newTools.append(contentsOf: adapters)
+                os_log("\(Self.t)  成功添加 \(adapters.count) 个适配器")
+            } catch {
+                os_log(.error, "\(Self.t)  获取 \(serverName) 工具失败: \(error.localizedDescription)")
             }
-            // Use MainActor.run to update published property if needed, but we are already on MainActor
-            self.tools = newTools
+        }
+
+        // 更新 published property（已在 MainActor 上）
+        self.tools = newTools
+        os_log("\(Self.t)✅ 工具列表已更新: \(newTools.count) 个 MCP 工具")
+
+        if Self.verbose {
+            for tool in newTools {
+                os_log("\(Self.t)  - \(tool.name)")
+            }
+        }
+    }
+
+    /// 从缓存更新工具列表（避免重复调用 listTools）
+    func updateToolsFromCache() async {
+        os_log("\(Self.t)🔄 从缓存更新工具列表，已缓存服务器: \(self.cachedTools.count) 个")
+
+        var newTools: [AgentTool] = []
+
+        for (serverName, mcpTools) in cachedTools {
+            guard let client = connectedClients[serverName] else {
+                os_log(.error, "\(Self.t)  警告: 服务器 \(serverName) 有缓存但无客户端连接")
+                continue
+            }
+
+            os_log("\(Self.t)  从缓存加载 \(serverName) 的 \(mcpTools.count) 个工具")
+
+            let adapters = mcpTools.map { MCPToolAdapter(client: client, tool: $0, serverName: serverName) }
+            newTools.append(contentsOf: adapters)
+        }
+
+        // 更新 published property
+        self.tools = newTools
+        os_log("\(Self.t)✅ 工具列表已更新（从缓存）: 共 \(newTools.count) 个 MCP 工具")
+
+        if Self.verbose {
+            for tool in newTools {
+                os_log("\(Self.t)  - \(tool.name)")
+            }
         }
     }
     
