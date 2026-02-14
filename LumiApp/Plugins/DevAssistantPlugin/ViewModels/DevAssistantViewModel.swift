@@ -23,6 +23,14 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
     @Published var currentProjectName: String = ""
     @Published var currentProjectPath: String = ""
     @Published var isProjectSelected: Bool = false
+    
+    // MARK: - 风险控制
+    
+    @Published var autoApproveRisk: Bool = false {
+        didSet {
+            UserDefaults.standard.set(autoApproveRisk, forKey: "DevAssistant_AutoApproveRisk")
+        }
+    }
 
     // MARK: - 语言偏好
 
@@ -360,7 +368,10 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
 
     private func handleToolCall(_ toolCall: ToolCall) async {
         // 检查权限
-        if PermissionService.shared.requiresPermission(toolName: toolCall.name, arguments: parseArguments(toolCall.arguments)) {
+        // 如果开启了自动批准，或者工具不需要权限
+        let requiresPermission = PermissionService.shared.requiresPermission(toolName: toolCall.name, arguments: parseArguments(toolCall.arguments))
+        
+        if requiresPermission && !autoApproveRisk {
             // 评估命令风险
             let riskLevel: CommandRiskLevel
 

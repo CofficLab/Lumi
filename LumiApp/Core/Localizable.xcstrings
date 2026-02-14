@@ -823,6 +823,12 @@
         }
       }
     },
+    "Auto" : {
+
+    },
+    "Automatically approve high-risk commands" : {
+
+    },
     "Available: %@" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5096,9 +5102,6 @@
           }
         }
       }
-    },
-    "快捷短语" : {
-
     },
     "打开App Support目录" : {
       "localizations" : {

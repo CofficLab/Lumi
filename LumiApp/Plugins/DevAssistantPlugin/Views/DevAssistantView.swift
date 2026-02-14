@@ -34,6 +34,23 @@ struct DevAssistantView: View {
                     }
 
                     Spacer()
+                    
+                    // 风险自动批准开关
+                    HStack(spacing: 6) {
+                        Text("Auto")
+                            .font(DesignTokens.Typography.caption2)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        
+                        Toggle("", isOn: $viewModel.autoApproveRisk)
+                            .toggleStyle(.switch)
+                            .controlSize(.mini)
+                            .labelsHidden()
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.black.opacity(0.05))
+                    .cornerRadius(6)
+                    .help("Automatically approve high-risk commands")
 
                     // 语言选择器
                     Menu {

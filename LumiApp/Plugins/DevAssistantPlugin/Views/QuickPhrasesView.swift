@@ -22,12 +22,6 @@ struct QuickPhrasesView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("快捷短语")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundColor(.secondary)
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(phrases) { phrase in
