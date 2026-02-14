@@ -19,7 +19,7 @@ struct PermissionRequestView: View {
                         Image(systemName: request.riskLevel.iconName)
                             .font(.title2)
                             .foregroundColor(request.riskLevel.iconColor)
-                        Text("Permission Request")
+                        Text(String(localized: "Permission Request", table: "DevAssistant"))
                             .font(.headline)
                         Spacer()
                     }
@@ -30,12 +30,12 @@ struct PermissionRequestView: View {
                             .font(.body)
                             .fontWeight(.medium)
 
-                        Text("The assistant is trying to perform a \(request.riskLevel.displayName) action.")
+                        Text(String(localized: "The assistant is trying to perform a \(request.riskLevel.displayName) action.", table: "DevAssistant"))
                             .font(.caption)
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
                         // 可折叠的详细信息
-                        DisclosureGroup("Details") {
+                        DisclosureGroup(String(localized: "Details", table: "DevAssistant")) {
                             ScrollView {
                                 Text(request.details)
                                     .font(.system(.caption, design: .monospaced))
@@ -63,11 +63,11 @@ struct PermissionRequestView: View {
 
                     // MARK: - Actions
                     HStack(spacing: 12) {
-                        GlassButton(title: "Deny", style: .ghost) {
+                        GlassButton(title: LocalizedStringKey("Deny"), tableName: "DevAssistant", style: .ghost) {
                             onDeny()
                         }
 
-                        GlassButton(title: "Allow", style: .primary) {
+                        GlassButton(title: LocalizedStringKey("Allow"), tableName: "DevAssistant", style: .primary) {
                             onAllow()
                         }
                     }

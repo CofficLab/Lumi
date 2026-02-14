@@ -221,6 +221,9 @@
         }
       }
     },
+    "%lld 行" : {
+
+    },
     "%lld%%" : {
       "localizations" : {
         "zh-Hans" : {
@@ -254,6 +257,9 @@
       }
     },
     "••••••••" : {
+
+    },
+    "×%lld 行" : {
 
     },
     "0" : {
@@ -1587,9 +1593,6 @@
         }
       }
     },
-    "Details" : {
-
-    },
     "Dev Assistant" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2659,6 +2662,22 @@
         }
       }
     },
+    "Manage network permissions for macOS applications." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理 macOS 应用程序的网络权限。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理 macOS 應用程式的網絡權限。"
+          }
+        }
+      }
+    },
     "Manage your menu bar items" : {
 
     },
@@ -2845,7 +2864,20 @@
       }
     },
     "Netto Firewall" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Netto 防火墙"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Netto 防火牆"
+          }
+        }
+      }
     },
     "Network" : {
       "extractionState" : "manual",
@@ -3234,9 +3266,6 @@
       }
     },
     "Password" : {
-
-    },
-    "Permission Request" : {
 
     },
     "Permission Required" : {
@@ -4501,9 +4530,6 @@
         }
       }
     },
-    "The assistant is trying to perform a %@ action." : {
-
-    },
     "The right-click menu functionality requires the Finder extension to be enabled in System Settings." : {
       "localizations" : {
         "zh-Hans" : {
@@ -5032,6 +5058,9 @@
         }
       }
     },
+    "复制" : {
+
+    },
     "完成" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5048,6 +5077,9 @@
           }
         }
       }
+    },
+    "已复制" : {
+
     },
     "当前项目" : {
 

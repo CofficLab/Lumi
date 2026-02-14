@@ -5,8 +5,8 @@ actor NettoPlugin: SuperPlugin {
     
     static let id = "NettoPlugin"
     static let navigationId = "netto_plugin"
-    static let displayName = "Netto Firewall"
-    static let description = "Manage network permissions for macOS applications."
+    static let displayName = String(localized: "Netto Firewall")
+    static let description = String(localized: "Manage network permissions for macOS applications.")
     static let iconName = "shield.lefthalf.filled"
     static let order: Int = 99
     

@@ -24,7 +24,7 @@ actor MenuBarManagerPlugin: SuperPlugin, SuperLog {
     static let navigationId = "\(id).settings"
 
     /// 插件显示名称
-    nonisolated(unsafe) static var displayName: String = "Menu Bar Manager"
+    nonisolated(unsafe) static var displayName: String = String(localized: "Menu Bar Manager", table: "MenuBarManager")
 
     /// 插件功能描述
     nonisolated(unsafe) static var description: String = "Manage your menu bar items"

@@ -20,16 +20,19 @@ struct PermissionRequest: Identifiable, Sendable {
         switch toolName {
         case "run_command":
             if let cmd = args["command"] as? String {
-                return "Execute command: \(cmd)"
+                let format = String(localized: "Execute command: %@", table: "DevAssistant")
+                return String(format: format, cmd)
             }
         case "write_file":
             if let path = args["path"] as? String {
-                return "Write file: \(URL(fileURLWithPath: path).lastPathComponent)"
+                let format = String(localized: "Write file: %@", table: "DevAssistant")
+                return String(format: format, URL(fileURLWithPath: path).lastPathComponent)
             }
         default:
             break
         }
-        return "Execute \(toolName)"
+        let format = String(localized: "Execute %@", table: "DevAssistant")
+        return String(format: format, toolName)
     }
 
     var details: String {

@@ -20,5 +20,8 @@ extension DesignTokens {
         static let footnote = Font.system(size: 13, weight: .regular)
         static let caption1 = Font.system(size: 12, weight: .regular)
         static let caption2 = Font.system(size: 11, weight: .regular)
+
+        // MARK: - 代码
+        static let code = Font.system(size: 13, weight: .regular, design: .monospaced)
     }
 }

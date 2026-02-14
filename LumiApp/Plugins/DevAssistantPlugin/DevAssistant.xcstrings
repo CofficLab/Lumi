@@ -2,6 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "%@ (%ld lines)..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -29,6 +30,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "智慧程式設計助手"
+          }
+        }
+      }
+    },
+    "Allow" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允许"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允許"
           }
         }
       }
@@ -67,6 +85,39 @@
         }
       }
     },
+    "Deny" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拒绝"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拒絕"
+          }
+        }
+      }
+    },
+    "Details" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "详情"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "詳情"
+          }
+        }
+      }
+    },
     "Dev Assistant" : {
       "localizations" : {
         "zh-Hans" : {
@@ -79,6 +130,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "開發助手"
+          }
+        }
+      }
+    },
+    "Execute %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "执行 %@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "執行 %@"
+          }
+        }
+      }
+    },
+    "Execute command: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "执行命令: %@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "執行指令: %@"
           }
         }
       }
@@ -100,6 +183,38 @@
         }
       }
     },
+    "Permission Request" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "权限请求"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "權限請求"
+          }
+        }
+      }
+    },
+    "The assistant is trying to perform a %@ action." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "助手正在尝试执行 %@ 操作。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "助手正在嘗試執行 %@ 操作。"
+          }
+        }
+      }
+    },
     "Tool Output" : {
       "localizations" : {
         "zh-Hans" : {
@@ -112,6 +227,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "工具輸出"
+          }
+        }
+      }
+    },
+    "Write file: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写入文件: %@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "寫入檔案: %@"
           }
         }
       }
