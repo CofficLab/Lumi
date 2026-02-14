@@ -86,45 +86,131 @@ struct InstalledServersView: View {
     struct ServerRow: View {
         let config: MCPServerConfig
         @ObservedObject var mcpService: MCPService
+        @State private var isExpanded: Bool = false
         
         var body: some View {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(config.name)
-                        .fontWeight(.medium)
-                    Text(config.command + " " + config.args.joined(separator: " "))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                }
-                
-                Spacer()
-                
-                // Status
-                if mcpService.connectedClients[config.name] != nil {
-                    MCPStatusBadge(isConnected: true)
-                } else {
-                    VStack(alignment: .trailing) {
-                        MCPStatusBadge(isConnected: false)
-                        if let error = mcpService.connectionErrors[config.name] {
-                            Text(error)
-                                .font(.caption2)
-                                .foregroundColor(.red)
-                                .multilineTextAlignment(.trailing)
-                                .frame(maxWidth: 200)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    // Expand/Collapse Button
+                    Button(action: {
+                        withAnimation {
+                            isExpanded.toggle()
+                        }
+                    }) {
+                        Image(systemName: "chevron.right")
+                            .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                            .frame(width: 16, height: 16)
+                    }
+                    .buttonStyle(.plain)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(config.name)
+                            .fontWeight(.medium)
+                        if !isExpanded {
+                            Text(config.command + " " + config.args.joined(separator: " "))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
                         }
                     }
+                    
+                    Spacer()
+                    
+                    // Status
+                    if mcpService.connectedClients[config.name] != nil {
+                        MCPStatusBadge(isConnected: true)
+                    } else {
+                        VStack(alignment: .trailing) {
+                            MCPStatusBadge(isConnected: false)
+                            if let error = mcpService.connectionErrors[config.name] {
+                                Text(error)
+                                    .font(.caption2)
+                                    .foregroundColor(.red)
+                                    .multilineTextAlignment(.trailing)
+                                    .frame(maxWidth: 200)
+                            }
+                        }
+                    }
+                    
+                    Button(action: {
+                        mcpService.removeConfig(name: config.name)
+                    }) {
+                        Image(systemName: "trash")
+                            .foregroundColor(.red)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.leading, 8)
                 }
                 
-                Button(action: {
-                    mcpService.removeConfig(name: config.name)
-                }) {
-                    Image(systemName: "trash")
-                        .foregroundColor(.red)
+                if isExpanded {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Divider()
+                        
+                        // Command Info
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("COMMAND")
+                                .font(.caption2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.secondary)
+                            
+                            HStack(alignment: .top, spacing: 4) {
+                                Text(config.command)
+                                    .font(.system(.caption, design: .monospaced))
+                                    .padding(4)
+                                    .background(Color.black.opacity(0.05))
+                                    .cornerRadius(4)
+                                
+                                ForEach(config.args, id: \.self) { arg in
+                                    Text(arg)
+                                        .font(.system(.caption, design: .monospaced))
+                                        .padding(4)
+                                        .background(Color.black.opacity(0.05))
+                                        .cornerRadius(4)
+                                }
+                            }
+                        }
+                        
+                        // Env Vars
+                        if !config.env.isEmpty {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("ENVIRONMENT VARIABLES")
+                                    .font(.caption2)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.secondary)
+                                
+                                ForEach(Array(config.env.keys.sorted()), id: \.self) { key in
+                                    HStack {
+                                        Text(key)
+                                            .font(.system(.caption, design: .monospaced))
+                                            .foregroundColor(.primary)
+                                        Text("=")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                        Text("******") // Hide value for security
+                                            .font(.system(.caption, design: .monospaced))
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Tools (if connected)
+                        if mcpService.connectedClients[config.name] != nil {
+                             // We might need to expose tools per client in MCPService to show them here.
+                             // For now, we can just show a placeholder or count if available.
+                             // Since we don't store tools per client easily accessible here without refactor, 
+                             // we'll skip the detailed tool list for now or add it later.
+                             Text("Tools available when connected.")
+                                 .font(.caption)
+                                 .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(.leading, 24)
+                    .padding(.bottom, 8)
                 }
-                .buttonStyle(.plain)
-                .padding(.leading, 8)
             }
             .padding(.vertical, 4)
         }

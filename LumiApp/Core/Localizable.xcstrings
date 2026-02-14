@@ -81,6 +81,9 @@
         }
       }
     },
+    "******" : {
+
+    },
     "/path/to/db.sqlite" : {
       "localizations" : {
         "zh-Hans" : {
@@ -267,6 +270,9 @@
       }
     },
     "••••••••" : {
+
+    },
+    "=" : {
 
     },
     "0" : {
@@ -1240,6 +1246,9 @@
         }
       }
     },
+    "COMMAND" : {
+
+    },
     "Comment" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1994,6 +2003,9 @@
           }
         }
       }
+    },
+    "ENVIRONMENT VARIABLES" : {
+
     },
     "Error" : {
       "localizations" : {
@@ -4645,6 +4657,9 @@
           }
         }
       }
+    },
+    "Tools available when connected." : {
+
     },
     "Total: %@" : {
       "localizations" : {
