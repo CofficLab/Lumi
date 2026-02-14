@@ -7,7 +7,7 @@ import SwiftUI
 @MainActor
 class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     nonisolated static let emoji = "🍎"
-    static let verbose = true
+    static let verbose = false
 
     // MARK: - Controllers
 

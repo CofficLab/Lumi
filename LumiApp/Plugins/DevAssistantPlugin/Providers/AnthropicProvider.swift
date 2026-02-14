@@ -4,7 +4,9 @@ import MagicKit
 
 // MARK: - Anthropic Provider
 
-struct AnthropicProvider: LLMProviderProtocol {
+struct AnthropicProvider: LLMProviderProtocol, SuperLog {
+    
+    nonisolated static let verbose = true
 
     // MARK: - Basic Info
 
@@ -119,13 +121,55 @@ struct AnthropicProvider: LLMProviderProtocol {
                 "content": content,
             ]
         }
-        
-        // Handle potential image markers in content
+
+        // Handle images in message
+        if !message.images.isEmpty {
+            if Self.verbose {
+                os_log("\(Self.t)🖼️ 消息包含 \(message.images.count) 张图片，正在转换...")
+            }
+
+            var content: [[String: Any]] = []
+
+            // Add text content first (if not empty)
+            if !message.content.isEmpty {
+                content.append([
+                    "type": "text",
+                    "text": message.content
+                ])
+            }
+
+            // Add all images
+            for (index, image) in message.images.enumerated() {
+                let base64Data = image.data.base64EncodedString()
+                if Self.verbose {
+                    os_log("\(Self.t)  图片 \(index + 1): \(image.mimeType), base64长度: \(base64Data.count)")
+                }
+                content.append([
+                    "type": "image",
+                    "source": [
+                        "type": "base64",
+                        "media_type": image.mimeType,
+                        "data": base64Data
+                    ]
+                ])
+            }
+
+            if Self.verbose {
+                os_log("\(Self.t)✅ 已将 \(message.images.count) 张图片转换为 API 格式")
+            }
+
+            return [
+                "role": message.role.rawValue,
+                "content": content
+            ]
+        }
+
+        // Fallback for legacy marker format (backward compatibility)
         // Marker format: [IMAGE_BASE64:<mime_type>:<data>]
         if message.content.contains("[IMAGE_BASE64:") {
             var content: [[String: Any]] = []
             let components = message.content.components(separatedBy: "[IMAGE_BASE64:")
-            
+
             // First component is text before any image
             if !components[0].isEmpty {
                 content.append([
@@ -133,18 +177,18 @@ struct AnthropicProvider: LLMProviderProtocol {
                     "text": components[0]
                 ])
             }
-            
+
             for component in components.dropFirst() {
                 // component format: <mime_type>:<data>]<rest_of_text>
                 if let closeBracketIndex = component.firstIndex(of: "]") {
                     let imagePart = component[..<closeBracketIndex]
                     let textPart = component[component.index(after: closeBracketIndex)...]
-                    
+
                     let imageComponents = imagePart.split(separator: ":", maxSplits: 1)
                     if imageComponents.count == 2 {
                         let mimeType = String(imageComponents[0])
                         let base64Data = String(imageComponents[1])
-                        
+
                         content.append([
                             "type": "image",
                             "source": [
@@ -154,7 +198,7 @@ struct AnthropicProvider: LLMProviderProtocol {
                             ]
                         ])
                     }
-                    
+
                     if !textPart.isEmpty {
                         // Clean up newlines that might have been added
                         let cleanText = String(textPart).trimmingCharacters(in: .whitespacesAndNewlines)
@@ -167,7 +211,7 @@ struct AnthropicProvider: LLMProviderProtocol {
                     }
                 }
             }
-            
+
             return [
                 "role": message.role.rawValue,
                 "content": content

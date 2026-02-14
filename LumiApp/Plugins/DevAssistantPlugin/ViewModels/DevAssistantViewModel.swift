@@ -93,38 +93,30 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
     // MARK: - 图片上传
     
     func handleImageUpload(url: URL) {
+        if Self.verbose {
+            os_log("\(self.t)📷 开始处理图片上传: \(url.lastPathComponent)")
+        }
+
         // 读取图片数据
         guard let data = try? Data(contentsOf: url),
               let _ = NSImage(data: data) else {
+            os_log(.error, "\(self.t)❌ 无效的图片文件")
             errorMessage = "Invalid image file"
             return
         }
-        
-        // 创建包含图片的消息
-        // 这里需要扩展 ChatMessage 支持图片，或者在 content 中以特定格式标记
-        // Claude 支持 content 为数组，包含 text 和 image
-        // 目前我们的 ChatMessage.content 是 String
-        // 我们可以暂时将其作为用户消息发送，并在发送时特殊处理
-        
-        // 临时方案：将图片转换为 base64 并嵌入到 content 中（如果后端支持）
-        // 或者修改 ChatMessage 结构
-        
-        // 由于需要查看 Claude code 的实现，通常是将图片作为 message content 的一部分
-        // 我们这里先简单处理，假设我们将在 sendMessage 时处理图片
-        
-        let base64 = data.base64EncodedString()
+
+        if Self.verbose {
+            os_log("\(self.t)✅ 图片读取成功，大小: \(data.count) bytes")
+        }
+
         let mimeType = url.pathExtension.lowercased() == "png" ? "image/png" : "image/jpeg"
-        
-        // 构造一个特殊的标记，让 LLMProvider 在构建请求时解析
-        // 格式: [IMAGE_BASE64:<mime_type>:<data>]
-        let imageMarker = "[IMAGE_BASE64:\(mimeType):\(base64)]"
-        
-        // 添加到当前输入框或直接发送
-        // 这里选择直接添加到输入框，让用户可以附带文字
-        // 但 base64 太长，不适合在输入框显示
-        // 我们应该在 ViewModel 中维护一个 pendingAttachments
-        
+
+        // 添加到待发送附件列表
         pendingAttachments.append(.image(id: UUID(), data: data, mimeType: mimeType, url: url))
+
+        if Self.verbose {
+            os_log("\(self.t)✅ 图片已添加到待发送列表，当前共 \(self.pendingAttachments.count) 个附件")
+        }
     }
     
     // 附件枚举
@@ -392,21 +384,32 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
 
     private func processUserMessage(_ content: String) async {
         var finalContent = content
-        
-        // 处理附件
+
+        // 处理附件 - 转换为结构化图片数据
+        var images: [ImageAttachment] = []
         if !pendingAttachments.isEmpty {
-            var attachmentsText = ""
+            if Self.verbose {
+                os_log("\(self.t)📎 处理 \(self.pendingAttachments.count) 个附件")
+            }
             for attachment in pendingAttachments {
                 if case .image(_, let data, let mimeType, _) = attachment {
-                    let base64 = data.base64EncodedString()
-                    attachmentsText += "[IMAGE_BASE64:\(mimeType):\(base64)]\n"
+                    images.append(ImageAttachment(data: data, mimeType: mimeType))
+                    if Self.verbose {
+                        os_log("\(self.t)  - 图片: \(mimeType), 大小: \(data.count) bytes")
+                    }
                 }
             }
-            finalContent = attachmentsText + finalContent
             pendingAttachments.removeAll()
+        } else if Self.verbose {
+            os_log("\(self.t)📎 无附件")
         }
-        
-        let userMsg = ChatMessage(role: .user, content: finalContent)
+
+        let userMsg = ChatMessage(role: .user, content: finalContent, images: images)
+
+        if Self.verbose && !images.isEmpty {
+            os_log("\(self.t)✅ 用户消息包含 \(images.count) 张图片")
+        }
+
         messages.append(userMsg)
 
         await processTurn()
@@ -489,11 +492,18 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
     }
 
     private func handleToolCall(_ toolCall: ToolCall) async {
+        if Self.verbose {
+            os_log("\(self.t)⚙️ 正在执行工具: \(toolCall.name)")
+        }
+
         // 检查权限
         // 如果开启了自动批准，或者工具不需要权限
         let requiresPermission = PermissionService.shared.requiresPermission(toolName: toolCall.name, arguments: parseArguments(toolCall.arguments))
 
         if requiresPermission && !autoApproveRisk {
+            if Self.verbose {
+                os_log("\(self.t)⚠️ 工具 \(toolCall.name) 需要权限批准")
+            }
             // 评估命令风险
             let riskLevel: CommandRiskLevel
 
@@ -519,15 +529,28 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
             return
         }
 
-        // 解析参数
-        var arguments: [String: Any] = [:]
+        // 解析参数（确保 Sendable）
+        let arguments: [String: AnySendable]
         if let data = toolCall.arguments.data(using: .utf8),
            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            arguments = json
+            // 转换为 AnySendable 以确保线程安全
+            arguments = json.mapValues { AnySendable(value: $0) }
+        } else {
+            arguments = [:]
+        }
+
+        if Self.verbose {
+            // 显示关键参数
+            let paramsPreview = arguments.keys.compactMap { key in
+                guard let value = arguments[key]?.value else { return nil }
+                return "\(key): \(type(of: value))"
+            }.joined(separator: ", ")
+            os_log("\(self.t)  参数: \(paramsPreview)")
         }
 
         // 直接执行工具
         guard let tool = tools.first(where: { $0.name == toolCall.name }) else {
+            os_log(.error, "\(self.t)❌ 工具 '\(toolCall.name)' 未找到")
             messages.append(ChatMessage(
                 role: .user,
                 content: "Error: Tool '\(toolCall.name)' not found.",
@@ -538,7 +561,25 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
         }
 
         do {
-            let result = try await tool.execute(arguments: arguments)
+            let startTime = Date()
+
+            // 在 async 调用前准备好参数
+            // 将 arguments 数据复制到局部变量，避免在 async 上下文中捕获
+            let toolArguments: [String: Any] = arguments.mapValues { $0.value }
+
+            // 抑制数据竞争警告：toolArguments 是值类型，在 await 传递时已经完成复制
+            // 这是安全的，因为 dictionary 在传递时被完整复制
+            nonisolated(unsafe) let unsafeArgs = toolArguments
+
+            let result = try await tool.execute(arguments: unsafeArgs)
+
+            let duration = Date().timeIntervalSince(startTime)
+
+            if Self.verbose {
+                let resultPreview = result.count > 200 ? String(result.prefix(200)) + "..." : result
+                os_log("\(self.t)✅ 工具执行成功 (耗时: \(String(format: "%.2f", duration))s)")
+                os_log("\(self.t)  结果预览: \(resultPreview)")
+            }
 
             messages.append(ChatMessage(
                 role: .user,
@@ -548,6 +589,7 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
 
             await processPendingTools()
         } catch {
+            os_log(.error, "\(self.t)❌ 工具执行失败: \(error.localizedDescription)")
             messages.append(ChatMessage(
                 role: .user,
                 content: "Error executing tool: \(error.localizedDescription)",
@@ -592,7 +634,15 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
             // 2. 检查工具调用
             if let toolCalls = responseMsg.toolCalls, !toolCalls.isEmpty {
                 if Self.verbose {
-                    os_log("\(self.t)收到 \(toolCalls.count) 个工具调用，开始执行")
+                    os_log("\(self.t)🔧 收到 \(toolCalls.count) 个工具调用，开始执行:")
+                    for (index, tc) in toolCalls.enumerated() {
+                        // 格式化参数显示（限制长度）
+                        var argsPreview = tc.arguments
+                        if argsPreview.count > 100 {
+                            argsPreview = String(argsPreview.prefix(100)) + "..."
+                        }
+                        os_log("\(self.t)  \(index + 1). \(tc.name)(\(argsPreview))")
+                    }
                 }
                 pendingToolCalls = toolCalls
 

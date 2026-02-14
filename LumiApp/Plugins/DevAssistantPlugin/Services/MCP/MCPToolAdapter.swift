@@ -38,38 +38,59 @@ final class MCPToolAdapter: AgentTool, @unchecked Sendable {
     }
     
     func execute(arguments: [String: Any]) async throws -> String {
+        os_log("[MCP] 🔧 开始执行 MCP 工具: \(self.name)")
+        os_log("[MCP]   原始工具名: \(self.mcpTool.name)")
+
         // Convert arguments dictionary to MCP.Value
         let mcpArguments: [String: Value]
         do {
             let data = try JSONSerialization.data(withJSONObject: arguments)
             mcpArguments = try JSONDecoder().decode([String: Value].self, from: data)
+            os_log("[MCP]   参数数量: \(mcpArguments.count)")
         } catch {
-            os_log(.error, "Failed to convert arguments for tool \(self.name): \(error.localizedDescription)")
+            os_log(.error, "[MCP] ❌ 参数转换失败: \(error.localizedDescription)")
             throw error
         }
-        
-        let result = try await client.callTool(name: name, arguments: mcpArguments)
-        
-        if result.isError ?? false {
-            let errorMessage = result.content.compactMap { content -> String? in
-                if case .text(let text) = content { return text }
-                return nil
-            }.joined(separator: "\n")
-            throw NSError(domain: "MCPToolAdapter", code: 1, userInfo: [NSLocalizedDescriptionKey: errorMessage.isEmpty ? "Unknown error from tool" : errorMessage])
-        }
-        
-        // Combine content into string
-        return result.content.compactMap { content -> String? in
-            switch content {
-            case .text(let text):
-                return text
-            case .image(_, let mimeType, _):
-                return "[Image: \(mimeType)]"
-            case .resource(let uri, _, _):
-                return "[Resource: \(uri)]"
-            @unknown default:
-                return nil
+
+        os_log("[MCP]   调用 client.callTool...")
+        let startTime = Date()
+
+        do {
+            // 使用原始工具名而不是带前缀的名称
+            let result = try await client.callTool(name: mcpTool.name, arguments: mcpArguments)
+            let duration = Date().timeIntervalSince(startTime)
+
+            os_log("[MCP] ✅ 工具调用成功 (耗时: \(String(format: "%.2f", duration))s)")
+
+            if result.isError ?? false {
+                let errorMessage = result.content.compactMap { content -> String? in
+                    if case .text(let text) = content { return text }
+                    return nil
+                }.joined(separator: "\n")
+                os_log(.error, "[MCP] ❌ 工具返回错误: \(errorMessage)")
+                throw NSError(domain: "MCPToolAdapter", code: 1, userInfo: [NSLocalizedDescriptionKey: errorMessage.isEmpty ? "Unknown error from tool" : errorMessage])
             }
-        }.joined(separator: "\n")
+
+            // Combine content into string
+            let output = result.content.compactMap { content -> String? in
+                switch content {
+                case .text(let text):
+                    return text
+                case .image(_, let mimeType, _):
+                    return "[Image: \(mimeType)]"
+                case .resource(let uri, _, _):
+                    return "[Resource: \(uri)]"
+                @unknown default:
+                    return nil
+                }
+            }.joined(separator: "\n")
+
+            os_log("[MCP] 📄 返回内容长度: \(output.count) 字符")
+            return output
+        } catch {
+            let duration = Date().timeIntervalSince(startTime)
+            os_log(.error, "[MCP] ❌ 工具调用失败 (耗时: \(String(format: "%.2f", duration))s): \(error.localizedDescription)")
+            throw error
+        }
     }
 }
