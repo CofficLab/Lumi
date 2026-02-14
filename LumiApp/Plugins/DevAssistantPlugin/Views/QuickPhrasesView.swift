@@ -4,21 +4,7 @@ import SwiftUI
 struct QuickPhrasesView: View {
     let onPhraseSelected: (String) -> Void
 
-    // 定义快捷短语列表
-    private let phrases: [QuickPhrase] = [
-        QuickPhrase(
-            icon: "checkmark.circle",
-            title: "英文 Commit",
-            subtitle: "提交英文 commit",
-            prompt: "请帮我生成一个英文的 commit message，说明当前代码的改动。请遵循 conventional commits 规范（feat/fix/docs/refactor 等）。"
-        ),
-        QuickPhrase(
-            icon: "checkmark.circle",
-            title: "中文 Commit",
-            subtitle: "提交中文 commit",
-            prompt: "请帮我生成一个中文的 commit message，说明当前代码的改动。请遵循 conventional commits 规范（feat/fix/docs/refactor 等）。"
-        ),
-    ]
+    @State private var phrases: [PromptService.QuickPhrase] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -34,12 +20,16 @@ struct QuickPhrasesView: View {
             }
         }
         .padding(.bottom, 8)
+        .task {
+            // 从 PromptService 获取快捷短语
+            phrases = await PromptService.shared.getQuickPhrases()
+        }
     }
 }
 
 /// 快捷短语按钮
 struct QuickPhraseButton: View {
-    let phrase: QuickPhrase
+    let phrase: PromptService.QuickPhrase
     let action: () -> Void
 
     @State private var isHovering = false
@@ -80,15 +70,6 @@ struct QuickPhraseButton: View {
             isHovering = hovering
         }
     }
-}
-
-/// 快捷短语数据模型
-struct QuickPhrase: Identifiable {
-    let id = UUID()
-    let icon: String
-    let title: String
-    let subtitle: String
-    let prompt: String
 }
 
 // MARK: - Preview

@@ -65,6 +65,39 @@ actor PromptService: SuperLog {
         return baseSystemPrompt
     }
 
+    // MARK: - 快捷短语提示词
+
+    /// 快捷短语数据模型
+    struct QuickPhrase: Identifiable {
+        let id = UUID()
+        let icon: String
+        let title: String
+        let subtitle: String
+        let prompt: String
+    }
+
+    /// 获取快捷短语列表
+    func getQuickPhrases() -> [QuickPhrase] {
+        return [
+            QuickPhrase(
+                icon: "checkmark.circle",
+                title: "英文 Commit",
+                subtitle: "提交英文 commit",
+                prompt: """
+                请帮我生成一个英文的 commit message，说明当前代码的改动。请遵循 conventional commits 规范（feat/fix/docs/refactor 等）。
+                """
+            ),
+            QuickPhrase(
+                icon: "checkmark.circle",
+                title: "中文 Commit",
+                subtitle: "提交中文 commit",
+                prompt: """
+                请帮我生成一个中文的 commit message，说明当前代码的改动。请遵循 conventional commits 规范（feat/fix/docs/refactor 等）。
+                """
+            ),
+        ]
+    }
+
     // MARK: - 专用提示词模板
 
     /// 欢迎消息（未选择项目时）
@@ -109,7 +142,7 @@ actor PromptService: SuperLog {
             return """
             👋 欢迎回来！
 
-            **当前项目**: \(projectName)  
+            **当前项目**: \(projectName)
             **项目路径**: \(projectPath)
 
             有什么可以帮你的吗？
@@ -118,7 +151,7 @@ actor PromptService: SuperLog {
             return """
             👋 Welcome back!
 
-            **Current Project**: \(projectName)  
+            **Current Project**: \(projectName)
             **Path**: \(projectPath)
 
             How can I help you today?
