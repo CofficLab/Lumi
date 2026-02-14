@@ -521,6 +521,9 @@
         }
       }
     },
+    "Add Vision MCP Server" : {
+
+    },
     "All" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1320,6 +1323,9 @@
         }
       }
     },
+    "Connected" : {
+
+    },
     "Connection Name" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1705,6 +1711,9 @@
       }
     },
     "Disconnect" : {
+
+    },
+    "Disconnected" : {
 
     },
     "Disk" : {
@@ -2393,6 +2402,9 @@
         }
       }
     },
+    "Install" : {
+
+    },
     "Interface" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2710,6 +2722,9 @@
           }
         }
       }
+    },
+    "MCP Servers" : {
+
     },
     "Medium" : {
       "localizations" : {
@@ -3117,6 +3132,9 @@
           }
         }
       }
+    },
+    "No MCP servers configured." : {
+
     },
     "No open terminals" : {
       "localizations" : {
@@ -4591,6 +4609,9 @@
         }
       }
     },
+    "This will install @z_ai/mcp-server via npx." : {
+
+    },
     "Time Range" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4981,6 +5002,9 @@
           }
         }
       }
+    },
+    "Zhipu API Key" : {
+
     },
     "主题" : {
       "localizations" : {

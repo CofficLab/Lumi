@@ -6,7 +6,8 @@ struct DevAssistantView: View {
     @State private var isInputFocused: Bool = false
     @State private var isModelSelectorPresented = false
     @State private var isProjectSelectorPresented = false
-
+    @State private var isMCPSettingsPresented = false
+    
     var body: some View {
         VStack(spacing: 0) {
             // MARK: - Header
@@ -83,6 +84,22 @@ struct DevAssistantView: View {
                     }
                     .menuStyle(.borderlessButton)
                     .frame(width: 70)
+
+                    // MCP Management Button
+                    Button(action: {
+                        isMCPSettingsPresented = true
+                    }) {
+                        Image(systemName: "server.rack")
+                            .font(.system(size: 14))
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .frame(width: 28, height: 28)
+                            .background(Color.black.opacity(0.05))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .popover(isPresented: $isMCPSettingsPresented, arrowEdge: .top) {
+                        MCPSettingsView()
+                    }
 
                     // 项目管理按钮
                     Button(action: {
