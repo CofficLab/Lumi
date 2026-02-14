@@ -1,6 +1,11 @@
 
 import Foundation
 
+enum MCPTransportType: String, Codable, Hashable, Sendable {
+    case stdio
+    case sse
+}
+
 struct MCPServerConfig: Identifiable, Codable, Hashable, Sendable {
     var id: String { name }
     let name: String
@@ -9,4 +14,8 @@ struct MCPServerConfig: Identifiable, Codable, Hashable, Sendable {
     let env: [String: String]
     var disabled: Bool = false
     var homepage: String? // Optional homepage URL
+    
+    // New fields for SSE support
+    var url: String?
+    var transportType: MCPTransportType?
 }

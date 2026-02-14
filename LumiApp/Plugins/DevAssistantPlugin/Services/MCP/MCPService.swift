@@ -77,12 +77,35 @@ class MCPService: ObservableObject, SuperLog {
         
         let client = Client(name: "Lumi-\(config.name)", version: "1.0.0")
         
-        // Use SubprocessTransport to spawn the MCP server
-        let transport = SubprocessTransport(
-            command: config.command,
-            arguments: config.args,
-            environment: config.env
-        )
+        let transport: Transport
+        
+        // Determine transport type. Default to stdio if not specified (backward compatibility)
+        switch config.transportType ?? .stdio {
+        case .sse:
+            guard let urlString = config.url, let url = URL(string: urlString) else {
+                let errorMsg = "Invalid URL for SSE transport"
+                connectionErrors[config.name] = errorMsg
+                os_log(.error, "\(Self.t)\(errorMsg)")
+                return
+            }
+            
+            // Prepare headers
+            var headers: [String: String] = [:]
+            // Automatically map Z_AI_API_KEY to Authorization header for Zhipu MCPs
+            if let apiKey = config.env["Z_AI_API_KEY"], !apiKey.isEmpty {
+                headers["Authorization"] = "Bearer \(apiKey)"
+            }
+            
+            transport = SSEClientTransport(url: url, headers: headers)
+            
+        case .stdio:
+            // Use SubprocessTransport to spawn the MCP server
+            transport = SubprocessTransport(
+                command: config.command,
+                arguments: config.args,
+                environment: config.env
+            )
+        }
         
         do {
             // Clear previous error

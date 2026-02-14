@@ -1246,9 +1246,6 @@
         }
       }
     },
-    "COMMAND" : {
-
-    },
     "Comment" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1280,9 +1277,6 @@
           }
         }
       }
-    },
-    "Configuration Required" : {
-
     },
     "Confirm" : {
       "localizations" : {
@@ -1985,9 +1979,6 @@
         }
       }
     },
-    "Enter value" : {
-
-    },
     "ENV:" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2003,9 +1994,6 @@
           }
         }
       }
-    },
-    "ENVIRONMENT VARIABLES" : {
-
     },
     "Error" : {
       "localizations" : {
@@ -2217,9 +2205,6 @@
         }
       }
     },
-    "Go to Marketplace to install servers" : {
-
-    },
     "Grant Permission" : {
 
     },
@@ -2302,9 +2287,6 @@
           }
         }
       }
-    },
-    "HOMEPAGE" : {
-
     },
     "Host" : {
 
@@ -2422,18 +2404,6 @@
           }
         }
       }
-    },
-    "Install" : {
-
-    },
-    "Install %@" : {
-
-    },
-    "Install Server" : {
-
-    },
-    "Installed" : {
-
     },
     "Interface" : {
       "localizations" : {
@@ -2752,9 +2722,6 @@
           }
         }
       }
-    },
-    "Marketplace" : {
-
     },
     "Medium" : {
       "localizations" : {
@@ -3083,9 +3050,6 @@
         }
       }
     },
-    "No configuration required." : {
-
-    },
     "No Data" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3165,9 +3129,6 @@
           }
         }
       }
-    },
-    "No MCP servers configured" : {
-
     },
     "No open terminals" : {
       "localizations" : {
@@ -3654,9 +3615,6 @@
       }
     },
     "Registry Manager" : {
-
-    },
-    "Reinstall" : {
 
     },
     "Rescan" : {
@@ -4660,9 +4618,6 @@
           }
         }
       }
-    },
-    "Tools available when connected." : {
-
     },
     "Total: %@" : {
       "localizations" : {

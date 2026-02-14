@@ -12,8 +12,8 @@ struct MCPSettingsView: View {
     var body: some View {
         VStack(spacing: 0) {
             Picker("", selection: $selectedTab) {
-                Text("Installed").tag(0)
-                Text("Marketplace").tag(1)
+                Text("Installed", tableName: "DevAssistant").tag(0)
+                Text("Marketplace", tableName: "DevAssistant").tag(1)
             }
             .pickerStyle(.segmented)
             .padding()
@@ -65,10 +65,10 @@ struct InstalledServersView: View {
             Image(systemName: "server.rack")
                 .font(.system(size: 48))
                 .foregroundColor(.secondary.opacity(0.5))
-            Text("No MCP servers configured")
+            Text("No MCP servers configured", tableName: "DevAssistant")
                 .font(.headline)
                 .foregroundColor(.secondary)
-            Text("Go to Marketplace to install servers")
+            Text("Go to Marketplace to install servers", tableName: "DevAssistant")
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
@@ -155,7 +155,7 @@ struct InstalledServersView: View {
                             if let homepage = config.homepage, let url = URL(string: homepage) {
                                 Link(destination: url) {
                                     HStack(spacing: 4) {
-                                        Text("HOMEPAGE")
+                                        Text("HOMEPAGE", tableName: "DevAssistant")
                                             .font(.caption2)
                                             .fontWeight(.bold)
                                         Image(systemName: "arrow.up.right.square")
@@ -166,7 +166,7 @@ struct InstalledServersView: View {
                                 .padding(.bottom, 4)
                             }
                             
-                            Text("COMMAND")
+                            Text("COMMAND", tableName: "DevAssistant")
                                 .font(.caption2)
                                 .fontWeight(.bold)
                                 .foregroundColor(.secondary)
@@ -191,7 +191,7 @@ struct InstalledServersView: View {
                         // Env Vars
                         if !config.env.isEmpty {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("ENVIRONMENT VARIABLES")
+                                Text("ENVIRONMENT VARIABLES", tableName: "DevAssistant")
                                     .font(.caption2)
                                     .fontWeight(.bold)
                                     .foregroundColor(.secondary)
@@ -218,7 +218,7 @@ struct InstalledServersView: View {
                              // For now, we can just show a placeholder or count if available.
                              // Since we don't store tools per client easily accessible here without refactor, 
                              // we'll skip the detailed tool list for now or add it later.
-                             Text("Tools available when connected.")
+                             Text("Tools available when connected.", tableName: "DevAssistant")
                                  .font(.caption)
                                  .foregroundColor(.secondary)
                         }
@@ -278,7 +278,7 @@ extension MCPSettingsView {
                                 .fontWeight(.medium)
                             
                             if mcpService.configs.contains(where: { $0.name == item.name }) {
-                                Text("Installed")
+                                Text("Installed", tableName: "DevAssistant")
                                     .font(.caption2)
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
@@ -288,7 +288,7 @@ extension MCPSettingsView {
                             }
                         }
                         
-                        Text(item.description)
+                        Text(LocalizedStringKey(item.description), tableName: "DevAssistant")
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .lineLimit(2)
@@ -296,10 +296,24 @@ extension MCPSettingsView {
                     
                     Spacer()
                     
+                    if let documentationURL = item.documentationURL, let url = URL(string: documentationURL) {
+                        Link(destination: url) {
+                            Image(systemName: "globe")
+                                .font(.system(size: 14))
+                                .foregroundColor(.secondary)
+                                .frame(width: 24, height: 24)
+                                .background(Color.black.opacity(0.05))
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.trailing, 8)
+                        .help(Text("Visit Homepage", tableName: "DevAssistant"))
+                    }
+                    
                     Button(action: {
                         selectedItem = item
                     }) {
-                        Text(mcpService.configs.contains(where: { $0.name == item.name }) ? "Reinstall" : "Install")
+                        Text(LocalizedStringKey(mcpService.configs.contains(where: { $0.name == item.name }) ? "Reinstall" : "Install"), tableName: "DevAssistant")
                             .font(.caption)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
@@ -320,17 +334,18 @@ extension MCPSettingsView {
         @Binding var envVarInputs: [String: String]
         var onInstall: () -> Void
         @Environment(\.dismiss) var dismiss
+        @State private var visibleKeys: Set<String> = []
         
         var body: some View {
             VStack(alignment: .leading, spacing: 20) {
                 HStack {
                     Image(systemName: item.iconName)
                         .font(.title2)
-                    Text("Install \(item.name)")
+                    Text("Install \(item.name)" as LocalizedStringKey, tableName: "DevAssistant")
                         .font(.headline)
                 }
                 
-                Text(item.description)
+                Text(LocalizedStringKey(item.description), tableName: "DevAssistant")
                     .font(.caption)
                     .foregroundColor(.secondary)
                 
@@ -338,41 +353,68 @@ extension MCPSettingsView {
                 
                 if !item.requiredEnvVars.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Configuration Required")
+                        Text("Configuration Required", tableName: "DevAssistant")
                             .font(.subheadline)
                             .fontWeight(.medium)
                         
-                        ForEach(item.requiredEnvVars, id: \.self) { envKey in
+                        ForEach(item.requiredEnvVars, id: \.self) { (envKey: String) in
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(envKey)
                                     .font(.caption)
                                     .foregroundColor(.secondary)
-                                SecureField("Enter value", text: Binding(
-                                    get: { envVarInputs[envKey] ?? "" },
-                                    set: { envVarInputs[envKey] = $0 }
-                                ))
-                                .textFieldStyle(.roundedBorder)
+                                
+                                HStack {
+                                    if visibleKeys.contains(envKey) {
+                                        TextField("", text: Binding(
+                                            get: { envVarInputs[envKey] ?? "" },
+                                            set: { envVarInputs[envKey] = $0 }
+                                        ), prompt: Text("Enter value", tableName: "DevAssistant"))
+                                        .textFieldStyle(.roundedBorder)
+                                    } else {
+                                        SecureField("", text: Binding(
+                                            get: { envVarInputs[envKey] ?? "" },
+                                            set: { envVarInputs[envKey] = $0 }
+                                        ), prompt: Text("Enter value", tableName: "DevAssistant"))
+                                        .textFieldStyle(.roundedBorder)
+                                    }
+                                    
+                                    Button(action: {
+                                        if visibleKeys.contains(envKey) {
+                                            visibleKeys.remove(envKey)
+                                        } else {
+                                            visibleKeys.insert(envKey)
+                                        }
+                                    }) {
+                                        Image(systemName: visibleKeys.contains(envKey) ? "eye.slash" : "eye")
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
                             }
                         }
                     }
                 } else {
-                    Text("No configuration required.")
+                    Text("No configuration required.", tableName: "DevAssistant")
                         .foregroundColor(.secondary)
                 }
                 
                 Spacer()
                 
                 HStack {
-                    Button("Cancel") {
+                    Button(action: {
                         dismiss()
+                    }) {
+                        Text("Cancel", tableName: "DevAssistant")
                     }
                     .keyboardShortcut(.cancelAction)
                     
                     Spacer()
                     
-                    Button("Install Server") {
+                    Button(action: {
                         onInstall()
                         dismiss()
+                    }) {
+                        Text("Install Server", tableName: "DevAssistant")
                     }
                     .buttonStyle(.borderedProminent)
                     .disabled(!item.requiredEnvVars.allSatisfy { 
@@ -382,9 +424,8 @@ extension MCPSettingsView {
                 }
             }
             .padding(24)
-            .frame(width: 400, height: item.requiredEnvVars.isEmpty ? 200 : 350)
+            .frame(width: 400, height: item.requiredEnvVars.isEmpty ? 200 : 400)
             .onAppear {
-                // Reset inputs
                 envVarInputs = [:]
             }
         }
@@ -399,7 +440,7 @@ struct MCPStatusBadge: View {
             Circle()
                 .fill(isConnected ? Color.green : Color.red)
                 .frame(width: 8, height: 8)
-            Text(isConnected ? "Connected" : "Disconnected")
+            Text(isConnected ? "Connected" : "Disconnected", tableName: "DevAssistant")
                 .font(.caption)
                 .foregroundColor(isConnected ? .green : .red)
         }
