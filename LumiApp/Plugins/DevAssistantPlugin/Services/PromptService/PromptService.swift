@@ -109,7 +109,7 @@ actor PromptService: SuperLog {
             return """
             👋 欢迎回来！
 
-            **当前项目**: \(projectName)
+            **当前项目**: \(projectName)  
             **项目路径**: \(projectPath)
 
             有什么可以帮你的吗？
@@ -118,7 +118,7 @@ actor PromptService: SuperLog {
             return """
             👋 Welcome back!
 
-            **Current Project**: \(projectName)
+            **Current Project**: \(projectName)  
             **Path**: \(projectPath)
 
             How can I help you today?
