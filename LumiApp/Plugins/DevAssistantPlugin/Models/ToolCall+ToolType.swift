@@ -4,7 +4,7 @@ import Foundation
 
 extension ToolCall {
     /// 根据工具名称推断工具类型
-    var toolType: EnhancedToolOutputView.ToolType {
+    var toolType: ToolOutputView.ToolType {
         switch name {
         // Shell 工具
         case "run_shell_command":
@@ -53,7 +53,7 @@ extension ToolCall {
 
 extension ChatMessage {
     /// 获取关联的工具类型
-    var toolType: EnhancedToolOutputView.ToolType? {
+    var toolType: ToolOutputView.ToolType? {
         guard let toolCalls = toolCalls, let firstTool = toolCalls.first else {
             return nil
         }

@@ -6,12 +6,10 @@ struct ChatBubble: View {
     let message: ChatMessage
     @State private var showRawMessage: Bool = false
 
-    // 配置：是否使用增强版工具输出视图（默认为 true）
-    private var useEnhancedToolOutput: Bool { true }
-
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             // MARK: - Avatar
+
             if message.role == .user {
                 if message.toolCallID == nil {
                     Spacer()
@@ -24,6 +22,7 @@ struct ChatBubble: View {
             }
 
             // MARK: - Content
+
             VStack(alignment: .leading, spacing: 4) {
                 if message.role == .assistant {
                     RoleLabel.assistant
@@ -32,26 +31,19 @@ struct ChatBubble: View {
                 }
 
                 if message.toolCallID != nil {
-                    // 工具输出视图 - 使用独立组件
-                    if useEnhancedToolOutput {
-                        // 使用增强版工具输出视图
-                        EnhancedToolOutputView(
-                            message: message,
-                            toolType: message.toolType
-                        )
-                    } else {
-                        // 使用基础版工具输出视图
-                        ToolOutputView(message: message)
-                    }
+                    ToolOutputView(
+                        message: message,
+                        toolType: message.toolType
+                    )
                 } else {
                     // 普通消息
                     MarkdownMessageView(message: message, showRawMessage: showRawMessage)
-                    .messageBubbleStyle(role: message.role, isError: message.isError)
-                    .overlay(alignment: .topTrailing) {
-                        if message.role == .assistant {
-                            RawMessageToggleButton(showRawMessage: $showRawMessage)
+                        .messageBubbleStyle(role: message.role, isError: message.isError)
+                        .overlay(alignment: .topTrailing) {
+                            if message.role == .assistant {
+                                RawMessageToggleButton(showRawMessage: $showRawMessage)
+                            }
                         }
-                    }
                 }
             }
 
