@@ -31,7 +31,8 @@ struct DevAssistantView: View {
                             .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                             .lineLimit(1)
                             .truncationMode(.middle)
-                    }
+
+}
 
                     Spacer()
                     
@@ -281,6 +282,20 @@ struct DevAssistantView: View {
                             ModelSelectorView(viewModel: viewModel)
                         }
                         
+                        // Image Upload Button
+                        Button(action: {
+                            selectImage()
+                        }) {
+                            Image(systemName: "photo")
+                                .font(.system(size: 14))
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                .frame(width: 28, height: 28)
+                                .background(Color.black.opacity(0.05))
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .help("Upload Image")
+                        
                         Spacer()
                         
                         // 发送按钮
@@ -340,6 +355,20 @@ struct DevAssistantView: View {
                         viewModel.respondToPermissionRequest(allowed: false)
                     }
                 )
+            }
+        }
+    }
+
+    private func selectImage() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowedContentTypes = [.image]
+        
+        panel.begin { response in
+            if response == .OK, let url = panel.url {
+                viewModel.handleImageUpload(url: url)
             }
         }
     }

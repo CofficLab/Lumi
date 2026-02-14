@@ -132,9 +132,9 @@ class MCPService: ObservableObject, SuperLog {
     func updateTools() {
         Task {
             var newTools: [AgentTool] = []
-            for (_, client) in connectedClients {
+            for (serverName, client) in connectedClients {
                 if let (mcpTools, _) = try? await client.listTools() {
-                    let adapters = mcpTools.map { MCPToolAdapter(client: client, tool: $0) }
+                    let adapters = mcpTools.map { MCPToolAdapter(client: client, tool: $0, serverName: serverName) }
                     newTools.append(contentsOf: adapters)
                 }
             }

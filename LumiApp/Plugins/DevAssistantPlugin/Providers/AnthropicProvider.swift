@@ -70,6 +70,115 @@ struct AnthropicProvider: LLMProviderProtocol {
 
         return body
     }
+    
+    // MARK: - Message Transformation
+    
+    func transformMessage(_ message: ChatMessage) -> [String: Any] {
+        if let toolCallID = message.toolCallID {
+            return [
+                "role": "user",
+                "content": [
+                    [
+                        "type": "tool_result",
+                        "tool_use_id": toolCallID,
+                        "content": message.content,
+                    ],
+                ],
+            ]
+        }
+
+        if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
+            var content: [[String: Any]] = []
+
+            if !message.content.isEmpty {
+                content.append([
+                    "type": "text",
+                    "text": message.content,
+                ])
+            }
+
+            for tc in toolCalls {
+                let argsObject: Any
+                if let data = tc.arguments.data(using: .utf8),
+                   let json = try? JSONSerialization.jsonObject(with: data) {
+                    argsObject = json
+                } else {
+                    argsObject = [:]
+                }
+
+                content.append([
+                    "type": "tool_use",
+                    "id": tc.id,
+                    "name": tc.name,
+                    "input": argsObject,
+                ])
+            }
+
+            return [
+                "role": "assistant",
+                "content": content,
+            ]
+        }
+        
+        // Handle potential image markers in content
+        // Marker format: [IMAGE_BASE64:<mime_type>:<data>]
+        if message.content.contains("[IMAGE_BASE64:") {
+            var content: [[String: Any]] = []
+            let components = message.content.components(separatedBy: "[IMAGE_BASE64:")
+            
+            // First component is text before any image
+            if !components[0].isEmpty {
+                content.append([
+                    "type": "text",
+                    "text": components[0]
+                ])
+            }
+            
+            for component in components.dropFirst() {
+                // component format: <mime_type>:<data>]<rest_of_text>
+                if let closeBracketIndex = component.firstIndex(of: "]") {
+                    let imagePart = component[..<closeBracketIndex]
+                    let textPart = component[component.index(after: closeBracketIndex)...]
+                    
+                    let imageComponents = imagePart.split(separator: ":", maxSplits: 1)
+                    if imageComponents.count == 2 {
+                        let mimeType = String(imageComponents[0])
+                        let base64Data = String(imageComponents[1])
+                        
+                        content.append([
+                            "type": "image",
+                            "source": [
+                                "type": "base64",
+                                "media_type": mimeType,
+                                "data": base64Data
+                            ]
+                        ])
+                    }
+                    
+                    if !textPart.isEmpty {
+                        // Clean up newlines that might have been added
+                        let cleanText = String(textPart).trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !cleanText.isEmpty {
+                            content.append([
+                                "type": "text",
+                                "text": cleanText
+                            ])
+                        }
+                    }
+                }
+            }
+            
+            return [
+                "role": message.role.rawValue,
+                "content": content
+            ]
+        }
+
+        return [
+            "role": message.role.rawValue,
+            "content": message.content,
+        ]
+    }
 
     func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
         struct AnthropicResponse: Decodable {
@@ -124,63 +233,6 @@ struct AnthropicProvider: LLMProviderProtocol {
     }
 
     static var logEmoji: String { "🟣" }
-}
-
-// MARK: - Message Transformation
-
-extension AnthropicProvider {
-    func transformMessage(_ message: ChatMessage) -> [String: Any] {
-        if let toolCallID = message.toolCallID {
-            return [
-                "role": "user",
-                "content": [
-                    [
-                        "type": "tool_result",
-                        "tool_use_id": toolCallID,
-                        "content": message.content,
-                    ],
-                ],
-            ]
-        }
-
-        if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
-            var content: [[String: Any]] = []
-
-            if !message.content.isEmpty {
-                content.append([
-                    "type": "text",
-                    "text": message.content,
-                ])
-            }
-
-            for tc in toolCalls {
-                let argsObject: Any
-                if let data = tc.arguments.data(using: .utf8),
-                   let json = try? JSONSerialization.jsonObject(with: data) {
-                    argsObject = json
-                } else {
-                    argsObject = [:]
-                }
-
-                content.append([
-                    "type": "tool_use",
-                    "id": tc.id,
-                    "name": tc.name,
-                    "input": argsObject,
-                ])
-            }
-
-            return [
-                "role": "assistant",
-                "content": content,
-            ]
-        }
-
-        return [
-            "role": message.role.rawValue,
-            "content": message.content,
-        ]
-    }
 }
 
 // MARK: - Tool Formatting

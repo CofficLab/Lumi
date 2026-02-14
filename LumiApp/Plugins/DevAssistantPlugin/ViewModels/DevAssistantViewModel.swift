@@ -90,6 +90,49 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
 
     let promptService = PromptService.shared
 
+    // MARK: - 图片上传
+    
+    func handleImageUpload(url: URL) {
+        // 读取图片数据
+        guard let data = try? Data(contentsOf: url),
+              let _ = NSImage(data: data) else {
+            errorMessage = "Invalid image file"
+            return
+        }
+        
+        // 创建包含图片的消息
+        // 这里需要扩展 ChatMessage 支持图片，或者在 content 中以特定格式标记
+        // Claude 支持 content 为数组，包含 text 和 image
+        // 目前我们的 ChatMessage.content 是 String
+        // 我们可以暂时将其作为用户消息发送，并在发送时特殊处理
+        
+        // 临时方案：将图片转换为 base64 并嵌入到 content 中（如果后端支持）
+        // 或者修改 ChatMessage 结构
+        
+        // 由于需要查看 Claude code 的实现，通常是将图片作为 message content 的一部分
+        // 我们这里先简单处理，假设我们将在 sendMessage 时处理图片
+        
+        let base64 = data.base64EncodedString()
+        let mimeType = url.pathExtension.lowercased() == "png" ? "image/png" : "image/jpeg"
+        
+        // 构造一个特殊的标记，让 LLMProvider 在构建请求时解析
+        // 格式: [IMAGE_BASE64:<mime_type>:<data>]
+        let imageMarker = "[IMAGE_BASE64:\(mimeType):\(base64)]"
+        
+        // 添加到当前输入框或直接发送
+        // 这里选择直接添加到输入框，让用户可以附带文字
+        // 但 base64 太长，不适合在输入框显示
+        // 我们应该在 ViewModel 中维护一个 pendingAttachments
+        
+        pendingAttachments.append(.image(data: data, mimeType: mimeType, url: url))
+    }
+    
+    // 附件枚举
+    enum Attachment {
+        case image(data: Data, mimeType: String, url: URL)
+    }
+    
+    @Published var pendingAttachments: [Attachment] = []
     // MARK: - 工具
     
     private let builtInTools: [AgentTool]
@@ -284,7 +327,7 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
     // MARK: - 消息发送
 
     func sendMessage() {
-        guard !currentInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        guard !currentInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !pendingAttachments.isEmpty else { return }
 
         if Self.verbose {
             os_log("\(self.t)用户发送消息")
@@ -319,9 +362,11 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
                 switch result {
                 case .handled:
                     isProcessing = false
+                    self.pendingAttachments.removeAll()
                 case let .error(msg):
                     messages.append(ChatMessage(role: .assistant, content: "Command Error: \(msg)", isError: true))
                     isProcessing = false
+                    self.pendingAttachments.removeAll()
                 case .notHandled:
                     await processUserMessage(input)
                 }
@@ -335,7 +380,22 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
     }
 
     private func processUserMessage(_ content: String) async {
-        let userMsg = ChatMessage(role: .user, content: content)
+        var finalContent = content
+        
+        // 处理附件
+        if !pendingAttachments.isEmpty {
+            var attachmentsText = ""
+            for attachment in pendingAttachments {
+                if case .image(let data, let mimeType, _) = attachment {
+                    let base64 = data.base64EncodedString()
+                    attachmentsText += "[IMAGE_BASE64:\(mimeType):\(base64)]\n"
+                }
+            }
+            finalContent = attachmentsText + finalContent
+            pendingAttachments.removeAll()
+        }
+        
+        let userMsg = ChatMessage(role: .user, content: finalContent)
         messages.append(userMsg)
 
         await processTurn()

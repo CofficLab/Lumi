@@ -7,14 +7,21 @@ import OSLog
 final class MCPToolAdapter: AgentTool, @unchecked Sendable {
     let client: Client
     let mcpTool: MCP.Tool
+    let serverName: String
     
-    init(client: Client, tool: MCP.Tool) {
+    init(client: Client, tool: MCP.Tool, serverName: String) {
         self.client = client
         self.mcpTool = tool
+        self.serverName = serverName
     }
     
     var name: String {
-        mcpTool.name
+        // Follow claude-code convention: mcp__<server_name>__<tool_name>
+        // Sanitize server name to be safe for tool names (only alphanumeric and underscores)
+        let safeServerName = serverName.replacingOccurrences(of: "-", with: "_")
+                                       .replacingOccurrences(of: " ", with: "_")
+                                       .lowercased()
+        return "mcp__\(safeServerName)__\(mcpTool.name)"
     }
     
     var description: String {
