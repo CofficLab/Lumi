@@ -1,4 +1,5 @@
 import SwiftUI
+import Textual
 
 /// 聊天气泡组件，用于显示用户消息、助手回复和工具输出
 struct ChatBubble: View {
@@ -70,12 +71,14 @@ struct ChatBubble: View {
                         if showRawMessage {
                             Text(message.content)
                         } else {
-                            // 预处理 Markdown 内容
-                            let processedContent = preprocessMarkdown(message.content)
-                            if let attributedString = try? AttributedString(markdown: processedContent) {
-                                Text(attributedString)
+                            // 使用 Textual 渲染 Markdown 内容
+                            if message.role == .user {
+                                // 用户消息：使用 InlineText
+                                InlineText(markdown: message.content)
                             } else {
-                                Text(message.content)
+                                // 助手消息：使用 StructuredText 支持完整 Markdown
+                                StructuredText(markdown: message.content)
+                                    .textual.structuredTextStyle(.gitHub)
                             }
                         }
                     }
@@ -85,7 +88,7 @@ struct ChatBubble: View {
                     .background(bubbleColor)
                     .foregroundColor(textColor)
                     .cornerRadius(12)
-                    .textSelection(.enabled)
+                    .textual.textSelection(.enabled)
                     .overlay(alignment: .topTrailing) {
                         if message.role == .assistant {
                             Button(action: { showRawMessage.toggle() }) {
