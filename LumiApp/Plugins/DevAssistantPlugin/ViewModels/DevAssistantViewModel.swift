@@ -504,7 +504,7 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
                 // 无工具调用，轮次结束
                 isProcessing = false
                 if Self.verbose {
-                    os_log("\(self.t)对话轮次已完成（无工具调用）")
+                    os_log("\(self.t)✅ 对话轮次已完成（无工具调用）")
                 }
             }
         } catch {

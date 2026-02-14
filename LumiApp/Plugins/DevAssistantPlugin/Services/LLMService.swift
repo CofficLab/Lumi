@@ -7,6 +7,7 @@ import MagicKit
 /// LLM 服务
 ///
 /// 使用供应商协议处理所有 LLM 请求，支持动态供应商注册。
+/// 网络请求部分已委托给 LLMAPIService。
 @MainActor
 class LLMService: SuperLog {
     nonisolated static let emoji = "🌐"
@@ -14,8 +15,8 @@ class LLMService: SuperLog {
 
     static let shared = LLMService()
 
-    private let logger = Logger(subsystem: "com.lumi.devassistant", category: "LLM")
     private let registry: ProviderRegistry
+    private let llmAPI = LLMAPIService.shared
 
     private init() {
         self.registry = ProviderRegistry.shared
@@ -50,9 +51,6 @@ class LLMService: SuperLog {
             throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL: \(provider.baseURL)"])
         }
 
-        // 构建请求
-        var request = provider.buildRequest(url: url, apiKey: config.apiKey)
-
         // 构建请求体
         let body: [String: Any]
         do {
@@ -67,44 +65,39 @@ class LLMService: SuperLog {
             throw error
         }
 
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-
         if Self.verbose {
             os_log("\(self.t)发送请求到 \(config.providerId): \(config.model)")
         }
 
-        // 发送请求
-        let (data, response) = try await URLSession.shared.data(for: request)
+        // 使用 LLM API 服务发送请求
+        do {
+            let data = try await llmAPI.sendChatRequest(
+                url: url,
+                apiKey: config.apiKey,
+                body: body
+            )
 
-        // 验证响应
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200 ... 299).contains(httpResponse.statusCode) else {
-            let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
-            let urlString = request.url?.absoluteString ?? "Unknown URL"
-            let bodyString = request.httpBody.flatMap { String(data: $0, encoding: .utf8) } ?? "No Body"
+            // 解析响应
+            let (content, toolCalls) = try provider.parseResponse(data: data)
 
-            let errorMessage = "API Error (\(config.providerId)): \(errorStr)\nURL: \(urlString)\nBody: \(bodyString)"
-            os_log(.error, "\(self.t)\(errorMessage)")
+            if Self.verbose {
+                if let toolCalls = toolCalls, !toolCalls.isEmpty {
+                    os_log("\(self.t)收到响应: \(content.prefix(100))...，包含 \(toolCalls.count) 个工具调用")
+                } else {
+                    os_log("\(self.t)收到响应: \(content.prefix(100))...")
+                }
+            }
 
+            return ChatMessage(role: .assistant, content: content, toolCalls: toolCalls)
+
+        } catch let apiError as APIError {
+            // 转换 API 错误为 NSError
             throw NSError(
                 domain: "LLMService",
-                code: (response as? HTTPURLResponse)?.statusCode ?? 500,
-                userInfo: [NSLocalizedDescriptionKey: errorMessage]
+                code: 500,
+                userInfo: [NSLocalizedDescriptionKey: apiError.localizedDescription]
             )
         }
-
-        // 解析响应
-        let (content, toolCalls) = try provider.parseResponse(data: data)
-
-        if Self.verbose {
-            if let toolCalls = toolCalls, !toolCalls.isEmpty {
-                os_log("\(self.t)收到响应: \(content.prefix(100))...，包含 \(toolCalls.count) 个工具调用")
-            } else {
-                os_log("\(self.t)收到响应: \(content.prefix(100))...")
-            }
-        }
-
-        return ChatMessage(role: .assistant, content: content, toolCalls: toolCalls)
     }
 }
 
