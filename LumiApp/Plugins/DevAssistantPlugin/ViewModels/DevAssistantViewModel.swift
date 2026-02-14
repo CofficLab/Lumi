@@ -18,7 +18,10 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
     @Published var errorMessage: String?
     @Published var pendingPermissionRequest: PermissionRequest?
     @Published var depthWarning: DepthWarning?
-
+    
+    // MARK: - 命令建议
+    @Published var commandSuggestionViewModel = CommandSuggestionViewModel()
+    
     // MARK: - 工具队列
 
     private var pendingToolCalls: [ToolCall] = []
@@ -88,23 +91,48 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
     let promptService = PromptService.shared
 
     // MARK: - 工具
-
-    private let tools: [AgentTool]
-
+    
+    private let builtInTools: [AgentTool]
+    private var tools: [AgentTool] = []
+    
+    private let mcpService = MCPService.shared
+    private var cancellables = Set<AnyCancellable>()
+    
     // MARK: - 初始化
-
+    
     init() {
         // 初始化工具
-        self.tools = [
+        self.builtInTools = [
             ListDirectoryTool(),
             ReadFileTool(),
             WriteFileTool(),
             ShellTool(shellService: .shared),
         ]
+        self.tools = self.builtInTools
+        
+        // 订阅 MCP 工具更新
+        mcpService.$tools
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] mcpTools in
+                guard let self = self else { return }
+                self.tools = self.builtInTools + mcpTools
+                if Self.verbose {
+                    os_log("\(self.t)工具列表已更新，当前共 \(self.tools.count) 个工具 (MCP: \(mcpTools.count))")
+                }
+            }
+            .store(in: &cancellables)
 
         // 加载语言偏好
         loadLanguagePreference()
 
+        // 订阅输入变化以更新建议
+        $currentInput
+            .receive(on: RunLoop.main)
+            .sink { [weak self] input in
+                self?.commandSuggestionViewModel.updateSuggestions(for: input)
+            }
+            .store(in: &cancellables)
+            
         // 初始化上下文和历史
         Task {
             // 默认不设置项目根目录，等待用户选择

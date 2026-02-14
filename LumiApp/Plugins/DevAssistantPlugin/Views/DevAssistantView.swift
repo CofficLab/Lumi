@@ -211,6 +211,25 @@ struct DevAssistantView: View {
                         onSubmit: {
                             viewModel.sendMessage()
                         },
+                        onArrowUp: {
+                            if viewModel.commandSuggestionViewModel.isVisible {
+                                viewModel.commandSuggestionViewModel.selectPrevious()
+                            }
+                        },
+                        onArrowDown: {
+                            if viewModel.commandSuggestionViewModel.isVisible {
+                                viewModel.commandSuggestionViewModel.selectNext()
+                            }
+                        },
+                        onEnter: {
+                            if viewModel.commandSuggestionViewModel.isVisible,
+                               let suggestion = viewModel.commandSuggestionViewModel.getCurrentSuggestion() {
+                                viewModel.currentInput = suggestion.command + " "
+                                viewModel.commandSuggestionViewModel.isVisible = false
+                            } else {
+                                viewModel.sendMessage()
+                            }
+                        },
                         isFocused: $isInputFocused
                     )
                     .frame(height: 32)
@@ -278,6 +297,14 @@ struct DevAssistantView: View {
                 )
                 .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
                 .padding(16)
+                .overlay(alignment: .bottomLeading) {
+                    CommandSuggestionView(viewModel: viewModel.commandSuggestionViewModel) { suggestion in
+                        viewModel.currentInput = suggestion.command + " "
+                        viewModel.commandSuggestionViewModel.isVisible = false
+                        isInputFocused = true
+                    }
+                    .offset(x: 16, y: -60) // Position above the input box
+                }
             }
             .background(DesignTokens.Material.glass)
         }

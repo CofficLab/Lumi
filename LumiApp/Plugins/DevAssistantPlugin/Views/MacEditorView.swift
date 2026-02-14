@@ -5,6 +5,9 @@ struct MacEditorView: NSViewRepresentable {
     @Binding var text: String
     var font: NSFont = .systemFont(ofSize: 15)
     var onSubmit: () -> Void
+    var onArrowUp: (() -> Void)? = nil
+    var onArrowDown: (() -> Void)? = nil
+    var onEnter: (() -> Void)? = nil
     @Binding var isFocused: Bool
 
     func makeNSView(context: Context) -> NSScrollView {
@@ -70,11 +73,25 @@ struct MacEditorView: NSViewRepresentable {
 
         func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
             if commandSelector == #selector(NSResponder.insertNewline(_:)) {
+                if let onEnter = parent.onEnter {
+                    onEnter()
+                    return true
+                }
                 if let event = NSApp.currentEvent, event.modifierFlags.contains(.shift) {
                     return false // 允许换行 (Shift + Enter)
                 }
                 parent.onSubmit()
                 return true // 阻止换行并触发提交
+            } else if commandSelector == #selector(NSResponder.moveUp(_:)) {
+                if let onArrowUp = parent.onArrowUp {
+                    onArrowUp()
+                    return true
+                }
+            } else if commandSelector == #selector(NSResponder.moveDown(_:)) {
+                if let onArrowDown = parent.onArrowDown {
+                    onArrowDown()
+                    return true
+                }
             }
             return false
         }
