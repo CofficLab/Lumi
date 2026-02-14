@@ -6,6 +6,7 @@ struct DevAssistantView: View {
     @State private var isInputFocused: Bool = false
     @State private var isModelSelectorPresented = false
     @State private var isProjectSelectorPresented = false
+    @State private var showQuickPhrases: Bool = true
 
     var body: some View {
         VStack(spacing: 0) {
@@ -158,11 +159,36 @@ struct DevAssistantView: View {
 
             // MARK: - Input Area
             VStack(spacing: 0) {
+                // 快捷短语区域
+                if showQuickPhrases && viewModel.isProjectSelected {
+                    QuickPhrasesView { prompt in
+                        viewModel.currentInput = prompt
+                        isInputFocused = true
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+
                 GlassDivider()
+
                 HStack(alignment: .bottom) {
                     // 供应商选择器
                     VStack(spacing: 0) {
                         Spacer()
+
+                        // 快捷短语显示切换按钮
+                        Button(action: {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                showQuickPhrases.toggle()
+                            }
+                        }) {
+                            Image(systemName: showQuickPhrases ? "chevron.up" : "chevron.down")
+                                .font(.system(size: 10))
+                                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                        }
+                        .buttonStyle(.plain)
+                        .help(showQuickPhrases ? "隐藏快捷短语" : "显示快捷短语")
+                        .padding(.bottom, 4)
+
                         Button(action: {
                             isModelSelectorPresented = true
                         }) {
@@ -217,7 +243,8 @@ struct DevAssistantView: View {
                 .padding(12)
                 .background(DesignTokens.Material.glass)
             }
-            .frame(height: 56)
+            .frame(height: showQuickPhrases ? 110 : 56)
+            .animation(.easeInOut(duration: 0.2), value: showQuickPhrases)
         }
         .onAppear {
             isInputFocused = true
