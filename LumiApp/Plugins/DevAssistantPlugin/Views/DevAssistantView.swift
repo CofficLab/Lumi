@@ -178,10 +178,15 @@ struct DevAssistantView: View {
             VStack(spacing: 0) {
                 // 快捷短语区域
                 if showQuickPhrases && viewModel.isProjectSelected {
-                    QuickPhrasesView { prompt in
-                        viewModel.currentInput = prompt
-                        isInputFocused = true
-                    }
+                    QuickPhrasesView(
+                        onPhraseSelected: { prompt in
+                            viewModel.currentInput = prompt
+                            isInputFocused = true
+                        },
+                        projectName: $viewModel.currentProjectName,
+                        projectPath: $viewModel.currentProjectPath,
+                        isProjectSelected: $viewModel.isProjectSelected
+                    )
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 }
 

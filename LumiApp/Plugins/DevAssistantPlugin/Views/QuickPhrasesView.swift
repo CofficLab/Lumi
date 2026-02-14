@@ -4,6 +4,11 @@ import SwiftUI
 struct QuickPhrasesView: View {
     let onPhraseSelected: (String) -> Void
 
+    // 项目信息（从 ViewModel 传入）
+    @Binding var projectName: String
+    @Binding var projectPath: String
+    @Binding var isProjectSelected: Bool
+
     @State private var phrases: [PromptService.QuickPhrase] = []
 
     var body: some View {
@@ -21,7 +26,24 @@ struct QuickPhrasesView: View {
         }
         .padding(.bottom, 8)
         .task {
-            // 从 PromptService 获取快捷短语
+            await refreshPhrases()
+        }
+        .onChange(of: isProjectSelected) { _, _ in
+            Task { await refreshPhrases() }
+        }
+        .onChange(of: projectName) { _, _ in
+            Task { await refreshPhrases() }
+        }
+    }
+
+    private func refreshPhrases() async {
+        // 根据项目状态传递不同的参数
+        if isProjectSelected {
+            phrases = await PromptService.shared.getQuickPhrases(
+                projectName: projectName,
+                projectPath: projectPath
+            )
+        } else {
             phrases = await PromptService.shared.getQuickPhrases()
         }
     }
@@ -74,10 +96,24 @@ struct QuickPhraseButton: View {
 
 // MARK: - Preview
 
-#Preview("Quick Phrases") {
-    QuickPhrasesView { phrase in
-        print("Selected: \(phrase)")
-    }
+#Preview("Quick Phrases - With Project") {
+    QuickPhrasesView(
+        onPhraseSelected: { print("Selected: \($0)") },
+        projectName: .constant("Lumi"),
+        projectPath: .constant("/Users/angel/Code/Coffic/Lumi"),
+        isProjectSelected: .constant(true)
+    )
+    .frame(width: 600)
+    .background(Color(nsColor: .windowBackgroundColor))
+}
+
+#Preview("Quick Phrases - No Project") {
+    QuickPhrasesView(
+        onPhraseSelected: { print("Selected: \($0)") },
+        projectName: .constant(""),
+        projectPath: .constant(""),
+        isProjectSelected: .constant(false)
+    )
     .frame(width: 600)
     .background(Color(nsColor: .windowBackgroundColor))
 }

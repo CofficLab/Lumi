@@ -77,14 +77,30 @@ actor PromptService: SuperLog {
     }
 
     /// 获取快捷短语列表
-    func getQuickPhrases() -> [QuickPhrase] {
+    /// - Parameters:
+    ///   - projectName: 当前项目名称
+    ///   - projectPath: 当前项目路径
+    /// - Returns: 快捷短语列表
+    func getQuickPhrases(projectName: String? = nil, projectPath: String? = nil) -> [QuickPhrase] {
+        // 构建项目上下文描述
+        let projectContext: String
+        if let name = projectName, let path = projectPath, !name.isEmpty {
+            projectContext = """
+
+            **当前项目**: \(name)
+            **项目路径**: \(path)
+            """
+        } else {
+            projectContext = ""
+        }
+
         return [
             QuickPhrase(
                 icon: "checkmark.circle",
                 title: "英文 Commit",
                 subtitle: "提交英文 commit",
                 prompt: """
-                请帮我生成一个英文的 commit message，说明当前代码的改动。请遵循 conventional commits 规范（feat/fix/docs/refactor 等）。
+                请帮我生成一个英文的 commit message，说明当前代码的改动。请遵循 conventional commits 规范（feat/fix/docs/refactor 等）。\(projectContext)
                 """
             ),
             QuickPhrase(
@@ -92,7 +108,7 @@ actor PromptService: SuperLog {
                 title: "中文 Commit",
                 subtitle: "提交中文 commit",
                 prompt: """
-                请帮我生成一个中文的 commit message，说明当前代码的改动。请遵循 conventional commits 规范（feat/fix/docs/refactor 等）。
+                请帮我生成一个中文的 commit message，说明当前代码的改动。请遵循 conventional commits 规范（feat/fix/docs/refactor 等）。\(projectContext)
                 """
             ),
         ]
