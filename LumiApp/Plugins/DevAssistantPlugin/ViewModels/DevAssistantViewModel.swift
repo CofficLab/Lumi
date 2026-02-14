@@ -124,15 +124,26 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
         // 但 base64 太长，不适合在输入框显示
         // 我们应该在 ViewModel 中维护一个 pendingAttachments
         
-        pendingAttachments.append(.image(data: data, mimeType: mimeType, url: url))
+        pendingAttachments.append(.image(id: UUID(), data: data, mimeType: mimeType, url: url))
     }
     
     // 附件枚举
-    enum Attachment {
-        case image(data: Data, mimeType: String, url: URL)
+    enum Attachment: Identifiable {
+        case image(id: UUID, data: Data, mimeType: String, url: URL)
+        
+        var id: UUID {
+            switch self {
+            case .image(let id, _, _, _):
+                return id
+            }
+        }
     }
     
     @Published var pendingAttachments: [Attachment] = []
+    
+    func removeAttachment(id: UUID) {
+        pendingAttachments.removeAll { $0.id == id }
+    }
     // MARK: - 工具
     
     private let builtInTools: [AgentTool]
@@ -386,7 +397,7 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
         if !pendingAttachments.isEmpty {
             var attachmentsText = ""
             for attachment in pendingAttachments {
-                if case .image(let data, let mimeType, _) = attachment {
+                if case .image(_, let data, let mimeType, _) = attachment {
                     let base64 = data.base64EncodedString()
                     attachmentsText += "[IMAGE_BASE64:\(mimeType):\(base64)]\n"
                 }

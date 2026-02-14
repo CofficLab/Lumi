@@ -4812,6 +4812,9 @@
         }
       }
     },
+    "Upload Image" : {
+
+    },
     "Uptime: %@" : {
       "localizations" : {
         "zh-Hans" : {

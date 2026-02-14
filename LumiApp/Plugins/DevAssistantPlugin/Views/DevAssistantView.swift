@@ -224,6 +224,45 @@ struct DevAssistantView: View {
 
                 // 输入框容器
                 VStack(spacing: 0) {
+                    // 附件预览区域
+                    if !viewModel.pendingAttachments.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 12) {
+                                ForEach(viewModel.pendingAttachments) { attachment in
+                                    if case .image(_, let data, _, _) = attachment,
+                                       let nsImage = NSImage(data: data) {
+                                        ZStack(alignment: .topTrailing) {
+                                            Image(nsImage: nsImage)
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fill)
+                                                .frame(width: 60, height: 60)
+                                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 8)
+                                                        .stroke(Color.black.opacity(0.1), lineWidth: 1)
+                                                )
+                                            
+                                            Button(action: {
+                                                viewModel.removeAttachment(id: attachment.id)
+                                            }) {
+                                                Image(systemName: "xmark.circle.fill")
+                                                    .font(.system(size: 16))
+                                                    .foregroundColor(.gray)
+                                                    .background(Color.white.clipShape(Circle()))
+                                            }
+                                            .buttonStyle(.plain)
+                                            .offset(x: 4, y: -4)
+                                        }
+                                        .padding(.top, 4)
+                                        .padding(.trailing, 4)
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.top, 12)
+                        }
+                    }
+
                     MacEditorView(
                         text: $viewModel.currentInput,
                         onSubmit: {
