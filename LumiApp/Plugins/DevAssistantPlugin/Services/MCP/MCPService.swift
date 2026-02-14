@@ -127,7 +127,8 @@ class MCPService: ObservableObject, SuperLog {
             name: "Vision MCP",
             command: "npx",
             args: ["-y", "@z_ai/mcp-server"],
-            env: ["Z_AI_API_KEY": apiKey]
+            env: ["Z_AI_API_KEY": apiKey],
+            homepage: "https://docs.bigmodel.cn/cn/coding-plan/mcp/vision-mcp-server"
         )
         addConfig(config)
     }

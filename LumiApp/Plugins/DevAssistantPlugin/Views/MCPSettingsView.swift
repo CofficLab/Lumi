@@ -40,7 +40,8 @@ struct MCPSettingsView: View {
             name: item.name,
             command: item.command,
             args: item.args,
-            env: envVarInputs
+            env: envVarInputs,
+            homepage: item.documentationURL
         )
         mcpService.addConfig(config)
     }
@@ -151,6 +152,20 @@ struct InstalledServersView: View {
                         
                         // Command Info
                         VStack(alignment: .leading, spacing: 4) {
+                            if let homepage = config.homepage, let url = URL(string: homepage) {
+                                Link(destination: url) {
+                                    HStack(spacing: 4) {
+                                        Text("HOMEPAGE")
+                                            .font(.caption2)
+                                            .fontWeight(.bold)
+                                        Image(systemName: "arrow.up.right.square")
+                                            .font(.system(size: 10))
+                                    }
+                                    .foregroundColor(.accentColor)
+                                }
+                                .padding(.bottom, 4)
+                            }
+                            
                             Text("COMMAND")
                                 .font(.caption2)
                                 .fontWeight(.bold)
