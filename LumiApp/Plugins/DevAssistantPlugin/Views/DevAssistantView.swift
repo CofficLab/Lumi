@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Dev Assistant 主视图 - 聊天界面
 struct DevAssistantView: View {
@@ -287,7 +288,21 @@ struct DevAssistantView: View {
                                 viewModel.sendMessage()
                             }
                         },
-                        isFocused: $isInputFocused
+                        isFocused: $isInputFocused,
+                        onDrop: { urls in
+                            let imageURLs = urls.filter { url in
+                                let ext = url.pathExtension.lowercased()
+                                return ["png", "jpg", "jpeg", "gif", "webp"].contains(ext)
+                            }
+                            
+                            if !imageURLs.isEmpty {
+                                for url in imageURLs {
+                                    viewModel.handleImageUpload(url: url)
+                                }
+                                return true
+                            }
+                            return false
+                        }
                     )
                     .frame(height: 32)
                     .padding(.horizontal, 4)
@@ -367,6 +382,9 @@ struct DevAssistantView: View {
                         .stroke(Color.black.opacity(0.1), lineWidth: 1)
                 )
                 .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
+                .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+                    handleDrop(providers: providers)
+                }
                 .padding(16)
                 .overlay(alignment: .bottomLeading) {
                     CommandSuggestionView(viewModel: viewModel.commandSuggestionViewModel) { suggestion in
@@ -410,6 +428,27 @@ struct DevAssistantView: View {
                 viewModel.handleImageUpload(url: url)
             }
         }
+    }
+
+    private func handleDrop(providers: [NSItemProvider]) -> Bool {
+        var handled = false
+        for provider in providers {
+            if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
+                provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { (item, error) in
+                    if let data = item as? Data, let url = URL(dataRepresentation: data, relativeTo: nil) {
+                        DispatchQueue.main.async {
+                            viewModel.handleImageUpload(url: url)
+                        }
+                    } else if let url = item as? URL {
+                        DispatchQueue.main.async {
+                            viewModel.handleImageUpload(url: url)
+                        }
+                    }
+                }
+                handled = true
+            }
+        }
+        return handled
     }
 }
 

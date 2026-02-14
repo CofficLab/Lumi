@@ -9,6 +9,7 @@ struct MacEditorView: NSViewRepresentable {
     var onArrowDown: (() -> Void)? = nil
     var onEnter: (() -> Void)? = nil
     @Binding var isFocused: Bool
+    var onDrop: (([URL]) -> Bool)? = nil
 
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSScrollView()
@@ -19,6 +20,7 @@ struct MacEditorView: NSViewRepresentable {
         scrollView.autohidesScrollers = true
 
         let textView = EditorTextView()
+        textView.onDrop = onDrop
         textView.autoresizingMask = [.width]
         textView.delegate = context.coordinator
         textView.drawsBackground = false
@@ -40,7 +42,9 @@ struct MacEditorView: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: NSScrollView, context: Context) {
-        guard let textView = nsView.documentView as? NSTextView else { return }
+        guard let textView = nsView.documentView as? EditorTextView else { return }
+
+        textView.onDrop = onDrop
 
         if textView.string != text {
             textView.string = text
@@ -99,7 +103,20 @@ struct MacEditorView: NSViewRepresentable {
 }
 
 class EditorTextView: NSTextView {
-    // 可以在这里进一步自定义行为
+    var onDrop: (([URL]) -> Bool)?
+    
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        let pasteboard = sender.draggingPasteboard
+        
+        // Check for file URLs
+        if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], !urls.isEmpty {
+            if let onDrop = onDrop, onDrop(urls) {
+                return true
+            }
+        }
+        
+        return super.performDragOperation(sender)
+    }
 }
 
 #Preview("App") {
