@@ -521,9 +521,6 @@
         }
       }
     },
-    "Add Vision MCP Server" : {
-
-    },
     "All" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1275,6 +1272,9 @@
         }
       }
     },
+    "Configuration Required" : {
+
+    },
     "Confirm" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1976,6 +1976,9 @@
         }
       }
     },
+    "Enter value" : {
+
+    },
     "ENV:" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2202,6 +2205,9 @@
         }
       }
     },
+    "Go to Marketplace to install servers" : {
+
+    },
     "Grant Permission" : {
 
     },
@@ -2403,6 +2409,15 @@
       }
     },
     "Install" : {
+
+    },
+    "Install %@" : {
+
+    },
+    "Install Server" : {
+
+    },
+    "Installed" : {
 
     },
     "Interface" : {
@@ -2723,7 +2738,7 @@
         }
       }
     },
-    "MCP Servers" : {
+    "Marketplace" : {
 
     },
     "Medium" : {
@@ -3053,6 +3068,9 @@
         }
       }
     },
+    "No configuration required." : {
+
+    },
     "No Data" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3133,7 +3151,7 @@
         }
       }
     },
-    "No MCP servers configured." : {
+    "No MCP servers configured" : {
 
     },
     "No open terminals" : {
@@ -3621,6 +3639,9 @@
       }
     },
     "Registry Manager" : {
+
+    },
+    "Reinstall" : {
 
     },
     "Rescan" : {
@@ -4609,9 +4630,6 @@
         }
       }
     },
-    "This will install @z_ai/mcp-server via npx." : {
-
-    },
     "Time Range" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5002,9 +5020,6 @@
           }
         }
       }
-    },
-    "Zhipu API Key" : {
-
     },
     "主题" : {
       "localizations" : {

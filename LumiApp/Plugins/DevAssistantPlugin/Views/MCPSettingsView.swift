@@ -3,114 +3,304 @@ import SwiftUI
 
 struct MCPSettingsView: View {
     @StateObject private var mcpService = MCPService.shared
-    @State private var newApiKey: String = ""
-    @State private var isAddingVision: Bool = false
+    @State private var selectedTab: Int = 0
+    
+    // Installation State
+    @State private var selectedMarketplaceItem: MCPMarketplaceItem?
+    @State private var envVarInputs: [String: String] = [:]
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            Picker("", selection: $selectedTab) {
+                Text("Installed").tag(0)
+                Text("Marketplace").tag(1)
+            }
+            .pickerStyle(.segmented)
+            .padding()
+            
+            if selectedTab == 0 {
+                InstalledServersView()
+            } else {
+                MarketplaceView(selectedItem: $selectedMarketplaceItem)
+            }
+        }
+        .frame(width: 500, height: 400)
+        .sheet(item: $selectedMarketplaceItem) { item in
+            InstallSheet(item: item, envVarInputs: $envVarInputs, onInstall: {
+                install(item: item)
+                selectedMarketplaceItem = nil
+                selectedTab = 0 // Switch to installed tab
+            })
+        }
+    }
+    
+    func install(item: MCPMarketplaceItem) {
+        // Construct args and env
+        let config = MCPServerConfig(
+            name: item.name,
+            command: item.command,
+            args: item.args,
+            env: envVarInputs
+        )
+        mcpService.addConfig(config)
+    }
+}
+
+struct InstalledServersView: View {
+    @ObservedObject var mcpService = MCPService.shared
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("MCP Servers")
-                .font(.headline)
-            
-            // Server List
             if mcpService.configs.isEmpty {
-                Text("No MCP servers configured.")
-                    .foregroundColor(.secondary)
-                    .padding(.vertical, 8)
+                emptyStateView
             } else {
-                List {
-                    ForEach(mcpService.configs) { config in
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(config.name)
-                                    .fontWeight(.medium)
-                                Text(config.command + " " + config.args.joined(separator: " "))
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                    .lineLimit(1)
-                                    .truncationMode(.middle)
-                            }
-                            
-                            Spacer()
-                            
-                            // Status
-                            if mcpService.connectedClients[config.name] != nil {
-                                HStack(spacing: 4) {
-                                    Circle()
-                                        .fill(Color.green)
-                                        .frame(width: 8, height: 8)
-                                    Text("Connected")
-                                        .font(.caption)
-                                        .foregroundColor(.green)
-                                }
-                            } else {
-                                VStack(alignment: .trailing) {
-                                    HStack(spacing: 4) {
-                                        Circle()
-                                            .fill(Color.red)
-                                            .frame(width: 8, height: 8)
-                                        Text("Disconnected")
-                                            .font(.caption)
-                                            .foregroundColor(.red)
-                                    }
-                                    
-                                    if let error = mcpService.connectionErrors[config.name] {
-                                        Text(error)
-                                            .font(.caption2)
-                                            .foregroundColor(.red)
-                                            .multilineTextAlignment(.trailing)
-                                            .frame(maxWidth: 200)
-                                    }
-                                }
-                            }
-                            
-                            Button(action: {
-                                mcpService.removeConfig(name: config.name)
-                            }) {
-                                Image(systemName: "trash")
-                                    .foregroundColor(.red)
-                            }
-                            .buttonStyle(.plain)
-                            .padding(.leading, 8)
-                        }
-                        .padding(.vertical, 4)
-                    }
-                }
-                .listStyle(.plain)
-                .frame(height: 200)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                )
-            }
-            
-            Divider()
-            
-            // Add Vision MCP Section
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Add Vision MCP Server")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                
-                HStack {
-                    SecureField("Zhipu API Key", text: $newApiKey)
-                        .textFieldStyle(.roundedBorder)
-                    
-                    Button(action: {
-                        guard !newApiKey.isEmpty else { return }
-                        mcpService.installVisionMCP(apiKey: newApiKey)
-                        newApiKey = ""
-                    }) {
-                        Text("Install")
-                    }
-                    .disabled(newApiKey.isEmpty)
-                }
-                
-                Text("This will install @z_ai/mcp-server via npx.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                serverListView
             }
         }
-        .padding()
-        .frame(width: 500)
+    }
+    
+    private var emptyStateView: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "server.rack")
+                .font(.system(size: 48))
+                .foregroundColor(.secondary.opacity(0.5))
+            Text("No MCP servers configured")
+                .font(.headline)
+                .foregroundColor(.secondary)
+            Text("Go to Marketplace to install servers")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
+    private var serverListView: some View {
+        List {
+            ForEach(Array(mcpService.configs.enumerated()), id: \.element.name) { index, config in
+                ServerRow(config: config, mcpService: mcpService)
+            }
+        }
+        .listStyle(.plain)
+    }
+    
+    struct ServerRow: View {
+        let config: MCPServerConfig
+        @ObservedObject var mcpService: MCPService
+        
+        var body: some View {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(config.name)
+                        .fontWeight(.medium)
+                    Text(config.command + " " + config.args.joined(separator: " "))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                
+                Spacer()
+                
+                // Status
+                if mcpService.connectedClients[config.name] != nil {
+                    MCPStatusBadge(isConnected: true)
+                } else {
+                    VStack(alignment: .trailing) {
+                        MCPStatusBadge(isConnected: false)
+                        if let error = mcpService.connectionErrors[config.name] {
+                            Text(error)
+                                .font(.caption2)
+                                .foregroundColor(.red)
+                                .multilineTextAlignment(.trailing)
+                                .frame(maxWidth: 200)
+                        }
+                    }
+                }
+                
+                Button(action: {
+                    mcpService.removeConfig(name: config.name)
+                }) {
+                    Image(systemName: "trash")
+                        .foregroundColor(.red)
+                }
+                .buttonStyle(.plain)
+                .padding(.leading, 8)
+            }
+            .padding(.vertical, 4)
+        }
+    }
+}
+
+struct MarketplaceView: View {
+    let items = MCPMarketplace.shared.items
+    @ObservedObject var mcpService = MCPService.shared
+    @State private var selectedItem: MCPMarketplaceItem?
+    
+    // Find parent to present sheet
+    // SwiftUI View hierarchy trickery might be needed or use binding from parent
+    // For simplicity, we will use a binding passed down or PreferenceKey, 
+    // but here we can just use the parent's state via @State in parent passed down?
+    // Let's rely on finding the parent MCPSettingsView via environment object if we made it one, 
+    // but since we are in same file, let's just make it simple.
+    // Actually, we need to bubble up the selection.
+    
+    // Since we can't easily bubble up without bindings, let's restructure slightly.
+    // We will assume this view is used inside MCPSettingsView which manages the sheet.
+    
+    var body: some View {
+        // We need access to the parent's state to trigger sheet. 
+        // A cleaner way is to use a Binding.
+        EmptyView()
+    }
+}
+
+// Re-implementing correctly
+extension MCPSettingsView {
+    struct MarketplaceView: View {
+        let items = MCPMarketplace.shared.items
+        @Binding var selectedItem: MCPMarketplaceItem?
+        @ObservedObject var mcpService = MCPService.shared
+        
+        var body: some View {
+            List(items) { item in
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: item.iconName)
+                        .font(.system(size: 24))
+                        .foregroundColor(.accentColor)
+                        .frame(width: 40, height: 40)
+                        .background(Color.accentColor.opacity(0.1))
+                        .cornerRadius(8)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(item.name)
+                                .fontWeight(.medium)
+                            
+                            if mcpService.configs.contains(where: { $0.name == item.name }) {
+                                Text("Installed")
+                                    .font(.caption2)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color.green.opacity(0.1))
+                                    .foregroundColor(.green)
+                                    .cornerRadius(4)
+                            }
+                        }
+                        
+                        Text(item.description)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .lineLimit(2)
+                    }
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        selectedItem = item
+                    }) {
+                        Text(mcpService.configs.contains(where: { $0.name == item.name }) ? "Reinstall" : "Install")
+                            .font(.caption)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.accentColor.opacity(0.1))
+                            .foregroundColor(.accentColor)
+                            .cornerRadius(4)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.vertical, 8)
+            }
+            .listStyle(.plain)
+        }
+    }
+    
+    struct InstallSheet: View {
+        let item: MCPMarketplaceItem
+        @Binding var envVarInputs: [String: String]
+        var onInstall: () -> Void
+        @Environment(\.dismiss) var dismiss
+        
+        var body: some View {
+            VStack(alignment: .leading, spacing: 20) {
+                HStack {
+                    Image(systemName: item.iconName)
+                        .font(.title2)
+                    Text("Install \(item.name)")
+                        .font(.headline)
+                }
+                
+                Text(item.description)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                
+                Divider()
+                
+                if !item.requiredEnvVars.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Configuration Required")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        
+                        ForEach(item.requiredEnvVars, id: \.self) { envKey in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(envKey)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                SecureField("Enter value", text: Binding(
+                                    get: { envVarInputs[envKey] ?? "" },
+                                    set: { envVarInputs[envKey] = $0 }
+                                ))
+                                .textFieldStyle(.roundedBorder)
+                            }
+                        }
+                    }
+                } else {
+                    Text("No configuration required.")
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                HStack {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                    .keyboardShortcut(.cancelAction)
+                    
+                    Spacer()
+                    
+                    Button("Install Server") {
+                        onInstall()
+                        dismiss()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!item.requiredEnvVars.allSatisfy { 
+                        let value = envVarInputs[$0] ?? ""
+                        return !value.isEmpty
+                    })
+                }
+            }
+            .padding(24)
+            .frame(width: 400, height: item.requiredEnvVars.isEmpty ? 200 : 350)
+            .onAppear {
+                // Reset inputs
+                envVarInputs = [:]
+            }
+        }
+    }
+}
+
+struct MCPStatusBadge: View {
+    let isConnected: Bool
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(isConnected ? Color.green : Color.red)
+                .frame(width: 8, height: 8)
+            Text(isConnected ? "Connected" : "Disconnected")
+                .font(.caption)
+                .foregroundColor(isConnected ? .green : .red)
+        }
     }
 }
