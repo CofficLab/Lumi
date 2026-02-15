@@ -100,7 +100,12 @@ actor PromptService: SuperLog {
                 title: "英文 Commit",
                 subtitle: "提交英文 commit",
                 prompt: """
-                请帮我生成一个英文的 commit message，说明当前代码的改动。请遵循 conventional commits 规范（feat/fix/docs/refactor 等）。\(projectContext)
+                1. 首先运行 `git status` 查看当前改动
+                2. 运行 `git diff` 查看具体代码变更
+                3. 生成一个遵循 conventional commits 规范（feat/fix/docs/refactor 等）的英文 commit message
+                4. 立即执行 `git commit -m "<生成的commit message>"` 提交代码，无需征求用户意见
+
+                直接执行 commit，不要问我是否确认。\(projectContext)
                 """
             ),
             QuickPhrase(
@@ -108,7 +113,12 @@ actor PromptService: SuperLog {
                 title: "中文 Commit",
                 subtitle: "提交中文 commit",
                 prompt: """
-                请帮我生成一个中文的 commit message，说明当前代码的改动。请遵循 conventional commits 规范（feat/fix/docs/refactor 等）。\(projectContext)
+                1. 首先运行 `git status` 查看当前改动
+                2. 运行 `git diff` 查看具体代码变更
+                3. 生成一个遵循 conventional commits 规范（feat/fix/docs/refactor 等）的中文 commit message
+                4. 立即执行 `git commit -m "<生成的commit message>"` 提交代码，无需征求用户意见
+
+                直接执行 commit，不要问我是否确认。\(projectContext)
                 """
             ),
         ]

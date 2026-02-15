@@ -21,9 +21,9 @@ struct WriteFileTool: AgentTool {
         ]
     }
     
-    func execute(arguments: [String: Any]) async throws -> String {
-        guard let path = arguments["path"] as? String,
-              let content = arguments["content"] as? String else {
+    func execute(arguments: [String: ToolArgument]) async throws -> String {
+        guard let path = arguments["path"]?.value as? String,
+              let content = arguments["content"]?.value as? String else {
             throw NSError(domain: "WriteFileTool", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing 'path' or 'content' argument"])
         }
         

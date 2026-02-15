@@ -30,8 +30,8 @@ struct ShellTool: AgentTool, SuperLog {
         self.shellService = shellService
     }
 
-    func execute(arguments: [String: Any]) async throws -> String {
-        guard let command = arguments["command"] as? String else {
+    func execute(arguments: [String: ToolArgument]) async throws -> String {
+        guard let command = arguments["command"]?.value as? String else {
             throw NSError(domain: "ShellTool", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing 'command' argument"])
         }
 

@@ -4,7 +4,7 @@ import SwiftUI
 ///
 /// 允许用户从所有已注册的供应商和模型中选择。
 struct ModelSelectorView: View {
-    @ObservedObject var viewModel: DevAssistantViewModel
+    @ObservedObject var viewModel: AssistantViewModel
     @Environment(\.dismiss) private var dismiss
 
     private let registry = ProviderRegistry.shared
@@ -111,7 +111,7 @@ struct ModelSelectorView: View {
 // MARK: - Preview
 
 #Preview("ModelSelector") {
-    ModelSelectorView(viewModel: DevAssistantViewModel())
+    ModelSelectorView(viewModel: AssistantViewModel())
 }
 
 #Preview("App") {

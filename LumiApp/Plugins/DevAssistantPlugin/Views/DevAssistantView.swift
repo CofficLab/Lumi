@@ -3,7 +3,7 @@ import UniformTypeIdentifiers
 
 /// Dev Assistant 主视图 - 聊天界面
 struct DevAssistantView: View {
-    @StateObject private var viewModel = DevAssistantViewModel()
+    @StateObject private var viewModel = AssistantViewModel()
     @State private var isInputFocused: Bool = false
     @State private var isModelSelectorPresented = false
     @State private var isProjectSelectorPresented = false

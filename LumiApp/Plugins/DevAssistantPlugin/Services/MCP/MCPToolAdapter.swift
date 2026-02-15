@@ -37,14 +37,17 @@ final class MCPToolAdapter: AgentTool, @unchecked Sendable {
         return json
     }
     
-    func execute(arguments: [String: Any]) async throws -> String {
+    func execute(arguments: [String: ToolArgument]) async throws -> String {
         os_log("[MCP] 🔧 开始执行 MCP 工具: \(self.name)")
         os_log("[MCP]   原始工具名: \(self.mcpTool.name)")
+
+        // Convert [String: ToolArgument] to [String: Any]
+        let anyArguments: [String: Any] = arguments.mapValues { $0.value }
 
         // Convert arguments dictionary to MCP.Value
         let mcpArguments: [String: Value]
         do {
-            let data = try JSONSerialization.data(withJSONObject: arguments)
+            let data = try JSONSerialization.data(withJSONObject: anyArguments)
             mcpArguments = try JSONDecoder().decode([String: Value].self, from: data)
             os_log("[MCP]   参数数量: \(mcpArguments.count)")
         } catch {

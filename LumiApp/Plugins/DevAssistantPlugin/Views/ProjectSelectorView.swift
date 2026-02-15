@@ -3,7 +3,7 @@ import UniformTypeIdentifiers
 
 /// 项目选择器视图
 struct ProjectSelectorView: View {
-    @ObservedObject var viewModel: DevAssistantViewModel
+    @ObservedObject var viewModel: AssistantViewModel
     @Binding var isPresented: Bool
     
     @State private var recentProjects: [RecentProject] = []
@@ -301,7 +301,7 @@ struct RecentProject: Codable, Identifiable, Equatable {
 
 #Preview("Project Selector") {
     ProjectSelectorView(
-        viewModel: DevAssistantViewModel(),
+        viewModel: AssistantViewModel(),
         isPresented: .constant(true)
     )
 }

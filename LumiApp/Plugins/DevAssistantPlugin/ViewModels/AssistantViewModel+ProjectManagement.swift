@@ -1,7 +1,7 @@
 import Foundation
 import OSLog
 
-extension DevAssistantViewModel {
+extension AssistantViewModel {
     // MARK: - 项目管理
 
     /// 切换到指定项目

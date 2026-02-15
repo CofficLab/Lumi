@@ -17,8 +17,8 @@ struct ReadFileTool: AgentTool {
         ]
     }
     
-    func execute(arguments: [String: Any]) async throws -> String {
-        guard let path = arguments["path"] as? String else {
+    func execute(arguments: [String: ToolArgument]) async throws -> String {
+        guard let path = arguments["path"]?.value as? String else {
             throw NSError(domain: "ReadFileTool", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing 'path' argument"])
         }
         

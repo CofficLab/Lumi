@@ -9,7 +9,7 @@ enum SlashCommandResult {
 actor SlashCommandService {
     static let shared = SlashCommandService()
     
-    func handle(input: String, viewModel: DevAssistantViewModel) async -> SlashCommandResult {
+    func handle(input: String, viewModel: AssistantViewModel) async -> SlashCommandResult {
         guard input.hasPrefix("/") else { return .notHandled }
         
         let components = input.dropFirst().split(separator: " ", maxSplits: 1).map(String.init)
@@ -47,7 +47,7 @@ actor SlashCommandService {
         }
     }
     
-    private func handleMCPCommand(args: String, viewModel: DevAssistantViewModel) async -> SlashCommandResult {
+    private func handleMCPCommand(args: String, viewModel: AssistantViewModel) async -> SlashCommandResult {
         let components = args.split(separator: " ", maxSplits: 1).map(String.init)
         let subCommand = components.first ?? "help"
         let param = components.count > 1 ? components[1] : ""

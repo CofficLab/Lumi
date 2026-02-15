@@ -21,12 +21,12 @@ struct ListDirectoryTool: AgentTool {
         ]
     }
     
-    func execute(arguments: [String: Any]) async throws -> String {
-        guard let path = arguments["path"] as? String else {
+    func execute(arguments: [String: ToolArgument]) async throws -> String {
+        guard let path = arguments["path"]?.value as? String else {
             throw NSError(domain: "ListDirectoryTool", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing 'path' argument"])
         }
-        
-        let recursive = arguments["recursive"] as? Bool ?? false
+
+        let recursive = arguments["recursive"]?.value as? Bool ?? false
         let fileManager = FileManager.default
         
         var result = ""

@@ -6,7 +6,7 @@ import OSLog
 
 /// DevAssistant 视图模型
 @MainActor
-class DevAssistantViewModel: ObservableObject, SuperLog {
+class AssistantViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🤖"
     nonisolated static let verbose = true
 
@@ -26,6 +26,7 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
 
     private var pendingToolCalls: [ToolCall] = []
     private var currentDepth: Int = 0
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - 项目信息
 
@@ -90,6 +91,16 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
 
     let promptService = PromptService.shared
 
+    // MARK: - 工具管理器（重构：关注点分离）
+    
+    /// 使用 ToolManager 管理所有工具，而不是直接管理
+    private let toolManager = ToolManager.shared
+    
+    /// 获取所有可用工具（通过 ToolManager）
+    private var tools: [AgentTool] {
+        return toolManager.tools
+    }
+
     // MARK: - 图片上传
     
     func handleImageUpload(url: URL) {
@@ -136,38 +147,10 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
     func removeAttachment(id: UUID) {
         pendingAttachments.removeAll { $0.id == id }
     }
-    // MARK: - 工具
-    
-    private let builtInTools: [AgentTool]
-    private var tools: [AgentTool] = []
-    
-    private let mcpService = MCPService.shared
-    private var cancellables = Set<AnyCancellable>()
     
     // MARK: - 初始化
     
     init() {
-        // 初始化工具
-        self.builtInTools = [
-            ListDirectoryTool(),
-            ReadFileTool(),
-            WriteFileTool(),
-            ShellTool(shellService: .shared),
-        ]
-        self.tools = self.builtInTools
-        
-        // 订阅 MCP 工具更新
-        mcpService.$tools
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] mcpTools in
-                guard let self = self else { return }
-                self.tools = self.builtInTools + mcpTools
-                if Self.verbose {
-                    os_log("\(self.t)工具列表已更新，当前共 \(self.tools.count) 个工具 (MCP: \(mcpTools.count))")
-                }
-            }
-            .store(in: &cancellables)
-
         // 加载语言偏好
         loadLanguagePreference()
 
@@ -256,7 +239,7 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
 
         // 验证路径是否存在
         var isDirectory: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory), isDirectory.boolValue else {
+        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) && isDirectory.boolValue else {
             self.errorMessage = "项目路径无效: \(path)"
             return
         }
@@ -446,7 +429,8 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
     }
 
     private func executePendingTool(request: PermissionRequest) async {
-        guard let tool = tools.first(where: { $0.name == request.toolName }) else {
+        // 使用 ToolManager 查找工具
+        guard toolManager.hasTool(named: request.toolName) else {
             messages.append(ChatMessage(
                 role: .user,
                 content: "Error: Tool '\(request.toolName)' not found.",
@@ -457,7 +441,11 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
         }
 
         do {
-            let result = try await tool.execute(arguments: request.arguments)
+            // 使用 ToolManager 执行工具
+            let result = try await toolManager.executeTool(
+                named: request.toolName,
+                arguments: request.arguments
+            )
 
             messages.append(ChatMessage(
                 role: .user,
@@ -548,8 +536,8 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
             os_log("\(self.t)  参数: \(paramsPreview)")
         }
 
-        // 直接执行工具
-        guard let tool = tools.first(where: { $0.name == toolCall.name }) else {
+        // 使用 ToolManager 查找工具
+        guard toolManager.hasTool(named: toolCall.name) else {
             os_log(.error, "\(self.t)❌ 工具 '\(toolCall.name)' 未找到")
             messages.append(ChatMessage(
                 role: .user,
@@ -571,7 +559,11 @@ class DevAssistantViewModel: ObservableObject, SuperLog {
             // 这是安全的，因为 dictionary 在传递时被完整复制
             nonisolated(unsafe) let unsafeArgs = toolArguments
 
-            let result = try await tool.execute(arguments: unsafeArgs)
+            // 使用 ToolManager 执行工具
+            let result = try await toolManager.executeTool(
+                named: toolCall.name,
+                arguments: unsafeArgs
+            )
 
             let duration = Date().timeIntervalSince(startTime)
 
