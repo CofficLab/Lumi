@@ -527,15 +527,6 @@ class AssistantViewModel: ObservableObject, SuperLog {
             arguments = [:]
         }
 
-        if Self.verbose {
-            // 显示关键参数
-            let paramsPreview = arguments.keys.compactMap { key in
-                guard let value = arguments[key]?.value else { return nil }
-                return "\(key): \(type(of: value))"
-            }.joined(separator: ", ")
-            os_log("\(self.t)  参数: \(paramsPreview)")
-        }
-
         // 使用 ToolManager 查找工具
         guard toolManager.hasTool(named: toolCall.name) else {
             os_log(.error, "\(self.t)❌ 工具 '\(toolCall.name)' 未找到")
@@ -566,12 +557,6 @@ class AssistantViewModel: ObservableObject, SuperLog {
             )
 
             let duration = Date().timeIntervalSince(startTime)
-
-            if Self.verbose {
-                let resultPreview = result.count > 200 ? String(result.prefix(200)) + "..." : result
-                os_log("\(self.t)✅ 工具执行成功 (耗时: \(String(format: "%.2f", duration))s)")
-                os_log("\(self.t)  结果预览: \(resultPreview)")
-            }
 
             messages.append(ChatMessage(
                 role: .user,

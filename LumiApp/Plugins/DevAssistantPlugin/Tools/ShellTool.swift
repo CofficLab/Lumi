@@ -38,11 +38,8 @@ struct ShellTool: AgentTool, SuperLog {
         // 评估命令风险
         let riskLevel = Self.evaluateCommandRisk(command: command)
         if Self.verbose {
-            os_log("\(Self.t)命令风险评估 \(command) -> \(riskLevel.displayName)")
+            os_log("\(Self.t)👮 \(riskLevel.displayName) -> \(command)")
         }
-
-        // 检查权限（由外部 PermissionService 调用）
-        // 如果需要权限，会在调用 execute 之前拦截
 
         do {
             let output = try await shellService.execute(command)
