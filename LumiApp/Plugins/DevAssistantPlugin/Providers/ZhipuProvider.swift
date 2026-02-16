@@ -15,7 +15,7 @@ struct ZhipuProvider: LLMProviderProtocol, SuperLog {
 
     static let id = "zhipu"
     static let displayName = "Zhipu AI"
-    static let iconName = "character.book.ja"
+    static let iconName = "sparkles"
     static let description = "智谱 AI (GLM)"
 
     // MARK: - 配置相关
