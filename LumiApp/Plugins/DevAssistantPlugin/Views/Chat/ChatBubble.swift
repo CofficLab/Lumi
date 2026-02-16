@@ -141,7 +141,7 @@ private extension View {
             .background(bubbleBackgroundColor(role: role, isError: isError))
             .foregroundColor(textColor(isError: isError))
             .cornerRadius(12)
-            .textual.textSelection(.enabled)
+            // .textual.textSelection(.enabled) - Temporarily disabled to fix "AnyTextLayoutCollection" warning
     }
 
     /// 气泡背景颜色

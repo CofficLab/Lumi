@@ -198,11 +198,18 @@ struct DevAssistantView: View {
                     }
                     .padding()
                 }
-                .onChange(of: viewModel.messages) { _, _ in
-                    if let lastId = viewModel.messages.last?.id {
+                .onChange(of: viewModel.messages) { oldMessages, newMessages in
+                    guard let lastMessage = newMessages.last else { return }
+                    
+                    // If it's a new message, animate
+                    if oldMessages.last?.id != lastMessage.id {
                         withAnimation {
-                            proxy.scrollTo(lastId, anchor: .bottom)
+                            proxy.scrollTo(lastMessage.id, anchor: .bottom)
                         }
+                    } else {
+                        // If it's the same message (streaming update), scroll without animation
+                        // to reduce layout churn and avoid "AnyTextLayoutCollection" warnings
+                        proxy.scrollTo(lastMessage.id, anchor: .bottom)
                     }
                 }
             }

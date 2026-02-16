@@ -93,14 +93,6 @@ class ToolManager: ObservableObject, SuperLog {
                 guard let self = self else { return }
                 self.mcpTools = mcpTools
                 self.refreshAllTools()
-                
-                if Self.verbose {
-                    os_log("\(Self.t)MCP 工具已更新: \(mcpTools.count) 个")
-                    if !mcpTools.isEmpty {
-                        let toolNames = mcpTools.map { $0.name }.joined(separator: ", ")
-                        os_log("\(Self.t)  MCP 工具列表: \(toolNames)")
-                    }
-                }
             }
             .store(in: &cancellables)
     }

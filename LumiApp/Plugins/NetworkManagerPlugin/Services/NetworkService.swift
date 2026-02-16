@@ -174,13 +174,38 @@ class NetworkService: SuperLog, ObservableObject {
     
     /// Get Public IP (Async)
     func getPublicIP() async -> String? {
-        guard let url = URL(string: "https://api.ipify.org") else { return nil }
-        do {
-            let (data, _) = try await URLSession.shared.data(from: url)
-            return String(data: data, encoding: .utf8)
-        } catch {
-            return nil
+        // 使用备用 API 列表，增加重试机制，避免单一服务故障或 TLS 问题
+        let services = [
+            "https://api.ipify.org",
+            "https://ifconfig.me/ip",
+            "https://icanhazip.com",
+            "https://checkip.amazonaws.com"
+        ]
+        
+        // 创建一个不使用缓存的 Session 配置
+        let config = URLSessionConfiguration.ephemeral
+        config.timeoutIntervalForRequest = 5
+        config.timeoutIntervalForResource = 5
+        
+        let session = URLSession(configuration: config)
+        
+        for service in services {
+            guard let url = URL(string: service) else { continue }
+            do {
+                let (data, _) = try await session.data(from: url)
+                let ip = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
+                
+                if let ip = ip, !ip.isEmpty {
+                    return ip
+                }
+            } catch {
+                if Self.verbose {
+                    os_log(.error, "\(self.t)Failed to get public IP from \(service): \(error.localizedDescription)")
+                }
+                continue
+            }
         }
+        return nil
     }
     
     /// Get Wi-Fi Info (SSID, RSSI) via airport utility

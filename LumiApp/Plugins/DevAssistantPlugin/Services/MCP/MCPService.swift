@@ -186,8 +186,6 @@ class MCPService: ObservableObject, SuperLog {
                 continue
             }
 
-            os_log("\(Self.t)  从缓存加载 \(serverName) 的 \(mcpTools.count) 个工具")
-
             let adapters = mcpTools.map { MCPToolAdapter(client: client, tool: $0, serverName: serverName) }
             newTools.append(contentsOf: adapters)
         }

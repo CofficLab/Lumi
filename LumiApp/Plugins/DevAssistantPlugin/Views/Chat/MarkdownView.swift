@@ -19,6 +19,7 @@ struct MarkdownMessageView: View {
                     // 助手消息：使用 StructuredText 支持完整 Markdown
                     StructuredText(markdown: message.content)
                         .textual.structuredTextStyle(.default)
+                        .textual.textSelection(.enabled) // Re-enable selection on the Text view itself
                 }
             }
         }

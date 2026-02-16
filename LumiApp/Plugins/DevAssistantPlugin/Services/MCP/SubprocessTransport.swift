@@ -82,7 +82,7 @@ actor SubprocessTransport: Transport, SuperLog {
         do {
             try process.run()
         } catch {
-            os_log(.error, "\(Self.t)Failed to run process \(executablePath): \(error.localizedDescription)")
+            os_log(.error, "\(Self.t)Failed to run process \(executablePath): \(error)")
             throw error
         }
     }
