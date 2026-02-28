@@ -28,7 +28,7 @@ echo "🔍 Scanning for components to sign..."
 # Also explicitly find Autoupdate binaries inside Sparkle
 # EXCLUDE: nested resource bundles (e.g., .bundle/Contents/Resources/*.bundle) which are not signable
 find "$APP_PATH" -depth \
-    \( -name "*.framework" -o -name "*.app" -o -name "*.xpc" -o -name "*.bundle" -o -name "*.appex" -o -name "*.dylib" -o -name "*.so" -o -name "Autoupdate" \) \
+    \( -name "*.framework" -o -name "*.app" -o -name "*.xpc" -o -name "*.bundle" -o -name "*.appex" -o -name "*.systemextension" -o -name "*.dylib" -o -name "*.so" -o -name "Autoupdate" \) \
     ! -path "$APP_PATH" \
     ! -type l \
     ! -path "*/Contents/Resources/*.bundle" \
