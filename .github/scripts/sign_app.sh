@@ -26,10 +26,12 @@ echo "🔍 Scanning for components to sign..."
 # Use find with -depth (BSD/macOS) to ensure children are processed before parents
 # We exclude symlinks (-type l) to avoid signing the same component multiple times via different paths
 # Also explicitly find Autoupdate binaries inside Sparkle
+# EXCLUDE: nested resource bundles (e.g., .bundle/Contents/Resources/*.bundle) which are not signable
 find "$APP_PATH" -depth \
     \( -name "*.framework" -o -name "*.app" -o -name "*.xpc" -o -name "*.bundle" -o -name "*.appex" -o -name "*.dylib" -o -name "*.so" -o -name "Autoupdate" \) \
     ! -path "$APP_PATH" \
     ! -type l \
+    ! -path "*/Contents/Resources/*.bundle" \
     | while read -r item; do
     
     echo "✍️  Signing component: $item"
