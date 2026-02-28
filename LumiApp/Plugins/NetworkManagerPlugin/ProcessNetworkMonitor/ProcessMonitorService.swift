@@ -65,16 +65,18 @@ class ProcessMonitorService: ObservableObject, SuperLog {
         self.task = task
         
         pipe.fileHandleForReading.waitForDataInBackgroundAndNotify()
-        
+
         // Listen for data output
         NotificationCenter.default.addObserver(forName: NSNotification.Name.NSFileHandleDataAvailable, object: pipe.fileHandleForReading, queue: nil) { [weak self] notification in
-            guard let self = self, self.isRunning else { return }
-            
+            guard let self = self else { return }
             let output = pipe.fileHandleForReading.availableData
             if !output.isEmpty {
-                self.processOutput(output)
+                // Hop to main actor to process output
+                Task { @MainActor in
+                    guard self.isRunning else { return }
+                    self.processOutput(output)
+                }
             }
-            
             pipe.fileHandleForReading.waitForDataInBackgroundAndNotify()
         }
         
@@ -141,7 +143,9 @@ class ProcessMonitorService: ObservableObject, SuperLog {
         // Reset debounce timer
         bufferTimer?.invalidate()
         bufferTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: false) { [weak self] _ in
-            self?.flushBuffer()
+            Task { @MainActor in
+                self?.flushBuffer()
+            }
         }
     }
     

@@ -16,11 +16,11 @@ struct CaffeinateStatusBarPopupView: View {
     @State private var activeAction: QuickActionType? = nil
 
     private let quickDurations: [(title: String, value: TimeInterval)] = [
-        (String(localized: "Indefinite"), 0),
-        (String(localized: "10 Min"), 600),
-        (String(localized: "1 Hour"), 3600),
-        (String(localized: "2 Hours"), 7200),
-        (String(localized: "5 Hours"), 18000),
+        (String(localized: "Indefinite", table: "Caffeinate"), 0),
+        (String(localized: "10 Min", table: "Caffeinate"), 600),
+        (String(localized: "1 Hour", table: "Caffeinate"), 3600),
+        (String(localized: "2 Hours", table: "Caffeinate"), 7200),
+        (String(localized: "5 Hours", table: "Caffeinate"), 18000),
     ]
 
     var body: some View {
@@ -28,7 +28,7 @@ struct CaffeinateStatusBarPopupView: View {
             // 第一区块：时间选项
             durationSection
 
-            Divider()
+            GlassDivider()
                 .padding(.horizontal, 12)
 
             // 第二区块：快捷菜单
@@ -70,35 +70,35 @@ struct CaffeinateStatusBarPopupView: View {
     private var quickActionsSection: some View {
         VStack(spacing: 0) {
             QuickActionMenuItem(
-                title: String(localized: "Prevent sleep & Keep screen on"),
+                title: String(localized: "Prevent sleep & Keep screen on", table: "Caffeinate"),
                 icon: "sun.max.fill",
-                color: .orange,
+                color: DesignTokens.Color.semantic.warning,
                 isSelected: activeAction == .systemAndDisplay,
                 action: {
                     toggleAction(.systemAndDisplay)
                 }
             )
 
-            Divider()
+            GlassDivider()
                 .padding(.leading, 36)
 
             QuickActionMenuItem(
-                title: String(localized: "Prevent sleep & Allow screen off"),
+                title: String(localized: "Prevent sleep & Allow screen off", table: "Caffeinate"),
                 icon: "moon.fill",
-                color: .blue,
+                color: DesignTokens.Color.semantic.info,
                 isSelected: activeAction == .systemOnly,
                 action: {
                     toggleAction(.systemOnly)
                 }
             )
 
-            Divider()
+            GlassDivider()
                 .padding(.leading, 36)
 
             QuickActionMenuItem(
-                title: String(localized: "Prevent sleep & Turn off screen"),
+                title: String(localized: "Prevent sleep & Turn off screen", table: "Caffeinate"),
                 icon: "power",
-                color: .purple,
+                color: DesignTokens.Color.semantic.primary,
                 showCheckmark: false, // 瞬时操作，不显示对号
                 action: {
                     // 立即关闭屏幕，并切换到"允许关闭"模式
@@ -147,10 +147,10 @@ private struct DurationButton: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 10))
-                .foregroundColor(isSelected ? .white : .secondary)
+                .foregroundColor(isSelected ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.1))
+                .background(isSelected ? DesignTokens.Color.semantic.primary : DesignTokens.Color.semantic.textTertiary.opacity(0.2))
                 .cornerRadius(3)
         }
         .buttonStyle(.plain)
@@ -187,12 +187,12 @@ private struct QuickActionMenuItem: View {
             HStack(spacing: 10) {
                 Image(systemName: icon)
                     .font(.system(size: 11))
-                    .foregroundColor(isHovering ? .white : color)
+                    .foregroundColor(isHovering ? DesignTokens.Color.semantic.textPrimary : color)
                     .frame(width: 18)
 
                 Text(title)
                     .font(.system(size: 11))
-                    .foregroundColor(isHovering ? .white : .secondary)
+                    .foregroundColor(isHovering ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
 
                 Spacer()
 
@@ -200,7 +200,7 @@ private struct QuickActionMenuItem: View {
                 if shouldShowCheckmark {
                     Image(systemName: "checkmark")
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(isHovering ? .white : color)
+                        .foregroundColor(isHovering ? DesignTokens.Color.semantic.textPrimary : color)
                 }
             }
             .padding(.horizontal, 12)
@@ -210,7 +210,7 @@ private struct QuickActionMenuItem: View {
         .buttonStyle(.plain)
         .background(
             Rectangle()
-                .fill(isHovering ? Color(nsColor: .selectedContentBackgroundColor) : Color.clear)
+                .fill(isHovering ? DesignTokens.Color.semantic.primary.opacity(0.2) : Color.clear)
         )
         .onHover { hovering in
             isHovering = hovering

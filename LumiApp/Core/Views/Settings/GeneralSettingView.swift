@@ -8,27 +8,50 @@ struct GeneralSettingView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xl) {
                 Spacer().frame(height: 40)
 
-                // Launch at Login
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Startup Options")
-                        .font(.headline)
-
-                    Toggle("Launch at Login", isOn: $launchAtLogin)
-                        .onChange(of: launchAtLogin) { _, newValue in
-                            updateLaunchAtLogin(newValue)
-                        }
-                }
-                .padding(.horizontal, 40)
+                // 启动选项
+                startupOptions
 
                 Spacer()
             }
+            .padding(.horizontal, DesignTokens.Spacing.lg)
         }
-        .navigationTitle("General")
+        .navigationTitle("通用设置")
         .onAppear {
             checkLaunchAtLoginStatus()
+        }
+    }
+
+    // MARK: - 启动选项
+
+    private var startupOptions: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                Image(systemName: "power")
+                    .font(.system(size: 20))
+                    .foregroundColor(DesignTokens.Color.semantic.primary)
+                    .frame(width: 32)
+
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
+                    Text("启动选项")
+                        .font(DesignTokens.Typography.bodyEmphasized)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+
+                    Text("管理应用启动行为")
+                        .font(DesignTokens.Typography.caption1)
+                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                }
+
+                Spacer()
+            }
+            .padding(.bottom, DesignTokens.Spacing.sm)
+
+            Toggle("登录时启动", isOn: $launchAtLogin)
+                .onChange(of: launchAtLogin) { _, newValue in
+                    updateLaunchAtLogin(newValue)
+                }
         }
     }
 
@@ -69,6 +92,13 @@ struct GeneralSettingView: View {
 
 // MARK: - Preview
 
-#Preview {
+#Preview("通用设置") {
     GeneralSettingView()
+        .inRootView()
+}
+
+#Preview("通用设置 - 完整应用") {
+    ContentLayout()
+        .hideSidebar()
+        .inRootView()
 }

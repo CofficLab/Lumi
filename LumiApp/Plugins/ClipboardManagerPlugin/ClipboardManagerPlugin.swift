@@ -58,3 +58,13 @@ actor ClipboardManagerPlugin: SuperPlugin {
         return AnyView(ClipboardSettingsView())
     }
 }
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .withNavigation(ClipboardManagerPlugin.navigationId)
+        .inRootView()
+        .withDebugBar()
+}

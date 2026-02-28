@@ -5,7 +5,11 @@ struct DirectoryTreeView: View {
     
     var body: some View {
         if entries.isEmpty {
-            ContentUnavailableView("No Data", systemImage: "folder", description: Text("Directory structure will be displayed after scanning"))
+            ContentUnavailableView(
+                label: { Text("No Data") },
+                description: { Text("Directory structure will be displayed after scanning") },
+                actions: { EmptyView() }
+            )
         } else {
             List(entries, children: \.children) { entry in
                 HStack {
@@ -22,7 +26,7 @@ struct DirectoryTreeView: View {
                     
                     Text(formatBytes(entry.size))
                         .font(.monospacedDigit(.caption)())
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
                 .padding(.vertical, 2)
             }
@@ -42,7 +46,6 @@ struct DirectoryTreeView: View {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .withDebugBar()
 }

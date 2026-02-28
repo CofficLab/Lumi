@@ -83,10 +83,24 @@ class FinderSync: FIFinderSync, SuperLog {
         }
 
         // Check macOS version for icon support
-        let showIcons = SystemUtil.isMacOSVersion(atLeast: 26)
+        let showIcons = SystemUtil.isMacOSVersion(atLeast: 11)
 
         if Self.verbose {
-            os_log("\(Self.t)图标显示: \(showIcons) (要求 macOS 26.0+，当前: \(SystemUtil.macOSVersionString()))")
+            os_log("\(Self.t)图标显示: \(showIcons) (要求 macOS 11.0+，当前: \(SystemUtil.macOSVersionString()))")
+        }
+
+        func menuIcon(_ name: String) -> NSImage? {
+            let appearanceMatch = NSApplication.shared.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua])
+            let currentMatch = NSAppearance.current.bestMatch(from: [.darkAqua, .aqua])
+            let isDark = appearanceMatch == .darkAqua || currentMatch == .darkAqua || (UserDefaults.standard.persistentDomain(forName: UserDefaults.globalDomain)?["AppleInterfaceStyle"] as? String == "Dark")
+            let color = isDark ? NSColor.white : NSColor.black
+            guard let symbolImage = NSImage(systemSymbolName: name, accessibilityDescription: nil) else {
+                return nil
+            }
+            let config = NSImage.SymbolConfiguration(paletteColors: [color])
+            let colored = symbolImage.withSymbolConfiguration(config) ?? symbolImage
+            colored.isTemplate = false
+            return colored
         }
 
         for item in items {
@@ -94,25 +108,25 @@ class FinderSync: FIFinderSync, SuperLog {
             case .openInVSCode:
                 let vscodeItem = menu.addItem(withTitle: item.customTitle ?? "在 VS Code 中打开", action: #selector(openInVSCode(_:)), keyEquivalent: "")
                 if showIcons {
-                    vscodeItem.image = NSImage(systemSymbolName: "chevron.left.forwardslash.chevron.right", accessibilityDescription: "Code")
+                    vscodeItem.image = menuIcon("chevron.left.forwardslash.chevron.right")
                 }
 
             case .openInTerminal:
                 let termItem = menu.addItem(withTitle: item.customTitle ?? "在终端中打开", action: #selector(openInTerminal(_:)), keyEquivalent: "")
                 if showIcons {
-                    termItem.image = NSImage(systemSymbolName: "apple.terminal", accessibilityDescription: "Terminal")
+                    termItem.image = menuIcon("apple.terminal")
                 }
 
             case .copyPath:
                 let copyPathItem = menu.addItem(withTitle: item.customTitle ?? "复制路径", action: #selector(copyPath(_:)), keyEquivalent: "")
                 if showIcons {
-                    copyPathItem.image = NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: "Copy")
+                    copyPathItem.image = menuIcon("doc.on.doc")
                 }
 
             case .newFile:
                 let newFileItem = menu.addItem(withTitle: item.customTitle ?? "新建文件", action: nil, keyEquivalent: "")
                 if showIcons {
-                    newFileItem.image = NSImage(systemSymbolName: "doc.badge.plus", accessibilityDescription: "New File")
+                    newFileItem.image = menuIcon("doc.badge.plus")
                 }
 
                 let newFileMenu = NSMenu(title: "New File")
@@ -130,229 +144,31 @@ class FinderSync: FIFinderSync, SuperLog {
                     let tItem = newFileMenu.addItem(withTitle: "\(template.name) (.\(template.extensionName))", action: #selector(createNewFileFromTemplate(_:)), keyEquivalent: "")
                     tItem.tag = index
                     if showIcons {
-                        tItem.image = NSImage(systemSymbolName: "doc.text", accessibilityDescription: "File")
+                        tItem.image = menuIcon("doc.text")
                     }
                 }
 
             case .deleteFile:
                 let deleteItem = menu.addItem(withTitle: item.customTitle ?? "删除文件", action: #selector(deleteFile(_:)), keyEquivalent: "")
                 if showIcons {
-                    deleteItem.image = NSImage(systemSymbolName: "trash", accessibilityDescription: "Delete")
+                    deleteItem.image = menuIcon("trash")
                 }
 
             case .hideFile:
                 let hideItem = menu.addItem(withTitle: item.customTitle ?? "隐藏文件", action: #selector(hideFile(_:)), keyEquivalent: "")
                 if showIcons {
-                    hideItem.image = NSImage(systemSymbolName: "eye.slash", accessibilityDescription: "Hide")
+                    hideItem.image = menuIcon("eye.slash")
                 }
 
             case .showHiddenFiles:
                 let showHiddenFilesItem = menu.addItem(withTitle: item.customTitle ?? "显示隐藏文件", action: #selector(showHiddenFiles(_:)), keyEquivalent: "")
                 if showIcons {
-                    showHiddenFilesItem.image = NSImage(systemSymbolName: "eye", accessibilityDescription: "Show Hidden")
+                    showHiddenFilesItem.image = menuIcon("eye")
                 }
             }
         }
 
         return menu
-    }
-
-    // MARK: - Actions
-
-    @IBAction func openInVSCode(_ sender: AnyObject?) {
-        if Self.verbose {
-            os_log("\(Self.t)触发「在 VS Code 中打开」操作")
-        }
-        guard let items = getSelectedURLs() else {
-            if Self.verbose {
-                os_log("\(Self.t)未获取到选中项")
-            }
-            return
-        }
-        if Self.verbose {
-            os_log("\(Self.t)选中项数量: \(items.count)")
-        }
-
-        let urlsToOpen = items.isEmpty ? [getCurrentDirectoryURL()].compactMap { $0 } : items
-
-        if Self.verbose {
-            os_log("\(Self.t)待打开 URL 数量: \(urlsToOpen.count)")
-        }
-        if Self.verbose, let first = urlsToOpen.first {
-            os_log("\(Self.t)首个 URL 路径: \(first.path)")
-        }
-
-        openURLs(urlsToOpen, withAppBundleIdentifier: "com.microsoft.VSCode")
-    }
-
-    @IBAction func openInTerminal(_ sender: AnyObject?) {
-        if Self.verbose {
-            os_log("\(Self.t)触发「在终端中打开」操作")
-        }
-        let items = getSelectedURLs() ?? []
-        let folders = items.filter { isDirectory($0) }
-
-        if Self.verbose {
-            os_log("\(Self.t)选中项: \(items.count)，文件夹: \(folders.count)")
-        }
-
-        if !folders.isEmpty {
-            openURLs(folders, withAppBundleIdentifier: "com.apple.Terminal")
-        } else if let target = getCurrentDirectoryURL() {
-            if Self.verbose {
-                os_log("\(Self.t)打开当前目录: \(target.path)")
-            }
-            openURLs([target], withAppBundleIdentifier: "com.apple.Terminal")
-        } else {
-            if Self.verbose {
-                os_log("\(Self.t)未找到目标目录")
-            }
-        }
-    }
-
-    @IBAction func createNewFileFromTemplate(_ sender: AnyObject?) {
-        if Self.verbose {
-            os_log("\(Self.t)触发「从模板新建文件」操作")
-        }
-        guard let item = sender as? NSMenuItem else {
-            if Self.verbose {
-                os_log("\(Self.t)sender 不是 NSMenuItem 类型")
-            }
-            return
-        }
-
-        let index = item.tag
-        guard index >= 0, index < cachedTemplates.count else {
-            if Self.verbose {
-                os_log("\(Self.t)模板索引无效: \(index)，缓存数量: \(self.cachedTemplates.count)")
-            }
-            return
-        }
-
-        let template = cachedTemplates[index]
-
-        if Self.verbose {
-            os_log("\(Self.t)创建文件 - 名称: \(template.name), 扩展名: \(template.extensionName)")
-        }
-        createNewFile(extension: template.extensionName, content: template.content, namePrefix: template.name)
-    }
-
-    @IBAction func copyPath(_ sender: AnyObject?) {
-        if Self.verbose {
-            os_log("\(Self.t)触发「复制路径」操作")
-        }
-        let items = getSelectedURLs() ?? []
-        let urlsToCopy = items.isEmpty ? [getCurrentDirectoryURL()].compactMap { $0 } : items
-
-        guard !urlsToCopy.isEmpty else {
-            if Self.verbose {
-                os_log("\(Self.t)没有可复制的 URL")
-            }
-            return
-        }
-
-        let paths = urlsToCopy.map { $0.path }
-        let stringToCopy = paths.joined(separator: "\n")
-
-        if Self.verbose {
-            os_log("\(Self.t)复制到剪贴板: \(stringToCopy)")
-        }
-
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(stringToCopy, forType: .string)
-    }
-
-    @IBAction func deleteFile(_ sender: AnyObject?) {
-        if Self.verbose {
-            os_log("\(Self.t)触发「删除文件」操作")
-        }
-        guard let items = getSelectedURLs(), !items.isEmpty else {
-            if Self.verbose {
-                os_log("\(Self.t)没有选中要删除的项")
-            }
-            return
-        }
-
-        for url in items {
-            do {
-                try FileManager.default.trashItem(at: url, resultingItemURL: nil)
-                if Self.verbose {
-                    os_log("\(Self.t)已移至废纸篓: \(url.path)")
-                }
-            } catch {
-                if Self.verbose {
-                    os_log("\(Self.t)移至废纸篓失败: \(url.path)，错误: \(error.localizedDescription)")
-                }
-            }
-        }
-    }
-
-    @IBAction func hideFile(_ sender: AnyObject?) {
-        if Self.verbose {
-            os_log("\(Self.t)触发「隐藏文件」操作")
-        }
-        guard let items = getSelectedURLs(), !items.isEmpty else {
-            if Self.verbose {
-                os_log("\(Self.t)没有选中要隐藏的项")
-            }
-            return
-        }
-
-        for url in items {
-            do {
-                var resourceValues = URLResourceValues()
-                resourceValues.isHidden = true
-                var mutableURL = url
-                try mutableURL.setResourceValues(resourceValues)
-                if Self.verbose {
-                    os_log("\(Self.t)已隐藏: \(url.path)")
-                }
-            } catch {
-                if Self.verbose {
-                    os_log("\(Self.t)隐藏失败: \(url.path)，错误: \(error.localizedDescription)")
-                }
-            }
-        }
-    }
-
-    @IBAction func showHiddenFiles(_ sender: AnyObject?) {
-        if Self.verbose {
-            os_log("\(Self.t)触发「显示隐藏文件」操作")
-        }
-        guard let currentDir = getCurrentDirectoryURL() else {
-            if Self.verbose {
-                os_log("\(Self.t)未获取到当前目录")
-            }
-            return
-        }
-
-        // 使用 AppleScript 来显示隐藏文件
-        let script = """
-        tell application "Finder"
-            if (count of windows) > 0 then
-                set folderPath to "\(currentDir.path)" as alias
-                set every file of folderPath whose name starts with "." to visible
-            end if
-        end tell
-        """
-
-        if Self.verbose {
-            os_log("\(Self.t)执行 AppleScript 显示隐藏文件")
-        }
-
-        var error: NSDictionary?
-        NSAppleScript(source: script)?.executeAndReturnError(&error)
-
-        if let error = error {
-            if Self.verbose {
-                os_log("\(Self.t)执行 AppleScript 失败: \(error)")
-            }
-        } else {
-            if Self.verbose {
-                os_log("\(Self.t)成功显示隐藏文件")
-            }
-        }
     }
 
     // MARK: - Helpers
@@ -382,7 +198,7 @@ class FinderSync: FIFinderSync, SuperLog {
         }
     }
 
-    private func getSelectedURLs() -> [URL]? {
+    func getSelectedURLs() -> [URL]? {
         let items = FIFinderSyncController.default().selectedItemURLs()
         if Self.verbose {
             os_log("\(Self.t)获取选中 URL: 找到 \(items?.count ?? 0) 项")
@@ -390,7 +206,7 @@ class FinderSync: FIFinderSync, SuperLog {
         return items
     }
 
-    private func getCurrentDirectoryURL() -> URL? {
+    func getCurrentDirectoryURL() -> URL? {
         let url = FIFinderSyncController.default().targetedURL()
         if Self.verbose {
             os_log("\(Self.t)获取当前目录 URL: \(url?.path ?? "nil")")
@@ -398,11 +214,11 @@ class FinderSync: FIFinderSync, SuperLog {
         return url
     }
 
-    private func isDirectory(_ url: URL) -> Bool {
+    func isDirectory(_ url: URL) -> Bool {
         return (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
     }
 
-    private func openURLs(_ urls: [URL], withAppBundleIdentifier bundleId: String) {
+    func openURLs(_ urls: [URL], withAppBundleIdentifier bundleId: String) {
         if Self.verbose {
             os_log("\(Self.t)打开 URL，数量: \(urls.count)，bundle: \(bundleId)")
         }
@@ -431,7 +247,7 @@ class FinderSync: FIFinderSync, SuperLog {
         }
     }
 
-    private func createNewFile(extension ext: String, content: String, namePrefix: String) {
+    func createNewFile(extension ext: String, content: String, namePrefix: String) {
         guard let target = getCurrentDirectoryURL() else {
             if Self.verbose {
                 os_log("\(Self.t)创建文件失败 - 没有目标目录")

@@ -76,12 +76,12 @@ class InputService: ObservableObject, SuperLog {
                 os_log("\(self.t)Switching to input source: \(rule.inputSourceID) for app \(app.localizedName ?? bundleID)")
             }
             switchInputSource(to: rule.inputSourceID)
-        } else if let defaultID = config.defaultInputSourceID {
+        } else if config.defaultInputSourceID != nil {
             // Optional: Switch to default if no rule exists
             // if Self.verbose {
-            //     os_log("\(self.t)Switching to default input source: \(defaultID)")
+            //     os_log("\(self.t)Switching to default input source: \(config.defaultInputSourceID)")
             // }
-            // switchInputSource(to: defaultID)
+            // switchInputSource(to: config.defaultInputSourceID)
         }
     }
 

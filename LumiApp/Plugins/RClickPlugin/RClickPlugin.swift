@@ -3,8 +3,8 @@ import SwiftUI
 
 actor RClickPlugin: SuperPlugin {
     nonisolated static let id = "RClick"
-    nonisolated static let displayName = String(localized: "Right Click")
-    nonisolated static let description = String(localized: "Customize Finder right-click menu actions")
+    nonisolated static let displayName = String(localized: "Right Click", table: "RClick")
+    nonisolated static let description = String(localized: "Customize Finder right-click menu actions", table: "RClick")
     nonisolated static let iconName = "cursorarrow.click.2"
     static var order: Int { 50 }
 
@@ -41,7 +41,7 @@ actor RClickPlugin: SuperPlugin {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
+        .withNavigation(RClickPlugin.id)
         .inRootView()
         .withDebugBar()
 }

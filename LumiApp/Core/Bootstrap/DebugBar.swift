@@ -110,12 +110,29 @@ private struct DynamicPreviewSizingView<Content: View>: View {
 
     var body: some View {
         #if os(macOS)
-            content
-                .frame(width: size.width, height: size.height)
-                .toolbar(content: {
+            VStack(spacing: 0) {
+                // Debug Toolbar Header
+                HStack {
+                    Image(systemName: "ruler")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Text("Preview Size")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    Spacer()
+                    
                     PreviewSizeToolbar()
-                })
-
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Color(nsColor: .windowBackgroundColor))
+                .overlay(Divider(), alignment: .bottom)
+                
+                // Content
+                content
+                    .frame(width: size.width, height: size.height)
+            }
         #else
             // iOS 平台直接返回原内容
             content

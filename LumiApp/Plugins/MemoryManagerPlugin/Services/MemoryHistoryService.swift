@@ -94,11 +94,14 @@ class MemoryHistoryService: ObservableObject, SuperLog {
     }
     
     private func saveHistory() {
+        // Capture the history data on the main actor before switching to background
+        let historyToSave = longTermHistory
+        let storageKey = self.storageKey
         DispatchQueue.global(qos: .background).async { [weak self] in
             guard let self = self else { return }
             do {
-                let data = try JSONEncoder().encode(self.longTermHistory)
-                UserDefaults.standard.set(data, forKey: self.storageKey)
+                let data = try JSONEncoder().encode(historyToSave)
+                UserDefaults.standard.set(data, forKey: storageKey)
             } catch {
                 os_log(.error, "\(self.t)Failed to save history: \(error.localizedDescription)")
             }

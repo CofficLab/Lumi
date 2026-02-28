@@ -7,8 +7,9 @@ extension View {
     /// - Returns: 包装后的视图，包含所有环境对象
     func inRootView() -> some View {
         self
-            .environmentObject(AppProvider())
-            .environmentObject(PluginProvider())
+            .environmentObject(AppProvider.shared)
+            .environmentObject(PluginProvider.shared)
+            .environmentObject(MystiqueThemeManager()) // 注册主题管理器
     }
 }
 
@@ -16,8 +17,6 @@ extension View {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .withDebugBar()
 }

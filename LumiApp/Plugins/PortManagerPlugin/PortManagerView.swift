@@ -24,26 +24,23 @@ struct PortManagerView: View {
             // Toolbar / Header
             HStack {
                 Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
-                TextField("Search port, PID, or process name", text: $searchText)
-                    .textFieldStyle(.plain)
-                    .padding(8)
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                GlassTextField(
+                    title: LocalizedStringKey(String(localized: "Search port, PID, or process name", table: "PortManager")),
+                    text: $searchText
+                )
 
                 Spacer()
 
-                Button(action: {
+                GlassButton(title: LocalizedStringKey(String(localized: "Refresh", table: "PortManager")), style: .secondary) {
                     Task { await refresh() }
-                }) {
-                    Label("Refresh", systemImage: "arrow.clockwise")
                 }
                 .disabled(isLoading)
             }
             .padding()
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(DesignTokens.Material.glass)
 
-            Divider()
+            GlassDivider()
 
             // Content
             if isLoading && ports.isEmpty {
@@ -51,15 +48,19 @@ struct PortManagerView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if ports.isEmpty {
                 if #available(macOS 14.0, *) {
-                    ContentUnavailableView("No Listening Ports", systemImage: "network.slash", description: Text("No listening ports found."))
+                    ContentUnavailableView(
+                        LocalizedStringKey(String(localized: "No Listening Ports")),
+                        systemImage: "network.slash",
+                        description: Text("No listening ports found.")
+                    )
                 } else {
                     VStack {
                         Image(systemName: "network.slash")
                             .font(.largeTitle)
-                            .foregroundStyle(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         Text("No Listening Ports")
                             .font(.headline)
-                            .foregroundStyle(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
@@ -79,10 +80,13 @@ struct PortManagerView: View {
         .task {
             await refresh()
         }
-        .alert("Error", isPresented: $showError, actions: {
-            Button("OK", role: .cancel) {}
+        .alert(Text("Error"), isPresented: $showError, actions: {
+            Button(role: .cancel) {
+            } label: {
+                Text("OK")
+            }
         }, message: {
-            Text(errorMessage ?? "Unknown error")
+            Text(errorMessage ?? String(localized: "Unknown error"))
         })
     }
 
@@ -99,7 +103,7 @@ struct PortManagerView: View {
             try? await Task.sleep(nanoseconds: 500000000) // Wait 0.5s
             await refresh()
         } catch {
-            errorMessage = "Failed to kill process: \(error.localizedDescription)"
+            errorMessage = String(localized: "Failed to kill process: \(error.localizedDescription)")
             showError = true
         }
     }
@@ -117,11 +121,12 @@ struct PortRowView: View {
                     Text(port.port)
                         .font(.title3)
                         .fontWeight(.bold)
-                        .foregroundStyle(.blue)
+                        .foregroundColor(DesignTokens.Color.semantic.info)
                         .frame(minWidth: 50, alignment: .leading)
 
                     Text(port.command)
                         .font(.headline)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
                     Spacer()
                 }
@@ -134,23 +139,23 @@ struct PortRowView: View {
                         .monospaced()
 
                     Text("•")
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
                     Text("PID: \(port.pid)")
                         .font(.caption)
                         .monospacedDigit()
                         .padding(.horizontal, 4)
-                        .background(Color.gray.opacity(0.1))
+                        .background(DesignTokens.Color.semantic.textTertiary.opacity(0.2))
                         .cornerRadius(4)
 
                     Text("•")
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
                     Text(port.user)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
-                .foregroundStyle(.secondary)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
 
             Spacer()
@@ -159,16 +164,24 @@ struct PortRowView: View {
                 showConfirm = true
             }) {
                 Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.red.opacity(0.8))
+                    .foregroundColor(DesignTokens.Color.semantic.error.opacity(0.8))
                     .font(.title2)
             }
             .buttonStyle(.borderless)
-            .help("Kill Process")
-            .confirmationDialog("Are you sure you want to kill process \(port.command) (PID: \(port.pid))?", isPresented: $showConfirm) {
-                Button("Kill Process", role: .destructive) {
+            .help(Text("Kill Process"))
+            .confirmationDialog(
+                Text("Are you sure you want to kill process \(port.command) (PID: \(port.pid))?"),
+                isPresented: $showConfirm
+            ) {
+                Button(role: .destructive) {
                     onKill()
+                } label: {
+                    Text("Kill Process")
                 }
-                Button("Cancel", role: .cancel) {}
+                Button(role: .cancel) {
+                } label: {
+                    Text("Cancel")
+                }
             } message: {
                 Text("This action will force terminate the process, which may lead to data loss.")
             }
@@ -183,7 +196,6 @@ struct PortRowView: View {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(PortManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()

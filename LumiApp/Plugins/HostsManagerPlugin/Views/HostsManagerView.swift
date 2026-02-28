@@ -21,27 +21,24 @@ struct HostsManagerView: View {
                 Spacer()
                 
                 // Search
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundStyle(.secondary)
-                    TextField("Search Host", text: $viewModel.searchText)
-                        .textFieldStyle(.plain)
-                }
-                .padding(6)
-                .background(Color.white.opacity(0.1))
-                .cornerRadius(6)
+                GlassTextField(
+                    title: "搜索",
+                    text: $viewModel.searchText,
+                    placeholder: "Search Host"
+                )
                 .frame(width: 200)
                 
                 // Actions
-                Button(action: { showAddSheet = true }) {
-                    Label("Add", systemImage: "plus")
+                GlassButton(title: "Add", style: .primary) {
+                    showAddSheet = true
                 }
+                .frame(width: 100)
                 
                 Menu {
                     Button("Refresh") {
                         Task { await viewModel.loadHosts() }
                     }
-                    Divider()
+                    GlassDivider()
                     Button("Export Backup...") {
                         exportHosts()
                     }
@@ -49,13 +46,17 @@ struct HostsManagerView: View {
                         importHosts()
                     }
                 } label: {
-                    Label("More", systemImage: "ellipsis.circle")
+                    GlassRow {
+                        Label("More", systemImage: "ellipsis.circle")
+                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    }
+                    .frame(width: 110)
                 }
             }
             .padding()
-            .background(.ultraThinMaterial)
+            .background(DesignTokens.Material.glass)
             
-            Divider()
+            GlassDivider()
             
             // List
             if viewModel.isLoading {
@@ -67,7 +68,7 @@ struct HostsManagerView: View {
                 } description: {
                     Text(error)
                 } actions: {
-                    Button("Retry") {
+                    GlassButton(title: "Retry", style: .secondary) {
                         Task { await viewModel.loadHosts() }
                     }
                 }
@@ -136,12 +137,12 @@ struct HostRowView: View {
             case .groupHeader(let name):
                 Text(name)
                     .font(.headline)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     .padding(.top, 8)
             case .comment(let text):
                 Text(text)
                     .font(.monospaced(.caption)())
-                    .foregroundStyle(.gray)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
             case .entry(let ip, let domains, let isEnabled, let comment):
                 Toggle("", isOn: Binding(
                     get: { isEnabled },
@@ -155,16 +156,16 @@ struct HostRowView: View {
                         Text(domains.joined(separator: ", "))
                             .font(.body)
                             .fontWeight(.medium)
-                            .foregroundStyle(isEnabled ? .primary : .secondary)
+                            .foregroundColor(isEnabled ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
                         
                         if let comment = comment {
                             Text("# \(comment)")
-                                .foregroundStyle(.gray)
+                                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                         }
                     }
                     Text(ip)
                         .font(.monospaced(.caption)())
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
                 
                 Spacer()
@@ -173,7 +174,7 @@ struct HostRowView: View {
                     viewModel.deleteEntry(entry)
                 }) {
                     Image(systemName: "trash")
-                        .foregroundStyle(.red.opacity(0.6))
+                        .foregroundColor(DesignTokens.Color.semantic.error.opacity(0.6))
                 }
                 .buttonStyle(.plain)
             case .empty:
@@ -197,33 +198,30 @@ struct HostAddView: View {
     var body: some View {
         VStack(spacing: 20) {
             Text("Add Host Entry")
-                .font(.headline)
+                .font(DesignTokens.Typography.title2)
+                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
             
-            Form {
-                TextField("IP Address", text: $ip)
-                    .onChange(of: ip) { _, newValue in
-                        // Simple validation feedback
+            MystiqueGlassCard {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                    GlassTextField(title: "IP Address", text: $ip, placeholder: "127.0.0.1")
+                    if showIPError {
+                        Text("Invalid IP address format")
+                            .foregroundColor(DesignTokens.Color.semantic.error)
+                            .font(DesignTokens.Typography.caption1)
                     }
-                if showIPError {
-                    Text("Invalid IP address format")
-                        .foregroundStyle(.red)
-                        .font(.caption)
+
+                    GlassTextField(title: "Domain", text: $domain, placeholder: "dev.example.com")
+                    GlassTextField(title: "Comment", text: $comment, placeholder: "Optional")
+                    GlassTextField(title: "Group", text: $group, placeholder: "Optional")
                 }
-                
-                TextField("Domain (e.g., dev.example.com)", text: $domain)
-                
-                TextField("Comment (Optional)", text: $comment)
-                
-                TextField("Group (Optional)", text: $group)
             }
-            .formStyle(.grouped)
             
             HStack {
-                Button("Cancel") {
+                GlassButton(title: "Cancel", style: .ghost) {
                     isPresented = false
                 }
                 
-                Button("Save") {
+                GlassButton(title: "Save", style: .primary) {
                     if viewModel.isValidIP(ip) && !domain.isEmpty {
                         viewModel.addEntry(ip: ip, domain: domain, comment: comment.isEmpty ? nil : comment, group: group.isEmpty ? nil : group)
                         isPresented = false
@@ -245,7 +243,6 @@ struct HostAddView: View {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .withDebugBar()
 }

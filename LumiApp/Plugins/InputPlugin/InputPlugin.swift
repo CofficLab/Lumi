@@ -4,7 +4,7 @@ actor InputPlugin: SuperPlugin {
     nonisolated static let id = "input-manager"
     nonisolated static let name = "Input Manager"
     nonisolated static let iconName = "keyboard"
-    nonisolated static let displayName = String(localized: "Input Manager")
+    nonisolated static let displayName = String(localized: "Input Manager", table: "Input")
     nonisolated static let navigationId = "InputManager"
     static var order: Int { 70 }
     
@@ -29,4 +29,14 @@ actor InputPlugin: SuperPlugin {
             }
         ]
     }
+}
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .withNavigation(InputPlugin.navigationId)
+        .inRootView()
+        .withDebugBar()
 }

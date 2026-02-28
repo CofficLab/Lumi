@@ -1,15 +1,16 @@
 import Foundation
+import SwiftUI
 
-struct RelatedFile: Identifiable, Hashable {
+struct RelatedFile: Identifiable, Hashable, Sendable {
     let id = UUID()
     let path: String
     let size: Int64
     let type: RelatedFileType
-    
+
     var name: String {
         (path as NSString).lastPathComponent
     }
-    
+
     enum RelatedFileType: String, Codable {
         case app
         case support
@@ -19,7 +20,7 @@ struct RelatedFile: Identifiable, Hashable {
         case container
         case log
         case other
-        
+
         var displayName: String {
             switch self {
             case .app: return "Application"
@@ -33,4 +34,14 @@ struct RelatedFile: Identifiable, Hashable {
             }
         }
     }
+}
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .withNavigation(AppManagerPlugin.navigationId)
+        .inRootView()
+        .withDebugBar()
 }

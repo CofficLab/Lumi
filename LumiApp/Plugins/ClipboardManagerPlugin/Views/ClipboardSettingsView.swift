@@ -9,7 +9,7 @@ struct ClipboardSettingsView: View {
         Form {
             Section("General") {
                 Toggle("Enable Clipboard Monitoring", isOn: $isMonitoringEnabled)
-                    .onChange(of: isMonitoringEnabled) { newValue in
+                    .onChange(of: isMonitoringEnabled) { _, newValue in
                         if newValue {
                             monitor.startMonitoring()
                         } else {
@@ -31,11 +31,11 @@ struct ClipboardSettingsView: View {
                         await ClipboardStorage.shared.clear()
                     }
                 }
-                .foregroundColor(.red)
+                .foregroundColor(DesignTokens.Color.semantic.error)
                 
                 Text("All data is stored locally and will not be uploaded to any server.")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
         }
         .padding()
@@ -47,7 +47,6 @@ struct ClipboardSettingsView: View {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .withDebugBar()
 }

@@ -14,7 +14,7 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "☕️"
 
     /// 是否启用该插件
-    nonisolated(unsafe) static let enable = true
+    nonisolated static let enable = true
 
     /// 是否启用详细日志输出
     nonisolated static let verbose = true
@@ -46,7 +46,7 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
         Self.id
     }
 
-    nonisolated(unsafe) static let shared = CaffeinatePlugin()
+    static let shared = CaffeinatePlugin()
 
     // MARK: - UI Contributions
 
@@ -62,7 +62,6 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(CaffeinatePlugin.navigationId)
         .inRootView()
         .withDebugBar()

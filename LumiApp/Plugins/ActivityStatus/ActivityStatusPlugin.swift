@@ -9,13 +9,13 @@ actor ActivityStatusPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "⌛️"
 
     /// 是否启用该插件
-    nonisolated(unsafe) static let enable = true
+    nonisolated static let enable = true
 
     /// 是否启用详细日志输出
     nonisolated static let verbose = true
 
-    nonisolated(unsafe) static let shared = ActivityStatusPlugin()
-    nonisolated(unsafe) static let label = "ActivityStatus"
+    nonisolated static let shared = ActivityStatusPlugin()
+    nonisolated static let label = "ActivityStatus"
 
     /// 插件的唯一标识符，用于设置管理
     nonisolated(unsafe) static var id: String = "ActivityStatus"
@@ -43,7 +43,6 @@ actor ActivityStatusPlugin: SuperPlugin, SuperLog {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .withDebugBar()
 }

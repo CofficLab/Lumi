@@ -22,11 +22,11 @@ struct SystemMonitorView: View {
             // Network Card
             MonitorCard(title: "Network", 
                         value: "↓\(viewModel.metrics.network.downloadSpeedString) ↑\(viewModel.metrics.network.uploadSpeedString)",
-                        color: .blue) {
+                        color: DesignTokens.Color.semantic.info) {
                 ZStack {
-                    WaveformView(data: viewModel.metrics.network.downloadHistory, color: .blue, maxVal: 1024*1024*10) // Approx 10MB scale
+                    WaveformView(data: viewModel.metrics.network.downloadHistory, color: DesignTokens.Color.semantic.info, maxVal: 1024*1024*10)
                         .opacity(0.8)
-                    WaveformView(data: viewModel.metrics.network.uploadHistory, color: .purple, maxVal: 1024*1024*5) // Approx 5MB scale
+                    WaveformView(data: viewModel.metrics.network.uploadHistory, color: DesignTokens.Color.semantic.primary, maxVal: 1024*1024*5)
                         .opacity(0.6)
                 }
             }
@@ -34,11 +34,11 @@ struct SystemMonitorView: View {
             // Disk Card
             MonitorCard(title: "Disk I/O", 
                         value: "R: \(viewModel.metrics.disk.readSpeedString) W: \(viewModel.metrics.disk.writeSpeedString)",
-                        color: .orange) {
+                        color: DesignTokens.Color.semantic.warning) {
                 ZStack {
-                    WaveformView(data: viewModel.metrics.disk.readHistory, color: .orange, maxVal: 1024*1024*50) // Approx 50MB scale
+                    WaveformView(data: viewModel.metrics.disk.readHistory, color: DesignTokens.Color.semantic.warning, maxVal: 1024*1024*50)
                         .opacity(0.8)
-                    WaveformView(data: viewModel.metrics.disk.writeHistory, color: .red, maxVal: 1024*1024*20) // Approx 20MB scale
+                    WaveformView(data: viewModel.metrics.disk.writeHistory, color: DesignTokens.Color.semantic.error, maxVal: 1024*1024*20)
                         .opacity(0.6)
                 }
             }
@@ -54,28 +54,28 @@ struct SystemMonitorView: View {
 }
 
 struct MonitorCard<Content: View>: View {
-    let title: String
+    let title: LocalizedStringKey
     let value: String
     let color: Color
     let content: () -> Content
     
     var body: some View {
-        GlassCard(padding: 16, cornerRadius: 16) {
+        MystiqueGlassCard(cornerRadius: 16, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Text(title)
                         .font(.headline)
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     Spacer()
                     Text(value)
                         .font(.system(.body, design: .monospaced))
                         .fontWeight(.medium)
-                        .foregroundStyle(color)
+                        .foregroundColor(color)
                 }
                 
                 content()
                     .frame(height: 100)
-                    .background(Color.black.opacity(0.05))
+                    .background(DesignTokens.Material.glass.opacity(0.2))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
             }
         }
@@ -87,7 +87,6 @@ struct MonitorCard<Content: View>: View {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .withDebugBar()
 }

@@ -8,33 +8,43 @@ struct Sidebar: View {
     /// 插件提供者环境对象
     @EnvironmentObject var pluginProvider: PluginProvider
 
+    /// 当前配色方案（浅色/深色模式）
+    @Environment(\.colorScheme) private var colorScheme
+
     private var entries: [NavigationEntry] {
         pluginProvider.getNavigationEntries()
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            // 导航列表区域
-            Group {
-                if entries.isNotEmpty {
-                        List(entries, selection: $appProvider.selectedNavigationId) { entry in
-                            SidebarRow(entry: entry, isSelected: appProvider.selectedNavigationId == entry.id)
+            if entries.isNotEmpty {
+                ScrollView {
+                    LazyVStack(spacing: DesignTokens.Spacing.sm) {
+                        ForEach(entries) { entry in
+                            Button {
+                                appProvider.selectedNavigationId = entry.id
+                            } label: {
+                                SidebarRow(title: entry.title, icon: entry.icon, isSelected: appProvider.selectedNavigationId == entry.id)
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .listStyle(.sidebar)
-                        .scrollContentBackground(.hidden)
-                        .background(.ultraThinMaterial)
-                } else {
-                    // 空状态
-                    emptyState
+                    }
+                    .padding(.horizontal, DesignTokens.Spacing.sm)
+                    .padding(.top, 40) // 为流量灯留出空间
+                    .padding(.bottom, DesignTokens.Spacing.lg)
                 }
+                .scrollIndicators(.hidden)
+            } else {
+                emptyState
             }
-            
-            Spacer()
 
-            // 底部设置按钮
+            Spacer(minLength: 0)
+
             settingsButton
+                .padding(.horizontal, DesignTokens.Spacing.sm)
+                .padding(.bottom, DesignTokens.Spacing.md)
         }
-        .background(.ultraThinMaterial)
+        .background(SwiftUI.Color.clear)
         .onAppear {
             // Delay to avoid "Publishing changes during view update" warning
             DispatchQueue.main.async {
@@ -44,38 +54,49 @@ struct Sidebar: View {
     }
     
     struct SidebarRow: View {
-        let entry: NavigationEntry
+        let title: String
+        let icon: String
         let isSelected: Bool
-        
+
+        /// 当前配色方案
+        @Environment(\.colorScheme) private var colorScheme
+
         var body: some View {
             HStack(spacing: 12) {
-                // 图标背景
-                ZStack {
-                    if isSelected {
-                        Circle()
-                            .fill(AppTheme.Colors.gradient(for: .primary))
-                    } else {
-                        Circle()
-                            .fill(Color.secondary.opacity(0.1))
-                    }
-                }
-                .frame(width: 32, height: 32)
-                .overlay(
-                    Image(systemName: entry.icon)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(isSelected ? .white : .secondary)
-                )
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(isSelected ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
+                    .frame(width: 20)
 
-                // 标题
-                Text(entry.title)
-                    .font(.system(size: 14, weight: isSelected ? .semibold : .regular))
-                    .foregroundStyle(isSelected ? .primary : .secondary)
+                Text(title)
+                    .font(isSelected ? .system(size: 13, weight: .medium) : .system(size: 13, weight: .regular))
+                    .foregroundColor(isSelected ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
 
                 Spacer()
             }
-            .padding(.vertical, 6)
-            .padding(.horizontal, 4)
-            .contentShape(Rectangle())
+            .padding(.vertical, DesignTokens.Spacing.sm)
+            .padding(.horizontal, DesignTokens.Spacing.md)
+            .background(selectionBackground)
+            .overlay(selectionBorder)
+            .contentShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.md))
+        }
+
+        @ViewBuilder private var selectionBackground: some View {
+            if isSelected {
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
+                    .fill(DesignTokens.Color.semantic.primary.opacity(0.15))
+                    .shadow(color: SwiftUI.Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            } else {
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
+                    .fill(SwiftUI.Color.clear)
+            }
+        }
+
+        @ViewBuilder private var selectionBorder: some View {
+            if isSelected {
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
+                    .stroke(DesignTokens.Color.semantic.primary.opacity(0.3), lineWidth: 1)
+            }
         }
     }
 
@@ -84,20 +105,7 @@ struct Sidebar: View {
         Button {
             NotificationCenter.postOpenSettings()
         } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "gearshape")
-                    .font(.system(size: 16))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 24)
-
-                Text("设置")
-                    .font(.body)
-
-                Spacer()
-            }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 16)
-            .contentShape(Rectangle())
+            SidebarRow(title: "设置", icon: "gearshape", isSelected: false)
         }
         .buttonStyle(.plain)
     }
@@ -107,17 +115,35 @@ struct Sidebar: View {
         VStack(spacing: 12) {
             Image(systemName: "tray")
                 .font(.system(size: 48))
-                .foregroundStyle(.secondary)
+                .foregroundColor(DesignTokens.Color.adaptive.textSecondary(for: colorScheme))
 
             Text("暂无导航")
                 .font(.headline)
-                .foregroundStyle(.secondary)
+                .foregroundColor(DesignTokens.Color.adaptive.textSecondary(for: colorScheme))
 
             Text("插件未提供导航入口")
                 .font(.caption)
-                .foregroundStyle(.tertiary)
+                .foregroundColor(DesignTokens.Color.adaptive.textTertiary(for: colorScheme))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var sidebarBackground: some View {
+        ZStack {
+            Rectangle()
+                .fill(DesignTokens.Material.mysticGlass(for: colorScheme))
+            LinearGradient(
+                colors: [
+                    DesignTokens.Color.basePalette.mysticIndigo.opacity(0.6),
+                    DesignTokens.Color.basePalette.mysticViolet.opacity(0.45),
+                    DesignTokens.Color.basePalette.mysticAzure.opacity(0.35)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .opacity(colorScheme == .dark ? 0.45 : 0.2)
+        }
+        .ignoresSafeArea()
     }
 
     /// 初始化默认选中的导航项
@@ -144,7 +170,6 @@ struct Sidebar: View {
 #Preview("App - Small Screen") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .frame(width: 800, height: 600)
 }
@@ -152,7 +177,6 @@ struct Sidebar: View {
 #Preview("App - Big Screen") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .frame(width: 1200, height: 1200)
 }

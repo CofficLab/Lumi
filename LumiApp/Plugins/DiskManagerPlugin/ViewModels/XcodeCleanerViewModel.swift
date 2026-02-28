@@ -105,7 +105,7 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
             await scanAll()
         } catch {
             os_log(.error, "\(self.t)Cleanup failed: \(error.localizedDescription)")
-            errorMessage = "Cleanup failed: \(error.localizedDescription)"
+            errorMessage = String(localized: "Cleanup failed: \(error.localizedDescription)")
         }
 
         isCleaning = false

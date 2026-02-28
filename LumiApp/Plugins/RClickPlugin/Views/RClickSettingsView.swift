@@ -1,145 +1,166 @@
 import SwiftUI
 
 struct RClickSettingsView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @StateObject private var configManager = RClickConfigManager.shared
     @State private var showingAddTemplateSheet = false
 
     var body: some View {
         HStack(spacing: 0) {
-            // Preview Section
-            ZStack {
-                Color(nsColor: .controlBackgroundColor)
-                    .ignoresSafeArea()
+            VStack(spacing: 20) {
+                Text("Preview")
+                    .font(.headline)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-                VStack(spacing: 20) {
-                    Text("Preview")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-
-                    RClickPreviewView(config: configManager.config)
-                        .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 6)
-                }
-                .padding()
+                RClickPreviewView(config: configManager.config)
+                    .shadow(color: DesignTokens.Shadow.subtle.opacity(0.6), radius: DesignTokens.Shadow.subtleRadius, x: 0, y: DesignTokens.Shadow.subtleOffset)
             }
+            .padding()
+
             .frame(width: 260)
 
-            Divider()
+            GlassDivider()
+                .frame(width: 1, height: 380)
+                .rotationEffect(.degrees(90))
 
-            // Settings Form
-            Form {
-                // MARK: - Finder Extension Setup Guide
+            ScrollView {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                    MystiqueGlassCard {
+                        VStack(spacing: DesignTokens.Spacing.sm) {
+                            HStack(spacing: DesignTokens.Spacing.sm) {
+                                Image(systemName: "puzzlepiece.extension")
+                                    .font(.system(size: 28))
+                                    .foregroundColor(DesignTokens.Color.semantic.primary)
 
-                Section {
-                    VStack(spacing: 12) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "puzzlepiece.extension")
-                                .font(.system(size: 28))
-                                .foregroundStyle(.blue)
+                                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
+                                    Text("Enable Finder Extension")
+                                        .font(DesignTokens.Typography.title3)
+                                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                                    Text("The right-click menu functionality requires the Finder extension to be enabled in System Settings.")
+                                        .font(DesignTokens.Typography.caption1)
+                                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                }
 
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Enable Finder Extension")
-                                    .font(.headline)
-                                Text("The right-click menu functionality requires the Finder extension to be enabled in System Settings.")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            Spacer()
-                        }
-
-                        HStack(spacing: 12) {
-                            Button {
-                                openFinderExtensionSettings()
-                            } label: {
-                                Label("Open System Settings", systemImage: "gear")
-                            }
-                            .buttonStyle(.borderedProminent)
-
-                            Spacer()
-
-                            Text("System Settings → Privacy & Security → Extensions → Added Extensions")
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
-
-                // MARK: - General Actions
-
-                Section(header: Text("General Actions")) {
-                    ForEach(configManager.config.items) { item in
-                        if item.type != .newFile {
-                            HStack {
-                                Image(systemName: item.type.iconName)
-                                    .frame(width: 20)
-                                Text(item.title)
                                 Spacer()
-                                Toggle("", isOn: Binding(
-                                    get: { item.isEnabled },
-                                    set: { _ in configManager.toggleItem(item) }
-                                ))
+                            }
+
+                            HStack(spacing: DesignTokens.Spacing.sm) {
+                                GlassButton(title: LocalizedStringKey(String(localized: "Open System Settings")), style: .primary) {
+                                    openFinderExtensionSettings()
+                                }
+                                .frame(width: 180)
+
+                                Spacer()
+
+                                Text("System Settings → Privacy & Security → Extensions → Added Extensions")
+                                    .font(DesignTokens.Typography.caption2)
+                                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                             }
                         }
                     }
-                }
 
-                // MARK: - New File Menu
+                    MystiqueGlassCard {
+                        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                            Text("General Actions")
+                                .font(DesignTokens.Typography.title3)
+                                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
-                Section(header: Text("New File Menu")) {
-                    if let newFileItem = configManager.config.items.first(where: { $0.type == .newFile }) {
-                        HStack {
-                            Image(systemName: newFileItem.type.iconName)
-                                .frame(width: 20)
-                            Text("Enable 'New File' Submenu")
-                            Spacer()
-                            Toggle("", isOn: Binding(
-                                get: { newFileItem.isEnabled },
-                                set: { _ in configManager.toggleItem(newFileItem) }
-                            ))
-                        }
-                    }
-
-                    if configManager.config.items.first(where: { $0.type == .newFile })?.isEnabled == true {
-                        List {
-                            ForEach(configManager.config.fileTemplates) { template in
-                                HStack {
-                                    VStack(alignment: .leading) {
-                                        Text(template.name)
-                                        Text(".\(template.extensionName)")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
+                            VStack(spacing: DesignTokens.Spacing.xs) {
+                                ForEach(configManager.config.items) { item in
+                                    if item.type != .newFile {
+                                        GlassRow {
+                                            HStack {
+                                                Image(systemName: item.type.iconName)
+                                                    .frame(width: 20)
+                                                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                                Text(item.title)
+                                                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                                                Spacer()
+                                                Toggle("", isOn: Binding(
+                                                    get: { item.isEnabled },
+                                                    set: { _ in configManager.toggleItem(item) }
+                                                ))
+                                                .labelsHidden()
+                                            }
+                                        }
                                     }
-                                    Spacer()
-                                    Toggle("", isOn: Binding(
-                                        get: { template.isEnabled },
-                                        set: { _ in configManager.toggleTemplate(template) }
-                                    ))
                                 }
                             }
-                            .onDelete { indexSet in
-                                configManager.deleteTemplate(at: indexSet)
+                        }
+                    }
+
+                    MystiqueGlassCard {
+                        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                            Text("New File Menu")
+                                .font(DesignTokens.Typography.title3)
+                                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+
+                            if let newFileItem = configManager.config.items.first(where: { $0.type == .newFile }) {
+                                GlassRow {
+                                    HStack {
+                                        Image(systemName: newFileItem.type.iconName)
+                                            .frame(width: 20)
+                                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                        Text("Enable 'New File' Submenu")
+                                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                                        Spacer()
+                                        Toggle("", isOn: Binding(
+                                            get: { newFileItem.isEnabled },
+                                            set: { _ in configManager.toggleItem(newFileItem) }
+                                        ))
+                                        .labelsHidden()
+                                    }
+                                }
+                            }
+
+                            if configManager.config.items.first(where: { $0.type == .newFile })?.isEnabled == true {
+                                List {
+                                    ForEach(configManager.config.fileTemplates) { template in
+                                        HStack {
+                                            VStack(alignment: .leading) {
+                                                Text(template.name)
+                                                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                                                Text(".\(template.extensionName)")
+                                                    .font(DesignTokens.Typography.caption2)
+                                                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                                            }
+                                            Spacer()
+                                            Toggle("", isOn: Binding(
+                                                get: { template.isEnabled },
+                                                set: { _ in configManager.toggleTemplate(template) }
+                                            ))
+                                            .labelsHidden()
+                                        }
+                                    }
+                                    .onDelete { indexSet in
+                                        configManager.deleteTemplate(at: indexSet)
+                                    }
+                                }
+                                .frame(minHeight: 100)
+
+                                GlassButton(title: LocalizedStringKey(String(localized: "Add Template")), style: .secondary) {
+                                    showingAddTemplateSheet = true
+                                }
+                                .frame(width: 140)
                             }
                         }
-                        .frame(minHeight: 100)
+                    }
 
-                        Button(action: { showingAddTemplateSheet = true }) {
-                            Label("Add Template", systemImage: "plus")
+                    MystiqueGlassCard {
+                        HStack {
+                            Text("Reset to Defaults")
+                                .font(DesignTokens.Typography.bodyEmphasized)
+                                .foregroundColor(DesignTokens.Color.adaptive.error(for: colorScheme))
+                            Spacer()
+                            GlassButton(title: LocalizedStringKey(String(localized: "Reset")), style: .danger) {
+                                configManager.resetToDefaults()
+                            }
+                            .frame(width: 100)
                         }
                     }
                 }
-
-                // MARK: - Reset
-
-                Section {
-                    Button("Reset to Defaults") {
-                        configManager.resetToDefaults()
-                    }
-                    .foregroundColor(.red)
-                }
+                .padding(DesignTokens.Spacing.md)
             }
-            .formStyle(.grouped)
-            .padding()
             .sheet(isPresented: $showingAddTemplateSheet) {
                 AddTemplateView(isPresented: $showingAddTemplateSheet) { name, ext, content in
                     let template = NewFileTemplate(name: name, extensionName: ext, content: content)
@@ -163,8 +184,8 @@ struct RClickSettingsView: View {
 
 #Preview("App") {
     ContentLayout()
+        .withNavigation(RClickPlugin.id)
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .withDebugBar()
 }

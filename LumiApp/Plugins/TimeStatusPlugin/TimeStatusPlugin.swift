@@ -22,10 +22,10 @@ actor TimeStatusPlugin: SuperPlugin, SuperLog {
     static let id: String = "TimeStatusPlugin"
 
     /// Plugin display name
-    static let displayName: String = String(localized: "Time Status")
+    static let displayName: String = String(localized: "Time Status", table: "TimeStatus")
 
     /// Plugin functional description
-    static let description: String = String(localized: "Displays the current time in the status bar")
+    static let description: String = String(localized: "Displays the current time in the status bar", table: "TimeStatus")
 
     /// Plugin icon name
     static let iconName: String = "clock"

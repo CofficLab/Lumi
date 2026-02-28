@@ -11,7 +11,7 @@ struct MemoryHistoryDetailView: View {
             HStack {
                 Text("Memory Usage Trend")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                 
                 Spacer()
                 
@@ -29,7 +29,7 @@ struct MemoryHistoryDetailView: View {
             .padding(.top, 12)
             
             // Graph
-            GlassCard(padding: 0, cornerRadius: 6) {
+            MystiqueGlassCard(cornerRadius: 6, padding: EdgeInsets()) {
                 MemoryHistoryGraphView(
                     dataPoints: historyService.getData(for: selectedRange),
                     timeRange: selectedRange
@@ -47,7 +47,6 @@ struct MemoryHistoryDetailView: View {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .withDebugBar()
 }

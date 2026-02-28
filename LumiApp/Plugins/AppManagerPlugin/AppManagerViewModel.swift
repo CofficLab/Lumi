@@ -10,7 +10,7 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📋"
     nonisolated static let verbose = true
 
-    nonisolated(unsafe) private let appService = AppService()
+    private let appService = AppService()
 
     @Published var installedApps: [AppModel] = []
     @Published var filteredApps: [AppModel] = []
@@ -250,7 +250,6 @@ class AppManagerViewModel: ObservableObject, SuperLog {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(AppManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()

@@ -11,7 +11,7 @@ struct AppManagerView: View {
                 // 顶部工具栏
                 toolbar
                 
-                Divider()
+                GlassDivider()
                 
                 // 应用列表
                 if viewModel.isLoading {
@@ -31,8 +31,8 @@ struct AppManagerView: View {
                 .infiniteHeight()
         }
         .infinite()
-        .navigationTitle(String(localized: "App Manager"))
-        .searchable(text: $viewModel.searchText, prompt: String(localized: "Search Apps"))
+        .navigationTitle(String(localized: "App Manager", table: "AppManager"))
+        .searchable(text: $viewModel.searchText, prompt: String(localized: "Search Apps", table: "AppManager"))
         .onChange(of: viewModel.selectedApp) { _, newApp in
             if let app = newApp {
                 viewModel.scanRelatedFiles(for: app)
@@ -53,19 +53,19 @@ struct AppManagerView: View {
                 }
             }
         }
-        .alert(String(localized: "Confirm Uninstall"), isPresented: $viewModel.showUninstallConfirmation) {
-            Button(String(localized: "Cancel"), role: .cancel) { }
-            Button(String(localized: "Uninstall"), role: .destructive) {
+        .alert(String(localized: "Confirm Uninstall", table: "AppManager"), isPresented: $viewModel.showUninstallConfirmation) {
+            Button(String(localized: "Cancel", table: "AppManager"), role: .cancel) { }
+            Button(String(localized: "Uninstall", table: "AppManager"), role: .destructive) {
                 viewModel.deleteSelectedFiles()
             }
         } message: {
             Text(String(localized: "Are you sure you want to delete the selected files? This action cannot be undone."))
         }
-        .alert(String(localized: "Error"), isPresented: Binding<Bool>(
+        .alert(String(localized: "Error", table: "AppManager"), isPresented: Binding<Bool>(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
         )) {
-            Button(String(localized: "OK")) {
+            Button(String(localized: "OK", table: "AppManager")) {
                 viewModel.errorMessage = nil
             }
         } message: {
@@ -78,30 +78,24 @@ struct AppManagerView: View {
     private var toolbar: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(String(localized: "\(viewModel.installedApps.count) Apps"))
+                Text(String(localized: "\(viewModel.installedApps.count) Apps", table: "AppManager"))
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-                Text(String(localized: "Total Size: \(viewModel.formattedTotalSize)"))
+                Text(String(localized: "Total Size: \(viewModel.formattedTotalSize)", table: "AppManager"))
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
             
             Spacer()
             
-            Button(action: {
+            GlassButton(title: LocalizedStringKey("Refresh"), style: .secondary) {
                 viewModel.refresh()
-            }) {
-                HStack(spacing: 4) {
-                    Image(systemName: "arrow.clockwise")
-                    Text(String(localized: "Refresh"))
-                }
             }
-            .buttonStyle(.borderedProminent)
             .disabled(viewModel.isLoading)
         }
         .padding()
-        .background(Color(nsColor: .controlBackgroundColor))
+        .background(DesignTokens.Material.glass)
     }
     
     private var loadingView: some View {
@@ -135,30 +129,31 @@ struct AppManagerView: View {
                             Image(systemName: "app.fill")
                                 .resizable()
                                 .frame(width: 64, height: 64)
-                                .foregroundStyle(.secondary)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         }
                         
                         VStack(alignment: .leading) {
                             Text(app.displayName)
                                 .font(.title)
+                                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                             Text(app.bundleIdentifier ?? "Unknown Bundle ID")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                             Text(app.bundleURL.path)
                                 .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                         }
                     }
                     .padding()
                     
-                    Divider()
+                    GlassDivider()
                     
                     // Related Files List
                     if viewModel.isScanningFiles {
                         Spacer()
-                        ProgressView(String(localized: "Scanning related files..."))
+                        ProgressView(String(localized: "Scanning related files...", table: "AppManager"))
                         Spacer()
                     } else {
                         List {
@@ -174,9 +169,10 @@ struct AppManagerView: View {
                                     VStack(alignment: .leading) {
                                         Text(file.type.displayName)
                                             .font(.caption)
-                                            .foregroundStyle(.secondary)
+                                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                                         Text(file.path)
                                             .font(.caption2)
+                                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                                             .lineLimit(1)
                                             .truncationMode(.middle)
                                     }
@@ -185,35 +181,32 @@ struct AppManagerView: View {
                                     
                                     Text(formatBytes(file.size))
                                         .font(.monospacedDigit(.caption)())
-                                        .foregroundStyle(.secondary)
+                                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                                 }
                             }
                         }
                     }
                     
-                    Divider()
+                    GlassDivider()
                     
                     // Footer Action
                     HStack {
-                        Text(String(localized: "Selected: \(formatBytes(viewModel.totalSelectedSize))"))
+                        Text(String(localized: "Selected: \(formatBytes(viewModel.totalSelectedSize))", table: "AppManager"))
                             .font(.headline)
+                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
                         Spacer()
 
-                        Button(role: .destructive) {
+                        GlassButton(title: LocalizedStringKey("Uninstall Selected"), style: .danger) {
                             viewModel.showUninstallConfirmation = true
-                        } label: {
-                            Text(String(localized: "Uninstall Selected"))
-                                .padding(.horizontal, 8)
                         }
                         .controlSize(.large)
-                        .buttonStyle(.borderedProminent)
                         .disabled(viewModel.selectedFileIds.isEmpty || viewModel.isDeleting)
                     }
                     .padding()
                 }
             } else {
-                ContentUnavailableView(String(localized: "Select an App"), systemImage: "hand.tap")
+                ContentUnavailableView(String(localized: "Select an App", table: "AppManager"), systemImage: "hand.tap")
             }
         }
     }
@@ -231,7 +224,6 @@ struct AppManagerView: View {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(AppManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()

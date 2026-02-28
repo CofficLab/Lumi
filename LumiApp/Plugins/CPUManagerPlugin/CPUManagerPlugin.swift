@@ -10,8 +10,8 @@ actor CPUManagerPlugin: SuperPlugin, SuperLog {
     nonisolated static let verbose = true
     
     static let id = "CPUManager"
-    static let displayName = String(localized: "CPU Monitor")
-    static let description = String(localized: "Real-time CPU usage and load monitoring")
+    static let displayName = String(localized: "CPU Monitor", table: "CPUManager")
+    static let description = String(localized: "Real-time CPU usage and load monitoring", table: "CPUManager")
     static let iconName = "cpu"
     static var order: Int { 31 }
     
@@ -40,7 +40,6 @@ actor CPUManagerPlugin: SuperPlugin, SuperLog {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .withDebugBar()
 }

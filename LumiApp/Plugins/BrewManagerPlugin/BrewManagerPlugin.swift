@@ -10,8 +10,8 @@ actor BrewManagerPlugin: SuperPlugin, SuperLog {
     
     static let id = "BrewManager"
     static let navigationId = "brew_manager"
-    static let displayName = String(localized: "Package Management")
-    static let description = String(localized: "Manage Homebrew packages and casks")
+    static let displayName = String(localized: "Package Management", table: "BrewManager")
+    static let description = String(localized: "Manage Homebrew packages and casks", table: "BrewManager")
     static let iconName = "shippingbox"
     static var order: Int { 60 }
     
@@ -36,7 +36,6 @@ actor BrewManagerPlugin: SuperPlugin, SuperLog {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(BrewManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()

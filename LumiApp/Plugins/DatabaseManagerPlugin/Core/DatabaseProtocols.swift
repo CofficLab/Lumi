@@ -5,6 +5,7 @@ enum DatabaseType: String, CaseIterable, Codable {
     case sqlite = "SQLite"
     case postgresql = "PostgreSQL"
     case mysql = "MySQL"
+    case redis = "Redis"
 }
 
 /// Database Configuration

@@ -11,7 +11,7 @@ actor AppManagerPlugin: SuperPlugin {
         return [
             NavigationEntry.create(
                 id: Self.navigationId,
-                title: String(localized: "App Manager"),
+                title: String(localized: "App Manager", table: "AppManager"),
                 icon: "apps.ipad",
                 pluginId: Self.id,
                 isDefault: false
@@ -27,7 +27,6 @@ actor AppManagerPlugin: SuperPlugin {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(AppManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()

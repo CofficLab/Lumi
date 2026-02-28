@@ -35,15 +35,15 @@ struct CPUHistoryGraphView: View {
                         if !dataPoints.isEmpty {
                             // Usage Area
                             CPUGraphArea(data: dataPoints.map { $0.usage }, maxValue: maxValue)
-                                .fill(LinearGradient(gradient: Gradient(colors: [Color.blue.opacity(0.5), Color.blue.opacity(0.1)]), startPoint: .top, endPoint: .bottom))
+                                .fill(LinearGradient(gradient: Gradient(colors: [DesignTokens.Color.semantic.info.opacity(0.5), DesignTokens.Color.semantic.info.opacity(0.1)]), startPoint: .top, endPoint: .bottom))
 
                             // Usage Line
                             CPUGraphLine(data: dataPoints.map { $0.usage }, maxValue: maxValue)
-                                .stroke(Color.blue, lineWidth: 1.5)
+                                .stroke(DesignTokens.Color.semantic.info, lineWidth: 1.5)
                         } else {
                             Text("收集数据中...")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
 
@@ -54,7 +54,7 @@ struct CPUHistoryGraphView: View {
                                 path.move(to: CGPoint(x: hoverLocation.x, y: 0))
                                 path.addLine(to: CGPoint(x: hoverLocation.x, y: geometry.size.height))
                             }
-                            .stroke(Color.primary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                            .stroke(DesignTokens.Color.semantic.textPrimary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
 
                             // Tooltip
                             CPUTooltipView(point: point, timeRange: timeRange)
@@ -94,7 +94,7 @@ struct CPUHistoryGraphView: View {
                     if index > 0 {
                         Text(formatYValue(for: index))
                             .font(.system(size: 9))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                             .frame(height: geometry.size.height / 5, alignment: .trailing)
                     }
                 }
@@ -102,7 +102,7 @@ struct CPUHistoryGraphView: View {
                 // 底部 0 标签
                 Text("0")
                     .font(.system(size: 9))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
             }
             .padding(.trailing, 4)
         }
@@ -120,7 +120,7 @@ struct CPUHistoryGraphView: View {
                     if let firstPoint = dataPoints.first {
                         Text(formatXAxisDate(firstPoint.timestamp))
                             .font(.system(size: 9))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     }
 
                     Spacer()
@@ -129,7 +129,7 @@ struct CPUHistoryGraphView: View {
                     if let lastPoint = dataPoints.last {
                         Text(formatXAxisDate(lastPoint.timestamp))
                             .font(.system(size: 9))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     }
                 }
                 .padding(.horizontal, 8)
@@ -148,7 +148,7 @@ struct CPUHistoryGraphView: View {
                     path.move(to: CGPoint(x: 0, y: y))
                     path.addLine(to: CGPoint(x: size.width, y: y))
                 }
-                .stroke(Color.gray.opacity(0.15), lineWidth: 0.5)
+                .stroke(DesignTokens.Color.semantic.textTertiary.opacity(0.15), lineWidth: 0.5)
             }
         }
     }
@@ -251,19 +251,19 @@ struct CPUTooltipView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(formatDate(point.timestamp))
                 .font(.system(size: 10, weight: .bold))
-                .foregroundColor(.primary)
+                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
             
             HStack(spacing: 4) {
                 Circle()
-                    .fill(Color.blue)
+                    .fill(DesignTokens.Color.semantic.info)
                     .frame(width: 6, height: 6)
                 Text("\(Int(point.usage))%")
                     .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
         }
         .padding(6)
-        .background(VisualEffectBlur(material: .popover, blendingMode: .withinWindow))
+        .background(DesignTokens.Material.glass)
         .cornerRadius(6)
         .shadow(radius: 2)
     }

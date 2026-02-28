@@ -12,7 +12,7 @@ struct NetworkHistoryDetailView: View {
             HStack {
                 Text(String(localized: "History Trend"))
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
 
                 Spacer()
 
@@ -34,12 +34,12 @@ struct NetworkHistoryDetailView: View {
                 timeRange: selectedRange
             )
             .frame(height: 140)
-            .background(.background.opacity(0.5))
+            .background(DesignTokens.Material.glass.opacity(0.5))
             .roundedMedium()
             .padding(.horizontal, 12)
             .padding(.bottom, 12)
 
-            Divider()
+            GlassDivider()
 
             // Process Monitor
             ProcessNetworkListView(viewModel: viewModel)

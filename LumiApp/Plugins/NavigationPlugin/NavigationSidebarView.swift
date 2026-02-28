@@ -10,8 +10,9 @@ struct NavigationSidebarView: View {
                     .font(.title2)
                     .fontWeight(.bold)
                     .padding(.horizontal)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
-                Divider()
+                GlassDivider()
             }
 
             // Navigation List
@@ -46,7 +47,6 @@ struct NavigationSidebarView: View {
 #Preview("App - Small Screen") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .frame(width: 800, height: 600)
 }
@@ -54,7 +54,6 @@ struct NavigationSidebarView: View {
 #Preview("App - Big Screen") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .frame(width: 1200, height: 1200)
 }

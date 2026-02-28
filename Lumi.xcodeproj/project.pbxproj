@@ -9,10 +9,17 @@
 /* Begin PBXBuildFile section */
 		0B0073C22F2F1ABF001B3789 /* MagicKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B0073C12F2F1ABF001B3789 /* MagicKit */; };
 		0B2F7D682F3A301D00AD7E94 /* LumiFinder.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		0BE03D7A2F402E0D0028FDF4 /* Textual in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE03D792F402E0D0028FDF4 /* Textual */; };
+		0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE04A742F409A6E0028FDF4 /* MCP */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
-		F5674BB02F3ACE7500A237DD /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = F5674BAF2F3ACE7500A237DD /* Localizable.xcstrings */; };
 		F5826C862F35731C0079B285 /* MagicKit in Frameworks */ = {isa = PBXBuildFile; productRef = F5826C852F35731C0079B285 /* MagicKit */; };
+		F5A640672F3ED1910039A761 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5A640662F3ED1910039A761 /* NetworkExtension.framework */; };
+		F5A640712F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension in Embed System Extensions */ = {isa = PBXBuildFile; fileRef = F5A640652F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		F5A640802F3ED7060039A761 /* PostgresNIO in Frameworks */ = {isa = PBXBuildFile; productRef = F5A6407F2F3ED7060039A761 /* PostgresNIO */; };
+		F5A640822F3ED7060039A761 /* _ConnectionPoolModule in Frameworks */ = {isa = PBXBuildFile; productRef = F5A640812F3ED7060039A761 /* _ConnectionPoolModule */; };
+		F5A640842F3ED7060039A761 /* _ConnectionPoolTestUtils in Frameworks */ = {isa = PBXBuildFile; productRef = F5A640832F3ED7060039A761 /* _ConnectionPoolTestUtils */; };
+		F5A640872F3ED72C0039A761 /* MySQLNIO in Frameworks */ = {isa = PBXBuildFile; productRef = F5A640862F3ED72C0039A761 /* MySQLNIO */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -22,6 +29,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 0B2F7D602F3A301C00AD7E94;
 			remoteInfo = LumiFinder;
+		};
+		F5A6406F2F3ED1910039A761 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F54F8C762F1A3B6500AABB2A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F5A640642F3ED1910039A761;
+			remoteInfo = NettoExtension;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -37,13 +51,25 @@
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F5A640762F3ED1910039A761 /* Embed System Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(SYSTEM_EXTENSIONS_FOLDER_PATH)";
+			dstSubfolderSpec = 16;
+			files = (
+				F5A640712F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension in Embed System Extensions */,
+			);
+			name = "Embed System Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LumiFinder.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F53C3ECB2F1A3CB000929321 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F53C49142F1A42EC00929321 /* Lumi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumi.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		F5674BAF2F3ACE7500A237DD /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		F5A640652F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension */ = {isa = PBXFileReference; explicitFileType = "wrapper.system-extension"; includeInIndex = 0; path = com.coffic.lumi.NettoExtension.systemextension; sourceTree = BUILT_PRODUCTS_DIR; };
+		F5A640662F3ED1910039A761 /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -53,6 +79,15 @@
 				Info.plist,
 			);
 			target = 0B2F7D602F3A301C00AD7E94 /* LumiFinder */;
+		};
+		F52C2B202F3EDDE200905557 /* Exceptions for "LumiApp" folder in "NettoExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Plugins/NettoPlugin/Bridge/IPCConnection.swift,
+				Plugins/NettoPlugin/Bridge/NEFilterFlowExt.swift,
+				Plugins/NettoPlugin/Bridge/Protocols.swift,
+			);
+			target = F5A640642F3ED1910039A761 /* NettoExtension */;
 		};
 		F5F4E1E82F3ACC6600C76EA0 /* Exceptions for "LumiApp" folder in "Lumi" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -72,10 +107,16 @@
 			path = LumiFinder;
 			sourceTree = "<group>";
 		};
+		F5A640682F3ED1910039A761 /* NettoExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = NettoExtension;
+			sourceTree = "<group>";
+		};
 		F5F4DFD42F3ACC5100C76EA0 /* LumiApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				F5F4E1E82F3ACC6600C76EA0 /* Exceptions for "LumiApp" folder in "Lumi" target */,
+				F52C2B202F3EDDE200905557 /* Exceptions for "LumiApp" folder in "NettoExtension" target */,
 			);
 			path = LumiApp;
 			sourceTree = "<group>";
@@ -94,9 +135,23 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */,
+				F5A640842F3ED7060039A761 /* _ConnectionPoolTestUtils in Frameworks */,
+				F5A640822F3ED7060039A761 /* _ConnectionPoolModule in Frameworks */,
+				F5A640872F3ED72C0039A761 /* MySQLNIO in Frameworks */,
+				0BE03D7A2F402E0D0028FDF4 /* Textual in Frameworks */,
+				F5A640802F3ED7060039A761 /* PostgresNIO in Frameworks */,
 				F5826C862F35731C0079B285 /* MagicKit in Frameworks */,
 				F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */,
 				0B0073C22F2F1ABF001B3789 /* MagicKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5A640622F3ED1910039A761 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F5A640672F3ED1910039A761 /* NetworkExtension.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -106,19 +161,21 @@
 		F54F8C752F1A3B6500AABB2A = {
 			isa = PBXGroup;
 			children = (
-				F5674BAF2F3ACE7500A237DD /* Localizable.xcstrings */,
 				F53C3ECB2F1A3CB000929321 /* Assets.xcassets */,
 				F5F4DFD42F3ACC5100C76EA0 /* LumiApp */,
 				0B2F7D622F3A301C00AD7E94 /* LumiFinder */,
 				F53C49142F1A42EC00929321 /* Lumi.app */,
 				0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */,
+				F5A640682F3ED1910039A761 /* NettoExtension */,
 				F5F4DFC92F3ABECF00C76EA0 /* Frameworks */,
+				F5A640652F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension */,
 			);
 			sourceTree = "<group>";
 		};
 		F5F4DFC92F3ABECF00C76EA0 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				F5A640662F3ED1910039A761 /* NetworkExtension.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -156,11 +213,13 @@
 				F54F8C7B2F1A3B6500AABB2A /* Frameworks */,
 				F54F8C7C2F1A3B6500AABB2A /* Resources */,
 				0B11F83D2F3A156D00B9B857 /* Embed Foundation Extensions */,
+				F5A640762F3ED1910039A761 /* Embed System Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				0B2F7D672F3A301D00AD7E94 /* PBXTargetDependency */,
+				F5A640702F3ED1910039A761 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				F5F4DFD42F3ACC5100C76EA0 /* LumiApp */,
@@ -170,10 +229,38 @@
 				F53C41592F1A3E6500929321 /* Sparkle */,
 				0B0073C12F2F1ABF001B3789 /* MagicKit */,
 				F5826C852F35731C0079B285 /* MagicKit */,
+				F5A6407F2F3ED7060039A761 /* PostgresNIO */,
+				F5A640812F3ED7060039A761 /* _ConnectionPoolModule */,
+				F5A640832F3ED7060039A761 /* _ConnectionPoolTestUtils */,
+				F5A640862F3ED72C0039A761 /* MySQLNIO */,
+				0BE03D792F402E0D0028FDF4 /* Textual */,
+				0BE04A742F409A6E0028FDF4 /* MCP */,
 			);
 			productName = "SwiftUI-Template";
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
 			productType = "com.apple.product-type.application";
+		};
+		F5A640642F3ED1910039A761 /* NettoExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F5A640722F3ED1910039A761 /* Build configuration list for PBXNativeTarget "NettoExtension" */;
+			buildPhases = (
+				F5A640612F3ED1910039A761 /* Sources */,
+				F5A640622F3ED1910039A761 /* Frameworks */,
+				F5A640632F3ED1910039A761 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				F5A640682F3ED1910039A761 /* NettoExtension */,
+			);
+			name = NettoExtension;
+			packageProductDependencies = (
+			);
+			productName = NettoExtension;
+			productReference = F5A640652F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension */;
+			productType = "com.apple.product-type.system-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -191,6 +278,9 @@
 					F54F8C7D2F1A3B6500AABB2A = {
 						CreatedOnToolsVersion = 16.4;
 					};
+					F5A640642F3ED1910039A761 = {
+						CreatedOnToolsVersion = 26.2;
+					};
 				};
 			};
 			buildConfigurationList = F54F8C792F1A3B6500AABB2A /* Build configuration list for PBXProject "Lumi" */;
@@ -207,6 +297,10 @@
 			packageReferences = (
 				F53C41582F1A3E6500929321 /* XCRemoteSwiftPackageReference "Sparkle" */,
 				F5826C842F35731C0079B285 /* XCRemoteSwiftPackageReference "MagicKit" */,
+				F5A6407E2F3ED7060039A761 /* XCRemoteSwiftPackageReference "postgres-nio" */,
+				F5A640852F3ED72C0039A761 /* XCRemoteSwiftPackageReference "mysql-nio" */,
+				0BE03D782F402E0D0028FDF4 /* XCRemoteSwiftPackageReference "textual" */,
+				0BE04A732F409A6E0028FDF4 /* XCRemoteSwiftPackageReference "swift-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -215,6 +309,7 @@
 			targets = (
 				F54F8C7D2F1A3B6500AABB2A /* Lumi */,
 				0B2F7D602F3A301C00AD7E94 /* LumiFinder */,
+				F5A640642F3ED1910039A761 /* NettoExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -231,8 +326,14 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F5674BB02F3ACE7500A237DD /* Localizable.xcstrings in Resources */,
 				F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5A640632F3ED1910039A761 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -253,6 +354,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F5A640612F3ED1910039A761 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -260,6 +368,11 @@
 			isa = PBXTargetDependency;
 			target = 0B2F7D602F3A301C00AD7E94 /* LumiFinder */;
 			targetProxy = 0B2F7D662F3A301D00AD7E94 /* PBXContainerItemProxy */;
+		};
+		F5A640702F3ED1910039A761 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F5A640642F3ED1910039A761 /* NettoExtension */;
+			targetProxy = F5A6406F2F3ED1910039A761 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -574,6 +687,74 @@
 			};
 			name = Release;
 		};
+		F5A640732F3ED1910039A761 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = NettoExtension/NettoExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = NettoExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = NettoExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.7;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.NettoExtension;
+				PRODUCT_NAME = "$(inherited)";
+				REGISTER_APP_GROUPS = YES;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		F5A640742F3ED1910039A761 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = NettoExtension/NettoExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = NettoExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = NettoExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.7;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.NettoExtension;
+				PRODUCT_NAME = "$(inherited)";
+				REGISTER_APP_GROUPS = YES;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -604,9 +785,34 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		F5A640722F3ED1910039A761 /* Build configuration list for PBXNativeTarget "NettoExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F5A640732F3ED1910039A761 /* Debug */,
+				F5A640742F3ED1910039A761 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		0BE03D782F402E0D0028FDF4 /* XCRemoteSwiftPackageReference "textual" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/gonzalezreal/textual";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.3.1;
+			};
+		};
+		0BE04A732F409A6E0028FDF4 /* XCRemoteSwiftPackageReference "swift-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/modelcontextprotocol/swift-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.10.2;
+			};
+		};
 		F53C41582F1A3E6500929321 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sparkle-project/Sparkle";
@@ -623,12 +829,38 @@
 				minimumVersion = 1.5.22;
 			};
 		};
+		F5A6407E2F3ED7060039A761 /* XCRemoteSwiftPackageReference "postgres-nio" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/vapor/postgres-nio";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.30.1;
+			};
+		};
+		F5A640852F3ED72C0039A761 /* XCRemoteSwiftPackageReference "mysql-nio" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/vapor/mysql-nio";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.9.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		0B0073C12F2F1ABF001B3789 /* MagicKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = MagicKit;
+		};
+		0BE03D792F402E0D0028FDF4 /* Textual */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0BE03D782F402E0D0028FDF4 /* XCRemoteSwiftPackageReference "textual" */;
+			productName = Textual;
+		};
+		0BE04A742F409A6E0028FDF4 /* MCP */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0BE04A732F409A6E0028FDF4 /* XCRemoteSwiftPackageReference "swift-sdk" */;
+			productName = MCP;
 		};
 		F53C41592F1A3E6500929321 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -639,6 +871,26 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F5826C842F35731C0079B285 /* XCRemoteSwiftPackageReference "MagicKit" */;
 			productName = MagicKit;
+		};
+		F5A6407F2F3ED7060039A761 /* PostgresNIO */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F5A6407E2F3ED7060039A761 /* XCRemoteSwiftPackageReference "postgres-nio" */;
+			productName = PostgresNIO;
+		};
+		F5A640812F3ED7060039A761 /* _ConnectionPoolModule */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F5A6407E2F3ED7060039A761 /* XCRemoteSwiftPackageReference "postgres-nio" */;
+			productName = _ConnectionPoolModule;
+		};
+		F5A640832F3ED7060039A761 /* _ConnectionPoolTestUtils */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F5A6407E2F3ED7060039A761 /* XCRemoteSwiftPackageReference "postgres-nio" */;
+			productName = _ConnectionPoolTestUtils;
+		};
+		F5A640862F3ED72C0039A761 /* MySQLNIO */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F5A640852F3ED72C0039A761 /* XCRemoteSwiftPackageReference "mysql-nio" */;
+			productName = MySQLNIO;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

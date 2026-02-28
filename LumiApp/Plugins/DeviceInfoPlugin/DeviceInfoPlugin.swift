@@ -8,8 +8,8 @@ actor DeviceInfoPlugin: SuperPlugin {
 
     static let id: String = "DeviceInfoPlugin"
     static let navigationId = "\(id).dashboard"
-    static let displayName: String = String(localized: "Device Info")
-    static let description: String = String(localized: "Show system status like CPU, Memory, Disk, Battery, etc.")
+    static let displayName: String = String(localized: "Device Info", table: "DeviceInfo")
+    static let description: String = String(localized: "Show system status like CPU, Memory, Disk, Battery, etc.", table: "DeviceInfo")
     static let iconName: String = "macbook.and.iphone"
     static let isConfigurable: Bool = false
     static var order: Int { 10 }
@@ -28,7 +28,7 @@ actor DeviceInfoPlugin: SuperPlugin {
         return [
             NavigationEntry.create(
                 id: Self.navigationId,
-                title: String(localized: "Overview"),
+                title: String(localized: "Overview", table: "DeviceInfo"),
                 icon: "macbook.and.iphone",
                 pluginId: Self.id
             ) {
@@ -43,7 +43,6 @@ actor DeviceInfoPlugin: SuperPlugin {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(DeviceInfoPlugin.navigationId)
         .inRootView()
         .withDebugBar()

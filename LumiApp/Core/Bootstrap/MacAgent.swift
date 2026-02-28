@@ -7,7 +7,7 @@ import SwiftUI
 @MainActor
 class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     nonisolated static let emoji = "🍎"
-    static let verbose = true
+    static let verbose = false
 
     // MARK: - Controllers
 
@@ -17,9 +17,6 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     /// 更新控制器
     private var updateController: UpdateController?
 
-    /// 插件提供者
-    private var pluginProvider: PluginProvider?
-
     // MARK: - Application Lifecycle
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -27,7 +24,6 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
             os_log("\(self.t)应用启动完成")
         }
 
-        setupApplication()
         setupControllers()
 
         // 发送应用启动完成的通知
@@ -65,12 +61,6 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
 
     // MARK: - Setup
 
-    /// 设置应用相关配置
-    private func setupApplication() {
-        // 初始化插件提供者
-        pluginProvider = PluginProvider(autoDiscover: true)
-    }
-
     /// 设置各个控制器
     private func setupControllers() {
         // 初始化更新控制器
@@ -78,7 +68,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
 
         // 初始化状态栏控制器
         statusBarController = StatusBarController()
-        statusBarController?.setupStatusBar(pluginProvider: pluginProvider)
+        statusBarController?.setupStatusBar(pluginProvider: PluginProvider.shared)
     }
 
     // MARK: - Cleanup
@@ -98,7 +88,6 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .withDebugBar()
 }

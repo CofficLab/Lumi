@@ -1,10 +1,13 @@
 import Foundation
+import MagicKit
 import AppKit
 import Combine
 import OSLog
 
 @MainActor
-class ClipboardMonitor: ObservableObject {
+class ClipboardMonitor: ObservableObject, SuperLog {
+    nonisolated static let verbose = false
+    
     static let shared = ClipboardMonitor()
     
     @Published var lastChangeCount: Int
@@ -25,13 +28,13 @@ class ClipboardMonitor: ObservableObject {
                 self?.checkForChanges()
             }
         }
-        os_log("Clipboard monitoring started")
+        os_log("\(Self.t)Clipboard monitoring started")
     }
     
     func stopMonitoring() {
         timer?.invalidate()
         timer = nil
-        os_log("Clipboard monitoring stopped")
+        os_log("\(Self.t)Clipboard monitoring stopped")
     }
     
     private func checkForChanges() {
@@ -55,7 +58,10 @@ class ClipboardMonitor: ObservableObject {
                     NotificationCenter.default.post(name: .clipboardHistoryDidUpdate, object: nil)
                 }
             }
-            os_log("Captured text clipboard item")
+            
+            if Self.verbose {
+                os_log("\(Self.t)Captured text clipboard item")
+            }
         }
         // Add more types later (Image, File, etc.)
     }

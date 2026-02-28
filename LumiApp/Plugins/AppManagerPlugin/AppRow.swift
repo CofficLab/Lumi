@@ -16,11 +16,11 @@ struct AppRow: View {
                     .frame(width: 48, height: 48)
             } else {
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color.gray.opacity(0.3))
+                    .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.3))
                     .frame(width: 48, height: 48)
                     .overlay {
                         Image.appleTerminal
-                            .foregroundStyle(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     }
             }
 
@@ -28,29 +28,30 @@ struct AppRow: View {
                 // 应用名称
                 Text(app.displayName)
                     .font(.headline)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
                 // Bundle ID 和版本
                 HStack(spacing: 8) {
                     if let identifier = app.bundleIdentifier {
                         Text(identifier)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     }
 
                     if let version = app.version {
                         Text("•")
-                            .foregroundStyle(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
 
                         Text(version)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     }
                 }
 
                 // 大小
                 Text(app.formattedSize)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
 
             Spacer()
@@ -72,7 +73,6 @@ struct AppRow: View {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(AppManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()

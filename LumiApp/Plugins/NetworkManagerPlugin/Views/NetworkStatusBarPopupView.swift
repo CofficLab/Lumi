@@ -30,17 +30,18 @@ struct NetworkStatusBarPopupView: View {
             HStack(spacing: 6) {
                 Image(systemName: "arrow.down.circle.fill")
                     .font(.system(size: 12))
-                    .foregroundColor(.green)
+                    .foregroundColor(DesignTokens.Color.semantic.success)
 
                 Text(SpeedFormatter.formatForStatusBar(viewModel.networkState.downloadSpeed))
                     .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                     .frame(alignment: .leading)
             }
             .frame(width: 100, alignment: .leading)
 
             Spacer()
 
-            Divider()
+            GlassDivider()
                 .frame(height: 24)
 
             Spacer()
@@ -49,10 +50,11 @@ struct NetworkStatusBarPopupView: View {
             HStack(spacing: 6) {
                 Image(systemName: "arrow.up.circle.fill")
                     .font(.system(size: 12))
-                    .foregroundColor(.red)
+                    .foregroundColor(DesignTokens.Color.semantic.error)
 
                 Text(SpeedFormatter.formatForStatusBar(viewModel.networkState.uploadSpeed))
                     .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                     .frame(alignment: .leading)
             }
             .frame(width: 100, alignment: .leading)
@@ -74,11 +76,11 @@ struct NetworkStatusBarPopupView: View {
             HStack(spacing: 4) {
                 Image(systemName: "chart.line.uptrend.xyaxis")
                     .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
 
                 Text(String(localized: "Last 60 seconds"))
                     .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
 
                 Spacer()
 
@@ -86,20 +88,20 @@ struct NetworkStatusBarPopupView: View {
                 HStack(spacing: 6) {
                     HStack(spacing: 3) {
                         Circle()
-                            .fill(Color.green.opacity(0.8))
+                            .fill(DesignTokens.Color.semantic.success.opacity(0.8))
                             .frame(width: 5, height: 5)
                         Text(String(localized: "Down"))
                             .font(.system(size: 9))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     }
 
                     HStack(spacing: 3) {
                         Circle()
-                            .fill(Color.red.opacity(0.8))
+                            .fill(DesignTokens.Color.semantic.error.opacity(0.8))
                             .frame(width: 5, height: 5)
                         Text(String(localized: "Up"))
                             .font(.system(size: 9))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     }
                 }
             }
@@ -115,7 +117,7 @@ struct NetworkStatusBarPopupView: View {
                             path.move(to: CGPoint(x: 0, y: y))
                             path.addLine(to: CGPoint(x: geometry.size.width, y: y))
                         }
-                        .stroke(Color.secondary.opacity(0.1), lineWidth: 1)
+                        .stroke(DesignTokens.Color.semantic.textTertiary.opacity(0.1), lineWidth: 1)
                     }
 
                     // Download area
@@ -127,8 +129,8 @@ struct NetworkStatusBarPopupView: View {
                         .fill(
                             LinearGradient(
                                 gradient: Gradient(colors: [
-                                    Color.green.opacity(0.4),
-                                    Color.green.opacity(0.05),
+                                    DesignTokens.Color.semantic.success.opacity(0.4),
+                                    DesignTokens.Color.semantic.success.opacity(0.05),
                                 ]),
                                 startPoint: .top,
                                 endPoint: .bottom
@@ -140,7 +142,7 @@ struct NetworkStatusBarPopupView: View {
                             data: recentData.map(\.downloadSpeed),
                             maxValue: maxSpeed
                         )
-                        .stroke(Color.green.opacity(0.8), lineWidth: 1.2)
+                        .stroke(DesignTokens.Color.semantic.success.opacity(0.8), lineWidth: 1.2)
 
                         // Upload area
                         MiniGraphArea(
@@ -150,8 +152,8 @@ struct NetworkStatusBarPopupView: View {
                         .fill(
                             LinearGradient(
                                 gradient: Gradient(colors: [
-                                    Color.red.opacity(0.4),
-                                    Color.red.opacity(0.05),
+                                    DesignTokens.Color.semantic.error.opacity(0.4),
+                                    DesignTokens.Color.semantic.error.opacity(0.05),
                                 ]),
                                 startPoint: .top,
                                 endPoint: .bottom
@@ -163,11 +165,11 @@ struct NetworkStatusBarPopupView: View {
                             data: recentData.map(\.uploadSpeed),
                             maxValue: maxSpeed
                         )
-                        .stroke(Color.red.opacity(0.8), lineWidth: 1.2)
+                        .stroke(DesignTokens.Color.semantic.error.opacity(0.8), lineWidth: 1.2)
                     } else {
                         Text(String(localized: "Collecting..."))
                             .font(.system(size: 10))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 }
@@ -176,7 +178,7 @@ struct NetworkStatusBarPopupView: View {
             .padding(.horizontal, 12)
         }
         .padding(.vertical, 8)
-        .background(.background.opacity(0.3))
+        .background(DesignTokens.Material.glass.opacity(0.3))
     }
 }
 
@@ -195,18 +197,19 @@ struct ProcessRowView: View {
             } else {
                 Image(systemName: "app")
                     .font(.system(size: 14))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
             }
 
             // Process name
             VStack(alignment: .leading, spacing: 2) {
                 Text(process.name)
                     .font(.system(size: 11))
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                     .lineLimit(1)
 
                 Text(String(localized: "PID: \(process.id)"))
                     .font(.system(size: 9))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
             }
 
             Spacer()
@@ -218,10 +221,11 @@ struct ProcessRowView: View {
                     HStack(spacing: 2) {
                         Image(systemName: "arrow.down.circle.fill")
                             .font(.system(size: 8))
-                            .foregroundColor(.green)
+                            .foregroundColor(DesignTokens.Color.semantic.success)
 
                         Text(SpeedFormatter.formatForStatusBar(process.downloadSpeed))
                             .font(.system(size: 10))
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     }
                 }
 
@@ -230,10 +234,11 @@ struct ProcessRowView: View {
                     HStack(spacing: 2) {
                         Image(systemName: "arrow.up.circle.fill")
                             .font(.system(size: 8))
-                            .foregroundColor(.red)
+                            .foregroundColor(DesignTokens.Color.semantic.error)
 
                         Text(SpeedFormatter.formatForStatusBar(process.uploadSpeed))
                             .font(.system(size: 10))
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     }
                 }
             }

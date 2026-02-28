@@ -86,8 +86,7 @@ alwaysApply: false
 ```swift
 #Preview("App - Small Screen") {
     ContentLayout()
-        .hideSidebar()
-        .hideTabPicker()        // 现有调用，无需修改
+        .hideSidebar()        // 现有调用，无需修改
         .hideProjectActions()
         .inRootView()
         .frame(width: 800)
@@ -103,8 +102,7 @@ alwaysApply: false
 #Preview("Component Preview") {
     ContentLayout()
         .hideSidebar()
-        .hideProjectActions()
-        .hideTabPicker()        // 根据需要添加
+        .hideProjectActions()        // 根据需要添加
         .inRootView()
         .frame(width: 600)      // 根据需要调整尺寸
         .frame(height: 400)

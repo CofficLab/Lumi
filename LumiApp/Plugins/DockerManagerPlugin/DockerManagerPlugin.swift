@@ -10,8 +10,8 @@ actor DockerManagerPlugin: SuperPlugin, SuperLog {
 
     static let id = "DockerManager"
     static let navigationId = "docker_manager"
-    static let displayName = String(localized: "Docker")
-    static let description = String(localized: "Local Docker image management and monitoring")
+    static let displayName = String(localized: "Docker", table: "DockerManager")
+    static let description = String(localized: "Local Docker image management and monitoring", table: "DockerManager")
     static let iconName = "shippingbox"
     static var order: Int { 50 }
 
@@ -42,7 +42,6 @@ actor DockerManagerPlugin: SuperPlugin, SuperLog {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(DockerManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()

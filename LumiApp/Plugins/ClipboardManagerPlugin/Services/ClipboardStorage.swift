@@ -1,7 +1,8 @@
 import Foundation
+import MagicKit
 import OSLog
 
-actor ClipboardStorage {
+actor ClipboardStorage: SuperLog {
     static let shared = ClipboardStorage()
     
     private var items: [ClipboardItem] = []
@@ -24,7 +25,6 @@ actor ClipboardStorage {
         // Deduplicate: if same content as first item, update timestamp (or ignore)
         if let first = items.first, first.content == item.content, first.type == item.type {
             // Move to top
-            var updated = first
             // specific to Swift structs, we need to create new one or just move existing
             // Here we just remove and insert new one to update timestamp
             items.removeFirst()
@@ -76,9 +76,9 @@ actor ClipboardStorage {
         do {
             let data = try Data(contentsOf: fileURL)
             items = try JSONDecoder().decode([ClipboardItem].self, from: data)
-            os_log(.info, "Loaded %d items", self.items.count) 
+            os_log("\(Self.t)Loaded \(self.items.count) items")
         } catch {
-            os_log(.error, "Failed to load history: %s", error.localizedDescription)
+            os_log(.error, "\(Self.t)Failed to load history: \(error.localizedDescription)")
         }
     }
 }

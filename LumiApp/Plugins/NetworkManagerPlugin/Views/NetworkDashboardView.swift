@@ -4,7 +4,7 @@ struct NetworkDashboardView: View {
     @StateObject private var viewModel = NetworkManagerViewModel()
 
     var body: some View {
-        VStack(spacing: 0) {
+        VSplitView {
             ScrollView {
                 VStack(spacing: 20) {
                     // Header Stats
@@ -14,7 +14,7 @@ struct NetworkDashboardView: View {
                             speed: viewModel.networkState.downloadSpeed,
                             total: viewModel.networkState.totalDownload,
                             icon: "arrow.down.circle.fill",
-                            color: .green,
+                            color: DesignTokens.Color.semantic.success,
                             viewModel: viewModel
                         )
 
@@ -23,13 +23,13 @@ struct NetworkDashboardView: View {
                             speed: viewModel.networkState.uploadSpeed,
                             total: viewModel.networkState.totalUpload,
                             icon: "arrow.up.circle.fill",
-                            color: .blue,
+                            color: DesignTokens.Color.semantic.info,
                             viewModel: viewModel
                         )
                     }
                     .padding(.horizontal)
 
-                    Divider()
+                    GlassDivider()
 
                     // Info Grid
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
@@ -44,14 +44,13 @@ struct NetworkDashboardView: View {
                 }
                 .padding(.vertical)
             }
-            .frame(minHeight: 200, maxHeight: 350) // Limit overview area height
+            .frame(minHeight: 200) // Limit overview area height
             
-            Divider()
+            GlassDivider()
             
             // Process monitor list
             ProcessNetworkListView(viewModel: viewModel)
         }
-        .background(Color(nsColor: .controlBackgroundColor))
         .navigationTitle(NetworkManagerPlugin.displayName)
     }
 }
@@ -65,27 +64,28 @@ struct SpeedCard: View {
     let viewModel: NetworkManagerViewModel
 
     var body: some View {
-        GlassCard(padding: 16, cornerRadius: 16) {
-            VStack(alignment: .leading, spacing: 12) {
+        MystiqueGlassCard(cornerRadius: DesignTokens.Radius.md, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
                 HStack {
                     Image(systemName: icon)
                         .font(.title2)
                         .foregroundStyle(color)
                     Text(title)
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
+                        .font(DesignTokens.Typography.bodyEmphasized)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     Spacer()
                 }
 
                 Text(speed.formattedNetworkSpeed())
                     .font(.system(size: 24, weight: .bold, design: .monospaced))
-                    .foregroundStyle(.primary)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
                 Text(String(localized: "Total: \(Double(total).formattedBytes())"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(DesignTokens.Typography.caption1)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
             }
         }
+        .mystiqueGlow(intensity: 0.2)
     }
 }
 
@@ -95,23 +95,23 @@ struct NetworkInfoCard: View {
     let icon: String
 
     var body: some View {
-        GlassCard(padding: 0, cornerRadius: 8) {
-            HStack {
+        MystiqueGlassCard(cornerRadius: DesignTokens.Radius.sm) {
+            HStack(spacing: DesignTokens.Spacing.sm) {
                 Image(systemName: icon)
-                    .frame(width: 24)
-                    .foregroundStyle(.secondary)
-                
-                VStack(alignment: .leading) {
+                    .frame(width: 24, height: 24)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
                     Text(title)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(DesignTokens.Typography.caption1)
+                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     Text(value)
-                        .font(.body)
-                        .fontWeight(.medium)
+                        .font(DesignTokens.Typography.body)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 }
                 Spacer()
             }
-            .padding()
+            .padding(DesignTokens.Spacing.sm)
         }
     }
 }
@@ -119,7 +119,6 @@ struct NetworkInfoCard: View {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .withNavigation(NetworkManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()

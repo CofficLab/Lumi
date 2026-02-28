@@ -21,6 +21,16 @@ struct ProjectInfo: Identifiable, Hashable {
         case python = "Python"
         case generic = "Generic"
         
+        var displayName: String {
+            switch self {
+            case .node: return String(localized: "Node.js")
+            case .rust: return String(localized: "Rust")
+            case .swift: return String(localized: "Swift/Xcode")
+            case .python: return String(localized: "Python")
+            case .generic: return String(localized: "Generic")
+            }
+        }
+
         var icon: String {
             switch self {
             case .node: return "hexagon"

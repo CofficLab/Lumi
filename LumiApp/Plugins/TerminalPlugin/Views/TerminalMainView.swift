@@ -22,22 +22,22 @@ struct TerminalMainView: View {
                     }) {
                         Image(systemName: "plus")
                             .frame(width: 24, height: 24)
-                            .background(Color(nsColor: .controlBackgroundColor))
-                            .cornerRadius(4)
+                            .background(DesignTokens.Material.glass)
+                            .cornerRadius(DesignTokens.Radius.sm)
                     }
                     .buttonStyle(.plain)
                     .padding(.leading, 4)
                 }
                 .padding(6)
             }
-            .background(Color(nsColor: .windowBackgroundColor))
+            .background(DesignTokens.Material.glass)
             
             // Content
             if let session = viewModel.selectedSession {
                 TerminalView(session: session)
             } else {
                 Text("No open terminals")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
@@ -54,7 +54,7 @@ struct TerminalTabItem: View {
         HStack(spacing: 6) {
             Text(title)
                 .font(.caption)
-                .foregroundColor(isSelected ? .primary : .secondary)
+                .foregroundColor(isSelected ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
             
             if isSelected {
                 Button(action: onClose) {
@@ -66,10 +66,20 @@ struct TerminalTabItem: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(isSelected ? Color(nsColor: .controlBackgroundColor) : Color.clear)
-        .cornerRadius(6)
+        .background(backgroundShape)
         .onTapGesture {
             onSelect()
+        }
+    }
+
+    @ViewBuilder
+    var backgroundShape: some View {
+        if isSelected {
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                .fill(DesignTokens.Material.glass)
+        } else {
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                .fill(Color.clear)
         }
     }
 }
@@ -81,7 +91,7 @@ struct TerminalView: View {
         ConsoleTextView(text: $session.output, onInput: { data in
             session.sendInput(data)
         })
-        .background(Color.black)
+        .background(DesignTokens.Color.basePalette.deepBackground)
     }
 }
 
@@ -126,7 +136,6 @@ class TerminalManagerViewModel: ObservableObject {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .withDebugBar()
 }

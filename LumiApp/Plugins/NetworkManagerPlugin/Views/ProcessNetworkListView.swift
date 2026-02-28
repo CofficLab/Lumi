@@ -9,6 +9,7 @@ struct ProcessNetworkListView: View {
             HStack {
                 Text(String(localized: "Process Monitor"))
                     .font(.headline)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
                 Spacer()
 
@@ -16,12 +17,15 @@ struct ProcessNetworkListView: View {
                     .toggleStyle(.switch)
                     .controlSize(.small)
 
-                TextField("Search...", text: $viewModel.processSearchText)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 120)
+                GlassTextField(
+                    title: "搜索",
+                    text: $viewModel.processSearchText,
+                    placeholder: "Search..."
+                )
+                .frame(width: 160)
             }
             .padding(10)
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(DesignTokens.Material.glass)
 
             // Table Header
             GeometryReader { geometry in
@@ -43,22 +47,22 @@ struct ProcessNetworkListView: View {
                         .frame(width: availableWidth * 0.2, alignment: .trailing)
                 }
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                 .padding(.horizontal, horizontalPadding)
                 .padding(.trailing, scrollBarWidth) // Extra padding to align with list (avoid scrollbar)
                 .padding(.vertical, 6)
-                .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
+                .background(DesignTokens.Material.glass.opacity(0.5))
             }
             .frame(height: 28)
 
-            Divider()
+            GlassDivider()
 
             // List
             if viewModel.filteredProcesses.isEmpty {
                 VStack {
                     Spacer()
                     Text(String(localized: "No active processes"))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     Spacer()
                 }
                 .frame(maxHeight: .infinity)

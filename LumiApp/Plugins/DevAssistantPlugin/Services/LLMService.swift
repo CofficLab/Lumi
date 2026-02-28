@@ -1,119 +1,122 @@
-import Foundation
 import Combine
+import SwiftUI
+import Foundation
 import OSLog
+import MagicKit
 
-actor LLMService {
+/// LLM 服务
+///
+/// 使用供应商协议处理所有 LLM 请求，支持动态供应商注册。
+/// 网络请求部分已委托给 LLMAPIService。
+@MainActor
+class LLMService: SuperLog {
+    nonisolated static let emoji = "🌐"
+    nonisolated static let verbose = true
+
     static let shared = LLMService()
-    private let logger = Logger(subsystem: "com.lumi.devassistant", category: "LLM")
-    
-    func sendMessage(messages: [ChatMessage], config: LLMConfig) async throws -> String {
+
+    private let registry: ProviderRegistry
+    private let llmAPI = LLMAPIService.shared
+
+    private init() {
+        self.registry = ProviderRegistry.shared
+        if Self.verbose {
+            os_log("\(self.t)LLM 服务已初始化")
+        }
+    }
+
+    // MARK: - 发送消息
+
+    /// 发送消息到指定的 LLM 供应商
+    /// - Parameters:
+    ///   - messages: 消息历史
+    ///   - config: LLM 配置
+    ///   - tools: 可用工具列表
+    /// - Returns: AI 助手的响应消息
+    func sendMessage(messages: [ChatMessage], config: LLMConfig, tools: [AgentTool]? = nil) async throws -> ChatMessage {
         guard !config.apiKey.isEmpty else {
+            os_log(.error, "\(self.t)API Key 为空")
             throw NSError(domain: "LLMService", code: 401, userInfo: [NSLocalizedDescriptionKey: "API Key is missing"])
         }
-        
-        switch config.provider {
-        case .anthropic:
-            return try await sendToAnthropic(messages: messages, apiKey: config.apiKey, model: config.model)
-        case .openai, .deepseek:
-            return try await sendToOpenAICompatible(messages: messages, config: config)
+
+        // 从注册表获取供应商实例
+        guard let provider = registry.createProvider(id: config.providerId) else {
+            os_log(.error, "\(self.t)未找到供应商: \(config.providerId)")
+            throw NSError(domain: "LLMService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Provider not found: \(config.providerId)"])
         }
-    }
-    
-    private func sendToOpenAICompatible(messages: [ChatMessage], config: LLMConfig) async throws -> String {
-        guard let urlString = config.baseURL, let url = URL(string: urlString) else {
-            throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL"])
+
+        // 构建 URL
+        guard let url = URL(string: provider.baseURL) else {
+            os_log(.error, "\(self.t)无效的 URL: \(provider.baseURL)")
+            throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL: \(provider.baseURL)"])
         }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.addValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        // Convert ChatMessage to OpenAI format
-        // System prompt is just another message with role "system"
-        let conversationMessages = messages.map { msg -> [String: String] in
-            return [
-                "role": msg.role.rawValue,
-                "content": msg.content
-            ]
+
+        // 构建请求体
+        let body: [String: Any]
+        do {
+            body = try provider.buildRequestBody(
+                messages: messages,
+                model: config.model,
+                tools: tools,
+                systemPrompt: "" // 系统提示已包含在 messages 中
+            )
+        } catch {
+            os_log(.error, "\(self.t)构建请求体失败: \(error.localizedDescription)")
+            throw error
         }
-        
-        let body: [String: Any] = [
-            "model": config.model,
-            "messages": conversationMessages,
-            "stream": false
-        ]
-        
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-            let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
-            os_log(.error, "OpenAI/DeepSeek API Error: %s", errorStr)
-            throw NSError(domain: "LLMService", code: (response as? HTTPURLResponse)?.statusCode ?? 500, userInfo: [NSLocalizedDescriptionKey: "API Error: \(errorStr)"])
-        }
-        
-        // Parse OpenAI response
-        struct OpenAIResponse: Decodable {
-            struct Choice: Decodable {
-                struct Message: Decodable {
-                    let content: String
+
+        // 输出工具列表（调试用）
+        if Self.verbose {
+            os_log("\(self.t)发送请求到 \(config.providerId): \(config.model)")
+
+            if let tools = tools, !tools.isEmpty {
+                os_log("\(self.t)📦 发送工具列表 (\(tools.count) 个):")
+                for tool in tools {
+                    os_log("\(self.t)  - \(tool.name): \(tool.description)")
                 }
-                let message: Message
+            } else {
+                os_log("\(self.t)📦 无工具")
             }
-            let choices: [Choice]
         }
-        
-        let result = try JSONDecoder().decode(OpenAIResponse.self, from: data)
-        return result.choices.first?.message.content ?? ""
-    }
-    
-    private func sendToAnthropic(messages: [ChatMessage], apiKey: String, model: String) async throws -> String {
-        let url = URL(string: "https://api.anthropic.com/v1/messages")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.addValue(apiKey, forHTTPHeaderField: "x-api-key")
-        request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        // Convert ChatMessage to Anthropic format
-        // System message is separate in Anthropic API
-        let systemMessage = messages.first(where: { $0.role == .system })?.content ?? ""
-        let conversationMessages = messages.filter { $0.role != .system }.map { msg -> [String: String] in
-            return [
-                "role": msg.role.rawValue,
-                "content": msg.content
-            ]
-        }
-        
-        let body: [String: Any] = [
-            "model": model,
-            "max_tokens": 4096,
-            "system": systemMessage,
-            "messages": conversationMessages
-        ]
-        
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-            let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
-            os_log(.error, "Anthropic API Error: %s", errorStr)
-            throw NSError(domain: "LLMService", code: (response as? HTTPURLResponse)?.statusCode ?? 500, userInfo: [NSLocalizedDescriptionKey: "API Error: \(errorStr)"])
-        }
-        
-        // Parse response
-        // Structure: { "content": [ { "text": "..." } ] }
-        struct AnthropicResponse: Decodable {
-            struct Content: Decodable {
-                let text: String
+
+        // 使用 LLM API 服务发送请求
+        do {
+            let data = try await llmAPI.sendChatRequest(
+                url: url,
+                apiKey: config.apiKey,
+                body: body
+            )
+
+            // 解析响应
+            let (content, toolCalls) = try provider.parseResponse(data: data)
+
+            if Self.verbose {
+                if let toolCalls = toolCalls, !toolCalls.isEmpty {
+                    os_log("\(self.t)收到响应: \(content.prefix(100))...，包含 \(toolCalls.count) 个工具调用")
+                } else {
+                    os_log("\(self.t)收到响应: \(content.prefix(100))...")
+                }
             }
-            let content: [Content]
+
+            return ChatMessage(role: .assistant, content: content, toolCalls: toolCalls)
+
+        } catch let apiError as APIError {
+            // 转换 API 错误为 NSError
+            throw NSError(
+                domain: "LLMService",
+                code: 500,
+                userInfo: [NSLocalizedDescriptionKey: apiError.localizedDescription]
+            )
         }
-        
-        let result = try JSONDecoder().decode(AnthropicResponse.self, from: data)
-        return result.content.first?.text ?? ""
     }
+}
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .withNavigation(DevAssistantPlugin.navigationId)
+        .inRootView()
+        .withDebugBar()
 }

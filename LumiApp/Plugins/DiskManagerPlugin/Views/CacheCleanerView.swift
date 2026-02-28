@@ -12,9 +12,10 @@ struct CacheCleanerView: View {
                     Text("System Cleanup")
                         .font(.title2)
                         .fontWeight(.bold)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                     Text("Scan and clean system caches, logs, and junk files")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
                 
                 Spacer()
@@ -25,24 +26,27 @@ struct CacheCleanerView: View {
                             .scaleEffect(0.5)
                         Text(viewModel.scanProgress)
                             .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     }
                 } else {
-                    Button("Rescan") {
+                    GlassButton(title: LocalizedStringKey("Rescan"), style: .secondary) {
                         viewModel.scan()
                     }
-                    .buttonStyle(.bordered)
                 }
             }
             .padding()
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(DesignTokens.Material.glass)
             
-            Divider()
+            GlassDivider()
             
             // Content
             if viewModel.categories.isEmpty && !viewModel.isScanning {
-                ContentUnavailableView("Ready", systemImage: "sparkles", description: Text("Click scan to start analyzing system junk"))
-                    .frame(maxHeight: .infinity)
+                ContentUnavailableView(
+                    label: { Text("Ready") },
+                    description: { Text("Click scan to start analyzing system junk") },
+                    actions: { EmptyView() }
+                )
+                .frame(maxHeight: .infinity)
             } else {
                 List {
                     ForEach(viewModel.categories) { category in
@@ -52,48 +56,50 @@ struct CacheCleanerView: View {
                 .listStyle(.sidebar) // Or .insetGrouped
             }
             
-            Divider()
+            GlassDivider()
             
             // Footer Action
             HStack {
                 VStack(alignment: .leading) {
                     Text("Selected: \(viewModel.formatBytes(viewModel.totalSelectedSize))")
                         .font(.headline)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                     Text("\(viewModel.selection.count) items")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
                 
                 Spacer()
                 
-                Button(action: {
+                GlassButton(title: viewModel.isCleaning ? LocalizedStringKey("Cleaning...") : LocalizedStringKey("Clean Now"), style: .primary) {
                     showCleanConfirmation = true
-                }) {
-                    Label(viewModel.isCleaning ? "Cleaning..." : "Clean Now", systemImage: "trash")
-                        .frame(minWidth: 100)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
                 .disabled(viewModel.selection.isEmpty || viewModel.isCleaning || viewModel.isScanning)
             }
             .padding()
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(DesignTokens.Material.glass)
         }
         .onAppear {
             if viewModel.categories.isEmpty {
                 viewModel.scan()
             }
         }
-        .alert("Confirm Cleanup", isPresented: $showCleanConfirmation) {
-            Button("Clean", role: .destructive) {
+        .alert(Text("Confirm Cleanup"), isPresented: $showCleanConfirmation) {
+            Button(role: .destructive) {
                 viewModel.cleanSelected()
+            } label: {
+                Text("Clean")
             }
-            Button("Cancel", role: .cancel) {}
+            Button(role: .cancel) {} label: {
+                Text("Cancel")
+            }
         } message: {
             Text("Are you sure you want to clean the selected \(viewModel.formatBytes(viewModel.totalSelectedSize)) files? This action cannot be undone.")
         }
-        .alert("Cleanup Complete", isPresented: $viewModel.showCleanupComplete) {
-            Button("OK", role: .cancel) {}
+        .alert(Text("Cleanup Complete"), isPresented: $viewModel.showCleanupComplete) {
+            Button(role: .cancel) {} label: {
+                Text("OK")
+            }
         } message: {
             Text("Successfully freed \(viewModel.formatBytes(viewModel.lastFreedSpace)) space.")
         }
@@ -117,6 +123,7 @@ struct CacheCategorySection: View {
                 Image(systemName: category.icon)
                 Text(category.name)
                     .font(.headline)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 
                 Spacer()
                 
@@ -125,13 +132,13 @@ struct CacheCategorySection: View {
                     .font(.caption2)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(Color(category.safetyLevel.color).opacity(0.2))
-                    .foregroundStyle(Color(category.safetyLevel.color))
+                    .background(DesignTokens.Color.semantic.warning.opacity(0.2))
+                    .foregroundColor(DesignTokens.Color.semantic.warning)
                     .cornerRadius(4)
                 
                 Text(viewModel.formatBytes(category.totalSize))
                     .font(.monospacedDigit(.caption)())
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
             .padding(.vertical, 4)
         }
@@ -142,40 +149,42 @@ struct CachePathRow: View {
     let path: CachePath
     let isSelected: Bool
     let toggleAction: () -> Void
-    
+
+    // 在 UI 层计算图标（避免在 Sendable 模型中存储 NSImage）
+    private var icon: NSImage {
+        NSWorkspace.shared.icon(forFile: path.path)
+    }
+
     var body: some View {
         HStack {
             Toggle("", isOn: Binding(get: { isSelected }, set: { _ in toggleAction() }))
                 .labelsHidden()
-            
-            if let icon = path.icon {
-                Image(nsImage: icon)
-                    .resizable()
-                    .frame(width: 24, height: 24)
-            } else {
-                Image(systemName: "doc")
-            }
-            
+
+            Image(nsImage: icon)
+                .resizable()
+                .frame(width: 24, height: 24)
+
             VStack(alignment: .leading) {
                 Text(path.name)
                     .lineLimit(1)
                     .truncationMode(.middle)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 Text(path.path)
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
-            
+
             Spacer()
-            
+
             Text(formatBytes(path.size))
                 .font(.monospacedDigit(.caption)())
-                .foregroundStyle(.secondary)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
         }
         .padding(.vertical, 2)
     }
-    
+
     private func formatBytes(_ bytes: Int64) -> String {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useGB, .useMB, .useKB]
@@ -189,7 +198,6 @@ struct CachePathRow: View {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .withDebugBar()
 }

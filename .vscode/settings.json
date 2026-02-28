@@ -6,6 +6,7 @@
         "appstore",
         "codesign",
         "codesigning",
+        "deepseek",
         "lobanov",
         "Lumi",
         "nonisolated",
@@ -17,6 +18,7 @@
         "volname",
         "xcarchive",
         "xcodeproj",
-        "xcrun"
+        "xcrun",
+        "zhipu"
     ]
 }

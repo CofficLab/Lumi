@@ -67,7 +67,6 @@ enum AppConfig {
 #Preview("App - Small Screen") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .frame(width: 800, height: 600)
 }
@@ -75,7 +74,6 @@ enum AppConfig {
 #Preview("App - Big Screen") {
     ContentLayout()
         .hideSidebar()
-        .hideTabPicker()
         .inRootView()
         .frame(width: 1200, height: 1200)
 }
