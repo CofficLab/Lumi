@@ -95,7 +95,6 @@ struct InputAreaView: View {
                 .offset(x: 16, y: -60)
             }
         }
-        .background(DesignTokens.Material.glass)
         .padding(16)
     }
 
