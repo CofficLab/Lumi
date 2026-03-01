@@ -37,7 +37,7 @@ struct AliyunProvider: LLMProviderProtocol, SuperLog {
     // MARK: - LLMProviderProtocol
 
     var baseURL: String {
-        "https://coding.dashscope.aliyuncs.com/apps/anthropic/v1"
+        "https://coding.dashscope.aliyuncs.com/apps/anthropic/v1/messages"
     }
 
     func buildRequest(url: URL, apiKey: String) -> URLRequest {
