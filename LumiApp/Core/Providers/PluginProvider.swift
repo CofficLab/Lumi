@@ -184,7 +184,23 @@ final class PluginProvider: ObservableObject, SuperLog {
             .filter { isPluginEnabled($0) }
             .compactMap { $0.addStatusBarContentView() }
     }
-    
+
+    /// 获取所有插件提供的侧边栏视图（用于 Agent 模式）
+    /// - Returns: 侧边栏视图数组，多个插件的侧边栏会从上到下垂直堆叠显示
+    func getSidebarViews() -> [AnyView] {
+        let views = plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addSidebarView() }
+
+        if Self.verbose {
+            let pluginNames = plugins.map { String(describing: type(of: $0)) }
+            let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
+            os_log("\(self.t) getSidebarViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 侧边栏视图数量=\(views.count)")
+        }
+
+        return views
+    }
+
     /// 获取所有插件的设置视图信息
     /// - Returns: 包含插件ID、名称、图标和视图的元组数组
     func getPluginSettingsViews() -> [(id: String, name: String, icon: String, view: AnyView)] {

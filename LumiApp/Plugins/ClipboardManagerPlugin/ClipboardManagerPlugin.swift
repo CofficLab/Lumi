@@ -52,11 +52,6 @@ actor ClipboardManagerPlugin: SuperPlugin {
             }
         ]
     }
-    
-    @MainActor
-    func addDetailView() -> AnyView? {
-        return AnyView(ClipboardSettingsView())
-    }
 }
 
 // MARK: - Preview

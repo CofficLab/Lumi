@@ -2,7 +2,7 @@ import Foundation
 
 /// 聊天模式
 /// 定义用户在对话中的意图和权限
-public enum ChatMode: String, CaseIterable, Codable, Identifiable {
+public enum ChatMode: String, CaseIterable, Codable, Identifiable, Sendable {
     /// 对话模式 - 只聊天，不执行任何工具或修改
     case chat = "chat"
 

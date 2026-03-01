@@ -29,6 +29,9 @@ final class AppProvider: ObservableObject {
     /// 当前选中的导航入口 ID
     @Published var selectedNavigationId: String?
 
+    /// 当前选中的应用模式
+    @Published var selectedMode: AppMode = .app
+
     // MARK: - 数据状态
 
     /// 活动状态文本

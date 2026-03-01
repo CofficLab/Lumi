@@ -530,6 +530,9 @@
         }
       }
     },
+    "Agent 模式侧边栏" : {
+
+    },
     "All" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2276,6 +2279,7 @@
       }
     },
     "Home" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2876,6 +2880,7 @@
       }
     },
     "Navigation" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4153,6 +4158,7 @@
       }
     },
     "Settings" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5134,6 +5140,9 @@
         }
       }
     },
+    "快捷操作" : {
+
+    },
     "打开App Support目录" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5335,6 +5344,9 @@
         }
       }
     },
+    "暂无插件提供侧边栏视图" : {
+
+    },
     "暂无输入源切换规则" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5443,6 +5455,9 @@
         }
       }
     },
+    "自动批准" : {
+
+    },
     "设置" : {
 
     },
@@ -5461,6 +5476,9 @@
           }
         }
       }
+    },
+    "语言" : {
+
     },
     "请从侧边栏选择一个导航入口" : {
       "localizations" : {
