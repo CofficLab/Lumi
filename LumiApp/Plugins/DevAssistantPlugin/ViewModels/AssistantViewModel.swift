@@ -598,7 +598,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
     // MARK: - 对话轮次处理
 
     private func processTurn(depth: Int = 0) async {
-        let maxDepth = 10
+        let maxDepth = 100
 
         guard depth < maxDepth else {
             errorMessage = "Max recursion depth reached."
