@@ -10,16 +10,18 @@ struct MarkdownMessageView: View {
         Group {
             if showRawMessage {
                 Text(message.content)
+                    .textSelection(.enabled)
             } else {
                 // 使用 Textual 渲染 Markdown 内容
                 if message.role == .user {
                     // 用户消息：使用 InlineText
                     InlineText(markdown: message.content)
+                        .textSelection(.enabled)
                 } else {
                     // 助手消息：使用 StructuredText 支持完整 Markdown
                     StructuredText(markdown: message.content)
                         .textual.structuredTextStyle(.default)
-                        .textual.textSelection(.enabled) // Re-enable selection on the Text view itself
+                        .textual.textSelection(.enabled)
                 }
             }
         }
