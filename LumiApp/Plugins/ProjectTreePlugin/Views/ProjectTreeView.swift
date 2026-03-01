@@ -1,6 +1,7 @@
 import SwiftUI
 import OSLog
 import MagicKit
+import UniformTypeIdentifiers
 
 /// 项目文件树视图
 struct ProjectTreeView: View {
@@ -8,6 +9,9 @@ struct ProjectTreeView: View {
     @State private var projectRoot: URL?
     @State private var rootItems: [FileTreeNode] = []
     @State private var isLoading = false
+
+    /// 拖拽类型
+    private let fileURLType = UTType.fileURL
 
     var body: some View {
         VStack(spacing: 0) {
@@ -72,7 +76,7 @@ struct ProjectTreeView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 2) {
                 ForEach(rootItems) { item in
-                    FileTreeNodeView(node: item, depth: 0)
+                    FileTreeNodeView(node: item, depth: 0, onFileDrop: handleFileDrop)
                 }
             }
             .padding(.horizontal, 4)
@@ -117,6 +121,12 @@ struct ProjectTreeView: View {
         if !agentProvider.currentProjectPath.isEmpty {
             loadProjectTree(path: agentProvider.currentProjectPath)
         }
+    }
+
+    /// 处理文件拖放 - 将文件路径传递给 AgentProvider
+    private func handleFileDrop(url: URL) {
+        // 通过 NotificationCenter 发送通知，让 InputAreaView 接收
+        NotificationCenter.postFileDroppedToChat(fileURL: url)
     }
 
     private func loadProjectTree(path: String) {
@@ -193,6 +203,7 @@ struct FileTreeNode: Identifiable {
 struct FileTreeNodeView: View {
     let node: FileTreeNode
     let depth: Int
+    let onFileDrop: (URL) -> Void
     @State private var isExpanded = false
     @State private var children: [FileTreeNode] = []
     @State private var isLoading = false
@@ -236,6 +247,10 @@ struct FileTreeNodeView: View {
                     toggle()
                 }
             }
+            // 添加拖拽支持
+            .draggable(node.url) {
+                DragPreview(fileURL: node.url)
+            }
 
             // 子节点
             if isExpanded && node.isDirectory {
@@ -249,7 +264,7 @@ struct FileTreeNodeView: View {
                     .padding(.vertical, 4)
                 } else if !children.isEmpty {
                     ForEach(children) { child in
-                        FileTreeNodeView(node: child, depth: depth + 1)
+                        FileTreeNodeView(node: child, depth: depth + 1, onFileDrop: onFileDrop)
                     }
                 }
             }
@@ -347,6 +362,33 @@ extension FileTreeNode {
         case "zip", "tar", "gz", "rar": return "doc.zipper"
         default: return "doc"
         }
+    }
+}
+
+// MARK: - Drag Preview
+
+struct DragPreview: View {
+    let fileURL: URL
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: iconForFileURL)
+                .font(.system(size: 12))
+                .foregroundColor(.accentColor)
+            Text(fileURL.lastPathComponent)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(.primary)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color(nsColor: .windowBackgroundColor).opacity(0.9))
+        .cornerRadius(8)
+        .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+    }
+
+    private var iconForFileURL: String {
+        let isDirectory = (try? fileURL.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
+        return isDirectory ? "folder.fill" : "doc.fill"
     }
 }
 

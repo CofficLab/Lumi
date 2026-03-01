@@ -25,6 +25,10 @@ extension Notification.Name {
 
     /// 检查应用更新的通知
     static let checkForUpdates = Notification.Name("checkForUpdates")
+
+    /// 文件拖放到聊天框的通知
+    /// userInfo: ["fileURL": URL]
+    static let fileDroppedToChat = Notification.Name("fileDroppedToChat")
 }
 
 // MARK: - NotificationCenter Extension
@@ -83,6 +87,16 @@ extension NotificationCenter {
     /// - Parameter object: 可选的对象参数
     static func postCheckForUpdates(object: Any? = nil) {
         NotificationCenter.default.post(name: .checkForUpdates, object: object)
+    }
+
+    /// 发送文件拖放到聊天框的通知
+    /// - Parameter fileURL: 文件 URL
+    static func postFileDroppedToChat(fileURL: URL) {
+        NotificationCenter.default.post(
+            name: .fileDroppedToChat,
+            object: nil,
+            userInfo: ["fileURL": fileURL]
+        )
     }
 }
 
@@ -145,6 +159,19 @@ extension View {
                 return
             }
             action(upload, download)
+        }
+    }
+
+    /// 监听文件拖放到聊天框的事件
+    /// - Parameter action: 事件处理闭包，参数为文件 URL
+    /// - Returns: 修改后的视图
+    func onFileDroppedToChat(perform action: @escaping (URL) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .fileDroppedToChat)) { notification in
+            guard let userInfo = notification.userInfo,
+                  let fileURL = userInfo["fileURL"] as? URL else {
+                return
+            }
+            action(fileURL)
         }
     }
 }

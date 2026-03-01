@@ -96,6 +96,10 @@ struct InputAreaView: View {
             }
         }
         .padding(16)
+        // 监听文件拖放通知
+        .onFileDroppedToChat { fileURL in
+            handleFileDrop(fileURL: fileURL)
+        }
     }
 
     // MARK: - Handle Drop
@@ -107,11 +111,11 @@ struct InputAreaView: View {
                 provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
                     if let data = item as? Data, let url = URL(dataRepresentation: data, relativeTo: nil) {
                         DispatchQueue.main.async {
-                            onDropImage([url])
+                            _ = onDropImage([url])
                         }
                     } else if let url = item as? URL {
                         DispatchQueue.main.async {
-                            onDropImage([url])
+                            _ = onDropImage([url])
                         }
                     }
                 }
@@ -119,6 +123,13 @@ struct InputAreaView: View {
             }
         }
         return handled
+    }
+
+    /// 处理从项目树拖放的文件
+    private func handleFileDrop(fileURL: URL) {
+        // 将文件路径作为文本插入到输入框
+        let file_path = fileURL.path
+        viewModel.currentInput += "\(file_path) "
     }
 }
 
