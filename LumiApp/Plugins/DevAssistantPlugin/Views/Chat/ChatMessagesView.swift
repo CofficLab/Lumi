@@ -13,6 +13,7 @@ struct ChatMessagesView: View {
                             .id(msg.id)
                     }
                 }
+                .padding(.horizontal)
             }
             .onChange(of: viewModel.messages) { oldMessages, newMessages in
                 guard let lastMessage = newMessages.last else { return }
