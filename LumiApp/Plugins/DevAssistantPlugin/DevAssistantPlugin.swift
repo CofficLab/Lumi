@@ -40,7 +40,8 @@ actor DevAssistantPlugin: SuperPlugin {
                 id: Self.navigationId,
                 title: Self.displayName,
                 icon: Self.iconName,
-                pluginId: Self.id
+                pluginId: Self.id,
+                mode: .agent
             ) {
                 DevAssistantView()
             },

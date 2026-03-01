@@ -12,11 +12,20 @@ struct Sidebar: View {
     @Environment(\.colorScheme) private var colorScheme
 
     private var entries: [NavigationEntry] {
-        pluginProvider.getNavigationEntries()
+        pluginProvider.getNavigationEntries(for: pluginProvider.selectedMode)
     }
 
     var body: some View {
         VStack(spacing: 0) {
+            // MARK: - Mode Switcher
+
+            modeSwitcher
+                .padding(.horizontal, DesignTokens.Spacing.sm)
+                .padding(.top, 32)
+                .padding(.bottom, DesignTokens.Spacing.sm)
+
+            Divider()
+
             if entries.isNotEmpty {
                 ScrollView {
                     LazyVStack(spacing: DesignTokens.Spacing.sm) {
@@ -51,6 +60,19 @@ struct Sidebar: View {
                 initializeDefaultSelection()
             }
         }
+    }
+
+    // MARK: - Mode Switcher
+
+    private var modeSwitcher: some View {
+        Picker("模式", selection: $pluginProvider.selectedMode) {
+            ForEach(AppMode.allCases) { mode in
+                Label(mode.rawValue, systemImage: mode.icon)
+                    .tag(mode)
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
     }
     
     struct SidebarRow: View {
@@ -150,7 +172,7 @@ struct Sidebar: View {
     private func initializeDefaultSelection() {
         // 如果还没有选中项，选择默认的或第一个
         if appProvider.selectedNavigationId == nil {
-            let entries = pluginProvider.getNavigationEntries()
+            let entries = pluginProvider.getNavigationEntries(for: pluginProvider.selectedMode)
             if let defaultEntry = entries.first(where: { $0.isDefault }) {
                 appProvider.selectedNavigationId = defaultEntry.id
             } else if let firstEntry = entries.first {

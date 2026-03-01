@@ -24,6 +24,9 @@ final class PluginProvider: ObservableObject, SuperLog {
     /// 插件是否已加载完成
     @Published private(set) var isLoaded: Bool = false
 
+    /// 当前选中的应用模式
+    @Published var selectedMode: AppMode = .app
+
     /// 插件设置存储
     private let settingsStore = PluginSettingsStore.shared
     
@@ -201,6 +204,13 @@ final class PluginProvider: ObservableObject, SuperLog {
             .filter { isPluginEnabled($0) }
             .compactMap { $0.addNavigationEntries() }
             .flatMap { $0 }
+    }
+
+    /// 获取指定模式下的导航入口
+    /// - Parameter mode: 应用模式
+    /// - Returns: 导航入口数组
+    func getNavigationEntries(for mode: AppMode) -> [NavigationEntry] {
+        getNavigationEntries().filter { $0.mode == mode }
     }
 
     /// 重新加载插件
