@@ -43,8 +43,8 @@ struct AliyunProvider: LLMProviderProtocol, SuperLog {
     func buildRequest(url: URL, apiKey: String) -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.addValue(apiKey, forHTTPHeaderField: "x-api-key")
-        request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        // 阿里云 Coding Plan 使用 Authorization: Bearer <API Key> 格式
+        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         return request
     }

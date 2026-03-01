@@ -85,10 +85,14 @@ class LLMService: SuperLog {
             var additionalHeaders: [String: String] = [:]
 
             // 为 Anthropic 兼容的 API 添加 anthropic-version 请求头
-            // 阿里云、Zhipu 等需要此请求头
-            if config.providerId == "aliyun" || config.providerId == "zhipu" || config.providerId == "anthropic" {
+            // Zhipu 需要此请求头
+            if config.providerId == "zhipu" {
                 additionalHeaders["anthropic-version"] = "2023-06-01"
             }
+
+            // 阿里云 Coding Plan 使用 Authorization: Bearer 认证，不需要 x-api-key 和 anthropic-version
+            // 其他 provider (如 Zhipu, Anthropic) 使用 x-api-key 认证
+            let useBearerAuth = config.providerId == "aliyun"
 
             if Self.verbose && !additionalHeaders.isEmpty {
                 os_log("\(self.t)📦 添加额外请求头：\(additionalHeaders)")
@@ -98,7 +102,8 @@ class LLMService: SuperLog {
                 url: url,
                 apiKey: config.apiKey,
                 body: body,
-                additionalHeaders: additionalHeaders
+                additionalHeaders: additionalHeaders,
+                useBearerAuth: useBearerAuth
             )
 
             // 解析响应
