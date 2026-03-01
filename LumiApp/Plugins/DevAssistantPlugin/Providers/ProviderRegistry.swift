@@ -43,6 +43,7 @@ class ProviderRegistry: SuperLog {
             OpenAIProvider.self,
             DeepSeekProvider.self,
             ZhipuProvider.self,
+            AliyunProvider.self,
         ])
 
         if Self.verbose {
@@ -91,6 +92,8 @@ class ProviderRegistry: SuperLog {
             instance = DeepSeekProvider()
         case ZhipuProvider.id:
             instance = ZhipuProvider()
+        case AliyunProvider.id:
+            instance = AliyunProvider()
         default:
             os_log(.error, "\(self.t)未知的供应商 ID: \(id)")
             return nil
