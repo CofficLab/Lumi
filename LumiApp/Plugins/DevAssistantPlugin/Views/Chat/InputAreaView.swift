@@ -1,7 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// 输入区域视图 - 包含快捷短语、附件预览、编辑器和工具栏
+/// 输入区域视图 - 包含附件预览、编辑器、工具栏和快捷短语
 struct InputAreaView: View {
     @ObservedObject var viewModel: AssistantViewModel
     @Binding var isInputFocused: Bool
@@ -12,20 +12,6 @@ struct InputAreaView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 快捷短语区域
-            if viewModel.isProjectSelected {
-                QuickPhrasesView(
-                    onPhraseSelected: { prompt in
-                        viewModel.currentInput = prompt
-                        isInputFocused = true
-                    },
-                    projectName: $viewModel.currentProjectName,
-                    projectPath: $viewModel.currentProjectPath,
-                    isProjectSelected: $viewModel.isProjectSelected
-                )
-                .padding(.top, 8)
-            }
-
             // 输入框容器
             VStack(spacing: 0) {
                 // 附件预览区域
@@ -64,7 +50,7 @@ struct InputAreaView: View {
                     isFocused: $isInputFocused,
                     onDrop: onDropImage
                 )
-                .frame(height: 32)
+                .frame(height: 64)
                 .padding(.horizontal, 4)
                 .padding(.top, 8)
 
@@ -75,6 +61,20 @@ struct InputAreaView: View {
                     onImageUpload: onImageUpload,
                     onSendMessage: onSendMessage
                 )
+                
+                // 快捷短语区域（英文 Commit 和中文 Commit）
+                if viewModel.isProjectSelected {
+                    QuickPhrasesView(
+                        onPhraseSelected: { prompt in
+                            viewModel.currentInput = prompt
+                            isInputFocused = true
+                        },
+                        projectName: $viewModel.currentProjectName,
+                        projectPath: $viewModel.currentProjectPath,
+                        isProjectSelected: $viewModel.isProjectSelected
+                    )
+                    .padding(.top, 8)
+                }
             }
             .background(Color(nsColor: .controlBackgroundColor))
             .cornerRadius(12)
