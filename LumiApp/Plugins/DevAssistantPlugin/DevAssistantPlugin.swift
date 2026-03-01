@@ -34,27 +34,14 @@ actor DevAssistantPlugin: SuperPlugin {
     // MARK: - UI
 
     @MainActor
-    func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id
-            ) {
-                DevAssistantView()
-            },
-        ]
-    }
-
-    @MainActor
     func addSettingsView() -> AnyView? {
         return AnyView(DevAssistantSettingsView())
     }
     
     @MainActor
     func addDetailView() -> AnyView? {
-        return AnyView(DevAssistantSettingsView())
+        // 在 Agent 模式下提供 DevAssistantView 作为详情视图
+        return AnyView(DevAssistantView())
     }
 }
 

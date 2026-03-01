@@ -20,12 +20,16 @@ struct NavigationEntry: Identifiable, Hashable {
     /// 是否为默认选中的导航项
     let isDefault: Bool
 
+    /// 所属应用模式
+    let mode: AppMode
+
     /// 初始化方法
     init(
         id: String,
         title: String,
         icon: String,
         pluginId: String,
+        mode: AppMode = .app,
         isDefault: Bool = false,
         contentProvider: @escaping () -> AnyView
     ) {
@@ -33,6 +37,7 @@ struct NavigationEntry: Identifiable, Hashable {
         self.title = title
         self.icon = icon
         self.pluginId = pluginId
+        self.mode = mode
         self.isDefault = isDefault
         self.contentProvider = contentProvider
     }
@@ -57,6 +62,7 @@ extension NavigationEntry {
         title: String,
         icon: String,
         pluginId: String,
+        mode: AppMode = .app,
         isDefault: Bool = false,
         @ViewBuilder content: @escaping () -> some View
     ) -> NavigationEntry {
@@ -65,6 +71,7 @@ extension NavigationEntry {
             title: title,
             icon: icon,
             pluginId: pluginId,
+            mode: mode,
             isDefault: isDefault
         ) {
             AnyView(content())

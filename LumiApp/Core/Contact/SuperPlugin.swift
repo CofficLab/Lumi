@@ -50,6 +50,11 @@ protocol SuperPlugin: Actor {
     /// - Note: 插件可以提供自定义的状态栏内容视图，内核会将其组合显示
     @MainActor func addStatusBarContentView() -> AnyView?
 
+    /// 添加侧边栏视图（用于 Agent 模式）
+    /// - Returns: 要添加的侧边栏视图，如果不需要则返回 nil
+    /// - Note: 在 Agent 模式下，插件可以提供自定义的侧边栏视图，多个插件的侧边栏会从上到下垂直堆叠显示
+    @MainActor func addSidebarView() -> AnyView?
+
     // MARK: - Lifecycle Hooks
 
     /// 插件注册完成后的回调
@@ -112,6 +117,9 @@ extension SuperPlugin {
 
     /// 默认实现：不提供状态栏内容视图
     @MainActor func addStatusBarContentView() -> AnyView? { nil }
+
+    /// 默认实现：不提供侧边栏视图
+    @MainActor func addSidebarView() -> AnyView? { nil }
 
     // MARK: - Lifecycle Hooks Default Implementation
     

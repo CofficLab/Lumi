@@ -18,60 +18,76 @@ class AssistantViewModel: ObservableObject, SuperLog {
     @Published var errorMessage: String?
     @Published var pendingPermissionRequest: PermissionRequest?
     @Published var depthWarning: DepthWarning?
-    
+
     // MARK: - 命令建议
     @Published var commandSuggestionViewModel = CommandSuggestionViewModel()
-    
+
     // MARK: - 工具队列
 
     private var pendingToolCalls: [ToolCall] = []
     private var currentDepth: Int = 0
     private var cancellables = Set<AnyCancellable>()
 
-    // MARK: - 项目信息
+    // MARK: - 项目信息（镜像 AgentProvider）
 
     @Published var currentProjectName: String = ""
     @Published var currentProjectPath: String = ""
     @Published var isProjectSelected: Bool = false
 
-    // MARK: - 风险控制
+    // MARK: - 风险控制（镜像 AgentProvider）
 
-    @Published var autoApproveRisk: Bool = {
-        // 从 UserDefaults 加载保存的值
-        let saved = UserDefaults.standard.bool(forKey: "DevAssistant_AutoApproveRisk")
-        // 如果不存在，默认为 false
-        return saved
-    }() {
+    @Published var autoApproveRisk: Bool = false {
         didSet {
-            UserDefaults.standard.set(autoApproveRisk, forKey: "DevAssistant_AutoApproveRisk")
+            AgentProvider.shared.autoApproveRisk = autoApproveRisk
             if Self.verbose {
-                os_log("\(self.t)自动批准风险已更改: \(self.autoApproveRisk)")
+                os_log("\(self.t) 自动批准风险已更改：\(self.autoApproveRisk)")
             }
         }
     }
 
-    // MARK: - 语言偏好
+    // MARK: - 语言偏好（镜像 AgentProvider）
 
     @Published var languagePreference: LanguagePreference = .chinese {
         didSet {
+            AgentProvider.shared.languagePreference = languagePreference
             if Self.verbose {
-                os_log("\(self.t)切换语言偏好: \(self.languagePreference.displayName)")
+                os_log("\(self.t) 切换语言偏好：\(self.languagePreference.displayName)")
             }
-            // 保存到 UserDefaults
-            if let encoded = try? JSONEncoder().encode(self.languagePreference) {
-                UserDefaults.standard.set(encoded, forKey: "DevAssistant_LanguagePreference")
-            }
-            // 通知语言切换
             notifyLanguageChange()
         }
     }
 
-    // MARK: - 供应商选择
+    // MARK: - 供应商选择（镜像 AgentProvider）
 
     @Published var selectedProviderId: String = "anthropic" {
         didSet {
+            AgentProvider.shared.selectedProviderId = selectedProviderId
             if Self.verbose {
-                os_log("\(self.t)切换供应商: \(self.selectedProviderId)")
+                os_log("\(self.t) 切换供应商：\(self.selectedProviderId)")
+            }
+        }
+    }
+
+    // MARK: - 模型选择（镜像 AgentProvider）
+
+    @Published var selectedModel: String = "" {
+        didSet {
+            AgentProvider.shared.selectedModel = selectedModel
+        }
+    }
+
+    // MARK: - 聊天模式（镜像 AgentProvider）
+
+    @Published var chatMode: ChatMode = .build {
+        didSet {
+            AgentProvider.shared.chatMode = chatMode
+            if Self.verbose {
+                os_log("\(self.t) 切换聊天模式：\(self.chatMode.displayName)")
+            }
+            if chatMode == .chat && oldValue == .build {
+                Task {
+                    await notifyModeChangeToChat()
+                }
             }
         }
     }
@@ -92,20 +108,20 @@ class AssistantViewModel: ObservableObject, SuperLog {
     let promptService = PromptService.shared
 
     // MARK: - 工具管理器（重构：关注点分离）
-    
+
     /// 使用 ToolManager 管理所有工具，而不是直接管理
     private let toolManager = ToolManager.shared
-    
+
     /// 获取所有可用工具（通过 ToolManager）
     private var tools: [AgentTool] {
         return toolManager.tools
     }
 
     // MARK: - 图片上传
-    
+
     func handleImageUpload(url: URL) {
         if Self.verbose {
-            os_log("\(self.t)📷 开始处理图片上传: \(url.lastPathComponent)")
+            os_log("\(self.t)📷 开始处理图片上传：\(url.lastPathComponent)")
         }
 
         // 读取图片数据
@@ -117,7 +133,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(self.t)✅ 图片读取成功，大小: \(data.count) bytes")
+            os_log("\(self.t)✅ 图片读取成功，大小：\(data.count) bytes")
         }
 
         let mimeType = url.pathExtension.lowercased() == "png" ? "image/png" : "image/jpeg"
@@ -129,11 +145,11 @@ class AssistantViewModel: ObservableObject, SuperLog {
             os_log("\(self.t)✅ 图片已添加到待发送列表，当前共 \(self.pendingAttachments.count) 个附件")
         }
     }
-    
+
     // 附件枚举
     enum Attachment: Identifiable {
         case image(id: UUID, data: Data, mimeType: String, url: URL)
-        
+
         var id: UUID {
             switch self {
             case .image(let id, _, _, _):
@@ -141,18 +157,25 @@ class AssistantViewModel: ObservableObject, SuperLog {
             }
         }
     }
-    
+
     @Published var pendingAttachments: [Attachment] = []
-    
+
     func removeAttachment(id: UUID) {
         pendingAttachments.removeAll { $0.id == id }
     }
-    
+
     // MARK: - 初始化
-    
+
     init() {
-        // 加载语言偏好
-        loadLanguagePreference()
+        // 同步 AgentProvider 的状态
+        self.languagePreference = AgentProvider.shared.languagePreference
+        self.chatMode = AgentProvider.shared.chatMode
+        self.autoApproveRisk = AgentProvider.shared.autoApproveRisk
+        self.selectedProviderId = AgentProvider.shared.selectedProviderId
+        self.selectedModel = AgentProvider.shared.selectedModel
+        self.currentProjectName = AgentProvider.shared.currentProjectName
+        self.currentProjectPath = AgentProvider.shared.currentProjectPath
+        self.isProjectSelected = AgentProvider.shared.isProjectSelected
 
         // 订阅输入变化以更新建议
         $currentInput
@@ -161,27 +184,29 @@ class AssistantViewModel: ObservableObject, SuperLog {
                 self?.commandSuggestionViewModel.updateSuggestions(for: input)
             }
             .store(in: &cancellables)
-            
-        // 初始化上下文和历史
-        Task {
-            // 默认不设置项目根目录，等待用户选择
-            await loadProjectSettings()
 
+        // 初始化上下文和历史
+        let initialLanguagePreference = languagePreference
+        let initialIsProjectSelected = isProjectSelected
+        let initialCurrentProjectName = currentProjectName
+        let initialCurrentProjectPath = currentProjectPath
+
+        Task { @MainActor in
             let fullSystemPrompt = await promptService.buildSystemPrompt(
-                languagePreference: languagePreference,
-                includeContext: isProjectSelected
+                languagePreference: initialLanguagePreference,
+                includeContext: initialIsProjectSelected
             )
 
             messages.append(ChatMessage(role: .system, content: fullSystemPrompt))
 
             // 如果未选择项目，显示引导消息
-            if !isProjectSelected {
+            if !initialIsProjectSelected {
                 showProjectSelectionPrompt()
             } else {
                 let welcomeMsg = await promptService.getWelcomeBackMessage(
-                    projectName: currentProjectName,
-                    projectPath: currentProjectPath,
-                    language: languagePreference
+                    projectName: initialCurrentProjectName,
+                    projectPath: initialCurrentProjectPath,
+                    language: initialLanguagePreference
                 )
                 messages.append(ChatMessage(role: .assistant, content: welcomeMsg))
             }
@@ -189,7 +214,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
 
         if Self.verbose {
             os_log("\(self.t)DevAssistant 视图模型已初始化")
-            os_log("\(self.t)自动批准风险设置: \(self.autoApproveRisk)")
+            os_log("\(self.t) 自动批准风险设置：\(self.autoApproveRisk)")
         }
     }
 
@@ -202,121 +227,13 @@ class AssistantViewModel: ObservableObject, SuperLog {
         }
     }
 
-    // MARK: - 项目管理
-
-    private func loadProjectSettings() async {
-        // 从 UserDefaults 加载上次选择的项目
-        if let savedPath = UserDefaults.standard.string(forKey: "DevAssistant_SelectedProject"),
-           !savedPath.isEmpty {
-            let rootURL = URL(fileURLWithPath: savedPath)
-
-            // 验证项目路径是否仍然有效
-            var isDirectory: ObjCBool = false
-            if FileManager.default.fileExists(atPath: savedPath, isDirectory: &isDirectory) && isDirectory.boolValue {
-                self.currentProjectName = rootURL.lastPathComponent
-                self.currentProjectPath = savedPath
-                self.isProjectSelected = true
-
-                // 获取并应用项目配置（包括模型选择）
-                let config = ProjectConfigStore.shared.getOrCreateConfig(for: savedPath)
-                applyProjectConfig(config)
-
-                await ContextService.shared.setProjectRoot(rootURL)
-
-                if Self.verbose {
-                    os_log("\(self.t)已加载项目: \(self.currentProjectName)")
-                    os_log("\(self.t)项目配置: 供应商=\(config.providerId), 模型=\(config.model)")
-                }
-            } else {
-                // 项目路径无效，清除设置
-                clearProjectSettings()
-            }
-        }
-    }
-
-    func switchProject(to path: String) async {
-        let rootURL = URL(fileURLWithPath: path)
-
-        // 验证路径是否存在
-        var isDirectory: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) && isDirectory.boolValue else {
-            self.errorMessage = "项目路径无效: \(path)"
-            return
-        }
-
-        await ContextService.shared.setProjectRoot(rootURL)
-        self.currentProjectName = rootURL.lastPathComponent
-        self.currentProjectPath = path
-        self.isProjectSelected = true
-
-        // 保存到 UserDefaults
-        UserDefaults.standard.set(path, forKey: "DevAssistant_SelectedProject")
-
-        // 添加到最近项目列表
-        addToRecentProjects(name: rootURL.lastPathComponent, path: path)
-
-        // 刷新上下文
-        let fullSystemPrompt = await promptService.buildSystemPrompt(
-            languagePreference: languagePreference,
-            includeContext: true
-        )
-
-        // 重建消息历史
-        messages = [ChatMessage(role: .system, content: fullSystemPrompt)]
-        let switchMsg = await promptService.getProjectSwitchedMessage(
-            projectName: currentProjectName,
-            projectPath: currentProjectPath
-        )
-        messages.append(ChatMessage(role: .assistant, content: switchMsg))
-
-        if Self.verbose {
-            os_log("\(self.t)已切换到项目: \(self.currentProjectName)")
-        }
-    }
-
-    func clearProjectSettings() {
-        UserDefaults.standard.removeObject(forKey: "DevAssistant_SelectedProject")
-        self.currentProjectName = ""
-        self.currentProjectPath = ""
-        self.isProjectSelected = false
-
-        Task {
-            await ContextService.shared.setProjectRoot(nil)
-        }
-    }
-
-    private func addToRecentProjects(name: String, path: String) {
-        var recentProjects: [RecentProject] = []
-
-        // 加载现有最近项目
-        if let data = UserDefaults.standard.data(forKey: "RecentProjects"),
-           let decoded = try? JSONDecoder().decode([RecentProject].self, from: data) {
-            recentProjects = decoded
-        }
-
-        // 移除重复项
-        recentProjects.removeAll { $0.path == path }
-
-        // 添加新项目到开头
-        let newProject = RecentProject(name: name, path: path, lastUsed: Date())
-        recentProjects.insert(newProject, at: 0)
-
-        // 只保留最近 5 个
-        recentProjects = Array(recentProjects.prefix(5))
-
-        // 保存
-        if let encoded = try? JSONEncoder().encode(recentProjects) {
-            UserDefaults.standard.set(encoded, forKey: "RecentProjects")
-        }
-    }
-
     // MARK: - 消息发送
 
     func sendMessage() {
         guard !currentInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !pendingAttachments.isEmpty else { return }
 
         if Self.verbose {
-            os_log("\(self.t)用户发送消息")
+            os_log("\(self.t) 用户发送消息")
         }
 
         // 清除之前的深度警告
@@ -378,7 +295,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
                 if case .image(_, let data, let mimeType, _) = attachment {
                     images.append(ImageAttachment(data: data, mimeType: mimeType))
                     if Self.verbose {
-                        os_log("\(self.t)  - 图片: \(mimeType), 大小: \(data.count) bytes")
+                        os_log("\(self.t) - 图片：\(mimeType), 大小：\(data.count) bytes")
                     }
                 }
             }
@@ -468,12 +385,12 @@ class AssistantViewModel: ObservableObject, SuperLog {
         if !pendingToolCalls.isEmpty {
             let nextTool = pendingToolCalls.removeFirst()
             if Self.verbose {
-                os_log("\(self.t)继续处理下一个工具: \(nextTool.name)")
+                os_log("\(self.t) 继续处理下一个工具：\(nextTool.name)")
             }
             await handleToolCall(nextTool)
         } else {
             if Self.verbose {
-                os_log("\(self.t)所有工具处理完成，继续对话")
+                os_log("\(self.t) 所有工具处理完成，继续对话")
             }
             await processTurn(depth: currentDepth + 1)
         }
@@ -481,7 +398,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
 
     private func handleToolCall(_ toolCall: ToolCall) async {
         if Self.verbose {
-            os_log("\(self.t)⚙️ 正在执行工具: \(toolCall.name)")
+            os_log("\(self.t)⚙️ 正在执行工具：\(toolCall.name)")
         }
 
         // 检查权限
@@ -566,7 +483,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
 
             await processPendingTools()
         } catch {
-            os_log(.error, "\(self.t)❌ 工具执行失败: \(error.localizedDescription)")
+            os_log(.error, "\(self.t)❌ 工具执行失败：\(error.localizedDescription)")
             messages.append(ChatMessage(
                 role: .user,
                 content: "Error executing tool: \(error.localizedDescription)",
@@ -579,33 +496,40 @@ class AssistantViewModel: ObservableObject, SuperLog {
     // MARK: - 对话轮次处理
 
     private func processTurn(depth: Int = 0) async {
-        let maxDepth = 10
+        let maxDepth = 100
 
         guard depth < maxDepth else {
             errorMessage = "Max recursion depth reached."
             isProcessing = false
             depthWarning = DepthWarning(currentDepth: depth, maxDepth: maxDepth, warningType: .reached)
-            os_log(.error, "\(self.t)达到最大递归深度 (\(maxDepth))，对话终止")
+            os_log(.error, "\(self.t) 达到最大递归深度 (\(maxDepth))，对话终止")
             return
         }
 
         currentDepth = depth
         if Self.verbose {
-            os_log("\(self.t)开始处理对话轮次 (深度: \(depth))")
+            os_log("\(self.t) 开始处理对话轮次 (深度：\(depth), 模式：\(self.chatMode.displayName))")
         }
 
         // 更新深度警告状态
         updateDepthWarning(currentDepth: depth, maxDepth: maxDepth)
 
+        // 根据聊天模式决定是否传递工具
+        let availableTools: [AgentTool] = (chatMode == .build) ? tools : []
+
+        if Self.verbose && chatMode == .chat {
+            os_log("\(self.t) 当前为对话模式，不传递工具")
+        }
+
         do {
             let config = getCurrentConfig()
 
             if Self.verbose {
-                os_log("\(self.t)调用 LLM (供应商: \(config.providerId), 模型: \(config.model))")
+                os_log("\(self.t) 调用 LLM (供应商：\(config.providerId), 模型：\(config.model))")
             }
 
             // 1. 获取 LLM 响应
-            let responseMsg = try await llmService.sendMessage(messages: messages, config: config, tools: tools)
+            let responseMsg = try await llmService.sendMessage(messages: messages, config: config, tools: availableTools)
             messages.append(responseMsg)
 
             // 2. 检查工具调用
@@ -638,13 +562,12 @@ class AssistantViewModel: ObservableObject, SuperLog {
             messages.append(ChatMessage(role: .assistant, content: "Error: \(error.localizedDescription)", isError: true))
             isProcessing = false
             depthWarning = nil  // 清除深度警告
-            os_log(.error, "\(self.t)对话处理失败: \(error.localizedDescription)")
+            os_log(.error, "\(self.t) 对话处理失败：\(error.localizedDescription)")
         }
     }
 
     // MARK: - 深度警告管理
 
-    /// 更新深度警告状态
     /// 更新深度警告状态
     private func updateDepthWarning(currentDepth: Int, maxDepth: Int) {
         if currentDepth >= maxDepth - 1 {
@@ -698,7 +621,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
         }
         UserDefaults.standard.set(model, forKey: providerType.modelStorageKey)
         if Self.verbose {
-            os_log("\(self.t)更新模型: \(providerType.displayName) -> \(model)")
+            os_log("\(self.t) 更新模型：\(providerType.displayName) -> \(model)")
         }
     }
 
@@ -720,7 +643,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
         ProjectConfigStore.shared.saveConfig(updatedConfig)
 
         if Self.verbose {
-            os_log("\(self.t)保存模型到项目配置: \(self.currentProjectName) -> \(self.currentModel)")
+            os_log("\(self.t) 保存模型到项目配置：\(self.currentProjectName) -> \(self.currentModel)")
         }
     }
 
@@ -739,7 +662,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
         }
         UserDefaults.standard.set(apiKey, forKey: providerType.apiKeyStorageKey)
         if Self.verbose {
-            os_log("\(self.t)已设置 \(providerType.displayName) 的 API Key")
+            os_log("\(self.t) 已设置 \(providerType.displayName) 的 API Key")
         }
     }
 
@@ -759,6 +682,9 @@ class AssistantViewModel: ObservableObject, SuperLog {
     // MARK: - 历史记录管理
 
     func clearHistory() {
+        let languagePreference = self.languagePreference
+        let isProjectSelected = self.isProjectSelected
+
         Task {
             let fullSystemPrompt = await promptService.buildSystemPrompt(
                 languagePreference: languagePreference,
@@ -770,28 +696,12 @@ class AssistantViewModel: ObservableObject, SuperLog {
 
     // MARK: - 语言偏好管理
 
-    /// 加载语言偏好
-    private func loadLanguagePreference() {
-        guard let data = UserDefaults.standard.data(forKey: "DevAssistant_LanguagePreference"),
-              let decoded = try? JSONDecoder().decode(LanguagePreference.self, from: data) else {
-            // 使用系统语言作为默认值
-            let systemLanguage = Locale.current.language.languageCode?.identifier ?? "zh"
-            let preferredLanguage: LanguagePreference = systemLanguage.hasPrefix("zh") ? .chinese : .english
-            // 只在值不同时才设置，避免触发不必要的 didSet
-            if self.languagePreference != preferredLanguage {
-                self.languagePreference = preferredLanguage
-            }
-            return
-        }
-        // 只在值不同时才设置，避免触发不必要的 didSet
-        if self.languagePreference != decoded {
-            self.languagePreference = decoded
-        }
-    }
-
     /// 通知语言切换
     private func notifyLanguageChange() {
-        Task {
+        let languagePreference = self.languagePreference
+        let isProjectSelected = self.isProjectSelected
+
+        Task { @MainActor in
             let message = await promptService.getLanguageSwitchedMessage(language: languagePreference)
             let fullSystemPrompt = await promptService.buildSystemPrompt(
                 languagePreference: languagePreference,
@@ -808,6 +718,19 @@ class AssistantViewModel: ObservableObject, SuperLog {
             // 添加语言切换通知
             messages.append(ChatMessage(role: .assistant, content: message))
         }
+    }
+
+    /// 通知模式切换到对话模式
+    private func notifyModeChangeToChat() async {
+        let message: String
+        switch languagePreference {
+        case .chinese:
+            message = "已切换到对话模式。在此模式下，我将只与您进行对话，不会执行任何工具或修改代码。有什么问题我可以帮您解答？"
+        case .english:
+            message = "Switched to Chat mode. In this mode, I will only chat with you without executing any tools or modifying code. How can I help you today?"
+        }
+
+        messages.append(ChatMessage(role: .assistant, content: message))
     }
 }
 

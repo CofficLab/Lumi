@@ -1,15 +1,15 @@
 import Foundation
 
 /// 项目配置模型
-struct ProjectConfig: Codable, Identifiable, Equatable {
-    let id: UUID
-    let projectPath: String
-    var providerId: String
-    var model: String
-    var createdAt: Date
-    var updatedAt: Date
+public struct ProjectConfig: Codable, Identifiable, Equatable {
+    public let id: UUID
+    public let projectPath: String
+    public var providerId: String
+    public var model: String
+    public var createdAt: Date
+    public var updatedAt: Date
 
-    init(projectPath: String, providerId: String = "anthropic", model: String = "") {
+    public init(projectPath: String, providerId: String = "anthropic", model: String = "") {
         self.id = UUID()
         self.projectPath = projectPath
         self.providerId = providerId
@@ -19,23 +19,23 @@ struct ProjectConfig: Codable, Identifiable, Equatable {
     }
 
     /// 获取项目名称
-    var projectName: String {
+    public var projectName: String {
         URL(fileURLWithPath: projectPath).lastPathComponent
     }
 }
 
 /// 项目配置存储管理器
 @MainActor
-class ProjectConfigStore {
+public class ProjectConfigStore {
     /// 单例
-    static let shared = ProjectConfigStore()
+    public static let shared = ProjectConfigStore()
 
     private let userDefaultsKey = "ProjectConfigs"
 
     private init() {}
 
     /// 获取所有项目配置
-    func getAllConfigs() -> [ProjectConfig] {
+    public func getAllConfigs() -> [ProjectConfig] {
         guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
               let configs = try? JSONDecoder().decode([ProjectConfig].self, from: data) else {
             return []
@@ -44,12 +44,12 @@ class ProjectConfigStore {
     }
 
     /// 获取特定项目的配置
-    func getConfig(for projectPath: String) -> ProjectConfig? {
+    public func getConfig(for projectPath: String) -> ProjectConfig? {
         return getAllConfigs().first { $0.projectPath == projectPath }
     }
 
     /// 保存或更新项目配置
-    func saveConfig(_ config: ProjectConfig) {
+    public func saveConfig(_ config: ProjectConfig) {
         var configs = getAllConfigs()
 
         // 移除旧配置（如果存在）
@@ -69,7 +69,7 @@ class ProjectConfigStore {
     }
 
     /// 删除项目配置
-    func deleteConfig(for projectPath: String) {
+    public func deleteConfig(for projectPath: String) {
         var configs = getAllConfigs()
         configs.removeAll { $0.projectPath == projectPath }
 
@@ -79,7 +79,7 @@ class ProjectConfigStore {
     }
 
     /// 获取或创建项目配置
-    func getOrCreateConfig(for projectPath: String, defaultProviderId: String = "anthropic", defaultModel: String = "") -> ProjectConfig {
+    public func getOrCreateConfig(for projectPath: String, defaultProviderId: String = "anthropic", defaultModel: String = "") -> ProjectConfig {
         if let existing = getConfig(for: projectPath) {
             return existing
         }

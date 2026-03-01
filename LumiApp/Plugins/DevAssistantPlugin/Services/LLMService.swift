@@ -81,10 +81,29 @@ class LLMService: SuperLog {
 
         // 使用 LLM API 服务发送请求
         do {
+            // 构建请求头（从 provider 获取）
+            var additionalHeaders: [String: String] = [:]
+
+            // 为 Anthropic 兼容的 API 添加 anthropic-version 请求头
+            // Zhipu 需要此请求头
+            if config.providerId == "zhipu" {
+                additionalHeaders["anthropic-version"] = "2023-06-01"
+            }
+
+            // 阿里云 Coding Plan 使用 Authorization: Bearer 认证，不需要 x-api-key 和 anthropic-version
+            // 其他 provider (如 Zhipu, Anthropic) 使用 x-api-key 认证
+            let useBearerAuth = config.providerId == "aliyun"
+
+            if Self.verbose && !additionalHeaders.isEmpty {
+                os_log("\(self.t)📦 添加额外请求头：\(additionalHeaders)")
+            }
+
             let data = try await llmAPI.sendChatRequest(
                 url: url,
                 apiKey: config.apiKey,
-                body: body
+                body: body,
+                additionalHeaders: additionalHeaders,
+                useBearerAuth: useBearerAuth
             )
 
             // 解析响应

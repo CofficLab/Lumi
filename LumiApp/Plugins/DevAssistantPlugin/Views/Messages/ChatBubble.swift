@@ -39,6 +39,7 @@ struct ChatBubble: View {
                     // 普通消息
                     MarkdownMessageView(message: message, showRawMessage: showRawMessage)
                         .messageBubbleStyle(role: message.role, isError: message.isError)
+                        .textSelection(.enabled) // 启用文本选择
                         .overlay(alignment: .topTrailing) {
                             if message.role == .assistant {
                                 RawMessageToggleButton(showRawMessage: $showRawMessage)
@@ -141,7 +142,6 @@ private extension View {
             .background(bubbleBackgroundColor(role: role, isError: isError))
             .foregroundColor(textColor(isError: isError))
             .cornerRadius(12)
-            // .textual.textSelection(.enabled) - Temporarily disabled to fix "AnyTextLayoutCollection" warning
     }
 
     /// 气泡背景颜色

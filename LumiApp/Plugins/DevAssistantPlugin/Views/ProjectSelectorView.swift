@@ -5,12 +5,12 @@ import UniformTypeIdentifiers
 struct ProjectSelectorView: View {
     @ObservedObject var viewModel: AssistantViewModel
     @Binding var isPresented: Bool
-    
+
     @State private var recentProjects: [RecentProject] = []
     @State private var isFileImporterPresented = false
-    
+
     private let maxRecentProjects = 5
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -18,9 +18,9 @@ struct ProjectSelectorView: View {
                 Text("选择项目")
                     .font(.headline)
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                
+
                 Spacer()
-                
+
                 Button(action: {
                     isPresented = false
                 }) {
@@ -38,7 +38,7 @@ struct ProjectSelectorView: View {
                     .foregroundColor(Color.black.opacity(0.05)),
                 alignment: .bottom
             )
-            
+
             // Content
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
@@ -50,10 +50,10 @@ struct ProjectSelectorView: View {
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                             .padding(.horizontal)
                             .padding(.top)
-                        
+
                         currentProjectCard
                     }
-                    
+
                     // Recent Projects Section
                     if !recentProjects.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
@@ -62,13 +62,13 @@ struct ProjectSelectorView: View {
                                 .fontWeight(.medium)
                                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                                 .padding(.horizontal)
-                            
+
                             ForEach(recentProjects) { project in
                                 projectCard(project)
                             }
                         }
                     }
-                    
+
                     // Browse Section
                     VStack(alignment: .leading, spacing: 8) {
                         Text("浏览")
@@ -76,7 +76,7 @@ struct ProjectSelectorView: View {
                             .fontWeight(.medium)
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                             .padding(.horizontal)
-                        
+
                         browseButton
                     }
                     .padding(.bottom)
@@ -89,9 +89,9 @@ struct ProjectSelectorView: View {
             loadRecentProjects()
         }
     }
-    
+
     // MARK: - Current Project Card
-    
+
     private var currentProjectCard: some View {
         GlassRow {
             HStack(spacing: 12) {
@@ -101,26 +101,26 @@ struct ProjectSelectorView: View {
                     .frame(width: 36, height: 36)
                     .background(Color.accentColor.opacity(0.1))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
-                
+
                 VStack(alignment: .leading, spacing: 2) {
                     Text(viewModel.currentProjectName.isEmpty ? "未选择项目" : viewModel.currentProjectName)
                         .font(.body)
                         .fontWeight(.medium)
                         .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                    
+
                     Text(viewModel.currentProjectPath.isEmpty ? "点击下方浏览选择项目" : viewModel.currentProjectPath)
                         .font(.caption)
                         .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                         .lineLimit(2)
                 }
-                
+
                 Spacer()
             }
             .padding()
         }
         .padding(.horizontal)
     }
-    
+
     // MARK: - Project Card
 
     private func projectCard(_ project: RecentProject) -> some View {
@@ -178,9 +178,9 @@ struct ProjectSelectorView: View {
         }
         .padding(.horizontal)
     }
-    
+
     // MARK: - Browse Button
-    
+
     private var browseButton: some View {
         Button(action: {
             isFileImporterPresented = true
@@ -189,13 +189,13 @@ struct ProjectSelectorView: View {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 20))
                     .foregroundColor(.accentColor)
-                
+
                 Text("选择新项目...")
                     .font(.body)
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                
+
                 Spacer()
-                
+
                 Image(systemName: "chevron.right")
                     .font(.system(size: 12))
                     .foregroundColor(DesignTokens.Color.semantic.textTertiary)
@@ -216,7 +216,7 @@ struct ProjectSelectorView: View {
             handleFileImport(result)
         }
     }
-    
+
     // MARK: - Actions
 
     private func selectProject(_ project: RecentProject) {
@@ -256,44 +256,25 @@ struct ProjectSelectorView: View {
                 }
             }
         case .failure(let error):
-            print("File import error: \(error)")
+            print("File import 错误：\(error)")
         }
     }
 
     private func loadRecentProjects() {
-        // Load from UserDefaults
-        if let data = UserDefaults.standard.data(forKey: "RecentProjects"),
-           let decoded = try? JSONDecoder().decode([RecentProject].self, from: data) {
-            recentProjects = decoded.prefix(maxRecentProjects).filter { project in
-                // Filter out current project
+        // 使用 AgentProvider 加载最近项目
+        recentProjects = AgentProvider.shared.getRecentProjects()
+            .prefix(maxRecentProjects)
+            .filter { project in
+                // 过滤掉当前项目
                 project.path != viewModel.currentProjectPath
             }
-        }
     }
 
     private func saveRecentProjects() {
+        // 直接保存到 UserDefaults
         if let encoded = try? JSONEncoder().encode(recentProjects) {
-            UserDefaults.standard.set(encoded, forKey: "RecentProjects")
+            UserDefaults.standard.set(encoded, forKey: "Agent_RecentProjects")
         }
-    }
-}
-
-// MARK: - RecentProject Model
-
-struct RecentProject: Codable, Identifiable, Equatable {
-    let id = UUID()
-    let name: String
-    let path: String
-    let lastUsed: Date
-
-    enum CodingKeys: String, CodingKey {
-        case name, path, lastUsed
-    }
-
-    init(name: String, path: String, lastUsed: Date = Date()) {
-        self.name = name
-        self.path = path
-        self.lastUsed = lastUsed
     }
 }
 

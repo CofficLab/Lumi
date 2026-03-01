@@ -8,171 +8,19 @@ struct DevAssistantView: View {
     @State private var isModelSelectorPresented = false
     @State private var isProjectSelectorPresented = false
     @State private var isMCPSettingsPresented = false
-    
+
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 8) {
             // MARK: - Header
-            VStack(spacing: 0) {
-                HStack(spacing: 12) {
-                    Image(systemName: "hammer.fill")
-                        .font(.system(size: 18))
-                        .foregroundColor(.accentColor)
-                        .frame(width: 36, height: 36)
-                        .background(Color.accentColor.opacity(0.1))
-                        .clipShape(Circle())
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(viewModel.currentProjectName.isEmpty ? "Dev Assistant" : viewModel.currentProjectName)
-                            .font(DesignTokens.Typography.body)
-                            .fontWeight(.medium)
-                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-
-                        Text(viewModel.currentProjectPath.isEmpty ? "Ready to help" : viewModel.currentProjectPath)
-                            .font(DesignTokens.Typography.caption1)
-                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-
-}
-
-                    Spacer()
-                    
-                    // 风险自动批准开关
-                    HStack(spacing: 6) {
-                        Text("Auto")
-                            .font(DesignTokens.Typography.caption2)
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        
-                        Toggle("", isOn: $viewModel.autoApproveRisk)
-                            .toggleStyle(.switch)
-                            .controlSize(.mini)
-                            .labelsHidden()
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.black.opacity(0.05))
-                    .cornerRadius(6)
-                    .help("Automatically approve high-risk commands")
-
-                    // 语言选择器
-                    Menu {
-                        ForEach(LanguagePreference.allCases) { lang in
-                            Button(action: {
-                                withAnimation {
-                                    viewModel.languagePreference = lang
-                                }
-                            }) {
-                                HStack {
-                                    Text(lang.displayName)
-                                    if viewModel.languagePreference == lang {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
-                            }
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "globe")
-                                .font(.system(size: 12))
-                            Text(viewModel.languagePreference.displayName)
-                                .font(DesignTokens.Typography.caption2)
-                                .fontWeight(.medium)
-                        }
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.black.opacity(0.05))
-                        .cornerRadius(6)
-                    }
-                    .menuStyle(.borderlessButton)
-                    .frame(width: 70)
-
-                    // MCP Management Button
-                    Button(action: {
-                        isMCPSettingsPresented = true
-                    }) {
-                        Image(systemName: "server.rack")
-                            .font(.system(size: 14))
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                            .frame(width: 28, height: 28)
-                            .background(Color.black.opacity(0.05))
-                            .clipShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .popover(isPresented: $isMCPSettingsPresented, arrowEdge: .top) {
-                        MCPSettingsView()
-                    }
-
-                    // 项目管理按钮
-                    Button(action: {
-                        isProjectSelectorPresented = true
-                    }) {
-                        Image(systemName: "folder.badge.gearshape")
-                            .font(.system(size: 14))
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                            .frame(width: 28, height: 28)
-                            .background(Color.black.opacity(0.05))
-                            .clipShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .popover(isPresented: $isProjectSelectorPresented, arrowEdge: .top) {
-                        ProjectSelectorView(viewModel: viewModel, isPresented: $isProjectSelectorPresented)
-                            .frame(width: 400, height: 500)
-                    }
-
-                    // 设置按钮
-                    Button(action: {
-                        NotificationCenter.postOpenSettings()
-                    }) {
-                        Image(systemName: "gearshape")
-                            .font(.system(size: 14))
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                            .frame(width: 28, height: 28)
-                            .background(Color.black.opacity(0.05))
-                            .clipShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-
-                // 项目选择提示
-                if !viewModel.isProjectSelected {
-                    HStack(spacing: 8) {
-                        Image(systemName: "info.circle.fill")
-                            .font(.system(size: 12))
-                            .foregroundColor(.orange)
-
-                        Text("请先选择一个项目才能开始对话")
-                            .font(DesignTokens.Typography.caption1)
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-
-                        Spacer()
-
-                        Button(action: {
-                            isProjectSelectorPresented = true
-                        }) {
-                            Text("选择项目")
-                                .font(DesignTokens.Typography.caption1)
-                                .fontWeight(.medium)
-                                .foregroundColor(.accentColor)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(Color.orange.opacity(0.05))
-                }
-            }
-            .background(DesignTokens.Material.glassThick)
-            .overlay(
-                Rectangle()
-                    .frame(height: 1)
-                    .foregroundColor(Color.black.opacity(0.05)),
-                alignment: .bottom
+            ChatHeaderView(
+                viewModel: viewModel,
+                isProjectSelectorPresented: $isProjectSelectorPresented,
+                isMCPSettingsPresented: $isMCPSettingsPresented
             )
 
             // MARK: - Depth Warning Banner
+
             if let warning = viewModel.depthWarning {
                 DepthWarningBanner(
                     warning: warning,
@@ -188,227 +36,43 @@ struct DevAssistantView: View {
             }
 
             // MARK: - Chat History
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 12) {
-                        ForEach(viewModel.messages.filter { $0.role != .system }) { msg in
-                            ChatBubble(message: msg)
-                                .id(msg.id)
-                        }
-                    }
-                    .padding()
-                }
-                .onChange(of: viewModel.messages) { oldMessages, newMessages in
-                    guard let lastMessage = newMessages.last else { return }
-                    
-                    // If it's a new message, animate
-                    if oldMessages.last?.id != lastMessage.id {
-                        withAnimation {
-                            proxy.scrollTo(lastMessage.id, anchor: .bottom)
-                        }
-                    } else {
-                        // If it's the same message (streaming update), scroll without animation
-                        // to reduce layout churn and avoid "AnyTextLayoutCollection" warnings
-                        proxy.scrollTo(lastMessage.id, anchor: .bottom)
-                    }
-                }
-            }
+
+            ChatMessagesView(viewModel: viewModel)
 
             // MARK: - Input Area
-            VStack(spacing: 0) {
-                // 快捷短语区域
-                if viewModel.isProjectSelected {
-                    QuickPhrasesView(
-                        onPhraseSelected: { prompt in
-                            viewModel.currentInput = prompt
-                            isInputFocused = true
-                        },
-                        projectName: $viewModel.currentProjectName,
-                        projectPath: $viewModel.currentProjectPath,
-                        isProjectSelected: $viewModel.isProjectSelected
-                    )
-                    .padding(.top, 8)
-                }
 
-                // 输入框容器
-                VStack(spacing: 0) {
-                    // 附件预览区域
-                    if !viewModel.pendingAttachments.isEmpty {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 12) {
-                                ForEach(viewModel.pendingAttachments) { attachment in
-                                    if case .image(_, let data, _, _) = attachment,
-                                       let nsImage = NSImage(data: data) {
-                                        ZStack(alignment: .topTrailing) {
-                                            Image(nsImage: nsImage)
-                                                .resizable()
-                                                .aspectRatio(contentMode: .fill)
-                                                .frame(width: 60, height: 60)
-                                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                                                .overlay(
-                                                    RoundedRectangle(cornerRadius: 8)
-                                                        .stroke(Color.black.opacity(0.1), lineWidth: 1)
-                                                )
-                                            
-                                            Button(action: {
-                                                viewModel.removeAttachment(id: attachment.id)
-                                            }) {
-                                                Image(systemName: "xmark.circle.fill")
-                                                    .font(.system(size: 16))
-                                                    .foregroundColor(.gray)
-                                                    .background(Color.white.clipShape(Circle()))
-                                            }
-                                            .buttonStyle(.plain)
-                                            .offset(x: 4, y: -4)
-                                        }
-                                        .padding(.top, 4)
-                                        .padding(.trailing, 4)
-                                    }
-                                }
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.top, 12)
-                        }
+            InputAreaView(
+                viewModel: viewModel,
+                isInputFocused: $isInputFocused,
+                isModelSelectorPresented: $isModelSelectorPresented,
+                onSendMessage: {
+                    viewModel.sendMessage()
+                },
+                onImageUpload: {
+                    selectImage()
+                },
+                onDropImage: { urls in
+                    let imageURLs = urls.filter { url in
+                        let ext = url.pathExtension.lowercased()
+                        return ["png", "jpg", "jpeg", "gif", "webp"].contains(ext)
                     }
 
-                    MacEditorView(
-                        text: $viewModel.currentInput,
-                        onSubmit: {
-                            viewModel.sendMessage()
-                        },
-                        onArrowUp: {
-                            if viewModel.commandSuggestionViewModel.isVisible {
-                                viewModel.commandSuggestionViewModel.selectPrevious()
-                            }
-                        },
-                        onArrowDown: {
-                            if viewModel.commandSuggestionViewModel.isVisible {
-                                viewModel.commandSuggestionViewModel.selectNext()
-                            }
-                        },
-                        onEnter: {
-                            if viewModel.commandSuggestionViewModel.isVisible,
-                               let suggestion = viewModel.commandSuggestionViewModel.getCurrentSuggestion() {
-                                viewModel.currentInput = suggestion.command + " "
-                                viewModel.commandSuggestionViewModel.isVisible = false
-                            } else {
-                                viewModel.sendMessage()
-                            }
-                        },
-                        isFocused: $isInputFocused,
-                        onDrop: { urls in
-                            let imageURLs = urls.filter { url in
-                                let ext = url.pathExtension.lowercased()
-                                return ["png", "jpg", "jpeg", "gif", "webp"].contains(ext)
-                            }
-                            
-                            if !imageURLs.isEmpty {
-                                for url in imageURLs {
-                                    viewModel.handleImageUpload(url: url)
-                                }
-                                return true
-                            }
-                            return false
+                    if !imageURLs.isEmpty {
+                        for url in imageURLs {
+                            viewModel.handleImageUpload(url: url)
                         }
-                    )
-                    .frame(height: 32)
-                    .padding(.horizontal, 4)
-                    .padding(.top, 8)
-                    
-                    // 工具栏
-                    HStack(alignment: .center, spacing: 8) {
-                        // 模型选择器
-                        Button(action: {
-                            isModelSelectorPresented = true
-                        }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "globe")
-                                    .font(.system(size: 14))
-                                Text(viewModel.currentModel)
-                                    .font(.system(size: 12))
-                                    .lineLimit(1)
-                                    .truncationMode(.middle)
-                                Image(systemName: "chevron.up")
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.secondary)
-                            }
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color.black.opacity(0.05))
-                            .cornerRadius(6)
-                        }
-                        .buttonStyle(.plain)
-                        .popover(isPresented: $isModelSelectorPresented, arrowEdge: .bottom) {
-                            ModelSelectorView(viewModel: viewModel)
-                        }
-                        
-                        // Image Upload Button
-                        Button(action: {
-                            selectImage()
-                        }) {
-                            Image(systemName: "photo")
-                                .font(.system(size: 14))
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                                .frame(width: 28, height: 28)
-                                .background(Color.black.opacity(0.05))
-                                .clipShape(Circle())
-                        }
-                        .buttonStyle(.plain)
-                        .help("Upload Image")
-                        
-                        Spacer()
-                        
-                        // 发送按钮
-                        if viewModel.isProcessing {
-                            ProgressView()
-                                .controlSize(.small)
-                                .frame(width: 28, height: 28)
-                        } else {
-                            Button(action: {
-                                viewModel.sendMessage()
-                            }) {
-                                Image(systemName: "paperplane.fill")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.white)
-                                    .frame(width: 28, height: 28)
-                                    .background(viewModel.currentInput.isEmpty || !viewModel.isProjectSelected ? Color.gray.opacity(0.5) : Color.accentColor)
-                                    .clipShape(Circle())
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(viewModel.currentInput.isEmpty || !viewModel.isProjectSelected)
-                        }
+                        return true
                     }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 8)
+                    return false
                 }
-                .background(Color(nsColor: .controlBackgroundColor))
-                .cornerRadius(12)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.black.opacity(0.1), lineWidth: 1)
-                )
-                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
-                .onDrop(of: [.fileURL], isTargeted: nil) { providers in
-                    handleDrop(providers: providers)
-                }
-                .padding(16)
-                .overlay(alignment: .bottomLeading) {
-                    CommandSuggestionView(viewModel: viewModel.commandSuggestionViewModel) { suggestion in
-                        viewModel.currentInput = suggestion.command + " "
-                        viewModel.commandSuggestionViewModel.isVisible = false
-                        isInputFocused = true
-                    }
-                    .offset(x: 16, y: -60) // Position above the input box
-                }
-            }
-            .background(DesignTokens.Material.glass)
+            )
         }
         .onAppear {
             isInputFocused = true
         }
         .overlay {
             // MARK: - Permission Request Overlay
+
             if let request = viewModel.pendingPermissionRequest {
                 PermissionRequestView(
                     request: request,
@@ -421,6 +85,16 @@ struct DevAssistantView: View {
                 )
             }
         }
+        .popover(isPresented: $isMCPSettingsPresented, arrowEdge: .top) {
+            MCPSettingsView()
+        }
+        .popover(isPresented: $isProjectSelectorPresented, arrowEdge: .top) {
+            ProjectSelectorView(viewModel: viewModel, isPresented: $isProjectSelectorPresented)
+                .frame(width: 400, height: 500)
+        }
+        .popover(isPresented: $isModelSelectorPresented, arrowEdge: .bottom) {
+            ModelSelectorView(viewModel: viewModel)
+        }
     }
 
     private func selectImage() {
@@ -429,33 +103,12 @@ struct DevAssistantView: View {
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
         panel.allowedContentTypes = [.image]
-        
+
         panel.begin { response in
             if response == .OK, let url = panel.url {
                 viewModel.handleImageUpload(url: url)
             }
         }
-    }
-
-    private func handleDrop(providers: [NSItemProvider]) -> Bool {
-        var handled = false
-        for provider in providers {
-            if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
-                provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { (item, error) in
-                    if let data = item as? Data, let url = URL(dataRepresentation: data, relativeTo: nil) {
-                        DispatchQueue.main.async {
-                            viewModel.handleImageUpload(url: url)
-                        }
-                    } else if let url = item as? URL {
-                        DispatchQueue.main.async {
-                            viewModel.handleImageUpload(url: url)
-                        }
-                    }
-                }
-                handled = true
-            }
-        }
-        return handled
     }
 }
 

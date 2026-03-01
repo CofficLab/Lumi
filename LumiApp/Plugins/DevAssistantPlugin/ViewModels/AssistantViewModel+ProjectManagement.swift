@@ -6,37 +6,20 @@ extension AssistantViewModel {
 
     /// 切换到指定项目
     func switchProject(to path: String) {
-        let projectURL = URL(fileURLWithPath: path)
+        // 使用内核的 AgentProvider 执行实际的项目切换
+        AgentProvider.shared.switchProject(to: path)
 
-        // 验证路径是否存在
-        var isDirectory: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory), isDirectory.boolValue else {
-            self.errorMessage = "项目路径无效: \(path)"
-            return
-        }
+        // 更新本地状态（镜像 AgentProvider）
+        self.currentProjectName = AgentProvider.shared.currentProjectName
+        self.currentProjectPath = AgentProvider.shared.currentProjectPath
+        self.isProjectSelected = AgentProvider.shared.isProjectSelected
+        self.selectedProviderId = AgentProvider.shared.selectedProviderId
+        self.selectedModel = AgentProvider.shared.selectedModel
 
-        let projectName = projectURL.lastPathComponent
+        // 更新 ContextService 并刷新系统提示
+        let languagePreference = self.languagePreference
 
-        self.currentProjectName = projectName
-        self.currentProjectPath = path
-        self.isProjectSelected = true
-
-        // 保存到 UserDefaults（记住上次选择的项目）
-        UserDefaults.standard.set(path, forKey: "DevAssistant_SelectedProject")
-
-        // 保存到最近使用列表
-        saveRecentProject(name: projectName, path: path)
-
-        // 获取或创建项目配置
-        let config = ProjectConfigStore.shared.getOrCreateConfig(for: path)
-
-        // 应用项目配置
-        applyProjectConfig(config)
-
-        // 更新 ContextService
         Task {
-            await ContextService.shared.setProjectRoot(projectURL)
-
             // 刷新系统提示
             let fullSystemPrompt = await promptService.buildSystemPrompt(
                 languagePreference: languagePreference,
@@ -51,6 +34,8 @@ extension AssistantViewModel {
             }
 
             // 添加切换项目通知（根据语言偏好）
+            let projectName = AgentProvider.shared.currentProjectName
+            let config = ProjectConfigStore.shared.getOrCreateConfig(for: path)
             let switchMessage: String
             switch languagePreference {
             case .chinese:
@@ -74,51 +59,13 @@ extension AssistantViewModel {
             messages.append(ChatMessage(role: .assistant, content: switchMessage))
 
             if Self.verbose {
-                os_log("\(self.t)已切换到项目: \(projectName) (\(path))")
-                os_log("\(self.t)项目配置: 供应商=\(config.providerId), 模型=\(config.model)")
+                os_log("\(self.t) 已切换到项目：\(projectName) (\(path))")
             }
         }
     }
 
-    /// 应用项目配置
-    func applyProjectConfig(_ config: ProjectConfig) {
-        // 切换供应商
-        if !config.providerId.isEmpty {
-            selectedProviderId = config.providerId
-        }
-
-        // 切换模型
-        if !config.model.isEmpty {
-            updateSelectedModel(config.model)
-        }
-    }
-
-    /// 保存最近使用的项目
-    private func saveRecentProject(name: String, path: String) {
-        var projects = getRecentProjects()
-
-        // 移除已存在的同名项目
-        projects.removeAll { $0.path == path }
-
-        // 添加新项目到开头
-        let newProject = RecentProject(name: name, path: path, lastUsed: Date())
-        projects.insert(newProject, at: 0)
-
-        // 只保留最近 5 个
-        projects = Array(projects.prefix(5))
-
-        // 保存到 UserDefaults
-        if let data = try? JSONEncoder().encode(projects) {
-            UserDefaults.standard.set(data, forKey: "RecentProjects")
-        }
-    }
-
-    /// 获取最近使用的项目列表
+    /// 获取最近使用的项目列表（使用 AgentProvider）
     func getRecentProjects() -> [RecentProject] {
-        guard let data = UserDefaults.standard.data(forKey: "RecentProjects"),
-              let projects = try? JSONDecoder().decode([RecentProject].self, from: data) else {
-            return []
-        }
-        return projects
+        return AgentProvider.shared.getRecentProjects()
     }
 }

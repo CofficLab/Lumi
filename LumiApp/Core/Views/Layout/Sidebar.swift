@@ -12,11 +12,13 @@ struct Sidebar: View {
     @Environment(\.colorScheme) private var colorScheme
 
     private var entries: [NavigationEntry] {
-        pluginProvider.getNavigationEntries()
+        pluginProvider.getNavigationEntries(for: appProvider.selectedMode)
     }
 
     var body: some View {
         VStack(spacing: 0) {
+            // MARK: - Navigation List
+
             if entries.isNotEmpty {
                 ScrollView {
                     LazyVStack(spacing: DesignTokens.Spacing.sm) {
@@ -52,7 +54,7 @@ struct Sidebar: View {
             }
         }
     }
-    
+
     struct SidebarRow: View {
         let title: String
         let icon: String
@@ -150,7 +152,7 @@ struct Sidebar: View {
     private func initializeDefaultSelection() {
         // 如果还没有选中项，选择默认的或第一个
         if appProvider.selectedNavigationId == nil {
-            let entries = pluginProvider.getNavigationEntries()
+            let entries = pluginProvider.getNavigationEntries(for: appProvider.selectedMode)
             if let defaultEntry = entries.first(where: { $0.isDefault }) {
                 appProvider.selectedNavigationId = defaultEntry.id
             } else if let firstEntry = entries.first {

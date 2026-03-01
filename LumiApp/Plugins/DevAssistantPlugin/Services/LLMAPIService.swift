@@ -27,17 +27,34 @@ class LLMAPIService: SuperLog {
     ///   - url: API 端点 URL
     ///   - apiKey: API 密钥
     ///   - body: 请求体（符合供应商格式）
+    ///   - additionalHeaders: 额外的请求头（如 anthropic-version）
+    ///   - useBearerAuth: 是否使用 Bearer 认证（默认使用 x-api-key）
     /// - Returns: 原始响应数据
     func sendChatRequest(
         url: URL,
         apiKey: String,
-        body: [String: Any]
+        body: [String: Any],
+        additionalHeaders: [String: String] = [:],
+        useBearerAuth: Bool = false
     ) async throws -> Data {
         // 构建请求头
         var headers = [
-            "Content-Type": "application/json",
-            "x-api-key": apiKey
+            "Content-Type": "application/json"
         ]
+
+        // 根据认证方式设置不同的请求头
+        if useBearerAuth {
+            // 阿里云 Coding Plan 使用 Authorization: Bearer 认证
+            headers["Authorization"] = "Bearer \(apiKey)"
+        } else {
+            // 其他供应商（如 Zhipu, Anthropic）使用 x-api-key 认证
+            headers["x-api-key"] = apiKey
+        }
+
+        // 添加额外的请求头（如 anthropic-version）
+        for (key, value) in additionalHeaders {
+            headers[key] = value
+        }
 
         // 发送请求（使用原始数据，不需要解码）
         let (data, _) = try await sendRawRequest(
@@ -88,6 +105,17 @@ class LLMAPIService: SuperLog {
         // 设置请求头
         for (key, value) in headers {
             request.setValue(value, forHTTPHeaderField: key)
+        }
+
+        // 记录请求头信息（调试用）
+        if Self.verbose {
+            os_log("\(self.t)LLM 请求头:")
+            for (key, value) in headers {
+                let maskedValue = key.lowercased().contains("key") || key.lowercased().contains("auth")
+                    ? String(value.prefix(10)) + "..."
+                    : value
+                os_log("\(self.t)  \(key): \(maskedValue)")
+            }
         }
 
         // 设置请求体
