@@ -81,10 +81,24 @@ class LLMService: SuperLog {
 
         // 使用 LLM API 服务发送请求
         do {
+            // 构建请求头（从 provider 获取）
+            var additionalHeaders: [String: String] = [:]
+
+            // 为 Anthropic 兼容的 API 添加 anthropic-version 请求头
+            // 阿里云、Zhipu 等需要此请求头
+            if config.providerId == "aliyun" || config.providerId == "zhipu" || config.providerId == "anthropic" {
+                additionalHeaders["anthropic-version"] = "2023-06-01"
+            }
+
+            if Self.verbose && !additionalHeaders.isEmpty {
+                os_log("\(self.t)📦 添加额外请求头：\(additionalHeaders)")
+            }
+
             let data = try await llmAPI.sendChatRequest(
                 url: url,
                 apiKey: config.apiKey,
-                body: body
+                body: body,
+                additionalHeaders: additionalHeaders
             )
 
             // 解析响应

@@ -27,17 +27,24 @@ class LLMAPIService: SuperLog {
     ///   - url: API 端点 URL
     ///   - apiKey: API 密钥
     ///   - body: 请求体（符合供应商格式）
+    ///   - additionalHeaders: 额外的请求头（如 anthropic-version）
     /// - Returns: 原始响应数据
     func sendChatRequest(
         url: URL,
         apiKey: String,
-        body: [String: Any]
+        body: [String: Any],
+        additionalHeaders: [String: String] = [:]
     ) async throws -> Data {
         // 构建请求头
         var headers = [
             "Content-Type": "application/json",
             "x-api-key": apiKey
         ]
+
+        // 添加额外的请求头（如 anthropic-version）
+        for (key, value) in additionalHeaders {
+            headers[key] = value
+        }
 
         // 发送请求（使用原始数据，不需要解码）
         let (data, _) = try await sendRawRequest(
