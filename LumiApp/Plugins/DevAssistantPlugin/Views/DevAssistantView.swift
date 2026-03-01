@@ -317,6 +317,47 @@ struct DevAssistantView: View {
                     
                     // 工具栏
                     HStack(alignment: .center, spacing: 8) {
+                        // 模式选择器 - 移到左侧
+                        Menu {
+                            ForEach(ChatMode.allCases) { mode in
+                                Button(action: {
+                                    withAnimation {
+                                        viewModel.chatMode = mode
+                                    }
+                                }) {
+                                    HStack {
+                                        Image(systemName: mode.iconName)
+                                        Text(mode.displayName)
+                                        Text("- \(mode.description)")
+                                            .foregroundColor(.secondary)
+                                            .font(.caption)
+                                        if viewModel.chatMode == mode {
+                                            Image(systemName: "checkmark")
+                                        }
+                                    }
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: viewModel.chatMode.iconName)
+                                    .font(.system(size: 14))
+                                Text(viewModel.chatMode.displayName)
+                                    .font(.system(size: 12))
+                                    .fontWeight(.medium)
+                                Image(systemName: "chevron.up")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.secondary)
+                            }
+                            .foregroundColor(viewModel.chatMode == .build ? DesignTokens.Color.semantic.textSecondary : Color.orange)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(viewModel.chatMode == .build ? Color.black.opacity(0.05) : Color.orange.opacity(0.1))
+                            .cornerRadius(6)
+                        }
+                        .menuStyle(.borderlessButton)
+                        .frame(width: 80)
+                        .help(viewModel.chatMode == .build ? "构建模式：可执行工具和修改代码" : "对话模式：只聊天，不执行任何操作")
+
                         // 模型选择器
                         Button(action: {
                             isModelSelectorPresented = true
@@ -356,7 +397,7 @@ struct DevAssistantView: View {
                         }
                         .buttonStyle(.plain)
                         .help("Upload Image")
-                        
+
                         Spacer()
                         
                         // 发送按钮

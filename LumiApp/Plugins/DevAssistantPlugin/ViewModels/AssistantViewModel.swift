@@ -76,6 +76,24 @@ class AssistantViewModel: ObservableObject, SuperLog {
         }
     }
 
+
+    // MARK: - 聊天模式
+
+    @Published var chatMode: ChatMode = .build {
+        didSet {
+            UserDefaults.standard.set(chatMode.rawValue, forKey: "DevAssistant_ChatMode")
+            if Self.verbose {
+                os_log("\(self.t)切换聊天模式: \(self.chatMode.displayName)")
+            }
+            // 当切换到对话模式时，通知用户
+            if chatMode == .chat && oldValue == .build {
+                Task {
+                    await notifyModeChangeToChat()
+                }
+            }
+        }
+    }
+
     // MARK: - 供应商注册表
 
     private let registry = ProviderRegistry.shared
@@ -153,6 +171,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
     init() {
         // 加载语言偏好
         loadLanguagePreference()
+        loadChatMode()
 
         // 订阅输入变化以更新建议
         $currentInput
@@ -591,11 +610,18 @@ class AssistantViewModel: ObservableObject, SuperLog {
 
         currentDepth = depth
         if Self.verbose {
-            os_log("\(self.t)开始处理对话轮次 (深度: \(depth))")
+            os_log("\(self.t)开始处理对话轮次 (深度: \(depth), 模式: \(self.chatMode.displayName))")
         }
 
         // 更新深度警告状态
         updateDepthWarning(currentDepth: depth, maxDepth: maxDepth)
+
+        // 根据聊天模式决定是否传递工具
+        let availableTools: [AgentTool] = (chatMode == .build) ? tools : []
+
+        if Self.verbose && chatMode == .chat {
+            os_log("\(self.t)当前为对话模式，不传递工具")
+        }
 
         do {
             let config = getCurrentConfig()
@@ -605,7 +631,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
             }
 
             // 1. 获取 LLM 响应
-            let responseMsg = try await llmService.sendMessage(messages: messages, config: config, tools: tools)
+            let responseMsg = try await llmService.sendMessage(messages: messages, config: config, tools: availableTools)
             messages.append(responseMsg)
 
             // 2. 检查工具调用
@@ -808,6 +834,30 @@ class AssistantViewModel: ObservableObject, SuperLog {
             // 添加语言切换通知
             messages.append(ChatMessage(role: .assistant, content: message))
         }
+    }
+
+    // MARK: - 聊天模式加载
+
+    private func loadChatMode() {
+        guard let rawValue = UserDefaults.standard.string(forKey: "DevAssistant_ChatMode"),
+              let mode = ChatMode(rawValue: rawValue) else {
+            // 默认使用构建模式
+            return
+        }
+        self.chatMode = mode
+    }
+
+    /// 通知模式切换到对话模式
+    private func notifyModeChangeToChat() async {
+        let message: String
+        switch languagePreference {
+        case .chinese:
+            message = "已切换到对话模式。在此模式下，我将只与您进行对话，不会执行任何工具或修改代码。有什么问题我可以帮您解答？"
+        case .english:
+            message = "Switched to Chat mode. In this mode, I will only chat with you without executing any tools or modifying code. How can I help you today?"
+        }
+
+        messages.append(ChatMessage(role: .assistant, content: message))
     }
 }
 
