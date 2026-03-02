@@ -67,7 +67,9 @@ actor ClipboardStorage: SuperLog {
             let data = try JSONEncoder().encode(items)
             try data.write(to: fileURL)
         } catch {
-            os_log(.error, "Failed to save history: %s", error.localizedDescription)
+            if Self.verbose {
+                os_log(.error, "\(Self.t)Failed to save history: \(error.localizedDescription)")
+            }
         }
     }
     
@@ -76,9 +78,13 @@ actor ClipboardStorage: SuperLog {
         do {
             let data = try Data(contentsOf: fileURL)
             items = try JSONDecoder().decode([ClipboardItem].self, from: data)
-            os_log("\(Self.t)Loaded \(self.items.count) items")
+            if Self.verbose {
+                os_log("\(Self.t)Loaded \(self.items.count) items")
+            }
         } catch {
-            os_log(.error, "\(Self.t)Failed to load history: \(error.localizedDescription)")
+            if Self.verbose {
+                os_log(.error, "\(Self.t)Failed to load history: \(error.localizedDescription)")
+            }
         }
     }
 }

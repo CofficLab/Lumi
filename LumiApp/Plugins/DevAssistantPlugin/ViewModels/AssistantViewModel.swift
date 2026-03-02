@@ -633,10 +633,42 @@ class AssistantViewModel: ObservableObject, SuperLog {
 
             // 1. 获取 LLM 响应
             let responseMsg = try await llmService.sendMessage(messages: messages, config: config, tools: availableTools)
-            messages.append(responseMsg)
+            
+            // 检查内容是否为空
+            let hasContent = !responseMsg.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            let hasToolCalls = responseMsg.toolCalls != nil && !responseMsg.toolCalls!.isEmpty
+            
+            // 当无内容但有工具调用时，生成一个友好的提示消息
+            var finalMsg = responseMsg
+            if !hasContent && hasToolCalls {
+                // 生成工具调用摘要
+                let toolSummary = responseMsg.toolCalls!.enumerated().map { index, tc in
+                    let emoji = toolEmoji(for: tc.name)
+                    return "\(emoji) \(tc.name)"
+                }.joined(separator: "\n")
+                
+                let prefix = languagePreference == .chinese 
+                    ? "🔧 正在执行 \(responseMsg.toolCalls!.count) 个工具："
+                    : "🔧 Executing \(responseMsg.toolCalls!.count) tools:"
+                
+                let enhancedContent = prefix + "\n" + toolSummary
+                finalMsg = ChatMessage(
+                    role: responseMsg.role,
+                    content: enhancedContent,
+                    isError: responseMsg.isError,
+                    toolCalls: responseMsg.toolCalls,
+                    toolCallID: responseMsg.toolCallID
+                )
+                
+                if Self.verbose {
+                    os_log("%{public}@📝 为空内容消息生成工具摘要", self.t)
+                }
+            }
+            
+            messages.append(finalMsg)
             
             // 立即保存助手消息
-            saveMessage(responseMsg)
+            saveMessage(finalMsg)
 
             // 2. 检查工具调用
             if let toolCalls = responseMsg.toolCalls, !toolCalls.isEmpty {
@@ -952,6 +984,32 @@ class AssistantViewModel: ObservableObject, SuperLog {
         }
 
         messages.append(ChatMessage(role: .assistant, content: message))
+    }
+
+    // MARK: - Helper Methods
+
+    /// 根据工具名称返回对应的 emoji
+    private func toolEmoji(for toolName: String) -> String {
+        switch toolName.lowercased() {
+        case let name where name.contains("read"):
+            return "📖"
+        case let name where name.contains("write"):
+            return "✍️"
+        case let name where name.contains("ls") || name.contains("list") || name.contains("dir"):
+            return "📁"
+        case let name where name.contains("search") || name.contains("find") || name.contains("grep"):
+            return "🔍"
+        case let name where name.contains("run") || name.contains("exec") || name.contains("command") || name.contains("shell"):
+            return "⚡️"
+        case let name where name.contains("git"):
+            return "🌿"
+        case let name where name.contains("build") || name.contains("compile"):
+            return "🔨"
+        case let name where name.contains("test"):
+            return "🧪"
+        default:
+            return "🔧"
+        }
     }
 }
 

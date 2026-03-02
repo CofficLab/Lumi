@@ -82,7 +82,9 @@ class ProcessMonitorService: ObservableObject, SuperLog {
         
         do {
             try task.run()
-            os_log("\(self.t)nettop process started")
+            if Self.verbose {
+                os_log("\(self.t)nettop process started")
+            }
         } catch {
             os_log(.error, "\(self.t)Failed to start nettop: \(error.localizedDescription)")
             self.isRunning = false
@@ -242,7 +244,9 @@ class ProcessMonitorService: ObservableObject, SuperLog {
         
         // 回调
         if !resultProcesses.isEmpty {
-            os_log("\(self.t)Published \(resultProcesses.count) processes")
+            if Self.verbose {
+                os_log("\(self.t)Published \(resultProcesses.count) processes")
+            }
         }
         
         DispatchQueue.main.async {

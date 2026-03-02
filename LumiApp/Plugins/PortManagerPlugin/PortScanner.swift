@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import OSLog
+import MagicKit
 
 struct PortInfo: Identifiable, Hashable {
     let id = UUID()
@@ -12,9 +13,13 @@ struct PortInfo: Identifiable, Hashable {
     let address: String
 }
 
-final class PortScanner: Sendable {
+final class PortScanner: Sendable, SuperLog {
+    nonisolated static let emoji = "🔌"
+    nonisolated static let verbose = false
+
     static let shared = PortScanner()
-    private let logger = Logger(subsystem: "com.coffic.lumi", category: "PortScanner")
+
+    private init() {}
 
     func scanPorts() async -> [PortInfo] {
         return await withCheckedContinuation { continuation in
@@ -40,7 +45,9 @@ final class PortScanner: Sendable {
                         continuation.resume(returning: [])
                     }
                 } catch {
-                    os_log(.error, "Failed to scan ports: %s", error.localizedDescription)
+                    if Self.verbose {
+                        os_log(.error, "\(Self.t)Failed to scan ports: \(error.localizedDescription)")
+                    }
                     continuation.resume(returning: [])
                 }
             }
@@ -96,7 +103,9 @@ final class PortScanner: Sendable {
                     try task.run()
                     continuation.resume(returning: ())
                 } catch {
-                    os_log(.error, "Failed to kill process %s: %s", pid, error.localizedDescription)
+                    if Self.verbose {
+                        os_log(.error, "\(Self.t)Failed to kill process \(pid): \(error.localizedDescription)")
+                    }
                     continuation.resume(throwing: error)
                 }
             }
