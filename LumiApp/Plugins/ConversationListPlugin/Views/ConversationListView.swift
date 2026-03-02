@@ -143,10 +143,14 @@ struct ConversationItemView: View {
             .padding(.horizontal, 6)
             .padding(.bottom, 4)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 4)
+        .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 6)
                 .fill(isSelected ? Color.accentColor.opacity(0.15) : Color.clear)
         )
+        .contentShape(Rectangle())
         .onTapGesture {
             agentProvider.selectConversation(conversation.id)
         }
