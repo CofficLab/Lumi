@@ -8,7 +8,7 @@ struct DevAssistantView: View {
     @State private var isModelSelectorPresented = false
     @State private var isProjectSelectorPresented = false
     @State private var isMCPSettingsPresented = false
-
+    
     var body: some View {
         VStack(spacing: 8) {
             // MARK: - Header
@@ -73,6 +73,12 @@ struct DevAssistantView: View {
         .onAppear {
             isInputFocused = true
         }
+        .onReceive(NotificationCenter.default.publisher(for: .conversationSelected)) { notification in
+            // 当选择对话时，加载对话消息
+            if let conversationId = notification.object as? UUID {
+                loadConversation(conversationId)
+            }
+        }
         .overlay {
             // MARK: - Permission Request Overlay
 
@@ -97,6 +103,18 @@ struct DevAssistantView: View {
         }
         .popover(isPresented: $isModelSelectorPresented, arrowEdge: .bottom) {
             ModelSelectorView(viewModel: viewModel)
+        }
+    }
+    
+    // MARK: - Methods
+    
+    /// 加载指定对话
+    private func loadConversation(_ conversationId: UUID) {
+        Task { @MainActor in
+            // 从数据库获取对话
+            if let conversation = viewModel.chatHistoryService.fetchConversation(id: conversationId) {
+                await viewModel.loadConversation(conversation)
+            }
         }
     }
 

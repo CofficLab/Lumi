@@ -40,6 +40,8 @@ final class AgentProvider: ObservableObject {
         didSet {
             if let id = selectedConversationId {
                 UserDefaults.standard.set(id.uuidString, forKey: "Agent_SelectedConversationId")
+                // 通知加载对话
+                NotificationCenter.default.post(name: .conversationSelected, object: id)
             } else {
                 UserDefaults.standard.removeObject(forKey: "Agent_SelectedConversationId")
             }
@@ -284,4 +286,10 @@ final class AgentProvider: ObservableObject {
     // MARK: - 日志
 
     nonisolated static let verbose = true
+}
+
+// MARK: - Notification Names
+
+extension Notification.Name {
+    static let conversationSelected = Notification.Name("conversationSelected")
 }

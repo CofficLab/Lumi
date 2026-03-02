@@ -101,7 +101,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
     @Published var currentConversation: Conversation?
     
     /// 聊天历史服务
-    private let chatHistoryService = ChatHistoryService.shared
+    let chatHistoryService = ChatHistoryService.shared
     
     /// 标记是否已生成标题
     private var hasGeneratedTitle: Bool = false
@@ -874,6 +874,56 @@ class AssistantViewModel: ObservableObject, SuperLog {
     }
 
     /// 通知模式切换到对话模式
+
+    // MARK: - 加载历史对话
+
+    /// 加载指定对话的消息
+    func loadConversation(_ conversation: Conversation) async {
+        if Self.verbose {
+            os_log("(self.t)📥 开始加载对话：(conversation.title)")
+        }
+        
+        await MainActor.run {
+            // 重置状态
+            withAnimation {
+                depthWarning = nil
+                errorMessage = nil
+                isProcessing = false
+                currentInput = ""
+                pendingAttachments.removeAll()
+            }
+        }
+        
+        // 设置当前对话
+        currentConversation = conversation
+        
+        // 加载消息
+        let loadedMessages = chatHistoryService.loadMessages(for: conversation)
+        
+        if Self.verbose {
+            os_log("(self.t)📥 加载到 (loadedMessages.count) 条消息")
+        }
+        
+        // 获取系统提示
+        let fullSystemPrompt = await promptService.buildSystemPrompt(
+            languagePreference: languagePreference,
+            includeContext: isProjectSelected
+        )
+        
+        await MainActor.run {
+            // 保留系统消息，添加历史消息
+            var newMessages: [ChatMessage] = [ChatMessage(role: .system, content: fullSystemPrompt)]
+            newMessages.append(contentsOf: loadedMessages.filter { $0.role != .system })
+            
+            withAnimation {
+                messages = newMessages
+            }
+        }
+        
+        if Self.verbose {
+            os_log("(self.t)✅ 对话加载完成：(conversation.title)")
+        }
+    }
     private func notifyModeChangeToChat() async {
         let message: String
         switch languagePreference {
