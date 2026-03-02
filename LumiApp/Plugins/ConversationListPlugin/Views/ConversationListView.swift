@@ -95,19 +95,25 @@ struct ConversationListView: View {
 struct ConversationItemView: View {
     let conversation: Conversation
     
+    @ObservedObject var agentProvider = AgentProvider.shared
+    
+    var isSelected: Bool {
+        agentProvider.selectedConversationId == conversation.id
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 // 图标
-                Image(systemName: "message")
+                Image(systemName: isSelected ? "message.fill" : "message")
                     .font(.system(size: 10))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(isSelected ? .accentColor : DesignTokens.Color.semantic.textSecondary)
                     .frame(width: 14)
                 
                 // 标题
                 Text(conversation.title)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .font(.system(size: 10, weight: isSelected ? .semibold : .medium))
+                    .foregroundColor(isSelected ? .accentColor : DesignTokens.Color.semantic.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.tail)
                 
@@ -136,6 +142,13 @@ struct ConversationItemView: View {
             }
             .padding(.horizontal, 6)
             .padding(.bottom, 4)
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(isSelected ? Color.accentColor.opacity(0.15) : Color.clear)
+        )
+        .onTapGesture {
+            agentProvider.selectConversation(conversation.id)
         }
     }
 }

@@ -33,6 +33,19 @@ final class AgentProvider: ObservableObject {
     /// 是否已选择文件
     @Published var isFileSelected: Bool = false
 
+    // MARK: - 当前选择的会话
+
+    /// 当前选择的会话 ID
+    @Published var selectedConversationId: UUID? {
+        didSet {
+            if let id = selectedConversationId {
+                UserDefaults.standard.set(id.uuidString, forKey: "Agent_SelectedConversationId")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "Agent_SelectedConversationId")
+            }
+        }
+    }
+
     // MARK: - 语言偏好
 
     @Published var languagePreference: LanguagePreference = .chinese {
@@ -81,6 +94,21 @@ final class AgentProvider: ObservableObject {
 
     private init() {
         loadPreferences()
+    }
+
+    // MARK: - 会话选择
+
+    /// 选择指定会话
+    func selectConversation(_ id: UUID) {
+        selectedConversationId = id
+        if Self.verbose {
+            os_log("[AgentProvider] 已选择会话：\(id)")
+        }
+    }
+
+    /// 清除会话选择
+    func clearConversationSelection() {
+        selectedConversationId = nil
     }
 
     // MARK: - 项目管理
@@ -244,6 +272,12 @@ final class AgentProvider: ObservableObject {
         // 加载上次选择的项目
         if let savedPath = UserDefaults.standard.string(forKey: "Agent_SelectedProject") {
             switchProject(to: savedPath)
+        }
+
+        // 加载上次选择的会话
+        if let savedConversationId = UserDefaults.standard.string(forKey: "Agent_SelectedConversationId"),
+           let uuid = UUID(uuidString: savedConversationId) {
+            selectedConversationId = uuid
         }
     }
 
