@@ -168,7 +168,7 @@ struct ConversationItemView: View {
                 deleteConversation()
             }
         } message: {
-            Text("确定要删除对话"\(conversation.title)"吗？此操作将彻底删除该对话的所有消息，且无法恢复。")
+            Text("确定要删除对话「\(conversation.title)」吗？此操作将彻底删除该对话的所有消息，且无法恢复。")
         }
     }
     
