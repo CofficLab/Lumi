@@ -2,8 +2,8 @@ import Foundation
 
 /// 应用模式枚举
 public enum AppMode: String, CaseIterable, Identifiable, Sendable {
-    case app = "应用模式"
-    case agent = "Agent 模式"
+    case app = "App"
+    case agent = "Agent"
 
     public var id: String { rawValue }
 
