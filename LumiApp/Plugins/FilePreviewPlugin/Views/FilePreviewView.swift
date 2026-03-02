@@ -21,6 +21,8 @@ struct FilePreviewView: View {
             } else {
                 emptyView
             }
+            
+            Spacer()
         }
         .padding(.vertical, 8)
         .background(DesignTokens.Material.glassThick)
