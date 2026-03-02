@@ -6,7 +6,7 @@ import SwiftUI
 import ObjectiveC.runtime
 import Combine
 
-/// 插件提供者，管理插件的生命周期和UI贡献
+/// 插件提供者，管理插件的生命周期和 UI 贡献
 @MainActor
 final class PluginProvider: ObservableObject, SuperLog {
     /// 全局单例
@@ -54,7 +54,7 @@ final class PluginProvider: ObservableObject, SuperLog {
         defer { free(UnsafeMutableRawPointer(classList)) }
         
         let classes = UnsafeBufferPointer(start: classList, count: Int(count))
-        // 临时存储，包含 (实例, 类名, 顺序)
+        // 临时存储，包含 (实例，类名，顺序)
         var discoveredItems: [(instance: any SuperPlugin, className: String, order: Int)] = []
         
         for i in 0 ..< classes.count {
@@ -126,7 +126,7 @@ final class PluginProvider: ObservableObject, SuperLog {
         // 尝试获取 init() 方法
         let initSelector = NSSelectorFromString("init")
         guard let initMethod = class_getInstanceMethod(cls, initSelector) else {
-            // 如果没有init方法，直接返回alloc的实例（虽然这通常不应该发生）
+            // 如果没有 init 方法，直接返回 alloc 的实例（虽然这通常不应该发生）
             return instance
         }
         
@@ -139,7 +139,7 @@ final class PluginProvider: ObservableObject, SuperLog {
 
     /// 检查插件是否被用户启用
     /// - Parameter plugin: 要检查的插件
-    /// - Returns: 如果插件被启用则返回true
+    /// - Returns: 如果插件被启用则返回 true
     func isPluginEnabled(_ plugin: any SuperPlugin) -> Bool {
         let pluginType = type(of: plugin)
         
@@ -201,8 +201,25 @@ final class PluginProvider: ObservableObject, SuperLog {
         return views
     }
 
+    /// 获取所有插件提供的中间栏视图（用于 Agent 模式）
+    /// 中间栏位于侧边栏和详情栏之间，用于展示文件预览等内容
+    /// - Returns: 中间栏视图数组，多个插件的中间栏会从上到下垂直堆叠显示
+    func getMiddleViews() -> [AnyView] {
+        let views = plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addMiddleView() }
+
+        if Self.verbose {
+            let pluginNames = plugins.map { String(describing: type(of: $0)) }
+            let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
+            os_log("\(self.t) getMiddleViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 中间栏视图数量=\(views.count)")
+        }
+
+        return views
+    }
+
     /// 获取所有插件的设置视图信息
-    /// - Returns: 包含插件ID、名称、图标和视图的元组数组
+    /// - Returns: 包含插件 ID、名称、图标和视图的元组数组
     func getPluginSettingsViews() -> [(id: String, name: String, icon: String, view: AnyView)] {
         plugins
             .filter { isPluginEnabled($0) }

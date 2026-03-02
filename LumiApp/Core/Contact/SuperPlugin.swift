@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// 插件协议，定义插件的基本接口和UI贡献方法
+/// 插件协议，定义插件的基本接口和 UI 贡献方法
 protocol SuperPlugin: Actor {
     /// 插件唯一标识符
     static var id: String { get }
@@ -22,31 +22,31 @@ protocol SuperPlugin: Actor {
     nonisolated var instanceLabel: String { get }
 
     /// 添加工具栏前导视图
-    /// - Returns: 要添加到工具栏前导的视图，如果不需要则返回nil
+    /// - Returns: 要添加到工具栏前导的视图，如果不需要则返回 nil
     @MainActor func addToolBarLeadingView() -> AnyView?
 
     /// 添加工具栏右侧视图
-    /// - Returns: 要添加到工具栏右侧的视图，如果不需要则返回nil
+    /// - Returns: 要添加到工具栏右侧的视图，如果不需要则返回 nil
     @MainActor func addToolBarTrailingView() -> AnyView?
 
     /// 添加详情视图
-    /// - Returns: 要添加的详情视图，如果不需要则返回nil
+    /// - Returns: 要添加的详情视图，如果不需要则返回 nil
     @MainActor func addDetailView() -> AnyView?
 
     /// 添加设置视图
-    /// - Returns: 要添加的设置视图，如果不需要则返回nil
+    /// - Returns: 要添加的设置视图，如果不需要则返回 nil
     @MainActor func addSettingsView() -> AnyView?
     
     /// 提供导航入口（用于侧边栏导航）
-    /// - Returns: 导航入口数组，如果不需要则返回nil
+    /// - Returns: 导航入口数组，如果不需要则返回 nil
     @MainActor func addNavigationEntries() -> [NavigationEntry]?
 
     /// 添加状态栏弹窗视图
-    /// - Returns: 要添加到状态栏弹窗的视图，如果不需要则返回nil
+    /// - Returns: 要添加到状态栏弹窗的视图，如果不需要则返回 nil
     @MainActor func addStatusBarPopupView() -> AnyView?
 
     /// 添加状态栏内容视图
-    /// - Returns: 要显示在状态栏图标位置的视图，如果不需要则返回nil
+    /// - Returns: 要显示在状态栏图标位置的视图，如果不需要则返回 nil
     /// - Note: 插件可以提供自定义的状态栏内容视图，内核会将其组合显示
     @MainActor func addStatusBarContentView() -> AnyView?
 
@@ -54,6 +54,11 @@ protocol SuperPlugin: Actor {
     /// - Returns: 要添加的侧边栏视图，如果不需要则返回 nil
     /// - Note: 在 Agent 模式下，插件可以提供自定义的侧边栏视图，多个插件的侧边栏会从上到下垂直堆叠显示
     @MainActor func addSidebarView() -> AnyView?
+
+    /// 添加中间栏视图（用于 Agent 模式）
+    /// - Returns: 要添加的中间栏视图，如果不需要则返回 nil
+    /// - Note: 在 Agent 模式下，插件可以提供自定义的中间栏视图，位于侧边栏和详情栏之间，多个插件的中间栏会从上到下垂直堆叠显示
+    @MainActor func addMiddleView() -> AnyView?
 
     // MARK: - Lifecycle Hooks
 
@@ -120,6 +125,9 @@ extension SuperPlugin {
 
     /// 默认实现：不提供侧边栏视图
     @MainActor func addSidebarView() -> AnyView? { nil }
+
+    /// 默认实现：不提供中间栏视图
+    @MainActor func addMiddleView() -> AnyView? { nil }
 
     // MARK: - Lifecycle Hooks Default Implementation
     

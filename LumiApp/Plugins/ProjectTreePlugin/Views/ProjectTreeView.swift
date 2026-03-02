@@ -76,7 +76,12 @@ struct ProjectTreeView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 2) {
                 ForEach(rootItems) { item in
-                    FileTreeNodeView(node: item, depth: 0, onFileDrop: handleFileDrop)
+                    FileTreeNodeView(
+                        node: item,
+                        depth: 0,
+                        onFileDrop: handleFileDrop,
+                        onFileSelect: handleFileSelect
+                    )
                 }
             }
             .padding(.horizontal, 4)
@@ -127,6 +132,11 @@ struct ProjectTreeView: View {
     private func handleFileDrop(url: URL) {
         // 通过 NotificationCenter 发送通知，让 InputAreaView 接收
         NotificationCenter.postFileDroppedToChat(fileURL: url)
+    }
+
+    /// 处理文件选择 - 更新 AgentProvider 的选中文件
+    private func handleFileSelect(url: URL) {
+        agentProvider.selectFile(at: url)
     }
 
     private func loadProjectTree(path: String) {
@@ -204,9 +214,11 @@ struct FileTreeNodeView: View {
     let node: FileTreeNode
     let depth: Int
     let onFileDrop: (URL) -> Void
+    let onFileSelect: (URL) -> Void
     @State private var isExpanded = false
     @State private var children: [FileTreeNode] = []
     @State private var isLoading = false
+    @EnvironmentObject var agentProvider: AgentProvider
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -234,17 +246,24 @@ struct FileTreeNodeView: View {
                 // 名称
                 Text(node.name)
                     .font(.system(size: 10))
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(isSelected ? .accentColor : DesignTokens.Color.semantic.textPrimary)
                     .lineLimit(1)
 
                 Spacer()
             }
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(isSelected ? Color.accentColor.opacity(0.2) : Color.clear)
+            )
             .contentShape(Rectangle())
             .onTapGesture {
                 if node.isDirectory {
                     toggle()
+                } else {
+                    // 选择文件
+                    onFileSelect(node.url)
                 }
             }
             // 添加拖拽支持
@@ -264,11 +283,21 @@ struct FileTreeNodeView: View {
                     .padding(.vertical, 4)
                 } else if !children.isEmpty {
                     ForEach(children) { child in
-                        FileTreeNodeView(node: child, depth: depth + 1, onFileDrop: onFileDrop)
+                        FileTreeNodeView(
+                            node: child,
+                            depth: depth + 1,
+                            onFileDrop: onFileDrop,
+                            onFileSelect: onFileSelect
+                        )
                     }
                 }
             }
         }
+    }
+
+    /// 检查当前节点是否被选中
+    private var isSelected: Bool {
+        agentProvider.selectedFileURL == node.url
     }
 
     private func toggle() {

@@ -52,7 +52,7 @@ extension ContentView {
                 // 应用模式：使用固定的侧边栏布局
                 appModeLayout
             case .agent:
-                // Agent 模式：侧边栏由插件提供
+                // Agent 模式：三栏布局（侧边栏 + 中间栏 + 详情栏）
                 agentModeLayout
             }
         }
@@ -104,10 +104,10 @@ extension ContentView {
 
     // MARK: - Agent Mode Layout
 
-    /// Agent 模式布局（插件提供侧边栏和详情视图）
+    /// Agent 模式布局（三栏：侧边栏 + 中间栏 + 详情栏）
     private var agentModeLayout: some View {
         HStack(spacing: 0) {
-            // 侧边栏
+            // 第一栏：侧边栏
             if sidebarVisibility {
                 VStack(spacing: 0) {
                     // 模式切换器
@@ -124,21 +124,39 @@ extension ContentView {
                 }
                 .frame(width: 220)
 
-                // 侧边栏与内容区的分隔线
+                // 侧边栏与中间栏的分隔线
                 Rectangle()
                     .fill(SwiftUI.Color.white.opacity(0.1))
                     .frame(width: 1)
                     .ignoresSafeArea()
             }
 
-            // 内容区域：显示插件提供的详情视图
+            // 第二栏：中间栏（文件预览等）
+            let middleViews = pluginProvider.getMiddleViews()
+            if !middleViews.isEmpty {
+                VStack(spacing: 0) {
+                    ForEach(Array(middleViews.enumerated()), id: \.offset) { _, view in
+                        view
+                    }
+                }
+                .frame(width: 300)
+
+                // 中间栏与详情栏的分隔线
+                Rectangle()
+                    .fill(SwiftUI.Color.white.opacity(0.1))
+                    .frame(width: 1)
+                    .ignoresSafeArea()
+            }
+
+            // 第三栏：内容区域（详情栏）
             agentDetailContent()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .task {
             if Self.verbose {
-                let views = pluginProvider.getSidebarViews()
-                os_log("\(Self.emoji) Agent Mode: 侧边栏视图数量=\(views.count)")
+                let sidebarViews = pluginProvider.getSidebarViews()
+                let middleViews = pluginProvider.getMiddleViews()
+                os_log("\(Self.emoji) Agent Mode: 侧边栏视图数量=\(sidebarViews.count), 中间栏视图数量=\(middleViews.count)")
             }
         }
     }

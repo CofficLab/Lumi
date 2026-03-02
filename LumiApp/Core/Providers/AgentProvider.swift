@@ -19,6 +19,20 @@ final class AgentProvider: ObservableObject {
     /// 是否已选择项目
     @Published var isProjectSelected: Bool = false
 
+    // MARK: - 当前选择的文件
+
+    /// 当前选择的文件 URL
+    @Published var selectedFileURL: URL?
+
+    /// 当前选择的文件路径
+    @Published var selectedFilePath: String = ""
+
+    /// 当前选择的文件内容
+    @Published var selectedFileContent: String = ""
+
+    /// 是否已选择文件
+    @Published var isFileSelected: Bool = false
+
     // MARK: - 语言偏好
 
     @Published var languagePreference: LanguagePreference = .chinese {
@@ -162,6 +176,46 @@ final class AgentProvider: ObservableObject {
             return []
         }
         return projects
+    }
+
+    // MARK: - 文件选择
+
+    /// 选择指定文件
+    func selectFile(at url: URL) {
+        selectedFileURL = url
+        selectedFilePath = url.path
+        isFileSelected = true
+
+        // 异步加载文件内容
+        Task {
+            await loadFileContent(from: url)
+        }
+
+        if Self.verbose {
+            os_log("[AgentProvider] 已选择文件：\(url.lastPathComponent)")
+        }
+    }
+
+    /// 加载文件内容
+    private func loadFileContent(from url: URL) async {
+        do {
+            let content = try String(contentsOf: url, encoding: .utf8)
+            await MainActor.run {
+                selectedFileContent = content
+            }
+        } catch {
+            await MainActor.run {
+                selectedFileContent = "无法加载文件内容：\(error.localizedDescription)"
+            }
+        }
+    }
+
+    /// 清除文件选择
+    func clearFileSelection() {
+        selectedFileURL = nil
+        selectedFilePath = ""
+        selectedFileContent = ""
+        isFileSelected = false
     }
 
     /// 加载保存的偏好设置
