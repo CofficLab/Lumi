@@ -25,12 +25,6 @@ struct ChatHeaderView: View {
                         .font(DesignTokens.Typography.body)
                         .fontWeight(.medium)
                         .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-
-                    Text(viewModel.currentProjectPath.isEmpty ? "Ready to help" : viewModel.currentProjectPath)
-                        .font(DesignTokens.Typography.caption1)
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
                 }
 
                 Spacer()
@@ -54,7 +48,7 @@ struct ChatHeaderView: View {
                 settingsButton
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.vertical, 4)
 
             // MARK: - 项目选择提示
 
