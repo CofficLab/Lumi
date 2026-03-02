@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// 侧边栏视图，显示插件提供的导航入口
-struct Sidebar: View {
+/// 应用模式侧边栏视图，显示插件提供的导航入口
+struct AppModeSidebar: View {
     /// 应用提供者环境对象
     @EnvironmentObject var appProvider: AppProvider
 
@@ -55,53 +55,6 @@ struct Sidebar: View {
         }
     }
 
-    struct SidebarRow: View {
-        let title: String
-        let icon: String
-        let isSelected: Bool
-
-        /// 当前配色方案
-        @Environment(\.colorScheme) private var colorScheme
-
-        var body: some View {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(isSelected ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
-                    .frame(width: 20)
-
-                Text(title)
-                    .font(isSelected ? .system(size: 13, weight: .medium) : .system(size: 13, weight: .regular))
-                    .foregroundColor(isSelected ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
-
-                Spacer()
-            }
-            .padding(.vertical, DesignTokens.Spacing.sm)
-            .padding(.horizontal, DesignTokens.Spacing.md)
-            .background(selectionBackground)
-            .overlay(selectionBorder)
-            .contentShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.md))
-        }
-
-        @ViewBuilder private var selectionBackground: some View {
-            if isSelected {
-                RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
-                    .fill(DesignTokens.Color.semantic.primary.opacity(0.15))
-                    .shadow(color: SwiftUI.Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-            } else {
-                RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
-                    .fill(SwiftUI.Color.clear)
-            }
-        }
-
-        @ViewBuilder private var selectionBorder: some View {
-            if isSelected {
-                RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
-                    .stroke(DesignTokens.Color.semantic.primary.opacity(0.3), lineWidth: 1)
-            }
-        }
-    }
-
     /// 底部设置按钮
     private var settingsButton: some View {
         Button {
@@ -130,24 +83,6 @@ struct Sidebar: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private var sidebarBackground: some View {
-        ZStack {
-            Rectangle()
-                .fill(DesignTokens.Material.mysticGlass(for: colorScheme))
-            LinearGradient(
-                colors: [
-                    DesignTokens.Color.basePalette.mysticIndigo.opacity(0.6),
-                    DesignTokens.Color.basePalette.mysticViolet.opacity(0.45),
-                    DesignTokens.Color.basePalette.mysticAzure.opacity(0.35)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .opacity(colorScheme == .dark ? 0.45 : 0.2)
-        }
-        .ignoresSafeArea()
-    }
-
     /// 初始化默认选中的导航项
     private func initializeDefaultSelection() {
         // 如果还没有选中项，选择默认的或第一个
@@ -162,23 +97,59 @@ struct Sidebar: View {
     }
 }
 
-// MARK: - Preview
+// MARK: - Sidebar Row
 
-#Preview {
-    Sidebar()
-        .inRootView()
+struct SidebarRow: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+
+    /// 当前配色方案
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(isSelected ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
+                .frame(width: 20)
+
+            Text(title)
+                .font(isSelected ? .system(size: 13, weight: .medium) : .system(size: 13, weight: .regular))
+                .foregroundColor(isSelected ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
+
+            Spacer()
+        }
+        .padding(.vertical, DesignTokens.Spacing.sm)
+        .padding(.horizontal, DesignTokens.Spacing.md)
+        .background(selectionBackground)
+        .overlay(selectionBorder)
+        .contentShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.md))
+    }
+
+    @ViewBuilder private var selectionBackground: some View {
+        if isSelected {
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
+                .fill(DesignTokens.Color.semantic.primary.opacity(0.15))
+                .shadow(color: SwiftUI.Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        } else {
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
+                .fill(SwiftUI.Color.clear)
+        }
+    }
+
+    @ViewBuilder private var selectionBorder: some View {
+        if isSelected {
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
+                .stroke(DesignTokens.Color.semantic.primary.opacity(0.3), lineWidth: 1)
+        }
+    }
 }
 
-#Preview("App - Small Screen") {
-    ContentLayout()
-        .hideSidebar()
+#Preview("App Mode Sidebar") {
+    AppModeSidebar()
+        .frame(width: 220, height: 600)
         .inRootView()
-        .frame(width: 800, height: 600)
-}
-
-#Preview("App - Big Screen") {
-    ContentLayout()
-        .hideSidebar()
-        .inRootView()
-        .frame(width: 1200, height: 1200)
+        .environmentObject(AppProvider.shared)
+        .environmentObject(PluginProvider.shared)
 }
