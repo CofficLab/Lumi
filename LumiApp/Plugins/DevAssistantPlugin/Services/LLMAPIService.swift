@@ -22,14 +22,7 @@ class LLMAPIService: SuperLog {
 
     // MARK: - LLM 请求
 
-    /// 发送聊天完成请求到 LLM 供应商
-    /// - Parameters:
-    ///   - url: API 端点 URL
-    ///   - apiKey: API 密钥
-    ///   - body: 请求体（符合供应商格式）
-    ///   - additionalHeaders: 额外的请求头（如 anthropic-version）
-    ///   - useBearerAuth: 是否使用 Bearer 认证（默认使用 x-api-key）
-    /// - Returns: 原始响应数据
+    /// 发送聊天完成请求到 LLM 供应商（带重试机制）
     func sendChatRequest(
         url: URL,
         apiKey: String,
@@ -37,27 +30,21 @@ class LLMAPIService: SuperLog {
         additionalHeaders: [String: String] = [:],
         useBearerAuth: Bool = false
     ) async throws -> Data {
-        // 构建请求头
         var headers = [
             "Content-Type": "application/json"
         ]
 
-        // 根据认证方式设置不同的请求头
         if useBearerAuth {
-            // 阿里云 Coding Plan 使用 Authorization: Bearer 认证
             headers["Authorization"] = "Bearer \(apiKey)"
         } else {
-            // 其他供应商（如 Zhipu, Anthropic）使用 x-api-key 认证
             headers["x-api-key"] = apiKey
         }
 
-        // 添加额外的请求头（如 anthropic-version）
         for (key, value) in additionalHeaders {
             headers[key] = value
         }
 
-        // 发送请求（使用原始数据，不需要解码）
-        let (data, _) = try await sendRawRequest(
+        let (data, _) = try await sendRawRequestWithRetry(
             url: url,
             method: .post,
             headers: headers,
@@ -67,20 +54,13 @@ class LLMAPIService: SuperLog {
         return data
     }
 
-    /// 发送流式聊天请求（SSE - Server-Sent Events）
-    /// - Parameters:
-    ///   - url: API 端点 URL
-    ///   - apiKey: API 密钥
-    ///   - body: 请求体
-    ///   - onChunk: 接收每个数据块的回调
+    /// 发送流式聊天请求
     func sendStreamingRequest(
         url: URL,
         apiKey: String,
         body: [String: Any],
         onChunk: @escaping (String) -> Void
     ) async throws {
-        // TODO: 实现流式请求
-        // 目前先使用非流式
         throw APIError.requestFailed(underlying: NSError(
             domain: "LLMAPIService",
             code: 501,
@@ -88,7 +68,58 @@ class LLMAPIService: SuperLog {
         ))
     }
 
-    // MARK: - 底层请求方法
+    // MARK: - 带重试的原始请求
+
+    private func sendRawRequestWithRetry(
+        url: URL,
+        method: HTTPMethod,
+        headers: [String: String],
+        body: [String: Any]?
+    ) async throws -> (Data, URLResponse) {
+        var lastError: Error?
+        let maxRetries = APIService.maxRetries
+
+        for attempt in 1...maxRetries {
+            do {
+                if Self.verbose && attempt > 1 {
+                    os_log("\(self.t)🔄 重试 LLM 请求 (尝试 \(attempt)/\(maxRetries))")
+                }
+
+                let result = try await sendRawRequest(
+                    url: url,
+                    method: method,
+                    headers: headers,
+                    body: body
+                )
+
+                if Self.verbose && attempt > 1 {
+                    os_log("\(self.t)✅ LLM 重试成功")
+                }
+
+                return result
+
+            } catch {
+                lastError = error
+
+                if attempt < maxRetries && apiService.isRetryableError(error) {
+                    let delay = apiService.calculateRetryDelay(for: attempt)
+                    os_log("\(self.t)⚠️ LLM 请求失败 (\(error.localizedDescription))，\(Int(delay)) 秒后重试...")
+                    try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                } else {
+                    if Self.verbose {
+                        os_log("\(self.t)❌ LLM 请求最终失败：\(error.localizedDescription)")
+                    }
+                    throw error
+                }
+            }
+        }
+
+        throw lastError ?? APIError.requestFailed(underlying: NSError(
+            domain: "LLMAPIService",
+            code: -1,
+            userInfo: [NSLocalizedDescriptionKey: "未知错误"]
+        ))
+    }
 
     /// 发送原始请求（不解析 JSON）
     private func sendRawRequest(
@@ -97,17 +128,14 @@ class LLMAPIService: SuperLog {
         headers: [String: String],
         body: [String: Any]?
     ) async throws -> (Data, URLResponse) {
-        // 构建 URLRequest
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
-        request.timeoutInterval = 60
+        request.timeoutInterval = 300
 
-        // 设置请求头
         for (key, value) in headers {
             request.setValue(value, forHTTPHeaderField: key)
         }
 
-        // 记录请求头信息（调试用）
         if Self.verbose {
             os_log("\(self.t)LLM 请求头:")
             for (key, value) in headers {
@@ -118,7 +146,6 @@ class LLMAPIService: SuperLog {
             }
         }
 
-        // 设置请求体
         if let body = body {
             do {
                 let jsonData = try JSONSerialization.data(withJSONObject: body)
@@ -135,16 +162,12 @@ class LLMAPIService: SuperLog {
             }
         }
 
-        // 记录请求信息
         if Self.verbose {
             os_log("\(self.t)发送 LLM \(method.rawValue) 请求到: \(url.absoluteString)")
         }
 
         do {
-            // 发送请求
             let (data, response) = try await apiService.session.data(for: request)
-
-            // 验证响应
             try validateResponse(response, data: data)
 
             if Self.verbose {
@@ -154,16 +177,12 @@ class LLMAPIService: SuperLog {
             return (data, response)
 
         } catch let error as APIError {
-            // 重新抛出 API 错误
             throw error
         } catch {
-            // 其他错误转换为 API 请求失败
             os_log(.error, "\(self.t)LLM 请求失败: \(error.localizedDescription)")
             throw APIError.requestFailed(underlying: error)
         }
     }
-
-    // MARK: - 响应验证
 
     /// 验证 LLM API 响应
     private func validateResponse(_ response: URLResponse, data: Data) throws {
@@ -171,12 +190,10 @@ class LLMAPIService: SuperLog {
             throw APIError.invalidResponse
         }
 
-        // 检查状态码
         guard (200 ... 299).contains(httpResponse.statusCode) else {
             let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
             os_log(.error, "\(self.t)LLM API 错误 \(httpResponse.statusCode): \(errorStr.prefix(200))")
 
-            // 详细的错误信息
             let errorMessage = """
             HTTP Error (\(httpResponse.statusCode))
             URL: \(response.url?.absoluteString ?? "Unknown")
