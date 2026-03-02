@@ -220,6 +220,9 @@ struct FileTreeNodeView: View {
     @State private var isLoading = false
     @EnvironmentObject var agentProvider: AgentProvider
 
+    /// 每层缩进量 (参考 VS Code 的默认缩进)
+    private let indentPerLevel: CGFloat = 16
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // 节点行
@@ -274,25 +277,38 @@ struct FileTreeNodeView: View {
             // 子节点
             if isExpanded && node.isDirectory {
                 if isLoading {
-                    HStack {
-                        Spacer().frame(width: 20)
-                        ProgressView()
-                            .scaleEffect(0.5)
-                        Spacer()
-                    }
-                    .padding(.vertical, 4)
+                    loadingIndicator
                 } else if !children.isEmpty {
-                    ForEach(children) { child in
-                        FileTreeNodeView(
-                            node: child,
-                            depth: depth + 1,
-                            onFileDrop: onFileDrop,
-                            onFileSelect: onFileSelect
-                        )
-                    }
+                    childNodes
                 }
             }
         }
+    }
+
+    /// 加载指示器
+    private var loadingIndicator: some View {
+        HStack {
+            Spacer().frame(width: indentPerLevel)
+            ProgressView()
+                .scaleEffect(0.5)
+            Spacer()
+        }
+        .padding(.vertical, 4)
+    }
+
+    /// 子节点列表
+    private var childNodes: some View {
+        Group {
+            ForEach(children) { child in
+                FileTreeNodeView(
+                    node: child,
+                    depth: depth + 1,
+                    onFileDrop: onFileDrop,
+                    onFileSelect: onFileSelect
+                )
+            }
+        }
+        .padding(.leading, indentPerLevel)
     }
 
     /// 检查当前节点是否被选中

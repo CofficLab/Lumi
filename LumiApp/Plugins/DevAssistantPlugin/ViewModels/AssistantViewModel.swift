@@ -95,6 +95,14 @@ class AssistantViewModel: ObservableObject, SuperLog {
         }
     }
 
+    // MARK: - 对话历史管理
+    
+    /// 当前对话会话
+    @Published var currentConversation: Conversation?
+    
+    /// 聊天历史服务
+    private let chatHistoryService = ChatHistoryService.shared
+
     // MARK: - 供应商注册表
 
     private let registry = ProviderRegistry.shared
@@ -195,6 +203,9 @@ class AssistantViewModel: ObservableObject, SuperLog {
         let initialCurrentProjectPath = currentProjectPath
 
         Task { @MainActor in
+            // 创建新对话
+            await createNewConversation()
+            
             let fullSystemPrompt = await promptService.buildSystemPrompt(
                 languagePreference: initialLanguagePreference,
                 includeContext: initialIsProjectSelected
@@ -219,6 +230,33 @@ class AssistantViewModel: ObservableObject, SuperLog {
             os_log("\(self.t)DevAssistant 视图模型已初始化")
             os_log("\(self.t) 自动批准风险设置：\(self.autoApproveRisk)")
         }
+    }
+
+    // MARK: - 对话管理
+
+    /// 创建新对话
+    func createNewConversation() async {
+        let projectId = isProjectSelected ? currentProjectPath : nil
+        currentConversation = chatHistoryService.createConversation(
+            projectId: projectId,
+            title: "新对话"
+        )
+        
+        if Self.verbose {
+            os_log("\(self.t)✅ 创建新对话：\(self.currentConversation?.title ?? "未知")")
+        }
+    }
+
+    /// 保存消息到存储
+    private func saveMessage(_ message: ChatMessage) {
+        guard let conversation = currentConversation else {
+            if Self.verbose {
+                os_log("\(self.t)⚠️ 当前没有活动对话，跳过保存")
+            }
+            return
+        }
+        
+        chatHistoryService.saveMessage(message, to: conversation)
     }
 
     // MARK: - 项目选择提示
@@ -314,6 +352,9 @@ class AssistantViewModel: ObservableObject, SuperLog {
         }
 
         messages.append(userMsg)
+        
+        // 立即保存用户消息
+        saveMessage(userMsg)
 
         await processTurn()
     }
@@ -534,6 +575,9 @@ class AssistantViewModel: ObservableObject, SuperLog {
             // 1. 获取 LLM 响应
             let responseMsg = try await llmService.sendMessage(messages: messages, config: config, tools: availableTools)
             messages.append(responseMsg)
+            
+            // 立即保存助手消息
+            saveMessage(responseMsg)
 
             // 2. 检查工具调用
             if let toolCalls = responseMsg.toolCalls, !toolCalls.isEmpty {
@@ -731,6 +775,9 @@ class AssistantViewModel: ObservableObject, SuperLog {
         }
 
         Task { @MainActor in
+            // 创建新对话
+            await createNewConversation()
+            
             // 重新构建系统提示
             let fullSystemPrompt = await promptService.buildSystemPrompt(
                 languagePreference: languagePreference,
