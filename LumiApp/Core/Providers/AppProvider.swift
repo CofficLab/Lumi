@@ -30,12 +30,27 @@ final class AppProvider: ObservableObject {
     @Published var selectedNavigationId: String?
 
     /// 当前选中的应用模式
-    @Published var selectedMode: AppMode = .app
+    @Published var selectedMode: AppMode = .app {
+        didSet {
+            // 保存模式到 UserDefaults
+            UserDefaults.standard.set(selectedMode.rawValue, forKey: "App_SelectedMode")
+        }
+    }
 
     // MARK: - 数据状态
 
     /// 活动状态文本
     @Published var activityStatus: String? = nil
+
+    // MARK: - 初始化
+
+    init() {
+        // 从 UserDefaults 加载上次选择的模式
+        if let savedModeRawValue = UserDefaults.standard.string(forKey: "App_SelectedMode"),
+           let savedMode = AppMode(rawValue: savedModeRawValue) {
+            selectedMode = savedMode
+        }
+    }
 
     // MARK: - 错误处理
 
