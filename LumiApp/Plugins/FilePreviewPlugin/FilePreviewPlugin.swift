@@ -14,7 +14,7 @@ actor FilePreviewPlugin: SuperPlugin, SuperLog {
     static let enable = true
 
     /// Whether to enable verbose log output
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     /// Plugin unique identifier
     static let id: String = "FilePreview"

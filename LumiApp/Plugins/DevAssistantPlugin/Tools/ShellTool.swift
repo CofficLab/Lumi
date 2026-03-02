@@ -5,7 +5,7 @@ import SwiftUI
 
 struct ShellTool: AgentTool, SuperLog {
     nonisolated static let emoji = "🔧"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     let name = "run_command"
     let description = "Execute a shell command in terminal. Use this to run build commands, git commands, or other system tools."

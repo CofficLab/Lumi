@@ -8,7 +8,7 @@ import MagicKit
 @MainActor
 class APIService: SuperLog {
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     static let shared = APIService()
 

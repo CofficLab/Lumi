@@ -8,7 +8,7 @@ import Combine
 @MainActor
 class NetworkService: SuperLog, ObservableObject {
     nonisolated static let emoji = "📡"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     static let shared = NetworkService()
 

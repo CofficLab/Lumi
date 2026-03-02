@@ -5,11 +5,13 @@ import SwiftData
 
 /// 聊天历史服务 - 使用 SwiftData 存储对话
 @MainActor
-class ChatHistoryService {
+class ChatHistoryService: SuperLog {
+    nonisolated static let emoji = "💾"
+    nonisolated static let verbose = false
+    
     static let shared = ChatHistoryService()
 
     private var modelContainer: ModelContainer?
-    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.cofficlab.lumi", category: "ChatHistory")
     private let llmService = LLMService.shared
 
     private init() {}
@@ -17,7 +19,7 @@ class ChatHistoryService {
     /// 使用外部容器初始化（从 App 初始化）
     func initializeWithContainer(_ container: ModelContainer) {
         self.modelContainer = container
-        logger.info("✅ SwiftData 聊天存储已初始化")
+        os_log("\(Self.t)✅ SwiftData 聊天存储已初始化")
     }
 
     // MARK: - 保存对话
@@ -25,7 +27,7 @@ class ChatHistoryService {
     /// 保存或更新对话
     func saveConversation(_ conversation: Conversation) {
         guard let container = modelContainer else {
-            logger.error("❌ 模型容器未初始化")
+            os_log(.error, "\(Self.t)❌ 模型容器未初始化")
             return
         }
 
@@ -34,8 +36,11 @@ class ChatHistoryService {
 
         do {
             try context.save()
+            if Self.verbose {
+                os_log("\(Self.t)💾 对话已保存：\(conversation.title)")
+            }
         } catch {
-            logger.error("❌ 保存对话失败：\(error.localizedDescription)")
+            os_log(.error, "\(Self.t)❌ 保存对话失败：\(error.localizedDescription)")
         }
     }
 
@@ -52,6 +57,10 @@ class ChatHistoryService {
 
         saveConversation(conversation)
 
+        if Self.verbose {
+            os_log("\(Self.t)✨ 创建新对话：\(title)")
+        }
+
         return conversation
     }
 
@@ -60,7 +69,7 @@ class ChatHistoryService {
     /// 更新对话标题
     func updateConversationTitle(_ conversation: Conversation, newTitle: String) {
         guard let container = modelContainer else {
-            logger.error("❌ 模型容器未初始化")
+            os_log(.error, "\(Self.t)❌ 模型容器未初始化")
             return
         }
 
@@ -69,7 +78,7 @@ class ChatHistoryService {
 
         saveConversation(conversation)
 
-        logger.info("✏️ 对话标题已更新：\(newTitle)")
+        os_log("\(Self.t)✏️ 对话标题已更新：\(newTitle)")
     }
 
     // MARK: - 生成会话标题
@@ -126,7 +135,7 @@ class ChatHistoryService {
                 return String(generatedTitle.prefix(20))
             }
         } catch {
-            logger.error("❌ 生成标题失败：\(error.localizedDescription)")
+            os_log(.error, "\(Self.t)❌ 生成标题失败：\(error.localizedDescription)")
             // 降级：使用消息的前 20 个字符作为标题
             return String(trimmedMessage.prefix(20))
         }
@@ -137,7 +146,7 @@ class ChatHistoryService {
     /// 保存消息到指定对话
     func saveMessage(_ message: ChatMessage, to conversation: Conversation) {
         guard let container = modelContainer else {
-            logger.error("❌ 模型容器未初始化")
+            os_log(.error, "\(Self.t)❌ 模型容器未初始化")
             return
         }
 
@@ -152,8 +161,11 @@ class ChatHistoryService {
 
         do {
             try context.save()
+            if Self.verbose {
+                os_log("\(Self.t)💾 消息已保存")
+            }
         } catch {
-            os_log(.error, "❌ 保存消息失败：\(error.localizedDescription)")
+            os_log(.error, "\(Self.t)❌ 保存消息失败：\(error.localizedDescription)")
         }
     }
 
@@ -162,7 +174,7 @@ class ChatHistoryService {
     /// 获取所有对话
     func fetchAllConversations() -> [Conversation] {
         guard let container = modelContainer else {
-            logger.error("❌ 模型容器未初始化")
+            os_log(.error, "\(Self.t)❌ 模型容器未初始化")
             return []
         }
 
@@ -173,10 +185,10 @@ class ChatHistoryService {
 
         do {
             let conversations = try context.fetch(descriptor)
-            logger.info("📄 获取到 \(conversations.count) 个对话")
+            os_log("\(Self.t)📄 获取到 \(conversations.count) 个对话")
             return conversations
         } catch {
-            logger.error("❌ 获取对话失败：\(error.localizedDescription)")
+            os_log(.error, "\(Self.t)❌ 获取对话失败：\(error.localizedDescription)")
             return []
         }
     }
@@ -184,7 +196,7 @@ class ChatHistoryService {
     /// 根据 ID 获取对话
     func fetchConversation(id: UUID) -> Conversation? {
         guard let container = modelContainer else {
-            logger.error("❌ 模型容器未初始化")
+            os_log(.error, "\(Self.t)❌ 模型容器未初始化")
             return nil
         }
 
@@ -197,7 +209,7 @@ class ChatHistoryService {
             let conversations = try context.fetch(descriptor)
             return conversations.first
         } catch {
-            logger.error("❌ 获取对话失败：\(error.localizedDescription)")
+            os_log(.error, "\(Self.t)❌ 获取对话失败：\(error.localizedDescription)")
             return nil
         }
     }
@@ -205,7 +217,7 @@ class ChatHistoryService {
     /// 获取项目相关的对话
     func fetchConversations(forProject projectId: String) -> [Conversation] {
         guard let container = modelContainer else {
-            logger.error("❌ 模型容器未初始化")
+            os_log(.error, "\(Self.t)❌ 模型容器未初始化")
             return []
         }
 
@@ -217,10 +229,12 @@ class ChatHistoryService {
 
         do {
             let conversations = try context.fetch(descriptor)
-            logger.info("📄 获取到项目 \(projectId) 的 \(conversations.count) 个对话")
+            if Self.verbose {
+                os_log("\(Self.t)📄 获取到项目 \(projectId) 的 \(conversations.count) 个对话")
+            }
             return conversations
         } catch {
-            logger.error("❌ 获取项目对话失败：\(error.localizedDescription)")
+            os_log(.error, "\(Self.t)❌ 获取项目对话失败：\(error.localizedDescription)")
             return []
         }
     }
@@ -232,7 +246,9 @@ class ChatHistoryService {
             .sorted { $0.timestamp < $1.timestamp }
             .compactMap { $0.toChatMessage() }
 
-        logger.debug("📄 加载到 \(messages.count) 条消息")
+        if Self.verbose {
+            os_log("\(Self.t)📄 加载到 \(messages.count) 条消息")
+        }
         return messages
     }
 
@@ -241,7 +257,7 @@ class ChatHistoryService {
     /// 删除对话
     func deleteConversation(_ conversation: Conversation) {
         guard let container = modelContainer else {
-            logger.error("❌ 模型容器未初始化")
+            os_log(.error, "\(Self.t)❌ 模型容器未初始化")
             return
         }
 
@@ -250,9 +266,9 @@ class ChatHistoryService {
 
         do {
             try context.save()
-            logger.info("🗑️ 对话已删除：\(conversation.title)")
+            os_log("\(Self.t)🗑️ 对话已删除：\(conversation.title)")
         } catch {
-            logger.error("❌ 删除对话失败：\(error.localizedDescription)")
+            os_log(.error, "\(Self.t)❌ 删除对话失败：\(error.localizedDescription)")
         }
     }
 

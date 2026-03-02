@@ -6,7 +6,7 @@ import MagicKit
 @MainActor
 class NetworkManagerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     @Published var networkState = NetworkState()
     @Published var interfaces: [NetworkInterfaceInfo] = []
