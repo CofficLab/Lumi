@@ -43,7 +43,7 @@ struct ToolOutputView: View {
             // 工具输出头部
             toolOutputHeader
                 .padding(12)
-                .background(DesignTokens.Color.semantic.textTertiary.opacity(0.03))
+                .background(DesignTokens.Color.semantic.textTertiary.opacity(0.3))
                 .overlay(
                     Rectangle()
                         .frame(height: 1)
@@ -201,6 +201,7 @@ private extension View {
                     .opacity(0.3)
             )
             .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }
 
