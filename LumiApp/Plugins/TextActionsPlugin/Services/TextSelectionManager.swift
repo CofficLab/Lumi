@@ -7,6 +7,9 @@ import OSLog
 
 @MainActor
 class TextSelectionManager: ObservableObject, SuperLog {
+    nonisolated static let emoji = "✂️"
+    nonisolated static let verbose = false
+    
     static let shared = TextSelectionManager()
     
     @Published var selectedText: String?
@@ -14,7 +17,6 @@ class TextSelectionManager: ObservableObject, SuperLog {
     @Published var isPermissionGranted: Bool = false
     
     private var monitor: Any?
-    private let logger = Logger(subsystem: "com.lumi.textactions", category: "SelectionManager")
     
     private init() {
         checkPermission()
@@ -26,6 +28,10 @@ class TextSelectionManager: ObservableObject, SuperLog {
         // Check silently (don't force prompt on app launch)
         let options = ["AXTrustedCheckOptionPrompt": false] as CFDictionary
         isPermissionGranted = AXIsProcessTrustedWithOptions(options)
+        
+        if Self.verbose {
+            os_log("\(Self.t)辅助功能权限状态：\(self.isPermissionGranted ? "✅ 已授予" : "❌ 未授予")")
+        }
     }
     
     nonisolated func startMonitoring() {
@@ -38,7 +44,10 @@ class TextSelectionManager: ObservableObject, SuperLog {
                     self?.handleMouseUp(event)
                 }
             }
-            os_log("\(Self.t)Started monitoring text selection")
+            
+            if Self.verbose {
+                os_log("\(Self.t)✅ 开始监控文本选择")
+            }
         }
     }
     
@@ -48,7 +57,10 @@ class TextSelectionManager: ObservableObject, SuperLog {
                 NSEvent.removeMonitor(monitor)
                 self.monitor = nil
             }
-            os_log("\(Self.t)Stopped monitoring text selection")
+            
+            if Self.verbose {
+                os_log("\(Self.t)🛑 停止监控文本选择")
+            }
         }
     }
     
@@ -63,7 +75,9 @@ class TextSelectionManager: ObservableObject, SuperLog {
                 if let (text, rect) = result, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     self.selectedText = text
                     self.selectionRect = rect
-                    os_log("\(Self.t)Detected selection: \(text.prefix(20))...")
+                    if Self.verbose {
+                        os_log("\(Self.t)📝 检测到选择：\(text.prefix(50))...")
+                    }
                 } else {
                     // Hide menu if clicking elsewhere
                     self.selectedText = nil

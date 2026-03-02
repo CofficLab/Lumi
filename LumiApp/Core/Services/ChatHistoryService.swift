@@ -19,7 +19,9 @@ class ChatHistoryService: SuperLog {
     /// 使用外部容器初始化（从 App 初始化）
     func initializeWithContainer(_ container: ModelContainer) {
         self.modelContainer = container
-        os_log("\(Self.t)✅ SwiftData 聊天存储已初始化")
+        if Self.verbose {
+            os_log("\(Self.t)✅ SwiftData 聊天存储已初始化")
+        }
     }
 
     // MARK: - 保存对话
@@ -78,7 +80,9 @@ class ChatHistoryService: SuperLog {
 
         saveConversation(conversation)
 
-        os_log("\(Self.t)✏️ 对话标题已更新：\(newTitle)")
+        if Self.verbose {
+            os_log("\(Self.t)✏️ 对话标题已更新：\(newTitle)")
+        }
     }
 
     // MARK: - 生成会话标题
@@ -185,7 +189,9 @@ class ChatHistoryService: SuperLog {
 
         do {
             let conversations = try context.fetch(descriptor)
-            os_log("\(Self.t)📄 获取到 \(conversations.count) 个对话")
+            if Self.verbose {
+                os_log("\(Self.t)📄 获取到 \(conversations.count) 个对话")
+            }
             return conversations
         } catch {
             os_log(.error, "\(Self.t)❌ 获取对话失败：\(error.localizedDescription)")
@@ -266,7 +272,9 @@ class ChatHistoryService: SuperLog {
 
         do {
             try context.save()
-            os_log("\(Self.t)🗑️ 对话已删除：\(conversation.title)")
+            if Self.verbose {
+                os_log("\(Self.t)🗑️ 对话已删除：\(conversation.title)")
+            }
         } catch {
             os_log(.error, "\(Self.t)❌ 删除对话失败：\(error.localizedDescription)")
         }

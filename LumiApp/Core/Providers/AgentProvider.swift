@@ -134,13 +134,17 @@ final class AgentProvider: ObservableObject, SuperLog {
                 let conversations = try context.fetch(descriptor)
                 if conversations.isEmpty {
                     // 会话已不存在，清除保存的 ID
-                    os_log("\(Self.t)⚠️ 上次选择的会话已不存在，清除保存状态")
+                    if Self.verbose {
+                        os_log("\(Self.t)⚠️ 上次选择的会话已不存在，清除保存状态")
+                    }
                     UserDefaults.standard.removeObject(forKey: "Agent_SelectedConversationId")
                     return
                 }
                 // 会话存在，恢复选择
                 selectedConversationId = uuid
-                os_log("\(Self.t)✅ 已恢复会话选择：\(uuid)")
+                if Self.verbose {
+                    os_log("\(Self.t)✅ 已恢复会话选择：\(uuid)")
+                }
             } catch {
                 os_log(.error, "\(Self.t)❌ 验证会话失败：\(error.localizedDescription)")
             }
@@ -256,7 +260,9 @@ final class AgentProvider: ObservableObject, SuperLog {
             await loadFileContent(from: url)
         }
 
-        os_log("\(Self.t)📄 已选择文件：\(url.lastPathComponent)")
+        if Self.verbose {
+            os_log("\(Self.t)📄 已选择文件：\(url.lastPathComponent)")
+        }
     }
 
     /// 加载文件内容

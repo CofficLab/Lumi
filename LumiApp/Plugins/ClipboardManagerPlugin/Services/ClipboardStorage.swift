@@ -55,7 +55,9 @@ actor ClipboardStorage: SuperLog {
         let count = items.count
         items.removeAll()
         save()
-        os_log("\(Self.t)🗑️ 已清空剪贴板历史（共 \(count) 项）")
+        if Self.verbose {
+            os_log("\(Self.t)🗑️ 已清空剪贴板历史（共 \(count) 项）")
+        }
     }
     
     func togglePin(id: UUID) {
@@ -99,7 +101,9 @@ actor ClipboardStorage: SuperLog {
         do {
             let data = try Data(contentsOf: fileURL)
             items = try JSONDecoder().decode([ClipboardItem].self, from: data)
-            os_log("\(Self.t)✅ 已加载 \(self.items.count) 个剪贴板项")
+            if Self.verbose {
+                os_log("\(Self.t)✅ 已加载 \(self.items.count) 个剪贴板项")
+            }
         } catch {
             os_log(.error, "\(Self.t)❌ 加载剪贴板历史失败：\(error.localizedDescription)")
         }
