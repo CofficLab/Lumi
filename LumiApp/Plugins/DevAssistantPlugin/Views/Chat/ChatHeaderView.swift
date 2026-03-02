@@ -35,6 +35,9 @@ struct ChatHeaderView: View {
 
                 Spacer()
 
+                // 开启新会话按钮
+                newChatButton
+
                 // 风险自动批准开关
                 autoApproveToggle
 
@@ -66,6 +69,29 @@ struct ChatHeaderView: View {
                 .foregroundColor(Color.black.opacity(0.05)),
             alignment: .bottom
         )
+    }
+
+    // MARK: - New Chat Button
+
+    private var newChatButton: some View {
+        Button(action: {
+            viewModel.startNewChat()
+        }) {
+            HStack(spacing: 4) {
+                Image(systemName: "plus.circle")
+                    .font(.system(size: 12))
+                Text("新会话")
+                    .font(DesignTokens.Typography.caption2)
+                    .fontWeight(.medium)
+            }
+            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Color.black.opacity(0.05))
+            .cornerRadius(6)
+        }
+        .buttonStyle(.plain)
+        .help("Start a new chat session")
     }
 
     // MARK: - Auto Approve Toggle

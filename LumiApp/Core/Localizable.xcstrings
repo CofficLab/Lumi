@@ -4306,6 +4306,9 @@
     "Start" : {
 
     },
+    "Start a new chat session" : {
+
+    },
     "Statistics" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5311,6 +5314,9 @@
           }
         }
       }
+    },
+    "新会话" : {
+
     },
     "暂无可配置的插件" : {
       "localizations" : {

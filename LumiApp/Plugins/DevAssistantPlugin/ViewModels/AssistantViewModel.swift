@@ -694,6 +694,48 @@ class AssistantViewModel: ObservableObject, SuperLog {
         }
     }
 
+    /// 开启新会话 - 清除历史并显示欢迎消息
+    func startNewChat() {
+        let languagePreference = self.languagePreference
+        let isProjectSelected = self.isProjectSelected
+        let currentProjectName = self.currentProjectName
+        let currentProjectPath = self.currentProjectPath
+
+        withAnimation {
+            // 清除深度警告和错误
+            depthWarning = nil
+            errorMessage = nil
+            isProcessing = false
+            currentInput = ""
+            pendingAttachments.removeAll()
+        }
+
+        Task { @MainActor in
+            // 重新构建系统提示
+            let fullSystemPrompt = await promptService.buildSystemPrompt(
+                languagePreference: languagePreference,
+                includeContext: isProjectSelected
+            )
+            messages = [ChatMessage(role: .system, content: fullSystemPrompt)]
+
+            // 显示欢迎消息
+            if !isProjectSelected {
+                showProjectSelectionPrompt()
+            } else {
+                let welcomeMsg = await promptService.getWelcomeBackMessage(
+                    projectName: currentProjectName,
+                    projectPath: currentProjectPath,
+                    language: languagePreference
+                )
+                messages.append(ChatMessage(role: .assistant, content: welcomeMsg))
+            }
+
+            if Self.verbose {
+                os_log("\(self.t)✅ 已开启新会话")
+            }
+        }
+    }
+
     // MARK: - 语言偏好管理
 
     /// 通知语言切换
