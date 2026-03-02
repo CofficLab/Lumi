@@ -493,6 +493,32 @@ class AssistantViewModel: ObservableObject, SuperLog {
         }
     }
 
+    // MARK: - 工具 Emoji 映射
+    
+    /// 获取工具对应的 emoji 图标
+    private func toolEmoji(for toolName: String) -> String {
+        let emojiMap: [String: String] = [
+            "read_file": "📖",
+            "write_file": "✍️",
+            "run_command": "⚡",
+            "list_directory": "📁",
+            "create_directory": "📂",
+            "move_file": "📦",
+            "search_files": "🔍",
+            "get_file_info": "ℹ️",
+            "bash": "⚡",
+            "glob": "🔎",
+            "edit": "✏️",
+            "str_replace_editor": "✏️",
+            "lsp": "💻",
+            "goto_definition": "➡️",
+            "find_references": "🔗",
+            "document": "📚",
+            "grep": "🔍"
+        ]
+        return emojiMap[toolName] ?? "🔧"
+    }
+
     private func handleToolCall(_ toolCall: ToolCall) async {
         if Self.verbose {
             os_log("\(self.t)⚙️ 正在执行工具：\(toolCall.name)")
@@ -632,7 +658,38 @@ class AssistantViewModel: ObservableObject, SuperLog {
             }
 
             // 1. 获取 LLM 响应
-            let responseMsg = try await llmService.sendMessage(messages: messages, config: config, tools: availableTools)
+            var responseMsg = try await llmService.sendMessage(messages: messages, config: config, tools: availableTools)
+            
+            // 检查内容是否为空（只有空白字符）
+            let hasContent = !responseMsg.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            let hasToolCalls = responseMsg.toolCalls != nil && !responseMsg.toolCalls!.isEmpty
+            
+            // 当无内容但有工具调用时，生成一个友好的提示消息
+            if !hasContent && hasToolCalls {
+                // 生成工具调用摘要
+                let toolSummary = responseMsg.toolCalls!.enumerated().map { index, tc in
+                    let emoji = toolEmoji(for: tc.name)
+                    return "\(emoji) \(tc.name)"
+                }.joined(separator: "\n")
+                
+                let prefix = languagePreference == .chinese 
+                    ? "🔧 正在执行 \(responseMsg.toolCalls!.count) 个工具："
+                    : "🔧 Executing \(responseMsg.toolCalls!.count) tools:"
+                
+                let enhancedContent = prefix + "\n" + toolSummary
+                responseMsg = ChatMessage(
+                    role: responseMsg.role,
+                    content: enhancedContent,
+                    isError: responseMsg.isError,
+                    toolCalls: responseMsg.toolCalls,
+                    toolCallID: responseMsg.toolCallID
+                )
+                
+                if Self.verbose {
+                    os_log("%{public}@📝 为空内容消息生成工具摘要", self.t)
+                }
+            }
+            
             messages.append(responseMsg)
             
             // 立即保存助手消息
