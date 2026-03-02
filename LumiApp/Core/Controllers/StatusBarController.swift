@@ -7,7 +7,7 @@ import SwiftUI
 @MainActor
 class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
     nonisolated static let emoji = "📊"
-    static let verbose = true
+    static let verbose = false
 
     // MARK: - Properties
 

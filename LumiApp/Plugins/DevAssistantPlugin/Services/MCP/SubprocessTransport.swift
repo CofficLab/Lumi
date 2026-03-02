@@ -1,4 +1,3 @@
-
 import Foundation
 import MCP
 import OSLog
@@ -7,6 +6,9 @@ import Logging
 
 /// A Transport that communicates with a subprocess via Stdio
 actor SubprocessTransport: Transport, SuperLog {
+    nonisolated static let emoji = "📟"
+    nonisolated static let verbose = false
+    
     nonisolated let logger: Logging.Logger
     let command: String
     let arguments: [String]
@@ -52,6 +54,10 @@ actor SubprocessTransport: Transport, SuperLog {
              }
         }
         
+        if Self.verbose {
+            os_log("\(Self.t)Starting subprocess: \(executablePath) \(self.arguments.joined(separator: " "))")
+        }
+        
         let process = Process()
         process.executableURL = URL(fileURLWithPath: executablePath)
         process.arguments = arguments
@@ -81,13 +87,19 @@ actor SubprocessTransport: Transport, SuperLog {
         
         do {
             try process.run()
+            if Self.verbose {
+                os_log("\(Self.t)✅ Subprocess started: \(executablePath)")
+            }
         } catch {
-            os_log(.error, "\(Self.t)Failed to run process \(executablePath): \(error)")
+            os_log(.error, "\(Self.t)❌ Failed to run process \(executablePath): \(error)")
             throw error
         }
     }
     
     func disconnect() async {
+        if Self.verbose {
+            os_log("\(Self.t)Stopping subprocess: \(self.command)")
+        }
         process?.terminate()
         process = nil
         messageContinuation.finish()
@@ -107,6 +119,12 @@ actor SubprocessTransport: Transport, SuperLog {
                 try stdin.fileHandleForWriting.write(contentsOf: newlineData)
              }
         }
+        
+        if Self.verbose {
+            if let str = String(data: data, encoding: .utf8) {
+                os_log("\(Self.t)📤 Sent: \(str.prefix(200))")
+            }
+        }
     }
     
     func receive() -> AsyncThrowingStream<Data, Error> {
@@ -123,11 +141,16 @@ actor SubprocessTransport: Transport, SuperLog {
             for try await line in handle.bytes.lines {
                 // Each line is a message
                 if let data = line.data(using: .utf8) {
+                    if Self.verbose {
+                        if let str = String(data: data, encoding: .utf8) {
+                            os_log("\(Self.t)📥 Received: \(str.prefix(200))")
+                        }
+                    }
                     messageContinuation.yield(data)
                 }
             }
         } catch {
-             os_log(.error, "Error reading from stdout: \(error.localizedDescription)")
+             os_log(.error, "\(Self.t)❌ Error reading from stdout: \(error.localizedDescription)")
              messageContinuation.finish(throwing: error)
              return
         }
@@ -140,10 +163,12 @@ actor SubprocessTransport: Transport, SuperLog {
         let handle = pipe.fileHandleForReading
         do {
             for try await line in handle.bytes.lines {
-                os_log(.debug, "\(Self.t)[MCP Stderr] \(line)")
+                if Self.verbose {
+                    os_log("\(Self.t)[MCP Stderr] \(line)")
+                }
             }
         } catch {
-             os_log(.error, "Error reading from stderr: \(error.localizedDescription)")
+             os_log(.error, "\(Self.t)❌ Error reading from stderr: \(error.localizedDescription)")
         }
     }
     
@@ -171,11 +196,14 @@ actor SubprocessTransport: Transport, SuperLog {
             if let path = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines), !path.isEmpty {
                 // Check if the path actually exists
                 if FileManager.default.fileExists(atPath: path) {
+                    if Self.verbose {
+                        os_log("\(Self.t)Resolved command '\(command)' to: \(path)")
+                    }
                     return path
                 }
             }
         } catch {
-            os_log(.error, "Failed to resolve command \(command): \(error.localizedDescription)")
+            os_log(.error, "\(Self.t)❌ Failed to resolve command \(command): \(error.localizedDescription)")
         }
         
         // Common fallback paths for Homebrew and system
@@ -188,11 +216,17 @@ actor SubprocessTransport: Transport, SuperLog {
         
         for path in commonPaths {
             if FileManager.default.fileExists(atPath: path) {
+                if Self.verbose {
+                    os_log("\(Self.t)Resolved command '\(command)' to fallback path: \(path)")
+                }
                 return path
             }
         }
         
         // Final fallback
+        if Self.verbose {
+            os_log("\(Self.t)⚠️ Using final fallback for command '\(command)': /usr/bin/\(command)")
+        }
         return "/usr/bin/\(command)"
     }
 }

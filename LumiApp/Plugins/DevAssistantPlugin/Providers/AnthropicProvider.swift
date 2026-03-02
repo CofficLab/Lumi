@@ -100,19 +100,20 @@ struct AnthropicProvider: LLMProviderProtocol, SuperLog {
             }
 
             for tc in toolCalls {
-                let argsObject: Any
+                // 确保 input 始终是一个有效的字典
+                let inputObject: [String: Any]
                 if let data = tc.arguments.data(using: .utf8),
-                   let json = try? JSONSerialization.jsonObject(with: data) {
-                    argsObject = json
+                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    inputObject = json
                 } else {
-                    argsObject = [:]
+                    inputObject = [:]
                 }
 
                 content.append([
                     "type": "tool_use",
                     "id": tc.id,
                     "name": tc.name,
-                    "input": argsObject,
+                    "input": inputObject,
                 ])
             }
 

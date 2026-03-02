@@ -47,24 +47,35 @@ struct ProjectTreeView: View {
     // MARK: - Header Section
 
     private var headerSection: some View {
-        HStack {
-            Image(systemName: "folder.fill")
-                .font(.system(size: 14))
-                .foregroundColor(.accentColor)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Image(systemName: "folder.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(.accentColor)
 
-            Text("项目文件")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                Text("项目文件")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
-            Spacer()
+                Spacer()
 
-            // 刷新按钮
-            Button(action: refresh) {
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 10))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                // 刷新按钮
+                Button(action: refresh) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 10))
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
+
+            // 项目路径
+            if let projectRoot = projectRoot {
+                Text(projectRoot.path)
+                    .font(.system(size: 9))
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                    .lineLimit(2)
+                    .truncationMode(.middle)
+            }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)

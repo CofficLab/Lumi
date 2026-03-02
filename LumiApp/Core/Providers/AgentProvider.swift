@@ -1,10 +1,15 @@
 import Combine
+import MagicKit
 import Foundation
 import OSLog
+import SwiftData
 
 /// Agent 模式提供者，管理 Agent 模式下的核心状态和服务
 @MainActor
-final class AgentProvider: ObservableObject {
+final class AgentProvider: ObservableObject, SuperLog {
+    nonisolated static let emoji = "🤖"
+    nonisolated static let verbose = false
+    
     /// 全局单例
     static let shared = AgentProvider()
 
@@ -33,11 +38,25 @@ final class AgentProvider: ObservableObject {
     /// 是否已选择文件
     @Published var isFileSelected: Bool = false
 
+    // MARK: - 当前选择的会话
+
+    /// 当前选择的会话 ID
+    @Published var selectedConversationId: UUID? {
+        didSet {
+            if let id = selectedConversationId {
+                UserDefaults.standard.set(id.uuidString, forKey: "Agent_SelectedConversationId")
+                // 通知加载对话
+                NotificationCenter.default.post(name: .conversationSelected, object: id)
+            } else {
+                UserDefaults.standard.removeObject(forKey: "Agent_SelectedConversationId")
+            }
+        }
+    }
+
     // MARK: - 语言偏好
 
     @Published var languagePreference: LanguagePreference = .chinese {
         didSet {
-            // 保存到 UserDefaults
             if let encoded = try? JSONEncoder().encode(languagePreference) {
                 UserDefaults.standard.set(encoded, forKey: "Agent_LanguagePreference")
             }
@@ -83,13 +102,67 @@ final class AgentProvider: ObservableObject {
         loadPreferences()
     }
 
+    // MARK: - 会话选择
+
+    /// 选择指定会话
+    func selectConversation(_ id: UUID) {
+        selectedConversationId = id
+        if Self.verbose {
+            os_log("\(Self.t)已选择会话：\(id)")
+        }
+    }
+
+    /// 清除会话选择
+    func clearConversationSelection() {
+        selectedConversationId = nil
+    }
+
+    /// 恢复上次选择的会话（需要验证会话是否存在）
+    func restoreSelectedConversation(modelContext: ModelContext?) {
+        guard let savedId = UserDefaults.standard.string(forKey: "Agent_SelectedConversationId"),
+              let uuid = UUID(uuidString: savedId) else {
+            return
+        }
+
+        // 如果有 modelContext，验证会话是否存在
+        if let context = modelContext {
+            let descriptor = FetchDescriptor<Conversation>(
+                predicate: #Predicate { $0.id == uuid }
+            )
+
+            do {
+                let conversations = try context.fetch(descriptor)
+                if conversations.isEmpty {
+                    // 会话已不存在，清除保存的 ID
+                    if Self.verbose {
+                        os_log("\(Self.t)⚠️ 上次选择的会话已不存在，清除保存状态")
+                    }
+                    UserDefaults.standard.removeObject(forKey: "Agent_SelectedConversationId")
+                    return
+                }
+                // 会话存在，恢复选择
+                selectedConversationId = uuid
+                if Self.verbose {
+                    os_log("\(Self.t)✅ 已恢复会话选择：\(uuid)")
+                }
+            } catch {
+                os_log(.error, "\(Self.t)❌ 验证会话失败：\(error.localizedDescription)")
+            }
+        } else {
+            // 没有 modelContext，直接恢复（可能在初始化阶段）
+            selectedConversationId = uuid
+            if Self.verbose {
+                os_log("\(Self.t)ℹ️ 已恢复会话选择（未验证）: \(uuid)")
+            }
+        }
+    }
+
     // MARK: - 项目管理
 
     /// 切换到指定项目
     func switchProject(to path: String) {
         let projectURL = URL(fileURLWithPath: path)
 
-        // 验证路径是否存在
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory),
               isDirectory.boolValue else {
@@ -102,38 +175,33 @@ final class AgentProvider: ObservableObject {
         currentProjectPath = path
         isProjectSelected = true
 
-        // 保存到 UserDefaults（记住上次选择的项目）
         UserDefaults.standard.set(path, forKey: "Agent_SelectedProject")
-
-        // 保存到最近使用列表
         saveRecentProject(name: projectName, path: path)
 
-        // 获取或创建项目配置
         let config = ProjectConfigStore.shared.getOrCreateConfig(for: path)
-
-        // 应用项目配置
         applyProjectConfig(config)
 
-        // 更新 ContextService
         Task {
             await ContextService.shared.setProjectRoot(projectURL)
         }
-
+        
         if Self.verbose {
-            os_log("[AgentProvider] 已切换到项目：\(projectName) (\(path))")
+            os_log("\(Self.t)📁 已切换项目：\(projectName)")
         }
     }
 
     /// 应用项目配置
     func applyProjectConfig(_ config: ProjectConfig) {
-        // 切换供应商
         if !config.providerId.isEmpty {
             selectedProviderId = config.providerId
         }
 
-        // 切换模型
         if !config.model.isEmpty {
             selectedModel = config.model
+        }
+        
+        if Self.verbose {
+            os_log("\(Self.t)⚙️ 已应用项目配置")
         }
     }
 
@@ -147,25 +215,27 @@ final class AgentProvider: ObservableObject {
             model: selectedModel
         )
         ProjectConfigStore.shared.saveConfig(config)
+        
+        if Self.verbose {
+            os_log("\(Self.t)💾 已保存项目配置")
+        }
     }
 
     /// 保存最近使用的项目
     private func saveRecentProject(name: String, path: String) {
         var projects = getRecentProjects()
-
-        // 移除已存在的同名项目
         projects.removeAll { $0.path == path }
 
-        // 添加新项目到开头
         let newProject = RecentProject(name: name, path: path, lastUsed: Date())
         projects.insert(newProject, at: 0)
-
-        // 只保留最近 5 个
         projects = Array(projects.prefix(5))
 
-        // 保存到 UserDefaults
         if let data = try? JSONEncoder().encode(projects) {
             UserDefaults.standard.set(data, forKey: "Agent_RecentProjects")
+        }
+        
+        if Self.verbose {
+            os_log("\(Self.t)📋 已保存最近项目：\(name)")
         }
     }
 
@@ -186,13 +256,12 @@ final class AgentProvider: ObservableObject {
         selectedFilePath = url.path
         isFileSelected = true
 
-        // 异步加载文件内容
         Task {
             await loadFileContent(from: url)
         }
 
         if Self.verbose {
-            os_log("[AgentProvider] 已选择文件：\(url.lastPathComponent)")
+            os_log("\(Self.t)📄 已选择文件：\(url.lastPathComponent)")
         }
     }
 
@@ -207,6 +276,7 @@ final class AgentProvider: ObservableObject {
             await MainActor.run {
                 selectedFileContent = "无法加载文件内容：\(error.localizedDescription)"
             }
+            os_log(.error, "\(Self.t)❌ 加载文件失败：\(error.localizedDescription)")
         }
     }
 
@@ -245,9 +315,14 @@ final class AgentProvider: ObservableObject {
         if let savedPath = UserDefaults.standard.string(forKey: "Agent_SelectedProject") {
             switchProject(to: savedPath)
         }
+
+        // 注意：会话选择不在此处恢复，因为需要等待 SwiftData 初始化完成
+        // 应该在视图获取到 modelContext 后调用 restoreSelectedConversation
     }
+}
 
-    // MARK: - 日志
+// MARK: - Notification Names
 
-    nonisolated static let verbose = true
+extension Notification.Name {
+    static let conversationSelected = Notification.Name("conversationSelected")
 }

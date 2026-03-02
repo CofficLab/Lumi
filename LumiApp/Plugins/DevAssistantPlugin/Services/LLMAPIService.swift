@@ -8,7 +8,7 @@ import MagicKit
 @MainActor
 class LLMAPIService: SuperLog {
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     static let shared = LLMAPIService()
 
@@ -150,20 +150,14 @@ class LLMAPIService: SuperLog {
             do {
                 let jsonData = try JSONSerialization.data(withJSONObject: body)
                 request.httpBody = jsonData
-
-                if Self.verbose {
-                    if let jsonString = String(data: jsonData, encoding: .utf8) {
-                        os_log("\(self.t)LLM 请求体: \(jsonString.prefix(500))...")
-                    }
-                }
             } catch {
-                os_log(.error, "\(self.t)JSON 序列化失败: \(error.localizedDescription)")
+                os_log(.error, "\(self.t)JSON 序列化失败：\(error.localizedDescription)")
                 throw APIError.jsonSerializationFailed(underlying: error)
             }
         }
 
         if Self.verbose {
-            os_log("\(self.t)发送 LLM \(method.rawValue) 请求到: \(url.absoluteString)")
+            os_log("\(self.t)发送 LLM \(method.rawValue) 请求到：\(url.absoluteString)")
         }
 
         do {
@@ -179,7 +173,7 @@ class LLMAPIService: SuperLog {
         } catch let error as APIError {
             throw error
         } catch {
-            os_log(.error, "\(self.t)LLM 请求失败: \(error.localizedDescription)")
+            os_log(.error, "\(self.t)LLM 请求失败：\(error.localizedDescription)")
             throw APIError.requestFailed(underlying: error)
         }
     }
@@ -197,7 +191,7 @@ class LLMAPIService: SuperLog {
             let errorMessage = """
             HTTP Error (\(httpResponse.statusCode))
             URL: \(response.url?.absoluteString ?? "Unknown")
-            Response: \(errorStr.prefix(500))
+            Response: \(errorStr)
             """
 
             throw APIError.httpError(

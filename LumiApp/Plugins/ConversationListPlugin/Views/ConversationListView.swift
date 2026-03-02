@@ -3,146 +3,125 @@ import MagicKit
 import SwiftData
 import OSLog
 
-private let logger = Logger(subsystem: "com.cofficlab.lumi", category: "ConversationList")
-
-/// 对话列表视图 - 仅显示数据库中的对话列表
-struct ConversationListView: View {
+/// 对话列表视图 - 使用 List 渲染
+struct ConversationListView: View, SuperLog {
+    nonisolated static let emoji = "💬"
+    nonisolated static let verbose = false
+    
     @Environment(\.modelContext) private var modelContext
+    @ObservedObject var agentProvider = AgentProvider.shared
     
     @Query(sort: \Conversation.updatedAt, order: .reverse)
     private var conversations: [Conversation]
     
+    @State private var hasRestoredSelection = false
+    
     var body: some View {
         VStack(spacing: 0) {
             // 标题栏
-            headerSection
+            ConversationListHeader()
 
             Divider()
                 .background(Color.white.opacity(0.1))
 
             // 对话列表内容
             if conversations.isEmpty {
-                emptyView
+                ConversationListEmptyView()
             } else {
-                conversationListView
+                conversationList
             }
         }
         .padding(.vertical, 8)
         .background(DesignTokens.Material.glassThick)
         .task {
-            // 调试：打印模型上下文和对话数量
-            logger.info("🔍 modelContext: \(modelContext != nil ? "存在" : "不存在")")
-            logger.info("📊 对话数量：\(conversations.count)")
-            if !conversations.isEmpty {
-                for conversation in conversations {
-                    logger.info("  - \(conversation.title) (项目：\(conversation.projectId ?? "无"))")
-                }
+            if Self.verbose {
+                os_log("\(Self.t)对话数量：\(conversations.count)")
+            }
+            
+            // 首次加载时恢复上次选择的会话
+            if !hasRestoredSelection && !conversations.isEmpty {
+                restoreSelectionIfNeeded()
+                hasRestoredSelection = true
+            }
+        }
+        .onChange(of: conversations.count) { oldCount, newCount in
+            // 如果列表从空变为有数据，恢复选择
+            if oldCount == 0 && newCount > 0 && !hasRestoredSelection {
+                restoreSelectionIfNeeded()
+                hasRestoredSelection = true
             }
         }
     }
 
-    // MARK: - Header Section
+    // MARK: - Restore Selection
 
-    private var headerSection: some View {
-        HStack {
-            Image(systemName: "message.fill")
-                .font(.system(size: 14))
-                .foregroundColor(.accentColor)
-
-            Text("对话历史")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-
-            Spacer()
+    /// 恢复上次选择的会话
+    private func restoreSelectionIfNeeded() {
+        // 如果已经有选中的会话，不需要恢复
+        if agentProvider.selectedConversationId != nil {
+            if Self.verbose {
+                os_log("\(Self.t)已有选中的会话，跳过恢复")
+            }
+            return
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        
+        // 调用 AgentProvider 的恢复方法（会验证会话是否存在）
+        agentProvider.restoreSelectedConversation(modelContext: modelContext)
+        
+        if let restoredId = agentProvider.selectedConversationId {
+            os_log("\(Self.t)✅ 已恢复会话选择：\(restoredId)")
+        } else {
+            if Self.verbose {
+                os_log("\(Self.t)ℹ️ 没有保存的会话选择")
+            }
+        }
     }
 
-    // MARK: - Conversation List View
+    // MARK: - Conversation List
 
-    private var conversationListView: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 4) {
-                ForEach(conversations) { conversation in
-                    ConversationItemView(conversation: conversation)
-                }
-            }
-            .padding(.horizontal, 4)
+    private var conversationList: some View {
+        List(conversations, selection: $agentProvider.selectedConversationId) { conversation in
+            ConversationItemView(
+                conversation: conversation,
+                onDelete: { handleDelete(conversation) }
+            )
+            .tag(conversation.id)
         }
         .scrollIndicators(.hidden)
+        .listStyle(.plain)
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+        .listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 8))
     }
-
-    // MARK: - Empty View
-
-    private var emptyView: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "message")
-                .font(.system(size: 24))
-                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-
-            Text("暂无对话")
-                .font(.system(size: 10))
-                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-        }
-        .padding(.vertical, 20)
-        .frame(maxWidth: .infinity)
-    }
-}
-
-// MARK: - Conversation Item View
-
-struct ConversationItemView: View {
-    let conversation: Conversation
     
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                // 图标
-                Image(systemName: "message")
-                    .font(.system(size: 10))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                    .frame(width: 14)
-                
-                // 标题
-                Text(conversation.title)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                
-                Spacer()
-            }
-            .padding(.horizontal, 6)
-            .padding(.vertical, 4)
-            
-            // 时间戳和项目信息
-            HStack {
-                if let projectId = conversation.projectId {
-                    let projectName = URL(fileURLWithPath: projectId).lastPathComponent
-                    Text(projectName)
-                        .font(.system(size: 8))
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                        .lineLimit(1)
-                    
-                    Text("•")
-                        .font(.system(size: 6))
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+    // MARK: - Delete Handler
+    
+    /// 处理删除会话
+    private func handleDelete(_ conversation: Conversation) {
+        os_log("\(Self.t)🗑️ 开始删除对话：\(conversation.title)")
+        
+        // 如果删除的是当前选中的会话，且还有其他会话，自动切换到最新的
+        if agentProvider.selectedConversationId == conversation.id {
+            let remainingConversations = conversations.filter { $0.id != conversation.id }
+            if let nextConversation = remainingConversations.first {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    agentProvider.selectedConversationId = nextConversation.id
+                    os_log("\(Self.t)🔄 已自动切换到对话：\(nextConversation.title)")
                 }
-                
-                Text(conversation.updatedAt.formatted(.relative(presentation: .named)))
-                    .font(.system(size: 8))
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+            } else {
+                agentProvider.selectedConversationId = nil
+                os_log("\(Self.t)📭 没有剩余会话，已清空选中状态")
             }
-            .padding(.horizontal, 6)
-            .padding(.bottom, 4)
+        }
+        
+        // 使用当前视图的 modelContext 删除，确保 @Query 能检测到变化
+        modelContext.delete(conversation)
+        
+        do {
+            try modelContext.save()
+            os_log("\(Self.t)✅ 对话已删除：\(conversation.title)")
+        } catch {
+            os_log(.error, "\(Self.t)❌ 删除对话失败：\(error.localizedDescription)")
         }
     }
-}
-
-#Preview {
-    ConversationListView()
-        .frame(width: 220, height: 400)
-        .modelContainer(for: [Conversation.self, ChatMessageEntity.self])
-        .inRootView()
 }

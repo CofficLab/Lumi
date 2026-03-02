@@ -16,7 +16,7 @@ struct MarkdownMessageView: View {
                 if message.role == .user {
                     // 用户消息：使用 InlineText
                     InlineText(markdown: message.content)
-                        .textSelection(.enabled)
+                        .textual.textSelection(.enabled)
                 } else {
                     // 助手消息：使用 StructuredText 支持完整 Markdown
                     StructuredText(markdown: message.content)

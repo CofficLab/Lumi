@@ -8,7 +8,7 @@ import OSLog
 @MainActor
 class AssistantViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🤖"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     // MARK: - 发布状态
 
@@ -101,7 +101,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
     @Published var currentConversation: Conversation?
     
     /// 聊天历史服务
-    private let chatHistoryService = ChatHistoryService.shared
+    let chatHistoryService = ChatHistoryService.shared
     
     /// 标记是否已生成标题
     private var hasGeneratedTitle: Bool = false
@@ -225,7 +225,10 @@ class AssistantViewModel: ObservableObject, SuperLog {
                     projectPath: initialCurrentProjectPath,
                     language: initialLanguagePreference
                 )
-                messages.append(ChatMessage(role: .assistant, content: welcomeMsg))
+                let welcomeMessage = ChatMessage(role: .assistant, content: welcomeMsg)
+                messages.append(welcomeMessage)
+                // 保存欢迎消息到数据库
+                saveMessage(welcomeMessage)
             }
         }
 
@@ -436,11 +439,13 @@ class AssistantViewModel: ObservableObject, SuperLog {
     private func executePendingTool(request: PermissionRequest) async {
         // 使用 ToolManager 查找工具
         guard toolManager.hasTool(named: request.toolName) else {
-            messages.append(ChatMessage(
+            let errorMsg = ChatMessage(
                 role: .user,
                 content: "Error: Tool '\(request.toolName)' not found.",
                 toolCallID: request.toolCallID
-            ))
+            )
+            messages.append(errorMsg)
+            saveMessage(errorMsg)
             await processPendingTools()
             return
         }
@@ -452,19 +457,23 @@ class AssistantViewModel: ObservableObject, SuperLog {
                 arguments: request.arguments
             )
 
-            messages.append(ChatMessage(
+            let resultMsg = ChatMessage(
                 role: .user,
                 content: result,
                 toolCallID: request.toolCallID
-            ))
+            )
+            messages.append(resultMsg)
+            saveMessage(resultMsg)
 
             await processPendingTools()
         } catch {
-            messages.append(ChatMessage(
+            let errorMsg = ChatMessage(
                 role: .user,
                 content: "Error executing tool: \(error.localizedDescription)",
                 toolCallID: request.toolCallID
-            ))
+            )
+            messages.append(errorMsg)
+            saveMessage(errorMsg)
             await processPendingTools()
         }
     }
@@ -482,6 +491,32 @@ class AssistantViewModel: ObservableObject, SuperLog {
             }
             await processTurn(depth: currentDepth + 1)
         }
+    }
+
+    // MARK: - 工具 Emoji 映射
+    
+    /// 获取工具对应的 emoji 图标
+    private func toolEmoji(for toolName: String) -> String {
+        let emojiMap: [String: String] = [
+            "read_file": "📖",
+            "write_file": "✍️",
+            "run_command": "⚡",
+            "list_directory": "📁",
+            "create_directory": "📂",
+            "move_file": "📦",
+            "search_files": "🔍",
+            "get_file_info": "ℹ️",
+            "bash": "⚡",
+            "glob": "🔎",
+            "edit": "✏️",
+            "str_replace_editor": "✏️",
+            "lsp": "💻",
+            "goto_definition": "➡️",
+            "find_references": "🔗",
+            "document": "📚",
+            "grep": "🔍"
+        ]
+        return emojiMap[toolName] ?? "🔧"
     }
 
     private func handleToolCall(_ toolCall: ToolCall) async {
@@ -535,11 +570,13 @@ class AssistantViewModel: ObservableObject, SuperLog {
         // 使用 ToolManager 查找工具
         guard toolManager.hasTool(named: toolCall.name) else {
             os_log(.error, "\(self.t)❌ 工具 '\(toolCall.name)' 未找到")
-            messages.append(ChatMessage(
+            let errorMsg = ChatMessage(
                 role: .user,
                 content: "Error: Tool '\(toolCall.name)' not found.",
                 toolCallID: toolCall.id
-            ))
+            )
+            messages.append(errorMsg)
+            saveMessage(errorMsg)
             await processPendingTools()
             return
         }
@@ -563,20 +600,24 @@ class AssistantViewModel: ObservableObject, SuperLog {
 
             let duration = Date().timeIntervalSince(startTime)
 
-            messages.append(ChatMessage(
+            let resultMsg = ChatMessage(
                 role: .user,
                 content: result,
                 toolCallID: toolCall.id
-            ))
+            )
+            messages.append(resultMsg)
+            saveMessage(resultMsg)
 
             await processPendingTools()
         } catch {
             os_log(.error, "\(self.t)❌ 工具执行失败：\(error.localizedDescription)")
-            messages.append(ChatMessage(
+            let errorMsg = ChatMessage(
                 role: .user,
                 content: "Error executing tool: \(error.localizedDescription)",
                 toolCallID: toolCall.id
-            ))
+            )
+            messages.append(errorMsg)
+            saveMessage(errorMsg)
             await processPendingTools()
         }
     }
@@ -617,7 +658,38 @@ class AssistantViewModel: ObservableObject, SuperLog {
             }
 
             // 1. 获取 LLM 响应
-            let responseMsg = try await llmService.sendMessage(messages: messages, config: config, tools: availableTools)
+            var responseMsg = try await llmService.sendMessage(messages: messages, config: config, tools: availableTools)
+            
+            // 检查内容是否为空（只有空白字符）
+            let hasContent = !responseMsg.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            let hasToolCalls = responseMsg.toolCalls != nil && !responseMsg.toolCalls!.isEmpty
+            
+            // 当无内容但有工具调用时，生成一个友好的提示消息
+            if !hasContent && hasToolCalls {
+                // 生成工具调用摘要
+                let toolSummary = responseMsg.toolCalls!.enumerated().map { index, tc in
+                    let emoji = toolEmoji(for: tc.name)
+                    return "\(emoji) \(tc.name)"
+                }.joined(separator: "\n")
+                
+                let prefix = languagePreference == .chinese 
+                    ? "🔧 正在执行 \(responseMsg.toolCalls!.count) 个工具："
+                    : "🔧 Executing \(responseMsg.toolCalls!.count) tools:"
+                
+                let enhancedContent = prefix + "\n" + toolSummary
+                responseMsg = ChatMessage(
+                    role: responseMsg.role,
+                    content: enhancedContent,
+                    isError: responseMsg.isError,
+                    toolCalls: responseMsg.toolCalls,
+                    toolCallID: responseMsg.toolCallID
+                )
+                
+                if Self.verbose {
+                    os_log("%{public}@📝 为空内容消息生成工具摘要", self.t)
+                }
+            }
+            
             messages.append(responseMsg)
             
             // 立即保存助手消息
@@ -838,7 +910,10 @@ class AssistantViewModel: ObservableObject, SuperLog {
                     projectPath: currentProjectPath,
                     language: languagePreference
                 )
-                messages.append(ChatMessage(role: .assistant, content: welcomeMsg))
+                let welcomeMessage = ChatMessage(role: .assistant, content: welcomeMsg)
+                messages.append(welcomeMessage)
+                // 保存欢迎消息到数据库
+                saveMessage(welcomeMessage)
             }
 
             if Self.verbose {
@@ -874,6 +949,56 @@ class AssistantViewModel: ObservableObject, SuperLog {
     }
 
     /// 通知模式切换到对话模式
+
+    // MARK: - 加载历史对话
+
+    /// 加载指定对话的消息
+    func loadConversation(_ conversation: Conversation) async {
+        if Self.verbose {
+            os_log("\(self.t)📥 开始加载对话：\(conversation.title)")
+        }
+        
+        await MainActor.run {
+            // 重置状态
+            withAnimation {
+                depthWarning = nil
+                errorMessage = nil
+                isProcessing = false
+                currentInput = ""
+                pendingAttachments.removeAll()
+            }
+        }
+        
+        // 设置当前对话
+        currentConversation = conversation
+        
+        // 加载消息
+        let loadedMessages = chatHistoryService.loadMessages(for: conversation)
+        
+        if Self.verbose {
+            os_log("\(self.t)📥 加载到 \(loadedMessages.count) 条消息")
+        }
+        
+        // 获取系统提示
+        let fullSystemPrompt = await promptService.buildSystemPrompt(
+            languagePreference: languagePreference,
+            includeContext: isProjectSelected
+        )
+        
+        await MainActor.run {
+            // 保留系统消息，添加历史消息
+            var newMessages: [ChatMessage] = [ChatMessage(role: .system, content: fullSystemPrompt)]
+            newMessages.append(contentsOf: loadedMessages.filter { $0.role != .system })
+            
+            withAnimation {
+                messages = newMessages
+            }
+        }
+        
+        if Self.verbose {
+            os_log("\(self.t)✅ 对话加载完成：\(conversation.title)")
+        }
+    }
     private func notifyModeChangeToChat() async {
         let message: String
         switch languagePreference {
