@@ -96,6 +96,7 @@ struct ConversationItemView: View {
     let conversation: Conversation
     
     @ObservedObject var agentProvider = AgentProvider.shared
+    @State private var showDeleteConfirmation = false
     
     var isSelected: Bool {
         agentProvider.selectedConversationId == conversation.id
@@ -154,6 +155,36 @@ struct ConversationItemView: View {
         .onTapGesture {
             agentProvider.selectConversation(conversation.id)
         }
+        .contextMenu {
+            Button(role: .destructive) {
+                showDeleteConfirmation = true
+            } label: {
+                Label("删除对话", systemImage: "trash")
+            }
+        }
+        .alert("删除对话", isPresented: $showDeleteConfirmation) {
+            Button("取消", role: .cancel) { }
+            Button("删除", role: .destructive) {
+                deleteConversation()
+            }
+        } message: {
+            Text("确定要删除对话"\(conversation.title)"吗？此操作将彻底删除该对话的所有消息，且无法恢复。")
+        }
+    }
+    
+    /// 删除对话
+    private func deleteConversation() {
+        logger.info("🗑️ 开始删除对话：\(conversation.title)")
+        
+        // 如果当前选中的是对话，清除选中状态
+        if isSelected {
+            agentProvider.selectedConversationId = nil
+        }
+        
+        // 删除对话
+        ChatHistoryService.shared.deleteConversation(conversation)
+        
+        logger.info("✅ 对话已删除：\(conversation.title)")
     }
 }
 
