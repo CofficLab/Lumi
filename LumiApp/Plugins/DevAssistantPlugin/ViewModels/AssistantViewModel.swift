@@ -572,7 +572,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
     private func updateDepthWarning(currentDepth: Int, maxDepth: Int) {
         if currentDepth >= maxDepth - 1 {
             depthWarning = DepthWarning(currentDepth: currentDepth, maxDepth: maxDepth, warningType: .critical)
-        } else if currentDepth >= 7 {
+        } else if currentDepth >= maxDepth * 8 / 10 {
             depthWarning = DepthWarning(currentDepth: currentDepth, maxDepth: maxDepth, warningType: .approaching)
         } else {
             depthWarning = nil  // 清除警告
