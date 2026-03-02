@@ -11,12 +11,6 @@ struct ConversationItemView: View {
     
     var body: some View {
         HStack(spacing: 8) {
-            // 图标
-            Image(systemName: "message.fill")
-                .font(.system(size: 10))
-                .foregroundColor(.accentColor)
-                .frame(width: 14)
-            
             // 标题和元信息
             VStack(alignment: .leading, spacing: 4) {
                 // 标题

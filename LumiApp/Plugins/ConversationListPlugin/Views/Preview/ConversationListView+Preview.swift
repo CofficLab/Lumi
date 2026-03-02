@@ -27,33 +27,15 @@ import SwiftData
 
 // MARK: - ConversationItemView Preview
 
-#Preview("会话项 - 未选中") {
+#Preview("会话项") {
     let conversation = Conversation(
         projectId: "/Users/test/project",
         title: "如何实现数据绑定",
         createdAt: Date().addingTimeInterval(-3600),
-        updatedAt: Date().addingTimeInterval(-60)
+        updatedAt: Date()
     )
     
-    return ConversationItemView(conversation: conversation, onDelete: { _ in })
-        .frame(width: 220)
-        .padding()
-        .modelContainer(for: [Conversation.self, ChatMessageEntity.self])
-        .inRootView()
-}
-
-#Preview("会话项 - 选中") {
-    let conversation = Conversation(
-        projectId: "/Users/test/project",
-        title: "如何实现数据绑定",
-        createdAt: Date().addingTimeInterval(-3600),
-        updatedAt: Date().addingTimeInterval(-60)
-    )
-    
-    // 模拟选中状态
-    AgentProvider.shared.selectedConversationId = conversation.id
-    
-    return ConversationItemView(conversation: conversation, onDelete: { _ in })
+    return ConversationItemView(conversation: conversation, onDelete: { })
         .frame(width: 220)
         .padding()
         .modelContainer(for: [Conversation.self, ChatMessageEntity.self])
