@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import OSLog
+import MagicKit
 
 /// 聊天历史服务 - 使用 SwiftData 存储对话
 @MainActor
@@ -9,6 +10,7 @@ class ChatHistoryService {
     
     private var modelContainer: ModelContainer?
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.cofficlab.lumi", category: "ChatHistory")
+    private let llmService = LLMService.shared
     
     private init() {}
     
@@ -52,6 +54,83 @@ class ChatHistoryService {
         saveConversation(conversation)
         
         return conversation
+    }
+    
+    // MARK: - 更新对话标题
+    
+    /// 更新对话标题
+    func updateConversationTitle(_ conversation: Conversation, newTitle: String) {
+        guard let container = modelContainer else {
+            logger.error("❌ 模型容器未初始化")
+            return
+        }
+        
+        conversation.title = newTitle
+        conversation.updatedAt = Date()
+        
+        saveConversation(conversation)
+        
+        logger.info("✏️ 对话标题已更新：\(newTitle)")
+    }
+    
+    // MARK: - 生成会话标题
+    
+    /// 基于用户消息生成会话标题
+    /// - Parameters:
+    ///   - userMessage: 用户的第一条消息
+    ///   - config: LLM 配置
+    /// - Returns: 生成的标题（最多 20 个字符）
+    func generateConversationTitle(from userMessage: String, config: LLMConfig) async -> String {
+        // 如果消息很短（≤15 字符），直接用作标题
+        let trimmedMessage = userMessage.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedMessage.count <= 15 {
+            return String(trimmedMessage.prefix(20))
+        }
+        
+        // 否则使用 LLM 生成简洁标题
+        let titlePrompt = """
+        请为以下用户消息生成一个简洁的对话标题（最多 10 个中文字符或 15 个英文字符）：
+        
+        用户消息：\(trimmedMessage)
+        
+        要求：
+        - 标题要准确反映用户的核心需求
+        - 简洁明了
+        - 不要使用标点符号
+        - 直接返回标题，不要解释
+        """
+        
+        do {
+            let titleConfig = LLMConfig(
+                apiKey: config.apiKey,
+                model: config.model,
+                providerId: config.providerId
+            )
+            
+            // 使用简单的消息结构请求标题
+            let titleMessages: [ChatMessage] = [
+                ChatMessage(role: .user, content: titlePrompt)
+            ]
+            
+            let response = try await llmService.sendMessage(
+                messages: titleMessages,
+                config: titleConfig,
+                tools: []
+            )
+            
+            let generatedTitle = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            // 确保标题长度合适
+            if generatedTitle.count <= 20 {
+                return generatedTitle
+            } else {
+                return String(generatedTitle.prefix(20))
+            }
+        } catch {
+            logger.error("❌ 生成标题失败：\(error.localizedDescription)")
+            // 降级：使用消息的前 20 个字符作为标题
+            return String(trimmedMessage.prefix(20))
+        }
     }
     
     // MARK: - 保存消息

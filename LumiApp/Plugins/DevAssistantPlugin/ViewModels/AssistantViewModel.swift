@@ -102,6 +102,9 @@ class AssistantViewModel: ObservableObject, SuperLog {
     
     /// 聊天历史服务
     private let chatHistoryService = ChatHistoryService.shared
+    
+    /// 标记是否已生成标题
+    private var hasGeneratedTitle: Bool = false
 
     // MARK: - 供应商注册表
 
@@ -241,6 +244,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
             projectId: projectId,
             title: "新对话"
         )
+        hasGeneratedTitle = false  // 重置标题生成标记
         
         if Self.verbose {
             os_log("\(self.t)✅ 创建新对话：\(self.currentConversation?.title ?? "未知")")
@@ -257,6 +261,43 @@ class AssistantViewModel: ObservableObject, SuperLog {
         }
         
         chatHistoryService.saveMessage(message, to: conversation)
+    }
+    
+    /// 生成会话标题（如果是第一条用户消息）
+    private func generateTitleIfNeeded(userMessage: String) async {
+        // 只在以下条件下生成标题：
+        // 1. 尚未生成过标题
+        // 2. 当前对话是初始标题 "新对话"
+        // 3. 消息内容非空
+        guard !hasGeneratedTitle,
+              let conversation = currentConversation,
+              conversation.title == "新对话",
+              !userMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return
+        }
+        
+        hasGeneratedTitle = true
+        
+        if Self.verbose {
+            os_log("\(self.t)🎯 开始为对话生成标题...")
+        }
+        
+        // 获取当前 LLM 配置
+        let config = getCurrentConfig()
+        
+        // 生成标题
+        let title = await chatHistoryService.generateConversationTitle(
+            from: userMessage,
+            config: config
+        )
+        
+        // 更新对话标题
+        chatHistoryService.updateConversationTitle(conversation, newTitle: title)
+        currentConversation?.title = title
+        
+        if Self.verbose {
+            os_log("\(self.t)✅ 对话标题已生成：\(title)")
+        }
     }
 
     // MARK: - 项目选择提示
@@ -355,6 +396,9 @@ class AssistantViewModel: ObservableObject, SuperLog {
         
         // 立即保存用户消息
         saveMessage(userMsg)
+        
+        // 生成会话标题（如果是第一条用户消息）
+        await generateTitleIfNeeded(userMessage: finalContent)
 
         await processTurn()
     }
