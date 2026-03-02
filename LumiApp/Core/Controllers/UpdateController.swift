@@ -12,7 +12,7 @@ class UpdateController: NSObject, SuperLog {
     // MARK: - Properties
 
     /// Sparkle 更新控制器，提供应用自动更新功能
-    private let updaterController = SPUStandardUpdaterController(
+    let updaterController = SPUStandardUpdaterController(
         startingUpdater: true,
         updaterDelegate: nil,
         userDriverDelegate: nil
