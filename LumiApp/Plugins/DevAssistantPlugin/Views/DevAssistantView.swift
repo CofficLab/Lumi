@@ -64,6 +64,9 @@ struct DevAssistantView: View {
                         return true
                     }
                     return false
+                },
+                onStopGenerating: {
+                    viewModel.cancelCurrentTask()
                 }
             )
         }

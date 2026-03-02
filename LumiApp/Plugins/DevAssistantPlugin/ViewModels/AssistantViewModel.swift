@@ -28,6 +28,9 @@ class AssistantViewModel: ObservableObject, SuperLog {
     private var currentDepth: Int = 0
     private var cancellables = Set<AnyCancellable>()
 
+    // MARK: - 取消支持
+    private var currentTask: Task<Void, Never>?
+
     // MARK: - 项目信息（镜像 AgentProvider）
 
     @Published var currentProjectName: String = ""
@@ -277,7 +280,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
             return
         }
 
-        Task {
+        currentTask = Task {
             await processUserMessage(input)
         }
     }
@@ -582,6 +585,23 @@ class AssistantViewModel: ObservableObject, SuperLog {
     /// 清除深度警告（用户手动关闭）
     func dismissDepthWarning() {
         depthWarning = nil
+    }
+
+    /// 取消当前正在进行的任务
+    func cancelCurrentTask() {
+        if let task = currentTask {
+            task.cancel()
+            currentTask = nil
+            os_log("\(self.t)🛑 任务已取消")
+        }
+        // 清除工具队列
+        pendingToolCalls.removeAll()
+        pendingPermissionRequest = nil
+        // 重置处理状态
+        isProcessing = false
+        // 添加取消提示消息
+        let cancelMessage = languagePreference == .chinese ? "⚠️ 生成已取消" : "⚠️ Generation cancelled"
+        messages.append(ChatMessage(role: .assistant, content: cancelMessage))
     }
 
     // MARK: - 配置管理

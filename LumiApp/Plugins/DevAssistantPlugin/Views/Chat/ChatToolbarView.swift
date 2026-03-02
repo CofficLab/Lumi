@@ -1,11 +1,12 @@
 import SwiftUI
 
-/// 聊天工具栏视图 - 包含模式选择器、模型选择器、图片上传和发送按钮
+/// 聊天工具栏视图 - 包含模式选择器、模型选择器、图片上传和发送/停止按钮
 struct ChatToolbarView: View {
     @ObservedObject var viewModel: AssistantViewModel
     @Binding var isModelSelectorPresented: Bool
     let onImageUpload: () -> Void
     let onSendMessage: () -> Void
+    let onStopGenerating: () -> Void
 
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
@@ -20,11 +21,54 @@ struct ChatToolbarView: View {
 
             Spacer()
 
-            // 发送按钮
-            sendButton
+            // 发送/停止按钮
+            actionButton
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 8)
+    }
+
+    // MARK: - Action Button (Send / Stop)
+
+    @ViewBuilder
+    private var actionButton: some View {
+        if viewModel.isProcessing {
+            // 停止按钮 - 在处理中显示
+            Button(action: onStopGenerating) {
+                HStack(spacing: 4) {
+                    Image(systemName: "stop.fill")
+                        .font(.system(size: 12))
+                    Text(stopButtonText)
+                        .font(.system(size: 12))
+                        .fontWeight(.medium)
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Color.red)
+                .cornerRadius(16)
+            }
+            .buttonStyle(.plain)
+            .help("停止生成")
+        } else {
+            // 发送按钮 - 正常状态
+            Button(action: onSendMessage) {
+                Image(systemName: "paperplane.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(.white)
+                    .frame(width: 28, height: 28)
+                    .background(viewModel.currentInput.isEmpty || !viewModel.isProjectSelected ? Color.gray.opacity(0.5) : Color.accentColor)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .disabled(viewModel.currentInput.isEmpty || !viewModel.isProjectSelected)
+            .help("发送消息")
+        }
+    }
+
+    /// 停止按钮文本 - 根据语言选择
+    private var stopButtonText: String {
+        viewModel.languagePreference == .chinese ? "停止" : "Stop"
     }
 
     // MARK: - Mode Selector
@@ -111,29 +155,6 @@ struct ChatToolbarView: View {
         .buttonStyle(.plain)
         .help("Upload Image")
     }
-
-    // MARK: - Send Button
-
-    private var sendButton: some View {
-        Group {
-            if viewModel.isProcessing {
-                ProgressView()
-                    .controlSize(.small)
-                    .frame(width: 28, height: 28)
-            } else {
-                Button(action: onSendMessage) {
-                    Image(systemName: "paperplane.fill")
-                        .font(.system(size: 14))
-                        .foregroundColor(.white)
-                        .frame(width: 28, height: 28)
-                        .background(viewModel.currentInput.isEmpty || !viewModel.isProjectSelected ? Color.gray.opacity(0.5) : Color.accentColor)
-                        .clipShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .disabled(viewModel.currentInput.isEmpty || !viewModel.isProjectSelected)
-            }
-        }
-    }
 }
 
 #Preview {
@@ -141,7 +162,8 @@ struct ChatToolbarView: View {
         viewModel: AssistantViewModel(),
         isModelSelectorPresented: .constant(false),
         onImageUpload: {},
-        onSendMessage: {}
+        onSendMessage: {},
+        onStopGenerating: {}
     )
     .padding()
     .frame(width: 800)
