@@ -153,17 +153,22 @@ class LLMAPIService: SuperLog {
 
                 if Self.verbose {
                     if let jsonString = String(data: jsonData, encoding: .utf8) {
-                        os_log("\(self.t)LLM 请求体: \(jsonString.prefix(500))...")
+                        os_log("\(self.t)LLM 请求体：\(jsonString.prefix(1000))...")
+                        // 将完整请求体写入临时文件以便调试
+                        let tempDir = FileManager.default.temporaryDirectory
+                        let debugFile = tempDir.appendingPathComponent("llm_request_\(Date().timeIntervalSince1970).json")
+                        try? jsonString.write(to: debugFile, atomically: true, encoding: .utf8)
+                        os_log("\(self.t)完整请求体已写入临时文件：\(debugFile.path)")
                     }
                 }
             } catch {
-                os_log(.error, "\(self.t)JSON 序列化失败: \(error.localizedDescription)")
+                os_log(.error, "\(self.t)JSON 序列化失败：\(error.localizedDescription)")
                 throw APIError.jsonSerializationFailed(underlying: error)
             }
         }
 
         if Self.verbose {
-            os_log("\(self.t)发送 LLM \(method.rawValue) 请求到: \(url.absoluteString)")
+            os_log("\(self.t)发送 LLM \(method.rawValue) 请求到：\(url.absoluteString)")
         }
 
         do {
@@ -179,7 +184,7 @@ class LLMAPIService: SuperLog {
         } catch let error as APIError {
             throw error
         } catch {
-            os_log(.error, "\(self.t)LLM 请求失败: \(error.localizedDescription)")
+            os_log(.error, "\(self.t)LLM 请求失败：\(error.localizedDescription)")
             throw APIError.requestFailed(underlying: error)
         }
     }
@@ -197,7 +202,7 @@ class LLMAPIService: SuperLog {
             let errorMessage = """
             HTTP Error (\(httpResponse.statusCode))
             URL: \(response.url?.absoluteString ?? "Unknown")
-            Response: \(errorStr.prefix(500))
+            Response: \(errorStr)
             """
 
             throw APIError.httpError(

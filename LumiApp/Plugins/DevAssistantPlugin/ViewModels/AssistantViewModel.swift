@@ -436,11 +436,13 @@ class AssistantViewModel: ObservableObject, SuperLog {
     private func executePendingTool(request: PermissionRequest) async {
         // 使用 ToolManager 查找工具
         guard toolManager.hasTool(named: request.toolName) else {
-            messages.append(ChatMessage(
+            let errorMsg = ChatMessage(
                 role: .user,
                 content: "Error: Tool '\(request.toolName)' not found.",
                 toolCallID: request.toolCallID
-            ))
+            )
+            messages.append(errorMsg)
+            saveMessage(errorMsg)
             await processPendingTools()
             return
         }
@@ -452,19 +454,23 @@ class AssistantViewModel: ObservableObject, SuperLog {
                 arguments: request.arguments
             )
 
-            messages.append(ChatMessage(
+            let resultMsg = ChatMessage(
                 role: .user,
                 content: result,
                 toolCallID: request.toolCallID
-            ))
+            )
+            messages.append(resultMsg)
+            saveMessage(resultMsg)
 
             await processPendingTools()
         } catch {
-            messages.append(ChatMessage(
+            let errorMsg = ChatMessage(
                 role: .user,
                 content: "Error executing tool: \(error.localizedDescription)",
                 toolCallID: request.toolCallID
-            ))
+            )
+            messages.append(errorMsg)
+            saveMessage(errorMsg)
             await processPendingTools()
         }
     }
@@ -535,11 +541,13 @@ class AssistantViewModel: ObservableObject, SuperLog {
         // 使用 ToolManager 查找工具
         guard toolManager.hasTool(named: toolCall.name) else {
             os_log(.error, "\(self.t)❌ 工具 '\(toolCall.name)' 未找到")
-            messages.append(ChatMessage(
+            let errorMsg = ChatMessage(
                 role: .user,
                 content: "Error: Tool '\(toolCall.name)' not found.",
                 toolCallID: toolCall.id
-            ))
+            )
+            messages.append(errorMsg)
+            saveMessage(errorMsg)
             await processPendingTools()
             return
         }
@@ -563,20 +571,24 @@ class AssistantViewModel: ObservableObject, SuperLog {
 
             let duration = Date().timeIntervalSince(startTime)
 
-            messages.append(ChatMessage(
+            let resultMsg = ChatMessage(
                 role: .user,
                 content: result,
                 toolCallID: toolCall.id
-            ))
+            )
+            messages.append(resultMsg)
+            saveMessage(resultMsg)
 
             await processPendingTools()
         } catch {
             os_log(.error, "\(self.t)❌ 工具执行失败：\(error.localizedDescription)")
-            messages.append(ChatMessage(
+            let errorMsg = ChatMessage(
                 role: .user,
                 content: "Error executing tool: \(error.localizedDescription)",
                 toolCallID: toolCall.id
-            ))
+            )
+            messages.append(errorMsg)
+            saveMessage(errorMsg)
             await processPendingTools()
         }
     }
