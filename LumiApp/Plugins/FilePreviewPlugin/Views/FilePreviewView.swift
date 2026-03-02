@@ -26,7 +26,6 @@ struct FilePreviewView: View {
         }
         .padding(.vertical, 8)
         .background(DesignTokens.Material.glassThick)
-        .frame(width: 300)
     }
 
     // MARK: - Header Section
