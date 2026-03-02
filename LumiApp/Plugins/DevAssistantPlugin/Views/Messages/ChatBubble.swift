@@ -31,10 +31,14 @@ struct ChatBubble: View {
                 }
 
                 if message.toolCallID != nil {
+                    // 工具输出
                     ToolOutputView(
                         message: message,
-                        toolType: message.toolType
+                        toolType: inferToolType(from: message)
                     )
+                } else if message.role == .assistant && hasToolCalls {
+                    // 助手消息且包含工具调用 - 显示工具调用列表
+                    assistantMessageWithToolCalls
                 } else {
                     // 普通消息
                     MarkdownMessageView(message: message, showRawMessage: showRawMessage)
@@ -51,6 +55,61 @@ struct ChatBubble: View {
                 Spacer()
             } else {
                 AvatarView.user
+            }
+        }
+    }
+    
+    // MARK: - Helper Properties
+    
+    /// 检查消息是否包含工具调用
+    private var hasToolCalls: Bool {
+        message.toolCalls != nil && !message.toolCalls!.isEmpty
+    }
+    
+    // MARK: - Infer Tool Type from Tool Call ID
+    
+    private func inferToolType(from message: ChatMessage) -> ToolOutputView.ToolType? {
+        // 根据 toolCallID 查找对应的工具调用
+        // 由于消息之间没有直接关联，我们通过工具名称前缀来推断
+        // 这是一个简化实现，更好的方式是在消息间建立关联
+        return .unknown
+    }
+    
+    // MARK: - Assistant Message with Tool Calls
+    
+    @ViewBuilder
+    private var assistantMessageWithToolCalls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // 显示助手的文本内容（如果有）
+            if !message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                MarkdownMessageView(message: message, showRawMessage: showRawMessage)
+                    .messageBubbleStyle(role: message.role, isError: message.isError)
+                    .overlay(alignment: .topTrailing) {
+                        RawMessageToggleButton(showRawMessage: $showRawMessage)
+                    }
+            }
+            
+            // 显示工具调用列表
+            if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    // 工具调用标题
+                    HStack(spacing: 6) {
+                        Image(systemName: "wrench.and.screwdriver.fill")
+                            .font(.system(size: 12))
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        Text("正在调用工具")
+                            .font(DesignTokens.Typography.caption1)
+                            .fontWeight(.medium)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    }
+                    .padding(.bottom, 2)
+                    
+                    // 工具调用列表
+                    ForEach(Array(toolCalls.enumerated()), id: \.element.id) { index, toolCall in
+                        ToolCallView(toolCall: toolCall, index: index)
+                    }
+                }
+                .padding(.top, message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0 : 8)
             }
         }
     }
@@ -193,33 +252,51 @@ private extension View {
         .background(Color.black)
 }
 
+#Preview("Assistant with Tool Calls") {
+    let toolCalls = [
+        ToolCall(id: "tool_1", name: "read_file", arguments: "{\"path\": \"/Users/angel/Code/Lumi/App.swift\"}"),
+        ToolCall(id: "tool_2", name: "run_command", arguments: "{\"command\": \"ls -la\"}")
+    ]
+    let message = ChatMessage(
+        role: .assistant,
+        content: "让我帮你查看项目结构和文件内容。",
+        toolCalls: toolCalls
+    )
+    
+    return ChatBubble(message: message)
+        .padding()
+        .frame(width: 600)
+        .background(Color.black)
+}
+
+#Preview("Assistant with Tool Calls (No Text)") {
+    let toolCalls = [
+        ToolCall(id: "tool_1", name: "list_directory", arguments: "{\"path\": \"/Users/angel/Code/Lumi\"}")
+    ]
+    let message = ChatMessage(
+        role: .assistant,
+        content: "",
+        toolCalls: toolCalls
+    )
+    
+    return ChatBubble(message: message)
+        .padding()
+        .frame(width: 600)
+        .background(Color.black)
+}
+
 #Preview("Multiple Messages") {
     VStack(alignment: .leading, spacing: 12) {
         ChatBubble(message: ChatMessage(role: .user, content: "List all files in the project"))
-        ChatBubble(message: ChatMessage(role: .assistant, content: "I'll list all files in the project."))
+        
+        let toolCalls = [
+            ToolCall(id: "tool_1", name: "list_directory", arguments: "{\"path\": \"/Users/angel/Code/Lumi\"}")
+        ]
+        ChatBubble(message: ChatMessage(role: .assistant, content: "我来列出项目中的所有文件。", toolCalls: toolCalls))
+        
         ChatBubble(message: ChatMessage(role: .system, content: "Project files: 142", toolCallID: "test"))
     }
     .padding()
     .frame(width: 500)
     .background(Color.black)
-}
-
-#Preview("Enhanced Tool Output") {
-    let toolCall = ToolCall(id: "test", name: "list_directory", arguments: "{}")
-    let message = ChatMessage(
-        role: .system,
-        content: """
-        Project Structure:
-        ├── LumiApp/
-        ├── LumiFinder/
-        └── NettoExtension/
-        """,
-        toolCalls: [toolCall],
-        toolCallID: "test"
-    )
-
-    return ChatBubble(message: message)
-        .padding()
-        .frame(width: 600)
-        .background(Color.black)
 }

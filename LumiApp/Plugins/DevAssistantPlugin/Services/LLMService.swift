@@ -11,7 +11,7 @@ import MagicKit
 @MainActor
 class LLMService: SuperLog {
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     static let shared = LLMService()
 
