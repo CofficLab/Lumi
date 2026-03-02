@@ -2,17 +2,26 @@ import Foundation
 import SwiftData
 import SwiftUI
 
-/// 应用配置管理器，负责SwiftData容器配置和应用级设置
+/// 应用配置管理器，负责 SwiftData 容器配置和应用级设置
 enum AppConfig {
-    /// 获取配置好的SwiftData模型容器
-    /// - Returns: 配置完整的ModelContainer实例
+    /// 获取配置好的 SwiftData 模型容器
+    /// - Returns: 配置完整的 ModelContainer 实例
     static func getContainer() -> ModelContainer {
         let schema = Schema([
-            // 您的模型类型将在这里注册
+            Conversation.self,
+            ChatMessageEntity.self
         ])
 
-        // 配置SwiftData容器
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        // 获取数据库文件路径（不是目录）
+        let dbFileURL = getDBFileURL()
+        
+        // 配置 SwiftData 容器，使用自定义存储路径
+        let modelConfiguration = ModelConfiguration(
+            schema: schema,
+            url: dbFileURL,
+            allowsSave: true,
+            cloudKitDatabase: .none
+        )
 
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
@@ -31,7 +40,7 @@ enum AppConfig {
             fatalError("无法获取 App Support 目录")
         }
 
-        let bundleID = Bundle.main.bundleIdentifier ?? "com.cofficlab.App"
+        let bundleID = Bundle.main.bundleIdentifier ?? "com.cofficlab.Lumi"
         let appDirectory = appSupportURL.appendingPathComponent(bundleID, isDirectory: true)
 
         // 确保目录存在
@@ -58,7 +67,22 @@ enum AppConfig {
     /// - Returns: 数据库目录的 URL
     static func getDBFolderURL() -> URL {
         let appSupport = getCurrentAppSupportDir()
-        return appSupport.appendingPathComponent("Database", isDirectory: true)
+        let dbDirectory = appSupport.appendingPathComponent("Database", isDirectory: true)
+        
+        // 确保数据库目录存在
+        let fileManager = FileManager.default
+        if !fileManager.fileExists(atPath: dbDirectory.path) {
+            try? fileManager.createDirectory(at: dbDirectory, withIntermediateDirectories: true, attributes: nil)
+        }
+        
+        return dbDirectory
+    }
+    
+    /// 获取数据库文件路径（包含具体文件名）
+    /// - Returns: 数据库文件的 URL
+    static func getDBFileURL() -> URL {
+        let dbDirectory = getDBFolderURL()
+        return dbDirectory.appendingPathComponent("Lumi.db")
     }
 }
 
