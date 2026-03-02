@@ -5,7 +5,6 @@ import MagicKit
 /// 文件预览视图
 struct FilePreviewView: View {
     @EnvironmentObject var agentProvider: AgentProvider
-    @State private var isExpanded = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -16,11 +15,7 @@ struct FilePreviewView: View {
                 .background(Color.white.opacity(0.1))
 
             // 文件预览内容
-            if agentProvider.isFileSelected {
-                filePreviewContent
-            } else {
-                emptyView
-            }
+            filePreviewContent
             
             Spacer()
         }
@@ -32,7 +27,7 @@ struct FilePreviewView: View {
 
     private var headerSection: some View {
         HStack {
-            Image(systemName: agentProvider.isFileSelected ? "doc.fill" : "doc")
+            Image(systemName: "doc.fill")
                 .font(.system(size: 14))
                 .foregroundColor(.accentColor)
 
@@ -42,15 +37,13 @@ struct FilePreviewView: View {
 
             Spacer()
 
-            if agentProvider.isFileSelected {
-                // 清除选择按钮
-                Button(action: clearSelection) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 10))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                }
-                .buttonStyle(.plain)
+            // 清除选择按钮
+            Button(action: clearSelection) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 10))
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
@@ -116,26 +109,6 @@ struct FilePreviewView: View {
                 .lineSpacing(2)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-    }
-
-    // MARK: - Empty View
-
-    private var emptyView: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "doc.text")
-                .font(.system(size: 24))
-                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-
-            Text("未选择文件")
-                .font(.system(size: 10))
-                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-
-            Text("从左侧文件树选择文件")
-                .font(.system(size: 9))
-                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-        }
-        .padding(.vertical, 20)
-        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Actions

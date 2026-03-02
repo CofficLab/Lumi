@@ -45,6 +45,14 @@ final class PluginProvider: ObservableObject, SuperLog {
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
+        
+        // 监听 AgentProvider 的文件选择状态，当文件选择状态变化时触发 UI 更新
+        // 这样可以让 FilePreviewPlugin 根据文件选择状态动态显示/隐藏中间视图
+        AgentProvider.shared.$isFileSelected
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 
     /// 自动发现并注册所有插件

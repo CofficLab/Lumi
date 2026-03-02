@@ -50,8 +50,16 @@ actor FilePreviewPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     /// Add middle view for Agent mode - 显示文件预览
-    /// - Returns: FilePreviewView to be added to the middle column
+    /// - Returns: FilePreviewView to be added to the middle column (only when file is selected)
     @MainActor func addMiddleView() -> AnyView? {
+        // 只有在选择文件时才显示文件预览视图
+        guard AgentProvider.shared.isFileSelected else {
+            if Self.verbose {
+                os_log("\(self.t) 未选择文件，不显示文件预览视图")
+            }
+            return nil
+        }
+        
         if Self.verbose {
             os_log("\(self.t) 提供 FilePreviewView")
         }
