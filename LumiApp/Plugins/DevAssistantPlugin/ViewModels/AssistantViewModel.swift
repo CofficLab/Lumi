@@ -225,7 +225,10 @@ class AssistantViewModel: ObservableObject, SuperLog {
                     projectPath: initialCurrentProjectPath,
                     language: initialLanguagePreference
                 )
-                messages.append(ChatMessage(role: .assistant, content: welcomeMsg))
+                let welcomeMessage = ChatMessage(role: .assistant, content: welcomeMsg)
+                messages.append(welcomeMessage)
+                // 保存欢迎消息到数据库
+                saveMessage(welcomeMessage)
             }
         }
 
@@ -850,7 +853,10 @@ class AssistantViewModel: ObservableObject, SuperLog {
                     projectPath: currentProjectPath,
                     language: languagePreference
                 )
-                messages.append(ChatMessage(role: .assistant, content: welcomeMsg))
+                let welcomeMessage = ChatMessage(role: .assistant, content: welcomeMsg)
+                messages.append(welcomeMessage)
+                // 保存欢迎消息到数据库
+                saveMessage(welcomeMessage)
             }
 
             if Self.verbose {
@@ -892,7 +898,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
     /// 加载指定对话的消息
     func loadConversation(_ conversation: Conversation) async {
         if Self.verbose {
-            os_log("(self.t)📥 开始加载对话：(conversation.title)")
+            os_log("\(self.t)📥 开始加载对话：\(conversation.title)")
         }
         
         await MainActor.run {
@@ -913,7 +919,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
         let loadedMessages = chatHistoryService.loadMessages(for: conversation)
         
         if Self.verbose {
-            os_log("(self.t)📥 加载到 (loadedMessages.count) 条消息")
+            os_log("\(self.t)📥 加载到 \(loadedMessages.count) 条消息")
         }
         
         // 获取系统提示
@@ -933,7 +939,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
         }
         
         if Self.verbose {
-            os_log("(self.t)✅ 对话加载完成：(conversation.title)")
+            os_log("\(self.t)✅ 对话加载完成：\(conversation.title)")
         }
     }
     private func notifyModeChangeToChat() async {
