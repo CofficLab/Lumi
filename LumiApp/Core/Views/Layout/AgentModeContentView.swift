@@ -12,6 +12,20 @@ struct AgentModeContentView: View {
     
     @EnvironmentObject var app: AppProvider
     @EnvironmentObject var pluginProvider: PluginProvider
+    
+    // 可调整的列宽度（使用 AppStorage 持久化）
+    @AppStorage("agentSidebarWidth") private var sidebarWidth: Double = 220
+    @AppStorage("agentMiddleWidth") private var middleWidth: Double = 300
+    
+    // 最小宽度约束
+    private let minSidebarWidth: Double = 150
+    private let maxSidebarWidth: Double = 400
+    private let minMiddleWidth: Double = 200
+    private let maxMiddleWidth: Double = 600
+    
+    // 拖拽状态
+    @State private var isDraggingSidebarDivider = false
+    @State private var isDraggingMiddleDivider = false
 
     var body: some View {
         HStack(spacing: 0) {
@@ -30,13 +44,30 @@ struct AgentModeContentView: View {
                     // 插件提供的侧边栏视图（垂直堆叠）
                     AgentModeSidebar()
                 }
-                .frame(width: 220)
+                .frame(width: sidebarWidth)
 
-                // 侧边栏与中间栏的分隔线
-                Rectangle()
-                    .fill(SwiftUI.Color.white.opacity(0.1))
-                    .frame(width: 1)
-                    .ignoresSafeArea()
+                // 侧边栏与中间栏的分隔线（可拖拽）
+                dividerView(isDragging: $isDraggingSidebarDivider)
+                    .frame(width: 6)
+                    .contentShape(Rectangle())
+                    .gesture(
+                        DragGesture()
+                            .onChanged { value in
+                                let delta = value.translation.width
+                                let newWidth = sidebarWidth + delta
+                                if newWidth >= minSidebarWidth && newWidth <= maxSidebarWidth {
+                                    sidebarWidth = newWidth
+                                }
+                            }
+                            .onEnded { _ in
+                                isDraggingSidebarDivider = false
+                            }
+                    )
+                    .onHover { hovering in
+                        if !isDraggingMiddleDivider {
+                            isDraggingSidebarDivider = hovering
+                        }
+                    }
             }
 
             // 第二栏：中间栏（文件预览等）
@@ -47,13 +78,30 @@ struct AgentModeContentView: View {
                         view
                     }
                 }
-                .frame(width: 300)
+                .frame(width: middleWidth)
 
-                // 中间栏与详情栏的分隔线
-                Rectangle()
-                    .fill(SwiftUI.Color.white.opacity(0.1))
-                    .frame(width: 1)
-                    .ignoresSafeArea()
+                // 中间栏与详情栏的分隔线（可拖拽）
+                dividerView(isDragging: $isDraggingMiddleDivider)
+                    .frame(width: 6)
+                    .contentShape(Rectangle())
+                    .gesture(
+                        DragGesture()
+                            .onChanged { value in
+                                let delta = value.translation.width
+                                let newWidth = middleWidth + delta
+                                if newWidth >= minMiddleWidth && newWidth <= maxMiddleWidth {
+                                    middleWidth = newWidth
+                                }
+                            }
+                            .onEnded { _ in
+                                isDraggingMiddleDivider = false
+                            }
+                    )
+                    .onHover { hovering in
+                        if !isDraggingSidebarDivider {
+                            isDraggingMiddleDivider = hovering
+                        }
+                    }
             }
 
             // 第三栏：内容区域（详情栏）
@@ -67,6 +115,15 @@ struct AgentModeContentView: View {
                 os_log("\(Self.emoji) Agent Mode: 侧边栏视图数量=\(sidebarViews.count), 中间栏视图数量=\(middleViews.count)")
             }
         }
+    }
+    
+    /// 可拖拽分隔线视图
+    private func dividerView(isDragging: Binding<Bool>) -> some View {
+        Rectangle()
+            .fill(isDragging.wrappedValue ? Color.accentColor.opacity(0.5) : Color.white.opacity(0.1))
+            .frame(width: 1)
+            .ignoresSafeArea()
+            .animation(.easeInOut(duration: 0.15), value: isDragging.wrappedValue)
     }
 
     /// Agent 模式的详情内容视图（显示插件提供的详情视图）
