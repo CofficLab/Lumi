@@ -15,7 +15,7 @@ class ToolManager: ObservableObject, SuperLog {
     // MARK: - Logger
     
     nonisolated static let emoji = "🧰"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
     
     // MARK: - Published Properties
     

@@ -34,7 +34,6 @@ class ChatHistoryService {
 
         do {
             try context.save()
-            logger.info("💾 对话已保存：\(conversation.title)")
         } catch {
             logger.error("❌ 保存对话失败：\(error.localizedDescription)")
         }
