@@ -39,7 +39,6 @@ struct ChatBubble: View {
                     // 普通消息
                     MarkdownMessageView(message: message, showRawMessage: showRawMessage)
                         .messageBubbleStyle(role: message.role, isError: message.isError)
-                        .textSelection(.enabled) // 启用文本选择
                         .overlay(alignment: .topTrailing) {
                             if message.role == .assistant {
                                 RawMessageToggleButton(showRawMessage: $showRawMessage)
