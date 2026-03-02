@@ -5,50 +5,34 @@ import SwiftData
 /// 会话项视图
 struct ConversationItemView: View {
     let conversation: Conversation
-    let onDelete: (Conversation) -> Void
+    let onDelete: () -> Void
     
-    @ObservedObject var agentProvider = AgentProvider.shared
     @State private var showDeleteConfirmation = false
     
-    var isSelected: Bool {
-        agentProvider.selectedConversationId == conversation.id
-    }
-    
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                // 图标
-                Image(systemName: isSelected ? "message.fill" : "message")
-                    .font(.system(size: 10))
-                    .foregroundColor(isSelected ? .accentColor : DesignTokens.Color.semantic.textSecondary)
-                    .frame(width: 14)
-                
+        HStack(spacing: 8) {
+            // 图标
+            Image(systemName: "message.fill")
+                .font(.system(size: 10))
+                .foregroundColor(.accentColor)
+                .frame(width: 14)
+            
+            // 标题和元信息
+            VStack(alignment: .leading, spacing: 4) {
                 // 标题
                 Text(conversation.title)
-                    .font(.system(size: 10, weight: isSelected ? .semibold : .medium))
-                    .foregroundColor(isSelected ? .accentColor : DesignTokens.Color.semantic.textPrimary)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.tail)
                 
-                Spacer()
+                // 时间戳和项目信息
+                metadataSection
             }
-            .padding(.horizontal, 6)
-            .padding(.vertical, 4)
             
-            // 时间戳和项目信息
-            metadataSection
+            Spacer()
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 4)
-        .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 6)
-                .fill(isSelected ? Color.accentColor.opacity(0.15) : Color.clear)
-        )
-        .contentShape(Rectangle())
-        .onTapGesture {
-            agentProvider.selectConversation(conversation.id)
-        }
+        .padding(.vertical, 4)
         .contextMenu {
             Button(role: .destructive) {
                 showDeleteConfirmation = true
@@ -59,7 +43,7 @@ struct ConversationItemView: View {
         .alert("删除对话", isPresented: $showDeleteConfirmation) {
             Button("取消", role: .cancel) { }
             Button("删除", role: .destructive) {
-                onDelete(conversation)
+                onDelete()
             }
         } message: {
             Text("确定要删除对话「\(conversation.title)」吗？此操作将彻底删除该对话的所有消息，且无法恢复。")
@@ -87,7 +71,5 @@ struct ConversationItemView: View {
                 .font(.system(size: 8))
                 .foregroundColor(DesignTokens.Color.semantic.textTertiary)
         }
-        .padding(.horizontal, 6)
-        .padding(.bottom, 4)
     }
 }
