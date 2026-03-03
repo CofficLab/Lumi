@@ -3,10 +3,11 @@ import MagicKit
 import SwiftData
 import OSLog
 
-private let logger = Logger(subsystem: "com.cofficlab.lumi", category: "ConversationList")
-
 /// 对话列表视图 - 使用 List 渲染
-struct ConversationListView: View {
+struct ConversationListView: View, SuperLog {
+    nonisolated static let emoji = "💬"
+    nonisolated static let verbose = false
+    
     @Environment(\.modelContext) private var modelContext
     @ObservedObject var agentProvider = AgentProvider.shared
     
@@ -33,7 +34,9 @@ struct ConversationListView: View {
         .padding(.vertical, 8)
         .background(DesignTokens.Material.glassThick)
         .task {
-            logger.info("🔍 对话数量：\(conversations.count)")
+            if Self.verbose {
+                os_log("\(Self.t)对话数量：\(conversations.count)")
+            }
             
             // 首次加载时恢复上次选择的会话
             if !hasRestoredSelection && !conversations.isEmpty {
@@ -56,7 +59,9 @@ struct ConversationListView: View {
     private func restoreSelectionIfNeeded() {
         // 如果已经有选中的会话，不需要恢复
         if agentProvider.selectedConversationId != nil {
-            logger.info("✅ 已有选中的会话，跳过恢复")
+            if Self.verbose {
+                os_log("\(Self.t)已有选中的会话，跳过恢复")
+            }
             return
         }
         
@@ -64,9 +69,11 @@ struct ConversationListView: View {
         agentProvider.restoreSelectedConversation(modelContext: modelContext)
         
         if let restoredId = agentProvider.selectedConversationId {
-            logger.info("✅ 已恢复会话选择：\(restoredId)")
+            os_log("\(Self.t)✅ 已恢复会话选择：\(restoredId)")
         } else {
-            logger.info("ℹ️ 没有保存的会话选择")
+            if Self.verbose {
+                os_log("\(Self.t)ℹ️ 没有保存的会话选择")
+            }
         }
     }
 
@@ -91,7 +98,7 @@ struct ConversationListView: View {
     
     /// 处理删除会话
     private func handleDelete(_ conversation: Conversation) {
-        logger.info("🗑️ 开始删除对话：\(conversation.title)")
+        os_log("\(Self.t)🗑️ 开始删除对话：\(conversation.title)")
         
         // 如果删除的是当前选中的会话，且还有其他会话，自动切换到最新的
         if agentProvider.selectedConversationId == conversation.id {
@@ -99,11 +106,11 @@ struct ConversationListView: View {
             if let nextConversation = remainingConversations.first {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     agentProvider.selectedConversationId = nextConversation.id
-                    logger.info("🔄 已自动切换到对话：\(nextConversation.title)")
+                    os_log("\(Self.t)🔄 已自动切换到对话：\(nextConversation.title)")
                 }
             } else {
                 agentProvider.selectedConversationId = nil
-                logger.info("📭 没有剩余会话，已清空选中状态")
+                os_log("\(Self.t)📭 没有剩余会话，已清空选中状态")
             }
         }
         
@@ -112,9 +119,9 @@ struct ConversationListView: View {
         
         do {
             try modelContext.save()
-            logger.info("✅ 对话已删除：\(conversation.title)")
+            os_log("\(Self.t)✅ 对话已删除：\(conversation.title)")
         } catch {
-            logger.error("❌ 删除对话失败：\(error.localizedDescription)")
+            os_log(.error, "\(Self.t)❌ 删除对话失败：\(error.localizedDescription)")
         }
     }
 }

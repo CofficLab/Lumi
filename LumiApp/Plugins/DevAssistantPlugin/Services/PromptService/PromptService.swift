@@ -5,7 +5,7 @@ import MagicKit
 /// 提示词服务 - 负责管理和构建系统提示词
 actor PromptService: SuperLog {
     nonisolated static let emoji = "📝"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     static let shared = PromptService()
 

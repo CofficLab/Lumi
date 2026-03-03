@@ -8,7 +8,7 @@ import MagicKit
 @MainActor
 class LLMAPIService: SuperLog {
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     static let shared = LLMAPIService()
 
@@ -150,17 +150,6 @@ class LLMAPIService: SuperLog {
             do {
                 let jsonData = try JSONSerialization.data(withJSONObject: body)
                 request.httpBody = jsonData
-
-                if Self.verbose {
-                    if let jsonString = String(data: jsonData, encoding: .utf8) {
-                        os_log("\(self.t)LLM 请求体：\(jsonString.prefix(1000))...")
-                        // 将完整请求体写入临时文件以便调试
-                        let tempDir = FileManager.default.temporaryDirectory
-                        let debugFile = tempDir.appendingPathComponent("llm_request_\(Date().timeIntervalSince1970).json")
-                        try? jsonString.write(to: debugFile, atomically: true, encoding: .utf8)
-                        os_log("\(self.t)完整请求体已写入临时文件：\(debugFile.path)")
-                    }
-                }
             } catch {
                 os_log(.error, "\(self.t)JSON 序列化失败：\(error.localizedDescription)")
                 throw APIError.jsonSerializationFailed(underlying: error)

@@ -8,7 +8,7 @@ import Combine
 @MainActor
 class NetworkService: SuperLog, ObservableObject {
     nonisolated static let emoji = "📡"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     static let shared = NetworkService()
 
@@ -29,7 +29,7 @@ class NetworkService: SuperLog, ObservableObject {
 
     private init() {
         if Self.verbose {
-            os_log("\(self.t)NetworkService initialized")
+            os_log("\(Self.t)NetworkService initialized")
         }
 
         // Initialize baseline
@@ -42,7 +42,9 @@ class NetworkService: SuperLog, ObservableObject {
     func startMonitoring() {
         subscribersCount += 1
         if monitoringTimer == nil {
-            os_log("\(self.t)Starting network monitoring")
+            if Self.verbose {
+                os_log("\(Self.t)Starting network monitoring")
+            }
             // Reset baseline to avoid huge spike if paused for long time
             let (In, Out) = getInterfaceCounters()
             lastBytesIn = In
@@ -60,7 +62,9 @@ class NetworkService: SuperLog, ObservableObject {
     func stopMonitoring() {
         subscribersCount = max(0, subscribersCount - 1)
         if subscribersCount == 0 {
-            os_log("\(self.t)Stopping network monitoring")
+            if Self.verbose {
+                os_log("\(Self.t)Stopping network monitoring")
+            }
             monitoringTimer?.invalidate()
             monitoringTimer = nil
         }
@@ -199,9 +203,7 @@ class NetworkService: SuperLog, ObservableObject {
                     return ip
                 }
             } catch {
-                if Self.verbose {
-                    os_log(.error, "\(self.t)Failed to get public IP from \(service): \(error.localizedDescription)")
-                }
+                os_log(.error, "\(Self.t)❌ Failed to get public IP from \(service): \(error.localizedDescription)")
                 continue
             }
         }
