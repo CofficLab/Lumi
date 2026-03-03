@@ -30,11 +30,6 @@ final class AgentProvider: ObservableObject, SuperLog {
     /// 工具管理器
     let toolManager = ToolManager.shared
 
-    /// 会话管理 ViewModel
-    let conversationViewModel = ConversationViewModel.shared
-
-    private var cancellables = Set<AnyCancellable>()
-
     // MARK: - 项目信息
 
     /// 当前项目名称
@@ -60,29 +55,123 @@ final class AgentProvider: ObservableObject, SuperLog {
     /// 是否已选择文件
     @Published fileprivate(set) var isFileSelected: Bool = false
 
-    // MARK: - 当前选择的会话
-
-    /// 当前选择的会话 ID（代理到 ConversationViewModel）
-    public var selectedConversationId: UUID? {
-        get { conversationViewModel.selectedConversationId }
-        set { conversationViewModel.selectedConversationId = newValue }
-    }
-
-    /// 当前对话会话（代理到 ConversationViewModel）
-    public var currentConversation: Conversation? {
-        get { conversationViewModel.currentConversation }
-    }
-
-    /// 标记是否已生成标题（代理到 ConversationViewModel）
-    public var hasGeneratedTitle: Bool {
-        get { conversationViewModel.hasGeneratedTitle }
-    }
-
     // MARK: - 聊天消息状态 (DevAssistant)
 
-    /// 聊天消息列表（代理到 ConversationViewModel）
-    public var messages: [ChatMessage] {
-        get { conversationViewModel.messages }
+    /// 当前输入内容
+    @Published public fileprivate(set) var currentInput: String = ""
+
+    /// 是否正在处理
+    @Published public fileprivate(set) var isProcessing: Bool = false
+
+    /// 错误消息
+    @Published public fileprivate(set) var errorMessage: String?
+
+    /// 待处理权限请求
+    @Published public fileprivate(set) var pendingPermissionRequest: PermissionRequest?
+
+    /// 深度警告
+    @Published public fileprivate(set) var depthWarning: DepthWarning?
+
+    /// 待处理工具调用队列
+    var pendingToolCalls: [ToolCall] = []
+    var currentDepth: Int = 0
+
+    /// 当前任务
+    var currentTask: Task<Void, Never>?
+
+    // MARK: - 附件（图片上传）
+
+    public enum Attachment: Identifiable {
+        case image(id: UUID, data: Data, mimeType: String, url: URL)
+
+        public var id: UUID {
+            switch self {
+            case .image(let id, _, _, _):
+                return id
+            }
+        }
+    }
+
+    public var pendingAttachments: [Attachment] = []
+
+    // MARK: - 语言偏好
+
+    @Published fileprivate(set) var languagePreference: LanguagePreference = .chinese {
+        didSet {
+            if let encoded = try? JSONEncoder().encode(languagePreference) {
+                UserDefaults.standard.set(encoded, forKey: "Agent_LanguagePreference")
+            }
+        }
+    }
+
+    // MARK: - 聊天模式
+
+    @Published fileprivate(set) var chatMode: ChatMode = .build {
+        didSet {
+            UserDefaults.standard.set(chatMode.rawValue, forKey: "Agent_ChatMode")
+        }
+    }
+
+    // MARK: - 自动批准风险
+
+    @Published fileprivate(set) var autoApproveRisk: Bool = {
+        UserDefaults.standard.bool(forKey: "Agent_AutoApproveRisk")
+    }() {
+        didSet {
+            UserDefaults.standard.set(autoApproveRisk, forKey: "Agent_AutoApproveRisk")
+        }
+    }
+
+    // MARK: - 供应商选择
+
+    @Published fileprivate(set) var selectedProviderId: String = "anthropic" {
+        didSet {
+            UserDefaults.standard.set(selectedProviderId, forKey: "Agent_SelectedProvider")
+        }
+    }
+
+    /// 当前选择的模型
+    @Published fileprivate(set) var selectedModel: String = "" {
+        didSet {
+            UserDefaults.standard.set(selectedModel, forKey: "Agent_SelectedModel")
+        }
+    }
+
+    // MARK: - 初始化
+
+    private init() {
+        loadPreferences()
+    }
+
+    // MARK: - 偏好设置加载
+
+    /// 加载保存的偏好设置
+    private func loadPreferences() {
+        // 加载语言偏好
+        if let data = UserDefaults.standard.data(forKey: "Agent_LanguagePreference"),
+           let preference = try? JSONDecoder().decode(LanguagePreference.self, from: data) {
+            languagePreference = preference
+        }
+
+        // 加载聊天模式
+        if let modeRaw = UserDefaults.standard.string(forKey: "Agent_ChatMode"),
+           let mode = ChatMode(rawValue: modeRaw) {
+            chatMode = mode
+        }
+
+        // 加载自动批准风险
+        autoApproveRisk = UserDefaults.standard.bool(forKey: "Agent_AutoApproveRisk")
+
+        // 加载供应商选择
+        selectedProviderId = UserDefaults.standard.string(forKey: "Agent_SelectedProvider") ?? "anthropic"
+
+        // 加载模型选择
+        selectedModel = UserDefaults.standard.string(forKey: "Agent_SelectedModel") ?? ""
+
+        // 加载上次选择的项目
+        if let savedPath = UserDefaults.standard.string(forKey: "Agent_SelectedProject") {
+            switchProject(to: savedPath)
+        }
     }
 
     // MARK: - Setter 方法
@@ -107,11 +196,6 @@ final class AgentProvider: ObservableObject, SuperLog {
     /// 设置文件内容（内部使用）
     func setSelectedFileContent(_ content: String) {
         selectedFileContent = content
-    }
-
-    /// 设置当前会话（内部使用）
-    func setCurrentConversationInternal(_ conversation: Conversation?) {
-        conversationViewModel.setCurrentConversationInternal(conversation)
     }
 
     /// 设置聊天消息状态（内部使用）
@@ -143,16 +227,6 @@ final class AgentProvider: ObservableObject, SuperLog {
     }
 
     // MARK: - 公开 Setter 方法
-
-    /// 设置选中会话 ID
-    func setSelectedConversationId(_ id: UUID) {
-        conversationViewModel.selectedConversationId = id
-    }
-
-    /// 清除选中会话 ID（内部使用）
-    func clearSelectedConversationId() {
-        conversationViewModel.clearConversationSelection()
-    }
 
     /// 设置语言偏好
     func setLanguagePreference(_ preference: LanguagePreference) {
@@ -207,164 +281,5 @@ final class AgentProvider: ObservableObject, SuperLog {
     /// 设置深度警告
     func setDepthWarning(_ warning: DepthWarning?) {
         depthWarning = warning
-    }
-
-    /// 设置聊天消息列表
-    func setMessages(_ messages: [ChatMessage]) {
-        conversationViewModel.setMessagesInternal(messages)
-    }
-
-    /// 追加消息到列表
-    func appendMessage(_ message: ChatMessage) {
-        conversationViewModel.appendMessageInternal(message)
-    }
-
-    /// 插入消息到指定位置
-    func insertMessage(_ message: ChatMessage, at index: Int) {
-        conversationViewModel.insertMessageInternal(message, at: index)
-    }
-
-    /// 更新指定位置的消息
-    func updateMessage(_ message: ChatMessage, at index: Int) {
-        conversationViewModel.updateMessageInternal(message, at: index)
-    }
-
-    /// 设置当前会话
-    func setCurrentConversation(_ conversation: Conversation?) {
-        conversationViewModel.setCurrentConversationInternal(conversation)
-    }
-
-    /// 设置标题生成标记
-    func setHasGeneratedTitle(_ value: Bool) {
-        conversationViewModel.setHasGeneratedTitleInternal(value)
-    }
-
-    // MARK: - 语言偏好
-
-    @Published fileprivate(set) var languagePreference: LanguagePreference = .chinese {
-        didSet {
-            if let encoded = try? JSONEncoder().encode(languagePreference) {
-                UserDefaults.standard.set(encoded, forKey: "Agent_LanguagePreference")
-            }
-        }
-    }
-
-    // MARK: - 聊天模式
-
-    @Published fileprivate(set) var chatMode: ChatMode = .build {
-        didSet {
-            UserDefaults.standard.set(chatMode.rawValue, forKey: "Agent_ChatMode")
-        }
-    }
-
-    // MARK: - 自动批准风险
-
-    @Published fileprivate(set) var autoApproveRisk: Bool = {
-        UserDefaults.standard.bool(forKey: "Agent_AutoApproveRisk")
-    }() {
-        didSet {
-            UserDefaults.standard.set(autoApproveRisk, forKey: "Agent_AutoApproveRisk")
-        }
-    }
-
-    // MARK: - 供应商选择
-
-    @Published fileprivate(set) var selectedProviderId: String = "anthropic" {
-        didSet {
-            UserDefaults.standard.set(selectedProviderId, forKey: "Agent_SelectedProvider")
-        }
-    }
-
-    /// 当前选择的模型
-    @Published fileprivate(set) var selectedModel: String = "" {
-        didSet {
-            UserDefaults.standard.set(selectedModel, forKey: "Agent_SelectedModel")
-        }
-    }
-
-    // MARK: - 聊天消息状态 (DevAssistant)
-
-    /// 当前输入内容
-    @Published public fileprivate(set) var currentInput: String = ""
-
-    /// 是否正在处理
-    @Published public fileprivate(set) var isProcessing: Bool = false
-
-    /// 错误消息
-    @Published public fileprivate(set) var errorMessage: String?
-
-    /// 待处理权限请求
-    @Published public fileprivate(set) var pendingPermissionRequest: PermissionRequest?
-
-    /// 深度警告
-    @Published public fileprivate(set) var depthWarning: DepthWarning?
-
-    /// 待处理工具调用队列
-    var pendingToolCalls: [ToolCall] = []
-    var currentDepth: Int = 0
-
-    /// 当前任务
-    var currentTask: Task<Void, Never>?
-
-    // MARK: - 附件（图片上传）
-
-    public enum Attachment: Identifiable {
-        case image(id: UUID, data: Data, mimeType: String, url: URL)
-
-        public var id: UUID {
-            switch self {
-            case .image(let id, _, _, _):
-                return id
-            }
-        }
-    }
-
-    public var pendingAttachments: [Attachment] = []
-
-    // MARK: - 初始化
-
-    private init() {
-        loadPreferences()
-
-        // 将 ConversationViewModel 的变化转发到 AgentProvider
-        conversationViewModel.objectWillChange
-            .sink { [weak self] _ in
-                self?.objectWillChange.send()
-            }
-            .store(in: &cancellables)
-    }
-
-    // MARK: - 偏好设置加载
-
-    /// 加载保存的偏好设置
-    private func loadPreferences() {
-        // 加载语言偏好
-        if let data = UserDefaults.standard.data(forKey: "Agent_LanguagePreference"),
-           let preference = try? JSONDecoder().decode(LanguagePreference.self, from: data) {
-            languagePreference = preference
-        }
-
-        // 加载聊天模式
-        if let modeRaw = UserDefaults.standard.string(forKey: "Agent_ChatMode"),
-           let mode = ChatMode(rawValue: modeRaw) {
-            chatMode = mode
-        }
-
-        // 加载自动批准风险
-        autoApproveRisk = UserDefaults.standard.bool(forKey: "Agent_AutoApproveRisk")
-
-        // 加载供应商选择
-        selectedProviderId = UserDefaults.standard.string(forKey: "Agent_SelectedProvider") ?? "anthropic"
-
-        // 加载模型选择
-        selectedModel = UserDefaults.standard.string(forKey: "Agent_SelectedModel") ?? ""
-
-        // 加载上次选择的项目
-        if let savedPath = UserDefaults.standard.string(forKey: "Agent_SelectedProject") {
-            switchProject(to: savedPath)
-        }
-
-        // 注意：会话选择不在此处恢复，因为需要等待 SwiftData 初始化完成
-        // 应该在视图获取到 modelContext 后调用 restoreSelectedConversation
     }
 }

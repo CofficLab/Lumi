@@ -6,28 +6,6 @@ import SwiftData
 import Combine
 import MagicKit
 
-// MARK: - 会话选择
-
-extension AgentProvider {
-    /// 选择指定会话
-    func selectConversation(_ id: UUID) {
-        conversationViewModel.selectConversation(id)
-        if Self.verbose {
-            os_log("\(Self.t) 已选择会话：\(id)")
-        }
-    }
-
-    /// 清除会话选择
-    func clearConversationSelection() {
-        conversationViewModel.clearConversationSelection()
-    }
-
-    /// 恢复上次选择的会话（需要验证会话是否存在）
-    func restoreSelectedConversation(modelContext: ModelContext?) {
-        conversationViewModel.restoreSelectedConversation(modelContext: modelContext)
-    }
-}
-
 // MARK: - 项目管理
 
 extension AgentProvider {
@@ -156,30 +134,8 @@ extension AgentProvider {
 extension AgentProvider {
     /// 创建新对话
     func createNewConversation() async {
-        if Self.verbose {
-            os_log("\(Self.t)🚀 开始创建新会话")
-        }
-
-        // 使用 ConversationViewModel 创建会话
         let projectId = isProjectSelected ? currentProjectPath : nil
-        let newConversation = conversationViewModel.createConversation(projectId: projectId)
-
-        // 设置当前会话
-        setCurrentConversationInternal(newConversation)
-
-        if Self.verbose {
-            os_log("\(Self.t)✅ [\(newConversation.id)] 新会话创建完成")
-        }
-    }
-
-    /// 保存消息到存储
-    func saveMessage(_ message: ChatMessage) {
-        conversationViewModel.saveMessage(message)
-    }
-
-    /// 加载指定对话的消息
-    func loadConversation(_ conversationId: UUID) async {
-        await conversationViewModel.loadConversation(conversationId)
+        await ConversationViewModel.shared.createNewConversation(projectId: projectId)
     }
 
     /// 获取可用供应商列表

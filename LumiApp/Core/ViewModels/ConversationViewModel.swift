@@ -108,6 +108,14 @@ final class ConversationViewModel: ObservableObject, SuperLog {
         return newConversation
     }
 
+    /// 创建新对话（异步版本，支持设置当前会话）
+    /// - Parameter projectId: 关联的项目 ID（可选，nil 表示全局对话）
+    func createNewConversation(projectId: String? = nil) async {
+        let newConversation = createConversation(projectId: projectId)
+        setCurrentConversationInternal(newConversation)
+        selectedConversationId = newConversation.id
+    }
+
     /// 加载指定对话的消息
     /// - Parameter conversationId: 对话 ID
     func loadConversation(_ conversationId: UUID) async {
