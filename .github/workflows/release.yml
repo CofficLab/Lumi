@@ -118,8 +118,12 @@ jobs:
           echo "team_id=$TEAM_ID" >> $GITHUB_OUTPUT
           echo "api_key_path=$API_KEY_PATH" >> $GITHUB_OUTPUT
 
+      - name: Install xcpretty
+        run: gem install xcpretty
+
       - name: Build App (Archive)
         run: |
+          set -o pipefail
           xcodebuild archive \
             -scheme ${{ env.SCHEME }} \
             -archivePath ./temp/${{ env.SCHEME }}.xcarchive \
@@ -129,7 +133,8 @@ jobs:
             DEVELOPMENT_TEAM="${{ steps.signing.outputs.team_id }}" \
             PROVISIONING_PROFILE_SPECIFIER="" \
             CODE_SIGNING_REQUIRED=NO \
-            AD_HOC_CODE_SIGNING_ALLOWED=YES
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            | xcpretty
 
       - name: Codesign App
         run: |
