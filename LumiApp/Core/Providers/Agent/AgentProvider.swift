@@ -154,9 +154,6 @@ final class AgentProvider: ObservableObject, SuperLog {
     /// 当前任务
     var currentTask: Task<Void, Never>?
 
-    /// 命令建议视图模型
-    public let commandSuggestionViewModel = CommandSuggestionViewModel()
-
     // MARK: - 附件（图片上传）
 
     public enum Attachment: Identifiable {

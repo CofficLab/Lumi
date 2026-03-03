@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 /// 输入区域视图 - 包含附件预览、编辑器、工具栏
 struct InputAreaView: View {
     @EnvironmentObject var agentProvider: AgentProvider
+    @EnvironmentObject var commandSuggestionViewModel: CommandSuggestionViewModel
 
     @Binding var isInputFocused: Bool
     @Binding var isModelSelectorPresented: Bool
@@ -37,20 +38,20 @@ struct InputAreaView: View {
                     ),
                     onSubmit: onSendMessage,
                     onArrowUp: {
-                        if agentProvider.commandSuggestionViewModel.isVisible {
-                            agentProvider.commandSuggestionViewModel.selectPrevious()
+                        if commandSuggestionViewModel.isVisible {
+                            commandSuggestionViewModel.selectPrevious()
                         }
                     },
                     onArrowDown: {
-                        if agentProvider.commandSuggestionViewModel.isVisible {
-                            agentProvider.commandSuggestionViewModel.selectNext()
+                        if commandSuggestionViewModel.isVisible {
+                            commandSuggestionViewModel.selectNext()
                         }
                     },
                     onEnter: {
-                        if agentProvider.commandSuggestionViewModel.isVisible,
-                           let suggestion = agentProvider.commandSuggestionViewModel.getCurrentSuggestion() {
+                        if commandSuggestionViewModel.isVisible,
+                           let suggestion = commandSuggestionViewModel.getCurrentSuggestion() {
                             agentProvider.currentInput = suggestion.command + " "
-                            agentProvider.commandSuggestionViewModel.isVisible = false
+                            commandSuggestionViewModel.isVisible = false
                         } else {
                             onSendMessage()
                         }
@@ -81,9 +82,9 @@ struct InputAreaView: View {
                 handleDrop(providers: providers)
             }
             .overlay(alignment: .bottomLeading) {
-                CommandSuggestionView(viewModel: agentProvider.commandSuggestionViewModel) { suggestion in
+                CommandSuggestionView { suggestion in
                     agentProvider.currentInput = suggestion.command + " "
-                    agentProvider.commandSuggestionViewModel.isVisible = false
+                    commandSuggestionViewModel.isVisible = false
                     isInputFocused = true
                 }
                 .offset(x: 16, y: -60)
