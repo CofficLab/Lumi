@@ -30,6 +30,11 @@ final class AgentProvider: ObservableObject, SuperLog {
     /// 工具管理器
     let toolManager = ToolManager.shared
 
+    /// 会话管理 ViewModel
+    let conversationViewModel = ConversationViewModel.shared
+
+    private var cancellables = Set<AnyCancellable>()
+
     // MARK: - 项目信息
 
     /// 当前项目名称
@@ -57,17 +62,30 @@ final class AgentProvider: ObservableObject, SuperLog {
 
     // MARK: - 当前选择的会话
 
-    /// 当前选择的会话 ID
-    @Published var selectedConversationId: UUID? {
-        didSet {
-            if let id = selectedConversationId {
-                UserDefaults.standard.set(id.uuidString, forKey: "Agent_SelectedConversationId")
-                // 通知加载对话
-                NotificationCenter.postConversationSelected(conversationId: id)
-            } else {
-                UserDefaults.standard.removeObject(forKey: "Agent_SelectedConversationId")
-            }
-        }
+    /// 当前选择的会话 ID（代理到 ConversationViewModel）
+    public var selectedConversationId: UUID? {
+        get { conversationViewModel.selectedConversationId }
+        set { conversationViewModel.selectedConversationId = newValue }
+    }
+
+    /// 当前对话会话（代理到 ConversationViewModel）
+    public var currentConversation: Conversation? {
+        get { conversationViewModel.currentConversation }
+        set { conversationViewModel.currentConversation = newValue }
+    }
+
+    /// 标记是否已生成标题（代理到 ConversationViewModel）
+    public var hasGeneratedTitle: Bool {
+        get { conversationViewModel.hasGeneratedTitle }
+        set { conversationViewModel.hasGeneratedTitle = newValue }
+    }
+
+    // MARK: - 聊天消息状态 (DevAssistant)
+
+    /// 聊天消息列表（代理到 ConversationViewModel）
+    public var messages: [ChatMessage] {
+        get { conversationViewModel.messages }
+        set { conversationViewModel.messages = newValue }
     }
 
     // MARK: - Setter 方法
@@ -96,7 +114,7 @@ final class AgentProvider: ObservableObject, SuperLog {
 
     /// 设置当前会话（内部使用）
     func setCurrentConversationInternal(_ conversation: Conversation?) {
-        currentConversation = conversation
+        conversationViewModel.currentConversation = conversation
     }
 
     /// 设置聊天消息状态（内部使用）
@@ -131,13 +149,12 @@ final class AgentProvider: ObservableObject, SuperLog {
 
     /// 设置选中会话 ID
     func setSelectedConversationId(_ id: UUID) {
-        selectedConversationId = id
-        UserDefaults.standard.set(id.uuidString, forKey: "Agent_SelectedConversationId")
+        conversationViewModel.selectedConversationId = id
     }
 
     /// 清除选中会话 ID（内部使用）
     func clearSelectedConversationId() {
-        selectedConversationId = nil
+        conversationViewModel.clearConversationSelection()
     }
 
     /// 设置语言偏好
@@ -197,27 +214,27 @@ final class AgentProvider: ObservableObject, SuperLog {
 
     /// 设置聊天消息列表
     func setMessages(_ messages: [ChatMessage]) {
-        self.messages = messages
+        conversationViewModel.messages = messages
     }
 
     /// 追加消息到列表
     func appendMessage(_ message: ChatMessage) {
-        messages.append(message)
+        conversationViewModel.messages.append(message)
     }
 
     /// 插入消息到指定位置
     func insertMessage(_ message: ChatMessage, at index: Int) {
-        messages.insert(message, at: index)
+        conversationViewModel.messages.insert(message, at: index)
     }
 
     /// 更新指定位置的消息
     func updateMessage(_ message: ChatMessage, at index: Int) {
-        messages[index] = message
+        conversationViewModel.messages[index] = message
     }
 
     /// 设置当前会话
     func setCurrentConversation(_ conversation: Conversation?) {
-        currentConversation = conversation
+        conversationViewModel.currentConversation = conversation
     }
 
     // MARK: - 语言偏好
@@ -263,18 +280,7 @@ final class AgentProvider: ObservableObject, SuperLog {
         }
     }
 
-    // MARK: - 对话历史管理
-
-    /// 当前对话会话
-    @Published fileprivate(set) var currentConversation: Conversation?
-
-    /// 标记是否已生成标题
-    var hasGeneratedTitle: Bool = false
-
     // MARK: - 聊天消息状态 (DevAssistant)
-
-    /// 聊天消息列表
-    @Published public fileprivate(set) var messages: [ChatMessage] = []
 
     /// 当前输入内容
     @Published public fileprivate(set) var currentInput: String = ""
@@ -317,6 +323,13 @@ final class AgentProvider: ObservableObject, SuperLog {
 
     private init() {
         loadPreferences()
+
+        // 将 ConversationViewModel 的变化转发到 AgentProvider
+        conversationViewModel.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - 偏好设置加载

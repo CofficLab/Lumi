@@ -3,13 +3,15 @@ import SwiftUI
 import AppKit
 import OSLog
 import SwiftData
+import Combine
+import MagicKit
 
 // MARK: - 会话选择
 
 extension AgentProvider {
     /// 选择指定会话
     func selectConversation(_ id: UUID) {
-        setSelectedConversationId(id)
+        conversationViewModel.selectConversation(id)
         if Self.verbose {
             os_log("\(Self.t) 已选择会话：\(id)")
         }
@@ -17,47 +19,12 @@ extension AgentProvider {
 
     /// 清除会话选择
     func clearConversationSelection() {
-        clearSelectedConversationId()
+        conversationViewModel.clearConversationSelection()
     }
 
     /// 恢复上次选择的会话（需要验证会话是否存在）
     func restoreSelectedConversation(modelContext: ModelContext?) {
-        guard let savedId = UserDefaults.standard.string(forKey: "Agent_SelectedConversationId"),
-              let uuid = UUID(uuidString: savedId) else {
-            return
-        }
-
-        // 如果有 modelContext，验证会话是否存在
-        if let context = modelContext {
-            let descriptor = FetchDescriptor<Conversation>(
-                predicate: #Predicate { $0.id == uuid }
-            )
-
-            do {
-                let conversations = try context.fetch(descriptor)
-                if conversations.isEmpty {
-                    // 会话已不存在，清除保存的 ID
-                    if Self.verbose {
-                        os_log("\(Self.t)⚠️ 上次选择的会话已不存在，清除保存状态")
-                    }
-                    UserDefaults.standard.removeObject(forKey: "Agent_SelectedConversationId")
-                    return
-                }
-                // 会话存在，恢复选择
-                setSelectedConversationId(uuid)
-                if Self.verbose {
-                    os_log("\(Self.t)✅ 已恢复会话选择：\(uuid)")
-                }
-            } catch {
-                os_log(.error, "\(Self.t)❌ 验证会话失败：\(error.localizedDescription)")
-            }
-        } else {
-            // 没有 modelContext，直接恢复（可能在初始化阶段）
-            setSelectedConversationId(uuid)
-            if Self.verbose {
-                os_log("\(Self.t)ℹ️ 已恢复会话选择（未验证）: \(uuid)")
-            }
-        }
+        conversationViewModel.restoreSelectedConversation(modelContext: modelContext)
     }
 }
 
@@ -193,18 +160,12 @@ extension AgentProvider {
             os_log("\(Self.t)🚀 开始创建新会话")
         }
 
-        // 首先创建会话
+        // 使用 ConversationViewModel 创建会话
         let projectId = isProjectSelected ? currentProjectPath : nil
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MM-dd HH:mm"
-        let newConversation = chatHistoryService.createConversation(
-            projectId: projectId,
-            title: "新会话 " + formatter.string(from: Date())
-        )
-        hasGeneratedTitle = false // 重置标题生成标记
+        let newConversation = conversationViewModel.createConversation(projectId: projectId)
 
+        // 设置当前会话
         setCurrentConversationInternal(newConversation)
-        setSelectedConversationId(newConversation.id)
 
         if Self.verbose {
             os_log("\(Self.t)✅ [\(newConversation.id)] 新会话创建完成")
@@ -213,32 +174,12 @@ extension AgentProvider {
 
     /// 保存消息到存储
     func saveMessage(_ message: ChatMessage) {
-        guard let conversation = currentConversation else {
-            if Self.verbose {
-                os_log("\(Self.t)⚠️ 当前没有活动对话，跳过保存")
-            }
-            return
-        }
-
-        chatHistoryService.saveMessage(message, to: conversation)
+        conversationViewModel.saveMessage(message)
     }
 
     /// 加载指定对话的消息
     func loadConversation(_ conversationId: UUID) async {
-        if Self.verbose {
-            os_log("\(Self.t)📥 [\(conversationId)] 开始加载对话")
-        }
-
-        // 从数据库获取对话
-        guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
-            return
-        }
-
-        setCurrentConversationInternal(conversation)
-
-        if Self.verbose {
-            os_log("\(Self.t)✅ [\(conversation.id)] 对话加载完成")
-        }
+        await conversationViewModel.loadConversation(conversationId)
     }
 
     /// 获取可用供应商列表
