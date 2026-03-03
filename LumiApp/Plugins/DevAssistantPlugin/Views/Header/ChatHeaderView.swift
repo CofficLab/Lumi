@@ -103,7 +103,7 @@ extension ChatHeaderView {
         .padding(.vertical, 4)
         .background(Color.black.opacity(0.05))
         .cornerRadius(6)
-        .help("Automatically approve high-risk commands")
+        .help("自动批准高风险命令")
     }
 
     /// 语言选择器：下拉菜单选择 AI 响应语言

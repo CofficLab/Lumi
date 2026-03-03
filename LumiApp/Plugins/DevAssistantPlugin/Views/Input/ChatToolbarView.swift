@@ -209,7 +209,7 @@ struct ChatToolbarView: View {
                 .clipShape(Circle())
         }
         .buttonStyle(.plain)
-        .help("Upload Image")
+        .help("上传图片")
     }
 }
 

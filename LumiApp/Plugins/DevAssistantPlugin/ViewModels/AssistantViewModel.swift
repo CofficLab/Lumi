@@ -11,7 +11,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🤖"
     nonisolated static let verbose = false
 
-    // MARK: - 发布状态
+    // 发布状态
 
     @Published var messages: [ChatMessage] = []
     @Published var currentInput: String = ""
@@ -20,25 +20,25 @@ class AssistantViewModel: ObservableObject, SuperLog {
     @Published var pendingPermissionRequest: PermissionRequest?
     @Published var depthWarning: DepthWarning?
 
-    // MARK: - 命令建议
+    // 命令建议
     @Published var commandSuggestionViewModel = CommandSuggestionViewModel()
 
-    // MARK: - 工具队列
+    // 工具队列
 
     var pendingToolCalls: [ToolCall] = []
     var currentDepth: Int = 0
     private var cancellables = Set<AnyCancellable>()
 
-    // MARK: - 取消支持
+    // 取消支持
     var currentTask: Task<Void, Never>?
 
-    // MARK: - 项目信息（镜像 AgentProvider）
+    // 项目信息
 
     @Published var currentProjectName: String = ""
     @Published var currentProjectPath: String = ""
     @Published var isProjectSelected: Bool = false
 
-    // MARK: - 风险控制（镜像 AgentProvider）
+    // 风险控制
 
     @Published var autoApproveRisk: Bool = false {
         didSet {
@@ -49,7 +49,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
         }
     }
 
-    // MARK: - 语言偏好（镜像 AgentProvider）
+    // 语言偏好
 
     @Published var languagePreference: LanguagePreference = .chinese {
         didSet {
@@ -61,7 +61,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
         }
     }
 
-    // MARK: - 供应商选择
+    // 供应商选择
 
     @Published var selectedProviderId: String = "anthropic" {
         didSet {
@@ -72,7 +72,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
         }
     }
 
-    // MARK: - 模型选择（镜像 AgentProvider）
+    // 模型选择
 
     @Published var selectedModel: String = "" {
         didSet {
@@ -80,7 +80,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
         }
     }
 
-    // MARK: - 聊天模式
+    // 聊天模式
 
     @Published var chatMode: ChatMode = .build {
         didSet {
@@ -96,7 +96,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
         }
     }
 
-    // MARK: - 对话历史管理
+    // 对话历史管理
     
     /// 当前对话会话
     @Published var currentConversation: Conversation?
@@ -122,19 +122,18 @@ class AssistantViewModel: ObservableObject, SuperLog {
 
     var pendingAttachments: [Attachment] = []
 
-    // MARK: - 供应商注册表
+    // 供应商注册表
 
     let registry = ProviderRegistry.shared
     let llmService = LLMService.shared
 
-    // MARK: - 可用供应商信息
+    // 可用供应商信息
 
     var availableProviders: [ProviderInfo] {
         registry.allProviders()
     }
 
-    // MARK: - 提示词服务
-
+    // 提示词服务
     let promptService = PromptService.shared
 
     // MARK: - 工具管理器

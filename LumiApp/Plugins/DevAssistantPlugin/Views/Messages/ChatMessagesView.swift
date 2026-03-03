@@ -18,14 +18,13 @@ struct ChatMessagesView: View {
             .onChange(of: viewModel.messages) { oldMessages, newMessages in
                 guard let lastMessage = newMessages.last else { return }
 
-                // If it's a new message, animate
+                // 如果是新消息，则滚动并带动画
                 if oldMessages.last?.id != lastMessage.id {
                     withAnimation {
                         proxy.scrollTo(lastMessage.id, anchor: .bottom)
                     }
                 } else {
-                    // If it's the same message (streaming update), scroll without animation
-                    // to reduce layout churn and avoid "AnyTextLayoutCollection" warnings
+                    // 如果是同一条消息（流式更新），直接滚动以减少布局闪烁
                     proxy.scrollTo(lastMessage.id, anchor: .bottom)
                 }
             }

@@ -6,8 +6,6 @@ import SwiftUI
 // MARK: - 对话管理与历史记录
 
 extension AssistantViewModel {
-    // MARK: - 对话管理
-
     /// 创建新对话
     func createNewConversation() async {
         let projectId = isProjectSelected ? currentProjectPath : nil
@@ -19,18 +17,9 @@ extension AssistantViewModel {
         )
         hasGeneratedTitle = false  // 重置标题生成标记
         
-        // 更新 AgentProvider 的选中会话 ID，让对话历史插件同步选中
-        // 注意：不直接设置 selectedConversationId，避免触发 notification 导致重复加载
         if let conversationId = currentConversation?.id {
             // 只更新 AgentProvider 的内部状态，不触发通知
             AgentProvider.shared.setSelectedConversationIdWithoutNotification(conversationId)
-            if Self.verbose {
-                os_log("\(self.t)✅ 已更新选中会话 ID: \(conversationId)")
-            }
-        }
-        
-        if Self.verbose {
-            os_log("\(self.t)✅ 创建新对话：\(self.currentConversation?.title ?? "未知")")
         }
     }
 
@@ -148,10 +137,6 @@ extension AssistantViewModel {
 
             // 一次性设置所有消息，避免多次刷新
             messages = newMessages
-
-            if Self.verbose {
-                os_log("\(self.t)✅ 已开启新会话")
-            }
         }
     }
 

@@ -1,14 +1,24 @@
 import AppKit
 import SwiftUI
 
+/// Mac 编辑器视图
+/// 基于 NSTextView 的自定义编辑器，支持快捷键、拖放和焦点管理
 struct MacEditorView: NSViewRepresentable {
+    /// 绑定的文本内容
     @Binding var text: String
+    /// 字体设置
     var font: NSFont = .systemFont(ofSize: 15)
+    /// 提交回调：当用户按下 Enter 键时触发
     var onSubmit: () -> Void
+    /// 上箭头键回调：用于命令建议列表的上移选择
     var onArrowUp: (() -> Void)? = nil
+    /// 下箭头键回调：用于命令建议列表的下移选择
     var onArrowDown: (() -> Void)? = nil
+    /// 回车键回调：用于触发命令建议或提交
     var onEnter: (() -> Void)? = nil
+    /// 焦点状态绑定
     @Binding var isFocused: Bool
+    /// 文件拖放回调：处理拖放的文件 URL
     var onDrop: (([URL]) -> Bool)? = nil
 
     func makeNSView(context: Context) -> NSScrollView {
@@ -63,7 +73,9 @@ struct MacEditorView: NSViewRepresentable {
         Coordinator(self)
     }
 
+    /// 协调器：处理文本变化和按键事件
     class Coordinator: NSObject, NSTextViewDelegate {
+        /// 父视图引用
         var parent: MacEditorView
 
         init(_ parent: MacEditorView) {
@@ -102,19 +114,22 @@ struct MacEditorView: NSViewRepresentable {
     }
 }
 
+/// 编辑器文本视图
+/// 扩展 NSTextView 以支持文件拖放功能
 class EditorTextView: NSTextView {
+    /// 文件拖放回调
     var onDrop: (([URL]) -> Bool)?
-    
+
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
         let pasteboard = sender.draggingPasteboard
-        
-        // Check for file URLs
+
+        // 检查文件 URL
         if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], !urls.isEmpty {
             if let onDrop = onDrop, onDrop(urls) {
                 return true
             }
         }
-        
+
         return super.performDragOperation(sender)
     }
 }

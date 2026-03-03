@@ -1,10 +1,14 @@
 
 import SwiftUI
 
+/// 命令建议视图
+/// 显示与当前输入匹配的命令建议列表，支持键盘上下键选择
 struct CommandSuggestionView: View {
+    /// 视图模型：管理命令建议的显示和选择状态
     @ObservedObject var viewModel: CommandSuggestionViewModel
+    /// 命令选择回调：当用户选择建议命令时触发
     var onSelect: (CommandSuggestion) -> Void
-    
+
     var body: some View {
         if viewModel.isVisible {
             VStack(alignment: .leading, spacing: 0) {
