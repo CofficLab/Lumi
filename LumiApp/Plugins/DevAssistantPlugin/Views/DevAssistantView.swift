@@ -73,12 +73,6 @@ struct DevAssistantView: View {
         .onAppear {
             isInputFocused = true
         }
-        .onReceive(NotificationCenter.default.publisher(for: .conversationSelected)) { notification in
-            // 当选择对话时，加载对话消息
-            if let conversationId = notification.object as? UUID {
-                loadConversation(conversationId)
-            }
-        }
         .overlay {
             // MARK: - Permission Request Overlay
 

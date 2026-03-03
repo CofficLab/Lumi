@@ -15,6 +15,7 @@ struct ChatMessagesView: View {
                 }
                 .padding(.horizontal)
             }
+            .onConversationSelected(perform: handleConversationSelected)
             .onChange(of: viewModel.messages) { oldMessages, newMessages in
                 guard let lastMessage = newMessages.last else { return }
 
@@ -31,6 +32,14 @@ struct ChatMessagesView: View {
         }
     }
 }
+
+// MARK: Event Handler
+
+func handleConversationSelected(_ conversationId: UUID) {
+
+}
+
+// MARK: - Preview
 
 #Preview {
     ChatMessagesView(viewModel: AssistantViewModel())
