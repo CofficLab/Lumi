@@ -205,8 +205,7 @@ class ChatHistoryService: SuperLog {
 
         let context = ModelContext(container)
         let descriptor = FetchDescriptor<Conversation>(
-            predicate: #Predicate { $0.id == id },
-            relationFetchPolicy: .includeAll
+            predicate: #Predicate { $0.id == id }
         )
 
         do {
@@ -245,15 +244,28 @@ class ChatHistoryService: SuperLog {
 
     /// 加载对话的消息
     func loadMessages(for conversation: Conversation) -> [ChatMessage] {
-        // 获取关联的消息
-        let messages = conversation.messages
-            .sorted { $0.timestamp < $1.timestamp }
-            .compactMap { $0.toChatMessage() }
-
-        if Self.verbose {
-            os_log("\(Self.t)📄 [\(conversation.id)] 加载到 \(messages.count) 条消息")
+        guard let container = modelContainer else {
+            os_log(.error, "\(Self.t)❌ 模型容器未初始化")
+            return []
         }
-        return messages
+
+        let context = ModelContext(container)
+        let descriptor = FetchDescriptor<ChatMessageEntity>(
+            predicate: #Predicate { $0.conversation?.id == conversation.id },
+            sortBy: [SortDescriptor(\.timestamp)]
+        )
+
+        do {
+            let messageEntities = try context.fetch(descriptor)
+            let messages = messageEntities.compactMap { $0.toChatMessage() }
+            if Self.verbose {
+                os_log("\(Self.t)📄 [\(conversation.id)] 加载到 \(messages.count) 条消息")
+            }
+            return messages
+        } catch {
+            os_log(.error, "\(Self.t)❌ 加载消息失败：\(error.localizedDescription)")
+            return []
+        }
     }
 
     // MARK: - 删除对话

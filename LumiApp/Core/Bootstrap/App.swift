@@ -20,7 +20,7 @@ struct CoreApp: App {
         // 初始化聊天历史服务
         let container = self.modelContainer
         Task { @MainActor in
-            await ChatHistoryService.shared.initializeWithContainer(container)
+            ChatHistoryService.shared.initializeWithContainer(container)
         }
     }
 
