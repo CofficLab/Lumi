@@ -243,9 +243,11 @@ class AssistantViewModel: ObservableObject, SuperLog {
     /// 创建新对话
     func createNewConversation() async {
         let projectId = isProjectSelected ? currentProjectPath : nil
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd HH:mm"
         currentConversation = chatHistoryService.createConversation(
             projectId: projectId,
-            title: "新会话 " + DateFormatter(format: "MM-dd HH:mm").string(from: Date())
+            title: "新会话 " + formatter.string(from: Date())
         )
         hasGeneratedTitle = false  // 重置标题生成标记
         
