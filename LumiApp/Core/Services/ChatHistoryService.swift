@@ -158,7 +158,7 @@ class ChatHistoryService: SuperLog {
         do {
             try context.save()
             if Self.verbose {
-                os_log("\(Self.t)💾 [\(conversation.id)] 消息已保存：\(message.content.max(100))")
+                os_log("\(Self.t)💾 [\(conversation.id)] 消息已保存：\(message.content.max(50))")
             }
         } catch {
             os_log(.error, "\(Self.t)❌ 保存消息失败：\(error.localizedDescription)")

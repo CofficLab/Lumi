@@ -85,22 +85,75 @@ struct AgentModeContentView: View {
     
     /// 详情栏
     private var detailColumn: some View {
-        agentDetailContent()
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        VStack(spacing: 0) {
+            // 详情栏头部
+            detailHeaderContent()
+
+            Divider()
+                .background(Color.white.opacity(0.1))
+
+            // 详情栏中间（消息列表）
+            detailMiddleContent()
+
+            Divider()
+                .background(Color.white.opacity(0.1))
+
+            // 详情栏底部（输入区域）
+            detailBottomContent()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// Agent 模式的详情内容视图（显示插件提供的详情视图）
+    /// Agent 模式的详情头部内容视图
     @ViewBuilder
-    private func agentDetailContent() -> some View {
-        let detailViews = pluginProvider.getDetailViews()
+    private func detailHeaderContent() -> some View {
+        let headerViews = pluginProvider.getDetailHeaderViews()
         Group {
-            if detailViews.isEmpty {
-                // 如果没有插件提供详情视图，显示默认内容
+            if headerViews.isEmpty {
+                // 如果没有插件提供头部视图，显示默认内容
                 defaultDetailView
             } else {
-                // 显示所有插件提供的详情视图
+                // 显示所有插件提供的头部视图
                 VStack(spacing: 0) {
-                    ForEach(Array(detailViews.enumerated()), id: \.offset) { _, view in
+                    ForEach(Array(headerViews.enumerated()), id: \.offset) { _, view in
+                        view
+                    }
+                }
+            }
+        }
+    }
+
+    /// Agent 模式的详情中间内容视图（消息列表）
+    @ViewBuilder
+    private func detailMiddleContent() -> some View {
+        let middleViews = pluginProvider.getDetailMiddleViews()
+        Group {
+            if middleViews.isEmpty {
+                // 如果没有插件提供中间视图，显示默认内容
+                defaultDetailView
+            } else {
+                // 显示所有插件提供的中间视图
+                VStack(spacing: 0) {
+                    ForEach(Array(middleViews.enumerated()), id: \.offset) { _, view in
+                        view
+                    }
+                }
+            }
+        }
+    }
+
+    /// Agent 模式的详情底部内容视图（输入区域）
+    @ViewBuilder
+    private func detailBottomContent() -> some View {
+        let bottomViews = pluginProvider.getDetailBottomViews()
+        Group {
+            if bottomViews.isEmpty {
+                // 如果没有插件提供底部视图，显示默认内容
+                defaultDetailView
+            } else {
+                // 显示所有插件提供的底部视图
+                VStack(spacing: 0) {
+                    ForEach(Array(bottomViews.enumerated()), id: \.offset) { _, view in
                         view
                     }
                 }

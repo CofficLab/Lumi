@@ -46,7 +46,7 @@ struct ChatMessagesView: View, SuperLog {
 extension ChatMessagesView {
     func handleConversationSelected(_ conversationId: UUID) {
         if Self.verbose {
-            os_log("\(self.t) 已选择会话：\(conversationId)")
+            os_log("\(self.t) [\(conversationId)] 已选择")
         }
 
         Task {

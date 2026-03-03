@@ -37,12 +37,6 @@ actor DevAssistantPlugin: SuperPlugin {
     func addSettingsView() -> AnyView? {
         return AnyView(DevAssistantSettingsView())
     }
-    
-    @MainActor
-    func addDetailView() -> AnyView? {
-        // 在 Agent 模式下提供 DevAssistantView 作为详情视图
-        return AnyView(DevAssistantView())
-    }
 }
 
 #Preview("App") {

@@ -8,7 +8,7 @@ import SwiftData
 @MainActor
 final class AgentProvider: ObservableObject, SuperLog {
     nonisolated static let emoji = "🤖"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     /// 全局单例
     static let shared = AgentProvider()
