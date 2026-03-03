@@ -1,7 +1,12 @@
+import MagicKit
+import OSLog
 import SwiftUI
 
 /// 聊天消息列表视图 - 可滚动的聊天历史记录
-struct ChatMessagesView: View {
+struct ChatMessagesView: View, SuperLog {
+    nonisolated static let emoji = "💬"
+    nonisolated static let verbose = true
+
     @ObservedObject var viewModel: AssistantViewModel
 
     var body: some View {
@@ -33,10 +38,21 @@ struct ChatMessagesView: View {
     }
 }
 
+// MARK: - Actions
+
+
 // MARK: Event Handler
 
-func handleConversationSelected(_ conversationId: UUID) {
+extension ChatMessagesView {
+    func handleConversationSelected(_ conversationId: UUID) {
+        if Self.verbose {
+            os_log("\(self.t) 已选择会话：\(conversationId)")
+        }
 
+        Task {
+            await viewModel.loadConversation(conversationId)
+        }
+    }
 }
 
 // MARK: - Preview

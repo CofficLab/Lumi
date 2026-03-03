@@ -74,7 +74,9 @@ extension ChatHeaderView {
     /// 新会话按钮：点击时调用 viewModel.startNewChat()
     private var newChatButton: some View {
         Button(action: {
-            viewModel.startNewChat()
+            Task {
+                await viewModel.createNewConversation()
+            }
         }) {
             Image(systemName: "plus.circle")
                 .font(.system(size: 14))

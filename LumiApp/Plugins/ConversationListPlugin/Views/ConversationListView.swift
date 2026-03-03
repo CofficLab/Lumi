@@ -1,7 +1,7 @@
-import SwiftUI
 import MagicKit
-import SwiftData
 import OSLog
+import SwiftData
+import SwiftUI
 
 /// 对话列表视图
 /// 使用 List 渲染会话列表，支持会话选择、删除和自动恢复上次选择的会话

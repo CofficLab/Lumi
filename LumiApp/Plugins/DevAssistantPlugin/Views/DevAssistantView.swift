@@ -101,16 +101,6 @@ struct DevAssistantView: View {
     }
     
     // MARK: - Methods
-    
-    /// 加载指定对话
-    private func loadConversation(_ conversationId: UUID) {
-        Task { @MainActor in
-            // 从数据库获取对话
-            if let conversation = viewModel.chatHistoryService.fetchConversation(id: conversationId) {
-                await viewModel.loadConversation(conversation)
-            }
-        }
-    }
 
     private func selectImage() {
         let panel = NSOpenPanel()

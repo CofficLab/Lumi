@@ -53,8 +53,8 @@ final class AgentProvider: ObservableObject, SuperLog {
         }
     }
     
-    /// 设置选中会话 ID 但不触发通知（用于内部调用）
-    func setSelectedConversationIdWithoutNotification(_ id: UUID) {
+    /// 设置选中会话 ID
+    func setSelectedConversationId(_ id: UUID) {
         selectedConversationId = id
         UserDefaults.standard.set(id.uuidString, forKey: "Agent_SelectedConversationId")
     }

@@ -9,7 +9,7 @@ import OSLog
 @MainActor
 class AssistantViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🤖"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     // 发布状态
 

@@ -7,7 +7,7 @@ import SwiftData
 @MainActor
 class ChatHistoryService: SuperLog {
     nonisolated static let emoji = "💾"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
     
     static let shared = ChatHistoryService()
 
@@ -38,9 +38,6 @@ class ChatHistoryService: SuperLog {
 
         do {
             try context.save()
-            if Self.verbose {
-                os_log("\(Self.t)💾 对话已保存：\(conversation.title)")
-            }
         } catch {
             os_log(.error, "\(Self.t)❌ 保存对话失败：\(error.localizedDescription)")
         }
@@ -166,7 +163,7 @@ class ChatHistoryService: SuperLog {
         do {
             try context.save()
             if Self.verbose {
-                os_log("\(Self.t)💾 消息已保存")
+                os_log("\(Self.t)💾 [\(conversation.id)] 消息已保存：\(message.content.max(100))")
             }
         } catch {
             os_log(.error, "\(Self.t)❌ 保存消息失败：\(error.localizedDescription)")
@@ -208,7 +205,8 @@ class ChatHistoryService: SuperLog {
 
         let context = ModelContext(container)
         let descriptor = FetchDescriptor<Conversation>(
-            predicate: #Predicate { $0.id == id }
+            predicate: #Predicate { $0.id == id },
+            relationFetchPolicy: .includeAll
         )
 
         do {
@@ -253,7 +251,7 @@ class ChatHistoryService: SuperLog {
             .compactMap { $0.toChatMessage() }
 
         if Self.verbose {
-            os_log("\(Self.t)📄 加载到 \(messages.count) 条消息")
+            os_log("\(Self.t)📄 [\(conversation.id)] 加载到 \(messages.count) 条消息")
         }
         return messages
     }
