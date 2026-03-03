@@ -249,6 +249,14 @@ class AssistantViewModel: ObservableObject, SuperLog {
         )
         hasGeneratedTitle = false  // 重置标题生成标记
         
+        // 更新 AgentProvider 的选中会话 ID，让对话历史插件同步选中
+        if let conversationId = currentConversation?.id {
+            AgentProvider.shared.selectedConversationId = conversationId
+            if Self.verbose {
+                os_log("\(self.t)✅ 已更新选中会话 ID: \(conversationId)")
+            }
+        }
+        
         if Self.verbose {
             os_log("\(self.t)✅ 创建新对话：\(self.currentConversation?.title ?? "未知")")
         }
