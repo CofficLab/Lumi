@@ -1,7 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// 输入区域视图 - 包含附件预览、编辑器、工具栏和快捷短语
+/// 输入区域视图 - 包含附件预览、编辑器、工具栏
 struct InputAreaView: View {
     @ObservedObject var viewModel: AssistantViewModel
     @Binding var isInputFocused: Bool
@@ -66,20 +66,6 @@ struct InputAreaView: View {
                     onSendMessage: onSendMessage,
                     onStopGenerating: onStopGenerating
                 )
-                
-                // 快捷短语区域（英文 Commit 和中文 Commit）
-                if viewModel.isProjectSelected {
-                    QuickPhrasesView(
-                        onPhraseSelected: { prompt in
-                            viewModel.currentInput = prompt
-                            isInputFocused = true
-                        },
-                        projectName: $viewModel.currentProjectName,
-                        projectPath: $viewModel.currentProjectPath,
-                        isProjectSelected: $viewModel.isProjectSelected
-                    )
-                    .padding(.top, 8)
-                }
             }
             .background(Color(nsColor: .controlBackgroundColor))
             .cornerRadius(12)

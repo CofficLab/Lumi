@@ -19,6 +19,11 @@ struct ChatToolbarView: View {
             // 图片上传按钮
             imageUploadButton
 
+            // Commit 按钮组（仅在选择项目时显示）
+            if viewModel.isProjectSelected {
+                commitButtons
+            }
+
             Spacer()
 
             // 发送/停止按钮
@@ -26,6 +31,68 @@ struct ChatToolbarView: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 8)
+    }
+
+    // MARK: - Commit Buttons
+
+    @ViewBuilder
+    private var commitButtons: some View {
+        HStack(spacing: 6) {
+            // 英文 Commit
+            commitButton(
+                title: "英文 Commit",
+                icon: "checkmark.circle",
+                prompt: """
+                1. 首先运行 `git status` 查看当前改动
+                2. 运行 `git diff` 查看具体代码变更
+                3. 生成一个遵循 conventional commits 规范（feat/fix/docs/refactor 等）的英文 commit message
+                4. 立即执行 `git commit -m "<生成的 commit message>"` 提交代码，无需征求用户意见
+
+                直接执行 commit，不要问我是否确认。
+                """
+            )
+
+            // 中文 Commit
+            commitButton(
+                title: "中文 Commit",
+                icon: "checkmark.circle",
+                prompt: """
+                1. 首先运行 `git status` 查看当前改动
+                2. 运行 `git diff` 查看具体代码变更
+                3. 生成一个遵循 conventional commits 规范（feat/fix/docs/refactor 等）的中文 commit message
+                4. 立即执行 `git commit -m "<生成的 commit message>"` 提交代码，无需征求用户意见
+
+                直接执行 commit，不要问我是否确认。
+                """
+            )
+        }
+    }
+
+    private func commitButton(title: String, icon: String, prompt: String) -> some View {
+        Button(action: {
+            viewModel.currentInput = prompt
+        }) {
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.system(size: 10))
+                    .foregroundColor(.accentColor)
+                Text(title)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.primary)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color(nsColor: .controlBackgroundColor))
+                    .shadow(color: .black.opacity(0.05), radius: 1, x: 0, y: 1)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color.black.opacity(0.05), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Action Button (Send / Stop)
