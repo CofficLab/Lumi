@@ -490,7 +490,7 @@ extension AgentProvider {
             return
         }
 
-        hasGeneratedTitle = true
+        setHasGeneratedTitle(true)
 
         if Self.verbose {
             os_log("\(Self.t)🎯 开始为对话生成标题...")

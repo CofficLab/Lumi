@@ -234,6 +234,11 @@ final class AgentProvider: ObservableObject, SuperLog {
         conversationViewModel.setCurrentConversationInternal(conversation)
     }
 
+    /// 设置标题生成标记
+    func setHasGeneratedTitle(_ value: Bool) {
+        conversationViewModel.setHasGeneratedTitleInternal(value)
+    }
+
     // MARK: - 语言偏好
 
     @Published fileprivate(set) var languagePreference: LanguagePreference = .chinese {
