@@ -282,4 +282,21 @@ final class AgentProvider: ObservableObject, SuperLog {
     func setDepthWarning(_ warning: DepthWarning?) {
         depthWarning = warning
     }
+
+    // MARK: - 代理 ConversationViewModel 属性（仅供内部扩展使用）
+
+    /// 当前会话（代理到 ConversationViewModel）
+    var currentConversation: Conversation? {
+        ConversationViewModel.shared.currentConversation
+    }
+
+    /// 当前会话的消息列表（代理到 ConversationViewModel）
+    var messages: [ChatMessage] {
+        ConversationViewModel.shared.messages
+    }
+
+    /// 标记是否已生成标题（代理到 ConversationViewModel）
+    var hasGeneratedTitle: Bool {
+        ConversationViewModel.shared.hasGeneratedTitle
+    }
 }

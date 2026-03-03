@@ -552,7 +552,7 @@ extension AgentProvider {
 
         // 更新对话标题
         chatHistoryService.updateConversationTitle(conversation, newTitle: title)
-        currentConversation?.title = title
+        setCurrentConversation(conversation)
 
         if Self.verbose {
             os_log("\(Self.t)✅ 对话标题已生成：\(title)")
@@ -722,13 +722,13 @@ extension AgentProvider {
         // 更新配置
         var updatedConfig = config
         updatedConfig.providerId = selectedProviderId
-        updatedConfig.model = currentModel
+        updatedConfig.model = selectedModel
 
         // 保存
         ProjectConfigStore.shared.saveConfig(updatedConfig)
 
         if Self.verbose {
-            os_log("\(Self.t) 保存模型到项目配置：\(self.currentProjectName) -> \(self.currentModel)")
+            os_log("\(Self.t) 保存模型到项目配置：\(self.currentProjectName) -> \(self.selectedModel)")
         }
     }
 }
