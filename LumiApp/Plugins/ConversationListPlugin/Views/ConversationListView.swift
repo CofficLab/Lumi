@@ -13,8 +13,10 @@ struct ConversationListView: View, SuperLog {
 
     /// 数据上下文：用于查询和删除会话
     @Environment(\.modelContext) private var modelContext
+    /// 会话管理 ViewModel
+    @EnvironmentObject var conversationViewModel: ConversationViewModel
     /// 智能体提供者：管理选中的会话
-    @ObservedObject var agentProvider = AgentProvider.shared
+    @EnvironmentObject var agentProvider: AgentProvider
 
     /// 会话列表：按更新时间倒序排列
     @Query(sort: \Conversation.updatedAt, order: .reverse)
