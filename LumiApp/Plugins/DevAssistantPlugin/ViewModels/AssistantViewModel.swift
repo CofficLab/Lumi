@@ -245,7 +245,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
         let projectId = isProjectSelected ? currentProjectPath : nil
         currentConversation = chatHistoryService.createConversation(
             projectId: projectId,
-            title: "新对话"
+            title: "新会话 " + DateFormatter(format: "MM-dd HH:mm").string(from: Date())
         )
         hasGeneratedTitle = false  // 重置标题生成标记
         
@@ -282,7 +282,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
         // 3. 消息内容非空
         guard !hasGeneratedTitle,
               let conversation = currentConversation,
-              conversation.title == "新对话",
+              conversation.title.hasPrefix("新会话 "),
               !userMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return
         }
