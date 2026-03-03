@@ -203,10 +203,6 @@ extension AgentProvider {
         )
         hasGeneratedTitle = false // 重置标题生成标记
 
-        if Self.verbose {
-            os_log("\(Self.t)✅ [\(newConversation.id)] 已创建新会话")
-        }
-
         setCurrentConversationInternal(newConversation)
         setSelectedConversationId(newConversation.id)
 
