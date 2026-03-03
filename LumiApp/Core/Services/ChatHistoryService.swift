@@ -244,28 +244,13 @@ class ChatHistoryService: SuperLog {
 
     /// 加载对话的消息
     func loadMessages(for conversation: Conversation) -> [ChatMessage] {
-        guard let container = modelContainer else {
-            os_log(.error, "\(Self.t)❌ 模型容器未初始化")
-            return []
+        // 直接从 conversation 的关系中获取消息，避免 SwiftData predicate 类型问题
+        let messageEntities = conversation.messages.sorted { $0.timestamp < $1.timestamp }
+        let messages = messageEntities.compactMap { $0.toChatMessage() }
+        if Self.verbose {
+            os_log("\(Self.t)📄 [\(conversation.id)] 加载到 \(messages.count) 条消息")
         }
-
-        let context = ModelContext(container)
-        let descriptor = FetchDescriptor<ChatMessageEntity>(
-            predicate: #Predicate { $0.conversation?.id == conversation.id },
-            sortBy: [SortDescriptor(\.timestamp)]
-        )
-
-        do {
-            let messageEntities = try context.fetch(descriptor)
-            let messages = messageEntities.compactMap { $0.toChatMessage() }
-            if Self.verbose {
-                os_log("\(Self.t)📄 [\(conversation.id)] 加载到 \(messages.count) 条消息")
-            }
-            return messages
-        } catch {
-            os_log(.error, "\(Self.t)❌ 加载消息失败：\(error.localizedDescription)")
-            return []
-        }
+        return messages
     }
 
     // MARK: - 删除对话
