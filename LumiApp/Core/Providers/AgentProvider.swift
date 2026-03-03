@@ -46,7 +46,7 @@ final class AgentProvider: ObservableObject, SuperLog {
             if let id = selectedConversationId {
                 UserDefaults.standard.set(id.uuidString, forKey: "Agent_SelectedConversationId")
                 // 通知加载对话
-                NotificationCenter.default.post(name: .conversationSelected, object: id)
+                NotificationCenter.postConversationSelected(conversationId: id)
             } else {
                 UserDefaults.standard.removeObject(forKey: "Agent_SelectedConversationId")
             }
@@ -325,10 +325,4 @@ final class AgentProvider: ObservableObject, SuperLog {
         // 注意：会话选择不在此处恢复，因为需要等待 SwiftData 初始化完成
         // 应该在视图获取到 modelContext 后调用 restoreSelectedConversation
     }
-}
-
-// MARK: - Notification Names
-
-extension Notification.Name {
-    static let conversationSelected = Notification.Name("conversationSelected")
 }

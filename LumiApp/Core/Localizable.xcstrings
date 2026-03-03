@@ -854,9 +854,6 @@
     "Auto" : {
 
     },
-    "Automatically approve high-risk commands" : {
-
-    },
     "Available: %@" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4827,9 +4824,6 @@
         }
       }
     },
-    "Upload Image" : {
-
-    },
     "Uptime: %@" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5011,6 +5005,9 @@
           }
         }
       }
+    },
+    "上传图片" : {
+
     },
     "主题" : {
       "localizations" : {
@@ -5508,6 +5505,9 @@
           }
         }
       }
+    },
+    "自动批准高风险命令" : {
+
     },
     "设置" : {
 
