@@ -9,9 +9,26 @@ import SwiftData
 final class AgentProvider: ObservableObject, SuperLog {
     nonisolated static let emoji = "🤖"
     nonisolated static let verbose = false
-    
+
     /// 全局单例
     static let shared = AgentProvider()
+
+    // MARK: - 服务依赖
+
+    /// 聊天历史服务
+    let chatHistoryService = ChatHistoryService.shared
+
+    /// 提示词服务
+    let promptService = PromptService.shared
+
+    /// 供应商注册表
+    let registry = ProviderRegistry.shared
+
+    /// LLM 服务
+    let llmService = LLMService.shared
+
+    /// 工具管理器
+    let toolManager = ToolManager.shared
 
     // MARK: - 项目信息
 
@@ -102,10 +119,135 @@ final class AgentProvider: ObservableObject, SuperLog {
         }
     }
 
+    // MARK: - 对话历史管理
+
+    /// 当前对话会话
+    @Published var currentConversation: Conversation?
+
+    /// 标记是否已生成标题
+    var hasGeneratedTitle: Bool = false
+
     // MARK: - 初始化
 
     private init() {
         loadPreferences()
+    }
+
+    // MARK: - 对话管理
+
+    /// 创建新对话
+    func createNewConversation() async {
+        if Self.verbose {
+            os_log("\(Self.t)🚀 开始创建新会话")
+        }
+
+        // 首先创建会话
+        let projectId = isProjectSelected ? currentProjectPath : nil
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd HH:mm"
+        let newConversation = chatHistoryService.createConversation(
+            projectId: projectId,
+            title: "新会话 " + formatter.string(from: Date())
+        )
+        hasGeneratedTitle = false // 重置标题生成标记
+
+        if Self.verbose {
+            os_log("\(Self.t)✅ [\(newConversation.id)] 已创建新会话")
+        }
+
+        currentConversation = newConversation
+        setSelectedConversationId(newConversation.id)
+
+        if Self.verbose {
+            os_log("\(Self.t)✅ [\(newConversation.id)] 新会话创建完成")
+        }
+    }
+
+    /// 保存消息到存储
+    func saveMessage(_ message: ChatMessage) {
+        guard let conversation = currentConversation else {
+            if Self.verbose {
+                os_log("\(Self.t)⚠️ 当前没有活动对话，跳过保存")
+            }
+            return
+        }
+
+        chatHistoryService.saveMessage(message, to: conversation)
+    }
+
+    /// 加载指定对话的消息
+    func loadConversation(_ conversationId: UUID) async {
+        if Self.verbose {
+            os_log("\(Self.t)📥 [\(conversationId)] 开始加载对话")
+        }
+
+        // 从数据库获取对话
+        guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
+            return
+        }
+
+        currentConversation = conversation
+
+        if Self.verbose {
+            os_log("\(Self.t)✅ [\(conversation.id)] 对话加载完成")
+        }
+    }
+
+    /// 获取可用供应商列表
+    var availableProviders: [ProviderInfo] {
+        registry.allProviders()
+    }
+
+    /// 获取可用工具列表
+    var tools: [AgentTool] {
+        toolManager.tools
+    }
+
+    /// 获取当前供应商配置
+    func getCurrentConfig() -> LLMConfig {
+        guard let providerType = registry.providerType(forId: selectedProviderId),
+              registry.createProvider(id: selectedProviderId) != nil else {
+            return LLMConfig.default
+        }
+
+        // 从 UserDefaults 获取 API Key
+        let apiKey = UserDefaults.standard.string(forKey: providerType.apiKeyStorageKey) ?? ""
+
+        // 从 UserDefaults 获取选中的模型
+        let selectedModel = UserDefaults.standard.string(forKey: providerType.modelStorageKey) ?? providerType.defaultModel
+
+        return LLMConfig(
+            apiKey: apiKey,
+            model: selectedModel,
+            providerId: selectedProviderId
+        )
+    }
+
+    /// 获取当前选中的模型名称
+    var currentModel: String {
+        guard let providerType = registry.providerType(forId: selectedProviderId) else {
+            return ""
+        }
+        return UserDefaults.standard.string(forKey: providerType.modelStorageKey) ?? providerType.defaultModel
+    }
+
+    /// 获取指定供应商的 API Key
+    func getApiKey(for providerId: String) -> String {
+        guard let providerType = registry.providerType(forId: providerId) else {
+            return ""
+        }
+        return UserDefaults.standard.string(forKey: providerType.apiKeyStorageKey) ?? ""
+    }
+
+    /// 设置指定供应商的 API Key
+    func setApiKey(_ apiKey: String, for providerId: String) {
+        guard let providerType = registry.providerType(forId: providerId) else {
+            return
+        }
+        UserDefaults.standard.set(apiKey, forKey: providerType.apiKeyStorageKey)
+        if Self.verbose {
+            os_log("\(Self.t) 已设置 \(providerType.displayName) 的 API Key")
+        }
     }
 
     // MARK: - 会话选择

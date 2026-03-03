@@ -20,7 +20,7 @@ extension AssistantViewModel {
         // 检查是否已选择项目
         if !isProjectSelected {
             Task {
-                let warningContent = await promptService.getProjectNotSelectedWarningMessage()
+                let warningContent = await AgentProvider.shared.promptService.getProjectNotSelectedWarningMessage()
                 let warningMsg = ChatMessage(
                     role: .assistant,
                     content: warningContent,
@@ -121,7 +121,7 @@ extension AssistantViewModel {
         updateDepthWarning(currentDepth: depth, maxDepth: maxDepth)
 
         // 根据聊天模式决定是否传递工具
-        let availableTools: [AgentTool] = (chatMode == .build) ? tools : []
+        let availableTools: [AgentTool] = (chatMode == .build) ? AgentProvider.shared.tools : []
 
         if Self.verbose && chatMode == .chat {
             os_log("\(self.t) 当前为对话模式，不传递工具")
@@ -135,7 +135,7 @@ extension AssistantViewModel {
             }
 
             // 1. 获取 LLM 响应
-            var responseMsg = try await llmService.sendMessage(messages: messages, config: config, tools: availableTools)
+            var responseMsg = try await AgentProvider.shared.llmService.sendMessage(messages: messages, config: config, tools: availableTools)
             
             // 检查内容是否为空（只有空白字符）
             let hasContent = !responseMsg.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -151,7 +151,7 @@ extension AssistantViewModel {
                 
                 let prefix = languagePreference == .chinese 
                     ? "🔧 正在执行 \(responseMsg.toolCalls!.count) 个工具："
-                    : "🔧 Executing \(responseMsg.toolCalls!.count) tools:"
+                    : "🔧 Executing \(responseMsg.toolCalls!.count) AgentProvider.shared.toolManager.tools:"
                 
                 let enhancedContent = prefix + "\n" + toolSummary
                 responseMsg = ChatMessage(
@@ -214,7 +214,7 @@ extension AssistantViewModel {
         case .chinese:
             message = "已切换到对话模式。在此模式下，我将只与您进行对话，不会执行任何工具或修改代码。有什么问题我可以帮您解答？"
         case .english:
-            message = "Switched to Chat mode. In this mode, I will only chat with you without executing any tools or modifying code. How can I help you today?"
+            message = "Switched to Chat mode. In this mode, I will only chat with you without executing any AgentProvider.shared.toolManager.tools or modifying code. How can I help you today?"
         }
 
         messages.append(ChatMessage(role: .assistant, content: message))

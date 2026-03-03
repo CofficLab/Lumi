@@ -21,7 +21,7 @@ extension AssistantViewModel {
 
         Task {
             // 刷新系统提示
-            let fullSystemPrompt = await promptService.buildSystemPrompt(
+            let fullSystemPrompt = await AgentProvider.shared.promptService.buildSystemPrompt(
                 languagePreference: languagePreference,
                 includeContext: true
             )

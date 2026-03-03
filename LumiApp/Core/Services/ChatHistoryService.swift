@@ -67,11 +67,6 @@ class ChatHistoryService: SuperLog {
 
     /// 更新对话标题
     func updateConversationTitle(_ conversation: Conversation, newTitle: String) {
-        guard let container = modelContainer else {
-            os_log(.error, "\(Self.t)❌ 模型容器未初始化")
-            return
-        }
-
         conversation.title = newTitle
         conversation.updatedAt = Date()
 

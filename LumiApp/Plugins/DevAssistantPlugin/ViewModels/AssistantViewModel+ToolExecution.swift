@@ -37,7 +37,7 @@ extension AssistantViewModel {
 
     private func executePendingTool(request: PermissionRequest) async {
         // 使用 ToolManager 查找工具
-        guard toolManager.hasTool(named: request.toolName) else {
+        guard AgentProvider.shared.toolManager.hasTool(named: request.toolName) else {
             let errorMsg = ChatMessage(
                 role: .user,
                 content: "Error: Tool '\(request.toolName)' not found.",
@@ -51,7 +51,7 @@ extension AssistantViewModel {
 
         do {
             // 使用 ToolManager 执行工具
-            let result = try await toolManager.executeTool(
+            let result = try await AgentProvider.shared.toolManager.executeTool(
                 named: request.toolName,
                 arguments: request.arguments
             )
@@ -167,7 +167,7 @@ extension AssistantViewModel {
         }
 
         // 使用 ToolManager 查找工具
-        guard toolManager.hasTool(named: toolCall.name) else {
+        guard AgentProvider.shared.toolManager.hasTool(named: toolCall.name) else {
             os_log(.error, "\(self.t)❌ 工具 '\(toolCall.name)' 未找到")
             let errorMsg = ChatMessage(
                 role: .user,
@@ -192,12 +192,12 @@ extension AssistantViewModel {
             nonisolated(unsafe) let unsafeArgs = toolArguments
 
             // 使用 ToolManager 执行工具
-            let result = try await toolManager.executeTool(
+            let result = try await AgentProvider.shared.toolManager.executeTool(
                 named: toolCall.name,
                 arguments: unsafeArgs
             )
 
-            let duration = Date().timeIntervalSince(startTime)
+            let _ = Date().timeIntervalSince(startTime)
 
             let resultMsg = ChatMessage(
                 role: .user,
