@@ -96,11 +96,11 @@ struct ModelSelectorView: View {
     ///   - providerId: 供应商 ID
     ///   - model: 模型名称
     private func selectModel(providerId: String, model: String) {
-        agentProvider.selectedProviderId = providerId
-        agentProvider.updateSelectedModel(model)
+        agentProvider.setSelectedProviderId(providerId)
+        agentProvider.setSelectedModel(model)
 
         // 保存到当前项目配置
-        agentProvider.saveCurrentModelToProjectConfig()
+        agentProvider.saveCurrentProjectConfig()
 
         dismiss()
     }

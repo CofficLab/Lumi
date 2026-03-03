@@ -26,7 +26,7 @@ struct DevAssistantView: View {
                     warning: warning,
                     onDismiss: {
                         withAnimation {
-                            agentProvider.depthWarning = nil
+                            agentProvider.setDepthWarning(nil)
                         }
                     }
                 )

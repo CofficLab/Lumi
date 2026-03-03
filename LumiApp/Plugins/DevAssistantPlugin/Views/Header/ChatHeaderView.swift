@@ -98,7 +98,7 @@ extension ChatHeaderView {
 
             Toggle("", isOn: Binding(
                 get: { agentProvider.autoApproveRisk },
-                set: { agentProvider.autoApproveRisk = $0 }
+                set: { agentProvider.setAutoApproveRisk($0) }
             ))
                 .toggleStyle(.switch)
                 .controlSize(.mini)
@@ -117,7 +117,7 @@ extension ChatHeaderView {
             ForEach(LanguagePreference.allCases) { lang in
                 Button(action: {
                     withAnimation {
-                        agentProvider.languagePreference = lang
+                        agentProvider.setLanguagePreference(lang)
                     }
                 }) {
                     HStack {

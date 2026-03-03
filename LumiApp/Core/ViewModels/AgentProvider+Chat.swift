@@ -15,18 +15,18 @@ extension AgentProvider {
         }
         // 清除工具队列
         pendingToolCalls.removeAll()
-        pendingPermissionRequest = nil
+        setPermissionAndWarningState(permissionRequest: nil)
         // 重置处理状态
-        isProcessing = false
+        setIsProcessing(false)
         // 添加取消提示消息
         let cancelMessage = languagePreference == .chinese ? "⚠️ 生成已取消" : "⚠️ Generation cancelled"
-        messages.append(ChatMessage(role: .assistant, content: cancelMessage))
+        appendMessage(ChatMessage(role: .assistant, content: cancelMessage))
     }
 
     // MARK: - SlashCommandService API
 
     public func appendSystemMessage(_ content: String) {
-        messages.append(ChatMessage(role: .assistant, content: content))
+        appendMessage(ChatMessage(role: .assistant, content: content))
     }
 
     public func triggerPlanningMode(task: String) {
@@ -50,7 +50,7 @@ extension AgentProvider {
         }
 
         // 清除之前的深度警告
-        depthWarning = nil
+        setPermissionAndWarningState(depthWarning: nil)
 
         // 检查是否已选择项目
         if !isProjectSelected {
@@ -61,15 +61,13 @@ extension AgentProvider {
                     content: warningContent,
                     isError: true
                 )
-                messages.append(warningMsg)
+                appendMessage(warningMsg)
             }
             return
         }
 
         let input = currentInput
-        currentInput = ""
-        isProcessing = true
-        errorMessage = nil
+        setChatMessageState(input: "", processing: true, errorMessage: nil)
 
         // 检查是否为斜杠命令
         if input.hasPrefix("/") {
@@ -77,11 +75,11 @@ extension AgentProvider {
                 let result = await SlashCommandService.shared.handle(input: input, provider: self)
                 switch result {
                 case .handled:
-                    isProcessing = false
+                    setIsProcessing(false)
                     self.pendingAttachments.removeAll()
                 case let .error(msg):
-                    messages.append(ChatMessage(role: .assistant, content: "Command Error: \(msg)", isError: true))
-                    isProcessing = false
+                    appendMessage(ChatMessage(role: .assistant, content: "Command Error: \(msg)", isError: true))
+                    setIsProcessing(false)
                     self.pendingAttachments.removeAll()
                 case .notHandled:
                     await processUserMessage(input: input)
@@ -123,7 +121,7 @@ extension AgentProvider {
             os_log("\(Self.t)✅ 用户消息包含 \(images.count) 张图片")
         }
 
-        messages.append(userMsg)
+        appendMessage(userMsg)
 
         // 立即保存用户消息
         saveMessage(userMsg)
@@ -140,9 +138,9 @@ extension AgentProvider {
         let maxDepth = 100
 
         guard depth < maxDepth else {
-            errorMessage = "Max recursion depth reached."
-            isProcessing = false
-            depthWarning = DepthWarning(currentDepth: depth, maxDepth: maxDepth, warningType: .reached)
+            setErrorMessage("Max recursion depth reached.")
+            setIsProcessing(false)
+            setPermissionAndWarningState(depthWarning: DepthWarning(currentDepth: depth, maxDepth: maxDepth, warningType: .reached))
             os_log(.error, "\(Self.t) 达到最大递归深度 (\(maxDepth))，对话终止")
             return
         }
@@ -202,7 +200,7 @@ extension AgentProvider {
                 }
             }
 
-            messages.append(responseMsg)
+            appendMessage(responseMsg)
 
             // 立即保存助手消息
             saveMessage(responseMsg)
@@ -227,16 +225,16 @@ extension AgentProvider {
                 await handleToolCall(firstTool)
             } else {
                 // 无工具调用，轮次结束
-                isProcessing = false
+                setIsProcessing(false)
                 if Self.verbose {
                     os_log("\(Self.t)✅ 对话轮次已完成（无工具调用）")
                 }
             }
         } catch {
-            errorMessage = error.localizedDescription
-            messages.append(ChatMessage(role: .assistant, content: "Error: \(error.localizedDescription)", isError: true))
-            isProcessing = false
-            depthWarning = nil  // 清除深度警告
+            setErrorMessage(error.localizedDescription)
+            appendMessage(ChatMessage(role: .assistant, content: "Error: \(error.localizedDescription)", isError: true))
+            setIsProcessing(false)
+            setPermissionAndWarningState(depthWarning: nil)
             os_log(.error, "\(Self.t) 对话处理失败：\(error.localizedDescription)")
         }
     }
@@ -252,7 +250,7 @@ extension AgentProvider {
             message = "Switched to Chat mode. In this mode, I will only chat with you without executing any tools or modifying code. How can I help you today?"
         }
 
-        messages.append(ChatMessage(role: .assistant, content: message))
+        appendMessage(ChatMessage(role: .assistant, content: message))
     }
 }
 
@@ -273,13 +271,13 @@ extension AgentProvider {
     public func respondToPermissionRequest(allowed: Bool) {
         guard let request = pendingPermissionRequest else { return }
 
-        pendingPermissionRequest = nil
+        setPermissionAndWarningState(permissionRequest: nil)
 
         Task {
             if allowed {
                 await executePendingTool(request: request)
             } else {
-                messages.append(ChatMessage(
+                appendMessage(ChatMessage(
                     role: .user,
                     content: "Tool execution denied by user.",
                     toolCallID: request.toolCallID
@@ -297,7 +295,7 @@ extension AgentProvider {
                 content: "Error: Tool '\(request.toolName)' not found.",
                 toolCallID: request.toolCallID
             )
-            messages.append(errorMsg)
+            appendMessage(errorMsg)
             saveMessage(errorMsg)
             await processPendingTools()
             return
@@ -315,7 +313,7 @@ extension AgentProvider {
                 content: result,
                 toolCallID: request.toolCallID
             )
-            messages.append(resultMsg)
+            appendMessage(resultMsg)
             saveMessage(resultMsg)
 
             await processPendingTools()
@@ -325,7 +323,7 @@ extension AgentProvider {
                 content: "Error executing tool: \(error.localizedDescription)",
                 toolCallID: request.toolCallID
             )
-            messages.append(errorMsg)
+            appendMessage(errorMsg)
             saveMessage(errorMsg)
             await processPendingTools()
         }
@@ -401,12 +399,12 @@ extension AgentProvider {
                 riskLevel = .medium
             }
 
-            pendingPermissionRequest = PermissionRequest(
+            setPermissionRequest(PermissionRequest(
                 toolName: toolCall.name,
                 argumentsString: toolCall.arguments,
                 toolCallID: toolCall.id,
                 riskLevel: riskLevel
-            )
+            ))
             return
         }
 
@@ -428,7 +426,7 @@ extension AgentProvider {
                 content: "Error: Tool '\(toolCall.name)' not found.",
                 toolCallID: toolCall.id
             )
-            messages.append(errorMsg)
+            appendMessage(errorMsg)
             saveMessage(errorMsg)
             await processPendingTools()
             return
@@ -458,7 +456,7 @@ extension AgentProvider {
                 content: result,
                 toolCallID: toolCall.id
             )
-            messages.append(resultMsg)
+            appendMessage(resultMsg)
             saveMessage(resultMsg)
 
             await processPendingTools()
@@ -469,7 +467,7 @@ extension AgentProvider {
                 content: "Error executing tool: \(error.localizedDescription)",
                 toolCallID: toolCall.id
             )
-            messages.append(errorMsg)
+            appendMessage(errorMsg)
             saveMessage(errorMsg)
             await processPendingTools()
         }
@@ -527,7 +525,7 @@ extension AgentProvider {
                 languagePreference: languagePreference,
                 includeContext: isProjectSelected
             )
-            messages = [ChatMessage(role: .system, content: fullSystemPrompt)]
+            setMessages([ChatMessage(role: .system, content: fullSystemPrompt)])
         }
     }
 }
@@ -553,10 +551,11 @@ extension AgentProvider {
             )
 
             // 更新第一条系统消息
-            if !messages.isEmpty, messages[0].role == .system {
-                messages[0] = ChatMessage(role: .system, content: fullSystemPrompt)
+            let currentMessages = messages
+            if !currentMessages.isEmpty, currentMessages[0].role == .system {
+                updateMessage(ChatMessage(role: .system, content: fullSystemPrompt), at: 0)
             } else {
-                messages.insert(ChatMessage(role: .system, content: fullSystemPrompt), at: 0)
+                insertMessage(ChatMessage(role: .system, content: fullSystemPrompt), at: 0)
             }
 
             // 添加切换项目通知（根据语言偏好）
@@ -582,7 +581,7 @@ extension AgentProvider {
                 """
             }
 
-            messages.append(ChatMessage(role: .assistant, content: switchMessage))
+            appendMessage(ChatMessage(role: .assistant, content: switchMessage))
 
             if Self.verbose {
                 os_log("\(Self.t) 已切换到项目：\(projectName) (\(path))")
@@ -605,7 +604,7 @@ extension AgentProvider {
         guard let data = try? Data(contentsOf: url),
               let _ = NSImage(data: data) else {
             os_log(.error, "\(Self.t)❌ 无效的图片文件")
-            errorMessage = "Invalid image file"
+            setErrorMessage("Invalid image file")
             return
         }
 
@@ -636,17 +635,17 @@ extension AgentProvider {
     /// 更新深度警告状态
     func updateDepthWarning(currentDepth: Int, maxDepth: Int) {
         if currentDepth >= maxDepth - 1 {
-            depthWarning = DepthWarning(currentDepth: currentDepth, maxDepth: maxDepth, warningType: .critical)
+            setPermissionAndWarningState(depthWarning: DepthWarning(currentDepth: currentDepth, maxDepth: maxDepth, warningType: .critical))
         } else if currentDepth >= maxDepth * 8 / 10 {
-            depthWarning = DepthWarning(currentDepth: currentDepth, maxDepth: maxDepth, warningType: .approaching)
+            setPermissionAndWarningState(depthWarning: DepthWarning(currentDepth: currentDepth, maxDepth: maxDepth, warningType: .approaching))
         } else {
-            depthWarning = nil  // 清除警告
+            setPermissionAndWarningState(depthWarning: nil)
         }
     }
 
     /// 清除深度警告（用户手动关闭）
     public func dismissDepthWarning() {
-        depthWarning = nil
+        setPermissionAndWarningState(depthWarning: nil)
     }
 }
 

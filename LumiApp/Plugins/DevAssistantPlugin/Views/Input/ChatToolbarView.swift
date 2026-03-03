@@ -71,7 +71,7 @@ struct ChatToolbarView: View {
 
     private func commitButton(title: String, icon: String, prompt: String) -> some View {
         Button(action: {
-            agentProvider.currentInput = prompt
+            agentProvider.setCurrentInput(prompt)
         }) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
@@ -135,7 +135,7 @@ struct ChatToolbarView: View {
             ForEach(ChatMode.allCases) { mode in
                 Button(action: {
                     withAnimation {
-                        agentProvider.chatMode = mode
+                        agentProvider.setChatMode(mode)
                     }
                 }) {
                     HStack {

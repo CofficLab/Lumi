@@ -34,7 +34,7 @@ struct InputAreaView: View {
                 MacEditorView(
                     text: Binding(
                         get: { agentProvider.currentInput },
-                        set: { agentProvider.currentInput = $0 }
+                        set: { agentProvider.setCurrentInput($0) }
                     ),
                     onSubmit: onSendMessage,
                     onArrowUp: {
@@ -50,7 +50,7 @@ struct InputAreaView: View {
                     onEnter: {
                         if commandSuggestionViewModel.isVisible,
                            let suggestion = commandSuggestionViewModel.getCurrentSuggestion() {
-                            agentProvider.currentInput = suggestion.command + " "
+                            agentProvider.setCurrentInput(suggestion.command + " ")
                             commandSuggestionViewModel.isVisible = false
                         } else {
                             onSendMessage()
@@ -83,7 +83,7 @@ struct InputAreaView: View {
             }
             .overlay(alignment: .bottomLeading) {
                 CommandSuggestionView { suggestion in
-                    agentProvider.currentInput = suggestion.command + " "
+                    agentProvider.setCurrentInput(suggestion.command + " ")
                     commandSuggestionViewModel.isVisible = false
                     isInputFocused = true
                 }
@@ -160,7 +160,7 @@ struct InputAreaView: View {
     private func handleFileDrop(fileURL: URL) {
         // 将文件路径作为文本插入到输入框
         let file_path = fileURL.path
-        agentProvider.currentInput += "\(file_path) "
+        agentProvider.appendInput("\(file_path) ")
     }
 }
 
