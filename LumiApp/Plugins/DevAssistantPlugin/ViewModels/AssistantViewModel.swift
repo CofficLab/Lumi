@@ -243,11 +243,21 @@ class AssistantViewModel: ObservableObject, SuperLog {
     /// 创建新对话
     func createNewConversation() async {
         let projectId = isProjectSelected ? currentProjectPath : nil
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd HH:mm"
         currentConversation = chatHistoryService.createConversation(
             projectId: projectId,
-            title: "新对话"
+            title: "新会话 " + formatter.string(from: Date())
         )
         hasGeneratedTitle = false  // 重置标题生成标记
+        
+        // 更新 AgentProvider 的选中会话 ID，让对话历史插件同步选中
+        if let conversationId = currentConversation?.id {
+            AgentProvider.shared.selectedConversationId = conversationId
+            if Self.verbose {
+                os_log("\(self.t)✅ 已更新选中会话 ID: \(conversationId)")
+            }
+        }
         
         if Self.verbose {
             os_log("\(self.t)✅ 创建新对话：\(self.currentConversation?.title ?? "未知")")
@@ -274,7 +284,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
         // 3. 消息内容非空
         guard !hasGeneratedTitle,
               let conversation = currentConversation,
-              conversation.title == "新对话",
+              conversation.title.hasPrefix("新会话 "),
               !userMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return
         }

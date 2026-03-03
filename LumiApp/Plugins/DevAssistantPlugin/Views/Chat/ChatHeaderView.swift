@@ -1,15 +1,18 @@
 import SwiftUI
 
-/// 聊天头部视图 - 包含项目信息、工具栏按钮和快捷操作
+/// 聊天头部视图
+/// 包含项目信息、工具栏按钮和快捷操作，显示在聊天界面顶部
 struct ChatHeaderView: View {
+    /// 视图模型：管理聊天状态和数据
     @ObservedObject var viewModel: AssistantViewModel
+    /// 项目选择器呈现状态绑定
     @Binding var isProjectSelectorPresented: Bool
+    /// MCP 设置呈现状态绑定
     @Binding var isMCPSettingsPresented: Bool
 
     var body: some View {
         VStack(spacing: 0) {
-            // MARK: - 主工具栏
-
+            // 主工具栏：包含应用图标、项目信息和功能按钮
             HStack(spacing: 12) {
                 // 应用图标
                 Image(systemName: "hammer.fill")
@@ -50,8 +53,7 @@ struct ChatHeaderView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 4)
 
-            // MARK: - 项目选择提示
-
+            // 项目选择提示：未选择项目时显示
             if !viewModel.isProjectSelected {
                 projectSelectionHint
             }
@@ -64,9 +66,12 @@ struct ChatHeaderView: View {
             alignment: .bottom
         )
     }
+}
 
-    // MARK: - New Chat Button
+// MARK: - View
 
+extension ChatHeaderView {
+    /// 新会话按钮：点击时调用 viewModel.startNewChat()
     private var newChatButton: some View {
         Button(action: {
             viewModel.startNewChat()
@@ -88,8 +93,7 @@ struct ChatHeaderView: View {
         .help("Start a new chat session")
     }
 
-    // MARK: - Auto Approve Toggle
-
+    /// 自动批准开关：控制是否自动批准高风险命令
     private var autoApproveToggle: some View {
         HStack(spacing: 6) {
             Text("Auto")
@@ -108,8 +112,7 @@ struct ChatHeaderView: View {
         .help("Automatically approve high-risk commands")
     }
 
-    // MARK: - Language Selector
-
+    /// 语言选择器：下拉菜单选择 AI 响应语言
     private var languageSelector: some View {
         Menu {
             ForEach(LanguagePreference.allCases) { lang in
@@ -144,8 +147,7 @@ struct ChatHeaderView: View {
         .frame(width: 70)
     }
 
-    // MARK: - MCP Button
-
+    /// MCP 管理按钮：打开 MCP 服务器设置
     private var mcpButton: some View {
         Button(action: {
             isMCPSettingsPresented = true
@@ -160,8 +162,7 @@ struct ChatHeaderView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Project Button
-
+    /// 项目管理按钮：打开项目选择器
     private var projectButton: some View {
         Button(action: {
             isProjectSelectorPresented = true
@@ -176,8 +177,7 @@ struct ChatHeaderView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Settings Button
-
+    /// 设置按钮：打开应用设置
     private var settingsButton: some View {
         Button(action: {
             NotificationCenter.postOpenSettings()
@@ -192,8 +192,7 @@ struct ChatHeaderView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Project Selection Hint
-
+    /// 项目选择提示：未选择项目时显示的提示信息
     private var projectSelectionHint: some View {
         HStack(spacing: 8) {
             Image(systemName: "info.circle.fill")
@@ -222,7 +221,10 @@ struct ChatHeaderView: View {
     }
 }
 
-#Preview {
+// MARK: - Preview
+
+#if os(macOS)
+#Preview("聊天头部 - 默认状态") {
     ChatHeaderView(
         viewModel: AssistantViewModel(),
         isProjectSelectorPresented: .constant(false),
@@ -230,3 +232,13 @@ struct ChatHeaderView: View {
     )
     .frame(width: 800)
 }
+
+#Preview("聊天头部 - 窄屏") {
+    ChatHeaderView(
+        viewModel: AssistantViewModel(),
+        isProjectSelectorPresented: .constant(false),
+        isMCPSettingsPresented: .constant(false)
+    )
+    .frame(width: 600)
+}
+#endif
