@@ -61,7 +61,7 @@ extension AssistantViewModel {
     }
 
     func processUserMessage(input: String) async {
-        var finalContent = input
+        let finalContent = input
 
         // 处理附件 - 转换为结构化图片数据
         var images: [ImageAttachment] = []
