@@ -7,7 +7,8 @@ import MagicKit
 @MainActor
 class ProcessMonitorService: ObservableObject, SuperLog {
     static let shared = ProcessMonitorService()
-    nonisolated static let emoji = "🕵️‍♂️"
+    nonisolated static let emoji = "👮"
+    nonisolated static let verbose = false
     
     // Sampling interval
     private let interval: TimeInterval = 1.0
