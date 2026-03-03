@@ -71,13 +71,11 @@ final class AgentProvider: ObservableObject, SuperLog {
     /// 当前对话会话（代理到 ConversationViewModel）
     public var currentConversation: Conversation? {
         get { conversationViewModel.currentConversation }
-        set { conversationViewModel.currentConversation = newValue }
     }
 
     /// 标记是否已生成标题（代理到 ConversationViewModel）
     public var hasGeneratedTitle: Bool {
         get { conversationViewModel.hasGeneratedTitle }
-        set { conversationViewModel.hasGeneratedTitle = newValue }
     }
 
     // MARK: - 聊天消息状态 (DevAssistant)
@@ -85,7 +83,6 @@ final class AgentProvider: ObservableObject, SuperLog {
     /// 聊天消息列表（代理到 ConversationViewModel）
     public var messages: [ChatMessage] {
         get { conversationViewModel.messages }
-        set { conversationViewModel.messages = newValue }
     }
 
     // MARK: - Setter 方法
@@ -114,7 +111,7 @@ final class AgentProvider: ObservableObject, SuperLog {
 
     /// 设置当前会话（内部使用）
     func setCurrentConversationInternal(_ conversation: Conversation?) {
-        conversationViewModel.currentConversation = conversation
+        conversationViewModel.setCurrentConversationInternal(conversation)
     }
 
     /// 设置聊天消息状态（内部使用）
@@ -214,27 +211,27 @@ final class AgentProvider: ObservableObject, SuperLog {
 
     /// 设置聊天消息列表
     func setMessages(_ messages: [ChatMessage]) {
-        conversationViewModel.messages = messages
+        conversationViewModel.setMessagesInternal(messages)
     }
 
     /// 追加消息到列表
     func appendMessage(_ message: ChatMessage) {
-        conversationViewModel.messages.append(message)
+        conversationViewModel.appendMessageInternal(message)
     }
 
     /// 插入消息到指定位置
     func insertMessage(_ message: ChatMessage, at index: Int) {
-        conversationViewModel.messages.insert(message, at: index)
+        conversationViewModel.insertMessageInternal(message, at: index)
     }
 
     /// 更新指定位置的消息
     func updateMessage(_ message: ChatMessage, at index: Int) {
-        conversationViewModel.messages[index] = message
+        conversationViewModel.updateMessageInternal(message, at: index)
     }
 
     /// 设置当前会话
     func setCurrentConversation(_ conversation: Conversation?) {
-        conversationViewModel.currentConversation = conversation
+        conversationViewModel.setCurrentConversationInternal(conversation)
     }
 
     // MARK: - 语言偏好

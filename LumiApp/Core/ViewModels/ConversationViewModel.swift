@@ -44,6 +44,38 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     /// 标记是否已生成标题
     @Published fileprivate(set) var hasGeneratedTitle: Bool = false
 
+    // MARK: - 内部方法（仅供 AgentProvider 使用）
+
+    /// 设置当前会话（内部使用）
+    func setCurrentConversationInternal(_ conversation: Conversation?) {
+        currentConversation = conversation
+    }
+
+    /// 设置消息列表（内部使用）
+    func setMessagesInternal(_ newMessages: [ChatMessage]) {
+        messages = newMessages
+    }
+
+    /// 追加消息（内部使用）
+    func appendMessageInternal(_ message: ChatMessage) {
+        messages.append(message)
+    }
+
+    /// 插入消息（内部使用）
+    func insertMessageInternal(_ message: ChatMessage, at index: Int) {
+        messages.insert(message, at: index)
+    }
+
+    /// 更新消息（内部使用）
+    func updateMessageInternal(_ message: ChatMessage, at index: Int) {
+        messages[index] = message
+    }
+
+    /// 设置标题生成标记（内部使用）
+    func setHasGeneratedTitleInternal(_ value: Bool) {
+        hasGeneratedTitle = value
+    }
+
     // MARK: - 初始化
 
     private init() {}
@@ -110,7 +142,7 @@ final class ConversationViewModel: ObservableObject, SuperLog {
         chatHistoryService.saveMessage(message, to: conversation)
 
         // 同时更新本地消息列表
-        messages.append(message)
+        appendMessageInternal(message)
 
         if Self.verbose {
             os_log("\(Self.t)💾 [\(conversation.id)] 消息已保存：\(message.content.max(50))")
