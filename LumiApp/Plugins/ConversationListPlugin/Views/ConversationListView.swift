@@ -38,13 +38,7 @@ struct ConversationListView: View, SuperLog {
                 conversationList
             }
         }
-        .padding(.vertical, 8)
-        .background(DesignTokens.Material.glassThick)
         .task {
-            if Self.verbose {
-                os_log("\(self.t)对话数量：\(conversations.count)")
-            }
-
             // 首次加载时恢复上次选择的会话
             if !hasRestoredSelection && !conversations.isEmpty {
                 restoreSelectionIfNeeded()
@@ -69,11 +63,6 @@ extension ConversationListView {
             )
             .tag(conversation.id)
         }
-        .scrollIndicators(.hidden)
-        .listStyle(.plain)
-        .listRowBackground(Color.clear)
-        .listRowSeparator(.hidden)
-        .listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 8))
     }
 }
 
