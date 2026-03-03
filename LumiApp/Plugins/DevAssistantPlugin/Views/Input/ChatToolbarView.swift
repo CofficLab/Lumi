@@ -2,11 +2,14 @@ import SwiftUI
 
 /// 聊天工具栏视图 - 包含模式选择器、模型选择器、图片上传和发送/停止按钮
 struct ChatToolbarView: View {
-    @ObservedObject var viewModel: AssistantViewModel
     @Binding var isModelSelectorPresented: Bool
     let onImageUpload: () -> Void
     let onSendMessage: () -> Void
     let onStopGenerating: () -> Void
+
+    var agentProvider: AgentProvider {
+        AgentProvider.shared
+    }
 
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
@@ -20,7 +23,7 @@ struct ChatToolbarView: View {
             imageUploadButton
 
             // Commit 按钮组（仅在选择项目时显示）
-            if viewModel.isProjectSelected {
+            if agentProvider.isProjectSelected {
                 commitButtons
             }
 
@@ -70,7 +73,7 @@ struct ChatToolbarView: View {
 
     private func commitButton(title: String, icon: String, prompt: String) -> some View {
         Button(action: {
-            viewModel.currentInput = prompt
+            agentProvider.currentInput = prompt
         }) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
@@ -99,7 +102,7 @@ struct ChatToolbarView: View {
 
     @ViewBuilder
     private var actionButton: some View {
-        if viewModel.isProcessing {
+        if agentProvider.isProcessing {
             // 停止按钮 - 在处理中显示（仅图标）
             Button(action: onStopGenerating) {
                 Image(systemName: "stop.fill")
@@ -118,11 +121,11 @@ struct ChatToolbarView: View {
                     .font(.system(size: 14))
                     .foregroundColor(.white)
                     .frame(width: 28, height: 28)
-                    .background(viewModel.currentInput.isEmpty || !viewModel.isProjectSelected ? Color.gray.opacity(0.5) : Color.accentColor)
+                    .background(agentProvider.currentInput.isEmpty || !agentProvider.isProjectSelected ? Color.gray.opacity(0.5) : Color.accentColor)
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
-            .disabled(viewModel.currentInput.isEmpty || !viewModel.isProjectSelected)
+            .disabled(agentProvider.currentInput.isEmpty || !agentProvider.isProjectSelected)
             .help("发送消息")
         }
     }
@@ -134,7 +137,7 @@ struct ChatToolbarView: View {
             ForEach(ChatMode.allCases) { mode in
                 Button(action: {
                     withAnimation {
-                        viewModel.chatMode = mode
+                        agentProvider.chatMode = mode
                     }
                 }) {
                     HStack {
@@ -143,7 +146,7 @@ struct ChatToolbarView: View {
                         Text("- \(mode.description)")
                             .foregroundColor(.secondary)
                             .font(.caption)
-                        if viewModel.chatMode == mode {
+                        if agentProvider.chatMode == mode {
                             Image(systemName: "checkmark")
                         }
                     }
@@ -151,24 +154,24 @@ struct ChatToolbarView: View {
             }
         } label: {
             HStack(spacing: 4) {
-                Image(systemName: viewModel.chatMode.iconName)
+                Image(systemName: agentProvider.chatMode.iconName)
                     .font(.system(size: 14))
-                Text(viewModel.chatMode.displayName)
+                Text(agentProvider.chatMode.displayName)
                     .font(.system(size: 12))
                     .fontWeight(.medium)
                 Image(systemName: "chevron.up")
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
             }
-            .foregroundColor(viewModel.chatMode == .build ? DesignTokens.Color.semantic.textSecondary : Color.orange)
+            .foregroundColor(agentProvider.chatMode == .build ? DesignTokens.Color.semantic.textSecondary : Color.orange)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(viewModel.chatMode == .build ? Color.black.opacity(0.05) : Color.orange.opacity(0.1))
+            .background(agentProvider.chatMode == .build ? Color.black.opacity(0.05) : Color.orange.opacity(0.1))
             .cornerRadius(6)
         }
         .menuStyle(.borderlessButton)
         .frame(width: 80)
-        .help(viewModel.chatMode == .build ? "构建模式：可执行工具和修改代码" : "对话模式：只聊天，不执行任何操作")
+        .help(agentProvider.chatMode == .build ? "构建模式：可执行工具和修改代码" : "对话模式：只聊天，不执行任何操作")
     }
 
     // MARK: - Model Selector
@@ -180,7 +183,7 @@ struct ChatToolbarView: View {
             HStack(spacing: 4) {
                 Image(systemName: "globe")
                     .font(.system(size: 14))
-                Text(viewModel.currentModel)
+                Text(agentProvider.currentModel)
                     .font(.system(size: 12))
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -215,7 +218,6 @@ struct ChatToolbarView: View {
 
 #Preview {
     ChatToolbarView(
-        viewModel: AssistantViewModel(),
         isModelSelectorPresented: .constant(false),
         onImageUpload: {},
         onSendMessage: {},

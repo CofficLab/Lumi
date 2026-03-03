@@ -4,13 +4,15 @@ import SwiftUI
 ///
 /// 允许用户从所有已注册的供应商和模型中选择。
 struct ModelSelectorView: View {
-    /// ViewModel：提供助手状态和操作支持
-    @ObservedObject var viewModel: AssistantViewModel
     /// 环境对象：用于关闭当前视图
     @Environment(\.dismiss) private var dismiss
 
     /// 供应商注册表：提供所有可用的模型供应商信息
     private let registry = ProviderRegistry.shared
+
+    var agentProvider: AgentProvider {
+        AgentProvider.shared
+    }
 
     // MARK: - View
 
@@ -97,11 +99,11 @@ struct ModelSelectorView: View {
     ///   - providerId: 供应商 ID
     ///   - model: 模型名称
     private func selectModel(providerId: String, model: String) {
-        viewModel.selectedProviderId = providerId
-        viewModel.updateSelectedModel(model)
+        agentProvider.selectedProviderId = providerId
+        agentProvider.updateSelectedModel(model)
 
         // 保存到当前项目配置
-        viewModel.saveCurrentModelToProjectConfig()
+        agentProvider.saveCurrentModelToProjectConfig()
 
         dismiss()
     }
@@ -114,7 +116,7 @@ struct ModelSelectorView: View {
     ///   - model: 模型名称
     /// - Returns: 是否为当前选中的模型
     private func isSelected(providerId: String, model: String) -> Bool {
-        return viewModel.selectedProviderId == providerId && viewModel.currentModel == model
+        return agentProvider.selectedProviderId == providerId && agentProvider.currentModel == model
     }
 
     /// 检查模型是否为供应商的默认模型
@@ -133,7 +135,7 @@ struct ModelSelectorView: View {
 // MARK: - Preview
 
 #Preview("ModelSelector") {
-    ModelSelectorView(viewModel: AssistantViewModel())
+    ModelSelectorView()
 }
 
 #Preview("App") {

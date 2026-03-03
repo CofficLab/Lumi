@@ -3,11 +3,14 @@ import UniformTypeIdentifiers
 
 /// 项目选择器视图
 struct ProjectSelectorView: View {
-    @ObservedObject var viewModel: AssistantViewModel
     @Binding var isPresented: Bool
 
     @State private var recentProjects: [RecentProject] = []
     @State private var isFileImporterPresented = false
+
+    var agentProvider: AgentProvider {
+        AgentProvider.shared
+    }
 
     private let maxRecentProjects = 5
 
@@ -103,12 +106,12 @@ struct ProjectSelectorView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(viewModel.currentProjectName.isEmpty ? "未选择项目" : viewModel.currentProjectName)
+                    Text(agentProvider.currentProjectName.isEmpty ? "未选择项目" : agentProvider.currentProjectName)
                         .font(.body)
                         .fontWeight(.medium)
                         .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
-                    Text(viewModel.currentProjectPath.isEmpty ? "点击下方浏览选择项目" : viewModel.currentProjectPath)
+                    Text(agentProvider.currentProjectPath.isEmpty ? "点击下方浏览选择项目" : agentProvider.currentProjectPath)
                         .font(.caption)
                         .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                         .lineLimit(2)
@@ -221,7 +224,7 @@ struct ProjectSelectorView: View {
 
     private func selectProject(_ project: RecentProject) {
         Task { @MainActor in
-            viewModel.switchProject(to: project.path)
+            agentProvider.switchProjectWithPrompt(to: project.path)
             isPresented = false
         }
     }
@@ -244,7 +247,7 @@ struct ProjectSelectorView: View {
 
                 let path = url.path
                 Task { @MainActor in
-                    viewModel.switchProject(to: path)
+                    agentProvider.switchProjectWithPrompt(to: path)
                     isPresented = false
                     // Reload recent projects
                     loadRecentProjects()
@@ -262,11 +265,11 @@ struct ProjectSelectorView: View {
 
     private func loadRecentProjects() {
         // 使用 AgentProvider 加载最近项目
-        recentProjects = AgentProvider.shared.getRecentProjects()
+        recentProjects = agentProvider.getRecentProjects()
             .prefix(maxRecentProjects)
             .filter { project in
                 // 过滤掉当前项目
-                project.path != viewModel.currentProjectPath
+                project.path != agentProvider.currentProjectPath
             }
     }
 
@@ -281,8 +284,5 @@ struct ProjectSelectorView: View {
 // MARK: - Preview
 
 #Preview("Project Selector") {
-    ProjectSelectorView(
-        viewModel: AssistantViewModel(),
-        isPresented: .constant(true)
-    )
+    ProjectSelectorView(isPresented: .constant(true))
 }

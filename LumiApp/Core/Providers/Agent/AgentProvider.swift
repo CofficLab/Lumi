@@ -127,6 +127,51 @@ final class AgentProvider: ObservableObject, SuperLog {
     /// 标记是否已生成标题
     var hasGeneratedTitle: Bool = false
 
+    // MARK: - 聊天消息状态 (DevAssistant)
+
+    /// 聊天消息列表
+    @Published public var messages: [ChatMessage] = []
+
+    /// 当前输入内容
+    @Published public var currentInput: String = ""
+
+    /// 是否正在处理
+    @Published public var isProcessing: Bool = false
+
+    /// 错误消息
+    @Published public var errorMessage: String?
+
+    /// 待处理权限请求
+    @Published public var pendingPermissionRequest: PermissionRequest?
+
+    /// 深度警告
+    @Published public var depthWarning: DepthWarning?
+
+    /// 待处理工具调用队列
+    var pendingToolCalls: [ToolCall] = []
+    var currentDepth: Int = 0
+
+    /// 当前任务
+    var currentTask: Task<Void, Never>?
+
+    /// 命令建议视图模型
+    public let commandSuggestionViewModel = CommandSuggestionViewModel()
+
+    // MARK: - 附件（图片上传）
+
+    public enum Attachment: Identifiable {
+        case image(id: UUID, data: Data, mimeType: String, url: URL)
+
+        public var id: UUID {
+            switch self {
+            case .image(let id, _, _, _):
+                return id
+            }
+        }
+    }
+
+    public var pendingAttachments: [Attachment] = []
+
     // MARK: - 初始化
 
     private init() {

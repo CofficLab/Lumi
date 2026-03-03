@@ -7,13 +7,15 @@ struct ChatMessagesView: View, SuperLog {
     nonisolated static let emoji = "💬"
     nonisolated static let verbose = true
 
-    @ObservedObject var viewModel: AssistantViewModel
+    var agentProvider: AgentProvider {
+        AgentProvider.shared
+    }
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
-                    ForEach(viewModel.messages.filter { $0.role != .system }) { msg in
+                    ForEach(agentProvider.messages.filter { $0.role != .system }) { msg in
                         ChatBubble(message: msg)
                             .id(msg.id)
                     }
@@ -21,7 +23,7 @@ struct ChatMessagesView: View, SuperLog {
                 .padding(.horizontal)
             }
             .onConversationSelected(perform: handleConversationSelected)
-            .onChange(of: viewModel.messages) { oldMessages, newMessages in
+            .onChange(of: agentProvider.messages) { oldMessages, newMessages in
                 guard let lastMessage = newMessages.last else { return }
 
                 // 如果是新消息，则滚动并带动画
@@ -50,7 +52,7 @@ extension ChatMessagesView {
         }
 
         Task {
-            await viewModel.loadConversation(conversationId)
+            await agentProvider.loadConversation(conversationId)
         }
     }
 }
@@ -58,7 +60,7 @@ extension ChatMessagesView {
 // MARK: - Preview
 
 #Preview {
-    ChatMessagesView(viewModel: AssistantViewModel())
+    ChatMessagesView()
         .padding()
         .frame(width: 800, height: 600)
         .background(Color.black)

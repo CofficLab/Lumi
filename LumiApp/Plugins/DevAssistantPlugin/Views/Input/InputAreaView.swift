@@ -3,13 +3,16 @@ import UniformTypeIdentifiers
 
 /// 输入区域视图 - 包含附件预览、编辑器、工具栏
 struct InputAreaView: View {
-    @ObservedObject var viewModel: AssistantViewModel
     @Binding var isInputFocused: Bool
     @Binding var isModelSelectorPresented: Bool
     let onSendMessage: () -> Void
     let onImageUpload: () -> Void
     let onDropImage: ([URL]) -> Bool
     let onStopGenerating: () -> Void
+
+    var agentProvider: AgentProvider {
+        AgentProvider.shared
+    }
 
     // 动画状态
     @State private var gradientPhase: CGFloat = 0
@@ -19,34 +22,37 @@ struct InputAreaView: View {
             // 输入框容器
             VStack(spacing: 0) {
                 // 附件预览区域
-                if !viewModel.pendingAttachments.isEmpty {
+                if !agentProvider.pendingAttachments.isEmpty {
                     AttachmentPreviewView(
-                        attachments: viewModel.pendingAttachments,
+                        attachments: agentProvider.pendingAttachments,
                         onRemove: { id in
-                            viewModel.removeAttachment(id: id)
+                            agentProvider.removeAttachment(id: id)
                         }
                     )
                 }
 
                 // 编辑器
                 MacEditorView(
-                    text: $viewModel.currentInput,
+                    text: Binding(
+                        get: { agentProvider.currentInput },
+                        set: { agentProvider.currentInput = $0 }
+                    ),
                     onSubmit: onSendMessage,
                     onArrowUp: {
-                        if viewModel.commandSuggestionViewModel.isVisible {
-                            viewModel.commandSuggestionViewModel.selectPrevious()
+                        if agentProvider.commandSuggestionViewModel.isVisible {
+                            agentProvider.commandSuggestionViewModel.selectPrevious()
                         }
                     },
                     onArrowDown: {
-                        if viewModel.commandSuggestionViewModel.isVisible {
-                            viewModel.commandSuggestionViewModel.selectNext()
+                        if agentProvider.commandSuggestionViewModel.isVisible {
+                            agentProvider.commandSuggestionViewModel.selectNext()
                         }
                     },
                     onEnter: {
-                        if viewModel.commandSuggestionViewModel.isVisible,
-                           let suggestion = viewModel.commandSuggestionViewModel.getCurrentSuggestion() {
-                            viewModel.currentInput = suggestion.command + " "
-                            viewModel.commandSuggestionViewModel.isVisible = false
+                        if agentProvider.commandSuggestionViewModel.isVisible,
+                           let suggestion = agentProvider.commandSuggestionViewModel.getCurrentSuggestion() {
+                            agentProvider.currentInput = suggestion.command + " "
+                            agentProvider.commandSuggestionViewModel.isVisible = false
                         } else {
                             onSendMessage()
                         }
@@ -60,7 +66,6 @@ struct InputAreaView: View {
 
                 // 工具栏 - 传递停止回调
                 ChatToolbarView(
-                    viewModel: viewModel,
                     isModelSelectorPresented: $isModelSelectorPresented,
                     onImageUpload: onImageUpload,
                     onSendMessage: onSendMessage,
@@ -78,9 +83,9 @@ struct InputAreaView: View {
                 handleDrop(providers: providers)
             }
             .overlay(alignment: .bottomLeading) {
-                CommandSuggestionView(viewModel: viewModel.commandSuggestionViewModel) { suggestion in
-                    viewModel.currentInput = suggestion.command + " "
-                    viewModel.commandSuggestionViewModel.isVisible = false
+                CommandSuggestionView(viewModel: agentProvider.commandSuggestionViewModel) { suggestion in
+                    agentProvider.currentInput = suggestion.command + " "
+                    agentProvider.commandSuggestionViewModel.isVisible = false
                     isInputFocused = true
                 }
                 .offset(x: 16, y: -60)
@@ -98,7 +103,7 @@ struct InputAreaView: View {
     /// 处理中的动态边框叠加层
     @ViewBuilder
     private var processingBorderOverlay: some View {
-        if viewModel.isProcessing {
+        if agentProvider.isProcessing {
             // 动态渐变边框
             RoundedRectangle(cornerRadius: 12)
                 .stroke(
@@ -156,13 +161,12 @@ struct InputAreaView: View {
     private func handleFileDrop(fileURL: URL) {
         // 将文件路径作为文本插入到输入框
         let file_path = fileURL.path
-        viewModel.currentInput += "\(file_path) "
+        agentProvider.currentInput += "\(file_path) "
     }
 }
 
 #Preview {
     InputAreaView(
-        viewModel: AssistantViewModel(),
         isInputFocused: .constant(true),
         isModelSelectorPresented: .constant(false),
         onSendMessage: {},

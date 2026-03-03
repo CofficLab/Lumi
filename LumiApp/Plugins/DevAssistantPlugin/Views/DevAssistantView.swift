@@ -3,30 +3,32 @@ import UniformTypeIdentifiers
 
 /// Dev Assistant 主视图 - 聊天界面
 struct DevAssistantView: View {
-    @StateObject private var viewModel = AssistantViewModel()
     @State private var isInputFocused: Bool = false
     @State private var isModelSelectorPresented = false
     @State private var isProjectSelectorPresented = false
     @State private var isMCPSettingsPresented = false
-    
+
+    var agentProvider: AgentProvider {
+        AgentProvider.shared
+    }
+
     var body: some View {
         VStack(spacing: 8) {
             // MARK: - Header
 
             ChatHeaderView(
-                viewModel: viewModel,
                 isProjectSelectorPresented: $isProjectSelectorPresented,
                 isMCPSettingsPresented: $isMCPSettingsPresented
             )
 
             // MARK: - Depth Warning Banner
 
-            if let warning = viewModel.depthWarning {
+            if let warning = agentProvider.depthWarning {
                 DepthWarningBanner(
                     warning: warning,
                     onDismiss: {
                         withAnimation {
-                            viewModel.depthWarning = nil
+                            agentProvider.depthWarning = nil
                         }
                     }
                 )
@@ -37,16 +39,15 @@ struct DevAssistantView: View {
 
             // MARK: - Chat History
 
-            ChatMessagesView(viewModel: viewModel)
+            ChatMessagesView()
 
             // MARK: - Input Area
 
             InputAreaView(
-                viewModel: viewModel,
                 isInputFocused: $isInputFocused,
                 isModelSelectorPresented: $isModelSelectorPresented,
                 onSendMessage: {
-                    viewModel.sendMessage()
+                    agentProvider.sendMessage()
                 },
                 onImageUpload: {
                     selectImage()
@@ -59,14 +60,14 @@ struct DevAssistantView: View {
 
                     if !imageURLs.isEmpty {
                         for url in imageURLs {
-                            viewModel.handleImageUpload(url: url)
+                            agentProvider.handleImageUpload(url: url)
                         }
                         return true
                     }
                     return false
                 },
                 onStopGenerating: {
-                    viewModel.cancelCurrentTask()
+                    agentProvider.cancelCurrentTask()
                 }
             )
         }
@@ -76,14 +77,14 @@ struct DevAssistantView: View {
         .overlay {
             // MARK: - Permission Request Overlay
 
-            if let request = viewModel.pendingPermissionRequest {
+            if let request = agentProvider.pendingPermissionRequest {
                 PermissionRequestView(
                     request: request,
                     onAllow: {
-                        viewModel.respondToPermissionRequest(allowed: true)
+                        agentProvider.respondToPermissionRequest(allowed: true)
                     },
                     onDeny: {
-                        viewModel.respondToPermissionRequest(allowed: false)
+                        agentProvider.respondToPermissionRequest(allowed: false)
                     }
                 )
             }
@@ -92,14 +93,14 @@ struct DevAssistantView: View {
             MCPSettingsView()
         }
         .popover(isPresented: $isProjectSelectorPresented, arrowEdge: .top) {
-            ProjectSelectorView(viewModel: viewModel, isPresented: $isProjectSelectorPresented)
+            ProjectSelectorView(isPresented: $isProjectSelectorPresented)
                 .frame(width: 400, height: 500)
         }
         .popover(isPresented: $isModelSelectorPresented, arrowEdge: .bottom) {
-            ModelSelectorView(viewModel: viewModel)
+            ModelSelectorView()
         }
     }
-    
+
     // MARK: - Methods
 
     private func selectImage() {
@@ -111,7 +112,7 @@ struct DevAssistantView: View {
 
         panel.begin { response in
             if response == .OK, let url = panel.url {
-                viewModel.handleImageUpload(url: url)
+                agentProvider.handleImageUpload(url: url)
             }
         }
     }

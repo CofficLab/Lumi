@@ -3,12 +3,14 @@ import SwiftUI
 /// 聊天头部视图
 /// 包含项目信息、工具栏按钮和快捷操作，显示在聊天界面顶部
 struct ChatHeaderView: View {
-    /// 视图模型：管理聊天状态和数据
-    @ObservedObject var viewModel: AssistantViewModel
     /// 项目选择器呈现状态绑定
     @Binding var isProjectSelectorPresented: Bool
     /// MCP 设置呈现状态绑定
     @Binding var isMCPSettingsPresented: Bool
+
+    var agentProvider: AgentProvider {
+        AgentProvider.shared
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -24,7 +26,7 @@ struct ChatHeaderView: View {
 
                 // 项目信息
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(viewModel.currentProjectName.isEmpty ? "Dev Assistant" : viewModel.currentProjectName)
+                    Text(agentProvider.currentProjectName.isEmpty ? "Dev Assistant" : agentProvider.currentProjectName)
                         .font(DesignTokens.Typography.body)
                         .fontWeight(.medium)
                         .foregroundColor(DesignTokens.Color.semantic.textPrimary)
@@ -54,7 +56,7 @@ struct ChatHeaderView: View {
             .padding(.vertical, 4)
 
             // 项目选择提示：未选择项目时显示
-            if !viewModel.isProjectSelected {
+            if !agentProvider.isProjectSelected {
                 projectSelectionHint
             }
         }
@@ -71,11 +73,11 @@ struct ChatHeaderView: View {
 // MARK: - View
 
 extension ChatHeaderView {
-    /// 新会话按钮：点击时调用 viewModel.startNewChat()
+    /// 新会话按钮：点击时调用 agentProvider.createNewConversation()
     private var newChatButton: some View {
         Button(action: {
             Task {
-                await viewModel.createNewConversation()
+                await agentProvider.createNewConversation()
             }
         }) {
             Image(systemName: "plus.circle")
@@ -96,7 +98,10 @@ extension ChatHeaderView {
                 .font(DesignTokens.Typography.caption2)
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-            Toggle("", isOn: $viewModel.autoApproveRisk)
+            Toggle("", isOn: Binding(
+                get: { agentProvider.autoApproveRisk },
+                set: { agentProvider.autoApproveRisk = $0 }
+            ))
                 .toggleStyle(.switch)
                 .controlSize(.mini)
                 .labelsHidden()
@@ -114,12 +119,12 @@ extension ChatHeaderView {
             ForEach(LanguagePreference.allCases) { lang in
                 Button(action: {
                     withAnimation {
-                        viewModel.languagePreference = lang
+                        agentProvider.languagePreference = lang
                     }
                 }) {
                     HStack {
                         Text(lang.displayName)
-                        if viewModel.languagePreference == lang {
+                        if agentProvider.languagePreference == lang {
                             Image(systemName: "checkmark")
                         }
                     }
@@ -129,7 +134,7 @@ extension ChatHeaderView {
             HStack(spacing: 4) {
                 Image(systemName: "globe")
                     .font(.system(size: 12))
-                Text(viewModel.languagePreference.displayName)
+                Text(agentProvider.languagePreference.displayName)
                     .font(DesignTokens.Typography.caption2)
                     .fontWeight(.medium)
             }
@@ -222,7 +227,6 @@ extension ChatHeaderView {
 #if os(macOS)
 #Preview("聊天头部 - 默认状态") {
     ChatHeaderView(
-        viewModel: AssistantViewModel(),
         isProjectSelectorPresented: .constant(false),
         isMCPSettingsPresented: .constant(false)
     )
@@ -231,7 +235,6 @@ extension ChatHeaderView {
 
 #Preview("聊天头部 - 窄屏") {
     ChatHeaderView(
-        viewModel: AssistantViewModel(),
         isProjectSelectorPresented: .constant(false),
         isMCPSettingsPresented: .constant(false)
     )
