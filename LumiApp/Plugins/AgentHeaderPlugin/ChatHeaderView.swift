@@ -4,6 +4,7 @@ import SwiftUI
 /// 包含项目信息、工具栏按钮和快捷操作，显示在聊天界面顶部
 struct ChatHeaderView: View {
     @EnvironmentObject var agentProvider: AgentProvider
+    @EnvironmentObject var conversationViewModel: ConversationViewModel
 
     /// 项目选择器呈现状态绑定
     @Binding var isProjectSelectorPresented: Bool
@@ -71,11 +72,12 @@ struct ChatHeaderView: View {
 // MARK: - View
 
 extension ChatHeaderView {
-    /// 新会话按钮：点击时调用 agentProvider.createNewConversation()
+    /// 新会话按钮：点击时调用 conversationViewModel.createNewConversation()
     private var newChatButton: some View {
         Button(action: {
             Task {
-                await agentProvider.createNewConversation()
+                let projectId = agentProvider.isProjectSelected ? agentProvider.currentProjectPath : nil
+                await conversationViewModel.createNewConversation(projectId: projectId)
             }
         }) {
             Image(systemName: "plus.circle")
