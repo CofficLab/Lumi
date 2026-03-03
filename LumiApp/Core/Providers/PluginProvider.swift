@@ -77,9 +77,9 @@ final class PluginProvider: ObservableObject, SuperLog {
                 continue
             }
             
-            // 检查是否应该注册
+            // 检查插件是否启用
             let pluginType = type(of: instance)
-            if pluginType.shouldRegister {
+            if pluginType.enable {
                 discoveredItems.append((instance, className, pluginType.order))
                 if Self.verbose {
                     os_log("\(self.t)🔍 Discovered plugin: \(pluginType.id) (order: \(pluginType.order))")

@@ -76,21 +76,15 @@ extension ChatHeaderView {
         Button(action: {
             viewModel.startNewChat()
         }) {
-            HStack(spacing: 4) {
-                Image(systemName: "plus.circle")
-                    .font(.system(size: 12))
-                Text("新会话")
-                    .font(DesignTokens.Typography.caption2)
-                    .fontWeight(.medium)
-            }
-            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Color.black.opacity(0.05))
-            .cornerRadius(6)
+            Image(systemName: "plus.circle")
+                .font(.system(size: 14))
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .frame(width: 28, height: 28)
+                .background(Color.black.opacity(0.05))
+                .clipShape(Circle())
         }
         .buttonStyle(.plain)
-        .help("Start a new chat session")
+        .help("开启新会话")
     }
 
     /// 自动批准开关：控制是否自动批准高风险命令

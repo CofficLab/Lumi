@@ -121,7 +121,7 @@ class AssistantViewModel: ObservableObject, SuperLog {
 
     let promptService = PromptService.shared
 
-    // MARK: - 工具管理器（重构：关注点分离）
+    // MARK: - 工具管理器
 
     /// 使用 ToolManager 管理所有工具，而不是直接管理
     private let toolManager = ToolManager.shared
@@ -252,8 +252,10 @@ class AssistantViewModel: ObservableObject, SuperLog {
         hasGeneratedTitle = false  // 重置标题生成标记
         
         // 更新 AgentProvider 的选中会话 ID，让对话历史插件同步选中
+        // 注意：不直接设置 selectedConversationId，避免触发 notification 导致重复加载
         if let conversationId = currentConversation?.id {
-            AgentProvider.shared.selectedConversationId = conversationId
+            // 只更新 AgentProvider 的内部状态，不触发通知
+            AgentProvider.shared.setSelectedConversationIdWithoutNotification(conversationId)
             if Self.verbose {
                 os_log("\(self.t)✅ 已更新选中会话 ID: \(conversationId)")
             }
@@ -909,22 +911,31 @@ class AssistantViewModel: ObservableObject, SuperLog {
                 languagePreference: languagePreference,
                 includeContext: isProjectSelected
             )
-            messages = [ChatMessage(role: .system, content: fullSystemPrompt)]
+            
+            // 构建新会话的初始消息
+            var newMessages: [ChatMessage] = [ChatMessage(role: .system, content: fullSystemPrompt)]
 
             // 显示欢迎消息
             if !isProjectSelected {
-                showProjectSelectionPrompt()
+                // 未选择项目：显示项目选择引导
+                let prompt = await promptService.getWelcomeMessage()
+                newMessages.append(ChatMessage(role: .assistant, content: prompt))
             } else {
+                // 已选择项目：显示欢迎回来消息
                 let welcomeMsg = await promptService.getWelcomeBackMessage(
                     projectName: currentProjectName,
                     projectPath: currentProjectPath,
                     language: languagePreference
                 )
                 let welcomeMessage = ChatMessage(role: .assistant, content: welcomeMsg)
-                messages.append(welcomeMessage)
+                newMessages.append(welcomeMessage)
+                
                 // 保存欢迎消息到数据库
                 saveMessage(welcomeMessage)
             }
+
+            // 一次性设置所有消息，避免多次刷新
+            messages = newMessages
 
             if Self.verbose {
                 os_log("\(self.t)✅ 已开启新会话")

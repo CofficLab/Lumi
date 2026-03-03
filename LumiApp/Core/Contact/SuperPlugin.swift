@@ -18,6 +18,9 @@ protocol SuperPlugin: Actor {
     /// 是否可配置
     static var isConfigurable: Bool { get }
 
+    /// 是否启用此插件
+    static var enable: Bool { get }
+
     /// 插件实例标签（用于识别唯一实例）
     nonisolated var instanceLabel: String { get }
 
@@ -99,8 +102,8 @@ extension SuperPlugin {
     /// 默认可配置
     static var isConfigurable: Bool { false }
     
-    /// 默认应该注册
-    static var shouldRegister: Bool { true }
+    /// 默认启用插件
+    static var enable: Bool { true }
     
     /// 默认实现：不提供工具栏前导视图
     @MainActor func addToolBarLeadingView() -> AnyView? { nil }
