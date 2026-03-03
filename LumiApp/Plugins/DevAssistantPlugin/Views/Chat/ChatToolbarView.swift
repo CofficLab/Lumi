@@ -100,20 +100,14 @@ struct ChatToolbarView: View {
     @ViewBuilder
     private var actionButton: some View {
         if viewModel.isProcessing {
-            // 停止按钮 - 在处理中显示
+            // 停止按钮 - 在处理中显示（仅图标）
             Button(action: onStopGenerating) {
-                HStack(spacing: 4) {
-                    Image(systemName: "stop.fill")
-                        .font(.system(size: 12))
-                    Text(stopButtonText)
-                        .font(.system(size: 12))
-                        .fontWeight(.medium)
-                }
-                .foregroundColor(.white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Color.red)
-                .cornerRadius(16)
+                Image(systemName: "stop.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(.white)
+                    .frame(width: 28, height: 28)
+                    .background(Color.red)
+                    .clipShape(Circle())
             }
             .buttonStyle(.plain)
             .help("停止生成")
@@ -131,11 +125,6 @@ struct ChatToolbarView: View {
             .disabled(viewModel.currentInput.isEmpty || !viewModel.isProjectSelected)
             .help("发送消息")
         }
-    }
-
-    /// 停止按钮文本 - 根据语言选择
-    private var stopButtonText: String {
-        viewModel.languagePreference == .chinese ? "停止" : "Stop"
     }
 
     // MARK: - Mode Selector
