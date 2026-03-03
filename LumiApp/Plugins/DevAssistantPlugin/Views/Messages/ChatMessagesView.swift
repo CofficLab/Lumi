@@ -4,12 +4,10 @@ import SwiftUI
 
 /// 聊天消息列表视图 - 可滚动的聊天历史记录
 struct ChatMessagesView: View, SuperLog {
+    @EnvironmentObject var agentProvider: AgentProvider
+
     nonisolated static let emoji = "💬"
     nonisolated static let verbose = true
-
-    var agentProvider: AgentProvider {
-        AgentProvider.shared
-    }
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -64,4 +62,5 @@ extension ChatMessagesView {
         .padding()
         .frame(width: 800, height: 600)
         .background(Color.black)
+        .inRootView()
 }

@@ -3,14 +3,12 @@ import UniformTypeIdentifiers
 
 /// Dev Assistant 主视图 - 聊天界面
 struct DevAssistantView: View {
+    @EnvironmentObject var agentProvider: AgentProvider
+
     @State private var isInputFocused: Bool = false
     @State private var isModelSelectorPresented = false
     @State private var isProjectSelectorPresented = false
     @State private var isMCPSettingsPresented = false
-
-    var agentProvider: AgentProvider {
-        AgentProvider.shared
-    }
 
     var body: some View {
         VStack(spacing: 8) {

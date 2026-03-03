@@ -2,14 +2,12 @@ import SwiftUI
 
 /// 聊天工具栏视图 - 包含模式选择器、模型选择器、图片上传和发送/停止按钮
 struct ChatToolbarView: View {
+    @EnvironmentObject var agentProvider: AgentProvider
+
     @Binding var isModelSelectorPresented: Bool
     let onImageUpload: () -> Void
     let onSendMessage: () -> Void
     let onStopGenerating: () -> Void
-
-    var agentProvider: AgentProvider {
-        AgentProvider.shared
-    }
 
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
@@ -226,4 +224,5 @@ struct ChatToolbarView: View {
     .padding()
     .frame(width: 800)
     .background(Color.black)
+    .inRootView()
 }

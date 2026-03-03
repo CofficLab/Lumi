@@ -6,13 +6,10 @@ import SwiftUI
 struct ModelSelectorView: View {
     /// 环境对象：用于关闭当前视图
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var agentProvider: AgentProvider
 
     /// 供应商注册表：提供所有可用的模型供应商信息
     private let registry = ProviderRegistry.shared
-
-    var agentProvider: AgentProvider {
-        AgentProvider.shared
-    }
 
     // MARK: - View
 
@@ -136,6 +133,7 @@ struct ModelSelectorView: View {
 
 #Preview("ModelSelector") {
     ModelSelectorView()
+        .inRootView()
 }
 
 #Preview("App") {

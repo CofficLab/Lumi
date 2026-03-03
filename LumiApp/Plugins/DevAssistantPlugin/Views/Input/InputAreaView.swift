@@ -3,16 +3,14 @@ import UniformTypeIdentifiers
 
 /// 输入区域视图 - 包含附件预览、编辑器、工具栏
 struct InputAreaView: View {
+    @EnvironmentObject var agentProvider: AgentProvider
+
     @Binding var isInputFocused: Bool
     @Binding var isModelSelectorPresented: Bool
     let onSendMessage: () -> Void
     let onImageUpload: () -> Void
     let onDropImage: ([URL]) -> Bool
     let onStopGenerating: () -> Void
-
-    var agentProvider: AgentProvider {
-        AgentProvider.shared
-    }
 
     // 动画状态
     @State private var gradientPhase: CGFloat = 0
@@ -176,4 +174,5 @@ struct InputAreaView: View {
     )
     .frame(width: 800)
     .background(Color.black)
+    .inRootView()
 }

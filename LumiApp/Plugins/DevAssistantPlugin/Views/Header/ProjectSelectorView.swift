@@ -3,14 +3,12 @@ import UniformTypeIdentifiers
 
 /// 项目选择器视图
 struct ProjectSelectorView: View {
+    @EnvironmentObject var agentProvider: AgentProvider
+
     @Binding var isPresented: Bool
 
     @State private var recentProjects: [RecentProject] = []
     @State private var isFileImporterPresented = false
-
-    var agentProvider: AgentProvider {
-        AgentProvider.shared
-    }
 
     private let maxRecentProjects = 5
 
@@ -285,4 +283,5 @@ struct ProjectSelectorView: View {
 
 #Preview("Project Selector") {
     ProjectSelectorView(isPresented: .constant(true))
+        .inRootView()
 }

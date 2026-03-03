@@ -3,14 +3,12 @@ import SwiftUI
 /// 聊天头部视图
 /// 包含项目信息、工具栏按钮和快捷操作，显示在聊天界面顶部
 struct ChatHeaderView: View {
+    @EnvironmentObject var agentProvider: AgentProvider
+
     /// 项目选择器呈现状态绑定
     @Binding var isProjectSelectorPresented: Bool
     /// MCP 设置呈现状态绑定
     @Binding var isMCPSettingsPresented: Bool
-
-    var agentProvider: AgentProvider {
-        AgentProvider.shared
-    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -231,6 +229,7 @@ extension ChatHeaderView {
         isMCPSettingsPresented: .constant(false)
     )
     .frame(width: 800)
+    .inRootView()
 }
 
 #Preview("聊天头部 - 窄屏") {
@@ -239,5 +238,6 @@ extension ChatHeaderView {
         isMCPSettingsPresented: .constant(false)
     )
     .frame(width: 600)
+    .inRootView()
 }
 #endif
