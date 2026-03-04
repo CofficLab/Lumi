@@ -38,7 +38,13 @@ struct ConversationListView: View, SuperLog {
             if conversations.isEmpty {
                 ConversationListEmptyView()
             } else {
-                conversationList
+                List(conversations, selection: $localSelectedConversationId) { conversation in
+                    ConversationItemView(
+                        conversation: conversation,
+                        onDelete: { handleDelete(conversation) }
+                    )
+                    .tag(conversation.id)
+                }
             }
         }
         .onAppear(perform: onAppear)
@@ -51,16 +57,6 @@ struct ConversationListView: View, SuperLog {
 // MARK: - View
 
 extension ConversationListView {
-    /// 对话列表视图：渲染会话列表
-    private var conversationList: some View {
-        List(conversations, selection: $localSelectedConversationId) { conversation in
-            ConversationItemView(
-                conversation: conversation,
-                onDelete: { handleDelete(conversation) }
-            )
-            .tag(conversation.id)
-        }
-    }
 }
 
 // MARK: - Action
@@ -106,17 +102,12 @@ extension ConversationListView {
         if localSelectedConversationId == conversation.id {
             let remainingConversations = conversations.filter { $0.id != conversation.id }
             if let nextConversation = remainingConversations.first {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    localSelectedConversationId = nextConversation.id
-                    if Self.verbose {
-                        os_log("\(self.t)🔄 已自动切换到对话：\(nextConversation.title)")
-                    }
+                localSelectedConversationId = nextConversation.id
+                if Self.verbose {
+                    os_log("\(self.t)🔄 已自动切换到对话：\(nextConversation.title)")
                 }
             } else {
                 localSelectedConversationId = nil
-                if Self.verbose {
-                    os_log("\(self.t)📭 没有剩余会话，已清空选中状态")
-                }
             }
         }
 
@@ -125,9 +116,6 @@ extension ConversationListView {
 
         do {
             try modelContext.save()
-            if Self.verbose {
-                os_log("\(self.t)✅ 对话已删除：\(conversation.title)")
-            }
         } catch {
             os_log(.error, "\(self.t)❌ 删除对话失败：\(error.localizedDescription)")
         }

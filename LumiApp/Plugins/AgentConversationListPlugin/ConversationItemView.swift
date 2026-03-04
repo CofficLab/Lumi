@@ -1,6 +1,6 @@
-import SwiftUI
 import MagicKit
 import SwiftData
+import SwiftUI
 
 /// 会话项视图
 /// 显示单个会话的标题、时间戳和项目信息，支持右键菜单删除操作
