@@ -72,11 +72,16 @@ struct ChatHeaderView: View {
 // MARK: - View
 
 extension ChatHeaderView {
-    /// 新会话按钮：点击时调用 agentProvider.createNewConversation()
+    /// 新会话按钮：点击时创建新会话
     private var newChatButton: some View {
         Button(action: {
             Task {
-                await agentProvider.createNewConversation()
+                let projectId = agentProvider.isProjectSelected ? agentProvider.currentProjectPath : nil
+                let welcomeMessage = await agentProvider.getEmptySessionWelcomeMessage()
+                await conversationViewModel.createNewConversation(
+                    projectId: projectId,
+                    welcomeMessage: welcomeMessage
+                )
             }
         }) {
             Image(systemName: "plus.circle")
