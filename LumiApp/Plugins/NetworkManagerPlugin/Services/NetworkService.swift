@@ -179,34 +179,54 @@ class NetworkService: SuperLog, ObservableObject {
     /// Get Public IP (Async)
     func getPublicIP() async -> String? {
         // 使用备用 API 列表，增加重试机制，避免单一服务故障或 TLS 问题
-        let services = [
+        // 国际服务
+        let internationalServices = [
             "https://api.ipify.org",
             "https://ifconfig.me/ip",
             "https://icanhazip.com",
             "https://checkip.amazonaws.com"
         ]
-        
+
+        // 国内可用服务
+        let domesticServices = [
+            "https://cip.cc",
+            "https://myip.ipip.net",
+            "https://pv.sohu.com/sigiapi"
+        ]
+
+        let services = domesticServices + internationalServices
+
         // 创建一个不使用缓存的 Session 配置
         let config = URLSessionConfiguration.ephemeral
-        config.timeoutIntervalForRequest = 5
-        config.timeoutIntervalForResource = 5
-        
+        config.timeoutIntervalForRequest = 3
+        config.timeoutIntervalForResource = 3
+
         let session = URLSession(configuration: config)
-        
+
         for service in services {
             guard let url = URL(string: service) else { continue }
             do {
                 let (data, _) = try await session.data(from: url)
-                let ip = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
-                
-                if let ip = ip, !ip.isEmpty {
+                let ip = String(data: data, encoding: .utf8)?
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .components(separatedBy: .whitespacesAndNewlines)
+                    .first
+
+                if let ip = ip, !ip.isEmpty, ip.contains(".") {
+                    if Self.verbose {
+                        os_log("\(Self.t)✅ 获取公网 IP 成功：\(ip) (来源：\(service))")
+                    }
                     return ip
                 }
             } catch {
-                os_log(.error, "\(Self.t)❌ Failed to get public IP from \(service): \(error.localizedDescription)")
+                if Self.verbose {
+                    os_log("\(Self.t)⚠️ 获取公网 IP 失败：\(service) - \(error.localizedDescription)")
+                }
                 continue
             }
         }
+
+        os_log(.error, "\(Self.t)❌ 所有公网 IP 服务均不可用")
         return nil
     }
     
