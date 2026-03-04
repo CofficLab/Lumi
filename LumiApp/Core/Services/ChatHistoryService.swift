@@ -20,7 +20,7 @@ class ChatHistoryService: SuperLog {
     func initializeWithContainer(_ container: ModelContainer, reason: String) {
         self.modelContainer = container
         if Self.verbose {
-            os_log("\(Self.t)✅ SwiftData 聊天存储已初始化 - \(reason)")
+            os_log("\(Self.t)✅ (\(reason)) SwiftData 聊天存储已初始化")
         }
     }
 
