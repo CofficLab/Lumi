@@ -109,11 +109,24 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     }
 
     /// 创建新对话（异步版本，支持设置当前会话）
-    /// - Parameter projectId: 关联的项目 ID（可选，nil 表示全局对话）
-    func createNewConversation(projectId: String? = nil) async {
+    /// - Parameters:
+    ///   - projectId: 关联的项目 ID（可选，nil 表示全局对话）
+    ///   - welcomeMessage: 欢迎消息（可选，如果提供则会保存到数据库）
+    func createNewConversation(projectId: String? = nil, welcomeMessage: String? = nil) async {
         let newConversation = createConversation(projectId: projectId)
         setCurrentConversationInternal(newConversation)
         selectedConversationId = newConversation.id
+
+        // 如果提供了欢迎消息，保存到数据库
+        if let welcome = welcomeMessage, !welcome.isEmpty {
+            let welcomeMsg = ChatMessage(role: .assistant, content: welcome)
+            if let savedMessage = chatHistoryService.saveMessage(welcomeMsg, to: newConversation) {
+                messages = [savedMessage]
+                if Self.verbose {
+                    os_log("\(Self.t)✅ 已为新会话添加欢迎消息")
+                }
+            }
+        }
     }
 
     /// 加载指定对话的消息

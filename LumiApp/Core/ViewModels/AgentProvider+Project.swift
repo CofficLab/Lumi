@@ -135,7 +135,10 @@ extension AgentProvider {
     /// 创建新对话
     func createNewConversation() async {
         let projectId = isProjectSelected ? currentProjectPath : nil
-        await ConversationViewModel.shared.createNewConversation(projectId: projectId)
+        await ConversationViewModel.shared.createNewConversation(
+            projectId: projectId,
+            welcomeMessage: await getEmptySessionWelcomeMessage()
+        )
     }
 
     /// 获取可用供应商列表
