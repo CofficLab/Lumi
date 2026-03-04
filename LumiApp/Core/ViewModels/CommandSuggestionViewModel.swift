@@ -15,9 +15,9 @@ class CommandSuggestionViewModel: ObservableObject {
     /// 全局单例
     static let shared = CommandSuggestionViewModel()
 
-    @Published var suggestions: [CommandSuggestion] = []
-    @Published var isVisible: Bool = false
-    @Published var selectedIndex: Int = 0
+    @Published private(set) var suggestions: [CommandSuggestion] = []
+    @Published private(set) var isVisible: Bool = false
+    @Published private(set) var selectedIndex: Int = 0
 
     private let allCommands: [CommandSuggestion] = [
         // Built-in commands
@@ -32,32 +32,55 @@ class CommandSuggestionViewModel: ObservableObject {
 
     private init() {}
 
+    // MARK: - Set Methods
+
+    func setSuggestions(_ suggestions: [CommandSuggestion]) {
+        self.suggestions = suggestions
+    }
+
+    func setIsVisible(_ isVisible: Bool) {
+        self.isVisible = isVisible
+    }
+
+    func setSelectedIndex(_ selectedIndex: Int) {
+        guard selectedIndex >= 0 else {
+            self.selectedIndex = 0
+            return
+        }
+        self.selectedIndex = selectedIndex
+    }
+
+    // MARK: - Business Logic
+
     func updateSuggestions(for input: String) {
         guard input.hasPrefix("/") else {
-            isVisible = false
+            setIsVisible(false)
             return
         }
 
         let lowercasedInput = input.lowercased()
 
         if lowercasedInput == "/" {
-            suggestions = allCommands
+            setSuggestions(allCommands)
         } else {
-            suggestions = allCommands.filter { $0.command.lowercased().hasPrefix(lowercasedInput) }
+            let filtered = allCommands.filter { $0.command.lowercased().hasPrefix(lowercasedInput) }
+            setSuggestions(filtered)
         }
 
-        isVisible = !suggestions.isEmpty
-        selectedIndex = 0
+        setIsVisible(!suggestions.isEmpty)
+        setSelectedIndex(0)
     }
 
     func selectNext() {
         guard !suggestions.isEmpty else { return }
-        selectedIndex = (selectedIndex + 1) % suggestions.count
+        let nextIndex = (selectedIndex + 1) % suggestions.count
+        setSelectedIndex(nextIndex)
     }
 
     func selectPrevious() {
         guard !suggestions.isEmpty else { return }
-        selectedIndex = (selectedIndex - 1 + suggestions.count) % suggestions.count
+        let previousIndex = (selectedIndex - 1 + suggestions.count) % suggestions.count
+        setSelectedIndex(previousIndex)
     }
 
     func getCurrentSuggestion() -> CommandSuggestion? {

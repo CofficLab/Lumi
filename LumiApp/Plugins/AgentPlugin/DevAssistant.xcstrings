@@ -35,6 +35,12 @@
         }
       }
     },
+    "Agent Input" : {
+
+    },
+    "Agent input area" : {
+
+    },
     "Agentic coding assistant" : {
       "localizations" : {
         "zh-Hans" : {
@@ -208,9 +214,6 @@
     "Dev Assistant Header" : {
 
     },
-    "Dev Assistant Input" : {
-
-    },
     "Dev Assistant Messages" : {
 
     },
@@ -218,9 +221,6 @@
 
     },
     "DevAssistant chat messages" : {
-
-    },
-    "DevAssistant input area" : {
 
     },
     "Disconnected" : {

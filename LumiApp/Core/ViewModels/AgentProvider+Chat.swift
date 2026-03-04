@@ -114,8 +114,8 @@ extension AgentProvider {
         let input = currentInput
         setChatMessageState(input: "", processing: true, errorMessage: nil)
 
-        // 检查是否为斜杠命令
-        if input.hasPrefix("/") {
+        // 检查是否为支持的斜杠命令
+        if SlashCommandService.shared.isSupportedSlashCommand(input) {
             Task {
                 let result = await SlashCommandService.shared.handle(input: input, provider: self)
                 switch result {

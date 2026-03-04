@@ -10,6 +10,17 @@ enum SlashCommandResult {
 actor SlashCommandService {
     static let shared = SlashCommandService()
 
+    /// 支持的命令列表
+    private let supportedCommands = ["clear", "help", "plan", "mcp"]
+
+    /// 检查是否为支持的斜杠命令
+    nonisolated func isSupportedSlashCommand(_ input: String) -> Bool {
+        guard input.hasPrefix("/") else { return false }
+
+        let command = input.dropFirst().split(separator: " ", maxSplits: 1).first.map(String.init) ?? ""
+        return supportedCommands.contains(command)
+    }
+
     /// Handle slash command with AgentProvider
     func handle(input: String, provider: AgentProvider) async -> SlashCommandResult {
         guard input.hasPrefix("/") else { return .notHandled }
@@ -43,7 +54,8 @@ actor SlashCommandService {
             return await handleMCPCommand(args: arguments, provider: provider)
 
         default:
-            return .error("Unknown command: /\(command)")
+            // 不支持的命令，返回 notHandled 让上层作为普通消息处理
+            return .notHandled
         }
     }
 

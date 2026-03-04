@@ -1,18 +1,18 @@
 import MagicKit
 import SwiftUI
 
-/// DevAssistant 输入插件 - 负责显示输入区域（编辑器、工具栏等）
-actor DevAssistantInputPlugin: SuperPlugin {
+/// Agent 输入插件 - 负责显示输入区域（编辑器、工具栏等）
+actor AgentInputPlugin: SuperPlugin {
     nonisolated static let emoji = "✏️"
     nonisolated static let verbose = false
 
-    static let id = "DevAssistantInput"
-    static let displayName = String(localized: "Dev Assistant Input", table: "DevAssistant")
-    static let description = String(localized: "DevAssistant input area", table: "DevAssistant")
+    static let id = "AgentInput"
+    static let displayName = String(localized: "Agent Input", table: "DevAssistant")
+    static let description = String(localized: "Agent input area", table: "DevAssistant")
     static let iconName = "textformat.abc"
     static var order: Int { 83 }
 
-    static let shared = DevAssistantInputPlugin()
+    static let shared = AgentInputPlugin()
 
     // MARK: - Lifecycle
 
@@ -37,7 +37,7 @@ actor DevAssistantInputPlugin: SuperPlugin {
 
     @MainActor
     func addDetailBottomView() -> AnyView? {
-        return AnyView(DevAssistantInputView())
+        return AnyView(InputView())
     }
 }
 

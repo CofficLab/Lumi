@@ -61,7 +61,7 @@ struct InputAreaView: View, SuperLog {
                         if commandSuggestionViewModel.isVisible,
                            let suggestion = commandSuggestionViewModel.getCurrentSuggestion() {
                             agentProvider.setCurrentInput(suggestion.command + " ")
-                            commandSuggestionViewModel.isVisible = false
+                            commandSuggestionViewModel.setIsVisible(false)
                         } else {
                             agentProvider.sendMessage()
                         }
@@ -93,7 +93,7 @@ struct InputAreaView: View, SuperLog {
             .overlay(alignment: .bottomLeading) {
                 CommandSuggestionView { suggestion in
                     agentProvider.setCurrentInput(suggestion.command + " ")
-                    commandSuggestionViewModel.isVisible = false
+                    commandSuggestionViewModel.setIsVisible(false)
                     isInputFocused = true
                 }
                 .offset(x: 16, y: -60)

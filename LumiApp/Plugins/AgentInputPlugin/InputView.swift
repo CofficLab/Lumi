@@ -3,9 +3,9 @@ import MagicKit
 import OSLog
 import SwiftUI
 
-/// DevAssistant 输入包装视图 - 管理输入区域所需的状态
+/// Agent 输入包装视图 - 管理输入区域所需的状态
 /// 封装 InputAreaView 并提供模型选择器 popover
-struct DevAssistantInputView: View, SuperLog {
+struct InputView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "💬"
     /// 是否输出详细日志
@@ -46,7 +46,7 @@ struct DevAssistantInputView: View, SuperLog {
 
 // MARK: - Event Handler
 
-extension DevAssistantInputView {
+extension InputView {
     func onAppear() {
         isInputFocused = true
     }
@@ -55,13 +55,13 @@ extension DevAssistantInputView {
 // MARK: - Preview
 
 #Preview("App - Small Screen") {
-    DevAssistantInputView()
+    InputView()
         .frame(width: 800, height: 600)
         .inRootView()
 }
 
 #Preview("App - Big Screen") {
-    DevAssistantInputView()
+    InputView()
         .frame(width: 1200, height: 800)
         .inRootView()
 }
