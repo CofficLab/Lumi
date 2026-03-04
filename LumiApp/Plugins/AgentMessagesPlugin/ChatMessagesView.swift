@@ -11,6 +11,8 @@ struct ChatMessagesView: View, SuperLog {
 
     /// 会话管理 ViewModel
     @EnvironmentObject var conversationViewModel: ConversationViewModel
+    /// 智能体提供者
+    @EnvironmentObject var agentProvider: AgentProvider
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -60,7 +62,7 @@ extension ChatMessagesView {
                 os_log("\(self.t) 当前会话为空，插入欢迎消息")
             }
 
-            let welcomeMessage = await PromptService.shared.getEmptySessionWelcomeMessage()
+            let welcomeMessage = await agentProvider.getEmptySessionWelcomeMessage()
             conversationViewModel.appendMessageInternal(ChatMessage(role: .assistant, content: welcomeMessage))
         }
     }
