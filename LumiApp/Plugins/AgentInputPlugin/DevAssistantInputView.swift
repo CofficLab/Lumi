@@ -68,9 +68,11 @@ struct DevAssistantInputView: View, SuperLog {
             ModelSelectorView()
         }
     }
+}
 
-    // MARK: - Action
+// MARK: - Action
 
+extension DevAssistantInputView {
     /// 选择图片文件
     /// 使用 NSOpenPanel 选择图片并上传到 Agent
     private func selectImage() {
