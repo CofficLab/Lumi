@@ -28,7 +28,6 @@ class ClipboardMonitor: ObservableObject, SuperLog {
                 self?.checkForChanges()
             }
         }
-        os_log("\(Self.t)Clipboard monitoring started")
     }
     
     func stopMonitoring() {

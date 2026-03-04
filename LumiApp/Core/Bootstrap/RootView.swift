@@ -1,5 +1,3 @@
-import MagicKit
-import OSLog
 import SwiftData
 import SwiftUI
 

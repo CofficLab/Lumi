@@ -3,7 +3,7 @@ import MagicKit
 
 actor ClipboardManagerPlugin: SuperPlugin {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
     
     static let id = "ClipboardManager"
     static let navigationId = "clipboard_manager"
@@ -11,6 +11,7 @@ actor ClipboardManagerPlugin: SuperPlugin {
     static let description = String(localized: "Manage clipboard history and snippets")
     static let iconName = "doc.on.clipboard"
     static var order: Int { 70 }
+    static let enable = false
     
     static let shared = ClipboardManagerPlugin()
     
