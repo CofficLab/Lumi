@@ -14,9 +14,6 @@ struct ChatMessagesView: View, SuperLog {
     /// 智能体提供者
     @EnvironmentObject var agentProvider: AgentProvider
 
-    /// 提示词服务
-    private let promptService = PromptService.shared
-
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
@@ -65,16 +62,7 @@ extension ChatMessagesView {
                 os_log("\(self.t) 当前会话为空，插入欢迎消息")
             }
 
-            let projectName = agentProvider.currentProjectName
-            let projectPath = agentProvider.currentProjectPath
-            let language = agentProvider.languagePreference
-
-            let welcomeMessage = await promptService.getEmptySessionWelcomeMessage(
-                projectName: projectName.isEmpty ? nil : projectName,
-                projectPath: projectPath.isEmpty ? nil : projectPath,
-                language: language
-            )
-
+            let welcomeMessage = await agentProvider.getEmptySessionWelcomeMessage()
             agentProvider.appendMessage(ChatMessage(role: .assistant, content: welcomeMessage))
         }
     }
@@ -99,7 +87,7 @@ extension ChatMessagesView {
 #Preview {
     ChatMessagesView()
         .padding()
-        .frame(width: 800, height: 600)
+        .withDebugBar()
         .background(Color.black)
         .inRootView()
 }
