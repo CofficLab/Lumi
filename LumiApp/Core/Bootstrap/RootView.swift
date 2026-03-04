@@ -1,18 +1,46 @@
+import MagicKit
+import OSLog
+import SwiftData
 import SwiftUI
 
-/// View扩展，提供便捷的根视图包装方法（主要用于Preview）
-extension View {
-    /// 将视图包装在根视图中，注入所有必要的环境对象
-    /// 主要用于SwiftUI Preview，在预览时自动注入环境对象
-    /// - Returns: 包装后的视图，包含所有环境对象
-    func inRootView() -> some View {
-        self
+/// 根视图容器组件
+/// 为应用提供统一的上下文环境，管理核心服务初始化和环境注入
+struct RootView<Content>: View where Content: View {
+    /// 视图内容
+    var content: Content
+
+    /// SwiftData 模型容器
+    let modelContainer: ModelContainer
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+
+        // 初始化 SwiftData 容器
+        self.modelContainer = AppConfig.getContainer()
+
+        // 初始化聊天历史服务
+        ChatHistoryService.shared.initializeWithContainer(self.modelContainer)
+    }
+
+    var body: some View {
+        content
             .environmentObject(AppProvider.shared)
             .environmentObject(PluginProvider.shared)
             .environmentObject(AgentProvider.shared)
             .environmentObject(ConversationViewModel.shared)
             .environmentObject(CommandSuggestionViewModel.shared)
-            .environmentObject(MystiqueThemeManager()) // 注册主题管理器
+            .environmentObject(MystiqueThemeManager())
+            .modelContainer(modelContainer)
+    }
+}
+
+extension View {
+    /// 将视图包装在 RootView 中，注入所有必要的环境对象和模型容器
+    /// - Returns: 包装在 RootView 中的视图
+    func inRootView() -> some View {
+        RootView {
+            self
+        }
     }
 }
 
