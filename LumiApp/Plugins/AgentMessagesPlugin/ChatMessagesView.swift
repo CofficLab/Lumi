@@ -31,7 +31,6 @@ struct ChatMessagesView: View, SuperLog {
                 }
                 .padding(.horizontal)
             }
-            .id(conversationViewModel.currentConversation?.id)
             .onConversationSelected(perform: handleConversationSelected)
             .task(id: conversationViewModel.currentConversation?.id) {
                 // 切换会话时，等待消息加载后滚动到底部
