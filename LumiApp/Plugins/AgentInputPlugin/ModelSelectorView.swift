@@ -1,17 +1,23 @@
+import MagicKit
+import OSLog
 import SwiftUI
 
 /// 模型选择器视图
-///
-/// 允许用户从所有已注册的供应商和模型中选择。
-struct ModelSelectorView: View {
+/// 允许用户从所有已注册的供应商和模型中选择
+struct ModelSelectorView: View, SuperLog {
+    /// 日志标识 emoji
+    nonisolated static let emoji = "🌐"
+    /// 是否输出详细日志
+    nonisolated static let verbose = false
+
     /// 环境对象：用于关闭当前视图
     @Environment(\.dismiss) private var dismiss
+
+    /// 智能体提供者
     @EnvironmentObject var agentProvider: AgentProvider
 
     /// 供应商注册表：提供所有可用的模型供应商信息
     private let registry = ProviderRegistry.shared
-
-    // MARK: - View
 
     var body: some View {
         VStack(spacing: 0) {
@@ -70,9 +76,11 @@ struct ModelSelectorView: View {
         .frame(width: 350, height: 400)
         .background(DesignTokens.Material.glass)
     }
+}
 
-    // MARK: - Section Header
+// MARK: - View
 
+extension ModelSelectorView {
     /// 构建供应商分组头部视图
     /// - Parameter provider: 供应商信息
     /// - Returns: 包含供应商图标和名称的头部视图
@@ -88,9 +96,11 @@ struct ModelSelectorView: View {
         }
         .padding(.vertical, 4)
     }
+}
 
-    // MARK: - Actions
+// MARK: - Action
 
+extension ModelSelectorView {
     /// 选择模型并保存到项目配置
     /// - Parameters:
     ///   - providerId: 供应商 ID
@@ -104,9 +114,11 @@ struct ModelSelectorView: View {
 
         dismiss()
     }
+}
 
-    // MARK: - Helpers
+// MARK: - Helper
 
+extension ModelSelectorView {
     /// 检查模型是否为当前选中状态
     /// - Parameters:
     ///   - providerId: 供应商 ID
@@ -134,12 +146,4 @@ struct ModelSelectorView: View {
 #Preview("ModelSelector") {
     ModelSelectorView()
         .inRootView()
-}
-
-#Preview("App") {
-    ContentLayout()
-        .hideSidebar()
-        .withNavigation(DevAssistantPlugin.navigationId)
-        .inRootView()
-        .withDebugBar()
 }

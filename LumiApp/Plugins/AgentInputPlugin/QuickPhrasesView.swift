@@ -1,22 +1,29 @@
+import MagicKit
+import OSLog
 import SwiftUI
 
 /// 快捷短语视图 - 显示可点击的快捷短语按钮
 /// 根据项目状态显示上下文相关的快捷短语，支持水平滚动浏览
-struct QuickPhrasesView: View {
+struct QuickPhrasesView: View, SuperLog {
+    /// 日志标识 emoji
+    nonisolated static let emoji = "⚡"
+    /// 是否输出详细日志
+    nonisolated static let verbose = false
+
     /// 短语选择回调：当用户点击快捷短语时触发
     let onPhraseSelected: (String) -> Void
 
     /// 项目名称：用于获取上下文相关的快捷短语
     @Binding var projectName: String
+
     /// 项目路径：用于获取上下文相关的快捷短语
     @Binding var projectPath: String
+
     /// 是否已选择项目：控制快捷短语的显示逻辑
     @Binding var isProjectSelected: Bool
 
     /// 快捷短语列表数据
     @State private var phrases: [PromptService.QuickPhrase] = []
-
-    // MARK: - View
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -42,9 +49,11 @@ struct QuickPhrasesView: View {
             Task { await refreshPhrases() }
         }
     }
+}
 
-    // MARK: - Action
+// MARK: - Action
 
+extension QuickPhrasesView {
     /// 刷新快捷短语列表：根据项目状态获取上下文相关的短语
     private func refreshPhrases() async {
         // 根据项目状态传递不同的参数
@@ -61,16 +70,20 @@ struct QuickPhrasesView: View {
 
 /// 快捷短语按钮视图
 /// 显示带有图标、标题和副标题的圆角按钮，支持悬停效果
-struct QuickPhraseButton: View {
+struct QuickPhraseButton: View, SuperLog {
+    /// 日志标识 emoji
+    nonisolated static let emoji = "🔖"
+    /// 是否输出详细日志
+    nonisolated static let verbose = false
+
     /// 快捷短语数据模型
     let phrase: PromptService.QuickPhrase
+
     /// 按钮点击回调
     let action: () -> Void
 
     /// 鼠标悬停状态：控制边框高亮
     @State private var isHovering = false
-
-    // MARK: - View
 
     var body: some View {
         Button(action: action) {
@@ -121,6 +134,7 @@ struct QuickPhraseButton: View {
     )
     .frame(width: 600)
     .background(Color(nsColor: .windowBackgroundColor))
+    .inRootView()
 }
 
 #Preview("Quick Phrases - No Project") {
@@ -132,4 +146,5 @@ struct QuickPhraseButton: View {
     )
     .frame(width: 600)
     .background(Color(nsColor: .windowBackgroundColor))
+    .inRootView()
 }
