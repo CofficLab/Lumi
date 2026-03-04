@@ -181,7 +181,6 @@ class NetworkService: SuperLog, ObservableObject {
         // 使用备用 API 列表，增加重试机制，避免单一服务故障或 TLS 问题
         // 国内可用服务（纯文本响应）
         let domesticServices = [
-            "https://cip.cc",
             "https://ip.3322.net",
             "https://www.speedtest.cn/api/external.php"
         ]
