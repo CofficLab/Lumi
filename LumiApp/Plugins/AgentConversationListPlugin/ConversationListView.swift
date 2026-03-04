@@ -45,9 +45,6 @@ struct ConversationListView: View, SuperLog {
                 hasRestoredSelection = true
             }
         }
-        .onChange(of: conversations.count) { oldCount, newCount in
-            handleConversationListChange(oldCount: oldCount, newCount: newCount)
-        }
     }
 }
 
@@ -134,22 +131,6 @@ extension ConversationListView {
     }
 }
 
-// MARK: - Event
-
-extension ConversationListView {
-    /// 处理会话列表数量变化的事件
-    /// 当列表从空变为有数据时，自动恢复上次选择的会话
-    /// - Parameters:
-    ///   - oldCount: 变化前的会话数量
-    ///   - newCount: 变化后的会话数量
-    private func handleConversationListChange(oldCount: Int, newCount: Int) {
-        // 如果列表从空变为有数据，恢复选择
-        if oldCount == 0 && newCount > 0 && !hasRestoredSelection {
-            restoreSelectionIfNeeded()
-            hasRestoredSelection = true
-        }
-    }
-}
 
 // MARK: - Preview
 
