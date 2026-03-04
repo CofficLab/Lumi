@@ -24,6 +24,12 @@ protocol SuperPlugin: Actor {
     /// 插件实例标签（用于识别唯一实例）
     nonisolated var instanceLabel: String { get }
 
+    /// 添加根视图包裹
+    /// - Parameter content: 要被包裹的原始内容视图
+    /// - Returns: 包裹后的视图，如果不需要则返回 nil
+    /// - Note: 插件可以通过此方法包裹整个应用的内容视图，实现全局拦截、修饰等功能
+    @MainActor func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View
+
     /// 添加工具栏前导视图
     /// - Returns: 要添加到工具栏前导的视图，如果不需要则返回 nil
     @MainActor func addToolBarLeadingView() -> AnyView?
@@ -119,7 +125,23 @@ extension SuperPlugin {
     
     /// 默认启用插件
     static var enable: Bool { true }
-    
+
+    /// 默认实现：不提供根视图包裹
+    @MainActor func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View { nil }
+
+    /// 提供根视图（接收 AnyView 参数的便捷方法）
+    @MainActor func provideRootView(_ content: AnyView) -> AnyView? {
+        self.addRootView { content }
+    }
+
+    /// 包裹根视图（安全版本）
+    @MainActor func wrapRoot(_ content: AnyView) -> AnyView {
+        if let wrapped = self.provideRootView(content) {
+            return wrapped
+        }
+        return content
+    }
+
     /// 默认实现：不提供工具栏前导视图
     @MainActor func addToolBarLeadingView() -> AnyView? { nil }
     

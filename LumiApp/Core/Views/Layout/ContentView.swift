@@ -31,26 +31,82 @@ struct ContentView: View {
     var defaultSidebarVisibility: Bool? = nil
 
     var body: some View {
-        Group {
-            switch app.selectedMode {
-            case .app:
-                AppModeContentView(sidebarVisibility: $sidebarVisibility)
-            case .agent:
-                AgentModeContentView(sidebarVisibility: $sidebarVisibility)
+        ContentViewBody(
+            sidebarVisibility: $sidebarVisibility,
+            columnVisibility: $columnVisibility,
+            app: app,
+            pluginProvider: pluginProvider,
+            themeManager: themeManager,
+            content: {
+                Group {
+                    switch app.selectedMode {
+                    case .app:
+                        AppModeContentView(sidebarVisibility: $sidebarVisibility)
+                    case .agent:
+                        AgentModeContentView(sidebarVisibility: $sidebarVisibility)
+                    }
+                }
+            },
+            openSettings: openSettings,
+            openPluginSettings: openPluginSettings,
+            onAppear: onAppear,
+            onChangeColumnVisibility: onChangeColumnVisibility
+        )
+    }
+}
+
+struct ContentViewBody<Content: View>: View {
+    @Binding var sidebarVisibility: Bool
+    @Binding var columnVisibility: NavigationSplitViewVisibility
+    @ObservedObject var app: AppProvider
+    @ObservedObject var pluginProvider: PluginProvider
+    @ObservedObject var themeManager: MystiqueThemeManager
+    let content: Content
+    let openSettings: () -> Void
+    let openPluginSettings: () -> Void
+    let onAppear: () -> Void
+    let onChangeColumnVisibility: () -> Void
+
+    init(
+        sidebarVisibility: Binding<Bool>,
+        columnVisibility: Binding<NavigationSplitViewVisibility>,
+        app: AppProvider,
+        pluginProvider: PluginProvider,
+        themeManager: MystiqueThemeManager,
+        @ViewBuilder content: () -> Content,
+        openSettings: @escaping () -> Void,
+        openPluginSettings: @escaping () -> Void,
+        onAppear: @escaping () -> Void,
+        onChangeColumnVisibility: @escaping () -> Void
+    ) {
+        self._sidebarVisibility = sidebarVisibility
+        self._columnVisibility = columnVisibility
+        self.app = app
+        self.pluginProvider = pluginProvider
+        self.themeManager = themeManager
+        self.content = content()
+        self.openSettings = openSettings
+        self.openPluginSettings = openPluginSettings
+        self.onAppear = onAppear
+        self.onChangeColumnVisibility = onChangeColumnVisibility
+    }
+
+    var body: some View {
+        content
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onOpenSettings(perform: openSettings)
+            .onOpenPluginSettings(perform: openPluginSettings)
+            .background {
+                GeometryReader { proxy in
+                    themeManager.currentVariant.theme.makeGlobalBackground(proxy: proxy)
+                }
+                .ignoresSafeArea()
             }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onOpenSettings(perform: openSettings)
-        .onOpenPluginSettings(perform: openPluginSettings)
-        // 全局背景光晕效果
-        .background {
-            GeometryReader { proxy in
-                themeManager.currentVariant.theme.makeGlobalBackground(proxy: proxy)
+            .onAppear(perform: onAppear)
+            .onChange(of: columnVisibility, perform: { _ in onChangeColumnVisibility() })
+            .overlay(alignment: .bottom) {
+                pluginProvider.getRootViewWrapper(content: { EmptyView() })
             }
-            .ignoresSafeArea()
-        }
-        .onAppear(perform: onAppear)
-        .onChange(of: columnVisibility, onChangeColumnVisibility)
     }
 }
 
