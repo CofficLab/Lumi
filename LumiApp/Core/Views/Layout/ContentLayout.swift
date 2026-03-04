@@ -72,6 +72,6 @@ extension ContentLayout {
 
 #Preview("App") {
     ContentLayout()
-        .inRootView()
+        .inRootView("Preview")
         .withDebugBar()
 }

@@ -43,6 +43,6 @@ actor PortManagerPlugin: SuperPlugin, SuperLog {
     ContentLayout()
         .hideSidebar()
         .withNavigation(PortManagerPlugin.navigationId)
-        .inRootView()
+        .inRootView("Preview")
         .withDebugBar()
 }

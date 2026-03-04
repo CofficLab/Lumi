@@ -145,5 +145,5 @@ extension ModelSelectorView {
 
 #Preview("ModelSelector") {
     ModelSelectorView()
-        .inRootView()
+        .inRootView("Preview")
 }

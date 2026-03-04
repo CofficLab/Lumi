@@ -61,6 +61,6 @@ actor ClipboardManagerPlugin: SuperPlugin {
     ContentLayout()
         .hideSidebar()
         .withNavigation(ClipboardManagerPlugin.navigationId)
-        .inRootView()
+        .inRootView("Preview")
         .withDebugBar()
 }

@@ -317,13 +317,13 @@ final class PluginProvider: ObservableObject, SuperLog {
 #Preview("App - Small Screen") {
     ContentLayout()
         .hideSidebar()
-        .inRootView()
+        .inRootView("Preview")
         .frame(width: 800, height: 600)
 }
 
 #Preview("App - Big Screen") {
     ContentLayout()
         .hideSidebar()
-        .inRootView()
+        .inRootView("Preview")
         .frame(width: 1200, height: 1200)
 }

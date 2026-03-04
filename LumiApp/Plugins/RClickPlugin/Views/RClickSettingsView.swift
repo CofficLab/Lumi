@@ -186,6 +186,6 @@ struct RClickSettingsView: View {
     ContentLayout()
         .withNavigation(RClickPlugin.id)
         .hideSidebar()
-        .inRootView()
+        .inRootView("Preview")
         .withDebugBar()
 }

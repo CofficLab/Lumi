@@ -37,6 +37,6 @@ actor BrewManagerPlugin: SuperPlugin, SuperLog {
     ContentLayout()
         .hideSidebar()
         .withNavigation(BrewManagerPlugin.navigationId)
-        .inRootView()
+        .inRootView("Preview")
         .withDebugBar()
 }

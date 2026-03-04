@@ -96,6 +96,6 @@ struct TextActionsSettingsView: View {
 #Preview("App") {
     ContentLayout()
         .withNavigation(TextActionsPlugin.id)
-        .inRootView()
+        .inRootView("Preview")
         .withDebugBar()
 }

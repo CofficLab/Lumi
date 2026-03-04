@@ -36,14 +36,14 @@ extension View {
     /// 将视图包装在 RootView 中，注入所有必要的环境对象和模型容器
     /// - Parameter reason: 初始化原因（用于日志）
     /// - Returns: 包装在 RootView 中的视图
-    func inRootView(_ reason: String = "") -> some View {
+    func inRootView(_ reason: String) -> some View {
         AnyView(RootView(content: { self }, reason: reason))
     }
 }
 
 extension RootView {
     /// 初始化 RootView，支持传入初始化原因
-    init(@ViewBuilder content: () -> Content, reason: String = "") {
+    init(@ViewBuilder content: () -> Content, reason: String) {
         self.content = content()
         self.modelContainer = AppConfig.getContainer()
         ChatHistoryService.shared.initializeWithContainer(self.modelContainer, reason: reason)
@@ -54,6 +54,6 @@ extension RootView {
 
 #Preview("App") {
     ContentLayout()
-        .inRootView()
+        .inRootView("Preview")
         .withDebugBar()
 }

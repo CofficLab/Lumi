@@ -197,6 +197,6 @@ struct PortRowView: View {
     ContentLayout()
         .hideSidebar()
         .withNavigation(PortManagerPlugin.navigationId)
-        .inRootView()
+        .inRootView("Preview")
         .withDebugBar()
 }

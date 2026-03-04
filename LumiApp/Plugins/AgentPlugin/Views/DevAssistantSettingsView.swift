@@ -519,6 +519,6 @@ private struct ProjectConfigRow: View {
     ContentLayout()
         .hideSidebar()
         .withNavigation(DevAssistantPlugin.navigationId)
-        .inRootView()
+        .inRootView("Preview")
         .withDebugBar()
 }

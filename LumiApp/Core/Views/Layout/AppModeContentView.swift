@@ -71,7 +71,7 @@ struct AppModeContentView: View {
 
 #Preview("App Mode") {
     AppModeContentView(sidebarVisibility: .constant(true))
-        .inRootView()
+        .inRootView("Preview")
         .environmentObject(AppProvider.shared)
         .environmentObject(PluginProvider.shared)
 }

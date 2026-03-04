@@ -17,11 +17,10 @@ class ChatHistoryService: SuperLog {
     private init() {}
 
     /// 使用外部容器初始化
-    func initializeWithContainer(_ container: ModelContainer, reason: String = "") {
+    func initializeWithContainer(_ container: ModelContainer, reason: String) {
         self.modelContainer = container
         if Self.verbose {
-            let reasonText = reason.isEmpty ? "" : " - \(reason)"
-            os_log("\(Self.t)✅ SwiftData 聊天存储已初始化\(reasonText)")
+            os_log("\(Self.t)✅ SwiftData 聊天存储已初始化 - \(reason)")
         }
     }
 

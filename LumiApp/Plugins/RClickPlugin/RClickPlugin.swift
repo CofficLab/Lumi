@@ -42,6 +42,6 @@ actor RClickPlugin: SuperPlugin {
     ContentLayout()
         .hideSidebar()
         .withNavigation(RClickPlugin.id)
-        .inRootView()
+        .inRootView("Preview")
         .withDebugBar()
 }

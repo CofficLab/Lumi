@@ -231,7 +231,7 @@ extension ChatHeaderView {
         isMCPSettingsPresented: .constant(false)
     )
     .frame(width: 800)
-    .inRootView()
+    .inRootView("Preview")
 }
 
 #Preview("聊天头部 - 窄屏") {
@@ -240,6 +240,6 @@ extension ChatHeaderView {
         isMCPSettingsPresented: .constant(false)
     )
     .frame(width: 600)
-    .inRootView()
+    .inRootView("Preview")
 }
 #endif

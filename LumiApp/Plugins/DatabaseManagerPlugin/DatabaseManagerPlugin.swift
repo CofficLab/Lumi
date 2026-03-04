@@ -37,6 +37,6 @@ actor DatabaseManagerPlugin: SuperPlugin, SuperLog {
     ContentLayout()
         .hideSidebar()
         .withNavigation(DatabaseManagerPlugin.navigationId)
-        .inRootView()
+        .inRootView("Preview")
         .withDebugBar()
 }

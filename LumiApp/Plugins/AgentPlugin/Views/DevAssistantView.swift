@@ -83,6 +83,6 @@ struct DevAssistantView: View {
     ContentLayout()
         .hideSidebar()
         .withNavigation(DevAssistantPlugin.navigationId)
-        .inRootView()
+        .inRootView("Preview")
         .withDebugBar()
 }

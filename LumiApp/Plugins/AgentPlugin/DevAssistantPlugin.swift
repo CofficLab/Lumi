@@ -43,6 +43,6 @@ actor DevAssistantPlugin: SuperPlugin {
     ContentLayout()
         .hideSidebar()
         .withNavigation(DevAssistantPlugin.navigationId)
-        .inRootView()
+        .inRootView("Preview")
         .withDebugBar()
 }

@@ -122,6 +122,6 @@ class TerminalNSTextView: NSTextView {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .inRootView()
+        .inRootView("Preview")
         .withDebugBar()
 }

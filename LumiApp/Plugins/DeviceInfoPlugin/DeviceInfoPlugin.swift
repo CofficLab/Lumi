@@ -44,6 +44,6 @@ actor DeviceInfoPlugin: SuperPlugin {
     ContentLayout()
         .hideSidebar()
         .withNavigation(DeviceInfoPlugin.navigationId)
-        .inRootView()
+        .inRootView("Preview")
         .withDebugBar()
 }

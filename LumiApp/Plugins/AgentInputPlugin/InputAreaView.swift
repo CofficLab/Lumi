@@ -226,5 +226,5 @@ extension InputAreaView {
     )
     .frame(width: 800, height: 200)
     .background(Color.black)
-    .inRootView()
+    .inRootView("Preview")
 }

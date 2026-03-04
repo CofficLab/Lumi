@@ -114,6 +114,6 @@ class AppCleanerHelper: SuperLog {
     ContentLayout()
         .hideSidebar()
         .withNavigation(AppManagerPlugin.navigationId)
-        .inRootView()
+        .inRootView("Preview")
         .withDebugBar()
 }

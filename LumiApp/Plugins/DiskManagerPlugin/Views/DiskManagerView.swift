@@ -273,6 +273,6 @@ struct LargeFileRow: View {
     ContentLayout()
         .hideSidebar()
         .withNavigation(DiskManagerPlugin.navigationId)
-        .inRootView()
+        .inRootView("Preview")
         .withDebugBar()
 }

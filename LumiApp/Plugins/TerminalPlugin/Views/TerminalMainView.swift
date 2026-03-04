@@ -136,6 +136,6 @@ class TerminalManagerViewModel: ObservableObject {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .inRootView()
+        .inRootView("Preview")
         .withDebugBar()
 }

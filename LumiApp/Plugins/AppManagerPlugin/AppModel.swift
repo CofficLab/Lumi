@@ -117,6 +117,6 @@ struct AppModel: Identifiable, Hashable, @unchecked Sendable {
     ContentLayout()
         .hideSidebar()
         .withNavigation(AppManagerPlugin.navigationId)
-        .inRootView()
+        .inRootView("Preview")
         .withDebugBar()
 }

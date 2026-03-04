@@ -188,5 +188,5 @@ class EditorTextView: NSTextView, SuperLog {
     .frame(height: 100)
     .padding()
     .background(Color.black)
-    .inRootView()
+    .inRootView("Preview")
 }

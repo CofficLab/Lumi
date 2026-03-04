@@ -254,5 +254,5 @@ extension ChatToolbarView {
     .padding()
     .frame(width: 800)
     .background(Color.black)
-    .inRootView()
+    .inRootView("Preview")
 }

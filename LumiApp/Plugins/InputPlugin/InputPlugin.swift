@@ -37,6 +37,6 @@ actor InputPlugin: SuperPlugin {
     ContentLayout()
         .hideSidebar()
         .withNavigation(InputPlugin.navigationId)
-        .inRootView()
+        .inRootView("Preview")
         .withDebugBar()
 }

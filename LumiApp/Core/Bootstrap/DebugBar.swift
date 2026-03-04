@@ -144,6 +144,6 @@ private struct DynamicPreviewSizingView<Content: View>: View {
 
 #Preview("App") {
     ContentView()
-        .inRootView()
+        .inRootView("Preview")
         .withDebugBar()
 }

@@ -283,5 +283,5 @@ struct ProjectSelectorView: View {
 
 #Preview("Project Selector") {
     ProjectSelectorView(isPresented: .constant(true))
-        .inRootView()
+        .inRootView("Preview")
 }

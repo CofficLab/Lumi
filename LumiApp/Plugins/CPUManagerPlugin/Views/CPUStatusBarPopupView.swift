@@ -147,6 +147,6 @@ struct CPUStatusBarPopupView: View {
 
 #Preview("App") {
     CPUStatusBarPopupView()
-        .inRootView()
+        .inRootView("Preview")
         .withDebugBar()
 }
