@@ -14,6 +14,9 @@ struct ChatMessagesView: View, SuperLog {
     /// 智能体提供者
     @EnvironmentObject var agentProvider: AgentProvider
 
+    /// 提示词服务
+    private let promptService = PromptService.shared
+
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
@@ -39,6 +42,36 @@ struct ChatMessagesView: View, SuperLog {
                     proxy.scrollTo(lastMessage.id, anchor: .bottom)
                 }
             }
+            .task(id: conversationViewModel.currentConversation?.id) {
+                // 当会话改变时，检查是否为空会话并插入欢迎消息
+                await checkAndInsertWelcomeMessage()
+            }
+        }
+    }
+
+    /// 检查当前会话是否为空，如果为空则插入欢迎消息
+    @MainActor
+    private func checkAndInsertWelcomeMessage() async {
+        // 过滤掉 system 角色的消息
+        let nonSystemMessages = conversationViewModel.messages.filter { $0.role != .system }
+
+        // 如果没有任何非系统消息，插入欢迎消息
+        if nonSystemMessages.isEmpty {
+            if Self.verbose {
+                os_log("\(self.t) 当前会话为空，插入欢迎消息")
+            }
+
+            let projectName = agentProvider.currentProjectName
+            let projectPath = agentProvider.currentProjectPath
+            let language = agentProvider.languagePreference
+
+            let welcomeMessage = await promptService.getEmptySessionWelcomeMessage(
+                projectName: projectName.isEmpty ? nil : projectName,
+                projectPath: projectPath.isEmpty ? nil : projectPath,
+                language: language
+            )
+
+            agentProvider.appendMessage(ChatMessage(role: .assistant, content: welcomeMessage))
         }
     }
 }

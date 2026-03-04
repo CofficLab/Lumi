@@ -204,6 +204,51 @@ actor PromptService: SuperLog {
         """
     }
 
+    /// 空会话欢迎消息（当会话没有任何消息时显示）
+    func getEmptySessionWelcomeMessage(projectName: String? = nil, projectPath: String? = nil, language: LanguagePreference = .chinese) -> String {
+        // 构建项目上下文描述
+        let projectContext: String
+        if let name = projectName, let path = projectPath, !name.isEmpty {
+            projectContext = """
+            **当前项目**: \(name)
+            **项目路径**: \(path)
+            """
+        } else {
+            projectContext = "**项目**: 未选择"
+        }
+
+        switch language {
+        case .chinese:
+            return """
+            👋 你好！我是你的智能编程助手 DevAssistant。
+
+            \(projectContext)
+
+            我可以帮你：
+            - **分析代码** - 阅读和理解项目结构
+            - **执行命令** - 运行构建、测试和脚本
+            - **修改文件** - 编辑代码和创建新文件
+            - **解答问题** - 提供技术支持和建议
+
+            请告诉我你需要什么帮助？
+            """
+        case .english:
+            return """
+            👋 Hello! I'm your intelligent coding assistant, DevAssistant.
+
+            \(projectContext)
+
+            I can help you:
+            - **Analyze code** - Read and understand project structure
+            - **Execute commands** - Run builds, tests, and scripts
+            - **Modify files** - Edit code and create new files
+            - **Answer questions** - Provide technical support and advice
+
+            How can I help you today?
+            """
+        }
+    }
+
     /// 规划模式提示词
     func getPlanningModePrompt(task: String) -> String {
         """
