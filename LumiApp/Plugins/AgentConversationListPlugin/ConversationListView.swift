@@ -84,7 +84,9 @@ extension ConversationListView {
         conversationViewModel.restoreSelectedConversation(modelContext: modelContext)
 
         if let restoredId = conversationViewModel.selectedConversationId {
-            os_log("\(self.t)✅ 已恢复会话选择：\(restoredId)")
+            if Self.verbose {
+                os_log("\(self.t)✅ 已恢复会话选择：\(restoredId)")
+            }
         } else {
             if Self.verbose {
                 os_log("\(self.t)ℹ️ 没有保存的会话选择")
@@ -96,7 +98,9 @@ extension ConversationListView {
     /// 删除后如果当前选中的是被删除的会话，自动切换到最新的会话
     /// - Parameter conversation: 要删除的会话
     private func handleDelete(_ conversation: Conversation) {
-        os_log("\(self.t)🗑️ 开始删除对话：\(conversation.title)")
+        if Self.verbose {
+            os_log("\(self.t)🗑️ 开始删除对话：\(conversation.title)")
+        }
 
         // 如果删除的是当前选中的会话，且还有其他会话，自动切换到最新的
         if conversationViewModel.selectedConversationId == conversation.id {
@@ -104,11 +108,15 @@ extension ConversationListView {
             if let nextConversation = remainingConversations.first {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     conversationViewModel.selectedConversationId = nextConversation.id
-                    os_log("\(self.t)🔄 已自动切换到对话：\(nextConversation.title)")
+                    if Self.verbose {
+                        os_log("\(self.t)🔄 已自动切换到对话：\(nextConversation.title)")
+                    }
                 }
             } else {
                 conversationViewModel.selectedConversationId = nil
-                os_log("\(self.t)📭 没有剩余会话，已清空选中状态")
+                if Self.verbose {
+                    os_log("\(self.t)📭 没有剩余会话，已清空选中状态")
+                }
             }
         }
 
@@ -117,7 +125,9 @@ extension ConversationListView {
 
         do {
             try modelContext.save()
-            os_log("\(self.t)✅ 对话已删除：\(conversation.title)")
+            if Self.verbose {
+                os_log("\(self.t)✅ 对话已删除：\(conversation.title)")
+            }
         } catch {
             os_log(.error, "\(self.t)❌ 删除对话失败：\(error.localizedDescription)")
         }
