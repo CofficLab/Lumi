@@ -29,14 +29,17 @@ struct ChatMessagesView: View, SuperLog {
             .onChange(of: conversationViewModel.messages) { oldMessages, newMessages in
                 guard let lastMessage = newMessages.last else { return }
 
-                // 如果是新消息，则滚动并带动画
-                if oldMessages.last?.id != lastMessage.id {
-                    withAnimation {
+                // 延迟执行滚动，避免与 Textual 框架的文本布局冲突
+                DispatchQueue.main.async {
+                    // 如果是新消息，则滚动并带动画
+                    if oldMessages.last?.id != lastMessage.id {
+                        withAnimation {
+                            proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                        }
+                    } else {
+                        // 如果是同一条消息（流式更新），直接滚动以减少布局闪烁
                         proxy.scrollTo(lastMessage.id, anchor: .bottom)
                     }
-                } else {
-                    // 如果是同一条消息（流式更新），直接滚动以减少布局闪烁
-                    proxy.scrollTo(lastMessage.id, anchor: .bottom)
                 }
             }
             .task(id: conversationViewModel.currentConversation?.id) {
