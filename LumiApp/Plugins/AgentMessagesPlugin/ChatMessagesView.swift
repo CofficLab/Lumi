@@ -14,6 +14,9 @@ struct ChatMessagesView: View, SuperLog {
     /// 智能体提供者
     @EnvironmentObject var agentProvider: AgentProvider
 
+    /// 跟踪最后一条消息的 ID，用于检测新消息
+    @State private var lastMessageId: UUID?
+
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
@@ -25,25 +28,29 @@ struct ChatMessagesView: View, SuperLog {
                 }
                 .padding(.horizontal)
             }
+            .id(conversationViewModel.currentConversation?.id)
             .onConversationSelected(perform: handleConversationSelected)
-            .onChange(of: conversationViewModel.messages) { oldMessages, newMessages in
-                guard let lastMessage = newMessages.last else { return }
+            .task(id: conversationViewModel.messages.last?.id) {
+                // 当有新消息时，滚动到底部
+                guard let lastMessage = conversationViewModel.messages.last else { return }
 
-                // 延迟执行滚动，避免与 Textual 框架的文本布局冲突
-                DispatchQueue.main.async {
-                    // 如果是新消息，则滚动并带动画
-                    if oldMessages.last?.id != lastMessage.id {
-                        withAnimation {
-                            proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                // 避免重复滚动到同一条消息
+                if lastMessageId != lastMessage.id {
+                    lastMessageId = lastMessage.id
+
+                    // 延迟执行，避免与文本布局冲突
+                    try? await Task.sleep(for: .milliseconds(50))
+
+                    if !Task.isCancelled {
+                        await MainActor.run {
+                            withAnimation {
+                                proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                            }
                         }
-                    } else {
-                        // 如果是同一条消息（流式更新），直接滚动以减少布局闪烁
-                        proxy.scrollTo(lastMessage.id, anchor: .bottom)
                     }
                 }
             }
             .task(id: conversationViewModel.currentConversation?.id) {
-                // 当会话改变时，检查是否为空会话并插入欢迎消息
                 await checkAndInsertWelcomeMessage()
             }
         }

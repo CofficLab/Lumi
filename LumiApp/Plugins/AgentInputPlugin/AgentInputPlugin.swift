@@ -11,6 +11,7 @@ actor AgentInputPlugin: SuperPlugin {
     static let description = String(localized: "Agent input area", table: "DevAssistant")
     static let iconName = "textformat.abc"
     static var order: Int { 83 }
+    static let enable = false
 
     static let shared = AgentInputPlugin()
 
