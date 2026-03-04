@@ -73,8 +73,12 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
 
         textView.onDrop = onDrop
 
+        // 只有当文本真正不同步时才更新，避免不必要的布局循环
         if textView.string != text {
+            // 临时移除 delegate 防止触发 textDidChange 造成循环更新
+            textView.delegate = nil
             textView.string = text
+            textView.delegate = context.coordinator
         }
 
         if isFocused {
