@@ -21,18 +21,6 @@ struct InputAreaView: View, SuperLog {
     /// 模型选择器是否显示
     @Binding var isModelSelectorPresented: Bool
 
-    /// 发送消息回调
-    let onSendMessage: () -> Void
-
-    /// 上传图片回调
-    let onImageUpload: () -> Void
-
-    /// 拖放图片回调
-    let onDropImage: ([URL]) -> Bool
-
-    /// 停止生成回调
-    let onStopGenerating: () -> Void
-
     /// 动画相位状态（用于渐变边框动画）
     @State private var gradientPhase: CGFloat = 0
 
@@ -56,7 +44,9 @@ struct InputAreaView: View, SuperLog {
                         get: { agentProvider.currentInput },
                         set: { agentProvider.setCurrentInput($0) }
                     ),
-                    onSubmit: onSendMessage,
+                    onSubmit: {
+                        agentProvider.sendMessage()
+                    },
                     onArrowUp: {
                         if commandSuggestionViewModel.isVisible {
                             commandSuggestionViewModel.selectPrevious()
@@ -73,22 +63,21 @@ struct InputAreaView: View, SuperLog {
                             agentProvider.setCurrentInput(suggestion.command + " ")
                             commandSuggestionViewModel.isVisible = false
                         } else {
-                            onSendMessage()
+                            agentProvider.sendMessage()
                         }
                     },
                     isFocused: $isInputFocused,
-                    onDrop: onDropImage
+                    onDrop: { urls in
+                        handleDrop(urls: urls)
+                    }
                 )
                 .frame(height: 64)
                 .padding(.horizontal, 4)
                 .padding(.top, 8)
 
-                // 工具栏 - 传递停止回调
+                // 工具栏
                 ChatToolbarView(
-                    isModelSelectorPresented: $isModelSelectorPresented,
-                    onImageUpload: onImageUpload,
-                    onSendMessage: onSendMessage,
-                    onStopGenerating: onStopGenerating
+                    isModelSelectorPresented: $isModelSelectorPresented
                 )
             }
             .background(Color(nsColor: .controlBackgroundColor))
@@ -99,7 +88,7 @@ struct InputAreaView: View, SuperLog {
             )
             .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
             .onDrop(of: [.fileURL], isTargeted: nil) { providers in
-                handleDrop(providers: providers)
+                handleDropProviders(providers: providers)
             }
             .overlay(alignment: .bottomLeading) {
                 CommandSuggestionView { suggestion in
@@ -171,28 +160,19 @@ extension InputAreaView {
 // MARK: - Action
 
 extension InputAreaView {
-    /// 处理拖放操作
-    /// - Parameter providers: NSItemProvider 列表
-    /// - Returns: 是否成功处理
-    private func handleDrop(providers: [NSItemProvider]) -> Bool {
-        var handled = false
-        for provider in providers {
-            if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
-                provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
-                    if let data = item as? Data, let url = URL(dataRepresentation: data, relativeTo: nil) {
-                        DispatchQueue.main.async {
-                            _ = onDropImage([url])
-                        }
-                    } else if let url = item as? URL {
-                        DispatchQueue.main.async {
-                            _ = onDropImage([url])
-                        }
-                    }
-                }
-                handled = true
+    /// 处理图片选择
+    private func selectImage() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowedContentTypes = [.image]
+
+        panel.begin { response in
+            if response == .OK, let url = panel.url {
+                agentProvider.handleImageUpload(url: url)
             }
         }
-        return handled
     }
 
     /// 处理从项目树拖放的文件
@@ -202,6 +182,39 @@ extension InputAreaView {
         let file_path = fileURL.path
         agentProvider.appendInput("\(file_path) ")
     }
+
+    /// 处理拖放操作（URL 列表）
+    /// - Parameter urls: 拖放的 URL 列表
+    private func handleDrop(urls: [URL]) -> Bool {
+        for url in urls {
+            agentProvider.handleImageUpload(url: url)
+        }
+        return true
+    }
+
+    /// 处理拖放操作（NSItemProvider 列表）
+    /// - Parameter providers: NSItemProvider 列表
+    /// - Returns: 是否成功处理
+    private func handleDropProviders(providers: [NSItemProvider]) -> Bool {
+        var handled = false
+        for provider in providers {
+            if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
+                provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
+                    if let data = item as? Data, let url = URL(dataRepresentation: data, relativeTo: nil) {
+                        DispatchQueue.main.async {
+                            agentProvider.handleImageUpload(url: url)
+                        }
+                    } else if let url = item as? URL {
+                        DispatchQueue.main.async {
+                            agentProvider.handleImageUpload(url: url)
+                        }
+                    }
+                }
+                handled = true
+            }
+        }
+        return handled
+    }
 }
 
 // MARK: - Preview
@@ -209,11 +222,7 @@ extension InputAreaView {
 #Preview("Input Area") {
     InputAreaView(
         isInputFocused: .constant(true),
-        isModelSelectorPresented: .constant(false),
-        onSendMessage: {},
-        onImageUpload: {},
-        onDropImage: { _ in true },
-        onStopGenerating: {}
+        isModelSelectorPresented: .constant(false)
     )
     .frame(width: 800, height: 200)
     .background(Color.black)

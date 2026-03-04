@@ -4,15 +4,12 @@ import OSLog
 import SwiftUI
 
 /// DevAssistant 输入包装视图 - 管理输入区域所需的状态
-/// 封装 InputAreaView 并提供图片选择、模型选择等功能
+/// 封装 InputAreaView 并提供模型选择器 popover
 struct DevAssistantInputView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "💬"
     /// 是否输出详细日志
     nonisolated static let verbose = false
-
-    /// 智能体提供者
-    @EnvironmentObject var agentProvider: AgentProvider
 
     /// 输入框是否处于聚焦状态
     @State private var isInputFocused: Bool = false
@@ -23,43 +20,18 @@ struct DevAssistantInputView: View, SuperLog {
     var body: some View {
         InputAreaView(
             isInputFocused: $isInputFocused,
-            isModelSelectorPresented: $isModelSelectorPresented,
-            onSendMessage: {
-                agentProvider.sendMessage()
-            },
-            onImageUpload: {
-                selectImage()
-            },
-            onDropImage: { urls in
-                let imageURLs = urls.filter { url in
-                    let ext = url.pathExtension.lowercased()
-                    return ["png", "jpg", "jpeg", "gif", "webp"].contains(ext)
-                }
-
-                if !imageURLs.isEmpty {
-                    for url in imageURLs {
-                        agentProvider.handleImageUpload(url: url)
-                    }
-                    return true
-                }
-                return false
-            },
-            onStopGenerating: {
-                agentProvider.cancelCurrentTask()
-            }
+            isModelSelectorPresented: $isModelSelectorPresented
         )
-        .onAppear {
-            isInputFocused = true
-        }
+        .onAppear(perform: onAppear)
         .overlay {
-            if let request = agentProvider.pendingPermissionRequest {
+            if let request = AgentProvider.shared.pendingPermissionRequest {
                 PermissionRequestView(
                     request: request,
                     onAllow: {
-                        agentProvider.respondToPermissionRequest(allowed: true)
+                        AgentProvider.shared.respondToPermissionRequest(allowed: true)
                     },
                     onDeny: {
-                        agentProvider.respondToPermissionRequest(allowed: false)
+                        AgentProvider.shared.respondToPermissionRequest(allowed: false)
                     }
                 )
             }
@@ -70,23 +42,13 @@ struct DevAssistantInputView: View, SuperLog {
     }
 }
 
-// MARK: - Action
+// MARK: - Actions
+
+// MARK: - Event Handler
 
 extension DevAssistantInputView {
-    /// 选择图片文件
-    /// 使用 NSOpenPanel 选择图片并上传到 Agent
-    private func selectImage() {
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-        panel.allowedContentTypes = [.image]
-
-        panel.begin { response in
-            if response == .OK, let url = panel.url {
-                agentProvider.handleImageUpload(url: url)
-            }
-        }
+    func onAppear() {
+        isInputFocused = true
     }
 }
 

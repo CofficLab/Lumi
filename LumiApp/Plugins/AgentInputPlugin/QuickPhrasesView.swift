@@ -42,12 +42,8 @@ struct QuickPhrasesView: View, SuperLog {
         .task {
             await refreshPhrases()
         }
-        .onChange(of: isProjectSelected) { _, _ in
-            Task { await refreshPhrases() }
-        }
-        .onChange(of: projectName) { _, _ in
-            Task { await refreshPhrases() }
-        }
+        .onChange(of: isProjectSelected, perform: handleIsProjectSelectedChanged)
+        .onChange(of: projectName, perform: handleProjectNameChanged)
     }
 }
 
@@ -117,9 +113,25 @@ struct QuickPhraseButton: View, SuperLog {
             )
         }
         .buttonStyle(.plain)
-        .onHover { hovering in
-            isHovering = hovering
-        }
+        .onHover(perform: handleHover)
+    }
+}
+
+// MARK: - Event Handler
+
+extension QuickPhrasesView {
+    func handleProjectNameChanged(_ projectName: String) {
+        Task { await refreshPhrases() }
+    }
+
+    func handleIsProjectSelectedChanged(_ b: Bool) {
+        Task { await refreshPhrases() }
+    }
+}
+
+extension QuickPhraseButton {
+    func handleHover(_ hovering: Bool) {
+        isHovering = hovering
     }
 }
 

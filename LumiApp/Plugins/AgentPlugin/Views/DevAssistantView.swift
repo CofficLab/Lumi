@@ -43,30 +43,7 @@ struct DevAssistantView: View {
 
             InputAreaView(
                 isInputFocused: $isInputFocused,
-                isModelSelectorPresented: $isModelSelectorPresented,
-                onSendMessage: {
-                    agentProvider.sendMessage()
-                },
-                onImageUpload: {
-                    selectImage()
-                },
-                onDropImage: { urls in
-                    let imageURLs = urls.filter { url in
-                        let ext = url.pathExtension.lowercased()
-                        return ["png", "jpg", "jpeg", "gif", "webp"].contains(ext)
-                    }
-
-                    if !imageURLs.isEmpty {
-                        for url in imageURLs {
-                            agentProvider.handleImageUpload(url: url)
-                        }
-                        return true
-                    }
-                    return false
-                },
-                onStopGenerating: {
-                    agentProvider.cancelCurrentTask()
-                }
+                isModelSelectorPresented: $isModelSelectorPresented
             )
         }
         .onAppear {
@@ -96,22 +73,6 @@ struct DevAssistantView: View {
         }
         .popover(isPresented: $isModelSelectorPresented, arrowEdge: .bottom) {
             ModelSelectorView()
-        }
-    }
-
-    // MARK: - Methods
-
-    private func selectImage() {
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-        panel.allowedContentTypes = [.image]
-
-        panel.begin { response in
-            if response == .OK, let url = panel.url {
-                agentProvider.handleImageUpload(url: url)
-            }
         }
     }
 }

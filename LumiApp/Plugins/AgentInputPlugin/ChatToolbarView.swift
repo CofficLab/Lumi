@@ -15,15 +15,6 @@ struct ChatToolbarView: View, SuperLog {
     /// 模型选择器是否显示
     @Binding var isModelSelectorPresented: Bool
 
-    /// 上传图片回调
-    let onImageUpload: () -> Void
-
-    /// 发送消息回调
-    let onSendMessage: () -> Void
-
-    /// 停止生成回调
-    let onStopGenerating: () -> Void
-
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
             // 模式选择器
@@ -92,7 +83,9 @@ extension ChatToolbarView {
     private var actionButton: some View {
         if agentProvider.isProcessing {
             // 停止按钮 - 在处理中显示（仅图标）
-            Button(action: onStopGenerating) {
+            Button(action: {
+                agentProvider.cancelCurrentTask()
+            }) {
                 Image(systemName: "stop.fill")
                     .font(.system(size: 14))
                     .foregroundColor(.white)
@@ -104,7 +97,9 @@ extension ChatToolbarView {
             .help("停止生成")
         } else {
             // 发送按钮 - 正常状态
-            Button(action: onSendMessage) {
+            Button(action: {
+                agentProvider.sendMessage()
+            }) {
                 Image(systemName: "paperplane.fill")
                     .font(.system(size: 14))
                     .foregroundColor(.white)
@@ -188,7 +183,9 @@ extension ChatToolbarView {
 
     /// 图片上传按钮视图
     private var imageUploadButton: some View {
-        Button(action: onImageUpload) {
+        Button(action: {
+            selectImage()
+        }) {
             Image(systemName: "photo")
                 .font(.system(size: 14))
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
@@ -231,16 +228,28 @@ extension ChatToolbarView {
         }
         .buttonStyle(.plain)
     }
+
+    /// 选择图片文件
+    private func selectImage() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowedContentTypes = [.image]
+
+        panel.begin { response in
+            if response == .OK, let url = panel.url {
+                agentProvider.handleImageUpload(url: url)
+            }
+        }
+    }
 }
 
 // MARK: - Preview
 
 #Preview("Toolbar") {
     ChatToolbarView(
-        isModelSelectorPresented: .constant(false),
-        onImageUpload: {},
-        onSendMessage: {},
-        onStopGenerating: {}
+        isModelSelectorPresented: .constant(false)
     )
     .padding()
     .frame(width: 800)
