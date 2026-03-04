@@ -48,7 +48,11 @@ struct ChatMessagesView: View, SuperLog {
             }
         }
     }
+}
 
+// MARK: - Actions
+
+extension ChatMessagesView {
     /// 检查当前会话是否为空，如果为空则插入欢迎消息
     @MainActor
     private func checkAndInsertWelcomeMessage() async {
@@ -75,9 +79,6 @@ struct ChatMessagesView: View, SuperLog {
         }
     }
 }
-
-// MARK: - Actions
-
 
 // MARK: Event Handler
 
