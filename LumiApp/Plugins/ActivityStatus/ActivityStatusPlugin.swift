@@ -43,6 +43,6 @@ actor ActivityStatusPlugin: SuperPlugin, SuperLog {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .inRootView("Preview")
+        .inRootView()
         .withDebugBar()
 }

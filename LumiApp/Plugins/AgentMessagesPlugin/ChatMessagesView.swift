@@ -82,5 +82,5 @@ extension ChatMessagesView {
         .padding()
         .withDebugBar()
         .background(Color.black)
-        .inRootView("Preview")
+        .inRootView()
 }

@@ -149,7 +149,7 @@ struct SidebarRow: View {
 #Preview("App Mode Sidebar") {
     AppModeSidebar()
         .frame(width: 220, height: 600)
-        .inRootView("Preview")
+        .inRootView()
         .environmentObject(AppProvider.shared)
         .environmentObject(PluginProvider.shared)
 }

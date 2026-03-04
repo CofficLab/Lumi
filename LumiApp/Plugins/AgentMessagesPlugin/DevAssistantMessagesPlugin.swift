@@ -46,6 +46,6 @@ actor DevAssistantMessagesPlugin: SuperPlugin {
     ContentLayout()
         .hideSidebar()
         .withNavigation("dev_assistant")
-        .inRootView("Preview")
+        .inRootView()
         .withDebugBar()
 }

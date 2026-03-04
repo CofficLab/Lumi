@@ -148,5 +148,5 @@ struct ProjectTreeView: View {
     ProjectTreeView()
         .frame(width: 220, height: 400)
         .environmentObject(AgentProvider.shared)
-        .inRootView("Preview")
+        .inRootView()
 }

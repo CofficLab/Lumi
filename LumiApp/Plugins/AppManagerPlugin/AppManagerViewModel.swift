@@ -251,6 +251,6 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     ContentLayout()
         .hideSidebar()
         .withNavigation(AppManagerPlugin.navigationId)
-        .inRootView("Preview")
+        .inRootView()
         .withDebugBar()
 }

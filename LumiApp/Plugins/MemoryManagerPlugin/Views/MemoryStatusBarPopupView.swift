@@ -140,6 +140,6 @@ struct MemoryStatusBarPopupView: View {
 
 #Preview("App") {
     MemoryStatusBarPopupView()
-        .inRootView("Preview")
+        .inRootView()
         .withDebugBar()
 }

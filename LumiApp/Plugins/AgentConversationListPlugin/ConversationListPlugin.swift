@@ -1,7 +1,7 @@
 import Foundation
-import SwiftUI
-import OSLog
 import MagicKit
+import OSLog
+import SwiftUI
 
 /// Conversation List Plugin: 显示对话历史列表
 actor ConversationListPlugin: SuperPlugin, SuperLog {

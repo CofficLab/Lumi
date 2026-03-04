@@ -120,6 +120,6 @@ struct NetworkInfoCard: View {
     ContentLayout()
         .hideSidebar()
         .withNavigation(NetworkManagerPlugin.navigationId)
-        .inRootView("Preview")
+        .inRootView()
         .withDebugBar()
 }

@@ -38,13 +38,7 @@ struct ConversationListView: View, SuperLog {
                 conversationList
             }
         }
-        .task {
-            // 首次加载时恢复上次选择的会话
-            if !hasRestoredSelection && !conversations.isEmpty {
-                restoreSelectionIfNeeded()
-                hasRestoredSelection = true
-            }
-        }
+        .onAppear(perform: onAppear)
     }
 }
 
@@ -131,6 +125,23 @@ extension ConversationListView {
     }
 }
 
+// MARK: - Setter
+
+extension ConversationListView {
+}
+
+// MARK: - Event Handler
+
+extension ConversationListView {
+    /// 视图出现时的事件处理
+    func onAppear() {
+        // 首次加载时恢复上次选择的会话
+        if !hasRestoredSelection && !conversations.isEmpty {
+            restoreSelectionIfNeeded()
+            hasRestoredSelection = true
+        }
+    }
+}
 
 // MARK: - Preview
 

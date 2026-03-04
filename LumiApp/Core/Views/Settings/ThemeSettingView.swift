@@ -91,11 +91,11 @@ struct ThemeSettingView: View {
 
 #Preview("主题设置") {
     ThemeSettingView()
-        .inRootView("Preview")
+        .inRootView()
 }
 
 #Preview("主题设置 - 完整应用") {
     ContentLayout()
         .hideSidebar()
-        .inRootView("Preview")
+        .inRootView()
 }
