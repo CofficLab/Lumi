@@ -11,6 +11,7 @@ actor DevAssistantHeaderPlugin: SuperPlugin {
     static let description = String(localized: "DevAssistant chat header", table: "DevAssistant")
     static let iconName = "rectangle.topthird.inset.filled"
     static var order: Int { 81 }
+    static let enable: Bool = true
 
     static let shared = DevAssistantHeaderPlugin()
 

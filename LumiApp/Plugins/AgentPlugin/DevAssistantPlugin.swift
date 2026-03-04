@@ -11,8 +11,8 @@ actor DevAssistantPlugin: SuperPlugin {
     static let description = String(localized: "Agentic coding assistant", table: "DevAssistant")
     static let iconName = "terminal.fill"
     static var order: Int { 80 }
-
     static let shared = DevAssistantPlugin()
+    static let enable: Bool = true
 
     // MARK: - Lifecycle
 

@@ -35,6 +35,7 @@ final class PluginProvider: ObservableObject, SuperLog {
 
     /// 初始化插件提供者（自动发现并注册所有插件）
     private init(autoDiscover: Bool = true) {
+        
         if autoDiscover {
             autoDiscoverAndRegisterPlugins()
         }
