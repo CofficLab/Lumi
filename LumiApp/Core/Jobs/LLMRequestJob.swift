@@ -6,7 +6,7 @@ import OSLog
 ///
 /// 负责在后台执行 LLM API 请求，避免阻塞主线程
 /// 封装了完整的 LLM 请求流程，包括供应商选择、请求构建和响应解析
-struct LLMRequestJob {
+struct LLMRequestJob: SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "🌐"
     /// 是否输出详细日志
@@ -57,12 +57,12 @@ extension LLMRequestJob {
         tools: [AgentTool]?,
         registry: ProviderRegistry
     ) async throws -> ChatMessage {
-        if verbose {
-            os_log("\(emoji) 开始执行 LLM 请求任务")
+        if Self.verbose {
+            os_log("\(Self.t)🚀 开始执行 LLM 请求任务")
         }
 
         guard !config.apiKey.isEmpty else {
-            os_log(.error, "\(emoji) API Key 为空")
+            os_log(.error, "\(Self.t)❌ API Key 为空")
             throw NSError(
                 domain: "LLMRequestJob",
                 code: 401,
@@ -73,7 +73,7 @@ extension LLMRequestJob {
         // 从注册表获取供应商实例
         // 注意：registry 是 @MainActor，需要在主线程调用
         guard let provider = registry.createProvider(id: config.providerId) else {
-            os_log(.error, "\(emoji) 未找到供应商：\(config.providerId)")
+            os_log(.error, "\(Self.t)❌ 未找到供应商：\(config.providerId)")
             throw NSError(
                 domain: "LLMRequestJob",
                 code: 404,
@@ -83,7 +83,7 @@ extension LLMRequestJob {
 
         // 构建 URL
         guard let url = URL(string: provider.baseURL) else {
-            os_log(.error, "\(emoji) 无效的 URL: \(provider.baseURL)")
+            os_log(.error, "\(Self.t)❌ 无效的 URL: \(provider.baseURL)")
             throw NSError(
                 domain: "LLMRequestJob",
                 code: 400,
@@ -101,21 +101,21 @@ extension LLMRequestJob {
                 systemPrompt: ""
             )
         } catch {
-            os_log(.error, "\(emoji) 构建请求体失败：\(error.localizedDescription)")
+            os_log(.error, "\(Self.t)❌ 构建请求体失败：\(error.localizedDescription)")
             throw error
         }
 
         // 输出工具列表（调试用）
         if Self.verbose {
-            os_log("\(emoji)🚀 发送请求到 \(config.providerId): \(config.model)")
+            os_log("\(Self.t)🚀 发送请求到 \(config.providerId): \(config.model)")
 
             if let tools = tools, !tools.isEmpty {
-                os_log("\(emoji)📦 发送工具列表 (\(tools.count) 个):")
+                os_log("\(Self.t)📦 发送工具列表 (\(tools.count) 个):")
                 for tool in tools {
-                    os_log("\(emoji)  - \(tool.name): \(tool.description)")
+                    os_log("\(Self.t)  - \(tool.name): \(tool.description)")
                 }
             } else {
-                os_log("\(emoji)📦 无工具")
+                os_log("\(Self.t)📦 无工具")
             }
         }
 
@@ -131,7 +131,7 @@ extension LLMRequestJob {
         let useBearerAuth = config.providerId == "aliyun"
 
         if Self.verbose && !additionalHeaders.isEmpty {
-            os_log("\(emoji)📦 添加额外请求头：\(additionalHeaders)")
+            os_log("\(Self.t)📦 添加额外请求头：\(additionalHeaders)")
         }
 
         // 使用 LLM API 服务发送请求
@@ -147,7 +147,7 @@ extension LLMRequestJob {
                 useBearerAuth: useBearerAuth
             )
         } catch let apiError as APIError {
-            os_log(.error, "\(emoji) API 请求失败：\(apiError.localizedDescription)")
+            os_log(.error, "\(Self.t)❌ API 请求失败：\(apiError.localizedDescription)")
             throw NSError(
                 domain: "LLMRequestJob",
                 code: 500,
@@ -160,9 +160,9 @@ extension LLMRequestJob {
 
         if Self.verbose {
             if let toolCalls = toolCalls, !toolCalls.isEmpty {
-                os_log("\(emoji) 收到响应：\(content.prefix(100))...，包含 \(toolCalls.count) 个工具调用")
+                os_log("\(Self.t)✅ 收到响应：\(content.prefix(100))...，包含 \(toolCalls.count) 个工具调用")
             } else {
-                os_log("\(emoji) 收到响应：\(content.prefix(100))...")
+                os_log("\(Self.t)✅ 收到响应：\(content.prefix(100))...")
             }
         }
 
