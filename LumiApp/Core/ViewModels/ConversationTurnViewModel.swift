@@ -199,10 +199,10 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
                 os_log("\(Self.t)⚠️ 工具 \(toolCall.name) 需要权限批准")
             }
 
-            // 评估命令风险（纯计算，无需后台）
+            // 评估命令风险
             let riskLevel = jobScheduler.evaluateRisk(toolCall)
 
-            // 创建权限请求（纯计算，无需后台）
+            // 创建权限请求
             let permissionRequest = jobScheduler.createPermissionRequest(toolCall, riskLevel: riskLevel)
 
             // 请求权限

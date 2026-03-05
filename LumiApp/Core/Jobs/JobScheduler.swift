@@ -7,16 +7,14 @@ import OSLog
 /// 负责管理和调度所有后台任务，提供统一的执行入口
 /// 确保耗时操作在后台线程执行，避免阻塞主线程
 actor JobScheduler: SuperLog {
-    /// 日志标识 emoji
-    nonisolated static let emoji = "⏰"
-    /// 是否输出详细日志
-    nonisolated static let verbose = true
+    /// 日志级别：0=禁用，1=基本，2=详细，3=调试
+    nonisolated static let verbose: Int = 1
 
     /// 全局单例
     static let shared = JobScheduler()
 
     private init() {
-        if Self.verbose {
+        if Self.verbose >= 1 {
             os_log("\(Self.t)✅ 后台任务调度器已初始化")
         }
     }

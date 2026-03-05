@@ -7,10 +7,8 @@ import OSLog
 /// 负责在后台执行 LLM API 请求，避免阻塞主线程
 /// 封装了完整的 LLM 请求流程，包括供应商选择、请求构建和响应解析
 struct LLMRequestJob: SuperLog {
-    /// 日志标识 emoji
-    nonisolated static let emoji = "🌐"
-    /// 是否输出详细日志
-    nonisolated static let verbose = true
+    /// 日志级别：0=禁用，1=基本，2=详细，3=调试
+    nonisolated static let verbose: Int = 0
 }
 
 // MARK: - 任务参数
@@ -53,7 +51,7 @@ extension LLMRequestJob {
         tools: [AgentTool]?,
         registry: ProviderRegistry
     ) async throws -> ChatMessage {
-        if Self.verbose {
+        if Self.verbose >= 1 {
             os_log("\(Self.t)🚀 开始执行 LLM 请求任务")
         }
 
@@ -102,7 +100,7 @@ extension LLMRequestJob {
         }
 
         // 输出工具列表（调试用）
-        if Self.verbose {
+        if Self.verbose >= 2 {
             os_log("\(Self.t)🚀 发送请求到 \(config.providerId): \(config.model)")
 
             if let tools = tools, !tools.isEmpty {
@@ -126,7 +124,7 @@ extension LLMRequestJob {
         // 阿里云 Coding Plan 使用 Authorization: Bearer 认证
         let useBearerAuth = config.providerId == "aliyun"
 
-        if Self.verbose && !additionalHeaders.isEmpty {
+        if Self.verbose >= 2 && !additionalHeaders.isEmpty {
             os_log("\(Self.t)📦 添加额外请求头：\(additionalHeaders)")
         }
 
@@ -154,8 +152,8 @@ extension LLMRequestJob {
         // 解析响应
         let (content, toolCalls) = try provider.parseResponse(data: data)
 
-        if Self.verbose {
-            os_log("\(Self.t)✅ 收到响应：「\(content.prefix(100))...」")
+        if Self.verbose >= 1 {
+            os_log("\(Self.t)✅ 收到响应")
         }
 
         return ChatMessage(role: .assistant, content: content, toolCalls: toolCalls)

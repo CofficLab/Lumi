@@ -7,10 +7,8 @@ import OSLog
 /// 负责在后台执行工具调用，包括文件操作、命令执行等
 /// 封装了完整的工具执行流程，包括参数解析、工具查找和结果返回
 struct ToolExecutionJob: SuperLog {
-    /// 日志标识 emoji
-    nonisolated static let emoji = "⚡"
-    /// 是否输出详细日志
-    nonisolated static let verbose = true
+    /// 日志级别：0=禁用，1=基本，2=详细，3=调试
+    nonisolated static let verbose: Int = 1
 }
 
 // MARK: - 任务参数
@@ -47,7 +45,7 @@ extension ToolExecutionJob {
         toolCall: ToolCall,
         toolManager: ToolManager
     ) async throws -> Output {
-        if Self.verbose {
+        if Self.verbose >= 1 {
             os_log("\(Self.t)🚀 开始执行工具：\(toolCall.name)")
         }
 
@@ -90,7 +88,7 @@ extension ToolExecutionJob {
 
         let duration = Date().timeIntervalSince(startTime)
 
-        if Self.verbose {
+        if Self.verbose >= 1 {
             os_log("\(Self.t)✅ 工具执行完成，耗时：\(String(format: "%.3f", duration))秒")
         }
 
