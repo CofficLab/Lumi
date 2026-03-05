@@ -12,17 +12,11 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
 
     // MARK: - 服务依赖
 
-    /// 聊天历史服务
-    let chatHistoryService: ChatHistoryService
-
     /// 提示词服务
     let promptService: PromptService
 
     /// 供应商注册表
     let registry: ProviderRegistry
-
-    /// LLM 服务
-    let llmService: LLMService
 
     /// 工具管理器
     let toolManager: ToolManager
@@ -61,9 +55,6 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     /// 深度警告
     @Published public fileprivate(set) var depthWarning: DepthWarning?
 
-    /// 当前任务
-    var currentTask: Task<Void, Never>?
-
     // MARK: - 附件（图片上传）
 
     public enum Attachment: Identifiable {
@@ -98,10 +89,8 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
 
     /// 初始化 AgentProvider
     /// - Parameters:
-    ///   - chatHistoryService: 聊天历史服务
     ///   - promptService: 提示词服务
     ///   - registry: 供应商注册表
-    ///   - llmService: LLM 服务
     ///   - toolManager: 工具管理器
     ///   - messageViewModel: 消息 ViewModel
     ///   - conversationViewModel: 会话 ViewModel
@@ -109,10 +98,8 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     ///   - projectViewModel: 项目 ViewModel
     ///   - conversationTurnViewModel: 对话轮次 ViewModel
     init(
-        chatHistoryService: ChatHistoryService,
         promptService: PromptService,
         registry: ProviderRegistry,
-        llmService: LLMService,
         toolManager: ToolManager,
         messageViewModel: MessageViewModel,
         conversationViewModel: ConversationViewModel,
@@ -120,10 +107,8 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         projectViewModel: ProjectViewModel,
         conversationTurnViewModel: ConversationTurnViewModel
     ) {
-        self.chatHistoryService = chatHistoryService
         self.promptService = promptService
         self.registry = registry
-        self.llmService = llmService
         self.toolManager = toolManager
         self.messageViewModel = messageViewModel
         self.conversationViewModel = conversationViewModel
@@ -146,10 +131,8 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
             promptService: PromptService.shared
         )
         let placeholderProvider = AgentProvider(
-            chatHistoryService: ChatHistoryService.shared,
             promptService: PromptService.shared,
             registry: ProviderRegistry.shared,
-            llmService: LLMService.shared,
             toolManager: ToolManager.shared,
             messageViewModel: MessageViewModel.shared,
             conversationViewModel: ConversationViewModel.shared,
@@ -161,9 +144,6 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         conversationTurnVM.delegate = placeholderProvider
         return placeholderProvider
     }()
-
-    /// 占位符 AgentProvider（用于解决循环依赖）
-    private static let nilPlaceholder: AgentProvider? = nil
 
     // MARK: - 偏好设置加载
 
@@ -199,34 +179,6 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     }
 
     // MARK: - Setter 方法
-
-    /// 设置聊天消息状态（内部使用）
-    func setChatMessageState(input: String? = nil, processing: Bool? = nil, errorMessage: String? = nil) {
-        if let input = input {
-            currentInput = input
-        }
-        if let processing = processing {
-            isProcessing = processing
-        }
-        if let errorMessage = errorMessage {
-            self.errorMessage = errorMessage
-        }
-    }
-
-    /// 设置权限和深度警告状态（内部使用）
-    func setPermissionAndWarningState(permissionRequest: PermissionRequest? = nil, depthWarning: DepthWarning? = nil) {
-        if let permissionRequest = permissionRequest {
-            pendingPermissionRequest = permissionRequest
-        }
-        if let depthWarning = depthWarning {
-            self.depthWarning = depthWarning
-        }
-    }
-
-    /// 设置权限请求（内部使用）
-    func setPermissionRequest(_ request: PermissionRequest) {
-        pendingPermissionRequest = request
-    }
 
     // MARK: - 公开 Setter 方法
 
@@ -467,14 +419,10 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
 
     /// 取消当前正在进行的任务
     public func cancelCurrentTask() {
-        if let task = currentTask {
-            task.cancel()
-            currentTask = nil
-            os_log("\(Self.t)🛑 任务已取消")
-        }
+        os_log("\(Self.t)🛑 任务已取消")
         // 重置处理状态
         setIsProcessing(false)
-        setPermissionAndWarningState(permissionRequest: nil)
+        pendingPermissionRequest = nil
         // 添加取消提示消息
         let cancelMessage = languagePreference == .chinese ? "⚠️ 生成已取消" : "⚠️ Generation cancelled"
         appendMessage(ChatMessage(role: .assistant, content: cancelMessage))
@@ -498,16 +446,16 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
 
     // MARK: - 消息发送
 
-    /// 发送消息（统一通过 MessageSenderViewModel 处理）
+    /// 发送消息
     public func sendMessage() {
         guard !currentInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !pendingAttachments.isEmpty else { return }
 
         if Self.verbose {
-            os_log("\(Self.t) 用户发送消息")
+            os_log("\(Self.t)🚀 用户发送消息")
         }
 
         // 清除之前的深度警告
-        setPermissionAndWarningState(depthWarning: nil)
+        depthWarning = nil
 
         // 检查是否已选择项目
         if !isProjectSelected {
@@ -533,7 +481,9 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         }
 
         // 清空输入框
-        setChatMessageState(input: "", processing: false, errorMessage: nil)
+        currentInput = ""
+        isProcessing = false
+        errorMessage = nil
         pendingAttachments.removeAll()
 
         // 检查是否为支持的斜杠命令
@@ -593,7 +543,7 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     public func respondToPermissionRequest(allowed: Bool) {
         guard let request = pendingPermissionRequest else { return }
 
-        setPermissionAndWarningState(permissionRequest: nil)
+        pendingPermissionRequest = nil
 
         Task {
             await conversationTurnViewModel.respondToPermissionRequest(
@@ -619,18 +569,18 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         setErrorMessage(error.localizedDescription)
         appendMessage(ChatMessage(role: .assistant, content: "Error: \(error.localizedDescription)", isError: true))
         setIsProcessing(false)
-        setPermissionAndWarningState(depthWarning: nil)
+        depthWarning = nil
     }
 
     func turnDidReachMaxDepth(currentDepth: Int, maxDepth: Int) async {
         setErrorMessage("Max recursion depth reached.")
         setIsProcessing(false)
-        setPermissionAndWarningState(depthWarning: DepthWarning(currentDepth: currentDepth, maxDepth: maxDepth, warningType: .reached))
+        depthWarning = DepthWarning(currentDepth: currentDepth, maxDepth: maxDepth, warningType: .reached)
         os_log(.error, "\(Self.t) 达到最大递归深度 (\(maxDepth))，对话终止")
     }
 
     func turnDidRequestPermission(_ request: PermissionRequest) async {
-        setPermissionRequest(request)
+        pendingPermissionRequest = request
     }
 
     func turnDidReceiveToolResult(_ result: ChatMessage) async {
@@ -639,7 +589,7 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     }
 
     func turnDidUpdateDepthWarning(_ warning: DepthWarning?) {
-        setPermissionAndWarningState(depthWarning: warning)
+        depthWarning = warning
     }
 
     func turnShouldContinue(depth: Int) async {

@@ -61,10 +61,8 @@ struct RootView<Content>: View where Content: View {
 
         // 初始化 AgentProvider（先创建，再注入到其他依赖中）
         self.agentProvider = AgentProvider(
-            chatHistoryService: ChatHistoryService.shared,
             promptService: PromptService.shared,
             registry: ProviderRegistry.shared,
-            llmService: LLMService.shared,
             toolManager: ToolManager.shared,
             messageViewModel: messageViewModel,
             conversationViewModel: conversationViewModel,
