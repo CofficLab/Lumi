@@ -40,7 +40,8 @@ extension LLMRequestJob {
 extension LLMRequestJob {
     /// 执行 LLM 请求任务
     ///
-    /// 此方法在后台线程运行，不会阻塞 UI
+    /// 此方法在主线程运行，因为需要访问 @MainActor 类
+    /// 但网络请求本身是异步的，不会阻塞 UI
     ///
     /// - Parameters:
     ///   - messages: 消息历史
@@ -49,6 +50,7 @@ extension LLMRequestJob {
     ///   - registry: 供应商注册表
     /// - Returns: AI 助手的响应消息
     /// - Throws: 如果请求失败，抛出相应的错误
+    @MainActor
     static func run(
         messages: [ChatMessage],
         config: LLMConfig,
@@ -139,7 +141,7 @@ extension LLMRequestJob {
         do {
             data = try await llmAPI.sendChatRequest(
                 url: url,
-                apiKey: input.config.apiKey,
+                apiKey: config.apiKey,
                 body: body,
                 additionalHeaders: additionalHeaders,
                 useBearerAuth: useBearerAuth

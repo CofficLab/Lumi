@@ -39,23 +39,13 @@ actor JobScheduler: SuperLog {
         tools: [AgentTool]?,
         registry: ProviderRegistry
     ) async throws -> ChatMessage {
-        // ProviderRegistry 和 LLMAPIService 是 @MainActor
-        // 需要在主线程访问，但网络请求是异步的，不会阻塞 UI
-        return try await withCheckedThrowingContinuation { continuation in
-            Task { @MainActor in
-                do {
-                    let result = try await LLMRequestJob.run(
-                        messages: messages,
-                        config: config,
-                        tools: tools,
-                        registry: registry
-                    )
-                    continuation.resume(returning: result)
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            }
-        }
+        // LLMRequestJob.run 已标记 @MainActor，直接 await 即可
+        try await LLMRequestJob.run(
+            messages: messages,
+            config: config,
+            tools: tools,
+            registry: registry
+        )
     }
 
     /// 执行工具调用任务
@@ -70,22 +60,13 @@ actor JobScheduler: SuperLog {
         toolCall: ToolCall,
         toolManager: ToolManager
     ) async throws -> (ChatMessage, TimeInterval) {
-        // ToolManager 是 @MainActor，需要在主线程执行
-        // 但工具执行本身是异步的，不会阻塞 UI
-        return try await withCheckedThrowingContinuation { continuation in
-            Task { @MainActor in
-                do {
-                    let output = try await ToolExecutionJob.run(
-                        toolCall: toolCall,
-                        toolManager: toolManager
-                    )
-                    // 解构 Output 为元组
-                    continuation.resume(returning: (output.result, output.duration))
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            }
-        }
+        // ToolExecutionJob.run 已标记 @MainActor，直接 await 即可
+        let output = try await ToolExecutionJob.run(
+            toolCall: toolCall,
+            toolManager: toolManager
+        )
+        // 解构 Output 为元组
+        return (output.result, output.duration)
     }
 }
 
