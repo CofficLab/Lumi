@@ -35,22 +35,25 @@ struct RootView<Content>: View where Content: View {
         ChatHistoryService.shared.initializeWithContainer(self.modelContainer, reason: "主窗口初始化")
 
         // 初始化 ViewModel
-        self.agentProvider = AgentProvider()
-        self.conversationViewModel = ConversationViewModel.shared
         self.messageViewModel = MessageViewModel.shared
+        self.conversationViewModel = ConversationViewModel.shared
         self.commandSuggestionViewModel = CommandSuggestionViewModel.shared
 
         // 初始化消息发送 ViewModel（注入依赖）
         self.messageSenderViewModel = MessageSenderViewModel(
             messageViewModel: messageViewModel,
-            conversationViewModel: conversationViewModel,
-            agentProvider: agentProvider
+            conversationViewModel: conversationViewModel
         )
 
-        // 设置 ViewModel 引用
-        agentProvider.messageViewModel = messageViewModel
-        agentProvider.conversationViewModel = conversationViewModel
-        agentProvider.messageSenderViewModel = messageSenderViewModel
+        // 初始化 AgentProvider（注入依赖）
+        self.agentProvider = AgentProvider(
+            messageViewModel: messageViewModel,
+            conversationViewModel: conversationViewModel,
+            messageSenderViewModel: messageSenderViewModel
+        )
+
+        // 设置 MessageSenderViewModel 的 AgentProvider 引用
+        messageSenderViewModel.setAgentProvider(agentProvider)
 
         // 设置 ConversationViewModel 的 AgentProvider 引用
         conversationViewModel.agentProvider = agentProvider
@@ -89,22 +92,25 @@ extension RootView {
         ChatHistoryService.shared.initializeWithContainer(self.modelContainer, reason: reason)
 
         // 初始化 ViewModel
-        self.agentProvider = AgentProvider()
-        self.conversationViewModel = ConversationViewModel.shared
         self.messageViewModel = MessageViewModel.shared
+        self.conversationViewModel = ConversationViewModel.shared
         self.commandSuggestionViewModel = CommandSuggestionViewModel.shared
 
         // 初始化消息发送 ViewModel（注入依赖）
         self.messageSenderViewModel = MessageSenderViewModel(
             messageViewModel: messageViewModel,
-            conversationViewModel: conversationViewModel,
-            agentProvider: agentProvider
+            conversationViewModel: conversationViewModel
         )
 
-        // 设置 ViewModel 引用
-        agentProvider.messageViewModel = messageViewModel
-        agentProvider.conversationViewModel = conversationViewModel
-        agentProvider.messageSenderViewModel = messageSenderViewModel
+        // 初始化 AgentProvider（注入依赖）
+        self.agentProvider = AgentProvider(
+            messageViewModel: messageViewModel,
+            conversationViewModel: conversationViewModel,
+            messageSenderViewModel: messageSenderViewModel
+        )
+
+        // 设置 MessageSenderViewModel 的 AgentProvider 引用
+        messageSenderViewModel.setAgentProvider(agentProvider)
 
         // 设置 ConversationViewModel 的 AgentProvider 引用
         conversationViewModel.agentProvider = agentProvider

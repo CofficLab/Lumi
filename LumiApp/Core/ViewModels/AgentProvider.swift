@@ -147,7 +147,19 @@ final class AgentProvider: ObservableObject, SuperLog {
 
     // MARK: - 初始化
 
-    init() {
+    /// 初始化 AgentProvider
+    /// - Parameters:
+    ///   - messageViewModel: 消息 ViewModel
+    ///   - conversationViewModel: 会话 ViewModel
+    ///   - messageSenderViewModel: 消息发送 ViewModel
+    init(
+        messageViewModel: MessageViewModel,
+        conversationViewModel: ConversationViewModel,
+        messageSenderViewModel: MessageSenderViewModel
+    ) {
+        self.messageViewModel = messageViewModel
+        self.conversationViewModel = conversationViewModel
+        self.messageSenderViewModel = messageSenderViewModel
         loadPreferences()
     }
 

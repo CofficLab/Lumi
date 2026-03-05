@@ -37,10 +37,15 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
     init(
         messageViewModel: MessageViewModel,
         conversationViewModel: ConversationViewModel,
-        agentProvider: AgentProvider
+        agentProvider: AgentProvider? = nil
     ) {
         self.messageViewModel = messageViewModel
         self.conversationViewModel = conversationViewModel
+        self.agentProvider = agentProvider
+    }
+
+    /// 设置 AgentProvider 引用
+    func setAgentProvider(_ agentProvider: AgentProvider) {
         self.agentProvider = agentProvider
     }
 
