@@ -127,11 +127,8 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
             os_log("\(Self.t)📤 正在发送：\(message.content.max(50))")
         }
 
-        // 立即保存用户消息
-        if let conversation = conversationViewModel?.currentConversation {
-            _ = chatHistoryService.saveMessage(message, to: conversation)
-            messageViewModel?.appendMessageInternal(message)
-        }
+        // 立即保存用户消息到当前对话（通过 conversationViewModel 保存，避免重复添加）
+        conversationViewModel?.saveMessage(message)
 
         // 通知 AgentProvider 处理消息
         await agentProvider?.processUserMessageAsync(content: message.content, images: message.images)

@@ -218,9 +218,7 @@ extension AgentProvider {
                 }
             }
 
-            appendMessage(responseMsg)
-
-            // 立即保存助手消息
+            // 立即保存助手消息（同时添加到本地列表）
             saveMessage(responseMsg)
 
             // 2. 检查工具调用
@@ -474,7 +472,7 @@ extension AgentProvider {
                 content: result,
                 toolCallID: toolCall.id
             )
-            appendMessage(resultMsg)
+            // 立即保存工具响应消息（同时添加到本地列表）
             saveMessage(resultMsg)
 
             await processPendingTools()
@@ -485,7 +483,7 @@ extension AgentProvider {
                 content: "Error executing tool: \(error.localizedDescription)",
                 toolCallID: toolCall.id
             )
-            appendMessage(errorMsg)
+            // 立即保存错误消息（同时添加到本地列表）
             saveMessage(errorMsg)
             await processPendingTools()
         }
