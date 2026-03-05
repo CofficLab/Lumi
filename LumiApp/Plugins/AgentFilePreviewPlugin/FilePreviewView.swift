@@ -1,6 +1,6 @@
-import SwiftUI
-import OSLog
 import MagicKit
+import OSLog
+import SwiftUI
 
 /// 文件预览视图
 struct FilePreviewView: View {
@@ -111,13 +111,17 @@ struct FilePreviewView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
+}
 
-    // MARK: - Actions
+// MARK: - Actions
 
-    private func clearSelection() {
+extension FilePreviewView {
+    func clearSelection() {
         agentProvider.clearFileSelection()
     }
 }
+
+// MARK: - Preview
 
 #Preview {
     FilePreviewView()
