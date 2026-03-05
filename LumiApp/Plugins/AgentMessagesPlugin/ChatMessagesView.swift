@@ -30,7 +30,7 @@ struct ChatMessagesView: View, SuperLog {
                 }
                 .padding(.horizontal)
             }
-            .onConversationSelected(perform: handleConversationSelected)
+            .onChange(of: conversationViewModel.selectedConversationId, handleConversationSelected)
             .onChange(of: conversationViewModel.currentConversation?.id) { oldId, newId in
                 if let newId = newId {
                     Task {
@@ -63,7 +63,9 @@ extension ChatMessagesView {
 // MARK: Event Handler
 
 extension ChatMessagesView {
-    func handleConversationSelected(_ conversationId: UUID) {
+    func handleConversationSelected() {
+        guard let conversationId = conversationViewModel.selectedConversationId else { return }
+
         if Self.verbose {
             os_log("\(self.t) [\(conversationId)] 已选择")
         }

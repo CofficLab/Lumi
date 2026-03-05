@@ -172,7 +172,7 @@ class ChatHistoryService: SuperLog {
         do {
             try context.save()
             if Self.verbose {
-                os_log("\(Self.t)💾 [\(conversation.id)] 消息已保存：\(message.content.max(50))")
+                os_log("\(Self.t)💾 [\(conversation.id)] 消息已保存：\(message.content.max(10))")
             }
             // 返回保存后的消息
             return messageEntity.toChatMessage()

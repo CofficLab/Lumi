@@ -9,7 +9,7 @@ struct ConversationListView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "💬"
     /// 是否输出详细日志
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     /// 数据上下文：用于查询和删除会话
     @Environment(\.modelContext) private var modelContext
@@ -51,6 +51,7 @@ struct ConversationListView: View, SuperLog {
         .onChange(of: localSelectedConversationId) { _, newValue in
             handleSelectionChange(newValue)
         }
+        .onChange(of: conversationViewModel.selectedConversationId, handleConversationSelected)
     }
 }
 
@@ -141,7 +142,23 @@ extension ConversationListView {
 
     /// 处理选择变化：同步到 ConversationViewModel
     private func handleSelectionChange(_ newValue: UUID?) {
-        conversationViewModel.selectedConversationId = newValue
+        if let id = newValue {
+            conversationViewModel.selectConversation(id)
+        } else {
+            conversationViewModel.clearConversationSelection()
+        }
+    }
+
+    func handleConversationSelected() {
+        if Self.verbose {
+            os_log("\(self.t)✅ [\(conversationViewModel.selectedConversationId?.uuidString ?? "")] 已选择")
+        }
+
+        if let conversationId = conversationViewModel.selectedConversationId {
+            if conversations.first(where: { $0.id == conversationId }) != nil {
+                localSelectedConversationId = conversationId
+            }
+        }
     }
 }
 

@@ -22,6 +22,9 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     /// LLM 服务（用于生成会话标题）
     private let llmService = LLMService.shared
 
+    /// 提示词服务（用于获取欢迎消息）
+    private let promptService = PromptService.shared
+
     // MARK: - 会话状态
 
     /// 当前会话
@@ -31,7 +34,7 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     @Published public fileprivate(set) var messages: [ChatMessage] = []
 
     /// 选中的会话 ID
-    @Published public var selectedConversationId: UUID? {
+    @Published public fileprivate(set) var selectedConversationId: UUID? {
         didSet {
             if let id = selectedConversationId {
                 UserDefaults.standard.set(id.uuidString, forKey: "Conversation_SelectedId")
@@ -109,22 +112,24 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     }
 
     /// 创建新对话（异步版本，支持设置当前会话）
-    /// - Parameters:
-    ///   - projectId: 关联的项目 ID（可选，nil 表示全局对话）
-    ///   - welcomeMessage: 欢迎消息（可选，如果提供则会保存到数据库）
-    func createNewConversation(projectId: String? = nil, welcomeMessage: String? = nil) async {
+    /// - Parameter projectId: 关联的项目 ID（可选，nil 表示全局对话）
+    func createNewConversation(projectId: String? = nil) async {
         let newConversation = createConversation(projectId: projectId)
         setCurrentConversationInternal(newConversation)
         selectedConversationId = newConversation.id
 
-        // 如果提供了欢迎消息，保存到数据库
-        if let welcome = welcomeMessage, !welcome.isEmpty {
-            let welcomeMsg = ChatMessage(role: .assistant, content: welcome)
+        // 获取欢迎消息并保存到数据库
+        let agentProvider = AgentProvider.shared
+        let welcomeMessage = await promptService.getEmptySessionWelcomeMessage(
+            projectName: agentProvider.currentProjectName.isEmpty ? nil : agentProvider.currentProjectName,
+            projectPath: agentProvider.currentProjectPath.isEmpty ? nil : agentProvider.currentProjectPath,
+            language: agentProvider.languagePreference
+        )
+
+        if !welcomeMessage.isEmpty {
+            let welcomeMsg = ChatMessage(role: .assistant, content: welcomeMessage)
             if let savedMessage = chatHistoryService.saveMessage(welcomeMsg, to: newConversation) {
                 messages = [savedMessage]
-                if Self.verbose {
-                    os_log("\(Self.t)✅ 已为新会话添加欢迎消息")
-                }
             }
         }
     }
@@ -217,9 +222,6 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     /// - Parameter id: 会话 ID
     func selectConversation(_ id: UUID) {
         selectedConversationId = id
-        if Self.verbose {
-            os_log("\(Self.t) 已选择会话：\(id)")
-        }
     }
 
     /// 清除会话选择

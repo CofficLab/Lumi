@@ -77,11 +77,7 @@ extension ChatHeaderView {
         Button(action: {
             Task {
                 let projectId = agentProvider.isProjectSelected ? agentProvider.currentProjectPath : nil
-                let welcomeMessage = await agentProvider.getEmptySessionWelcomeMessage()
-                await conversationViewModel.createNewConversation(
-                    projectId: projectId,
-                    welcomeMessage: welcomeMessage
-                )
+                await conversationViewModel.createNewConversation(projectId: projectId)
             }
         }) {
             Image(systemName: "plus.circle")

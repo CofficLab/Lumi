@@ -285,16 +285,6 @@ final class AgentProvider: ObservableObject, SuperLog {
 
     // MARK: - 业务方法
 
-    /// 获取空会话欢迎消息
-    /// - Returns: 欢迎消息字符串
-    func getEmptySessionWelcomeMessage() async -> String {
-        await promptService.getEmptySessionWelcomeMessage(
-            projectName: currentProjectName.isEmpty ? nil : currentProjectName,
-            projectPath: currentProjectPath.isEmpty ? nil : currentProjectPath,
-            language: languagePreference
-        )
-    }
-
     // MARK: - 代理 ConversationViewModel 属性（仅供内部扩展使用）
 
     /// 当前会话（代理到 ConversationViewModel）
