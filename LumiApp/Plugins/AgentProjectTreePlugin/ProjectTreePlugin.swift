@@ -11,10 +11,10 @@ actor ProjectTreePlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🌳"
 
     /// Whether to enable this plugin
-    static let enable = true
+    static let enable = false
 
     /// Whether to enable verbose log output
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     /// Plugin unique identifier
     static let id: String = "ProjectTree"

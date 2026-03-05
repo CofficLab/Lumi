@@ -9,7 +9,7 @@ import SwiftData
 @MainActor
 final class ConversationViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "💬"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     /// 全局单例
     static let shared = ConversationViewModel()
@@ -259,7 +259,7 @@ final class ConversationViewModel: ObservableObject, SuperLog {
                 // 会话存在，恢复选择
                 selectedConversationId = uuid
                 if Self.verbose {
-                    os_log("\(Self.t)✅ 已恢复会话选择：\(uuid)")
+                    os_log("\(Self.t)✅ [\(uuid)] 已恢复会话")
                 }
             } catch {
                 os_log(.error, "\(Self.t)❌ 验证会话失败：\(error.localizedDescription)")

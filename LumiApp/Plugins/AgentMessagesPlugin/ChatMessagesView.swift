@@ -67,7 +67,7 @@ extension ChatMessagesView {
         guard let conversationId = conversationViewModel.selectedConversationId else { return }
 
         if Self.verbose {
-            os_log("\(self.t) [\(conversationId)] 已选择")
+            os_log("\(self.t)✅ [\(conversationId)] 已选择")
         }
 
         Task {

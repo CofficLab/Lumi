@@ -29,8 +29,6 @@ struct ConversationItemView: View {
 
             Spacer()
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
         .contextMenu {
             Button(role: .destructive) {
                 showDeleteConfirmation = true
@@ -61,17 +59,14 @@ extension ConversationItemView {
                 let projectName = URL(fileURLWithPath: projectId).lastPathComponent
                 Text(projectName)
                     .font(.system(size: 8))
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     .lineLimit(1)
 
                 Text("•")
                     .font(.system(size: 6))
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
             }
 
             Text(conversation.updatedAt.formatted(.relative(presentation: .named)))
                 .font(.system(size: 8))
-                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
         }
     }
 }

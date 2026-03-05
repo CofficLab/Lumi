@@ -7,7 +7,7 @@ import SwiftData
 @MainActor
 class ChatHistoryService: SuperLog {
     nonisolated static let emoji = "💾"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
     
     static let shared = ChatHistoryService()
 
