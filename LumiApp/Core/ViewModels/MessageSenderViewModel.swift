@@ -3,6 +3,23 @@ import MagicKit
 import OSLog
 import SwiftUI
 
+/// 消息发送回调
+/// 用于解耦 MessageSenderViewModel 和 AgentProvider
+@MainActor
+protocol MessageSendingDelegate: AnyObject, Sendable {
+    /// 开始处理消息
+    func messageSendingDidStart()
+    
+    /// 结束处理消息
+    func messageSendingDidFinish()
+    
+    /// 处理用户消息
+    /// - Parameters:
+    ///   - content: 消息内容
+    ///   - images: 图片附件
+    func processUserMessage(content: String, images: [ImageAttachment]) async
+}
+
 /// 消息发送队列 ViewModel
 /// 负责管理待发送消息队列，按顺序逐个发送消息
 @MainActor
@@ -18,8 +35,11 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
     private let conversationViewModel: ConversationViewModel
     /// 聊天历史服务
     private let chatHistoryService: ChatHistoryService
-    /// 智能体提供者
-    private var agentProvider: AgentProvider?
+
+    // MARK: - 回调委托
+
+    /// 消息发送委托
+    weak var delegate: MessageSendingDelegate?
 
     // MARK: - 发送状态
 
@@ -40,20 +60,11 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
     init(
         messageViewModel: MessageViewModel,
         conversationViewModel: ConversationViewModel,
-        chatHistoryService: ChatHistoryService,
-        agentProvider: AgentProvider?
+        chatHistoryService: ChatHistoryService
     ) {
         self.messageViewModel = messageViewModel
         self.conversationViewModel = conversationViewModel
         self.chatHistoryService = chatHistoryService
-        self.agentProvider = agentProvider
-    }
-
-    // MARK: - 设置 AgentProvider
-
-    /// 设置 AgentProvider 引用
-    func setAgentProvider(_ agentProvider: AgentProvider) {
-        self.agentProvider = agentProvider
     }
 
     // MARK: - 公开方法
@@ -116,7 +127,7 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         await MainActor.run {
             isSending = true
             isCancelled = false
-            agentProvider?.setIsProcessing(true)
+            delegate?.messageSendingDidStart()
         }
 
         while !pendingMessages.isEmpty && !isCancelled {
@@ -127,7 +138,7 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         // 在主线程更新 UI 状态
         await MainActor.run {
             isSending = false
-            agentProvider?.setIsProcessing(false)
+            delegate?.messageSendingDidFinish()
         }
     }
 
@@ -138,14 +149,10 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         }
 
         // 在主线程保存用户消息到当前对话
-        await MainActor.run {
-            conversationViewModel.saveMessage(message)
-        }
+        conversationViewModel.saveMessage(message)
 
-        // 在后台线程处理消息，避免阻塞 UI
-        await Task.detached(priority: .userInitiated) { [weak self] in
-            await self?.agentProvider?.processUserMessageAsync(content: message.content, images: message.images)
-        }.value
+        // 处理消息
+        await delegate?.processUserMessage(content: message.content, images: message.images)
 
         if Self.verbose {
             os_log("\(Self.t)✅ 消息发送完成")
@@ -184,20 +191,5 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
     /// 判断队列是否为空
     func isQueueEmpty() -> Bool {
         pendingMessages.isEmpty
-    }
-}
-
-// MARK: - AgentProvider Extension
-
-extension AgentProvider {
-    /// 处理用户消息（内部使用，不重复保存和追加消息）
-    @MainActor func processUserMessageAsync(content: String, images: [ImageAttachment]) async {
-        if Self.verbose && !images.isEmpty {
-            os_log("\(Self.t)✅ 用户消息包含 \(images.count) 张图片")
-        }
-
-        // 消息已由 MessageSenderViewModel 保存和追加
-        // 直接处理对话轮次
-        await processTurn()
     }
 }

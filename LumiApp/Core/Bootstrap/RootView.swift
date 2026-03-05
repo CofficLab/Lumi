@@ -26,9 +26,7 @@ struct RootView<Content>: View where Content: View {
     let messageViewModel: MessageViewModel
 
     /// 消息发送 ViewModel
-    var messageSenderViewModel: MessageSenderViewModel {
-        agentProvider.messageSenderViewModel
-    }
+    let messageSenderViewModel: MessageSenderViewModel
 
     /// 命令建议 ViewModel
     let commandSuggestionViewModel: CommandSuggestionViewModel
@@ -48,6 +46,18 @@ struct RootView<Content>: View where Content: View {
         self.messageViewModel = MessageViewModel.shared
         self.conversationViewModel = ConversationViewModel.shared
         self.commandSuggestionViewModel = CommandSuggestionViewModel.shared
+        self.messageSenderViewModel = MessageSenderViewModel(
+            messageViewModel: messageViewModel,
+            conversationViewModel: conversationViewModel,
+            chatHistoryService: ChatHistoryService.shared
+        )
+
+        // 初始化对话轮次 ViewModel
+        let conversationTurnViewModel = ConversationTurnViewModel(
+            llmService: LLMService.shared,
+            toolManager: ToolManager.shared,
+            promptService: PromptService.shared
+        )
 
         // 初始化 AgentProvider（先创建，再注入到其他依赖中）
         self.agentProvider = AgentProvider(
@@ -58,20 +68,10 @@ struct RootView<Content>: View where Content: View {
             toolManager: ToolManager.shared,
             messageViewModel: messageViewModel,
             conversationViewModel: conversationViewModel,
-            messageSenderViewModel: MessageSenderViewModel(
-                messageViewModel: messageViewModel,
-                conversationViewModel: conversationViewModel,
-                chatHistoryService: ChatHistoryService.shared,
-                agentProvider: AgentProvider.placeholder
-            ),
-            projectViewModel: projectViewModel
+            messageSenderViewModel: self.messageSenderViewModel,
+            projectViewModel: projectViewModel,
+            conversationTurnViewModel: conversationTurnViewModel
         )
-
-        // 重新设置 MessageSenderViewModel 的 agentProvider 引用
-        agentProvider.messageSenderViewModel.setAgentProvider(agentProvider)
-
-        // 设置 ConversationViewModel 的 AgentProvider 引用
-        conversationViewModel.agentProvider = agentProvider
     }
 
     var body: some View {

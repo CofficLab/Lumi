@@ -6,7 +6,7 @@ import SwiftData
 
 /// Agent 模式提供者，管理 Agent 模式下的核心状态和服务
 @MainActor
-final class AgentProvider: ObservableObject, SuperLog {
+final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, ConversationTurnDelegate {
     nonisolated static let emoji = "🤖"
     nonisolated static let verbose = true
 
@@ -41,6 +41,9 @@ final class AgentProvider: ObservableObject, SuperLog {
     /// 项目 ViewModel
     let projectViewModel: ProjectViewModel
 
+    /// 对话轮次 ViewModel
+    let conversationTurnViewModel: ConversationTurnViewModel
+
     // MARK: - 聊天消息状态 (DevAssistant)
 
     /// 当前输入内容
@@ -57,10 +60,6 @@ final class AgentProvider: ObservableObject, SuperLog {
 
     /// 深度警告
     @Published public fileprivate(set) var depthWarning: DepthWarning?
-
-    /// 待处理工具调用队列
-    var pendingToolCalls: [ToolCall] = []
-    var currentDepth: Int = 0
 
     /// 当前任务
     var currentTask: Task<Void, Never>?
@@ -108,6 +107,7 @@ final class AgentProvider: ObservableObject, SuperLog {
     ///   - conversationViewModel: 会话 ViewModel
     ///   - messageSenderViewModel: 消息发送 ViewModel
     ///   - projectViewModel: 项目 ViewModel
+    ///   - conversationTurnViewModel: 对话轮次 ViewModel
     init(
         chatHistoryService: ChatHistoryService,
         promptService: PromptService,
@@ -117,7 +117,8 @@ final class AgentProvider: ObservableObject, SuperLog {
         messageViewModel: MessageViewModel,
         conversationViewModel: ConversationViewModel,
         messageSenderViewModel: MessageSenderViewModel,
-        projectViewModel: ProjectViewModel
+        projectViewModel: ProjectViewModel,
+        conversationTurnViewModel: ConversationTurnViewModel
     ) {
         self.chatHistoryService = chatHistoryService
         self.promptService = promptService
@@ -128,11 +129,22 @@ final class AgentProvider: ObservableObject, SuperLog {
         self.conversationViewModel = conversationViewModel
         self.messageSenderViewModel = messageSenderViewModel
         self.projectViewModel = projectViewModel
+        self.conversationTurnViewModel = conversationTurnViewModel
         loadPreferences()
     }
 
     /// 占位符 AgentProvider（用于解决循环依赖）
     static let placeholder: AgentProvider = {
+        let messageSenderVM = MessageSenderViewModel(
+            messageViewModel: MessageViewModel.shared,
+            conversationViewModel: ConversationViewModel.shared,
+            chatHistoryService: ChatHistoryService.shared
+        )
+        let conversationTurnVM = ConversationTurnViewModel(
+            llmService: LLMService.shared,
+            toolManager: ToolManager.shared,
+            promptService: PromptService.shared
+        )
         let placeholderProvider = AgentProvider(
             chatHistoryService: ChatHistoryService.shared,
             promptService: PromptService.shared,
@@ -141,14 +153,12 @@ final class AgentProvider: ObservableObject, SuperLog {
             toolManager: ToolManager.shared,
             messageViewModel: MessageViewModel.shared,
             conversationViewModel: ConversationViewModel.shared,
-            messageSenderViewModel: MessageSenderViewModel(
-                messageViewModel: MessageViewModel.shared,
-                conversationViewModel: ConversationViewModel.shared,
-                chatHistoryService: ChatHistoryService.shared,
-                agentProvider: nilPlaceholder
-            ),
-            projectViewModel: ProjectViewModel.shared
+            messageSenderViewModel: messageSenderVM,
+            projectViewModel: ProjectViewModel.shared,
+            conversationTurnViewModel: conversationTurnVM
         )
+        messageSenderVM.delegate = placeholderProvider
+        conversationTurnVM.delegate = placeholderProvider
         return placeholderProvider
     }()
 
@@ -184,28 +194,11 @@ final class AgentProvider: ObservableObject, SuperLog {
 
         // 加载上次选择的项目
         if let savedPath = UserDefaults.standard.string(forKey: "Agent_SelectedProject") {
-            switchProject(to: savedPath)
+            projectViewModel.switchProject(to: savedPath)
         }
     }
 
     // MARK: - Setter 方法
-
-    // MARK: - 内部 Setter 方法（仅供扩展文件使用）
-
-    /// 设置项目信息（内部使用）
-    func setCurrentProjectInfo(name: String, path: String, selected: Bool) {
-        projectViewModel.setCurrentProjectInfo(name: name, path: path, selected: selected)
-    }
-
-    /// 设置文件信息（内部使用）
-    func setSelectedFileInfo(url: URL?, path: String, content: String, selected: Bool) {
-        projectViewModel.setSelectedFileInfo(url: url, path: path, content: content, selected: selected)
-    }
-
-    /// 设置文件内容（内部使用）
-    func setSelectedFileContent(_ content: String) {
-        projectViewModel.setSelectedFileContent(content)
-    }
 
     /// 设置聊天消息状态（内部使用）
     func setChatMessageState(input: String? = nil, processing: Bool? = nil, errorMessage: String? = nil) {
@@ -236,21 +229,6 @@ final class AgentProvider: ObservableObject, SuperLog {
     }
 
     // MARK: - 公开 Setter 方法
-
-    /// 设置语言偏好
-    func setLanguagePreference(_ preference: LanguagePreference) {
-        projectViewModel.setLanguagePreference(preference)
-    }
-
-    /// 设置聊天模式
-    func setChatMode(_ mode: ChatMode) {
-        projectViewModel.setChatMode(mode)
-    }
-
-    /// 设置自动批准风险
-    func setAutoApproveRisk(_ enabled: Bool) {
-        projectViewModel.setAutoApproveRisk(enabled)
-    }
 
     /// 设置供应商
     func setSelectedProviderId(_ providerId: String) {
@@ -328,11 +306,6 @@ final class AgentProvider: ObservableObject, SuperLog {
         projectViewModel.isProjectSelected
     }
 
-    /// 是否已选择文件（代理到 ProjectViewModel）
-    var isFileSelected: Bool {
-        projectViewModel.isFileSelected
-    }
-
     /// 语言偏好（代理到 ProjectViewModel）
     var languagePreference: LanguagePreference {
         projectViewModel.languagePreference
@@ -346,5 +319,479 @@ final class AgentProvider: ObservableObject, SuperLog {
     /// 自动批准风险（代理到 ProjectViewModel）
     var autoApproveRisk: Bool {
         projectViewModel.autoApproveRisk
+    }
+
+    // MARK: - 项目管理（协调 ProjectViewModel）
+
+    /// 应用项目配置
+    func applyProjectConfig(_ config: ProjectConfig) {
+        setSelectedProviderId(config.providerId)
+        setSelectedModel(config.model)
+
+        if Self.verbose {
+            os_log("\(Self.t)⚙️ 已应用项目配置")
+        }
+    }
+
+    /// 保存当前项目配置
+    func saveCurrentProjectConfig() {
+        guard projectViewModel.isProjectSelected,
+              !projectViewModel.currentProjectPath.isEmpty else { return }
+
+        projectViewModel.saveProjectConfig(
+            path: projectViewModel.currentProjectPath,
+            providerId: selectedProviderId,
+            model: selectedModel
+        )
+    }
+
+    /// 获取最近使用的项目列表
+    func getRecentProjects() -> [RecentProject] {
+        projectViewModel.getRecentProjects()
+    }
+
+    // MARK: - 文件选择（协调 ProjectViewModel）
+
+    /// 选择指定文件
+    func selectFile(at url: URL) {
+        projectViewModel.selectFile(at: url)
+    }
+
+    /// 清除文件选择
+    func clearFileSelection() {
+        projectViewModel.clearFileSelection()
+    }
+
+    // MARK: - 供应商配置
+
+    /// 获取可用供应商列表
+    var availableProviders: [ProviderInfo] {
+        registry.allProviders()
+    }
+
+    /// 获取可用工具列表
+    var tools: [AgentTool] {
+        toolManager.tools
+    }
+
+    /// 获取当前供应商配置
+    func getCurrentConfig() -> LLMConfig {
+        guard let providerType = registry.providerType(forId: selectedProviderId),
+              registry.createProvider(id: selectedProviderId) != nil else {
+            return LLMConfig.default
+        }
+
+        // 从 UserDefaults 获取 API Key
+        let apiKey = UserDefaults.standard.string(forKey: providerType.apiKeyStorageKey) ?? ""
+
+        // 从 UserDefaults 获取选中的模型
+        let selectedModel = UserDefaults.standard.string(forKey: providerType.modelStorageKey) ?? providerType.defaultModel
+
+        return LLMConfig(
+            apiKey: apiKey,
+            model: selectedModel,
+            providerId: selectedProviderId
+        )
+    }
+
+    /// 获取当前选中的模型名称
+    var currentModel: String {
+        guard let providerType = registry.providerType(forId: selectedProviderId) else {
+            return ""
+        }
+        return UserDefaults.standard.string(forKey: providerType.modelStorageKey) ?? providerType.defaultModel
+    }
+
+    /// 获取指定供应商的 API Key
+    func getApiKey(for providerId: String) -> String {
+        guard let providerType = registry.providerType(forId: providerId) else {
+            return ""
+        }
+        return UserDefaults.standard.string(forKey: providerType.apiKeyStorageKey) ?? ""
+    }
+
+    /// 设置指定供应商的 API Key
+    func setApiKey(_ apiKey: String, for providerId: String) {
+        guard let providerType = registry.providerType(forId: providerId) else {
+            return
+        }
+        UserDefaults.standard.set(apiKey, forKey: providerType.apiKeyStorageKey)
+        if Self.verbose {
+            os_log("\(Self.t) 已设置 \(providerType.displayName) 的 API Key")
+        }
+    }
+
+    // MARK: - 消息便捷方法（代理到 ConversationViewModel）
+
+    /// 追加消息到列表
+    func appendMessage(_ message: ChatMessage) {
+        messageViewModel.appendMessageInternal(message)
+    }
+
+    /// 插入消息到指定位置
+    func insertMessage(_ message: ChatMessage, at index: Int) {
+        messageViewModel.insertMessageInternal(message, at: index)
+    }
+
+    /// 更新指定位置的消息
+    func updateMessage(_ message: ChatMessage, at index: Int) {
+        messageViewModel.updateMessageInternal(message, at: index)
+    }
+
+    /// 设置聊天消息列表
+    func setMessages(_ messages: [ChatMessage]) {
+        messageViewModel.setMessagesInternal(messages)
+    }
+
+    /// 设置当前会话
+    func setCurrentConversation(_ conversation: Conversation?) {
+        conversationViewModel.setCurrentConversationInternal(conversation)
+    }
+
+    /// 设置标题生成标记
+    func setHasGeneratedTitle(_ value: Bool) {
+        messageViewModel.setHasGeneratedTitleInternal(value)
+    }
+
+    /// 加载指定对话的消息
+    func loadConversation(_ conversationId: UUID) async {
+        await conversationViewModel.loadConversation(conversationId)
+    }
+
+    /// 保存消息到存储
+    func saveMessage(_ message: ChatMessage) {
+        conversationViewModel.saveMessage(message)
+    }
+
+    // MARK: - Cancel Support
+
+    /// 取消当前正在进行的任务
+    public func cancelCurrentTask() {
+        if let task = currentTask {
+            task.cancel()
+            currentTask = nil
+            os_log("\(Self.t)🛑 任务已取消")
+        }
+        // 重置处理状态
+        setIsProcessing(false)
+        setPermissionAndWarningState(permissionRequest: nil)
+        // 添加取消提示消息
+        let cancelMessage = languagePreference == .chinese ? "⚠️ 生成已取消" : "⚠️ Generation cancelled"
+        appendMessage(ChatMessage(role: .assistant, content: cancelMessage))
+    }
+
+    // MARK: - SlashCommandService API
+
+    public func appendSystemMessage(_ content: String) {
+        appendMessage(ChatMessage(role: .assistant, content: content))
+    }
+
+    public func triggerPlanningMode(task: String) {
+        Task {
+            let planPrompt = await promptService.getPlanningModePrompt(task: task)
+            // 添加计划模式消息
+            appendMessage(ChatMessage(role: .user, content: planPrompt))
+            // 直接处理对话轮次
+            await processTurn()
+        }
+    }
+
+    // MARK: - 消息发送
+
+    /// 发送消息（统一通过 MessageSenderViewModel 处理）
+    public func sendMessage() {
+        guard !currentInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !pendingAttachments.isEmpty else { return }
+
+        if Self.verbose {
+            os_log("\(Self.t) 用户发送消息")
+        }
+
+        // 清除之前的深度警告
+        setPermissionAndWarningState(depthWarning: nil)
+
+        // 检查是否已选择项目
+        if !isProjectSelected {
+            Task {
+                let warningContent = await promptService.getProjectNotSelectedWarningMessage()
+                let warningMsg = ChatMessage(
+                    role: .assistant,
+                    content: warningContent,
+                    isError: true
+                )
+                appendMessage(warningMsg)
+            }
+            return
+        }
+
+        // 获取当前输入和附件
+        let input = currentInput
+        let images = pendingAttachments.compactMap { attachment -> ImageAttachment? in
+            if case .image(_, let data, let mimeType, _) = attachment {
+                return ImageAttachment(data: data, mimeType: mimeType)
+            }
+            return nil
+        }
+
+        // 清空输入框
+        setChatMessageState(input: "", processing: false, errorMessage: nil)
+        pendingAttachments.removeAll()
+
+        // 检查是否为支持的斜杠命令
+        if SlashCommandService.shared.isSupportedSlashCommand(input) {
+            Task {
+                let result = await SlashCommandService.shared.handle(input: input, provider: self)
+                switch result {
+                case .handled:
+                    setIsProcessing(false)
+                case let .error(msg):
+                    appendMessage(ChatMessage(role: .assistant, content: "Command Error: \(msg)", isError: true))
+                    setIsProcessing(false)
+                case .notHandled:
+                    // 对于未处理的命令，继续通过消息队列发送
+                    messageSenderViewModel.sendMessage(content: input, images: images)
+                }
+            }
+            return
+        }
+
+        // 通过 MessageSenderViewModel 发送消息
+        messageSenderViewModel.sendMessage(content: input, images: images)
+    }
+
+    // MARK: - 对话轮次处理
+
+    /// 处理对话轮次
+    /// - Parameter depth: 当前递归深度
+    public func processTurn(depth: Int = 0) async {
+        await conversationTurnViewModel.processTurn(
+            depth: depth,
+            config: getCurrentConfig(),
+            messages: messages,
+            chatMode: chatMode,
+            tools: tools,
+            languagePreference: languagePreference,
+            autoApproveRisk: autoApproveRisk
+        )
+    }
+
+    // MARK: - 模式切换通知
+
+    public func notifyModeChangeToChat() async {
+        let message: String
+        switch languagePreference {
+        case .chinese:
+            message = "已切换到对话模式。在此模式下，我将只与您进行对话，不会执行任何工具或修改代码。有什么问题我可以帮您解答？"
+        case .english:
+            message = "Switched to Chat mode. In this mode, I will only chat with you without executing any tools or modifying code. How can I help you today?"
+        }
+
+        appendMessage(ChatMessage(role: .assistant, content: message))
+    }
+
+    // MARK: - 权限响应
+
+    public func respondToPermissionRequest(allowed: Bool) {
+        guard let request = pendingPermissionRequest else { return }
+
+        setPermissionAndWarningState(permissionRequest: nil)
+
+        Task {
+            await conversationTurnViewModel.respondToPermissionRequest(
+                allowed: allowed,
+                request: request,
+                languagePreference: languagePreference,
+                autoApproveRisk: autoApproveRisk
+            )
+        }
+    }
+
+    // MARK: - ConversationTurnDelegate
+
+    func turnDidReceiveResponse(_ response: ChatMessage) async {
+        saveMessage(response)
+    }
+
+    func turnDidComplete() async {
+        setIsProcessing(false)
+    }
+
+    func turnDidEncounterError(_ error: Error) async {
+        setErrorMessage(error.localizedDescription)
+        appendMessage(ChatMessage(role: .assistant, content: "Error: \(error.localizedDescription)", isError: true))
+        setIsProcessing(false)
+        setPermissionAndWarningState(depthWarning: nil)
+    }
+
+    func turnDidReachMaxDepth(currentDepth: Int, maxDepth: Int) async {
+        setErrorMessage("Max recursion depth reached.")
+        setIsProcessing(false)
+        setPermissionAndWarningState(depthWarning: DepthWarning(currentDepth: currentDepth, maxDepth: maxDepth, warningType: .reached))
+        os_log(.error, "\(Self.t) 达到最大递归深度 (\(maxDepth))，对话终止")
+    }
+
+    func turnDidRequestPermission(_ request: PermissionRequest) async {
+        setPermissionRequest(request)
+    }
+
+    func turnDidReceiveToolResult(_ result: ChatMessage) async {
+        appendMessage(result)
+        saveMessage(result)
+    }
+
+    func turnDidUpdateDepthWarning(_ warning: DepthWarning?) {
+        setPermissionAndWarningState(depthWarning: warning)
+    }
+
+    func turnShouldContinue(depth: Int) async {
+        await processTurn(depth: depth)
+    }
+
+    // MARK: - 历史记录管理
+
+    public func clearHistory() {
+        let languagePreference = self.languagePreference
+        let isProjectSelected = self.isProjectSelected
+
+        Task {
+            let fullSystemPrompt = await promptService.buildSystemPrompt(
+                languagePreference: languagePreference,
+                includeContext: isProjectSelected
+            )
+            setMessages([ChatMessage(role: .system, content: fullSystemPrompt)])
+        }
+    }
+
+    // MARK: - 项目管理
+
+    /// 切换到指定项目
+    public func switchProjectWithPrompt(to path: String) {
+        // 使用内核的 AgentProvider 执行实际的项目切换
+        projectViewModel.switchProject(to: path)
+
+        // 更新本地状态（镜像 AgentProvider）
+        let languagePreference = self.languagePreference
+
+        Task {
+            // 刷新系统提示
+            let fullSystemPrompt = await promptService.buildSystemPrompt(
+                languagePreference: languagePreference,
+                includeContext: true
+            )
+
+            // 更新第一条系统消息
+            let currentMessages = messages
+            if !currentMessages.isEmpty, currentMessages[0].role == .system {
+                updateMessage(ChatMessage(role: .system, content: fullSystemPrompt), at: 0)
+            } else {
+                insertMessage(ChatMessage(role: .system, content: fullSystemPrompt), at: 0)
+            }
+
+            // 添加切换项目通知（根据语言偏好）
+            let projectName = self.currentProjectName
+            let config = ProjectConfigStore.shared.getOrCreateConfig(for: path)
+            let switchMessage: String
+            switch languagePreference {
+            case .chinese:
+                switchMessage = """
+                ✅ 已切换到项目
+
+                **项目名称**: \(projectName)
+                **项目路径**: \(path)
+                **使用模型**: \(config.model.isEmpty ? "默认" : config.model) (\(config.providerId))
+                """
+            case .english:
+                switchMessage = """
+                ✅ Switched to project
+
+                **Project**: \(projectName)
+                **Path**: \(path)
+                **Model**: \(config.model.isEmpty ? "Default" : config.model) (\(config.providerId))
+                """
+            }
+
+            appendMessage(ChatMessage(role: .assistant, content: switchMessage))
+
+            if Self.verbose {
+                os_log("\(Self.t)📁 已切换项目：\(projectName)")
+            }
+        }
+    }
+
+    // MARK: - 图片上传
+
+    /// 处理图片上传
+    public func handleImageUpload(url: URL) {
+        do {
+            let imageData = try Data(contentsOf: url)
+            let mimeType = mimeTypeForPath(url.pathExtension)
+
+            if Self.verbose {
+                os_log("\(Self.t)📤 添加图片附件: \(url.lastPathComponent) (\(imageData.count) bytes)")
+            }
+
+            let attachment = Attachment.image(
+                id: UUID(),
+                data: imageData,
+                mimeType: mimeType,
+                url: url
+            )
+            pendingAttachments.append(attachment)
+        } catch {
+            os_log(.error, "\(Self.t)❌ 无法读取图片: \(error.localizedDescription)")
+        }
+    }
+
+    /// 根据文件扩展名获取 MIME 类型
+    private func mimeTypeForPath(_ pathExtension: String) -> String {
+        switch pathExtension.lowercased() {
+        case "jpg", "jpeg":
+            return "image/jpeg"
+        case "png":
+            return "image/png"
+        case "gif":
+            return "image/gif"
+        case "webp":
+            return "image/webp"
+        case "heic":
+            return "image/heic"
+        default:
+            return "image/jpeg"
+        }
+    }
+
+    /// 移除指定附件
+    public func removeAttachment(id: UUID) {
+        pendingAttachments.removeAll { $0.id == id }
+    }
+
+    /// 清空所有附件
+    public func clearAttachments() {
+        pendingAttachments.removeAll()
+    }
+
+    // MARK: - MessageSendingDelegate
+
+    /// 开始处理消息
+    func messageSendingDidStart() {
+        setIsProcessing(true)
+    }
+
+    /// 结束处理消息
+    func messageSendingDidFinish() {
+        setIsProcessing(false)
+    }
+
+    /// 处理用户消息
+    /// - Parameters:
+    ///   - content: 消息内容
+    ///   - images: 图片附件
+    func processUserMessage(content: String, images: [ImageAttachment]) async {
+        if Self.verbose && !images.isEmpty {
+            os_log("\(Self.t)✅ 用户消息包含 \(images.count) 张图片")
+        }
+
+        // 消息已由 MessageSenderViewModel 保存和追加
+        // 直接处理对话轮次
+        await processTurn()
     }
 }

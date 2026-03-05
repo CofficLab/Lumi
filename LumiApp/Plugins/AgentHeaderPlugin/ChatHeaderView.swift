@@ -5,6 +5,7 @@ import SwiftUI
 struct ChatHeaderView: View {
     @EnvironmentObject var agentProvider: AgentProvider
     @EnvironmentObject var conversationViewModel: ConversationViewModel
+    @EnvironmentObject var projectViewModel: ProjectViewModel
 
     /// 项目选择器呈现状态绑定
     @Binding var isProjectSelectorPresented: Bool
@@ -77,7 +78,14 @@ extension ChatHeaderView {
         Button(action: {
             Task {
                 let projectId = agentProvider.isProjectSelected ? agentProvider.currentProjectPath : nil
-                await conversationViewModel.createNewConversation(projectId: projectId)
+                let projectName = agentProvider.isProjectSelected ? agentProvider.currentProjectName : nil
+                let projectPath = agentProvider.isProjectSelected ? agentProvider.currentProjectPath : nil
+                await conversationViewModel.createNewConversation(
+                    projectId: projectId,
+                    projectName: projectName,
+                    projectPath: projectPath,
+                    language: agentProvider.languagePreference
+                )
             }
         }) {
             Image(systemName: "plus.circle")
@@ -99,8 +107,8 @@ extension ChatHeaderView {
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
             Toggle("", isOn: Binding(
-                get: { agentProvider.autoApproveRisk },
-                set: { agentProvider.setAutoApproveRisk($0) }
+                get: { projectViewModel.autoApproveRisk },
+                set: { projectViewModel.setAutoApproveRisk($0) }
             ))
                 .toggleStyle(.switch)
                 .controlSize(.mini)
@@ -119,12 +127,12 @@ extension ChatHeaderView {
             ForEach(LanguagePreference.allCases) { lang in
                 Button(action: {
                     withAnimation {
-                        agentProvider.setLanguagePreference(lang)
+                        projectViewModel.setLanguagePreference(lang)
                     }
                 }) {
                     HStack {
                         Text(lang.displayName)
-                        if agentProvider.languagePreference == lang {
+                        if projectViewModel.languagePreference == lang {
                             Image(systemName: "checkmark")
                         }
                     }
@@ -134,7 +142,7 @@ extension ChatHeaderView {
             HStack(spacing: 4) {
                 Image(systemName: "globe")
                     .font(.system(size: 12))
-                Text(agentProvider.languagePreference.displayName)
+                Text(projectViewModel.languagePreference.displayName)
                     .font(DesignTokens.Typography.caption2)
                     .fontWeight(.medium)
             }

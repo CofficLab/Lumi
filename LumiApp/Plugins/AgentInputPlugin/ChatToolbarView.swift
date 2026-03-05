@@ -11,6 +11,7 @@ struct ChatToolbarView: View, SuperLog {
 
     /// 智能体提供者
     @EnvironmentObject var agentProvider: AgentProvider
+    @EnvironmentObject var projectViewModel: ProjectViewModel
 
     /// 模型选择器是否显示
     @Binding var isModelSelectorPresented: Bool
@@ -119,7 +120,7 @@ extension ChatToolbarView {
             ForEach(ChatMode.allCases) { mode in
                 Button(action: {
                     withAnimation {
-                        agentProvider.setChatMode(mode)
+                        projectViewModel.setChatMode(mode)
                     }
                 }) {
                     HStack {

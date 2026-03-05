@@ -28,9 +28,6 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     /// 消息管理 ViewModel
     let messageViewModel = MessageViewModel.shared
 
-    /// 智能体提供者
-    weak var agentProvider: AgentProvider?
-
     // MARK: - 会话状态
 
     /// 当前会话
@@ -126,20 +123,25 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     }
 
     /// 创建新对话（异步版本，支持设置当前会话）
-    /// - Parameter projectId: 关联的项目 ID（可选，nil 表示全局对话）
-    func createNewConversation(projectId: String? = nil) async {
+    /// - Parameters:
+    ///   - projectId: 关联的项目 ID（可选，nil 表示全局对话）
+    ///   - projectName: 项目名称（可选，用于生成欢迎消息）
+    ///   - projectPath: 项目路径（可选，用于生成欢迎消息）
+    ///   - language: 语言偏好（默认为中文）
+    func createNewConversation(
+        projectId: String? = nil,
+        projectName: String? = nil,
+        projectPath: String? = nil,
+        language: LanguagePreference = .chinese
+    ) async {
         let newConversation = createConversation(projectId: projectId)
         currentConversation = newConversation
         selectedConversationId = newConversation.id
 
         // 获取欢迎消息并保存到数据库
-        let projectName = agentProvider?.currentProjectName ?? ""
-        let projectPath = agentProvider?.currentProjectPath ?? ""
-        let language = agentProvider?.languagePreference ?? .chinese
-
         let welcomeMessage = await promptService.getEmptySessionWelcomeMessage(
-            projectName: projectName.isEmpty ? nil : projectName,
-            projectPath: projectPath.isEmpty ? nil : projectPath,
+            projectName: projectName,
+            projectPath: projectPath,
             language: language,
             conversationId: newConversation.id
         )
