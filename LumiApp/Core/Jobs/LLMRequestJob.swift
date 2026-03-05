@@ -40,9 +40,6 @@ extension LLMRequestJob {
 extension LLMRequestJob {
     /// 执行 LLM 请求任务
     ///
-    /// 此方法在主线程运行，因为需要访问 @MainActor 类
-    /// 但网络请求本身是异步的，不会阻塞 UI
-    ///
     /// - Parameters:
     ///   - messages: 消息历史
     ///   - config: LLM 配置
@@ -50,7 +47,6 @@ extension LLMRequestJob {
     ///   - registry: 供应商注册表
     /// - Returns: AI 助手的响应消息
     /// - Throws: 如果请求失败，抛出相应的错误
-    @MainActor
     static func run(
         messages: [ChatMessage],
         config: LLMConfig,
