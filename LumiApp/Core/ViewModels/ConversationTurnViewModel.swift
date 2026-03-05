@@ -114,8 +114,8 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
                 }.joined(separator: "\n")
 
                 let prefix = languagePreference == .chinese
-                    ? "🔧 正在执行 \(responseMsg.toolCalls!.count) 个工具："
-                    : "🔧 Executing \(responseMsg.toolCalls!.count) tools:"
+                    ? "正在执行 \(responseMsg.toolCalls!.count) 个工具："
+                    : "Executing \(responseMsg.toolCalls!.count) tools:"
 
                 let enhancedContent = prefix + "\n" + toolSummary
                 responseMsg = ChatMessage(
@@ -139,9 +139,7 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
                 if Self.verbose {
                     os_log("\(Self.t)🔧 收到 \(toolCalls.count) 个工具调用，开始执行:")
                     for (index, tc) in toolCalls.enumerated() {
-                        // 格式化参数显示（限制长度）
-                        var argsPreview = tc.arguments.max(50)
-                        os_log("\(Self.t)  \(index + 1). \(tc.name)(\(argsPreview))")
+                        os_log("\(Self.t)  \(index + 1). \(tc.name)(\(tc.arguments.max(50)))")
                     }
                 }
                 pendingToolCalls = toolCalls

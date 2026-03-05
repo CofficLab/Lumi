@@ -26,19 +26,6 @@ struct InputView: View, SuperLog {
             isModelSelectorPresented: $isModelSelectorPresented
         )
         .onAppear(perform: onAppear)
-        .overlay {
-            if let request = agentProvider.pendingPermissionRequest {
-                PermissionRequestView(
-                    request: request,
-                    onAllow: {
-                        agentProvider.respondToPermissionRequest(allowed: true)
-                    },
-                    onDeny: {
-                        agentProvider.respondToPermissionRequest(allowed: false)
-                    }
-                )
-            }
-        }
         .popover(isPresented: $isModelSelectorPresented, arrowEdge: .bottom) {
             ModelSelectorView()
         }

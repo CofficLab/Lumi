@@ -36,6 +36,19 @@ struct ChatMessagesView: View, SuperLog {
             .onChange(of: nonSystemMessages.count) {
                 handleMessagesChanged(proxy: proxy)
             }
+            .overlay {
+                if let request = agentProvider.pendingPermissionRequest {
+                    PermissionRequestView(
+                        request: request,
+                        onAllow: {
+                            agentProvider.respondToPermissionRequest(allowed: true)
+                        },
+                        onDeny: {
+                            agentProvider.respondToPermissionRequest(allowed: false)
+                        }
+                    )
+                }
+            }
         }
     }
 }

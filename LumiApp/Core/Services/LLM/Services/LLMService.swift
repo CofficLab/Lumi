@@ -11,7 +11,7 @@ import MagicKit
 @MainActor
 class LLMService: SuperLog {
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     static let shared = LLMService()
 
@@ -67,7 +67,7 @@ class LLMService: SuperLog {
 
         // 输出工具列表（调试用）
         if Self.verbose {
-            os_log("\(self.t)发送请求到 \(config.providerId): \(config.model)")
+            os_log("\(self.t)🚀 发送请求到 \(config.providerId): \(config.model)")
 
             if let tools = tools, !tools.isEmpty {
                 os_log("\(self.t)📦 发送工具列表 (\(tools.count) 个):")
