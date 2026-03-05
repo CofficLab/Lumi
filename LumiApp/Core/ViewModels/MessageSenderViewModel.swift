@@ -13,13 +13,13 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
     // MARK: - 服务依赖
 
     /// 消息管理 ViewModel
-    private weak var messageViewModel: MessageViewModel?
+    private let messageViewModel: MessageViewModel
     /// 会话管理 ViewModel
-    private weak var conversationViewModel: ConversationViewModel?
+    private let conversationViewModel: ConversationViewModel
     /// 聊天历史服务
-    private let chatHistoryService = ChatHistoryService.shared
+    private let chatHistoryService: ChatHistoryService
     /// 智能体提供者
-    private weak var agentProvider: AgentProvider?
+    private var agentProvider: AgentProvider?
 
     // MARK: - 发送状态
 
@@ -40,12 +40,16 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
     init(
         messageViewModel: MessageViewModel,
         conversationViewModel: ConversationViewModel,
-        agentProvider: AgentProvider? = nil
+        chatHistoryService: ChatHistoryService,
+        agentProvider: AgentProvider?
     ) {
         self.messageViewModel = messageViewModel
         self.conversationViewModel = conversationViewModel
+        self.chatHistoryService = chatHistoryService
         self.agentProvider = agentProvider
     }
+
+    // MARK: - 设置 AgentProvider
 
     /// 设置 AgentProvider 引用
     func setAgentProvider(_ agentProvider: AgentProvider) {
@@ -68,7 +72,7 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
             return
         }
 
-        guard let _ = conversationViewModel?.currentConversation else {
+        guard conversationViewModel.currentConversation != nil else {
             os_log(.error, "\(Self.t)❌ 当前没有活动对话")
             return
         }
@@ -135,7 +139,7 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
 
         // 在主线程保存用户消息到当前对话
         await MainActor.run {
-            conversationViewModel?.saveMessage(message)
+            conversationViewModel.saveMessage(message)
         }
 
         // 在后台线程处理消息，避免阻塞 UI

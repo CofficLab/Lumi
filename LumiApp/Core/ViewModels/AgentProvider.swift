@@ -13,19 +13,19 @@ final class AgentProvider: ObservableObject, SuperLog {
     // MARK: - 服务依赖
 
     /// 聊天历史服务
-    let chatHistoryService = ChatHistoryService.shared
+    let chatHistoryService: ChatHistoryService
 
     /// 提示词服务
-    let promptService = PromptService.shared
+    let promptService: PromptService
 
     /// 供应商注册表
-    let registry = ProviderRegistry.shared
+    let registry: ProviderRegistry
 
     /// LLM 服务
-    let llmService = LLMService.shared
+    let llmService: LLMService
 
     /// 工具管理器
-    let toolManager = ToolManager.shared
+    let toolManager: ToolManager
 
     // MARK: - ViewModel 引用
 
@@ -36,7 +36,7 @@ final class AgentProvider: ObservableObject, SuperLog {
     let conversationViewModel: ConversationViewModel
 
     /// 消息发送 ViewModel
-    let messageSenderViewModel: MessageSenderViewModel
+    var messageSenderViewModel: MessageSenderViewModel
 
     /// 项目 ViewModel
     let projectViewModel: ProjectViewModel
@@ -99,22 +99,61 @@ final class AgentProvider: ObservableObject, SuperLog {
 
     /// 初始化 AgentProvider
     /// - Parameters:
+    ///   - chatHistoryService: 聊天历史服务
+    ///   - promptService: 提示词服务
+    ///   - registry: 供应商注册表
+    ///   - llmService: LLM 服务
+    ///   - toolManager: 工具管理器
     ///   - messageViewModel: 消息 ViewModel
     ///   - conversationViewModel: 会话 ViewModel
     ///   - messageSenderViewModel: 消息发送 ViewModel
     ///   - projectViewModel: 项目 ViewModel
     init(
+        chatHistoryService: ChatHistoryService,
+        promptService: PromptService,
+        registry: ProviderRegistry,
+        llmService: LLMService,
+        toolManager: ToolManager,
         messageViewModel: MessageViewModel,
         conversationViewModel: ConversationViewModel,
         messageSenderViewModel: MessageSenderViewModel,
         projectViewModel: ProjectViewModel
     ) {
+        self.chatHistoryService = chatHistoryService
+        self.promptService = promptService
+        self.registry = registry
+        self.llmService = llmService
+        self.toolManager = toolManager
         self.messageViewModel = messageViewModel
         self.conversationViewModel = conversationViewModel
         self.messageSenderViewModel = messageSenderViewModel
         self.projectViewModel = projectViewModel
         loadPreferences()
     }
+
+    /// 占位符 AgentProvider（用于解决循环依赖）
+    static let placeholder: AgentProvider = {
+        let placeholderProvider = AgentProvider(
+            chatHistoryService: ChatHistoryService.shared,
+            promptService: PromptService.shared,
+            registry: ProviderRegistry.shared,
+            llmService: LLMService.shared,
+            toolManager: ToolManager.shared,
+            messageViewModel: MessageViewModel.shared,
+            conversationViewModel: ConversationViewModel.shared,
+            messageSenderViewModel: MessageSenderViewModel(
+                messageViewModel: MessageViewModel.shared,
+                conversationViewModel: ConversationViewModel.shared,
+                chatHistoryService: ChatHistoryService.shared,
+                agentProvider: nilPlaceholder
+            ),
+            projectViewModel: ProjectViewModel.shared
+        )
+        return placeholderProvider
+    }()
+
+    /// 占位符 AgentProvider（用于解决循环依赖）
+    private static let nilPlaceholder: AgentProvider? = nil
 
     // MARK: - 偏好设置加载
 

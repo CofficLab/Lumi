@@ -9,42 +9,42 @@ import MagicKit
 extension AgentProvider {
     /// 追加消息到列表
     func appendMessage(_ message: ChatMessage) {
-        messageViewModel?.appendMessageInternal(message)
+        messageViewModel.appendMessageInternal(message)
     }
 
     /// 插入消息到指定位置
     func insertMessage(_ message: ChatMessage, at index: Int) {
-        messageViewModel?.insertMessageInternal(message, at: index)
+        messageViewModel.insertMessageInternal(message, at: index)
     }
 
     /// 更新指定位置的消息
     func updateMessage(_ message: ChatMessage, at index: Int) {
-        messageViewModel?.updateMessageInternal(message, at: index)
+        messageViewModel.updateMessageInternal(message, at: index)
     }
 
     /// 设置聊天消息列表
     func setMessages(_ messages: [ChatMessage]) {
-        messageViewModel?.setMessagesInternal(messages)
+        messageViewModel.setMessagesInternal(messages)
     }
 
     /// 设置当前会话
     func setCurrentConversation(_ conversation: Conversation?) {
-        conversationViewModel?.setCurrentConversationInternal(conversation)
+        conversationViewModel.setCurrentConversationInternal(conversation)
     }
 
     /// 设置标题生成标记
     func setHasGeneratedTitle(_ value: Bool) {
-        messageViewModel?.setHasGeneratedTitleInternal(value)
+        messageViewModel.setHasGeneratedTitleInternal(value)
     }
 
     /// 加载指定对话的消息
     func loadConversation(_ conversationId: UUID) async {
-        await conversationViewModel?.loadConversation(conversationId)
+        await conversationViewModel.loadConversation(conversationId)
     }
 
     /// 保存消息到存储
     func saveMessage(_ message: ChatMessage) {
-        conversationViewModel?.saveMessage(message)
+        conversationViewModel.saveMessage(message)
     }
 }
 
@@ -140,14 +140,14 @@ extension AgentProvider {
                     setIsProcessing(false)
                 case .notHandled:
                     // 对于未处理的命令，继续通过消息队列发送
-                    messageSenderViewModel?.sendMessage(content: input, images: images)
+                    messageSenderViewModel.sendMessage(content: input, images: images)
                 }
             }
             return
         }
 
         // 通过 MessageSenderViewModel 发送消息
-        messageSenderViewModel?.sendMessage(content: input, images: images)
+        messageSenderViewModel.sendMessage(content: input, images: images)
     }
 
     // MARK: - 对话轮次处理

@@ -26,7 +26,9 @@ struct RootView<Content>: View where Content: View {
     let messageViewModel: MessageViewModel
 
     /// 消息发送 ViewModel
-    let messageSenderViewModel: MessageSenderViewModel
+    var messageSenderViewModel: MessageSenderViewModel {
+        agentProvider.messageSenderViewModel
+    }
 
     /// 命令建议 ViewModel
     let commandSuggestionViewModel: CommandSuggestionViewModel
@@ -47,22 +49,26 @@ struct RootView<Content>: View where Content: View {
         self.conversationViewModel = ConversationViewModel.shared
         self.commandSuggestionViewModel = CommandSuggestionViewModel.shared
 
-        // 初始化消息发送 ViewModel（注入依赖）
-        self.messageSenderViewModel = MessageSenderViewModel(
-            messageViewModel: messageViewModel,
-            conversationViewModel: conversationViewModel
-        )
-
-        // 初始化 AgentProvider
+        // 初始化 AgentProvider（先创建，再注入到其他依赖中）
         self.agentProvider = AgentProvider(
+            chatHistoryService: ChatHistoryService.shared,
+            promptService: PromptService.shared,
+            registry: ProviderRegistry.shared,
+            llmService: LLMService.shared,
+            toolManager: ToolManager.shared,
             messageViewModel: messageViewModel,
             conversationViewModel: conversationViewModel,
-            messageSenderViewModel: messageSenderViewModel,
+            messageSenderViewModel: MessageSenderViewModel(
+                messageViewModel: messageViewModel,
+                conversationViewModel: conversationViewModel,
+                chatHistoryService: ChatHistoryService.shared,
+                agentProvider: AgentProvider.placeholder
+            ),
             projectViewModel: projectViewModel
         )
 
-        // 设置 MessageSenderViewModel 的 AgentProvider 引用
-        messageSenderViewModel.setAgentProvider(agentProvider)
+        // 重新设置 MessageSenderViewModel 的 agentProvider 引用
+        agentProvider.messageSenderViewModel.setAgentProvider(agentProvider)
 
         // 设置 ConversationViewModel 的 AgentProvider 引用
         conversationViewModel.agentProvider = agentProvider

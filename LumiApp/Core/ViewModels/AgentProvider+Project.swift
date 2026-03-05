@@ -11,10 +11,10 @@ import MagicKit
 extension AgentProvider {
     /// 切换到指定项目
     func switchProject(to path: String) {
-        projectViewModel?.switchProject(to: path)
+        projectViewModel.switchProject(to: path)
 
         if Self.verbose {
-            os_log("\(Self.t)📁 已切换项目：\(self.projectViewModel?.currentProjectName ?? "")")
+            os_log("\(Self.t)📁 已切换项目：\(self.projectViewModel.currentProjectName)")
         }
     }
 
@@ -30,12 +30,11 @@ extension AgentProvider {
 
     /// 保存当前项目配置
     func saveCurrentProjectConfig() {
-        guard let projectVM = projectViewModel,
-              projectVM.isProjectSelected,
-              !projectVM.currentProjectPath.isEmpty else { return }
+        guard projectViewModel.isProjectSelected,
+              !projectViewModel.currentProjectPath.isEmpty else { return }
 
-        projectVM.saveProjectConfig(
-            path: projectVM.currentProjectPath,
+        projectViewModel.saveProjectConfig(
+            path: projectViewModel.currentProjectPath,
             providerId: selectedProviderId,
             model: selectedModel
         )
@@ -43,7 +42,7 @@ extension AgentProvider {
 
     /// 获取最近使用的项目列表
     func getRecentProjects() -> [RecentProject] {
-        projectViewModel?.getRecentProjects() ?? []
+        projectViewModel.getRecentProjects()
     }
 }
 
@@ -52,12 +51,12 @@ extension AgentProvider {
 extension AgentProvider {
     /// 选择指定文件
     func selectFile(at url: URL) {
-        projectViewModel?.selectFile(at: url)
+        projectViewModel.selectFile(at: url)
     }
 
     /// 清除文件选择
     func clearFileSelection() {
-        projectViewModel?.clearFileSelection()
+        projectViewModel.clearFileSelection()
     }
 }
 
