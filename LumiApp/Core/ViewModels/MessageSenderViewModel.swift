@@ -8,7 +8,7 @@ import SwiftUI
 @MainActor
 final class MessageSenderViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📤"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     /// 全局单例
     static let shared = MessageSenderViewModel()
@@ -97,12 +97,18 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         isSending = true
         isCancelled = false
 
+        // 设置 AgentProvider 处理状态
+        agentProvider.setIsProcessing(true)
+
         while !pendingMessages.isEmpty && !isCancelled {
             let message = pendingMessages.removeFirst()
             await sendMessageToAgent(message: message)
         }
 
         isSending = false
+
+        // 清除 AgentProvider 处理状态
+        agentProvider.setIsProcessing(false)
     }
 
     /// 发送单条消息到 Agent
