@@ -1,44 +1,46 @@
 import SwiftUI
-import Textual
+import MarkdownUI
 
 /// Markdown 消息视图，负责渲染聊天消息内容
+/// 使用 MarkdownUI 库渲染（支持 GitHub Flavored Markdown）
 struct MarkdownMessageView: View {
     let message: ChatMessage
     let showRawMessage: Bool
 
-    @State private var isTextualReady = false
-
     var body: some View {
         Group {
             if showRawMessage {
-                Text(message.content)
+                TextEditor(text: .constant(message.content))
+                    .font(.system(.body, design: .monospaced))
                     .textSelection(.enabled)
-            } else if isTextualReady {
-                if message.role == .user {
-                    InlineText(markdown: message.content)
-                        .textual.textSelection(.enabled)
-                } else {
-                    StructuredText(markdown: message.content)
-                        .textual.structuredTextStyle(.default)
-                        .textual.textSelection(.enabled)
-                }
+                    .scrollContentBackground(.hidden)
             } else {
-                Text(message.content)
+                Markdown(message.content)
                     .textSelection(.enabled)
-                    .onAppear {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            isTextualReady = true
-                        }
-                    }
             }
         }
     }
 }
 
 #Preview {
-    VStack {
+    VStack(alignment: .leading, spacing: 16) {
         MarkdownMessageView(
-            message: ChatMessage(role: .assistant, content: "# Hello\nThis is a *markdown* message."),
+            message: ChatMessage(role: .assistant, content: """
+                ## Try MarkdownUI
+                
+                **MarkdownUI** is a native Markdown renderer for SwiftUI
+                compatible with the [GitHub Flavored Markdown Spec](https://github.github.com/gfm/).
+                
+                ### Code Example
+                
+                ```swift
+                let hello = "world"
+                print(hello)
+                ```
+                
+                - List item 1
+                - List item 2
+                """),
             showRawMessage: false
         )
 
