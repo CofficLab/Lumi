@@ -41,6 +41,18 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         self.toolCallID = toolCallID
         self.images = images
     }
+    
+    /// 从数据库加载时使用的初始化方法，保留原有 ID
+    init(id: UUID, role: MessageRole, content: String, timestamp: Date, isError: Bool = false, toolCalls: [ToolCall]? = nil, toolCallID: String? = nil, images: [ImageAttachment] = []) {
+        self.id = id
+        self.role = role
+        self.content = content
+        self.timestamp = timestamp
+        self.isError = isError
+        self.toolCalls = toolCalls
+        self.toolCallID = toolCallID
+        self.images = images
+    }
 
     // 实现 Equatable
     static func == (lhs: ChatMessage, rhs: ChatMessage) -> Bool {

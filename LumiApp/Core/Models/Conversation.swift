@@ -64,7 +64,7 @@ final class ChatMessageEntity {
             images = try! JSONDecoder().decode([ImageAttachment].self, from: imagesData)
         }
         
-        return ChatMessage(
+        var message = ChatMessage(
             role: messageRole,
             content: content,
             isError: isError,
@@ -72,6 +72,20 @@ final class ChatMessageEntity {
             toolCallID: toolCallID,
             images: images
         )
+        
+        // 使用实体的 ID，避免生成重复 ID
+        message = ChatMessage(
+            id: id,
+            role: messageRole,
+            content: content,
+            timestamp: timestamp,
+            isError: isError,
+            toolCalls: toolCalls,
+            toolCallID: toolCallID,
+            images: images
+        )
+        
+        return message
     }
     
     /// 从 ChatMessage 创建
