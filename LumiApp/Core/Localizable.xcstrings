@@ -854,9 +854,6 @@
     "Auto" : {
 
     },
-    "Automatically approve high-risk commands" : {
-
-    },
     "Available: %@" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4312,9 +4309,6 @@
     "Start" : {
 
     },
-    "Start a new chat session" : {
-
-    },
     "Statistics" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4830,9 +4824,6 @@
         }
       }
     },
-    "Upload Image" : {
-
-    },
     "Uptime: %@" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5015,6 +5006,9 @@
         }
       }
     },
+    "上传图片" : {
+
+    },
     "主题" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5155,6 +5149,9 @@
 
     },
     "已复制" : {
+
+    },
+    "开启新会话" : {
 
     },
     "当前项目" : {
@@ -5348,9 +5345,6 @@
     "文件预览" : {
 
     },
-    "新会话" : {
-
-    },
     "无参数" : {
 
     },
@@ -5511,6 +5505,9 @@
           }
         }
       }
+    },
+    "自动批准高风险命令" : {
+
     },
     "设置" : {
 

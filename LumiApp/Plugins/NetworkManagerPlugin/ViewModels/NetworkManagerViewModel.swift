@@ -10,6 +10,11 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
 
     @Published var networkState = NetworkState()
     @Published var interfaces: [NetworkInterfaceInfo] = []
+
+    // 公网 IP 缓存（避免频繁请求）
+    private var cachedPublicIP: String?
+    private var lastPublicIPFetch: Date?
+    private let publicIPCacheDuration: TimeInterval = 300 // 5 分钟缓存
     
     // Process monitoring related
     @Published var processes: [NetworkProcess] = []
@@ -132,17 +137,33 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
         let (ssid, rssi) = NetworkService.shared.getWifiInfo()
         networkState.wifiSSID = ssid
         networkState.wifiSignalStrength = rssi
-        
+
         // Ping
         let latency = await NetworkService.shared.ping()
         networkState.ping = latency
-        
+
         // Local IP
         networkState.localIP = NetworkService.shared.getLocalIP()
-        
-        // Public IP (only if missing or periodically refreshed rarely, here we do it every 10s which might be too much for API limits, let's optimize)
-        if networkState.publicIP == nil {
-            networkState.publicIP = await NetworkService.shared.getPublicIP()
+
+        // Public IP - 使用缓存机制，避免频繁请求
+        // 只在以下情况获取：
+        // 1. 从未获取过
+        // 2. 缓存已过期（> 5 分钟）
+        let shouldFetchPublicIP: Bool
+        if let lastFetch = lastPublicIPFetch {
+            shouldFetchPublicIP = Date().timeIntervalSince(lastFetch) > publicIPCacheDuration
+        } else {
+            shouldFetchPublicIP = true
+        }
+
+        if shouldFetchPublicIP {
+            if let ip = await NetworkService.shared.getPublicIP() {
+                networkState.publicIP = ip
+                cachedPublicIP = ip
+                lastPublicIPFetch = Date()
+            }
+        } else if let cachedIP = cachedPublicIP {
+            networkState.publicIP = cachedIP
         }
     }
 

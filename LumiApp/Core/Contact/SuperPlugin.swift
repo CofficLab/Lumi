@@ -18,8 +18,17 @@ protocol SuperPlugin: Actor {
     /// 是否可配置
     static var isConfigurable: Bool { get }
 
+    /// 是否启用此插件
+    static var enable: Bool { get }
+
     /// 插件实例标签（用于识别唯一实例）
     nonisolated var instanceLabel: String { get }
+
+    /// 添加根视图包裹
+    /// - Parameter content: 要被包裹的原始内容视图
+    /// - Returns: 包裹后的视图，如果不需要则返回 nil
+    /// - Note: 插件可以通过此方法包裹整个应用的内容视图，实现全局拦截、修饰等功能
+    @MainActor func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View
 
     /// 添加工具栏前导视图
     /// - Returns: 要添加到工具栏前导的视图，如果不需要则返回 nil
@@ -60,6 +69,21 @@ protocol SuperPlugin: Actor {
     /// - Note: 在 Agent 模式下，插件可以提供自定义的中间栏视图，位于侧边栏和详情栏之间，多个插件的中间栏会从上到下垂直堆叠显示
     @MainActor func addMiddleView() -> AnyView?
 
+    /// 添加详情栏头部视图（用于 Agent 模式）
+    /// - Returns: 要添加的详情栏头部视图，如果不需要则返回 nil
+    /// - Note: 在 Agent 模式下，插件可以提供自定义的详情栏头部视图，多个插件的头部视图会从上到下垂直堆叠显示
+    @MainActor func addDetailHeaderView() -> AnyView?
+
+    /// 添加详情栏中间视图（用于 Agent 模式）
+    /// - Returns: 要添加的详情栏中间视图，如果不需要则返回 nil
+    /// - Note: 在 Agent 模式下，插件可以提供自定义的详情栏中间视图（消息列表），多个插件的中间视图会从上到下垂直堆叠显示
+    @MainActor func addDetailMiddleView() -> AnyView?
+
+    /// 添加详情栏底部视图（用于 Agent 模式）
+    /// - Returns: 要添加的详情栏底部视图，如果不需要则返回 nil
+    /// - Note: 在 Agent 模式下，插件可以提供自定义的详情栏底部视图（输入区域），多个插件的底部视图会从上到下垂直堆叠显示
+    @MainActor func addDetailBottomView() -> AnyView?
+
     // MARK: - Lifecycle Hooks
 
     /// 插件注册完成后的回调
@@ -99,9 +123,25 @@ extension SuperPlugin {
     /// 默认可配置
     static var isConfigurable: Bool { false }
     
-    /// 默认应该注册
-    static var shouldRegister: Bool { true }
-    
+    /// 默认启用插件
+    static var enable: Bool { true }
+
+    /// 默认实现：不提供根视图包裹
+    @MainActor func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View { nil }
+
+    /// 提供根视图（接收 AnyView 参数的便捷方法）
+    @MainActor func provideRootView(_ content: AnyView) -> AnyView? {
+        self.addRootView { content }
+    }
+
+    /// 包裹根视图（安全版本）
+    @MainActor func wrapRoot(_ content: AnyView) -> AnyView {
+        if let wrapped = self.provideRootView(content) {
+            return wrapped
+        }
+        return content
+    }
+
     /// 默认实现：不提供工具栏前导视图
     @MainActor func addToolBarLeadingView() -> AnyView? { nil }
     
@@ -128,6 +168,15 @@ extension SuperPlugin {
 
     /// 默认实现：不提供中间栏视图
     @MainActor func addMiddleView() -> AnyView? { nil }
+
+    /// 默认实现：不提供详情栏头部视图
+    @MainActor func addDetailHeaderView() -> AnyView? { nil }
+
+    /// 默认实现：不提供详情栏中间视图
+    @MainActor func addDetailMiddleView() -> AnyView? { nil }
+
+    /// 默认实现：不提供详情栏底部视图
+    @MainActor func addDetailBottomView() -> AnyView? { nil }
 
     // MARK: - Lifecycle Hooks Default Implementation
     

@@ -2,35 +2,19 @@ import AppKit
 import MagicKit
 import SwiftUI
 import Sparkle
-import SwiftData
 
-/// 主应用入口，负责应用生命周期管理和核心服务初始化
+/// 主应用入口，负责应用生命周期管理
 @main
 struct CoreApp: App {
     /// macOS 应用代理，处理应用级别的生命周期事件
     @NSApplicationDelegateAdaptor private var appDelegate: MacAgent
-    
-    /// SwiftData 模型容器
-    private let modelContainer: ModelContainer
-    
-    init() {
-        // 初始化 SwiftData 容器
-        self.modelContainer = AppConfig.getContainer()
-        
-        // 初始化聊天历史服务
-        let container = self.modelContainer
-        Task { @MainActor in
-            await ChatHistoryService.shared.initializeWithContainer(container)
-        }
-    }
 
     var body: some Scene {
         // 主窗口
         WindowGroup {
-            ContentLayout()
-                .inRootView()
-                .ignoresSafeArea()
-                .modelContainer(modelContainer)
+            RootView {
+                ContentLayout()
+            }
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
@@ -38,7 +22,7 @@ struct CoreApp: App {
             DebugCommand()
             SettingsCommand()
             ConfigCommand()
-            
+
             // 添加检查更新菜单项
             CommandGroup(after: .appInfo) {
                 CheckForUpdatesView(updater: updaterController.updater)
@@ -54,7 +38,7 @@ struct CoreApp: App {
         .windowToolbarStyle(.unifiedCompact)
         .defaultSize(width: 780, height: 600)
     }
-    
+
     /// Sparkle 更新控制器
     private let updaterController = SPUStandardUpdaterController(
         startingUpdater: true,

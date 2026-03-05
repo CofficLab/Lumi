@@ -1,16 +1,101 @@
+import SwiftData
 import SwiftUI
 
-/// View扩展，提供便捷的根视图包装方法（主要用于Preview）
-extension View {
-    /// 将视图包装在根视图中，注入所有必要的环境对象
-    /// 主要用于SwiftUI Preview，在预览时自动注入环境对象
-    /// - Returns: 包装后的视图，包含所有环境对象
-    func inRootView() -> some View {
-        self
-            .environmentObject(AppProvider.shared)
+/// 根视图容器组件
+/// 为应用提供统一的上下文环境，管理核心服务初始化和环境注入
+struct RootView<Content>: View where Content: View {
+    /// 视图内容
+    var content: Content
+
+    /// SwiftData 模型容器
+    let modelContainer: ModelContainer
+
+    /// AgentProvider
+    let agentProvider: AgentProvider
+
+    /// 应用提供者
+    let appProvider: AppProvider
+
+    /// 项目 ViewModel
+    let projectViewModel: ProjectViewModel
+
+    /// 会话 ViewModel
+    let conversationViewModel: ConversationViewModel
+
+    /// 消息 ViewModel
+    let messageViewModel: MessageViewModel
+
+    /// 消息发送 ViewModel
+    let messageSenderViewModel: MessageSenderViewModel
+
+    /// 命令建议 ViewModel
+    let commandSuggestionViewModel: CommandSuggestionViewModel
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+
+        // 初始化 SwiftData 容器
+        self.modelContainer = AppConfig.getContainer()
+
+        // 初始化聊天历史服务
+        ChatHistoryService.shared.initializeWithContainer(self.modelContainer, reason: "主窗口初始化")
+
+        // 初始化 ViewModel
+        self.appProvider = AppProvider.shared
+        self.projectViewModel = ProjectViewModel.shared
+        self.messageViewModel = MessageViewModel.shared
+        self.conversationViewModel = ConversationViewModel.shared
+        self.commandSuggestionViewModel = CommandSuggestionViewModel.shared
+        self.messageSenderViewModel = MessageSenderViewModel(
+            messageViewModel: messageViewModel,
+            conversationViewModel: conversationViewModel,
+            chatHistoryService: ChatHistoryService.shared
+        )
+
+        // 初始化对话轮次 ViewModel
+        let conversationTurnViewModel = ConversationTurnViewModel(
+            llmService: LLMService.shared,
+            toolManager: ToolManager.shared,
+            promptService: PromptService.shared
+        )
+
+        // 初始化 AgentProvider（先创建，再注入到其他依赖中）
+        self.agentProvider = AgentProvider(
+            promptService: PromptService.shared,
+            registry: ProviderRegistry.shared,
+            toolManager: ToolManager.shared,
+            messageViewModel: messageViewModel,
+            conversationViewModel: conversationViewModel,
+            messageSenderViewModel: self.messageSenderViewModel,
+            projectViewModel: projectViewModel,
+            conversationTurnViewModel: conversationTurnViewModel
+        )
+
+        // 设置委托
+        self.messageSenderViewModel.delegate = self.agentProvider
+        conversationTurnViewModel.delegate = self.agentProvider
+    }
+
+    var body: some View {
+        content
+            .environmentObject(appProvider)
+            .environmentObject(agentProvider)
+            .environmentObject(projectViewModel)
             .environmentObject(PluginProvider.shared)
-            .environmentObject(AgentProvider.shared)
-            .environmentObject(MystiqueThemeManager()) // 注册主题管理器
+            .environmentObject(conversationViewModel)
+            .environmentObject(messageViewModel)
+            .environmentObject(messageSenderViewModel)
+            .environmentObject(commandSuggestionViewModel)
+            .environmentObject(MystiqueThemeManager())
+            .modelContainer(modelContainer)
+    }
+}
+
+extension View {
+    /// 将视图包装在 RootView 中，注入所有必要的环境对象和模型容器
+    /// - Returns: 包装在 RootView 中的视图
+    func inRootView() -> some View {
+        AnyView(RootView(content: { self }))
     }
 }
 

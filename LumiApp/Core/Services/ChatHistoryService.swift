@@ -16,11 +16,11 @@ class ChatHistoryService: SuperLog {
 
     private init() {}
 
-    /// 使用外部容器初始化（从 App 初始化）
-    func initializeWithContainer(_ container: ModelContainer) {
+    /// 使用外部容器初始化
+    func initializeWithContainer(_ container: ModelContainer, reason: String) {
         self.modelContainer = container
         if Self.verbose {
-            os_log("\(Self.t)✅ SwiftData 聊天存储已初始化")
+            os_log("\(Self.t)✅ (\(reason)) SwiftData 聊天存储已初始化")
         }
     }
 
@@ -38,9 +38,6 @@ class ChatHistoryService: SuperLog {
 
         do {
             try context.save()
-            if Self.verbose {
-                os_log("\(Self.t)💾 对话已保存：\(conversation.title)")
-            }
         } catch {
             os_log(.error, "\(Self.t)❌ 保存对话失败：\(error.localizedDescription)")
         }
@@ -70,11 +67,6 @@ class ChatHistoryService: SuperLog {
 
     /// 更新对话标题
     func updateConversationTitle(_ conversation: Conversation, newTitle: String) {
-        guard let container = modelContainer else {
-            os_log(.error, "\(Self.t)❌ 模型容器未初始化")
-            return
-        }
-
         conversation.title = newTitle
         conversation.updatedAt = Date()
 
@@ -148,28 +140,45 @@ class ChatHistoryService: SuperLog {
     // MARK: - 保存消息
 
     /// 保存消息到指定对话
-    func saveMessage(_ message: ChatMessage, to conversation: Conversation) {
+    /// - Returns: 保存后的消息（从数据库重新加载）
+    @discardableResult
+    func saveMessage(_ message: ChatMessage, to conversation: Conversation) -> ChatMessage? {
         guard let container = modelContainer else {
             os_log(.error, "\(Self.t)❌ 模型容器未初始化")
-            return
+            return nil
         }
 
         let context = ModelContext(container)
 
         // 创建消息实体
         let messageEntity = ChatMessageEntity.fromChatMessage(message)
-        messageEntity.conversation = conversation
+
+        // 重新获取 conversation 以确保在当前上下文中
+        let conversationId = conversation.id
+        let descriptor = FetchDescriptor<Conversation>(
+            predicate: #Predicate { $0.id == conversationId }
+        )
+
+        guard let fetchedConversation = try? context.fetch(descriptor).first else {
+            os_log(.error, "\(Self.t)❌ 无法在当前上下文中找到对话")
+            return nil
+        }
+
+        messageEntity.conversation = fetchedConversation
+        fetchedConversation.updatedAt = Date()
 
         context.insert(messageEntity)
-        conversation.updatedAt = Date()
 
         do {
             try context.save()
             if Self.verbose {
-                os_log("\(Self.t)💾 消息已保存")
+                os_log("\(Self.t)💾 [\(conversation.id)] 消息已保存：\(message.content.max(10))")
             }
+            // 返回保存后的消息
+            return messageEntity.toChatMessage()
         } catch {
             os_log(.error, "\(Self.t)❌ 保存消息失败：\(error.localizedDescription)")
+            return nil
         }
     }
 
@@ -247,13 +256,28 @@ class ChatHistoryService: SuperLog {
 
     /// 加载对话的消息
     func loadMessages(for conversation: Conversation) -> [ChatMessage] {
-        // 获取关联的消息
-        let messages = conversation.messages
-            .sorted { $0.timestamp < $1.timestamp }
-            .compactMap { $0.toChatMessage() }
+        guard let container = modelContainer else {
+            os_log(.error, "\(Self.t)❌ 模型容器未初始化")
+            return []
+        }
 
+        // 重新获取 conversation 以确保在当前上下文中
+        let context = ModelContext(container)
+        let conversationId = conversation.id
+        let descriptor = FetchDescriptor<Conversation>(
+            predicate: #Predicate { $0.id == conversationId }
+        )
+
+        guard let fetchedConversation = try? context.fetch(descriptor).first else {
+            os_log(.error, "\(Self.t)❌ 无法在当前上下文中找到对话")
+            return []
+        }
+
+        // 从关系中获取消息
+        let messageEntities = fetchedConversation.messages.sorted { $0.timestamp < $1.timestamp }
+        let messages = messageEntities.compactMap { $0.toChatMessage() }
         if Self.verbose {
-            os_log("\(Self.t)📄 加载到 \(messages.count) 条消息")
+            os_log("\(Self.t)📄 [\(conversation.id)] 加载到 \(messages.count) 条消息")
         }
         return messages
     }
