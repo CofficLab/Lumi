@@ -87,7 +87,7 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
 
         currentDepth = depth
         if Self.verbose {
-            os_log("\(Self.t) 开始处理对话轮次 (深度：\(depth), 模式：\(chatMode.displayName))")
+            os_log("\(Self.t)🚀 开始处理对话轮次 (深度：\(depth), 模式：\(chatMode.displayName))")
         }
 
         // 更新深度警告状态
@@ -101,10 +101,6 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
         }
 
         do {
-            if Self.verbose {
-                os_log("\(Self.t)🌍 开始调用 LLM (供应商：\(config.providerId), 模型：\(config.model))")
-            }
-
             // 1. 获取 LLM 响应（在后台执行）
             var responseMsg = try await jobScheduler.executeLLMRequest(
                 messages: messages,
@@ -245,11 +241,7 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
                 toolCall: toolCall,
                 toolManager: toolManager
             )
-
-            if Self.verbose {
-                os_log("\(Self.t)✅ 工具执行完成，耗时：\(String(format: "%.3f", duration))秒")
-            }
-
+            
             await delegate?.turnDidReceiveToolResult(resultMsg)
             await processPendingTools(languagePreference: .chinese, autoApproveRisk: false)
         } catch {
@@ -280,7 +272,7 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
             await handleToolCall(nextTool, languagePreference: languagePreference, autoApproveRisk: autoApproveRisk)
         } else {
             if Self.verbose {
-                os_log("\(Self.t) 所有工具处理完成，继续对话")
+                os_log("\(Self.t)✅ 所有工具处理完成，继续对话")
             }
             // 通知委托继续下一轮
             await delegate?.turnShouldContinue(depth: currentDepth + 1)

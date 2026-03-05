@@ -108,7 +108,7 @@ extension LLMRequestJob {
             if let tools = tools, !tools.isEmpty {
                 os_log("\(Self.t)📦 发送工具列表 (\(tools.count) 个):")
                 for tool in tools {
-                    os_log("\(Self.t)  - \(tool.name): \(tool.description)")
+                    os_log("\(Self.t)  - \(tool.name): \(tool.description.max(30))")
                 }
             } else {
                 os_log("\(Self.t)📦 无工具")
@@ -155,7 +155,7 @@ extension LLMRequestJob {
         let (content, toolCalls) = try provider.parseResponse(data: data)
 
         if Self.verbose {
-            os_log("\(Self.t)✅ 收到响应：\(content.prefix(100))...")
+            os_log("\(Self.t)✅ 收到响应：「\(content.prefix(100))...」")
         }
 
         return ChatMessage(role: .assistant, content: content, toolCalls: toolCalls)
