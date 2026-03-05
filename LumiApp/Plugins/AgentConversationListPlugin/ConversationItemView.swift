@@ -20,7 +20,6 @@ struct ConversationItemView: View {
                 // 标题
                 Text(conversation.title)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.tail)
 
