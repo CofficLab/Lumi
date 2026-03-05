@@ -217,12 +217,18 @@ actor PromptService: SuperLog {
             projectContext = "**项目**: 未选择"
         }
 
+        // 格式化当前时间
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy 年 MM 月 dd 日 HH:mm"
+        let currentTime = dateFormatter.string(from: Date())
+
         switch language {
         case .chinese:
             return """
             👋 你好！我是你的智能编程助手 DevAssistant。
 
             \(projectContext)
+            **当前时间**: \(currentTime)
 
             我可以帮你：
             - **分析代码** - 阅读和理解项目结构
@@ -233,10 +239,13 @@ actor PromptService: SuperLog {
             请告诉我你需要什么帮助？
             """
         case .english:
+            dateFormatter.dateFormat = "MMMM dd, yyyy HH:mm"
+            let currentTimeEN = dateFormatter.string(from: Date())
             return """
             👋 Hello! I'm your intelligent coding assistant, DevAssistant.
 
             \(projectContext)
+            **Current Time**: \(currentTimeEN)
 
             I can help you:
             - **Analyze code** - Read and understand project structure
