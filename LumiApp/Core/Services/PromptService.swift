@@ -205,7 +205,12 @@ actor PromptService: SuperLog {
     }
 
     /// 空会话欢迎消息（当会话没有任何消息时显示）
-    func getEmptySessionWelcomeMessage(projectName: String? = nil, projectPath: String? = nil, language: LanguagePreference = .chinese) -> String {
+    /// - Parameters:
+    ///   - projectName: 项目名称
+    ///   - projectPath: 项目路径
+    ///   - language: 语言偏好
+    ///   - conversationId: 会话 ID（用于显示当前会话标识）
+    func getEmptySessionWelcomeMessage(projectName: String? = nil, projectPath: String? = nil, language: LanguagePreference = .chinese, conversationId: UUID? = nil) -> String {
         // 构建项目上下文描述
         let projectContext: String
         if let name = projectName, let path = projectPath, !name.isEmpty {
@@ -222,6 +227,15 @@ actor PromptService: SuperLog {
         dateFormatter.dateFormat = "yyyy 年 MM 月 dd 日 HH:mm"
         let currentTime = dateFormatter.string(from: Date())
 
+        // 构建会话 ID 显示
+        let sessionIdDisplay: String
+        if let id = conversationId {
+            let shortId = id.uuidString.prefix(8)
+            sessionIdDisplay = "**会话 ID**: `\(shortId)`\n"
+        } else {
+            sessionIdDisplay = ""
+        }
+
         switch language {
         case .chinese:
             return """
@@ -229,7 +243,7 @@ actor PromptService: SuperLog {
 
             \(projectContext)
             **当前时间**: \(currentTime)
-
+            \(sessionIdDisplay)
             我可以帮你：
             - **分析代码** - 阅读和理解项目结构
             - **执行命令** - 运行构建、测试和脚本
@@ -246,7 +260,7 @@ actor PromptService: SuperLog {
 
             \(projectContext)
             **Current Time**: \(currentTimeEN)
-
+            \(sessionIdDisplay)
             I can help you:
             - **Analyze code** - Read and understand project structure
             - **Execute commands** - Run builds, tests, and scripts

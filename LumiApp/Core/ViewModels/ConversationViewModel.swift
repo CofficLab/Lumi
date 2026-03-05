@@ -123,7 +123,8 @@ final class ConversationViewModel: ObservableObject, SuperLog {
         let welcomeMessage = await promptService.getEmptySessionWelcomeMessage(
             projectName: agentProvider.currentProjectName.isEmpty ? nil : agentProvider.currentProjectName,
             projectPath: agentProvider.currentProjectPath.isEmpty ? nil : agentProvider.currentProjectPath,
-            language: agentProvider.languagePreference
+            language: agentProvider.languagePreference,
+            conversationId: newConversation.id
         )
 
         if !welcomeMessage.isEmpty {
