@@ -57,11 +57,11 @@ extension InputView {
 #Preview("App - Small Screen") {
     InputView()
         .frame(width: 800, height: 600)
-        .inRootView("Preview")
+        .inRootView()
 }
 
 #Preview("App - Big Screen") {
     InputView()
         .frame(width: 1200, height: 800)
-        .inRootView("Preview")
+        .inRootView()
 }

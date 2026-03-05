@@ -146,7 +146,7 @@ extension QuickPhraseButton {
     )
     .frame(width: 600)
     .background(Color(nsColor: .windowBackgroundColor))
-    .inRootView("Preview")
+    .inRootView()
 }
 
 #Preview("Quick Phrases - No Project") {
@@ -158,5 +158,5 @@ extension QuickPhraseButton {
     )
     .frame(width: 600)
     .background(Color(nsColor: .windowBackgroundColor))
-    .inRootView("Preview")
+    .inRootView()
 }

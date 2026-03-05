@@ -132,12 +132,6 @@ extension AgentProvider {
 // MARK: - 对话管理
 
 extension AgentProvider {
-    /// 创建新对话
-    func createNewConversation() async {
-        let projectId = isProjectSelected ? currentProjectPath : nil
-        await ConversationViewModel.shared.createNewConversation(projectId: projectId)
-    }
-
     /// 获取可用供应商列表
     var availableProviders: [ProviderInfo] {
         registry.allProviders()

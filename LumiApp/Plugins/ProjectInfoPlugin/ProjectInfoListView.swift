@@ -102,7 +102,7 @@ private struct ProjectInfoRow: View {
 #Preview("App - Small Screen") {
     ContentLayout()
         .hideSidebar()
-        .inRootView("Preview")
+        .inRootView()
         .frame(width: 800)
         .frame(height: 600)
 }
@@ -110,7 +110,7 @@ private struct ProjectInfoRow: View {
 #Preview("App - Big Screen") {
     ContentLayout()
         .hideSidebar()
-        .inRootView("Preview")
+        .inRootView()
         .frame(width: 1200)
         .frame(height: 1200)
 }

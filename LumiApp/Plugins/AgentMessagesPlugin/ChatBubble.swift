@@ -22,16 +22,13 @@ struct ChatBubble: View {
                 }
 
                 if message.toolCallID != nil {
-                    // 工具输出
                     ToolOutputView(
                         message: message,
                         toolType: inferToolType(from: message)
                     )
                 } else if message.role == .assistant && hasToolCalls {
-                    // 助手消息且包含工具调用 - 显示工具调用列表
                     AssistantMessageWithToolCallsView(message: message)
                 } else {
-                    // 普通消息
                     MarkdownMessageView(message: message, showRawMessage: showRawMessage)
                         .messageBubbleStyle(role: message.role, isError: message.isError)
                         .overlay(alignment: .topTrailing) {

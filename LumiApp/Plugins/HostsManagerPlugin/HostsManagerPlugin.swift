@@ -41,6 +41,6 @@ actor HostsManagerPlugin: SuperPlugin, SuperLog {
     ContentLayout()
         .hideSidebar()
         .withNavigation(HostsManagerPlugin.navigationId)
-        .inRootView("Preview")
+        .inRootView()
         .withDebugBar()
 }

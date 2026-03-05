@@ -162,6 +162,19 @@ final class PluginProvider: ObservableObject, SuperLog {
         return settingsStore.isPluginEnabled(pluginId)
     }
 
+    /// 获取所有插件的根视图包裹
+    /// - Parameter content: 原始内容视图
+    /// - Returns: 经过所有插件依次包裹后的视图
+    func getRootViewWrapper<Content: View>(@ViewBuilder content: () -> Content) -> AnyView {
+        var wrapped: AnyView = AnyView(content())
+
+        for plugin in plugins {
+            wrapped = plugin.wrapRoot(wrapped)
+        }
+
+        return wrapped
+    }
+
     /// 获取所有插件的工具栏右侧视图
     /// - Returns: 工具栏右侧视图数组
     func getToolbarTrailingViews() -> [AnyView] {
@@ -318,13 +331,13 @@ final class PluginProvider: ObservableObject, SuperLog {
 #Preview("App - Small Screen") {
     ContentLayout()
         .hideSidebar()
-        .inRootView("Preview")
+        .inRootView()
         .frame(width: 800, height: 600)
 }
 
 #Preview("App - Big Screen") {
     ContentLayout()
         .hideSidebar()
-        .inRootView("Preview")
+        .inRootView()
         .frame(width: 1200, height: 1200)
 }

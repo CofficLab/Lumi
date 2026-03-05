@@ -54,6 +54,6 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
     ContentLayout()
         .hideSidebar()
         .withNavigation(NetworkManagerPlugin.navigationId)
-        .inRootView("Preview")
+        .inRootView()
         .withDebugBar()
 }

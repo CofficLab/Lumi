@@ -265,6 +265,6 @@ struct BrewPackageRow: View {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .inRootView("Preview")
+        .inRootView()
         .withDebugBar()
 }

@@ -39,6 +39,6 @@ struct AgentModeSidebar: View {
 #Preview("Agent Mode Sidebar") {
     AgentModeSidebar()
         .frame(width: 220, height: 600)
-        .inRootView("Preview")
+        .inRootView()
         .environmentObject(PluginProvider.shared)
 }

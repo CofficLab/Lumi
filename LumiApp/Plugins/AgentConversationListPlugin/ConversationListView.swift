@@ -20,6 +20,9 @@ struct ConversationListView: View, SuperLog {
     @Query(sort: \Conversation.updatedAt, order: .reverse)
     private var conversations: [Conversation]
 
+    /// 本地选择的会话 ID
+    @State private var localSelectedConversationId: UUID?
+
     /// 是否已恢复选择标记：防止重复恢复
     @State private var hasRestoredSelection = false
 
@@ -35,15 +38,18 @@ struct ConversationListView: View, SuperLog {
             if conversations.isEmpty {
                 ConversationListEmptyView()
             } else {
-                conversationList
+                List(conversations, selection: $localSelectedConversationId) { conversation in
+                    ConversationItemView(
+                        conversation: conversation,
+                        onDelete: { handleDelete(conversation) }
+                    )
+                    .tag(conversation.id)
+                }
             }
         }
-        .task {
-            // 首次加载时恢复上次选择的会话
-            if !hasRestoredSelection && !conversations.isEmpty {
-                restoreSelectionIfNeeded()
-                hasRestoredSelection = true
-            }
+        .onAppear(perform: onAppear)
+        .onChange(of: localSelectedConversationId) { _, newValue in
+            handleSelectionChange(newValue)
         }
     }
 }
@@ -51,16 +57,6 @@ struct ConversationListView: View, SuperLog {
 // MARK: - View
 
 extension ConversationListView {
-    /// 对话列表视图：渲染会话列表
-    private var conversationList: some View {
-        List(conversations, selection: $conversationViewModel.selectedConversationId) { conversation in
-            ConversationItemView(
-                conversation: conversation,
-                onDelete: { handleDelete(conversation) }
-            )
-            .tag(conversation.id)
-        }
-    }
 }
 
 // MARK: - Action
@@ -70,7 +66,7 @@ extension ConversationListView {
     /// 仅在首次加载且没有选中的会话时执行
     private func restoreSelectionIfNeeded() {
         // 如果已经有选中的会话，不需要恢复
-        if conversationViewModel.selectedConversationId != nil {
+        if localSelectedConversationId != nil {
             if Self.verbose {
                 os_log("\(self.t)已有选中的会话，跳过恢复")
             }
@@ -80,7 +76,10 @@ extension ConversationListView {
         // 调用 ConversationViewModel 的恢复方法（会验证会话是否存在）
         conversationViewModel.restoreSelectedConversation(modelContext: modelContext)
 
-        if let restoredId = conversationViewModel.selectedConversationId {
+        // 同步到本地选择状态
+        localSelectedConversationId = conversationViewModel.selectedConversationId
+
+        if let restoredId = localSelectedConversationId {
             if Self.verbose {
                 os_log("\(self.t)✅ 已恢复会话选择：\(restoredId)")
             }
@@ -100,20 +99,15 @@ extension ConversationListView {
         }
 
         // 如果删除的是当前选中的会话，且还有其他会话，自动切换到最新的
-        if conversationViewModel.selectedConversationId == conversation.id {
+        if localSelectedConversationId == conversation.id {
             let remainingConversations = conversations.filter { $0.id != conversation.id }
             if let nextConversation = remainingConversations.first {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    conversationViewModel.selectedConversationId = nextConversation.id
-                    if Self.verbose {
-                        os_log("\(self.t)🔄 已自动切换到对话：\(nextConversation.title)")
-                    }
+                localSelectedConversationId = nextConversation.id
+                if Self.verbose {
+                    os_log("\(self.t)🔄 已自动切换到对话：\(nextConversation.title)")
                 }
             } else {
-                conversationViewModel.selectedConversationId = nil
-                if Self.verbose {
-                    os_log("\(self.t)📭 没有剩余会话，已清空选中状态")
-                }
+                localSelectedConversationId = nil
             }
         }
 
@@ -122,15 +116,34 @@ extension ConversationListView {
 
         do {
             try modelContext.save()
-            if Self.verbose {
-                os_log("\(self.t)✅ 对话已删除：\(conversation.title)")
-            }
         } catch {
             os_log(.error, "\(self.t)❌ 删除对话失败：\(error.localizedDescription)")
         }
     }
 }
 
+// MARK: - Setter
+
+extension ConversationListView {
+}
+
+// MARK: - Event Handler
+
+extension ConversationListView {
+    /// 视图出现时的事件处理
+    func onAppear() {
+        // 首次加载时恢复上次选择的会话
+        if !hasRestoredSelection && !conversations.isEmpty {
+            restoreSelectionIfNeeded()
+            hasRestoredSelection = true
+        }
+    }
+
+    /// 处理选择变化：同步到 ConversationViewModel
+    private func handleSelectionChange(_ newValue: UUID?) {
+        conversationViewModel.selectedConversationId = newValue
+    }
+}
 
 // MARK: - Preview
 

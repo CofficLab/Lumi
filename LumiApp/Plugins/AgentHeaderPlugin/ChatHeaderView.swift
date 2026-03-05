@@ -72,12 +72,16 @@ struct ChatHeaderView: View {
 // MARK: - View
 
 extension ChatHeaderView {
-    /// 新会话按钮：点击时调用 conversationViewModel.createNewConversation()
+    /// 新会话按钮：点击时创建新会话
     private var newChatButton: some View {
         Button(action: {
             Task {
                 let projectId = agentProvider.isProjectSelected ? agentProvider.currentProjectPath : nil
-                await conversationViewModel.createNewConversation(projectId: projectId)
+                let welcomeMessage = await agentProvider.getEmptySessionWelcomeMessage()
+                await conversationViewModel.createNewConversation(
+                    projectId: projectId,
+                    welcomeMessage: welcomeMessage
+                )
             }
         }) {
             Image(systemName: "plus.circle")
@@ -231,7 +235,7 @@ extension ChatHeaderView {
         isMCPSettingsPresented: .constant(false)
     )
     .frame(width: 800)
-    .inRootView("Preview")
+    .inRootView()
 }
 
 #Preview("聊天头部 - 窄屏") {
@@ -240,6 +244,6 @@ extension ChatHeaderView {
         isMCPSettingsPresented: .constant(false)
     )
     .frame(width: 600)
-    .inRootView("Preview")
+    .inRootView()
 }
 #endif

@@ -197,7 +197,7 @@ struct AgentModeContentView: View {
 
 #Preview("Agent Mode") {
     AgentModeContentView(sidebarVisibility: .constant(true))
-        .inRootView("Preview")
+        .inRootView()
         .environmentObject(AppProvider.shared)
         .environmentObject(PluginProvider.shared)
 }

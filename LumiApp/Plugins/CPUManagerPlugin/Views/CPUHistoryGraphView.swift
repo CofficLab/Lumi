@@ -287,7 +287,7 @@ struct CPUTooltipView: View {
 
 #Preview("App") {
     CPUStatusBarPopupView()
-        .inRootView("Preview")
+        .inRootView()
         .frame(width: 300)
         .frame(height: 300)
 }

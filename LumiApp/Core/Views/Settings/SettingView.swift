@@ -153,12 +153,12 @@ struct SettingView: View {
 
 #Preview {
     SettingView()
-        .inRootView("Preview")
+        .inRootView()
 }
 
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .inRootView("Preview")
+        .inRootView()
         .withDebugBar()
 }

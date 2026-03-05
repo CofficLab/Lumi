@@ -6,23 +6,38 @@ struct MarkdownMessageView: View {
     let message: ChatMessage
     let showRawMessage: Bool
 
+    @State private var isTextualReady = false
+
+    /// 检查是否是欢迎消息（包含特定标记）
+    private var isWelcomeMessage: Bool {
+        message.content.contains("你好！我是你的智能编程助手")
+    }
+
     var body: some View {
         Group {
             if showRawMessage {
                 Text(message.content)
                     .textSelection(.enabled)
-            } else {
-                // 使用 Textual 渲染 Markdown 内容
+            } else if isWelcomeMessage {
+                Text(message.content)
+                    .textSelection(.enabled)
+            } else if isTextualReady {
                 if message.role == .user {
-                    // 用户消息：使用 InlineText
                     InlineText(markdown: message.content)
                         .textual.textSelection(.enabled)
                 } else {
-                    // 助手消息：使用 StructuredText 支持完整 Markdown
                     StructuredText(markdown: message.content)
                         .textual.structuredTextStyle(.default)
                         .textual.textSelection(.enabled)
                 }
+            } else {
+                Text(message.content)
+                    .textSelection(.enabled)
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            isTextualReady = true
+                        }
+                    }
             }
         }
     }

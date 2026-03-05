@@ -150,5 +150,5 @@ struct PluginToggleRow: View {
         PluginSettingsView()
             .frame(width: 600, height: 500)
     }
-    .inRootView("Preview")
+    .inRootView()
 }

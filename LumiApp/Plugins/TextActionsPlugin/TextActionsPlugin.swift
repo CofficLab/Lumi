@@ -60,6 +60,6 @@ actor TextActionsPlugin: SuperPlugin {
     ContentLayout()
         .hideSidebar()
         .withNavigation(TextActionsPlugin.id)
-        .inRootView("Preview")
+        .inRootView()
         .withDebugBar()
 }

@@ -156,5 +156,5 @@ struct MenuItemRow: View {
         onCheckForUpdates: {},
         onQuit: {}
     )
-    .inRootView("Preview")
+    .inRootView()
 }

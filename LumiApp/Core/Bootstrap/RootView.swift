@@ -34,10 +34,9 @@ struct RootView<Content>: View where Content: View {
 
 extension View {
     /// 将视图包装在 RootView 中，注入所有必要的环境对象和模型容器
-    /// - Parameter reason: 初始化原因（用于日志）
     /// - Returns: 包装在 RootView 中的视图
-    func inRootView(_ reason: String) -> some View {
-        AnyView(RootView(content: { self }, reason: reason))
+    func inRootView() -> some View {
+        AnyView(RootView(content: { self }, reason: "RootView"))
     }
 }
 
@@ -54,6 +53,6 @@ extension RootView {
 
 #Preview("App") {
     ContentLayout()
-        .inRootView("Preview")
+        .inRootView()
         .withDebugBar()
 }

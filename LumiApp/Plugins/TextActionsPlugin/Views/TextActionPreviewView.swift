@@ -90,6 +90,6 @@ struct MockActionMenu: View {
     ContentLayout()
         .withNavigation(TextActionsPlugin.id)
         .hideSidebar()
-        .inRootView("Preview")
+        .inRootView()
         .withDebugBar()
 }

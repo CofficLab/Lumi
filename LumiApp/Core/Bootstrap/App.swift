@@ -32,7 +32,7 @@ struct CoreApp: App {
         // 独立的设置窗口
         Window("设置", id: SettingsWindowID.settings) {
             SettingView()
-                .inRootView("设置窗口初始化")
+                .inRootView()
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unifiedCompact)
@@ -79,6 +79,6 @@ final class CheckForUpdatesViewModel: ObservableObject {
 
 #Preview("App") {
     ContentLayout()
-        .inRootView("Preview")
+        .inRootView()
         .withDebugBar()
 }
