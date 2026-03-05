@@ -4,8 +4,11 @@ import MagicKit
 
 // MARK: - Provider Registry
 
-@MainActor
-class ProviderRegistry: SuperLog {
+/// 供应商注册表
+///
+/// 负责管理所有 LLM 供应商的注册和实例创建。
+/// 此类可以在后台线程执行
+class ProviderRegistry: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "📋"
     nonisolated static let verbose = false
 

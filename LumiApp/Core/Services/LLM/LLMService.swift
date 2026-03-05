@@ -8,20 +8,21 @@ import MagicKit
 ///
 /// 使用供应商协议处理所有 LLM 请求，支持动态供应商注册。
 /// 网络请求部分已委托给 LLMAPIService。
-@MainActor
-class LLMService: SuperLog {
+/// 此类可以在后台线程执行
+class LLMService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🌐"
     nonisolated static let verbose = true
 
     static let shared = LLMService()
 
-    private let registry: ProviderRegistry
-    private let llmAPI = LLMAPIService.shared
+    private nonisolated let registry: ProviderRegistry
+    private nonisolated let llmAPI: LLMAPIService
 
     private init() {
         self.registry = ProviderRegistry.shared
+        self.llmAPI = LLMAPIService.shared
         if Self.verbose {
-            os_log("\(self.t)LLM 服务已初始化")
+            os_log("\(self.t)✅ LLM 服务已初始化")
         }
     }
 

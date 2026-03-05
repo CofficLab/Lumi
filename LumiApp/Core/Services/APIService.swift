@@ -5,8 +5,8 @@ import MagicKit
 /// API 服务
 ///
 /// 负责所有 HTTP API 请求的统一管理，包括请求构建、发送、错误处理和重试机制。
-@MainActor
-class APIService: SuperLog {
+/// 此类可以在后台线程执行
+class APIService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🌐"
     nonisolated static let verbose = false
 

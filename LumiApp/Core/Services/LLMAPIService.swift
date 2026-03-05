@@ -5,14 +5,14 @@ import MagicKit
 /// LLM API 服务
 ///
 /// 专门负责大语言模型 API 请求，包括消息发送、流式响应等。
-@MainActor
-class LLMAPIService: SuperLog {
+/// 此类可以在后台线程执行
+class LLMAPIService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🌐"
     nonisolated static let verbose = false
 
     static let shared = LLMAPIService()
 
-    private let apiService = APIService.shared
+    private nonisolated let apiService = APIService.shared
 
     private init() {
         if Self.verbose {

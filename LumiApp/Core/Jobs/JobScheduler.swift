@@ -17,7 +17,7 @@ actor JobScheduler: SuperLog {
 
     private init() {
         if Self.verbose {
-            os_log("\(Self.t)后台任务调度器已初始化")
+            os_log("\(Self.t)✅ 后台任务调度器已初始化")
         }
     }
 
