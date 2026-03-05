@@ -11,7 +11,7 @@ actor ProjectTreePlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🌳"
 
     /// Whether to enable this plugin
-    static let enable = false
+    static let enable = true
 
     /// Whether to enable verbose log output
     nonisolated static let verbose = true
@@ -52,9 +52,6 @@ actor ProjectTreePlugin: SuperPlugin, SuperLog {
     /// Add sidebar view for Agent mode - 显示项目文件树
     /// - Returns: ProjectTreeView to be added to the sidebar
     @MainActor func addSidebarView() -> AnyView? {
-        if Self.verbose {
-            os_log("\(self.t) 提供 ProjectTreeView")
-        }
         return AnyView(ProjectTreeView())
     }
 }

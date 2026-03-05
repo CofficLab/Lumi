@@ -8,17 +8,9 @@ struct MarkdownMessageView: View {
 
     @State private var isTextualReady = false
 
-    /// 检查是否是欢迎消息（包含特定标记）
-    private var isWelcomeMessage: Bool {
-        message.content.contains("你好！我是你的智能编程助手")
-    }
-
     var body: some View {
         Group {
             if showRawMessage {
-                Text(message.content)
-                    .textSelection(.enabled)
-            } else if isWelcomeMessage {
                 Text(message.content)
                     .textSelection(.enabled)
             } else if isTextualReady {

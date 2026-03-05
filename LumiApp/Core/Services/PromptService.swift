@@ -241,9 +241,9 @@ actor PromptService: SuperLog {
             return """
             👋 你好！我是你的智能编程助手 DevAssistant。
 
-            \(projectContext)
-            **当前时间**: \(currentTime)
-            \(sessionIdDisplay)
+            \(projectContext)  
+            **当前时间**: \(currentTime)  
+            \(sessionIdDisplay)  
             我可以帮你：
             - **分析代码** - 阅读和理解项目结构
             - **执行命令** - 运行构建、测试和脚本

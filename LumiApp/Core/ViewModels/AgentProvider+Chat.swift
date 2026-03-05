@@ -171,9 +171,6 @@ extension AgentProvider {
         // 立即保存用户消息
         saveMessage(userMsg)
 
-        // 生成会话标题（如果是第一条用户消息）
-        await generateTitleIfNeeded(userMessage: finalContent)
-
         await processTurn()
     }
 
@@ -280,7 +277,7 @@ extension AgentProvider {
             appendMessage(ChatMessage(role: .assistant, content: "Error: \(error.localizedDescription)", isError: true))
             setIsProcessing(false)
             setPermissionAndWarningState(depthWarning: nil)
-            os_log(.error, "\(Self.t) 对话处理失败：\(error.localizedDescription)")
+            os_log(.error, "\(Self.t) 对话处理失败")
         }
     }
 
@@ -522,43 +519,6 @@ extension AgentProvider {
 // MARK: - Conversation Management
 
 extension AgentProvider {
-    /// 生成会话标题（如果是第一条用户消息）
-    func generateTitleIfNeeded(userMessage: String) async {
-        // 只在以下条件下生成标题：
-        // 1. 尚未生成过标题
-        // 2. 当前对话是初始标题 "新会话 "
-        // 3. 消息内容非空
-        guard !hasGeneratedTitle,
-              let conversation = currentConversation,
-              conversation.title.hasPrefix("新会话 "),
-              !userMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return
-        }
-
-        setHasGeneratedTitle(true)
-
-        if Self.verbose {
-            os_log("\(Self.t)🎯 开始为对话生成标题...")
-        }
-
-        // 获取当前 LLM 配置
-        let config = getCurrentConfig()
-
-        // 生成标题
-        let title = await chatHistoryService.generateConversationTitle(
-            from: userMessage,
-            config: config
-        )
-
-        // 更新对话标题
-        chatHistoryService.updateConversationTitle(conversation, newTitle: title)
-        setCurrentConversation(conversation)
-
-        if Self.verbose {
-            os_log("\(Self.t)✅ 对话标题已生成：\(title)")
-        }
-    }
-
     // MARK: - 历史记录管理
 
     public func clearHistory() {
