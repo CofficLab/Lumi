@@ -41,13 +41,20 @@ actor JobScheduler: SuperLog {
     ) async throws -> ChatMessage {
         // ProviderRegistry 和 LLMAPIService 是 @MainActor
         // 需要在主线程访问，但网络请求是异步的，不会阻塞 UI
-        try await MainActor.run { [messages, config, tools, registry] in
-            try await LLMRequestJob.run(
-                messages: messages,
-                config: config,
-                tools: tools,
-                registry: registry
-            )
+        return try await withCheckedThrowingContinuation { continuation in
+            Task { @MainActor in
+                do {
+                    let result = try await LLMRequestJob.run(
+                        messages: messages,
+                        config: config,
+                        tools: tools,
+                        registry: registry
+                    )
+                    continuation.resume(returning: result)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
         }
     }
 
@@ -63,16 +70,21 @@ actor JobScheduler: SuperLog {
         toolCall: ToolCall,
         toolManager: ToolManager
     ) async throws -> (ChatMessage, TimeInterval) {
-        let input = ToolExecutionJob.Input(
-            toolCall: toolCall,
-            toolManager: toolManager
-        )
-
-        let output = try await Task.detached(priority: .userInitiated) {
-            try await ToolExecutionJob.run(input)
-        }.value
-
-        return (output.result, output.duration)
+        // ToolManager 是 @MainActor，需要在主线程执行
+        // 但工具执行本身是异步的，不会阻塞 UI
+        return try await withCheckedThrowingContinuation { continuation in
+            Task { @MainActor in
+                do {
+                    let result = try await ToolExecutionJob.run(
+                        toolCall: toolCall,
+                        toolManager: toolManager
+                    )
+                    continuation.resume(returning: result)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
     }
 }
 

@@ -40,33 +40,38 @@ extension ToolExecutionJob {
     ///
     /// 此方法在后台线程运行，不会阻塞 UI
     ///
-    /// - Parameter input: 任务输入参数
+    /// - Parameters:
+    ///   - toolCall: 工具调用信息
+    ///   - toolManager: 工具管理器
     /// - Returns: 工具执行结果
     /// - Throws: 如果工具执行失败，抛出相应的错误
-    static func run(_ input: Input) async throws -> Output {
+    static func run(
+        toolCall: ToolCall,
+        toolManager: ToolManager
+    ) async throws -> Output {
         if verbose {
-            os_log("\(emoji) 开始执行工具：\(input.toolCall.name)")
+            os_log("\(emoji) 开始执行工具：\(toolCall.name)")
         }
 
         let startTime = Date()
 
         // 解析参数
         let arguments: [String: Any]
-        if let data = input.toolCall.arguments.data(using: .utf8),
+        if let data = toolCall.arguments.data(using: .utf8),
            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
             arguments = json
         } else {
             arguments = [:]
-            os_log(.warning, "\(emoji) 参数解析失败，使用空参数")
+            os_log(.error, "\(emoji) 参数解析失败，使用空参数")
         }
 
         // 使用 ToolManager 查找工具
-        guard input.toolManager.hasTool(named: input.toolCall.name) else {
-            os_log(.error, "\(emoji)❌ 工具 '\(input.toolCall.name)' 未找到")
+        guard toolManager.hasTool(named: toolCall.name) else {
+            os_log(.error, "\(emoji)❌ 工具 '\(toolCall.name)' 未找到")
             throw NSError(
                 domain: "ToolExecutionJob",
                 code: 404,
-                userInfo: [NSLocalizedDescriptionKey: "Tool not found: \(input.toolCall.name)"]
+                userInfo: [NSLocalizedDescriptionKey: "Tool not found: \(toolCall.name)"]
             )
         }
 
@@ -76,8 +81,8 @@ extension ToolExecutionJob {
             // 抑制数据竞争警告：arguments 是值类型，在 await 传递时已经完成复制
             nonisolated(unsafe) let unsafeArgs = arguments
 
-            result = try await input.toolManager.executeTool(
-                named: input.toolCall.name,
+            result = try await toolManager.executeTool(
+                named: toolCall.name,
                 arguments: unsafeArgs
             )
         } catch {
