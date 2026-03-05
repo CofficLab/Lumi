@@ -25,7 +25,7 @@ actor JobScheduler: SuperLog {
 
     /// 执行 LLM 请求任务
     ///
-    /// 自动在后台线程执行，不阻塞调用线程
+    /// 在后台线程执行，不阻塞调用线程
     ///
     /// - Parameters:
     ///   - messages: 消息历史
@@ -39,16 +39,16 @@ actor JobScheduler: SuperLog {
         tools: [AgentTool]?,
         registry: ProviderRegistry
     ) async throws -> ChatMessage {
-        let input = LLMRequestJob.Input(
-            messages: messages,
-            config: config,
-            tools: tools,
-            registry: registry
-        )
-
-        return try await Task.detached(priority: .userInitiated) {
-            try await LLMRequestJob.run(input)
-        }.value
+        // ProviderRegistry 和 LLMAPIService 是 @MainActor
+        // 需要在主线程访问，但网络请求是异步的，不会阻塞 UI
+        try await MainActor.run { [messages, config, tools, registry] in
+            try await LLMRequestJob.run(
+                messages: messages,
+                config: config,
+                tools: tools,
+                registry: registry
+            )
+        }
     }
 
     /// 执行工具调用任务

@@ -42,15 +42,24 @@ extension LLMRequestJob {
     ///
     /// 此方法在后台线程运行，不会阻塞 UI
     ///
-    /// - Parameter input: 任务输入参数
+    /// - Parameters:
+    ///   - messages: 消息历史
+    ///   - config: LLM 配置
+    ///   - tools: 可用工具列表
+    ///   - registry: 供应商注册表
     /// - Returns: AI 助手的响应消息
     /// - Throws: 如果请求失败，抛出相应的错误
-    static func run(_ input: Input) async throws -> ChatMessage {
+    static func run(
+        messages: [ChatMessage],
+        config: LLMConfig,
+        tools: [AgentTool]?,
+        registry: ProviderRegistry
+    ) async throws -> ChatMessage {
         if verbose {
             os_log("\(emoji) 开始执行 LLM 请求任务")
         }
 
-        guard !input.config.apiKey.isEmpty else {
+        guard !config.apiKey.isEmpty else {
             os_log(.error, "\(emoji) API Key 为空")
             throw NSError(
                 domain: "LLMRequestJob",
@@ -60,12 +69,13 @@ extension LLMRequestJob {
         }
 
         // 从注册表获取供应商实例
-        guard let provider = input.registry.createProvider(id: input.config.providerId) else {
-            os_log(.error, "\(emoji) 未找到供应商：\(input.config.providerId)")
+        // 注意：registry 是 @MainActor，需要在主线程调用
+        guard let provider = registry.createProvider(id: config.providerId) else {
+            os_log(.error, "\(emoji) 未找到供应商：\(config.providerId)")
             throw NSError(
                 domain: "LLMRequestJob",
                 code: 404,
-                userInfo: [NSLocalizedDescriptionKey: "Provider not found: \(input.config.providerId)"]
+                userInfo: [NSLocalizedDescriptionKey: "Provider not found: \(config.providerId)"]
             )
         }
 
@@ -83,9 +93,9 @@ extension LLMRequestJob {
         let body: [String: Any]
         do {
             body = try provider.buildRequestBody(
-                messages: input.messages,
-                model: input.config.model,
-                tools: input.tools,
+                messages: messages,
+                model: config.model,
+                tools: tools,
                 systemPrompt: ""
             )
         } catch {
@@ -95,9 +105,9 @@ extension LLMRequestJob {
 
         // 输出工具列表（调试用）
         if Self.verbose {
-            os_log("\(emoji)🚀 发送请求到 \(input.config.providerId): \(input.config.model)")
+            os_log("\(emoji)🚀 发送请求到 \(config.providerId): \(config.model)")
 
-            if let tools = input.tools, !tools.isEmpty {
+            if let tools = tools, !tools.isEmpty {
                 os_log("\(emoji)📦 发送工具列表 (\(tools.count) 个):")
                 for tool in tools {
                     os_log("\(emoji)  - \(tool.name): \(tool.description)")
@@ -111,12 +121,12 @@ extension LLMRequestJob {
         var additionalHeaders: [String: String] = [:]
 
         // 为 Anthropic 兼容的 API 添加 anthropic-version 请求头
-        if input.config.providerId == "zhipu" {
+        if config.providerId == "zhipu" {
             additionalHeaders["anthropic-version"] = "2023-06-01"
         }
 
         // 阿里云 Coding Plan 使用 Authorization: Bearer 认证
-        let useBearerAuth = input.config.providerId == "aliyun"
+        let useBearerAuth = config.providerId == "aliyun"
 
         if Self.verbose && !additionalHeaders.isEmpty {
             os_log("\(emoji)📦 添加额外请求头：\(additionalHeaders)")
