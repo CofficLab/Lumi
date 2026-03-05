@@ -9,6 +9,8 @@ struct ChatMessagesView: View, SuperLog {
     /// 是否输出详细日志
     nonisolated static let verbose = true
 
+    /// 消息管理 ViewModel
+    @EnvironmentObject var messageViewModel: MessageViewModel
     /// 会话管理 ViewModel
     @EnvironmentObject var conversationViewModel: ConversationViewModel
     /// 智能体提供者
@@ -16,7 +18,7 @@ struct ChatMessagesView: View, SuperLog {
 
     /// 非系统消息
     private var nonSystemMessages: [ChatMessage] {
-        conversationViewModel.messages.filter { $0.role != .system }
+        messageViewModel.messages.filter { $0.role != .system }
     }
 
     var body: some View {
@@ -31,13 +33,6 @@ struct ChatMessagesView: View, SuperLog {
                 .padding(.horizontal)
             }
             .onChange(of: conversationViewModel.selectedConversationId, handleConversationSelected)
-            .onChange(of: conversationViewModel.currentConversation?.id) { oldId, newId in
-                if let newId = newId {
-                    Task {
-                        await handleConversationChange(id: newId, proxy: proxy)
-                    }
-                }
-            }
         }
     }
 }
@@ -45,19 +40,7 @@ struct ChatMessagesView: View, SuperLog {
 // MARK: - Actions
 
 extension ChatMessagesView {
-    /// 处理会话切换
-    @MainActor
-    private func handleConversationChange(id: UUID, proxy: ScrollViewProxy) async {
-        try? await Task.sleep(for: .milliseconds(150))
 
-        if Task.isCancelled { return }
-
-        if let lastMessage = conversationViewModel.messages.last {
-            withAnimation(.easeOut(duration: 0.15)) {
-                proxy.scrollTo(lastMessage.id, anchor: .bottom)
-            }
-        }
-    }
 }
 
 // MARK: Event Handler
