@@ -155,11 +155,7 @@ extension LLMRequestJob {
         let (content, toolCalls) = try provider.parseResponse(data: data)
 
         if Self.verbose {
-            if let toolCalls = toolCalls, !toolCalls.isEmpty {
-                os_log("\(Self.t)✅ 收到响应：\(content.prefix(100))...，包含 \(toolCalls.count) 个工具调用")
-            } else {
-                os_log("\(Self.t)✅ 收到响应：\(content.prefix(100))...")
-            }
+            os_log("\(Self.t)✅ 收到响应：\(content.prefix(100))...")
         }
 
         return ChatMessage(role: .assistant, content: content, toolCalls: toolCalls)

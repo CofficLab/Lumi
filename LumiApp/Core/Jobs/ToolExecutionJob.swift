@@ -6,7 +6,7 @@ import OSLog
 ///
 /// 负责在后台执行工具调用，包括文件操作、命令执行等
 /// 封装了完整的工具执行流程，包括参数解析、工具查找和结果返回
-struct ToolExecutionJob {
+struct ToolExecutionJob: SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "⚡"
     /// 是否输出详细日志
@@ -47,8 +47,8 @@ extension ToolExecutionJob {
         toolCall: ToolCall,
         toolManager: ToolManager
     ) async throws -> Output {
-        if verbose {
-            os_log("\(emoji) 开始执行工具：\(toolCall.name)")
+        if Self.verbose {
+            os_log("\(Self.t)🚀 开始执行工具：\(toolCall.name)")
         }
 
         let startTime = Date()
@@ -60,12 +60,12 @@ extension ToolExecutionJob {
             arguments = json
         } else {
             arguments = [:]
-            os_log(.error, "\(emoji) 参数解析失败，使用空参数")
+            os_log(.error, "\(Self.t)❌ 参数解析失败，使用空参数")
         }
 
         // 使用 ToolManager 查找工具
         guard await toolManager.hasTool(named: toolCall.name) else {
-            os_log(.error, "\(emoji)❌ 工具 '\(toolCall.name)' 未找到")
+            os_log(.error, "\(Self.t)❌ 工具 '\(toolCall.name)' 未找到")
             throw NSError(
                 domain: "ToolExecutionJob",
                 code: 404,
@@ -84,14 +84,14 @@ extension ToolExecutionJob {
                 arguments: unsafeArgs
             )
         } catch {
-            os_log(.error, "\(emoji)❌ 工具执行失败：\(error.localizedDescription)")
+            os_log(.error, "\(Self.t)❌ 工具执行失败：\(error.localizedDescription)")
             throw error
         }
 
         let duration = Date().timeIntervalSince(startTime)
 
         if Self.verbose {
-            os_log("\(emoji)✅ 工具执行完成，耗时：\(String(format: "%.3f", duration))秒")
+            os_log("\(Self.t)✅ 工具执行完成，耗时：\(String(format: "%.3f", duration))秒")
         }
 
         let resultMsg = ChatMessage(
