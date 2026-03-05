@@ -15,6 +15,8 @@ class ProviderRegistry: SuperLog {
         if Self.verbose {
             os_log("\(self.t)供应商注册表已初始化")
         }
+        
+        self.registerAllProviders()
     }
 
     // MARK: - Registered Provider Types

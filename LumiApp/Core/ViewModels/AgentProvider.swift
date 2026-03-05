@@ -30,38 +30,16 @@ final class AgentProvider: ObservableObject, SuperLog {
     // MARK: - ViewModel 引用
 
     /// 消息 ViewModel
-    weak var messageViewModel: MessageViewModel?
+    let messageViewModel: MessageViewModel
 
     /// 会话 ViewModel
-    weak var conversationViewModel: ConversationViewModel?
+    let conversationViewModel: ConversationViewModel
 
     /// 消息发送 ViewModel
-    weak var messageSenderViewModel: MessageSenderViewModel?
+    let messageSenderViewModel: MessageSenderViewModel
 
-    // MARK: - 项目信息
-
-    /// 当前项目名称
-    @Published fileprivate(set) var currentProjectName: String = ""
-
-    /// 当前项目路径
-    @Published fileprivate(set) var currentProjectPath: String = ""
-
-    /// 是否已选择项目
-    @Published fileprivate(set) var isProjectSelected: Bool = false
-
-    // MARK: - 当前选择的文件
-
-    /// 当前选择的文件 URL
-    @Published fileprivate(set) var selectedFileURL: URL?
-
-    /// 当前选择的文件路径
-    @Published fileprivate(set) var selectedFilePath: String = ""
-
-    /// 当前选择的文件内容
-    @Published fileprivate(set) var selectedFileContent: String = ""
-
-    /// 是否已选择文件
-    @Published fileprivate(set) var isFileSelected: Bool = false
+    /// 项目 ViewModel
+    let projectViewModel: ProjectViewModel
 
     // MARK: - 聊天消息状态 (DevAssistant)
 
@@ -102,34 +80,6 @@ final class AgentProvider: ObservableObject, SuperLog {
 
     public var pendingAttachments: [Attachment] = []
 
-    // MARK: - 语言偏好
-
-    @Published fileprivate(set) var languagePreference: LanguagePreference = .chinese {
-        didSet {
-            if let encoded = try? JSONEncoder().encode(languagePreference) {
-                UserDefaults.standard.set(encoded, forKey: "Agent_LanguagePreference")
-            }
-        }
-    }
-
-    // MARK: - 聊天模式
-
-    @Published fileprivate(set) var chatMode: ChatMode = .build {
-        didSet {
-            UserDefaults.standard.set(chatMode.rawValue, forKey: "Agent_ChatMode")
-        }
-    }
-
-    // MARK: - 自动批准风险
-
-    @Published fileprivate(set) var autoApproveRisk: Bool = {
-        UserDefaults.standard.bool(forKey: "Agent_AutoApproveRisk")
-    }() {
-        didSet {
-            UserDefaults.standard.set(autoApproveRisk, forKey: "Agent_AutoApproveRisk")
-        }
-    }
-
     // MARK: - 供应商选择
 
     @Published fileprivate(set) var selectedProviderId: String = "anthropic" {
@@ -152,14 +102,17 @@ final class AgentProvider: ObservableObject, SuperLog {
     ///   - messageViewModel: 消息 ViewModel
     ///   - conversationViewModel: 会话 ViewModel
     ///   - messageSenderViewModel: 消息发送 ViewModel
+    ///   - projectViewModel: 项目 ViewModel
     init(
         messageViewModel: MessageViewModel,
         conversationViewModel: ConversationViewModel,
-        messageSenderViewModel: MessageSenderViewModel
+        messageSenderViewModel: MessageSenderViewModel,
+        projectViewModel: ProjectViewModel
     ) {
         self.messageViewModel = messageViewModel
         self.conversationViewModel = conversationViewModel
         self.messageSenderViewModel = messageSenderViewModel
+        self.projectViewModel = projectViewModel
         loadPreferences()
     }
 
@@ -170,17 +123,19 @@ final class AgentProvider: ObservableObject, SuperLog {
         // 加载语言偏好
         if let data = UserDefaults.standard.data(forKey: "Agent_LanguagePreference"),
            let preference = try? JSONDecoder().decode(LanguagePreference.self, from: data) {
-            languagePreference = preference
+            projectViewModel.setLanguagePreference(preference)
         }
 
         // 加载聊天模式
         if let modeRaw = UserDefaults.standard.string(forKey: "Agent_ChatMode"),
            let mode = ChatMode(rawValue: modeRaw) {
-            chatMode = mode
+            projectViewModel.setChatMode(mode)
         }
 
         // 加载自动批准风险
-        autoApproveRisk = UserDefaults.standard.bool(forKey: "Agent_AutoApproveRisk")
+        if let autoApprove = UserDefaults.standard.string(forKey: "Agent_AutoApproveRisk") {
+            projectViewModel.setAutoApproveRisk(autoApprove == "true")
+        }
 
         // 加载供应商选择
         selectedProviderId = UserDefaults.standard.string(forKey: "Agent_SelectedProvider") ?? "anthropic"
@@ -200,25 +155,17 @@ final class AgentProvider: ObservableObject, SuperLog {
 
     /// 设置项目信息（内部使用）
     func setCurrentProjectInfo(name: String, path: String, selected: Bool) {
-        currentProjectName = name
-        currentProjectPath = path
-        isProjectSelected = selected
+        projectViewModel.setCurrentProjectInfo(name: name, path: path, selected: selected)
     }
 
     /// 设置文件信息（内部使用）
     func setSelectedFileInfo(url: URL?, path: String, content: String, selected: Bool) {
-        selectedFileURL = url
-        selectedFilePath = path
-        selectedFileContent = content
-        isFileSelected = selected
-
-        // 发送文件选择变化通知
-        NotificationCenter.default.post(name: NSNotification.Name("AgentProviderFileSelectionChanged"), object: nil)
+        projectViewModel.setSelectedFileInfo(url: url, path: path, content: content, selected: selected)
     }
 
     /// 设置文件内容（内部使用）
     func setSelectedFileContent(_ content: String) {
-        selectedFileContent = content
+        projectViewModel.setSelectedFileContent(content)
     }
 
     /// 设置聊天消息状态（内部使用）
@@ -253,17 +200,17 @@ final class AgentProvider: ObservableObject, SuperLog {
 
     /// 设置语言偏好
     func setLanguagePreference(_ preference: LanguagePreference) {
-        languagePreference = preference
+        projectViewModel.setLanguagePreference(preference)
     }
 
     /// 设置聊天模式
     func setChatMode(_ mode: ChatMode) {
-        chatMode = mode
+        projectViewModel.setChatMode(mode)
     }
 
     /// 设置自动批准风险
     func setAutoApproveRisk(_ enabled: Bool) {
-        autoApproveRisk = enabled
+        projectViewModel.setAutoApproveRisk(enabled)
     }
 
     /// 设置供应商
@@ -312,16 +259,53 @@ final class AgentProvider: ObservableObject, SuperLog {
 
     /// 当前会话（代理到 ConversationViewModel）
     var currentConversation: Conversation? {
-        conversationViewModel?.currentConversation
+        conversationViewModel.currentConversation
     }
 
     /// 当前会话的消息列表（代理到 ConversationViewModel）
     var messages: [ChatMessage] {
-        conversationViewModel?.messages ?? []
+        conversationViewModel.messages
     }
 
     /// 标记是否已生成标题（代理到 ConversationViewModel）
     var hasGeneratedTitle: Bool {
-        conversationViewModel?.hasGeneratedTitle ?? false
+        conversationViewModel.hasGeneratedTitle
+    }
+
+    // MARK: - 代理 ProjectViewModel 属性（仅供内部扩展使用）
+
+    /// 当前项目名称（代理到 ProjectViewModel）
+    var currentProjectName: String {
+        projectViewModel.currentProjectName
+    }
+
+    /// 当前项目路径（代理到 ProjectViewModel）
+    var currentProjectPath: String {
+        projectViewModel.currentProjectPath
+    }
+
+    /// 是否已选择项目（代理到 ProjectViewModel）
+    var isProjectSelected: Bool {
+        projectViewModel.isProjectSelected
+    }
+
+    /// 是否已选择文件（代理到 ProjectViewModel）
+    var isFileSelected: Bool {
+        projectViewModel.isFileSelected
+    }
+
+    /// 语言偏好（代理到 ProjectViewModel）
+    var languagePreference: LanguagePreference {
+        projectViewModel.languagePreference
+    }
+
+    /// 聊天模式（代理到 ProjectViewModel）
+    var chatMode: ChatMode {
+        projectViewModel.chatMode
+    }
+
+    /// 自动批准风险（代理到 ProjectViewModel）
+    var autoApproveRisk: Bool {
+        projectViewModel.autoApproveRisk
     }
 }

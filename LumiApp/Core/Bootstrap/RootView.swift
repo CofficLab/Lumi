@@ -16,6 +16,9 @@ struct RootView<Content>: View where Content: View {
     /// 应用提供者
     let appProvider: AppProvider
 
+    /// 项目 ViewModel
+    let projectViewModel: ProjectViewModel
+
     /// 会话 ViewModel
     let conversationViewModel: ConversationViewModel
 
@@ -39,6 +42,7 @@ struct RootView<Content>: View where Content: View {
 
         // 初始化 ViewModel
         self.appProvider = AppProvider.shared
+        self.projectViewModel = ProjectViewModel.shared
         self.messageViewModel = MessageViewModel.shared
         self.conversationViewModel = ConversationViewModel.shared
         self.commandSuggestionViewModel = CommandSuggestionViewModel.shared
@@ -49,11 +53,12 @@ struct RootView<Content>: View where Content: View {
             conversationViewModel: conversationViewModel
         )
 
-        // 初始化 AgentProvider（注入依赖）
+        // 初始化 AgentProvider
         self.agentProvider = AgentProvider(
             messageViewModel: messageViewModel,
             conversationViewModel: conversationViewModel,
-            messageSenderViewModel: messageSenderViewModel
+            messageSenderViewModel: messageSenderViewModel,
+            projectViewModel: projectViewModel
         )
 
         // 设置 MessageSenderViewModel 的 AgentProvider 引用
@@ -67,6 +72,7 @@ struct RootView<Content>: View where Content: View {
         content
             .environmentObject(appProvider)
             .environmentObject(agentProvider)
+            .environmentObject(projectViewModel)
             .environmentObject(PluginProvider.shared)
             .environmentObject(conversationViewModel)
             .environmentObject(messageViewModel)

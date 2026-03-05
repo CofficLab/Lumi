@@ -32,6 +32,9 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
     /// 取消标记
     private var isCancelled: Bool = false
 
+    /// 发送任务队列（后台执行）
+    private var sendTask: Task<Void, Never>?
+
     // MARK: - 初始化
 
     init(
@@ -80,9 +83,10 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
             os_log("\(Self.t)📝 消息已加入队列：\(content.max(50))")
         }
 
-        // 启动或继续发送流程
-        Task {
-            await processQueue()
+        // 在后台线程启动发送流程，避免阻塞 UI
+        sendTask?.cancel()
+        sendTask = Task.detached(priority: .userInitiated) { [weak self] in
+            await self?.processQueue()
         }
     }
 
@@ -104,21 +108,23 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
             return
         }
 
-        isSending = true
-        isCancelled = false
-
-        // 设置 AgentProvider 处理状态
-        agentProvider?.setIsProcessing(true)
+        // 在主线程更新 UI 状态
+        await MainActor.run {
+            isSending = true
+            isCancelled = false
+            agentProvider?.setIsProcessing(true)
+        }
 
         while !pendingMessages.isEmpty && !isCancelled {
             let message = pendingMessages.removeFirst()
             await sendMessageToAgent(message: message)
         }
 
-        isSending = false
-
-        // 清除 AgentProvider 处理状态
-        agentProvider?.setIsProcessing(false)
+        // 在主线程更新 UI 状态
+        await MainActor.run {
+            isSending = false
+            agentProvider?.setIsProcessing(false)
+        }
     }
 
     /// 发送单条消息到 Agent
@@ -127,11 +133,15 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
             os_log("\(Self.t)📤 正在发送：\(message.content.max(50))")
         }
 
-        // 立即保存用户消息到当前对话（通过 conversationViewModel 保存，避免重复添加）
-        conversationViewModel?.saveMessage(message)
+        // 在主线程保存用户消息到当前对话
+        await MainActor.run {
+            conversationViewModel?.saveMessage(message)
+        }
 
-        // 通知 AgentProvider 处理消息
-        await agentProvider?.processUserMessageAsync(content: message.content, images: message.images)
+        // 在后台线程处理消息，避免阻塞 UI
+        await Task.detached(priority: .userInitiated) { [weak self] in
+            await self?.agentProvider?.processUserMessageAsync(content: message.content, images: message.images)
+        }.value
 
         if Self.verbose {
             os_log("\(Self.t)✅ 消息发送完成")
@@ -143,6 +153,8 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         isCancelled = true
         pendingMessages.removeAll()
         isSending = false
+        sendTask?.cancel()
+        sendTask = nil
 
         if Self.verbose {
             os_log("\(Self.t)🛑 已取消所有待发送消息")

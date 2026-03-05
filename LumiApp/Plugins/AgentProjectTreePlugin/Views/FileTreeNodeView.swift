@@ -8,6 +8,7 @@ struct FileTreeNodeView: View {
     let onFileDrop: (URL) -> Void
     let onFileSelect: (URL) -> Void
     @EnvironmentObject var agentProvider: AgentProvider
+    @EnvironmentObject var projectViewModel: ProjectViewModel
 
     @State private var isExpanded = false
     @State private var children: [FileTreeNode] = []
@@ -122,7 +123,7 @@ struct FileTreeNodeView: View {
 
     /// 检查当前节点是否被选中
     private var isSelected: Bool {
-        agentProvider.selectedFileURL == node.url
+        projectViewModel.selectedFileURL == node.url
     }
 
     // MARK: - Actions

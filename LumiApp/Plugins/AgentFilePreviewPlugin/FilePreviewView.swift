@@ -5,6 +5,7 @@ import MagicKit
 /// 文件预览视图
 struct FilePreviewView: View {
     @EnvironmentObject var agentProvider: AgentProvider
+    @EnvironmentObject var projectViewModel: ProjectViewModel
 
     var body: some View {
         VStack(spacing: 0) {
@@ -16,7 +17,7 @@ struct FilePreviewView: View {
 
             // 文件预览内容
             filePreviewContent
-            
+
             Spacer()
         }
         .padding(.vertical, 8)
@@ -72,13 +73,13 @@ struct FilePreviewView: View {
     private var fileInfoSection: some View {
         VStack(alignment: .leading, spacing: 4) {
             // 文件名
-            Text(agentProvider.selectedFileURL?.lastPathComponent ?? "")
+            Text(projectViewModel.selectedFileURL?.lastPathComponent ?? "")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 .lineLimit(2)
 
             // 文件路径
-            Text(agentProvider.selectedFilePath)
+            Text(projectViewModel.selectedFilePath)
                 .font(.system(size: 9))
                 .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                 .lineLimit(1)
@@ -97,13 +98,13 @@ struct FilePreviewView: View {
                 Spacer()
 
                 // 字符数统计
-                Text("\(agentProvider.selectedFileContent.count) 字符")
+                Text("\(projectViewModel.selectedFileContent.count) 字符")
                     .font(.system(size: 9))
                     .foregroundColor(DesignTokens.Color.semantic.textTertiary)
             }
 
             // 文件内容
-            Text(agentProvider.selectedFileContent)
+            Text(projectViewModel.selectedFileContent)
                 .font(.system(size: 9, design: .monospaced))
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 .lineSpacing(2)

@@ -6,35 +6,15 @@ import SwiftData
 import Combine
 import MagicKit
 
-// MARK: - 项目管理
+// MARK: - 项目管理（协调 ProjectViewModel）
 
 extension AgentProvider {
     /// 切换到指定项目
     func switchProject(to path: String) {
-        let projectURL = URL(fileURLWithPath: path)
-
-        var isDirectory: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory),
-              isDirectory.boolValue else {
-            return
-        }
-
-        let projectName = projectURL.lastPathComponent
-
-        setCurrentProjectInfo(name: projectName, path: path, selected: true)
-
-        UserDefaults.standard.set(path, forKey: "Agent_SelectedProject")
-        saveRecentProject(name: projectName, path: path)
-
-        let config = ProjectConfigStore.shared.getOrCreateConfig(for: path)
-        applyProjectConfig(config)
-
-        Task {
-            await ContextService.shared.setProjectRoot(projectURL)
-        }
+        projectViewModel?.switchProject(to: path)
 
         if Self.verbose {
-            os_log("\(Self.t)📁 已切换项目：\(projectName)")
+            os_log("\(Self.t)📁 已切换项目：\(self.projectViewModel?.currentProjectName ?? "")")
         }
     }
 
@@ -48,88 +28,40 @@ extension AgentProvider {
         }
     }
 
-    /// 保存项目配置
+    /// 保存当前项目配置
     func saveCurrentProjectConfig() {
-        guard isProjectSelected, !currentProjectPath.isEmpty else { return }
+        guard let projectVM = projectViewModel,
+              projectVM.isProjectSelected,
+              !projectVM.currentProjectPath.isEmpty else { return }
 
-        let config = ProjectConfig(
-            projectPath: currentProjectPath,
+        projectVM.saveProjectConfig(
+            path: projectVM.currentProjectPath,
             providerId: selectedProviderId,
             model: selectedModel
         )
-        ProjectConfigStore.shared.saveConfig(config)
-
-        if Self.verbose {
-            os_log("\(Self.t)💾 已保存项目配置")
-        }
-    }
-
-    /// 保存最近使用的项目
-    private func saveRecentProject(name: String, path: String) {
-        var projects = getRecentProjects()
-        projects.removeAll { $0.path == path }
-
-        let newProject = RecentProject(name: name, path: path, lastUsed: Date())
-        projects.insert(newProject, at: 0)
-        projects = Array(projects.prefix(5))
-
-        if let data = try? JSONEncoder().encode(projects) {
-            UserDefaults.standard.set(data, forKey: "Agent_RecentProjects")
-        }
-
-        if Self.verbose {
-            os_log("\(Self.t)📋 已保存最近项目：\(name)")
-        }
     }
 
     /// 获取最近使用的项目列表
     func getRecentProjects() -> [RecentProject] {
-        guard let data = UserDefaults.standard.data(forKey: "Agent_RecentProjects"),
-              let projects = try? JSONDecoder().decode([RecentProject].self, from: data) else {
-            return []
-        }
-        return projects
+        projectViewModel?.getRecentProjects() ?? []
     }
 }
 
-// MARK: - 文件选择
+// MARK: - 文件选择（协调 ProjectViewModel）
 
 extension AgentProvider {
     /// 选择指定文件
     func selectFile(at url: URL) {
-        setSelectedFileInfo(url: url, path: url.path, content: "", selected: true)
-
-        Task {
-            await loadFileContent(from: url)
-        }
-
-        if Self.verbose {
-            os_log("\(Self.t)📄 已选择文件：\(url.lastPathComponent)")
-        }
-    }
-
-    /// 加载文件内容
-    private func loadFileContent(from url: URL) async {
-        do {
-            let content = try String(contentsOf: url, encoding: .utf8)
-            await MainActor.run {
-                setSelectedFileContent(content)
-            }
-        } catch {
-            await MainActor.run {
-                setSelectedFileContent("无法加载文件内容：\(error.localizedDescription)")
-            }
-            os_log(.error, "\(Self.t)❌ 加载文件失败：\(error.localizedDescription)")
-        }
+        projectViewModel?.selectFile(at: url)
     }
 
     /// 清除文件选择
     func clearFileSelection() {
-        setSelectedFileInfo(url: nil, path: "", content: "", selected: false)
+        projectViewModel?.clearFileSelection()
     }
 }
 
-// MARK: - 对话管理
+// MARK: - 供应商配置
 
 extension AgentProvider {
     /// 获取可用供应商列表

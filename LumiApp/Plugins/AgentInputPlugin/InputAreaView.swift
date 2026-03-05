@@ -187,7 +187,7 @@ extension InputAreaView {
     /// - Parameter urls: 拖放的 URL 列表
     private func handleDrop(urls: [URL]) -> Bool {
         for url in urls {
-            agentProvider.handleImageUpload(url: url)
+            handleDroppedFile(url: url)
         }
         return true
     }
@@ -202,11 +202,11 @@ extension InputAreaView {
                 provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
                     if let data = item as? Data, let url = URL(dataRepresentation: data, relativeTo: nil) {
                         DispatchQueue.main.async {
-                            agentProvider.handleImageUpload(url: url)
+                            self.handleDroppedFile(url: url)
                         }
                     } else if let url = item as? URL {
                         DispatchQueue.main.async {
-                            agentProvider.handleImageUpload(url: url)
+                            self.handleDroppedFile(url: url)
                         }
                     }
                 }
@@ -214,6 +214,24 @@ extension InputAreaView {
             }
         }
         return handled
+    }
+
+    /// 处理拖放的文件
+    /// 根据文件类型决定是插入图片还是文件路径
+    /// - Parameter url: 拖放的文件 URL
+    private func handleDroppedFile(url: URL) {
+        // 检查是否是图片文件
+        let imageExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp", "heic"]
+        let fileExtension = url.pathExtension.lowercased()
+
+        if imageExtensions.contains(fileExtension) {
+            // 图片文件：作为附件上传
+            agentProvider.handleImageUpload(url: url)
+        } else {
+            // 非图片文件：将文件路径插入到输入框
+            let filePath = url.path
+            agentProvider.appendInput("\(filePath) ")
+        }
     }
 }
 

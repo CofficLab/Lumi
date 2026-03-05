@@ -135,7 +135,6 @@ class LLMService: SuperLog {
 #Preview("App") {
     ContentLayout()
         .hideSidebar()
-        .withNavigation(DevAssistantPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }
