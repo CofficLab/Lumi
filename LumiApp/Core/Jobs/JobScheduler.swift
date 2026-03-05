@@ -74,38 +74,6 @@ actor JobScheduler: SuperLog {
 
         return (output.result, output.duration)
     }
-
-    /// 执行 JSON 解析任务
-    ///
-    /// 自动在后台线程执行，不阻塞调用线程
-    ///
-    /// - Parameter jsonString: JSON 字符串
-    /// - Returns: 解析后的字典
-    func parseJSON(_ jsonString: String) async -> [String: Any] {
-        await Task.detached(priority: .utility) {
-            await JSONParsingJob.parseToDictionary(jsonString)
-        }.value
-    }
-
-    /// 执行 JSON 解析任务（AnySendable 版本）
-    ///
-    /// - Parameter jsonString: JSON 字符串
-    /// - Returns: 解析后的 AnySendable 字典
-    func parseJSONToSendable(_ jsonString: String) async -> [String: AnySendable] {
-        await Task.detached(priority: .utility) {
-            await JSONParsingJob.parseToSendable(jsonString)
-        }.value
-    }
-
-    /// 解析工具调用参数
-    ///
-    /// - Parameter argumentsString: 工具调用参数字符串
-    /// - Returns: 解析后的参数字典
-    func parseToolArguments(_ argumentsString: String) async -> [String: Any] {
-        await Task.detached(priority: .utility) {
-            await JSONParsingJob.parseToolArguments(argumentsString)
-        }.value
-    }
 }
 
 // MARK: - 便捷扩展
@@ -143,5 +111,23 @@ extension JobScheduler {
     /// - Returns: 权限请求对象
     nonisolated func createPermissionRequest(_ toolCall: ToolCall, riskLevel: CommandRiskLevel) -> PermissionRequest {
         ToolExecutionJob.createPermissionRequest(toolCall, riskLevel: riskLevel)
+    }
+}
+
+// MARK: - JSON 解析辅助方法
+
+extension JobScheduler {
+    /// 解析工具调用参数
+    ///
+    /// JSON 解析是轻量级操作，不需要后台执行
+    ///
+    /// - Parameter argumentsString: 工具调用参数字符串
+    /// - Returns: 解析后的参数字典
+    nonisolated func parseToolArguments(_ argumentsString: String) -> [String: Any] {
+        if let data = argumentsString.data(using: .utf8),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            return json
+        }
+        return [:]
     }
 }

@@ -140,7 +140,7 @@ extension JSONParsingJob {
             return dict
         }
 
-        os_log(.warning, "\(emoji) 工具参数解析失败，返回空字典")
+        os_log(.error, "\(emoji) 工具参数解析失败，返回空字典")
         return [:]
     }
 
