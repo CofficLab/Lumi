@@ -70,6 +70,10 @@ struct RootView<Content>: View where Content: View {
             projectViewModel: projectViewModel,
             conversationTurnViewModel: conversationTurnViewModel
         )
+
+        // 设置委托
+        self.messageSenderViewModel.delegate = self.agentProvider
+        conversationTurnViewModel.delegate = self.agentProvider
     }
 
     var body: some View {

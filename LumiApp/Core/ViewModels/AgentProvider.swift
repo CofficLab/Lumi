@@ -457,20 +457,6 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         // 清除之前的深度警告
         depthWarning = nil
 
-        // 检查是否已选择项目
-        if !isProjectSelected {
-            Task {
-                let warningContent = await promptService.getProjectNotSelectedWarningMessage()
-                let warningMsg = ChatMessage(
-                    role: .assistant,
-                    content: warningContent,
-                    isError: true
-                )
-                appendMessage(warningMsg)
-            }
-            return
-        }
-
         // 获取当前输入和附件
         let input = currentInput
         let images = pendingAttachments.compactMap { attachment -> ImageAttachment? in

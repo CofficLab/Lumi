@@ -140,10 +140,7 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
                     os_log("\(Self.t)🔧 收到 \(toolCalls.count) 个工具调用，开始执行:")
                     for (index, tc) in toolCalls.enumerated() {
                         // 格式化参数显示（限制长度）
-                        var argsPreview = tc.arguments
-                        if argsPreview.count > 100 {
-                            argsPreview = String(argsPreview.prefix(100)) + "..."
-                        }
+                        var argsPreview = tc.arguments.max(50)
                         os_log("\(Self.t)  \(index + 1). \(tc.name)(\(argsPreview))")
                     }
                 }
