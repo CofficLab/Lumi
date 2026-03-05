@@ -77,7 +77,10 @@ extension AgentProvider {
     public func triggerPlanningMode(task: String) {
         Task {
             let planPrompt = await promptService.getPlanningModePrompt(task: task)
-            await processUserMessage(input: planPrompt)
+            // 添加计划模式消息
+            appendMessage(ChatMessage(role: .user, content: planPrompt))
+            // 直接处理对话轮次
+            await processTurn()
         }
     }
 }
@@ -87,6 +90,7 @@ extension AgentProvider {
 extension AgentProvider {
     // MARK: - 消息发送
 
+    /// 发送消息（统一通过 MessageSenderViewModel 处理）
     public func sendMessage() {
         guard !currentInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !pendingAttachments.isEmpty else { return }
 
@@ -111,8 +115,18 @@ extension AgentProvider {
             return
         }
 
+        // 获取当前输入和附件
         let input = currentInput
-        setChatMessageState(input: "", processing: true, errorMessage: nil)
+        let images = pendingAttachments.compactMap { attachment -> ImageAttachment? in
+            if case .image(_, let data, let mimeType, _) = attachment {
+                return ImageAttachment(data: data, mimeType: mimeType)
+            }
+            return nil
+        }
+
+        // 清空输入框
+        setChatMessageState(input: "", processing: false, errorMessage: nil)
+        pendingAttachments.removeAll()
 
         // 检查是否为支持的斜杠命令
         if SlashCommandService.shared.isSupportedSlashCommand(input) {
@@ -121,57 +135,19 @@ extension AgentProvider {
                 switch result {
                 case .handled:
                     setIsProcessing(false)
-                    self.pendingAttachments.removeAll()
                 case let .error(msg):
                     appendMessage(ChatMessage(role: .assistant, content: "Command Error: \(msg)", isError: true))
                     setIsProcessing(false)
-                    self.pendingAttachments.removeAll()
                 case .notHandled:
-                    await processUserMessage(input: input)
+                    // 对于未处理的命令，继续通过消息队列发送
+                    MessageSenderViewModel.shared.sendMessage(content: input, images: images)
                 }
             }
             return
         }
 
-        currentTask = Task {
-            await processUserMessage(input: input)
-        }
-    }
-
-    public func processUserMessage(input: String) async {
-        let finalContent = input
-
-        // 处理附件 - 转换为结构化图片数据
-        var images: [ImageAttachment] = []
-        if !pendingAttachments.isEmpty {
-            if Self.verbose {
-                os_log("\(Self.t)📎 处理 \(self.pendingAttachments.count) 个附件")
-            }
-            for attachment in pendingAttachments {
-                if case .image(_, let data, let mimeType, _) = attachment {
-                    images.append(ImageAttachment(data: data, mimeType: mimeType))
-                    if Self.verbose {
-                        os_log("\(Self.t) - 图片：\(mimeType), 大小：\(data.count) bytes")
-                    }
-                }
-            }
-            pendingAttachments.removeAll()
-        } else if Self.verbose {
-            os_log("\(Self.t)📎 无附件")
-        }
-
-        let userMsg = ChatMessage(role: .user, content: finalContent, images: images)
-
-        if Self.verbose && !images.isEmpty {
-            os_log("\(Self.t)✅ 用户消息包含 \(images.count) 张图片")
-        }
-
-        appendMessage(userMsg)
-
-        // 立即保存用户消息
-        saveMessage(userMsg)
-
-        await processTurn()
+        // 通过 MessageSenderViewModel 发送消息
+        MessageSenderViewModel.shared.sendMessage(content: input, images: images)
     }
 
     // MARK: - 对话轮次处理
