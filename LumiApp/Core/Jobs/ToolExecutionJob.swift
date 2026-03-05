@@ -99,7 +99,7 @@ extension ToolExecutionJob {
         let resultMsg = ChatMessage(
             role: .user,
             content: result,
-            toolCallID: input.toolCall.id
+            toolCallID: toolCall.id
         )
 
         return Output(result: resultMsg, duration: duration)

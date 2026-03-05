@@ -75,11 +75,12 @@ actor JobScheduler: SuperLog {
         return try await withCheckedThrowingContinuation { continuation in
             Task { @MainActor in
                 do {
-                    let result = try await ToolExecutionJob.run(
+                    let output = try await ToolExecutionJob.run(
                         toolCall: toolCall,
                         toolManager: toolManager
                     )
-                    continuation.resume(returning: result)
+                    // 解构 Output 为元组
+                    continuation.resume(returning: (output.result, output.duration))
                 } catch {
                     continuation.resume(throwing: error)
                 }
