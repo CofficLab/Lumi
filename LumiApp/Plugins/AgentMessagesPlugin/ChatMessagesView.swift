@@ -32,6 +32,7 @@ struct ChatMessagesView: View, SuperLog {
                 }
                 .padding(.horizontal)
             }
+            .padding(.vertical)
             .onChange(of: conversationViewModel.selectedConversationId, handleConversationSelected)
             .onChange(of: nonSystemMessages.count) {
                 handleMessagesChanged(proxy: proxy)
@@ -60,8 +61,6 @@ extension ChatMessagesView {
         guard let lastMessage = nonSystemMessages.last else { return }
 
         Task {
-            // 稍作延迟确保视图已更新
-            try? await Task.sleep(nanoseconds: 100000000)
             proxy.scrollTo(lastMessage.id, anchor: .bottom)
         }
     }

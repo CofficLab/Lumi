@@ -85,7 +85,7 @@ struct AgentModeContentView: View {
     
     /// 详情栏
     private var detailColumn: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 0) {
             // 详情栏头部
             detailHeaderContent()
 
