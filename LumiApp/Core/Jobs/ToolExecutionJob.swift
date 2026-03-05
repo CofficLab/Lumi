@@ -38,15 +38,11 @@ extension ToolExecutionJob {
 extension ToolExecutionJob {
     /// 执行工具调用任务
     ///
-    /// 此方法在主线程运行，因为需要访问 @MainActor 的 ToolManager
-    /// 但工具执行本身是异步的，不会阻塞 UI
-    ///
     /// - Parameters:
     ///   - toolCall: 工具调用信息
     ///   - toolManager: 工具管理器
     /// - Returns: 工具执行结果
     /// - Throws: 如果工具执行失败，抛出相应的错误
-    @MainActor
     static func run(
         toolCall: ToolCall,
         toolManager: ToolManager
@@ -68,7 +64,7 @@ extension ToolExecutionJob {
         }
 
         // 使用 ToolManager 查找工具
-        guard toolManager.hasTool(named: toolCall.name) else {
+        guard await toolManager.hasTool(named: toolCall.name) else {
             os_log(.error, "\(emoji)❌ 工具 '\(toolCall.name)' 未找到")
             throw NSError(
                 domain: "ToolExecutionJob",

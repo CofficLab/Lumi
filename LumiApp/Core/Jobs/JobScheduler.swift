@@ -39,7 +39,6 @@ actor JobScheduler: SuperLog {
         tools: [AgentTool]?,
         registry: ProviderRegistry
     ) async throws -> ChatMessage {
-        // LLMRequestJob.run 已标记 @MainActor，直接 await 即可
         try await LLMRequestJob.run(
             messages: messages,
             config: config,
@@ -60,7 +59,6 @@ actor JobScheduler: SuperLog {
         toolCall: ToolCall,
         toolManager: ToolManager
     ) async throws -> (ChatMessage, TimeInterval) {
-        // ToolExecutionJob.run 已标记 @MainActor，直接 await 即可
         let output = try await ToolExecutionJob.run(
             toolCall: toolCall,
             toolManager: toolManager
