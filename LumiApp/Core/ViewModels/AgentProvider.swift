@@ -544,6 +544,7 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     // MARK: - ConversationTurnDelegate
 
     func turnDidReceiveResponse(_ response: ChatMessage) async {
+        appendMessage(response)
         saveMessage(response)
     }
 

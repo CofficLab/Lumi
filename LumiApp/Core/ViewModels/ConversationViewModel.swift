@@ -187,9 +187,6 @@ final class ConversationViewModel: ObservableObject, SuperLog {
 
         chatHistoryService.saveMessage(message, to: conversation)
 
-        // 同时更新本地消息列表
-        messageViewModel.appendMessageInternal(message)
-
         if Self.verbose {
             os_log("\(Self.t)💾 [\(conversation.id)] 消息已保存：\(message.content.max(50))")
         }

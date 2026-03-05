@@ -124,15 +124,17 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
 
                 let enhancedContent = prefix + "\n" + toolSummary
                 responseMsg = ChatMessage(
+                    id: responseMsg.id,
                     role: responseMsg.role,
                     content: enhancedContent,
+                    timestamp: responseMsg.timestamp,
                     isError: responseMsg.isError,
                     toolCalls: responseMsg.toolCalls,
                     toolCallID: responseMsg.toolCallID
                 )
 
                 if Self.verbose {
-                    os_log("%{public}@📝 为空内容消息生成工具摘要", Self.t)
+                    os_log("\(Self.t)📝 为空内容消息生成工具摘要")
                 }
             }
 

@@ -148,7 +148,12 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
             os_log("\(Self.t)📤 正在发送：\(message.content.max(50))")
         }
 
-        // 在主线程保存用户消息到当前对话
+        // 在主线程添加用户消息到列表
+        await MainActor.run {
+            messageViewModel.appendMessageInternal(message)
+        }
+        
+        // 保存到数据库
         conversationViewModel.saveMessage(message)
 
         // 处理消息

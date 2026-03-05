@@ -82,8 +82,8 @@ final class MessageViewModel: ObservableObject, SuperLog {
     func saveMessage(_ message: ChatMessage, to conversation: Conversation) -> ChatMessage? {
         let savedMessage = chatHistoryService.saveMessage(message, to: conversation)
 
-        // 同时更新本地消息列表
-        if let saved = savedMessage {
+        // 同时更新本地消息列表（避免重复添加）
+        if let saved = savedMessage, !messages.contains(where: { $0.id == saved.id }) {
             appendMessageInternal(saved)
 
             if Self.verbose {
