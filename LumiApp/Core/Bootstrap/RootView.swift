@@ -10,6 +10,21 @@ struct RootView<Content>: View where Content: View {
     /// SwiftData 模型容器
     let modelContainer: ModelContainer
 
+    /// AgentProvider
+    let agentProvider: AgentProvider
+
+    /// 会话 ViewModel
+    let conversationViewModel: ConversationViewModel
+
+    /// 消息 ViewModel
+    let messageViewModel: MessageViewModel
+
+    /// 消息发送 ViewModel
+    let messageSenderViewModel: MessageSenderViewModel
+
+    /// 命令建议 ViewModel
+    let commandSuggestionViewModel: CommandSuggestionViewModel
+
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
 
@@ -18,17 +33,37 @@ struct RootView<Content>: View where Content: View {
 
         // 初始化聊天历史服务
         ChatHistoryService.shared.initializeWithContainer(self.modelContainer, reason: "主窗口初始化")
+
+        // 初始化 ViewModel
+        self.agentProvider = AgentProvider()
+        self.conversationViewModel = ConversationViewModel.shared
+        self.messageViewModel = MessageViewModel.shared
+        self.commandSuggestionViewModel = CommandSuggestionViewModel.shared
+
+        // 初始化消息发送 ViewModel（注入依赖）
+        self.messageSenderViewModel = MessageSenderViewModel(
+            messageViewModel: messageViewModel,
+            conversationViewModel: conversationViewModel,
+            agentProvider: agentProvider
+        )
+
+        // 设置 ViewModel 引用
+        agentProvider.messageViewModel = messageViewModel
+        agentProvider.conversationViewModel = conversationViewModel
+        agentProvider.messageSenderViewModel = messageSenderViewModel
+
+        // 设置 ConversationViewModel 的 AgentProvider 引用
+        conversationViewModel.agentProvider = agentProvider
     }
 
     var body: some View {
         content
-            .environmentObject(AppProvider.shared)
+            .environmentObject(agentProvider)
             .environmentObject(PluginProvider.shared)
-            .environmentObject(AgentProvider.shared)
-            .environmentObject(ConversationViewModel.shared)
-            .environmentObject(MessageViewModel.shared)
-            .environmentObject(MessageSenderViewModel.shared)
-            .environmentObject(CommandSuggestionViewModel.shared)
+            .environmentObject(conversationViewModel)
+            .environmentObject(messageViewModel)
+            .environmentObject(messageSenderViewModel)
+            .environmentObject(commandSuggestionViewModel)
             .environmentObject(MystiqueThemeManager())
             .modelContainer(modelContainer)
     }
@@ -46,8 +81,33 @@ extension RootView {
     /// 初始化 RootView，支持传入初始化原因
     init(@ViewBuilder content: () -> Content, reason: String) {
         self.content = content()
+
+        // 初始化 SwiftData 容器
         self.modelContainer = AppConfig.getContainer()
+
+        // 初始化聊天历史服务
         ChatHistoryService.shared.initializeWithContainer(self.modelContainer, reason: reason)
+
+        // 初始化 ViewModel
+        self.agentProvider = AgentProvider()
+        self.conversationViewModel = ConversationViewModel.shared
+        self.messageViewModel = MessageViewModel.shared
+        self.commandSuggestionViewModel = CommandSuggestionViewModel.shared
+
+        // 初始化消息发送 ViewModel（注入依赖）
+        self.messageSenderViewModel = MessageSenderViewModel(
+            messageViewModel: messageViewModel,
+            conversationViewModel: conversationViewModel,
+            agentProvider: agentProvider
+        )
+
+        // 设置 ViewModel 引用
+        agentProvider.messageViewModel = messageViewModel
+        agentProvider.conversationViewModel = conversationViewModel
+        agentProvider.messageSenderViewModel = messageSenderViewModel
+
+        // 设置 ConversationViewModel 的 AgentProvider 引用
+        conversationViewModel.agentProvider = agentProvider
     }
 }
 

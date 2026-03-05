@@ -10,19 +10,16 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📤"
     nonisolated static let verbose = true
 
-    /// 全局单例
-    static let shared = MessageSenderViewModel()
-
     // MARK: - 服务依赖
 
     /// 消息管理 ViewModel
-    private let messageViewModel = MessageViewModel.shared
+    private weak var messageViewModel: MessageViewModel?
     /// 会话管理 ViewModel
-    private let conversationViewModel = ConversationViewModel.shared
+    private weak var conversationViewModel: ConversationViewModel?
     /// 聊天历史服务
     private let chatHistoryService = ChatHistoryService.shared
     /// 智能体提供者
-    private let agentProvider = AgentProvider.shared
+    private weak var agentProvider: AgentProvider?
 
     // MARK: - 发送状态
 
@@ -37,7 +34,15 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
 
     // MARK: - 初始化
 
-    private init() {}
+    init(
+        messageViewModel: MessageViewModel,
+        conversationViewModel: ConversationViewModel,
+        agentProvider: AgentProvider
+    ) {
+        self.messageViewModel = messageViewModel
+        self.conversationViewModel = conversationViewModel
+        self.agentProvider = agentProvider
+    }
 
     // MARK: - 公开方法
 
@@ -55,7 +60,7 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
             return
         }
 
-        guard let _ = conversationViewModel.currentConversation else {
+        guard let _ = conversationViewModel?.currentConversation else {
             os_log(.error, "\(Self.t)❌ 当前没有活动对话")
             return
         }
@@ -98,7 +103,7 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         isCancelled = false
 
         // 设置 AgentProvider 处理状态
-        agentProvider.setIsProcessing(true)
+        agentProvider?.setIsProcessing(true)
 
         while !pendingMessages.isEmpty && !isCancelled {
             let message = pendingMessages.removeFirst()
@@ -108,7 +113,7 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         isSending = false
 
         // 清除 AgentProvider 处理状态
-        agentProvider.setIsProcessing(false)
+        agentProvider?.setIsProcessing(false)
     }
 
     /// 发送单条消息到 Agent
@@ -118,13 +123,13 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         }
 
         // 立即保存用户消息
-        if let conversation = conversationViewModel.currentConversation {
+        if let conversation = conversationViewModel?.currentConversation {
             _ = chatHistoryService.saveMessage(message, to: conversation)
-            messageViewModel.appendMessageInternal(message)
+            messageViewModel?.appendMessageInternal(message)
         }
 
         // 通知 AgentProvider 处理消息
-        await agentProvider.processUserMessageAsync(content: message.content, images: message.images)
+        await agentProvider?.processUserMessageAsync(content: message.content, images: message.images)
 
         if Self.verbose {
             os_log("\(Self.t)✅ 消息发送完成")
@@ -169,10 +174,6 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
 extension AgentProvider {
     /// 处理用户消息（内部使用，不重复保存和追加消息）
     @MainActor func processUserMessageAsync(content: String, images: [ImageAttachment]) async {
-        let finalContent = content
-
-        let userMsg = ChatMessage(role: .user, content: finalContent, images: images)
-
         if Self.verbose && !images.isEmpty {
             os_log("\(Self.t)✅ 用户消息包含 \(images.count) 张图片")
         }

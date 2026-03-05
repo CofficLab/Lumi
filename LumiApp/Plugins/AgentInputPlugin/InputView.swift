@@ -11,6 +11,9 @@ struct InputView: View, SuperLog {
     /// 是否输出详细日志
     nonisolated static let verbose = false
 
+    /// 智能体提供者
+    @EnvironmentObject var agentProvider: AgentProvider
+
     /// 输入框是否处于聚焦状态
     @State private var isInputFocused: Bool = false
 
@@ -24,14 +27,14 @@ struct InputView: View, SuperLog {
         )
         .onAppear(perform: onAppear)
         .overlay {
-            if let request = AgentProvider.shared.pendingPermissionRequest {
+            if let request = agentProvider.pendingPermissionRequest {
                 PermissionRequestView(
                     request: request,
                     onAllow: {
-                        AgentProvider.shared.respondToPermissionRequest(allowed: true)
+                        agentProvider.respondToPermissionRequest(allowed: true)
                     },
                     onDeny: {
-                        AgentProvider.shared.respondToPermissionRequest(allowed: false)
+                        agentProvider.respondToPermissionRequest(allowed: false)
                     }
                 )
             }

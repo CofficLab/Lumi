@@ -120,6 +120,5 @@ struct FilePreviewView: View {
 
 #Preview {
     FilePreviewView()
-        .environmentObject(AgentProvider.shared)
         .inRootView()
 }

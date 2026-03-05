@@ -35,25 +35,30 @@ final class PluginProvider: ObservableObject, SuperLog {
 
     /// 初始化插件提供者（自动发现并注册所有插件）
     private init(autoDiscover: Bool = true) {
-        
+
         if autoDiscover {
             autoDiscoverAndRegisterPlugins()
         }
-        
+
         // 订阅设置变化，当设置改变时触发 UI 更新
         settingsStore.$settings
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
-        
-        // 监听 AgentProvider 的文件选择状态，当文件选择状态变化时触发 UI 更新
-        // 这样可以让 FilePreviewPlugin 根据文件选择状态动态显示/隐藏中间视图
-        AgentProvider.shared.$isFileSelected
-            .sink { [weak self] _ in
-                self?.objectWillChange.send()
-            }
-            .store(in: &cancellables)
+
+        // 监听文件选择变化通知
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleFileSelectionChanged),
+            name: NSNotification.Name("AgentProviderFileSelectionChanged"),
+            object: nil
+        )
+    }
+
+    /// 处理文件选择变化通知
+    @objc private func handleFileSelectionChanged(_ notification: Notification) {
+        objectWillChange.send()
     }
 
     /// 自动发现并注册所有插件

@@ -28,6 +28,9 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     /// 消息管理 ViewModel
     let messageViewModel = MessageViewModel.shared
 
+    /// 智能体提供者
+    weak var agentProvider: AgentProvider?
+
     // MARK: - 会话状态
 
     /// 当前会话
@@ -130,11 +133,14 @@ final class ConversationViewModel: ObservableObject, SuperLog {
         selectedConversationId = newConversation.id
 
         // 获取欢迎消息并保存到数据库
-        let agentProvider = AgentProvider.shared
+        let projectName = agentProvider?.currentProjectName ?? ""
+        let projectPath = agentProvider?.currentProjectPath ?? ""
+        let language = agentProvider?.languagePreference ?? .chinese
+
         let welcomeMessage = await promptService.getEmptySessionWelcomeMessage(
-            projectName: agentProvider.currentProjectName.isEmpty ? nil : agentProvider.currentProjectName,
-            projectPath: agentProvider.currentProjectPath.isEmpty ? nil : agentProvider.currentProjectPath,
-            language: agentProvider.languagePreference,
+            projectName: projectName.isEmpty ? nil : projectName,
+            projectPath: projectPath.isEmpty ? nil : projectPath,
+            language: language,
             conversationId: newConversation.id
         )
 

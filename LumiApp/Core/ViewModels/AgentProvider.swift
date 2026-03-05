@@ -10,9 +10,6 @@ final class AgentProvider: ObservableObject, SuperLog {
     nonisolated static let emoji = "🤖"
     nonisolated static let verbose = true
 
-    /// 全局单例
-    static let shared = AgentProvider()
-
     // MARK: - 服务依赖
 
     /// 聊天历史服务
@@ -29,6 +26,17 @@ final class AgentProvider: ObservableObject, SuperLog {
 
     /// 工具管理器
     let toolManager = ToolManager.shared
+
+    // MARK: - ViewModel 引用
+
+    /// 消息 ViewModel
+    weak var messageViewModel: MessageViewModel?
+
+    /// 会话 ViewModel
+    weak var conversationViewModel: ConversationViewModel?
+
+    /// 消息发送 ViewModel
+    weak var messageSenderViewModel: MessageSenderViewModel?
 
     // MARK: - 项目信息
 
@@ -139,7 +147,7 @@ final class AgentProvider: ObservableObject, SuperLog {
 
     // MARK: - 初始化
 
-    private init() {
+    init() {
         loadPreferences()
     }
 
@@ -191,6 +199,9 @@ final class AgentProvider: ObservableObject, SuperLog {
         selectedFilePath = path
         selectedFileContent = content
         isFileSelected = selected
+
+        // 发送文件选择变化通知
+        NotificationCenter.default.post(name: NSNotification.Name("AgentProviderFileSelectionChanged"), object: nil)
     }
 
     /// 设置文件内容（内部使用）
@@ -289,16 +300,16 @@ final class AgentProvider: ObservableObject, SuperLog {
 
     /// 当前会话（代理到 ConversationViewModel）
     var currentConversation: Conversation? {
-        ConversationViewModel.shared.currentConversation
+        conversationViewModel?.currentConversation
     }
 
     /// 当前会话的消息列表（代理到 ConversationViewModel）
     var messages: [ChatMessage] {
-        ConversationViewModel.shared.messages
+        conversationViewModel?.messages ?? []
     }
 
     /// 标记是否已生成标题（代理到 ConversationViewModel）
     var hasGeneratedTitle: Bool {
-        ConversationViewModel.shared.hasGeneratedTitle
+        conversationViewModel?.hasGeneratedTitle ?? false
     }
 }
