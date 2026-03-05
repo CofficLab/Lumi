@@ -16,7 +16,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
 
     private init() {
         if Self.verbose {
-            os_log("\(self.t)LLM API 服务已初始化")
+            os_log("\(self.t)✅ LLM API 服务已初始化")
         }
     }
 

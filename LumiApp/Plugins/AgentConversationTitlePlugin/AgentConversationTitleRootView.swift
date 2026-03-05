@@ -21,7 +21,7 @@ struct AgentConversationTitleRootViewWrapper<Content: View>: View {
     /// 日志标识
     private let emoji = "🏷️"
     /// 是否输出详细日志
-    private let verbose = false
+    private let verbose = true
 
     /// 上次检查的消息数量
     @State private var lastMessageCount: Int = 0
