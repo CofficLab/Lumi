@@ -9,22 +9,22 @@ import MagicKit
 extension AgentProvider {
     /// 追加消息到列表
     func appendMessage(_ message: ChatMessage) {
-        ConversationViewModel.shared.appendMessageInternal(message)
+        MessageViewModel.shared.appendMessageInternal(message)
     }
 
     /// 插入消息到指定位置
     func insertMessage(_ message: ChatMessage, at index: Int) {
-        ConversationViewModel.shared.insertMessageInternal(message, at: index)
+        MessageViewModel.shared.insertMessageInternal(message, at: index)
     }
 
     /// 更新指定位置的消息
     func updateMessage(_ message: ChatMessage, at index: Int) {
-        ConversationViewModel.shared.updateMessageInternal(message, at: index)
+        MessageViewModel.shared.updateMessageInternal(message, at: index)
     }
 
     /// 设置聊天消息列表
     func setMessages(_ messages: [ChatMessage]) {
-        ConversationViewModel.shared.setMessagesInternal(messages)
+        MessageViewModel.shared.setMessagesInternal(messages)
     }
 
     /// 设置当前会话
@@ -34,7 +34,7 @@ extension AgentProvider {
 
     /// 设置标题生成标记
     func setHasGeneratedTitle(_ value: Bool) {
-        ConversationViewModel.shared.setHasGeneratedTitleInternal(value)
+        MessageViewModel.shared.setHasGeneratedTitleInternal(value)
     }
 
     /// 加载指定对话的消息

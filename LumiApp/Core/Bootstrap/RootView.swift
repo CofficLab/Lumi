@@ -26,6 +26,7 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(PluginProvider.shared)
             .environmentObject(AgentProvider.shared)
             .environmentObject(ConversationViewModel.shared)
+            .environmentObject(MessageViewModel.shared)
             .environmentObject(CommandSuggestionViewModel.shared)
             .environmentObject(MystiqueThemeManager())
             .modelContainer(modelContainer)

@@ -25,13 +25,13 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     /// 提示词服务（用于获取欢迎消息）
     private let promptService = PromptService.shared
 
+    /// 消息管理 ViewModel
+    let messageViewModel = MessageViewModel.shared
+
     // MARK: - 会话状态
 
     /// 当前会话
     @Published public fileprivate(set) var currentConversation: Conversation?
-
-    /// 当前会话的消息列表
-    @Published public fileprivate(set) var messages: [ChatMessage] = []
 
     /// 选中的会话 ID
     @Published public fileprivate(set) var selectedConversationId: UUID? {
@@ -44,8 +44,17 @@ final class ConversationViewModel: ObservableObject, SuperLog {
         }
     }
 
-    /// 标记是否已生成标题
-    @Published fileprivate(set) var hasGeneratedTitle: Bool = false
+    // MARK: - 代理 MessageViewModel 属性
+
+    /// 当前会话的消息列表（代理到 MessageViewModel）
+    public var messages: [ChatMessage] {
+        messageViewModel.messages
+    }
+
+    /// 标记是否已生成标题（代理到 MessageViewModel）
+    public var hasGeneratedTitle: Bool {
+        messageViewModel.hasGeneratedTitle
+    }
 
     // MARK: - 内部方法（仅供 AgentProvider 使用）
 
@@ -54,29 +63,31 @@ final class ConversationViewModel: ObservableObject, SuperLog {
         currentConversation = conversation
     }
 
+    // MARK: - 代理 MessageViewModel 方法
+
     /// 设置消息列表（内部使用）
     func setMessagesInternal(_ newMessages: [ChatMessage]) {
-        messages = newMessages
+        messageViewModel.setMessagesInternal(newMessages)
     }
 
     /// 追加消息（内部使用）
     func appendMessageInternal(_ message: ChatMessage) {
-        messages.append(message)
+        messageViewModel.appendMessageInternal(message)
     }
 
     /// 插入消息（内部使用）
     func insertMessageInternal(_ message: ChatMessage, at index: Int) {
-        messages.insert(message, at: index)
+        messageViewModel.insertMessageInternal(message, at: index)
     }
 
     /// 更新消息（内部使用）
     func updateMessageInternal(_ message: ChatMessage, at index: Int) {
-        messages[index] = message
+        messageViewModel.updateMessageInternal(message, at: index)
     }
 
     /// 设置标题生成标记（内部使用）
     func setHasGeneratedTitleInternal(_ value: Bool) {
-        hasGeneratedTitle = value
+        messageViewModel.setHasGeneratedTitleInternal(value)
     }
 
     // MARK: - 初始化
@@ -102,7 +113,7 @@ final class ConversationViewModel: ObservableObject, SuperLog {
             title: title + " " + formatter.string(from: Date())
         )
 
-        hasGeneratedTitle = false
+        messageViewModel.setHasGeneratedTitleInternal(false)
 
         if Self.verbose {
             os_log("\(Self.t)✅ [\(newConversation.id)] 新会话创建完成")
@@ -115,7 +126,7 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     /// - Parameter projectId: 关联的项目 ID（可选，nil 表示全局对话）
     func createNewConversation(projectId: String? = nil) async {
         let newConversation = createConversation(projectId: projectId)
-        setCurrentConversationInternal(newConversation)
+        currentConversation = newConversation
         selectedConversationId = newConversation.id
 
         // 获取欢迎消息并保存到数据库
@@ -130,7 +141,7 @@ final class ConversationViewModel: ObservableObject, SuperLog {
         if !welcomeMessage.isEmpty {
             let welcomeMsg = ChatMessage(role: .assistant, content: welcomeMessage)
             if let savedMessage = chatHistoryService.saveMessage(welcomeMsg, to: newConversation) {
-                messages = [savedMessage]
+                messageViewModel.setMessagesInternal([savedMessage])
             }
         }
     }
@@ -149,7 +160,7 @@ final class ConversationViewModel: ObservableObject, SuperLog {
         }
 
         currentConversation = conversation
-        messages = chatHistoryService.loadMessages(for: conversation)
+        _ = messageViewModel.loadMessages(for: conversation)
 
         if Self.verbose {
             os_log("\(Self.t)✅ [\(conversation.id)] 对话加载完成，共 \(self.messages.count) 条消息")
@@ -169,7 +180,7 @@ final class ConversationViewModel: ObservableObject, SuperLog {
         chatHistoryService.saveMessage(message, to: conversation)
 
         // 同时更新本地消息列表
-        appendMessageInternal(message)
+        messageViewModel.appendMessageInternal(message)
 
         if Self.verbose {
             os_log("\(Self.t)💾 [\(conversation.id)] 消息已保存：\(message.content.max(50))")
@@ -184,7 +195,7 @@ final class ConversationViewModel: ObservableObject, SuperLog {
         // 如果删除的是当前对话，清理状态
         if currentConversation?.id == conversation.id {
             currentConversation = nil
-            messages.removeAll()
+            messageViewModel.clearMessages()
         }
 
         // 如果删除的是选中的对话，清除选中状态
@@ -229,7 +240,7 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     func clearConversationSelection() {
         selectedConversationId = nil
         currentConversation = nil
-        messages.removeAll()
+        messageViewModel.clearMessages()
     }
 
     /// 恢复上次选择的会话
