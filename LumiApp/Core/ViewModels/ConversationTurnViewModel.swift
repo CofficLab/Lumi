@@ -6,8 +6,8 @@ import SwiftUI
 /// 对话轮次处理 ViewModel
 /// 负责处理对话轮次、工具调用和权限管理
 ///
-/// 此类不再标记 @MainActor，所有耗时操作在后台执行
-/// 委托回调会自动回到主线程（因为协议标记了 @MainActor）
+/// 此类使用 @MainActor 标记以确保与 AgentProvider 的安全互操作
+@MainActor
 final class ConversationTurnViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🔄"
     nonisolated static let verbose = true
@@ -224,8 +224,10 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
     ///
     /// - Parameter toolCall: 工具调用
     private func executeTool(_ toolCall: ToolCall) async {
-        // 使用 ToolManager 查找工具
-        guard toolManager.hasTool(named: toolCall.name) else {
+        let hasTool = await MainActor.run {
+            toolManager.hasTool(named: toolCall.name)
+        }
+        guard hasTool else {
             os_log(.error, "\(Self.t)❌ 工具 '\(toolCall.name)' 未找到")
             let errorMsg = ChatMessage(
                 role: .user,
@@ -322,8 +324,10 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
         languagePreference: LanguagePreference,
         autoApproveRisk: Bool
     ) async {
-        // 使用 ToolManager 查找工具
-        guard toolManager.hasTool(named: request.toolName) else {
+        let hasTool = await MainActor.run {
+            toolManager.hasTool(named: request.toolName)
+        }
+        guard hasTool else {
             let errorMsg = ChatMessage(
                 role: .user,
                 content: "Error: Tool '\(request.toolName)' not found.",
@@ -335,7 +339,6 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
         }
 
         do {
-            // 使用 ToolManager 执行工具
             let result = try await toolManager.executeTool(
                 named: request.toolName,
                 arguments: request.arguments
@@ -362,14 +365,14 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
     // MARK: - 深度警告更新
 
     private func updateDepthWarning(currentDepth: Int, maxDepth: Int) {
-        if currentDepth >= maxDepth - 10 {
-            delegate?.turnDidUpdateDepthWarning(DepthWarning(
-                currentDepth: currentDepth,
-                maxDepth: maxDepth,
-                warningType: .approaching
-            ))
-        } else {
-            delegate?.turnDidUpdateDepthWarning(nil)
+        let warning: DepthWarning? = currentDepth >= maxDepth - 10 ? DepthWarning(
+            currentDepth: currentDepth,
+            maxDepth: maxDepth,
+            warningType: .approaching
+        ) : nil
+        
+        Task { @MainActor in
+            delegate?.turnDidUpdateDepthWarning(warning)
         }
     }
 
