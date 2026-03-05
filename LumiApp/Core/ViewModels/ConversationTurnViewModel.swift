@@ -5,7 +5,9 @@ import SwiftUI
 
 /// 对话轮次处理 ViewModel
 /// 负责处理对话轮次、工具调用和权限管理
-@MainActor
+///
+/// 此类不再标记 @MainActor，所有耗时操作在后台执行
+/// 委托回调会自动回到主线程（因为协议标记了 @MainActor）
 final class ConversationTurnViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🔄"
     nonisolated static let verbose = true
@@ -20,6 +22,9 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
 
     /// 提示词服务
     private let promptService: PromptService
+
+    /// 后台任务调度器
+    private let jobScheduler: JobScheduler
 
     // MARK: - 回调委托
 
@@ -42,16 +47,22 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
     init(
         llmService: LLMService,
         toolManager: ToolManager,
-        promptService: PromptService
+        promptService: PromptService,
+        jobScheduler: JobScheduler = .shared
     ) {
         self.llmService = llmService
         self.toolManager = toolManager
         self.promptService = promptService
+        self.jobScheduler = jobScheduler
     }
 
     // MARK: - 对话轮次处理
 
     /// 处理对话轮次
+    ///
+    /// 此方法不再标记 @MainActor，整个方法在后台执行
+    /// 委托回调会自动回到主线程
+    ///
     /// - Parameters:
     ///   - depth: 当前递归深度
     ///   - config: LLM 配置
@@ -94,11 +105,12 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
                 os_log("\(Self.t)🌍 开始调用 LLM (供应商：\(config.providerId), 模型：\(config.model))")
             }
 
-            // 1. 获取 LLM 响应
-            var responseMsg = try await llmService.sendMessage(
+            // 1. 获取 LLM 响应（在后台执行）
+            var responseMsg = try await jobScheduler.executeLLMRequest(
                 messages: messages,
                 config: config,
-                tools: availableTools
+                tools: availableTools,
+                registry: ProviderRegistry.shared
             )
 
             // 检查内容是否为空（只有空白字符）
@@ -167,6 +179,9 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
     // MARK: - 工具调用处理
 
     /// 处理工具调用
+    ///
+    /// 使用 JobScheduler 进行权限检查和风险评估
+    ///
     /// - Parameters:
     ///   - toolCall: 工具调用
     ///   - languagePreference: 语言偏好
@@ -180,39 +195,22 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
             os_log("\(Self.t)⚙️ 正在执行工具：\(toolCall.name)")
         }
 
-        // 检查权限
-        let requiresPermission = PermissionService.shared.requiresPermission(
-            toolName: toolCall.name,
-            arguments: parseArguments(toolCall.arguments)
-        )
+        // 使用 JobScheduler 检查权限（纯计算，无需后台）
+        let requiresPermission = jobScheduler.requiresPermission(toolCall, autoApproveRisk: autoApproveRisk)
 
         if requiresPermission && !autoApproveRisk {
             if Self.verbose {
                 os_log("\(Self.t)⚠️ 工具 \(toolCall.name) 需要权限批准")
             }
-            // 评估命令风险
-            let riskLevel: CommandRiskLevel
 
-            if toolCall.name == "run_command" {
-                let args = parseArguments(toolCall.arguments)
-                if let command = args["command"] as? String {
-                    riskLevel = PermissionService.shared.evaluateCommandRisk(command: command)
-                } else {
-                    riskLevel = .medium
-                }
-            } else {
-                riskLevel = .medium
-            }
+            // 评估命令风险（纯计算，无需后台）
+            let riskLevel = jobScheduler.evaluateRisk(toolCall)
+
+            // 创建权限请求（纯计算，无需后台）
+            let permissionRequest = jobScheduler.createPermissionRequest(toolCall, riskLevel: riskLevel)
 
             // 请求权限
-            await delegate?.turnDidRequestPermission(
-                PermissionRequest(
-                    toolName: toolCall.name,
-                    argumentsString: toolCall.arguments,
-                    toolCallID: toolCall.id,
-                    riskLevel: riskLevel
-                )
-            )
+            await delegate?.turnDidRequestPermission(permissionRequest)
             return
         }
 
@@ -221,17 +219,11 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
     }
 
     /// 执行工具调用
+    ///
+    /// 此方法使用 JobScheduler 在后台执行工具调用
+    ///
     /// - Parameter toolCall: 工具调用
     private func executeTool(_ toolCall: ToolCall) async {
-        // 解析参数
-        let arguments: [String: AnySendable]
-        if let data = toolCall.arguments.data(using: .utf8),
-           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            arguments = json.mapValues { AnySendable(value: $0) }
-        } else {
-            arguments = [:]
-        }
-
         // 使用 ToolManager 查找工具
         guard toolManager.hasTool(named: toolCall.name) else {
             os_log(.error, "\(Self.t)❌ 工具 '\(toolCall.name)' 未找到")
@@ -246,25 +238,15 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
         }
 
         do {
-            let startTime = Date()
-
-            // 准备参数
-            let toolArguments: [String: Any] = arguments.mapValues { $0.value }
-            nonisolated(unsafe) let unsafeArgs = toolArguments
-
-            // 使用 ToolManager 执行工具
-            let result = try await toolManager.executeTool(
-                named: toolCall.name,
-                arguments: unsafeArgs
+            // 使用 JobScheduler 在后台执行工具
+            let (resultMsg, duration) = try await jobScheduler.executeToolCall(
+                toolCall: toolCall,
+                toolManager: toolManager
             )
 
-            let _ = Date().timeIntervalSince(startTime)
-
-            let resultMsg = ChatMessage(
-                role: .user,
-                content: result,
-                toolCallID: toolCall.id
-            )
+            if Self.verbose {
+                os_log("\(Self.t)✅ 工具执行完成，耗时：\(String(format: "%.3f", duration))秒")
+            }
 
             await delegate?.turnDidReceiveToolResult(resultMsg)
             await processPendingTools(languagePreference: .chinese, autoApproveRisk: false)
@@ -415,17 +397,6 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
             "grep": "🔍"
         ]
         return emojiMap[toolName] ?? "🔧"
-    }
-
-    // MARK: - 参数解析
-
-    /// 解析工具调用参数
-    private func parseArguments(_ argumentsString: String) -> [String: Any] {
-        if let data = argumentsString.data(using: .utf8),
-           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            return json
-        }
-        return [:]
     }
 }
 
