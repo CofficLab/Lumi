@@ -33,6 +33,9 @@ struct ChatMessagesView: View, SuperLog {
                 .padding(.horizontal)
             }
             .onChange(of: conversationViewModel.selectedConversationId, handleConversationSelected)
+            .onChange(of: nonSystemMessages.count) {
+                handleMessagesChanged(proxy: proxy)
+            }
         }
     }
 }
@@ -40,12 +43,27 @@ struct ChatMessagesView: View, SuperLog {
 // MARK: - Actions
 
 extension ChatMessagesView {
+    func scrollToBottom(proxy: ScrollViewProxy) {
+        guard let lastMessage = nonSystemMessages.last else { return }
 
+        Task {
+            // 稍作延迟确保视图已更新
+            try? await Task.sleep(nanoseconds: 100000000)
+            proxy.scrollTo(lastMessage.id, anchor: .bottom)
+        }
+    }
 }
 
 // MARK: Event Handler
 
 extension ChatMessagesView {
+    func handleMessagesChanged(proxy: ScrollViewProxy) {
+        if Self.verbose {
+            os_log("\(self.t)📬 消息数量变化，滚动到底部")
+        }
+        scrollToBottom(proxy: proxy)
+    }
+
     func handleConversationSelected() {
         guard let conversationId = conversationViewModel.selectedConversationId else { return }
 

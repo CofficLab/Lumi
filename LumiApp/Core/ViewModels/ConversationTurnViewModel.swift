@@ -91,7 +91,7 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
 
         do {
             if Self.verbose {
-                os_log("\(Self.t) 调用 LLM (供应商：\(config.providerId), 模型：\(config.model))")
+                os_log("\(Self.t)🌍 开始调用 LLM (供应商：\(config.providerId), 模型：\(config.model))")
             }
 
             // 1. 获取 LLM 响应
