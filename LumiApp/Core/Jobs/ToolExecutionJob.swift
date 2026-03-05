@@ -8,7 +8,7 @@ import OSLog
 /// 封装了完整的工具执行流程，包括参数解析、工具查找和结果返回
 struct ToolExecutionJob: SuperLog {
     /// 日志级别：0=禁用，1=基本，2=详细，3=调试
-    nonisolated static let verbose: Int = 1
+    nonisolated static let verbose: Int = 0
 }
 
 // MARK: - 任务参数

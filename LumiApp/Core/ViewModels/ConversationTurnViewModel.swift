@@ -60,9 +60,6 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
 
     /// 处理对话轮次
     ///
-    /// 此方法不再标记 @MainActor，整个方法在后台执行
-    /// 委托回调会自动回到主线程
-    ///
     /// - Parameters:
     ///   - depth: 当前递归深度
     ///   - config: LLM 配置
@@ -145,10 +142,7 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
             // 2. 检查工具调用
             if let toolCalls = responseMsg.toolCalls, !toolCalls.isEmpty {
                 if Self.verbose {
-                    os_log("\(Self.t)🔧 收到 \(toolCalls.count) 个工具调用，开始执行:")
-                    for (index, tc) in toolCalls.enumerated() {
-                        os_log("\(Self.t)  \(index + 1). \(tc.name)(\(tc.arguments.max(50)))")
-                    }
+                    os_log("\(Self.t)🔧 收到 \(toolCalls.count) 个工具调用，开始执行")
                 }
                 pendingToolCalls = toolCalls
 
@@ -187,10 +181,6 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
         languagePreference: LanguagePreference,
         autoApproveRisk: Bool
     ) async {
-        if Self.verbose {
-            os_log("\(Self.t)⚙️ 正在执行工具：\(toolCall.name)")
-        }
-
         // 使用 JobScheduler 检查权限（纯计算，无需后台）
         let requiresPermission = jobScheduler.requiresPermission(toolCall, autoApproveRisk: autoApproveRisk)
 
@@ -237,7 +227,7 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
 
         do {
             // 使用 JobScheduler 在后台执行工具
-            let (resultMsg, duration) = try await jobScheduler.executeToolCall(
+            let (resultMsg, _) = try await jobScheduler.executeToolCall(
                 toolCall: toolCall,
                 toolManager: toolManager
             )
