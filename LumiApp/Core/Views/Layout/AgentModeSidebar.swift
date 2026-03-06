@@ -40,5 +40,4 @@ struct AgentModeSidebar: View {
     AgentModeSidebar()
         .frame(width: 220, height: 600)
         .inRootView()
-        .environmentObject(PluginProvider.shared)
 }

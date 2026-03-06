@@ -4,7 +4,7 @@ import SwiftUI
 /// 在独立窗口中显示
 struct SettingView: View {
     /// 插件提供者
-    @ObservedObject private var pluginProvider = PluginProvider.shared
+    @EnvironmentObject private var pluginProvider: PluginProvider
 
     /// 默认显示的标签
     var defaultTab: SettingTab = .about

@@ -64,7 +64,6 @@ struct CommandSuggestionView: View, SuperLog {
 
 #Preview("Command Suggestion") {
     CommandSuggestionView { _ in }
-        .environmentObject(CommandSuggestionViewModel.shared)
         .frame(width: 400, height: 300)
         .background(Color.black)
         .inRootView()

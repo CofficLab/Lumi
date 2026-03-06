@@ -21,6 +21,9 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     /// 工具管理器
     let toolManager: ToolManager
 
+    /// 聊天历史服务
+    let chatHistoryService: ChatHistoryService
+
     // MARK: - ViewModel 引用
 
     /// 消息 ViewModel
@@ -77,6 +80,7 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     ///   - promptService: 提示词服务
     ///   - registry: 供应商注册表
     ///   - toolManager: 工具管理器
+    ///   - chatHistoryService: 聊天历史服务
     ///   - messageViewModel: 消息 ViewModel
     ///   - conversationViewModel: 会话 ViewModel
     ///   - messageSenderViewModel: 消息发送 ViewModel
@@ -86,6 +90,7 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         promptService: PromptService,
         registry: ProviderRegistry,
         toolManager: ToolManager,
+        chatHistoryService: ChatHistoryService,
         messageViewModel: MessageViewModel,
         conversationViewModel: ConversationViewModel,
         messageSenderViewModel: MessageSenderViewModel,
@@ -95,6 +100,7 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         self.promptService = promptService
         self.registry = registry
         self.toolManager = toolManager
+        self.chatHistoryService = chatHistoryService
         self.messageViewModel = messageViewModel
         self.conversationViewModel = conversationViewModel
         self.messageSenderViewModel = messageSenderViewModel
@@ -102,33 +108,6 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         self.conversationTurnViewModel = conversationTurnViewModel
         loadPreferences()
     }
-
-    /// 占位符 AgentProvider（用于解决循环依赖）
-    static let placeholder: AgentProvider = {
-        let messageSenderVM = MessageSenderViewModel(
-            messageViewModel: MessageViewModel.shared,
-            conversationViewModel: ConversationViewModel.shared
-        )
-        let conversationTurnVM = ConversationTurnViewModel(
-            llmService: LLMService.shared,
-            toolManager: ToolManager.shared,
-            promptService: PromptService.shared
-        )
-        let placeholderProvider = AgentProvider(
-            promptService: PromptService.shared,
-            registry: ProviderRegistry.shared,
-            toolManager: ToolManager.shared,
-            messageViewModel: MessageViewModel.shared,
-            conversationViewModel: ConversationViewModel.shared,
-            messageSenderViewModel: messageSenderVM,
-            projectViewModel: ProjectViewModel.shared,
-            conversationTurnViewModel: conversationTurnVM
-        )
-        messageSenderVM.delegate = placeholderProvider
-        messageSenderVM.setConfigProvider(placeholderProvider)
-        conversationTurnVM.delegate = placeholderProvider
-        return placeholderProvider
-    }()
 
     // MARK: - 偏好设置加载
 

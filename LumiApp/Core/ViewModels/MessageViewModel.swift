@@ -11,13 +11,10 @@ final class MessageViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "💬"
     nonisolated static let verbose = false
 
-    /// 全局单例
-    static let shared = MessageViewModel()
-
     // MARK: - 服务依赖
 
     /// 聊天历史服务
-    private let chatHistoryService = ChatHistoryService.shared
+    private let chatHistoryService: ChatHistoryService
 
     // MARK: - 消息状态
 
@@ -56,7 +53,10 @@ final class MessageViewModel: ObservableObject, SuperLog {
 
     // MARK: - 初始化
 
-    private init() {}
+    /// 使用聊天历史服务初始化
+    init(chatHistoryService: ChatHistoryService) {
+        self.chatHistoryService = chatHistoryService
+    }
 
     // MARK: - 消息管理
 

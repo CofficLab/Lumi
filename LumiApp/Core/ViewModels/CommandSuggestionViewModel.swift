@@ -12,9 +12,6 @@ struct CommandSuggestion: Identifiable {
 /// 命令建议视图模型 - 提供斜杠命令自动补全功能
 @MainActor
 class CommandSuggestionViewModel: ObservableObject {
-    /// 全局单例
-    static let shared = CommandSuggestionViewModel()
-
     @Published private(set) var suggestions: [CommandSuggestion] = []
     @Published private(set) var isVisible: Bool = false
     @Published private(set) var selectedIndex: Int = 0
@@ -30,7 +27,7 @@ class CommandSuggestionViewModel: ObservableObject {
         CommandSuggestion(command: "/mcp install vision", description: "Install Vision MCP Server", category: "MCP"),
     ]
 
-    private init() {}
+    init() {}
 
     // MARK: - Set Methods
 

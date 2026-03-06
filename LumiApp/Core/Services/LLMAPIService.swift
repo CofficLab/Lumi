@@ -8,7 +8,7 @@ import MagicKit
 /// 此类可以在后台线程执行
 class LLMAPIService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     static let shared = LLMAPIService()
 

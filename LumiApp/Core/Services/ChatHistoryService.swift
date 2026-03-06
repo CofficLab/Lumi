@@ -4,35 +4,35 @@ import OSLog
 import SwiftData
 
 /// 聊天历史服务 - 使用 SwiftData 存储对话
+@Observable
 final class ChatHistoryService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "💾"
-    nonisolated static let verbose = false
-    
-    static let shared = ChatHistoryService()
+    nonisolated static let verbose = true
 
-    private var modelContainer: ModelContainer?
-    private let llmService = LLMService.shared
+    private let modelContainer: ModelContainer
+    private let modelContext: ModelContext
+    private let llmService: LLMService
 
-    private init() {}
-
-    /// 使用外部容器初始化
-    func initializeWithContainer(_ container: ModelContainer, reason: String) {
-        self.modelContainer = container
+    /// 使用 LLM 服务和模型容器初始化
+    init(llmService: LLMService, modelContainer: ModelContainer) {
+        self.llmService = llmService
+        self.modelContainer = modelContainer
+        self.modelContext = ModelContext(modelContainer)
         if Self.verbose {
-            os_log("\(Self.t)✅ (\(reason)) SwiftData 聊天存储已初始化")
+            os_log("\(Self.t)✅ SwiftData 聊天存储已初始化")
         }
+    }
+
+    /// 获取模型上下文
+    private func getContext() -> ModelContext {
+        return modelContext
     }
 
     // MARK: - 保存对话
 
     /// 保存或更新对话
     func saveConversation(_ conversation: Conversation) {
-        guard let container = modelContainer else {
-            os_log(.error, "\(Self.t)❌ 模型容器未初始化")
-            return
-        }
-
-        let context = ModelContext(container)
+        let context = getContext()
         context.insert(conversation)
 
         do {
@@ -142,12 +142,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
     /// - Returns: 保存后的消息（从数据库重新加载）
     @discardableResult
     func saveMessage(_ message: ChatMessage, to conversation: Conversation) -> ChatMessage? {
-        guard let container = modelContainer else {
-            os_log(.error, "\(Self.t)❌ 模型容器未初始化")
-            return nil
-        }
-
-        let context = ModelContext(container)
+        let context = getContext()
 
         // 创建消息实体
         let messageEntity = ChatMessageEntity.fromChatMessage(message)
@@ -185,12 +180,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
 
     /// 获取所有对话
     func fetchAllConversations() -> [Conversation] {
-        guard let container = modelContainer else {
-            os_log(.error, "\(Self.t)❌ 模型容器未初始化")
-            return []
-        }
-
-        let context = ModelContext(container)
+        let context = getContext()
         let descriptor = FetchDescriptor<Conversation>(
             sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
         )
@@ -209,12 +199,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
 
     /// 根据 ID 获取对话
     func fetchConversation(id: UUID) -> Conversation? {
-        guard let container = modelContainer else {
-            os_log(.error, "\(Self.t)❌ 模型容器未初始化")
-            return nil
-        }
-
-        let context = ModelContext(container)
+        let context = getContext()
         let descriptor = FetchDescriptor<Conversation>(
             predicate: #Predicate { $0.id == id }
         )
@@ -230,12 +215,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
 
     /// 获取项目相关的对话
     func fetchConversations(forProject projectId: String) -> [Conversation] {
-        guard let container = modelContainer else {
-            os_log(.error, "\(Self.t)❌ 模型容器未初始化")
-            return []
-        }
-
-        let context = ModelContext(container)
+        let context = getContext()
         let descriptor = FetchDescriptor<Conversation>(
             predicate: #Predicate { $0.projectId == projectId },
             sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
@@ -255,13 +235,9 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
 
     /// 加载对话的消息
     func loadMessages(for conversation: Conversation) -> [ChatMessage] {
-        guard let container = modelContainer else {
-            os_log(.error, "\(Self.t)❌ 模型容器未初始化")
-            return []
-        }
+        let context = getContext()
 
         // 重新获取 conversation 以确保在当前上下文中
-        let context = ModelContext(container)
         let conversationId = conversation.id
         let descriptor = FetchDescriptor<Conversation>(
             predicate: #Predicate { $0.id == conversationId }
@@ -285,12 +261,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
 
     /// 删除对话
     func deleteConversation(_ conversation: Conversation) {
-        guard let container = modelContainer else {
-            os_log(.error, "\(Self.t)❌ 模型容器未初始化")
-            return
-        }
-
-        let context = ModelContext(container)
+        let context = getContext()
         context.delete(conversation)
 
         do {
@@ -308,12 +279,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
     /// 获取每个供应商和模型的平均耗时
     /// - Returns: 字典，键为 (providerId, modelName)，值为平均耗时（毫秒）
     func getModelLatencyStats() -> [(providerId: String, modelName: String, avgLatency: Double, sampleCount: Int)] {
-        guard let container = modelContainer else {
-            os_log(.error, "\(Self.t)❌ 模型容器未初始化")
-            return []
-        }
-
-        let context = ModelContext(container)
+        let context = getContext()
         
         // 获取所有有 latency 数据的消息
         let descriptor = FetchDescriptor<ChatMessageEntity>(
@@ -362,18 +328,14 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
             }
             return $0.modelName < $1.modelName
         }
-
-        if Self.verbose {
-            os_log("\(Self.t)📊 获取到 \(result.count) 个模型的性能统计")
-        }
-
+        
         return result
     }
 
     // MARK: - 工具方法
 
     /// 获取模型容器（用于 @Query）
-    func getModelContainer() -> ModelContainer? {
+    func getModelContainer() -> ModelContainer {
         return modelContainer
     }
 }

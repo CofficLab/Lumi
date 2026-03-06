@@ -16,9 +16,6 @@ struct ModelSelectorView: View, SuperLog {
     /// 智能体提供者
     @EnvironmentObject var agentProvider: AgentProvider
 
-    /// 供应商注册表：提供所有可用的模型供应商信息
-    private let registry = ProviderRegistry.shared
-
     /// 模型性能统计：[(providerId, modelName, avgLatency, sampleCount)]
     @State private var latencyStats: [(providerId: String, modelName: String, avgLatency: Double, sampleCount: Int)] = []
 
@@ -42,7 +39,7 @@ struct ModelSelectorView: View, SuperLog {
 
             // List of Providers and Models
             List {
-                ForEach(registry.allProviders()) { provider in
+                ForEach(agentProvider.registry.allProviders()) { provider in
                     Section(header: sectionHeader(for: provider)) {
                         ForEach(provider.availableModels, id: \.self) { model in
                             Button(action: {
@@ -154,7 +151,7 @@ extension ModelSelectorView {
     ///   - model: 模型名称
     /// - Returns: 是否为默认模型
     private func isDefaultModel(providerId: String, model: String) -> Bool {
-        guard let providerType = registry.providerType(forId: providerId) else {
+        guard let providerType = agentProvider.registry.providerType(forId: providerId) else {
             return false
         }
         return model == providerType.defaultModel
@@ -162,7 +159,7 @@ extension ModelSelectorView {
 
     /// 加载性能统计数据
     private func loadLatencyStats() {
-        latencyStats = ChatHistoryService.shared.getModelLatencyStats()
+        latencyStats = agentProvider.chatHistoryService.getModelLatencyStats()
         if Self.verbose {
             os_log("\(Self.t)📊 加载到 \(latencyStats.count) 个模型的性能统计")
         }

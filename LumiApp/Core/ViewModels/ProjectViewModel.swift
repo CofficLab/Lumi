@@ -11,9 +11,6 @@ final class ProjectViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose = false
 
-    /// 全局单例
-    static let shared = ProjectViewModel()
-
     // MARK: - 项目信息
 
     /// 当前项目名称
@@ -61,7 +58,7 @@ final class ProjectViewModel: ObservableObject, SuperLog {
 
     // MARK: - 初始化
 
-    private init() {
+    init() {
         loadLanguagePreference()
         loadChatMode()
         loadAutoApproveRisk()

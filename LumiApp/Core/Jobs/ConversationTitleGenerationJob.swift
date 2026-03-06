@@ -7,7 +7,7 @@ import OSLog
 /// 负责在后台为新对话生成描述性标题
 /// 当用户发送第一条消息时触发，自动生成简洁的对话标题
 struct ConversationTitleGenerationJob: SuperLog {
-    nonisolated static let emoji = "🏷️"
+    nonisolated static let emoji = "👷"
     nonisolated static let verbose = true
 }
 
@@ -21,15 +21,14 @@ extension ConversationTitleGenerationJob {
     ///   - messageId: 触发标题生成的消息 ID
     ///   - userMessageContent: 用户消息内容
     ///   - config: LLM 配置
+    ///   - chatHistoryService: 聊天历史服务实例
     func run(
         conversationId: UUID,
         messageId: UUID,
         userMessageContent: String,
-        config: LLMConfig
+        config: LLMConfig,
+        chatHistoryService: ChatHistoryService
     ) async {
-        // 聊天历史服务实例
-        let chatHistoryService = ChatHistoryService.shared
-        
         // 检查是否满足生成标题的条件
         let trimmedMessage = userMessageContent.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedMessage.isEmpty else {
@@ -40,7 +39,7 @@ extension ConversationTitleGenerationJob {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)🎯 开始为对话 \(conversationId) 生成标题...")
+            os_log("\(Self.t)🎯 [\(conversationId)] 开始为对话生成标题...")
         }
 
         // 获取对话信息

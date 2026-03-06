@@ -67,7 +67,14 @@ enum AppConfig {
     /// - Returns: 数据库目录的 URL
     static func getDBFolderURL() -> URL {
         let appSupport = getCurrentAppSupportDir()
-        let dbDirectory = appSupport.appendingPathComponent("Database", isDirectory: true)
+        
+        #if DEBUG
+        let dbDirectoryName = "db_debug"
+        #else
+        let dbDirectoryName = "db_production"
+        #endif
+        
+        let dbDirectory = appSupport.appendingPathComponent(dbDirectoryName, isDirectory: true)
         
         // 确保数据库目录存在
         let fileManager = FileManager.default

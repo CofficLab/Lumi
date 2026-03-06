@@ -32,6 +32,8 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
     private let messageViewModel: MessageViewModel
     /// 会话管理 ViewModel
     private let conversationViewModel: ConversationViewModel
+    /// 聊天历史服务
+    private let chatHistoryService: ChatHistoryService
     /// LLM 配置提供者
     private weak var configProvider: (any LLMConfigProvider)?
 
@@ -59,10 +61,12 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
     init(
         messageViewModel: MessageViewModel,
         conversationViewModel: ConversationViewModel,
+        chatHistoryService: ChatHistoryService,
         configProvider: (any LLMConfigProvider)? = nil
     ) {
         self.messageViewModel = messageViewModel
         self.conversationViewModel = conversationViewModel
+        self.chatHistoryService = chatHistoryService
         self.configProvider = configProvider
     }
 
@@ -195,6 +199,7 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         // 消息内容和 ID
         let messageContent = message.content
         let messageId = message.id
+        let chatHistoryService = self.chatHistoryService
 
         // 在后台 Task 中执行标题生成
         Task.detached(priority: .utility) {
@@ -203,7 +208,8 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
                 conversationId: conversationId,
                 messageId: messageId,
                 userMessageContent: messageContent,
-                config: config
+                config: config,
+                chatHistoryService: chatHistoryService
             )
         }
     }
