@@ -2,7 +2,7 @@ import MagicKit
 import SwiftUI
 
 /// 待发送消息队列视图
-/// 显示在输入框上方，展示等待发送的消息列表
+/// 显示在输入框上方，展示等待发送的消息列表（不包括正在发送的消息）
 struct PendingMessagesView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "📋"
@@ -16,60 +16,43 @@ struct PendingMessagesView: View, SuperLog {
         let messageSenderVM = agentProvider.messageSenderViewModel
         let pendingMessages = messageSenderVM.pendingMessages
         let currentProcessingIndex = messageSenderVM.currentProcessingIndex
-        let isSending = messageSenderVM.isSending
 
-        if !pendingMessages.isEmpty {
+        // 只显示队列中等待发送的消息（排除当前正在处理的消息）
+        let waitingMessages = pendingMessages.enumerated()
+            .filter { index, _ in index != currentProcessingIndex }
+
+        if !waitingMessages.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 // 队列标题
                 HStack(spacing: 6) {
-                    if isSending {
-                        ProgressView()
-                            .scaleEffect(0.6)
-                            .frame(width: 12, height: 12)
-                    } else {
-                        Image(systemName: "clock")
-                            .font(.system(size: 10))
-                            .foregroundColor(.secondary)
-                    }
+                    Image(systemName: "clock")
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
 
-                    Text(isSending ? "正在发送..." : "等待发送")
+                    Text("等待发送")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(.secondary)
 
-                    Text("(\(pendingMessages.count))")
+                    Text("(\(waitingMessages.count))")
                         .font(.system(size: 10))
                         .foregroundColor(.secondary.opacity(0.7))
-
-                    Spacer()
-
-                    // 清空队列按钮
-                    Button(action: {
-                        messageSenderVM.clearQueue()
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 12))
-                            .foregroundColor(.secondary.opacity(0.6))
-                    }
-                    .buttonStyle(.plain)
-                    .help("清空队列")
                 }
 
                 // 消息列表
                 ScrollView {
                     LazyVStack(spacing: 4) {
-                        ForEach(Array(pendingMessages.enumerated()), id: \.element.id) { index, message in
+                        ForEach(Array(waitingMessages), id: \.element.id) { index, message in
                             PendingMessageRow(
                                 message: message,
                                 index: index,
-                                isProcessing: index == currentProcessingIndex,
-                                onRemove: index != currentProcessingIndex ? {
+                                onRemove: {
                                     messageSenderVM.removeMessage(at: index)
-                                } : nil
+                                }
                             )
                         }
                     }
                 }
-                .frame(maxHeight: min(CGFloat(pendingMessages.count) * 36, 120))
+                .frame(maxHeight: min(CGFloat(waitingMessages.count) * 36, 120))
             }
             .padding(10)
             .background(
@@ -78,7 +61,7 @@ struct PendingMessagesView: View, SuperLog {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
+                    .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
             )
         }
     }
@@ -88,23 +71,14 @@ struct PendingMessagesView: View, SuperLog {
 struct PendingMessageRow: View {
     let message: ChatMessage
     let index: Int
-    let isProcessing: Bool
     let onRemove: (() -> Void)?
 
     var body: some View {
         HStack(spacing: 8) {
-            // 状态图标
-            if isProcessing {
-                // 正在发送
-                ProgressView()
-                    .scaleEffect(0.5)
-                    .frame(width: 14, height: 14)
-            } else {
-                // 等待中
-                Image(systemName: "hourglass")
-                    .font(.system(size: 9))
-                    .foregroundColor(.secondary.opacity(0.6))
-            }
+            // 等待中图标
+            Image(systemName: "hourglass")
+                .font(.system(size: 9))
+                .foregroundColor(.secondary.opacity(0.6))
 
             // 消息内容预览
             Text(message.content.prefix(80))
@@ -126,7 +100,7 @@ struct PendingMessageRow: View {
 
             Spacer()
 
-            // 移除按钮（非发送中消息才显示）
+            // 移除按钮
             if let onRemove = onRemove {
                 Button(action: onRemove) {
                     Image(systemName: "xmark")
@@ -141,11 +115,7 @@ struct PendingMessageRow: View {
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 4)
-                .fill(isProcessing ? Color.accentColor.opacity(0.15) : Color.black.opacity(0.02))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 4)
-                .stroke(isProcessing ? Color.accentColor.opacity(0.3) : Color.clear, lineWidth: 1)
+                .fill(Color.black.opacity(0.02))
         )
     }
 }
