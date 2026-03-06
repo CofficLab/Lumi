@@ -1,21 +1,34 @@
 import MagicKit
 import SwiftUI
+import SwiftData
+import OSLog
 
 /// 待发送消息队列视图
 /// 显示在输入框上方，展示等待发送的消息列表（不包括正在发送的消息）
+///
+/// ## 性能优化说明
+/// 此视图使用独立的 ViewModel 来隔离 `MessageSenderViewModel` 的状态变化，
+/// 避免每次 `pendingMessages` 变化时触发整个输入区域的重新渲染。
 struct PendingMessagesView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "📋"
     /// 是否输出详细日志
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
+    /// 消息发送队列 ViewModel（直接订阅，确保 pendingMessages 变化时视图能刻刷新）
+    @ObservedObject var messageSenderViewModel: MessageSenderViewModel
+
+    /// 数据上下文
+    @Environment(\.modelContext) private var modelContext
     /// 智能体提供者
     @EnvironmentObject var agentProvider: AgentProvider
 
+    /// 缓存的会话标题
+    @State private var cachedConversationTitle: String?
+
     var body: some View {
-        let messageSenderVM = agentProvider.messageSenderViewModel
-        let pendingMessages = messageSenderVM.pendingMessages
-        let currentProcessingIndex = messageSenderVM.currentProcessingIndex
+        let pendingMessages = messageSenderViewModel.pendingMessages
+        let currentProcessingIndex = messageSenderViewModel.currentProcessingIndex
 
         // 只显示队列中等待发送的消息（排除当前正在处理的消息）
         let waitingMessages = pendingMessages.enumerated()
@@ -23,6 +36,25 @@ struct PendingMessagesView: View, SuperLog {
 
         if !waitingMessages.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
+                // 顶部：会话标题
+                HStack(spacing: 6) {
+                    Image(systemName: "message")
+                        .font(.system(size: 10))
+                        .foregroundColor(.accentColor)
+
+                    Text(cachedConversationTitle ?? "当前会话")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+
+                    Spacer()
+                }
+                .padding(.bottom, 2)
+
+                Divider()
+                    .padding(.bottom, 2)
+
                 // 队列标题
                 HStack(spacing: 6) {
                     Image(systemName: "clock")
@@ -46,7 +78,7 @@ struct PendingMessagesView: View, SuperLog {
                                 message: message,
                                 index: index,
                                 onRemove: {
-                                    messageSenderVM.removeMessage(at: index)
+                                    messageSenderViewModel.removeMessage(at: index)
                                 }
                             )
                         }
@@ -63,6 +95,31 @@ struct PendingMessagesView: View, SuperLog {
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
             )
+            .onAppear(perform: updateConversationTitle)
+            .onChange(of: agentProvider.conversationViewModel.selectedConversationId) { _, _ in
+                updateConversationTitle()
+            }
+        }
+    }
+
+    // MARK: - Event Handler
+
+    private func updateConversationTitle() {
+        guard let conversationId = agentProvider.conversationViewModel.selectedConversationId else {
+            cachedConversationTitle = nil
+            return
+        }
+
+        let descriptor = FetchDescriptor<Conversation>(
+            predicate: #Predicate<Conversation> { $0.id == conversationId }
+        )
+
+        do {
+            cachedConversationTitle = try modelContext.fetch(descriptor).first?.title
+        } catch {
+            if Self.verbose {
+                os_log("\(Self.t)❌ 获取会话标题失败：\(error.localizedDescription)")
+            }
         }
     }
 }
@@ -122,12 +179,3 @@ struct PendingMessageRow: View {
 
 // MARK: - Preview
 
-#Preview("Pending Messages") {
-    VStack {
-        PendingMessagesView()
-        Spacer()
-    }
-    .frame(width: 600, height: 400)
-    .padding()
-    .inRootView()
-}

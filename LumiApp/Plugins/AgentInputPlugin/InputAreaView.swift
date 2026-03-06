@@ -3,6 +3,10 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// 输入区域视图 - 包含附件预览、编辑器、工具栏
+///
+/// ## 注意
+/// 此视图不包含 `PendingMessagesView`，后者已移到外层视图 (`InputView`) 中。
+/// 这样设计是为了避免待发送消息队列的变化导致输入框重新渲染而丢失焦点。
 struct InputAreaView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "💬"
@@ -15,6 +19,9 @@ struct InputAreaView: View, SuperLog {
     /// 命令建议 ViewModel
     @EnvironmentObject var commandSuggestionViewModel: CommandSuggestionViewModel
 
+    /// 输入框本地状态 ViewModel（与 agentProvider 解耦，避免击键触发全局重庆染）
+    @ObservedObject var inputViewModel: InputViewModel
+
     /// 输入框是否处于聚焦状态
     @Binding var isInputFocused: Bool
 
@@ -26,83 +33,78 @@ struct InputAreaView: View, SuperLog {
 
     var body: some View {
         VStack(spacing: 8) {
-            // 待发送消息队列
-            PendingMessagesView()
-
-            // 输入框容器
-            VStack(spacing: 0) {
-                // 附件预览区域
-                if !agentProvider.pendingAttachments.isEmpty {
-                    AttachmentPreviewView(
-                        attachments: agentProvider.pendingAttachments,
-                        onRemove: { id in
-                            agentProvider.removeAttachment(id: id)
-                        }
-                    )
-                }
-
-                // 编辑器
-                MacEditorView(
-                    text: Binding(
-                        get: { agentProvider.currentInput },
-                        set: { agentProvider.setCurrentInput($0) }
-                    ),
-                    onSubmit: {
-                        agentProvider.sendMessage()
-                    },
-                    onArrowUp: {
-                        if commandSuggestionViewModel.isVisible {
-                            commandSuggestionViewModel.selectPrevious()
-                        }
-                    },
-                    onArrowDown: {
-                        if commandSuggestionViewModel.isVisible {
-                            commandSuggestionViewModel.selectNext()
-                        }
-                    },
-                    onEnter: {
-                        if commandSuggestionViewModel.isVisible,
-                           let suggestion = commandSuggestionViewModel.getCurrentSuggestion() {
-                            agentProvider.setCurrentInput(suggestion.command + " ")
-                            commandSuggestionViewModel.setIsVisible(false)
-                        } else {
-                            agentProvider.sendMessage()
-                        }
-                    },
-                    isFocused: $isInputFocused,
-                    onDrop: { urls in
-                        handleDrop(urls: urls)
+            // 附件预览区域
+            if !agentProvider.pendingAttachments.isEmpty {
+                AttachmentPreviewView(
+                    attachments: agentProvider.pendingAttachments,
+                    onRemove: { id in
+                        agentProvider.removeAttachment(id: id)
                     }
                 )
-                .frame(height: 64)
-                .padding(.horizontal, 4)
-                .padding(.top, 8)
+            }
 
-                // 工具栏
-                ChatToolbarView(
-                    isModelSelectorPresented: $isModelSelectorPresented
-                )
-            }
-            .background(Color(nsColor: .controlBackgroundColor))
-            .cornerRadius(12)
-            .overlay(
-                // 动态边框 - 处理中时显示动画边框
-                processingBorderOverlay
-            )
-            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
-            .onDrop(of: [.fileURL], isTargeted: nil) { providers in
-                handleDropProviders(providers: providers)
-            }
-            .overlay(alignment: .bottomLeading) {
-                CommandSuggestionView { suggestion in
-                    agentProvider.setCurrentInput(suggestion.command + " ")
-                    commandSuggestionViewModel.setIsVisible(false)
-                    isInputFocused = true
+            // 编辑器
+            MacEditorView(
+                text: $inputViewModel.text,
+                onSubmit: {
+                    let text = inputViewModel.text
+                    inputViewModel.clear()
+                    agentProvider.sendMessage(input: text)
+                },
+                onArrowUp: {
+                    if commandSuggestionViewModel.isVisible {
+                        commandSuggestionViewModel.selectPrevious()
+                    }
+                },
+                onArrowDown: {
+                    if commandSuggestionViewModel.isVisible {
+                        commandSuggestionViewModel.selectNext()
+                    }
+                },
+                onEnter: {
+                    if commandSuggestionViewModel.isVisible,
+                       let suggestion = commandSuggestionViewModel.getCurrentSuggestion() {
+                        inputViewModel.set(suggestion.command + " ")
+                        commandSuggestionViewModel.setIsVisible(false)
+                    } else {
+                        let text = inputViewModel.text
+                        inputViewModel.clear()
+                        agentProvider.sendMessage(input: text)
+                    }
+                },
+                isFocused: $isInputFocused,
+                onDrop: { urls in
+                    handleDrop(urls: urls)
                 }
-                .offset(x: 16, y: -60)
-            }
+            )
+            .frame(height: 64)
+            .padding(.horizontal, 4)
+            .padding(.top, 8)
+
+            // 工具栏
+            ChatToolbarView(
+                inputViewModel: inputViewModel,
+                isModelSelectorPresented: $isModelSelectorPresented
+            )
         }
-        .padding(16)
+        .background(.background)
+        .cornerRadius(12)
+        .overlay(
+            // 动态边框 - 处理中时显示动画边框
+            processingBorderOverlay
+        )
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
+        .onDrop(of: [.fileURL, .plainText], isTargeted: nil) { providers in
+            handleDropProviders(providers: providers)
+        }
+        .overlay(alignment: .bottomLeading) {
+            CommandSuggestionView { suggestion in
+                inputViewModel.set(suggestion.command + " ")
+                commandSuggestionViewModel.setIsVisible(false)
+                isInputFocused = true
+            }
+            .offset(x: 16, y: -60)
+        }
         // 监听文件拖放通知
         .onFileDroppedToChat { fileURL in
             handleFileDrop(fileURL: fileURL)
@@ -183,7 +185,7 @@ extension InputAreaView {
     private func handleFileDrop(fileURL: URL) {
         // 将文件路径作为文本插入到输入框
         let file_path = fileURL.path
-        agentProvider.appendInput("\(file_path) ")
+        inputViewModel.append("\(file_path) ")
     }
 
     /// 处理拖放操作（URL 列表）
@@ -200,14 +202,16 @@ extension InputAreaView {
     /// - Returns: 是否成功处理
     private func handleDropProviders(providers: [NSItemProvider]) -> Bool {
         var handled = false
+        
         for provider in providers {
+            // 优先尝试 fileURL 类型
             if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
                 provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
-                    if let data = item as? Data, let url = URL(dataRepresentation: data, relativeTo: nil) {
+                    if let url = item as? URL {
                         DispatchQueue.main.async {
                             self.handleDroppedFile(url: url)
                         }
-                    } else if let url = item as? URL {
+                    } else if let data = item as? Data, let string = String(data: data, encoding: .utf8), let url = URL(string: string) {
                         DispatchQueue.main.async {
                             self.handleDroppedFile(url: url)
                         }
@@ -215,7 +219,37 @@ extension InputAreaView {
                 }
                 handled = true
             }
+            // 也尝试纯文本类型（用于传递原始文件路径字符串）
+            else if provider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
+                provider.loadItem(forTypeIdentifier: UTType.plainText.identifier, options: nil) { item, _ in
+                    if let string = item as? String {
+                        DispatchQueue.main.async {
+                            // 判断是否传入的是拖拽进来的原始路径字符串
+                            if string.hasPrefix("/") {
+                                self.handleDroppedFile(url: URL(fileURLWithPath: string))
+                            } else if let url = URL(string: string) {
+                                self.handleDroppedFile(url: url)
+                            } else {
+                                // 备用降级：当作纯文本直接补充到输入框
+                                self.inputViewModel.append(string)
+                            }
+                        }
+                    } else if let data = item as? Data, let string = String(data: data, encoding: .utf8) {
+                        DispatchQueue.main.async {
+                            if string.hasPrefix("/") {
+                                self.handleDroppedFile(url: URL(fileURLWithPath: string))
+                            } else if let url = URL(string: string) {
+                                self.handleDroppedFile(url: url)
+                            } else {
+                                self.inputViewModel.append(string)
+                            }
+                        }
+                    }
+                }
+                handled = true
+            }
         }
+        
         return handled
     }
 
@@ -233,19 +267,9 @@ extension InputAreaView {
         } else {
             // 非图片文件：将文件路径插入到输入框
             let filePath = url.path
-            agentProvider.appendInput("\(filePath) ")
+            inputViewModel.append("\(filePath) ")
         }
     }
 }
 
 // MARK: - Preview
-
-#Preview("Input Area") {
-    InputAreaView(
-        isInputFocused: .constant(true),
-        isModelSelectorPresented: .constant(false)
-    )
-    .frame(width: 800, height: 200)
-    .background(Color.black)
-    .inRootView()
-}

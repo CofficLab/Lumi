@@ -133,12 +133,16 @@ struct ExpandButton: View {
 // MARK: - View Modifier
 
 extension View {
-    /// 应用折叠逻辑
+    @ViewBuilder
     func applyCollapsible(isCollapsible: Bool, isExpanded: Bool, maxHeight: CGFloat) -> some View {
-        self
-            .lineLimit(isCollapsible && !isExpanded ? 20 : nil)
-            .frame(maxHeight: isCollapsible && !isExpanded ? maxHeight : nil)
-            .clipped()
+        if isCollapsible && !isExpanded {
+            self
+                .lineLimit(20)
+                .frame(maxHeight: maxHeight)
+                .clipped()
+        } else {
+            self
+        }
     }
 }
 

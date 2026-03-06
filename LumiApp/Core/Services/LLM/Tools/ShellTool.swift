@@ -1,11 +1,11 @@
 import Foundation
-import OSLog
 import MagicKit
+import OSLog
 import SwiftUI
 
 struct ShellTool: AgentTool, SuperLog {
     nonisolated static let emoji = "🔧"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     let name = "run_command"
     let description = "Execute a shell command in terminal. Use this to run build commands, git commands, or other system tools."

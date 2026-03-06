@@ -6,6 +6,10 @@ import SwiftData
 
 /// 会话管理 ViewModel
 /// 负责处理所有会话相关的业务逻辑，包括创建、加载、删除会话等
+///
+/// ## 设计说明
+/// 此类只维护 `selectedConversationId`，不持有 `Conversation` 对象引用。
+/// 需要会话数据的视图应使用 `@Query` 根据 ID 自行查询。
 @MainActor
 final class ConversationViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "💬"
@@ -25,12 +29,19 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     /// 消息管理 ViewModel
     let messageViewModel: MessageViewModel
 
+    /// 消息发送队列 ViewModel（用于会话切换时同步队列）
+    weak var messageSenderViewModel: MessageSenderViewModel?
+
     // MARK: - 会话状态
 
-    /// 当前会话
-    @Published public fileprivate(set) var currentConversation: Conversation?
-
     /// 选中的会话 ID
+    ///
+    /// 此类只维护此 ID，不持有 Conversation 对象引用。
+    /// 需要会话数据的视图应使用 @Query 根据 ID 自行查询：
+    /// ```swift
+    /// @Query(filter: #Predicate<Conversation> { $0.id == viewModel.selectedConversationId })
+    /// var selectedConversation: [Conversation]
+    /// ```
     @Published public fileprivate(set) var selectedConversationId: UUID? {
         didSet {
             if let id = selectedConversationId {
@@ -51,13 +62,6 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     /// 标记是否已生成标题（代理到 MessageViewModel）
     public var hasGeneratedTitle: Bool {
         messageViewModel.hasGeneratedTitle
-    }
-
-    // MARK: - 内部方法（仅供 AgentProvider 使用）
-
-    /// 设置当前会话（内部使用）
-    func setCurrentConversationInternal(_ conversation: Conversation?) {
-        currentConversation = conversation
     }
 
     // MARK: - 代理 MessageViewModel 方法
@@ -94,12 +98,14 @@ final class ConversationViewModel: ObservableObject, SuperLog {
         chatHistoryService: ChatHistoryService,
         llmService: LLMService = LLMService.shared,
         promptService: PromptService = PromptService.shared,
-        messageViewModel: MessageViewModel
+        messageViewModel: MessageViewModel,
+        messageSenderViewModel: MessageSenderViewModel? = nil
     ) {
         self.chatHistoryService = chatHistoryService
         self.llmService = llmService
         self.promptService = promptService
         self.messageViewModel = messageViewModel
+        self.messageSenderViewModel = messageSenderViewModel
     }
 
     // MARK: - 会话管理
@@ -120,6 +126,9 @@ final class ConversationViewModel: ObservableObject, SuperLog {
             projectId: projectId,
             title: title + " " + formatter.string(from: Date())
         )
+
+        // 切换到新会话的队列
+        messageSenderViewModel?.switchToConversation(newConversation.id)
 
         messageViewModel.setHasGeneratedTitleInternal(false)
 
@@ -143,8 +152,10 @@ final class ConversationViewModel: ObservableObject, SuperLog {
         language: LanguagePreference = .chinese
     ) async {
         let newConversation = createConversation(projectId: projectId)
-        currentConversation = newConversation
         selectedConversationId = newConversation.id
+
+        // 切换消息发送队列到新会话
+        messageSenderViewModel?.switchToConversation(newConversation.id)
 
         // 获取欢迎消息并保存到数据库
         let welcomeMessage = await promptService.getEmptySessionWelcomeMessage(
@@ -175,7 +186,14 @@ final class ConversationViewModel: ObservableObject, SuperLog {
             return
         }
 
-        currentConversation = conversation
+        // 切换消息发送队列到新会话
+        if let senderVM = messageSenderViewModel {
+            let queueCount = senderVM.switchToConversation(conversation.id)
+            if Self.verbose {
+                os_log("\(Self.t)🔄 切换到会话队列，待发送消息：\(queueCount) 条")
+            }
+        }
+
         _ = messageViewModel.loadMessages(for: conversation)
 
         if Self.verbose {
@@ -186,10 +204,16 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     /// 保存消息到当前对话
     /// - Parameter message: 要保存的消息
     func saveMessage(_ message: ChatMessage) {
-        guard let conversation = currentConversation else {
+        guard let conversationId = selectedConversationId else {
             if Self.verbose {
-                os_log("\(Self.t)⚠️ 当前没有活动对话，跳过保存")
+                os_log("\(Self.t)⚠️ 当前没有选中会话，跳过保存")
             }
+            return
+        }
+
+        // 从数据库获取对话
+        guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
+            os_log(.error, "\(Self.t)❌ [\(conversationId)] 对话不存在")
             return
         }
 
@@ -205,16 +229,16 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     func deleteConversation(_ conversation: Conversation) {
         os_log("\(Self.t)🗑️ 开始删除对话：\(conversation.title)")
 
-        // 如果删除的是当前对话，清理状态
-        if currentConversation?.id == conversation.id {
-            currentConversation = nil
-            messageViewModel.clearMessages()
-        }
-
-        // 如果删除的是选中的对话，清除选中状态
+        // 如果删除的是选中的对话，清理状态
         if selectedConversationId == conversation.id {
             selectedConversationId = nil
+            messageViewModel.clearMessages()
+            // 清理该会话的待发送队列
+            messageSenderViewModel?.clearCurrentConversationQueue()
         }
+
+        // 清理该会话的待发送队列（即使不是当前对话）
+        messageSenderViewModel?.removeConversationQueue(conversation.id)
 
         chatHistoryService.deleteConversation(conversation)
 
@@ -247,12 +271,16 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     /// - Parameter id: 会话 ID
     func selectConversation(_ id: UUID) {
         selectedConversationId = id
+
+        // 加载该会话的消息
+        Task {
+            await loadConversation(id)
+        }
     }
 
     /// 清除会话选择
     func clearConversationSelection() {
         selectedConversationId = nil
-        currentConversation = nil
         messageViewModel.clearMessages()
     }
 

@@ -43,9 +43,6 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
 
     // MARK: - 聊天消息状态 (DevAssistant)
 
-    /// 当前输入内容
-    @Published public fileprivate(set) var currentInput: String = ""
-
     /// 是否正在处理
     @Published public fileprivate(set) var isProcessing: Bool = false
 
@@ -139,16 +136,6 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
 
     // MARK: - 公开 Setter 方法
 
-    /// 设置当前输入
-    func setCurrentInput(_ input: String) {
-        currentInput = input
-    }
-
-    /// 追加文本到当前输入
-    func appendInput(_ text: String) {
-        currentInput += text
-    }
-
     /// 设置错误消息
     func setErrorMessage(_ message: String?) {
         errorMessage = message
@@ -173,9 +160,15 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
 
     // MARK: - 代理 ConversationViewModel 属性（仅供内部扩展使用）
 
-    /// 当前会话（代理到 ConversationViewModel）
-    var currentConversation: Conversation? {
-        conversationViewModel.currentConversation
+    /// 当前选中的会话 ID（代理到 ConversationViewModel）
+    ///
+    /// 需要完整会话数据的视图应使用 `@Query` 根据此 ID 自行查询：
+    /// ```swift
+    /// @Query(filter: #Predicate<Conversation> { $0.id == agentProvider.selectedConversationId })
+    /// var selectedConversation: [Conversation]
+    /// ```
+    var selectedConversationId: UUID? {
+        conversationViewModel.selectedConversationId
     }
 
     /// 当前会话的消息列表（代理到 ConversationViewModel）
@@ -349,11 +342,6 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         messageViewModel.setMessagesInternal(messages)
     }
 
-    /// 设置当前会话
-    func setCurrentConversation(_ conversation: Conversation?) {
-        conversationViewModel.setCurrentConversationInternal(conversation)
-    }
-
     /// 设置标题生成标记
     func setHasGeneratedTitle(_ value: Bool) {
         messageViewModel.setHasGeneratedTitleInternal(value)
@@ -401,8 +389,12 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     // MARK: - 消息发送
 
     /// 发送消息
-    public func sendMessage() {
-        guard !currentInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !pendingAttachments.isEmpty else { return }
+    /// - Parameters:
+    ///   - input: 要发送的文字内容（由 InputViewModel 传入，不再从内部状态读取）
+    ///   - images: 附件图片列表
+    public func sendMessage(input: String, images: [ImageAttachment] = []) {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty || !pendingAttachments.isEmpty else { return }
 
         if Self.verbose {
             os_log("\(Self.t)🚀 用户发送消息")
@@ -411,25 +403,23 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         // 清除之前的深度警告
         depthWarning = nil
 
-        // 获取当前输入和附件
-        let input = currentInput
-        let images = pendingAttachments.compactMap { attachment -> ImageAttachment? in
+        // 合并外部传入的图片和 pendingAttachments 中的图片
+        let attachmentImages = pendingAttachments.compactMap { attachment -> ImageAttachment? in
             if case .image(_, let data, let mimeType, _) = attachment {
                 return ImageAttachment(data: data, mimeType: mimeType)
             }
             return nil
         }
+        let allImages = images + attachmentImages
 
-        // 清空输入框
-        currentInput = ""
         isProcessing = false
         errorMessage = nil
         pendingAttachments.removeAll()
 
         // 检查是否为支持的斜杠命令
-        if SlashCommandService.shared.isSupportedSlashCommand(input) {
+        if SlashCommandService.shared.isSupportedSlashCommand(trimmed) {
             Task {
-                let result = await SlashCommandService.shared.handle(input: input, provider: self)
+                let result = await SlashCommandService.shared.handle(input: trimmed, provider: self)
                 switch result {
                 case .handled:
                     setIsProcessing(false)
@@ -438,14 +428,14 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
                     setIsProcessing(false)
                 case .notHandled:
                     // 对于未处理的命令，继续通过消息队列发送
-                    messageSenderViewModel.sendMessage(content: input, images: images)
+                    messageSenderViewModel.sendMessage(content: trimmed, images: allImages)
                 }
             }
             return
         }
 
         // 通过 MessageSenderViewModel 发送消息
-        messageSenderViewModel.sendMessage(content: input, images: images)
+        messageSenderViewModel.sendMessage(content: trimmed, images: allImages)
     }
 
     // MARK: - 对话轮次处理

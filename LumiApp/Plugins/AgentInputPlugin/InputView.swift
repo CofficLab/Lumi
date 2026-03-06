@@ -5,6 +5,12 @@ import SwiftUI
 
 /// Agent 输入包装视图 - 管理输入区域所需的状态
 /// 封装 InputAreaView 并提供模型选择器 popover
+///
+/// ## 架构说明
+/// `PendingMessagesView` 放置在此视图（外层），而不是 `InputAreaView` 内部。
+/// 这样设计是为了隔离状态变化：
+/// - 当 `pendingMessages` 变化时，只会导致 `PendingMessagesView` 重新渲染
+/// - `InputAreaView` 不受影响，输入框保持焦点
 struct InputView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "💬"
@@ -14,6 +20,9 @@ struct InputView: View, SuperLog {
     /// 智能体提供者
     @EnvironmentObject var agentProvider: AgentProvider
 
+    /// 输入框本地状态 ViewModel（与 agentProvider 解耦，避免每次击键触发全局重庆染）
+    @StateObject private var inputViewModel = InputViewModel()
+
     /// 输入框是否处于聚焦状态
     @State private var isInputFocused: Bool = false
 
@@ -21,10 +30,18 @@ struct InputView: View, SuperLog {
     @State private var isModelSelectorPresented = false
 
     var body: some View {
-        InputAreaView(
-            isInputFocused: $isInputFocused,
-            isModelSelectorPresented: $isModelSelectorPresented
-        )
+        VStack(spacing: 8) {
+            // 待发送消息队列（放在外层，避免影响输入框焦点）
+            PendingMessagesView(messageSenderViewModel: agentProvider.messageSenderViewModel)
+
+            // 输入区域
+            InputAreaView(
+                inputViewModel: inputViewModel,
+                isInputFocused: $isInputFocused,
+                isModelSelectorPresented: $isModelSelectorPresented
+            )
+        }
+        .padding()
         .onAppear(perform: onAppear)
         .popover(isPresented: $isModelSelectorPresented, arrowEdge: .bottom) {
             ModelSelectorView()

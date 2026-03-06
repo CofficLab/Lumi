@@ -13,6 +13,9 @@ struct ChatToolbarView: View, SuperLog {
     @EnvironmentObject var agentProvider: AgentProvider
     @EnvironmentObject var projectViewModel: ProjectViewModel
 
+    /// 输入框本地状态 ViewModel
+    @ObservedObject var inputViewModel: InputViewModel
+
     /// 模型选择器是否显示
     @Binding var isModelSelectorPresented: Bool
 
@@ -97,19 +100,21 @@ extension ChatToolbarView {
             .buttonStyle(.plain)
             .help("停止生成")
         } else {
-            // 发送按钮 - 正常状态
+            // 发送按钞 - 正常状态
             Button(action: {
-                agentProvider.sendMessage()
+                let text = inputViewModel.text
+                inputViewModel.clear()
+                agentProvider.sendMessage(input: text)
             }) {
                 Image(systemName: "paperplane.fill")
                     .font(.system(size: 14))
                     .foregroundColor(.white)
                     .frame(width: 28, height: 28)
-                    .background(agentProvider.currentInput.isEmpty || !agentProvider.isProjectSelected ? Color.gray.opacity(0.5) : Color.accentColor)
+                    .background(inputViewModel.isEmpty || !agentProvider.isProjectSelected ? Color.gray.opacity(0.5) : Color.accentColor)
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
-            .disabled(agentProvider.currentInput.isEmpty || !agentProvider.isProjectSelected)
+            .disabled(inputViewModel.isEmpty || !agentProvider.isProjectSelected)
             .help("发送消息")
         }
     }
@@ -205,7 +210,7 @@ extension ChatToolbarView {
     ///   - prompt: 点击后填入的提示词
     private func commitButton(title: String, icon: String, prompt: String) -> some View {
         Button(action: {
-            agentProvider.setCurrentInput(prompt)
+            inputViewModel.set(prompt)
         }) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
@@ -248,12 +253,3 @@ extension ChatToolbarView {
 
 // MARK: - Preview
 
-#Preview("Toolbar") {
-    ChatToolbarView(
-        isModelSelectorPresented: .constant(false)
-    )
-    .padding()
-    .frame(width: 800)
-    .background(Color.black)
-    .inRootView()
-}

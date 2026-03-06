@@ -1,5 +1,6 @@
 import SwiftUI
 import MagicKit
+import UniformTypeIdentifiers
 
 /// 项目文件树节点视图
 struct FileTreeNodeView: View {
@@ -15,6 +16,7 @@ struct FileTreeNodeView: View {
     @State private var children: [FileTreeNode] = []
     @State private var isLoading = false
     @State private var hasLoadedOnce = false
+    @State private var isHovered = false
 
     /// 每层缩进量 (参考 VS Code 的默认缩进)
     private let indentPerLevel: CGFloat = 16
@@ -23,11 +25,15 @@ struct FileTreeNodeView: View {
         VStack(alignment: .leading, spacing: 0) {
             // 节点行
             nodeRow
-            // 子节点
+
+            // 子节点或加载状态
             if isExpanded && node.isDirectory {
                 if isLoading {
                     loadingIndicator
-                } else if !children.isEmpty {
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.leading, indentPerLevel)
+                        .padding(.vertical, 4)
+                } else {
                     childNodes
                 }
             }
@@ -39,7 +45,7 @@ struct FileTreeNodeView: View {
                 let savedState = FileTreeStateManager.shared.isExpanded(url: node.url, projectPath: projectPath)
                 if savedState {
                     isExpanded = true
-                    // 如果之前是展开的，自动加载子节点
+                    // 如果之前是展开的，并且还没有数据，则异步加载
                     if children.isEmpty && !isLoading {
                         loadChildren()
                     }
@@ -71,16 +77,32 @@ struct FileTreeNodeView: View {
         .padding(.vertical, 3)
         .background(
             RoundedRectangle(cornerRadius: 4)
-                .fill(isSelected ? Color.accentColor.opacity(0.2) : Color.clear)
+                .fill(backgroundColor)
         )
         .contentShape(Rectangle())
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHovered = hovering
+            }
+        }
         .onTapGesture {
             handleTap()
         }
-        // 添加拖拽支持
-        .draggable(node.url) {
-            DragPreview(fileURL: node.url)
+        // 添加拖拽支持 - 强制转换为普通纯文本字符串传递，避免系统为 fileURL 生成 Caches 目录下的替身文件
+        .onDrag {
+            // 将真实路径作为普通字符串拖出
+            return NSItemProvider(object: node.url.path as NSString)
         }
+    }
+
+    /// 背景色：根据选中状态和 hover 状态返回不同颜色
+    private var backgroundColor: Color {
+        if isSelected {
+            return Color.accentColor.opacity(0.2)
+        } else if isHovered {
+            return Color.primary.opacity(0.08)
+        }
+        return Color.clear
     }
 
     private var expandCollapseButton: some View {
@@ -114,9 +136,6 @@ struct FileTreeNodeView: View {
             ProgressView()
                 .frame(width: 8, height: 8)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.leading, indentPerLevel)
-        .padding(.vertical, 4)
     }
 
     // MARK: - Child Nodes

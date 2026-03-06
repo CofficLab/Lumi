@@ -7,7 +7,7 @@ struct ChatMessagesView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "💬"
     /// 是否输出详细日志
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     /// 消息管理 ViewModel
     @EnvironmentObject var messageViewModel: MessageViewModel
@@ -43,6 +43,7 @@ struct ChatMessagesView: View, SuperLog {
                 emptyStateView
             }
         }
+        .onChange(of: conversationViewModel.selectedConversationId, handleConversationSelected)
     }
 }
 
@@ -62,7 +63,6 @@ extension ChatMessagesView {
                 .padding(.horizontal)
             }
             .padding(.vertical)
-            .onChange(of: conversationViewModel.selectedConversationId, handleConversationSelected)
             .onChange(of: nonSystemMessages.count) {
                 handleMessagesChanged(proxy: proxy)
             }
