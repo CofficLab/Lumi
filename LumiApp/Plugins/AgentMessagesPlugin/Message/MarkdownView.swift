@@ -74,14 +74,14 @@ struct ExpandButtonBar: View {
                 Spacer()
             }
             .background(
-                DesignTokens.Color.semantic.info.opacity(0.15)
+                DesignTokens.Color.semantic.info.opacity(0.8)
                     .overlay(
                         Rectangle()
                             .foregroundStyle(
                                 LinearGradient(
                                     colors: [
                                         Color.clear,
-                                        DesignTokens.Color.semantic.info.opacity(0.15)
+                                        DesignTokens.Color.semantic.info.opacity(0.8)
                                     ],
                                     startPoint: .top,
                                     endPoint: .bottom
@@ -91,7 +91,7 @@ struct ExpandButtonBar: View {
             )
             .overlay(alignment: .top) {
                 Rectangle()
-                    .fill(DesignTokens.Color.semantic.info.opacity(0.3))
+                    .fill(DesignTokens.Color.semantic.info.opacity(0.8))
                     .frame(height: 1)
             }
         }
