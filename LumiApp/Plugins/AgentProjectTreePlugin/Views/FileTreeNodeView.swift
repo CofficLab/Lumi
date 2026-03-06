@@ -1,5 +1,6 @@
 import SwiftUI
 import MagicKit
+import UniformTypeIdentifiers
 
 /// 项目文件树节点视图
 struct FileTreeNodeView: View {
@@ -77,8 +78,8 @@ struct FileTreeNodeView: View {
         .onTapGesture {
             handleTap()
         }
-        // 添加拖拽支持
-        .draggable(node.url) {
+        // 添加拖拽支持 - 使用 NSItemProvider 传递原始路径而不是临时副本
+        .draggable(NSItemProvider(object: node.url.absoluteString as NSString)) {
             DragPreview(fileURL: node.url)
         }
     }

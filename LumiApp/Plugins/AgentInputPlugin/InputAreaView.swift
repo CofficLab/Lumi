@@ -95,7 +95,7 @@ struct InputAreaView: View, SuperLog {
             processingBorderOverlay
         )
         .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
-        .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+        .onDrop(of: [.fileURL, .plainText], isTargeted: nil) { providers in
             handleDropProviders(providers: providers)
         }
         .overlay(alignment: .bottomLeading) {
@@ -203,7 +203,9 @@ extension InputAreaView {
     /// - Returns: 是否成功处理
     private func handleDropProviders(providers: [NSItemProvider]) -> Bool {
         var handled = false
+        
         for provider in providers {
+            // 优先尝试 fileURL 类型
             if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
                 provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
                     if let data = item as? Data, let url = URL(dataRepresentation: data, relativeTo: nil) {
@@ -218,7 +220,20 @@ extension InputAreaView {
                 }
                 handled = true
             }
+            // 也尝试纯文本类型（用于传递原始文件路径字符串）
+            else if provider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
+                provider.loadItem(forTypeIdentifier: UTType.plainText.identifier, options: nil) { item, _ in
+                    if let string = item as? String,
+                       let url = URL(string: string) {
+                        DispatchQueue.main.async {
+                            self.handleDroppedFile(url: url)
+                        }
+                    }
+                }
+                handled = true
+            }
         }
+        
         return handled
     }
 
@@ -242,4 +257,3 @@ extension InputAreaView {
 }
 
 // MARK: - Preview
-
