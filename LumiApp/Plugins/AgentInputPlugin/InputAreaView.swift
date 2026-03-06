@@ -25,7 +25,10 @@ struct InputAreaView: View, SuperLog {
     @State private var gradientPhase: CGFloat = 0
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 8) {
+            // 待发送消息队列
+            PendingMessagesView()
+
             // 输入框容器
             VStack(spacing: 0) {
                 // 附件预览区域
