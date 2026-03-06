@@ -1,10 +1,4 @@
-
 import Foundation
-
-enum MCPTransportType: String, Codable, Hashable, Sendable {
-    case stdio
-    case sse
-}
 
 struct MCPServerConfig: Identifiable, Codable, Hashable, Sendable {
     var id: String { name }
