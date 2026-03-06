@@ -11,7 +11,7 @@ import MagicKit
 /// 此类可以在后台线程执行
 class LLMService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     static let shared = LLMService()
 

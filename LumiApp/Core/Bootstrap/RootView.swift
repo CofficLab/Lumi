@@ -50,19 +50,22 @@ struct RootView<Content>: View where Content: View {
         
         // 创建 MessageViewModel
         self.messageViewModel = MessageViewModel(chatHistoryService: chatHistoryService)
-        
-        // 创建 ConversationViewModel
+
+        // 创建 ConversationViewModel（messageSenderViewModel 将在之后设置）
         self.conversationViewModel = ConversationViewModel(
             chatHistoryService: chatHistoryService,
             messageViewModel: messageViewModel
         )
-        
+
         // 创建 MessageSenderViewModel
         self.messageSenderViewModel = MessageSenderViewModel(
             messageViewModel: messageViewModel,
             conversationViewModel: conversationViewModel,
             chatHistoryService: chatHistoryService
         )
+
+        // 设置 ConversationViewModel 的 messageSenderViewModel 引用
+        self.conversationViewModel.messageSenderViewModel = self.messageSenderViewModel
 
         // 初始化对话轮次 ViewModel
         let conversationTurnViewModel = ConversationTurnViewModel(

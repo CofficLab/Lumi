@@ -25,6 +25,9 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     /// 消息管理 ViewModel
     let messageViewModel: MessageViewModel
 
+    /// 消息发送队列 ViewModel（用于会话切换时同步队列）
+    weak var messageSenderViewModel: MessageSenderViewModel?
+
     // MARK: - 会话状态
 
     /// 当前会话
@@ -94,12 +97,14 @@ final class ConversationViewModel: ObservableObject, SuperLog {
         chatHistoryService: ChatHistoryService,
         llmService: LLMService = LLMService.shared,
         promptService: PromptService = PromptService.shared,
-        messageViewModel: MessageViewModel
+        messageViewModel: MessageViewModel,
+        messageSenderViewModel: MessageSenderViewModel? = nil
     ) {
         self.chatHistoryService = chatHistoryService
         self.llmService = llmService
         self.promptService = promptService
         self.messageViewModel = messageViewModel
+        self.messageSenderViewModel = messageSenderViewModel
     }
 
     // MARK: - 会话管理
@@ -120,6 +125,9 @@ final class ConversationViewModel: ObservableObject, SuperLog {
             projectId: projectId,
             title: title + " " + formatter.string(from: Date())
         )
+
+        // 切换到新会话的队列
+        messageSenderViewModel?.switchToConversation(newConversation.id)
 
         messageViewModel.setHasGeneratedTitleInternal(false)
 
@@ -175,6 +183,14 @@ final class ConversationViewModel: ObservableObject, SuperLog {
             return
         }
 
+        // 切换消息发送队列到新会话
+        if let senderVM = messageSenderViewModel {
+            let queueCount = senderVM.switchToConversation(conversation.id)
+            if Self.verbose {
+                os_log("\(Self.t)🔄 切换到会话队列，待发送消息：\(queueCount) 条")
+            }
+        }
+
         currentConversation = conversation
         _ = messageViewModel.loadMessages(for: conversation)
 
@@ -209,12 +225,17 @@ final class ConversationViewModel: ObservableObject, SuperLog {
         if currentConversation?.id == conversation.id {
             currentConversation = nil
             messageViewModel.clearMessages()
+            // 清理该会话的待发送队列
+            messageSenderViewModel?.clearCurrentConversationQueue()
         }
 
         // 如果删除的是选中的对话，清除选中状态
         if selectedConversationId == conversation.id {
             selectedConversationId = nil
         }
+
+        // 清理该会话的待发送队列（即使不是当前对话）
+        messageSenderViewModel?.removeConversationQueue(conversation.id)
 
         chatHistoryService.deleteConversation(conversation)
 
