@@ -26,10 +26,19 @@ struct ChatMessagesView: View, SuperLog {
         conversationViewModel.selectedConversationId != nil
     }
 
+    /// 消息是否为空
+    private var isMessagesEmpty: Bool {
+        nonSystemMessages.isEmpty
+    }
+
     var body: some View {
         Group {
             if hasSelectedConversation {
-                messagesListView
+                if isMessagesEmpty {
+                    emptyMessagesView
+                } else {
+                    messagesListView
+                }
             } else {
                 emptyStateView
             }
@@ -92,6 +101,36 @@ extension ChatMessagesView {
 
             // 描述
             Text("从左侧列表选择一个现有会话，或创建新会话", tableName: "DevAssistant")
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.clear)
+    }
+
+    /// 空消息视图 - 已选择会话但没有消息时显示
+    private var emptyMessagesView: some View {
+        VStack(spacing: 20) {
+            Spacer()
+
+            // 图标
+            Image(systemName: "text.bubble.fill")
+                .font(.system(size: 56))
+                .foregroundStyle(.tertiary)
+                .symbolEffect(.bounce, options: .repeating.speed(0.5))
+
+            // 标题
+            Text("暂无消息", tableName: "DevAssistant")
+                .font(.title2)
+                .fontWeight(.semibold)
+                .foregroundStyle(.primary)
+
+            // 描述
+            Text("在下方输入框中输入您的问题，开始与 AI 助手对话", tableName: "DevAssistant")
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
