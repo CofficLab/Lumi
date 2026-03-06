@@ -52,7 +52,6 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
     private var pendingMessagesByConversation: [UUID: [ChatMessage]] = [:]
 
     /// 当前会话的待发送消息队列（包括正在发送的消息）
-    /// 使用 @Published 包装，在切换会话时手动发送 objectWillChange 通知
     @Published public fileprivate(set) var pendingMessages: [ChatMessage] = []
 
     /// 当前正在处理的消息索引（nil 表示没有正在处理的消息）
@@ -95,7 +94,6 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
     func switchToConversation(_ conversationId: UUID) -> Int {
         // 保存当前会话状态（如果有）
         if let currentId = currentConversationId {
-            // 当前会话的队列已经自动保存在字典中，无需额外操作
             if Self.verbose {
                 let count = pendingMessagesByConversation[currentId]?.count ?? 0
                 os_log("\(Self.t)💾 保存会话 [{\(currentId.uuidString.prefix(8))}] 队列状态：\(count) 条消息")
@@ -111,7 +109,11 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         }
 
         // 更新 pendingMessages，触发 UI 更新
-        pendingMessages = pendingMessagesByConversation[conversationId] ?? []
+        let newMessages = pendingMessagesByConversation[conversationId] ?? []
+        
+        // 强制触发 @Published 通知
+        objectWillChange.send()
+        pendingMessages = newMessages
 
         let queueCount = pendingMessages.count
 
@@ -127,6 +129,10 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         guard let conversationId = currentConversationId else { return }
         pendingMessagesByConversation[conversationId]?.removeAll()
         currentProcessingIndex = nil
+
+        // 强制触发 @Published 通知
+        objectWillChange.send()
+        pendingMessages = []
 
         if Self.verbose {
             os_log("\(Self.t)🗑️ 已清空当前会话 [{\(conversationId.uuidString.prefix(8))}] 的发送队列")
@@ -171,7 +177,9 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         pendingMessagesByConversation[conversation.id, default: []].append(userMessage)
 
         // 同步更新 pendingMessages，触发 UI 更新
-        pendingMessages = pendingMessagesByConversation[conversation.id, default: []]
+        let updatedMessages = pendingMessagesByConversation[conversation.id, default: []]
+        objectWillChange.send()
+        pendingMessages = updatedMessages
 
         os_log("\(Self.t)📝 消息已加入队列（队列长度：\(self.pendingMessages.count)）：\(content.max(50))")
 
@@ -247,7 +255,9 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
                 guard let conversationId = self.currentConversationId else { return }
                 self.pendingMessagesByConversation[conversationId]?.removeFirst()
                 // 同步更新 pendingMessages，触发 UI 更新
-                self.pendingMessages = self.pendingMessagesByConversation[conversationId] ?? []
+                let updatedMessages = self.pendingMessagesByConversation[conversationId] ?? []
+                self.objectWillChange.send()
+                self.pendingMessages = updatedMessages
                 os_log("\(Self.t)🗑️ 移除已处理消息，队列剩余：\(self.pendingMessages.count)")
                 self.currentProcessingIndex = nil
             }
@@ -346,7 +356,9 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         }
 
         // 同步更新 pendingMessages，触发 UI 更新
-        pendingMessages = pendingMessagesByConversation[conversationId] ?? []
+        let updatedMessages = pendingMessagesByConversation[conversationId] ?? []
+        objectWillChange.send()
+        pendingMessages = updatedMessages
 
         os_log("\(Self.t)🗑️ 发送队列已清空")
     }
@@ -371,7 +383,9 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         pendingMessagesByConversation[conversationId]?.remove(at: index)
 
         // 同步更新 pendingMessages，触发 UI 更新
-        pendingMessages = pendingMessagesByConversation[conversationId] ?? []
+        let updatedMessages = pendingMessagesByConversation[conversationId] ?? []
+        objectWillChange.send()
+        pendingMessages = updatedMessages
 
         // 更新当前处理索引
         if let currentIdx = currentProcessingIndex, index < currentIdx {
