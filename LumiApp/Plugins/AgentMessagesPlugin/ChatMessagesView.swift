@@ -21,7 +21,27 @@ struct ChatMessagesView: View, SuperLog {
         messageViewModel.messages.filter { $0.role != .system }
     }
 
+    /// 是否已选择会话
+    private var hasSelectedConversation: Bool {
+        conversationViewModel.selectedConversationId != nil
+    }
+
     var body: some View {
+        Group {
+            if hasSelectedConversation {
+                messagesListView
+            } else {
+                emptyStateView
+            }
+        }
+    }
+}
+
+// MARK: - Subviews
+
+extension ChatMessagesView {
+    /// 消息列表视图
+    private var messagesListView: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
@@ -51,6 +71,36 @@ struct ChatMessagesView: View, SuperLog {
                 }
             }
         }
+    }
+
+    /// 空状态视图 - 未选择会话时显示
+    private var emptyStateView: some View {
+        VStack(spacing: 20) {
+            Spacer()
+
+            // 图标
+            Image(systemName: "bubble.left.and.bubble.right.fill")
+                .font(.system(size: 64))
+                .foregroundStyle(.secondary)
+                .symbolEffect(.pulse, options: .repeating)
+
+            // 标题
+            Text("选择一个会话开始聊天", tableName: "DevAssistant")
+                .font(.title2)
+                .fontWeight(.semibold)
+                .foregroundStyle(.primary)
+
+            // 描述
+            Text("从左侧列表选择一个现有会话，或创建新会话", tableName: "DevAssistant")
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.clear)
     }
 }
 
@@ -91,7 +141,15 @@ extension ChatMessagesView {
 
 // MARK: - Preview
 
-#Preview {
+#Preview("With Messages") {
+    ChatMessagesView()
+        .padding()
+        .withDebugBar()
+        .background(Color.black)
+        .inRootView()
+}
+
+#Preview("Empty State") {
     ChatMessagesView()
         .padding()
         .withDebugBar()
