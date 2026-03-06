@@ -41,6 +41,7 @@ struct InputView: View, SuperLog {
                 isModelSelectorPresented: $isModelSelectorPresented
             )
         }
+        .padding()
         .onAppear(perform: onAppear)
         .popover(isPresented: $isModelSelectorPresented, arrowEdge: .bottom) {
             ModelSelectorView()

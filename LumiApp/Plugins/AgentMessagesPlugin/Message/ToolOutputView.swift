@@ -122,7 +122,6 @@ struct ToolOutputView: View {
                     .font(DesignTokens.Typography.code)
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .textSelection(.enabled)
             }
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)

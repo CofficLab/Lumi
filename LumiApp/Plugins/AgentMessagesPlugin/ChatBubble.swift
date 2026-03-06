@@ -140,7 +140,7 @@ struct AssistantMessageHeader: View {
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
             // 供应商和模型信息
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
+            HStack(alignment: .center, spacing: 4) {
                 Text(String(localized: "Dev Assistant", table: "DevAssistant"))
                     .font(DesignTokens.Typography.caption1)
                     .fontWeight(.medium)
