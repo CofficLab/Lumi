@@ -4,6 +4,7 @@ import SwiftUI
 struct ChatBubble: View {
     let message: ChatMessage
     @State private var showRawMessage: Bool = false
+    @State private var isMessageExpanded: Bool = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
@@ -19,14 +20,21 @@ struct ChatBubble: View {
                     VStack(alignment: .leading, spacing: 4) {
                         AssistantMessageHeader(
                             message: message,
-                            showRawMessage: $showRawMessage
+                            showRawMessage: $showRawMessage,
+                            isMessageExpanded: $isMessageExpanded,
+                            contentLength: message.content.count
                         )
                         
                         if hasToolCalls {
                             AssistantMessageWithToolCallsView(message: message)
                         } else {
-                            MarkdownMessageView(message: message, showRawMessage: showRawMessage)
-                                .messageBubbleStyle(role: message.role, isError: message.isError)
+                            MarkdownMessageView(
+                                message: message,
+                                showRawMessage: showRawMessage,
+                                isCollapsible: shouldCollapse(message.content),
+                                isExpanded: $isMessageExpanded
+                            )
+                            .messageBubbleStyle(role: message.role, isError: message.isError)
                         }
                     }
                 } else if message.toolCallID != nil {
@@ -38,8 +46,13 @@ struct ChatBubble: View {
                     )
                 } else {
                     // 用户消息
-                    MarkdownMessageView(message: message, showRawMessage: showRawMessage)
-                        .messageBubbleStyle(role: message.role, isError: message.isError)
+                    MarkdownMessageView(
+                        message: message,
+                        showRawMessage: showRawMessage,
+                        isCollapsible: false,
+                        isExpanded: .constant(true)
+                    )
+                    .messageBubbleStyle(role: message.role, isError: message.isError)
                 }
             }
 
@@ -52,6 +65,13 @@ struct ChatBubble: View {
     /// 检查消息是否包含工具调用
     private var hasToolCalls: Bool {
         message.toolCalls != nil && !message.toolCalls!.isEmpty
+    }
+    
+    /// 判断内容是否需要折叠（超过 1000 字符或 50 行）
+    private func shouldCollapse(_ content: String) -> Bool {
+        let charCount = content.count
+        let lineCount = content.components(separatedBy: "\n").count
+        return charCount > 1000 || lineCount > 50
     }
 
     // MARK: - Infer Tool Type from Tool Call ID
@@ -70,6 +90,8 @@ struct ChatBubble: View {
 struct AssistantMessageHeader: View {
     let message: ChatMessage
     @Binding var showRawMessage: Bool
+    @Binding var isMessageExpanded: Bool
+    let contentLength: Int
 
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
@@ -113,11 +135,21 @@ struct AssistantMessageHeader: View {
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
                 
+                // 折叠/展开按钮（仅当内容需要折叠时显示）
+                if shouldCollapse(contentLength) {
+                    CollapseButton(isExpanded: $isMessageExpanded)
+                }
+                
                 // 切换源码/渲染按钮
                 RawMessageToggleButton(showRawMessage: $showRawMessage)
             }
         }
         .padding(.bottom, 4)
+    }
+    
+    /// 判断内容是否需要折叠
+    private func shouldCollapse(_ charCount: Int) -> Bool {
+        return charCount > 1000
     }
     
     /// 格式化供应商名称（显示友好名称）
@@ -270,25 +302,14 @@ extension View {
     .background(Color.black)
 }
 
-#Preview("Assistant Message (智谱 AI)") {
+#Preview("Assistant Message (Long Content)") {
+    let longContent = String(repeating: "这是一段测试文字，用于验证长消息的折叠功能。", count: 100)
     ChatBubble(message: ChatMessage(
         role: .assistant,
-        content: "我可以帮助你完成编程任务。",
-        providerId: "zhipu",
-        modelName: "glm-4-plus",
-        latency: 890.12
-    ))
-    .padding()
-    .background(Color.black)
-}
-
-#Preview("Assistant Message (Slow)") {
-    ChatBubble(message: ChatMessage(
-        role: .assistant,
-        content: "I can help you with coding tasks.",
+        content: longContent,
         providerId: "anthropic",
-        modelName: "claude-3-5-sonnet-20241022",
-        latency: 5678.9
+        modelName: "claude-sonnet-4-20250514",
+        latency: 2345.67
     ))
     .padding()
     .background(Color.black)
@@ -304,47 +325,4 @@ extension View {
     ChatBubble(message: ChatMessage(role: .assistant, content: "An error occurred", isError: true))
         .padding()
         .background(Color.black)
-}
-
-#Preview("Assistant with Tool Calls") {
-    let toolCalls = [
-        ToolCall(id: "tool_1", name: "read_file", arguments: "{\"path\": \"/Users/angel/Code/Lumi/App.swift\"}"),
-        ToolCall(id: "tool_2", name: "run_command", arguments: "{\"command\": \"ls -la\"}")
-    ]
-    let message = ChatMessage(
-        role: .assistant,
-        content: "让我帮你查看项目结构和文件内容。",
-        toolCalls: toolCalls,
-        providerId: "anthropic",
-        modelName: "claude-sonnet-4-20250514",
-        latency: 2345.67
-    )
-
-    return AssistantMessageWithToolCallsView(message: message)
-        .padding()
-        .frame(width: 600)
-        .background(Color.black)
-}
-
-#Preview("Multiple Messages") {
-    VStack(alignment: .leading, spacing: 12) {
-        ChatBubble(message: ChatMessage(role: .user, content: "List all files in the project"))
-
-        let toolCalls = [
-            ToolCall(id: "tool_1", name: "list_directory", arguments: "{\"path\": \"/Users/angel/Code/Lumi\"}")
-        ]
-        AssistantMessageWithToolCallsView(message: ChatMessage(
-            role: .assistant,
-            content: "我来列出项目中的所有文件。",
-            toolCalls: toolCalls,
-            providerId: "anthropic",
-            modelName: "claude-sonnet-4-20250514",
-            latency: 1567.89
-        ))
-
-        ChatBubble(message: ChatMessage(role: .system, content: "Project files: 142", toolCallID: "test"))
-    }
-    .padding()
-    .frame(width: 500)
-    .background(Color.black)
 }

@@ -4,16 +4,19 @@ import SwiftUI
 struct AssistantMessageWithToolCallsView: View {
     let message: ChatMessage
     @State private var showRawMessage: Bool = false
+    @State private var isContentExpanded: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // 显示助手的文本内容（如果有）
             if !message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                MarkdownMessageView(message: message, showRawMessage: showRawMessage)
-                    .messageBubbleStyle(role: message.role, isError: message.isError)
-                    .overlay(alignment: .topTrailing) {
-                        RawMessageToggleButton(showRawMessage: $showRawMessage)
-                    }
+                MarkdownMessageView(
+                    message: message,
+                    showRawMessage: showRawMessage,
+                    isCollapsible: shouldCollapse(message.content),
+                    isExpanded: $isContentExpanded
+                )
+                .messageBubbleStyle(role: message.role, isError: message.isError)
             }
 
             // 显示工具调用列表
@@ -39,6 +42,13 @@ struct AssistantMessageWithToolCallsView: View {
                 .padding(.top, message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0 : 8)
             }
         }
+    }
+    
+    /// 判断内容是否需要折叠
+    private func shouldCollapse(_ content: String) -> Bool {
+        let charCount = content.count
+        let lineCount = content.components(separatedBy: "\n").count
+        return charCount > 1000 || lineCount > 50
     }
 }
 
