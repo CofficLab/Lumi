@@ -156,6 +156,12 @@ extension LLMRequestJob {
             os_log("\(Self.t)✅ 收到响应")
         }
 
-        return ChatMessage(role: .assistant, content: content, toolCalls: toolCalls)
+        return ChatMessage(
+        role: .assistant,
+        content: content,
+        toolCalls: toolCalls,
+        providerId: config.providerId,
+        modelName: config.model
+    )
     }
 }

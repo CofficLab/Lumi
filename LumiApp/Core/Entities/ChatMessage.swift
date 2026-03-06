@@ -14,7 +14,14 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     // Image Support
     var images: [ImageAttachment] = []
 
-    init(role: MessageRole, content: String, isError: Bool = false, toolCalls: [ToolCall]? = nil, toolCallID: String? = nil, images: [ImageAttachment] = []) {
+    // LLM Metadata - 记录大模型供应商和模型名称
+    var providerId: String?  // 例如："anthropic", "openai", "zhipu"
+    var modelName: String?   // 例如："claude-sonnet-4-20250514", "gpt-4o"
+
+    init(role: MessageRole, content: String, isError: Bool = false, 
+         toolCalls: [ToolCall]? = nil, toolCallID: String? = nil, 
+         images: [ImageAttachment] = [],
+         providerId: String? = nil, modelName: String? = nil) {
         self.id = UUID()
         self.role = role
         self.content = content
@@ -23,10 +30,15 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         self.toolCalls = toolCalls
         self.toolCallID = toolCallID
         self.images = images
+        self.providerId = providerId
+        self.modelName = modelName
     }
     
     /// 从数据库加载时使用的初始化方法，保留原有 ID
-    init(id: UUID, role: MessageRole, content: String, timestamp: Date, isError: Bool = false, toolCalls: [ToolCall]? = nil, toolCallID: String? = nil, images: [ImageAttachment] = []) {
+    init(id: UUID, role: MessageRole, content: String, timestamp: Date, 
+         isError: Bool = false, toolCalls: [ToolCall]? = nil, 
+         toolCallID: String? = nil, images: [ImageAttachment] = [],
+         providerId: String? = nil, modelName: String? = nil) {
         self.id = id
         self.role = role
         self.content = content
@@ -35,6 +47,8 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         self.toolCalls = toolCalls
         self.toolCallID = toolCallID
         self.images = images
+        self.providerId = providerId
+        self.modelName = modelName
     }
 
     // 实现 Equatable
@@ -43,6 +57,8 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         lhs.role == rhs.role &&
         lhs.content == rhs.content &&
         lhs.isError == rhs.isError &&
-        lhs.images == rhs.images
+        lhs.images == rhs.images &&
+        lhs.providerId == rhs.providerId &&
+        lhs.modelName == rhs.modelName
     }
 }
