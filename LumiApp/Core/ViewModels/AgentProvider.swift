@@ -6,7 +6,7 @@ import SwiftData
 
 /// Agent 模式提供者，管理 Agent 模式下的核心状态和服务
 @MainActor
-final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, ConversationTurnDelegate {
+final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, ConversationTurnDelegate, LLMConfigProvider {
     nonisolated static let emoji = "🤖"
     nonisolated static let verbose = true
 
@@ -107,8 +107,7 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     static let placeholder: AgentProvider = {
         let messageSenderVM = MessageSenderViewModel(
             messageViewModel: MessageViewModel.shared,
-            conversationViewModel: ConversationViewModel.shared,
-            chatHistoryService: ChatHistoryService.shared
+            conversationViewModel: ConversationViewModel.shared
         )
         let conversationTurnVM = ConversationTurnViewModel(
             llmService: LLMService.shared,
@@ -126,6 +125,7 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
             conversationTurnViewModel: conversationTurnVM
         )
         messageSenderVM.delegate = placeholderProvider
+        messageSenderVM.setConfigProvider(placeholderProvider)
         conversationTurnVM.delegate = placeholderProvider
         return placeholderProvider
     }()

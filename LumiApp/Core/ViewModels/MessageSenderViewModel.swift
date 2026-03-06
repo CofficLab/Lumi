@@ -1,7 +1,6 @@
 import Foundation
 import MagicKit
 import OSLog
-import SwiftUI
 
 /// 消息发送回调
 /// 用于解耦 MessageSenderViewModel 和 AgentProvider
@@ -25,7 +24,7 @@ protocol MessageSendingDelegate: AnyObject, Sendable {
 @MainActor
 final class MessageSenderViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📤"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     // MARK: - 服务依赖
 
@@ -33,13 +32,13 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
     private let messageViewModel: MessageViewModel
     /// 会话管理 ViewModel
     private let conversationViewModel: ConversationViewModel
-    /// 聊天历史服务
-    private let chatHistoryService: ChatHistoryService
+    /// LLM 配置提供者
+    private weak var configProvider: (any LLMConfigProvider)?
 
     // MARK: - 回调委托
 
     /// 消息发送委托
-    weak var delegate: MessageSendingDelegate?
+    weak var delegate: (any MessageSendingDelegate)?
 
     // MARK: - 发送状态
 
@@ -60,11 +59,16 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
     init(
         messageViewModel: MessageViewModel,
         conversationViewModel: ConversationViewModel,
-        chatHistoryService: ChatHistoryService
+        configProvider: (any LLMConfigProvider)? = nil
     ) {
         self.messageViewModel = messageViewModel
         self.conversationViewModel = conversationViewModel
-        self.chatHistoryService = chatHistoryService
+        self.configProvider = configProvider
+    }
+
+    /// 设置 LLM 配置提供者
+    func setConfigProvider(_ provider: any LLMConfigProvider) {
+        self.configProvider = provider
     }
 
     // MARK: - 公开方法
@@ -156,11 +160,51 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         // 保存到数据库
         conversationViewModel.saveMessage(message)
 
+        // 启动会话标题生成 Job（如果需要）- 只传递必要参数，让 Job 自己处理
+        startConversationTitleGenerationJob(message: message)
+
         // 处理消息
         await delegate?.processUserMessage(content: message.content, images: message.images)
 
         if Self.verbose {
             os_log("\(Self.t)✅ 消息发送完成")
+        }
+    }
+
+    /// 启动会话标题生成 Job
+    /// 只提取必要参数，在后台 Task 中执行，不阻塞当前流程
+    private func startConversationTitleGenerationJob(message: ChatMessage) {
+        // 只处理用户消息
+        guard message.role == .user else { return }
+
+        // 获取当前对话 ID
+        guard let conversationId = conversationViewModel.currentConversation?.id else { return }
+        
+        // 检查是否满足生成标题的条件（快速检查，避免不必要的后台任务）
+        guard conversationViewModel.currentConversation?.title.hasPrefix("新会话 ") == true,
+              !conversationViewModel.hasGeneratedTitle else {
+            return
+        }
+
+        // 标记已生成标题，防止重复生成
+        conversationViewModel.setHasGeneratedTitleInternal(true)
+
+        // 获取 LLM 配置
+        let config = configProvider?.getCurrentConfig() ?? LLMConfig.default
+        
+        // 消息内容和 ID
+        let messageContent = message.content
+        let messageId = message.id
+
+        // 在后台 Task 中执行标题生成
+        Task.detached(priority: .utility) {
+            let job = ConversationTitleGenerationJob()
+            await job.run(
+                conversationId: conversationId,
+                messageId: messageId,
+                userMessageContent: messageContent,
+                config: config
+            )
         }
     }
 

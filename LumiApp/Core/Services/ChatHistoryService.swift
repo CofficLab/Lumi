@@ -4,8 +4,7 @@ import OSLog
 import SwiftData
 
 /// 聊天历史服务 - 使用 SwiftData 存储对话
-@MainActor
-class ChatHistoryService: SuperLog {
+final class ChatHistoryService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "💾"
     nonisolated static let verbose = false
     

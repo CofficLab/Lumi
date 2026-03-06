@@ -40,9 +40,12 @@ class LLMService: SuperLog, @unchecked Sendable {
             throw NSError(domain: "LLMService", code: 401, userInfo: [NSLocalizedDescriptionKey: "API Key is missing"])
         }
 
+        // 记录开始时间
+        let startTime = CFAbsoluteTimeGetCurrent()
+
         // 从注册表获取供应商实例
         guard let provider = registry.createProvider(id: config.providerId) else {
-            os_log(.error, "\(self.t)未找到供应商: \(config.providerId)")
+            os_log(.error, "\(self.t)未找到供应商：\(config.providerId)")
             throw NSError(domain: "LLMService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Provider not found: \(config.providerId)"])
         }
 
@@ -62,7 +65,7 @@ class LLMService: SuperLog, @unchecked Sendable {
                 systemPrompt: "" // 系统提示已包含在 messages 中
             )
         } catch {
-            os_log(.error, "\(self.t)构建请求体失败: \(error.localizedDescription)")
+            os_log(.error, "\(self.t)构建请求体失败：\(error.localizedDescription)")
             throw error
         }
 
@@ -110,15 +113,26 @@ class LLMService: SuperLog, @unchecked Sendable {
             // 解析响应
             let (content, toolCalls) = try provider.parseResponse(data: data)
 
+            // 计算总耗时（毫秒）
+            let endTime = CFAbsoluteTimeGetCurrent()
+            let latency = (endTime - startTime) * 1000.0
+
             if Self.verbose {
                 if let toolCalls = toolCalls, !toolCalls.isEmpty {
-                    os_log("\(self.t)收到响应: \(content.prefix(100))...，包含 \(toolCalls.count) 个工具调用")
+                    os_log("\(self.t)收到响应：\(content.prefix(100))...，包含 \(toolCalls.count) 个工具调用，耗时：\(String(format: "%.2f", latency))ms")
                 } else {
-                    os_log("\(self.t)收到响应: \(content.prefix(100))...")
+                    os_log("\(self.t)收到响应：\(content.prefix(100))...，耗时：\(String(format: "%.2f", latency))ms")
                 }
             }
 
-            return ChatMessage(role: .assistant, content: content, toolCalls: toolCalls)
+            return ChatMessage(
+                role: .assistant,
+                content: content,
+                toolCalls: toolCalls,
+                providerId: config.providerId,
+                modelName: config.model,
+                latency: latency  // 记录耗时
+            )
 
         } catch let apiError as APIError {
             // 转换 API 错误为 NSError
