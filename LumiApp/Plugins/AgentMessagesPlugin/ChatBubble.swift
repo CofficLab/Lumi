@@ -15,26 +15,31 @@ struct ChatBubble: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 if message.role == .assistant {
-                    RoleLabel.assistant
+                    // 助手消息：显示 Header（包含模型信息和响应时间）
+                    VStack(alignment: .leading, spacing: 4) {
+                        AssistantMessageHeader(
+                            message: message,
+                            showRawMessage: $showRawMessage
+                        )
+                        
+                        if hasToolCalls {
+                            AssistantMessageWithToolCallsView(message: message)
+                        } else {
+                            MarkdownMessageView(message: message, showRawMessage: showRawMessage)
+                                .messageBubbleStyle(role: message.role, isError: message.isError)
+                        }
+                    }
                 } else if message.toolCallID != nil {
+                    // 工具输出
                     RoleLabel.tool
-                }
-
-                if message.toolCallID != nil {
                     ToolOutputView(
                         message: message,
                         toolType: inferToolType(from: message)
                     )
-                } else if message.role == .assistant && hasToolCalls {
-                    AssistantMessageWithToolCallsView(message: message)
                 } else {
+                    // 用户消息
                     MarkdownMessageView(message: message, showRawMessage: showRawMessage)
                         .messageBubbleStyle(role: message.role, isError: message.isError)
-                        .overlay(alignment: .topTrailing) {
-                            if message.role == .assistant {
-                                RawMessageToggleButton(showRawMessage: $showRawMessage)
-                            }
-                        }
                 }
             }
 
@@ -56,6 +61,74 @@ struct ChatBubble: View {
         // 由于消息之间没有直接关联，我们通过工具名称前缀来推断
         // 这是一个简化实现，更好的方式是在消息间建立关联
         return .unknown
+    }
+}
+
+// MARK: - Assistant Message Header
+
+/// 助手消息头部组件
+struct AssistantMessageHeader: View {
+    let message: ChatMessage
+    @Binding var showRawMessage: Bool
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 8) {
+            // 模型信息
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(String(localized: "Dev Assistant", table: "DevAssistant"))
+                    .font(DesignTokens.Typography.caption1)
+                    .fontWeight(.medium)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                
+                // 模型名称（如果有）
+                if let modelName = message.modelName {
+                    Text("·")
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    Text(formatModelName(modelName))
+                        .font(DesignTokens.Typography.caption2)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                }
+            }
+            
+            Spacer()
+            
+            HStack(alignment: .center, spacing: 12) {
+                // 响应时间（如果有）
+                if let latency = message.latency {
+                    HStack(alignment: .center, spacing: 3) {
+                        Image(systemName: "clock")
+                            .font(.system(size: 9, weight: .medium))
+                        Text(formatLatency(latency))
+                            .font(DesignTokens.Typography.caption2)
+                    }
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                }
+                
+                // 切换源码/渲染按钮
+                RawMessageToggleButton(showRawMessage: $showRawMessage)
+            }
+        }
+        .padding(.bottom, 4)
+    }
+    
+    /// 格式化模型名称（简化显示）
+    private func formatModelName(_ name: String) -> String {
+        // 移除日期后缀，例如：claude-sonnet-4-20250514 → claude-sonnet-4
+        // gpt-4o-2024-11-20 → gpt-4o
+        let parts = name.split(separator: "-")
+        if parts.count > 2, let lastPart = parts.last, lastPart.allSatisfy({ $0.isNumber }) {
+            return parts.dropLast().joined(separator: "-")
+        }
+        return name
+    }
+    
+    /// 格式化响应时间
+    private func formatLatency(_ latency: Double) -> String {
+        if latency < 1000 {
+            return String(format: "%.0fms", latency)
+        } else {
+            return String(format: "%.1fs", latency / 1000.0)
+        }
     }
 }
 
@@ -87,13 +160,17 @@ struct RawMessageToggleButton: View {
     var body: some View {
         Button(action: { showRawMessage.toggle() }) {
             Image(systemName: showRawMessage ? "text.bubble.fill" : "curlybraces")
-                .font(.system(size: 10))
+                .font(.system(size: 10, weight: .medium))
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary.opacity(0.6))
                 .padding(6)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.08))
+                )
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .padding([.top, .trailing], 2)
+        .help(showRawMessage ? String(localized: "Show Rendered", comment: "Toggle to show rendered markdown") : String(localized: "Show Source", comment: "Toggle to show markdown source"))
     }
 }
 
@@ -143,10 +220,40 @@ extension View {
         .background(Color.black)
 }
 
-#Preview("Assistant Message") {
-    ChatBubble(message: ChatMessage(role: .assistant, content: "I can help you with coding tasks."))
-        .padding()
-        .background(Color.black)
+#Preview("Assistant Message with Latency") {
+    ChatBubble(message: ChatMessage(
+        role: .assistant,
+        content: "I can help you with coding tasks.",
+        providerId: "anthropic",
+        modelName: "claude-sonnet-4-20250514",
+        latency: 1234.56
+    ))
+    .padding()
+    .background(Color.black)
+}
+
+#Preview("Assistant Message (Fast)") {
+    ChatBubble(message: ChatMessage(
+        role: .assistant,
+        content: "I can help you with coding tasks.",
+        providerId: "openai",
+        modelName: "gpt-4o",
+        latency: 456.78
+    ))
+    .padding()
+    .background(Color.black)
+}
+
+#Preview("Assistant Message (Slow)") {
+    ChatBubble(message: ChatMessage(
+        role: .assistant,
+        content: "I can help you with coding tasks.",
+        providerId: "anthropic",
+        modelName: "claude-3-5-sonnet-20241022",
+        latency: 5678.9
+    ))
+    .padding()
+    .background(Color.black)
 }
 
 #Preview("Tool Output") {
@@ -169,7 +276,10 @@ extension View {
     let message = ChatMessage(
         role: .assistant,
         content: "让我帮你查看项目结构和文件内容。",
-        toolCalls: toolCalls
+        toolCalls: toolCalls,
+        providerId: "anthropic",
+        modelName: "claude-sonnet-4-20250514",
+        latency: 2345.67
     )
 
     return AssistantMessageWithToolCallsView(message: message)
@@ -185,7 +295,10 @@ extension View {
     let message = ChatMessage(
         role: .assistant,
         content: "",
-        toolCalls: toolCalls
+        toolCalls: toolCalls,
+        providerId: "anthropic",
+        modelName: "claude-sonnet-4-20250514",
+        latency: 1890.12
     )
 
     return AssistantMessageWithToolCallsView(message: message)
@@ -201,7 +314,14 @@ extension View {
         let toolCalls = [
             ToolCall(id: "tool_1", name: "list_directory", arguments: "{\"path\": \"/Users/angel/Code/Lumi\"}")
         ]
-        AssistantMessageWithToolCallsView(message: ChatMessage(role: .assistant, content: "我来列出项目中的所有文件。", toolCalls: toolCalls))
+        AssistantMessageWithToolCallsView(message: ChatMessage(
+            role: .assistant,
+            content: "我来列出项目中的所有文件。",
+            toolCalls: toolCalls,
+            providerId: "anthropic",
+            modelName: "claude-sonnet-4-20250514",
+            latency: 1567.89
+        ))
 
         ChatBubble(message: ChatMessage(role: .system, content: "Project files: 142", toolCallID: "test"))
     }
