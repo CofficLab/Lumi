@@ -30,7 +30,7 @@ final class MessageExpansionState: ObservableObject {
 /// 聊天气泡组件，用于显示用户消息、助手回复和工具输出
 struct ChatBubble: View {
     let message: ChatMessage
-    @StateObject private var expansionState = MessageExpansionState()
+    @ObservedObject private var expansionState = MessageExpansionState.shared
     @State private var showRawMessage: Bool = false
     
     // 判断是否是长消息

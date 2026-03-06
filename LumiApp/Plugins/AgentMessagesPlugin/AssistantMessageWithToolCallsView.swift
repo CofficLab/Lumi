@@ -3,7 +3,7 @@ import SwiftUI
 /// 助手消息与工具调用视图 - 显示助手回复及工具调用列表
 struct AssistantMessageWithToolCallsView: View {
     let message: ChatMessage
-    @StateObject private var expansionState = MessageExpansionState()
+    @ObservedObject private var expansionState = MessageExpansionState.shared
     @State private var showRawMessage: Bool = false
 
     // 判断是否是长消息
