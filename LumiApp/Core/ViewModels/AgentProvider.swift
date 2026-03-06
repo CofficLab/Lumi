@@ -70,21 +70,6 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
 
     public var pendingAttachments: [Attachment] = []
 
-    // MARK: - 供应商选择
-
-    @Published fileprivate(set) var selectedProviderId: String = "anthropic" {
-        didSet {
-            UserDefaults.standard.set(selectedProviderId, forKey: "Agent_SelectedProvider")
-        }
-    }
-
-    /// 当前选择的模型
-    @Published fileprivate(set) var selectedModel: String = "" {
-        didSet {
-            UserDefaults.standard.set(selectedModel, forKey: "Agent_SelectedModel")
-        }
-    }
-
     // MARK: - 初始化
 
     /// 初始化 AgentProvider
@@ -165,13 +150,7 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         let autoApprove = UserDefaults.standard.bool(forKey: "Agent_AutoApproveRisk")
         projectViewModel.setAutoApproveRisk(autoApprove)
 
-        // 加载供应商选择
-        selectedProviderId = UserDefaults.standard.string(forKey: "Agent_SelectedProvider") ?? "anthropic"
-
-        // 加载模型选择
-        selectedModel = UserDefaults.standard.string(forKey: "Agent_SelectedModel") ?? ""
-
-        // 加载上次选择的项目
+        // 加载上次选择的项目（项目切换会自动应用配置）
         if let savedPath = UserDefaults.standard.string(forKey: "Agent_SelectedProject") {
             projectViewModel.switchProject(to: savedPath)
         }
@@ -180,16 +159,6 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     // MARK: - Setter 方法
 
     // MARK: - 公开 Setter 方法
-
-    /// 设置供应商
-    func setSelectedProviderId(_ providerId: String) {
-        selectedProviderId = providerId
-    }
-
-    /// 设置模型
-    func setSelectedModel(_ model: String) {
-        selectedModel = model
-    }
 
     /// 设置当前输入
     func setCurrentInput(_ input: String) {
@@ -257,6 +226,16 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         projectViewModel.isProjectSelected
     }
 
+    /// 当前项目的供应商 ID（代理到 ProjectViewModel）
+    var selectedProviderId: String {
+        projectViewModel.currentProviderId
+    }
+
+    /// 当前项目的模型名称（代理到 ProjectViewModel）
+    var currentModel: String {
+        projectViewModel.currentModel
+    }
+
     /// 语言偏好（代理到 ProjectViewModel）
     var languagePreference: LanguagePreference {
         projectViewModel.languagePreference
@@ -274,26 +253,34 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
 
     // MARK: - 项目管理（协调 ProjectViewModel）
 
-    /// 应用项目配置
-    func applyProjectConfig(_ config: ProjectConfig) {
-        setSelectedProviderId(config.providerId)
-        setSelectedModel(config.model)
-
+    /// 设置供应商并保存到项目配置
+    func setSelectedProviderId(_ providerId: String) {
+        guard isProjectSelected, !currentProjectPath.isEmpty else { return }
+        
+        projectViewModel.saveProjectConfig(
+            path: currentProjectPath,
+            providerId: providerId,
+            model: currentModel
+        )
+        
         if Self.verbose {
-            os_log("\(Self.t)⚙️ 已应用项目配置")
+            os_log("\(Self.t)⚙️ 已设置供应商：\(providerId)")
         }
     }
 
-    /// 保存当前项目配置
-    func saveCurrentProjectConfig() {
-        guard projectViewModel.isProjectSelected,
-              !projectViewModel.currentProjectPath.isEmpty else { return }
-
+    /// 设置模型并保存到项目配置
+    func setSelectedModel(_ model: String) {
+        guard isProjectSelected, !currentProjectPath.isEmpty else { return }
+        
         projectViewModel.saveProjectConfig(
-            path: projectViewModel.currentProjectPath,
+            path: currentProjectPath,
             providerId: selectedProviderId,
-            model: selectedModel
+            model: model
         )
+        
+        if Self.verbose {
+            os_log("\(Self.t)⚙️ 已设置模型：\(model)")
+        }
     }
 
     /// 获取最近使用的项目列表
@@ -335,22 +322,11 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         // 从 UserDefaults 获取 API Key
         let apiKey = UserDefaults.standard.string(forKey: providerType.apiKeyStorageKey) ?? ""
 
-        // 从 UserDefaults 获取选中的模型
-        let selectedModel = UserDefaults.standard.string(forKey: providerType.modelStorageKey) ?? providerType.defaultModel
-
         return LLMConfig(
             apiKey: apiKey,
-            model: selectedModel,
+            model: currentModel,
             providerId: selectedProviderId
         )
-    }
-
-    /// 获取当前选中的模型名称
-    var currentModel: String {
-        guard let providerType = registry.providerType(forId: selectedProviderId) else {
-            return ""
-        }
-        return UserDefaults.standard.string(forKey: providerType.modelStorageKey) ?? providerType.defaultModel
     }
 
     /// 获取指定供应商的 API Key
@@ -662,7 +638,7 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
             let mimeType = mimeTypeForPath(url.pathExtension)
 
             if Self.verbose {
-                os_log("\(Self.t)📤 添加图片附件: \(url.lastPathComponent) (\(imageData.count) bytes)")
+                os_log("\(Self.t)📤 添加图片附件：\(url.lastPathComponent) (\(imageData.count) bytes)")
             }
 
             let attachment = Attachment.image(
