@@ -5,6 +5,7 @@ import MagicKit
 struct FileTreeNodeView: View {
     let node: FileTreeNode
     let depth: Int
+    let projectPath: String
     let onFileDrop: (URL) -> Void
     let onFileSelect: (URL) -> Void
     @EnvironmentObject var agentProvider: AgentProvider
@@ -13,6 +14,7 @@ struct FileTreeNodeView: View {
     @State private var isExpanded = false
     @State private var children: [FileTreeNode] = []
     @State private var isLoading = false
+    @State private var hasLoadedOnce = false
 
     /// 每层缩进量 (参考 VS Code 的默认缩进)
     private let indentPerLevel: CGFloat = 16
@@ -27,6 +29,20 @@ struct FileTreeNodeView: View {
                     loadingIndicator
                 } else if !children.isEmpty {
                     childNodes
+                }
+            }
+        }
+        .onAppear {
+            // 首次出现时，从状态管理器恢复展开状态
+            if !hasLoadedOnce {
+                hasLoadedOnce = true
+                let savedState = FileTreeStateManager.shared.isExpanded(url: node.url, projectPath: projectPath)
+                if savedState {
+                    isExpanded = true
+                    // 如果之前是展开的，自动加载子节点
+                    if children.isEmpty && !isLoading {
+                        loadChildren()
+                    }
                 }
             }
         }
@@ -111,6 +127,7 @@ struct FileTreeNodeView: View {
                 FileTreeNodeView(
                     node: child,
                     depth: depth + 1,
+                    projectPath: projectPath,
                     onFileDrop: onFileDrop,
                     onFileSelect: onFileSelect
                 )
@@ -139,6 +156,9 @@ struct FileTreeNodeView: View {
 
     private func toggle() {
         isExpanded.toggle()
+        
+        // 保存状态到持久化存储
+        FileTreeStateManager.shared.setExpanded(isExpanded, url: node.url, projectPath: projectPath)
 
         if isExpanded && children.isEmpty && !isLoading {
             loadChildren()

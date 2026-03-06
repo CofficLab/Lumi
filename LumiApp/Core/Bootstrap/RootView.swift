@@ -37,19 +37,31 @@ struct RootView<Content>: View where Content: View {
         // 初始化 SwiftData 容器
         self.modelContainer = AppConfig.getContainer()
 
-        // 初始化聊天历史服务
-        ChatHistoryService.shared.initializeWithContainer(self.modelContainer, reason: "主窗口初始化")
+        // 初始化聊天历史服务（非单例）
+        let chatHistoryService = ChatHistoryService(
+            llmService: LLMService.shared,
+            modelContainer: self.modelContainer
+        )
 
-        // 初始化 ViewModel
-        self.appProvider = AppProvider.shared
-        self.projectViewModel = ProjectViewModel.shared
-        self.messageViewModel = MessageViewModel.shared
-        self.conversationViewModel = ConversationViewModel.shared
-        self.commandSuggestionViewModel = CommandSuggestionViewModel.shared
+        // 初始化 ViewModel（非单例，使用依赖注入）
+        self.appProvider = AppProvider()
+        self.projectViewModel = ProjectViewModel()
+        self.commandSuggestionViewModel = CommandSuggestionViewModel()
+        
+        // 创建 MessageViewModel
+        self.messageViewModel = MessageViewModel(chatHistoryService: chatHistoryService)
+        
+        // 创建 ConversationViewModel
+        self.conversationViewModel = ConversationViewModel(
+            chatHistoryService: chatHistoryService,
+            messageViewModel: messageViewModel
+        )
+        
+        // 创建 MessageSenderViewModel
         self.messageSenderViewModel = MessageSenderViewModel(
             messageViewModel: messageViewModel,
             conversationViewModel: conversationViewModel,
-            chatHistoryService: ChatHistoryService.shared
+            chatHistoryService: chatHistoryService
         )
 
         // 初始化对话轮次 ViewModel
@@ -64,6 +76,7 @@ struct RootView<Content>: View where Content: View {
             promptService: PromptService.shared,
             registry: ProviderRegistry.shared,
             toolManager: ToolManager.shared,
+            chatHistoryService: chatHistoryService,
             messageViewModel: messageViewModel,
             conversationViewModel: conversationViewModel,
             messageSenderViewModel: self.messageSenderViewModel,
@@ -71,8 +84,9 @@ struct RootView<Content>: View where Content: View {
             conversationTurnViewModel: conversationTurnViewModel
         )
 
-        // 设置委托
+        // 设置委托和配置提供者
         self.messageSenderViewModel.delegate = self.agentProvider
+        self.messageSenderViewModel.setConfigProvider(self.agentProvider)
         conversationTurnViewModel.delegate = self.agentProvider
     }
 

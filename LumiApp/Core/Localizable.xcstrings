@@ -84,6 +84,12 @@
         }
       }
     },
+    "·" : {
+
+    },
+    "(%lld)" : {
+
+    },
     "******" : {
 
     },
@@ -4193,6 +4199,12 @@
         }
       }
     },
+    "Show Rendered" : {
+      "comment" : "Toggle to show rendered markdown"
+    },
+    "Show Source" : {
+      "comment" : "Toggle to show markdown source"
+    },
     "Show system status like CPU, Memory, Disk, Battery, etc." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5148,7 +5160,13 @@
     "对话模式：只聊天，不执行任何操作" : {
 
     },
+    "展开" : {
+
+    },
     "已复制" : {
+
+    },
+    "已折叠" : {
 
     },
     "开启新会话" : {
@@ -5238,6 +5256,12 @@
       }
     },
     "打开项目后将自动创建配置" : {
+
+    },
+    "折叠" : {
+
+    },
+    "折叠消息" : {
 
     },
     "插件未找到或已禁用" : {
@@ -5488,6 +5512,12 @@
       }
     },
     "确定要删除对话「%@」吗？此操作将彻底删除该对话的所有消息，且无法恢复。" : {
+
+    },
+    "移除此消息" : {
+
+    },
+    "等待发送" : {
 
     },
     "管理应用启动行为" : {

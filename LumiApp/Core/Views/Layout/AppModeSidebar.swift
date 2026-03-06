@@ -150,6 +150,4 @@ struct SidebarRow: View {
     AppModeSidebar()
         .frame(width: 220, height: 600)
         .inRootView()
-        .environmentObject(AppProvider.shared)
-        .environmentObject(PluginProvider.shared)
 }

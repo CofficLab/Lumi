@@ -28,13 +28,14 @@ final class PluginProvider: ObservableObject, SuperLog {
     @Published var selectedMode: AppMode = .app
 
     /// 插件设置存储
-    private let settingsStore = PluginSettingsStore.shared
+    private let settingsStore: PluginSettingsStore
     
     /// Combine 订阅集合
     private var cancellables = Set<AnyCancellable>()
 
     /// 初始化插件提供者（自动发现并注册所有插件）
-    private init(autoDiscover: Bool = true) {
+    private init(settingsStore: PluginSettingsStore = PluginSettingsStore.shared, autoDiscover: Bool = true) {
+        self.settingsStore = settingsStore
 
         if autoDiscover {
             autoDiscoverAndRegisterPlugins()

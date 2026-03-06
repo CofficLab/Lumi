@@ -11,9 +11,6 @@ final class ProjectViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose = false
 
-    /// 全局单例
-    static let shared = ProjectViewModel()
-
     // MARK: - 项目信息
 
     /// 当前项目名称
@@ -24,6 +21,14 @@ final class ProjectViewModel: ObservableObject, SuperLog {
 
     /// 是否已选择项目
     @Published public fileprivate(set) var isProjectSelected: Bool = false
+
+    // MARK: - 项目配置
+
+    /// 当前项目的供应商 ID
+    @Published public fileprivate(set) var currentProviderId: String = "anthropic"
+
+    /// 当前项目的模型名称
+    @Published public fileprivate(set) var currentModel: String = ""
 
     // MARK: - 文件选择
 
@@ -39,11 +44,24 @@ final class ProjectViewModel: ObservableObject, SuperLog {
     /// 是否已选择文件
     @Published public fileprivate(set) var isFileSelected: Bool = false
 
+    // MARK: - 语言偏好
+
+    @Published var languagePreference: LanguagePreference = .chinese
+
+    // MARK: - 聊天模式
+
+    @Published var chatMode: ChatMode = .build
+
+    // MARK: - 自动批准风险
+
+    @Published var autoApproveRisk: Bool = false
+
     // MARK: - 初始化
 
-    private init() {
+    init() {
         loadLanguagePreference()
         loadChatMode()
+        loadAutoApproveRisk()
     }
 
     // MARK: - 项目管理
@@ -65,6 +83,7 @@ final class ProjectViewModel: ObservableObject, SuperLog {
         UserDefaults.standard.set(path, forKey: "Agent_SelectedProject")
         saveRecentProject(name: projectName, path: path)
 
+        // 获取并应用项目配置
         let config = ProjectConfigStore.shared.getOrCreateConfig(for: path)
         applyProjectConfig(config)
 
@@ -86,6 +105,10 @@ final class ProjectViewModel: ObservableObject, SuperLog {
 
     /// 应用项目配置
     func applyProjectConfig(_ config: ProjectConfig) {
+        // 更新当前项目配置
+        currentProviderId = config.providerId
+        currentModel = config.model.isEmpty ? getDefaultModel(for: config.providerId) : config.model
+
         // 通知供应商设置更新配置
         NotificationCenter.default.post(
             name: NSNotification.Name("ProjectConfigApplied"),
@@ -93,7 +116,7 @@ final class ProjectViewModel: ObservableObject, SuperLog {
         )
 
         if Self.verbose {
-            os_log("\(Self.t)⚙️ 已应用项目配置")
+            os_log("\(Self.t)⚙️ 已应用项目配置：\(config.providerId) / \(self.currentModel)")
         }
     }
 
@@ -111,9 +134,23 @@ final class ProjectViewModel: ObservableObject, SuperLog {
         )
         ProjectConfigStore.shared.saveConfig(config)
 
-        if Self.verbose {
-            os_log("\(Self.t)💾 已保存项目配置")
+        // 如果是当前项目，更新本地状态
+        if path == currentProjectPath {
+            currentProviderId = providerId
+            currentModel = model
         }
+
+        if Self.verbose {
+            os_log("\(Self.t)💾 已保存项目配置：\(providerId) / \(model)")
+        }
+    }
+
+    /// 获取指定供应商的默认模型
+    private func getDefaultModel(for providerId: String) -> String {
+        guard let providerType = ProviderRegistry.shared.providerType(forId: providerId) else {
+            return ""
+        }
+        return providerType.defaultModel
     }
 
     /// 保存最近使用的项目
@@ -196,8 +233,6 @@ final class ProjectViewModel: ObservableObject, SuperLog {
 
     // MARK: - 语言偏好
 
-    @Published var languagePreference: LanguagePreference = .chinese
-
     private func loadLanguagePreference() {
         if let data = UserDefaults.standard.data(forKey: "Agent_LanguagePreference"),
            let preference = try? JSONDecoder().decode(LanguagePreference.self, from: data) {
@@ -214,8 +249,6 @@ final class ProjectViewModel: ObservableObject, SuperLog {
 
     // MARK: - 聊天模式
 
-    @Published var chatMode: ChatMode = .build
-
     private func loadChatMode() {
         if let rawValue = UserDefaults.standard.string(forKey: "Agent_ChatMode"),
            let mode = ChatMode(rawValue: rawValue) {
@@ -230,15 +263,13 @@ final class ProjectViewModel: ObservableObject, SuperLog {
 
     // MARK: - 自动批准风险
 
-    @Published var autoApproveRisk: Bool = {
-        UserDefaults.standard.bool(forKey: "Agent_AutoApproveRisk")
-    }() {
-        didSet {
-            UserDefaults.standard.set(autoApproveRisk, forKey: "Agent_AutoApproveRisk")
-        }
+    /// 加载自动批准风险设置
+    private func loadAutoApproveRisk() {
+        autoApproveRisk = UserDefaults.standard.bool(forKey: "Agent_AutoApproveRisk")
     }
 
     func setAutoApproveRisk(_ enabled: Bool) {
         autoApproveRisk = enabled
+        UserDefaults.standard.set(enabled, forKey: "Agent_AutoApproveRisk")
     }
 }

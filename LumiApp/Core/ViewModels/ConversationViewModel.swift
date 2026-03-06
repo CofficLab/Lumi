@@ -11,22 +11,19 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "💬"
     nonisolated static let verbose = false
 
-    /// 全局单例
-    static let shared = ConversationViewModel()
-
     // MARK: - 服务依赖
 
     /// 聊天历史服务
-    private let chatHistoryService = ChatHistoryService.shared
+    private let chatHistoryService: ChatHistoryService
 
     /// LLM 服务（用于生成会话标题）
-    private let llmService = LLMService.shared
+    private let llmService: LLMService
 
     /// 提示词服务（用于获取欢迎消息）
-    private let promptService = PromptService.shared
+    private let promptService: PromptService
 
     /// 消息管理 ViewModel
-    let messageViewModel = MessageViewModel.shared
+    let messageViewModel: MessageViewModel
 
     // MARK: - 会话状态
 
@@ -92,7 +89,18 @@ final class ConversationViewModel: ObservableObject, SuperLog {
 
     // MARK: - 初始化
 
-    private init() {}
+    /// 使用依赖服务初始化
+    init(
+        chatHistoryService: ChatHistoryService,
+        llmService: LLMService = LLMService.shared,
+        promptService: PromptService = PromptService.shared,
+        messageViewModel: MessageViewModel
+    ) {
+        self.chatHistoryService = chatHistoryService
+        self.llmService = llmService
+        self.promptService = promptService
+        self.messageViewModel = messageViewModel
+    }
 
     // MARK: - 会话管理
 

@@ -3,17 +3,37 @@ import SwiftUI
 /// 助手消息与工具调用视图 - 显示助手回复及工具调用列表
 struct AssistantMessageWithToolCallsView: View {
     let message: ChatMessage
+    @ObservedObject private var expansionState = MessageExpansionState.shared
     @State private var showRawMessage: Bool = false
+
+    // 判断是否是长消息
+    private var isLongMessage: Bool {
+        let charCount = message.content.count
+        let lineCount = message.content.components(separatedBy: "\n").count
+        return charCount > 1000 || lineCount > 50
+    }
+    
+    // 当前消息的展开状态
+    private var isExpanded: Bool {
+        expansionState.isExpanded(id: message.id)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // 显示助手的文本内容（如果有）
             if !message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                MarkdownMessageView(message: message, showRawMessage: showRawMessage)
-                    .messageBubbleStyle(role: message.role, isError: message.isError)
-                    .overlay(alignment: .topTrailing) {
-                        RawMessageToggleButton(showRawMessage: $showRawMessage)
+                MarkdownMessageView(
+                    message: message,
+                    showRawMessage: showRawMessage,
+                    isCollapsible: isLongMessage,
+                    isExpanded: isExpanded,
+                    onToggleExpand: {
+                        Task { @MainActor in
+                            expansionState.toggleExpansion(id: message.id)
+                        }
                     }
+                )
+                .messageBubbleStyle(role: message.role, isError: message.isError)
             }
 
             // 显示工具调用列表

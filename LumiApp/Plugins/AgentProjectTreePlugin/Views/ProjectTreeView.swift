@@ -7,6 +7,7 @@ struct ProjectTreeView: View {
     @State private var projectRoot: URL?
     @State private var rootItems: [FileTreeNode] = []
     @State private var isLoading = false
+    @State private var currentProjectPath: String = ""
 
     var body: some View {
         VStack(spacing: 0) {
@@ -28,12 +29,14 @@ struct ProjectTreeView: View {
         .padding(.vertical, 8)
         .background(DesignTokens.Material.glassThick)
         .onChange(of: agentProvider.currentProjectPath) { _, newPath in
-            if !newPath.isEmpty {
+            if !newPath.isEmpty && newPath != currentProjectPath {
+                currentProjectPath = newPath
                 loadProjectTree(path: newPath)
             }
         }
         .onAppear {
             if !agentProvider.currentProjectPath.isEmpty {
+                currentProjectPath = agentProvider.currentProjectPath
                 loadProjectTree(path: agentProvider.currentProjectPath)
             }
         }
@@ -57,6 +60,7 @@ struct ProjectTreeView: View {
                     FileTreeNodeView(
                         node: item,
                         depth: 0,
+                        projectPath: currentProjectPath,
                         onFileDrop: handleFileDrop,
                         onFileSelect: handleFileSelect
                     )
@@ -91,7 +95,7 @@ struct ProjectTreeView: View {
         projectRoot = URL(fileURLWithPath: path)
 
         Task {
-            let items = await loadDirectoryContents(url: projectRoot!, depth: 0, maxDepth: 3)
+            let items = await loadDirectoryContents(url: projectRoot!, depth: 0, maxDepth: 3, projectPath: path)
             await MainActor.run {
                 rootItems = items
                 isLoading = false
@@ -99,7 +103,7 @@ struct ProjectTreeView: View {
         }
     }
 
-    private func loadDirectoryContents(url: URL, depth: Int, maxDepth: Int) async -> [FileTreeNode] {
+    private func loadDirectoryContents(url: URL, depth: Int, maxDepth: Int, projectPath: String) async -> [FileTreeNode] {
         guard depth < maxDepth else { return [] }
 
         var items: [FileTreeNode] = []
@@ -115,12 +119,15 @@ struct ProjectTreeView: View {
                 do {
                     let resourceValues = try fileURL.resourceValues(forKeys: [.isDirectoryKey])
                     let isDirectory = resourceValues.isDirectory ?? false
+                    
+                    // 检查该目录是否之前被展开过
+                    let wasExpanded = FileTreeStateManager.shared.isExpanded(url: fileURL, projectPath: projectPath)
 
                     let node = FileTreeNode(
                         name: fileURL.lastPathComponent,
                         url: fileURL,
                         isDirectory: isDirectory,
-                        isExpanded: false,
+                        isExpanded: wasExpanded,
                         children: isDirectory ? [] : nil
                     )
                     items.append(node)

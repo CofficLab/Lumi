@@ -4,6 +4,7 @@ import Combine
 /// 插件设置存储：管理插件的启用/禁用状态
 @MainActor
 class PluginSettingsStore: ObservableObject {
+    /// 全局单例
     static let shared = PluginSettingsStore()
 
     private let userDefaultsKey = "SwiftUI_Template_PluginSettings"
