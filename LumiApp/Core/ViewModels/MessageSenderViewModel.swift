@@ -24,7 +24,7 @@ protocol MessageSendingDelegate: AnyObject, Sendable {
 @MainActor
 final class MessageSenderViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📤"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true  // 开启日志以便调试
 
     // MARK: - 服务依赖
 
@@ -105,9 +105,7 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         // 添加到待发送队列
         pendingMessages.append(userMessage)
 
-        if Self.verbose {
-            os_log("\(Self.t)📝 消息已加入队列（队列长度：\(self.pendingMessages.count)）：\(content.max(50))")
-        }
+        os_log("\(Self.t)📝 消息已加入队列（队列长度：\(self.pendingMessages.count)）：\(content.max(50))")
 
         // 启动或继续队列处理
         startOrContinueProcessing()
@@ -117,14 +115,14 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
     private func startOrContinueProcessing() {
         // 如果已经在处理中，新消息会自动留在队列中等待处理
         guard !isSending else {
-            if Self.verbose {
-                os_log("\(Self.t)⏳ 已有消息在处理中，新消息已在队列中等待")
-            }
+            os_log("\(Self.t)⏳ 已有消息在处理中，新消息已在队列中等待")
             return
         }
 
         // 队列为空则退出
         guard !pendingMessages.isEmpty else { return }
+
+        os_log("\(Self.t)🚀 启动队列处理，当前队列长度：\(self.pendingMessages.count)")
 
         // 在后台线程启动发送流程
         sendTask?.cancel()
@@ -135,6 +133,8 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
 
     /// 处理消息队列
     private func processQueue() async {
+        os_log("\(Self.t)🔄 processQueue 开始执行")
+
         // 标记开始处理
         await MainActor.run {
             isSending = true
@@ -146,26 +146,39 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         while !isCancelled {
             // 获取下一条消息
             var nextMessage: ChatMessage? = nil
+            var queueCount = 0
+            
             await MainActor.run {
+                queueCount = self.pendingMessages.count
                 if !self.pendingMessages.isEmpty {
                     self.currentProcessingIndex = 0
                     nextMessage = self.pendingMessages.first
+                    os_log("\(Self.t)📥 取出消息，队列剩余：\(self.pendingMessages.count)")
                 }
             }
 
             // 队列为空，结束处理
-            guard let message = nextMessage else { break }
+            guard let message = nextMessage else {
+                os_log("\(Self.t)📭 队列为空，结束处理")
+                break
+            }
+
+            os_log("\(Self.t)📤 开始发送消息：\(message.content.max(30))...")
 
             // 发送消息
             await sendMessageToAgent(message: message)
 
             // 检查是否被取消
-            if isCancelled { break }
+            if isCancelled {
+                os_log("\(Self.t)🛑 处理被取消")
+                break
+            }
 
             // 移除已处理的消息
             await MainActor.run {
                 if !self.pendingMessages.isEmpty {
-                    self.pendingMessages.removeFirst()
+                    let removed = self.pendingMessages.removeFirst()
+                    os_log("\(Self.t)🗑️ 移除已处理消息，队列剩余：\(self.pendingMessages.count)")
                 }
                 self.currentProcessingIndex = nil
             }
@@ -176,15 +189,14 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
             isSending = false
             currentProcessingIndex = nil
             delegate?.messageSendingDidFinish()
+            os_log("\(Self.t)✅ 队列处理完成，剩余消息：\(self.pendingMessages.count)")
         }
     }
 
     /// 发送单条消息到 Agent
     private func sendMessageToAgent(message: ChatMessage) async {
-        if Self.verbose {
-            let remaining = await MainActor.run { self.pendingMessages.count - 1 }
-            os_log("\(Self.t)📤 正在发送（剩余 \(remaining) 条等待）：\(message.content.max(50))")
-        }
+        let remaining = await MainActor.run { self.pendingMessages.count - 1 }
+        os_log("\(Self.t)📤 正在发送（剩余 \(remaining) 条等待）：\(message.content.max(50))")
 
         // 在主线程添加用户消息到列表
         await MainActor.run {
@@ -200,9 +212,7 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         // 处理消息（等待完成）
         await delegate?.processUserMessage(content: message.content, images: message.images)
 
-        if Self.verbose {
-            os_log("\(Self.t)✅ 消息发送完成")
-        }
+        os_log("\(Self.t)✅ 消息发送完成：\(message.content.max(30))...")
     }
 
     /// 启动会话标题生成 Job
@@ -253,9 +263,7 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         sendTask?.cancel()
         sendTask = nil
 
-        if Self.verbose {
-            os_log("\(Self.t)🛑 已取消所有待发送消息")
-        }
+        os_log("\(Self.t)🛑 已取消所有待发送消息")
     }
 
     /// 清空发送队列（仅清除等待中的消息）
@@ -267,9 +275,7 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
             pendingMessages.removeAll()
         }
 
-        if Self.verbose {
-            os_log("\(Self.t)🗑️ 发送队列已清空")
-        }
+        os_log("\(Self.t)🗑️ 发送队列已清空")
     }
 
     /// 获取队列中的消息数量
@@ -295,8 +301,6 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
             currentProcessingIndex = currentIdx - 1
         }
         
-        if Self.verbose {
-            os_log("\(Self.t)🗑️ 已移除队列中的第 \(index) 条消息")
-        }
+        os_log("\(Self.t)🗑️ 已移除队列中的第 \(index) 条消息")
     }
 }
