@@ -18,10 +18,14 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     var providerId: String?  // 例如："anthropic", "openai", "zhipu"
     var modelName: String?   // 例如："claude-sonnet-4-20250514", "gpt-4o"
 
+    // Performance Metrics - 性能指标
+    var latency: Double?     // 请求总耗时（毫秒）
+
     init(role: MessageRole, content: String, isError: Bool = false, 
          toolCalls: [ToolCall]? = nil, toolCallID: String? = nil, 
          images: [ImageAttachment] = [],
-         providerId: String? = nil, modelName: String? = nil) {
+         providerId: String? = nil, modelName: String? = nil,
+         latency: Double? = nil) {
         self.id = UUID()
         self.role = role
         self.content = content
@@ -32,13 +36,15 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         self.images = images
         self.providerId = providerId
         self.modelName = modelName
+        self.latency = latency
     }
     
     /// 从数据库加载时使用的初始化方法，保留原有 ID
     init(id: UUID, role: MessageRole, content: String, timestamp: Date, 
          isError: Bool = false, toolCalls: [ToolCall]? = nil, 
          toolCallID: String? = nil, images: [ImageAttachment] = [],
-         providerId: String? = nil, modelName: String? = nil) {
+         providerId: String? = nil, modelName: String? = nil,
+         latency: Double? = nil) {
         self.id = id
         self.role = role
         self.content = content
@@ -49,6 +55,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         self.images = images
         self.providerId = providerId
         self.modelName = modelName
+        self.latency = latency
     }
 
     // 实现 Equatable
@@ -59,6 +66,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         lhs.isError == rhs.isError &&
         lhs.images == rhs.images &&
         lhs.providerId == rhs.providerId &&
-        lhs.modelName == rhs.modelName
+        lhs.modelName == rhs.modelName &&
+        lhs.latency == rhs.latency
     }
 }

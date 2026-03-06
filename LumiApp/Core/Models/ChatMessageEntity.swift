@@ -17,13 +17,17 @@ final class ChatMessageEntity {
     var providerId: String?      // 例如："anthropic", "openai", "zhipu"
     var modelName: String?       // 例如："claude-sonnet-4-20250514", "gpt-4o"
     
+    // Performance Metrics - 性能指标
+    var latency: Double?         // 请求总耗时（毫秒）
+    
     // 反向关系
     var conversation: Conversation?
     
     init(id: UUID = UUID(), role: String, content: String, timestamp: Date = Date(), 
          isError: Bool = false, toolCallsData: Data? = nil, 
          toolCallID: String? = nil, imagesData: Data? = nil,
-         providerId: String? = nil, modelName: String? = nil) {
+         providerId: String? = nil, modelName: String? = nil,
+         latency: Double? = nil) {
         self.id = id
         self.role = role
         self.content = content
@@ -34,6 +38,7 @@ final class ChatMessageEntity {
         self.imagesData = imagesData
         self.providerId = providerId
         self.modelName = modelName
+        self.latency = latency
     }
     
     /// 转换为 ChatMessage
@@ -62,7 +67,8 @@ final class ChatMessageEntity {
             toolCallID: toolCallID,
             images: images,
             providerId: providerId,
-            modelName: modelName
+            modelName: modelName,
+            latency: latency
         )
     }
     
@@ -88,7 +94,8 @@ final class ChatMessageEntity {
             toolCallID: message.toolCallID,
             imagesData: imagesData,
             providerId: message.providerId,
-            modelName: message.modelName
+            modelName: message.modelName,
+            latency: message.latency
         )
     }
 }

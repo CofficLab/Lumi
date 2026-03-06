@@ -55,6 +55,9 @@ extension LLMRequestJob {
             os_log("\(Self.t)🚀 开始执行 LLM 请求任务")
         }
 
+        // 记录开始时间
+        let startTime = CFAbsoluteTimeGetCurrent()
+
         guard !config.apiKey.isEmpty else {
             os_log(.error, "\(Self.t)❌ API Key 为空")
             throw NSError(
@@ -152,16 +155,21 @@ extension LLMRequestJob {
         // 解析响应
         let (content, toolCalls) = try provider.parseResponse(data: data)
 
+        // 计算总耗时（毫秒）
+        let endTime = CFAbsoluteTimeGetCurrent()
+        let latency = (endTime - startTime) * 1000.0  // 转换为毫秒
+
         if Self.verbose >= 1 {
-            os_log("\(Self.t)✅ 收到响应")
+            os_log("\(Self.t)✅ 收到响应，耗时：\(String(format: "%.2f", latency))ms")
         }
 
         return ChatMessage(
-        role: .assistant,
-        content: content,
-        toolCalls: toolCalls,
-        providerId: config.providerId,
-        modelName: config.model
-    )
+            role: .assistant,
+            content: content,
+            toolCalls: toolCalls,
+            providerId: config.providerId,
+            modelName: config.model,
+            latency: latency  // 记录耗时
+        )
     }
 }
