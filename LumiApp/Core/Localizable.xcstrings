@@ -84,6 +84,9 @@
         }
       }
     },
+    "·" : {
+
+    },
     "******" : {
 
     },
@@ -4192,6 +4195,12 @@
           }
         }
       }
+    },
+    "Show Rendered" : {
+      "comment" : "Toggle to show rendered markdown"
+    },
+    "Show Source" : {
+      "comment" : "Toggle to show markdown source"
     },
     "Show system status like CPU, Memory, Disk, Battery, etc." : {
       "extractionState" : "manual",

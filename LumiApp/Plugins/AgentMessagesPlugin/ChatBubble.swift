@@ -15,7 +15,7 @@ struct ChatBubble: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 if message.role == .assistant {
-                    // 助手消息：显示 Header（包含模型信息和响应时间）
+                    // 助手消息：显示 Header（包含供应商、模型信息和响应时间）
                     VStack(alignment: .leading, spacing: 4) {
                         AssistantMessageHeader(
                             message: message,
@@ -73,12 +73,21 @@ struct AssistantMessageHeader: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
-            // 模型信息
+            // 供应商和模型信息
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(String(localized: "Dev Assistant", table: "DevAssistant"))
                     .font(DesignTokens.Typography.caption1)
                     .fontWeight(.medium)
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                
+                // 供应商名称（如果有）
+                if let providerId = message.providerId {
+                    Text("·")
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    Text(formatProviderName(providerId))
+                        .font(DesignTokens.Typography.caption2)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                }
                 
                 // 模型名称（如果有）
                 if let modelName = message.modelName {
@@ -109,6 +118,23 @@ struct AssistantMessageHeader: View {
             }
         }
         .padding(.bottom, 4)
+    }
+    
+    /// 格式化供应商名称（显示友好名称）
+    private func formatProviderName(_ providerId: String) -> String {
+        let providerNames: [String: String] = [
+            "anthropic": "Anthropic",
+            "openai": "OpenAI",
+            "zhipu": "智谱 AI",
+            "deepseek": "深度求索",
+            "aliyun": "阿里云",
+            "azure": "Azure",
+            "google": "Google",
+            "mistral": "Mistral",
+            "groq": "Groq",
+            "ollama": "Ollama"
+        ]
+        return providerNames[providerId] ?? providerId.capitalized
     }
     
     /// 格式化模型名称（简化显示）
@@ -232,13 +258,25 @@ extension View {
     .background(Color.black)
 }
 
-#Preview("Assistant Message (Fast)") {
+#Preview("Assistant Message (OpenAI)") {
     ChatBubble(message: ChatMessage(
         role: .assistant,
         content: "I can help you with coding tasks.",
         providerId: "openai",
         modelName: "gpt-4o",
         latency: 456.78
+    ))
+    .padding()
+    .background(Color.black)
+}
+
+#Preview("Assistant Message (智谱 AI)") {
+    ChatBubble(message: ChatMessage(
+        role: .assistant,
+        content: "我可以帮助你完成编程任务。",
+        providerId: "zhipu",
+        modelName: "glm-4-plus",
+        latency: 890.12
     ))
     .padding()
     .background(Color.black)
@@ -280,25 +318,6 @@ extension View {
         providerId: "anthropic",
         modelName: "claude-sonnet-4-20250514",
         latency: 2345.67
-    )
-
-    return AssistantMessageWithToolCallsView(message: message)
-        .padding()
-        .frame(width: 600)
-        .background(Color.black)
-}
-
-#Preview("Assistant with Tool Calls (No Text)") {
-    let toolCalls = [
-        ToolCall(id: "tool_1", name: "list_directory", arguments: "{\"path\": \"/Users/angel/Code/Lumi\"}")
-    ]
-    let message = ChatMessage(
-        role: .assistant,
-        content: "",
-        toolCalls: toolCalls,
-        providerId: "anthropic",
-        modelName: "claude-sonnet-4-20250514",
-        latency: 1890.12
     )
 
     return AssistantMessageWithToolCallsView(message: message)
