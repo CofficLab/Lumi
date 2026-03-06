@@ -24,11 +24,15 @@ struct FileTreeNodeView: View {
         VStack(alignment: .leading, spacing: 0) {
             // 节点行
             nodeRow
-            // 子节点
+
+            // 子节点或加载状态
             if isExpanded && node.isDirectory {
                 if isLoading {
                     loadingIndicator
-                } else if !children.isEmpty {
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.leading, indentPerLevel)
+                        .padding(.vertical, 4)
+                } else {
                     childNodes
                 }
             }
@@ -40,7 +44,7 @@ struct FileTreeNodeView: View {
                 let savedState = FileTreeStateManager.shared.isExpanded(url: node.url, projectPath: projectPath)
                 if savedState {
                     isExpanded = true
-                    // 如果之前是展开的，自动加载子节点
+                    // 如果之前是展开的，并且还没有数据，则异步加载
                     if children.isEmpty && !isLoading {
                         loadChildren()
                     }
@@ -116,9 +120,6 @@ struct FileTreeNodeView: View {
             ProgressView()
                 .frame(width: 8, height: 8)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.leading, indentPerLevel)
-        .padding(.vertical, 4)
     }
 
     // MARK: - Child Nodes
