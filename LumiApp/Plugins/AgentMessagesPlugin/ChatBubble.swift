@@ -4,7 +4,7 @@ import SwiftUI
 struct ChatBubble: View {
     let message: ChatMessage
     @State private var showRawMessage: Bool = false
-    @State private var isMessageExpanded: Bool = true  // 默认展开
+    @State private var isExpanded: Bool = true  // 每条消息独立的展开状态
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
@@ -21,8 +21,8 @@ struct ChatBubble: View {
                         AssistantMessageHeader(
                             message: message,
                             showRawMessage: $showRawMessage,
-                            isMessageExpanded: $isMessageExpanded,
-                            contentLength: message.content.count
+                            isExpanded: $isExpanded,
+                            isLongMessage: isLongMessage
                         )
                         
                         if hasToolCalls {
@@ -31,8 +31,8 @@ struct ChatBubble: View {
                             MarkdownMessageView(
                                 message: message,
                                 showRawMessage: showRawMessage,
-                                isCollapsible: shouldCollapse(message.content),
-                                isExpanded: $isMessageExpanded
+                                isCollapsible: isLongMessage,
+                                isExpanded: $isExpanded
                             )
                             .messageBubbleStyle(role: message.role, isError: message.isError)
                         }
@@ -67,10 +67,10 @@ struct ChatBubble: View {
         message.toolCalls != nil && !message.toolCalls!.isEmpty
     }
     
-    /// 判断内容是否需要折叠（超过 1000 字符或 50 行）
-    private func shouldCollapse(_ content: String) -> Bool {
-        let charCount = content.count
-        let lineCount = content.components(separatedBy: "\n").count
+    /// 判断是否是长消息
+    private var isLongMessage: Bool {
+        let charCount = message.content.count
+        let lineCount = message.content.components(separatedBy: "\n").count
         return charCount > 1000 || lineCount > 50
     }
 
@@ -90,8 +90,8 @@ struct ChatBubble: View {
 struct AssistantMessageHeader: View {
     let message: ChatMessage
     @Binding var showRawMessage: Bool
-    @Binding var isMessageExpanded: Bool
-    let contentLength: Int
+    @Binding var isExpanded: Bool
+    let isLongMessage: Bool
 
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
@@ -135,13 +135,13 @@ struct AssistantMessageHeader: View {
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
                 
-                // 折叠/展开按钮（仅当内容需要折叠且已展开时显示折叠按钮）
-                if shouldCollapse(contentLength) {
-                    if isMessageExpanded {
+                // 折叠/展开按钮（仅当内容是长消息时显示）
+                if isLongMessage {
+                    if isExpanded {
                         // 已展开，显示折叠按钮
-                        CollapseButton(isExpanded: $isMessageExpanded)
+                        CollapseButton(isExpanded: $isExpanded)
                     } else {
-                        // 已折叠，显示展开提示（可选）
+                        // 已折叠，显示提示
                         Text("已折叠")
                             .font(DesignTokens.Typography.caption2)
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary.opacity(0.6))
@@ -153,11 +153,6 @@ struct AssistantMessageHeader: View {
             }
         }
         .padding(.bottom, 4)
-    }
-    
-    /// 判断内容是否需要折叠
-    private func shouldCollapse(_ charCount: Int) -> Bool {
-        return charCount > 1000
     }
     
     /// 格式化供应商名称（显示友好名称）
