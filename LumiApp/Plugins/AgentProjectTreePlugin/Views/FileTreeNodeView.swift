@@ -78,9 +78,10 @@ struct FileTreeNodeView: View {
         .onTapGesture {
             handleTap()
         }
-        // 添加拖拽支持 - 使用 NSItemProvider 传递原始路径而不是临时副本
-        .draggable(NSItemProvider(object: node.url.absoluteString as NSString)) {
-            DragPreview(fileURL: node.url)
+        // 添加拖拽支持 - 强制转换为普通纯文本字符串传递，避免系统为 fileURL 生成 Caches 目录下的替身文件
+        .onDrag {
+            // 将真实路径作为普通字符串拖出
+            return NSItemProvider(object: node.url.path as NSString)
         }
     }
 

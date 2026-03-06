@@ -208,11 +208,11 @@ extension InputAreaView {
             // 优先尝试 fileURL 类型
             if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
                 provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
-                    if let data = item as? Data, let url = URL(dataRepresentation: data, relativeTo: nil) {
+                    if let url = item as? URL {
                         DispatchQueue.main.async {
                             self.handleDroppedFile(url: url)
                         }
-                    } else if let url = item as? URL {
+                    } else if let data = item as? Data, let string = String(data: data, encoding: .utf8), let url = URL(string: string) {
                         DispatchQueue.main.async {
                             self.handleDroppedFile(url: url)
                         }
@@ -223,10 +223,27 @@ extension InputAreaView {
             // 也尝试纯文本类型（用于传递原始文件路径字符串）
             else if provider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
                 provider.loadItem(forTypeIdentifier: UTType.plainText.identifier, options: nil) { item, _ in
-                    if let string = item as? String,
-                       let url = URL(string: string) {
+                    if let string = item as? String {
                         DispatchQueue.main.async {
-                            self.handleDroppedFile(url: url)
+                            // 判断是否传入的是拖拽进来的原始路径字符串
+                            if string.hasPrefix("/") {
+                                self.handleDroppedFile(url: URL(fileURLWithPath: string))
+                            } else if let url = URL(string: string) {
+                                self.handleDroppedFile(url: url)
+                            } else {
+                                // 备用降级：当作纯文本直接补充到输入框
+                                self.inputViewModel.append(string)
+                            }
+                        }
+                    } else if let data = item as? Data, let string = String(data: data, encoding: .utf8) {
+                        DispatchQueue.main.async {
+                            if string.hasPrefix("/") {
+                                self.handleDroppedFile(url: URL(fileURLWithPath: string))
+                            } else if let url = URL(string: string) {
+                                self.handleDroppedFile(url: url)
+                            } else {
+                                self.inputViewModel.append(string)
+                            }
                         }
                     }
                 }
