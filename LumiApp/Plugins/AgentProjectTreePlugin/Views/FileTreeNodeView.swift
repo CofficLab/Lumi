@@ -16,6 +16,7 @@ struct FileTreeNodeView: View {
     @State private var children: [FileTreeNode] = []
     @State private var isLoading = false
     @State private var hasLoadedOnce = false
+    @State private var isHovered = false
 
     /// 每层缩进量 (参考 VS Code 的默认缩进)
     private let indentPerLevel: CGFloat = 16
@@ -76,9 +77,14 @@ struct FileTreeNodeView: View {
         .padding(.vertical, 3)
         .background(
             RoundedRectangle(cornerRadius: 4)
-                .fill(isSelected ? Color.accentColor.opacity(0.2) : Color.clear)
+                .fill(backgroundColor)
         )
         .contentShape(Rectangle())
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHovered = hovering
+            }
+        }
         .onTapGesture {
             handleTap()
         }
@@ -87,6 +93,16 @@ struct FileTreeNodeView: View {
             // 将真实路径作为普通字符串拖出
             return NSItemProvider(object: node.url.path as NSString)
         }
+    }
+
+    /// 背景色：根据选中状态和 hover 状态返回不同颜色
+    private var backgroundColor: Color {
+        if isSelected {
+            return Color.accentColor.opacity(0.2)
+        } else if isHovered {
+            return Color.primary.opacity(0.08)
+        }
+        return Color.clear
     }
 
     private var expandCollapseButton: some View {
