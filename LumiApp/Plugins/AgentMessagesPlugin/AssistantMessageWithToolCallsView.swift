@@ -3,8 +3,20 @@ import SwiftUI
 /// 助手消息与工具调用视图 - 显示助手回复及工具调用列表
 struct AssistantMessageWithToolCallsView: View {
     let message: ChatMessage
+    @StateObject private var expansionState = MessageExpansionState()
     @State private var showRawMessage: Bool = false
-    @State private var isContentExpanded: Bool = false
+
+    // 判断是否是长消息
+    private var isLongMessage: Bool {
+        let charCount = message.content.count
+        let lineCount = message.content.components(separatedBy: "\n").count
+        return charCount > 1000 || lineCount > 50
+    }
+    
+    // 当前消息的展开状态
+    private var isExpanded: Bool {
+        expansionState.isExpanded(id: message.id)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -13,8 +25,13 @@ struct AssistantMessageWithToolCallsView: View {
                 MarkdownMessageView(
                     message: message,
                     showRawMessage: showRawMessage,
-                    isCollapsible: shouldCollapse(message.content),
-                    isExpanded: $isContentExpanded
+                    isCollapsible: isLongMessage,
+                    isExpanded: isExpanded,
+                    onToggleExpand: {
+                        Task { @MainActor in
+                            expansionState.toggleExpansion(id: message.id)
+                        }
+                    }
                 )
                 .messageBubbleStyle(role: message.role, isError: message.isError)
             }
@@ -42,13 +59,6 @@ struct AssistantMessageWithToolCallsView: View {
                 .padding(.top, message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0 : 8)
             }
         }
-    }
-    
-    /// 判断内容是否需要折叠
-    private func shouldCollapse(_ content: String) -> Bool {
-        let charCount = content.count
-        let lineCount = content.components(separatedBy: "\n").count
-        return charCount > 1000 || lineCount > 50
     }
 }
 

@@ -1,10 +1,49 @@
 import SwiftUI
+import Combine
+
+/// 消息展开状态管理器
+@MainActor
+final class MessageExpansionState: ObservableObject {
+    static let shared = MessageExpansionState()
+    
+    @Published private var expandedStates: [UUID: Bool] = [:]
+    
+    init() {}
+    
+    /// 获取消息的展开状态
+    func isExpanded(id: UUID) -> Bool {
+        expandedStates[id] ?? true  // 默认展开
+    }
+    
+    /// 设置消息的展开状态
+    func setExpanded(id: UUID, expanded: Bool) {
+        expandedStates[id] = expanded
+    }
+    
+    /// 切换消息的展开状态
+    func toggleExpansion(id: UUID) {
+        let current = isExpanded(id: id)
+        expandedStates[id] = !current
+    }
+}
 
 /// 聊天气泡组件，用于显示用户消息、助手回复和工具输出
 struct ChatBubble: View {
     let message: ChatMessage
+    @StateObject private var expansionState = MessageExpansionState()
     @State private var showRawMessage: Bool = false
-    @State private var isExpanded: Bool = true  // 每条消息独立的展开状态
+    
+    // 判断是否是长消息
+    private var isLongMessage: Bool {
+        let charCount = message.content.count
+        let lineCount = message.content.components(separatedBy: "\n").count
+        return charCount > 1000 || lineCount > 50
+    }
+    
+    // 当前消息的展开状态
+    private var isExpanded: Bool {
+        expansionState.isExpanded(id: message.id)
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
@@ -21,7 +60,12 @@ struct ChatBubble: View {
                         AssistantMessageHeader(
                             message: message,
                             showRawMessage: $showRawMessage,
-                            isExpanded: $isExpanded,
+                            isExpanded: isExpanded,
+                            onToggleExpand: {
+                                Task { @MainActor in
+                                    expansionState.toggleExpansion(id: message.id)
+                                }
+                            },
                             isLongMessage: isLongMessage
                         )
                         
@@ -32,7 +76,12 @@ struct ChatBubble: View {
                                 message: message,
                                 showRawMessage: showRawMessage,
                                 isCollapsible: isLongMessage,
-                                isExpanded: $isExpanded
+                                isExpanded: isExpanded,
+                                onToggleExpand: {
+                                    Task { @MainActor in
+                                        expansionState.toggleExpansion(id: message.id)
+                                    }
+                                }
                             )
                             .messageBubbleStyle(role: message.role, isError: message.isError)
                         }
@@ -50,7 +99,8 @@ struct ChatBubble: View {
                         message: message,
                         showRawMessage: showRawMessage,
                         isCollapsible: false,
-                        isExpanded: .constant(true)
+                        isExpanded: true,
+                        onToggleExpand: {}
                     )
                     .messageBubbleStyle(role: message.role, isError: message.isError)
                 }
@@ -65,13 +115,6 @@ struct ChatBubble: View {
     /// 检查消息是否包含工具调用
     private var hasToolCalls: Bool {
         message.toolCalls != nil && !message.toolCalls!.isEmpty
-    }
-    
-    /// 判断是否是长消息
-    private var isLongMessage: Bool {
-        let charCount = message.content.count
-        let lineCount = message.content.components(separatedBy: "\n").count
-        return charCount > 1000 || lineCount > 50
     }
 
     // MARK: - Infer Tool Type from Tool Call ID
@@ -90,7 +133,8 @@ struct ChatBubble: View {
 struct AssistantMessageHeader: View {
     let message: ChatMessage
     @Binding var showRawMessage: Bool
-    @Binding var isExpanded: Bool
+    let isExpanded: Bool
+    let onToggleExpand: () -> Void
     let isLongMessage: Bool
 
     var body: some View {
@@ -139,7 +183,7 @@ struct AssistantMessageHeader: View {
                 if isLongMessage {
                     if isExpanded {
                         // 已展开，显示折叠按钮
-                        CollapseButton(isExpanded: $isExpanded)
+                        CollapseButton(action: onToggleExpand)
                     } else {
                         // 已折叠，显示提示
                         Text("已折叠")
@@ -190,6 +234,58 @@ struct AssistantMessageHeader: View {
         } else {
             return String(format: "%.1fs", latency / 1000.0)
         }
+    }
+}
+
+// MARK: - Collapse Button
+
+/// 折叠按钮（在 Header 中显示）
+struct CollapseButton: View {
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 4) {
+                Image(systemName: "chevron.up")
+                    .font(.system(size: 10, weight: .semibold))
+                Text("折叠")
+                    .font(.system(size: 11, weight: .medium))
+            }
+            .foregroundColor(DesignTokens.Color.semantic.textSecondary.opacity(0.8))
+            .padding(6)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.08))
+            )
+        }
+        .buttonStyle(.plain)
+        .help("折叠消息")
+    }
+}
+
+// MARK: - Expand Button
+
+/// 展开按钮（在消息底部显示）
+struct ExpandButton: View {
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 4) {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 12, weight: .semibold))
+                Text("展开")
+                    .font(.system(size: 13, weight: .medium))
+            }
+            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.15))
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 

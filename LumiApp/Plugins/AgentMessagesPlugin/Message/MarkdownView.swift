@@ -7,7 +7,8 @@ struct MarkdownMessageView: View {
     let message: ChatMessage
     let showRawMessage: Bool
     let isCollapsible: Bool
-    @Binding var isExpanded: Bool
+    let isExpanded: Bool
+    let onToggleExpand: () -> Void
     
     /// 最大高度（超过后折叠）
     private let maxHeight: CGFloat = 400
@@ -31,7 +32,7 @@ struct MarkdownMessageView: View {
             if isCollapsible && !isExpanded && contentNeedsCollapse {
                 VStack {
                     Spacer()
-                    ExpandButton(isExpanded: $isExpanded)
+                    ExpandButton(action: onToggleExpand)
                         .padding(.top, 60)
                         .padding(.bottom, 8)
                 }
@@ -49,57 +50,6 @@ struct MarkdownMessageView: View {
     }
 }
 
-// MARK: - Expand Button
-
-/// 展开按钮
-struct ExpandButton: View {
-    @Binding var isExpanded: Bool
-    
-    var body: some View {
-        Button(action: { isExpanded = true }) {
-            HStack(spacing: 4) {
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 12, weight: .semibold))
-                Text("展开")
-                    .font(.system(size: 13, weight: .medium))
-            }
-            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.15))
-            )
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Collapse Button
-
-/// 折叠按钮（在 Header 中显示）
-struct CollapseButton: View {
-    @Binding var isExpanded: Bool
-    
-    var body: some View {
-        Button(action: { isExpanded = false }) {
-            HStack(spacing: 4) {
-                Image(systemName: "chevron.up")
-                    .font(.system(size: 10, weight: .semibold))
-                Text("折叠")
-                    .font(.system(size: 11, weight: .medium))
-            }
-            .foregroundColor(DesignTokens.Color.semantic.textSecondary.opacity(0.8))
-            .padding(6)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.08))
-            )
-        }
-        .buttonStyle(.plain)
-        .help("折叠消息")
-    }
-}
 
 // MARK: - View Modifier
 
@@ -134,14 +84,16 @@ extension View {
                 """),
             showRawMessage: false,
             isCollapsible: true,
-            isExpanded: .constant(true)
+            isExpanded: true,
+            onToggleExpand: {}
         )
 
         MarkdownMessageView(
             message: ChatMessage(role: .assistant, content: "# Hello\nThis is a *markdown* message."),
             showRawMessage: true,
             isCollapsible: false,
-            isExpanded: .constant(true)
+            isExpanded: true,
+            onToggleExpand: {}
         )
     }
     .padding()
@@ -223,7 +175,8 @@ extension View {
         message: ChatMessage(role: .assistant, content: longContent),
         showRawMessage: false,
         isCollapsible: true,
-        isExpanded: .constant(false)
+        isExpanded: false,
+        onToggleExpand: {}
     )
     .padding()
     .frame(width: 600)
