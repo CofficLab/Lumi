@@ -163,6 +163,8 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
                 }
             }
         } catch {
+            // 错误发生时清空待处理工具队列，防止状态不一致
+            pendingToolCalls.removeAll()
             await delegate?.turnDidEncounterError(error)
             os_log(.error, "\(Self.t) 对话处理失败")
         }
@@ -256,19 +258,21 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
         languagePreference: LanguagePreference,
         autoApproveRisk: Bool
     ) async {
-        if !pendingToolCalls.isEmpty {
-            let nextTool = pendingToolCalls.removeFirst()
-            if Self.verbose {
-                os_log("\(Self.t) 继续处理下一个工具：\(nextTool.name)")
-            }
-            await handleToolCall(nextTool, languagePreference: languagePreference, autoApproveRisk: autoApproveRisk)
-        } else {
+        // 检查队列是否为空，避免崩溃
+        guard !pendingToolCalls.isEmpty else {
             if Self.verbose {
                 os_log("\(Self.t)✅ 所有工具处理完成，继续对话")
             }
             // 通知委托继续下一轮
             await delegate?.turnShouldContinue(depth: currentDepth + 1)
+            return
         }
+
+        let nextTool = pendingToolCalls.removeFirst()
+        if Self.verbose {
+            os_log("\(Self.t) 继续处理下一个工具：\(nextTool.name)")
+        }
+        await handleToolCall(nextTool, languagePreference: languagePreference, autoApproveRisk: autoApproveRisk)
     }
 
     // MARK: - 权限响应

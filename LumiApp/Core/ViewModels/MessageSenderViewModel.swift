@@ -108,12 +108,7 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
             pendingMessagesByConversation[conversationId] = []
         }
 
-        // 更新 pendingMessages，触发 UI 更新
-        let newMessages = pendingMessagesByConversation[conversationId] ?? []
-        
-        // 强制触发 @Published 通知
-        objectWillChange.send()
-        pendingMessages = newMessages
+        pendingMessages = pendingMessagesByConversation[conversationId] ?? []
 
         let queueCount = pendingMessages.count
 
@@ -160,7 +155,9 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
             return
         }
 
-        guard let conversation = conversationViewModel.currentConversation else {
+        // 使用选中的会话 ID 获取会话
+        guard let conversationId = conversationViewModel.selectedConversationId,
+              let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
             os_log(.error, "\(Self.t)❌ 当前没有活动对话")
             return
         }
@@ -253,6 +250,11 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
             // 移除已处理的消息
             await MainActor.run {
                 guard let conversationId = self.currentConversationId else { return }
+                // 检查队列是否为空，避免崩溃
+                guard !self.pendingMessagesByConversation[conversationId, default: []].isEmpty else {
+                    os_log("\(Self.t)⚠️ 队列已空，跳过移除操作")
+                    return
+                }
                 self.pendingMessagesByConversation[conversationId]?.removeFirst()
                 // 同步更新 pendingMessages，触发 UI 更新
                 let updatedMessages = self.pendingMessagesByConversation[conversationId] ?? []
@@ -301,10 +303,13 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         guard message.role == .user else { return }
 
         // 获取当前对话 ID
-        guard let conversationId = conversationViewModel.currentConversation?.id else { return }
-        
+        guard let conversationId = conversationViewModel.selectedConversationId else { return }
+
+        // 获取会话以检查标题
+        guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else { return }
+
         // 检查是否满足生成标题的条件（快速检查，避免不必要的后台任务）
-        guard conversationViewModel.currentConversation?.title.hasPrefix("新会话 ") == true,
+        guard conversation.title.hasPrefix("新会话 "),
               !conversationViewModel.hasGeneratedTitle else {
             return
         }
@@ -379,6 +384,8 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         guard index != currentProcessingIndex else { return }
         guard let conversationId = currentConversationId else { return }
         guard pendingMessages.indices.contains(index) else { return }
+        // 检查数组是否为空，避免崩溃
+        guard !pendingMessagesByConversation[conversationId, default: []].isEmpty else { return }
 
         pendingMessagesByConversation[conversationId]?.remove(at: index)
 

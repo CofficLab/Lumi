@@ -173,9 +173,15 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
 
     // MARK: - 代理 ConversationViewModel 属性（仅供内部扩展使用）
 
-    /// 当前会话（代理到 ConversationViewModel）
-    var currentConversation: Conversation? {
-        conversationViewModel.currentConversation
+    /// 当前选中的会话 ID（代理到 ConversationViewModel）
+    ///
+    /// 需要完整会话数据的视图应使用 `@Query` 根据此 ID 自行查询：
+    /// ```swift
+    /// @Query(filter: #Predicate<Conversation> { $0.id == agentProvider.selectedConversationId })
+    /// var selectedConversation: [Conversation]
+    /// ```
+    var selectedConversationId: UUID? {
+        conversationViewModel.selectedConversationId
     }
 
     /// 当前会话的消息列表（代理到 ConversationViewModel）
@@ -347,11 +353,6 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     /// 设置聊天消息列表
     func setMessages(_ messages: [ChatMessage]) {
         messageViewModel.setMessagesInternal(messages)
-    }
-
-    /// 设置当前会话
-    func setCurrentConversation(_ conversation: Conversation?) {
-        conversationViewModel.setCurrentConversationInternal(conversation)
     }
 
     /// 设置标题生成标记

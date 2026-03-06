@@ -3,6 +3,10 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// 输入区域视图 - 包含附件预览、编辑器、工具栏
+///
+/// ## 注意
+/// 此视图不包含 `PendingMessagesView`，后者已移到外层视图 (`InputView`) 中。
+/// 这样设计是为了避免待发送消息队列的变化导致输入框重新渲染而丢失焦点。
 struct InputAreaView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "💬"
@@ -26,83 +30,77 @@ struct InputAreaView: View, SuperLog {
 
     var body: some View {
         VStack(spacing: 8) {
-            // 待发送消息队列
-            PendingMessagesView()
-
-            // 输入框容器
-            VStack(spacing: 0) {
-                // 附件预览区域
-                if !agentProvider.pendingAttachments.isEmpty {
-                    AttachmentPreviewView(
-                        attachments: agentProvider.pendingAttachments,
-                        onRemove: { id in
-                            agentProvider.removeAttachment(id: id)
-                        }
-                    )
-                }
-
-                // 编辑器
-                MacEditorView(
-                    text: Binding(
-                        get: { agentProvider.currentInput },
-                        set: { agentProvider.setCurrentInput($0) }
-                    ),
-                    onSubmit: {
-                        agentProvider.sendMessage()
-                    },
-                    onArrowUp: {
-                        if commandSuggestionViewModel.isVisible {
-                            commandSuggestionViewModel.selectPrevious()
-                        }
-                    },
-                    onArrowDown: {
-                        if commandSuggestionViewModel.isVisible {
-                            commandSuggestionViewModel.selectNext()
-                        }
-                    },
-                    onEnter: {
-                        if commandSuggestionViewModel.isVisible,
-                           let suggestion = commandSuggestionViewModel.getCurrentSuggestion() {
-                            agentProvider.setCurrentInput(suggestion.command + " ")
-                            commandSuggestionViewModel.setIsVisible(false)
-                        } else {
-                            agentProvider.sendMessage()
-                        }
-                    },
-                    isFocused: $isInputFocused,
-                    onDrop: { urls in
-                        handleDrop(urls: urls)
+            // 附件预览区域
+            if !agentProvider.pendingAttachments.isEmpty {
+                AttachmentPreviewView(
+                    attachments: agentProvider.pendingAttachments,
+                    onRemove: { id in
+                        agentProvider.removeAttachment(id: id)
                     }
                 )
-                .frame(height: 64)
-                .padding(.horizontal, 4)
-                .padding(.top, 8)
+            }
 
-                // 工具栏
-                ChatToolbarView(
-                    isModelSelectorPresented: $isModelSelectorPresented
-                )
-            }
-            .background(Color(nsColor: .controlBackgroundColor))
-            .cornerRadius(12)
-            .overlay(
-                // 动态边框 - 处理中时显示动画边框
-                processingBorderOverlay
-            )
-            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
-            .onDrop(of: [.fileURL], isTargeted: nil) { providers in
-                handleDropProviders(providers: providers)
-            }
-            .overlay(alignment: .bottomLeading) {
-                CommandSuggestionView { suggestion in
-                    agentProvider.setCurrentInput(suggestion.command + " ")
-                    commandSuggestionViewModel.setIsVisible(false)
-                    isInputFocused = true
+            // 编辑器
+            MacEditorView(
+                text: Binding(
+                    get: { agentProvider.currentInput },
+                    set: { agentProvider.setCurrentInput($0) }
+                ),
+                onSubmit: {
+                    agentProvider.sendMessage()
+                },
+                onArrowUp: {
+                    if commandSuggestionViewModel.isVisible {
+                        commandSuggestionViewModel.selectPrevious()
+                    }
+                },
+                onArrowDown: {
+                    if commandSuggestionViewModel.isVisible {
+                        commandSuggestionViewModel.selectNext()
+                    }
+                },
+                onEnter: {
+                    if commandSuggestionViewModel.isVisible,
+                       let suggestion = commandSuggestionViewModel.getCurrentSuggestion() {
+                        agentProvider.setCurrentInput(suggestion.command + " ")
+                        commandSuggestionViewModel.setIsVisible(false)
+                    } else {
+                        agentProvider.sendMessage()
+                    }
+                },
+                isFocused: $isInputFocused,
+                onDrop: { urls in
+                    handleDrop(urls: urls)
                 }
-                .offset(x: 16, y: -60)
-            }
+            )
+            .frame(height: 64)
+            .padding(.horizontal, 4)
+            .padding(.top, 8)
+
+            // 工具栏
+            ChatToolbarView(
+                isModelSelectorPresented: $isModelSelectorPresented
+            )
         }
         .padding(16)
+        .background(Color(nsColor: .controlBackgroundColor))
+        .cornerRadius(12)
+        .overlay(
+            // 动态边框 - 处理中时显示动画边框
+            processingBorderOverlay
+        )
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
+        .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+            handleDropProviders(providers: providers)
+        }
+        .overlay(alignment: .bottomLeading) {
+            CommandSuggestionView { suggestion in
+                agentProvider.setCurrentInput(suggestion.command + " ")
+                commandSuggestionViewModel.setIsVisible(false)
+                isInputFocused = true
+            }
+            .offset(x: 16, y: -60)
+        }
         // 监听文件拖放通知
         .onFileDroppedToChat { fileURL in
             handleFileDrop(fileURL: fileURL)
