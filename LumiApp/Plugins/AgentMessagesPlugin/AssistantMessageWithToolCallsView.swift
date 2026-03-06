@@ -1,5 +1,4 @@
 import SwiftUI
-import Textual
 
 /// 助手消息与工具调用视图 - 显示助手回复及工具调用列表
 struct AssistantMessageWithToolCallsView: View {

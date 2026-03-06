@@ -1,5 +1,4 @@
 import SwiftUI
-import Textual
 
 /// 聊天气泡组件，用于显示用户消息、助手回复和工具输出
 struct ChatBubble: View {
