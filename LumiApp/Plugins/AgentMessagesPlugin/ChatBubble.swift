@@ -263,37 +263,6 @@ struct CollapseButton: View {
     }
 }
 
-// MARK: - Expand Button
-
-/// 展开按钮（在消息底部显示）
-/// 展开按钮（在消息底部显示）
-struct ExpandButton: View {
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 12, weight: .semibold))
-                Text("展开")
-                    .font(.system(size: 13, weight: .medium))
-            }
-            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(DesignTokens.Color.semantic.info.opacity(0.15))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(DesignTokens.Color.semantic.info.opacity(0.3), lineWidth: 1)
-                    )
-                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-}
 // MARK: - Role Labels
 
 /// 角色标签
