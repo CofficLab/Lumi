@@ -39,11 +39,24 @@ final class ProjectViewModel: ObservableObject, SuperLog {
     /// 是否已选择文件
     @Published public fileprivate(set) var isFileSelected: Bool = false
 
+    // MARK: - 语言偏好
+
+    @Published var languagePreference: LanguagePreference = .chinese
+
+    // MARK: - 聊天模式
+
+    @Published var chatMode: ChatMode = .build
+
+    // MARK: - 自动批准风险
+
+    @Published var autoApproveRisk: Bool = false
+
     // MARK: - 初始化
 
     private init() {
         loadLanguagePreference()
         loadChatMode()
+        loadAutoApproveRisk()
     }
 
     // MARK: - 项目管理
@@ -196,8 +209,6 @@ final class ProjectViewModel: ObservableObject, SuperLog {
 
     // MARK: - 语言偏好
 
-    @Published var languagePreference: LanguagePreference = .chinese
-
     private func loadLanguagePreference() {
         if let data = UserDefaults.standard.data(forKey: "Agent_LanguagePreference"),
            let preference = try? JSONDecoder().decode(LanguagePreference.self, from: data) {
@@ -214,8 +225,6 @@ final class ProjectViewModel: ObservableObject, SuperLog {
 
     // MARK: - 聊天模式
 
-    @Published var chatMode: ChatMode = .build
-
     private func loadChatMode() {
         if let rawValue = UserDefaults.standard.string(forKey: "Agent_ChatMode"),
            let mode = ChatMode(rawValue: rawValue) {
@@ -230,15 +239,13 @@ final class ProjectViewModel: ObservableObject, SuperLog {
 
     // MARK: - 自动批准风险
 
-    @Published var autoApproveRisk: Bool = {
-        UserDefaults.standard.bool(forKey: "Agent_AutoApproveRisk")
-    }() {
-        didSet {
-            UserDefaults.standard.set(autoApproveRisk, forKey: "Agent_AutoApproveRisk")
-        }
+    /// 加载自动批准风险设置
+    private func loadAutoApproveRisk() {
+        autoApproveRisk = UserDefaults.standard.bool(forKey: "Agent_AutoApproveRisk")
     }
 
     func setAutoApproveRisk(_ enabled: Bool) {
         autoApproveRisk = enabled
+        UserDefaults.standard.set(enabled, forKey: "Agent_AutoApproveRisk")
     }
 }

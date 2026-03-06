@@ -161,10 +161,9 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
             projectViewModel.setChatMode(mode)
         }
 
-        // 加载自动批准风险
-        if let autoApprove = UserDefaults.standard.string(forKey: "Agent_AutoApproveRisk") {
-            projectViewModel.setAutoApproveRisk(autoApprove == "true")
-        }
+        // 加载自动批准风险 - 使用 bool 类型读取
+        let autoApprove = UserDefaults.standard.bool(forKey: "Agent_AutoApproveRisk")
+        projectViewModel.setAutoApproveRisk(autoApprove)
 
         // 加载供应商选择
         selectedProviderId = UserDefaults.standard.string(forKey: "Agent_SelectedProvider") ?? "anthropic"
@@ -674,7 +673,7 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
             )
             pendingAttachments.append(attachment)
         } catch {
-            os_log(.error, "\(Self.t)❌ 无法读取图片: \(error.localizedDescription)")
+            os_log(.error, "\(Self.t)❌ 无法读取图片：\(error.localizedDescription)")
         }
     }
 
