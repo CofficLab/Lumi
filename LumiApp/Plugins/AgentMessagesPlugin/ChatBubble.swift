@@ -4,7 +4,7 @@ import SwiftUI
 struct ChatBubble: View {
     let message: ChatMessage
     @State private var showRawMessage: Bool = false
-    @State private var isMessageExpanded: Bool = false
+    @State private var isMessageExpanded: Bool = true  // 默认展开
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
@@ -135,9 +135,17 @@ struct AssistantMessageHeader: View {
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
                 
-                // 折叠/展开按钮（仅当内容需要折叠时显示）
+                // 折叠/展开按钮（仅当内容需要折叠且已展开时显示折叠按钮）
                 if shouldCollapse(contentLength) {
-                    CollapseButton(isExpanded: $isMessageExpanded)
+                    if isMessageExpanded {
+                        // 已展开，显示折叠按钮
+                        CollapseButton(isExpanded: $isMessageExpanded)
+                    } else {
+                        // 已折叠，显示展开提示（可选）
+                        Text("已折叠")
+                            .font(DesignTokens.Typography.caption2)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary.opacity(0.6))
+                    }
                 }
                 
                 // 切换源码/渲染按钮
