@@ -87,8 +87,7 @@ struct InputAreaView: View, SuperLog {
                 isModelSelectorPresented: $isModelSelectorPresented
             )
         }
-        .padding(16)
-        .background(Color(nsColor: .controlBackgroundColor))
+        .background(.background)
         .cornerRadius(12)
         .overlay(
             // 动态边框 - 处理中时显示动画边框
