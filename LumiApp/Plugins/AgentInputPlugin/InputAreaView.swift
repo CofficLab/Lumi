@@ -19,6 +19,9 @@ struct InputAreaView: View, SuperLog {
     /// 命令建议 ViewModel
     @EnvironmentObject var commandSuggestionViewModel: CommandSuggestionViewModel
 
+    /// 输入框本地状态 ViewModel（与 agentProvider 解耦，避免击键触发全局重庆染）
+    @ObservedObject var inputViewModel: InputViewModel
+
     /// 输入框是否处于聚焦状态
     @Binding var isInputFocused: Bool
 
@@ -42,12 +45,11 @@ struct InputAreaView: View, SuperLog {
 
             // 编辑器
             MacEditorView(
-                text: Binding(
-                    get: { agentProvider.currentInput },
-                    set: { agentProvider.setCurrentInput($0) }
-                ),
+                text: $inputViewModel.text,
                 onSubmit: {
-                    agentProvider.sendMessage()
+                    let text = inputViewModel.text
+                    inputViewModel.clear()
+                    agentProvider.sendMessage(input: text)
                 },
                 onArrowUp: {
                     if commandSuggestionViewModel.isVisible {
@@ -62,10 +64,12 @@ struct InputAreaView: View, SuperLog {
                 onEnter: {
                     if commandSuggestionViewModel.isVisible,
                        let suggestion = commandSuggestionViewModel.getCurrentSuggestion() {
-                        agentProvider.setCurrentInput(suggestion.command + " ")
+                        inputViewModel.set(suggestion.command + " ")
                         commandSuggestionViewModel.setIsVisible(false)
                     } else {
-                        agentProvider.sendMessage()
+                        let text = inputViewModel.text
+                        inputViewModel.clear()
+                        agentProvider.sendMessage(input: text)
                     }
                 },
                 isFocused: $isInputFocused,
@@ -79,6 +83,7 @@ struct InputAreaView: View, SuperLog {
 
             // 工具栏
             ChatToolbarView(
+                inputViewModel: inputViewModel,
                 isModelSelectorPresented: $isModelSelectorPresented
             )
         }
@@ -95,7 +100,7 @@ struct InputAreaView: View, SuperLog {
         }
         .overlay(alignment: .bottomLeading) {
             CommandSuggestionView { suggestion in
-                agentProvider.setCurrentInput(suggestion.command + " ")
+                inputViewModel.set(suggestion.command + " ")
                 commandSuggestionViewModel.setIsVisible(false)
                 isInputFocused = true
             }
@@ -181,7 +186,7 @@ extension InputAreaView {
     private func handleFileDrop(fileURL: URL) {
         // 将文件路径作为文本插入到输入框
         let file_path = fileURL.path
-        agentProvider.appendInput("\(file_path) ")
+        inputViewModel.append("\(file_path) ")
     }
 
     /// 处理拖放操作（URL 列表）
@@ -231,19 +236,10 @@ extension InputAreaView {
         } else {
             // 非图片文件：将文件路径插入到输入框
             let filePath = url.path
-            agentProvider.appendInput("\(filePath) ")
+            inputViewModel.append("\(filePath) ")
         }
     }
 }
 
 // MARK: - Preview
 
-#Preview("Input Area") {
-    InputAreaView(
-        isInputFocused: .constant(true),
-        isModelSelectorPresented: .constant(false)
-    )
-    .frame(width: 800, height: 200)
-    .background(Color.black)
-    .inRootView()
-}

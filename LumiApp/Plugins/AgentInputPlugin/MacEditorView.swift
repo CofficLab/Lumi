@@ -73,6 +73,11 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
 
         textView.onDrop = onDrop
 
+        // 如果用户正在使用输入法组合文字（存在 markedText），不要强制同步，否则会打断输入状态
+        if textView.hasMarkedText() {
+            return
+        }
+
         // 只有当文本真正不同步时才更新，避免不必要的布局循环
         if textView.string != text {
             // 临时移除 delegate 防止触发 textDidChange 造成循环更新

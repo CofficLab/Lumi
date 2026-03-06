@@ -15,6 +15,9 @@ struct PendingMessagesView: View, SuperLog {
     /// 是否输出详细日志
     nonisolated static let verbose = true
 
+    /// 消息发送队列 ViewModel（直接订阅，确保 pendingMessages 变化时视图能刻刷新）
+    @ObservedObject var messageSenderViewModel: MessageSenderViewModel
+
     /// 数据上下文
     @Environment(\.modelContext) private var modelContext
     /// 智能体提供者
@@ -24,10 +27,8 @@ struct PendingMessagesView: View, SuperLog {
     @State private var cachedConversationTitle: String?
 
     var body: some View {
-        // 使用独立的 ViewModel 来读取 pendingMessages，避免直接绑定导致过度刷新
-        let messageSenderVM = agentProvider.messageSenderViewModel
-        let pendingMessages = messageSenderVM.pendingMessages
-        let currentProcessingIndex = messageSenderVM.currentProcessingIndex
+        let pendingMessages = messageSenderViewModel.pendingMessages
+        let currentProcessingIndex = messageSenderViewModel.currentProcessingIndex
 
         // 只显示队列中等待发送的消息（排除当前正在处理的消息）
         let waitingMessages = pendingMessages.enumerated()
@@ -77,7 +78,7 @@ struct PendingMessagesView: View, SuperLog {
                                 message: message,
                                 index: index,
                                 onRemove: {
-                                    messageSenderVM.removeMessage(at: index)
+                                    messageSenderViewModel.removeMessage(at: index)
                                 }
                             )
                         }
@@ -178,12 +179,3 @@ struct PendingMessageRow: View {
 
 // MARK: - Preview
 
-#Preview("Pending Messages") {
-    VStack {
-        PendingMessagesView()
-        Spacer()
-    }
-    .frame(width: 600, height: 400)
-    .padding()
-    .inRootView()
-}

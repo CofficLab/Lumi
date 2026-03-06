@@ -20,6 +20,9 @@ struct InputView: View, SuperLog {
     /// 智能体提供者
     @EnvironmentObject var agentProvider: AgentProvider
 
+    /// 输入框本地状态 ViewModel（与 agentProvider 解耦，避免每次击键触发全局重庆染）
+    @StateObject private var inputViewModel = InputViewModel()
+
     /// 输入框是否处于聚焦状态
     @State private var isInputFocused: Bool = false
 
@@ -29,10 +32,11 @@ struct InputView: View, SuperLog {
     var body: some View {
         VStack(spacing: 8) {
             // 待发送消息队列（放在外层，避免影响输入框焦点）
-            PendingMessagesView()
+            PendingMessagesView(messageSenderViewModel: agentProvider.messageSenderViewModel)
 
             // 输入区域
             InputAreaView(
+                inputViewModel: inputViewModel,
                 isInputFocused: $isInputFocused,
                 isModelSelectorPresented: $isModelSelectorPresented
             )
