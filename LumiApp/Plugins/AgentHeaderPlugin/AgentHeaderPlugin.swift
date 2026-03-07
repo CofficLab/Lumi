@@ -32,13 +32,8 @@ actor AgentHeaderPlugin: SuperPlugin {
     // MARK: - UI
 
     @MainActor
-    func addSettingsView() -> AnyView? {
-        return AnyView(DevAssistantSettingsView())
-    }
-
-    @MainActor
     func addDetailHeaderView() -> AnyView? {
-        return AnyView(DevAssistantHeaderView())
+        return AnyView(ChatHeaderView())
     }
 }
 

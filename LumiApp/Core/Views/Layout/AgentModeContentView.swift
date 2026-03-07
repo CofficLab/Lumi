@@ -24,6 +24,7 @@ struct AgentModeContentView: View {
             // 第二栏 + 第三栏：嵌套 HSplitView
             middleAndDetailColumns
         }
+        .ignoresSafeArea()
         .task {
             if Self.verbose {
                 let sidebarViews = pluginProvider.getSidebarViews()
@@ -72,6 +73,7 @@ struct AgentModeContentView: View {
                 }
             }
         }
+        .ignoresSafeArea()
     }
 
     /// 中间栏
@@ -101,6 +103,7 @@ struct AgentModeContentView: View {
             // 详情栏底部（输入区域）
             detailBottomContent()
         }
+        .ignoresSafeArea()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
