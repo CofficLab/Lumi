@@ -104,14 +104,11 @@ actor PromptService: SuperLog {
                 title: "英文 Commit",
                 subtitle: "提交英文 commit",
                 prompt: """
-                请在当前项目目录中执行以下操作：
+                执行以下操作，无需向我确认：
                 1. 运行 `\(cdCommand)git status` 查看当前改动
                 2. 运行 `\(cdCommand)git diff` 查看具体代码变更
                 3. 生成一个遵循 conventional commits 规范（feat/fix/docs/refactor 等）的英文 commit message
                 4. 立即执行 `\(cdCommand)git commit -m "<生成的 commit message>"` 提交代码
-
-                重要：必须在项目路径 \(projectPath ?? "当前目录") 下执行所有 git 命令。
-                直接执行 commit，不要问我是否确认。\(projectContext)
                 """
             ),
             QuickPhrase(
@@ -119,14 +116,11 @@ actor PromptService: SuperLog {
                 title: "中文 Commit",
                 subtitle: "提交中文 commit",
                 prompt: """
-                请在当前项目目录中执行以下操作：
+                执行以下操作，无需向我确认：
                 1. 运行 `\(cdCommand)git status` 查看当前改动
                 2. 运行 `\(cdCommand)git diff` 查看具体代码变更
                 3. 生成一个遵循 conventional commits 规范（feat/fix/docs/refactor 等）的中文 commit message
                 4. 立即执行 `\(cdCommand)git commit -m "<生成的 commit message>"` 提交代码
-
-                重要：必须在项目路径 \(projectPath ?? "当前目录") 下执行所有 git 命令。
-                直接执行 commit，不要问我是否确认。\(projectContext)
                 """
             ),
         ]
