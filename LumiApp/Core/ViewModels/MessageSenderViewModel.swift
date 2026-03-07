@@ -312,12 +312,12 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
 
         // 检查是否满足生成标题的条件（快速检查，避免不必要的后台任务）
         guard conversation.title.hasPrefix("新会话 "),
-              !conversationViewModel.hasGeneratedTitle else {
+              !messageViewModel.hasGeneratedTitle else {
             return
         }
 
         // 标记已生成标题，防止重复生成
-        conversationViewModel.setHasGeneratedTitleInternal(true)
+        messageViewModel.setHasGeneratedTitleInternal(true)
 
         // 获取 LLM 配置
         let config = configProvider?.getCurrentConfig() ?? LLMConfig.default

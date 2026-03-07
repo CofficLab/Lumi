@@ -47,6 +47,10 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     /// Slash 命令服务
     let slashCommandService: SlashCommandService
 
+    // MARK: - 订阅管理
+
+    private var cancellables = Set<AnyCancellable>()
+
     // MARK: - 聊天消息状态 (DevAssistant)
 
     /// 是否正在处理
@@ -114,7 +118,26 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         self.projectViewModel = projectViewModel
         self.conversationTurnViewModel = conversationTurnViewModel
         self.slashCommandService = slashCommandService
+        
+        // 监听会话选择变化
+        setupConversationSelectionObserver()
+        
         loadPreferences()
+    }
+    
+    /// 设置会话选择监听
+    /// 当 selectedConversationId 变化时，自动加载对应会话的消息
+    private func setupConversationSelectionObserver() {
+        conversationViewModel.$selectedConversationId
+            .dropFirst() // 跳过初始值
+            .removeDuplicates()
+            .sink { [weak self] conversationId in
+                guard let self = self, let id = conversationId else { return }
+                Task { @MainActor in
+                    await self.loadConversation(id)
+                }
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - 偏好设置加载
@@ -182,14 +205,14 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         conversationViewModel.selectedConversationId
     }
 
-    /// 当前会话的消息列表（代理到 ConversationViewModel）
+    /// 当前会话的消息列表（代理到 MessageViewModel）
     var messages: [ChatMessage] {
-        conversationViewModel.messages
+        messageViewModel.messages
     }
 
-    /// 标记是否已生成标题（代理到 ConversationViewModel）
+    /// 标记是否已生成标题（代理到 MessageViewModel）
     var hasGeneratedTitle: Bool {
-        conversationViewModel.hasGeneratedTitle
+        messageViewModel.hasGeneratedTitle
     }
 
     // MARK: - 代理 ProjectViewModel 属性（仅供内部扩展使用）
@@ -358,9 +381,31 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         messageViewModel.setHasGeneratedTitleInternal(value)
     }
 
-    /// 加载指定对话的消息
+    /// 加载指定对话
+    /// 协调 ConversationViewModel 和 MessageViewModel 完成加载
     func loadConversation(_ conversationId: UUID) async {
-        await conversationViewModel.loadConversation(conversationId)
+        if Self.verbose {
+            os_log("\(Self.t)📥 [\(conversationId)] 开始加载对话")
+        }
+
+        // 从数据库获取对话
+        guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
+            os_log(.error, "\(Self.t)❌ [\(conversationId)] 对话不存在")
+            return
+        }
+
+        // 切换消息发送队列到新会话
+        let queueCount = messageSenderViewModel.switchToConversation(conversation.id)
+        if Self.verbose {
+            os_log("\(Self.t)🔄 切换到会话队列，待发送消息：\(queueCount) 条")
+        }
+
+        // 加载消息到 MessageViewModel
+        _ = messageViewModel.loadMessages(for: conversation)
+
+        if Self.verbose {
+            os_log("\(Self.t)✅ [\(conversation.id)] 对话加载完成，共 \(self.messageViewModel.messages.count) 条消息")
+        }
     }
 
     /// 保存消息到存储

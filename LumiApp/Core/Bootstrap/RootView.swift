@@ -99,8 +99,7 @@ struct RootView<Content>: View where Content: View {
         self.conversationViewModel = ConversationViewModel(
             chatHistoryService: chatHistoryService,
             llmService: llmService,
-            promptService: promptService,
-            messageViewModel: messageViewModel
+            promptService: promptService
         )
 
         // 创建 MessageSenderViewModel
