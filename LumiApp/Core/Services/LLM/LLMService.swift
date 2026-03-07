@@ -150,10 +150,6 @@ class LLMService: SuperLog, @unchecked Sendable {
                 additionalHeaders["anthropic-version"] = "2023-06-01"
             }
 
-            // 阿里云 Coding Plan 使用 Authorization: Bearer 认证
-            // 其他 provider (如 Zhipu, Anthropic) 使用 x-api-key 认证
-            let useBearerAuth = config.providerId == "aliyun"
-
             if Self.verbose && !additionalHeaders.isEmpty {
                 os_log("\(self.t)📦 添加额外请求头：\(additionalHeaders)")
             }
@@ -163,8 +159,7 @@ class LLMService: SuperLog, @unchecked Sendable {
                 url: url,
                 apiKey: config.apiKey,
                 body: body,
-                additionalHeaders: additionalHeaders,
-                useBearerAuth: false
+                additionalHeaders: additionalHeaders
             )
 
             // 解析响应

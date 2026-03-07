@@ -40,23 +40,28 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
     // MARK: - LLM 请求
 
     /// 发送聊天完成请求到 LLM 供应商（带重试机制）
+    ///
+    /// - Parameters:
+    ///   - url: 请求 URL
+    ///   - apiKey: API 密钥
+    ///   - body: 请求体字典
+    ///   - additionalHeaders: 额外的请求头（可包含认证信息）
+    /// - Returns: 响应数据
+    /// - Throws: 网络错误或 API 错误
     func sendChatRequest(
         url: URL,
         apiKey: String,
         body: [String: Any],
-        additionalHeaders: [String: String] = [:],
-        useBearerAuth: Bool = false
+        additionalHeaders: [String: String] = [:]
     ) async throws -> Data {
+        // 构建请求头
+        // 默认使用 x-api-key 认证，如需 Bearer 认证可通过 additionalHeaders 传递
         var headers = [
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "x-api-key": apiKey
         ]
 
-        if useBearerAuth {
-            headers["Authorization"] = "Bearer \(apiKey)"
-        } else {
-            headers["x-api-key"] = apiKey
-        }
-
+        // 合并额外的请求头（可覆盖默认值）
         for (key, value) in additionalHeaders {
             headers[key] = value
         }
