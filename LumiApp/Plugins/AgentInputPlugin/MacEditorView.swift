@@ -4,15 +4,23 @@ import OSLog
 import SwiftUI
 
 /// Mac 编辑器视图
-/// 基于 NSTextView 的自定义编辑器，支持快捷键、拖放和焦点管理
+/// 基于 NSTextView 的自定义编辑器，支持快捷键、拖放、焦点管理和动态高度
 struct MacEditorView: NSViewRepresentable, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "✏️"
     /// 是否输出详细日志
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
+
+    /// 最小高度
+    static let minHeight: CGFloat = 64
+    /// 最大高度
+    static let maxHeight: CGFloat = 300
 
     /// 绑定的文本内容
     @Binding var text: String
+
+    /// 绑定的动态高度
+    @Binding var height: CGFloat
 
     /// 字体设置
     var font: NSFont = .systemFont(ofSize: 15)
@@ -39,7 +47,7 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
         let scrollView = NSScrollView()
         scrollView.drawsBackground = false
         scrollView.borderType = .noBorder
-        scrollView.hasVerticalScroller = true
+        scrollView.hasVerticalScroller = false
         scrollView.hasHorizontalScroller = false
         scrollView.autohidesScrollers = true
 
@@ -55,7 +63,7 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
         textView.isHorizontallyResizable = false
         textView.allowsUndo = true
 
-        // 设置文本容器
+        // 设置文本容器 - 使用无限高度以便计算内容高度
         textView.textContainer?.widthTracksTextView = true
         textView.textContainer?.containerSize = NSSize(
             width: scrollView.contentSize.width,
@@ -64,6 +72,12 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
         textView.textContainerInset = NSSize(width: 4, height: 4)
 
         scrollView.documentView = textView
+        
+        // 初始高度计算
+        DispatchQueue.main.async {
+            updateHeight(for: textView)
+        }
+        
         return scrollView
     }
 
@@ -82,6 +96,9 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
             textView.delegate = nil
             textView.string = text
             textView.delegate = context.coordinator
+            
+            // 文本变化后更新高度
+            updateHeight(for: textView)
         }
 
         // 更新光标位置（延迟到下一个 runloop 确保文本已更新）
@@ -104,6 +121,37 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
+
+    /// 计算并更新编辑器高度
+    private func updateHeight(for textView: NSTextView) {
+        let layoutManager = textView.layoutManager!
+        let textContainer = textView.textContainer!
+        
+        // 确保布局是最新的
+        layoutManager.ensureLayout(for: textContainer)
+        
+        // 获取已使用的矩形
+        let usedRect = layoutManager.usedRect(for: textContainer)
+        
+        // 加上内边距
+        let insetHeight = textView.textContainerInset.height * 2
+        let contentHeight = usedRect.height + insetHeight
+        
+        // 限制在最小和最大高度之间
+        let newHeight = min(max(contentHeight, Self.minHeight), Self.maxHeight)
+        
+        // 更新滚动条状态
+        if let scrollView = textView.enclosingScrollView {
+            scrollView.hasVerticalScroller = contentHeight > Self.maxHeight
+        }
+        
+        // 更新高度绑定
+        if height != newHeight {
+            DispatchQueue.main.async {
+                self.height = newHeight
+            }
+        }
+    }
 }
 
 // MARK: - Coordinator
@@ -123,11 +171,15 @@ extension MacEditorView {
         func textDidChange(_ notification: Notification) {
             guard let textView = notification.object as? NSTextView else { return }
             parent.text = textView.string
+            
             // 同步光标位置
             let location = textView.selectedRange().location
             if parent.cursorPosition != location {
                 parent.cursorPosition = location
             }
+            
+            // 文本变化时更新高度
+            parent.updateHeight(for: textView)
         }
 
         /// 按键事件处理
@@ -219,17 +271,38 @@ class EditorTextView: NSTextView, SuperLog {
 // MARK: - Preview
 
 #Preview("Editor") {
-    MacEditorView(
-        text: .constant("Hello, World!"),
-        onSubmit: {},
-        onArrowUp: {},
-        onArrowDown: {},
-        onEnter: {},
-        isFocused: .constant(true),
-        cursorPosition: .constant(0)
-    )
-    .frame(height: 100)
-    .padding()
-    .background(Color.black)
-    .inRootView()
+    struct PreviewWrapper: View {
+        @State private var text = "Hello, World!"
+        @State private var height: CGFloat = 64
+        @State private var isFocused = true
+        @State private var cursorPosition = 0
+        
+        var body: some View {
+            VStack {
+                MacEditorView(
+                    text: $text,
+                    height: $height,
+                    onSubmit: {},
+                    onArrowUp: {},
+                    onArrowDown: {},
+                    onEnter: {},
+                    isFocused: $isFocused,
+                    cursorPosition: $cursorPosition
+                )
+                .frame(height: height)
+                .padding()
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(8)
+                
+                Text("Height: \(Int(height))")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding()
+            .frame(width: 400)
+        }
+    }
+    
+    return PreviewWrapper()
+        .inRootView()
 }

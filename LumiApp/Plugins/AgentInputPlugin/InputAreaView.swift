@@ -29,6 +29,9 @@ struct InputAreaView: View, SuperLog {
     /// 模型选择器是否显示
     @Binding var isModelSelectorPresented: Bool
 
+    /// 编辑器动态高度
+    @State private var editorHeight: CGFloat = MacEditorView.minHeight
+
     /// 动画相位状态（用于渐变边框动画）
     @State private var gradientPhase: CGFloat = 0
 
@@ -44,13 +47,16 @@ struct InputAreaView: View, SuperLog {
                 )
             }
 
-            // 编辑器
+            // 编辑器 - 使用动态高度
             MacEditorView(
                 text: $inputViewModel.text,
+                height: $editorHeight,
                 onSubmit: {
                     let text = inputViewModel.text
                     inputViewModel.clear()
                     agentProvider.sendMessage(input: text)
+                    // 发送后重置高度
+                    editorHeight = MacEditorView.minHeight
                 },
                 onArrowUp: {
                     if commandSuggestionViewModel.isVisible {
@@ -71,14 +77,18 @@ struct InputAreaView: View, SuperLog {
                         let text = inputViewModel.text
                         inputViewModel.clear()
                         agentProvider.sendMessage(input: text)
+                        // 发送后重置高度
+                        editorHeight = MacEditorView.minHeight
                     }
                 },
                 isFocused: $isInputFocused,
                 cursorPosition: $inputViewModel.cursorPosition
             )
-            .frame(height: 64)
+            .frame(height: editorHeight)
             .padding(.horizontal, 4)
             .padding(.top, 8)
+            // 添加高度变化动画
+            .animation(.easeInOut(duration: 0.15), value: editorHeight)
 
             // 工具栏
             ChatToolbarView(
@@ -182,7 +192,7 @@ extension InputAreaView {
         }
         
         if Self.verbose {
-            os_log("\(Self.t)✅ handleFileDrop")
+            os_log("\(Self.t)✅ handleFileDrop 完成, text.count=\(inputViewModel.text.count), cursorPosition=\(inputViewModel.cursorPosition)")
         }
     }
 }
