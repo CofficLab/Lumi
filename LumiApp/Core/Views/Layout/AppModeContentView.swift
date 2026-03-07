@@ -10,22 +10,10 @@ struct AppModeContentView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            // 侧边栏
+            // 侧边栏（统一侧边栏，顶部显示模式切换）
             if sidebarVisibility {
-                VStack(spacing: 0) {
-                    // 模式切换器
-                    AppModeSwitcherView()
-                        .padding(.horizontal, DesignTokens.Spacing.sm)
-                        .padding(.top, 32)
-                        .padding(.bottom, DesignTokens.Spacing.sm)
-
-                    Divider()
-                        .background(Color.white.opacity(0.1))
-
-                    // 应用模式侧边栏
-                    AppModeSidebar()
-                }
-                .frame(width: 220)
+                UnifiedSidebar(sidebarVisibility: $sidebarVisibility)
+                    .frame(width: 220)
 
                 // 侧边栏与内容区的微妙分隔线
                 Rectangle()

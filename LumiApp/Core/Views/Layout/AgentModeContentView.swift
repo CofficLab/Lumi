@@ -15,10 +15,10 @@ struct AgentModeContentView: View {
 
     var body: some View {
         HSplitView {
-            // 第一栏：侧边栏
+            // 第一栏：侧边栏（统一侧边栏，顶部显示模式切换）
             if sidebarVisibility {
                 sidebarColumn
-                    .frame(minWidth: 150, idealWidth: 220, maxWidth: 400)
+                    .frame(minWidth: 200, idealWidth: 220, maxWidth: 400)
             }
 
             // 第二栏 + 第三栏：嵌套 HSplitView
@@ -27,9 +27,8 @@ struct AgentModeContentView: View {
         .ignoresSafeArea()
         .task {
             if Self.verbose {
-                let sidebarViews = pluginProvider.getSidebarViews()
                 let middleViews = pluginProvider.getMiddleViews()
-                os_log("\(Self.emoji) Agent Mode: 侧边栏视图数量=\(sidebarViews.count), 中间栏视图数量=\(middleViews.count)")
+                os_log("\(Self.emoji) Agent Mode: 中间栏视图数量=\(middleViews.count)")
             }
         }
     }
@@ -38,19 +37,7 @@ struct AgentModeContentView: View {
 
     /// 侧边栏列
     private var sidebarColumn: some View {
-        VStack(spacing: 0) {
-            // 模式切换器
-            AppModeSwitcherView()
-                .padding(.horizontal, DesignTokens.Spacing.sm)
-                .padding(.top, 32)
-                .padding(.bottom, DesignTokens.Spacing.sm)
-
-            Divider()
-                .background(Color.white.opacity(0.1))
-
-            // 插件提供的侧边栏视图（垂直堆叠）
-            AgentModeSidebar()
-        }
+        UnifiedSidebar(sidebarVisibility: $sidebarVisibility)
     }
 
     /// 中间栏和详情栏（嵌套 HSplitView）

@@ -542,9 +542,6 @@
         }
       }
     },
-    "Agent 模式侧边栏" : {
-
-    },
     "All" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5251,6 +5248,7 @@
 
     },
     "插件未提供导航入口" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5375,6 +5373,7 @@
 
     },
     "暂无导航" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5389,9 +5388,6 @@
           }
         }
       }
-    },
-    "暂无插件提供侧边栏视图" : {
-
     },
     "暂无文件" : {
 

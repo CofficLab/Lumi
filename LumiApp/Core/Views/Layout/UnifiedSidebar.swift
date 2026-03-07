@@ -1,43 +1,77 @@
 import SwiftUI
 
-/// 应用模式侧边栏视图，显示插件提供的导航入口
-struct AppModeSidebar: View {
-    /// 应用提供者环境对象
-    @EnvironmentObject var appProvider: GlobalProvider
+/// 统一侧边栏视图 - App 模式和 Agent 模式共用
+/// 顶部显示模式切换，下方根据不同模式显示不同内容
+struct UnifiedSidebar: View {
+    @Binding var sidebarVisibility: Bool
 
-    /// 插件提供者环境对象
+    @EnvironmentObject var app: GlobalProvider
     @EnvironmentObject var pluginProvider: PluginProvider
-
-    /// 当前配色方案（浅色/深色模式）
     @Environment(\.colorScheme) private var colorScheme
-
-    private var entries: [NavigationEntry] {
-        pluginProvider.getNavigationEntries(for: appProvider.selectedMode)
-    }
 
     var body: some View {
         VStack(spacing: 0) {
-            // MARK: - Navigation List
+            // MARK: - 模式切换器（顶部）
+            HStack {
+                Spacer()
+                AppModeSwitcherView()
+                    .padding(.horizontal, DesignTokens.Spacing.sm)
+                    .padding(.vertical, DesignTokens.Spacing.sm)
+            }
+
+            Divider()
+                .background(Color.white.opacity(0.1))
+
+            // MARK: - 模式内容（根据模式显示不同视图）
+            modeContent
+        }
+        .ignoresSafeArea()
+        .onAppear {
+            DispatchQueue.main.async {
+                initializeDefaultSelection()
+            }
+        }
+    }
+
+    // MARK: - 模式内容
+
+    @ViewBuilder
+    private var modeContent: some View {
+        switch app.selectedMode {
+        case .app:
+            // App 模式：显示导航入口列表
+            appModeContent
+        case .agent:
+            // Agent 模式：显示插件提供的侧边栏视图
+            agentModeContent
+        }
+    }
+
+    // MARK: - App 模式内容
+
+    private var appModeContent: some View {
+        VStack(spacing: 0) {
+            let entries = pluginProvider.getNavigationEntries(for: app.selectedMode)
 
             if entries.isNotEmpty {
                 ScrollView {
                     LazyVStack(spacing: DesignTokens.Spacing.sm) {
                         ForEach(entries) { entry in
                             Button {
-                                appProvider.selectedNavigationId = entry.id
+                                app.selectedNavigationId = entry.id
                             } label: {
-                                SidebarRow(title: entry.title, icon: entry.icon, isSelected: appProvider.selectedNavigationId == entry.id)
+                                SidebarRow(title: entry.title, icon: entry.icon, isSelected: app.selectedNavigationId == entry.id)
                             }
                             .buttonStyle(.plain)
                         }
                     }
                     .padding(.horizontal, DesignTokens.Spacing.sm)
-                    .padding(.top, 40) // 为流量灯留出空间
+                    .padding(.top, DesignTokens.Spacing.lg)
                     .padding(.bottom, DesignTokens.Spacing.lg)
                 }
                 .scrollIndicators(.hidden)
             } else {
-                emptyState
+                emptyState(message: "暂无导航", subtitle: "插件未提供导航入口")
             }
 
             Spacer(minLength: 0)
@@ -46,14 +80,29 @@ struct AppModeSidebar: View {
                 .padding(.horizontal, DesignTokens.Spacing.sm)
                 .padding(.bottom, DesignTokens.Spacing.md)
         }
-        .background(SwiftUI.Color.clear)
-        .onAppear {
-            // Delay to avoid "Publishing changes during view update" warning
-            DispatchQueue.main.async {
-                initializeDefaultSelection()
+    }
+
+    // MARK: - Agent 模式内容
+
+    private var agentModeContent: some View {
+        let sidebarViews = pluginProvider.getSidebarViews()
+
+        return Group {
+            if sidebarViews.isEmpty {
+                // 默认内容
+                emptyState(message: "Agent 模式侧边栏", subtitle: "暂无插件提供侧边栏视图")
+            } else {
+                // 显示插件提供的侧边栏视图
+                VStack(spacing: 0) {
+                    ForEach(Array(sidebarViews.enumerated()), id: \.offset) { _, view in
+                        view
+                    }
+                }
             }
         }
     }
+
+    // MARK: - 辅助视图
 
     /// 底部设置按钮
     private var settingsButton: some View {
@@ -66,32 +115,35 @@ struct AppModeSidebar: View {
     }
 
     /// 空状态视图
-    private var emptyState: some View {
+    private func emptyState(message: String, subtitle: String) -> some View {
         VStack(spacing: 12) {
             Image(systemName: "tray")
                 .font(.system(size: 48))
                 .foregroundColor(DesignTokens.Color.adaptive.textSecondary(for: colorScheme))
 
-            Text("暂无导航")
+            Text(message)
                 .font(.headline)
                 .foregroundColor(DesignTokens.Color.adaptive.textSecondary(for: colorScheme))
 
-            Text("插件未提供导航入口")
+            Text(subtitle)
                 .font(.caption)
                 .foregroundColor(DesignTokens.Color.adaptive.textTertiary(for: colorScheme))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    // MARK: - 私有方法
+
     /// 初始化默认选中的导航项
     private func initializeDefaultSelection() {
-        // 如果还没有选中项，选择默认的或第一个
-        if appProvider.selectedNavigationId == nil {
-            let entries = pluginProvider.getNavigationEntries(for: appProvider.selectedMode)
+        guard app.selectedMode == .app else { return }
+
+        if app.selectedNavigationId == nil {
+            let entries = pluginProvider.getNavigationEntries(for: app.selectedMode)
             if let defaultEntry = entries.first(where: { $0.isDefault }) {
-                appProvider.selectedNavigationId = defaultEntry.id
+                app.selectedNavigationId = defaultEntry.id
             } else if let firstEntry = entries.first {
-                appProvider.selectedNavigationId = firstEntry.id
+                app.selectedNavigationId = firstEntry.id
             }
         }
     }
@@ -146,8 +198,12 @@ struct SidebarRow: View {
     }
 }
 
-#Preview("App Mode Sidebar") {
-    AppModeSidebar()
+// MARK: - Preview
+
+#if os(macOS)
+#Preview("Unified Sidebar - App Mode") {
+    UnifiedSidebar(sidebarVisibility: .constant(true))
         .frame(width: 220, height: 600)
         .inRootView()
 }
+#endif
