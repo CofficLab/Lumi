@@ -270,6 +270,14 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     /// 选择指定会话
     /// - Parameter id: 会话 ID
     func selectConversation(_ id: UUID) {
+        // 避免重复设置相同的 ID
+        guard selectedConversationId != id else {
+            if Self.verbose {
+                os_log("\(Self.t)⚠️ 会话已选中，跳过重复设置: \(id)")
+            }
+            return
+        }
+
         selectedConversationId = id
 
         // 加载该会话的消息

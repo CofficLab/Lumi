@@ -9,7 +9,7 @@ struct ConversationListView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "🐶"
     /// 是否输出详细日志
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     /// 数据上下文：用于查询和删除会话
     @Environment(\.modelContext) private var modelContext
@@ -25,6 +25,9 @@ struct ConversationListView: View, SuperLog {
 
     /// 是否已恢复选择标记：防止重复恢复
     @State private var hasRestoredSelection = false
+
+    /// 是否正在处理选择变更（防止循环）
+    @State private var isProcessingSelection = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -75,10 +78,16 @@ extension ConversationListView {
         // 调用 ConversationViewModel 的恢复方法（会验证会话是否存在）
         conversationViewModel.restoreSelectedConversation(modelContext: modelContext)
 
-        // 同步到本地选择状态
-        localSelectedConversationId = conversationViewModel.selectedConversationId
+        // 同步到本地选择状态（使用 isProcessingSelection 防止触发 onChange 循环）
+        if conversationViewModel.selectedConversationId != nil {
+            isProcessingSelection = true
+            localSelectedConversationId = conversationViewModel.selectedConversationId
+            os_log("\(self.t)✅ 已恢复上次选择的会话: \(self.localSelectedConversationId?.uuidString ?? "nil")")
 
-        if localSelectedConversationId != nil {
+            // 延迟重置标志
+            DispatchQueue.main.async {
+                isProcessingSelection = false
+            }
         } else {
             if Self.verbose {
                 os_log("\(self.t)ℹ️ 没有保存的会话选择")
@@ -139,23 +148,72 @@ extension ConversationListView {
 
     /// 处理选择变化：同步到 ConversationViewModel
     func handleSelectionChange() {
-        if localSelectedConversationId != conversationViewModel.selectedConversationId {
-            if localSelectedConversationId != nil {
-                conversationViewModel.selectConversation(localSelectedConversationId!)
+        let localId = localSelectedConversationId?.uuidString ?? "nil"
+        let vmId = conversationViewModel.selectedConversationId?.uuidString ?? "nil"
+        os_log("\(self.t)🔄 handleSelectionChange called: local=\(localId), vm=\(vmId)")
+
+        // 如果正在处理选择变更，跳过（防止循环）
+        guard !isProcessingSelection else {
+            os_log("\(self.t)⏭️ 正在处理中，跳过")
+            return
+        }
+
+        // 只在值确实不同时才更新，避免循环
+        guard localSelectedConversationId != conversationViewModel.selectedConversationId else {
+            os_log("\(self.t)⏭️ 值相同，跳过处理")
+            return
+        }
+
+        isProcessingSelection = true
+
+        // 使用 async 延迟执行，打破同步循环
+        DispatchQueue.main.async {
+            if let newId = self.localSelectedConversationId {
+                os_log("\(self.t)👉 从 List 选择会话: \(newId)")
+                self.conversationViewModel.selectConversation(newId)
             } else {
-                conversationViewModel.clearConversationSelection()
+                os_log("\(self.t)👉 清除会话选择")
+                self.conversationViewModel.clearConversationSelection()
+            }
+
+            // 延迟重置标志
+            DispatchQueue.main.async {
+                self.isProcessingSelection = false
             }
         }
     }
 
     func handleConversationSelected() {
-        if Self.verbose {
-            os_log("\(self.t)✅ [\(conversationViewModel.selectedConversationId?.uuidString ?? "")] 已选择")
+        let localId = localSelectedConversationId?.uuidString ?? "nil"
+        let vmId = conversationViewModel.selectedConversationId?.uuidString ?? "nil"
+        os_log("\(self.t)🔄 handleConversationSelected called: local=\(localId), vm=\(vmId)")
+
+        // 如果正在处理选择变更，跳过（防止循环）
+        guard !isProcessingSelection else {
+            os_log("\(self.t)⏭️ 正在处理中，跳过")
+            return
         }
 
-        if let conversationId = conversationViewModel.selectedConversationId {
-            if conversations.first(where: { $0.id == conversationId }) != nil {
-                localSelectedConversationId = conversationId
+        // 只在值确实不同时才更新，避免循环
+        guard localSelectedConversationId != conversationViewModel.selectedConversationId else {
+            os_log("\(self.t)⏭️ 值相同，跳过处理")
+            return
+        }
+
+        isProcessingSelection = true
+
+        // 使用 async 延迟执行，打破同步循环
+        DispatchQueue.main.async {
+            if let conversationId = self.conversationViewModel.selectedConversationId {
+                if self.conversations.first(where: { $0.id == conversationId }) != nil {
+                    os_log("\(self.t)👉 同步 VM 选择到 List: \(conversationId)")
+                    self.localSelectedConversationId = conversationId
+                }
+            }
+
+            // 延迟重置标志
+            DispatchQueue.main.async {
+                self.isProcessingSelection = false
             }
         }
     }

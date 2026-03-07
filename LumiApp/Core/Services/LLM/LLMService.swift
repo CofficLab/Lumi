@@ -120,9 +120,9 @@ class LLMService: SuperLog, @unchecked Sendable {
 
             if Self.verbose {
                 if let toolCalls = toolCalls, !toolCalls.isEmpty {
-                    os_log("\(self.t)收到响应：\(content.prefix(100))...，包含 \(toolCalls.count) 个工具调用，耗时：\(String(format: "%.2f", latency))ms")
+                    os_log("\(self.t)收到响应：\(content.prefix(10))...，包含 \(toolCalls.count) 个工具调用，耗时：\(String(format: "%.2f", latency))ms")
                 } else {
-                    os_log("\(self.t)收到响应：「\(content.prefix(100))...」，耗时：\(String(format: "%.2f", latency))ms")
+                    os_log("\(self.t)收到响应：「\(content.prefix(10))...」，耗时：\(String(format: "%.2f", latency))ms")
                 }
             }
 

@@ -106,11 +106,15 @@ struct HoverableContainerView<Content: View, Detail: View>: View {
             }
             .onReceive(coordinator.$visibleID) { visibleID in
                 let shouldShow = (visibleID == self.id)
+                // 只在值确实不同时才更新，避免循环
                 if isPresented != shouldShow {
                     isPresented = shouldShow
                 }
             }
-            .onChange(of: isPresented) { _, newValue in
+            .onChange(of: isPresented) { oldValue, newValue in
+                // 只在值确实变化时才处理，避免循环
+                guard oldValue != newValue else { return }
+
                 // 如果是用户手动关闭（例如点击外部），则通知协调器
                 if !newValue && coordinator.visibleID == self.id {
                     coordinator.close(id: self.id)

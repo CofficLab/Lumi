@@ -82,7 +82,7 @@ extension ChatMessagesView {
         }
     }
 
-    /// 空状态视图 - 未选择会话时显示
+    /// 空状态视图 - 未选择会话时显示（无动态效果）
     private var emptyStateView: some View {
         VStack(spacing: 20) {
             Spacer()
@@ -91,7 +91,6 @@ extension ChatMessagesView {
             Image(systemName: "bubble.left.and.bubble.right.fill")
                 .font(.system(size: 64))
                 .foregroundStyle(.secondary)
-                .symbolEffect(.pulse, options: .repeating)
 
             // 标题
             Text("选择一个会话开始聊天", tableName: "DevAssistant")
@@ -112,7 +111,7 @@ extension ChatMessagesView {
         .background(Color.clear)
     }
 
-    /// 空消息视图 - 已选择会话但没有消息时显示
+    /// 空消息视图 - 已选择会话但没有消息时显示（带动态效果）
     private var emptyMessagesView: some View {
         VStack(spacing: 20) {
             Spacer()
@@ -172,9 +171,11 @@ extension ChatMessagesView {
             os_log("\(self.t)✅ [\(conversationId)] 已选择")
         }
 
-        Task {
-            await conversationViewModel.loadConversation(conversationId)
-        }
+        // 注意：ConversationViewModel.selectConversation 已经调用了 loadConversation
+        // 这里不需要再次加载，避免重复请求
+        // Task {
+        //     await conversationViewModel.loadConversation(conversationId)
+        // }
     }
 }
 
