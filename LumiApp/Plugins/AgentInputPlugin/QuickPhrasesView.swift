@@ -142,7 +142,7 @@ extension QuickPhraseButton {
 
 #Preview("Quick Phrases - With Project") {
     QuickPhrasesView(
-        onPhraseSelected: { print("Selected: \($0)") },
+        onPhraseSelected: { _ in },
         projectName: .constant("Lumi"),
         projectPath: .constant("/Users/angel/Code/Coffic/Lumi"),
         isProjectSelected: .constant(true)
@@ -154,7 +154,7 @@ extension QuickPhraseButton {
 
 #Preview("Quick Phrases - No Project") {
     QuickPhrasesView(
-        onPhraseSelected: { print("Selected: \($0)") },
+        onPhraseSelected: { _ in },
         projectName: .constant(""),
         projectPath: .constant(""),
         isProjectSelected: .constant(false)
