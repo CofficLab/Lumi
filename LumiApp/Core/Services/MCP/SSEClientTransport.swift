@@ -60,7 +60,7 @@ actor SSEClientTransport: Transport, SuperLog {
                     if line.isEmpty {
                         // End of event dispatch
                         if !currentData.isEmpty {
-                            await self.handleMessage(event: currentEvent, data: currentData, id: currentId)
+                            self.handleMessage(event: currentEvent, data: currentData, id: currentId)
                         }
 
                         // Reset state

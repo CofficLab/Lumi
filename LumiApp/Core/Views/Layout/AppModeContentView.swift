@@ -4,7 +4,7 @@ import SwiftUI
 /// 应用模式内容视图
 struct AppModeContentView: View {
     @Binding var sidebarVisibility: Bool
-    
+
     @EnvironmentObject var app: AppProvider
     @EnvironmentObject var pluginProvider: PluginProvider
 
@@ -14,7 +14,7 @@ struct AppModeContentView: View {
             if sidebarVisibility {
                 VStack(spacing: 0) {
                     // 模式切换器
-                    modeSwitcher
+                    AppModeSwitcherView()
                         .padding(.horizontal, DesignTokens.Spacing.sm)
                         .padding(.top, 32)
                         .padding(.bottom, DesignTokens.Spacing.sm)
@@ -50,23 +50,7 @@ struct AppModeContentView: View {
         .frame(maxHeight: .infinity)
     }
 
-    /// 模式切换器
-    private var modeSwitcher: some View {
-        Picker("模式", selection: Binding(
-            get: { app.selectedMode },
-            set: {
-                app.selectedMode = $0
-                pluginProvider.selectedMode = $0
-            }
-        )) {
-            ForEach(AppMode.allCases) { mode in
-                Label(mode.rawValue, systemImage: mode.icon)
-                    .tag(mode)
-            }
-        }
-        .pickerStyle(.segmented)
-        .labelsHidden()
-    }
+
 }
 
 #Preview("App Mode") {

@@ -130,8 +130,10 @@ extension ConversationListView {
     func onAppear() {
         // 首次加载时恢复上次选择的会话
         if !hasRestoredSelection && !conversations.isEmpty {
-            restoreSelectionIfNeeded()
             hasRestoredSelection = true
+            Task { @MainActor in
+                restoreSelectionIfNeeded()
+            }
         }
     }
 

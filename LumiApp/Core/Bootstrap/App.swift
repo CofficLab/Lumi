@@ -1,7 +1,7 @@
 import AppKit
 import MagicKit
-import SwiftUI
 import Sparkle
+import SwiftUI
 
 /// 主应用入口，负责应用生命周期管理
 @main
@@ -12,9 +12,8 @@ struct CoreApp: App {
     var body: some Scene {
         // 主窗口
         WindowGroup {
-            RootView {
-                ContentLayout()
-            }
+            ContentLayout()
+                .inRootView()
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))

@@ -39,7 +39,7 @@ struct AgentModeContentView: View {
     private var sidebarColumn: some View {
         VStack(spacing: 0) {
             // 模式切换器
-            modeSwitcher
+            AppModeSwitcherView()
                 .padding(.horizontal, DesignTokens.Spacing.sm)
                 .padding(.top, 32)
                 .padding(.bottom, DesignTokens.Spacing.sm)
@@ -176,20 +176,7 @@ struct AgentModeContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// 模式切换器
-    private var modeSwitcher: some View {
-        Picker("模式", selection: $app.selectedMode) {
-            ForEach(AppMode.allCases) { mode in
-                Label(mode.rawValue, systemImage: mode.icon)
-                    .tag(mode)
-            }
-        }
-        .pickerStyle(.segmented)
-        .labelsHidden()
-        .onChange(of: app.selectedMode) { _, newValue in
-            pluginProvider.selectedMode = newValue
-        }
-    }
+
 }
 
 #Preview("Agent Mode") {

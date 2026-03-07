@@ -103,7 +103,9 @@ struct ContentViewBody<Content: View>: View {
                 .ignoresSafeArea()
             }
             .onAppear(perform: onAppear)
-            .onChange(of: columnVisibility, perform: { _ in onChangeColumnVisibility() })
+            .onChange(of: columnVisibility) { _, _ in
+                onChangeColumnVisibility()
+            }
             .overlay(alignment: .bottom) {
                 pluginProvider.getRootViewWrapper(content: { EmptyView() })
             }
