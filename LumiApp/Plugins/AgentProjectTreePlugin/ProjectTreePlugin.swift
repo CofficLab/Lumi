@@ -45,13 +45,20 @@ actor ProjectTreePlugin: SuperPlugin, SuperLog {
     static let shared = ProjectTreePlugin()
 
     /// Initialization method
-    init() {}
+    init() {
+        if Self.verbose {
+            os_log("\(Self.t)✅ ProjectTreePlugin 初始化完成")
+        }
+    }
 
     // MARK: - UI Contributions
 
     /// Add sidebar view for Agent mode - 显示项目文件树
     /// - Returns: ProjectTreeView to be added to the sidebar
     @MainActor func addSidebarView() -> AnyView? {
+        if Self.verbose {
+            os_log("\(Self.t)📋 addSidebarView 被调用")
+        }
         return AnyView(ProjectTreeView())
     }
 }

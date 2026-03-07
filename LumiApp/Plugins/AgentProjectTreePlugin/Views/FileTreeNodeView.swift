@@ -1,9 +1,13 @@
 import SwiftUI
 import MagicKit
 import UniformTypeIdentifiers
+import OSLog
 
 /// 项目文件树节点视图
-struct FileTreeNodeView: View {
+struct FileTreeNodeView: View, SuperLog {
+    nonisolated static let emoji = "🌿"
+    nonisolated static let verbose = true
+
     let node: FileTreeNode
     let depth: Int
     let projectPath: String
@@ -47,6 +51,9 @@ struct FileTreeNodeView: View {
                     isExpanded = true
                     // 如果之前是展开的，并且还没有数据，则异步加载
                     if children.isEmpty && !isLoading {
+                        if Self.verbose {
+                            os_log("\(Self.t)📂 恢复展开状态: \(node.name)")
+                        }
                         loadChildren()
                     }
                 }
@@ -90,6 +97,9 @@ struct FileTreeNodeView: View {
         }
         // 添加拖拽支持 - 强制转换为普通纯文本字符串传递，避免系统为 fileURL 生成 Caches 目录下的替身文件
         .onDrag {
+            if Self.verbose {
+                os_log("\(Self.t)🎯 开始拖拽: \(node.name)")
+            }
             // 将真实路径作为普通字符串拖出
             return NSItemProvider(object: node.url.path as NSString)
         }
@@ -166,8 +176,14 @@ struct FileTreeNodeView: View {
 
     private func handleTap() {
         if node.isDirectory {
+            if Self.verbose {
+                os_log("\(Self.t)👆 点击文件夹: \(node.name)")
+            }
             toggle()
         } else {
+            if Self.verbose {
+                os_log("\(Self.t)👆 选择文件: \(node.name)")
+            }
             // 选择文件
             onFileSelect(node.url)
         }
@@ -175,7 +191,11 @@ struct FileTreeNodeView: View {
 
     private func toggle() {
         isExpanded.toggle()
-        
+
+        if Self.verbose {
+            os_log("\(Self.t)\(isExpanded ? "📂" : "📁") \(node.name) \(isExpanded ? "展开" : "折叠")")
+        }
+
         // 保存状态到持久化存储
         FileTreeStateManager.shared.setExpanded(isExpanded, url: node.url, projectPath: projectPath)
 
@@ -187,11 +207,21 @@ struct FileTreeNodeView: View {
     private func loadChildren() {
         isLoading = true
 
+        if Self.verbose {
+            os_log("\(Self.t)⏳ 加载子节点: \(node.name)")
+        }
+
         Task {
+            let startTime = Date()
             let loadedChildren = await loadChildrenAsync()
+            let duration = Date().timeIntervalSince(startTime)
+
             await MainActor.run {
                 children = loadedChildren
                 isLoading = false
+                if Self.verbose {
+                    os_log("\(Self.t)✅ 子节点加载完成: \(node.name) - \(loadedChildren.count) 个子项, 耗时 \(String(format: "%.3f", duration))s")
+                }
             }
         }
     }
@@ -205,6 +235,10 @@ struct FileTreeNodeView: View {
                 includingPropertiesForKeys: [.isDirectoryKey],
                 options: [.skipsHiddenFiles, .skipsPackageDescendants]
             )
+
+            if Self.verbose {
+                os_log("\(Self.t)📂 读取目录: \(node.name) 包含 \(contents.count) 个项")
+            }
 
             for fileURL in contents {
                 do {
@@ -220,10 +254,16 @@ struct FileTreeNodeView: View {
                     )
                     items.append(childNode)
                 } catch {
+                    if Self.verbose {
+                        os_log("\(Self.t)⚠️ 读取子文件信息失败: \(fileURL.lastPathComponent), error: \(error.localizedDescription)")
+                    }
                     continue
                 }
             }
         } catch {
+            if Self.verbose {
+                os_log("\(Self.t)❌ 读取子目录失败: \(node.name), error: \(error.localizedDescription)")
+            }
             return []
         }
 
