@@ -58,7 +58,7 @@ class MCPService: SuperLog, @unchecked Sendable {
         }
 
         Task.detached {
-            await self.connectAll()
+//            await self.connectAll()
         }
     }
 

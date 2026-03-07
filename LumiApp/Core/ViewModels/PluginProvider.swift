@@ -57,6 +57,16 @@ final class PluginProvider: ObservableObject, SuperLog {
         )
     }
 
+    /// 析构函数，清理资源
+    deinit {
+        // 移除 NotificationCenter 观察者，防止内存泄漏
+        NotificationCenter.default.removeObserver(
+            self,
+            name: NSNotification.Name("AgentProviderFileSelectionChanged"),
+            object: nil
+        )
+    }
+
     /// 处理文件选择变化通知
     @objc private func handleFileSelectionChanged(_ notification: Notification) {
         objectWillChange.send()
