@@ -23,9 +23,6 @@ struct ConversationListView: View, SuperLog {
     /// 本地选择的会话 ID
     @State private var localSelectedConversationId: UUID?
 
-    /// 是否已恢复选择标记：防止重复恢复
-    @State private var hasRestoredSelection = false
-
     /// 是否正在处理选择变更（防止循环）
     @State private var isProcessingSelection = false
 
@@ -53,6 +50,10 @@ struct ConversationListView: View, SuperLog {
         .onAppear(perform: onAppear)
         .onChange(of: localSelectedConversationId, handleSelectionChange)
         .onChange(of: conversationViewModel.selectedConversationId, handleConversationSelected)
+        .onChange(of: conversations) { _, newConversations in
+            // 当会话列表变化时，同步当前选中的会话
+            handleConversationsChanged(newConversations)
+        }
     }
 }
 
@@ -64,33 +65,35 @@ extension ConversationListView {
 // MARK: - Action
 
 extension ConversationListView {
-    /// 恢复上次选择的会话
-    /// 仅在首次加载且没有选中的会话时执行
-    private func restoreSelectionIfNeeded() {
-        // 如果已经有选中的会话，不需要恢复
-        if localSelectedConversationId != nil {
-            if Self.verbose {
-                os_log("\(self.t)已有选中的会话，跳过恢复")
-            }
-            return
-        }
+    /// 同步 VM 的选中状态到本地 List
+    /// 在视图出现时调用，确保 List 的选中状态与 VM 一致
+    private func syncSelectionFromViewModel() {
+        guard !isProcessingSelection else { return }
 
-        // 调用 ConversationViewModel 的恢复方法（会验证会话是否存在）
-        conversationViewModel.restoreSelectedConversation(modelContext: modelContext)
+        let vmId = conversationViewModel.selectedConversationId
 
-        // 同步到本地选择状态（使用 isProcessingSelection 防止触发 onChange 循环）
-        if conversationViewModel.selectedConversationId != nil {
-            isProcessingSelection = true
-            localSelectedConversationId = conversationViewModel.selectedConversationId
-            os_log("\(self.t)✅ 已恢复上次选择的会话: \(self.localSelectedConversationId?.uuidString ?? "nil")")
+        // 如果 VM 有选中的会话，同步到本地
+        if let selectedId = vmId {
+            // 检查选中的会话是否存在于当前列表中
+            if conversations.first(where: { $0.id == selectedId }) != nil {
+                if localSelectedConversationId != selectedId {
+                    isProcessingSelection = true
+                    localSelectedConversationId = selectedId
+                    os_log("\(self.t)✅ 同步 VM 选中状态到 List: \(selectedId)")
 
-            // 延迟重置标志
-            DispatchQueue.main.async {
-                isProcessingSelection = false
+                    DispatchQueue.main.async {
+                        isProcessingSelection = false
+                    }
+                }
+            } else {
+                // 选中的会话不存在于列表中，清除选择
+                os_log("\(self.t)⚠️ 选中的会话不存在于列表中")
+                localSelectedConversationId = nil
             }
         } else {
-            if Self.verbose {
-                os_log("\(self.t)ℹ️ 没有保存的会话选择")
+            // VM 没有选中会话，清除本地选择
+            if localSelectedConversationId != nil {
+                localSelectedConversationId = nil
             }
         }
     }
@@ -137,11 +140,20 @@ extension ConversationListView {
 extension ConversationListView {
     /// 视图出现时的事件处理
     func onAppear() {
-        // 首次加载时恢复上次选择的会话
-        if !hasRestoredSelection && !conversations.isEmpty {
-            hasRestoredSelection = true
-            Task { @MainActor in
-                restoreSelectionIfNeeded()
+        // 同步 VM 的选中状态到本地 List
+        // 注意：不再恢复上次的选择，而是在 RootView 初始化时恢复
+        if !conversations.isEmpty {
+            syncSelectionFromViewModel()
+        }
+    }
+
+    /// 处理会话列表变化
+    func handleConversationsChanged(_ newConversations: [Conversation]) {
+        // 如果当前选中的会话不在新列表中，清除选择
+        if let localId = localSelectedConversationId {
+            if !newConversations.contains(where: { $0.id == localId }) {
+                os_log("\(self.t)⚠️ 当前选中的会话已不在列表中，清除选择")
+                localSelectedConversationId = nil
             }
         }
     }

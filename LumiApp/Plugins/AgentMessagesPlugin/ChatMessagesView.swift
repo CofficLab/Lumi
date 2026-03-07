@@ -43,6 +43,7 @@ struct ChatMessagesView: View, SuperLog {
                 emptyStateView
             }
         }
+        .background(.background.opacity(0.8))
         .onChange(of: conversationViewModel.selectedConversationId, handleConversationSelected)
     }
 }

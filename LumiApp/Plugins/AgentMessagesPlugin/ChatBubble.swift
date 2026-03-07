@@ -141,7 +141,7 @@ struct AssistantMessageHeader: View {
         HStack(alignment: .center, spacing: 8) {
             // 供应商和模型信息
             HStack(alignment: .center, spacing: 4) {
-                Text(String(localized: "Dev Assistant", table: "DevAssistant"))
+                Text("Lumi")
                     .font(DesignTokens.Typography.caption1)
                     .fontWeight(.medium)
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
