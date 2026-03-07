@@ -99,6 +99,9 @@ final class ConversationViewModel: ObservableObject, SuperLog {
         self.llmService = llmService
         self.promptService = promptService
         self.messageSenderViewModel = messageSenderViewModel
+        
+        // 恢复上次选择的会话
+        restoreSelectedConversation()
     }
 
     // MARK: - 会话管理
@@ -269,46 +272,18 @@ final class ConversationViewModel: ObservableObject, SuperLog {
 
     /// 恢复上次选择的会话
     ///
-    /// 应用启动时恢复上次选中的会话。
-    /// 会验证会话是否存在，如果不存在则清除保存的状态。
-    ///
-    /// - Parameter modelContext: 数据上下文（用于验证会话是否存在）
-    func restoreSelectedConversation(modelContext: ModelContext?) {
+    /// 应用启动时从 UserDefaults 恢复上次选中的会话 ID。
+    /// 不验证会话是否存在于数据库，由调用方处理验证。
+    func restoreSelectedConversation() {
         guard let savedId = UserDefaults.standard.string(forKey: "Conversation_SelectedId"),
               let uuid = UUID(uuidString: savedId) else {
             return
         }
 
-        // 如果有 modelContext，验证会话是否存在
-        if let context = modelContext {
-            let descriptor = FetchDescriptor<Conversation>(
-                predicate: #Predicate { $0.id == uuid }
-            )
+        selectedConversationId = uuid
 
-            do {
-                let conversations = try context.fetch(descriptor)
-                if conversations.isEmpty {
-                    // 会话已不存在，清除保存的 ID
-                    if Self.verbose {
-                        os_log("\(Self.t)⚠️ 上次选择的会话已不存在，清除保存状态")
-                    }
-                    UserDefaults.standard.removeObject(forKey: "Conversation_SelectedId")
-                    return
-                }
-                // 会话存在，恢复选择
-                selectedConversationId = uuid
-                if Self.verbose {
-                    os_log("\(Self.t)✅ [\(uuid)] 已恢复会话")
-                }
-            } catch {
-                os_log(.error, "\(Self.t)❌ 验证会话失败：\(error.localizedDescription)")
-            }
-        } else {
-            // 没有 modelContext，直接恢复（可能在初始化阶段）
-            selectedConversationId = uuid
-            if Self.verbose {
-                os_log("\(Self.t)ℹ️ 已恢复会话选择（未验证）: \(uuid)")
-            }
+        if Self.verbose {
+            os_log("\(Self.t)✅ [\(uuid)] 已恢复会话选择")
         }
     }
 

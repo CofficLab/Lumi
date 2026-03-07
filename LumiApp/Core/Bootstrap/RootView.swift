@@ -113,11 +113,6 @@ struct RootView<Content>: View where Content: View {
         // 设置 ConversationViewModel 的 messageSenderViewModel 引用
         self.conversationViewModel.messageSenderViewModel = self.messageSenderViewModel
 
-        // 恢复上次选择的会话（在应用启动时只执行一次）
-        // 注意：这里不加载 modelContext，因为初始化时可能还没有准备好
-        // 实际的选择恢复会在 ConversationListView 出现时检查
-        self.conversationViewModel.restoreSelectedConversation(modelContext: nil)
-
         // 初始化对话轮次 ViewModel
         let conversationTurnViewModel = ConversationTurnViewModel(
             llmService: llmService,
