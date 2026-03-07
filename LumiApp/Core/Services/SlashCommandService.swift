@@ -51,7 +51,7 @@ actor SlashCommandService {
             return .handled
 
         case "mcp":
-            return await handleMCPCommand(args: arguments, provider: provider, mcpViewModel: provider.mcpViewModel)
+            return await handleMCPCommand(args: arguments, provider: provider, toolsViewModel: provider.toolsViewModel)
 
         default:
             // 不支持的命令，返回 notHandled 让上层作为普通消息处理
@@ -59,7 +59,7 @@ actor SlashCommandService {
         }
     }
 
-    private func handleMCPCommand(args: String, provider: AgentProvider, mcpViewModel: MCPViewModel) async -> SlashCommandResult {
+    private func handleMCPCommand(args: String, provider: AgentProvider, toolsViewModel: ToolsViewModel) async -> SlashCommandResult {
         let components = args.split(separator: " ", maxSplits: 1).map(String.init)
         let subCommand = components.first ?? "help"
         let param = components.count > 1 ? components[1] : ""
@@ -67,7 +67,7 @@ actor SlashCommandService {
         switch subCommand {
         case "list":
             let status = await MainActor.run {
-                mcpViewModel.getStatusReport()
+                toolsViewModel.getStatusReport()
             }
             await provider.appendSystemMessage(status)
             return .handled
@@ -79,7 +79,7 @@ actor SlashCommandService {
                 if parts.count >= 2 {
                     let apiKey = String(parts[1])
                     await MainActor.run {
-                        mcpViewModel.installVisionMCP(apiKey: apiKey)
+                        toolsViewModel.installVisionMCP(apiKey: apiKey)
                     }
                     await provider.appendSystemMessage("Installing and connecting to Vision MCP Server...")
                 } else {

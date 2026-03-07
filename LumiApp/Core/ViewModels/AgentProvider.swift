@@ -21,12 +21,6 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     /// 工具服务
     let toolService: ToolService
 
-    /// MCP 服务
-    let mcpService: MCPService
-
-    /// MCP ViewModel
-    let mcpViewModel: MCPViewModel
-
     /// Tools ViewModel
     let toolsViewModel: ToolsViewModel
 
@@ -100,8 +94,6 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         promptService: PromptService,
         registry: ProviderRegistry,
         toolService: ToolService,
-        mcpService: MCPService,
-        mcpViewModel: MCPViewModel,
         toolsViewModel: ToolsViewModel,
         chatHistoryService: ChatHistoryService,
         messageViewModel: MessageViewModel,
@@ -114,8 +106,6 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         self.promptService = promptService
         self.registry = registry
         self.toolService = toolService
-        self.mcpService = mcpService
-        self.mcpViewModel = mcpViewModel
         self.toolsViewModel = toolsViewModel
         self.chatHistoryService = chatHistoryService
         self.messageViewModel = messageViewModel

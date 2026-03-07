@@ -8,63 +8,93 @@ import MagicKit
 /// 设计原则：
 /// - 在 @MainActor 上运行，安全更新 UI 状态
 /// - 通过 @Published 属性暴露状态给 SwiftUI
-/// - 监听 ToolService 的 Publishers 来同步状态
+/// - 通过 ToolService 监听工具状态
 @MainActor
 class ToolsViewModel: ObservableObject, SuperLog {
-    nonisolated static let emoji = "🔧"
+    nonisolated static let emoji = "🧰"
     nonisolated static let verbose = true
 
     // MARK: - Published Properties (UI 状态)
 
-    /// 所有可用工具
-    @Published private(set) var allTools: [AgentTool] = []
+    /// 所有 MCP 服务器配置
+    @Published private(set) var configs: [MCPServerConfig] = []
 
-    /// 工具数量
-    @Published private(set) var toolCount: Int = 0
+    /// 可用的工具列表
+    @Published private(set) var tools: [AgentTool] = []
 
-    /// 内置工具数量
-    @Published private(set) var builtInToolCount: Int = 0
+    /// 连接错误信息
+    @Published private(set) var connectionErrors: [String: String] = [:]
 
-    /// MCP 工具数量
-    @Published private(set) var mcpToolCount: Int = 0
+    /// 已连接的客户端数量（用于 UI 显示）
+    @Published private(set) var connectedClientsCount: Int = 0
 
     // MARK: - Service
 
-    let service: ToolService
+    let toolService: ToolService
 
     private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Initialization
 
-    init(service: ToolService) {
-        self.service = service
+    init(toolService: ToolService) {
+        self.toolService = toolService
 
         // 初始化状态
-        self.allTools = service.allTools
-        self.toolCount = service.toolCount
-        self.builtInToolCount = service.builtInToolCount
-        self.mcpToolCount = service.mcpToolCount
+        self.configs = toolService.mcpConfigs
+        self.tools = toolService.tools
+        self.connectionErrors = toolService.mcpConnectionErrors
+        self.connectedClientsCount = toolService.mcpConnectedClientsCount
 
         setupPublishers()
 
         if Self.verbose {
-            os_log("\(Self.t)✅ Tools ViewModel 已初始化，工具总数：\(self.toolCount)")
+            os_log("\(Self.t)✅ Tools ViewModel 已初始化")
         }
     }
 
     // MARK: - Setup Publishers
 
     private func setupPublishers() {
+        // 监听配置变化
+        toolService.mcpConfigsPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] configs in
+                self?.configs = configs
+                if Self.verbose {
+                    os_log("\(Self.t)📋 配置列表已更新：\(configs.count) 个")
+                }
+            }
+            .store(in: &cancellables)
+
         // 监听工具列表变化
-        service.toolsPublisher
+        toolService.toolsPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] tools in
-                self?.allTools = tools
-                self?.toolCount = tools.count
-                self?.builtInToolCount = self?.service.builtInToolCount ?? 0
-                self?.mcpToolCount = self?.service.mcpToolCount ?? 0
+                self?.tools = tools
                 if Self.verbose {
                     os_log("\(Self.t)🔧 工具列表已更新：\(tools.count) 个")
+                }
+            }
+            .store(in: &cancellables)
+
+        // 监听连接错误变化
+        toolService.mcpConnectionErrorsPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] errors in
+                self?.connectionErrors = errors
+                if Self.verbose {
+                    os_log("\(Self.t)⚠️ 连接错误已更新：\(errors.count) 个")
+                }
+            }
+            .store(in: &cancellables)
+
+        // 监听客户端连接变化
+        toolService.mcpConnectedClientsCountPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] count in
+                self?.connectedClientsCount = count
+                if Self.verbose {
+                    os_log("\(Self.t)🔌 已连接客户端：\(count) 个")
                 }
             }
             .store(in: &cancellables)
@@ -72,65 +102,37 @@ class ToolsViewModel: ObservableObject, SuperLog {
 
     // MARK: - Public Methods
 
-    /// 根据名称获取工具
-    /// - Parameter name: 工具名称
-    /// - Returns: 匹配的工具，如果未找到则返回 nil
-    func tool(named name: String) -> AgentTool? {
-        service.tool(named: name)
+    /// 添加服务器配置
+    /// - Parameter config: MCP 服务器配置
+    func addConfig(_ config: MCPServerConfig) {
+        toolService.addMCPConfig(config)
     }
 
-    /// 检查工具是否存在
-    /// - Parameter name: 工具名称
-    /// - Returns: 如果工具存在则返回 true
-    func hasTool(named name: String) -> Bool {
-        service.hasTool(named: name)
+    /// 移除服务器配置
+    /// - Parameter name: 配置名称
+    func removeConfig(name: String) {
+        toolService.removeMCPConfig(name: name)
     }
 
-    /// 获取所有工具名称
-    var allToolNames: [String] {
-        service.allToolNames
+    /// 安装 Vision MCP
+    /// - Parameter apiKey: API 密钥
+    func installVisionMCP(apiKey: String) {
+        toolService.installVisionMCP(apiKey: apiKey)
     }
 
-    /// 按名称搜索工具
-    /// - Parameter query: 搜索关键词
-    /// - Returns: 匹配的工具数组
-    func searchTools(query: String) -> [AgentTool] {
-        service.searchTools(query: query)
+    /// 获取状态报告
+    /// - Returns: 状态报告字符串
+    func getStatusReport() -> String {
+        toolService.getMCPStatusReport()
     }
 
-    /// 获取工具描述
-    /// - Parameter name: 工具名称
-    /// - Returns: 工具描述
-    func description(forTool name: String) -> String? {
-        service.description(forTool: name)
+    /// 重新连接所有服务器
+    func reconnectAll() async {
+        await toolService.connectAllMCPServers()
     }
 
-    /// 执行工具
-    /// - Parameters:
-    ///   - name: 工具名称
-    ///   - arguments: 工具参数
-    /// - Returns: 执行结果
-    func executeTool(named name: String, arguments: [String: Any]) async throws -> String {
-        // ToolService 已经是 @unchecked Sendable，可以直接调用
-        // arguments 在调用期间不会被修改，安全传递
-        nonisolated(unsafe) let unsafeArguments = arguments
-        return try await service.executeTool(named: name, arguments: unsafeArguments)
-    }
-
-    // MARK: - Tool Categories
-
-    /// 文件操作相关工具
-    var fileOperationTools: [AgentTool] {
-        service.fileOperationTools
-    }
-
-    /// Shell/命令相关工具
-    var shellTools: [AgentTool] {
-        service.shellTools
-    }
-
-    /// 其他工具
-    var otherTools: [AgentTool] {
-        service.otherTools
+    /// 刷新工具列表
+    func refreshTools() async {
+        await toolService.updateMCPTools()
     }
 }

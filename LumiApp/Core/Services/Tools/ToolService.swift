@@ -22,6 +22,15 @@ class ToolService: SuperLog, @unchecked Sendable {
 
     /// 工具列表变化通知
     let toolsPublisher = PassthroughSubject<[AgentTool], Never>()
+    
+    /// MCP 配置列表变化通知（代理 MCPService）
+    let mcpConfigsPublisher = PassthroughSubject<[MCPServerConfig], Never>()
+    
+    /// MCP 连接错误变化通知（代理 MCPService）
+    let mcpConnectionErrorsPublisher = PassthroughSubject<[String: String], Never>()
+    
+    /// MCP 连接客户端数量变化通知（代理 MCPService）
+    let mcpConnectedClientsCountPublisher = PassthroughSubject<Int, Never>()
 
     // MARK: - Properties
 
@@ -38,13 +47,15 @@ class ToolService: SuperLog, @unchecked Sendable {
 
     private let mcpService: MCPService
     private let shellService: ShellService
+    private(set) var permissionService: PermissionService
     private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Initialization
 
-    init(mcpService: MCPService, shellService: ShellService) {
-        self.mcpService = mcpService
-        self.shellService = shellService
+    init() {
+        self.mcpService = MCPService()
+        self.shellService = ShellService()
+        self.permissionService = PermissionService()
         setupBuiltInTools()
         setupMCPObservers()
         refreshAllTools()
@@ -62,7 +73,7 @@ class ToolService: SuperLog, @unchecked Sendable {
             ListDirectoryTool(),
             ReadFileTool(),
             WriteFileTool(),
-            ShellTool(shellService: shellService),
+            ShellTool(),
         ]
     }
 
@@ -75,6 +86,25 @@ class ToolService: SuperLog, @unchecked Sendable {
                 self.refreshAllTools()
             }
             .store(in: &cancellables)
+        
+        // 代理 MCPService 的其他 publishers
+        mcpService.configsPublisher
+            .sink { [weak self] configs in
+                self?.mcpConfigsPublisher.send(configs)
+            }
+            .store(in: &cancellables)
+        
+        mcpService.connectionErrorsPublisher
+            .sink { [weak self] errors in
+                self?.mcpConnectionErrorsPublisher.send(errors)
+            }
+            .store(in: &cancellables)
+        
+        mcpService.connectedClientsPublisher
+            .sink { [weak self] clients in
+                self?.mcpConnectedClientsCountPublisher.send(clients.count)
+            }
+            .store(in: &cancellables)
     }
 
     /// 刷新所有工具列表
@@ -84,6 +114,8 @@ class ToolService: SuperLog, @unchecked Sendable {
     }
 
     // MARK: - Public API
+
+    // MARK: - 工具相关
 
     /// 获取所有工具（只读）
     var tools: [AgentTool] {
@@ -171,6 +203,25 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 执行工具
     /// - Parameters:
     ///   - name: 工具名称
+    ///   - arguments: 工具参数（JSON 字符串）
+    /// - Returns: 执行结果
+    /// - Throws: 如果工具不存在或执行失败则抛出错误
+    func executeTool(named name: String, argumentsJSON: String) async throws -> String {
+        // 解析 JSON 字符串
+        let arguments: [String: Any]
+        if let data = argumentsJSON.data(using: .utf8),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            arguments = json
+        } else {
+            arguments = [:]
+        }
+        
+        return try await executeTool(named: name, arguments: arguments)
+    }
+    
+    /// 执行工具
+    /// - Parameters:
+    ///   - name: 工具名称
     ///   - arguments: 工具参数
     /// - Returns: 执行结果
     /// - Throws: 如果工具不存在或执行失败则抛出错误
@@ -187,7 +238,9 @@ class ToolService: SuperLog, @unchecked Sendable {
         do {
             let startTime = Date()
             // 转换 [String: Any] 到 [String: ToolArgument]
-            let toolArguments = arguments.mapValues { ToolArgument($0) }
+            let toolArguments = arguments.mapValues { value in
+                ToolArgument(value)
+            }
             let result = try await tool.execute(arguments: toolArguments)
             let duration = Date().timeIntervalSince(startTime)
 
@@ -202,6 +255,83 @@ class ToolService: SuperLog, @unchecked Sendable {
             os_log(.error, "\(Self.t)❌ 工具执行失败：\(error.localizedDescription)")
             throw error
         }
+    }
+
+    // MARK: - MCP 相关（代理 MCPService）
+
+    /// 获取 MCP 配置列表
+    var mcpConfigs: [MCPServerConfig] {
+        return mcpService.configs
+    }
+
+    /// 获取 MCP 连接错误
+    var mcpConnectionErrors: [String: String] {
+        return mcpService.connectionErrors
+    }
+
+    /// 获取 MCP 连接客户端数量
+    var mcpConnectedClientsCount: Int {
+        return mcpService.connectedClients.count
+    }
+
+    /// 添加 MCP 服务器配置
+    /// - Parameter config: MCP 服务器配置
+    func addMCPConfig(_ config: MCPServerConfig) {
+        mcpService.addConfig(config)
+    }
+
+    /// 移除 MCP 服务器配置
+    /// - Parameter name: 配置名称
+    func removeMCPConfig(name: String) {
+        mcpService.removeConfig(name: name)
+    }
+
+    /// 安装 Vision MCP
+    /// - Parameter apiKey: API 密钥
+    func installVisionMCP(apiKey: String) {
+        mcpService.installVisionMCP(apiKey: apiKey)
+    }
+
+    /// 连接所有 MCP 服务器
+    func connectAllMCPServers() async {
+        await mcpService.connectAll()
+    }
+
+    /// 更新 MCP 工具列表
+    func updateMCPTools() async {
+        await mcpService.updateTools()
+    }
+
+    /// 获取 MCP 状态报告
+    func getMCPStatusReport() -> String {
+        return mcpService.getStatusReport()
+    }
+
+    // MARK: - 权限相关（代理 PermissionService）
+
+    /// 检查工具是否需要权限（JSON 字符串版本）
+    func requiresPermission(toolName: String, argumentsJSON: String?) -> Bool {
+        // 解析 JSON 字符串
+        let arguments: [String: Any]?
+        if let json = argumentsJSON,
+           let data = json.data(using: .utf8),
+           let parsed = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            arguments = parsed
+        } else {
+            arguments = nil
+        }
+        
+        return permissionService.requiresPermission(toolName: toolName, arguments: arguments)
+    }
+    
+    /// 检查工具是否需要权限
+    func requiresPermission(toolName: String, arguments: [String: Any]?) -> Bool {
+        return permissionService.requiresPermission(toolName: toolName, arguments: arguments)
+    }
+
+    /// 评估命令风险等级
+    func evaluateCommandRisk(command: String) -> CommandRiskLevel {
+        return permissionService.evaluateCommandRisk(command: command)
     }
 
     // MARK: - Tool Categorization

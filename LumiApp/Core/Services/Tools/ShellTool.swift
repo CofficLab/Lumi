@@ -23,12 +23,7 @@ struct ShellTool: AgentTool, SuperLog {
         ]
     }
 
-    // We inject existing ShellService to reuse its logic
-    private let shellService: ShellService
-
-    init(shellService: ShellService) {
-        self.shellService = shellService
-    }
+    init() {}
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let command = arguments["command"]?.value as? String else {
@@ -41,6 +36,8 @@ struct ShellTool: AgentTool, SuperLog {
             os_log("\(Self.t)👮 \(riskLevel.displayName) -> \(command)")
         }
 
+        // 创建临时的 ShellService 执行命令
+        let shellService = ShellService()
         do {
             let output = try await shellService.execute(command)
             return output

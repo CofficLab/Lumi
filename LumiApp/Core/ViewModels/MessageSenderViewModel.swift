@@ -291,8 +291,8 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         // 保存到数据库
         conversationViewModel.saveMessage(message)
 
-        // 启动会话标题生成 Job（如果需要）
-        startConversationTitleGenerationJob(message: message)
+        // 启动会话标题生成（如果需要）
+        startConversationTitleGenerationIfNeeded(message: message)
 
         // 处理消息（等待完成）
         await delegate?.processUserMessage(content: message.content, images: message.images)
@@ -300,9 +300,9 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         os_log("\(Self.t)✅ 消息发送完成：\(message.content.max(30))...")
     }
 
-    /// 启动会话标题生成 Job
+    /// 启动会话标题生成（如果需要）
     /// 只提取必要参数，在后台 Task 中执行，不阻塞当前流程
-    private func startConversationTitleGenerationJob(message: ChatMessage) {
+    private func startConversationTitleGenerationIfNeeded(message: ChatMessage) {
         // 只处理用户消息
         guard message.role == .user else { return }
 
@@ -326,18 +326,14 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         
         // 消息内容和 ID
         let messageContent = message.content
-        let messageId = message.id
         let chatHistoryService = self.chatHistoryService
 
         // 在后台 Task 中执行标题生成
         Task.detached(priority: .utility) {
-            let job = ConversationTitleGenerationJob()
-            await job.run(
+            await chatHistoryService.autoGenerateConversationTitleIfNeeded(
                 conversationId: conversationId,
-                messageId: messageId,
                 userMessageContent: messageContent,
-                config: config,
-                chatHistoryService: chatHistoryService
+                config: config
             )
         }
     }

@@ -34,20 +34,8 @@ struct RootView<Content>: View where Content: View {
     /// 工具服务
     let toolService: ToolService
 
-    /// MCP 服务
-    let mcpService: MCPService
-
-    /// MCP ViewModel
-    let mcpViewModel: MCPViewModel
-
     /// Tools ViewModel
     let toolsViewModel: ToolsViewModel
-
-    /// 权限服务
-    let permissionService: PermissionService
-
-    /// 后台任务调度器
-    let jobScheduler: JobScheduler
 
     /// 上下文服务
     let contextService: ContextService
@@ -61,9 +49,6 @@ struct RootView<Content>: View where Content: View {
     /// Slash 命令服务
     let slashCommandService: SlashCommandService
 
-    /// Shell 服务
-    let shellService: ShellService
-
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
 
@@ -74,17 +59,8 @@ struct RootView<Content>: View where Content: View {
         // 基础服务层（无依赖或依赖最少）
         // ========================================
 
-        // 初始化 MCP 服务（仅在 RootView 中创建单实例）
-        self.mcpService = MCPService()
-
-        // 初始化权限服务
-        self.permissionService = PermissionService()
-
         // 初始化上下文服务
         self.contextService = ContextService()
-
-        // 初始化 Shell 服务
-        self.shellService = ShellService()
 
         // 初始化 LLM 服务（内部自动初始化 APIService 和 LLMAPIService）
         self.llmService = LLMService()
@@ -95,25 +71,15 @@ struct RootView<Content>: View where Content: View {
         // 初始化 Slash 命令服务
         self.slashCommandService = SlashCommandService()
 
-        // 初始化后台任务调度器（依赖权限服务）
-        self.jobScheduler = JobScheduler(permissionService: permissionService)
-
-        // ========================================
-        // 工具服务层
-        // ========================================
-
-        // 初始化工具服务（依赖 MCP 服务和 ShellService）
-        self.toolService = ToolService(mcpService: mcpService, shellService: shellService)
+        // 初始化工具服务
+        self.toolService = ToolService()
 
         // ========================================
         // ViewModel 层
         // ========================================
 
-        // 创建 MCP ViewModel
-        self.mcpViewModel = MCPViewModel(service: mcpService)
-
         // 创建 Tools ViewModel
-        self.toolsViewModel = ToolsViewModel(service: toolService)
+        self.toolsViewModel = ToolsViewModel(toolService: toolService)
 
         // 初始化聊天历史服务（依赖 LLMService）
         let chatHistoryService = ChatHistoryService(
@@ -152,8 +118,7 @@ struct RootView<Content>: View where Content: View {
         let conversationTurnViewModel = ConversationTurnViewModel(
             llmService: llmService,
             toolService: toolService,
-            promptService: promptService,
-            jobScheduler: jobScheduler
+            promptService: promptService
         )
 
         // 初始化 AgentProvider（先创建，再注入到其他依赖中）
@@ -161,8 +126,6 @@ struct RootView<Content>: View where Content: View {
             promptService: promptService,
             registry: ProviderRegistry(),
             toolService: toolService,
-            mcpService: mcpService,
-            mcpViewModel: mcpViewModel,
             toolsViewModel: toolsViewModel,
             chatHistoryService: chatHistoryService,
             messageViewModel: messageViewModel,
@@ -189,10 +152,7 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(messageViewModel)
             .environmentObject(messageSenderViewModel)
             .environmentObject(commandSuggestionViewModel)
-            .environmentObject(mcpViewModel)
             .environmentObject(toolsViewModel)
-            .environmentObject(permissionService)
-            .environmentObject(shellService)
             .environmentObject(MystiqueThemeManager())
             .modelContainer(modelContainer)
     }

@@ -23,9 +23,6 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
     /// 提示词服务
     private let promptService: PromptService
 
-    /// 后台任务调度器
-    private let jobScheduler: JobScheduler
-
     // MARK: - 回调委托
 
     /// 对话轮次处理委托
@@ -47,13 +44,11 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
     init(
         llmService: LLMService,
         toolService: ToolService,
-        promptService: PromptService,
-        jobScheduler: JobScheduler
+        promptService: PromptService
     ) {
         self.llmService = llmService
         self.toolService = toolService
         self.promptService = promptService
-        self.jobScheduler = jobScheduler
     }
 
     // MARK: - 对话轮次处理
@@ -184,8 +179,11 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
         languagePreference: LanguagePreference,
         autoApproveRisk: Bool
     ) async {
-        // 使用 JobScheduler 检查权限（纯计算，无需后台）
-        let requiresPermission = jobScheduler.requiresPermission(toolCall, autoApproveRisk: autoApproveRisk)
+        // 使用 ToolService 检查权限（纯计算，无需后台）
+        let requiresPermission = toolService.requiresPermission(
+            toolName: toolCall.name,
+            argumentsJSON: toolCall.arguments
+        )
 
         if requiresPermission && !autoApproveRisk {
             if Self.verbose {
@@ -193,10 +191,27 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
             }
 
             // 评估命令风险
-            let riskLevel = jobScheduler.evaluateRisk(toolCall)
+            let riskLevel: CommandRiskLevel
+            if toolCall.name == "run_command" {
+                // 解析命令参数
+                if let data = toolCall.arguments.data(using: .utf8),
+                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let command = json["command"] as? String {
+                    riskLevel = toolService.evaluateCommandRisk(command: command)
+                } else {
+                    riskLevel = .medium
+                }
+            } else {
+                riskLevel = .medium
+            }
 
             // 创建权限请求
-            let permissionRequest = jobScheduler.createPermissionRequest(toolCall, riskLevel: riskLevel)
+            let permissionRequest = PermissionRequest(
+                toolName: toolCall.name,
+                argumentsString: toolCall.arguments,
+                toolCallID: toolCall.id,
+                riskLevel: riskLevel
+            )
 
             // 请求权限
             await delegate?.turnDidRequestPermission(permissionRequest)
@@ -209,7 +224,7 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
 
     /// 执行工具调用
     ///
-    /// 此方法使用 JobScheduler 在后台执行工具调用
+    /// 直接在后台执行，不阻塞调用线程
     ///
     /// - Parameter toolCall: 工具调用
     private func executeTool(_ toolCall: ToolCall) async {
@@ -229,11 +244,25 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
         }
 
         do {
-            // 使用 JobScheduler 在后台执行工具
-            let (resultMsg, _) = try await jobScheduler.executeToolCall(
-                toolCall: toolCall,
-                toolService: toolService
+            let startTime = Date()
+            
+            // 直接调用 ToolService 执行工具
+            // 传递 JSON 字符串（Sendable），避免 [String: Any] 的并发安全问题
+            let result = try await toolService.executeTool(
+                named: toolCall.name,
+                argumentsJSON: toolCall.arguments
             )
+            let duration = Date().timeIntervalSince(startTime)
+            
+            let resultMsg = ChatMessage(
+                role: .user,
+                content: result,
+                toolCallID: toolCall.id
+            )
+            
+            if Self.verbose {
+                os_log("\(Self.t)✅ 工具执行完成 (耗时：\(String(format: "%.2f", duration))s)")
+            }
             
             await delegate?.turnDidReceiveToolResult(resultMsg)
             await processPendingTools(languagePreference: .chinese, autoApproveRisk: false)
