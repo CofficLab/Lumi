@@ -4,7 +4,6 @@ import SwiftUI
 /// 包含项目信息、工具栏按钮和快捷操作，显示在聊天界面顶部
 struct ChatHeaderView: View {
     @EnvironmentObject var agentProvider: AgentProvider
-    @EnvironmentObject var conversationViewModel: ConversationViewModel
     @EnvironmentObject var projectViewModel: ProjectViewModel
 
     /// 项目选择器呈现状态绑定
@@ -80,11 +79,10 @@ extension ChatHeaderView {
                 let projectId = agentProvider.isProjectSelected ? agentProvider.currentProjectPath : nil
                 let projectName = agentProvider.isProjectSelected ? agentProvider.currentProjectName : nil
                 let projectPath = agentProvider.isProjectSelected ? agentProvider.currentProjectPath : nil
-                await conversationViewModel.createNewConversation(
+                await agentProvider.createNewConversation(
                     projectId: projectId,
                     projectName: projectName,
-                    projectPath: projectPath,
-                    language: agentProvider.languagePreference
+                    projectPath: projectPath
                 )
             }
         }) {

@@ -51,11 +51,7 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     /// 获取新会话的欢迎消息内容。
     private let promptService: PromptService
 
-    /// 消息发送队列 ViewModel
-    ///
-    /// 用于会话切换时同步待发送消息队列。
-    /// 使用 weak 避免循环引用。
-    weak var messageSenderViewModel: MessageSenderViewModel?
+
 
     // MARK: - 会话状态
 
@@ -88,96 +84,20 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     ///   - chatHistoryService: 聊天历史服务
     ///   - llmService: LLM 服务
     ///   - promptService: 提示词服务
-    ///   - messageSenderViewModel: 消息发送队列视图模型（可选）
     init(
         chatHistoryService: ChatHistoryService,
         llmService: LLMService,
-        promptService: PromptService,
-        messageSenderViewModel: MessageSenderViewModel? = nil
+        promptService: PromptService
     ) {
         self.chatHistoryService = chatHistoryService
         self.llmService = llmService
         self.promptService = promptService
-        self.messageSenderViewModel = messageSenderViewModel
-        
+
         // 恢复上次选择的会话
         restoreSelectedConversation()
     }
 
     // MARK: - 会话管理
-
-    /// 创建新对话
-    ///
-    /// 在数据库中创建新的会话记录。
-    /// 标题格式："新会话 MM-dd HH:mm"
-    ///
-    /// - Parameters:
-    ///   - projectId: 关联的项目 ID（可选，nil 表示全局对话）
-    ///   - title: 对话标题（默认为"新会话"）
-    /// - Returns: 新创建的对话
-    func createConversation(projectId: String? = nil, title: String = "新会话") -> Conversation {
-        if Self.verbose {
-            os_log("\(Self.t)🚀 开始创建新会话")
-        }
-
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MM-dd HH:mm"
-        let newConversation = chatHistoryService.createConversation(
-            projectId: projectId,
-            title: title + " " + formatter.string(from: Date())
-        )
-
-        // 切换到新会话的队列
-        messageSenderViewModel?.switchToConversation(newConversation.id)
-
-        if Self.verbose {
-            os_log("\(Self.t)✅ [\(newConversation.id)] 新会话创建完成")
-        }
-
-        return newConversation
-    }
-
-    /// 创建新对话（异步版本，支持设置当前会话）
-    ///
-    /// 完整的新会话创建流程：
-    /// 1. 创建会话记录
-    /// 2. 选中该会话
-    /// 3. 切换消息队列
-    /// 4. 获取并保存欢迎消息
-    ///
-    /// - Parameters:
-    ///   - projectId: 关联的项目 ID（可选）
-    ///   - projectName: 项目名称（可选，用于生成欢迎消息）
-    ///   - projectPath: 项目路径（可选，用于生成欢迎消息）
-    ///   - language: 语言偏好（默认为中文）
-    func createNewConversation(
-        projectId: String? = nil,
-        projectName: String? = nil,
-        projectPath: String? = nil,
-        language: LanguagePreference = .chinese
-    ) async {
-        // 1. 创建会话
-        let newConversation = createConversation(projectId: projectId)
-        
-        // 2. 选中该会话
-        selectedConversationId = newConversation.id
-
-        // 3. 切换消息发送队列到新会话
-        messageSenderViewModel?.switchToConversation(newConversation.id)
-
-        // 4. 获取欢迎消息并保存到数据库
-        let welcomeMessage = await promptService.getEmptySessionWelcomeMessage(
-            projectName: projectName,
-            projectPath: projectPath,
-            language: language,
-            conversationId: newConversation.id
-        )
-
-        if !welcomeMessage.isEmpty {
-            let welcomeMsg = ChatMessage(role: .assistant, content: welcomeMessage)
-            chatHistoryService.saveMessage(welcomeMsg, to: newConversation)
-        }
-    }
 
     /// 保存消息到当前对话
     ///
@@ -204,25 +124,15 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     }
 
     /// 删除指定对话
-    ///
-    /// 删除流程：
-    /// 1. 如果是选中的对话，清理状态
-    /// 2. 清理待发送队列
-    /// 3. 从数据库删除
-    ///
     /// - Parameter conversation: 要删除的对话
+    /// - Note: 调用方（如 AgentProvider）需要负责清理相关的消息发送队列
     func deleteConversation(_ conversation: Conversation) {
         os_log("\(Self.t)🗑️ 开始删除对话：\(conversation.title)")
 
         // 如果删除的是选中的对话，清理状态
         if selectedConversationId == conversation.id {
             selectedConversationId = nil
-            // 清理该会话的待发送队列
-            messageSenderViewModel?.clearCurrentConversationQueue()
         }
-
-        // 清理该会话的待发送队列（即使不是当前对话）
-        messageSenderViewModel?.removeConversationQueue(conversation.id)
 
         chatHistoryService.deleteConversation(conversation)
 

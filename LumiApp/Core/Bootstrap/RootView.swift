@@ -103,15 +103,7 @@ struct RootView<Content>: View where Content: View {
         )
 
         // 创建 MessageSenderViewModel
-        self.messageSenderViewModel = MessageSenderViewModel(
-            messageViewModel: messageViewModel,
-            conversationViewModel: conversationViewModel,
-            chatHistoryService: chatHistoryService,
-            slashCommandService: slashCommandService
-        )
-
-        // 设置 ConversationViewModel 的 messageSenderViewModel 引用
-        self.conversationViewModel.messageSenderViewModel = self.messageSenderViewModel
+        self.messageSenderViewModel = MessageSenderViewModel()
 
         // 初始化对话轮次 ViewModel
         let conversationTurnViewModel = ConversationTurnViewModel(
@@ -137,7 +129,6 @@ struct RootView<Content>: View where Content: View {
 
         // 设置委托和配置提供者
         self.messageSenderViewModel.delegate = self.agentProvider
-        self.messageSenderViewModel.setConfigProvider(self.agentProvider)
         conversationTurnViewModel.delegate = self.agentProvider
     }
 

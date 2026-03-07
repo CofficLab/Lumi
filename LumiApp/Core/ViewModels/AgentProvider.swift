@@ -5,6 +5,31 @@ import OSLog
 import SwiftData
 
 /// Agent 模式提供者，管理 Agent 模式下的核心状态和服务
+///
+/// ## 设计原则
+///
+/// `AgentProvider` 作为协调者，负责管理需要多个 ViewModel 协作的复杂操作。
+/// 如果某个操作只涉及单个 ViewModel，应该由该 ViewModel 自己处理；
+/// 如果某个操作需要协调多个 ViewModel，则应该由 `AgentProvider` 提供。
+///
+/// ## 职责划分
+///
+/// - **ConversationViewModel**: 只维护 `selectedConversationId`，管理会话的增删改查
+/// - **MessageViewModel**: 只管理消息列表的加载、追加、更新
+/// - **AgentProvider**: 协调多个 ViewModel，处理需要协作的复杂业务逻辑
+///
+/// ## 示例
+///
+/// ```swift
+/// // 新建会话 - 需要协调多个 VM，由 AgentProvider 处理
+/// await agentProvider.createNewConversation(projectId: projectId)
+///
+/// // 选择会话 - 只涉及 ConversationViewModel，直接调用
+/// conversationViewModel.setSelectedConversation(id)
+///
+/// // 加载消息 - 只涉及 MessageViewModel，直接调用
+/// messageViewModel.loadMessages(for: conversation)
+/// ```
 @MainActor
 final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, ConversationTurnDelegate, LLMConfigProvider {
     nonisolated static let emoji = "🤖"
@@ -414,6 +439,153 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     /// 保存消息到存储
     func saveMessage(_ message: ChatMessage) {
         conversationViewModel.saveMessage(message)
+    }
+
+    /// 删除指定对话
+    /// 协调多个 ViewModel 完成删除操作：
+    /// 1. 清理消息发送队列
+    /// 2. 删除会话记录
+    /// - Parameter conversation: 要删除的对话
+    func deleteConversation(_ conversation: Conversation) {
+        if Self.verbose {
+            os_log("\(Self.t)🗑️ 开始删除对话：\(conversation.title)")
+        }
+
+        // 1. 清理该会话的待发送队列
+        messageSenderViewModel.removeConversationQueue(conversation.id)
+
+        // 如果删除的是选中的对话，清理当前队列
+        if conversationViewModel.selectedConversationId == conversation.id {
+            messageSenderViewModel.clearCurrentConversationQueue()
+        }
+
+        // 2. 删除会话记录
+        conversationViewModel.deleteConversation(conversation)
+
+        if Self.verbose {
+            os_log("\(Self.t)✅ 对话已删除：\(conversation.title)")
+        }
+    }
+
+    // MARK: - 会话管理
+
+    /// 创建新对话
+    ///
+    /// 协调多个 ViewModel 完成新会话创建：
+    /// 1. 创建会话记录
+    /// 2. 选中该会话
+    /// 3. 切换消息队列
+    /// 4. 获取并保存欢迎消息
+    ///
+    /// - Parameters:
+    ///   - projectId: 关联的项目 ID（可选）
+    ///   - projectName: 项目名称（可选，用于生成欢迎消息）
+    ///   - projectPath: 项目路径（可选，用于生成欢迎消息）
+    func createNewConversation(
+        projectId: String? = nil,
+        projectName: String? = nil,
+        projectPath: String? = nil
+    ) async {
+        if Self.verbose {
+            os_log("\(Self.t)🚀 开始创建新会话")
+        }
+
+        // 1. 创建会话记录
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd HH:mm"
+        let newConversation = chatHistoryService.createConversation(
+            projectId: projectId,
+            title: "新会话 " + formatter.string(from: Date())
+        )
+
+        // 2. 选中该会话（会触发监听加载消息）
+        conversationViewModel.setSelectedConversation(newConversation.id)
+
+        // 3. 切换消息发送队列到新会话
+        messageSenderViewModel.switchToConversation(newConversation.id)
+
+        // 4. 清空当前消息列表并获取欢迎消息
+        messageViewModel.clearMessages()
+        
+        let welcomeMessage = await promptService.getEmptySessionWelcomeMessage(
+            projectName: projectName,
+            projectPath: projectPath,
+            language: languagePreference,
+            conversationId: newConversation.id
+        )
+
+        if !welcomeMessage.isEmpty {
+            let welcomeMsg = ChatMessage(role: .assistant, content: welcomeMessage)
+            if let savedMessage = chatHistoryService.saveMessage(welcomeMsg, to: newConversation) {
+                messageViewModel.appendMessageInternal(savedMessage)
+            }
+        }
+
+        if Self.verbose {
+            os_log("\(Self.t)✅ [\(newConversation.id)] 新会话创建完成")
+        }
+    }
+
+    // MARK: - 消息发送协调
+
+    /// 发送单条消息到 Agent
+    /// 协调 MessageViewModel 和 ConversationViewModel 完成消息发送
+    /// - Parameter message: 要发送的消息
+    func sendMessageToAgent(message: ChatMessage) async {
+        if Self.verbose {
+            os_log("\(Self.t)📤 正在发送消息：\(message.content.max(50))")
+        }
+
+        // 1. 添加消息到消息列表
+        messageViewModel.appendMessageInternal(message)
+
+        // 2. 保存到数据库
+        conversationViewModel.saveMessage(message)
+
+        // 3. 启动会话标题生成（如果需要）
+        startConversationTitleGenerationIfNeeded(message: message)
+
+        // 4. 处理消息（等待完成）
+        await delegate?.processUserMessage(content: message.content, images: message.images)
+
+        if Self.verbose {
+            os_log("\(Self.t)✅ 消息发送完成：\(message.content.max(30))...")
+        }
+    }
+
+    /// 启动会话标题生成（如果需要）
+    /// - Parameter message: 用户消息
+    private func startConversationTitleGenerationIfNeeded(message: ChatMessage) {
+        // 只处理用户消息
+        guard message.role == .user else { return }
+
+        // 获取当前对话 ID
+        guard let conversationId = conversationViewModel.selectedConversationId else { return }
+
+        // 获取会话以检查标题
+        guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else { return }
+
+        // 检查是否满足生成标题的条件
+        guard conversation.title.hasPrefix("新会话 "),
+              !messageViewModel.hasGeneratedTitle else {
+            return
+        }
+
+        // 标记已生成标题，防止重复生成
+        messageViewModel.setHasGeneratedTitleInternal(true)
+
+        // 获取 LLM 配置
+        let config = getCurrentConfig()
+
+        // 在后台 Task 中执行标题生成
+        Task.detached(priority: .utility) { [weak self] in
+            guard let self = self else { return }
+            await self.chatHistoryService.autoGenerateConversationTitleIfNeeded(
+                conversationId: conversationId,
+                userMessageContent: message.content,
+                config: config
+            )
+        }
     }
 
     // MARK: - Cancel Support
