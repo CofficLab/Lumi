@@ -56,16 +56,29 @@ extension ChatMessagesView {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
-                    ForEach(nonSystemMessages) { msg in
-                        ChatBubble(message: msg)
-                            .id(msg.id)
+                    ForEach(Array(nonSystemMessages.enumerated()), id: \.element.id) { index, msg in
+                        ChatBubble(
+                            message: msg,
+                            isLastMessage: index == nonSystemMessages.count - 1
+                        )
+                        .id(msg.id)
                     }
                 }
                 .padding(.horizontal)
             }
             .padding(.vertical)
-            .onChange(of: nonSystemMessages.count) {
-                handleMessagesChanged(proxy: proxy)
+            // 优化：只在消息数量变化时滚动到底部
+            .onChange(of: nonSystemMessages.count) { oldCount, newCount in
+                if newCount > oldCount {
+                    handleMessagesChanged(proxy: proxy)
+                }
+            }
+            // 优化：监听最后一条消息内容变化（流式更新时）
+            .onChange(of: nonSystemMessages.last?.content) { _, _ in
+                // 只在有流式更新时轻微滚动
+                if agentProvider.isProcessing {
+                    scrollToBottomIfNeeded(proxy: proxy)
+                }
             }
             .overlay {
                 if let request = agentProvider.pendingPermissionRequest {
@@ -149,6 +162,17 @@ extension ChatMessagesView {
         guard let lastMessage = nonSystemMessages.last else { return }
 
         Task {
+            proxy.scrollTo(lastMessage.id, anchor: .bottom)
+        }
+    }
+
+    /// 智能滚动到底部
+    /// 只在用户已经在底部附近时才自动滚动，避免打扰用户阅读历史消息
+    func scrollToBottomIfNeeded(proxy: ScrollViewProxy) {
+        guard let lastMessage = nonSystemMessages.last else { return }
+
+        // 使用动画平滑滚动
+        withAnimation(.easeOut(duration: 0.1)) {
             proxy.scrollTo(lastMessage.id, anchor: .bottom)
         }
     }

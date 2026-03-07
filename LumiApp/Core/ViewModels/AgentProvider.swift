@@ -96,6 +96,15 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     /// 深度警告
     @Published public fileprivate(set) var depthWarning: DepthWarning?
 
+    /// 最后收到心跳的时间（用于动画效果）
+    @Published public fileprivate(set) var lastHeartbeatTime: Date?
+
+    /// 是否正在思考（用于显示思考状态）
+    @Published public fileprivate(set) var isThinking: Bool = false
+
+    /// 当前思考过程文本
+    @Published public fileprivate(set) var thinkingText: String = ""
+
     // MARK: - 附件（图片上传）
 
     public enum Attachment: Identifiable {
@@ -232,6 +241,11 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         }
     }
 
+    /// 当前流式消息ID
+    public private(set) var currentStreamingMessageId: UUID?
+    /// 当前流式消息索引
+    private var currentStreamingMessageIndex: Int?
+
     /// 处理对话轮次事件
     /// - Parameter event: 对话轮次事件
     private func handleConversationTurnEvent(_ event: ConversationTurnEvent) async {
@@ -240,6 +254,156 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             // 保存助手响应
             appendMessage(message)
             saveMessage(message)
+
+        case let .streamStarted(messageId):
+            // 流式响应开始，创建空消息占位
+            currentStreamingMessageId = messageId
+
+            // 清空上一次的思考文本
+            setThinkingText("")
+
+            let placeholderMessage = ChatMessage(
+                id: messageId,
+                role: .assistant,
+                content: "",
+                timestamp: Date()
+            )
+            appendMessage(placeholderMessage)
+            currentStreamingMessageIndex = messages.count - 1
+
+        case let .streamChunk(content, messageId):
+            // 更新流式消息内容
+            guard currentStreamingMessageId == messageId,
+                  let index = currentStreamingMessageIndex,
+                  index < messages.count else {
+                return
+            }
+
+            // 获取当前消息并追加内容
+            var currentMessage = messages[index]
+            currentMessage.content += content
+
+            // 更新消息（使用内部方法避免触发过多UI更新）
+            updateMessage(currentMessage, at: index)
+
+        case let .streamEvent(eventType, content, rawEvent, messageId):
+            // 处理流式事件（用于调试和展示所有事件）
+
+            // 首先记录所有事件
+            if Self.verbose {
+                let contentPreview = content.isEmpty ? "(空)" : "\(content.prefix(50))..."
+                os_log("\(Self.t)📨 收到事件 [\(eventType.rawValue)]: \(contentPreview)")
+            }
+
+            // 处理心跳事件 - 更新心跳时间触发动画
+            if eventType == .ping {
+                setLastHeartbeatTime(Date())
+                return
+            }
+
+            // 处理思考增量事件 - 累积思考文本
+            if eventType == .thinkingDelta {
+                // 累积思考文本
+                if !content.isEmpty {
+                    appendThinkingText(content)
+                    if Self.verbose {
+                        os_log("\(Self.t)🧠 累积思考文本: \(content.prefix(30))... (总长度: \(self.thinkingText.count))")
+                    }
+                }
+                return
+            }
+
+            // 处理内容块开始事件 - 不追加到消息内容
+            if eventType == .contentBlockStart {
+                // 从 rawEvent 判断是否是思考块
+                if rawEvent.contains("\"type\":\"thinking\"") || rawEvent.contains("thinking") {
+                    setIsThinking(true)
+                    if Self.verbose {
+                        os_log("\(Self.t)🤔 思考开始")
+                    }
+                }
+                return
+            }
+
+            // 处理内容块停止事件 - 不追加到消息内容
+            if eventType == .contentBlockStop {
+                if Self.verbose {
+                    os_log("\(Self.t)✅ 内容块结束")
+                }
+                return
+            }
+
+            // 处理签名增量事件 - 不追加到消息内容
+            if eventType == .signatureDelta {
+                if Self.verbose {
+                    os_log("\(Self.t)🔏 收到签名")
+                }
+                return
+            }
+
+            // 处理 input_json_delta 事件 - 不追加到消息内容
+            if eventType == .inputJsonDelta {
+                if Self.verbose && !content.isEmpty {
+                    os_log("\(Self.t)🔧 收到工具参数: \(content)")
+                }
+                return
+            }
+
+            // 处理消息增量事件 - 不追加到消息内容（只包含停止原因等元数据）
+            if eventType == .messageDelta {
+                if Self.verbose {
+                    os_log("\(Self.t)📊 消息增量: \(content)")
+                }
+                return
+            }
+
+            guard currentStreamingMessageId == messageId,
+                  let index = currentStreamingMessageIndex,
+                  index < messages.count else {
+                return
+            }
+
+            // 只追加文本增量事件的内容到消息
+            if eventType == .textDelta {
+                if Self.verbose && !content.isEmpty {
+                    os_log("\(Self.t)📝 文本增量: \(content.prefix(30))...")
+                }
+                // 获取当前消息并追加事件内容
+                var currentMessage = messages[index]
+                currentMessage.content += content
+
+                // 更新消息
+                updateMessage(currentMessage, at: index)
+            }
+
+        case let .streamFinished(message):
+            // 流式响应结束，将思考过程附加到消息
+            var finalMessage = message
+            if !thinkingText.isEmpty {
+                finalMessage.thinkingContent = thinkingText
+                if Self.verbose {
+                    os_log("\(Self.t)💭 保存思考过程到消息: \(self.thinkingText.prefix(50))...")
+                }
+            } else {
+                if Self.verbose {
+                    os_log("\(Self.t)⚠️ 思考文本为空，不保存思考过程")
+                }
+            }
+
+            // 流式响应结束，保存最终消息
+            if let index = currentStreamingMessageIndex, index < messages.count {
+                // 更新为最终消息（包含工具调用等信息）
+                updateMessage(finalMessage, at: index)
+                // 保存到数据库
+                saveMessage(finalMessage)
+            }
+
+            // 清理流式状态
+            currentStreamingMessageId = nil
+            currentStreamingMessageIndex = nil
+
+            // 重置思考状态（但保留思考文本，以便在界面上显示）
+            setIsThinking(false)
 
         case let .toolResultReceived(result):
             // 保存工具结果
@@ -260,14 +424,26 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             setDepthWarning(warning)
             setIsProcessing(false)
 
+            // 清理流式状态
+            currentStreamingMessageId = nil
+            currentStreamingMessageIndex = nil
+
         case .completed:
             // 轮次完成
             setIsProcessing(false)
+
+            // 清理流式状态
+            currentStreamingMessageId = nil
+            currentStreamingMessageIndex = nil
 
         case let .error(error):
             // 处理错误
             setErrorMessage(error.localizedDescription)
             setIsProcessing(false)
+
+            // 清理流式状态
+            currentStreamingMessageId = nil
+            currentStreamingMessageIndex = nil
 
         case let .shouldContinue(depth):
             // 继续下一轮
@@ -313,6 +489,26 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     /// 设置是否正在处理
     func setIsProcessing(_ processing: Bool) {
         isProcessing = processing
+    }
+
+    /// 设置最后心跳时间
+    func setLastHeartbeatTime(_ date: Date?) {
+        lastHeartbeatTime = date
+    }
+
+    /// 设置思考状态
+    func setIsThinking(_ thinking: Bool) {
+        isThinking = thinking
+    }
+
+    /// 追加思考文本
+    func appendThinkingText(_ text: String) {
+        thinkingText += text
+    }
+
+    /// 设置思考文本
+    func setThinkingText(_ text: String) {
+        thinkingText = text
     }
 
     /// 设置待处理权限请求

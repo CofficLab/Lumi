@@ -144,8 +144,91 @@ protocol LLMProviderProtocol: Sendable {
     /// - Throws: 解析错误
     func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?)
 
+    /// 解析流式响应数据块
+    ///
+    /// 将 SSE (Server-Sent Events) 格式的数据块解析为文本片段。
+    /// 用于流式响应时逐步显示内容。
+    ///
+    /// - Parameter data: 单个 SSE 数据块
+    /// - Returns: 解析出的文本片段，如果数据块不包含内容则返回 nil
+    /// - Throws: 解析错误
+    func parseStreamChunk(data: Data) throws -> StreamChunk?
+
+    /// 构建流式请求体
+    ///
+    /// 在普通请求体基础上添加流式参数（如 stream: true）
+    ///
+    /// - Parameters:
+    ///   - messages: 消息列表
+    ///   - model: 模型名称
+    ///   - tools: 可用工具列表
+    ///   - systemPrompt: 系统提示词
+    /// - Returns: 请求体字典
+    func buildStreamingRequestBody(
+        messages: [ChatMessage],
+        model: String,
+        tools: [AgentTool]?,
+        systemPrompt: String
+    ) throws -> [String: Any]
+
     /// 获取用于日志的 emoji 标识
     ///
     /// 用于日志输出时区分不同供应商的日志。
     static var logEmoji: String { get }
+}
+
+// MARK: - Stream Event Type
+
+/// 流式事件类型
+enum StreamEventType: String, Sendable {
+    case messageStart = "message_start"
+    case messageDelta = "message_delta"
+    case messageStop = "message_stop"
+    case contentBlockStart = "content_block_start"
+    case contentBlockDelta = "content_block_delta"
+    case contentBlockStop = "content_block_stop"
+    case thinkingDelta = "thinking_delta"
+    case textDelta = "text_delta"
+    case inputJsonDelta = "input_json_delta"
+    case signatureDelta = "signature_delta"
+    case ping = "ping"
+    case unknown
+}
+
+// MARK: - Stream Chunk
+
+/// 流式响应数据块
+struct StreamChunk: Sendable {
+    /// 文本内容片段
+    let content: String?
+    /// 是否结束
+    let isDone: Bool
+    /// 工具调用（如果有）
+    let toolCalls: [ToolCall]?
+    /// 错误信息（如果有）
+    let error: String?
+    /// 工具调用参数的 JSON 分片（用于流式传输）
+    let partialJson: String?
+    /// 事件类型
+    let eventType: StreamEventType?
+    /// 原始事件数据（用于调试和展示）
+    let rawEvent: String?
+
+    init(
+        content: String? = nil,
+        isDone: Bool = false,
+        toolCalls: [ToolCall]? = nil,
+        error: String? = nil,
+        partialJson: String? = nil,
+        eventType: StreamEventType? = nil,
+        rawEvent: String? = nil
+    ) {
+        self.content = content
+        self.isDone = isDone
+        self.toolCalls = toolCalls
+        self.error = error
+        self.partialJson = partialJson
+        self.eventType = eventType
+        self.rawEvent = rawEvent
+    }
 }

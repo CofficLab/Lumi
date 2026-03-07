@@ -106,6 +106,31 @@ struct DeepSeekProvider: LLMProviderProtocol {
         return (content, toolCalls)
     }
 
+    /// 构建流式请求体
+    func buildStreamingRequestBody(
+        messages: [ChatMessage],
+        model: String,
+        tools: [AgentTool]?,
+        systemPrompt: String
+    ) throws -> [String: Any] {
+        var body = try buildRequestBody(
+            messages: messages,
+            model: model,
+            tools: tools,
+            systemPrompt: systemPrompt
+        )
+        body["stream"] = true
+        return body
+    }
+
+    /// 解析流式响应数据块
+    /// DeepSeek 兼容 OpenAI 流式格式
+    func parseStreamChunk(data: Data) throws -> StreamChunk? {
+        // 复用 OpenAI 的解析逻辑
+        let openAIProvider = OpenAIProvider()
+        return try openAIProvider.parseStreamChunk(data: data)
+    }
+
     static var logEmoji: String { "🔵" }
 }
 

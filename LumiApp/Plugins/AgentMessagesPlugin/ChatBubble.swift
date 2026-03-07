@@ -30,19 +30,63 @@ final class MessageExpansionState: ObservableObject {
 /// 聊天气泡组件，用于显示用户消息、助手回复和工具输出
 struct ChatBubble: View {
     let message: ChatMessage
+    /// 是否是最后一条消息
+    let isLastMessage: Bool
     @ObservedObject private var expansionState = MessageExpansionState.shared
     @State private var showRawMessage: Bool = false
-    
+    /// 智能体提供者（用于获取思考状态）
+    @EnvironmentObject var agentProvider: AgentProvider
+
     // 判断是否是长消息
     private var isLongMessage: Bool {
         let charCount = message.content.count
         let lineCount = message.content.components(separatedBy: "\n").count
         return charCount > 1000 || lineCount > 50
     }
-    
+
     // 当前消息的展开状态
     private var isExpanded: Bool {
         expansionState.isExpanded(id: message.id)
+    }
+
+    // 是否是当前正在流式传输的消息
+    private var isCurrentStreamingMessage: Bool {
+        agentProvider.currentStreamingMessageId == message.id
+    }
+
+    // 是否应该显示思考过程
+    private var shouldShowThinkingProcess: Bool {
+        // 必须是助手消息
+        guard message.role == .assistant else { return false }
+        // 如果有存储的思考内容，显示它
+        if let storedThinking = message.thinkingContent, !storedThinking.isEmpty {
+            return true
+        }
+        // 如果是最后一条消息且正在流式传输，显示实时思考
+        if isLastMessage {
+            return agentProvider.isThinking || !agentProvider.thinkingText.isEmpty
+        }
+        return false
+    }
+
+    // 获取思考过程文本（优先使用存储的，否则使用实时的）
+    private var thinkingText: String {
+        // 如果有存储的思考内容，使用它
+        if let storedThinking = message.thinkingContent, !storedThinking.isEmpty {
+            return storedThinking
+        }
+        // 否则使用实时的思考文本
+        return agentProvider.thinkingText
+    }
+
+    // 是否正在思考（用于动画）
+    private var isThinking: Bool {
+        // 如果有存储的思考内容，说明思考已完成
+        if message.thinkingContent != nil {
+            return false
+        }
+        // 否则使用实时的思考状态
+        return agentProvider.isThinking
     }
 
     var body: some View {
@@ -68,7 +112,15 @@ struct ChatBubble: View {
                             },
                             isLongMessage: isLongMessage
                         )
-                        
+
+                        // 思考过程展示（对最后一条助手消息显示）
+                        if shouldShowThinkingProcess {
+                            ThinkingProcessView(
+                                thinkingText: thinkingText,
+                                isThinking: isThinking
+                            )
+                        }
+
                         if hasToolCalls {
                             AssistantMessageWithToolCallsView(message: message)
                         } else {
@@ -136,6 +188,8 @@ struct AssistantMessageHeader: View {
     let isExpanded: Bool
     let onToggleExpand: () -> Void
     let isLongMessage: Bool
+    /// 智能体提供者（用于获取心跳状态）
+    @EnvironmentObject var agentProvider: AgentProvider
 
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
@@ -145,7 +199,17 @@ struct AssistantMessageHeader: View {
                     .font(DesignTokens.Typography.caption1)
                     .fontWeight(.medium)
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                
+
+                // 心跳动画指示器（当正在处理时显示）
+                if agentProvider.isProcessing {
+                    HeartbeatIndicator()
+                }
+
+                // 思考状态指示器
+                if agentProvider.isThinking {
+                    ThinkingIndicator()
+                }
+
                 // 供应商名称（如果有）
                 if let providerId = message.providerId {
                     Text("·")
@@ -154,7 +218,7 @@ struct AssistantMessageHeader: View {
                         .font(DesignTokens.Typography.caption2)
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
-                
+
                 // 模型名称（如果有）
                 if let modelName = message.modelName {
                     Text("·")
@@ -234,6 +298,163 @@ struct AssistantMessageHeader: View {
         } else {
             return String(format: "%.1fs", latency / 1000.0)
         }
+    }
+}
+
+// MARK: - Heartbeat Indicator
+
+/// 心跳动画指示器
+struct HeartbeatIndicator: View {
+    @EnvironmentObject var agentProvider: AgentProvider
+    @State private var isAnimating = false
+    @State private var pulseScale: CGFloat = 1.0
+
+    var body: some View {
+        Circle()
+            .fill(Color.green)
+            .frame(width: 6, height: 6)
+            .scaleEffect(pulseScale)
+            .opacity(isAnimating ? 1.0 : 0.4)
+            .onAppear {
+                startAnimation()
+            }
+            .onChange(of: agentProvider.lastHeartbeatTime) { _, _ in
+                // 收到心跳时触发脉冲动画
+                triggerPulse()
+            }
+            .onChange(of: agentProvider.isProcessing) { _, isProcessing in
+                if isProcessing {
+                    startAnimation()
+                } else {
+                    stopAnimation()
+                }
+            }
+    }
+
+    private func startAnimation() {
+        guard agentProvider.isProcessing else { return }
+
+        // 基础呼吸动画
+        withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+            isAnimating = true
+        }
+    }
+
+    private func stopAnimation() {
+        withAnimation(.easeOut(duration: 0.2)) {
+            isAnimating = false
+            pulseScale = 1.0
+        }
+    }
+
+    private func triggerPulse() {
+        // 心跳脉冲效果
+        withAnimation(.easeOut(duration: 0.3)) {
+            pulseScale = 1.8
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            withAnimation(.easeIn(duration: 0.3)) {
+                pulseScale = 1.0
+            }
+        }
+    }
+}
+
+// MARK: - Thinking Indicator
+
+/// 思考状态指示器
+struct ThinkingIndicator: View {
+    @State private var isAnimating = false
+    @State private var rotation: Double = 0
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "brain.head.profile")
+                .font(.system(size: 10))
+                .foregroundColor(.orange)
+                .rotationEffect(.degrees(rotation))
+                .onAppear {
+                    withAnimation(.linear(duration: 2.0).repeatForever(autoreverses: false)) {
+                        rotation = 360
+                    }
+                }
+
+            Text("思考中")
+                .font(DesignTokens.Typography.caption2)
+                .foregroundColor(.orange)
+        }
+    }
+}
+
+// MARK: - Thinking Process View
+
+/// 思考过程展示视图（可展开/折叠）
+struct ThinkingProcessView: View {
+    let thinkingText: String
+    let isThinking: Bool
+    @State private var isExpanded: Bool = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // 展开/折叠按钮
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isExpanded.toggle()
+                }
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(.orange)
+
+                    Text(isThinking ? "思考过程..." : "思考过程")
+                        .font(DesignTokens.Typography.caption1)
+                        .foregroundColor(.orange)
+
+                    if isThinking {
+                        // 思考中的动画点
+                        HStack(spacing: 2) {
+                            ForEach(0..<3) { i in
+                                Circle()
+                                    .fill(Color.orange)
+                                    .frame(width: 4, height: 4)
+                                    .opacity(isThinking ? 1.0 : 0.5)
+                                    .animation(
+                                        .easeInOut(duration: 0.6)
+                                        .repeatForever(autoreverses: true)
+                                        .delay(Double(i) * 0.2),
+                                        value: isThinking
+                                    )
+                            }
+                        }
+                    }
+
+                    Spacer()
+                }
+            }
+            .buttonStyle(.plain)
+
+            // 思考内容（展开时显示）
+            if isExpanded && !thinkingText.isEmpty {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(thinkingText)
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundColor(Color.gray)
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.gray.opacity(0.1))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+                )
+            }
+        }
+        .padding(.vertical, 4)
     }
 }
 
@@ -346,56 +567,74 @@ extension View {
 // MARK: - Preview
 
 #Preview("User Message") {
-    ChatBubble(message: ChatMessage(role: .user, content: "Hello, how can you help me?"))
-        .padding()
-        .background(Color.black)
+    ChatBubble(
+        message: ChatMessage(role: .user, content: "Hello, how can you help me?"),
+        isLastMessage: false
+    )
+    .padding()
+    .background(Color.black)
 }
 
 #Preview("Assistant Message with Latency") {
-    ChatBubble(message: ChatMessage(
-        role: .assistant,
-        content: "I can help you with coding tasks.",
-        providerId: "anthropic",
-        modelName: "claude-sonnet-4-20250514",
-        latency: 1234.56
-    ))
+    ChatBubble(
+        message: ChatMessage(
+            role: .assistant,
+            content: "I can help you with coding tasks.",
+            providerId: "anthropic",
+            modelName: "claude-sonnet-4-20250514",
+            latency: 1234.56
+        ),
+        isLastMessage: true
+    )
     .padding()
     .background(Color.black)
 }
 
 #Preview("Assistant Message (OpenAI)") {
-    ChatBubble(message: ChatMessage(
-        role: .assistant,
-        content: "I can help you with coding tasks.",
-        providerId: "openai",
-        modelName: "gpt-4o",
-        latency: 456.78
-    ))
+    ChatBubble(
+        message: ChatMessage(
+            role: .assistant,
+            content: "I can help you with coding tasks.",
+            providerId: "openai",
+            modelName: "gpt-4o",
+            latency: 456.78
+        ),
+        isLastMessage: true
+    )
     .padding()
     .background(Color.black)
 }
 
 #Preview("Assistant Message (Long Content)") {
     let longContent = String(repeating: "这是一段测试文字，用于验证长消息的折叠功能。", count: 100)
-    ChatBubble(message: ChatMessage(
-        role: .assistant,
-        content: longContent,
-        providerId: "anthropic",
-        modelName: "claude-sonnet-4-20250514",
-        latency: 2345.67
-    ))
+    ChatBubble(
+        message: ChatMessage(
+            role: .assistant,
+            content: longContent,
+            providerId: "anthropic",
+            modelName: "claude-sonnet-4-20250514",
+            latency: 2345.67
+        ),
+        isLastMessage: true
+    )
     .padding()
     .background(Color.black)
 }
 
 #Preview("Tool Output") {
-    ChatBubble(message: ChatMessage(role: .system, content: "File contents: \nLine 1\nLine 2\nLine 3", toolCallID: "test"))
-        .padding()
-        .background(Color.black)
+    ChatBubble(
+        message: ChatMessage(role: .system, content: "File contents: \nLine 1\nLine 2\nLine 3", toolCallID: "test"),
+        isLastMessage: false
+    )
+    .padding()
+    .background(Color.black)
 }
 
 #Preview("Error Message") {
-    ChatBubble(message: ChatMessage(role: .assistant, content: "An error occurred", isError: true))
-        .padding()
-        .background(Color.black)
+    ChatBubble(
+        message: ChatMessage(role: .assistant, content: "An error occurred", isError: true),
+        isLastMessage: true
+    )
+    .padding()
+    .background(Color.black)
 }

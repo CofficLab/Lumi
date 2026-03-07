@@ -19,15 +19,20 @@ final class ChatMessageEntity {
     
     // Performance Metrics - 性能指标
     var latency: Double?         // 请求总耗时（毫秒）
-    
+
+    // Thinking Process - 思考过程
+    var thinkingContent: String? // 思考过程文本（用于 reasoning 模型）
+    var hasThinking: Bool = false // 是否有思考过程（便于查询，必须有默认值用于迁移）
+
     // 反向关系
     var conversation: Conversation?
     
-    init(id: UUID = UUID(), role: String, content: String, timestamp: Date = Date(), 
-         isError: Bool = false, toolCallsData: Data? = nil, 
+    init(id: UUID = UUID(), role: String, content: String, timestamp: Date = Date(),
+         isError: Bool = false, toolCallsData: Data? = nil,
          toolCallID: String? = nil, imagesData: Data? = nil,
          providerId: String? = nil, modelName: String? = nil,
-         latency: Double? = nil) {
+         latency: Double? = nil, thinkingContent: String? = nil,
+         hasThinking: Bool = false) {
         self.id = id
         self.role = role
         self.content = content
@@ -39,6 +44,8 @@ final class ChatMessageEntity {
         self.providerId = providerId
         self.modelName = modelName
         self.latency = latency
+        self.thinkingContent = thinkingContent
+        self.hasThinking = hasThinking
     }
     
     /// 转换为 ChatMessage
@@ -68,7 +75,8 @@ final class ChatMessageEntity {
             images: images,
             providerId: providerId,
             modelName: modelName,
-            latency: latency
+            latency: latency,
+            thinkingContent: thinkingContent
         )
     }
     
@@ -95,7 +103,9 @@ final class ChatMessageEntity {
             imagesData: imagesData,
             providerId: message.providerId,
             modelName: message.modelName,
-            latency: message.latency
+            latency: message.latency,
+            thinkingContent: message.thinkingContent,
+            hasThinking: message.thinkingContent != nil && !message.thinkingContent!.isEmpty
         )
     }
 }
