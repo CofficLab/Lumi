@@ -6,7 +6,7 @@ actor InputPlugin: SuperPlugin {
     nonisolated static let iconName = "keyboard"
     nonisolated static let displayName = String(localized: "Input Manager", table: "Input")
     nonisolated static let navigationId = "InputManager"
-    nonisolated static let enable = false
+    nonisolated static let enable = true
     static var order: Int { 70 }
     
     // Initialize service on plugin load

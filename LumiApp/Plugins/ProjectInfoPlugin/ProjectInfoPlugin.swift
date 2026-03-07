@@ -11,7 +11,7 @@ actor ProjectInfoPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "📋"
 
     /// Whether to enable this plugin
-    static let enable = false
+    static let enable = true
 
     /// Whether to enable verbose log output
     nonisolated static let verbose = true

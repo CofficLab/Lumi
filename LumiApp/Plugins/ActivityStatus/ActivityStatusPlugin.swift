@@ -9,7 +9,7 @@ actor ActivityStatusPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "⌛️"
 
     /// 是否启用该插件
-    nonisolated static let enable = false
+    nonisolated static let enable = true
 
     /// 是否启用详细日志输出
     nonisolated static let verbose = true

@@ -6,7 +6,7 @@ actor MemoryManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
     
     nonisolated static let emoji = "💾"
-    static let enable = false
+    static let enable = true
     nonisolated static let verbose = true
     
     static let id = "MemoryManager"
