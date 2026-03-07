@@ -121,8 +121,7 @@ extension ChatMessagesView {
             Image(systemName: "text.bubble.fill")
                 .font(.system(size: 56))
                 .foregroundStyle(.tertiary)
-                .symbolEffect(.bounce, options: .repeating.speed(0.5))
-
+            
             // 标题
             Text("暂无消息", tableName: "DevAssistant")
                 .font(.title2)
