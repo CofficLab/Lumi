@@ -125,7 +125,22 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         }
 
         if Self.verbose {
-            os_log("\(self.t)🚀 发送流式请求到：\(url.absoluteString)")
+            // 构建完整请求信息
+            var logMessage = "\(self.t)🚀 发送流式请求到：\(url.absoluteString)\n"
+            
+            // 添加请求体
+            if let bodyData = request.httpBody,
+               let bodyString = String(data: bodyData, encoding: .utf8) {
+                logMessage += "📦 请求体：\n\(bodyString)\n"
+            }
+            
+            // 添加请求头
+            logMessage += "📋 请求头：\n"
+            for (key, value) in headers {
+                logMessage += "  - \(key): \(value)\n"
+            }
+            
+            os_log("\(logMessage)")
         }
 
         // 发送请求并处理流式响应

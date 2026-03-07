@@ -794,9 +794,23 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         // 3. 切换消息发送队列到新会话
         messageSenderViewModel.switchToConversation(newConversation.id)
 
-        // 4. 清空当前消息列表并获取欢迎消息
+        // 4. 清空当前消息列表并获取系统上下文消息和欢迎消息
         messageViewModel.clearMessages()
 
+        // 4.1 添加系统上下文消息（设置项目上下文）
+        let systemMessage = await promptService.getSystemContextMessage(
+            projectName: projectName,
+            projectPath: projectPath,
+            language: languagePreference
+        )
+        if !systemMessage.isEmpty {
+            let sysMsg = ChatMessage(role: .system, content: systemMessage)
+            if let savedSystemMsg = chatHistoryService.saveMessage(sysMsg, to: newConversation) {
+                messageViewModel.appendMessageInternal(savedSystemMsg)
+            }
+        }
+
+        // 4.2 添加欢迎消息
         let welcomeMessage = await promptService.getEmptySessionWelcomeMessage(
             projectName: projectName,
             projectPath: projectPath,
