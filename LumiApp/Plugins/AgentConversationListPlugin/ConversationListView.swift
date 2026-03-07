@@ -139,10 +139,12 @@ extension ConversationListView {
 
     /// 处理选择变化：同步到 ConversationViewModel
     func handleSelectionChange() {
-        if localSelectedConversationId != nil {
-            conversationViewModel.selectConversation(localSelectedConversationId!)
-        } else {
-            conversationViewModel.clearConversationSelection()
+        if localSelectedConversationId != conversationViewModel.selectedConversationId {
+            if localSelectedConversationId != nil {
+                conversationViewModel.selectConversation(localSelectedConversationId!)
+            } else {
+                conversationViewModel.clearConversationSelection()
+            }
         }
     }
 

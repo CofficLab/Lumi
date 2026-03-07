@@ -30,7 +30,7 @@ class MCPService: SuperLog, @unchecked Sendable {
     /// 连接客户端变化通知
     let connectedClientsPublisher = PassthroughSubject<[String: Client], Never>()
 
-    // MARK: - 状态属性 (非 @Published)
+    // MARK: - 状态属性
 
     /// 所有 MCP 服务器配置
     private(set) var configs: [MCPServerConfig] = []
