@@ -223,10 +223,8 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         while !isCancelled {
             // 获取下一条消息
             var nextMessage: ChatMessage? = nil
-            var queueCount = 0
             
             await MainActor.run {
-                queueCount = self.pendingMessages.count
                 if !self.pendingMessages.isEmpty {
                     self.currentProcessingIndex = 0
                     nextMessage = self.pendingMessages.first

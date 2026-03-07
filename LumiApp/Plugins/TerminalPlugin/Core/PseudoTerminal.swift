@@ -27,7 +27,8 @@ class PseudoTerminal: @unchecked Sendable {
         
         let slavePathC = ptsname(masterFD)
         guard let slavePathC = slavePathC else { throw TerminalError.ptyCreationFailed }
-        let slavePath = String(cString: slavePathC)
+        let length = strlen(slavePathC)
+        let slavePath = String(decoding: UnsafeBufferPointer(start: UnsafeRawPointer(slavePathC).assumingMemoryBound(to: UInt8.self), count: length), as: UTF8.self)
         
         // 2. Setup Process
         let process = Process()

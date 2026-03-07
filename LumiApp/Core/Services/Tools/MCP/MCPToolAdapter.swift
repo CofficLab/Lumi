@@ -75,18 +75,22 @@ final class MCPToolAdapter: AgentTool, @unchecked Sendable {
             }
 
             // Combine content into string
-            let output = result.content.compactMap { content -> String? in
+            var outputParts: [String] = []
+            for content in result.content {
                 switch content {
                 case .text(let text):
-                    return text
+                    outputParts.append(text)
                 case .image(_, let mimeType, _):
-                    return "[Image: \(mimeType)]"
+                    outputParts.append("[Image: \(mimeType)]")
                 case .resource(let uri, _, _):
-                    return "[Resource: \(uri)]"
+                    outputParts.append("[Resource: \(uri)]")
+                case .audio(_, let mimeType):
+                    outputParts.append("[Audio: \(mimeType)]")
                 @unknown default:
-                    return nil
+                    break
                 }
-            }.joined(separator: "\n")
+            }
+            let output = outputParts.joined(separator: "\n")
 
             os_log("[MCP] 📄 返回内容长度: \(output.count) 字符")
             return output

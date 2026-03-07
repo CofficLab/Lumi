@@ -16,7 +16,7 @@ final class PluginProvider: ObservableObject, SuperLog {
     nonisolated static let emoji = "🔌"
 
     /// 是否启用详细日志输出
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     /// 已加载的插件列表
     @Published private(set) var plugins: [any SuperPlugin] = []

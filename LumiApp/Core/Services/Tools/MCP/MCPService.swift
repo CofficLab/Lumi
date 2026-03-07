@@ -57,9 +57,7 @@ class MCPService: SuperLog, @unchecked Sendable {
             self.configs = savedConfigs
         }
 
-        // 延迟自动连接，确保应用已准备好
         Task.detached {
-            try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 秒
             await self.connectAll()
         }
     }

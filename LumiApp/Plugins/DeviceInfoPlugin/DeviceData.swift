@@ -96,7 +96,7 @@ class DeviceData: ObservableObject {
         sysctlbyname("machdep.cpu.brand_string", nil, &size, nil, 0)
         var model = [CChar](repeating: 0, count: size)
         sysctlbyname("machdep.cpu.brand_string", &model, &size, nil, 0)
-        return String(validatingCString: model) ?? ""
+        return String(cString: model)
     }
 
     private func getCPUUsage() -> Double {

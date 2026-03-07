@@ -4,12 +4,13 @@ import OSLog
 import MagicKit
 import Logging
 
-/// A Transport that communicates with a subprocess via Stdio
+/// 通过标准输入输出与子进程通信的传输层
 actor SubprocessTransport: Transport, SuperLog {
+    var logger: Logging.Logger
+    
     nonisolated static let emoji = "📟"
     nonisolated static let verbose = true
     
-    nonisolated let logger: Logging.Logger
     let command: String
     let arguments: [String]
     let environment: [String: String]
@@ -32,21 +33,21 @@ actor SubprocessTransport: Transport, SuperLog {
     }
     
     func connect() async throws {
-        // Resolve executable path
-        var executablePath = resolveExecutablePath(for: command)
+        // 解析可执行文件路径
+        let executablePath = resolveExecutablePath(for: command)
         
-        // If command is npx or npm, we need to ensure node is in PATH
-        // or resolve npx absolute path.
-        // Also, for npx, we might want to check if it's a node script wrapper
-        // and ensure the environment has correct PATH.
+        // 如果是 npx 或 npm，需要确保 node 在 PATH 中
+        // 或者解析 npx 的绝对路径
+        // 对于 npx，可能需要检查是否是 node 脚本包装器
+        // 并确保环境变量有正确的 PATH
         
-        // Special handling for node/npx environment
+        // node/npx 环境的特殊处理
         var env = ProcessInfo.processInfo.environment
         for (key, value) in environment {
             env[key] = value
         }
         
-        // Try to find node path to append to PATH if not present
+        // 尝试查找 node 路径以添加到 PATH（如果不存在）
         if let nodePath = resolveExecutablePath(for: "node").components(separatedBy: "/").dropLast().joined(separator: "/").nilIfEmpty {
              let currentPath = env["PATH"] ?? ""
              if !currentPath.contains(nodePath) {
@@ -55,7 +56,7 @@ actor SubprocessTransport: Transport, SuperLog {
         }
         
         if Self.verbose {
-            os_log("\(Self.t)Starting subprocess: \(executablePath) \(self.arguments.joined(separator: " "))")
+            os_log("\(Self.t)启动子进程: \(executablePath) \(self.arguments.joined(separator: " "))")
         }
         
         let process = Process()
@@ -74,13 +75,13 @@ actor SubprocessTransport: Transport, SuperLog {
         self.stdinPipe = stdin
         self.process = process
         
-        // Start monitoring stdout
+        // 开始监控 stdout
         Task.detached { [weak self] in
             guard let self = self else { return }
             await self.monitorOutput(pipe: stdout)
         }
         
-        // Start monitoring stderr (log it)
+        // 开始监控 stderr（记录日志）
         Task.detached {
             await self.monitorError(pipe: stderr)
         }
@@ -88,17 +89,17 @@ actor SubprocessTransport: Transport, SuperLog {
         do {
             try process.run()
             if Self.verbose {
-                os_log("\(Self.t)✅ Subprocess started: \(executablePath)")
+                os_log("\(Self.t)✅ 子进程已启动: \(executablePath)")
             }
         } catch {
-            os_log(.error, "\(Self.t)❌ Failed to run process \(executablePath): \(error)")
+            os_log(.error, "\(Self.t)❌ 运行进程失败 \(executablePath): \(error)")
             throw error
         }
     }
     
     func disconnect() async {
         if Self.verbose {
-            os_log("\(Self.t)Stopping subprocess: \(self.command)")
+            os_log("\(Self.t)停止子进程: \(self.command)")
         }
         process?.terminate()
         process = nil
@@ -108,12 +109,12 @@ actor SubprocessTransport: Transport, SuperLog {
     func send(_ data: Data) async throws {
         guard let stdin = stdinPipe else { return }
         
-        // Write data to stdin
+        // 写入数据到 stdin
         try stdin.fileHandleForWriting.write(contentsOf: data)
         
-        // Ensure newline for JSON-RPC over Stdio
-        // If the data doesn't end with newline, append it.
-        // Explicitly use UTF-8 string conversion to check suffix
+        // 为 JSON-RPC over Stdio 确保换行
+        // 如果数据不以换行符结尾，添加它
+        // 显式使用 UTF-8 字符串转换来检查后缀
         if let str = String(data: data, encoding: .utf8), !str.hasSuffix("\n") {
              if let newlineData = "\n".data(using: .utf8) {
                 try stdin.fileHandleForWriting.write(contentsOf: newlineData)
@@ -122,7 +123,7 @@ actor SubprocessTransport: Transport, SuperLog {
         
         if Self.verbose {
             if let str = String(data: data, encoding: .utf8) {
-                os_log("\(Self.t)📤 Sent: \(str.prefix(200))")
+                os_log("\(Self.t)📤 已发送: \(str.prefix(200))")
             }
         }
     }
@@ -131,31 +132,31 @@ actor SubprocessTransport: Transport, SuperLog {
         return messageStream
     }
     
-    // MARK: - Helpers
+    // MARK: - 辅助方法
     
     private func monitorOutput(pipe: Pipe) async {
         let handle = pipe.fileHandleForReading
         
-        // Read line by line
+        // 逐行读取
         do {
             for try await line in handle.bytes.lines {
-                // Each line is a message
+                // 每一行都是一个消息
                 if let data = line.data(using: .utf8) {
                     if Self.verbose {
                         if let str = String(data: data, encoding: .utf8) {
-                            os_log("\(Self.t)📥 Received: \(str.prefix(200))")
+                            os_log("\(Self.t)📥 已接收: \(str.prefix(200))")
                         }
                     }
                     messageContinuation.yield(data)
                 }
             }
         } catch {
-             os_log(.error, "\(Self.t)❌ Error reading from stdout: \(error.localizedDescription)")
+             os_log(.error, "\(Self.t)❌ 从 stdout 读取失败: \(error.localizedDescription)")
              messageContinuation.finish(throwing: error)
              return
         }
         
-        // Stream ended
+        // 流结束
         messageContinuation.finish()
     }
     
@@ -168,23 +169,23 @@ actor SubprocessTransport: Transport, SuperLog {
                 }
             }
         } catch {
-             os_log(.error, "\(Self.t)❌ Error reading from stderr: \(error.localizedDescription)")
+             os_log(.error, "\(Self.t)❌ 从 stderr 读取失败: \(error.localizedDescription)")
         }
     }
     
     nonisolated private func resolveExecutablePath(for command: String) -> String {
         if command.hasPrefix("/") { return command }
         
-        // Use a more comprehensive shell environment to resolve path
+        // 使用更全面的 shell 环境来解析路径
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/zsh")
-        // Use login shell to ensure PATH is loaded correctly (e.g. from .zshrc)
+        // 使用登录 shell 确保 PATH 正确加载（例如从 .zshrc）
         process.arguments = ["-l", "-c", "which \(command)"]
         
         let pipe = Pipe()
         process.standardOutput = pipe
         
-        // Also capture stderr to debug resolution failures
+        // 同时捕获 stderr 以调试解析失败
         let errPipe = Pipe()
         process.standardError = errPipe
         
@@ -194,19 +195,19 @@ actor SubprocessTransport: Transport, SuperLog {
             
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             if let path = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines), !path.isEmpty {
-                // Check if the path actually exists
+                // 检查路径是否实际存在
                 if FileManager.default.fileExists(atPath: path) {
                     if Self.verbose {
-                        os_log("\(Self.t)Resolved command '\(command)' to: \(path)")
+                        os_log("\(Self.t)解析命令 '\(command)' 为: \(path)")
                     }
                     return path
                 }
             }
         } catch {
-            os_log(.error, "\(Self.t)❌ Failed to resolve command \(command): \(error.localizedDescription)")
+            os_log(.error, "\(Self.t)❌ 解析命令失败 \(command): \(error.localizedDescription)")
         }
         
-        // Common fallback paths for Homebrew and system
+        // Homebrew 和系统的常见备用路径
         let commonPaths = [
             "/opt/homebrew/bin/\(command)",
             "/usr/local/bin/\(command)",
@@ -217,15 +218,15 @@ actor SubprocessTransport: Transport, SuperLog {
         for path in commonPaths {
             if FileManager.default.fileExists(atPath: path) {
                 if Self.verbose {
-                    os_log("\(Self.t)Resolved command '\(command)' to fallback path: \(path)")
+                    os_log("\(Self.t)解析命令 '\(command)' 为备用路径: \(path)")
                 }
                 return path
             }
         }
         
-        // Final fallback
+        // 最终备用
         if Self.verbose {
-            os_log("\(Self.t)⚠️ Using final fallback for command '\(command)': /usr/bin/\(command)")
+            os_log("\(Self.t)⚠️ 使用最终备用路径命令 '\(command)': /usr/bin/\(command)")
         }
         return "/usr/bin/\(command)"
     }

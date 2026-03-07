@@ -1,5 +1,5 @@
 import Foundation
-import NetworkExtension
+@preconcurrency import NetworkExtension
 import SystemExtensions
 import OSLog
 import AppKit
@@ -51,7 +51,8 @@ class FirewallService: NSObject, ObservableObject, @unchecked Sendable {
             
             if manager.providerConfiguration == nil {
                 let providerConfiguration = NEFilterProviderConfiguration()
-                providerConfiguration.filterBrowsers = true
+                // filterBrowsers 在 macOS 上不受支持，已弃用
+                // providerConfiguration.filterBrowsers = true
                 providerConfiguration.filterSockets = true
                 manager.providerConfiguration = providerConfiguration
                 manager.localizedDescription = "Lumi Netto Firewall"
