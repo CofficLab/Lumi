@@ -1,6 +1,6 @@
 import Combine
-import MagicKit
 import Foundation
+import MagicKit
 import OSLog
 import SwiftData
 
@@ -31,7 +31,7 @@ import SwiftData
 /// messageViewModel.loadMessages(for: conversation)
 /// ```
 @MainActor
-final class AgentProvider: ObservableObject, SuperLog, ConversationTurnDelegate, LLMConfigProvider {
+final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     nonisolated static let emoji = "🤖"
     nonisolated static let verbose = true
 
@@ -79,7 +79,8 @@ final class AgentProvider: ObservableObject, SuperLog, ConversationTurnDelegate,
     /// 消息发送事件流任务
     private var messageSendEventTask: Task<Void, Never>?
 
-    // MARK: - 聊天消息状态 (DevAssistant)
+    /// 对话轮次事件流任务
+    private var conversationTurnEventTask: Task<Void, Never>?
 
     // MARK: - 聊天消息状态 (DevAssistant)
 
@@ -102,7 +103,7 @@ final class AgentProvider: ObservableObject, SuperLog, ConversationTurnDelegate,
 
         public var id: UUID {
             switch self {
-            case .image(let id, _, _, _):
+            case let .image(id, _, _, _):
                 return id
             }
         }
@@ -148,7 +149,7 @@ final class AgentProvider: ObservableObject, SuperLog, ConversationTurnDelegate,
         self.projectViewModel = projectViewModel
         self.conversationTurnViewModel = conversationTurnViewModel
         self.slashCommandService = slashCommandService
-        
+
         // 监听会话选择变化
         setupConversationSelectionObserver()
 
@@ -158,22 +159,25 @@ final class AgentProvider: ObservableObject, SuperLog, ConversationTurnDelegate,
         // 订阅消息发送事件流
         subscribeToMessageSendEvents()
 
+        // 订阅对话轮次事件流
+        subscribeToConversationTurnEvents()
+
         loadPreferences()
     }
-    
+
     /// 加载初始会话消息
     /// 在初始化时，如果 ConversationViewModel 已经恢复了上次选择的会话，立即加载消息
     private func loadInitialConversationIfNeeded() {
         if let selectedId = conversationViewModel.selectedConversationId {
             if Self.verbose {
-                os_log("\(Self.t)📥 初始化时加载已选中的会话: \(selectedId)")
+                os_log("\(Self.t)📥 [\(selectedId)] 初始化会话")
             }
-            Task { @MainActor in
+            Task {
                 await self.loadConversation(selectedId)
             }
         }
     }
-    
+
     /// 设置会话选择监听
     /// 当 selectedConversationId 变化时，自动加载对应会话的消息
     private func setupConversationSelectionObserver() {
@@ -211,8 +215,63 @@ final class AgentProvider: ObservableObject, SuperLog, ConversationTurnDelegate,
         case .processingFinished:
             setIsProcessing(false)
 
-        case .sendMessage(let message):
+        case let .sendMessage(message):
             await sendMessageToAgent(message: message)
+        }
+    }
+
+    /// 订阅对话轮次事件流
+    /// 处理 ConversationTurnViewModel 发出的事件
+    private func subscribeToConversationTurnEvents() {
+        conversationTurnEventTask?.cancel()
+        conversationTurnEventTask = Task { [weak self] in
+            guard let self = self else { return }
+            for await event in self.conversationTurnViewModel.events {
+                await self.handleConversationTurnEvent(event)
+            }
+        }
+    }
+
+    /// 处理对话轮次事件
+    /// - Parameter event: 对话轮次事件
+    private func handleConversationTurnEvent(_ event: ConversationTurnEvent) async {
+        switch event {
+        case let .responseReceived(message):
+            // 保存助手响应
+            appendMessage(message)
+            saveMessage(message)
+
+        case let .toolResultReceived(result):
+            // 保存工具结果
+            appendMessage(result)
+            saveMessage(result)
+
+        case let .permissionRequested(request):
+            // 设置待处理权限请求
+            setPendingPermissionRequest(request)
+
+        case let .maxDepthReached(currentDepth, maxDepth):
+            // 处理达到最大深度
+            let warning = DepthWarning(
+                currentDepth: currentDepth,
+                maxDepth: maxDepth,
+                warningType: .reached
+            )
+            setDepthWarning(warning)
+            setIsProcessing(false)
+
+        case .completed:
+            // 轮次完成
+            setIsProcessing(false)
+
+        case let .error(error):
+            // 处理错误
+            setErrorMessage(error.localizedDescription)
+            setIsProcessing(false)
+
+        case let .shouldContinue(depth):
+            // 继续下一轮
+            await processTurn(depth: depth)
         }
     }
 
@@ -325,13 +384,13 @@ final class AgentProvider: ObservableObject, SuperLog, ConversationTurnDelegate,
     /// 设置供应商并保存到项目配置
     func setSelectedProviderId(_ providerId: String) {
         guard isProjectSelected, !currentProjectPath.isEmpty else { return }
-        
+
         projectViewModel.saveProjectConfig(
             path: currentProjectPath,
             providerId: providerId,
             model: currentModel
         )
-        
+
         if Self.verbose {
             os_log("\(Self.t)⚙️ 已设置供应商：\(providerId)")
         }
@@ -340,13 +399,13 @@ final class AgentProvider: ObservableObject, SuperLog, ConversationTurnDelegate,
     /// 设置模型并保存到项目配置
     func setSelectedModel(_ model: String) {
         guard isProjectSelected, !currentProjectPath.isEmpty else { return }
-        
+
         projectViewModel.saveProjectConfig(
             path: currentProjectPath,
             providerId: selectedProviderId,
             model: model
         )
-        
+
         if Self.verbose {
             os_log("\(Self.t)⚙️ 已设置模型：\(model)")
         }
@@ -460,14 +519,14 @@ final class AgentProvider: ObservableObject, SuperLog, ConversationTurnDelegate,
         // 切换消息发送队列到新会话
         let queueCount = messageSenderViewModel.switchToConversation(conversation.id)
         if Self.verbose {
-            os_log("\(Self.t)🔄 切换到会话队列，待发送消息：\(queueCount) 条")
+            os_log("\(Self.t)🔄 [\(conversationId)] 待发送消息：\(queueCount) 条")
         }
 
         // 加载消息到 MessageViewModel
         _ = messageViewModel.loadMessages(for: conversation)
 
         if Self.verbose {
-            os_log("\(Self.t)✅ [\(conversation.id)] 对话加载完成，共 \(self.messageViewModel.messages.count) 条消息")
+            os_log("\(Self.t)✅ [\(conversation.id)] 共 \(self.messageViewModel.messages.count) 条消息")
         }
     }
 
@@ -541,7 +600,7 @@ final class AgentProvider: ObservableObject, SuperLog, ConversationTurnDelegate,
 
         // 4. 清空当前消息列表并获取欢迎消息
         messageViewModel.clearMessages()
-        
+
         let welcomeMessage = await promptService.getEmptySessionWelcomeMessage(
             projectName: projectName,
             projectPath: projectPath,
@@ -671,7 +730,7 @@ final class AgentProvider: ObservableObject, SuperLog, ConversationTurnDelegate,
 
         // 合并外部传入的图片和 pendingAttachments 中的图片
         let attachmentImages = pendingAttachments.compactMap { attachment -> ImageAttachment? in
-            if case .image(_, let data, let mimeType, _) = attachment {
+            if case let .image(_, data, mimeType, _) = attachment {
                 return ImageAttachment(data: data, mimeType: mimeType)
             }
             return nil
@@ -741,56 +800,24 @@ final class AgentProvider: ObservableObject, SuperLog, ConversationTurnDelegate,
 
         pendingPermissionRequest = nil
 
-        Task {
-            await conversationTurnViewModel.respondToPermissionRequest(
-                allowed: allowed,
-                request: request,
-                languagePreference: languagePreference,
-                autoApproveRisk: autoApproveRisk
+        if allowed {
+            // 批准后继续执行工具
+            Task {
+                await conversationTurnViewModel.executeToolAndContinue(
+                    request.toToolCall(),
+                    languagePreference: languagePreference
+                )
+            }
+        } else {
+            // 拒绝执行，添加拒绝消息
+            let rejectMessage = ChatMessage(
+                role: .user,
+                content: "用户拒绝了执行 \(request.toolName) 的权限请求",
+                toolCallID: request.toolCallID
             )
+            appendMessage(rejectMessage)
+            saveMessage(rejectMessage)
         }
-    }
-
-    // MARK: - ConversationTurnDelegate
-
-    func turnDidReceiveResponse(_ response: ChatMessage) async {
-        appendMessage(response)
-        saveMessage(response)
-    }
-
-    func turnDidComplete() async {
-        setIsProcessing(false)
-    }
-
-    func turnDidEncounterError(_ error: Error) async {
-        setErrorMessage(error.localizedDescription)
-        appendMessage(ChatMessage(role: .assistant, content: "Error: \(error.localizedDescription)", isError: true))
-        setIsProcessing(false)
-        depthWarning = nil
-    }
-
-    func turnDidReachMaxDepth(currentDepth: Int, maxDepth: Int) async {
-        setErrorMessage("Max recursion depth reached.")
-        setIsProcessing(false)
-        depthWarning = DepthWarning(currentDepth: currentDepth, maxDepth: maxDepth, warningType: .reached)
-        os_log(.error, "\(Self.t) 达到最大递归深度 (\(maxDepth))，对话终止")
-    }
-
-    func turnDidRequestPermission(_ request: PermissionRequest) async {
-        pendingPermissionRequest = request
-    }
-
-    func turnDidReceiveToolResult(_ result: ChatMessage) async {
-        appendMessage(result)
-        saveMessage(result)
-    }
-
-    func turnDidUpdateDepthWarning(_ warning: DepthWarning?) {
-        depthWarning = warning
-    }
-
-    func turnShouldContinue(depth: Int) async {
-        await processTurn(depth: depth)
     }
 
     // MARK: - 历史记录管理
@@ -915,5 +942,4 @@ final class AgentProvider: ObservableObject, SuperLog, ConversationTurnDelegate,
     public func clearAttachments() {
         pendingAttachments.removeAll()
     }
-
 }

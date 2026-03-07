@@ -45,7 +45,7 @@ struct ConversationListView: View, SuperLog {
             }
         }
         .onAppear(perform: onAppear)
-        .onChange(of: localSelectedConversationId, handleSelectionChange)
+        .onChange(of: localSelectedConversationId, handleLocalSelectionChange)
         .onChange(of: conversationViewModel.selectedConversationId, handleConversationSelected)
         .onChange(of: conversations) { _, newConversations in
             // 当会话列表变化时，同步当前选中的会话
@@ -73,7 +73,7 @@ extension ConversationListView {
             if conversations.first(where: { $0.id == selectedId }) != nil {
                 if localSelectedConversationId != selectedId {
                     localSelectedConversationId = selectedId
-                    os_log("\(self.t)✅ 同步 VM 选中状态到 List: \(selectedId)")
+                    os_log("\(self.t)✅ [\(selectedId)] 同步 VM 选中状态到 List")
                 }
             } else {
                 // 选中的会话不存在于列表中，清除选择
@@ -149,10 +149,9 @@ extension ConversationListView {
     }
 
     /// 处理选择变化：同步到 ConversationViewModel
-    func handleSelectionChange() {
+    func handleLocalSelectionChange() {
         let localId = localSelectedConversationId?.uuidString ?? "nil"
         let vmId = conversationViewModel.selectedConversationId?.uuidString ?? "nil"
-        os_log("\(self.t)🔄 handleSelectionChange called: local=\(localId), vm=\(vmId)")
 
         // 只在值确实不同时才更新，避免循环
         guard localSelectedConversationId != conversationViewModel.selectedConversationId else {
@@ -160,10 +159,14 @@ extension ConversationListView {
         }
 
         if let newId = self.localSelectedConversationId {
-            os_log("\(self.t)👉 从 List 选择会话: \(newId)")
+            if Self.verbose {
+                os_log("\(self.t)👉 [\(newId)] 从 List 选择会话")
+            }
             self.conversationViewModel.setSelectedConversation(newId)
         } else {
-            os_log("\(self.t)👉 清除会话选择")
+            if Self.verbose {
+                os_log("\(self.t)👉 清除会话选择")
+            }
             self.conversationViewModel.setSelectedConversation(nil)
         }
     }

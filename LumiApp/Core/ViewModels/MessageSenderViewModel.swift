@@ -112,7 +112,7 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         let queueCount = pendingMessages.count
 
         if Self.verbose {
-            os_log("\(Self.t)🔄 切换到会话 [{\(conversationId.uuidString.prefix(8))}]，队列长度：\(queueCount)")
+            os_log("\(Self.t)🔄 [\(conversationId.uuidString)] 切换到会话，队列长度：\(queueCount)")
         }
 
         return queueCount
@@ -123,13 +123,10 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         guard let conversationId = currentConversationId else { return }
         pendingMessagesByConversation[conversationId]?.removeAll()
         currentProcessingIndex = nil
-
-        // 强制触发 @Published 通知
-        objectWillChange.send()
         pendingMessages = []
 
         if Self.verbose {
-            os_log("\(Self.t)🗑️ 已清空当前会话 [{\(conversationId.uuidString.prefix(8))}] 的发送队列")
+            os_log("\(Self.t)🗑️ [\(conversationId.uuidString)] 已清空发送队列")
         }
     }
 

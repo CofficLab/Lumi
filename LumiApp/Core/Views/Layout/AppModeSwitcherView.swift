@@ -35,7 +35,7 @@ extension AppModeSwitcherView {
 
     func handleModeChanged() {
         if Self.verbose {
-            os_log("\(self.t)模式已切换：\(mode.rawValue)")
+            os_log("\(self.t)🤖 模式已切换：\(mode.rawValue)")
         }
         
         app.selectedMode = mode
