@@ -121,9 +121,6 @@ class MenuBarManagerService: ObservableObject, SuperLog {
         
         var items: [MenuBarItem] = []
         
-        // 1. 获取 Control Center (macOS 11+)
-        let systemWide = AXUIElementCreateSystemWide()
-        
         // 这是一个简化的逻辑，实际上需要更复杂的遍历
         // 为了演示，我们先添加一些模拟数据或者尝试获取最顶层的应用
         

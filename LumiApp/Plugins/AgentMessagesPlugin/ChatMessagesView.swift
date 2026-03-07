@@ -43,6 +43,7 @@ struct ChatMessagesView: View, SuperLog {
                 emptyStateView
             }
         }
+        .background(.background.opacity(0.8))
         .onChange(of: conversationViewModel.selectedConversationId, handleConversationSelected)
     }
 }
@@ -55,16 +56,29 @@ extension ChatMessagesView {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
-                    ForEach(nonSystemMessages) { msg in
-                        ChatBubble(message: msg)
-                            .id(msg.id)
+                    ForEach(Array(nonSystemMessages.enumerated()), id: \.element.id) { index, msg in
+                        ChatBubble(
+                            message: msg,
+                            isLastMessage: index == nonSystemMessages.count - 1
+                        )
+                        .id(msg.id)
                     }
                 }
                 .padding(.horizontal)
             }
             .padding(.vertical)
-            .onChange(of: nonSystemMessages.count) {
-                handleMessagesChanged(proxy: proxy)
+            // 优化：只在消息数量变化时滚动到底部
+            .onChange(of: nonSystemMessages.count) { oldCount, newCount in
+                if newCount > oldCount {
+                    handleMessagesChanged(proxy: proxy)
+                }
+            }
+            // 优化：监听最后一条消息内容变化（流式更新时）
+            .onChange(of: nonSystemMessages.last?.content) { _, _ in
+                // 只在有流式更新时轻微滚动
+                if agentProvider.isProcessing {
+                    scrollToBottomIfNeeded(proxy: proxy)
+                }
             }
             .overlay {
                 if let request = agentProvider.pendingPermissionRequest {
@@ -82,7 +96,7 @@ extension ChatMessagesView {
         }
     }
 
-    /// 空状态视图 - 未选择会话时显示
+    /// 空状态视图 - 未选择会话时显示（无动态效果）
     private var emptyStateView: some View {
         VStack(spacing: 20) {
             Spacer()
@@ -91,7 +105,6 @@ extension ChatMessagesView {
             Image(systemName: "bubble.left.and.bubble.right.fill")
                 .font(.system(size: 64))
                 .foregroundStyle(.secondary)
-                .symbolEffect(.pulse, options: .repeating)
 
             // 标题
             Text("选择一个会话开始聊天", tableName: "DevAssistant")
@@ -112,7 +125,7 @@ extension ChatMessagesView {
         .background(Color.clear)
     }
 
-    /// 空消息视图 - 已选择会话但没有消息时显示
+    /// 空消息视图 - 已选择会话但没有消息时显示（带动态效果）
     private var emptyMessagesView: some View {
         VStack(spacing: 20) {
             Spacer()
@@ -121,8 +134,7 @@ extension ChatMessagesView {
             Image(systemName: "text.bubble.fill")
                 .font(.system(size: 56))
                 .foregroundStyle(.tertiary)
-                .symbolEffect(.bounce, options: .repeating.speed(0.5))
-
+            
             // 标题
             Text("暂无消息", tableName: "DevAssistant")
                 .font(.title2)
@@ -153,6 +165,17 @@ extension ChatMessagesView {
             proxy.scrollTo(lastMessage.id, anchor: .bottom)
         }
     }
+
+    /// 智能滚动到底部
+    /// 只在用户已经在底部附近时才自动滚动，避免打扰用户阅读历史消息
+    func scrollToBottomIfNeeded(proxy: ScrollViewProxy) {
+        guard let lastMessage = nonSystemMessages.last else { return }
+
+        // 使用动画平滑滚动
+        withAnimation(.easeOut(duration: 0.1)) {
+            proxy.scrollTo(lastMessage.id, anchor: .bottom)
+        }
+    }
 }
 
 // MARK: Event Handler
@@ -172,9 +195,11 @@ extension ChatMessagesView {
             os_log("\(self.t)✅ [\(conversationId)] 已选择")
         }
 
-        Task {
-            await conversationViewModel.loadConversation(conversationId)
-        }
+        // 注意：ConversationViewModel.selectConversation 已经调用了 loadConversation
+        // 这里不需要再次加载，避免重复请求
+        // Task {
+        //     await conversationViewModel.loadConversation(conversationId)
+        // }
     }
 }
 

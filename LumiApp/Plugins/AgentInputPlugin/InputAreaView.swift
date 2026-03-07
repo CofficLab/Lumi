@@ -1,5 +1,6 @@
 import MagicKit
 import SwiftUI
+import OSLog
 import UniformTypeIdentifiers
 
 /// 输入区域视图 - 包含附件预览、编辑器、工具栏
@@ -11,7 +12,7 @@ struct InputAreaView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "💬"
     /// 是否输出详细日志
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     /// 智能体提供者
     @EnvironmentObject var agentProvider: AgentProvider
@@ -28,6 +29,9 @@ struct InputAreaView: View, SuperLog {
     /// 模型选择器是否显示
     @Binding var isModelSelectorPresented: Bool
 
+    /// 编辑器动态高度
+    @State private var editorHeight: CGFloat = MacEditorView.minHeight
+
     /// 动画相位状态（用于渐变边框动画）
     @State private var gradientPhase: CGFloat = 0
 
@@ -43,13 +47,16 @@ struct InputAreaView: View, SuperLog {
                 )
             }
 
-            // 编辑器
+            // 编辑器 - 使用动态高度
             MacEditorView(
                 text: $inputViewModel.text,
+                height: $editorHeight,
                 onSubmit: {
                     let text = inputViewModel.text
                     inputViewModel.clear()
                     agentProvider.sendMessage(input: text)
+                    // 发送后重置高度
+                    editorHeight = MacEditorView.minHeight
                 },
                 onArrowUp: {
                     if commandSuggestionViewModel.isVisible {
@@ -70,16 +77,18 @@ struct InputAreaView: View, SuperLog {
                         let text = inputViewModel.text
                         inputViewModel.clear()
                         agentProvider.sendMessage(input: text)
+                        // 发送后重置高度
+                        editorHeight = MacEditorView.minHeight
                     }
                 },
                 isFocused: $isInputFocused,
-                onDrop: { urls in
-                    handleDrop(urls: urls)
-                }
+                cursorPosition: $inputViewModel.cursorPosition
             )
-            .frame(height: 64)
+            .frame(height: editorHeight)
             .padding(.horizontal, 4)
             .padding(.top, 8)
+            // 添加高度变化动画
+            .animation(.easeInOut(duration: 0.15), value: editorHeight)
 
             // 工具栏
             ChatToolbarView(
@@ -94,9 +103,6 @@ struct InputAreaView: View, SuperLog {
             processingBorderOverlay
         )
         .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
-        .onDrop(of: [.fileURL, .plainText], isTargeted: nil) { providers in
-            handleDropProviders(providers: providers)
-        }
         .overlay(alignment: .bottomLeading) {
             CommandSuggestionView { suggestion in
                 inputViewModel.set(suggestion.command + " ")
@@ -105,7 +111,7 @@ struct InputAreaView: View, SuperLog {
             }
             .offset(x: 16, y: -60)
         }
-        // 监听文件拖放通知
+        // 监听文件拖放通知（由 MacEditorView 发送）
         .onFileDroppedToChat { fileURL in
             handleFileDrop(fileURL: fileURL)
         }
@@ -165,109 +171,28 @@ extension InputAreaView {
 // MARK: - Action
 
 extension InputAreaView {
-    /// 处理图片选择
-    private func selectImage() {
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-        panel.allowedContentTypes = [.image]
-
-        panel.begin { response in
-            if response == .OK, let url = panel.url {
-                agentProvider.handleImageUpload(url: url)
-            }
-        }
-    }
-
     /// 处理从项目树拖放的文件
     /// - Parameter fileURL: 拖放的文件 URL
     private func handleFileDrop(fileURL: URL) {
-        // 将文件路径作为文本插入到输入框
-        let file_path = fileURL.path
-        inputViewModel.append("\(file_path) ")
-    }
-
-    /// 处理拖放操作（URL 列表）
-    /// - Parameter urls: 拖放的 URL 列表
-    private func handleDrop(urls: [URL]) -> Bool {
-        for url in urls {
-            handleDroppedFile(url: url)
-        }
-        return true
-    }
-
-    /// 处理拖放操作（NSItemProvider 列表）
-    /// - Parameter providers: NSItemProvider 列表
-    /// - Returns: 是否成功处理
-    private func handleDropProviders(providers: [NSItemProvider]) -> Bool {
-        var handled = false
-        
-        for provider in providers {
-            // 优先尝试 fileURL 类型
-            if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
-                provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
-                    if let url = item as? URL {
-                        DispatchQueue.main.async {
-                            self.handleDroppedFile(url: url)
-                        }
-                    } else if let data = item as? Data, let string = String(data: data, encoding: .utf8), let url = URL(string: string) {
-                        DispatchQueue.main.async {
-                            self.handleDroppedFile(url: url)
-                        }
-                    }
-                }
-                handled = true
-            }
-            // 也尝试纯文本类型（用于传递原始文件路径字符串）
-            else if provider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
-                provider.loadItem(forTypeIdentifier: UTType.plainText.identifier, options: nil) { item, _ in
-                    if let string = item as? String {
-                        DispatchQueue.main.async {
-                            // 判断是否传入的是拖拽进来的原始路径字符串
-                            if string.hasPrefix("/") {
-                                self.handleDroppedFile(url: URL(fileURLWithPath: string))
-                            } else if let url = URL(string: string) {
-                                self.handleDroppedFile(url: url)
-                            } else {
-                                // 备用降级：当作纯文本直接补充到输入框
-                                self.inputViewModel.append(string)
-                            }
-                        }
-                    } else if let data = item as? Data, let string = String(data: data, encoding: .utf8) {
-                        DispatchQueue.main.async {
-                            if string.hasPrefix("/") {
-                                self.handleDroppedFile(url: URL(fileURLWithPath: string))
-                            } else if let url = URL(string: string) {
-                                self.handleDroppedFile(url: url)
-                            } else {
-                                self.inputViewModel.append(string)
-                            }
-                        }
-                    }
-                }
-                handled = true
-            }
+        if Self.verbose {
+            os_log("\(Self.t)📎 handleFileDrop: \(fileURL.path)")
         }
         
-        return handled
-    }
-
-    /// 处理拖放的文件
-    /// 根据文件类型决定是插入图片还是文件路径
-    /// - Parameter url: 拖放的文件 URL
-    private func handleDroppedFile(url: URL) {
         // 检查是否是图片文件
         let imageExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp", "heic"]
-        let fileExtension = url.pathExtension.lowercased()
+        let fileExtension = fileURL.pathExtension.lowercased()
 
         if imageExtensions.contains(fileExtension) {
             // 图片文件：作为附件上传
-            agentProvider.handleImageUpload(url: url)
+            agentProvider.handleImageUpload(url: fileURL)
         } else {
             // 非图片文件：将文件路径插入到输入框
-            let filePath = url.path
-            inputViewModel.append("\(filePath) ")
+            // 使用 append 方法自动处理空格和光标位置
+            inputViewModel.append(fileURL.path)
+        }
+        
+        if Self.verbose {
+            os_log("\(Self.t)✅ handleFileDrop 完成, text.count=\(inputViewModel.text.count), cursorPosition=\(inputViewModel.cursorPosition)")
         }
     }
 }

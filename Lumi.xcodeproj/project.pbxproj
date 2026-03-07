@@ -80,6 +80,13 @@
 			);
 			target = 0B2F7D602F3A301C00AD7E94 /* LumiFinder */;
 		};
+		0BB546B22F5BEA17009E1AEA /* Exceptions for "NettoExtension" folder in "NettoExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = F5A640642F3ED1910039A761 /* NettoExtension */;
+		};
 		F52C2B202F3EDDE200905557 /* Exceptions for "LumiApp" folder in "NettoExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -109,6 +116,9 @@
 		};
 		F5A640682F3ED1910039A761 /* NettoExtension */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				0BB546B22F5BEA17009E1AEA /* Exceptions for "NettoExtension" folder in "NettoExtension" target */,
+			);
 			path = NettoExtension;
 			sourceTree = "<group>";
 		};

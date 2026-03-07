@@ -52,33 +52,29 @@ extension ChatToolbarView {
     @ViewBuilder
     private var commitButtons: some View {
         HStack(spacing: 6) {
-            // 英文 Commit
-            commitButton(
-                title: "英文 Commit",
-                icon: "checkmark.circle",
-                prompt: """
-                1. 首先运行 `git status` 查看当前改动
-                2. 运行 `git diff` 查看具体代码变更
-                3. 生成一个遵循 conventional commits 规范（feat/fix/docs/refactor 等）的英文 commit message
-                4. 立即执行 `git commit -m "<生成的 commit message>"` 提交代码，无需征求用户意见
-
-                直接执行 commit，不要问我是否确认。
-                """
+            // 从 PromptService 获取快捷短语
+            let phrases = agentProvider.promptService.getQuickPhrases(
+                projectName: projectViewModel.currentProjectName,
+                projectPath: projectViewModel.currentProjectPath
             )
+
+            // 英文 Commit
+            if let englishPhrase = phrases.first(where: { $0.title == "英文 Commit" }) {
+                commitButton(
+                    title: englishPhrase.title,
+                    icon: englishPhrase.icon,
+                    prompt: englishPhrase.prompt
+                )
+            }
 
             // 中文 Commit
-            commitButton(
-                title: "中文 Commit",
-                icon: "checkmark.circle",
-                prompt: """
-                1. 首先运行 `git status` 查看当前改动
-                2. 运行 `git diff` 查看具体代码变更
-                3. 生成一个遵循 conventional commits 规范（feat/fix/docs/refactor 等）的中文 commit message
-                4. 立即执行 `git commit -m "<生成的 commit message>"` 提交代码，无需征求用户意见
-
-                直接执行 commit，不要问我是否确认。
-                """
-            )
+            if let chinesePhrase = phrases.first(where: { $0.title == "中文 Commit" }) {
+                commitButton(
+                    title: chinesePhrase.title,
+                    icon: chinesePhrase.icon,
+                    prompt: chinesePhrase.prompt
+                )
+            }
         }
     }
 

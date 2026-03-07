@@ -18,7 +18,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         self.modelContainer = modelContainer
         self.modelContext = ModelContext(modelContainer)
         if Self.verbose {
-            os_log("\(Self.t)✅ SwiftData 聊天存储已初始化")
+            os_log("\(Self.t)✅ 聊天存储已初始化")
         }
     }
 
@@ -135,6 +135,67 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         }
     }
 
+    /// 自动为对话生成标题（如果需要）
+    ///
+    /// 检查对话是否满足生成标题的条件，如果满足则自动生成并保存
+    ///
+    /// - Parameters:
+    ///   - conversationId: 对话 ID
+    ///   - userMessageContent: 用户消息内容
+    ///   - config: LLM 配置
+    func autoGenerateConversationTitleIfNeeded(
+        conversationId: UUID,
+        userMessageContent: String,
+        config: LLMConfig
+    ) async {
+        // 检查是否满足生成标题的条件
+        let trimmedMessage = userMessageContent.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedMessage.isEmpty else {
+            if Self.verbose {
+                os_log("\(Self.t)⚠️ 消息内容为空，跳过生成标题")
+            }
+            return
+        }
+
+        // 获取对话信息
+        guard let conversation = fetchConversation(id: conversationId) else {
+            if Self.verbose {
+                os_log("\(Self.t)⚠️ 对话 \(conversationId) 不存在，跳过生成标题")
+            }
+            return
+        }
+        
+        // 检查标题是否还是默认的 "新会话 "
+        guard conversation.title.hasPrefix("新会话 ") else {
+            if Self.verbose {
+                os_log("\(Self.t)ℹ️ 对话已有自定义标题，跳过生成标题")
+            }
+            return
+        }
+
+        if Self.verbose {
+            os_log("\(Self.t)🎯 [\(conversationId)] 开始为对话自动生成标题...")
+        }
+
+        // 生成标题
+        let title = await generateConversationTitle(from: trimmedMessage, config: config)
+
+        // 再次检查并更新对话标题（避免并发修改）
+        guard let freshConversation = fetchConversation(id: conversationId),
+              freshConversation.title.hasPrefix("新会话 ") else {
+            if Self.verbose {
+                os_log("\(Self.t)ℹ️ 对话标题已被修改，放弃更新")
+            }
+            return
+        }
+        
+        updateConversationTitle(freshConversation, newTitle: title)
+        
+        if Self.verbose {
+            os_log("\(Self.t)✅ 对话标题已生成：\(title)")
+        }
+    }
+
     // MARK: - 保存消息
 
     /// 保存消息到指定对话
@@ -165,7 +226,14 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         do {
             try context.save()
             if Self.verbose {
-                os_log("\(Self.t)💾 [\(conversation.id)] 消息已保存：\(message.content.max(10))")
+                let hasThinking = message.thinkingContent != nil && !message.thinkingContent!.isEmpty
+                let metrics = [
+                    message.inputTokens.map { "输入: \($0)" },
+                    message.outputTokens.map { "输出: \($0)" },
+                    message.totalTokens.map { "总计: \($0)" },
+                    message.latency.map { "耗时: \(String(format: "%.0f", $0))ms" }
+                ].compactMap { $0 }.joined(separator: ", ")
+                os_log("\(Self.t)💾 [\(conversation.id)] 消息已保存：\(message.content.max(10)), 指标: [\(metrics)], 思考过程: \(hasThinking)")
             }
             // 返回保存后的消息
             return messageEntity.toChatMessage()

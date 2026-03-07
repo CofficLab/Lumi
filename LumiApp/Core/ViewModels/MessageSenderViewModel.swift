@@ -2,45 +2,59 @@ import Foundation
 import MagicKit
 import OSLog
 
-/// 消息发送回调
-/// 用于解耦 MessageSenderViewModel 和 AgentProvider
+/// 消息发送事件
+/// 用于向外部报告队列处理状态
 @MainActor
-protocol MessageSendingDelegate: AnyObject, Sendable {
-    /// 开始处理消息
-    func messageSendingDidStart()
-    
-    /// 结束处理消息
-    func messageSendingDidFinish()
-    
-    /// 处理用户消息
-    /// - Parameters:
-    ///   - content: 消息内容
-    ///   - images: 图片附件
-    func processUserMessage(content: String, images: [ImageAttachment]) async
+enum MessageSendEvent: Sendable {
+    /// 开始处理队列
+    case processingStarted
+    /// 队列处理完成
+    case processingFinished
+    /// 需要发送消息
+    /// - Parameter message: 待发送的消息
+    case sendMessage(ChatMessage)
 }
 
 /// 消息发送队列 ViewModel
 /// 负责管理待发送消息队列，按顺序逐个发送消息
+///
+/// ## 设计原则
+///
+/// `MessageSenderViewModel` 只专注于队列管理，不关心消息如何被处理。
+/// 通过 `events` AsyncStream 向外部报告状态变化，由调用方决定如何处理消息。
+///
+/// ## 使用示例
+///
+/// ```swift
+/// // 订阅事件流
+/// for await event in messageSenderViewModel.events {
+///     switch event {
+///     case .processingStarted:
+///         isProcessing = true
+///     case .processingFinished:
+///         isProcessing = false
+///     case .sendMessage(let message):
+///         await handleMessage(message)
+///     }
+/// }
+/// ```
 @MainActor
 final class MessageSenderViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📤"
     nonisolated static let verbose = true  // 开启日志以便调试
 
-    // MARK: - 服务依赖
+    // MARK: - 事件流
 
-    /// 消息管理 ViewModel
-    private let messageViewModel: MessageViewModel
-    /// 会话管理 ViewModel
-    private let conversationViewModel: ConversationViewModel
-    /// 聊天历史服务
-    private let chatHistoryService: ChatHistoryService
-    /// LLM 配置提供者
-    private weak var configProvider: (any LLMConfigProvider)?
+    /// 消息发送事件流
+    /// 外部订阅此流来处理消息发送逻辑
+    var events: AsyncStream<MessageSendEvent> {
+        AsyncStream { continuation in
+            self.eventContinuation = continuation
+        }
+    }
 
-    // MARK: - 回调委托
-
-    /// 消息发送委托
-    weak var delegate: (any MessageSendingDelegate)?
+    /// 事件流延续
+    private var eventContinuation: AsyncStream<MessageSendEvent>.Continuation?
 
     // MARK: - 发送状态
 
@@ -68,22 +82,7 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
 
     // MARK: - 初始化
 
-    init(
-        messageViewModel: MessageViewModel,
-        conversationViewModel: ConversationViewModel,
-        chatHistoryService: ChatHistoryService,
-        configProvider: (any LLMConfigProvider)? = nil
-    ) {
-        self.messageViewModel = messageViewModel
-        self.conversationViewModel = conversationViewModel
-        self.chatHistoryService = chatHistoryService
-        self.configProvider = configProvider
-    }
-
-    /// 设置 LLM 配置提供者
-    func setConfigProvider(_ provider: any LLMConfigProvider) {
-        self.configProvider = provider
-    }
+    init() {}
 
     // MARK: - 会话管理
 
@@ -113,7 +112,7 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         let queueCount = pendingMessages.count
 
         if Self.verbose {
-            os_log("\(Self.t)🔄 切换到会话 [{\(conversationId.uuidString.prefix(8))}]，队列长度：\(queueCount)")
+            os_log("\(Self.t)🔄 [\(conversationId.uuidString)] 切换到会话，队列长度：\(queueCount)")
         }
 
         return queueCount
@@ -124,13 +123,10 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         guard let conversationId = currentConversationId else { return }
         pendingMessagesByConversation[conversationId]?.removeAll()
         currentProcessingIndex = nil
-
-        // 强制触发 @Published 通知
-        objectWillChange.send()
         pendingMessages = []
 
         if Self.verbose {
-            os_log("\(Self.t)🗑️ 已清空当前会话 [{\(conversationId.uuidString.prefix(8))}] 的发送队列")
+            os_log("\(Self.t)🗑️ [\(conversationId.uuidString)] 已清空发送队列")
         }
     }
 
@@ -155,26 +151,20 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
             return
         }
 
-        // 使用选中的会话 ID 获取会话
-        guard let conversationId = conversationViewModel.selectedConversationId,
-              let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
-            os_log(.error, "\(Self.t)❌ 当前没有活动对话")
+        // 检查是否有当前会话
+        guard let conversationId = currentConversationId else {
+            os_log(.error, "\(Self.t)❌ 当前没有活动对话，请先调用 switchToConversation")
             return
-        }
-
-        // 确保当前会话 ID 与活动对话一致
-        if currentConversationId != conversation.id {
-            switchToConversation(conversation.id)
         }
 
         // 创建用户消息
         let userMessage = ChatMessage(role: .user, content: content, images: images)
 
         // 添加到待发送队列
-        pendingMessagesByConversation[conversation.id, default: []].append(userMessage)
+        pendingMessagesByConversation[conversationId, default: []].append(userMessage)
 
         // 同步更新 pendingMessages，触发 UI 更新
-        let updatedMessages = pendingMessagesByConversation[conversation.id, default: []]
+        let updatedMessages = pendingMessagesByConversation[conversationId, default: []]
         objectWillChange.send()
         pendingMessages = updatedMessages
 
@@ -212,17 +202,15 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         await MainActor.run {
             isSending = true
             isCancelled = false
-            delegate?.messageSendingDidStart()
+            eventContinuation?.yield(.processingStarted)
         }
 
         // 持续处理队列中的消息
         while !isCancelled {
             // 获取下一条消息
             var nextMessage: ChatMessage? = nil
-            var queueCount = 0
             
             await MainActor.run {
-                queueCount = self.pendingMessages.count
                 if !self.pendingMessages.isEmpty {
                     self.currentProcessingIndex = 0
                     nextMessage = self.pendingMessages.first
@@ -238,8 +226,10 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
 
             os_log("\(Self.t)📤 开始发送消息：\(message.content.max(30))...")
 
-            // 发送消息
-            await sendMessageToAgent(message: message)
+            // 发送消息 - 通过事件流通知外部
+            await MainActor.run {
+                eventContinuation?.yield(.sendMessage(message))
+            }
 
             // 检查是否被取消
             if isCancelled {
@@ -269,72 +259,8 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         await MainActor.run {
             isSending = false
             currentProcessingIndex = nil
-            delegate?.messageSendingDidFinish()
+            eventContinuation?.yield(.processingFinished)
             os_log("\(Self.t)✅ 队列处理完成，剩余消息：\(self.pendingMessages.count)")
-        }
-    }
-
-    /// 发送单条消息到 Agent
-    private func sendMessageToAgent(message: ChatMessage) async {
-        let remaining = await MainActor.run { self.pendingMessages.count - 1 }
-        os_log("\(Self.t)📤 正在发送（剩余 \(remaining) 条等待）：\(message.content.max(50))")
-
-        // 在主线程添加用户消息到列表
-        await MainActor.run {
-            messageViewModel.appendMessageInternal(message)
-        }
-        
-        // 保存到数据库
-        conversationViewModel.saveMessage(message)
-
-        // 启动会话标题生成 Job（如果需要）
-        startConversationTitleGenerationJob(message: message)
-
-        // 处理消息（等待完成）
-        await delegate?.processUserMessage(content: message.content, images: message.images)
-
-        os_log("\(Self.t)✅ 消息发送完成：\(message.content.max(30))...")
-    }
-
-    /// 启动会话标题生成 Job
-    /// 只提取必要参数，在后台 Task 中执行，不阻塞当前流程
-    private func startConversationTitleGenerationJob(message: ChatMessage) {
-        // 只处理用户消息
-        guard message.role == .user else { return }
-
-        // 获取当前对话 ID
-        guard let conversationId = conversationViewModel.selectedConversationId else { return }
-
-        // 获取会话以检查标题
-        guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else { return }
-
-        // 检查是否满足生成标题的条件（快速检查，避免不必要的后台任务）
-        guard conversation.title.hasPrefix("新会话 "),
-              !conversationViewModel.hasGeneratedTitle else {
-            return
-        }
-
-        // 标记已生成标题，防止重复生成
-        conversationViewModel.setHasGeneratedTitleInternal(true)
-
-        // 获取 LLM 配置
-        let config = configProvider?.getCurrentConfig() ?? LLMConfig.default
-        
-        // 消息内容和 ID
-        let messageContent = message.content
-        let messageId = message.id
-        let chatHistoryService = self.chatHistoryService
-
-        // 在后台 Task 中执行标题生成
-        Task.detached(priority: .utility) {
-            let job = ConversationTitleGenerationJob()
-            await job.run(
-                conversationId: conversationId,
-                messageId: messageId,
-                userMessageContent: messageContent,
-                config: config,
-                chatHistoryService: chatHistoryService
-            )
         }
     }
 

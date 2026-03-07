@@ -4,15 +4,23 @@ import OSLog
 import SwiftUI
 
 /// Mac 编辑器视图
-/// 基于 NSTextView 的自定义编辑器，支持快捷键、拖放和焦点管理
+/// 基于 NSTextView 的自定义编辑器，支持快捷键、拖放、焦点管理和动态高度
 struct MacEditorView: NSViewRepresentable, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "✏️"
     /// 是否输出详细日志
     nonisolated static let verbose = false
 
+    /// 最小高度
+    static let minHeight: CGFloat = 64
+    /// 最大高度
+    static let maxHeight: CGFloat = 300
+
     /// 绑定的文本内容
     @Binding var text: String
+
+    /// 绑定的动态高度
+    @Binding var height: CGFloat
 
     /// 字体设置
     var font: NSFont = .systemFont(ofSize: 15)
@@ -32,19 +40,18 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
     /// 焦点状态绑定
     @Binding var isFocused: Bool
 
-    /// 文件拖放回调：处理拖放的文件 URL
-    var onDrop: (([URL]) -> Bool)? = nil
+    /// 光标位置绑定
+    @Binding var cursorPosition: Int
 
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSScrollView()
         scrollView.drawsBackground = false
         scrollView.borderType = .noBorder
-        scrollView.hasVerticalScroller = true
+        scrollView.hasVerticalScroller = false
         scrollView.hasHorizontalScroller = false
         scrollView.autohidesScrollers = true
 
         let textView = EditorTextView()
-        textView.onDrop = onDrop
         textView.autoresizingMask = [.width]
         textView.delegate = context.coordinator
         textView.drawsBackground = false
@@ -56,7 +63,7 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
         textView.isHorizontallyResizable = false
         textView.allowsUndo = true
 
-        // 设置文本容器
+        // 设置文本容器 - 使用无限高度以便计算内容高度
         textView.textContainer?.widthTracksTextView = true
         textView.textContainer?.containerSize = NSSize(
             width: scrollView.contentSize.width,
@@ -65,13 +72,17 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
         textView.textContainerInset = NSSize(width: 4, height: 4)
 
         scrollView.documentView = textView
+        
+        // 初始高度计算
+        DispatchQueue.main.async {
+            updateHeight(for: textView)
+        }
+        
         return scrollView
     }
 
     func updateNSView(_ nsView: NSScrollView, context: Context) {
         guard let textView = nsView.documentView as? EditorTextView else { return }
-
-        textView.onDrop = onDrop
 
         // 如果用户正在使用输入法组合文字（存在 markedText），不要强制同步，否则会打断输入状态
         if textView.hasMarkedText() {
@@ -79,11 +90,23 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
         }
 
         // 只有当文本真正不同步时才更新，避免不必要的布局循环
-        if textView.string != text {
+        let textChanged = textView.string != text
+        if textChanged {
             // 临时移除 delegate 防止触发 textDidChange 造成循环更新
             textView.delegate = nil
             textView.string = text
             textView.delegate = context.coordinator
+            
+            // 文本变化后更新高度
+            updateHeight(for: textView)
+        }
+
+        // 更新光标位置（延迟到下一个 runloop 确保文本已更新）
+        let targetPosition = min(cursorPosition, text.count)
+        if textView.selectedRange().location != targetPosition || textChanged {
+            DispatchQueue.main.async {
+                textView.setSelectedRange(NSRange(location: targetPosition, length: 0))
+            }
         }
 
         if isFocused {
@@ -97,6 +120,37 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
+    }
+
+    /// 计算并更新编辑器高度
+    private func updateHeight(for textView: NSTextView) {
+        let layoutManager = textView.layoutManager!
+        let textContainer = textView.textContainer!
+        
+        // 确保布局是最新的
+        layoutManager.ensureLayout(for: textContainer)
+        
+        // 获取已使用的矩形
+        let usedRect = layoutManager.usedRect(for: textContainer)
+        
+        // 加上内边距
+        let insetHeight = textView.textContainerInset.height * 2
+        let contentHeight = usedRect.height + insetHeight
+        
+        // 限制在最小和最大高度之间
+        let newHeight = min(max(contentHeight, Self.minHeight), Self.maxHeight)
+        
+        // 更新滚动条状态
+        if let scrollView = textView.enclosingScrollView {
+            scrollView.hasVerticalScroller = contentHeight > Self.maxHeight
+        }
+        
+        // 更新高度绑定
+        if height != newHeight {
+            DispatchQueue.main.async {
+                self.height = newHeight
+            }
+        }
     }
 }
 
@@ -117,6 +171,15 @@ extension MacEditorView {
         func textDidChange(_ notification: Notification) {
             guard let textView = notification.object as? NSTextView else { return }
             parent.text = textView.string
+            
+            // 同步光标位置
+            let location = textView.selectedRange().location
+            if parent.cursorPosition != location {
+                parent.cursorPosition = location
+            }
+            
+            // 文本变化时更新高度
+            parent.updateHeight(for: textView)
         }
 
         /// 按键事件处理
@@ -163,19 +226,42 @@ class EditorTextView: NSTextView, SuperLog {
     /// 是否输出详细日志
     nonisolated static let verbose = false
 
-    /// 文件拖放回调
-    var onDrop: (([URL]) -> Bool)?
-
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
         let pasteboard = sender.draggingPasteboard
+        
+        if Self.verbose {
+            os_log("\(Self.t)📎 performDragOperation 被调用")
+        }
 
-        // 检查文件 URL
+        // 首先尝试读取文件 URL
         if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL],
            !urls.isEmpty
         {
-            if let onDrop = onDrop, onDrop(urls) {
+            if Self.verbose {
+                os_log("\(Self.t)📎 读取到 \(urls.count) 个 URL: \(urls.first?.path ?? "unknown")")
+            }
+            // 发送通知让 InputAreaView 处理
+            NotificationCenter.postFileDroppedToChat(fileURL: urls.first!)
+            return true
+        }
+        
+        // 尝试读取纯文本（用于从项目树拖放的文件路径字符串）
+        if let strings = pasteboard.readObjects(forClasses: [NSString.self], options: nil) as? [String],
+           !strings.isEmpty,
+           let firstString = strings.first
+        {
+            if Self.verbose {
+                os_log("\(Self.t)📎 读取到字符串: \(firstString)")
+            }
+            // 如果是绝对路径，发送通知
+            if firstString.hasPrefix("/") {
+                NotificationCenter.postFileDroppedToChat(fileURL: URL(fileURLWithPath: firstString))
                 return true
             }
+        }
+        
+        if Self.verbose {
+            os_log("\(Self.t)⚠️ 没有读取到有效的拖放数据")
         }
 
         return super.performDragOperation(sender)
@@ -185,17 +271,38 @@ class EditorTextView: NSTextView, SuperLog {
 // MARK: - Preview
 
 #Preview("Editor") {
-    MacEditorView(
-        text: .constant("Hello, World!"),
-        onSubmit: {},
-        onArrowUp: {},
-        onArrowDown: {},
-        onEnter: {},
-        isFocused: .constant(true),
-        onDrop: { _ in true }
-    )
-    .frame(height: 100)
-    .padding()
-    .background(Color.black)
-    .inRootView()
+    struct PreviewWrapper: View {
+        @State private var text = "Hello, World!"
+        @State private var height: CGFloat = 64
+        @State private var isFocused = true
+        @State private var cursorPosition = 0
+        
+        var body: some View {
+            VStack {
+                MacEditorView(
+                    text: $text,
+                    height: $height,
+                    onSubmit: {},
+                    onArrowUp: {},
+                    onArrowDown: {},
+                    onEnter: {},
+                    isFocused: $isFocused,
+                    cursorPosition: $cursorPosition
+                )
+                .frame(height: height)
+                .padding()
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(8)
+                
+                Text("Height: \(Int(height))")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding()
+            .frame(width: 400)
+        }
+    }
+    
+    return PreviewWrapper()
+        .inRootView()
 }

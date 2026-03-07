@@ -8,10 +8,10 @@ enum SlashCommandResult {
 }
 
 actor SlashCommandService {
-    static let shared = SlashCommandService()
-
     /// 支持的命令列表
     private let supportedCommands = ["clear", "help", "plan", "mcp"]
+
+    init() {}
 
     /// 检查是否为支持的斜杠命令
     nonisolated func isSupportedSlashCommand(_ input: String) -> Bool {
@@ -51,7 +51,7 @@ actor SlashCommandService {
             return .handled
 
         case "mcp":
-            return await handleMCPCommand(args: arguments, provider: provider)
+            return await handleMCPCommand(args: arguments, provider: provider, toolsViewModel: provider.toolsViewModel)
 
         default:
             // 不支持的命令，返回 notHandled 让上层作为普通消息处理
@@ -59,14 +59,16 @@ actor SlashCommandService {
         }
     }
 
-    private func handleMCPCommand(args: String, provider: AgentProvider) async -> SlashCommandResult {
+    private func handleMCPCommand(args: String, provider: AgentProvider, toolsViewModel: ToolsViewModel) async -> SlashCommandResult {
         let components = args.split(separator: " ", maxSplits: 1).map(String.init)
         let subCommand = components.first ?? "help"
         let param = components.count > 1 ? components[1] : ""
 
         switch subCommand {
         case "list":
-            let status = await MCPService.shared.getStatusReport()
+            let status = await MainActor.run {
+                toolsViewModel.getStatusReport()
+            }
             await provider.appendSystemMessage(status)
             return .handled
 
@@ -76,7 +78,9 @@ actor SlashCommandService {
                 let parts = param.split(separator: " ")
                 if parts.count >= 2 {
                     let apiKey = String(parts[1])
-                    await MCPService.shared.installVisionMCP(apiKey: apiKey)
+                    await MainActor.run {
+                        toolsViewModel.installVisionMCP(apiKey: apiKey)
+                    }
                     await provider.appendSystemMessage("Installing and connecting to Vision MCP Server...")
                 } else {
                     return .error("Usage: /mcp install vision <api_key>")

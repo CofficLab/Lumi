@@ -13,6 +13,7 @@ actor DeviceInfoPlugin: SuperPlugin {
     static let iconName: String = "macbook.and.iphone"
     static let isConfigurable: Bool = false
     static var order: Int { 10 }
+    static let enable: Bool = false
 
     // MARK: - Instance
 

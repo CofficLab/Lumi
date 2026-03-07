@@ -43,7 +43,10 @@ final class MessageViewModel: ObservableObject, SuperLog {
 
     /// 更新消息（内部使用）
     func updateMessageInternal(_ message: ChatMessage, at index: Int) {
-        messages[index] = message
+        // 创建新数组以触发 SwiftUI 更新
+        var updatedMessages = messages
+        updatedMessages[index] = message
+        messages = updatedMessages
     }
 
     /// 设置标题生成标记（内部使用）

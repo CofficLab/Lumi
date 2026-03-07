@@ -38,4 +38,14 @@ struct PermissionRequest: Identifiable, Sendable {
     var details: String {
         return argumentsString
     }
+
+    /// 转换为 ToolCall
+    /// - Returns: ToolCall 对象
+    func toToolCall() -> ToolCall {
+        ToolCall(
+            id: toolCallID,
+            name: toolName,
+            arguments: argumentsString
+        )
+    }
 }

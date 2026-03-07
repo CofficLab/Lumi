@@ -10,7 +10,7 @@ extension NEFilterFlow {
             return ""
         }
 
-        guard let endpoint = socketFlow.localFlowEndpoint as? Network.NWEndpoint else { return "" }
+        guard let endpoint = socketFlow.localFlowEndpoint else { return "" }
         switch endpoint {
         case .hostPort(_, let port):
             return String(describing: port)
@@ -25,7 +25,7 @@ extension NEFilterFlow {
             return ""
         }
 
-        guard let endpoint = socketFlow.remoteFlowEndpoint as? Network.NWEndpoint else { return "" }
+        guard let endpoint = socketFlow.remoteFlowEndpoint else { return "" }
         switch endpoint {
         case .hostPort(let host, _):
             return String(describing: host)

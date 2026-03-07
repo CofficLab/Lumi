@@ -8,7 +8,7 @@ struct ContentView: View {
     /// 是否启用详细日志输出
     nonisolated static let verbose = false
 
-    @EnvironmentObject var app: AppProvider
+    @EnvironmentObject var app: GlobalProvider
     @EnvironmentObject var pluginProvider: PluginProvider
     @EnvironmentObject var themeManager: MystiqueThemeManager
 
@@ -58,7 +58,7 @@ struct ContentView: View {
 struct ContentViewBody<Content: View>: View {
     @Binding var sidebarVisibility: Bool
     @Binding var columnVisibility: NavigationSplitViewVisibility
-    @ObservedObject var app: AppProvider
+    @ObservedObject var app: GlobalProvider
     @ObservedObject var pluginProvider: PluginProvider
     @ObservedObject var themeManager: MystiqueThemeManager
     let content: Content
@@ -70,7 +70,7 @@ struct ContentViewBody<Content: View>: View {
     init(
         sidebarVisibility: Binding<Bool>,
         columnVisibility: Binding<NavigationSplitViewVisibility>,
-        app: AppProvider,
+        app: GlobalProvider,
         pluginProvider: PluginProvider,
         themeManager: MystiqueThemeManager,
         @ViewBuilder content: () -> Content,
@@ -103,7 +103,9 @@ struct ContentViewBody<Content: View>: View {
                 .ignoresSafeArea()
             }
             .onAppear(perform: onAppear)
-            .onChange(of: columnVisibility, perform: { _ in onChangeColumnVisibility() })
+            .onChange(of: columnVisibility) { _, _ in
+                onChangeColumnVisibility()
+            }
             .overlay(alignment: .bottom) {
                 pluginProvider.getRootViewWrapper(content: { EmptyView() })
             }

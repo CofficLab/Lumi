@@ -4,7 +4,7 @@ import SwiftUI
 /// 提供便捷的初始化方法和修饰符来配置 ContentView 的行为
 struct ContentLayout: View {
     /// 应用状态提供者环境对象
-    @EnvironmentObject var app: AppProvider
+    @EnvironmentObject var app: GlobalProvider
 
     /// 插件提供者环境对象
     @EnvironmentObject var pluginProvider: PluginProvider

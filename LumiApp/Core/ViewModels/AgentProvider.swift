@@ -1,12 +1,37 @@
 import Combine
-import MagicKit
 import Foundation
+import MagicKit
 import OSLog
 import SwiftData
 
 /// Agent 模式提供者，管理 Agent 模式下的核心状态和服务
+///
+/// ## 设计原则
+///
+/// `AgentProvider` 作为协调者，负责管理需要多个 ViewModel 协作的复杂操作。
+/// 如果某个操作只涉及单个 ViewModel，应该由该 ViewModel 自己处理；
+/// 如果某个操作需要协调多个 ViewModel，则应该由 `AgentProvider` 提供。
+///
+/// ## 职责划分
+///
+/// - **ConversationViewModel**: 只维护 `selectedConversationId`，管理会话的增删改查
+/// - **MessageViewModel**: 只管理消息列表的加载、追加、更新
+/// - **AgentProvider**: 协调多个 ViewModel，处理需要协作的复杂业务逻辑
+///
+/// ## 示例
+///
+/// ```swift
+/// // 新建会话 - 需要协调多个 VM，由 AgentProvider 处理
+/// await agentProvider.createNewConversation(projectId: projectId)
+///
+/// // 选择会话 - 只涉及 ConversationViewModel，直接调用
+/// conversationViewModel.setSelectedConversation(id)
+///
+/// // 加载消息 - 只涉及 MessageViewModel，直接调用
+/// messageViewModel.loadMessages(for: conversation)
+/// ```
 @MainActor
-final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, ConversationTurnDelegate, LLMConfigProvider {
+final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     nonisolated static let emoji = "🤖"
     nonisolated static let verbose = true
 
@@ -18,8 +43,11 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     /// 供应商注册表
     let registry: ProviderRegistry
 
-    /// 工具管理器
-    let toolManager: ToolManager
+    /// 工具服务
+    let toolService: ToolService
+
+    /// Tools ViewModel
+    let toolsViewModel: ToolsViewModel
 
     /// 聊天历史服务
     let chatHistoryService: ChatHistoryService
@@ -41,6 +69,19 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     /// 对话轮次 ViewModel
     let conversationTurnViewModel: ConversationTurnViewModel
 
+    /// Slash 命令服务
+    let slashCommandService: SlashCommandService
+
+    // MARK: - 订阅管理
+
+    private var cancellables = Set<AnyCancellable>()
+
+    /// 消息发送事件流任务
+    private var messageSendEventTask: Task<Void, Never>?
+
+    /// 对话轮次事件流任务
+    private var conversationTurnEventTask: Task<Void, Never>?
+
     // MARK: - 聊天消息状态 (DevAssistant)
 
     /// 是否正在处理
@@ -55,6 +96,15 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     /// 深度警告
     @Published public fileprivate(set) var depthWarning: DepthWarning?
 
+    /// 最后收到心跳的时间（用于动画效果）
+    @Published public fileprivate(set) var lastHeartbeatTime: Date?
+
+    /// 是否正在思考（用于显示思考状态）
+    @Published public fileprivate(set) var isThinking: Bool = false
+
+    /// 当前思考过程文本
+    @Published public fileprivate(set) var thinkingText: String = ""
+
     // MARK: - 附件（图片上传）
 
     public enum Attachment: Identifiable {
@@ -62,7 +112,7 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
 
         public var id: UUID {
             switch self {
-            case .image(let id, _, _, _):
+            case let .image(id, _, _, _):
                 return id
             }
         }
@@ -76,7 +126,8 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     /// - Parameters:
     ///   - promptService: 提示词服务
     ///   - registry: 供应商注册表
-    ///   - toolManager: 工具管理器
+    ///   - toolService: 工具服务
+    ///   - mcpService: MCP 服务
     ///   - chatHistoryService: 聊天历史服务
     ///   - messageViewModel: 消息 ViewModel
     ///   - conversationViewModel: 会话 ViewModel
@@ -86,24 +137,318 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     init(
         promptService: PromptService,
         registry: ProviderRegistry,
-        toolManager: ToolManager,
+        toolService: ToolService,
+        toolsViewModel: ToolsViewModel,
         chatHistoryService: ChatHistoryService,
         messageViewModel: MessageViewModel,
         conversationViewModel: ConversationViewModel,
         messageSenderViewModel: MessageSenderViewModel,
         projectViewModel: ProjectViewModel,
-        conversationTurnViewModel: ConversationTurnViewModel
+        conversationTurnViewModel: ConversationTurnViewModel,
+        slashCommandService: SlashCommandService
     ) {
         self.promptService = promptService
         self.registry = registry
-        self.toolManager = toolManager
+        self.toolService = toolService
+        self.toolsViewModel = toolsViewModel
         self.chatHistoryService = chatHistoryService
         self.messageViewModel = messageViewModel
         self.conversationViewModel = conversationViewModel
         self.messageSenderViewModel = messageSenderViewModel
         self.projectViewModel = projectViewModel
         self.conversationTurnViewModel = conversationTurnViewModel
+        self.slashCommandService = slashCommandService
+
+        // 监听会话选择变化
+        setupConversationSelectionObserver()
+
+        // 加载当前选中的会话消息（如果存在）
+        loadInitialConversationIfNeeded()
+
+        // 订阅消息发送事件流
+        subscribeToMessageSendEvents()
+
+        // 订阅对话轮次事件流
+        subscribeToConversationTurnEvents()
+
         loadPreferences()
+    }
+
+    /// 加载初始会话消息
+    /// 在初始化时，如果 ConversationViewModel 已经恢复了上次选择的会话，立即加载消息
+    private func loadInitialConversationIfNeeded() {
+        if let selectedId = conversationViewModel.selectedConversationId {
+            if Self.verbose {
+                os_log("\(Self.t)📥 [\(selectedId)] 初始化会话")
+            }
+            Task {
+                await self.loadConversation(selectedId)
+            }
+        }
+    }
+
+    /// 设置会话选择监听
+    /// 当 selectedConversationId 变化时，自动加载对应会话的消息
+    private func setupConversationSelectionObserver() {
+        conversationViewModel.$selectedConversationId
+            .dropFirst() // 跳过初始值
+            .removeDuplicates()
+            .sink { [weak self] conversationId in
+                guard let self = self, let id = conversationId else { return }
+                Task { @MainActor in
+                    await self.loadConversation(id)
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    /// 订阅消息发送事件流
+    /// 处理 MessageSenderViewModel 发出的发送消息事件
+    private func subscribeToMessageSendEvents() {
+        messageSendEventTask?.cancel()
+        messageSendEventTask = Task { [weak self] in
+            guard let self = self else { return }
+            for await event in self.messageSenderViewModel.events {
+                await self.handleMessageSendEvent(event)
+            }
+        }
+    }
+
+    /// 处理消息发送事件
+    /// - Parameter event: 消息发送事件
+    private func handleMessageSendEvent(_ event: MessageSendEvent) async {
+        switch event {
+        case .processingStarted:
+            setIsProcessing(true)
+
+        case .processingFinished:
+            setIsProcessing(false)
+
+        case let .sendMessage(message):
+            await sendMessageToAgent(message: message)
+        }
+    }
+
+    /// 订阅对话轮次事件流
+    /// 处理 ConversationTurnViewModel 发出的事件
+    private func subscribeToConversationTurnEvents() {
+        conversationTurnEventTask?.cancel()
+        conversationTurnEventTask = Task { [weak self] in
+            guard let self = self else { return }
+            for await event in self.conversationTurnViewModel.events {
+                await self.handleConversationTurnEvent(event)
+            }
+        }
+    }
+
+    /// 当前流式消息ID
+    public private(set) var currentStreamingMessageId: UUID?
+    /// 当前流式消息索引
+    private var currentStreamingMessageIndex: Int?
+
+    /// 处理对话轮次事件
+    /// - Parameter event: 对话轮次事件
+    private func handleConversationTurnEvent(_ event: ConversationTurnEvent) async {
+        switch event {
+        case let .responseReceived(message):
+            // 保存助手响应
+            appendMessage(message)
+            saveMessage(message)
+
+        case let .streamStarted(messageId):
+            // 流式响应开始，创建空消息占位
+            currentStreamingMessageId = messageId
+
+            // 清空上一次的思考文本
+            setThinkingText("")
+
+            let placeholderMessage = ChatMessage(
+                id: messageId,
+                role: .assistant,
+                content: "",
+                timestamp: Date()
+            )
+            appendMessage(placeholderMessage)
+            currentStreamingMessageIndex = messages.count - 1
+
+        case let .streamChunk(content, messageId):
+            // 更新流式消息内容
+            guard currentStreamingMessageId == messageId,
+                  let index = currentStreamingMessageIndex,
+                  index < messages.count else {
+                return
+            }
+
+            // 获取当前消息并追加内容
+            var currentMessage = messages[index]
+            currentMessage.content += content
+
+            // 更新消息（使用内部方法避免触发过多UI更新）
+            updateMessage(currentMessage, at: index)
+
+        case let .streamEvent(eventType, content, rawEvent, messageId):
+            // 处理流式事件（用于调试和展示所有事件）
+
+            // 首先记录所有事件
+            if Self.verbose {
+                let contentPreview = content.isEmpty ? "(空)" : "\(content.prefix(50))..."
+                os_log("\(Self.t)📨 收到事件 [\(eventType.rawValue)]: \(contentPreview)")
+            }
+
+            // 处理心跳事件 - 更新心跳时间触发动画
+            if eventType == .ping {
+                setLastHeartbeatTime(Date())
+                return
+            }
+
+            // 处理思考增量事件 - 累积思考文本
+            if eventType == .thinkingDelta {
+                // 累积思考文本
+                if !content.isEmpty {
+                    appendThinkingText(content)
+                    if Self.verbose {
+                        os_log("\(Self.t)🧠 累积思考文本: \(content.prefix(30))... (总长度: \(self.thinkingText.count))")
+                    }
+                }
+                return
+            }
+
+            // 处理内容块开始事件 - 不追加到消息内容
+            if eventType == .contentBlockStart {
+                // 从 rawEvent 判断是否是思考块
+                if rawEvent.contains("\"type\":\"thinking\"") || rawEvent.contains("thinking") {
+                    setIsThinking(true)
+                    if Self.verbose {
+                        os_log("\(Self.t)🤔 思考开始")
+                    }
+                }
+                return
+            }
+
+            // 处理内容块停止事件 - 不追加到消息内容
+            if eventType == .contentBlockStop {
+                if Self.verbose {
+                    os_log("\(Self.t)✅ 内容块结束")
+                }
+                return
+            }
+
+            // 处理签名增量事件 - 不追加到消息内容
+            if eventType == .signatureDelta {
+                if Self.verbose {
+                    os_log("\(Self.t)🔏 收到签名")
+                }
+                return
+            }
+
+            // 处理 input_json_delta 事件 - 不追加到消息内容
+            if eventType == .inputJsonDelta {
+                if Self.verbose && !content.isEmpty {
+                    os_log("\(Self.t)🔧 收到工具参数: \(content)")
+                }
+                return
+            }
+
+            // 处理消息增量事件 - 不追加到消息内容（只包含停止原因等元数据）
+            if eventType == .messageDelta {
+                if Self.verbose {
+                    os_log("\(Self.t)📊 消息增量: \(content)")
+                }
+                return
+            }
+
+            guard currentStreamingMessageId == messageId,
+                  let index = currentStreamingMessageIndex,
+                  index < messages.count else {
+                return
+            }
+
+            // 只追加文本增量事件的内容到消息
+            if eventType == .textDelta {
+                if Self.verbose && !content.isEmpty {
+                    os_log("\(Self.t)📝 文本增量: \(content.prefix(30))...")
+                }
+                // 获取当前消息并追加事件内容
+                var currentMessage = messages[index]
+                currentMessage.content += content
+
+                // 更新消息
+                updateMessage(currentMessage, at: index)
+            }
+
+        case let .streamFinished(message):
+            // 流式响应结束，将思考过程附加到消息
+            var finalMessage = message
+            if !thinkingText.isEmpty {
+                finalMessage.thinkingContent = thinkingText
+                if Self.verbose {
+                    os_log("\(Self.t)💭 保存思考过程到消息: \(self.thinkingText.prefix(50))...")
+                }
+            } else {
+                if Self.verbose {
+                    os_log("\(Self.t)⚠️ 思考文本为空，不保存思考过程")
+                }
+            }
+
+            // 流式响应结束，保存最终消息
+            if let index = currentStreamingMessageIndex, index < messages.count {
+                // 更新为最终消息（包含工具调用等信息）
+                updateMessage(finalMessage, at: index)
+                // 保存到数据库
+                saveMessage(finalMessage)
+            }
+
+            // 清理流式状态
+            currentStreamingMessageId = nil
+            currentStreamingMessageIndex = nil
+
+            // 重置思考状态（但保留思考文本，以便在界面上显示）
+            setIsThinking(false)
+
+        case let .toolResultReceived(result):
+            // 保存工具结果
+            appendMessage(result)
+            saveMessage(result)
+
+        case let .permissionRequested(request):
+            // 设置待处理权限请求
+            setPendingPermissionRequest(request)
+
+        case let .maxDepthReached(currentDepth, maxDepth):
+            // 处理达到最大深度
+            let warning = DepthWarning(
+                currentDepth: currentDepth,
+                maxDepth: maxDepth,
+                warningType: .reached
+            )
+            setDepthWarning(warning)
+            setIsProcessing(false)
+
+            // 清理流式状态
+            currentStreamingMessageId = nil
+            currentStreamingMessageIndex = nil
+
+        case .completed:
+            // 轮次完成
+            setIsProcessing(false)
+
+            // 清理流式状态
+            currentStreamingMessageId = nil
+            currentStreamingMessageIndex = nil
+
+        case let .error(error):
+            // 处理错误
+            setErrorMessage(error.localizedDescription)
+            setIsProcessing(false)
+
+            // 清理流式状态
+            currentStreamingMessageId = nil
+            currentStreamingMessageIndex = nil
+
+        case let .shouldContinue(depth):
+            // 继续下一轮
+            await processTurn(depth: depth)
+        }
     }
 
     // MARK: - 偏好设置加载
@@ -146,6 +491,26 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         isProcessing = processing
     }
 
+    /// 设置最后心跳时间
+    func setLastHeartbeatTime(_ date: Date?) {
+        lastHeartbeatTime = date
+    }
+
+    /// 设置思考状态
+    func setIsThinking(_ thinking: Bool) {
+        isThinking = thinking
+    }
+
+    /// 追加思考文本
+    func appendThinkingText(_ text: String) {
+        thinkingText += text
+    }
+
+    /// 设置思考文本
+    func setThinkingText(_ text: String) {
+        thinkingText = text
+    }
+
     /// 设置待处理权限请求
     func setPendingPermissionRequest(_ request: PermissionRequest?) {
         pendingPermissionRequest = request
@@ -158,27 +523,14 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
 
     // MARK: - 业务方法
 
-    // MARK: - 代理 ConversationViewModel 属性（仅供内部扩展使用）
-
-    /// 当前选中的会话 ID（代理到 ConversationViewModel）
-    ///
-    /// 需要完整会话数据的视图应使用 `@Query` 根据此 ID 自行查询：
-    /// ```swift
-    /// @Query(filter: #Predicate<Conversation> { $0.id == agentProvider.selectedConversationId })
-    /// var selectedConversation: [Conversation]
-    /// ```
-    var selectedConversationId: UUID? {
-        conversationViewModel.selectedConversationId
-    }
-
-    /// 当前会话的消息列表（代理到 ConversationViewModel）
+    /// 当前会话的消息列表（代理到 MessageViewModel）
     var messages: [ChatMessage] {
-        conversationViewModel.messages
+        messageViewModel.messages
     }
 
-    /// 标记是否已生成标题（代理到 ConversationViewModel）
+    /// 标记是否已生成标题（代理到 MessageViewModel）
     var hasGeneratedTitle: Bool {
-        conversationViewModel.hasGeneratedTitle
+        messageViewModel.hasGeneratedTitle
     }
 
     // MARK: - 代理 ProjectViewModel 属性（仅供内部扩展使用）
@@ -228,13 +580,13 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     /// 设置供应商并保存到项目配置
     func setSelectedProviderId(_ providerId: String) {
         guard isProjectSelected, !currentProjectPath.isEmpty else { return }
-        
+
         projectViewModel.saveProjectConfig(
             path: currentProjectPath,
             providerId: providerId,
             model: currentModel
         )
-        
+
         if Self.verbose {
             os_log("\(Self.t)⚙️ 已设置供应商：\(providerId)")
         }
@@ -243,13 +595,13 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     /// 设置模型并保存到项目配置
     func setSelectedModel(_ model: String) {
         guard isProjectSelected, !currentProjectPath.isEmpty else { return }
-        
+
         projectViewModel.saveProjectConfig(
             path: currentProjectPath,
             providerId: selectedProviderId,
             model: model
         )
-        
+
         if Self.verbose {
             os_log("\(Self.t)⚙️ 已设置模型：\(model)")
         }
@@ -281,7 +633,7 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
 
     /// 获取可用工具列表
     var tools: [AgentTool] {
-        toolManager.tools
+        toolService.tools
     }
 
     /// 获取当前供应商配置
@@ -347,14 +699,197 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         messageViewModel.setHasGeneratedTitleInternal(value)
     }
 
-    /// 加载指定对话的消息
+    /// 加载指定对话
+    /// 协调 ConversationViewModel 和 MessageViewModel 完成加载
     func loadConversation(_ conversationId: UUID) async {
-        await conversationViewModel.loadConversation(conversationId)
+        if Self.verbose {
+            os_log("\(Self.t)📥 [\(conversationId)] 开始加载对话")
+        }
+
+        // 从数据库获取对话
+        guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
+            os_log(.error, "\(Self.t)❌ [\(conversationId)] 对话不存在")
+            return
+        }
+
+        // 切换消息发送队列到新会话
+        let queueCount = messageSenderViewModel.switchToConversation(conversation.id)
+        if Self.verbose {
+            os_log("\(Self.t)🔄 [\(conversationId)] 待发送消息：\(queueCount) 条")
+        }
+
+        // 加载消息到 MessageViewModel
+        _ = messageViewModel.loadMessages(for: conversation)
+
+        if Self.verbose {
+            os_log("\(Self.t)✅ [\(conversation.id)] 共 \(self.messageViewModel.messages.count) 条消息")
+        }
     }
 
     /// 保存消息到存储
     func saveMessage(_ message: ChatMessage) {
         conversationViewModel.saveMessage(message)
+    }
+
+    /// 删除指定对话
+    /// 协调多个 ViewModel 完成删除操作：
+    /// 1. 清理消息发送队列
+    /// 2. 删除会话记录
+    /// - Parameter conversation: 要删除的对话
+    func deleteConversation(_ conversation: Conversation) {
+        if Self.verbose {
+            os_log("\(Self.t)🗑️ 开始删除对话：\(conversation.title)")
+        }
+
+        // 1. 清理该会话的待发送队列
+        messageSenderViewModel.removeConversationQueue(conversation.id)
+
+        // 如果删除的是选中的对话，清理当前队列
+        if conversationViewModel.selectedConversationId == conversation.id {
+            messageSenderViewModel.clearCurrentConversationQueue()
+        }
+
+        // 2. 删除会话记录
+        conversationViewModel.deleteConversation(conversation)
+
+        if Self.verbose {
+            os_log("\(Self.t)✅ 对话已删除：\(conversation.title)")
+        }
+    }
+
+    // MARK: - 会话管理
+
+    /// 创建新对话
+    ///
+    /// 协调多个 ViewModel 完成新会话创建：
+    /// 1. 创建会话记录
+    /// 2. 选中该会话
+    /// 3. 切换消息队列
+    /// 4. 获取并保存欢迎消息
+    ///
+    /// - Parameters:
+    ///   - projectId: 关联的项目 ID（可选）
+    ///   - projectName: 项目名称（可选，用于生成欢迎消息）
+    ///   - projectPath: 项目路径（可选，用于生成欢迎消息）
+    func createNewConversation(
+        projectId: String? = nil,
+        projectName: String? = nil,
+        projectPath: String? = nil
+    ) async {
+        if Self.verbose {
+            os_log("\(Self.t)🚀 开始创建新会话")
+        }
+
+        // 1. 创建会话记录
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd HH:mm"
+        let newConversation = chatHistoryService.createConversation(
+            projectId: projectId,
+            title: "新会话 " + formatter.string(from: Date())
+        )
+
+        // 2. 选中该会话（会触发监听加载消息）
+        conversationViewModel.setSelectedConversation(newConversation.id)
+
+        // 3. 切换消息发送队列到新会话
+        messageSenderViewModel.switchToConversation(newConversation.id)
+
+        // 4. 清空当前消息列表并获取系统上下文消息和欢迎消息
+        messageViewModel.clearMessages()
+
+        // 4.1 添加系统上下文消息（设置项目上下文）
+        let systemMessage = await promptService.getSystemContextMessage(
+            projectName: projectName,
+            projectPath: projectPath,
+            language: languagePreference
+        )
+        if !systemMessage.isEmpty {
+            let sysMsg = ChatMessage(role: .system, content: systemMessage)
+            if let savedSystemMsg = chatHistoryService.saveMessage(sysMsg, to: newConversation) {
+                messageViewModel.appendMessageInternal(savedSystemMsg)
+            }
+        }
+
+        // 4.2 添加欢迎消息
+        let welcomeMessage = await promptService.getEmptySessionWelcomeMessage(
+            projectName: projectName,
+            projectPath: projectPath,
+            language: languagePreference,
+            conversationId: newConversation.id
+        )
+
+        if !welcomeMessage.isEmpty {
+            let welcomeMsg = ChatMessage(role: .assistant, content: welcomeMessage)
+            if let savedMessage = chatHistoryService.saveMessage(welcomeMsg, to: newConversation) {
+                messageViewModel.appendMessageInternal(savedMessage)
+            }
+        }
+
+        if Self.verbose {
+            os_log("\(Self.t)✅ [\(newConversation.id)] 新会话创建完成")
+        }
+    }
+
+    // MARK: - 消息发送协调
+
+    /// 发送单条消息到 Agent
+    /// 协调 MessageViewModel 和 ConversationViewModel 完成消息发送
+    /// - Parameter message: 要发送的消息
+    func sendMessageToAgent(message: ChatMessage) async {
+        if Self.verbose {
+            os_log("\(Self.t)📤 正在发送消息：\(message.content.max(50))")
+        }
+
+        // 1. 添加消息到消息列表
+        messageViewModel.appendMessageInternal(message)
+
+        // 2. 保存到数据库
+        conversationViewModel.saveMessage(message)
+
+        // 3. 启动会话标题生成（如果需要）
+        startConversationTitleGenerationIfNeeded(message: message)
+
+        // 4. 处理消息（等待完成）
+        await processTurn()
+
+        if Self.verbose {
+            os_log("\(Self.t)✅ 消息发送完成：\(message.content.max(30))...")
+        }
+    }
+
+    /// 启动会话标题生成（如果需要）
+    /// - Parameter message: 用户消息
+    private func startConversationTitleGenerationIfNeeded(message: ChatMessage) {
+        // 只处理用户消息
+        guard message.role == .user else { return }
+
+        // 获取当前对话 ID
+        guard let conversationId = conversationViewModel.selectedConversationId else { return }
+
+        // 获取会话以检查标题
+        guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else { return }
+
+        // 检查是否满足生成标题的条件
+        guard conversation.title.hasPrefix("新会话 "),
+              !messageViewModel.hasGeneratedTitle else {
+            return
+        }
+
+        // 标记已生成标题，防止重复生成
+        messageViewModel.setHasGeneratedTitleInternal(true)
+
+        // 获取 LLM 配置
+        let config = getCurrentConfig()
+
+        // 在后台 Task 中执行标题生成
+        Task.detached(priority: .utility) { [weak self] in
+            guard let self = self else { return }
+            await self.chatHistoryService.autoGenerateConversationTitleIfNeeded(
+                conversationId: conversationId,
+                userMessageContent: message.content,
+                config: config
+            )
+        }
     }
 
     // MARK: - Cancel Support
@@ -405,7 +940,7 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
 
         // 合并外部传入的图片和 pendingAttachments 中的图片
         let attachmentImages = pendingAttachments.compactMap { attachment -> ImageAttachment? in
-            if case .image(_, let data, let mimeType, _) = attachment {
+            if case let .image(_, data, mimeType, _) = attachment {
                 return ImageAttachment(data: data, mimeType: mimeType)
             }
             return nil
@@ -417,9 +952,9 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         pendingAttachments.removeAll()
 
         // 检查是否为支持的斜杠命令
-        if SlashCommandService.shared.isSupportedSlashCommand(trimmed) {
+        if slashCommandService.isSupportedSlashCommand(trimmed) {
             Task {
-                let result = await SlashCommandService.shared.handle(input: trimmed, provider: self)
+                let result = await slashCommandService.handle(input: trimmed, provider: self)
                 switch result {
                 case .handled:
                     setIsProcessing(false)
@@ -475,56 +1010,24 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
 
         pendingPermissionRequest = nil
 
-        Task {
-            await conversationTurnViewModel.respondToPermissionRequest(
-                allowed: allowed,
-                request: request,
-                languagePreference: languagePreference,
-                autoApproveRisk: autoApproveRisk
+        if allowed {
+            // 批准后继续执行工具
+            Task {
+                await conversationTurnViewModel.executeToolAndContinue(
+                    request.toToolCall(),
+                    languagePreference: languagePreference
+                )
+            }
+        } else {
+            // 拒绝执行，添加拒绝消息
+            let rejectMessage = ChatMessage(
+                role: .user,
+                content: "用户拒绝了执行 \(request.toolName) 的权限请求",
+                toolCallID: request.toolCallID
             )
+            appendMessage(rejectMessage)
+            saveMessage(rejectMessage)
         }
-    }
-
-    // MARK: - ConversationTurnDelegate
-
-    func turnDidReceiveResponse(_ response: ChatMessage) async {
-        appendMessage(response)
-        saveMessage(response)
-    }
-
-    func turnDidComplete() async {
-        setIsProcessing(false)
-    }
-
-    func turnDidEncounterError(_ error: Error) async {
-        setErrorMessage(error.localizedDescription)
-        appendMessage(ChatMessage(role: .assistant, content: "Error: \(error.localizedDescription)", isError: true))
-        setIsProcessing(false)
-        depthWarning = nil
-    }
-
-    func turnDidReachMaxDepth(currentDepth: Int, maxDepth: Int) async {
-        setErrorMessage("Max recursion depth reached.")
-        setIsProcessing(false)
-        depthWarning = DepthWarning(currentDepth: currentDepth, maxDepth: maxDepth, warningType: .reached)
-        os_log(.error, "\(Self.t) 达到最大递归深度 (\(maxDepth))，对话终止")
-    }
-
-    func turnDidRequestPermission(_ request: PermissionRequest) async {
-        pendingPermissionRequest = request
-    }
-
-    func turnDidReceiveToolResult(_ result: ChatMessage) async {
-        appendMessage(result)
-        saveMessage(result)
-    }
-
-    func turnDidUpdateDepthWarning(_ warning: DepthWarning?) {
-        depthWarning = warning
-    }
-
-    func turnShouldContinue(depth: Int) async {
-        await processTurn(depth: depth)
     }
 
     // MARK: - 历史记录管理
@@ -648,31 +1151,5 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     /// 清空所有附件
     public func clearAttachments() {
         pendingAttachments.removeAll()
-    }
-
-    // MARK: - MessageSendingDelegate
-
-    /// 开始处理消息
-    func messageSendingDidStart() {
-        setIsProcessing(true)
-    }
-
-    /// 结束处理消息
-    func messageSendingDidFinish() {
-        setIsProcessing(false)
-    }
-
-    /// 处理用户消息
-    /// - Parameters:
-    ///   - content: 消息内容
-    ///   - images: 图片附件
-    func processUserMessage(content: String, images: [ImageAttachment]) async {
-        if Self.verbose && !images.isEmpty {
-            os_log("\(Self.t)✅ 用户消息包含 \(images.count) 张图片")
-        }
-
-        // 消息已由 MessageSenderViewModel 保存和追加
-        // 直接处理对话轮次
-        await processTurn()
     }
 }

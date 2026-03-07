@@ -4,12 +4,13 @@ import MagicKit
 actor TerminalPlugin: SuperPlugin {
     nonisolated static let emoji = "💻"
     nonisolated static let verbose = true
-    
+
     static let id = "Terminal"
     static let navigationId = "terminal"
     static let displayName = String(localized: "Terminal", table: "Terminal")
     static let description = String(localized: "Interactive terminal emulator", table: "Terminal")
     static let iconName = "terminal"
+    static let enable = true
     static var order: Int { 90 }
     
     static let shared = TerminalPlugin()

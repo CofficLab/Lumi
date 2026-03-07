@@ -9,25 +9,27 @@ import Logging
 actor PGConnection: DatabaseConnection {
     private let group: EventLoopGroup
     private let conn: PostgresConnection
-    private let logger = Logger(label: "Lumi.Database.Postgres")
+    private let logger = Logger(label: "com.lumi.postgres")
 
-    /// 初始化并建立连接
     init(host: String, port: Int, username: String, password: String?, database: String) async throws {
         self.group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
 
         let config = PostgresConnection.Configuration(
-            connection: .init(host: host, port: port),
-            authentication: .init(username: username, database: database, password: password ?? ""),
+            host: host,
+            port: port,
+            username: username,
+            password: password ?? "",
+            database: database,
             tls: .disable
         )
 
-        // 使用正确的 connect API
+        // 使用 connect API
         self.conn = try await PostgresConnection.connect(
             on: group.next(),
             configuration: config,
             id: 1,
             logger: logger
-        )
+        ).get()
     }
 
     /// 执行写入语句
@@ -88,7 +90,7 @@ actor PGConnection: DatabaseConnection {
                 // 仅在第一行时收集列名
                 if out.isEmpty {
                     // PostgresRowSequence 无法直接访问 metadata
-                    // 通过 row.rowDescription 获取
+                    // rowDescription 虽然已弃用，但目前没有更好的替代方案
                     columns.append(row.rowDescription.fields[index].name)
                 }
                 index += 1

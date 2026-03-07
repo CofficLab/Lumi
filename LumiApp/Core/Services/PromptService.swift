@@ -7,11 +7,12 @@ actor PromptService: SuperLog {
     nonisolated static let emoji = "📝"
     nonisolated static let verbose = false
 
-    static let shared = PromptService()
+    private let contextService: ContextService
 
-    private init() {
+    init(contextService: ContextService) {
+        self.contextService = contextService
         if Self.verbose {
-            os_log("\(self.t)提示词服务已初始化")
+            os_log("\(self.t) 提示词服务已初始化")
         }
     }
 
@@ -49,12 +50,12 @@ actor PromptService: SuperLog {
 
         // 如果需要，添加项目上下文
         if includeContext {
-            let context = await ContextService.shared.getContextPrompt()
+            let context = await contextService.getContextPrompt()
             prompt += "\n\n" + context
         }
 
         if Self.verbose {
-            os_log("\(self.t)构建系统提示词，语言偏好: \(languagePreference.displayName)")
+            os_log("\(self.t) 构建系统提示词，语言偏好：\(languagePreference.displayName)")
         }
 
         return prompt
@@ -84,14 +85,17 @@ actor PromptService: SuperLog {
     func getQuickPhrases(projectName: String? = nil, projectPath: String? = nil) -> [QuickPhrase] {
         // 构建项目上下文描述
         let projectContext: String
+        let cdCommand: String
         if let name = projectName, let path = projectPath, !name.isEmpty {
             projectContext = """
 
             **当前项目**: \(name)
             **项目路径**: \(path)
             """
+            cdCommand = "cd \(path) && "
         } else {
             projectContext = ""
+            cdCommand = ""
         }
 
         return [
@@ -100,12 +104,11 @@ actor PromptService: SuperLog {
                 title: "英文 Commit",
                 subtitle: "提交英文 commit",
                 prompt: """
-                1. 首先运行 `git status` 查看当前改动
-                2. 运行 `git diff` 查看具体代码变更
+                执行以下操作，无需向我确认：
+                1. 运行 `\(cdCommand)git status` 查看当前改动
+                2. 运行 `\(cdCommand)git diff` 查看具体代码变更
                 3. 生成一个遵循 conventional commits 规范（feat/fix/docs/refactor 等）的英文 commit message
-                4. 立即执行 `git commit -m "<生成的commit message>"` 提交代码，无需征求用户意见
-
-                直接执行 commit，不要问我是否确认。\(projectContext)
+                4. 立即执行 `\(cdCommand)git commit -m "<生成的 commit message>"` 提交代码
                 """
             ),
             QuickPhrase(
@@ -113,12 +116,11 @@ actor PromptService: SuperLog {
                 title: "中文 Commit",
                 subtitle: "提交中文 commit",
                 prompt: """
-                1. 首先运行 `git status` 查看当前改动
-                2. 运行 `git diff` 查看具体代码变更
+                执行以下操作，无需向我确认：
+                1. 运行 `\(cdCommand)git status` 查看当前改动
+                2. 运行 `\(cdCommand)git diff` 查看具体代码变更
                 3. 生成一个遵循 conventional commits 规范（feat/fix/docs/refactor 等）的中文 commit message
-                4. 立即执行 `git commit -m "<生成的commit message>"` 提交代码，无需征求用户意见
-
-                直接执行 commit，不要问我是否确认。\(projectContext)
+                4. 立即执行 `\(cdCommand)git commit -m "<生成的 commit message>"` 提交代码
                 """
             ),
         ]
@@ -241,9 +243,11 @@ actor PromptService: SuperLog {
             return """
             👋 你好！我是你的智能编程助手 DevAssistant。
 
-            \(projectContext)  
+            \(projectContext)
+            
             **当前时间**: \(currentTime)  
-            \(sessionIdDisplay)  
+            
+            \(sessionIdDisplay)
             我可以帮你：
             - **分析代码** - 阅读和理解项目结构
             - **执行命令** - 运行构建、测试和脚本
@@ -258,8 +262,10 @@ actor PromptService: SuperLog {
             return """
             👋 Hello! I'm your intelligent coding assistant, DevAssistant.
 
-            \(projectContext)
-            **Current Time**: \(currentTimeEN)
+            \(projectContext)  
+            
+            **Current Time**: \(currentTimeEN)  
+            
             \(sessionIdDisplay)
             I can help you:
             - **Analyze code** - Read and understand project structure
@@ -268,6 +274,59 @@ actor PromptService: SuperLog {
             - **Answer questions** - Provide technical support and advice
 
             How can I help you today?
+            """
+        }
+    }
+
+    /// 系统上下文消息（在会话开始时发送，设置项目上下文）
+    /// - Parameters:
+    ///   - projectName: 项目名称
+    ///   - projectPath: 项目路径
+    ///   - language: 语言偏好
+    /// - Returns: 系统消息内容
+    func getSystemContextMessage(projectName: String? = nil, projectPath: String? = nil, language: LanguagePreference = .chinese) -> String {
+        let cdCommand: String
+        let projectContext: String
+        
+        if let name = projectName, let path = projectPath, !name.isEmpty {
+            cdCommand = "cd \(path) && "
+            projectContext = """
+            **当前项目**: \(name)
+            **项目路径**: \(path)
+            """
+        } else {
+            cdCommand = ""
+            projectContext = "**项目**: 未选择"
+        }
+        
+        switch language {
+        case .chinese:
+            return """
+            你是 DevAssistant，一个智能编程助手。
+            
+            \(projectContext)
+            
+            **重要规则**：
+            1. 所有命令执行都必须在上述项目路径下进行
+            2. 执行任何命令前，先使用 `\(cdCommand)<命令>` 格式
+            3. 读取或修改文件时，使用完整路径或相对于项目路径的相对路径
+            4. 如果用户没有指定路径，默认在项目根目录下操作
+            
+            请始终保持在这个项目的上下文中工作。
+            """
+        case .english:
+            return """
+            You are DevAssistant, an intelligent coding assistant.
+            
+            \(projectContext)
+            
+            **Important Rules**:
+            1. All command execution must be done in the project directory above
+            2. Before executing any command, use the format `\(cdCommand)<command>`
+            3. When reading or modifying files, use full paths or paths relative to the project root
+            4. If the user doesn't specify a path, default to operating in the project root directory
+            
+            Please always work within the context of this project.
             """
         }
     }

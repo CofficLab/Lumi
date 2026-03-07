@@ -41,8 +41,6 @@ class DatabaseViewModel: ObservableObject, SuperLog {
             
             // 根据类型设置默认查询/命令
             switch config.type {
-            case .sqlite:
-                queryText = "SELECT * FROM sqlite_master;"
             case .postgresql:
                 queryText = "SELECT table_name FROM information_schema.tables WHERE table_schema='public';"
             case .mysql:

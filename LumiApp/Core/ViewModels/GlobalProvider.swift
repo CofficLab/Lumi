@@ -1,0 +1,193 @@
+import Combine
+import SwiftData
+import SwiftUI
+
+/// 全局服务提供者，管理应用状态和全局服务
+///
+/// GlobalProvider 是 Lumi 应用的核心状态管理类，负责：
+/// - 应用级别的状态（加载状态、错误信息）
+/// - 主题管理
+/// - 导航状态
+/// - 应用模式切换
+///
+/// ## 状态类型
+///
+/// - **应用状态**: isLoading, errorMessage
+/// - **主题**: themeManager
+/// - **导航**: selectedNavigationId
+/// - **模式**: selectedMode (App 模式 / Agent 模式)
+///
+/// ## 使用示例
+///
+/// ```swift
+/// @StateObject private var globalProvider = GlobalProvider()
+///
+/// // 切换主题
+/// globalProvider.themeManager.setTheme(.aurora)
+///
+/// // 切换模式
+/// globalProvider.selectedMode = .agent
+///
+/// // 显示错误
+/// globalProvider.showError("网络连接失败")
+/// ```
+@MainActor
+final class GlobalProvider: ObservableObject {
+    // MARK: - 应用状态
+
+    /// 当前选中的设置标签
+    ///
+    /// 用于设置面板中的标签切换。
+    /// 默认为 ".about"。
+    @Published var selectedSettingTab: SettingTab = .about
+
+    /// 应用是否正在加载
+    ///
+    /// 当应用执行耗时操作时设为 true，
+    /// UI 可以根据此状态显示加载指示器。
+    @Published var isLoading = false
+
+    /// 应用错误信息
+    ///
+    /// 当发生错误时存储错误消息。
+    /// 通过 showError() 设置，clearError() 清除。
+    @Published var errorMessage: String?
+
+    // MARK: - 主题管理
+
+    /// 主题管理器
+    ///
+    /// 负责管理应用的主题切换和样式。
+    /// 支持多种主题：Aurora, Nebula, Midnight, etc.
+    let themeManager = MystiqueThemeManager()
+
+    // MARK: - 导航状态
+
+    /// 当前选中的导航入口 ID
+    ///
+    /// 对应插件提供的 NavigationEntry.id。
+    /// 用于在侧边栏中高亮当前选中的导航项。
+    @Published var selectedNavigationId: String?
+
+    /// 当前选中的应用模式
+    ///
+    /// Lumi 支持两种模式：
+    /// - `.app`: 应用模式，传统的工具应用
+    /// - `.agent`: Agent 模式，AI 助手对话模式
+    ///
+    /// 模式选择会持久化到 UserDefaults。
+    @Published var selectedMode: AppMode = .app {
+        didSet {
+            // 保存模式到 UserDefaults
+            // 应用重启后会恢复上次选择的模式
+            UserDefaults.standard.set(selectedMode.rawValue, forKey: "App_SelectedMode")
+        }
+    }
+
+    // MARK: - 数据状态
+
+    /// 活动状态文本
+    ///
+    /// 用于在状态栏显示当前活动信息。
+    /// 例如："正在分析代码..."、"正在搜索..."
+    @Published var activityStatus: String? = nil
+
+    // MARK: - 初始化
+
+    /// 初始化全局提供者
+    ///
+    /// 从 UserDefaults 加载上次选择的模式。
+    init() {
+        // 从 UserDefaults 加载上次选择的模式
+        // 如果没有保存的记录，使用默认值 .app
+        if let savedModeRawValue = UserDefaults.standard.string(forKey: "App_SelectedMode"),
+           let savedMode = AppMode(rawValue: savedModeRawValue) {
+            selectedMode = savedMode
+        }
+    }
+
+    // MARK: - 错误处理
+
+    /// 显示错误信息
+    ///
+    /// 设置 errorMessage 并可触发 UI 显示错误提示。
+    ///
+    /// - Parameter message: 错误消息
+    func showError(_ message: String) {
+        errorMessage = message
+        // 可以在这里添加错误显示逻辑，比如显示通知
+    }
+
+    /// 清除错误信息
+    ///
+    /// 重置 errorMessage 为 nil。
+    func clearError() {
+        errorMessage = nil
+    }
+
+    // MARK: - 导航管理
+
+    /// 获取当前导航的内容视图
+    ///
+    /// 根据 selectedNavigationId 从插件提供的导航入口中查找对应的视图。
+    ///
+    /// - Parameter pluginProvider: 插件提供者
+    /// - Returns: 当前选中导航的内容视图，如果未找到则返回 EmptyView
+    func getCurrentNavigationView(pluginProvider: PluginProvider) -> AnyView {
+        guard let selectedId = selectedNavigationId else {
+            return AnyView(EmptyView())
+        }
+
+        let entries = pluginProvider.getNavigationEntries()
+        guard let selectedEntry = entries.first(where: { $0.id == selectedId }) else {
+            return AnyView(EmptyView())
+        }
+
+        return selectedEntry.contentProvider()
+    }
+
+    /// 获取当前导航的标题
+    ///
+    /// 根据 selectedNavigationId 获取导航项的标题。
+    ///
+    /// - Parameter pluginProvider: 插件提供者
+    /// - Returns: 当前选中导航的标题，如果未找到则返回空字符串
+    func getCurrentNavigationTitle(pluginProvider: PluginProvider) -> String {
+        guard let selectedId = selectedNavigationId else {
+            return ""
+        }
+
+        let entries = pluginProvider.getNavigationEntries()
+        return entries.first(where: { $0.id == selectedId })?.title ?? ""
+    }
+}
+
+/// 设置标签枚举
+///
+/// 定义设置面板中的各个标签页。
+enum SettingTab: String, CaseIterable {
+    case about = "关于"
+
+    /// 标签对应的 SF Symbols 图标名称
+    var icon: String {
+        switch self {
+        case .about: return "info.circle"
+        }
+    }
+}
+
+// MARK: - Preview
+
+#Preview("App - Small Screen") {
+    ContentLayout()
+        .hideSidebar()
+        .inRootView()
+        .frame(width: 800, height: 600)
+}
+
+#Preview("App - Big Screen") {
+    ContentLayout()
+        .hideSidebar()
+        .inRootView()
+        .frame(width: 1200, height: 1200)
+}

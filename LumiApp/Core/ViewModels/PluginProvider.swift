@@ -7,33 +7,84 @@ import ObjectiveC.runtime
 import Combine
 
 /// 插件提供者，管理插件的生命周期和 UI 贡献
+///
+/// PluginProvider 是 Lumi 插件系统的核心管理器，负责：
+/// - 自动发现并注册所有插件
+/// - 管理插件的生命周期（注册、启用、禁用）
+/// - 聚合所有插件提供的 UI 扩展点
+/// - 处理插件设置的持久化
+///
+/// ## 插件发现机制
+///
+/// PluginProvider 使用 Objective-C Runtime 扫描所有以 "Lumi." 开头
+/// 且以 "Plugin" 结尾的类，自动创建实例并注册。
+/// 插件按 `order` 属性排序，确保按正确顺序加载。
+///
+/// ## 线程安全
+///
+/// ⚠️ 注意：此类标记为 `@MainActor`，所有成员访问都必须在主线程。
+/// 这确保了 UI 相关的操作（如插件注册、视图获取）的线程安全性。
+///
+/// ## 使用示例
+///
+/// ```swift
+/// // 获取侧边栏视图
+/// let sidebarViews = PluginProvider.shared.getSidebarViews()
+///
+/// // 检查插件是否启用
+/// let isEnabled = PluginProvider.shared.isPluginEnabled(somePlugin)
+/// ```
 @MainActor
 final class PluginProvider: ObservableObject, SuperLog {
     /// 全局单例
+    ///
+    /// 整个应用共享同一个 PluginProvider 实例。
+    /// 使用 `shared` 属性访问全局实例。
     static let shared = PluginProvider()
 
     /// 日志标识符
+    ///
+    /// 用于日志输出的前缀标识。
     nonisolated static let emoji = "🔌"
 
     /// 是否启用详细日志输出
+    ///
+    /// 设为 true 时会输出详细的插件加载和调试信息。
+    /// 建议在调试时开启，发布时关闭。
     nonisolated static let verbose = false
 
     /// 已加载的插件列表
+    ///
+    /// 包含所有成功注册的插件实例。
+    /// 只读属性，通过 `reloadPlugins()` 触发重新加载。
     @Published private(set) var plugins: [any SuperPlugin] = []
     
     /// 插件是否已加载完成
+    ///
+    /// 用于在 UI 中显示加载状态。
+    /// 当插件正在加载时为 false，加载完成后为 true。
     @Published private(set) var isLoaded: Bool = false
 
-    /// 当前选中的应用模式
-    @Published var selectedMode: AppMode = .app
-
     /// 插件设置存储
+    ///
+    /// 负责持久化用户的插件配置（启用/禁用状态）。
+    /// 当设置变化时，会触发 UI 更新。
     private let settingsStore: PluginSettingsStore
     
     /// Combine 订阅集合
+    ///
+    /// 存储所有 Combine 订阅，用于在 deinit 时取消。
+    /// 防止内存泄漏。
     private var cancellables = Set<AnyCancellable>()
 
-    /// 初始化插件提供者（自动发现并注册所有插件）
+    /// 初始化插件提供者
+    ///
+    /// - Parameters:
+    ///   - settingsStore: 插件设置存储实例，默认使用单例
+    ///   - autoDiscover: 是否自动发现插件，默认为 true
+    ///
+    /// 如果 `autoDiscover` 为 true，会立即扫描并注册所有插件。
+    /// 设为 false 可以延迟加载，常用于测试场景。
     private init(settingsStore: PluginSettingsStore = PluginSettingsStore.shared, autoDiscover: Bool = true) {
         self.settingsStore = settingsStore
 
@@ -49,6 +100,7 @@ final class PluginProvider: ObservableObject, SuperLog {
             .store(in: &cancellables)
 
         // 监听文件选择变化通知
+        // 用于在 Agent 模式中当用户选择不同文件时刷新相关插件的 UI
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleFileSelectionChanged),
@@ -57,12 +109,41 @@ final class PluginProvider: ObservableObject, SuperLog {
         )
     }
 
+    /// 析构函数，清理资源
+    ///
+    /// 移除所有 NotificationCenter 观察者，防止内存泄漏。
+    deinit {
+        NotificationCenter.default.removeObserver(
+            self,
+            name: NSNotification.Name("AgentProviderFileSelectionChanged"),
+            object: nil
+        )
+    }
+
     /// 处理文件选择变化通知
+    ///
+    /// 当 Agent 模式中的文件选择改变时调用。
+    /// 触发 objectWillChange 以刷新 UI。
+    ///
+    /// - Parameter notification: 通知对象，包含文件选择信息
     @objc private func handleFileSelectionChanged(_ notification: Notification) {
         objectWillChange.send()
     }
 
     /// 自动发现并注册所有插件
+    ///
+    /// 使用 Objective-C Runtime 扫描所有符合插件命名规范的类：
+    /// - 类名以 "Lumi." 开头
+    /// - 类名以 "Plugin" 结尾
+    ///
+    /// 扫描过程：
+    /// 1. 获取所有类列表
+    /// 2. 筛选符合条件的类
+    /// 3. 创建 Actor 实例
+    /// 4. 按 order 排序
+    /// 5. 调用生命周期钩子
+    ///
+    /// 扫描完成后会发送 `PluginsDidLoad` 通知。
     private func autoDiscoverAndRegisterPlugins() {
         var count: UInt32 = 0
         guard let classList = objc_copyClassList(&count) else { return }
@@ -94,7 +175,7 @@ final class PluginProvider: ObservableObject, SuperLog {
             }
         }
         
-        // 按顺序排序
+        // 按 order 升序排序，确保核心插件先加载
         discoveredItems.sort { $0.order < $1.order }
         
         // 更新插件列表
@@ -111,7 +192,7 @@ final class PluginProvider: ObservableObject, SuperLog {
             }
         }
         
-        // 发送通知
+        // 发送通知，告知其他组件插件加载完成
         NotificationCenter.default.post(
             name: NSNotification.Name("PluginsDidLoad"),
             object: self
@@ -123,7 +204,12 @@ final class PluginProvider: ObservableObject, SuperLog {
     }
     
     /// 创建 actor 实例的辅助函数
-    /// 由于 actor 的特殊性，我们需要使用 Objective-C Runtime 来创建实例
+    ///
+    /// 由于 Actor 的特殊性，不能使用普通的 `new` 或 `init()` 创建实例。
+    /// 需要使用 Objective-C Runtime 的 alloc/init 方法。
+    ///
+    /// - Parameter cls: 要实例化的类
+    /// - Returns: 插件实例，如果创建失败则返回 nil
     private func createActorInstance(cls: AnyClass) -> AnyObject? {
         // 尝试获取 alloc 方法
         let allocSelector = NSSelectorFromString("alloc")
@@ -153,6 +239,11 @@ final class PluginProvider: ObservableObject, SuperLog {
     }
 
     /// 检查插件是否被用户启用
+    ///
+    /// 判断逻辑：
+    /// 1. 如果插件不可配置（`isConfigurable = false`），始终返回 true
+    /// 2. 如果插件可配置，从用户设置中读取启用状态
+    ///
     /// - Parameter plugin: 要检查的插件
     /// - Returns: 如果插件被启用则返回 true
     func isPluginEnabled(_ plugin: any SuperPlugin) -> Bool {
@@ -169,6 +260,10 @@ final class PluginProvider: ObservableObject, SuperLog {
     }
 
     /// 获取所有插件的根视图包裹
+    ///
+    /// 将所有插件提供的根视图包装器依次应用于内容视图。
+    /// 包装顺序与插件的 `order` 顺序一致。
+    ///
     /// - Parameter content: 原始内容视图
     /// - Returns: 经过所有插件依次包裹后的视图
     func getRootViewWrapper<Content: View>(@ViewBuilder content: () -> Content) -> AnyView {
@@ -182,6 +277,10 @@ final class PluginProvider: ObservableObject, SuperLog {
     }
 
     /// 获取所有插件的工具栏右侧视图
+    ///
+    /// 收集所有启用插件提供的工具栏右侧视图。
+    /// 这些视图将在工具栏右侧水平排列显示。
+    ///
     /// - Returns: 工具栏右侧视图数组
     func getToolbarTrailingViews() -> [AnyView] {
         plugins
@@ -190,6 +289,10 @@ final class PluginProvider: ObservableObject, SuperLog {
     }
 
     /// 获取所有插件的详情视图
+    ///
+    /// 收集所有启用插件提供的详情视图。
+    /// 这些视图将显示在主内容区域。
+    ///
     /// - Returns: 详情视图数组
     func getDetailViews() -> [AnyView] {
         plugins
@@ -198,6 +301,10 @@ final class PluginProvider: ObservableObject, SuperLog {
     }
 
     /// 获取所有插件提供的状态栏弹窗视图
+    ///
+    /// 收集所有启用插件提供的状态栏弹窗视图。
+    /// 当用户点击菜单栏图标时显示。
+    ///
     /// - Returns: 状态栏弹窗视图数组
     func getStatusBarPopupViews() -> [AnyView] {
         plugins
@@ -206,6 +313,10 @@ final class PluginProvider: ObservableObject, SuperLog {
     }
 
     /// 获取所有插件提供的状态栏内容视图
+    ///
+    /// 收集所有启用插件提供的状态栏内容视图。
+    /// 这些视图直接显示在菜单栏图标位置。
+    ///
     /// - Returns: 状态栏内容视图数组
     func getStatusBarContentViews() -> [AnyView] {
         plugins
@@ -214,7 +325,11 @@ final class PluginProvider: ObservableObject, SuperLog {
     }
 
     /// 获取所有插件提供的侧边栏视图（用于 Agent 模式）
-    /// - Returns: 侧边栏视图数组，多个插件的侧边栏会从上到下垂直堆叠显示
+    ///
+    /// 收集所有启用插件提供的侧边栏视图。
+    /// 多个插件的侧边栏会从上到下垂直堆叠显示。
+    ///
+    /// - Returns: 侧边栏视图数组
     func getSidebarViews() -> [AnyView] {
         let views = plugins
             .filter { isPluginEnabled($0) }
@@ -230,8 +345,12 @@ final class PluginProvider: ObservableObject, SuperLog {
     }
 
     /// 获取所有插件提供的中间栏视图（用于 Agent 模式）
-    /// 中间栏位于侧边栏和详情栏之间，用于展示文件预览等内容
-    /// - Returns: 中间栏视图数组，多个插件的中间栏会从上到下垂直堆叠显示
+    ///
+    /// 收集所有启用插件提供的中间栏视图。
+    /// 中间栏位于侧边栏和详情栏之间，用于展示文件预览等内容。
+    /// 多个插件的中间栏会从上到下垂直堆叠显示。
+    ///
+    /// - Returns: 中间栏视图数组
     func getMiddleViews() -> [AnyView] {
         let views = plugins
             .filter { isPluginEnabled($0) }
@@ -247,8 +366,12 @@ final class PluginProvider: ObservableObject, SuperLog {
     }
 
     /// 获取所有插件提供的详情栏头部视图（用于 Agent 模式）
-    /// 详情栏头部位于详情栏顶部，用于显示聊天头部等信息
-    /// - Returns: 详情栏头部视图数组，多个插件的头部视图会从上到下垂直堆叠显示
+    ///
+    /// 收集所有启用插件提供的详情栏头部视图。
+    /// 详情栏头部位于详情栏顶部，用于显示聊天头部等信息。
+    /// 多个插件的头部视图会从上到下垂直堆叠显示。
+    ///
+    /// - Returns: 详情栏头部视图数组
     func getDetailHeaderViews() -> [AnyView] {
         let views = plugins
             .filter { isPluginEnabled($0) }
@@ -264,8 +387,12 @@ final class PluginProvider: ObservableObject, SuperLog {
     }
 
     /// 获取所有插件提供的详情栏中间视图（用于 Agent 模式）
-    /// 详情栏中间位于详情栏中部，用于显示消息列表等内容
-    /// - Returns: 详情栏中间视图数组，多个插件的中间视图会从上到下垂直堆叠显示
+    ///
+    /// 收集所有启用插件提供的详情栏中间视图。
+    /// 详情栏中间位于详情栏中部，用于显示消息列表等内容。
+    /// 多个插件的中间视图会从上到下垂直堆叠显示。
+    ///
+    /// - Returns: 详情栏中间视图数组
     func getDetailMiddleViews() -> [AnyView] {
         let views = plugins
             .filter { isPluginEnabled($0) }
@@ -281,8 +408,12 @@ final class PluginProvider: ObservableObject, SuperLog {
     }
 
     /// 获取所有插件提供的详情栏底部视图（用于 Agent 模式）
-    /// 详情栏底部位于详情栏底部，用于显示输入区域等内容
-    /// - Returns: 详情栏底部视图数组，多个插件的底部视图会从上到下垂直堆叠显示
+    ///
+    /// 收集所有启用插件提供的详情栏底部视图。
+    /// 详情栏底部位于详情栏底部，用于显示输入区域等内容。
+    /// 多个插件的底部视图会从上到下垂直堆叠显示。
+    ///
+    /// - Returns: 详情栏底部视图数组
     func getDetailBottomViews() -> [AnyView] {
         let views = plugins
             .filter { isPluginEnabled($0) }
@@ -298,6 +429,10 @@ final class PluginProvider: ObservableObject, SuperLog {
     }
 
     /// 获取所有插件的设置视图信息
+    ///
+    /// 收集所有可配置且已启用插件的设置视图。
+    /// 用于在设置面板中展示插件配置选项。
+    ///
     /// - Returns: 包含插件 ID、名称、图标和视图的元组数组
     func getPluginSettingsViews() -> [(id: String, name: String, icon: String, view: AnyView)] {
         plugins
@@ -310,6 +445,10 @@ final class PluginProvider: ObservableObject, SuperLog {
     }
 
     /// 获取所有插件提供的导航入口
+    ///
+    /// 收集所有启用插件提供的导航入口。
+    /// 用于在侧边栏显示导航项。
+    ///
     /// - Returns: 导航入口数组
     func getNavigationEntries() -> [NavigationEntry] {
         plugins
@@ -319,6 +458,9 @@ final class PluginProvider: ObservableObject, SuperLog {
     }
 
     /// 获取指定模式下的导航入口
+    ///
+    /// 过滤出指定应用模式（App 或 Agent）下的导航入口。
+    ///
     /// - Parameter mode: 应用模式
     /// - Returns: 导航入口数组
     func getNavigationEntries(for mode: AppMode) -> [NavigationEntry] {
@@ -326,6 +468,12 @@ final class PluginProvider: ObservableObject, SuperLog {
     }
 
     /// 重新加载插件
+    ///
+    /// 清空当前插件列表并重新执行自动发现和注册流程。
+    /// 用于：
+    /// - 添加新插件后刷新
+    /// - 插件发生崩溃后恢复
+    /// - 调试时强制重新加载
     func reloadPlugins() {
         isLoaded = false
         autoDiscoverAndRegisterPlugins()

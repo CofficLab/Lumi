@@ -6,21 +6,65 @@ import MagicKit
 
 /// LLM 服务
 ///
-/// 使用供应商协议处理所有 LLM 请求，支持动态供应商注册。
-/// 网络请求部分已委托给 LLMAPIService。
-/// 此类可以在后台线程执行
+/// Lumi 应用的 AI 助手后端服务，负责与各种 LLM 供应商进行通信。
+///
+/// ## 支持的供应商
+///
+/// - OpenAI (GPT-4, GPT-3.5)
+/// - Anthropic (Claude)
+/// - DeepSeek
+/// - 智谱 (Zhipu)
+/// - 阿里云 (Aliyun)
+///
+/// ## 使用示例
+///
+/// ```swift
+/// let llmService = LLMService()
+///
+/// let messages = [
+///     ChatMessage(role: .user, content: "你好")
+/// ]
+///
+/// let config = LLMConfig(
+///     providerId: "openai",
+///     model: "gpt-4",
+///     apiKey: "sk-..."
+/// )
+///
+/// let response = try await llmService.sendMessage(messages: messages, config: config)
+/// print(response.content)
+/// ```
 class LLMService: SuperLog, @unchecked Sendable {
-    nonisolated static let emoji = "🌐"
+    /// 日志标识符
+    nonisolated static let emoji = "🤖"
+    
+    /// 是否启用详细日志
+    /// 设为 true 时会输出请求/响应的详细信息
     nonisolated static let verbose = true
 
-    static let shared = LLMService()
-
+    /// 供应商注册表
+    ///
+    /// 管理所有支持的 LLM 供应商。
+    /// 负责创建供应商实例和提供供应商元数据。
     private nonisolated let registry: ProviderRegistry
+    
+    /// LLM API 服务
+    ///
+    /// 负责实际的网络请求。
+    /// 处理 HTTP 连接、请求/响应序列化、错误处理等。
     private nonisolated let llmAPI: LLMAPIService
 
-    private init() {
-        self.registry = ProviderRegistry.shared
-        self.llmAPI = LLMAPIService.shared
+    /// 供应商注册表（公开访问）
+    ///
+    /// 允许外部代码查询已注册的供应商信息。
+    nonisolated var providerRegistry: ProviderRegistry { registry }
+
+    /// 初始化 LLM 服务
+    ///
+    /// 创建供应商注册表和 API 服务实例。
+    init() {
+        self.registry = ProviderRegistry()
+        self.llmAPI = LLMAPIService()
         if Self.verbose {
             os_log("\(self.t)✅ LLM 服务已初始化")
         }
@@ -29,18 +73,30 @@ class LLMService: SuperLog, @unchecked Sendable {
     // MARK: - 发送消息
 
     /// 发送消息到指定的 LLM 供应商
+    ///
+    /// 将消息历史发送到选定的 LLM 提供商，获取 AI 助手的回复。
+    /// 支持函数调用（Tool Calls）功能。
+    ///
     /// - Parameters:
-    ///   - messages: 消息历史
-    ///   - config: LLM 配置
-    ///   - tools: 可用工具列表
-    /// - Returns: AI 助手的响应消息
+    ///   - messages: 消息历史，包含用户、助手、AI 的消息
+    ///   - config: LLM 配置，包含供应商、模型、API Key 等
+    ///   - tools: 可用工具列表，用于函数调用
+    ///
+    /// - Returns: AI 助手的回复消息
+    ///
+    /// - Throws:
+    ///   - NSError (code 401): API Key 为空
+    ///   - NSError (code 404): 供应商未找到
+    ///   - NSError (code 400): 无效的 Base URL
+    ///   - NSError (code 500): API 请求失败
     func sendMessage(messages: [ChatMessage], config: LLMConfig, tools: [AgentTool]? = nil) async throws -> ChatMessage {
+        // 验证 API Key
         guard !config.apiKey.isEmpty else {
             os_log(.error, "\(self.t)API Key 为空")
             throw NSError(domain: "LLMService", code: 401, userInfo: [NSLocalizedDescriptionKey: "API Key is missing"])
         }
 
-        // 记录开始时间
+        // 记录开始时间，用于计算延迟
         let startTime = CFAbsoluteTimeGetCurrent()
 
         // 从注册表获取供应商实例
@@ -49,7 +105,7 @@ class LLMService: SuperLog, @unchecked Sendable {
             throw NSError(domain: "LLMService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Provider not found: \(config.providerId)"])
         }
 
-        // 构建 URL
+        // 构建 API URL
         guard let url = URL(string: provider.baseURL) else {
             os_log(.error, "\(self.t)无效的 URL: \(provider.baseURL)")
             throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL: \(provider.baseURL)"])
@@ -69,7 +125,7 @@ class LLMService: SuperLog, @unchecked Sendable {
             throw error
         }
 
-        // 输出工具列表（调试用）
+        // 输出调试信息
         if Self.verbose {
             os_log("\(self.t)🚀 发送请求到 \(config.providerId): \(config.model)")
 
@@ -83,31 +139,27 @@ class LLMService: SuperLog, @unchecked Sendable {
             }
         }
 
-        // 使用 LLM API 服务发送请求
+        // 发送请求到 LLM API
         do {
-            // 构建请求头（从 provider 获取）
+            // 构建额外的请求头
             var additionalHeaders: [String: String] = [:]
 
             // 为 Anthropic 兼容的 API 添加 anthropic-version 请求头
-            // Zhipu 需要此请求头
+            // 智谱 (Zhipu) 也需要此请求头
             if config.providerId == "zhipu" {
                 additionalHeaders["anthropic-version"] = "2023-06-01"
             }
-
-            // 阿里云 Coding Plan 使用 Authorization: Bearer 认证，不需要 x-api-key 和 anthropic-version
-            // 其他 provider (如 Zhipu, Anthropic) 使用 x-api-key 认证
-            let useBearerAuth = config.providerId == "aliyun"
 
             if Self.verbose && !additionalHeaders.isEmpty {
                 os_log("\(self.t)📦 添加额外请求头：\(additionalHeaders)")
             }
 
+            // 发送聊天请求
             let data = try await llmAPI.sendChatRequest(
                 url: url,
                 apiKey: config.apiKey,
                 body: body,
-                additionalHeaders: additionalHeaders,
-                useBearerAuth: useBearerAuth
+                additionalHeaders: additionalHeaders
             )
 
             // 解析响应
@@ -117,31 +169,316 @@ class LLMService: SuperLog, @unchecked Sendable {
             let endTime = CFAbsoluteTimeGetCurrent()
             let latency = (endTime - startTime) * 1000.0
 
+            // 输出响应信息
             if Self.verbose {
                 if let toolCalls = toolCalls, !toolCalls.isEmpty {
-                    os_log("\(self.t)收到响应：\(content.prefix(100))...，包含 \(toolCalls.count) 个工具调用，耗时：\(String(format: "%.2f", latency))ms")
+                    os_log("\(self.t)收到响应：\(content.prefix(10))...，包含 \(toolCalls.count) 个工具调用，耗时：\(String(format: "%.2f", latency))ms")
                 } else {
-                    os_log("\(self.t)收到响应：「\(content.prefix(100))...」，耗时：\(String(format: "%.2f", latency))ms")
+                    os_log("\(self.t)收到响应：「\(content.prefix(10))...」，耗时：\(String(format: "%.2f", latency))ms")
                 }
             }
 
+            // 返回助手消息（包含请求参数）
             return ChatMessage(
                 role: .assistant,
                 content: content,
                 toolCalls: toolCalls,
                 providerId: config.providerId,
                 modelName: config.model,
-                latency: latency  // 记录耗时
+                latency: latency,
+                temperature: config.temperature,
+                maxTokens: config.maxTokens
             )
 
         } catch let apiError as APIError {
-            // 转换 API 错误为 NSError
+            // 转换 API 错误为 NSError，保留错误描述
             throw NSError(
                 domain: "LLMService",
                 code: 500,
                 userInfo: [NSLocalizedDescriptionKey: apiError.localizedDescription]
             )
         }
+    }
+
+    // MARK: - 流式发送消息
+
+    /// 流式发送消息到 LLM
+    ///
+    /// 使用 SSE 协议接收流式响应，通过回调实时返回内容片段
+    ///
+    /// - Parameters:
+    ///   - messages: 消息历史
+    ///   - config: LLM 配置
+    ///   - tools: 可用工具列表
+    ///   - onChunk: 收到内容片段时的回调
+    /// - Returns: 完整的助手消息（包含累积的内容和工具调用）
+    /// - Throws: API 错误
+    func sendStreamingMessage(
+        messages: [ChatMessage],
+        config: LLMConfig,
+        tools: [AgentTool]? = nil,
+        onChunk: @Sendable @escaping (StreamChunk) -> Void
+    ) async throws -> ChatMessage {
+        // 验证 API Key
+        guard !config.apiKey.isEmpty else {
+            os_log(.error, "\(self.t)API Key 为空")
+            throw NSError(domain: "LLMService", code: 401, userInfo: [NSLocalizedDescriptionKey: "API Key is missing"])
+        }
+
+        // 记录开始时间
+        let startTime = CFAbsoluteTimeGetCurrent()
+
+        // 从注册表获取供应商实例
+        guard let provider = registry.createProvider(id: config.providerId) else {
+            os_log(.error, "\(self.t)未找到供应商：\(config.providerId)")
+            throw NSError(domain: "LLMService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Provider not found: \(config.providerId)"])
+        }
+
+        // 构建 API URL
+        guard let url = URL(string: provider.baseURL) else {
+            os_log(.error, "\(self.t)无效的 URL: \(provider.baseURL)")
+            throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL: \(provider.baseURL)"])
+        }
+
+        // 构建流式请求体
+        let body: [String: Any]
+        do {
+            body = try provider.buildStreamingRequestBody(
+                messages: messages,
+                model: config.model,
+                tools: tools,
+                systemPrompt: ""
+            )
+        } catch {
+            os_log(.error, "\(self.t)构建流式请求体失败：\(error.localizedDescription)")
+            throw error
+        }
+
+        // 输出调试信息
+        if Self.verbose {
+            os_log("\(self.t)🚀 发送流式请求到 \(config.providerId): \(config.model)")
+        }
+
+        // 构建额外的请求头
+        var additionalHeaders: [String: String] = [:]
+        if config.providerId == "zhipu" {
+            additionalHeaders["anthropic-version"] = "2023-06-01"
+        }
+
+        // 使用 actor 来保护可变状态，确保在闭包中的修改对外部可见
+        actor StreamingState {
+            var accumulatedContent = ""
+            var accumulatedToolCalls: [ToolCall] = []
+            var streamError: String?
+            var currentToolCallId: String?
+            var currentToolCallName: String?
+            var currentToolCallArguments = ""
+            var inputTokens: Int?
+            var outputTokens: Int?
+            var stopReason: String?
+            var timeToFirstToken: Double?
+            var isFirstToken = true
+            let startTime: CFAbsoluteTime
+            
+            init(startTime: CFAbsoluteTime) {
+                self.startTime = startTime
+            }
+            
+            func recordFirstToken() -> Double? {
+                guard isFirstToken else { return nil }
+                isFirstToken = false
+                let firstTokenTime = CFAbsoluteTimeGetCurrent()
+                let ttft = (firstTokenTime - startTime) * 1000.0
+                timeToFirstToken = ttft
+                return ttft
+            }
+            
+            func appendContent(_ content: String) {
+                accumulatedContent += content
+            }
+            
+            func saveCurrentToolCall() {
+                if let currentId = currentToolCallId,
+                   let currentName = currentToolCallName {
+                    let toolCall = ToolCall(
+                        id: currentId,
+                        name: currentName,
+                        arguments: currentToolCallArguments.isEmpty ? "{}" : currentToolCallArguments
+                    )
+                    accumulatedToolCalls.append(toolCall)
+                }
+            }
+            
+            func startNewToolCall(_ toolCall: ToolCall) {
+                currentToolCallId = toolCall.id
+                currentToolCallName = toolCall.name
+                currentToolCallArguments = ""
+            }
+            
+            func appendToolCallArguments(_ partialJson: String) {
+                currentToolCallArguments += partialJson
+            }
+            
+            func setError(_ error: String) {
+                streamError = error
+            }
+            
+            func updateTokens(input: Int?, output: Int?) {
+                if let input = input { inputTokens = input }
+                if let output = output { outputTokens = output }
+            }
+            
+            func setStopReason(_ reason: String) {
+                stopReason = reason
+            }
+        }
+        
+        let state = StreamingState(startTime: startTime)
+
+        // 发送流式请求
+        do {
+            try await llmAPI.sendStreamingRequest(
+                url: url,
+                apiKey: config.apiKey,
+                body: body,
+                additionalHeaders: additionalHeaders
+            ) { chunkData in
+                // 使用 Task 来在同步闭包中执行异步操作
+                Task {
+                    do {
+                        if let chunk = try provider.parseStreamChunk(data: chunkData) {
+                            // 记录首 token 时间
+                            if let ttft = await state.recordFirstToken() {
+                                if Self.verbose {
+                                    os_log("\(self.t)⏱️ 首 token 延迟: \(String(format: "%.2f", ttft))ms")
+                                }
+                            }
+
+                            // 累积内容 - 只累积 textDelta 的内容，跳过 thinkingDelta
+                            if let content = chunk.content, chunk.eventType == .textDelta {
+                                await state.appendContent(content)
+                                if Self.verbose {
+                                    let currentContent = await state.accumulatedContent
+                                    if currentContent.count < 200 {
+                                        os_log("\(self.t)📝 累积内容: \(content)")
+                                    }
+                                }
+                            }
+                            
+                            // 处理工具调用
+                            if let toolCalls = chunk.toolCalls {
+                                // 如果是新的工具调用，保存当前的（如果有）
+                                await state.saveCurrentToolCall()
+                                
+                                // 开始新的工具调用
+                                if let firstToolCall = toolCalls.first {
+                                    await state.startNewToolCall(firstToolCall)
+                                }
+                            }
+                            
+                            // 处理工具调用参数分片
+                            if let partialJson = chunk.partialJson {
+                                await state.appendToolCallArguments(partialJson)
+                            }
+                            
+                            if let error = chunk.error {
+                                await state.setError(error)
+                            }
+
+                            // 累积性能指标
+                            await state.updateTokens(input: chunk.inputTokens, output: chunk.outputTokens)
+                            if let reason = chunk.stopReason {
+                                await state.setStopReason(reason)
+                            }
+
+                            // 处理消息结束，保存最后一个工具调用
+                            if chunk.isDone {
+                                await state.saveCurrentToolCall()
+                            }
+
+                            // 回调通知外部
+                            onChunk(chunk)
+                        } else {
+                            // Provider 应该已经处理了所有事件类型，这里不应该再返回 nil
+                            if Self.verbose {
+                                let preview = String(data: chunkData, encoding: .utf8)?.prefix(100) ?? "无法解码"
+                                os_log("\(self.t)⚠️ 警告：Provider 返回 nil，原始数据: \(preview)...")
+                            }
+                        }
+                    } catch {
+                        if Self.verbose {
+                            os_log("\(self.t)⚠️ 解析流式数据块失败: \(error.localizedDescription)")
+                        }
+                    }
+                }
+            }
+        } catch {
+            throw NSError(
+                domain: "LLMService",
+                code: 500,
+                userInfo: [NSLocalizedDescriptionKey: error.localizedDescription]
+            )
+        }
+        
+        // 给 Task 一点时间来完成处理
+        try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+        
+        // 流式结束后，保存最后一个工具调用
+        await state.saveCurrentToolCall()
+
+        // 检查流式过程中是否发生错误
+        if let error = await state.streamError {
+            throw NSError(
+                domain: "LLMService",
+                code: 500,
+                userInfo: [NSLocalizedDescriptionKey: error]
+            )
+        }
+
+        // 计算总耗时
+        let endTime = CFAbsoluteTimeGetCurrent()
+        let latency = (endTime - startTime) * 1000.0
+
+        // 获取最终状态
+        let finalContent = await state.accumulatedContent
+        let finalToolCalls = await state.accumulatedToolCalls
+        let finalInputTokens = await state.inputTokens
+        let finalOutputTokens = await state.outputTokens
+        let finalStopReason = await state.stopReason
+        let finalTimeToFirstToken = await state.timeToFirstToken
+
+        if Self.verbose {
+            os_log("\(self.t)✅ 流式响应完成，总耗时：\(String(format: "%.2f", latency))ms, TTFT: \(String(format: "%.2f", finalTimeToFirstToken ?? 0))ms, 内容长度：\(finalContent.count)")
+            if finalContent.isEmpty {
+                os_log("\(self.t)⚠️ 警告：累积内容为空！")
+            } else {
+                os_log("\(self.t)📝 累积内容预览：\(finalContent.prefix(100))...")
+            }
+        }
+
+        // 计算总 token 数
+        let totalTokens: Int? = if let input = finalInputTokens, let output = finalOutputTokens {
+            input + output
+        } else {
+            nil
+        }
+
+        // 返回完整的助手消息（包含性能指标和请求参数）
+        return ChatMessage(
+            role: .assistant,
+            content: finalContent,
+            toolCalls: finalToolCalls.isEmpty ? nil : finalToolCalls,
+            providerId: config.providerId,
+            modelName: config.model,
+            latency: latency,
+            inputTokens: finalInputTokens,
+            outputTokens: finalOutputTokens,
+            totalTokens: totalTokens,
+            timeToFirstToken: finalTimeToFirstToken,
+            finishReason: finalStopReason,
+            temperature: config.temperature,
+            maxTokens: config.maxTokens
+        )
     }
 }
 
