@@ -58,11 +58,9 @@ final class ProjectViewModel: ObservableObject, SuperLog {
 
     // MARK: - 初始化
 
-    private let providerRegistry: ProviderRegistry
     private let contextService: ContextService
 
-    init(providerRegistry: ProviderRegistry = ProviderRegistry(), contextService: ContextService = ContextService()) {
-        self.providerRegistry = providerRegistry
+    init(contextService: ContextService = ContextService()) {
         self.contextService = contextService
         loadLanguagePreference()
         loadChatMode()
@@ -152,7 +150,8 @@ final class ProjectViewModel: ObservableObject, SuperLog {
 
     /// 获取指定供应商的默认模型
     private func getDefaultModel(for providerId: String) -> String {
-        guard let providerType = providerRegistry.providerType(forId: providerId) else {
+        let registry = ProviderRegistry()
+        guard let providerType = registry.providerType(forId: providerId) else {
             return ""
         }
         return providerType.defaultModel

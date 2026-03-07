@@ -2,7 +2,7 @@ import SwiftUI
 
 /// MCP 服务器设置视图
 struct MCPSettingsView: View {
-    @EnvironmentObject var mcpService: MCPService
+    @EnvironmentObject var mcpViewModel: MCPViewModel
     @State private var selectedTab: Int = 0
 
     // 安装状态
@@ -44,17 +44,17 @@ struct MCPSettingsView: View {
             env: envVarInputs,
             homepage: item.documentationURL
         )
-        mcpService.addConfig(config)
+        mcpViewModel.addConfig(config)
     }
 }
 
 /// 已安装服务器视图
 struct InstalledServersView: View {
-    @EnvironmentObject var mcpService: MCPService
+    @EnvironmentObject var mcpViewModel: MCPViewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if mcpService.configs.isEmpty {
+            if mcpViewModel.configs.isEmpty {
                 emptyStateView
             } else {
                 serverListView
@@ -81,16 +81,16 @@ struct InstalledServersView: View {
     /// 服务器列表视图
     private var serverListView: some View {
         List {
-            ForEach(Array(mcpService.configs.enumerated()), id: \.element.name) { index, config in
-                ServerRow(config: config, mcpService: mcpService)
+            ForEach(Array(mcpViewModel.configs.enumerated()), id: \.element.name) { index, config in
+                ServerRow(config: config, mcpViewModel: mcpViewModel)
             }
         }
         .listStyle(.plain)
     }
-    
+
     struct ServerRow: View {
         let config: MCPServerConfig
-        @ObservedObject var mcpService: MCPService
+        let mcpViewModel: MCPViewModel
         @State private var isExpanded: Bool = false
 
         var body: some View {
@@ -125,12 +125,12 @@ struct InstalledServersView: View {
                     Spacer()
 
                     // 状态指示
-                    if mcpService.connectedClients[config.name] != nil {
+                    if mcpViewModel.service.connectedClients[config.name] != nil {
                         MCPStatusBadge(isConnected: true)
                     } else {
                         VStack(alignment: .trailing) {
                             MCPStatusBadge(isConnected: false)
-                            if let error = mcpService.connectionErrors[config.name] {
+                            if let error = mcpViewModel.service.connectionErrors[config.name] {
                                 Text(error)
                                     .font(.caption2)
                                     .foregroundColor(.red)
@@ -141,7 +141,7 @@ struct InstalledServersView: View {
                     }
 
                     Button(action: {
-                        mcpService.removeConfig(name: config.name)
+                        mcpViewModel.removeConfig(name: config.name)
                     }) {
                         Image(systemName: "trash")
                             .foregroundColor(.red)
@@ -217,7 +217,7 @@ struct InstalledServersView: View {
                         }
 
                         // 工具（连接时可用）
-                        if mcpService.connectedClients[config.name] != nil {
+                        if mcpViewModel.service.connectedClients[config.name] != nil {
                             Text("Tools available when connected.", tableName: "DevAssistant")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
@@ -238,7 +238,7 @@ extension MCPSettingsView {
     struct MarketplaceView: View {
         let items = MCPMarketplace.shared.items
         @Binding var selectedItem: MCPMarketplaceItem?
-        @EnvironmentObject var mcpService: MCPService
+        @EnvironmentObject var mcpViewModel: MCPViewModel
 
         var body: some View {
             List(items) { item in
@@ -255,7 +255,7 @@ extension MCPSettingsView {
                             Text(item.name)
                                 .fontWeight(.medium)
 
-                            if mcpService.configs.contains(where: { $0.name == item.name }) {
+                            if mcpViewModel.configs.contains(where: { $0.name == item.name }) {
                                 Text("Installed", tableName: "DevAssistant")
                                     .font(.caption2)
                                     .padding(.horizontal, 6)
@@ -291,7 +291,7 @@ extension MCPSettingsView {
                     Button(action: {
                         selectedItem = item
                     }) {
-                        Text(LocalizedStringKey(mcpService.configs.contains(where: { $0.name == item.name }) ? "Reinstall" : "Install"), tableName: "DevAssistant")
+                        Text(LocalizedStringKey(mcpViewModel.configs.contains(where: { $0.name == item.name }) ? "Reinstall" : "Install"), tableName: "DevAssistant")
                             .font(.caption)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)

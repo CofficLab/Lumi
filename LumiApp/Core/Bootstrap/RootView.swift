@@ -37,6 +37,12 @@ struct RootView<Content>: View where Content: View {
     /// MCP 服务
     let mcpService: MCPService
 
+    /// MCP ViewModel
+    let mcpViewModel: MCPViewModel
+
+    /// Tools ViewModel
+    let toolsViewModel: ToolsViewModel
+
     /// 权限服务
     let permissionService: PermissionService
 
@@ -49,12 +55,6 @@ struct RootView<Content>: View where Content: View {
     /// 提示词服务
     let promptService: PromptService
 
-    /// API 服务
-    let apiService: APIService
-
-    /// LLM API 服务
-    let llmAPI: LLMAPIService
-
     /// LLM 服务
     let llmService: LLMService
 
@@ -63,9 +63,6 @@ struct RootView<Content>: View where Content: View {
 
     /// Shell 服务
     let shellService: ShellService
-
-    /// 供应商注册表
-    let providerRegistry: ProviderRegistry
 
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
@@ -86,20 +83,11 @@ struct RootView<Content>: View where Content: View {
         // 初始化上下文服务
         self.contextService = ContextService()
 
-        // 初始化 API 服务
-        self.apiService = APIService()
-
         // 初始化 Shell 服务
         self.shellService = ShellService()
 
-        // 初始化 LLM API 服务（依赖 API 服务）
-        self.llmAPI = LLMAPIService(apiService: apiService)
-
-        // 初始化供应商注册表
-        self.providerRegistry = ProviderRegistry()
-
-        // 初始化 LLM 服务（依赖 Registry 和 LLMAPIService）
-        self.llmService = LLMService(registry: providerRegistry, llmAPI: llmAPI)
+        // 初始化 LLM 服务（内部自动初始化 APIService 和 LLMAPIService）
+        self.llmService = LLMService()
 
         // 初始化提示词服务（依赖 ContextService）
         self.promptService = PromptService(contextService: contextService)
@@ -121,6 +109,12 @@ struct RootView<Content>: View where Content: View {
         // ViewModel 层
         // ========================================
 
+        // 创建 MCP ViewModel
+        self.mcpViewModel = MCPViewModel(service: mcpService)
+
+        // 创建 Tools ViewModel
+        self.toolsViewModel = ToolsViewModel(service: toolService)
+
         // 初始化聊天历史服务（依赖 LLMService）
         let chatHistoryService = ChatHistoryService(
             llmService: llmService,
@@ -129,7 +123,7 @@ struct RootView<Content>: View where Content: View {
 
         // 初始化基础 ViewModel
         self.appProvider = GlobalProvider()
-        self.projectViewModel = ProjectViewModel(providerRegistry: providerRegistry, contextService: contextService)
+        self.projectViewModel = ProjectViewModel(contextService: contextService)
         self.commandSuggestionViewModel = CommandSuggestionViewModel()
 
         // 创建 MessageViewModel
@@ -159,16 +153,17 @@ struct RootView<Content>: View where Content: View {
             llmService: llmService,
             toolService: toolService,
             promptService: promptService,
-            jobScheduler: jobScheduler,
-            llmAPI: llmAPI
+            jobScheduler: jobScheduler
         )
 
         // 初始化 AgentProvider（先创建，再注入到其他依赖中）
         self.agentProvider = AgentProvider(
             promptService: promptService,
-            registry: providerRegistry,
+            registry: ProviderRegistry(),
             toolService: toolService,
             mcpService: mcpService,
+            mcpViewModel: mcpViewModel,
+            toolsViewModel: toolsViewModel,
             chatHistoryService: chatHistoryService,
             messageViewModel: messageViewModel,
             conversationViewModel: conversationViewModel,
@@ -194,11 +189,10 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(messageViewModel)
             .environmentObject(messageSenderViewModel)
             .environmentObject(commandSuggestionViewModel)
-            .environmentObject(mcpService)
-            .environmentObject(toolService)
+            .environmentObject(mcpViewModel)
+            .environmentObject(toolsViewModel)
             .environmentObject(permissionService)
             .environmentObject(shellService)
-            .environmentObject(providerRegistry)
             .environmentObject(MystiqueThemeManager())
             .modelContainer(modelContainer)
     }

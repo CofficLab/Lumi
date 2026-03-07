@@ -10,7 +10,7 @@ import MagicKit
 /// 网络请求部分已委托给 LLMAPIService。
 /// 此类可以在后台线程执行
 class LLMService: SuperLog, @unchecked Sendable {
-    nonisolated static let emoji = "🌐"
+    nonisolated static let emoji = "🤖"
     nonisolated static let verbose = true
 
     private nonisolated let registry: ProviderRegistry
@@ -19,9 +19,9 @@ class LLMService: SuperLog, @unchecked Sendable {
     /// 供应商注册表（公开访问）
     nonisolated var providerRegistry: ProviderRegistry { registry }
 
-    init(registry: ProviderRegistry, llmAPI: LLMAPIService) {
-        self.registry = registry
-        self.llmAPI = llmAPI
+    init() {
+        self.registry = ProviderRegistry()
+        self.llmAPI = LLMAPIService()
         if Self.verbose {
             os_log("\(self.t)✅ LLM 服务已初始化")
         }

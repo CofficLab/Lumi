@@ -66,7 +66,8 @@ extension ToolExecutionJob {
         }
 
         // 使用 ToolService 查找工具
-        guard await toolService.hasTool(named: toolCall.name) else {
+        // ToolService 是 @unchecked Sendable，可以直接调用
+        guard toolService.hasTool(named: toolCall.name) else {
             os_log(.error, "\(Self.t)❌ 工具 '\(toolCall.name)' 未找到")
             throw NSError(
                 domain: "ToolExecutionJob",
@@ -78,13 +79,9 @@ extension ToolExecutionJob {
         // 执行工具
         let result: String
         do {
-            // 抑制数据竞争警告：arguments 是值类型，在 await 传递时已经完成复制
-            nonisolated(unsafe) let unsafeArgs = arguments
-
-            result = try await toolService.executeTool(
-                named: toolCall.name,
-                arguments: unsafeArgs
-            )
+            // arguments 在调用期间不会被修改，安全传递
+            nonisolated(unsafe) let unsafeArguments = arguments
+            result = try await toolService.executeTool(named: toolCall.name, arguments: unsafeArguments)
         } catch {
             os_log(.error, "\(Self.t)❌ 工具执行失败：\(error.localizedDescription)")
             throw error

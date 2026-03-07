@@ -24,33 +24,6 @@ actor JobScheduler: SuperLog {
 
     // MARK: - 任务执行方法
 
-    /// 执行 LLM 请求任务
-    ///
-    /// 在后台线程执行，不阻塞调用线程
-    ///
-    /// - Parameters:
-    ///   - messages: 消息历史
-    ///   - config: LLM 配置
-    ///   - tools: 可用工具列表
-    ///   - registry: 供应商注册表
-    ///   - llmAPI: LLM API 服务
-    /// - Returns: AI 助手的响应消息
-    func executeLLMRequest(
-        messages: [ChatMessage],
-        config: LLMConfig,
-        tools: [AgentTool]?,
-        registry: ProviderRegistry,
-        llmAPI: LLMAPIService
-    ) async throws -> ChatMessage {
-        try await LLMRequestJob.run(
-            messages: messages,
-            config: config,
-            tools: tools,
-            registry: registry,
-            llmAPI: llmAPI
-        )
-    }
-
     /// 执行工具调用任务
     ///
     /// 自动在后台线程执行，不阻塞调用线程

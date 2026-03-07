@@ -9,13 +9,31 @@ import MagicKit
 class LLMAPIService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🌐"
     nonisolated static let verbose = true
-
-    private nonisolated let apiService: APIService
-
-    init(apiService: APIService) {
-        self.apiService = apiService
+    
+    /// URLSession 配置
+    private nonisolated let session: URLSession
+    private nonisolated let decoder: JSONDecoder
+    
+    // MARK: - 重试配置
+    
+    /// 最大重试次数
+    private nonisolated let maxRetries: Int = 3
+    
+    /// 初始重试等待时间（秒）
+    private nonisolated let baseRetryDelay: Double = 1.0
+    
+    /// 重试退避倍数（指数增长）
+    private nonisolated let retryBackoffMultiplier: Double = 2.0
+    
+    init() {
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = 300  // 5 分钟超时（LLM 需要更多时间）
+        configuration.timeoutIntervalForResource = 600  // 10 分钟资源超时
+        self.session = URLSession(configuration: configuration)
+        self.decoder = JSONDecoder()
+        
         if Self.verbose {
-            os_log("\(self.t)✅ LLM API 服务已初始化")
+            os_log("\(self.t)✅ LLM API 服务已初始化（最大重试次数：\(self.maxRetries)）")
         }
     }
 
@@ -76,12 +94,11 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         body: [String: Any]?
     ) async throws -> (Data, URLResponse) {
         var lastError: Error?
-        let maxRetries = APIService.maxRetries
 
         for attempt in 1...maxRetries {
             do {
                 if Self.verbose && attempt > 1 {
-                    os_log("\(self.t)🔄 重试 LLM 请求 (尝试 \(attempt)/\(maxRetries))")
+                    os_log("\(self.t)🔄 重试 LLM 请求 (尝试 \(attempt)/\(self.maxRetries))")
                 }
 
                 let result = try await sendRawRequest(
@@ -100,8 +117,8 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
             } catch {
                 lastError = error
 
-                if attempt < maxRetries && apiService.isRetryableError(error) {
-                    let delay = apiService.calculateRetryDelay(for: attempt)
+                if attempt < maxRetries && isRetryableError(error) {
+                    let delay = calculateRetryDelay(for: attempt)
                     os_log("\(self.t)⚠️ LLM 请求失败 (\(error.localizedDescription))，\(Int(delay)) 秒后重试...")
                     try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
                 } else {
@@ -160,7 +177,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         }
 
         do {
-            let (data, response) = try await apiService.session.data(for: request)
+            let (data, response) = try await session.data(for: request)
             try validateResponse(response, data: data)
 
             if Self.verbose {
@@ -175,6 +192,44 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
             os_log(.error, "\(self.t)LLM 请求失败：\(error.localizedDescription)")
             throw APIError.requestFailed(underlying: error)
         }
+    }
+
+    // MARK: - 错误判断
+
+    /// 判断错误是否可重试
+    private func isRetryableError(_ error: Error) -> Bool {
+        switch error {
+        case APIError.requestFailed(let underlying):
+            let nsError = underlying as NSError
+            if nsError.code == NSURLErrorTimedOut {
+                return true
+            }
+            if nsError.code == NSURLErrorNotConnectedToInternet ||
+               nsError.code == NSURLErrorCannotConnectToHost ||
+               nsError.code == NSURLErrorNetworkConnectionLost {
+                return true
+            }
+            return false
+            
+        case APIError.httpError(let statusCode, _):
+            if (500 ... 599).contains(statusCode) {
+                return true
+            }
+            if statusCode == 429 {
+                return true
+            }
+            return false
+            
+        default:
+            return false
+        }
+    }
+    
+    /// 计算重试延迟时间（指数退避）
+    private func calculateRetryDelay(for attempt: Int) -> Double {
+        let delay = baseRetryDelay * pow(retryBackoffMultiplier, Double(attempt - 1))
+        let jitter = Double.random(in: 0...0.5)
+        return delay + jitter
     }
 
     /// 验证 LLM API 响应
@@ -199,4 +254,39 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
             )
         }
     }
+}
+
+// MARK: - API 错误
+
+enum APIError: LocalizedError {
+    case jsonSerializationFailed(underlying: Error)
+    case requestFailed(underlying: Error)
+    case decodingFailed(underlying: Error)
+    case invalidResponse
+    case httpError(statusCode: Int, message: String)
+
+    var errorDescription: String? {
+        switch self {
+        case .jsonSerializationFailed(let error):
+            return "JSON 序列化失败：\(error.localizedDescription)"
+        case .requestFailed(let error):
+            return "请求失败：\(error.localizedDescription)"
+        case .decodingFailed(let error):
+            return "响应解码失败：\(error.localizedDescription)"
+        case .invalidResponse:
+            return "无效的响应"
+        case .httpError(let code, let message):
+            return "HTTP 错误 (\(code)): \(message.prefix(200))"
+        }
+    }
+}
+
+// MARK: - HTTP 方法
+
+enum HTTPMethod: String {
+    case get = "GET"
+    case post = "POST"
+    case put = "PUT"
+    case patch = "PATCH"
+    case delete = "DELETE"
 }

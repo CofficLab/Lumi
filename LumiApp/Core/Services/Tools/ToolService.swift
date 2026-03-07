@@ -4,18 +4,29 @@ import OSLog
 import Combine
 
 /// 工具服务：负责管理所有可用工具
-@MainActor
-class ToolService: ObservableObject, SuperLog {
+///
+/// 设计原则：
+/// - 不在主线程上运行，所有操作都是异步的
+/// - 通过 Combine Publishers 通知状态变化
+/// - ViewModel 层负责将状态暴露给 UI
+///
+/// 注意：此类通过方法内部同步保证线程安全，因此可以安全地在并发代码中使用
+class ToolService: SuperLog, @unchecked Sendable {
 
     // MARK: - Logger
 
     nonisolated static let emoji = "🧰"
     nonisolated static let verbose = true
 
-    // MARK: - Published Properties
+    // MARK: - Combine Publishers (状态变化通知)
+
+    /// 工具列表变化通知
+    let toolsPublisher = PassthroughSubject<[AgentTool], Never>()
+
+    // MARK: - Properties
 
     /// 所有可用工具（包括内置工具和 MCP 工具）
-    @Published private(set) var allTools: [AgentTool] = []
+    private(set) var allTools: [AgentTool] = []
 
     /// 内置工具
     private var builtInTools: [AgentTool] = []
@@ -43,6 +54,37 @@ class ToolService: ObservableObject, SuperLog {
         }
     }
 
+    // MARK: - Setup
+
+    /// 注册所有内置工具
+    private func setupBuiltInTools() {
+        builtInTools = [
+            ListDirectoryTool(),
+            ReadFileTool(),
+            WriteFileTool(),
+            ShellTool(shellService: shellService),
+        ]
+    }
+
+    /// 设置 MCP 工具监听器
+    private func setupMCPObservers() {
+        mcpService.toolsPublisher
+            .sink { [weak self] mcpTools in
+                guard let self = self else { return }
+                self.mcpTools = mcpTools
+                self.refreshAllTools()
+            }
+            .store(in: &cancellables)
+    }
+
+    /// 刷新所有工具列表
+    private func refreshAllTools() {
+        allTools = builtInTools + mcpTools
+        toolsPublisher.send(allTools)
+    }
+
+    // MARK: - Public API
+
     /// 获取所有工具（只读）
     var tools: [AgentTool] {
         return allTools
@@ -62,37 +104,6 @@ class ToolService: ObservableObject, SuperLog {
     var mcpToolCount: Int {
         return mcpTools.count
     }
-
-    // MARK: - Setup
-
-    /// 注册所有内置工具
-    private func setupBuiltInTools() {
-        builtInTools = [
-            ListDirectoryTool(),
-            ReadFileTool(),
-            WriteFileTool(),
-            ShellTool(shellService: shellService),
-        ]
-    }
-
-    /// 设置 MCP 工具监听器
-    private func setupMCPObservers() {
-        mcpService.$tools
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] mcpTools in
-                guard let self = self else { return }
-                self.mcpTools = mcpTools
-                self.refreshAllTools()
-            }
-            .store(in: &cancellables)
-    }
-
-    /// 刷新所有工具列表
-    private func refreshAllTools() {
-        allTools = builtInTools + mcpTools
-    }
-
-    // MARK: - Public API
 
     /// 根据名称获取工具
     /// - Parameter name: 工具名称
@@ -193,7 +204,7 @@ class ToolService: ObservableObject, SuperLog {
         }
     }
 
-    // MARK: - Tool Categorization (可选)
+    // MARK: - Tool Categorization
 
     /// 获取文件操作相关工具
     var fileOperationTools: [AgentTool] {

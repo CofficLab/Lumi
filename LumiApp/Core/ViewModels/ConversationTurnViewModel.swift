@@ -26,9 +26,6 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
     /// 后台任务调度器
     private let jobScheduler: JobScheduler
 
-    /// LLM API 服务
-    private let llmAPI: LLMAPIService
-
     // MARK: - 回调委托
 
     /// 对话轮次处理委托
@@ -51,14 +48,12 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
         llmService: LLMService,
         toolService: ToolService,
         promptService: PromptService,
-        jobScheduler: JobScheduler,
-        llmAPI: LLMAPIService
+        jobScheduler: JobScheduler
     ) {
         self.llmService = llmService
         self.toolService = toolService
         self.promptService = promptService
         self.jobScheduler = jobScheduler
-        self.llmAPI = llmAPI
     }
 
     // MARK: - 对话轮次处理
@@ -104,16 +99,14 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
 
         do {
             // 1. 获取 LLM 响应（在后台执行）
-            var responseMsg = try await jobScheduler.executeLLMRequest(
+            var responseMsg = try await llmService.sendMessage(
                 messages: messages,
                 config: config,
-                tools: availableTools,
-                registry: llmService.providerRegistry,
-                llmAPI: llmAPI
+                tools: availableTools
             )
 
             // 检查内容是否为空（只有空白字符）
-            let hasContent = !responseMsg.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            let hasContent = !responseMsg.content.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty
             let hasToolCalls = responseMsg.toolCalls != nil && !responseMsg.toolCalls!.isEmpty
 
             // 当无内容但有工具调用时，生成一个友好的提示消息
