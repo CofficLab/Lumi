@@ -21,6 +21,9 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     /// 工具服务
     let toolService: ToolService
 
+    /// MCP 服务
+    let mcpService: MCPService
+
     /// 聊天历史服务
     let chatHistoryService: ChatHistoryService
 
@@ -77,6 +80,7 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     ///   - promptService: 提示词服务
     ///   - registry: 供应商注册表
     ///   - toolService: 工具服务
+    ///   - mcpService: MCP 服务
     ///   - chatHistoryService: 聊天历史服务
     ///   - messageViewModel: 消息 ViewModel
     ///   - conversationViewModel: 会话 ViewModel
@@ -87,6 +91,7 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         promptService: PromptService,
         registry: ProviderRegistry,
         toolService: ToolService,
+        mcpService: MCPService,
         chatHistoryService: ChatHistoryService,
         messageViewModel: MessageViewModel,
         conversationViewModel: ConversationViewModel,
@@ -97,6 +102,7 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         self.promptService = promptService
         self.registry = registry
         self.toolService = toolService
+        self.mcpService = mcpService
         self.chatHistoryService = chatHistoryService
         self.messageViewModel = messageViewModel
         self.conversationViewModel = conversationViewModel

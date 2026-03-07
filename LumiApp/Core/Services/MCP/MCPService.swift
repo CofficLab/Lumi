@@ -9,9 +9,7 @@ import MagicKit
 class MCPService: ObservableObject, SuperLog {
     nonisolated static let verbose = false
     nonisolated static let emoji = "🐘"
-    
-    static let shared = MCPService()
-    
+
     @Published var configs: [MCPServerConfig] = []
     @Published var connectedClients: [String: Client] = [:]
     @Published var tools: [AgentTool] = []
@@ -21,10 +19,10 @@ class MCPService: ObservableObject, SuperLog {
     private var cachedTools: [String: [MCP.Tool]] = [:]
 
     private let storageKey = "MCPService_Configs"
-    
-    private init() {
+
+    init() {
         loadConfigs()
-        
+
         // Auto-connect after a short delay to ensure app is ready
         Task {
             try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second

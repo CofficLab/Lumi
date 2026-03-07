@@ -34,11 +34,17 @@ struct RootView<Content>: View where Content: View {
     /// 工具服务
     let toolService: ToolService
 
+    /// MCP 服务
+    let mcpService: MCPService
+
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
 
         // 初始化 SwiftData 容器
         self.modelContainer = AppConfig.getContainer()
+
+        // 初始化 MCP 服务（仅在 RootView 中创建单实例）
+        self.mcpService = MCPService()
 
         // 初始化聊天历史服务
         let chatHistoryService = ChatHistoryService(
@@ -51,8 +57,8 @@ struct RootView<Content>: View where Content: View {
         self.projectViewModel = ProjectViewModel()
         self.commandSuggestionViewModel = CommandSuggestionViewModel()
 
-        // 初始化工具服务
-        self.toolService = ToolService()
+        // 初始化工具服务（依赖 MCP 服务）
+        self.toolService = ToolService(mcpService: mcpService)
 
         // 创建 MessageViewModel
         self.messageViewModel = MessageViewModel(chatHistoryService: chatHistoryService)
@@ -85,6 +91,7 @@ struct RootView<Content>: View where Content: View {
             promptService: PromptService.shared,
             registry: ProviderRegistry.shared,
             toolService: toolService,
+            mcpService: mcpService,
             chatHistoryService: chatHistoryService,
             messageViewModel: messageViewModel,
             conversationViewModel: conversationViewModel,
@@ -109,6 +116,8 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(messageViewModel)
             .environmentObject(messageSenderViewModel)
             .environmentObject(commandSuggestionViewModel)
+            .environmentObject(mcpService)
+            .environmentObject(toolService)
             .environmentObject(MystiqueThemeManager())
             .modelContainer(modelContainer)
     }

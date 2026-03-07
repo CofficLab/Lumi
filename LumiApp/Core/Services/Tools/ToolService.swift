@@ -4,6 +4,7 @@ import OSLog
 import Combine
 
 /// 工具服务：负责管理所有可用工具
+@MainActor
 class ToolService: ObservableObject, SuperLog {
 
     // MARK: - Logger
@@ -23,11 +24,23 @@ class ToolService: ObservableObject, SuperLog {
     private var mcpTools: [AgentTool] = []
     
     // MARK: - Dependencies
-    
-    private let mcpService = MCPService.shared
+
+    private let mcpService: MCPService
     private var cancellables = Set<AnyCancellable>()
-    
-    // MARK: - Computed Properties
+
+    // MARK: - Initialization
+
+    init(mcpService: MCPService) {
+        self.mcpService = mcpService
+        setupBuiltInTools()
+        setupMCPObservers()
+        refreshAllTools()
+
+        if Self.verbose {
+            os_log("\(Self.t) 工具服务已初始化")
+            os_log("\(Self.t) 内置工具：\(self.builtInTools.count) 个")
+        }
+    }
     
     /// 获取所有工具（只读）
     var tools: [AgentTool] {

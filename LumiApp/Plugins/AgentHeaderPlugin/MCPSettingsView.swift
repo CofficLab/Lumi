@@ -1,9 +1,8 @@
-
 import SwiftUI
 
 /// MCP 服务器设置视图
 struct MCPSettingsView: View {
-    @StateObject private var mcpService = MCPService.shared
+    @EnvironmentObject var mcpService: MCPService
     @State private var selectedTab: Int = 0
 
     // 安装状态
@@ -51,7 +50,7 @@ struct MCPSettingsView: View {
 
 /// 已安装服务器视图
 struct InstalledServersView: View {
-    @ObservedObject var mcpService = MCPService.shared
+    @EnvironmentObject var mcpService: MCPService
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -239,7 +238,7 @@ extension MCPSettingsView {
     struct MarketplaceView: View {
         let items = MCPMarketplace.shared.items
         @Binding var selectedItem: MCPMarketplaceItem?
-        @ObservedObject var mcpService = MCPService.shared
+        @EnvironmentObject var mcpService: MCPService
 
         var body: some View {
             List(items) { item in
