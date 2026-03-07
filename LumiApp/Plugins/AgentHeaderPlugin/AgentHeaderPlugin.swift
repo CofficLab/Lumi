@@ -1,8 +1,8 @@
 import MagicKit
 import SwiftUI
 
-/// DevAssistant 头部插件 - 负责显示聊天头部（项目信息、工具栏按钮等）
-actor DevAssistantHeaderPlugin: SuperPlugin {
+/// 头部插件 - 负责显示聊天头部（项目信息、工具栏按钮等）
+actor AgentHeaderPlugin: SuperPlugin {
     nonisolated static let emoji = "📌"
     nonisolated static let verbose = false
 
@@ -11,9 +11,9 @@ actor DevAssistantHeaderPlugin: SuperPlugin {
     static let description = String(localized: "DevAssistant chat header", table: "DevAssistant")
     static let iconName = "rectangle.topthird.inset.filled"
     static var order: Int { 81 }
-    static let enable: Bool = false
+    static let enable: Bool = true
 
-    static let shared = DevAssistantHeaderPlugin()
+    static let shared = AgentHeaderPlugin()
 
     // MARK: - Lifecycle
 

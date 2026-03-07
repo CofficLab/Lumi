@@ -7,7 +7,7 @@ import Logging
 /// A Transport that communicates with a subprocess via Stdio
 actor SubprocessTransport: Transport, SuperLog {
     nonisolated static let emoji = "📟"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
     
     nonisolated let logger: Logging.Logger
     let command: String

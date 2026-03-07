@@ -7,7 +7,7 @@ import MagicKit
 
 @MainActor
 class MCPService: ObservableObject, SuperLog {
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
     nonisolated static let emoji = "🐘"
 
     @Published var configs: [MCPServerConfig] = []

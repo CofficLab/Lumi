@@ -596,23 +596,6 @@
         }
       }
     },
-    "API Key" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "API 密钥"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "API 密钥"
-          }
-        }
-      }
-    },
     "API Key 将安全存储在系统钥匙串中" : {
 
     },
