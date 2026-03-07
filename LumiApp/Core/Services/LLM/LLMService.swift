@@ -13,14 +13,15 @@ class LLMService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🌐"
     nonisolated static let verbose = true
 
-    static let shared = LLMService()
-
     private nonisolated let registry: ProviderRegistry
     private nonisolated let llmAPI: LLMAPIService
 
-    private init() {
-        self.registry = ProviderRegistry.shared
-        self.llmAPI = LLMAPIService.shared
+    /// 供应商注册表（公开访问）
+    nonisolated var providerRegistry: ProviderRegistry { registry }
+
+    init(registry: ProviderRegistry, llmAPI: LLMAPIService) {
+        self.registry = registry
+        self.llmAPI = llmAPI
         if Self.verbose {
             os_log("\(self.t)✅ LLM 服务已初始化")
         }

@@ -30,7 +30,7 @@ struct DevAssistantSettingsView: View {
 
     // MARK: - Dependencies
 
-    private let registry = ProviderRegistry.shared
+    @EnvironmentObject private var registry: ProviderRegistry
     private let configStore = ProjectConfigStore.shared
 
     // MARK: - Computed Properties

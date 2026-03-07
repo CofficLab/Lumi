@@ -10,23 +10,21 @@ class APIService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🌐"
     nonisolated static let verbose = false
 
-    static let shared = APIService()
-
     let session: URLSession
     private let decoder: JSONDecoder
-    
+
     // MARK: - 重试配置
-    
+
     /// 最大重试次数
     static let maxRetries: Int = 3
-    
+
     /// 初始重试等待时间（秒）
     let baseRetryDelay: Double = 1.0
-    
+
     /// 重试退避倍数（指数增长）
     let retryBackoffMultiplier: Double = 2.0
 
-    private init() {
+    init() {
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 300  // 5 分钟超时（LLM 需要更多时间）
         configuration.timeoutIntervalForResource = 600  // 10 分钟资源超时

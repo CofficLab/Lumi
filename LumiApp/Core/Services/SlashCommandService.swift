@@ -8,10 +8,10 @@ enum SlashCommandResult {
 }
 
 actor SlashCommandService {
-    static let shared = SlashCommandService()
-
     /// 支持的命令列表
     private let supportedCommands = ["clear", "help", "plan", "mcp"]
+
+    init() {}
 
     /// 检查是否为支持的斜杠命令
     nonisolated func isSupportedSlashCommand(_ input: String) -> Bool {

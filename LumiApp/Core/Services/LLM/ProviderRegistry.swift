@@ -2,23 +2,19 @@ import Foundation
 import OSLog
 import MagicKit
 
-// MARK: - Provider Registry
-
 /// 供应商注册表
 ///
 /// 负责管理所有 LLM 供应商的注册和实例创建。
 /// 此类可以在后台线程执行
-class ProviderRegistry: SuperLog, @unchecked Sendable {
+class ProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
     nonisolated static let emoji = "📋"
     nonisolated static let verbose = false
 
-    static let shared = ProviderRegistry()
-
-    private init() {
+    init() {
         if Self.verbose {
-            os_log("\(self.t)供应商注册表已初始化")
+            os_log("\(self.t) 供应商注册表已初始化")
         }
-        
+
         self.registerAllProviders()
     }
 
@@ -32,7 +28,7 @@ class ProviderRegistry: SuperLog, @unchecked Sendable {
     func register<T: LLMProviderProtocol>(_ providerType: T.Type) {
         providerTypes.append(providerType)
         if Self.verbose {
-            os_log("\(self.t)已注册供应商: \(providerType.displayName) (ID: \(providerType.id))")
+            os_log("\(self.t) 已注册供应商：\(providerType.displayName) (ID: \(providerType.id))")
         }
     }
 
@@ -52,7 +48,7 @@ class ProviderRegistry: SuperLog, @unchecked Sendable {
         ])
 
         if Self.verbose {
-            os_log("\(self.t)已注册 \(self.providerTypes.count) 个供应商")
+            os_log("\(self.t) 已注册 \(self.providerTypes.count) 个供应商")
         }
     }
 
@@ -100,7 +96,7 @@ class ProviderRegistry: SuperLog, @unchecked Sendable {
         case AliyunProvider.id:
             instance = AliyunProvider()
         default:
-            os_log(.error, "\(self.t)未知的供应商 ID: \(id)")
+            os_log(.error, "\(self.t) 未知的供应商 ID: \(id)")
             return nil
         }
 

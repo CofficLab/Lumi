@@ -43,34 +43,94 @@ struct RootView<Content>: View where Content: View {
     /// 后台任务调度器
     let jobScheduler: JobScheduler
 
+    /// 上下文服务
+    let contextService: ContextService
+
+    /// 提示词服务
+    let promptService: PromptService
+
+    /// API 服务
+    let apiService: APIService
+
+    /// LLM API 服务
+    let llmAPI: LLMAPIService
+
+    /// LLM 服务
+    let llmService: LLMService
+
+    /// Slash 命令服务
+    let slashCommandService: SlashCommandService
+
+    /// Shell 服务
+    let shellService: ShellService
+
+    /// 供应商注册表
+    let providerRegistry: ProviderRegistry
+
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
 
         // 初始化 SwiftData 容器
         self.modelContainer = AppConfig.getContainer()
 
+        // ========================================
+        // 基础服务层（无依赖或依赖最少）
+        // ========================================
+
         // 初始化 MCP 服务（仅在 RootView 中创建单实例）
         self.mcpService = MCPService()
 
-        // 初始化权限服务（仅在 RootView 中创建单实例）
+        // 初始化权限服务
         self.permissionService = PermissionService()
+
+        // 初始化上下文服务
+        self.contextService = ContextService()
+
+        // 初始化 API 服务
+        self.apiService = APIService()
+
+        // 初始化 Shell 服务
+        self.shellService = ShellService()
+
+        // 初始化 LLM API 服务（依赖 API 服务）
+        self.llmAPI = LLMAPIService(apiService: apiService)
+
+        // 初始化供应商注册表
+        self.providerRegistry = ProviderRegistry()
+
+        // 初始化 LLM 服务（依赖 Registry 和 LLMAPIService）
+        self.llmService = LLMService(registry: providerRegistry, llmAPI: llmAPI)
+
+        // 初始化提示词服务（依赖 ContextService）
+        self.promptService = PromptService(contextService: contextService)
+
+        // 初始化 Slash 命令服务
+        self.slashCommandService = SlashCommandService()
 
         // 初始化后台任务调度器（依赖权限服务）
         self.jobScheduler = JobScheduler(permissionService: permissionService)
 
-        // 初始化聊天历史服务
+        // ========================================
+        // 工具服务层
+        // ========================================
+
+        // 初始化工具服务（依赖 MCP 服务和 ShellService）
+        self.toolService = ToolService(mcpService: mcpService, shellService: shellService)
+
+        // ========================================
+        // ViewModel 层
+        // ========================================
+
+        // 初始化聊天历史服务（依赖 LLMService）
         let chatHistoryService = ChatHistoryService(
-            llmService: LLMService.shared,
+            llmService: llmService,
             modelContainer: self.modelContainer
         )
 
-        // 初始化 ViewModel
+        // 初始化基础 ViewModel
         self.appProvider = AppProvider()
-        self.projectViewModel = ProjectViewModel()
+        self.projectViewModel = ProjectViewModel(providerRegistry: providerRegistry, contextService: contextService)
         self.commandSuggestionViewModel = CommandSuggestionViewModel()
-
-        // 初始化工具服务（依赖 MCP 服务）
-        self.toolService = ToolService(mcpService: mcpService)
 
         // 创建 MessageViewModel
         self.messageViewModel = MessageViewModel(chatHistoryService: chatHistoryService)
@@ -78,6 +138,8 @@ struct RootView<Content>: View where Content: View {
         // 创建 ConversationViewModel（messageSenderViewModel 将在之后设置）
         self.conversationViewModel = ConversationViewModel(
             chatHistoryService: chatHistoryService,
+            llmService: llmService,
+            promptService: promptService,
             messageViewModel: messageViewModel
         )
 
@@ -85,7 +147,8 @@ struct RootView<Content>: View where Content: View {
         self.messageSenderViewModel = MessageSenderViewModel(
             messageViewModel: messageViewModel,
             conversationViewModel: conversationViewModel,
-            chatHistoryService: chatHistoryService
+            chatHistoryService: chatHistoryService,
+            slashCommandService: slashCommandService
         )
 
         // 设置 ConversationViewModel 的 messageSenderViewModel 引用
@@ -93,16 +156,17 @@ struct RootView<Content>: View where Content: View {
 
         // 初始化对话轮次 ViewModel
         let conversationTurnViewModel = ConversationTurnViewModel(
-            llmService: LLMService.shared,
+            llmService: llmService,
             toolService: toolService,
-            promptService: PromptService.shared,
-            jobScheduler: jobScheduler
+            promptService: promptService,
+            jobScheduler: jobScheduler,
+            llmAPI: llmAPI
         )
 
         // 初始化 AgentProvider（先创建，再注入到其他依赖中）
         self.agentProvider = AgentProvider(
-            promptService: PromptService.shared,
-            registry: ProviderRegistry.shared,
+            promptService: promptService,
+            registry: providerRegistry,
             toolService: toolService,
             mcpService: mcpService,
             chatHistoryService: chatHistoryService,
@@ -110,7 +174,8 @@ struct RootView<Content>: View where Content: View {
             conversationViewModel: conversationViewModel,
             messageSenderViewModel: self.messageSenderViewModel,
             projectViewModel: projectViewModel,
-            conversationTurnViewModel: conversationTurnViewModel
+            conversationTurnViewModel: conversationTurnViewModel,
+            slashCommandService: slashCommandService
         )
 
         // 设置委托和配置提供者
@@ -132,6 +197,8 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(mcpService)
             .environmentObject(toolService)
             .environmentObject(permissionService)
+            .environmentObject(shellService)
+            .environmentObject(providerRegistry)
             .environmentObject(MystiqueThemeManager())
             .modelContainer(modelContainer)
     }

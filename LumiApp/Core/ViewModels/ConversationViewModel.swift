@@ -96,8 +96,8 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     /// 使用依赖服务初始化
     init(
         chatHistoryService: ChatHistoryService,
-        llmService: LLMService = LLMService.shared,
-        promptService: PromptService = PromptService.shared,
+        llmService: LLMService,
+        promptService: PromptService,
         messageViewModel: MessageViewModel,
         messageSenderViewModel: MessageSenderViewModel? = nil
     ) {

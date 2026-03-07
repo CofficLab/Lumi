@@ -44,6 +44,9 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     /// 对话轮次 ViewModel
     let conversationTurnViewModel: ConversationTurnViewModel
 
+    /// Slash 命令服务
+    let slashCommandService: SlashCommandService
+
     // MARK: - 聊天消息状态 (DevAssistant)
 
     /// 是否正在处理
@@ -97,7 +100,8 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         conversationViewModel: ConversationViewModel,
         messageSenderViewModel: MessageSenderViewModel,
         projectViewModel: ProjectViewModel,
-        conversationTurnViewModel: ConversationTurnViewModel
+        conversationTurnViewModel: ConversationTurnViewModel,
+        slashCommandService: SlashCommandService
     ) {
         self.promptService = promptService
         self.registry = registry
@@ -109,6 +113,7 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         self.messageSenderViewModel = messageSenderViewModel
         self.projectViewModel = projectViewModel
         self.conversationTurnViewModel = conversationTurnViewModel
+        self.slashCommandService = slashCommandService
         loadPreferences()
     }
 
@@ -423,9 +428,9 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         pendingAttachments.removeAll()
 
         // 检查是否为支持的斜杠命令
-        if SlashCommandService.shared.isSupportedSlashCommand(trimmed) {
+        if slashCommandService.isSupportedSlashCommand(trimmed) {
             Task {
-                let result = await SlashCommandService.shared.handle(input: trimmed, provider: self)
+                let result = await slashCommandService.handle(input: trimmed, provider: self)
                 switch result {
                 case .handled:
                     setIsProcessing(false)

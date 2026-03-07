@@ -178,13 +178,7 @@ struct AgentModeContentView: View {
 
     /// 模式切换器
     private var modeSwitcher: some View {
-        Picker("模式", selection: Binding(
-            get: { app.selectedMode },
-            set: {
-                app.selectedMode = $0
-                pluginProvider.selectedMode = $0
-            }
-        )) {
+        Picker("模式", selection: $app.selectedMode) {
             ForEach(AppMode.allCases) { mode in
                 Label(mode.rawValue, systemImage: mode.icon)
                     .tag(mode)
@@ -192,6 +186,9 @@ struct AgentModeContentView: View {
         }
         .pickerStyle(.segmented)
         .labelsHidden()
+        .onChange(of: app.selectedMode) { _, newValue in
+            pluginProvider.selectedMode = newValue
+        }
     }
 }
 

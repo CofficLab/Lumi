@@ -43,13 +43,15 @@ extension LLMRequestJob {
     ///   - config: LLM 配置
     ///   - tools: 可用工具列表
     ///   - registry: 供应商注册表
+    ///   - llmAPI: LLM API 服务
     /// - Returns: AI 助手的响应消息
     /// - Throws: 如果请求失败，抛出相应的错误
     static func run(
         messages: [ChatMessage],
         config: LLMConfig,
         tools: [AgentTool]?,
-        registry: ProviderRegistry
+        registry: ProviderRegistry,
+        llmAPI: LLMAPIService
     ) async throws -> ChatMessage {
         if Self.verbose >= 1 {
             os_log("\(Self.t)🚀 开始执行 LLM 请求任务")
@@ -132,7 +134,6 @@ extension LLMRequestJob {
         }
 
         // 使用 LLM API 服务发送请求
-        let llmAPI = LLMAPIService.shared
         let data: Data
 
         do {

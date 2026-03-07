@@ -25,6 +25,9 @@ struct QuickPhrasesView: View, SuperLog {
     /// 快捷短语列表数据
     @State private var phrases: [PromptService.QuickPhrase] = []
 
+    /// 从环境获取 AgentProvider，通过它访问 PromptService
+    @EnvironmentObject var agentProvider: AgentProvider
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ScrollView(.horizontal, showsIndicators: false) {
@@ -54,12 +57,12 @@ extension QuickPhrasesView {
     private func refreshPhrases() async {
         // 根据项目状态传递不同的参数
         if isProjectSelected {
-            phrases = await PromptService.shared.getQuickPhrases(
+            phrases = await agentProvider.promptService.getQuickPhrases(
                 projectName: projectName,
                 projectPath: projectPath
             )
         } else {
-            phrases = await PromptService.shared.getQuickPhrases()
+            phrases = await agentProvider.promptService.getQuickPhrases()
         }
     }
 }

@@ -1,14 +1,14 @@
 import Foundation
 
 /// 上下文服务，管理 Agent 模式的上下文信息
-actor ContextService {
-    static let shared = ContextService()
-
+actor ContextService: Sendable {
     private(set) var projectRoot: URL?
     private(set) var openFiles: [URL] = []
 
     // Limits
     private let maxContextTokens = 100_000 // Approximate
+
+    init() {}
 
     func setProjectRoot(_ url: URL?) {
         self.projectRoot = url

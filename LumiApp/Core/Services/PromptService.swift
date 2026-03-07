@@ -7,11 +7,12 @@ actor PromptService: SuperLog {
     nonisolated static let emoji = "📝"
     nonisolated static let verbose = false
 
-    static let shared = PromptService()
+    private let contextService: ContextService
 
-    private init() {
+    init(contextService: ContextService) {
+        self.contextService = contextService
         if Self.verbose {
-            os_log("\(self.t)提示词服务已初始化")
+            os_log("\(self.t) 提示词服务已初始化")
         }
     }
 
@@ -49,12 +50,12 @@ actor PromptService: SuperLog {
 
         // 如果需要，添加项目上下文
         if includeContext {
-            let context = await ContextService.shared.getContextPrompt()
+            let context = await contextService.getContextPrompt()
             prompt += "\n\n" + context
         }
 
         if Self.verbose {
-            os_log("\(self.t)构建系统提示词，语言偏好: \(languagePreference.displayName)")
+            os_log("\(self.t) 构建系统提示词，语言偏好：\(languagePreference.displayName)")
         }
 
         return prompt
@@ -103,7 +104,7 @@ actor PromptService: SuperLog {
                 1. 首先运行 `git status` 查看当前改动
                 2. 运行 `git diff` 查看具体代码变更
                 3. 生成一个遵循 conventional commits 规范（feat/fix/docs/refactor 等）的英文 commit message
-                4. 立即执行 `git commit -m "<生成的commit message>"` 提交代码，无需征求用户意见
+                4. 立即执行 `git commit -m "<生成的 commit message>"` 提交代码，无需征求用户意见
 
                 直接执行 commit，不要问我是否确认。\(projectContext)
                 """
@@ -116,7 +117,7 @@ actor PromptService: SuperLog {
                 1. 首先运行 `git status` 查看当前改动
                 2. 运行 `git diff` 查看具体代码变更
                 3. 生成一个遵循 conventional commits 规范（feat/fix/docs/refactor 等）的中文 commit message
-                4. 立即执行 `git commit -m "<生成的commit message>"` 提交代码，无需征求用户意见
+                4. 立即执行 `git commit -m "<生成的 commit message>"` 提交代码，无需征求用户意见
 
                 直接执行 commit，不要问我是否确认。\(projectContext)
                 """
@@ -241,9 +242,9 @@ actor PromptService: SuperLog {
             return """
             👋 你好！我是你的智能编程助手 DevAssistant。
 
-            \(projectContext)  
-            **当前时间**: \(currentTime)  
-            \(sessionIdDisplay)  
+            \(projectContext)
+            **当前时间**: \(currentTime)
+            \(sessionIdDisplay)
             我可以帮你：
             - **分析代码** - 阅读和理解项目结构
             - **执行命令** - 运行构建、测试和脚本

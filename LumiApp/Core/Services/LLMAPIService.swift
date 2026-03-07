@@ -10,11 +10,10 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🌐"
     nonisolated static let verbose = true
 
-    static let shared = LLMAPIService()
+    private nonisolated let apiService: APIService
 
-    private nonisolated let apiService = APIService.shared
-
-    private init() {
+    init(apiService: APIService) {
+        self.apiService = apiService
         if Self.verbose {
             os_log("\(self.t)✅ LLM API 服务已初始化")
         }

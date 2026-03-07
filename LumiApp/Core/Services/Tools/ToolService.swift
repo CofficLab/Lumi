@@ -26,19 +26,20 @@ class ToolService: ObservableObject, SuperLog {
     // MARK: - Dependencies
 
     private let mcpService: MCPService
+    private let shellService: ShellService
     private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Initialization
 
-    init(mcpService: MCPService) {
+    init(mcpService: MCPService, shellService: ShellService) {
         self.mcpService = mcpService
+        self.shellService = shellService
         setupBuiltInTools()
         setupMCPObservers()
         refreshAllTools()
 
         if Self.verbose {
-            os_log("\(Self.t) 工具服务已初始化")
-            os_log("\(Self.t) 内置工具：\(self.builtInTools.count) 个")
+            os_log("\(Self.t)✅ 工具服务已初始化，内置工具：\(self.builtInTools.count) 个")
         }
     }
 
@@ -70,7 +71,7 @@ class ToolService: ObservableObject, SuperLog {
             ListDirectoryTool(),
             ReadFileTool(),
             WriteFileTool(),
-            ShellTool(shellService: .shared),
+            ShellTool(shellService: shellService),
         ]
     }
 

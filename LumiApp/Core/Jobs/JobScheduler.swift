@@ -33,18 +33,21 @@ actor JobScheduler: SuperLog {
     ///   - config: LLM 配置
     ///   - tools: 可用工具列表
     ///   - registry: 供应商注册表
+    ///   - llmAPI: LLM API 服务
     /// - Returns: AI 助手的响应消息
     func executeLLMRequest(
         messages: [ChatMessage],
         config: LLMConfig,
         tools: [AgentTool]?,
-        registry: ProviderRegistry
+        registry: ProviderRegistry,
+        llmAPI: LLMAPIService
     ) async throws -> ChatMessage {
         try await LLMRequestJob.run(
             messages: messages,
             config: config,
             tools: tools,
-            registry: registry
+            registry: registry,
+            llmAPI: llmAPI
         )
     }
 

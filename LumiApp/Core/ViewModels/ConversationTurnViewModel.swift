@@ -26,6 +26,9 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
     /// 后台任务调度器
     private let jobScheduler: JobScheduler
 
+    /// LLM API 服务
+    private let llmAPI: LLMAPIService
+
     // MARK: - 回调委托
 
     /// 对话轮次处理委托
@@ -48,12 +51,14 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
         llmService: LLMService,
         toolService: ToolService,
         promptService: PromptService,
-        jobScheduler: JobScheduler
+        jobScheduler: JobScheduler,
+        llmAPI: LLMAPIService
     ) {
         self.llmService = llmService
         self.toolService = toolService
         self.promptService = promptService
         self.jobScheduler = jobScheduler
+        self.llmAPI = llmAPI
     }
 
     // MARK: - 对话轮次处理
@@ -103,7 +108,8 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
                 messages: messages,
                 config: config,
                 tools: availableTools,
-                registry: ProviderRegistry.shared
+                registry: llmService.providerRegistry,
+                llmAPI: llmAPI
             )
 
             // 检查内容是否为空（只有空白字符）

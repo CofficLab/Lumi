@@ -18,7 +18,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         self.modelContainer = modelContainer
         self.modelContext = ModelContext(modelContainer)
         if Self.verbose {
-            os_log("\(Self.t)✅ SwiftData 聊天存储已初始化")
+            os_log("\(Self.t)✅ 聊天存储已初始化")
         }
     }
 

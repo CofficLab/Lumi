@@ -36,6 +36,8 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
     private let chatHistoryService: ChatHistoryService
     /// LLM 配置提供者
     private weak var configProvider: (any LLMConfigProvider)?
+    /// Slash 命令服务
+    private let slashCommandService: SlashCommandService
 
     // MARK: - 回调委托
 
@@ -72,11 +74,13 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         messageViewModel: MessageViewModel,
         conversationViewModel: ConversationViewModel,
         chatHistoryService: ChatHistoryService,
+        slashCommandService: SlashCommandService,
         configProvider: (any LLMConfigProvider)? = nil
     ) {
         self.messageViewModel = messageViewModel
         self.conversationViewModel = conversationViewModel
         self.chatHistoryService = chatHistoryService
+        self.slashCommandService = slashCommandService
         self.configProvider = configProvider
     }
 
