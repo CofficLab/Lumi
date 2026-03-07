@@ -265,22 +265,75 @@ class LLMService: SuperLog, @unchecked Sendable {
             additionalHeaders["anthropic-version"] = "2023-06-01"
         }
 
-        // 累积内容
-        var accumulatedContent = ""
-        var accumulatedToolCalls: [ToolCall] = []
-        var streamError: String?
-
-        // 工具调用参数累积（用于处理 input_json_delta 分片）
-        var currentToolCallId: String?
-        var currentToolCallName: String?
-        var currentToolCallArguments = ""
-
-        // 性能指标累积
-        var inputTokens: Int?
-        var outputTokens: Int?
-        var stopReason: String?
-        var timeToFirstToken: Double?
-        var isFirstToken = true
+        // 使用 actor 来保护可变状态，确保在闭包中的修改对外部可见
+        actor StreamingState {
+            var accumulatedContent = ""
+            var accumulatedToolCalls: [ToolCall] = []
+            var streamError: String?
+            var currentToolCallId: String?
+            var currentToolCallName: String?
+            var currentToolCallArguments = ""
+            var inputTokens: Int?
+            var outputTokens: Int?
+            var stopReason: String?
+            var timeToFirstToken: Double?
+            var isFirstToken = true
+            let startTime: CFAbsoluteTime
+            
+            init(startTime: CFAbsoluteTime) {
+                self.startTime = startTime
+            }
+            
+            func recordFirstToken() -> Double? {
+                guard isFirstToken else { return nil }
+                isFirstToken = false
+                let firstTokenTime = CFAbsoluteTimeGetCurrent()
+                let ttft = (firstTokenTime - startTime) * 1000.0
+                timeToFirstToken = ttft
+                return ttft
+            }
+            
+            func appendContent(_ content: String) {
+                accumulatedContent += content
+            }
+            
+            func saveCurrentToolCall() {
+                if let currentId = currentToolCallId,
+                   let currentName = currentToolCallName {
+                    let toolCall = ToolCall(
+                        id: currentId,
+                        name: currentName,
+                        arguments: currentToolCallArguments.isEmpty ? "{}" : currentToolCallArguments
+                    )
+                    accumulatedToolCalls.append(toolCall)
+                }
+            }
+            
+            func startNewToolCall(_ toolCall: ToolCall) {
+                currentToolCallId = toolCall.id
+                currentToolCallName = toolCall.name
+                currentToolCallArguments = ""
+            }
+            
+            func appendToolCallArguments(_ partialJson: String) {
+                currentToolCallArguments += partialJson
+            }
+            
+            func setError(_ error: String) {
+                streamError = error
+            }
+            
+            func updateTokens(input: Int?, output: Int?) {
+                if let input = input { inputTokens = input }
+                if let output = output { outputTokens = output }
+            }
+            
+            func setStopReason(_ reason: String) {
+                stopReason = reason
+            }
+        }
+        
+        let state = StreamingState(startTime: startTime)
 
         // 发送流式请求
         do {
@@ -290,92 +343,72 @@ class LLMService: SuperLog, @unchecked Sendable {
                 body: body,
                 additionalHeaders: additionalHeaders
             ) { chunkData in
-                do {
-                    if let chunk = try provider.parseStreamChunk(data: chunkData) {
-                        // 记录首 token 时间
-                        if isFirstToken {
-                            isFirstToken = false
-                            let firstTokenTime = CFAbsoluteTimeGetCurrent()
-                            timeToFirstToken = (firstTokenTime - startTime) * 1000.0
-                            if Self.verbose {
-                                os_log("\(self.t)⏱️ 首 token 延迟: \(String(format: "%.2f", timeToFirstToken!))ms")
+                // 使用 Task 来在同步闭包中执行异步操作
+                Task {
+                    do {
+                        if let chunk = try provider.parseStreamChunk(data: chunkData) {
+                            // 记录首 token 时间
+                            if let ttft = await state.recordFirstToken() {
+                                if Self.verbose {
+                                    os_log("\(self.t)⏱️ 首 token 延迟: \(String(format: "%.2f", ttft))ms")
+                                }
                             }
-                        }
 
-                        // 累积内容 - 只累积 textDelta 的内容，跳过 thinkingDelta
-                        if let content = chunk.content, chunk.eventType == .textDelta {
-                            accumulatedContent += content
-                            if Self.verbose && accumulatedContent.count < 200 {
-                                os_log("\(self.t)📝 累积内容: \(content)")
-                            }
-                        }
-                        
-                        // 处理工具调用
-                        if let toolCalls = chunk.toolCalls {
-                            // 如果是新的工具调用，保存当前的（如果有）
-                            if let currentId = currentToolCallId,
-                               let currentName = currentToolCallName {
-                                let toolCall = ToolCall(
-                                    id: currentId,
-                                    name: currentName,
-                                    arguments: currentToolCallArguments.isEmpty ? "{}" : currentToolCallArguments
-                                )
-                                accumulatedToolCalls.append(toolCall)
+                            // 累积内容 - 只累积 textDelta 的内容，跳过 thinkingDelta
+                            if let content = chunk.content, chunk.eventType == .textDelta {
+                                await state.appendContent(content)
+                                if Self.verbose {
+                                    let currentContent = await state.accumulatedContent
+                                    if currentContent.count < 200 {
+                                        os_log("\(self.t)📝 累积内容: \(content)")
+                                    }
+                                }
                             }
                             
-                            // 开始新的工具调用
-                            if let firstToolCall = toolCalls.first {
-                                currentToolCallId = firstToolCall.id
-                                currentToolCallName = firstToolCall.name
-                                currentToolCallArguments = ""
+                            // 处理工具调用
+                            if let toolCalls = chunk.toolCalls {
+                                // 如果是新的工具调用，保存当前的（如果有）
+                                await state.saveCurrentToolCall()
+                                
+                                // 开始新的工具调用
+                                if let firstToolCall = toolCalls.first {
+                                    await state.startNewToolCall(firstToolCall)
+                                }
+                            }
+                            
+                            // 处理工具调用参数分片
+                            if let partialJson = chunk.partialJson {
+                                await state.appendToolCallArguments(partialJson)
+                            }
+                            
+                            if let error = chunk.error {
+                                await state.setError(error)
+                            }
+
+                            // 累积性能指标
+                            await state.updateTokens(input: chunk.inputTokens, output: chunk.outputTokens)
+                            if let reason = chunk.stopReason {
+                                await state.setStopReason(reason)
+                            }
+
+                            // 处理消息结束，保存最后一个工具调用
+                            if chunk.isDone {
+                                await state.saveCurrentToolCall()
+                            }
+
+                            // 回调通知外部
+                            onChunk(chunk)
+                        } else {
+                            // Provider 应该已经处理了所有事件类型，这里不应该再返回 nil
+                            if Self.verbose {
+                                let preview = String(data: chunkData, encoding: .utf8)?.prefix(100) ?? "无法解码"
+                                os_log("\(self.t)⚠️ 警告：Provider 返回 nil，原始数据: \(preview)...")
                             }
                         }
-                        
-                        // 处理工具调用参数分片
-                        if let partialJson = chunk.partialJson {
-                            currentToolCallArguments += partialJson
-                        }
-                        
-                        if let error = chunk.error {
-                            streamError = error
-                        }
-
-                        // 累积性能指标
-                        if let tokens = chunk.inputTokens {
-                            inputTokens = tokens
-                        }
-                        if let tokens = chunk.outputTokens {
-                            outputTokens = tokens
-                        }
-                        if let reason = chunk.stopReason {
-                            stopReason = reason
-                        }
-
-                        // 处理消息结束，保存最后一个工具调用
-                        if chunk.isDone {
-                            if let currentId = currentToolCallId,
-                               let currentName = currentToolCallName {
-                                let toolCall = ToolCall(
-                                    id: currentId,
-                                    name: currentName,
-                                    arguments: currentToolCallArguments.isEmpty ? "{}" : currentToolCallArguments
-                                )
-                                accumulatedToolCalls.append(toolCall)
-                            }
-                        }
-
-                        // 回调通知外部
-                        onChunk(chunk)
-                    } else {
-                        // Provider 应该已经处理了所有事件类型，这里不应该再返回 nil
+                    } catch {
                         if Self.verbose {
-                            let preview = String(data: chunkData, encoding: .utf8)?.prefix(100) ?? "无法解码"
-                            os_log("\(self.t)⚠️ 警告：Provider 返回 nil，原始数据: \(preview)...")
+                            os_log("\(self.t)⚠️ 解析流式数据块失败: \(error.localizedDescription)")
                         }
-                    }
-                } catch {
-                    if Self.verbose {
-                        os_log("\(self.t)⚠️ 解析流式数据块失败: \(error.localizedDescription)")
                     }
                 }
             }
@@ -387,19 +420,14 @@ class LLMService: SuperLog, @unchecked Sendable {
             )
         }
         
+        // 给 Task 一点时间来完成处理
+        try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+        
         // 流式结束后，保存最后一个工具调用
-        if let currentId = currentToolCallId,
-           let currentName = currentToolCallName {
-            let toolCall = ToolCall(
-                id: currentId,
-                name: currentName,
-                arguments: currentToolCallArguments.isEmpty ? "{}" : currentToolCallArguments
-            )
-            accumulatedToolCalls.append(toolCall)
-        }
+        await state.saveCurrentToolCall()
 
         // 检查流式过程中是否发生错误
-        if let error = streamError {
+        if let error = await state.streamError {
             throw NSError(
                 domain: "LLMService",
                 code: 500,
@@ -411,17 +439,25 @@ class LLMService: SuperLog, @unchecked Sendable {
         let endTime = CFAbsoluteTimeGetCurrent()
         let latency = (endTime - startTime) * 1000.0
 
+        // 获取最终状态
+        let finalContent = await state.accumulatedContent
+        let finalToolCalls = await state.accumulatedToolCalls
+        let finalInputTokens = await state.inputTokens
+        let finalOutputTokens = await state.outputTokens
+        let finalStopReason = await state.stopReason
+        let finalTimeToFirstToken = await state.timeToFirstToken
+
         if Self.verbose {
-            os_log("\(self.t)✅ 流式响应完成，总耗时：\(String(format: "%.2f", latency))ms, 内容长度：\(accumulatedContent.count)")
-            if accumulatedContent.isEmpty {
+            os_log("\(self.t)✅ 流式响应完成，总耗时：\(String(format: "%.2f", latency))ms, TTFT: \(String(format: "%.2f", finalTimeToFirstToken ?? 0))ms, 内容长度：\(finalContent.count)")
+            if finalContent.isEmpty {
                 os_log("\(self.t)⚠️ 警告：累积内容为空！")
             } else {
-                os_log("\(self.t)📝 累积内容预览：\(accumulatedContent.prefix(100))...")
+                os_log("\(self.t)📝 累积内容预览：\(finalContent.prefix(100))...")
             }
         }
 
         // 计算总 token 数
-        let totalTokens: Int? = if let input = inputTokens, let output = outputTokens {
+        let totalTokens: Int? = if let input = finalInputTokens, let output = finalOutputTokens {
             input + output
         } else {
             nil
@@ -430,16 +466,16 @@ class LLMService: SuperLog, @unchecked Sendable {
         // 返回完整的助手消息（包含性能指标和请求参数）
         return ChatMessage(
             role: .assistant,
-            content: accumulatedContent,
-            toolCalls: accumulatedToolCalls.isEmpty ? nil : accumulatedToolCalls,
+            content: finalContent,
+            toolCalls: finalToolCalls.isEmpty ? nil : finalToolCalls,
             providerId: config.providerId,
             modelName: config.model,
             latency: latency,
-            inputTokens: inputTokens,
-            outputTokens: outputTokens,
+            inputTokens: finalInputTokens,
+            outputTokens: finalOutputTokens,
             totalTokens: totalTokens,
-            timeToFirstToken: timeToFirstToken,
-            finishReason: stopReason,
+            timeToFirstToken: finalTimeToFirstToken,
+            finishReason: finalStopReason,
             temperature: config.temperature,
             maxTokens: config.maxTokens
         )
