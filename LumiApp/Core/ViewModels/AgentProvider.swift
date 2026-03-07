@@ -546,7 +546,7 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         startConversationTitleGenerationIfNeeded(message: message)
 
         // 4. 处理消息（等待完成）
-        await delegate?.processUserMessage(content: message.content, images: message.images)
+        await processTurn()
 
         if Self.verbose {
             os_log("\(Self.t)✅ 消息发送完成：\(message.content.max(30))...")
