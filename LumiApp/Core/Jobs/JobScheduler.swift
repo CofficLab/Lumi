@@ -10,10 +10,13 @@ actor JobScheduler: SuperLog {
     /// 日志级别：0=禁用，1=基本，2=详细，3=调试
     nonisolated static let verbose = false
 
-    /// 全局单例
-    static let shared = JobScheduler()
+    /// 权限服务
+    private let permissionService: PermissionService
 
-    private init() {
+    /// 初始化
+    /// - Parameter permissionService: 权限服务
+    init(permissionService: PermissionService) {
+        self.permissionService = permissionService
         if Self.verbose {
             os_log("\(Self.t)✅ 后台任务调度器已初始化")
         }
@@ -59,7 +62,8 @@ actor JobScheduler: SuperLog {
     ) async throws -> (ChatMessage, TimeInterval) {
         let output = try await ToolExecutionJob.run(
             toolCall: toolCall,
-            toolService: toolService
+            toolService: toolService,
+            permissionService: permissionService
         )
         // 解构 Output 为元组
         return (output.result, output.duration)
@@ -78,7 +82,7 @@ extension JobScheduler {
     ///   - autoApproveRisk: 是否自动批准
     /// - Returns: 是否需要权限
     nonisolated func requiresPermission(_ toolCall: ToolCall, autoApproveRisk: Bool) -> Bool {
-        ToolExecutionJob.requiresPermission(toolCall, autoApproveRisk: autoApproveRisk)
+        ToolExecutionJob.requiresPermission(toolCall, autoApproveRisk: autoApproveRisk, permissionService: permissionService)
     }
 
     /// 评估工具风险等级
@@ -88,7 +92,7 @@ extension JobScheduler {
     /// - Parameter toolCall: 工具调用
     /// - Returns: 风险等级
     nonisolated func evaluateRisk(_ toolCall: ToolCall) -> CommandRiskLevel {
-        ToolExecutionJob.evaluateRisk(toolCall)
+        ToolExecutionJob.evaluateRisk(toolCall, permissionService: permissionService)
     }
 
     /// 创建权限请求

@@ -20,6 +20,8 @@ extension ToolExecutionJob {
         let toolCall: ToolCall
         /// 工具服务
         let toolService: ToolService
+        /// 权限服务
+        let permissionService: PermissionService
     }
 
     /// 任务输出结果
@@ -39,11 +41,13 @@ extension ToolExecutionJob {
     /// - Parameters:
     ///   - toolCall: 工具调用信息
     ///   - toolService: 工具服务
+    ///   - permissionService: 权限服务
     /// - Returns: 工具执行结果
     /// - Throws: 如果工具执行失败，抛出相应的错误
     static func run(
         toolCall: ToolCall,
-        toolService: ToolService
+        toolService: ToolService,
+        permissionService: PermissionService
     ) async throws -> Output {
         if Self.verbose >= 1 {
             os_log("\(Self.t)🚀 开始执行工具：\(toolCall.name)")
@@ -112,9 +116,14 @@ extension ToolExecutionJob {
     /// - Parameters:
     ///   - toolCall: 工具调用
     ///   - autoApproveRisk: 是否自动批准风险操作
+    ///   - permissionService: 权限服务
     /// - Returns: 是否需要请求权限
-    static func requiresPermission(_ toolCall: ToolCall, autoApproveRisk: Bool) -> Bool {
-        let requiresPermission = PermissionService.shared.requiresPermission(
+    static func requiresPermission(
+        _ toolCall: ToolCall,
+        autoApproveRisk: Bool,
+        permissionService: PermissionService
+    ) -> Bool {
+        let requiresPermission = permissionService.requiresPermission(
             toolName: toolCall.name,
             arguments: parseArguments(toolCall.arguments)
         )
@@ -123,13 +132,18 @@ extension ToolExecutionJob {
 
     /// 评估工具风险等级
     ///
-    /// - Parameter toolCall: 工具调用
+    /// - Parameters:
+    ///   - toolCall: 工具调用
+    ///   - permissionService: 权限服务
     /// - Returns: 风险等级
-    static func evaluateRisk(_ toolCall: ToolCall) -> CommandRiskLevel {
+    static func evaluateRisk(
+        _ toolCall: ToolCall,
+        permissionService: PermissionService
+    ) -> CommandRiskLevel {
         if toolCall.name == "run_command" {
             let args = parseArguments(toolCall.arguments)
             if let command = args["command"] as? String {
-                return PermissionService.shared.evaluateCommandRisk(command: command)
+                return permissionService.evaluateCommandRisk(command: command)
             }
         }
         return .medium

@@ -48,7 +48,7 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
         llmService: LLMService,
         toolService: ToolService,
         promptService: PromptService,
-        jobScheduler: JobScheduler = .shared
+        jobScheduler: JobScheduler
     ) {
         self.llmService = llmService
         self.toolService = toolService

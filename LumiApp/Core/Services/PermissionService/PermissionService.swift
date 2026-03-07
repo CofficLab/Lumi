@@ -1,10 +1,13 @@
 import Foundation
 import OSLog
 import SwiftUI
+import Combine
 
-final class PermissionService: Sendable {
+final class PermissionService: ObservableObject, Sendable {
     static let shared = PermissionService()
     nonisolated static let verbose = true
+
+    init() {}
 
     // MARK: - 工具权限检查
 

@@ -37,6 +37,12 @@ struct RootView<Content>: View where Content: View {
     /// MCP 服务
     let mcpService: MCPService
 
+    /// 权限服务
+    let permissionService: PermissionService
+
+    /// 后台任务调度器
+    let jobScheduler: JobScheduler
+
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
 
@@ -45,6 +51,12 @@ struct RootView<Content>: View where Content: View {
 
         // 初始化 MCP 服务（仅在 RootView 中创建单实例）
         self.mcpService = MCPService()
+
+        // 初始化权限服务（仅在 RootView 中创建单实例）
+        self.permissionService = PermissionService()
+
+        // 初始化后台任务调度器（依赖权限服务）
+        self.jobScheduler = JobScheduler(permissionService: permissionService)
 
         // 初始化聊天历史服务
         let chatHistoryService = ChatHistoryService(
@@ -83,7 +95,8 @@ struct RootView<Content>: View where Content: View {
         let conversationTurnViewModel = ConversationTurnViewModel(
             llmService: LLMService.shared,
             toolService: toolService,
-            promptService: PromptService.shared
+            promptService: PromptService.shared,
+            jobScheduler: jobScheduler
         )
 
         // 初始化 AgentProvider（先创建，再注入到其他依赖中）
@@ -118,6 +131,7 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(commandSuggestionViewModel)
             .environmentObject(mcpService)
             .environmentObject(toolService)
+            .environmentObject(permissionService)
             .environmentObject(MystiqueThemeManager())
             .modelContainer(modelContainer)
     }
