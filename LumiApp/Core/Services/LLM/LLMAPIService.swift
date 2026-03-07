@@ -77,17 +77,117 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
     }
 
     /// 发送流式聊天请求
+    ///
+    /// 使用 SSE (Server-Sent Events) 协议接收流式响应
+    ///
+    /// - Parameters:
+    ///   - url: 请求 URL
+    ///   - apiKey: API 密钥
+    ///   - body: 请求体字典
+    ///   - additionalHeaders: 额外的请求头
+    ///   - onChunk: 收到数据块时的回调
+    /// - Throws: 网络错误或 API 错误
     func sendStreamingRequest(
         url: URL,
         apiKey: String,
         body: [String: Any],
-        onChunk: @escaping (String) -> Void
+        additionalHeaders: [String: String] = [:],
+        onChunk: @escaping (Data) -> Void
     ) async throws {
-        throw APIError.requestFailed(underlying: NSError(
-            domain: "LLMAPIService",
-            code: 501,
-            userInfo: [NSLocalizedDescriptionKey: "流式请求尚未实现"]
-        ))
+        // 构建请求头
+        var headers = [
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "Accept": "text/event-stream"
+        ]
+
+        // 合并额外的请求头
+        for (key, value) in additionalHeaders {
+            headers[key] = value
+        }
+
+        // 构建请求
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 300
+
+        for (key, value) in headers {
+            request.setValue(value, forHTTPHeaderField: key)
+        }
+
+        // 序列化请求体
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: body)
+            request.httpBody = jsonData
+        } catch {
+            os_log(.error, "\(self.t)JSON 序列化失败：\(error.localizedDescription)")
+            throw APIError.jsonSerializationFailed(underlying: error)
+        }
+
+        if Self.verbose {
+            os_log("\(self.t)🚀 发送流式请求到：\(url.absoluteString)")
+        }
+
+        // 发送请求并处理流式响应
+        let (bytes, response) = try await session.bytes(for: request)
+
+        // 验证响应
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        guard (200 ... 299).contains(httpResponse.statusCode) else {
+            var errorData = Data()
+            for try await byte in bytes {
+                errorData.append(byte)
+            }
+            let errorStr = String(data: errorData, encoding: .utf8) ?? "Unknown error"
+            throw APIError.httpError(statusCode: httpResponse.statusCode, message: errorStr)
+        }
+
+        if Self.verbose {
+            os_log("\(self.t)✅ 流式连接已建立，开始接收数据...")
+        }
+
+        // 读取 SSE 数据流
+        var buffer = Data()
+        var chunkCount = 0
+
+        for try await byte in bytes {
+            buffer.append(byte)
+
+            // 检查是否收到完整的 SSE 事件（以 \n\n 或 \r\n\r\n 结尾）
+            let newlinePattern = Data([0x0A, 0x0A]) // \n\n
+            let crlfPattern = Data([0x0D, 0x0A, 0x0D, 0x0A]) // \r\n\r\n
+
+            if let range = buffer.range(of: newlinePattern) ?? buffer.range(of: crlfPattern) {
+                let eventData = buffer.subdata(in: 0 ..< range.lowerBound)
+                buffer.removeSubrange(0 ..< range.upperBound)
+
+                // 处理 SSE 事件数据
+                if !eventData.isEmpty {
+                    chunkCount += 1
+                    if Self.verbose && chunkCount <= 5 {
+                        let preview = String(data: eventData, encoding: .utf8)?.prefix(200) ?? "无法解码"
+                        os_log("\(self.t)📦 收到 SSE 数据块 #\(chunkCount) (\(eventData.count) bytes): \(preview)...")
+                    }
+                    onChunk(eventData)
+                }
+            }
+        }
+
+        // 处理剩余数据
+        if !buffer.isEmpty {
+            if Self.verbose {
+                let preview = String(data: buffer, encoding: .utf8)?.prefix(200) ?? "无法解码"
+                os_log("\(self.t)📦 处理剩余数据 (\(buffer.count) bytes): \(preview)...")
+            }
+            onChunk(buffer)
+        }
+
+        if Self.verbose {
+            os_log("\(self.t)✅ 流式响应接收完成")
+        }
     }
 
     // MARK: - 带重试的原始请求

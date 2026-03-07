@@ -109,6 +109,105 @@ struct OpenAIProvider: LLMProviderProtocol {
         return (content, toolCalls)
     }
 
+    /// 构建流式请求体
+    func buildStreamingRequestBody(
+        messages: [ChatMessage],
+        model: String,
+        tools: [AgentTool]?,
+        systemPrompt: String
+    ) throws -> [String: Any] {
+        var body = try buildRequestBody(
+            messages: messages,
+            model: model,
+            tools: tools,
+            systemPrompt: systemPrompt
+        )
+        body["stream"] = true
+        body["stream_options"] = ["include_usage": false]
+        return body
+    }
+
+    /// 解析流式响应数据块
+    ///
+    /// OpenAI SSE 格式示例：
+    /// data: {"id":"chatcmpl-xxx","object":"chat.completion.chunk","choices":[{"delta":{"content":"Hello"},"index":0}]}
+    ///
+    /// data: [DONE]
+    func parseStreamChunk(data: Data) throws -> StreamChunk? {
+        guard let text = String(data: data, encoding: .utf8) else {
+            return nil
+        }
+
+        // 解析 SSE 格式
+        var eventData: String?
+
+        let lines = text.components(separatedBy: "\n")
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("data: ") {
+                eventData = String(trimmed.dropFirst(6))
+            }
+        }
+
+        guard let data = eventData else {
+            return nil
+        }
+
+        // 处理结束标记
+        if data == "[DONE]" {
+            return StreamChunk(isDone: true)
+        }
+
+        // 解析 JSON 数据
+        guard let jsonData = data.data(using: .utf8) else {
+            return nil
+        }
+
+        do {
+            let json = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any]
+
+            // 处理错误
+            if let error = json?["error"] as? [String: Any],
+               let errorMessage = error["message"] as? String {
+                return StreamChunk(error: errorMessage)
+            }
+
+            // 提取内容增量
+            if let choices = json?["choices"] as? [[String: Any]],
+               let firstChoice = choices.first,
+               let delta = firstChoice["delta"] as? [String: Any] {
+
+                // 处理文本内容
+                if let content = delta["content"] as? String {
+                    return StreamChunk(content: content)
+                }
+
+                // 处理工具调用
+                if let toolCalls = delta["tool_calls"] as? [[String: Any]] {
+                    let parsedToolCalls = toolCalls.compactMap { tc -> ToolCall? in
+                        guard let id = tc["id"] as? String,
+                              let function = tc["function"] as? [String: Any],
+                              let name = function["name"] as? String else {
+                            return nil
+                        }
+                        let arguments = function["arguments"] as? String ?? "{}"
+                        return ToolCall(id: id, name: name, arguments: arguments)
+                    }
+                    if !parsedToolCalls.isEmpty {
+                        return StreamChunk(toolCalls: parsedToolCalls)
+                    }
+                }
+            }
+
+            return nil
+        } catch {
+            if Self.verbose {
+                os_log("⚠️ 解析流式数据块失败: \(error.localizedDescription)")
+            }
+            return nil
+        }
+    }
+
     static var logEmoji: String { "🟢" }
 }
 

@@ -85,12 +85,20 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     var modelName: String?
 
     // MARK: - Performance Metrics
-    
+
     /// 请求延迟（毫秒）
     ///
     /// 从发送请求到收到响应的时间。
     /// 用于性能分析和用户展示。
     var latency: Double?
+
+    // MARK: - Thinking Process
+
+    /// 思考过程文本
+    ///
+    /// 用于 reasoning 模型（如 Claude 3.7 Sonnet）的思考过程展示。
+    /// 包含模型在生成最终回复前的思考内容。
+    var thinkingContent: String?
 
     /// 初始化聊天消息
     ///
@@ -104,11 +112,12 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     ///   - providerId: LLM 供应商 ID
     ///   - modelName: 模型名称
     ///   - latency: 请求延迟
-    init(role: MessageRole, content: String, isError: Bool = false, 
-         toolCalls: [ToolCall]? = nil, toolCallID: String? = nil, 
+    ///   - thinkingContent: 思考过程文本
+    init(role: MessageRole, content: String, isError: Bool = false,
+         toolCalls: [ToolCall]? = nil, toolCallID: String? = nil,
          images: [ImageAttachment] = [],
          providerId: String? = nil, modelName: String? = nil,
-         latency: Double? = nil) {
+         latency: Double? = nil, thinkingContent: String? = nil) {
         self.id = UUID()
         self.role = role
         self.content = content
@@ -120,6 +129,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         self.providerId = providerId
         self.modelName = modelName
         self.latency = latency
+        self.thinkingContent = thinkingContent
     }
     
     /// 从数据库加载时使用的初始化方法
@@ -138,11 +148,12 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     ///   - providerId: LLM 供应商 ID
     ///   - modelName: 模型名称
     ///   - latency: 请求延迟
-    init(id: UUID, role: MessageRole, content: String, timestamp: Date, 
-         isError: Bool = false, toolCalls: [ToolCall]? = nil, 
+    ///   - thinkingContent: 思考过程文本
+    init(id: UUID, role: MessageRole, content: String, timestamp: Date,
+         isError: Bool = false, toolCalls: [ToolCall]? = nil,
          toolCallID: String? = nil, images: [ImageAttachment] = [],
          providerId: String? = nil, modelName: String? = nil,
-         latency: Double? = nil) {
+         latency: Double? = nil, thinkingContent: String? = nil) {
         self.id = id
         self.role = role
         self.content = content
@@ -154,6 +165,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         self.providerId = providerId
         self.modelName = modelName
         self.latency = latency
+        self.thinkingContent = thinkingContent
     }
 
     // MARK: - Equatable

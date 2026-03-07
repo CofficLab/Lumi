@@ -375,6 +375,271 @@ struct AnthropicProvider: LLMProviderProtocol, SuperLog {
         return (textContent, toolCalls.isEmpty ? nil : toolCalls)
     }
 
+    /// 构建流式请求体
+    ///
+    /// 在普通请求体基础上添加 stream: true 参数
+    func buildStreamingRequestBody(
+        messages: [ChatMessage],
+        model: String,
+        tools: [AgentTool]?,
+        systemPrompt: String
+    ) throws -> [String: Any] {
+        var body = try buildRequestBody(
+            messages: messages,
+            model: model,
+            tools: tools,
+            systemPrompt: systemPrompt
+        )
+        body["stream"] = true
+        return body
+    }
+
+    /// 解析流式响应数据块
+    ///
+    /// Anthropic SSE 格式示例：
+    /// event: content_block_delta
+    /// data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Hello"}}
+    ///
+    /// event: content_block_stop
+    /// data: {"type":"content_block_stop","index":0}
+    ///
+    /// event: message_stop
+    /// data: {"type":"message_stop"}
+    func parseStreamChunk(data: Data) throws -> StreamChunk? {
+        guard let text = String(data: data, encoding: .utf8) else {
+            return nil
+        }
+
+        // 解析 SSE 格式
+        var eventType: String?
+        var eventData: String?
+
+        let lines = text.components(separatedBy: "\n")
+        for line in lines {
+            if line.hasPrefix("event:") {
+                let afterPrefix = String(line.dropFirst(6))
+                eventType = afterPrefix.trimmingCharacters(in: .whitespaces)
+            } else if line.hasPrefix("data:") {
+                let afterPrefix = String(line.dropFirst(5))
+                eventData = afterPrefix.trimmingCharacters(in: .whitespaces)
+            }
+        }
+
+        guard let data = eventData else {
+            return nil
+        }
+
+        // 解析 JSON 数据
+        guard let jsonData = data.data(using: .utf8) else {
+            return nil
+        }
+
+        do {
+            let json = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any]
+            let jsonType = json?["type"] as? String
+            let effectiveEventType = eventType ?? jsonType ?? "unknown"
+            
+            // 将字符串事件类型转换为枚举
+            let streamEventType = StreamEventType(rawValue: effectiveEventType) ?? .unknown
+
+            // 处理错误
+            if let error = json?["error"] as? [String: Any],
+               let errorMessage = error["message"] as? String {
+                return StreamChunk(
+                    error: errorMessage,
+                    eventType: .unknown,
+                    rawEvent: text
+                )
+            }
+
+            // 处理 ping 事件 - 不添加内容，只标记事件类型
+            if effectiveEventType == "ping" {
+                return StreamChunk(
+                    eventType: .ping,
+                    rawEvent: text
+                )
+            }
+
+            // 处理消息开始 - 不添加内容到消息，只标记事件
+            if effectiveEventType == "message_start" {
+                return StreamChunk(
+                    eventType: .messageStart,
+                    rawEvent: text
+                )
+            }
+
+            // 处理消息增量（包含 stop_reason）- 不添加内容到消息
+            if effectiveEventType == "message_delta" {
+                return StreamChunk(
+                    eventType: .messageDelta,
+                    rawEvent: text
+                )
+            }
+
+            // 处理消息结束
+            if effectiveEventType == "message_stop" {
+                return StreamChunk(
+                    isDone: true,
+                    eventType: .messageStop,
+                    rawEvent: text
+                )
+            }
+
+            // 处理内容块开始
+            if effectiveEventType == "content_block_start" {
+                if let contentBlock = json?["content_block"] as? [String: Any],
+                   let blockType = contentBlock["type"] as? String {
+
+                    // 优先处理思考块 - 不添加内容，只标记事件类型
+                    // 必须在 text 块之前处理，因为某些 API 可能在 thinking 块中包含 text 字段
+                    if blockType == "thinking" {
+                        return StreamChunk(
+                            eventType: .contentBlockStart,
+                            rawEvent: text
+                        )
+                    }
+
+                    // 处理工具调用 - 不添加内容到消息，只标记事件
+                    if blockType == "tool_use" {
+                        if let id = contentBlock["id"] as? String,
+                           let name = contentBlock["name"] as? String {
+                            let toolCall = ToolCall(
+                                id: id,
+                                name: name,
+                                arguments: "{}"
+                            )
+                            return StreamChunk(
+                                toolCalls: [toolCall],
+                                eventType: .contentBlockStart,
+                                rawEvent: text
+                            )
+                        }
+                    }
+
+                    // 处理文本块 - 只返回实际文本内容
+                    if blockType == "text" {
+                        if let textContent = contentBlock["text"] as? String, !textContent.isEmpty {
+                            return StreamChunk(
+                                content: textContent,
+                                eventType: .contentBlockStart,
+                                rawEvent: text
+                            )
+                        }
+                        // 空文本块不添加内容
+                        return StreamChunk(
+                            eventType: .contentBlockStart,
+                            rawEvent: text
+                        )
+                    }
+
+                    // 其他类型内容块不添加内容
+                    return StreamChunk(
+                        eventType: .contentBlockStart,
+                        rawEvent: text
+                    )
+                }
+                // 无法解析的内容块不添加内容
+                return StreamChunk(
+                    eventType: .contentBlockStart,
+                    rawEvent: text
+                )
+            }
+
+            // 处理内容块增量
+            if effectiveEventType == "content_block_delta" {
+                if let delta = json?["delta"] as? [String: Any] {
+                    let deltaType = delta["type"] as? String
+
+                    // 优先处理 thinking_delta 类型 - 必须在 text 之前检查
+                    // 注意：字段名可能是 "thinking" 而不是 "thinking_delta"
+                    if let thinkingDelta = delta["thinking_delta"] as? String {
+                        return StreamChunk(
+                            content: thinkingDelta,
+                            eventType: .thinkingDelta,
+                            rawEvent: text
+                        )
+                    }
+                    if let thinkingDelta = delta["thinking"] as? String {
+                        return StreamChunk(
+                            content: thinkingDelta,
+                            eventType: .thinkingDelta,
+                            rawEvent: text
+                        )
+                    }
+
+                    // 处理标准 text 字段
+                    if let textContent = delta["text"] as? String {
+                        return StreamChunk(
+                            content: textContent,
+                            eventType: .textDelta,
+                            rawEvent: text
+                        )
+                    }
+
+                    // 处理 text_delta 类型
+                    if let textDelta = delta["text_delta"] as? String {
+                        return StreamChunk(
+                            content: textDelta,
+                            eventType: .textDelta,
+                            rawEvent: text
+                        )
+                    }
+                    
+                    // 处理 input_json_delta 类型（工具调用参数）
+                    if let partialJson = delta["partial_json"] as? String {
+                        return StreamChunk(
+                            partialJson: partialJson,
+                            eventType: .inputJsonDelta,
+                            rawEvent: text
+                        )
+                    }
+                    
+                    // 处理 signature_delta 类型 - 不添加内容到消息
+                    if delta["signature"] != nil {
+                        return StreamChunk(
+                            eventType: .signatureDelta,
+                            rawEvent: text
+                        )
+                    }
+                    
+                    // 未知类型的内容块增量不添加内容
+                    return StreamChunk(
+                        eventType: .contentBlockDelta,
+                        rawEvent: text
+                    )
+                }
+                // 无法解析的内容块增量不添加内容
+                return StreamChunk(
+                    eventType: .contentBlockDelta,
+                    rawEvent: text
+                )
+            }
+
+            // 处理内容块停止 - 不添加内容到消息
+            if effectiveEventType == "content_block_stop" {
+                return StreamChunk(
+                    eventType: .contentBlockStop,
+                    rawEvent: text
+                )
+            }
+
+            // 处理未知事件类型 - 不添加内容到消息
+            return StreamChunk(
+                eventType: .unknown,
+                rawEvent: text
+            )
+        } catch {
+            if Self.verbose {
+                os_log("\(Self.t)⚠️ 解析流式数据块失败: \(error.localizedDescription)")
+            }
+            return StreamChunk(
+                error: "解析失败: \(error.localizedDescription)",
+                eventType: .unknown,
+                rawEvent: text
+            )
+        }
+    }
+
     /// 日志 emoji
     static var logEmoji: String { "🟣" }
 }

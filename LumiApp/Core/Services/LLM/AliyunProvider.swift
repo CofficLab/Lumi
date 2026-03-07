@@ -129,6 +129,31 @@ struct AliyunProvider: LLMProviderProtocol, SuperLog {
         return (textContent, toolCalls.isEmpty ? nil : toolCalls)
     }
 
+    /// 构建流式请求体
+    func buildStreamingRequestBody(
+        messages: [ChatMessage],
+        model: String,
+        tools: [AgentTool]?,
+        systemPrompt: String
+    ) throws -> [String: Any] {
+        var body = try buildRequestBody(
+            messages: messages,
+            model: model,
+            tools: tools,
+            systemPrompt: systemPrompt
+        )
+        body["stream"] = true
+        return body
+    }
+
+    /// 解析流式响应数据块
+    /// Aliyun 兼容 Anthropic 流式格式
+    func parseStreamChunk(data: Data) throws -> StreamChunk? {
+        // 复用 Anthropic 的解析逻辑
+        let anthropicProvider = AnthropicProvider()
+        return try anthropicProvider.parseStreamChunk(data: data)
+    }
+
     static var logEmoji: String { "🔵" }
 }
 

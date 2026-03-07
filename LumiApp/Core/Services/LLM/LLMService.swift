@@ -197,6 +197,209 @@ class LLMService: SuperLog, @unchecked Sendable {
             )
         }
     }
+
+    // MARK: - 流式发送消息
+
+    /// 流式发送消息到 LLM
+    ///
+    /// 使用 SSE 协议接收流式响应，通过回调实时返回内容片段
+    ///
+    /// - Parameters:
+    ///   - messages: 消息历史
+    ///   - config: LLM 配置
+    ///   - tools: 可用工具列表
+    ///   - onChunk: 收到内容片段时的回调
+    /// - Returns: 完整的助手消息（包含累积的内容和工具调用）
+    /// - Throws: API 错误
+    func sendStreamingMessage(
+        messages: [ChatMessage],
+        config: LLMConfig,
+        tools: [AgentTool]? = nil,
+        onChunk: @Sendable @escaping (StreamChunk) -> Void
+    ) async throws -> ChatMessage {
+        // 验证 API Key
+        guard !config.apiKey.isEmpty else {
+            os_log(.error, "\(self.t)API Key 为空")
+            throw NSError(domain: "LLMService", code: 401, userInfo: [NSLocalizedDescriptionKey: "API Key is missing"])
+        }
+
+        // 记录开始时间
+        let startTime = CFAbsoluteTimeGetCurrent()
+
+        // 从注册表获取供应商实例
+        guard let provider = registry.createProvider(id: config.providerId) else {
+            os_log(.error, "\(self.t)未找到供应商：\(config.providerId)")
+            throw NSError(domain: "LLMService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Provider not found: \(config.providerId)"])
+        }
+
+        // 构建 API URL
+        guard let url = URL(string: provider.baseURL) else {
+            os_log(.error, "\(self.t)无效的 URL: \(provider.baseURL)")
+            throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL: \(provider.baseURL)"])
+        }
+
+        // 构建流式请求体
+        let body: [String: Any]
+        do {
+            body = try provider.buildStreamingRequestBody(
+                messages: messages,
+                model: config.model,
+                tools: tools,
+                systemPrompt: ""
+            )
+        } catch {
+            os_log(.error, "\(self.t)构建流式请求体失败：\(error.localizedDescription)")
+            throw error
+        }
+
+        // 输出调试信息
+        if Self.verbose {
+            os_log("\(self.t)🚀 发送流式请求到 \(config.providerId): \(config.model)")
+        }
+
+        // 构建额外的请求头
+        var additionalHeaders: [String: String] = [:]
+        if config.providerId == "zhipu" {
+            additionalHeaders["anthropic-version"] = "2023-06-01"
+        }
+
+        // 累积内容
+        var accumulatedContent = ""
+        var accumulatedToolCalls: [ToolCall] = []
+        var streamError: String?
+        
+        // 工具调用参数累积（用于处理 input_json_delta 分片）
+        var currentToolCallId: String?
+        var currentToolCallName: String?
+        var currentToolCallArguments = ""
+
+        // 发送流式请求
+        do {
+            try await llmAPI.sendStreamingRequest(
+                url: url,
+                apiKey: config.apiKey,
+                body: body,
+                additionalHeaders: additionalHeaders
+            ) { chunkData in
+                do {
+                    if let chunk = try provider.parseStreamChunk(data: chunkData) {
+                        // 累积内容 - 只累积 textDelta 的内容，跳过 thinkingDelta
+                        if let content = chunk.content, chunk.eventType == .textDelta {
+                            accumulatedContent += content
+                            if Self.verbose && accumulatedContent.count < 200 {
+                                os_log("\(self.t)📝 累积内容: \(content)")
+                            }
+                        }
+                        
+                        // 处理工具调用
+                        if let toolCalls = chunk.toolCalls {
+                            // 如果是新的工具调用，保存当前的（如果有）
+                            if let currentId = currentToolCallId,
+                               let currentName = currentToolCallName {
+                                let toolCall = ToolCall(
+                                    id: currentId,
+                                    name: currentName,
+                                    arguments: currentToolCallArguments.isEmpty ? "{}" : currentToolCallArguments
+                                )
+                                accumulatedToolCalls.append(toolCall)
+                            }
+                            
+                            // 开始新的工具调用
+                            if let firstToolCall = toolCalls.first {
+                                currentToolCallId = firstToolCall.id
+                                currentToolCallName = firstToolCall.name
+                                currentToolCallArguments = ""
+                            }
+                        }
+                        
+                        // 处理工具调用参数分片
+                        if let partialJson = chunk.partialJson {
+                            currentToolCallArguments += partialJson
+                        }
+                        
+                        if let error = chunk.error {
+                            streamError = error
+                        }
+                        
+                        // 处理消息结束，保存最后一个工具调用
+                        if chunk.isDone {
+                            if let currentId = currentToolCallId,
+                               let currentName = currentToolCallName {
+                                let toolCall = ToolCall(
+                                    id: currentId,
+                                    name: currentName,
+                                    arguments: currentToolCallArguments.isEmpty ? "{}" : currentToolCallArguments
+                                )
+                                accumulatedToolCalls.append(toolCall)
+                            }
+                        }
+                        
+                        // 回调通知外部
+                        onChunk(chunk)
+                    } else {
+                        // Provider 应该已经处理了所有事件类型，这里不应该再返回 nil
+                        if Self.verbose {
+                            let preview = String(data: chunkData, encoding: .utf8)?.prefix(100) ?? "无法解码"
+                            os_log("\(self.t)⚠️ 警告：Provider 返回 nil，原始数据: \(preview)...")
+                        }
+                    }
+                } catch {
+                    if Self.verbose {
+                        os_log("\(self.t)⚠️ 解析流式数据块失败: \(error.localizedDescription)")
+                    }
+                }
+            }
+        } catch {
+            throw NSError(
+                domain: "LLMService",
+                code: 500,
+                userInfo: [NSLocalizedDescriptionKey: error.localizedDescription]
+            )
+        }
+        
+        // 流式结束后，保存最后一个工具调用
+        if let currentId = currentToolCallId,
+           let currentName = currentToolCallName {
+            let toolCall = ToolCall(
+                id: currentId,
+                name: currentName,
+                arguments: currentToolCallArguments.isEmpty ? "{}" : currentToolCallArguments
+            )
+            accumulatedToolCalls.append(toolCall)
+        }
+
+        // 检查流式过程中是否发生错误
+        if let error = streamError {
+            throw NSError(
+                domain: "LLMService",
+                code: 500,
+                userInfo: [NSLocalizedDescriptionKey: error]
+            )
+        }
+
+        // 计算总耗时
+        let endTime = CFAbsoluteTimeGetCurrent()
+        let latency = (endTime - startTime) * 1000.0
+
+        if Self.verbose {
+            os_log("\(self.t)✅ 流式响应完成，总耗时：\(String(format: "%.2f", latency))ms, 内容长度：\(accumulatedContent.count)")
+            if accumulatedContent.isEmpty {
+                os_log("\(self.t)⚠️ 警告：累积内容为空！")
+            } else {
+                os_log("\(self.t)📝 累积内容预览：\(accumulatedContent.prefix(100))...")
+            }
+        }
+
+        // 返回完整的助手消息
+        return ChatMessage(
+            role: .assistant,
+            content: accumulatedContent,
+            toolCalls: accumulatedToolCalls.isEmpty ? nil : accumulatedToolCalls,
+            providerId: config.providerId,
+            modelName: config.model,
+            latency: latency
+        )
+    }
 }
 
 // MARK: - Preview
