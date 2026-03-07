@@ -5,7 +5,7 @@ import SwiftUI
 struct AppModeContentView: View {
     @Binding var sidebarVisibility: Bool
 
-    @EnvironmentObject var app: AppProvider
+    @EnvironmentObject var app: GlobalProvider
     @EnvironmentObject var pluginProvider: PluginProvider
 
     var body: some View {
@@ -49,8 +49,6 @@ struct AppModeContentView: View {
         }
         .frame(maxHeight: .infinity)
     }
-
-
 }
 
 #Preview("App Mode") {

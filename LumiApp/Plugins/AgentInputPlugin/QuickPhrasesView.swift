@@ -45,8 +45,8 @@ struct QuickPhrasesView: View, SuperLog {
         .task {
             await refreshPhrases()
         }
-        .onChange(of: isProjectSelected, perform: handleIsProjectSelectedChanged)
-        .onChange(of: projectName, perform: handleProjectNameChanged)
+        .onChange(of: isProjectSelected, handleIsProjectSelectedChanged)
+        .onChange(of: projectName, handleProjectNameChanged)
     }
 }
 
@@ -123,11 +123,11 @@ struct QuickPhraseButton: View, SuperLog {
 // MARK: - Event Handler
 
 extension QuickPhrasesView {
-    func handleProjectNameChanged(_ projectName: String) {
+    func handleProjectNameChanged() {
         Task { await refreshPhrases() }
     }
 
-    func handleIsProjectSelectedChanged(_ b: Bool) {
+    func handleIsProjectSelectedChanged() {
         Task { await refreshPhrases() }
     }
 }

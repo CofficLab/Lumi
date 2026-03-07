@@ -14,7 +14,7 @@ struct RootView<Content>: View where Content: View {
     let agentProvider: AgentProvider
 
     /// 应用提供者
-    let appProvider: AppProvider
+    let appProvider: GlobalProvider
 
     /// 项目 ViewModel
     let projectViewModel: ProjectViewModel
@@ -128,7 +128,7 @@ struct RootView<Content>: View where Content: View {
         )
 
         // 初始化基础 ViewModel
-        self.appProvider = AppProvider()
+        self.appProvider = GlobalProvider()
         self.projectViewModel = ProjectViewModel(providerRegistry: providerRegistry, contextService: contextService)
         self.commandSuggestionViewModel = CommandSuggestionViewModel()
 

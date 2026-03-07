@@ -3,7 +3,7 @@ import SwiftUI
 /// 应用模式侧边栏视图，显示插件提供的导航入口
 struct AppModeSidebar: View {
     /// 应用提供者环境对象
-    @EnvironmentObject var appProvider: AppProvider
+    @EnvironmentObject var appProvider: GlobalProvider
 
     /// 插件提供者环境对象
     @EnvironmentObject var pluginProvider: PluginProvider

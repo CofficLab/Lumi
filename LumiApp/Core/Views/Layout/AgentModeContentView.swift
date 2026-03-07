@@ -7,10 +7,10 @@ struct AgentModeContentView: View {
     nonisolated static let emoji = "🤖"
     /// 是否启用详细日志输出
     nonisolated static let verbose = false
-    
+
     @Binding var sidebarVisibility: Bool
-    
-    @EnvironmentObject var app: AppProvider
+
+    @EnvironmentObject var app: GlobalProvider
     @EnvironmentObject var pluginProvider: PluginProvider
 
     var body: some View {
@@ -20,7 +20,7 @@ struct AgentModeContentView: View {
                 sidebarColumn
                     .frame(minWidth: 150, idealWidth: 220, maxWidth: 400)
             }
-            
+
             // 第二栏 + 第三栏：嵌套 HSplitView
             middleAndDetailColumns
         }
@@ -32,9 +32,9 @@ struct AgentModeContentView: View {
             }
         }
     }
-    
+
     // MARK: - 子视图
-    
+
     /// 侧边栏列
     private var sidebarColumn: some View {
         VStack(spacing: 0) {
@@ -51,11 +51,11 @@ struct AgentModeContentView: View {
             AgentModeSidebar()
         }
     }
-    
+
     /// 中间栏和详情栏（嵌套 HSplitView）
     private var middleAndDetailColumns: some View {
         let middleViews = pluginProvider.getMiddleViews()
-        
+
         return Group {
             if middleViews.isEmpty {
                 // 如果没有中间栏视图，直接显示详情栏
@@ -66,14 +66,14 @@ struct AgentModeContentView: View {
                     // 第二栏：中间栏
                     middleColumn(middleViews: middleViews)
                         .frame(minWidth: 200, idealWidth: 300, maxWidth: 600)
-                    
+
                     // 第三栏：详情栏
                     detailColumn
                 }
             }
         }
     }
-    
+
     /// 中间栏
     private func middleColumn(middleViews: [AnyView]) -> some View {
         VStack(spacing: 0) {
@@ -82,7 +82,7 @@ struct AgentModeContentView: View {
             }
         }
     }
-    
+
     /// 详情栏
     private var detailColumn: some View {
         VStack(spacing: 0) {
@@ -175,8 +175,6 @@ struct AgentModeContentView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-
-
 }
 
 #Preview("Agent Mode") {

@@ -25,7 +25,7 @@ final class PluginProvider: ObservableObject, SuperLog {
     @Published private(set) var isLoaded: Bool = false
 
     /// 当前选中的应用模式
-    @Published var selectedMode: AppMode = .app
+//    @Published var selectedMode: AppMode = .app
 
     /// 插件设置存储
     private let settingsStore: PluginSettingsStore
