@@ -93,11 +93,9 @@ actor PromptService: SuperLog {
             **项目路径**: \(path)
             """
             cdCommand = "cd \(path) && "
-            os_log("\(Self.t)✅ 已选择项目，添加 cd 命令前缀: \(cdCommand)")
         } else {
             projectContext = ""
             cdCommand = ""
-            os_log("\(Self.t)⚠️ 未选择项目，cd 命令为空")
         }
 
         return [
@@ -252,7 +250,9 @@ actor PromptService: SuperLog {
             👋 你好！我是你的智能编程助手 DevAssistant。
 
             \(projectContext)
-            **当前时间**: \(currentTime)
+            
+            **当前时间**: \(currentTime)  
+            
             \(sessionIdDisplay)
             我可以帮你：
             - **分析代码** - 阅读和理解项目结构
@@ -268,8 +268,10 @@ actor PromptService: SuperLog {
             return """
             👋 Hello! I'm your intelligent coding assistant, DevAssistant.
 
-            \(projectContext)
-            **Current Time**: \(currentTimeEN)
+            \(projectContext)  
+            
+            **Current Time**: \(currentTimeEN)  
+            
             \(sessionIdDisplay)
             I can help you:
             - **Analyze code** - Read and understand project structure

@@ -279,6 +279,8 @@ class LLMService: SuperLog, @unchecked Sendable {
         var inputTokens: Int?
         var outputTokens: Int?
         var stopReason: String?
+        var timeToFirstToken: Double?
+        var isFirstToken = true
 
         // 发送流式请求
         do {
@@ -290,6 +292,16 @@ class LLMService: SuperLog, @unchecked Sendable {
             ) { chunkData in
                 do {
                     if let chunk = try provider.parseStreamChunk(data: chunkData) {
+                        // 记录首 token 时间
+                        if isFirstToken {
+                            isFirstToken = false
+                            let firstTokenTime = CFAbsoluteTimeGetCurrent()
+                            timeToFirstToken = (firstTokenTime - startTime) * 1000.0
+                            if Self.verbose {
+                                os_log("\(self.t)⏱️ 首 token 延迟: \(String(format: "%.2f", timeToFirstToken!))ms")
+                            }
+                        }
+
                         // 累积内容 - 只累积 textDelta 的内容，跳过 thinkingDelta
                         if let content = chunk.content, chunk.eventType == .textDelta {
                             accumulatedContent += content
@@ -426,6 +438,7 @@ class LLMService: SuperLog, @unchecked Sendable {
             inputTokens: inputTokens,
             outputTokens: outputTokens,
             totalTokens: totalTokens,
+            timeToFirstToken: timeToFirstToken,
             finishReason: stopReason,
             temperature: config.temperature,
             maxTokens: config.maxTokens
