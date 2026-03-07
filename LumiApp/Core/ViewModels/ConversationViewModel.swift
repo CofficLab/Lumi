@@ -253,25 +253,18 @@ final class ConversationViewModel: ObservableObject, SuperLog {
 
     // MARK: - 会话选择
 
-    /// 选择指定会话
-    /// - Parameter id: 会话 ID
-    func selectConversation(_ id: UUID) {
+    /// 设置当前选中的会话
+    /// - Parameter id: 会话 ID，传入 nil 表示清除选择
+    func setSelectedConversation(_ id: UUID?) {
         // 避免重复设置相同的 ID
         guard selectedConversationId != id else {
-            if Self.verbose {
-                os_log("\(Self.t)⚠️ 会话已选中，跳过重复设置: \(id)")
+            if let existingId = id, Self.verbose {
+                os_log("\(Self.t)⚠️ 会话已选中，跳过重复设置: \(existingId)")
             }
             return
         }
 
         selectedConversationId = id
-    }
-
-    /// 清除会话选择
-    ///
-    /// 清理选中状态。
-    func clearConversationSelection() {
-        selectedConversationId = nil
     }
 
     /// 恢复上次选择的会话

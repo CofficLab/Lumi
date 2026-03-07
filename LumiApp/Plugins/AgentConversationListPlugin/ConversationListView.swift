@@ -23,9 +23,6 @@ struct ConversationListView: View, SuperLog {
     /// 本地选择的会话 ID
     @State private var localSelectedConversationId: UUID?
 
-    /// 是否正在处理选择变更（防止循环）
-    @State private var isProcessingSelection = false
-
     var body: some View {
         VStack(spacing: 0) {
             // 标题栏
@@ -68,8 +65,6 @@ extension ConversationListView {
     /// 同步 VM 的选中状态到本地 List
     /// 在视图出现时调用，确保 List 的选中状态与 VM 一致
     private func syncSelectionFromViewModel() {
-        guard !isProcessingSelection else { return }
-
         let vmId = conversationViewModel.selectedConversationId
 
         // 如果 VM 有选中的会话，同步到本地
@@ -77,13 +72,8 @@ extension ConversationListView {
             // 检查选中的会话是否存在于当前列表中
             if conversations.first(where: { $0.id == selectedId }) != nil {
                 if localSelectedConversationId != selectedId {
-                    isProcessingSelection = true
                     localSelectedConversationId = selectedId
                     os_log("\(self.t)✅ 同步 VM 选中状态到 List: \(selectedId)")
-
-                    DispatchQueue.main.async {
-                        isProcessingSelection = false
-                    }
                 }
             } else {
                 // 选中的会话不存在于列表中，清除选择
@@ -164,34 +154,17 @@ extension ConversationListView {
         let vmId = conversationViewModel.selectedConversationId?.uuidString ?? "nil"
         os_log("\(self.t)🔄 handleSelectionChange called: local=\(localId), vm=\(vmId)")
 
-        // 如果正在处理选择变更，跳过（防止循环）
-        guard !isProcessingSelection else {
-            os_log("\(self.t)⏭️ 正在处理中，跳过")
-            return
-        }
-
         // 只在值确实不同时才更新，避免循环
         guard localSelectedConversationId != conversationViewModel.selectedConversationId else {
-            os_log("\(self.t)⏭️ 值相同，跳过处理")
             return
         }
 
-        isProcessingSelection = true
-
-        // 使用 async 延迟执行，打破同步循环
-        DispatchQueue.main.async {
-            if let newId = self.localSelectedConversationId {
-                os_log("\(self.t)👉 从 List 选择会话: \(newId)")
-                self.conversationViewModel.selectConversation(newId)
-            } else {
-                os_log("\(self.t)👉 清除会话选择")
-                self.conversationViewModel.clearConversationSelection()
-            }
-
-            // 延迟重置标志
-            DispatchQueue.main.async {
-                self.isProcessingSelection = false
-            }
+        if let newId = self.localSelectedConversationId {
+            os_log("\(self.t)👉 从 List 选择会话: \(newId)")
+            self.conversationViewModel.setSelectedConversation(newId)
+        } else {
+            os_log("\(self.t)👉 清除会话选择")
+            self.conversationViewModel.setSelectedConversation(nil)
         }
     }
 
@@ -200,32 +173,15 @@ extension ConversationListView {
         let vmId = conversationViewModel.selectedConversationId?.uuidString ?? "nil"
         os_log("\(self.t)🔄 handleConversationSelected called: local=\(localId), vm=\(vmId)")
 
-        // 如果正在处理选择变更，跳过（防止循环）
-        guard !isProcessingSelection else {
-            os_log("\(self.t)⏭️ 正在处理中，跳过")
-            return
-        }
-
         // 只在值确实不同时才更新，避免循环
         guard localSelectedConversationId != conversationViewModel.selectedConversationId else {
-            os_log("\(self.t)⏭️ 值相同，跳过处理")
             return
         }
 
-        isProcessingSelection = true
-
-        // 使用 async 延迟执行，打破同步循环
-        DispatchQueue.main.async {
-            if let conversationId = self.conversationViewModel.selectedConversationId {
-                if self.conversations.first(where: { $0.id == conversationId }) != nil {
-                    os_log("\(self.t)👉 同步 VM 选择到 List: \(conversationId)")
-                    self.localSelectedConversationId = conversationId
-                }
-            }
-
-            // 延迟重置标志
-            DispatchQueue.main.async {
-                self.isProcessingSelection = false
+        if let conversationId = self.conversationViewModel.selectedConversationId {
+            if self.conversations.first(where: { $0.id == conversationId }) != nil {
+                os_log("\(self.t)👉 同步 VM 选择到 List: \(conversationId)")
+                self.localSelectedConversationId = conversationId
             }
         }
     }

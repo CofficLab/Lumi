@@ -122,7 +122,23 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         // 监听会话选择变化
         setupConversationSelectionObserver()
         
+        // 加载当前选中的会话消息（如果存在）
+        loadInitialConversationIfNeeded()
+        
         loadPreferences()
+    }
+    
+    /// 加载初始会话消息
+    /// 在初始化时，如果 ConversationViewModel 已经恢复了上次选择的会话，立即加载消息
+    private func loadInitialConversationIfNeeded() {
+        if let selectedId = conversationViewModel.selectedConversationId {
+            if Self.verbose {
+                os_log("\(Self.t)📥 初始化时加载已选中的会话: \(selectedId)")
+            }
+            Task { @MainActor in
+                await self.loadConversation(selectedId)
+            }
+        }
     }
     
     /// 设置会话选择监听
@@ -191,19 +207,6 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     }
 
     // MARK: - 业务方法
-
-    // MARK: - 代理 ConversationViewModel 属性（仅供内部扩展使用）
-
-    /// 当前选中的会话 ID（代理到 ConversationViewModel）
-    ///
-    /// 需要完整会话数据的视图应使用 `@Query` 根据此 ID 自行查询：
-    /// ```swift
-    /// @Query(filter: #Predicate<Conversation> { $0.id == agentProvider.selectedConversationId })
-    /// var selectedConversation: [Conversation]
-    /// ```
-    var selectedConversationId: UUID? {
-        conversationViewModel.selectedConversationId
-    }
 
     /// 当前会话的消息列表（代理到 MessageViewModel）
     var messages: [ChatMessage] {
