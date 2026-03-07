@@ -460,19 +460,32 @@ struct AnthropicProvider: LLMProviderProtocol, SuperLog {
                 )
             }
 
-            // 处理消息开始 - 不添加内容到消息，只标记事件
+            // 处理消息开始 - 提取 usage 信息
             if effectiveEventType == "message_start" {
+                var inputTokens: Int?
+                if let message = json?["message"] as? [String: Any],
+                   let usage = message["usage"] as? [String: Any] {
+                    inputTokens = usage["input_tokens"] as? Int
+                }
                 return StreamChunk(
                     eventType: .messageStart,
-                    rawEvent: text
+                    rawEvent: text,
+                    inputTokens: inputTokens
                 )
             }
 
-            // 处理消息增量（包含 stop_reason）- 不添加内容到消息
+            // 处理消息增量（包含 stop_reason 和 usage）
             if effectiveEventType == "message_delta" {
+                let stopReason = json?["stop_reason"] as? String
+                var outputTokens: Int?
+                if let usage = json?["usage"] as? [String: Any] {
+                    outputTokens = usage["output_tokens"] as? Int
+                }
                 return StreamChunk(
                     eventType: .messageDelta,
-                    rawEvent: text
+                    rawEvent: text,
+                    outputTokens: outputTokens,
+                    stopReason: stopReason
                 )
             }
 

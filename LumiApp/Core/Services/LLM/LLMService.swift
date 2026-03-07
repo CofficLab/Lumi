@@ -178,14 +178,16 @@ class LLMService: SuperLog, @unchecked Sendable {
                 }
             }
 
-            // 返回助手消息
+            // 返回助手消息（包含请求参数）
             return ChatMessage(
                 role: .assistant,
                 content: content,
                 toolCalls: toolCalls,
                 providerId: config.providerId,
                 modelName: config.model,
-                latency: latency  // 记录耗时
+                latency: latency,
+                temperature: config.temperature,
+                maxTokens: config.maxTokens
             )
 
         } catch let apiError as APIError {
@@ -267,11 +269,16 @@ class LLMService: SuperLog, @unchecked Sendable {
         var accumulatedContent = ""
         var accumulatedToolCalls: [ToolCall] = []
         var streamError: String?
-        
+
         // 工具调用参数累积（用于处理 input_json_delta 分片）
         var currentToolCallId: String?
         var currentToolCallName: String?
         var currentToolCallArguments = ""
+
+        // 性能指标累积
+        var inputTokens: Int?
+        var outputTokens: Int?
+        var stopReason: String?
 
         // 发送流式请求
         do {
@@ -320,7 +327,18 @@ class LLMService: SuperLog, @unchecked Sendable {
                         if let error = chunk.error {
                             streamError = error
                         }
-                        
+
+                        // 累积性能指标
+                        if let tokens = chunk.inputTokens {
+                            inputTokens = tokens
+                        }
+                        if let tokens = chunk.outputTokens {
+                            outputTokens = tokens
+                        }
+                        if let reason = chunk.stopReason {
+                            stopReason = reason
+                        }
+
                         // 处理消息结束，保存最后一个工具调用
                         if chunk.isDone {
                             if let currentId = currentToolCallId,
@@ -333,7 +351,7 @@ class LLMService: SuperLog, @unchecked Sendable {
                                 accumulatedToolCalls.append(toolCall)
                             }
                         }
-                        
+
                         // 回调通知外部
                         onChunk(chunk)
                     } else {
@@ -390,14 +408,27 @@ class LLMService: SuperLog, @unchecked Sendable {
             }
         }
 
-        // 返回完整的助手消息
+        // 计算总 token 数
+        let totalTokens: Int? = if let input = inputTokens, let output = outputTokens {
+            input + output
+        } else {
+            nil
+        }
+
+        // 返回完整的助手消息（包含性能指标和请求参数）
         return ChatMessage(
             role: .assistant,
             content: accumulatedContent,
             toolCalls: accumulatedToolCalls.isEmpty ? nil : accumulatedToolCalls,
             providerId: config.providerId,
             modelName: config.model,
-            latency: latency
+            latency: latency,
+            inputTokens: inputTokens,
+            outputTokens: outputTokens,
+            totalTokens: totalTokens,
+            finishReason: stopReason,
+            temperature: config.temperature,
+            maxTokens: config.maxTokens
         )
     }
 }

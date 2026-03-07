@@ -213,6 +213,12 @@ struct StreamChunk: Sendable {
     let eventType: StreamEventType?
     /// 原始事件数据（用于调试和展示）
     let rawEvent: String?
+    /// 输入 token 数量（从 message_start 或 message_delta 中获取）
+    let inputTokens: Int?
+    /// 输出 token 数量（从 message_delta 中获取）
+    let outputTokens: Int?
+    /// 完成原因（从 message_delta 中获取）
+    let stopReason: String?
 
     init(
         content: String? = nil,
@@ -221,7 +227,10 @@ struct StreamChunk: Sendable {
         error: String? = nil,
         partialJson: String? = nil,
         eventType: StreamEventType? = nil,
-        rawEvent: String? = nil
+        rawEvent: String? = nil,
+        inputTokens: Int? = nil,
+        outputTokens: Int? = nil,
+        stopReason: String? = nil
     ) {
         self.content = content
         self.isDone = isDone
@@ -230,5 +239,8 @@ struct StreamChunk: Sendable {
         self.partialJson = partialJson
         self.eventType = eventType
         self.rawEvent = rawEvent
+        self.inputTokens = inputTokens
+        self.outputTokens = outputTokens
+        self.stopReason = stopReason
     }
 }

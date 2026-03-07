@@ -56,12 +56,27 @@ struct LLMConfig: Codable, Sendable, Equatable {
     /// 用于在 ProviderRegistry 中查找对应的供应商实现。
     var providerId: String
     
+    /// 温度参数
+    ///
+    /// 控制生成文本的随机性。
+    /// - 较低值（如 0.0-0.3）：更确定、更保守的输出
+    /// - 较高值（如 0.7-1.0）：更随机、更有创意的输出
+    var temperature: Double?
+    
+    /// 最大生成 token 数
+    ///
+    /// 限制模型生成的最大 token 数量。
+    /// 不同供应商有不同的默认值和上限。
+    var maxTokens: Int?
+    
     /// 默认配置
     ///
     /// 使用 Anthropic Claude 作为默认供应商。
     static let `default` = LLMConfig(
         apiKey: "", 
         model: "claude-sonnet-4-20250514", 
-        providerId: "anthropic"
+        providerId: "anthropic",
+        temperature: nil,
+        maxTokens: nil
     )
 }

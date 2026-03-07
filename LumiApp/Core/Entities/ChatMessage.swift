@@ -92,6 +92,38 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     /// 用于性能分析和用户展示。
     var latency: Double?
 
+    /// 输入 token 数量
+    var inputTokens: Int?
+
+    /// 输出 token 数量
+    var outputTokens: Int?
+
+    /// 总 token 数量
+    var totalTokens: Int?
+
+    /// 首 token 延迟（毫秒）
+    var timeToFirstToken: Double?
+
+    /// 流式传输耗时（毫秒）
+    var streamingDuration: Double?
+
+    /// 思考过程耗时（毫秒）
+    var thinkingDuration: Double?
+
+    // MARK: - Request Metadata
+
+    /// 完成原因（stop/max_tokens/tool_calls 等）
+    var finishReason: String?
+
+    /// 供应商请求 ID（用于问题追踪）
+    var requestId: String?
+
+    /// 生成时使用的 temperature 参数
+    var temperature: Double?
+
+    /// 生成时使用的 max_tokens 参数
+    var maxTokens: Int?
+
     // MARK: - Thinking Process
 
     /// 思考过程文本
@@ -112,12 +144,27 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     ///   - providerId: LLM 供应商 ID
     ///   - modelName: 模型名称
     ///   - latency: 请求延迟
+    ///   - inputTokens: 输入 token 数量
+    ///   - outputTokens: 输出 token 数量
+    ///   - totalTokens: 总 token 数量
+    ///   - timeToFirstToken: 首 token 延迟
+    ///   - streamingDuration: 流式传输耗时
+    ///   - thinkingDuration: 思考过程耗时
+    ///   - finishReason: 完成原因
+    ///   - requestId: 供应商请求 ID
+    ///   - temperature: temperature 参数
+    ///   - maxTokens: max_tokens 参数
     ///   - thinkingContent: 思考过程文本
     init(role: MessageRole, content: String, isError: Bool = false,
          toolCalls: [ToolCall]? = nil, toolCallID: String? = nil,
          images: [ImageAttachment] = [],
          providerId: String? = nil, modelName: String? = nil,
-         latency: Double? = nil, thinkingContent: String? = nil) {
+         latency: Double? = nil, inputTokens: Int? = nil,
+         outputTokens: Int? = nil, totalTokens: Int? = nil,
+         timeToFirstToken: Double? = nil, streamingDuration: Double? = nil,
+         thinkingDuration: Double? = nil, finishReason: String? = nil,
+         requestId: String? = nil, temperature: Double? = nil,
+         maxTokens: Int? = nil, thinkingContent: String? = nil) {
         self.id = UUID()
         self.role = role
         self.content = content
@@ -129,6 +176,16 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         self.providerId = providerId
         self.modelName = modelName
         self.latency = latency
+        self.inputTokens = inputTokens
+        self.outputTokens = outputTokens
+        self.totalTokens = totalTokens
+        self.timeToFirstToken = timeToFirstToken
+        self.streamingDuration = streamingDuration
+        self.thinkingDuration = thinkingDuration
+        self.finishReason = finishReason
+        self.requestId = requestId
+        self.temperature = temperature
+        self.maxTokens = maxTokens
         self.thinkingContent = thinkingContent
     }
     
@@ -148,12 +205,27 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     ///   - providerId: LLM 供应商 ID
     ///   - modelName: 模型名称
     ///   - latency: 请求延迟
+    ///   - inputTokens: 输入 token 数量
+    ///   - outputTokens: 输出 token 数量
+    ///   - totalTokens: 总 token 数量
+    ///   - timeToFirstToken: 首 token 延迟
+    ///   - streamingDuration: 流式传输耗时
+    ///   - thinkingDuration: 思考过程耗时
+    ///   - finishReason: 完成原因
+    ///   - requestId: 供应商请求 ID
+    ///   - temperature: temperature 参数
+    ///   - maxTokens: max_tokens 参数
     ///   - thinkingContent: 思考过程文本
     init(id: UUID, role: MessageRole, content: String, timestamp: Date,
          isError: Bool = false, toolCalls: [ToolCall]? = nil,
          toolCallID: String? = nil, images: [ImageAttachment] = [],
          providerId: String? = nil, modelName: String? = nil,
-         latency: Double? = nil, thinkingContent: String? = nil) {
+         latency: Double? = nil, inputTokens: Int? = nil,
+         outputTokens: Int? = nil, totalTokens: Int? = nil,
+         timeToFirstToken: Double? = nil, streamingDuration: Double? = nil,
+         thinkingDuration: Double? = nil, finishReason: String? = nil,
+         requestId: String? = nil, temperature: Double? = nil,
+         maxTokens: Int? = nil, thinkingContent: String? = nil) {
         self.id = id
         self.role = role
         self.content = content
@@ -165,6 +237,16 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         self.providerId = providerId
         self.modelName = modelName
         self.latency = latency
+        self.inputTokens = inputTokens
+        self.outputTokens = outputTokens
+        self.totalTokens = totalTokens
+        self.timeToFirstToken = timeToFirstToken
+        self.streamingDuration = streamingDuration
+        self.thinkingDuration = thinkingDuration
+        self.finishReason = finishReason
+        self.requestId = requestId
+        self.temperature = temperature
+        self.maxTokens = maxTokens
         self.thinkingContent = thinkingContent
     }
 

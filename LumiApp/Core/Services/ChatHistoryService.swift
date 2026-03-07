@@ -227,7 +227,13 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
             try context.save()
             if Self.verbose {
                 let hasThinking = message.thinkingContent != nil && !message.thinkingContent!.isEmpty
-                os_log("\(Self.t)💾 [\(conversation.id)] 消息已保存：\(message.content.max(10)), 有思考过程: \(hasThinking)")
+                let metrics = [
+                    message.inputTokens.map { "输入: \($0)" },
+                    message.outputTokens.map { "输出: \($0)" },
+                    message.totalTokens.map { "总计: \($0)" },
+                    message.latency.map { "耗时: \(String(format: "%.0f", $0))ms" }
+                ].compactMap { $0 }.joined(separator: ", ")
+                os_log("\(Self.t)💾 [\(conversation.id)] 消息已保存：\(message.content.max(10)), 指标: [\(metrics)], 思考过程: \(hasThinking)")
             }
             // 返回保存后的消息
             return messageEntity.toChatMessage()
