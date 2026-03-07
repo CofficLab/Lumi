@@ -164,7 +164,7 @@ class LLMService: SuperLog, @unchecked Sendable {
                 apiKey: config.apiKey,
                 body: body,
                 additionalHeaders: additionalHeaders,
-                useBearerAuth: useBearerAuth
+                useBearerAuth: false
             )
 
             // 解析响应
