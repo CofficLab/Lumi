@@ -127,8 +127,7 @@ struct RootView<Content>: View where Content: View {
             slashCommandService: slashCommandService
         )
 
-        // 设置委托和配置提供者
-        self.messageSenderViewModel.delegate = self.agentProvider
+        // 设置委托
         conversationTurnViewModel.delegate = self.agentProvider
     }
 

@@ -2,34 +2,59 @@ import Foundation
 import MagicKit
 import OSLog
 
-/// 消息发送回调
-/// 用于解耦 MessageSenderViewModel 和 AgentProvider
+/// 消息发送事件
+/// 用于向外部报告队列处理状态
 @MainActor
-protocol MessageSendingDelegate: AnyObject, Sendable {
-    /// 开始处理消息
-    func messageSendingDidStart()
-    
-    /// 结束处理消息
-    func messageSendingDidFinish()
-    
-    /// 发送单条消息到 Agent
-    /// 协调多个 ViewModel 完成消息发送、保存、标题生成等操作
-    /// - Parameter message: 要发送的消息
-    func sendMessageToAgent(message: ChatMessage) async
+enum MessageSendEvent: Sendable {
+    /// 开始处理队列
+    case processingStarted
+    /// 队列处理完成
+    case processingFinished
+    /// 需要发送消息
+    /// - Parameter message: 待发送的消息
+    case sendMessage(ChatMessage)
 }
 
 /// 消息发送队列 ViewModel
 /// 负责管理待发送消息队列，按顺序逐个发送消息
+///
+/// ## 设计原则
+///
+/// `MessageSenderViewModel` 只专注于队列管理，不关心消息如何被处理。
+/// 通过 `events` AsyncStream 向外部报告状态变化，由调用方决定如何处理消息。
+///
+/// ## 使用示例
+///
+/// ```swift
+/// // 订阅事件流
+/// for await event in messageSenderViewModel.events {
+///     switch event {
+///     case .processingStarted:
+///         isProcessing = true
+///     case .processingFinished:
+///         isProcessing = false
+///     case .sendMessage(let message):
+///         await handleMessage(message)
+///     }
+/// }
+/// ```
 @MainActor
 final class MessageSenderViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📤"
     nonisolated static let verbose = true  // 开启日志以便调试
 
-    // MARK: - 回调委托
+    // MARK: - 事件流
 
-    /// 消息发送委托
-    /// 负责协调多个 ViewModel 完成消息发送、保存、标题生成等操作
-    weak var delegate: (any MessageSendingDelegate)?
+    /// 消息发送事件流
+    /// 外部订阅此流来处理消息发送逻辑
+    var events: AsyncStream<MessageSendEvent> {
+        AsyncStream { continuation in
+            self.eventContinuation = continuation
+        }
+    }
+
+    /// 事件流延续
+    private var eventContinuation: AsyncStream<MessageSendEvent>.Continuation?
 
     // MARK: - 发送状态
 
@@ -180,7 +205,7 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         await MainActor.run {
             isSending = true
             isCancelled = false
-            delegate?.messageSendingDidStart()
+            eventContinuation?.yield(.processingStarted)
         }
 
         // 持续处理队列中的消息
@@ -204,8 +229,10 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
 
             os_log("\(Self.t)📤 开始发送消息：\(message.content.max(30))...")
 
-            // 发送消息
-            await sendMessageToAgent(message: message)
+            // 发送消息 - 通过事件流通知外部
+            await MainActor.run {
+                eventContinuation?.yield(.sendMessage(message))
+            }
 
             // 检查是否被取消
             if isCancelled {
@@ -235,21 +262,9 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
         await MainActor.run {
             isSending = false
             currentProcessingIndex = nil
-            delegate?.messageSendingDidFinish()
+            eventContinuation?.yield(.processingFinished)
             os_log("\(Self.t)✅ 队列处理完成，剩余消息：\(self.pendingMessages.count)")
         }
-    }
-
-    /// 发送单条消息到 Agent
-    /// 通过委托协调多个 ViewModel 完成消息发送
-    private func sendMessageToAgent(message: ChatMessage) async {
-        let remaining = await MainActor.run { self.pendingMessages.count - 1 }
-        os_log("\(Self.t)📤 正在发送（剩余 \(remaining) 条等待）：\(message.content.max(50))")
-
-        // 通过委托发送消息（委托负责协调多个 VM）
-        await delegate?.sendMessageToAgent(message: message)
-
-        os_log("\(Self.t)✅ 消息发送完成：\(message.content.max(30))...")
     }
 
     /// 取消当前任务并清空队列

@@ -31,7 +31,7 @@ import SwiftData
 /// messageViewModel.loadMessages(for: conversation)
 /// ```
 @MainActor
-final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, ConversationTurnDelegate, LLMConfigProvider {
+final class AgentProvider: ObservableObject, SuperLog, ConversationTurnDelegate, LLMConfigProvider {
     nonisolated static let emoji = "🤖"
     nonisolated static let verbose = true
 
@@ -75,6 +75,11 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     // MARK: - 订阅管理
 
     private var cancellables = Set<AnyCancellable>()
+
+    /// 消息发送事件流任务
+    private var messageSendEventTask: Task<Void, Never>?
+
+    // MARK: - 聊天消息状态 (DevAssistant)
 
     // MARK: - 聊天消息状态 (DevAssistant)
 
@@ -146,10 +151,13 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         
         // 监听会话选择变化
         setupConversationSelectionObserver()
-        
+
         // 加载当前选中的会话消息（如果存在）
         loadInitialConversationIfNeeded()
-        
+
+        // 订阅消息发送事件流
+        subscribeToMessageSendEvents()
+
         loadPreferences()
     }
     
@@ -179,6 +187,33 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
                 }
             }
             .store(in: &cancellables)
+    }
+
+    /// 订阅消息发送事件流
+    /// 处理 MessageSenderViewModel 发出的发送消息事件
+    private func subscribeToMessageSendEvents() {
+        messageSendEventTask?.cancel()
+        messageSendEventTask = Task { [weak self] in
+            guard let self = self else { return }
+            for await event in self.messageSenderViewModel.events {
+                await self.handleMessageSendEvent(event)
+            }
+        }
+    }
+
+    /// 处理消息发送事件
+    /// - Parameter event: 消息发送事件
+    private func handleMessageSendEvent(_ event: MessageSendEvent) async {
+        switch event {
+        case .processingStarted:
+            setIsProcessing(true)
+
+        case .processingFinished:
+            setIsProcessing(false)
+
+        case .sendMessage(let message):
+            await sendMessageToAgent(message: message)
+        }
     }
 
     // MARK: - 偏好设置加载
@@ -881,29 +916,4 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
         pendingAttachments.removeAll()
     }
 
-    // MARK: - MessageSendingDelegate
-
-    /// 开始处理消息
-    func messageSendingDidStart() {
-        setIsProcessing(true)
-    }
-
-    /// 结束处理消息
-    func messageSendingDidFinish() {
-        setIsProcessing(false)
-    }
-
-    /// 处理用户消息
-    /// - Parameters:
-    ///   - content: 消息内容
-    ///   - images: 图片附件
-    func processUserMessage(content: String, images: [ImageAttachment]) async {
-        if Self.verbose && !images.isEmpty {
-            os_log("\(Self.t)✅ 用户消息包含 \(images.count) 张图片")
-        }
-
-        // 消息已由 MessageSenderViewModel 保存和追加
-        // 直接处理对话轮次
-        await processTurn()
-    }
 }
