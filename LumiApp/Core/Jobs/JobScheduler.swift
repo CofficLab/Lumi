@@ -51,15 +51,15 @@ actor JobScheduler: SuperLog {
     ///
     /// - Parameters:
     ///   - toolCall: 工具调用信息
-    ///   - toolManager: 工具管理器
+    ///   - toolService: 工具服务
     /// - Returns: 工具执行结果和耗时
     func executeToolCall(
         toolCall: ToolCall,
-        toolManager: ToolManager
+        toolService: ToolService
     ) async throws -> (ChatMessage, TimeInterval) {
         let output = try await ToolExecutionJob.run(
             toolCall: toolCall,
-            toolManager: toolManager
+            toolService: toolService
         )
         // 解构 Output 为元组
         return (output.result, output.duration)

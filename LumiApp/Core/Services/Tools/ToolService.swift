@@ -3,17 +3,11 @@ import MagicKit
 import OSLog
 import Combine
 
-/// 工具管理器：负责管理所有可用工具
-/// 单例模式，确保全局唯一实例
-@MainActor
-class ToolManager: ObservableObject, SuperLog {
-    
-    // MARK: - Singleton
-    
-    static let shared = ToolManager()
-    
+/// 工具服务：负责管理所有可用工具
+class ToolService: ObservableObject, SuperLog {
+
     // MARK: - Logger
-    
+
     nonisolated static let emoji = "🧰"
     nonisolated static let verbose = true
     
@@ -56,14 +50,14 @@ class ToolManager: ObservableObject, SuperLog {
     }
     
     // MARK: - Initialization
-    
-    private init() {
+
+    init() {
         setupBuiltInTools()
         setupMCPObservers()
         refreshAllTools()
         
         if Self.verbose {
-            os_log("\(Self.t)工具管理器已初始化")
+            os_log("\(Self.t)工具服务已初始化")
             os_log("\(Self.t)内置工具: \(self.builtInTools.count) 个")
         }
     }
@@ -78,11 +72,6 @@ class ToolManager: ObservableObject, SuperLog {
             WriteFileTool(),
             ShellTool(shellService: .shared),
         ]
-        
-        if Self.verbose {
-            let toolNames = builtInTools.map { $0.name }.joined(separator: ", ")
-            os_log("\(Self.t)已注册内置工具: \(toolNames)")
-        }
     }
     
     /// 设置 MCP 工具监听器
@@ -100,10 +89,6 @@ class ToolManager: ObservableObject, SuperLog {
     /// 刷新所有工具列表
     private func refreshAllTools() {
         allTools = builtInTools + mcpTools
-        
-        if Self.verbose {
-            os_log("\(Self.t)工具列表已刷新 (总计: \(self.allTools.count) 个)")
-        }
     }
     
     // MARK: - Public API
@@ -204,22 +189,6 @@ class ToolManager: ObservableObject, SuperLog {
         } catch {
             os_log(.error, "\(Self.t)❌ 工具执行失败: \(error.localizedDescription)")
             throw error
-        }
-    }
-    
-    /// 打印工具统计信息
-    func printStatistics() {
-        os_log("\(Self.t)📊 工具统计:")
-        os_log("\(Self.t)  总计: \(self.allTools.count) 个")
-        os_log("\(Self.t)  内置: \(self.builtInTools.count) 个")
-        os_log("\(Self.t)  MCP: \(self.mcpTools.count) 个")
-        
-        if !builtInTools.isEmpty {
-            os_log("\(Self.t)  内置工具: \(self.builtInToolNames.joined(separator: ", "))")
-        }
-        
-        if !mcpTools.isEmpty {
-            os_log("\(Self.t)  MCP 工具: \(self.mcpToolNames.joined(separator: ", "))")
         }
     }
     

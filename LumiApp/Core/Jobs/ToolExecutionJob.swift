@@ -18,8 +18,8 @@ extension ToolExecutionJob {
     struct Input {
         /// 工具调用信息
         let toolCall: ToolCall
-        /// 工具管理器
-        let toolManager: ToolManager
+        /// 工具服务
+        let toolService: ToolService
     }
 
     /// 任务输出结果
@@ -38,12 +38,12 @@ extension ToolExecutionJob {
     ///
     /// - Parameters:
     ///   - toolCall: 工具调用信息
-    ///   - toolManager: 工具管理器
+    ///   - toolService: 工具服务
     /// - Returns: 工具执行结果
     /// - Throws: 如果工具执行失败，抛出相应的错误
     static func run(
         toolCall: ToolCall,
-        toolManager: ToolManager
+        toolService: ToolService
     ) async throws -> Output {
         if Self.verbose >= 1 {
             os_log("\(Self.t)🚀 开始执行工具：\(toolCall.name)")
@@ -61,8 +61,8 @@ extension ToolExecutionJob {
             os_log(.error, "\(Self.t)❌ 参数解析失败，使用空参数")
         }
 
-        // 使用 ToolManager 查找工具
-        guard await toolManager.hasTool(named: toolCall.name) else {
+        // 使用 ToolService 查找工具
+        guard await toolService.hasTool(named: toolCall.name) else {
             os_log(.error, "\(Self.t)❌ 工具 '\(toolCall.name)' 未找到")
             throw NSError(
                 domain: "ToolExecutionJob",
@@ -77,7 +77,7 @@ extension ToolExecutionJob {
             // 抑制数据竞争警告：arguments 是值类型，在 await 传递时已经完成复制
             nonisolated(unsafe) let unsafeArgs = arguments
 
-            result = try await toolManager.executeTool(
+            result = try await toolService.executeTool(
                 named: toolCall.name,
                 arguments: unsafeArgs
             )

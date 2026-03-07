@@ -6,6 +6,7 @@ actor RegistryManagerPlugin: SuperPlugin {
     nonisolated static let id = "com.coffic.lumi.plugin.registrymanager"
     nonisolated static let displayName = String(localized: "Registry Manager", table: "RegistryManager")
     nonisolated static let navigationId = "\(id).main"
+    nonisolated static let enable = false
 
     @MainActor func addNavigationEntries() -> [NavigationEntry]? {
         return [

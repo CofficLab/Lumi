@@ -11,7 +11,7 @@ actor AgentSettingsPlugin: SuperPlugin {
     static let description = String(localized: "Agent settings and configuration", table: "DevAssistant")
     static let iconName = "gear"
     static var order: Int { 82 }
-    static let enable = true
+    static let enable = false
 
     static let shared = AgentSettingsPlugin()
 

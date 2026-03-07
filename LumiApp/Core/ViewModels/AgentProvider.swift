@@ -18,8 +18,8 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     /// 供应商注册表
     let registry: ProviderRegistry
 
-    /// 工具管理器
-    let toolManager: ToolManager
+    /// 工具服务
+    let toolService: ToolService
 
     /// 聊天历史服务
     let chatHistoryService: ChatHistoryService
@@ -76,7 +76,7 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     /// - Parameters:
     ///   - promptService: 提示词服务
     ///   - registry: 供应商注册表
-    ///   - toolManager: 工具管理器
+    ///   - toolService: 工具服务
     ///   - chatHistoryService: 聊天历史服务
     ///   - messageViewModel: 消息 ViewModel
     ///   - conversationViewModel: 会话 ViewModel
@@ -86,7 +86,7 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     init(
         promptService: PromptService,
         registry: ProviderRegistry,
-        toolManager: ToolManager,
+        toolService: ToolService,
         chatHistoryService: ChatHistoryService,
         messageViewModel: MessageViewModel,
         conversationViewModel: ConversationViewModel,
@@ -96,7 +96,7 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
     ) {
         self.promptService = promptService
         self.registry = registry
-        self.toolManager = toolManager
+        self.toolService = toolService
         self.chatHistoryService = chatHistoryService
         self.messageViewModel = messageViewModel
         self.conversationViewModel = conversationViewModel
@@ -281,7 +281,7 @@ final class AgentProvider: ObservableObject, SuperLog, MessageSendingDelegate, C
 
     /// 获取可用工具列表
     var tools: [AgentTool] {
-        toolManager.tools
+        toolService.tools
     }
 
     /// 获取当前供应商配置

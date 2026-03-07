@@ -17,8 +17,8 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
     /// LLM 服务
     private let llmService: LLMService
 
-    /// 工具管理器
-    private let toolManager: ToolManager
+    /// 工具服务
+    private let toolService: ToolService
 
     /// 提示词服务
     private let promptService: PromptService
@@ -46,12 +46,12 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
 
     init(
         llmService: LLMService,
-        toolManager: ToolManager,
+        toolService: ToolService,
         promptService: PromptService,
         jobScheduler: JobScheduler = .shared
     ) {
         self.llmService = llmService
-        self.toolManager = toolManager
+        self.toolService = toolService
         self.promptService = promptService
         self.jobScheduler = jobScheduler
     }
@@ -215,7 +215,7 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
     /// - Parameter toolCall: 工具调用
     private func executeTool(_ toolCall: ToolCall) async {
         let hasTool = await MainActor.run {
-            toolManager.hasTool(named: toolCall.name)
+            toolService.hasTool(named: toolCall.name)
         }
         guard hasTool else {
             os_log(.error, "\(Self.t)❌ 工具 '\(toolCall.name)' 未找到")
@@ -233,7 +233,7 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
             // 使用 JobScheduler 在后台执行工具
             let (resultMsg, _) = try await jobScheduler.executeToolCall(
                 toolCall: toolCall,
-                toolManager: toolManager
+                toolService: toolService
             )
             
             await delegate?.turnDidReceiveToolResult(resultMsg)
@@ -313,7 +313,7 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
         autoApproveRisk: Bool
     ) async {
         let hasTool = await MainActor.run {
-            toolManager.hasTool(named: request.toolName)
+            toolService.hasTool(named: request.toolName)
         }
         guard hasTool else {
             let errorMsg = ChatMessage(
@@ -327,7 +327,7 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
         }
 
         do {
-            let result = try await toolManager.executeTool(
+            let result = try await toolService.executeTool(
                 named: request.toolName,
                 arguments: request.arguments
             )

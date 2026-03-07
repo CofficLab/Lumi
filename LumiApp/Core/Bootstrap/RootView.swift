@@ -31,23 +31,29 @@ struct RootView<Content>: View where Content: View {
     /// 命令建议 ViewModel
     let commandSuggestionViewModel: CommandSuggestionViewModel
 
+    /// 工具服务
+    let toolService: ToolService
+
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
 
         // 初始化 SwiftData 容器
         self.modelContainer = AppConfig.getContainer()
 
-        // 初始化聊天历史服务（非单例）
+        // 初始化聊天历史服务
         let chatHistoryService = ChatHistoryService(
             llmService: LLMService.shared,
             modelContainer: self.modelContainer
         )
 
-        // 初始化 ViewModel（非单例，使用依赖注入）
+        // 初始化 ViewModel
         self.appProvider = AppProvider()
         self.projectViewModel = ProjectViewModel()
         self.commandSuggestionViewModel = CommandSuggestionViewModel()
-        
+
+        // 初始化工具服务
+        self.toolService = ToolService()
+
         // 创建 MessageViewModel
         self.messageViewModel = MessageViewModel(chatHistoryService: chatHistoryService)
 
@@ -70,7 +76,7 @@ struct RootView<Content>: View where Content: View {
         // 初始化对话轮次 ViewModel
         let conversationTurnViewModel = ConversationTurnViewModel(
             llmService: LLMService.shared,
-            toolManager: ToolManager.shared,
+            toolService: toolService,
             promptService: PromptService.shared
         )
 
@@ -78,7 +84,7 @@ struct RootView<Content>: View where Content: View {
         self.agentProvider = AgentProvider(
             promptService: PromptService.shared,
             registry: ProviderRegistry.shared,
-            toolManager: ToolManager.shared,
+            toolService: toolService,
             chatHistoryService: chatHistoryService,
             messageViewModel: messageViewModel,
             conversationViewModel: conversationViewModel,
