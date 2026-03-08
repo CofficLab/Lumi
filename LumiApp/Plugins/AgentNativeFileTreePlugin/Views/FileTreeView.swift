@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 
 /// 文件树节点
+@MainActor
 class FileNode: NSObject {
     let url: URL
     let name: String
@@ -42,10 +43,12 @@ class FileNode: NSObject {
 }
 
 /// NSOutlineView 数据源和代理
-class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelegate {
+@MainActor
+class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelegate, NSMenuDelegate {
     var rootNodes: [FileNode] = []
     weak var outlineView: NSOutlineView?
     var onSelect: ((URL) -> Void)?
+    var onDelete: ((URL, Bool) -> Void)?
     
     func setRootURL(_ url: URL) {
         let node = FileNode(url: url)
@@ -149,6 +152,205 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         }
     }
     
+    // MARK: - 右键菜单
+    
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        menu.removeAllItems()
+        
+        guard let outlineView = outlineView,
+              let event = NSApp.currentEvent,
+              event.type == .rightMouseDown || event.type == .rightMouseUp || event.type == .leftMouseDown else {
+            return
+        }
+        
+        // 转换坐标到 outlineView
+        let point = outlineView.convert(event.locationInWindow, from: nil)
+        let row = outlineView.row(at: point)
+        
+        guard row >= 0,
+              let node = outlineView.item(atRow: row) as? FileNode else {
+            return
+        }
+        
+        // 选中当前行
+        outlineView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+        
+        // 在 Finder 中显示
+        let revealItem = NSMenuItem(
+            title: "在 Finder 中显示",
+            action: #selector(handleRevealInFinder(_:)),
+            keyEquivalent: ""
+        )
+        revealItem.target = self
+        revealItem.representedObject = node
+        revealItem.image = NSImage(systemSymbolName: "folder", accessibilityDescription: nil)
+        menu.addItem(revealItem)
+        
+        // 在 VS Code 中打开
+        let vscodeItem = NSMenuItem(
+            title: "在 VS Code 中打开",
+            action: #selector(handleOpenInVSCode(_:)),
+            keyEquivalent: ""
+        )
+        vscodeItem.target = self
+        vscodeItem.representedObject = node
+        vscodeItem.image = NSImage(systemSymbolName: "chevron.left.forwardslash.chevron.right", accessibilityDescription: nil)
+        menu.addItem(vscodeItem)
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        // 复制路径
+        let copyPathItem = NSMenuItem(
+            title: "复制路径",
+            action: #selector(handleCopyPath(_:)),
+            keyEquivalent: ""
+        )
+        copyPathItem.target = self
+        copyPathItem.representedObject = node
+        copyPathItem.image = NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: nil)
+        menu.addItem(copyPathItem)
+        
+        // 复制相对路径
+        let copyRelativePathItem = NSMenuItem(
+            title: "复制相对路径",
+            action: #selector(handleCopyRelativePath(_:)),
+            keyEquivalent: ""
+        )
+        copyRelativePathItem.target = self
+        copyRelativePathItem.representedObject = node
+        copyRelativePathItem.image = NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: nil)
+        menu.addItem(copyRelativePathItem)
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        // 删除菜单项
+        let deleteItem = NSMenuItem(
+            title: "删除",
+            action: #selector(handleDelete(_:)),
+            keyEquivalent: ""
+        )
+        deleteItem.target = self
+        deleteItem.representedObject = node
+        deleteItem.image = NSImage(systemSymbolName: "trash", accessibilityDescription: nil)
+        menu.addItem(deleteItem)
+    }
+    
+    @objc private func handleDelete(_ sender: NSMenuItem) {
+        guard let node = sender.representedObject as? FileNode else { return }
+        
+        let alert = NSAlert()
+        alert.messageText = node.isDirectory ? "确认删除文件夹？" : "确认删除文件？"
+        alert.informativeText = "即将删除: \(node.name)\n此操作不可撤销。"
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "删除")
+        alert.addButton(withTitle: "取消")
+        
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            do {
+                try FileManager.default.removeItem(at: node.url)
+                onDelete?(node.url, node.isDirectory)
+                
+                // 刷新数据
+                if let parent = findParentNode(of: node) {
+                    parent.children.removeAll { $0 === node }
+                    outlineView?.reloadItem(parent, reloadChildren: true)
+                } else {
+                    rootNodes.removeAll { $0 === node }
+                    outlineView?.reloadData()
+                }
+            } catch {
+                let errorAlert = NSAlert()
+                errorAlert.messageText = "删除失败"
+                errorAlert.informativeText = error.localizedDescription
+                errorAlert.alertStyle = .critical
+                errorAlert.runModal()
+            }
+        }
+    }
+    
+    // MARK: - 菜单动作
+    
+    @objc private func handleCopyPath(_ sender: NSMenuItem) {
+        guard let node = sender.representedObject as? FileNode else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(node.url.path, forType: .string)
+    }
+    
+    @objc private func handleCopyRelativePath(_ sender: NSMenuItem) {
+        guard let node = sender.representedObject as? FileNode else { return }
+        
+        // 获取项目根路径
+        let rootPath = rootNodes.first?.url.deletingLastPathComponent().path ?? ""
+        let fullPath = node.url.path
+        
+        // 计算相对路径
+        let relativePath: String
+        if fullPath.hasPrefix(rootPath) {
+            let index = fullPath.index(fullPath.startIndex, offsetBy: rootPath.count)
+            relativePath = String(fullPath[index...]).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        } else {
+            relativePath = fullPath
+        }
+        
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(relativePath, forType: .string)
+    }
+    
+    @objc private func handleRevealInFinder(_ sender: NSMenuItem) {
+        guard let node = sender.representedObject as? FileNode else { return }
+        NSWorkspace.shared.selectFile(node.url.path, inFileViewerRootedAtPath: "")
+    }
+    
+    @objc private func handleOpenInVSCode(_ sender: NSMenuItem) {
+        guard let node = sender.representedObject as? FileNode else { return }
+        let path = node.url.path
+        
+        let task = Process()
+        task.launchPath = "/usr/bin/open"
+        task.arguments = ["-b", "com.microsoft.VSCode", path]
+        
+        do {
+            try task.run()
+        } catch {
+            // 如果 VS Code 未安装，尝试使用 code 命令
+            let codeTask = Process()
+            codeTask.launchPath = "/usr/local/bin/code"
+            codeTask.arguments = [path]
+            
+            do {
+                try codeTask.run()
+            } catch {
+                let alert = NSAlert()
+                alert.messageText = "无法打开 VS Code"
+                alert.informativeText = "请确保 VS Code 已安装。"
+                alert.alertStyle = .warning
+                alert.runModal()
+            }
+        }
+    }
+    
+    private func findParentNode(of targetNode: FileNode) -> FileNode? {
+        for rootNode in rootNodes {
+            if let parent = findParentNodeRecursive(parent: rootNode, target: targetNode) {
+                return parent
+            }
+        }
+        return nil
+    }
+    
+    private func findParentNodeRecursive(parent: FileNode, target: FileNode) -> FileNode? {
+        for child in parent.children {
+            if child === target {
+                return parent
+            }
+            if let found = findParentNodeRecursive(parent: child, target: target) {
+                return found
+            }
+        }
+        return nil
+    }
+    
     private func iconName(for node: FileNode) -> String {
         if node.isDirectory {
             return "folder"
@@ -165,6 +367,7 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
 }
 
 /// 自定义行视图
+@MainActor
 class FileTreeRowView: NSTableRowView {
     private var isHovered: Bool = false {
         didSet {
@@ -240,6 +443,11 @@ struct FileTreeView: NSViewRepresentable {
         outlineView.dataSource = context.coordinator
         outlineView.delegate = context.coordinator
         
+        // 启用右键菜单
+        let menu = NSMenu()
+        menu.delegate = context.coordinator
+        outlineView.menu = menu
+        
         // 先创建并添加列
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("FileColumn"))
         column.title = ""
@@ -251,6 +459,7 @@ struct FileTreeView: NSViewRepresentable {
         outlineView.rowHeight = 22
         outlineView.indentationPerLevel = 16
         outlineView.floatsGroupRows = false
+        outlineView.allowsEmptySelection = true
         
         scrollView.documentView = outlineView
         context.coordinator.outlineView = outlineView
