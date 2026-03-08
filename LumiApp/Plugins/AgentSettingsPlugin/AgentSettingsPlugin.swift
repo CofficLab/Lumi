@@ -33,6 +33,6 @@ actor AgentSettingsPlugin: SuperPlugin {
 
     @MainActor
     func addSettingsView() -> AnyView? {
-        return AnyView(DevAssistantSettingsView())
+        return AnyView(AgentSettingsView())
     }
 }

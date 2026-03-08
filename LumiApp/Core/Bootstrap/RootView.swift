@@ -41,6 +41,7 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(container.messageSenderViewModel)
             .environmentObject(container.commandSuggestionViewModel)
             .environmentObject(container.toolsViewModel)
+            .environmentObject(container.providerRegistry)
             .environmentObject(MystiqueThemeManager())
             .modelContainer(container.modelContainer)
     }
@@ -61,6 +62,7 @@ final class RootViewContainer: ObservableObject {
     let promptService: PromptService
     let slashCommandService: SlashCommandService
     let toolService: ToolService
+    let providerRegistry: ProviderRegistry
 
     // MARK: - ViewModel
 
@@ -97,6 +99,9 @@ final class RootViewContainer: ObservableObject {
 
         // 初始化工具服务
         self.toolService = ToolService()
+
+        // 初始化供应商注册表
+        self.providerRegistry = ProviderRegistry()
 
         // ========================================
         // ViewModel 层
@@ -142,7 +147,7 @@ final class RootViewContainer: ObservableObject {
         // 初始化 AgentProvider
         self.agentProvider = AgentProvider(
             promptService: promptService,
-            registry: ProviderRegistry(),
+            registry: providerRegistry,
             toolService: toolService,
             toolsViewModel: toolsViewModel,
             chatHistoryService: chatHistoryService,

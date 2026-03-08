@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// 开发助手设置视图
-/// 采用扁平化设计，避免嵌套侧边栏
+/// Agent设置视图
 struct AgentSettingsView: View {
     // MARK: - State
 

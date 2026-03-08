@@ -32,11 +32,6 @@ actor DevAssistantMessagesPlugin: SuperPlugin {
     // MARK: - UI
 
     @MainActor
-    func addSettingsView() -> AnyView? {
-        return AnyView(DevAssistantSettingsView())
-    }
-
-    @MainActor
     func addDetailMiddleView() -> AnyView? {
         return AnyView(ChatMessagesView())
     }
