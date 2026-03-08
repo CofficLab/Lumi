@@ -6,7 +6,7 @@ actor CPUManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
     
     nonisolated static let emoji = "🧠"
-    nonisolated static let enable = false
+    nonisolated static let enable = true
     nonisolated static let verbose = true
     
     static let id = "CPUManager"
