@@ -6,7 +6,7 @@ struct AgentNativeFileTreeContainer: View {
     @EnvironmentObject var projectViewModel: ProjectViewModel
 
     /// 折叠状态
-    @State private var isExpanded: Bool = true
+    @AppStorage("Sidebar_FileTree_Expanded") private var isExpanded: Bool = true
     @State private var isHovered: Bool = false
 
     var body: some View {

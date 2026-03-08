@@ -24,7 +24,7 @@ struct ConversationListView: View, SuperLog {
     @State private var localSelectedConversationId: UUID?
 
     /// 折叠状态
-    @State private var isExpanded: Bool = true
+    @AppStorage("Sidebar_ConversationList_Expanded") private var isExpanded: Bool = true
 
     var body: some View {
         VStack(spacing: 0) {
