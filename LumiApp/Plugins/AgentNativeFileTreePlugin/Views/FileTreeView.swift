@@ -49,6 +49,7 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
     weak var outlineView: NSOutlineView?
     var onSelect: ((URL) -> Void)?
     var onDelete: ((URL, Bool) -> Void)?
+    var onRename: ((URL, String) -> Void)?
     
     func setRootURL(_ url: URL) {
         let node = FileNode(url: url)
@@ -223,6 +224,19 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         
         menu.addItem(NSMenuItem.separator())
         
+        // 重命名菜单项
+        let renameItem = NSMenuItem(
+            title: "重命名",
+            action: #selector(handleRename(_:)),
+            keyEquivalent: ""
+        )
+        renameItem.target = self
+        renameItem.representedObject = node
+        renameItem.image = NSImage(systemSymbolName: "pencil", accessibilityDescription: nil)
+        menu.addItem(renameItem)
+        
+        menu.addItem(NSMenuItem.separator())
+        
         // 删除菜单项
         let deleteItem = NSMenuItem(
             title: "删除",
@@ -266,6 +280,62 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
                 errorAlert.alertStyle = .critical
                 errorAlert.runModal()
             }
+        }
+    }
+    
+    @objc private func handleRename(_ sender: NSMenuItem) {
+        guard let node = sender.representedObject as? FileNode else { return }
+        
+        let alert = NSAlert()
+        alert.messageText = "重命名"
+        alert.informativeText = "请输入新的文件名："
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "确定")
+        alert.addButton(withTitle: "取消")
+        
+        let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
+        textField.stringValue = node.name
+        alert.accessoryView = textField
+        
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            let newName = textField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            if newName.isEmpty || newName == node.name {
+                return
+            }
+            
+            let newURL = node.url.deletingLastPathComponent().appendingPathComponent(newName)
+            
+            do {
+                try FileManager.default.moveItem(at: node.url, to: newURL)
+                onRename?(newURL, newName)
+                refreshNode(node, withNewURL: newURL)
+            } catch {
+                let errorAlert = NSAlert()
+                errorAlert.messageText = "重命名失败"
+                errorAlert.informativeText = error.localizedDescription
+                errorAlert.alertStyle = .critical
+                errorAlert.runModal()
+            }
+        }
+    }
+    
+    private func refreshNode(_ oldNode: FileNode, withNewURL newURL: URL) {
+        let newNode = FileNode(url: newURL)
+        newNode.isLoaded = oldNode.isLoaded
+        newNode.children = oldNode.children
+        
+        if let parent = findParentNode(of: oldNode) {
+            if let index = parent.children.firstIndex(where: { $0 === oldNode }) {
+                parent.children[index] = newNode
+            }
+            outlineView?.reloadItem(parent, reloadChildren: true)
+        } else {
+            if let index = rootNodes.firstIndex(where: { $0 === oldNode }) {
+                rootNodes[index] = newNode
+            }
+            outlineView?.reloadData()
         }
     }
     
