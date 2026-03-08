@@ -11,17 +11,16 @@ struct FileTreeNodeView: View, SuperLog {
     let node: FileTreeNode
     let depth: Int
     let projectPath: String
+    let isSelected: Bool  // 通过参数传递选中状态，而不是依赖 EnvironmentObject
     let onFileDrop: (URL) -> Void
     let onFileSelect: (URL) -> Void
-    @EnvironmentObject var agentProvider: AgentProvider
-    @EnvironmentObject var projectViewModel: ProjectViewModel
 
     @State private var isExpanded = false
     @State private var children: [FileTreeNode] = []
     @State private var isLoading = false
     @State private var hasLoadedOnce = false
     @State private var isHovered = false
-
+    
     /// 每层缩进量 (参考 VS Code 的默认缩进)
     private let indentPerLevel: CGFloat = 16
 
@@ -42,20 +41,30 @@ struct FileTreeNodeView: View, SuperLog {
                 }
             }
         }
-        .onAppear {
-            // 首次出现时，从状态管理器恢复展开状态
-            if !hasLoadedOnce {
-                hasLoadedOnce = true
-                let savedState = FileTreeStateManager.shared.isExpanded(url: node.url, projectPath: projectPath)
-                if savedState {
-                    isExpanded = true
-                    // 如果之前是展开的，并且还没有数据，则异步加载
-                    if children.isEmpty && !isLoading {
-                        if Self.verbose {
-                            os_log("\(Self.t)📂 恢复展开状态: \(node.name)")
-                        }
-                        loadChildren()
+        .task {
+            await handleOnAppear()
+        }
+    }
+    
+    private func handleOnAppear() async {
+        // 首次出现时，从状态管理器恢复展开状态
+        if !hasLoadedOnce {
+            hasLoadedOnce = true
+            let savedState = FileTreeStateManager.shared.isExpanded(url: node.url, projectPath: projectPath)
+            if Self.verbose {
+                os_log("\(Self.t)👁️ [\(node.name)] onAppear - savedState=\(savedState)")
+            }
+            if savedState {
+                // 使用 async 将状态修改推迟到下一个 run loop，避免在视图更新期间修改状态
+                await MainActor.run {
+                    self.isExpanded = true
+                }
+                // 如果之前是展开的，并且还没有数据，则异步加载
+                if children.isEmpty && !isLoading {
+                    if Self.verbose {
+                        os_log("\(Self.t)📂 [\(node.name)] 恢复展开状态并加载子节点")
                     }
+                    await loadChildrenAsync()
                 }
             }
         }
@@ -88,9 +97,7 @@ struct FileTreeNodeView: View, SuperLog {
         )
         .contentShape(Rectangle())
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHovered = hovering
-            }
+            handleHover(hovering)
         }
         .onTapGesture {
             handleTap()
@@ -104,6 +111,10 @@ struct FileTreeNodeView: View, SuperLog {
             return NSItemProvider(object: node.url.path as NSString)
         }
     }
+    
+    private func handleHover(_ hovering: Bool) {
+        isHovered = hovering
+    }
 
     /// 背景色：根据选中状态和 hover 状态返回不同颜色
     private var backgroundColor: Color {
@@ -116,7 +127,12 @@ struct FileTreeNodeView: View, SuperLog {
     }
 
     private var expandCollapseButton: some View {
-        Button(action: toggle) {
+        Button(action: {
+            if Self.verbose {
+                os_log("\(Self.t)🔘 [\(node.name)] 展开/折叠按钮点击")
+            }
+            toggle()
+        }) {
             Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                 .font(.system(size: 8))
                 .foregroundColor(DesignTokens.Color.semantic.textTertiary)
@@ -157,6 +173,7 @@ struct FileTreeNodeView: View, SuperLog {
                     node: child,
                     depth: depth + 1,
                     projectPath: projectPath,
+                    isSelected: isSelected,  // 传递选中状态给子节点
                     onFileDrop: onFileDrop,
                     onFileSelect: onFileSelect
                 )
@@ -165,24 +182,17 @@ struct FileTreeNodeView: View, SuperLog {
         .padding(.leading, indentPerLevel)
     }
 
-    // MARK: - Properties
-
-    /// 检查当前节点是否被选中
-    private var isSelected: Bool {
-        projectViewModel.selectedFileURL == node.url
-    }
-
     // MARK: - Actions
 
     private func handleTap() {
         if node.isDirectory {
             if Self.verbose {
-                os_log("\(Self.t)👆 点击文件夹: \(node.name)")
+                os_log("\(Self.t)👆 [\(node.name)] 点击文件夹")
             }
             toggle()
         } else {
             if Self.verbose {
-                os_log("\(Self.t)👆 选择文件: \(node.name)")
+                os_log("\(Self.t)👆 [\(node.name)] 点击文件")
             }
             // 选择文件
             onFileSelect(node.url)
@@ -190,15 +200,16 @@ struct FileTreeNodeView: View, SuperLog {
     }
 
     private func toggle() {
+        let oldValue = isExpanded
         isExpanded.toggle()
-
+        
         if Self.verbose {
-            os_log("\(Self.t)\(isExpanded ? "📂" : "📁") \(node.name) \(isExpanded ? "展开" : "折叠")")
+            os_log("\(Self.t)\(isExpanded ? "📂" : "📁") [\(node.name)] 从 \(oldValue) 变为 \(isExpanded)")
         }
-
+        
         // 保存状态到持久化存储
         FileTreeStateManager.shared.setExpanded(isExpanded, url: node.url, projectPath: projectPath)
-
+        
         if isExpanded && children.isEmpty && !isLoading {
             loadChildren()
         }
@@ -206,21 +217,21 @@ struct FileTreeNodeView: View, SuperLog {
 
     private func loadChildren() {
         isLoading = true
-
+        
         if Self.verbose {
-            os_log("\(Self.t)⏳ 加载子节点: \(node.name)")
+            os_log("\(Self.t)⏳ [\(node.name)] 开始加载子节点")
         }
-
+        
         Task {
             let startTime = Date()
             let loadedChildren = await loadChildrenAsync()
             let duration = Date().timeIntervalSince(startTime)
-
+            
             await MainActor.run {
                 children = loadedChildren
                 isLoading = false
                 if Self.verbose {
-                    os_log("\(Self.t)✅ 子节点加载完成: \(node.name) - \(loadedChildren.count) 个子项, 耗时 \(String(format: "%.3f", duration))s")
+                    os_log("\(Self.t)✅ [\(node.name)] 子节点加载完成: \(loadedChildren.count) 个, 耗时 \(String(format: "%.3f", duration))s")
                 }
             }
         }
@@ -237,7 +248,7 @@ struct FileTreeNodeView: View, SuperLog {
             )
 
             if Self.verbose {
-                os_log("\(Self.t)📂 读取目录: \(node.name) 包含 \(contents.count) 个项")
+                os_log("\(Self.t)📂 [\(node.name)] 读取目录包含 \(contents.count) 个项")
             }
 
             for fileURL in contents {

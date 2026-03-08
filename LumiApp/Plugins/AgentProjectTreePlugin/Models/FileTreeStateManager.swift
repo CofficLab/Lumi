@@ -10,12 +10,16 @@ final class FileTreeStateManager: @unchecked Sendable, SuperLog {
     nonisolated static let emoji = "💾"
 
     /// Whether to enable verbose log output
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false  // 关闭详细日志，避免日志过多
 
     static let shared = FileTreeStateManager()
 
     private let userDefaults: UserDefaults
     private let expandedKeyPrefix = "com.cofficlab.lumi.fileTree.expanded."
+    
+    /// 缓存项目键前缀，避免重复计算 SHA256
+    private var projectKeyPrefixCache: [String: String] = [:]
+    private let cacheLock = NSLock()
 
     private init() {
         self.userDefaults = UserDefaults.standard
@@ -27,22 +31,38 @@ final class FileTreeStateManager: @unchecked Sendable, SuperLog {
     /// 获取项目特定的状态键前缀
     /// 使用 SHA256 哈希确保跨应用启动的稳定性
     private func projectKeyPrefix(for projectPath: String) -> String {
+        // 先检查缓存
+        cacheLock.lock()
+        if let cached = projectKeyPrefixCache[projectPath] {
+            cacheLock.unlock()
+            return cached
+        }
+        cacheLock.unlock()
+        
         // 使用 SHA256 生成稳定的哈希值（hashValue 在不同启动间不稳定）
         let inputData = Data(projectPath.utf8)
         let hash = SHA256.hash(data: inputData)
         let hashString = hash.compactMap { String(format: "%02x", $0) }.joined()
         // 取前 16 个字符作为项目标识
         let projectIdentifier = String(hashString.prefix(16))
-        return "\(expandedKeyPrefix)\(projectIdentifier)."
+        let prefix = "\(expandedKeyPrefix)\(projectIdentifier)."
+        
+        // 存入缓存
+        cacheLock.lock()
+        projectKeyPrefixCache[projectPath] = prefix
+        cacheLock.unlock()
+        
+        return prefix
     }
 
     /// 检查某个目录是否应该展开
     func isExpanded(url: URL, projectPath: String) -> Bool {
         let key = expandedKey(for: url, projectPath: projectPath)
         let expanded = userDefaults.bool(forKey: key)
-        if Self.verbose {
-            os_log("\(Self.t)🔍 检查展开状态: \(url.lastPathComponent) = \(expanded ? "展开" : "折叠")")
-        }
+        // 关闭详细日志，避免频繁调用时日志过多
+        // if Self.verbose {
+        //     os_log("\(Self.t)🔍 检查展开状态: \(url.lastPathComponent) = \(expanded ? "展开" : "折叠")")
+        // }
         return expanded
     }
 
@@ -74,6 +94,11 @@ final class FileTreeStateManager: @unchecked Sendable, SuperLog {
                 clearedCount += 1
             }
         }
+        
+        // 清除缓存
+        cacheLock.lock()
+        projectKeyPrefixCache.removeValue(forKey: projectPath)
+        cacheLock.unlock()
 
         if Self.verbose {
             os_log("\(Self.t)✅ 已清除 \(clearedCount) 个状态项")

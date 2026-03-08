@@ -7,14 +7,19 @@ struct ProjectTreeView: View, SuperLog {
     nonisolated static let emoji = "🌲"
     nonisolated static let verbose = true
 
-    @EnvironmentObject var agentProvider: AgentProvider
+    @EnvironmentObject var projectViewModel: ProjectViewModel
     @State private var projectRoot: URL?
     @State private var rootItems: [FileTreeNode] = []
     @State private var isLoading = false
     @State private var currentProjectPath: String = ""
+    
+    // 用于追踪 body 计算次数
+    @State private var bodyComputeCount = 0
 
     var body: some View {
-        VStack(spacing: 0) {
+        let _ = Self.logBodyCompute()
+        
+        return VStack(spacing: 0) {
             // 标题栏
             headerSection
 
@@ -32,27 +37,38 @@ struct ProjectTreeView: View, SuperLog {
         }
         .padding(.vertical, 8)
         .background(.background.opacity(0.8))
-        .onChange(of: agentProvider.currentProjectPath) { _, newPath in
+        .onChange(of: projectViewModel.currentProjectPath) { _, newPath in
             if Self.verbose {
-                os_log("\(Self.t)🔄 项目路径变化: \(newPath)")
+                os_log("\(Self.t)🔄 onChange 触发 - 项目路径变化: \(newPath)")
             }
             if !newPath.isEmpty && newPath != currentProjectPath {
                 currentProjectPath = newPath
                 loadProjectTree(path: newPath)
+            } else {
+                if Self.verbose {
+                    os_log("\(Self.t)⏭️ onChange 跳过 - 路径为空或相同")
+                }
             }
         }
         .onAppear {
             if Self.verbose {
-                os_log("\(Self.t)👁️ ProjectTreeView 出现")
+                os_log("\(Self.t)👁️ ProjectTreeView onAppear")
             }
-            if !agentProvider.currentProjectPath.isEmpty {
-                currentProjectPath = agentProvider.currentProjectPath
-                loadProjectTree(path: agentProvider.currentProjectPath)
+            let projectPath = projectViewModel.currentProjectPath
+            if !projectPath.isEmpty {
+                currentProjectPath = projectPath
+                loadProjectTree(path: projectPath)
             } else {
                 if Self.verbose {
                     os_log("\(Self.t)⚠️ 当前项目路径为空")
                 }
             }
+        }
+    }
+    
+    private static func logBodyCompute() {
+        if verbose {
+            os_log("\(Self.t)🔁 body 计算")
         }
     }
 
@@ -75,6 +91,7 @@ struct ProjectTreeView: View, SuperLog {
                         node: item,
                         depth: 0,
                         projectPath: currentProjectPath,
+                        isSelected: projectViewModel.selectedFileURL == item.url,
                         onFileDrop: handleFileDrop,
                         onFileSelect: handleFileSelect
                     )
@@ -91,8 +108,9 @@ struct ProjectTreeView: View, SuperLog {
         if Self.verbose {
             os_log("\(Self.t)🔄 手动刷新项目树")
         }
-        if !agentProvider.currentProjectPath.isEmpty {
-            loadProjectTree(path: agentProvider.currentProjectPath)
+        let projectPath = projectViewModel.currentProjectPath
+        if !projectPath.isEmpty {
+            loadProjectTree(path: projectPath)
         } else {
             if Self.verbose {
                 os_log("\(Self.t)⚠️ 刷新失败：项目路径为空")
@@ -109,12 +127,12 @@ struct ProjectTreeView: View, SuperLog {
         NotificationCenter.postFileDroppedToChat(fileURL: url)
     }
 
-    /// 处理文件选择 - 更新 AgentProvider 的选中文件
+    /// 处理文件选择 - 更新 ProjectViewModel 的选中文件
     private func handleFileSelect(url: URL) {
         if Self.verbose {
             os_log("\(Self.t)👆 选择文件: \(url.lastPathComponent)")
         }
-        agentProvider.selectFile(at: url)
+        projectViewModel.selectFile(at: url)
     }
 
     private func loadProjectTree(path: String) {
