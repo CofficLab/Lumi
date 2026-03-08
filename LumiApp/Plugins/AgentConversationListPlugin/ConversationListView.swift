@@ -23,24 +23,29 @@ struct ConversationListView: View, SuperLog {
     /// 本地选择的会话 ID
     @State private var localSelectedConversationId: UUID?
 
+    /// 折叠状态
+    @State private var isExpanded: Bool = true
+
     var body: some View {
         VStack(spacing: 0) {
             // 标题栏
-            ConversationListHeader()
+            ConversationListHeader(isExpanded: $isExpanded)
 
-            Divider()
-                .background(Color.white.opacity(0.1))
+            if isExpanded {
+                Divider()
+                    .background(Color.white.opacity(0.1))
 
-            // 对话列表内容
-            if conversations.isEmpty {
-                ConversationListEmptyView()
-            } else {
-                List(conversations, selection: $localSelectedConversationId) { conversation in
-                    ConversationItemView(
-                        conversation: conversation,
-                        onDelete: { handleDelete(conversation) }
-                    )
-                    .tag(conversation.id)
+                // 对话列表内容
+                if conversations.isEmpty {
+                    ConversationListEmptyView()
+                } else {
+                    List(conversations, selection: $localSelectedConversationId) { conversation in
+                        ConversationItemView(
+                            conversation: conversation,
+                            onDelete: { handleDelete(conversation) }
+                        )
+                        .tag(conversation.id)
+                    }
                 }
             }
         }

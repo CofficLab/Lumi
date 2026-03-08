@@ -4,43 +4,62 @@ import MagicKit
 /// 高性能文件树容器视图
 struct AgentNativeFileTreeContainer: View {
     @EnvironmentObject var projectViewModel: ProjectViewModel
-    
+
+    /// 折叠状态
+    @State private var isExpanded: Bool = true
+
     var body: some View {
         VStack(spacing: 0) {
             // 标题栏
             headerView
-            
-            Divider()
-                .background(Color.white.opacity(0.1))
-            
-            // 文件树
-            if !projectViewModel.currentProjectPath.isEmpty {
-                FileTreeView(
-                    rootURL: URL(fileURLWithPath: projectViewModel.currentProjectPath),
-                    onSelect: { url in
-                        // 处理文件选择
-                    }
-                )
-            } else {
-                emptyView
+
+            if isExpanded {
+                Divider()
+                    .background(Color.white.opacity(0.1))
+
+                // 文件树
+                if !projectViewModel.currentProjectPath.isEmpty {
+                    FileTreeView(
+                        rootURL: URL(fileURLWithPath: projectViewModel.currentProjectPath),
+                        onSelect: { url in
+                            // 处理文件选择
+                        }
+                    )
+                } else {
+                    emptyView
+                }
             }
         }
-        .padding(.vertical, 8)
-        .background(.background.opacity(0.8))
     }
-    
+
     // MARK: - Header
-    
+
     private var headerView: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isExpanded.toggle()
+                    }
+                } label: {
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(.secondary)
+                        .frame(width: 16, height: 16)
+                }
+                .buttonStyle(.plain)
+
+                Image(systemName: "folder.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(.accentColor)
+
                 Text("文件树")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.secondary)
-                
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+
                 Spacer()
             }
-            
+
             if !projectViewModel.currentProjectPath.isEmpty {
                 Text(projectViewModel.currentProjectPath)
                     .font(.system(size: 9))
@@ -49,12 +68,12 @@ struct AgentNativeFileTreeContainer: View {
                     .truncationMode(.middle)
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 4)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
     }
-    
+
     // MARK: - Empty View
-    
+
     private var emptyView: some View {
         VStack(spacing: 8) {
             Image(systemName: "folder")

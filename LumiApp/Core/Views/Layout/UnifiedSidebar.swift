@@ -23,7 +23,7 @@ struct UnifiedSidebar: View {
                 .background(Color.white.opacity(0.1))
 
             // MARK: - 模式内容（根据模式显示不同视图）
-            modeContent
+                modeContent.frame(maxHeight: .infinity)
         }
         .ignoresSafeArea()
         .onAppear {
@@ -97,6 +97,7 @@ struct UnifiedSidebar: View {
                     ForEach(Array(sidebarViews.enumerated()), id: \.offset) { _, view in
                         view
                     }
+                    Spacer()
                 }
             }
         }

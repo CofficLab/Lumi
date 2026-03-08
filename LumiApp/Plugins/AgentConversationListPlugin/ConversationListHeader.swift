@@ -2,16 +2,28 @@ import SwiftUI
 import MagicKit
 
 /// 会话列表头部视图
-/// 显示在会话列表顶部，包含图标和标题文字
+/// 显示在会话列表顶部，包含折叠按钮、图标和标题文字
 struct ConversationListHeader: View {
+    @Binding var isExpanded: Bool
+
     var body: some View {
         HStack {
-            // 消息图标
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isExpanded.toggle()
+                }
+            } label: {
+                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(.secondary)
+                    .frame(width: 16, height: 16)
+            }
+            .buttonStyle(.plain)
+
             Image(systemName: "message.fill")
                 .font(.system(size: 14))
                 .foregroundColor(.accentColor)
 
-            // 标题文字
             Text("对话历史")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
@@ -23,32 +35,14 @@ struct ConversationListHeader: View {
     }
 }
 
-// MARK: - View
-
-extension ConversationListHeader {
-    /// 图标视图：橙色消息填充图标
-    private var iconView: some View {
-        Image(systemName: "message.fill")
-            .font(.system(size: 14))
-            .foregroundColor(.accentColor)
-    }
-
-    /// 标题视图：对话历史文字
-    private var titleView: some View {
-        Text("对话历史")
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-    }
-}
-
 // MARK: - Preview
 
 #Preview("列表头部 - 标准尺寸") {
-    ConversationListHeader()
+    ConversationListHeader(isExpanded: .constant(true))
         .frame(width: 220)
 }
 
 #Preview("列表头部 - 窄屏") {
-    ConversationListHeader()
+    ConversationListHeader(isExpanded: .constant(true))
         .frame(width: 180)
 }
