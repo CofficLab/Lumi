@@ -190,6 +190,7 @@ struct AssistantMessageHeader: View {
     let isLongMessage: Bool
     /// 智能体提供者（用于获取心跳状态）
     @EnvironmentObject var agentProvider: AgentProvider
+    @State private var isHovered: Bool = false
 
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
@@ -260,7 +261,18 @@ struct AssistantMessageHeader: View {
                 RawMessageToggleButton(showRawMessage: $showRawMessage)
             }
         }
-        .padding(.bottom, 4)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(isHovered ? Color.primary.opacity(0.05) : Color.primary.opacity(0.02))
+        )
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHovered = hovering
+            }
+        }
     }
     
     /// 格式化供应商名称（显示友好名称）
