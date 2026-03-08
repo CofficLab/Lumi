@@ -5,20 +5,14 @@ import MagicKit
 /// 显示在会话列表顶部，包含折叠按钮、图标和标题文字
 struct ConversationListHeader: View {
     @Binding var isExpanded: Bool
+    @State private var isHovered: Bool = false
 
     var body: some View {
         HStack {
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    isExpanded.toggle()
-                }
-            } label: {
-                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(.secondary)
-                    .frame(width: 16, height: 16)
-            }
-            .buttonStyle(.plain)
+            Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(.secondary)
+                .frame(width: 16, height: 16)
 
             Image(systemName: "message.fill")
                 .font(.system(size: 14))
@@ -32,6 +26,18 @@ struct ConversationListHeader: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
+        .background(isHovered ? Color.primary.opacity(0.05) : Color.clear)
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHovered = hovering
+            }
+        }
+        .onTapGesture {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isExpanded.toggle()
+            }
+        }
     }
 }
 
