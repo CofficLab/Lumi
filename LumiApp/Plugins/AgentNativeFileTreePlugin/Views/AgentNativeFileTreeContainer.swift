@@ -39,14 +39,6 @@ struct AgentNativeFileTreeContainer: View {
                     .foregroundColor(.secondary)
                 
                 Spacer()
-                
-                Text("Native")
-                    .font(.system(size: 9))
-                    .foregroundColor(.secondary.opacity(0.6))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.secondary.opacity(0.1))
-                    .cornerRadius(4)
             }
             
             if !projectViewModel.currentProjectPath.isEmpty {
