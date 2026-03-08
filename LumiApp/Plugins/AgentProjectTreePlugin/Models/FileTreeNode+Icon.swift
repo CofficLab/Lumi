@@ -4,12 +4,18 @@ import Foundation
 
 extension FileTreeNode {
     /// 获取节点对应的 SF Symbol 图标名称
-    var icon: String {
+    /// - Parameter isExpanded: 是否展开（对于文件夹）
+    func icon(isExpanded: Bool = false) -> String {
         if isDirectory {
             return isExpanded ? "folder.fill" : "folder"
         } else {
             return fileIcon
         }
+    }
+
+    /// 获取节点图标（使用默认折叠状态）
+    var icon: String {
+        icon(isExpanded: false)
     }
 
     /// 根据文件扩展名获取对应的图标

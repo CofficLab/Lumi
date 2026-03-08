@@ -9,7 +9,7 @@ actor TextActionsPlugin: SuperPlugin {
     static let displayName = String(localized: "Text Actions", table: "TextActions")
     static let description = String(localized: "Selected text actions menu", table: "TextActions")
     static let iconName = "cursorarrow.click.2"
-    static let enable = true
+    nonisolated static let enable = false
     static var order: Int { 60 }
     
     static let shared = TextActionsPlugin()

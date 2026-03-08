@@ -12,7 +12,6 @@ actor AgentInputPlugin: SuperPlugin {
     static let iconName = "textformat.abc"
     static var order: Int { 83 }
     static let enable = true
-
     static let shared = AgentInputPlugin()
 
     // MARK: - Lifecycle

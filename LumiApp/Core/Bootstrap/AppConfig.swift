@@ -4,6 +4,12 @@ import SwiftUI
 
 /// 应用配置管理器，负责 SwiftData 容器配置和应用级设置
 enum AppConfig {
+    // MARK: - Layout Constants
+    
+    /// 统一的头部高度（侧边栏顶部和详情栏头部）
+    static let headerHeight: CGFloat = 44
+    
+    // MARK: - SwiftData Configuration
     /// 获取配置好的 SwiftData 模型容器
     /// - Returns: 配置完整的 ModelContainer 实例
     static func getContainer() -> ModelContainer {

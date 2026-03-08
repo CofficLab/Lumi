@@ -1,209 +1,153 @@
 import SwiftUI
 import MagicKit
-import OSLog
 
-/// 项目文件树视图
-struct ProjectTreeView: View, SuperLog {
-    nonisolated static let emoji = "🌲"
-    nonisolated static let verbose = true
-
-    @EnvironmentObject var agentProvider: AgentProvider
-    @State private var projectRoot: URL?
-    @State private var rootItems: [FileTreeNode] = []
+/// 项目文件树视图 - 使用 List 优化性能
+struct ProjectTreeView: View {
+    @EnvironmentObject var projectViewModel: ProjectViewModel
+    @State private var rootURLs: [URL] = []
     @State private var isLoading = false
-    @State private var currentProjectPath: String = ""
-
+    
     var body: some View {
         VStack(spacing: 0) {
             // 标题栏
-            headerSection
-
+            headerView
+            
             Divider()
                 .background(Color.white.opacity(0.1))
-
+            
             // 文件树内容
-            if isLoading {
-                ProjectTreeLoadingView()
-            } else if rootItems.isEmpty {
-                ProjectTreeEmptyView()
-            } else {
-                fileTreeView
-            }
+            contentView
         }
         .padding(.vertical, 8)
         .background(.background.opacity(0.8))
-        .onChange(of: agentProvider.currentProjectPath) { _, newPath in
-            if Self.verbose {
-                os_log("\(Self.t)🔄 项目路径变化: \(newPath)")
-            }
-            if !newPath.isEmpty && newPath != currentProjectPath {
-                currentProjectPath = newPath
-                loadProjectTree(path: newPath)
-            }
+        .onChange(of: projectViewModel.currentProjectPath) { _, newPath in
+            loadProject(at: newPath)
         }
         .onAppear {
-            if Self.verbose {
-                os_log("\(Self.t)👁️ ProjectTreeView 出现")
-            }
-            if !agentProvider.currentProjectPath.isEmpty {
-                currentProjectPath = agentProvider.currentProjectPath
-                loadProjectTree(path: agentProvider.currentProjectPath)
-            } else {
-                if Self.verbose {
-                    os_log("\(Self.t)⚠️ 当前项目路径为空")
-                }
-            }
+            loadProject(at: projectViewModel.currentProjectPath)
         }
     }
-
-    // MARK: - Header Section
-
-    private var headerSection: some View {
-        ProjectTreeHeader(
-            projectRoot: projectRoot,
-            onRefresh: refresh
-        )
-    }
-
-    // MARK: - File Tree View
-
-    private var fileTreeView: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 2) {
-                ForEach(rootItems) { item in
-                    FileTreeNodeView(
-                        node: item,
-                        depth: 0,
-                        projectPath: currentProjectPath,
-                        onFileDrop: handleFileDrop,
-                        onFileSelect: handleFileSelect
-                    )
-                }
+    
+    // MARK: - Header
+    
+    private var headerView: some View {
+        HStack {
+            Text("文件树")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(.secondary)
+            
+            Spacer()
+            
+            Button(action: { loadProject(at: projectViewModel.currentProjectPath) }) {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 10))
+                    .foregroundColor(.secondary)
             }
-            .padding(.horizontal, 4)
+            .buttonStyle(.plain)
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 4)
+    }
+    
+    // MARK: - Content
+    
+    @ViewBuilder
+    private var contentView: some View {
+        if isLoading && rootURLs.isEmpty {
+            loadingView
+        } else if rootURLs.isEmpty {
+            emptyView
+        } else {
+            fileTreeList
+        }
+    }
+    
+    private var fileTreeList: some View {
+        List {
+            ForEach(rootURLs, id: \.self) { url in
+                FileTreeNodeView(
+                    url: url,
+                    depth: 0,
+                    onSelect: { selectedURL in
+                        // 处理文件选择
+                    }
+                )
+                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                .listRowBackground(Color.clear)
+            }
+        }
+        .listStyle(.plain)
         .scrollIndicators(.hidden)
     }
-
-    // MARK: - Actions
-
-    private func refresh() {
-        if Self.verbose {
-            os_log("\(Self.t)🔄 手动刷新项目树")
+    
+    private var loadingView: some View {
+        VStack(spacing: 8) {
+            ProgressView()
+                .scaleEffect(0.8)
+            Text("加载中...")
+                .font(.system(size: 10))
+                .foregroundColor(.secondary)
         }
-        if !agentProvider.currentProjectPath.isEmpty {
-            loadProjectTree(path: agentProvider.currentProjectPath)
-        } else {
-            if Self.verbose {
-                os_log("\(Self.t)⚠️ 刷新失败：项目路径为空")
-            }
-        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-
-    /// 处理文件拖放 - 将文件路径传递给 AgentProvider
-    private func handleFileDrop(url: URL) {
-        if Self.verbose {
-            os_log("\(Self.t)📎 文件拖放: \(url.lastPathComponent)")
+    
+    private var emptyView: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "folder")
+                .font(.system(size: 24))
+                .foregroundColor(.secondary.opacity(0.5))
+            Text("暂无项目")
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
         }
-        // 通过 NotificationCenter 发送通知，让 InputAreaView 接收
-        NotificationCenter.postFileDroppedToChat(fileURL: url)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-
-    /// 处理文件选择 - 更新 AgentProvider 的选中文件
-    private func handleFileSelect(url: URL) {
-        if Self.verbose {
-            os_log("\(Self.t)👆 选择文件: \(url.lastPathComponent)")
+    
+    // MARK: - Load Project
+    
+    private func loadProject(at path: String) {
+        guard !path.isEmpty else {
+            rootURLs = []
+            return
         }
-        agentProvider.selectFile(at: url)
-    }
-
-    private func loadProjectTree(path: String) {
-        if Self.verbose {
-            os_log("\(Self.t)📂 开始加载项目树: \(path)")
-        }
+        
+        let url = URL(fileURLWithPath: path)
         isLoading = true
-        projectRoot = URL(fileURLWithPath: path)
-
+        
         Task {
-            let startTime = Date()
-            let items = await loadDirectoryContents(url: projectRoot!, depth: 0, maxDepth: 3, projectPath: path)
-            let duration = Date().timeIntervalSince(startTime)
-
-            await MainActor.run {
-                rootItems = items
-                isLoading = false
-                if Self.verbose {
-                    os_log("\(Self.t)✅ 项目树加载完成: \(items.count) 个根项, 耗时 \(String(format: "%.2f", duration))s")
-                }
-            }
-        }
-    }
-
-    private func loadDirectoryContents(url: URL, depth: Int, maxDepth: Int, projectPath: String) async -> [FileTreeNode] {
-        guard depth < maxDepth else {
-            if Self.verbose {
-                os_log("\(Self.t)⏹️ 达到最大深度限制: depth=\(depth)")
-            }
-            return []
-        }
-
-        var items: [FileTreeNode] = []
-
-        do {
-            let contents = try FileManager.default.contentsOfDirectory(
-                at: url,
-                includingPropertiesForKeys: [.isDirectoryKey],
-                options: [.skipsHiddenFiles, .skipsPackageDescendants]
-            )
-
-            if Self.verbose && depth == 0 {
-                os_log("\(Self.t)📂 目录内容: \(url.lastPathComponent) 包含 \(contents.count) 个项")
-            }
-
-            for fileURL in contents {
-                do {
-                    let resourceValues = try fileURL.resourceValues(forKeys: [.isDirectoryKey])
-                    let isDirectory = resourceValues.isDirectory ?? false
-
-                    // 检查该目录是否之前被展开过
-                    let wasExpanded = FileTreeStateManager.shared.isExpanded(url: fileURL, projectPath: projectPath)
-
-                    let node = FileTreeNode(
-                        name: fileURL.lastPathComponent,
-                        url: fileURL,
-                        isDirectory: isDirectory,
-                        isExpanded: wasExpanded,
-                        children: isDirectory ? [] : nil
-                    )
-                    items.append(node)
-                } catch {
-                    if Self.verbose {
-                        os_log("\(Self.t)⚠️ 读取文件信息失败: \(fileURL.lastPathComponent), error: \(error.localizedDescription)")
+            do {
+                let contents = try FileManager.default.contentsOfDirectory(
+                    at: url,
+                    includingPropertiesForKeys: [.isDirectoryKey],
+                    options: [.skipsHiddenFiles]
+                )
+                
+                // 排序：文件夹在前
+                let sorted = contents.sorted { a, b in
+                    let aIsDir = (try? a.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+                    let bIsDir = (try? b.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+                    if aIsDir == bIsDir {
+                        return a.lastPathComponent.localizedStandardCompare(b.lastPathComponent) == .orderedAscending
                     }
-                    continue
+                    return aIsDir
+                }
+                
+                await MainActor.run {
+                    self.rootURLs = sorted
+                    self.isLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    self.rootURLs = []
+                    self.isLoading = false
                 }
             }
-        } catch {
-            if Self.verbose {
-                os_log("\(Self.t)❌ 读取目录失败: \(url.lastPathComponent), error: \(error.localizedDescription)")
-            }
-            return []
         }
-
-        // 按类型和名称排序：文件夹在前，文件在后
-        items.sort { left, right in
-            if left.isDirectory == right.isDirectory {
-                return left.name.localizedStandardCompare(right.name) == .orderedAscending
-            }
-            return left.isDirectory
-        }
-
-        return items
     }
 }
 
 #Preview {
     ProjectTreeView()
-        .frame(width: 220, height: 400)
-        .inRootView()
+        .environmentObject(ProjectViewModel())
+        .frame(width: 250, height: 400)
 }

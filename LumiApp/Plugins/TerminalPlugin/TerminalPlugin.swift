@@ -10,7 +10,7 @@ actor TerminalPlugin: SuperPlugin {
     static let displayName = String(localized: "Terminal", table: "Terminal")
     static let description = String(localized: "Interactive terminal emulator", table: "Terminal")
     static let iconName = "terminal"
-    static let enable = true
+    nonisolated static let enable = false
     static var order: Int { 90 }
     
     static let shared = TerminalPlugin()

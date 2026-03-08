@@ -1,8 +1,7 @@
 import SwiftUI
 
-/// 开发助手设置视图
-/// 采用扁平化设计，避免嵌套侧边栏
-struct DevAssistantSettingsView: View {
+/// Agent设置视图
+struct AgentSettingsView: View {
     // MARK: - State
 
     /// 当前选中的供应商 ID
@@ -279,7 +278,7 @@ struct DevAssistantSettingsView: View {
 
 // MARK: - View Components
 
-extension DevAssistantSettingsView {
+extension AgentSettingsView {
     /// 全局默认配置区域
     private var globalConfigSection: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
@@ -511,7 +510,7 @@ private struct ProjectConfigRow: View {
 // MARK: - Preview
 
 #Preview("Settings") {
-    DevAssistantSettingsView()
+    AgentSettingsView()
         .frame(width: 500, height: 600)
 }
 

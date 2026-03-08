@@ -12,18 +12,20 @@ struct UnifiedSidebar: View {
     var body: some View {
         VStack(spacing: 0) {
             // MARK: - 模式切换器（顶部）
+
             HStack {
                 Spacer()
                 AppModeSwitcherView()
                     .padding(.horizontal, DesignTokens.Spacing.sm)
-                    .padding(.vertical, DesignTokens.Spacing.sm)
             }
+            .frame(height: AppConfig.headerHeight)
 
             Divider()
                 .background(Color.white.opacity(0.1))
 
             // MARK: - 模式内容（根据模式显示不同视图）
-            modeContent
+
+            modeContent.frame(maxHeight: .infinity)
         }
         .ignoresSafeArea()
         .onAppear {
@@ -97,6 +99,7 @@ struct UnifiedSidebar: View {
                     ForEach(Array(sidebarViews.enumerated()), id: \.offset) { _, view in
                         view
                     }
+                    Spacer(minLength: 0)
                 }
             }
         }
@@ -201,9 +204,9 @@ struct SidebarRow: View {
 // MARK: - Preview
 
 #if os(macOS)
-#Preview("Unified Sidebar - App Mode") {
-    UnifiedSidebar(sidebarVisibility: .constant(true))
-        .frame(width: 220, height: 600)
-        .inRootView()
-}
+    #Preview("Unified Sidebar - App Mode") {
+        UnifiedSidebar(sidebarVisibility: .constant(true))
+            .frame(width: 220, height: 600)
+            .inRootView()
+    }
 #endif
