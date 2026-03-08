@@ -126,6 +126,20 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         return FileTreeRowView()
     }
     
+    func outlineView(_ outlineView: NSOutlineView, shouldSelectItem item: Any) -> Bool {
+        guard let node = item as? FileNode else { return false }
+        
+        if node.isDirectory {
+            if outlineView.isItemExpanded(item) {
+                outlineView.collapseItem(item)
+            } else {
+                outlineView.expandItem(item)
+            }
+            return false
+        }
+        return true
+    }
+    
     func outlineViewSelectionDidChange(_ notification: Notification) {
         guard let outlineView = notification.object as? NSOutlineView,
               let node = outlineView.item(atRow: outlineView.selectedRow) as? FileNode else { return }
@@ -152,6 +166,20 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
 
 /// 自定义行视图
 class FileTreeRowView: NSTableRowView {
+    private var isHovered: Bool = false {
+        didSet {
+            needsDisplay = true
+        }
+    }
+    
+    private var trackingArea: NSTrackingArea?
+    
+    override var wantsUpdateLayer: Bool { true }
+    
+    override func updateLayer() {
+        layer?.backgroundColor = isHovered ? NSColor.controlBackgroundColor.cgColor : NSColor.clear.cgColor
+    }
+    
     override func drawSelection(in dirtyRect: NSRect) {
         if selectionHighlightStyle != .none {
             let selectionRect = bounds.insetBy(dx: 2, dy: 0)
@@ -159,6 +187,40 @@ class FileTreeRowView: NSTableRowView {
             let path = NSBezierPath(roundedRect: selectionRect, xRadius: 4, yRadius: 4)
             path.fill()
         }
+    }
+    
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        
+        if let existing = trackingArea {
+            removeTrackingArea(existing)
+        }
+        
+        let options: NSTrackingArea.Options = [.mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect]
+        trackingArea = NSTrackingArea(rect: bounds, options: options, owner: self, userInfo: nil)
+        
+        if let area = trackingArea {
+            addTrackingArea(area)
+        }
+        
+        if let window = window, let area = trackingArea {
+            let mouseLocation = window.mouseLocationOutsideOfEventStream
+            let pointInBounds = convert(mouseLocation, from: nil)
+            isHovered = bounds.contains(pointInBounds)
+        }
+    }
+    
+    override func mouseEntered(with event: NSEvent) {
+        isHovered = true
+    }
+    
+    override func mouseExited(with event: NSEvent) {
+        isHovered = false
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        isHovered = false
     }
 }
 
