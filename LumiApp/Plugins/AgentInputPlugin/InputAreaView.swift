@@ -89,6 +89,10 @@ struct InputAreaView: View, SuperLog {
             .padding(.top, 8)
             // 添加高度变化动画
             .animation(.easeInOut(duration: 0.15), value: editorHeight)
+            // 监听文本变化以触发命令建议
+            .onChange(of: inputViewModel.text) { newValue in
+                commandSuggestionViewModel.updateSuggestions(for: newValue)
+            }
 
             // 工具栏
             ChatToolbarView(
@@ -192,7 +196,7 @@ extension InputAreaView {
         }
         
         if Self.verbose {
-            os_log("\(Self.t)✅ handleFileDrop 完成, text.count=\(inputViewModel.text.count), cursorPosition=\(inputViewModel.cursorPosition)")
+            os_log("\(Self.t)✅ handleFileDrop 完成，text.count=\(inputViewModel.text.count), cursorPosition=\(inputViewModel.cursorPosition)")
         }
     }
 }

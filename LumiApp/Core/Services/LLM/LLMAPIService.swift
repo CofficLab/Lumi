@@ -131,7 +131,13 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
             // 添加请求体
             if let bodyData = request.httpBody,
                let bodyString = String(data: bodyData, encoding: .utf8) {
-                logMessage += "📦 请求体：\n\(bodyString)\n"
+                if bodyString.count <= 400 {
+                    logMessage += "📦 请求体：\n\(bodyString)\n"
+                } else {
+                    let prefix = bodyString.prefix(200)
+                    let suffix = bodyString.suffix(200)
+                    logMessage += "📦 请求体：\n\(prefix)...\n\(suffix)\n"
+                }
             }
             
             // 添加请求头
