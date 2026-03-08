@@ -76,6 +76,15 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         return node.isDirectory
     }
     
+    func outlineView(_ outlineView: NSOutlineView, pasteboardWriterForItem item: Any) -> NSPasteboardWriting? {
+        guard let node = item as? FileNode else { return nil }
+        
+        let pasteboardItem = NSPasteboardItem()
+        pasteboardItem.setString(node.url.path, forType: .string)
+        pasteboardItem.setString(node.url.path, forType: .fileURL)
+        return pasteboardItem
+    }
+    
     // MARK: - NSOutlineViewDelegate
     
     func outlineView(_ outlineView: NSOutlineView, viewFor tableColumn: NSTableColumn?, item: Any) -> NSView? {
