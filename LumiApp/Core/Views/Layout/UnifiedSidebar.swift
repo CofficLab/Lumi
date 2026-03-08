@@ -16,8 +16,8 @@ struct UnifiedSidebar: View {
                 Spacer()
                 AppModeSwitcherView()
                     .padding(.horizontal, DesignTokens.Spacing.sm)
-                    .padding(.vertical, DesignTokens.Spacing.sm)
             }
+            .frame(height: AppConfig.headerHeight)
 
             Divider()
                 .background(Color.white.opacity(0.1))
