@@ -2,44 +2,62 @@ import SwiftUI
 import MagicKit
 import OSLog
 
-/// 文件树节点视图
+/// 文件树节点视图 - 使用 DisclosureGroup
 struct FileTreeNodeView: View {
-    let node: FileTreeNode
+    let url: URL
     let depth: Int
-    @ObservedObject var viewModel: FileTreeViewModel
+    let onSelect: (URL) -> Void
     
     /// 每层缩进量
     private let indentPerLevel: CGFloat = 16
     
-    /// 是否展开
-    private var isExpanded: Bool {
-        viewModel.isExpanded(node.url)
+    /// 本地展开状态
+    @State private var isExpanded: Bool = false
+    
+    /// 本地子节点缓存
+    @State private var children: [URL] = []
+    
+    /// 唯一ID用于追踪
+    private let nodeId = UUID()
+    
+    /// 是否文件夹
+    private var isDirectory: Bool {
+        (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
     }
     
-    /// 是否选中
-    private var isSelected: Bool {
-        viewModel.selectedFileURL == node.url
+    /// 文件名
+    private var fileName: String {
+        url.lastPathComponent
     }
     
-    /// 是否正在加载
-    private var isLoading: Bool {
-        viewModel.isLoading(node.url)
-    }
-    
-    /// 子节点
-    private var children: [FileTreeNode] {
-        viewModel.children(for: node.url)
-    }
+    private let logger = Logger(subsystem: "com.coffic.lumi", category: "FileTreeNodeView")
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // 节点行
-            nodeRow
-            
-            // 子节点（如果展开）
-            if isExpanded && node.isDirectory {
-                childNodesView
+        if isDirectory {
+            DisclosureGroup(
+                isExpanded: $isExpanded,
+                content: {
+                    if !children.isEmpty {
+                        ForEach(children, id: \.self) { childURL in
+                            FileTreeNodeView(
+                                url: childURL,
+                                depth: depth + 1,
+                                onSelect: onSelect
+                            )
+                        }
+                    }
+                },
+                label: {
+                    nodeRow
+                }
+            )
+            .onChange(of: isExpanded) { _, newValue in
+                if newValue && children.isEmpty {
+                    loadChildren()
+                }
             }
+        } else {
+            nodeRow
         }
     }
     
@@ -47,99 +65,86 @@ struct FileTreeNodeView: View {
     
     private var nodeRow: some View {
         HStack(spacing: 6) {
-            // 展开/折叠箭头（仅文件夹）
-            if node.isDirectory {
-                expandCollapseButton
-            } else {
-                Spacer().frame(width: 12)
+            // 缩进
+            HStack(spacing: 0) {
+                ForEach(0..<depth, id: \.self) { _ in
+                    Spacer().frame(width: indentPerLevel)
+                }
             }
             
             // 图标
-            Image(systemName: node.icon(isExpanded: isExpanded))
+            Image(systemName: iconName)
                 .font(.system(size: 10))
-                .foregroundColor(node.isDirectory ? .accentColor : .secondary)
+                .foregroundColor(isDirectory ? .accentColor : .secondary)
                 .frame(width: 14)
             
             // 名称
-            Text(node.name)
+            Text(fileName)
                 .font(.system(size: 10))
-                .foregroundColor(isSelected ? .accentColor : .primary)
+                .foregroundColor(.primary)
                 .lineLimit(1)
             
             Spacer()
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 3)
-        .background(
-            RoundedRectangle(cornerRadius: 4)
-                .fill(isSelected ? Color.accentColor.opacity(0.2) : Color.clear)
-        )
         .contentShape(Rectangle())
         .onTapGesture {
-            handleTap()
-        }
-    }
-    
-    private var expandCollapseButton: some View {
-        Button(action: {
-            viewModel.toggleExpansion(for: node.url)
-        }) {
-            Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                .font(.system(size: 8))
-                .foregroundColor(.secondary)
-        }
-        .buttonStyle(.plain)
-        .frame(width: 12)
-    }
-    
-    // MARK: - Child Nodes
-    
-    @ViewBuilder
-    private var childNodesView: some View {
-        if isLoading {
-            ProgressView()
-                .frame(width: 8, height: 8)
-                .padding(.leading, CGFloat(depth + 1) * indentPerLevel + 6)
-                .padding(.vertical, 4)
-        } else if !children.isEmpty {
-            ForEach(children) { child in
-                FileTreeNodeView(
-                    node: child,
-                    depth: depth + 1,
-                    viewModel: viewModel
-                )
+            if !isDirectory {
+                onSelect(url)
             }
-            .padding(.leading, indentPerLevel)
         }
     }
     
-    // MARK: - Actions
+    // MARK: - Icon
     
-    private func handleTap() {
-        if node.isDirectory {
-            viewModel.toggleExpansion(for: node.url)
-        } else {
-            viewModel.selectFile(node.url)
+    private var iconName: String {
+        if isDirectory {
+            return isExpanded ? "folder.fill" : "folder"
+        }
+        return iconForFile(url)
+    }
+    
+    private func iconForFile(_ url: URL) -> String {
+        let ext = url.pathExtension.lowercased()
+        switch ext {
+        case "swift": return "swift"
+        case "md", "txt", "json", "xml", "yaml", "yml": return "doc.text"
+        case "png", "jpg", "jpeg", "gif", "svg": return "photo"
+        case "pdf": return "doc.richtext"
+        default: return "doc"
         }
     }
-}
-
-#Preview {
-    let viewModel = FileTreeViewModel()
-    viewModel.rootNodes = [
-        FileTreeNode(
-            name: "LumiApp",
-            url: URL(fileURLWithPath: "/test/LumiApp"),
-            isDirectory: true,
-            isExpanded: false,
-            children: nil
-        )
-    ]
     
-    return FileTreeNodeView(
-        node: viewModel.rootNodes[0],
-        depth: 0,
-        viewModel: viewModel
-    )
-    .frame(width: 250)
+    // MARK: - Load Children
+    
+    private func loadChildren() {
+        logger.info("📂 [\(nodeId)] loadChildren: \(fileName)")
+        
+        Task {
+            do {
+                let contents = try FileManager.default.contentsOfDirectory(
+                    at: url,
+                    includingPropertiesForKeys: [.isDirectoryKey],
+                    options: [.skipsHiddenFiles]
+                )
+                
+                // 排序：文件夹在前
+                let sorted = contents.sorted { a, b in
+                    let aIsDir = (try? a.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+                    let bIsDir = (try? b.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+                    if aIsDir == bIsDir {
+                        return a.lastPathComponent.localizedStandardCompare(b.lastPathComponent) == .orderedAscending
+                    }
+                    return aIsDir
+                }
+                
+                await MainActor.run {
+                    self.children = sorted
+                }
+            } catch {
+                logger.error("❌ [\(nodeId)] loadChildren error: \(error.localizedDescription)")
+            }
+        }
+    }
 }
