@@ -6,7 +6,7 @@ import SwiftUI
 actor AppManagerPlugin: SuperPlugin {
     static let id = "com.coffic.lumi.plugin.appmanager"
     static let navigationId = "\(id).apps"
-    nonisolated static let enable = false
+    nonisolated static let enable = true
 
     @MainActor func addNavigationEntries() -> [NavigationEntry]? {
         return [

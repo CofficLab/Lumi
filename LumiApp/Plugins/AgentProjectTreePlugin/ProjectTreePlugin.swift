@@ -3,7 +3,7 @@ import SwiftUI
 import OSLog
 import MagicKit
 
-/// Project Tree Plugin: 显示项目文件树状结构
+/// Project Tree Plugin: 显示项目文件树状结构，使用 SwiftUI 开发，性能较差，AgentNativeFileTreePlugin 更好
 actor ProjectTreePlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
