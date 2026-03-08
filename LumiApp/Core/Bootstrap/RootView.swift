@@ -119,7 +119,7 @@ final class RootViewContainer: ObservableObject {
         // 初始化基础 ViewModel
         self.appProvider = GlobalProvider()
         self.projectViewModel = ProjectViewModel(contextService: contextService)
-        self.commandSuggestionViewModel = CommandSuggestionViewModel()
+        self.commandSuggestionViewModel = CommandSuggestionViewModel(slashCommandService: slashCommandService)
 
         // 创建 MessageViewModel
         self.messageViewModel = MessageViewModel(chatHistoryService: chatHistoryService)

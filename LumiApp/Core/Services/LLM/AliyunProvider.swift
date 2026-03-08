@@ -29,6 +29,7 @@ struct AliyunProvider: LLMProviderProtocol, SuperLog {
 
     static let availableModels = [
         "qwen3.5-plus",       // 通义千问 3.5 Plus
+        "glm-4.7",            // GLM-4.7
         "glm-5",              // GLM-5
         "MiniMax-M2.5",       // MiniMax M2.5
         "kimi-k2.5",          // Kimi K2.5

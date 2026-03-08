@@ -306,9 +306,6 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
                 // 累积思考文本
                 if !content.isEmpty {
                     appendThinkingText(content)
-                    if Self.verbose {
-                        os_log("\(Self.t)🧠 累积思考文本: \(content.prefix(30))... (总长度: \(self.thinkingText.count))")
-                    }
                 }
                 return
             }
@@ -343,9 +340,6 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
             // 处理 input_json_delta 事件 - 不追加到消息内容
             if eventType == .inputJsonDelta {
-                if Self.verbose && !content.isEmpty {
-                    os_log("\(Self.t)🔧 收到工具参数: \(content)")
-                }
                 return
             }
 
@@ -365,9 +359,6 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
             // 只追加文本增量事件的内容到消息
             if eventType == .textDelta {
-                if Self.verbose && !content.isEmpty {
-                    os_log("\(Self.t)📝 文本增量: \(content.prefix(30))...")
-                }
                 // 获取当前消息并追加事件内容
                 var currentMessage = messages[index]
                 currentMessage.content += content
@@ -474,6 +465,14 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         // 加载上次选择的项目（项目切换会自动应用配置）
         if let savedPath = UserDefaults.standard.string(forKey: "Agent_SelectedProject") {
             projectViewModel.switchProject(to: savedPath)
+            
+            // 加载项目命令
+            Task {
+                await slashCommandService.setCurrentProjectPath(savedPath)
+                if Self.verbose {
+                    os_log("\(Self.t)📚 初始化时加载项目命令：\(savedPath)")
+                }
+            }
         }
     }
 
@@ -927,6 +926,10 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     /// - Parameters:
     ///   - input: 要发送的文字内容（由 InputViewModel 传入，不再从内部状态读取）
     ///   - images: 附件图片列表
+    /// 发送消息
+    /// - Parameters:
+    ///   - input: 要发送的文字内容（由 InputViewModel 传入，不再从内部状态读取）
+    ///   - images: 附件图片列表
     public func sendMessage(input: String, images: [ImageAttachment] = []) {
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty || !pendingAttachments.isEmpty else { return }
@@ -951,9 +954,10 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         errorMessage = nil
         pendingAttachments.removeAll()
 
-        // 检查是否为支持的斜杠命令
-        if slashCommandService.isSupportedSlashCommand(trimmed) {
-            Task {
+        // 检查是否为支持的斜杠命令（异步检查包括项目命令）
+        Task {
+            let isCommand = await slashCommandService.isSlashCommand(trimmed)
+            if isCommand {
                 let result = await slashCommandService.handle(input: trimmed, provider: self)
                 switch result {
                 case .handled:
@@ -965,13 +969,13 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
                     // 对于未处理的命令，继续通过消息队列发送
                     messageSenderViewModel.sendMessage(content: trimmed, images: allImages)
                 }
+            } else {
+                // 通过 MessageSenderViewModel 发送消息
+                messageSenderViewModel.sendMessage(content: trimmed, images: allImages)
             }
-            return
         }
-
-        // 通过 MessageSenderViewModel 发送消息
-        messageSenderViewModel.sendMessage(content: trimmed, images: allImages)
     }
+
 
     // MARK: - 对话轮次处理
 
@@ -1069,6 +1073,9 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             } else {
                 insertMessage(ChatMessage(role: .system, content: fullSystemPrompt), at: 0)
             }
+
+            // 加载项目命令
+            await slashCommandService.setCurrentProjectPath(path)
 
             // 添加切换项目通知（根据语言偏好）
             let projectName = self.currentProjectName
