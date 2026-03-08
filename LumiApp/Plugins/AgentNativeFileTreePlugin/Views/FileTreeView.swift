@@ -24,7 +24,7 @@ class FileNode: NSObject {
             let contents = try FileManager.default.contentsOfDirectory(
                 at: url,
                 includingPropertiesForKeys: [.isDirectoryKey],
-                options: [.skipsHiddenFiles]
+                options: []
             )
             
             children = contents
