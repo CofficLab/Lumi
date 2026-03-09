@@ -386,6 +386,85 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         }
     }
 
+    /// 分页加载消息（从最新消息开始，按时间倒序）
+    /// - Parameters:
+    ///   - conversationId: 对话 ID
+    ///   - limit: 每页数量
+    ///   - beforeTimestamp: 加载此时间戳之前的消息（nil 表示从最新开始）
+    /// - Returns: (消息列表, 是否还有更多)
+    func loadMessagesPage(
+        forConversationId conversationId: UUID,
+        limit: Int,
+        beforeTimestamp: Date? = nil
+    ) async -> (messages: [ChatMessage], hasMore: Bool) {
+        await withCheckedContinuation { continuation in
+            storageQueue.async { [weak self] in
+                guard let self = self else {
+                    continuation.resume(returning: ([], false))
+                    return
+                }
+
+                let context = ModelContext(self.modelContainer)
+                let descriptor = FetchDescriptor<Conversation>(
+                    predicate: #Predicate { $0.id == conversationId }
+                )
+
+                guard let fetchedConversation = try? context.fetch(descriptor).first else {
+                    continuation.resume(returning: ([], false))
+                    return
+                }
+
+                // 按时间倒序排序（最新的在前）
+                var sortedMessages = fetchedConversation.messages.sorted { $0.timestamp > $1.timestamp }
+
+                // 如果指定了时间戳，过滤出更早的消息
+                if let beforeTimestamp = beforeTimestamp {
+                    sortedMessages = sortedMessages.filter { $0.timestamp < beforeTimestamp }
+                }
+
+                // 取一页数据
+                let pageMessages = sortedMessages.prefix(limit + 1)
+                let hasMore = pageMessages.count > limit
+                let messagesToReturn = Array(pageMessages.prefix(limit))
+
+                // 转换并恢复正序（最早的在前，最新的在后）
+                let messages = messagesToReturn.reversed().compactMap { $0.toChatMessage() }
+
+                if Self.verbose {
+                    os_log("\(Self.t)📄 [\(conversationId)] 分页加载消息: \(messages.count) 条, hasMore: \(hasMore)")
+                }
+
+                continuation.resume(returning: (messages, hasMore))
+            }
+        }
+    }
+
+    /// 获取会话消息总数
+    /// - Parameter conversationId: 对话 ID
+    /// - Returns: 消息数量
+    func getMessageCount(forConversationId conversationId: UUID) async -> Int {
+        await withCheckedContinuation { continuation in
+            storageQueue.async { [weak self] in
+                guard let self = self else {
+                    continuation.resume(returning: 0)
+                    return
+                }
+
+                let context = ModelContext(self.modelContainer)
+                let descriptor = FetchDescriptor<Conversation>(
+                    predicate: #Predicate { $0.id == conversationId }
+                )
+
+                guard let fetchedConversation = try? context.fetch(descriptor).first else {
+                    continuation.resume(returning: 0)
+                    return
+                }
+
+                continuation.resume(returning: fetchedConversation.messages.count)
+            }
+        }
+    }
+
     // MARK: - 加载对话
 
     /// 获取所有对话

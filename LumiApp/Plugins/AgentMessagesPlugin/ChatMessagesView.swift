@@ -128,6 +128,11 @@ extension ChatMessagesView {
     private func messageRows(items: [DisplayMessageItem]) -> some View {
         let lastMessageID = items.last?.id
         return LazyVStack(alignment: .leading, spacing: 12) {
+            // 加载更多历史消息按钮
+            if messageViewModel.hasMoreMessages {
+                loadMoreButton
+            }
+
             ForEach(items) { item in
                 ChatBubble(
                     message: item.message,
@@ -138,6 +143,45 @@ extension ChatMessagesView {
             }
         }
         .padding(.horizontal)
+    }
+
+    /// 加载更多消息按钮
+    private var loadMoreButton: some View {
+        HStack {
+            Spacer()
+
+            Button(action: handleLoadMore) {
+                HStack(spacing: 8) {
+                    if messageViewModel.isLoadingMore {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: "arrow.up.circle")
+                    }
+
+                    Text(loadMoreButtonText)
+                        .font(.caption)
+                }
+                .foregroundStyle(.secondary)
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
+            }
+            .buttonStyle(.plain)
+            .disabled(messageViewModel.isLoadingMore)
+
+            Spacer()
+        }
+        .padding(.vertical, 8)
+    }
+
+    /// 加载更多按钮文本
+    private var loadMoreButtonText: String {
+        if messageViewModel.isLoadingMore {
+            return "加载中..."
+        }
+        let loaded = messageViewModel.messages.count
+        let total = messageViewModel.totalMessageCount
+        return "加载更早消息 (\(loaded)/\(total))"
     }
 
     private var messageOverlay: some View {
@@ -256,6 +300,20 @@ extension ChatMessagesView {
 
         if Self.verbose {
             os_log("\(self.t)✅ [\(conversationId)] 已选择")
+        }
+    }
+
+    /// 处理加载更多历史消息
+    func handleLoadMore() {
+        guard let conversationId = conversationViewModel.selectedConversationId else { return }
+        guard messageViewModel.hasMoreMessages, !messageViewModel.isLoadingMore else { return }
+
+        if Self.verbose {
+            os_log("\(self.t)📄 加载更多历史消息")
+        }
+
+        Task {
+            await messageViewModel.loadMoreMessages(conversationId: conversationId)
         }
     }
 }

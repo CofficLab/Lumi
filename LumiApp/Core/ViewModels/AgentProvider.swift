@@ -820,10 +820,10 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     }
 
     /// 加载指定对话
-    /// 协调 ConversationViewModel 和 MessageViewModel 完成加载
+    /// 协调 ConversationViewModel 和 MessageViewModel 完成加载（分页模式）
     func loadConversation(_ conversationId: UUID) async {
         if Self.verbose {
-            os_log("\(Self.t)📥 [\(conversationId)] 开始加载对话")
+            os_log("\(Self.t)📥 [\(conversationId)] 开始加载对话（分页模式）")
         }
 
         // 切换消息发送队列到新会话
@@ -832,15 +832,15 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             os_log("\(Self.t)🔄 [\(conversationId)] 待发送消息：\(queueCount) 条")
         }
 
-        // 后台加载消息到 MessageViewModel
-        let exists = await messageViewModel.loadMessages(conversationId: conversationId)
+        // 分页加载消息到 MessageViewModel（初始只加载最近的消息）
+        let exists = await messageViewModel.loadMessagesPaginated(conversationId: conversationId)
         guard exists else {
             os_log(.error, "\(Self.t)❌ [\(conversationId)] 对话不存在")
             return
         }
 
         if Self.verbose {
-            os_log("\(Self.t)✅ [\(conversationId)] 共 \(self.messageViewModel.messages.count) 条消息")
+            os_log("\(Self.t)✅ [\(conversationId)] 分页加载完成：\(self.messageViewModel.messages.count)/\(self.messageViewModel.totalMessageCount) 条，hasMore: \(self.messageViewModel.hasMoreMessages)")
         }
 
         refreshSessionScopedUIState(for: conversationId)
@@ -913,16 +913,13 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             title: "新会话 " + formatter.string(from: Date())
         )
 
-        // 2. 选中该会话（会触发监听加载消息）
-        conversationViewModel.setSelectedConversation(newConversation.id)
-
-        // 3. 切换消息发送队列到新会话
+        // 2. 切换消息发送队列到新会话
         messageSenderViewModel.switchToConversation(newConversation.id)
 
-        // 4. 清空当前消息列表并获取系统上下文消息和欢迎消息
-        messageViewModel.clearMessages()
+        // 3. 准备系统上下文消息和欢迎消息
+        var initialMessages: [ChatMessage] = []
 
-        // 4.1 添加系统上下文消息（设置项目上下文）
+        // 3.1 添加系统上下文消息（设置项目上下文）
         let systemMessage = await promptService.getSystemContextMessage(
             projectName: projectName,
             projectPath: projectPath,
@@ -931,11 +928,11 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         if !systemMessage.isEmpty {
             let sysMsg = ChatMessage(role: .system, content: systemMessage)
             if let savedSystemMsg = chatHistoryService.saveMessage(sysMsg, to: newConversation) {
-                messageViewModel.appendMessageInternal(savedSystemMsg)
+                initialMessages.append(savedSystemMsg)
             }
         }
 
-        // 4.2 添加欢迎消息
+        // 3.2 添加欢迎消息
         let welcomeMessage = await promptService.getEmptySessionWelcomeMessage(
             projectName: projectName,
             projectPath: projectPath,
@@ -946,12 +943,22 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         if !welcomeMessage.isEmpty {
             let welcomeMsg = ChatMessage(role: .assistant, content: welcomeMessage)
             if let savedMessage = chatHistoryService.saveMessage(welcomeMsg, to: newConversation) {
-                messageViewModel.appendMessageInternal(savedMessage)
+                initialMessages.append(savedMessage)
             }
         }
 
+        // 4. 设置消息列表（直接设置，避免与 loadConversation 竞争）
+        await MainActor.run {
+            messageViewModel.setMessagesInternal(initialMessages)
+            messageViewModel.setHasMoreMessagesInternal(false)
+            messageViewModel.setTotalMessageCountInternal(initialMessages.count)
+        }
+
+        // 5. 选中该会话（这会触发 UI 更新，但消息已经准备好了）
+        conversationViewModel.setSelectedConversation(newConversation.id)
+
         if Self.verbose {
-            os_log("\(Self.t)✅ [\(newConversation.id)] 新会话创建完成")
+            os_log("\(Self.t)✅ [\(newConversation.id)] 新会话创建完成，初始消息: \(initialMessages.count) 条")
         }
     }
 
@@ -1124,15 +1131,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     /// 处理对话轮次
     /// - Parameter depth: 当前递归深度
     public func processTurn(conversationId: UUID, depth: Int = 0) async {
-        let messages: [ChatMessage]
-        if conversationViewModel.selectedConversationId == conversationId {
-            messages = self.messages
-        } else {
-            guard let loaded = await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) else {
-                return
-            }
-            messages = loaded
-        }
+        let messages = await getMessagesForLLM(conversationId: conversationId)
 
         await conversationTurnViewModel.processTurn(
             conversationId: conversationId,
@@ -1144,6 +1143,36 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             languagePreference: languagePreference,
             autoApproveRisk: autoApproveRisk
         )
+    }
+
+    /// 获取发送给 LLM 的消息列表
+    /// 如果当前是分页加载且还有更多消息未加载，需要加载完整上下文
+    private func getMessagesForLLM(conversationId: UUID) async -> [ChatMessage] {
+        // 如果不是当前选中的会话，从数据库全量加载
+        guard conversationViewModel.selectedConversationId == conversationId else {
+            return await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
+        }
+
+        // 如果已经加载了所有消息，直接使用内存中的消息
+        guard messageViewModel.hasMoreMessages else {
+            return messageViewModel.messages
+        }
+
+        // 如果还有更多消息未加载，需要加载完整上下文给 LLM
+        // 注意：这是第一阶段的临时方案，第二阶段应该实现上下文裁剪
+        if Self.verbose {
+            os_log("\(Self.t)⚠️ [\(conversationId)] 分页模式下需要完整上下文，加载所有消息")
+        }
+
+        let allMessages = await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
+
+        // 更新 ViewModel 的消息列表为完整列表
+        await MainActor.run {
+            messageViewModel.setMessagesInternal(allMessages)
+            messageViewModel.setHasMoreMessagesInternal(false)
+        }
+
+        return allMessages
     }
 
     // MARK: - 模式切换通知
