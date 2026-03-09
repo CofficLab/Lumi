@@ -67,14 +67,6 @@ struct ModelSelectorView: View, SuperLog {
                                                         sampleCount: stat.sampleCount
                                                     )
                                                 }
-                                                
-                                                // Token 进度条
-                                                if stat.avgInputTokens > 0 || stat.avgOutputTokens > 0 {
-                                                    ModelTokenProgressBar(
-                                                        inputTokens: stat.avgInputTokens,
-                                                        outputTokens: stat.avgOutputTokens
-                                                    )
-                                                }
                                             }
                                         }
                                     }
@@ -288,75 +280,6 @@ struct ModelLatencyProgressBar: View {
         
         TTFT 表示从发送请求到收到第一个 token 的时间
         响应时间表示从第一个 token 到响应完成的时间
-        """
-    }
-}
-
-// MARK: - Model Token Progress Bar
-
-/// 模型 Token 进度条组件
-struct ModelTokenProgressBar: View {
-    let inputTokens: Int
-    let outputTokens: Int
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            // 进度条
-            GeometryReader { geometry in
-                HStack(spacing: 0) {
-                    // 输入 token 部分（绿色）
-                    Rectangle()
-                        .fill(Color.green)
-                        .frame(width: geometry.size.width * inputRatio)
-                    
-                    // 输出 token 部分（紫色）
-                    Rectangle()
-                        .fill(Color.purple)
-                        .frame(width: geometry.size.width * (1 - inputRatio))
-                }
-            }
-            .frame(width: 80, height: 3)
-            .clipShape(RoundedRectangle(cornerRadius: 1.5))
-            
-            // Token 信息（一行显示）
-            HStack(spacing: 6) {
-                HStack(spacing: 1) {
-                    Image(systemName: "arrow.right.circle.fill")
-                        .font(.system(size: 6, weight: .medium))
-                    Text("\(inputTokens)")
-                        .font(.caption2)
-                }
-                .foregroundColor(.green)
-                
-                HStack(spacing: 1) {
-                    Image(systemName: "arrow.left.circle.fill")
-                        .font(.system(size: 6, weight: .medium))
-                    Text("\(outputTokens)")
-                        .font(.caption2)
-                }
-                .foregroundColor(.purple)
-            }
-        }
-        .help(helpText)
-    }
-    
-    /// 输入 token 占总 token 的比例
-    private var inputRatio: Double {
-        let total = inputTokens + outputTokens
-        guard total > 0 else { return 0 }
-        return Double(inputTokens) / Double(total)
-    }
-    
-    /// 帮助文本
-    private var helpText: String {
-        let inputPercent = String(format: "%.1f", inputRatio * 100)
-        let outputPercent = String(format: "%.1f", (1 - inputRatio) * 100)
-        return """
-        ➡️ 输入 Token: \(inputTokens) (\(inputPercent)%)
-        ⬅️ 输出 Token: \(outputTokens) (\(outputPercent)%)
-        
-        输入 Token 表示发送给模型的 token 数量
-        输出 Token 表示模型生成的 token 数量
         """
     }
 }

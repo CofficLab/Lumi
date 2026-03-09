@@ -41,6 +41,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
     private let modelContainer: ModelContainer
     private let modelContext: ModelContext
     private let llmService: LLMService
+    private let storageQueue = DispatchQueue(label: "com.coffic.lumi.chat-history.storage", qos: .utility)
 
     /// 使用 LLM 服务和模型容器初始化
     init(llmService: LLMService, modelContainer: ModelContainer) {
@@ -270,6 +271,74 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         } catch {
             os_log(.error, "\(Self.t)❌ 保存消息失败：\(error.localizedDescription)")
             return nil
+        }
+    }
+
+    /// 后台队列保存消息，避免阻塞主线程
+    /// - Parameters:
+    ///   - message: 要保存的消息
+    ///   - conversationId: 对话 ID
+    /// - Returns: 保存后的消息
+    func saveMessageAsync(_ message: ChatMessage, toConversationId conversationId: UUID) async -> ChatMessage? {
+        await withCheckedContinuation { continuation in
+            storageQueue.async { [weak self] in
+                guard let self = self else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                // 在后台队列中使用独立 context，避免与主线程 context 争用
+                let context = ModelContext(self.modelContainer)
+                let descriptor = FetchDescriptor<Conversation>(
+                    predicate: #Predicate { $0.id == conversationId }
+                )
+
+                guard let fetchedConversation = try? context.fetch(descriptor).first else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                let messageEntity = ChatMessageEntity.fromChatMessage(message)
+                messageEntity.conversation = fetchedConversation
+                fetchedConversation.updatedAt = Date()
+                context.insert(messageEntity)
+
+                do {
+                    try context.save()
+                    continuation.resume(returning: messageEntity.toChatMessage())
+                } catch {
+                    os_log(.error, "\(Self.t)❌ 异步保存消息失败：\(error.localizedDescription)")
+                    continuation.resume(returning: nil)
+                }
+            }
+        }
+    }
+
+    /// 后台加载对话消息，避免阻塞主线程
+    /// - Parameter conversationId: 对话 ID
+    /// - Returns: 消息列表；若会话不存在返回 nil
+    func loadMessagesAsync(forConversationId conversationId: UUID) async -> [ChatMessage]? {
+        await withCheckedContinuation { continuation in
+            storageQueue.async { [weak self] in
+                guard let self = self else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                let context = ModelContext(self.modelContainer)
+                let descriptor = FetchDescriptor<Conversation>(
+                    predicate: #Predicate { $0.id == conversationId }
+                )
+
+                guard let fetchedConversation = try? context.fetch(descriptor).first else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                let messageEntities = fetchedConversation.messages.sorted { $0.timestamp < $1.timestamp }
+                let messages = messageEntities.compactMap { $0.toChatMessage() }
+                continuation.resume(returning: messages)
+            }
         }
     }
 

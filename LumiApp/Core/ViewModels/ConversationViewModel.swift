@@ -117,17 +117,11 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     ///   - message: 要保存的消息
     ///   - conversationId: 目标对话 ID
     func saveMessage(_ message: ChatMessage, to conversationId: UUID) {
-
-        // 从数据库获取对话
-        guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
-            os_log(.error, "\(Self.t)❌ [\(conversationId)] 对话不存在")
-            return
-        }
-
-        chatHistoryService.saveMessage(message, to: conversation)
-
-        if Self.verbose {
-            os_log("\(Self.t)💾 [\(conversation.id)] 消息已保存：\(message.content.max(50))")
+        Task(priority: .utility) {
+            let saved = await chatHistoryService.saveMessageAsync(message, toConversationId: conversationId)
+            if Self.verbose, saved != nil {
+                os_log("\(Self.t)💾 [\(conversationId)] 消息已保存：\(message.content.max(50))")
+            }
         }
     }
 

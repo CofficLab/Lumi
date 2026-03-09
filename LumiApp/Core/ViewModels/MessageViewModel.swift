@@ -76,6 +76,18 @@ final class MessageViewModel: ObservableObject, SuperLog {
         return loadedMessages
     }
 
+    /// 按会话 ID 异步加载消息（后台 I/O）
+    /// - Parameter conversationId: 会话 ID
+    /// - Returns: 会话是否存在
+    @discardableResult
+    func loadMessages(conversationId: UUID) async -> Bool {
+        guard let loadedMessages = await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) else {
+            return false
+        }
+        messages = loadedMessages
+        return true
+    }
+
     /// 保存消息到指定会话
     /// - Parameters:
     ///   - message: 要保存的消息

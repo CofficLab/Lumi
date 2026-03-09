@@ -826,23 +826,21 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             os_log("\(Self.t)📥 [\(conversationId)] 开始加载对话")
         }
 
-        // 从数据库获取对话
-        guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
-            os_log(.error, "\(Self.t)❌ [\(conversationId)] 对话不存在")
-            return
-        }
-
         // 切换消息发送队列到新会话
-        let queueCount = messageSenderViewModel.switchToConversation(conversation.id)
+        let queueCount = messageSenderViewModel.switchToConversation(conversationId)
         if Self.verbose {
             os_log("\(Self.t)🔄 [\(conversationId)] 待发送消息：\(queueCount) 条")
         }
 
-        // 加载消息到 MessageViewModel
-        _ = messageViewModel.loadMessages(for: conversation)
+        // 后台加载消息到 MessageViewModel
+        let exists = await messageViewModel.loadMessages(conversationId: conversationId)
+        guard exists else {
+            os_log(.error, "\(Self.t)❌ [\(conversationId)] 对话不存在")
+            return
+        }
 
         if Self.verbose {
-            os_log("\(Self.t)✅ [\(conversation.id)] 共 \(self.messageViewModel.messages.count) 条消息")
+            os_log("\(Self.t)✅ [\(conversationId)] 共 \(self.messageViewModel.messages.count) 条消息")
         }
 
         refreshSessionScopedUIState(for: conversationId)
@@ -1129,10 +1127,11 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         let messages: [ChatMessage]
         if conversationViewModel.selectedConversationId == conversationId {
             messages = self.messages
-        } else if let conversation = chatHistoryService.fetchConversation(id: conversationId) {
-            messages = chatHistoryService.loadMessages(for: conversation)
         } else {
-            return
+            guard let loaded = await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) else {
+                return
+            }
+            messages = loaded
         }
 
         await conversationTurnViewModel.processTurn(

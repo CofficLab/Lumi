@@ -186,9 +186,8 @@ extension ChatMessagesView {
 extension ChatMessagesView {
     func handleMessagesChanged(proxy: ScrollViewProxy) {
         if Self.verbose {
-            os_log("\(self.t)📬 消息数量变化，滚动到底部")
+            os_log("\(self.t)📬 消息数量变化")
         }
-        scrollToBottom(proxy: proxy)
     }
 
     func handleConversationSelected() {
@@ -197,12 +196,6 @@ extension ChatMessagesView {
         if Self.verbose {
             os_log("\(self.t)✅ [\(conversationId)] 已选择")
         }
-
-        // 注意：ConversationViewModel.selectConversation 已经调用了 loadConversation
-        // 这里不需要再次加载，避免重复请求
-        // Task {
-        //     await conversationViewModel.loadConversation(conversationId)
-        // }
     }
 }
 
