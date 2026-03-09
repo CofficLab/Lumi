@@ -117,9 +117,9 @@ extension ChatMessagesView {
             messageRows(items: items)
         }
         .padding(.vertical)
-        .onChange(of: nonSystemMessages.count) { oldCount, newCount in
-            if newCount > oldCount {
-                handleMessagesChanged(proxy: proxy)
+        .onChange(of: agentProvider.userJustSentMessage) { _, userJustSent in
+            if userJustSent {
+                handleUserSentMessage(proxy: proxy)
             }
         }
         .overlay { messageOverlay }
@@ -289,10 +289,16 @@ extension ChatMessagesView {
 // MARK: Event Handler
 
 extension ChatMessagesView {
-    func handleMessagesChanged(proxy: ScrollViewProxy) {
+    func handleUserSentMessage(proxy: ScrollViewProxy) {
         if Self.verbose {
-            os_log("\(self.t)📬 消息数量变化")
+            os_log("\(self.t)📬 用户发送消息，滚动到底部")
         }
+
+        // 用户发送消息时滚动到底部
+        scrollToBottomIfNeeded(proxy: proxy)
+
+        // 重置标记
+        agentProvider.userJustSentMessage = false
     }
 
     func handleConversationSelected() {
