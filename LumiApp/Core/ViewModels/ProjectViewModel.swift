@@ -110,18 +110,20 @@ final class ProjectViewModel: ObservableObject, SuperLog {
 
     /// 应用项目配置
     func applyProjectConfig(_ config: ProjectConfig) {
-        // 更新当前项目配置
-        currentProviderId = config.providerId
-        currentModel = config.model.isEmpty ? getDefaultModel(for: config.providerId) : config.model
+        Task { @MainActor in
+            // 更新当前项目配置
+            self.currentProviderId = config.providerId
+            self.currentModel = config.model.isEmpty ? self.getDefaultModel(for: config.providerId) : config.model
 
-        // 通知供应商设置更新配置
-        NotificationCenter.default.post(
-            name: NSNotification.Name("ProjectConfigApplied"),
-            object: config
-        )
+            // 通知供应商设置更新配置
+            NotificationCenter.default.post(
+                name: NSNotification.Name("ProjectConfigApplied"),
+                object: config
+            )
 
-        if Self.verbose {
-            os_log("\(Self.t)⚙️ 已应用项目配置：\(config.providerId) / \(self.currentModel)")
+            if Self.verbose {
+                os_log("\(Self.t)⚙️ 已应用项目配置：\(config.providerId) / \(self.currentModel)")
+            }
         }
     }
 
@@ -242,14 +244,18 @@ final class ProjectViewModel: ObservableObject, SuperLog {
     private func loadLanguagePreference() {
         if let data = UserDefaults.standard.data(forKey: "Agent_LanguagePreference"),
            let preference = try? JSONDecoder().decode(LanguagePreference.self, from: data) {
-            languagePreference = preference
+            Task { @MainActor in
+                self.languagePreference = preference
+            }
         }
     }
 
     func setLanguagePreference(_ preference: LanguagePreference) {
-        languagePreference = preference
-        if let encoded = try? JSONEncoder().encode(languagePreference) {
-            UserDefaults.standard.set(encoded, forKey: "Agent_LanguagePreference")
+        Task { @MainActor in
+            self.languagePreference = preference
+            if let encoded = try? JSONEncoder().encode(self.languagePreference) {
+                UserDefaults.standard.set(encoded, forKey: "Agent_LanguagePreference")
+            }
         }
     }
 
@@ -258,24 +264,33 @@ final class ProjectViewModel: ObservableObject, SuperLog {
     private func loadChatMode() {
         if let rawValue = UserDefaults.standard.string(forKey: "Agent_ChatMode"),
            let mode = ChatMode(rawValue: rawValue) {
-            chatMode = mode
+            Task { @MainActor in
+                self.chatMode = mode
+            }
         }
     }
 
     func setChatMode(_ mode: ChatMode) {
-        chatMode = mode
-        UserDefaults.standard.set(chatMode.rawValue, forKey: "Agent_ChatMode")
+        Task { @MainActor in
+            self.chatMode = mode
+            UserDefaults.standard.set(self.chatMode.rawValue, forKey: "Agent_ChatMode")
+        }
     }
 
     // MARK: - 自动批准风险
 
     /// 加载自动批准风险设置
     private func loadAutoApproveRisk() {
-        autoApproveRisk = UserDefaults.standard.bool(forKey: "Agent_AutoApproveRisk")
+        let enabled = UserDefaults.standard.bool(forKey: "Agent_AutoApproveRisk")
+        Task { @MainActor in
+            self.autoApproveRisk = enabled
+        }
     }
 
     func setAutoApproveRisk(_ enabled: Bool) {
-        autoApproveRisk = enabled
-        UserDefaults.standard.set(enabled, forKey: "Agent_AutoApproveRisk")
+        Task { @MainActor in
+            self.autoApproveRisk = enabled
+            UserDefaults.standard.set(enabled, forKey: "Agent_AutoApproveRisk")
+        }
     }
 }
