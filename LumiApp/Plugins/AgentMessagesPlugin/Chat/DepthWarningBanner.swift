@@ -1,49 +1,52 @@
 import SwiftUI
 
 /// 深度警告横幅组件
-struct DepthWarningBanner: View {
-    let warning: DepthWarning
-    let onDismiss: () -> Void
+public struct DepthWarningBanner: View {
+    @EnvironmentObject var depthWarningViewModel: DepthWarningViewModel
 
-    var body: some View {
-        HStack(spacing: 12) {
-            // 图标
-            Image(systemName: warningIcon)
-                .font(.system(size: 16))
-                .foregroundColor(warning.iconColor)
-                .frame(width: 20)
+    public var body: some View {
+        if let warning = depthWarningViewModel.depthWarning {
+            HStack(spacing: 12) {
+                // 图标
+                Image(systemName: warningIcon(for: warning))
+                    .font(.system(size: 16))
+                    .foregroundColor(warning.iconColor)
+                    .frame(width: 20)
 
-            // 消息文本
-            Text(warning.warningMessage)
-                .font(DesignTokens.Typography.caption1)
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                .lineLimit(2)
+                // 消息文本
+                Text(warning.warningMessage)
+                    .font(DesignTokens.Typography.caption1)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .lineLimit(2)
 
-            Spacer()
+                Spacer()
 
-            // 进度指示器
-            DepthProgressIndicator(warning: warning)
+                // 进度指示器
+                DepthProgressIndicator(warning: warning)
 
-            // 关闭按钮
-            Button(action: onDismiss) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 14))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                // 关闭按钮
+                Button(action: {
+                    depthWarningViewModel.dismissDepthWarning()
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(warningBackground(for: warning))
+            .overlay(
+                Rectangle()
+                    .frame(width: 4)
+                    .foregroundColor(warning.iconColor),
+                alignment: .leading
+            )
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(warningBackground)
-        .overlay(
-            Rectangle()
-                .frame(width: 4)
-                .foregroundColor(warning.iconColor),
-            alignment: .leading
-        )
     }
 
-    private var warningIcon: String {
+    private func warningIcon(for warning: DepthWarning) -> String {
         switch warning.warningType {
         case .approaching:
             return "exclamationmark.triangle.fill"
@@ -54,7 +57,7 @@ struct DepthWarningBanner: View {
         }
     }
 
-    private var warningBackground: some View {
+    private func warningBackground(for warning: DepthWarning) -> some View {
         Group {
             if warning.warningType == .reached {
                 Color.red.opacity(0.15)
@@ -93,29 +96,5 @@ private struct DepthProgressIndicator: View {
             .frame(width: 60, height: 4)
         }
     }
-}
-
-// MARK: - Preview
-
-#Preview("Approaching Warning") {
-    VStack(spacing: 20) {
-        DepthWarningBanner(
-            warning: DepthWarning(currentDepth: 7, maxDepth: 10, warningType: .approaching),
-            onDismiss: {}
-        )
-
-        DepthWarningBanner(
-            warning: DepthWarning(currentDepth: 9, maxDepth: 10, warningType: .critical),
-            onDismiss: {}
-        )
-
-        DepthWarningBanner(
-            warning: DepthWarning(currentDepth: 10, maxDepth: 10, warningType: .reached),
-            onDismiss: {}
-        )
-    }
-    .padding()
-    .frame(width: 600)
-    .background(Color.black)
 }
 

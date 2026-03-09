@@ -42,6 +42,11 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(container.commandSuggestionViewModel)
             .environmentObject(container.toolsViewModel)
             .environmentObject(container.providerRegistry)
+            .environmentObject(container.depthWarningViewModel)
+            .environmentObject(container.processingStateViewModel)
+            .environmentObject(container.errorStateViewModel)
+            .environmentObject(container.permissionRequestViewModel)
+            .environmentObject(container.thinkingStateViewModel)
             .environmentObject(MystiqueThemeManager())
             .modelContainer(container.modelContainer)
     }
@@ -74,6 +79,11 @@ final class RootViewContainer: ObservableObject {
     let conversationViewModel: ConversationViewModel
     let messageSenderViewModel: MessageSenderViewModel
     let agentProvider: AgentProvider
+    let depthWarningViewModel: DepthWarningViewModel
+    let processingStateViewModel: ProcessingStateViewModel
+    let errorStateViewModel: ErrorStateViewModel
+    let permissionRequestViewModel: PermissionRequestViewModel
+    let thinkingStateViewModel: ThinkingStateViewModel
 
     // MARK: - 初始化
 
@@ -109,6 +119,13 @@ final class RootViewContainer: ObservableObject {
 
         // 创建 Tools ViewModel
         self.toolsViewModel = ToolsViewModel(toolService: toolService)
+
+        // 初始化状态 ViewModels
+        self.depthWarningViewModel = DepthWarningViewModel()
+        self.processingStateViewModel = ProcessingStateViewModel()
+        self.errorStateViewModel = ErrorStateViewModel()
+        self.permissionRequestViewModel = PermissionRequestViewModel()
+        self.thinkingStateViewModel = ThinkingStateViewModel()
 
         // 初始化聊天历史服务（依赖 LLMService）
         let chatHistoryService = ChatHistoryService(
@@ -156,7 +173,12 @@ final class RootViewContainer: ObservableObject {
             messageSenderViewModel: self.messageSenderViewModel,
             projectViewModel: projectViewModel,
             conversationTurnViewModel: conversationTurnViewModel,
-            slashCommandService: slashCommandService
+            slashCommandService: slashCommandService,
+            depthWarningViewModel: self.depthWarningViewModel,
+            processingStateViewModel: self.processingStateViewModel,
+            errorStateViewModel: self.errorStateViewModel,
+            permissionRequestViewModel: self.permissionRequestViewModel,
+            thinkingStateViewModel: self.thinkingStateViewModel
         )
     }
 }

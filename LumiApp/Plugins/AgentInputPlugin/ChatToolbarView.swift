@@ -13,6 +13,9 @@ struct ChatToolbarView: View, SuperLog {
     @EnvironmentObject var agentProvider: AgentProvider
     @EnvironmentObject var projectViewModel: ProjectViewModel
 
+    /// 处理状态 ViewModel
+    @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
+
     /// 输入框本地状态 ViewModel
     @ObservedObject var inputViewModel: InputViewModel
 
@@ -81,7 +84,7 @@ extension ChatToolbarView {
     /// 发送/停止按钮视图
     @ViewBuilder
     private var actionButton: some View {
-        if agentProvider.isProcessing {
+        if processingStateViewModel.isProcessing {
             // 停止按钮 - 在处理中显示（仅图标）
             Button(action: {
                 agentProvider.cancelCurrentTask()

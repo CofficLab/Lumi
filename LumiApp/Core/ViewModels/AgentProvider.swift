@@ -72,6 +72,21 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     /// Slash 命令服务
     let slashCommandService: SlashCommandService
 
+    /// 深度警告 ViewModel
+    let depthWarningViewModel: DepthWarningViewModel
+
+    /// 处理状态 ViewModel
+    let processingStateViewModel: ProcessingStateViewModel
+
+    /// 错误状态 ViewModel
+    let errorStateViewModel: ErrorStateViewModel
+
+    /// 权限请求 ViewModel
+    let permissionRequestViewModel: PermissionRequestViewModel
+
+    /// 思考状态 ViewModel
+    let thinkingStateViewModel: ThinkingStateViewModel
+
     // MARK: - 订阅管理
 
     private var cancellables = Set<AnyCancellable>()
@@ -81,29 +96,6 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
     /// 对话轮次事件流任务
     private var conversationTurnEventTask: Task<Void, Never>?
-
-    // MARK: - 聊天消息状态 (DevAssistant)
-
-    /// 是否正在处理
-    @Published public fileprivate(set) var isProcessing: Bool = false
-
-    /// 错误消息
-    @Published public fileprivate(set) var errorMessage: String?
-
-    /// 待处理权限请求
-    @Published public fileprivate(set) var pendingPermissionRequest: PermissionRequest?
-
-    /// 深度警告
-    @Published public fileprivate(set) var depthWarning: DepthWarning?
-
-    /// 最后收到心跳的时间（用于动画效果）
-    @Published public fileprivate(set) var lastHeartbeatTime: Date?
-
-    /// 是否正在思考（用于显示思考状态）
-    @Published public fileprivate(set) var isThinking: Bool = false
-
-    /// 当前思考过程文本
-    @Published public fileprivate(set) var thinkingText: String = ""
 
     // MARK: - 附件（图片上传）
 
@@ -145,7 +137,12 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         messageSenderViewModel: MessageSenderViewModel,
         projectViewModel: ProjectViewModel,
         conversationTurnViewModel: ConversationTurnViewModel,
-        slashCommandService: SlashCommandService
+        slashCommandService: SlashCommandService,
+        depthWarningViewModel: DepthWarningViewModel,
+        processingStateViewModel: ProcessingStateViewModel,
+        errorStateViewModel: ErrorStateViewModel,
+        permissionRequestViewModel: PermissionRequestViewModel,
+        thinkingStateViewModel: ThinkingStateViewModel
     ) {
         self.promptService = promptService
         self.registry = registry
@@ -158,6 +155,11 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         self.projectViewModel = projectViewModel
         self.conversationTurnViewModel = conversationTurnViewModel
         self.slashCommandService = slashCommandService
+        self.depthWarningViewModel = depthWarningViewModel
+        self.processingStateViewModel = processingStateViewModel
+        self.errorStateViewModel = errorStateViewModel
+        self.permissionRequestViewModel = permissionRequestViewModel
+        self.thinkingStateViewModel = thinkingStateViewModel
 
         // 监听会话选择变化
         setupConversationSelectionObserver()
@@ -370,10 +372,10 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         case let .streamFinished(message):
             // 流式响应结束，将思考过程附加到消息
             var finalMessage = message
-            if !thinkingText.isEmpty {
-                finalMessage.thinkingContent = thinkingText
+            if !thinkingStateViewModel.thinkingText.isEmpty {
+                finalMessage.thinkingContent = thinkingStateViewModel.thinkingText
                 if Self.verbose {
-                    os_log("\(Self.t)💭 保存思考过程到消息: \(self.thinkingText.prefix(50))...")
+                    os_log("\(Self.t)💭 保存思考过程到消息: \(self.thinkingStateViewModel.thinkingText.prefix(50))...")
                 }
             } else {
                 if Self.verbose {
@@ -482,42 +484,47 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
     /// 设置错误消息
     func setErrorMessage(_ message: String?) {
-        errorMessage = message
+        errorStateViewModel.setErrorMessage(message)
     }
 
     /// 设置是否正在处理
     func setIsProcessing(_ processing: Bool) {
-        isProcessing = processing
+        processingStateViewModel.setIsProcessing(processing)
     }
 
     /// 设置最后心跳时间
     func setLastHeartbeatTime(_ date: Date?) {
-        lastHeartbeatTime = date
+        processingStateViewModel.setLastHeartbeatTime(date)
     }
 
     /// 设置思考状态
     func setIsThinking(_ thinking: Bool) {
-        isThinking = thinking
+        thinkingStateViewModel.setIsThinking(thinking)
     }
 
     /// 追加思考文本
     func appendThinkingText(_ text: String) {
-        thinkingText += text
+        thinkingStateViewModel.appendThinkingText(text)
     }
 
     /// 设置思考文本
     func setThinkingText(_ text: String) {
-        thinkingText = text
+        thinkingStateViewModel.setThinkingText(text)
     }
 
     /// 设置待处理权限请求
     func setPendingPermissionRequest(_ request: PermissionRequest?) {
-        pendingPermissionRequest = request
+        permissionRequestViewModel.setPendingPermissionRequest(request)
     }
 
     /// 设置深度警告
     func setDepthWarning(_ warning: DepthWarning?) {
-        depthWarning = warning
+        depthWarningViewModel.setDepthWarning(warning)
+    }
+
+    /// 关闭深度警告
+    func dismissDepthWarning() {
+        depthWarningViewModel.dismissDepthWarning()
     }
 
     // MARK: - 业务方法
@@ -898,7 +905,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         os_log("\(Self.t)🛑 任务已取消")
         // 重置处理状态
         setIsProcessing(false)
-        pendingPermissionRequest = nil
+        permissionRequestViewModel.setPendingPermissionRequest(nil)
         // 添加取消提示消息
         let cancelMessage = languagePreference == .chinese ? "⚠️ 生成已取消" : "⚠️ Generation cancelled"
         appendMessage(ChatMessage(role: .assistant, content: cancelMessage))
@@ -939,7 +946,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         }
 
         // 清除之前的深度警告
-        depthWarning = nil
+        depthWarningViewModel.dismissDepthWarning()
 
         // 合并外部传入的图片和 pendingAttachments 中的图片
         let attachmentImages = pendingAttachments.compactMap { attachment -> ImageAttachment? in
@@ -950,8 +957,8 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         }
         let allImages = images + attachmentImages
 
-        isProcessing = false
-        errorMessage = nil
+        setIsProcessing(false)
+        setErrorMessage(nil)
         pendingAttachments.removeAll()
 
         // 检查是否为支持的斜杠命令（异步检查包括项目命令）
@@ -1010,9 +1017,9 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     // MARK: - 权限响应
 
     public func respondToPermissionRequest(allowed: Bool) {
-        guard let request = pendingPermissionRequest else { return }
+        guard let request = permissionRequestViewModel.pendingPermissionRequest else { return }
 
-        pendingPermissionRequest = nil
+        permissionRequestViewModel.setPendingPermissionRequest(nil)
 
         if allowed {
             // 批准后继续执行工具

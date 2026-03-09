@@ -36,6 +36,10 @@ struct ChatBubble: View {
     @State private var showRawMessage: Bool = false
     /// 智能体提供者（用于获取思考状态）
     @EnvironmentObject var agentProvider: AgentProvider
+    /// 思考状态 ViewModel
+    @EnvironmentObject var thinkingStateViewModel: ThinkingStateViewModel
+    /// 处理状态 ViewModel
+    @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
 
     // 判断是否是长消息
     private var isLongMessage: Bool {
@@ -64,7 +68,7 @@ struct ChatBubble: View {
         }
         // 如果是最后一条消息且正在流式传输，显示实时思考
         if isLastMessage {
-            return agentProvider.isThinking || !agentProvider.thinkingText.isEmpty
+            return thinkingStateViewModel.isThinking || !thinkingStateViewModel.thinkingText.isEmpty
         }
         return false
     }
@@ -76,7 +80,7 @@ struct ChatBubble: View {
             return storedThinking
         }
         // 否则使用实时的思考文本
-        return agentProvider.thinkingText
+        return thinkingStateViewModel.thinkingText
     }
 
     // 是否正在思考（用于动画）
@@ -86,7 +90,7 @@ struct ChatBubble: View {
             return false
         }
         // 否则使用实时的思考状态
-        return agentProvider.isThinking
+        return thinkingStateViewModel.isThinking
     }
 
     var body: some View {
@@ -190,6 +194,10 @@ struct AssistantMessageHeader: View {
     let isLongMessage: Bool
     /// 智能体提供者（用于获取心跳状态）
     @EnvironmentObject var agentProvider: AgentProvider
+    /// 处理状态 ViewModel
+    @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
+    /// 思考状态 ViewModel
+    @EnvironmentObject var thinkingStateViewModel: ThinkingStateViewModel
     @State private var isHovered: Bool = false
 
     var body: some View {
@@ -202,12 +210,12 @@ struct AssistantMessageHeader: View {
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
                 // 心跳动画指示器（当正在处理时显示）
-                if agentProvider.isProcessing {
+                if processingStateViewModel.isProcessing {
                     HeartbeatIndicator()
                 }
 
                 // 思考状态指示器
-                if agentProvider.isThinking {
+                if thinkingStateViewModel.isThinking {
                     ThinkingIndicator()
                 }
 
@@ -318,6 +326,7 @@ struct AssistantMessageHeader: View {
 /// 心跳动画指示器
 struct HeartbeatIndicator: View {
     @EnvironmentObject var agentProvider: AgentProvider
+    @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
     @State private var isAnimating = false
     @State private var pulseScale: CGFloat = 1.0
 
@@ -330,11 +339,11 @@ struct HeartbeatIndicator: View {
             .onAppear {
                 startAnimation()
             }
-            .onChange(of: agentProvider.lastHeartbeatTime) { _, _ in
+            .onChange(of: processingStateViewModel.lastHeartbeatTime) { _, _ in
                 // 收到心跳时触发脉冲动画
                 triggerPulse()
             }
-            .onChange(of: agentProvider.isProcessing) { _, isProcessing in
+            .onChange(of: processingStateViewModel.isProcessing) { _, isProcessing in
                 if isProcessing {
                     startAnimation()
                 } else {
@@ -344,7 +353,7 @@ struct HeartbeatIndicator: View {
     }
 
     private func startAnimation() {
-        guard agentProvider.isProcessing else { return }
+        guard processingStateViewModel.isProcessing else { return }
 
         // 基础呼吸动画
         withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {

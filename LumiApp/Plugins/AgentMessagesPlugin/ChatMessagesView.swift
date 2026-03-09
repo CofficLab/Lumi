@@ -15,6 +15,10 @@ struct ChatMessagesView: View, SuperLog {
     @EnvironmentObject var conversationViewModel: ConversationViewModel
     /// 智能体提供者
     @EnvironmentObject var agentProvider: AgentProvider
+    /// 处理状态 ViewModel
+    @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
+    /// 权限请求 ViewModel
+    @EnvironmentObject var permissionRequestViewModel: PermissionRequestViewModel
 
     /// 非系统消息
     private var nonSystemMessages: [ChatMessage] {
@@ -76,22 +80,28 @@ extension ChatMessagesView {
             // 优化：监听最后一条消息内容变化（流式更新时）
             .onChange(of: nonSystemMessages.last?.content) { _, _ in
                 // 只在有流式更新时轻微滚动
-                if agentProvider.isProcessing {
+                if processingStateViewModel.isProcessing {
                     scrollToBottomIfNeeded(proxy: proxy)
                 }
             }
             .overlay {
-                if let request = agentProvider.pendingPermissionRequest {
-                    PermissionRequestView(
-                        request: request,
-                        onAllow: {
-                            agentProvider.respondToPermissionRequest(allowed: true)
-                        },
-                        onDeny: {
-                            agentProvider.respondToPermissionRequest(allowed: false)
-                        }
-                    )
+                VStack(spacing: 8) {
+                    DepthWarningBanner()
+                    
+                    if let request = permissionRequestViewModel.pendingPermissionRequest {
+                        PermissionRequestView(
+                            request: request,
+                            onAllow: {
+                                agentProvider.respondToPermissionRequest(allowed: true)
+                            },
+                            onDeny: {
+                                agentProvider.respondToPermissionRequest(allowed: false)
+                            }
+                        )
+                    }
                 }
+                .padding()
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
         }
     }
