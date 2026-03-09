@@ -52,6 +52,7 @@ final class StreamState: Sendable {
 private struct TurnContext {
     var currentDepth: Int = 0
     var pendingToolCalls: [ToolCall] = []
+    var currentProviderId: String = ""
 }
 
 /// 对话轮次事件
@@ -130,13 +131,21 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
 
         var context = turnContexts[conversationId] ?? TurnContext()
         context.currentDepth = depth
+        context.currentProviderId = config.providerId
         turnContexts[conversationId] = context
 
         if Self.verbose {
             os_log("\(Self.t)🚀 [\(conversationId)] 开始处理轮次 (深度：\(depth), 模式：\(chatMode.displayName), 流式：\(self.enableStreaming))")
         }
 
-        let availableTools: [AgentTool] = (chatMode == .build) ? tools : []
+        let availableTools: [AgentTool] = chatMode.allowsTools
+            ? tools.filter { tool in
+                if tool.name == CreateAndAssignTaskTool.toolName {
+                    return chatMode.allowsMultiWorker
+                }
+                return true
+            }
+            : []
 
         do {
             let responseMsg: ChatMessage
@@ -382,12 +391,13 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
         languagePreference: LanguagePreference
     ) async {
         do {
-            let result = try await toolExecutionService.executeTool(toolCall)
+            let normalizedToolCall = normalizeToolCallForExecution(toolCall, conversationId: conversationId)
+            let result = try await toolExecutionService.executeTool(normalizedToolCall)
 
             let resultMsg = ChatMessage(
                 role: .user,
                 content: result,
-                toolCallID: toolCall.id
+                toolCallID: normalizedToolCall.id
             )
 
             eventContinuation?.yield(.toolResultReceived(resultMsg, conversationId: conversationId))
@@ -418,6 +428,33 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
         )
     }
 
+    private func normalizeToolCallForExecution(_ toolCall: ToolCall, conversationId: UUID) -> ToolCall {
+        guard toolCall.name == "create_and_assign_task",
+              let providerId = turnContexts[conversationId]?.currentProviderId,
+              !providerId.isEmpty else {
+            return toolCall
+        }
+
+        guard let data = toolCall.arguments.data(using: .utf8),
+              var json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
+            return toolCall
+        }
+
+        // Worker provider is always aligned with current manager provider.
+        json["providerId"] = providerId
+
+        guard let normalizedData = try? JSONSerialization.data(withJSONObject: json),
+              let normalizedArguments = String(data: normalizedData, encoding: .utf8) else {
+            return toolCall
+        }
+
+        return ToolCall(
+            id: toolCall.id,
+            name: toolCall.name,
+            arguments: normalizedArguments
+        )
+    }
+
     // MARK: - 工具 Emoji
 
     private func toolEmoji(for toolName: String) -> String {
@@ -426,6 +463,7 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
         case "write_file": return "✏️"
         case "list_directory": return "📁"
         case "run_command": return "⚡"
+        case "create_and_assign_task": return "🧩"
         default: return "🔧"
         }
     }

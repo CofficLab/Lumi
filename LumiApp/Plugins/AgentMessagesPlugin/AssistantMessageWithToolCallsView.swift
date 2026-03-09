@@ -3,8 +3,10 @@ import SwiftUI
 /// 助手消息与工具调用视图 - 显示助手回复及工具调用列表
 struct AssistantMessageWithToolCallsView: View {
     let message: ChatMessage
+    let toolOutputMessages: [ChatMessage]
     @ObservedObject private var expansionState = MessageExpansionState.shared
     @State private var showRawMessage: Bool = false
+    @State private var isToolDetailsExpanded: Bool = false
 
     // 判断是否是长消息
     private var isLongMessage: Bool {
@@ -20,8 +22,8 @@ struct AssistantMessageWithToolCallsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // 显示助手的文本内容（如果有）
-            if !message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            // 显示助手的文本内容（如果有且不是工具摘要占位）
+            if !message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !shouldHideMessageBody {
                 MarkdownMessageView(
                     message: message,
                     showRawMessage: showRawMessage,
@@ -36,29 +38,119 @@ struct AssistantMessageWithToolCallsView: View {
                 .messageBubbleStyle(role: message.role, isError: message.isError)
             }
 
-            // 显示工具调用列表
+            // 显示工具执行分组（默认折叠）
             if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    // 工具调用标题
-                    HStack(spacing: 6) {
-                        Image(systemName: "wrench.and.screwdriver.fill")
-                            .font(.system(size: 12))
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        Text("正在调用工具")
-                            .font(DesignTokens.Typography.caption1)
-                            .fontWeight(.medium)
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                    }
-                    .padding(.bottom, 2)
+                VStack(alignment: .leading, spacing: 8) {
+                    Button {
+                        withAnimation(.spring(response: 0.28, dampingFraction: 0.8)) {
+                            isToolDetailsExpanded.toggle()
+                        }
+                    } label: {
+                        HStack(spacing: 8) {
+                            Text(executionSummaryTitle(for: toolCalls))
+                                .font(DesignTokens.Typography.body)
+                                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                                .lineLimit(1)
 
-                    // 工具调用列表
-                    ForEach(Array(toolCalls.enumerated()), id: \.element.id) { index, toolCall in
-                        ToolCallView(toolCall: toolCall, index: index)
+                            Spacer()
+
+                            Image(systemName: isToolDetailsExpanded ? "chevron.up" : "chevron.down")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.08))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .stroke(DesignTokens.Color.semantic.textTertiary.opacity(0.22), lineWidth: 1)
+                                )
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    if isToolDetailsExpanded {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "wrench.and.screwdriver.fill")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                Text("正在调用工具")
+                                    .font(DesignTokens.Typography.caption1)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            }
+                            .padding(.bottom, 2)
+
+                            ForEach(Array(toolCalls.enumerated()), id: \.element.id) { index, toolCall in
+                                ToolCallView(toolCall: toolCall, index: index)
+                            }
+
+                            if !toolOutputMessages.isEmpty {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "gearshape.2.fill")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                    Text(String(localized: "Tool Output", table: "DevAssistant"))
+                                        .font(DesignTokens.Typography.caption1)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                }
+                                .padding(.top, 8)
+                                .padding(.bottom, 2)
+
+                                ForEach(toolOutputMessages, id: \.id) { output in
+                                    ToolOutputView(
+                                        message: output,
+                                        toolType: toolType(for: output)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
-                .padding(.top, message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0 : 8)
+                .padding(.top, (message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || shouldHideMessageBody) ? 0 : 8)
             }
         }
+    }
+
+    private var trimmedContent: String {
+        message.content.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var shouldHideMessageBody: Bool {
+        guard message.toolCalls != nil else { return false }
+        guard !trimmedContent.isEmpty else { return false }
+
+        let lines = trimmedContent
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        guard let first = lines.first else { return false }
+        let isToolSummaryPrefix = first.hasPrefix("正在执行 ") || first.hasPrefix("Executing ")
+        guard isToolSummaryPrefix else { return false }
+
+        let toolCount = message.toolCalls?.count ?? 0
+        return lines.count <= toolCount + 1
+    }
+
+    private func executionSummaryTitle(for toolCalls: [ToolCall]) -> String {
+        if shouldHideMessageBody {
+            let firstLine = trimmedContent.components(separatedBy: .newlines).first ?? trimmedContent
+            return firstLine
+        }
+        return "正在执行 \(toolCalls.count) 个工具："
+    }
+
+    private func toolType(for output: ChatMessage) -> ToolOutputView.ToolType? {
+        guard let toolCallID = output.toolCallID,
+              let toolCall = message.toolCalls?.first(where: { $0.id == toolCallID }) else {
+            return .unknown
+        }
+        return toolCall.toolType
     }
 }
 
@@ -73,7 +165,7 @@ struct AssistantMessageWithToolCallsView: View {
         toolCalls: toolCalls
     )
 
-    return AssistantMessageWithToolCallsView(message: message)
+    return AssistantMessageWithToolCallsView(message: message, toolOutputMessages: [])
         .padding()
         .frame(width: 600)
         .background(Color.black)
@@ -89,7 +181,7 @@ struct AssistantMessageWithToolCallsView: View {
         toolCalls: toolCalls
     )
 
-    return AssistantMessageWithToolCallsView(message: message)
+    return AssistantMessageWithToolCallsView(message: message, toolOutputMessages: [])
         .padding()
         .frame(width: 600)
         .background(Color.black)

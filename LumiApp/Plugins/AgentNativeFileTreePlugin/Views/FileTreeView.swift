@@ -72,9 +72,11 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
     var onSelect: ((URL) -> Void)?
     var onDelete: ((URL, Bool) -> Void)?
     var onRename: ((URL, String) -> Void)?
+    var currentRootURL: URL?
     private var renamingNodeURL: URL?
     
     func setRootURL(_ url: URL) {
+        currentRootURL = url
         Task.detached(priority: .userInitiated) {
             let urls = (try? FileNode.sortedContents(at: url)) ?? []
             await MainActor.run {
@@ -688,7 +690,7 @@ struct FileTreeView: NSViewRepresentable {
     }
     
     func updateNSView(_ nsView: NSScrollView, context: Context) {
-        if let url = rootURL, context.coordinator.rootNodes.isEmpty {
+        if let url = rootURL, context.coordinator.currentRootURL?.standardizedFileURL != url.standardizedFileURL {
             context.coordinator.setRootURL(url)
         }
     }

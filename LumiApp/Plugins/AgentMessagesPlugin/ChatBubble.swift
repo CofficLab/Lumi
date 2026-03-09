@@ -32,12 +32,20 @@ struct ChatBubble: View {
     let message: ChatMessage
     /// 是否是最后一条消息
     let isLastMessage: Bool
+    /// 与当前 assistant 工具调用关联的工具输出（仅用于 UI 分组展示）
+    let relatedToolOutputs: [ChatMessage]
     @ObservedObject private var expansionState = MessageExpansionState.shared
     @State private var showRawMessage: Bool = false
     /// 智能体提供者（用于获取思考状态）
     @EnvironmentObject var agentProvider: AgentProvider
     /// 思考状态 ViewModel
     @EnvironmentObject var thinkingStateViewModel: ThinkingStateViewModel
+
+    init(message: ChatMessage, isLastMessage: Bool, relatedToolOutputs: [ChatMessage] = []) {
+        self.message = message
+        self.isLastMessage = isLastMessage
+        self.relatedToolOutputs = relatedToolOutputs
+    }
     /// 处理状态 ViewModel
     @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
 
@@ -126,7 +134,10 @@ struct ChatBubble: View {
                         }
 
                         if hasToolCalls {
-                            AssistantMessageWithToolCallsView(message: message)
+                            AssistantMessageWithToolCallsView(
+                                message: message,
+                                toolOutputMessages: relatedToolOutputs
+                            )
                         } else {
                             MarkdownMessageView(
                                 message: message,
@@ -141,6 +152,12 @@ struct ChatBubble: View {
                             )
                             .messageBubbleStyle(role: message.role, isError: message.isError)
                         }
+                        
+                        // 消息工具栏（底部按钮行）
+                        MessageToolbarView(
+                            message: message,
+                            isAssistantMessage: true
+                        )
                     }
                 } else if message.toolCallID != nil {
                     // 工具输出
@@ -149,16 +166,29 @@ struct ChatBubble: View {
                         message: message,
                         toolType: inferToolType(from: message)
                     )
+                    // 工具输出也显示工具栏
+                    MessageToolbarView(
+                        message: message,
+                        isAssistantMessage: false
+                    )
                 } else {
                     // 用户消息
-                    MarkdownMessageView(
-                        message: message,
-                        showRawMessage: showRawMessage,
-                        isCollapsible: false,
-                        isExpanded: true,
-                        onToggleExpand: {}
-                    )
-                    .messageBubbleStyle(role: message.role, isError: message.isError)
+                    VStack(alignment: .leading, spacing: 4) {
+                        MarkdownMessageView(
+                            message: message,
+                            showRawMessage: showRawMessage,
+                            isCollapsible: false,
+                            isExpanded: true,
+                            onToggleExpand: {}
+                        )
+                        .messageBubbleStyle(role: message.role, isError: message.isError)
+                        
+                        // 消息工具栏（底部按钮行）
+                        MessageToolbarView(
+                            message: message,
+                            isAssistantMessage: false
+                        )
+                    }
                 }
             }
 
@@ -243,7 +273,7 @@ struct AssistantMessageHeader: View {
             HStack(alignment: .center, spacing: 12) {
                 // 性能指标组
                 HStack(alignment: .center, spacing: 8) {
-                    // 耗时进度条（如果有TTFT和总耗时）
+                    // 耗时进度条（如果有 TTFT 和总耗时）
                     if let ttft = message.timeToFirstToken, let latency = message.latency {
                         LatencyProgressBar(ttft: ttft, totalLatency: latency)
                     }

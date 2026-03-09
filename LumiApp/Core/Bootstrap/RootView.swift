@@ -108,7 +108,7 @@ final class RootViewContainer: ObservableObject {
         self.slashCommandService = SlashCommandService()
 
         // 初始化工具服务
-        self.toolService = ToolService()
+        self.toolService = ToolService(llmService: llmService)
 
         // 初始化供应商注册表
         self.providerRegistry = ProviderRegistry()
