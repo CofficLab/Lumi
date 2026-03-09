@@ -133,8 +133,11 @@ final class MessageViewModel: ObservableObject, SuperLog {
             oldestLoadedTimestamp = firstMessage.timestamp
         }
 
+        // 重置标题生成标志：如果会话已有用户消息，则标记为已生成标题，避免重复生成
+        hasGeneratedTitle = messages.contains { $0.role == .user }
+
         if Self.verbose {
-            os_log("\(Self.t)📄 [\(conversationId)] 分页加载完成: \(self.messages.count)/\(self.totalMessageCount) 条, hasMore: \(self.hasMoreMessages)")
+            os_log("\(Self.t)📄 [\(conversationId)] 分页加载完成: \(self.messages.count)/\(self.totalMessageCount) 条, hasMore: \(self.hasMoreMessages), hasGeneratedTitle: \(self.hasGeneratedTitle)")
         }
 
         return !messages.isEmpty || totalMessageCount == 0
