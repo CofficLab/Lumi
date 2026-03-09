@@ -1,6 +1,21 @@
 import AppKit
 import SwiftUI
 
+/// 支持在列表层捕获 Enter 键触发行内重命名
+@MainActor
+final class FileTreeOutlineView: NSOutlineView {
+    var onEnterKey: (() -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+        // Return(36) / Numpad Enter(76)
+        if event.keyCode == 36 || event.keyCode == 76 {
+            onEnterKey?()
+            return
+        }
+        super.keyDown(with: event)
+    }
+}
+
 /// 文件树节点
 @MainActor
 class FileNode: NSObject {
@@ -51,12 +66,13 @@ class FileNode: NSObject {
 
 /// NSOutlineView 数据源和代理
 @MainActor
-class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelegate, NSMenuDelegate {
+class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelegate, NSMenuDelegate, NSTextFieldDelegate {
     var rootNodes: [FileNode] = []
     weak var outlineView: NSOutlineView?
     var onSelect: ((URL) -> Void)?
     var onDelete: ((URL, Bool) -> Void)?
     var onRename: ((URL, String) -> Void)?
+    private var renamingNodeURL: URL?
     
     func setRootURL(_ url: URL) {
         Task.detached(priority: .userInitiated) {
@@ -120,18 +136,53 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         icon.frame = NSRect(x: 0, y: 0, width: 14, height: 14)
         stack.addArrangedSubview(icon)
         
-        // 名称
-        let label = NSTextField(labelWithString: node.name)
-        label.font = .systemFont(ofSize: 11)
-        label.textColor = .labelColor
-        label.lineBreakMode = .byTruncatingMiddle
-        stack.addArrangedSubview(label)
+        // 名称（重命名时切为可编辑输入框）
+        let textField: NSTextField
+        if renamingNodeURL == node.url {
+            let editor = NSTextField(string: node.name)
+            editor.font = .systemFont(ofSize: 11)
+            editor.isBordered = false
+            editor.drawsBackground = false
+            editor.focusRingType = .none
+            editor.lineBreakMode = .byClipping
+            editor.setContentHuggingPriority(.defaultLow, for: .horizontal)
+            editor.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            editor.delegate = self
+            editor.target = self
+            editor.action = #selector(handleRenameTextFieldAction(_:))
+            textField = editor
+            cell.textField = editor
+
+            DispatchQueue.main.async { [weak self, weak outlineView, weak editor] in
+                guard
+                    let self,
+                    let outlineView,
+                    let editor,
+                    self.renamingNodeURL == node.url
+                else { return }
+
+                outlineView.window?.makeFirstResponder(editor)
+                if let fieldEditor = editor.currentEditor() {
+                    fieldEditor.selectedRange = NSRange(location: 0, length: (editor.stringValue as NSString).length)
+                }
+            }
+        } else {
+            let label = NSTextField(labelWithString: node.name)
+            label.font = .systemFont(ofSize: 11)
+            label.textColor = .labelColor
+            label.lineBreakMode = .byTruncatingMiddle
+            label.setContentHuggingPriority(.defaultLow, for: .horizontal)
+            label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            textField = label
+            cell.textField = label
+        }
+        stack.addArrangedSubview(textField)
         
         cell.addSubview(stack)
         stack.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             stack.leadingAnchor.constraint(equalTo: cell.leadingAnchor),
-            stack.trailingAnchor.constraint(lessThanOrEqualTo: cell.trailingAnchor),
+            stack.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -4),
             stack.centerYAnchor.constraint(equalTo: cell.centerYAnchor)
         ])
         
@@ -143,17 +194,7 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
     }
     
     func outlineView(_ outlineView: NSOutlineView, shouldSelectItem item: Any) -> Bool {
-        guard let node = item as? FileNode else { return false }
-        
-        if node.isDirectory {
-            if outlineView.isItemExpanded(item) {
-                outlineView.collapseItem(item)
-            } else {
-                outlineView.expandItem(item)
-            }
-            return false
-        }
-        return true
+        item is FileNode
     }
     
     func outlineViewSelectionDidChange(_ notification: Notification) {
@@ -220,7 +261,6 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         )
         copyPathItem.target = self
         copyPathItem.representedObject = node
-        copyPathItem.image = NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: nil)
         menu.addItem(copyPathItem)
         
         // 复制相对路径
@@ -303,46 +343,122 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
     
     @objc private func handleRename(_ sender: NSMenuItem) {
         guard let node = sender.representedObject as? FileNode else { return }
-        
-        let alert = NSAlert()
-        alert.messageText = "重命名"
-        alert.informativeText = "请输入新的文件名："
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: "确定")
-        alert.addButton(withTitle: "取消")
-        
-        let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
-        textField.stringValue = node.name
-        alert.accessoryView = textField
-        
-        let response = alert.runModal()
-        if response == .alertFirstButtonReturn {
-            let newName = textField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-            
-            if newName.isEmpty || newName == node.name {
-                return
-            }
-            
-            let newURL = node.url.deletingLastPathComponent().appendingPathComponent(newName)
+        beginInlineRename(for: node)
+    }
 
-            Task.detached(priority: .userInitiated) {
-                do {
-                    try FileManager.default.moveItem(at: node.url, to: newURL)
-                    await MainActor.run {
-                        self.onRename?(newURL, newName)
-                        self.refreshNode(node, withNewURL: newURL)
-                    }
-                } catch {
-                    await MainActor.run {
-                        let errorAlert = NSAlert()
-                        errorAlert.messageText = "重命名失败"
-                        errorAlert.informativeText = error.localizedDescription
-                        errorAlert.alertStyle = .critical
-                        errorAlert.runModal()
-                    }
+    @objc private func handleRenameTextFieldAction(_ sender: NSTextField) {
+        commitInlineRename(newName: sender.stringValue)
+    }
+
+    func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        if commandSelector == #selector(NSResponder.cancelOperation(_:)) {
+            cancelInlineRename()
+            return true
+        }
+        return false
+    }
+
+    func beginInlineRenameForSelectedRow() {
+        guard
+            let outlineView,
+            outlineView.selectedRow >= 0,
+            let node = outlineView.item(atRow: outlineView.selectedRow) as? FileNode
+        else {
+            return
+        }
+        beginInlineRename(for: node)
+    }
+
+    private func beginInlineRename(for node: FileNode) {
+        renamingNodeURL = node.url
+        guard let outlineView else { return }
+
+        let row = outlineView.row(forItem: node)
+        if row >= 0 {
+            outlineView.reloadData(forRowIndexes: IndexSet(integer: row), columnIndexes: IndexSet(integer: 0))
+        } else {
+            outlineView.reloadData()
+        }
+    }
+
+    private func cancelInlineRename() {
+        guard let currentURL = renamingNodeURL else { return }
+        renamingNodeURL = nil
+        reloadRow(for: currentURL)
+    }
+
+    private func commitInlineRename(newName rawName: String) {
+        guard let currentURL = renamingNodeURL else { return }
+        let newName = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        renamingNodeURL = nil
+
+        guard let node = node(for: currentURL) else {
+            outlineView?.reloadData()
+            return
+        }
+
+        guard !newName.isEmpty, newName != node.name else {
+            reloadRow(for: currentURL)
+            return
+        }
+
+        let newURL = node.url.deletingLastPathComponent().appendingPathComponent(newName)
+        Task.detached(priority: .userInitiated) {
+            do {
+                try FileManager.default.moveItem(at: node.url, to: newURL)
+                await MainActor.run {
+                    self.onRename?(newURL, newName)
+                    self.refreshNode(node, withNewURL: newURL)
+                }
+            } catch {
+                await MainActor.run {
+                    self.reloadRow(for: currentURL)
+                    let errorAlert = NSAlert()
+                    errorAlert.messageText = "重命名失败"
+                    errorAlert.informativeText = error.localizedDescription
+                    errorAlert.alertStyle = .critical
+                    errorAlert.runModal()
                 }
             }
         }
+    }
+
+    private func reloadRow(for nodeURL: URL) {
+        guard let outlineView, let node = node(for: nodeURL) else {
+            outlineView?.reloadData()
+            return
+        }
+        let row = outlineView.row(forItem: node)
+        if row >= 0 {
+            outlineView.reloadData(forRowIndexes: IndexSet(integer: row), columnIndexes: IndexSet(integer: 0))
+        } else {
+            outlineView.reloadData()
+        }
+    }
+
+    private func node(for url: URL) -> FileNode? {
+        for rootNode in rootNodes {
+            if rootNode.url == url {
+                return rootNode
+            }
+            if let found = findNodeRecursive(parent: rootNode, targetURL: url) {
+                return found
+            }
+        }
+        return nil
+    }
+
+    private func findNodeRecursive(parent: FileNode, targetURL: URL) -> FileNode? {
+        for child in parent.children {
+            if child.url == targetURL {
+                return child
+            }
+            if let found = findNodeRecursive(parent: child, targetURL: targetURL) {
+                return found
+            }
+        }
+        return nil
     }
     
     private func refreshNode(_ oldNode: FileNode, withNewURL newURL: URL) {
@@ -360,6 +476,13 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
                 rootNodes[index] = newNode
             }
             outlineView?.reloadData()
+        }
+
+        // 重命名后保持选中项
+        if let outlineView {
+            let row = outlineView.row(forItem: newNode)
+            guard row >= 0 else { return }
+            outlineView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
         }
     }
     
@@ -500,7 +623,7 @@ class FileTreeRowView: NSTableRowView {
             addTrackingArea(area)
         }
         
-        if let window = window, let area = trackingArea {
+        if let window = window {
             let mouseLocation = window.mouseLocationOutsideOfEventStream
             let pointInBounds = convert(mouseLocation, from: nil)
             isHovered = bounds.contains(pointInBounds)
@@ -533,9 +656,12 @@ struct FileTreeView: NSViewRepresentable {
         scrollView.borderType = .noBorder
         scrollView.drawsBackground = false
         
-        let outlineView = NSOutlineView()
+        let outlineView = FileTreeOutlineView()
         outlineView.dataSource = context.coordinator
         outlineView.delegate = context.coordinator
+        outlineView.onEnterKey = { [weak coordinator = context.coordinator] in
+            coordinator?.beginInlineRenameForSelectedRow()
+        }
         
         // 启用右键菜单
         let menu = NSMenu()
