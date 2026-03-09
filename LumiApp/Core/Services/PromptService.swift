@@ -28,6 +28,7 @@ actor PromptService: SuperLog {
 
     You can also delegate specialist subtasks with:
     - create_and_assign_task(workerType, taskDescription, context?, providerId?, model?)
+      Note: worker provider is locked to your current manager provider; model may differ.
 
     Available worker types:
     1. code_expert

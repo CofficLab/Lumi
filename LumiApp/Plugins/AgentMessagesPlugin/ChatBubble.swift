@@ -32,12 +32,20 @@ struct ChatBubble: View {
     let message: ChatMessage
     /// 是否是最后一条消息
     let isLastMessage: Bool
+    /// 与当前 assistant 工具调用关联的工具输出（仅用于 UI 分组展示）
+    let relatedToolOutputs: [ChatMessage]
     @ObservedObject private var expansionState = MessageExpansionState.shared
     @State private var showRawMessage: Bool = false
     /// 智能体提供者（用于获取思考状态）
     @EnvironmentObject var agentProvider: AgentProvider
     /// 思考状态 ViewModel
     @EnvironmentObject var thinkingStateViewModel: ThinkingStateViewModel
+
+    init(message: ChatMessage, isLastMessage: Bool, relatedToolOutputs: [ChatMessage] = []) {
+        self.message = message
+        self.isLastMessage = isLastMessage
+        self.relatedToolOutputs = relatedToolOutputs
+    }
     /// 处理状态 ViewModel
     @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
 
@@ -126,7 +134,10 @@ struct ChatBubble: View {
                         }
 
                         if hasToolCalls {
-                            AssistantMessageWithToolCallsView(message: message)
+                            AssistantMessageWithToolCallsView(
+                                message: message,
+                                toolOutputMessages: relatedToolOutputs
+                            )
                         } else {
                             MarkdownMessageView(
                                 message: message,

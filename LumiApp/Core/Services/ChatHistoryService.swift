@@ -88,14 +88,30 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
     }
 
     private func notifyConversationChanged(type: ConversationChangeType, conversationId: UUID) {
-        NotificationCenter.default.post(
-            name: .conversationDidChange,
-            object: nil,
-            userInfo: [
-                ConversationChangeUserInfoKey.type: type.rawValue,
-                ConversationChangeUserInfoKey.conversationId: conversationId.uuidString,
-            ]
-        )
+        let userInfo: [String: String] = [
+            ConversationChangeUserInfoKey.type: type.rawValue,
+            ConversationChangeUserInfoKey.conversationId: conversationId.uuidString,
+        ]
+
+        let postOnCurrentThread = {
+            NotificationCenter.default.post(
+                name: .conversationDidChange,
+                object: nil,
+                userInfo: userInfo
+            )
+        }
+
+        if Thread.isMainThread {
+            postOnCurrentThread()
+        } else {
+            Task { @MainActor in
+                NotificationCenter.default.post(
+                    name: .conversationDidChange,
+                    object: nil,
+                    userInfo: userInfo
+                )
+            }
+        }
     }
 
     // MARK: - 创建对话

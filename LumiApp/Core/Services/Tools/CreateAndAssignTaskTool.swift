@@ -67,7 +67,7 @@ struct CreateAndAssignTaskTool: AgentTool, SuperLog {
         }
 
         let context = arguments["context"]?.value as? String
-        let preferredProviderId = arguments["providerId"]?.value as? String
+        let managerProviderId = arguments["providerId"]?.value as? String
         let preferredModel = arguments["model"]?.value as? String
 
         let fullTask: String
@@ -78,13 +78,13 @@ struct CreateAndAssignTaskTool: AgentTool, SuperLog {
         }
 
         guard let config = WorkerLLMConfigResolver.resolve(
-            preferredProviderId: preferredProviderId,
+            managerProviderId: managerProviderId,
             preferredModel: preferredModel
         ) else {
             throw NSError(
                 domain: "CreateAndAssignTaskTool",
                 code: 401,
-                userInfo: [NSLocalizedDescriptionKey: "No available LLM API key for worker execution"]
+                userInfo: [NSLocalizedDescriptionKey: "No available LLM API key for manager provider"]
             )
         }
 
@@ -113,39 +113,33 @@ struct CreateAndAssignTaskTool: AgentTool, SuperLog {
 
 private enum WorkerLLMConfigResolver {
     static func resolve(
-        preferredProviderId: String?,
+        managerProviderId: String?,
         preferredModel: String?
     ) -> LLMConfig? {
+        guard let managerProviderId, !managerProviderId.isEmpty else {
+            return nil
+        }
+
         let registry = ProviderRegistry()
-        let providers = registry.allProviders()
-
-        var candidateProviderIDs: [String] = []
-        if let preferredProviderId, !preferredProviderId.isEmpty {
-            candidateProviderIDs.append(preferredProviderId)
-        }
-        candidateProviderIDs.append(contentsOf: providers.map(\.id))
-
-        var seen = Set<String>()
-        for providerId in candidateProviderIDs where !seen.contains(providerId) {
-            seen.insert(providerId)
-            guard let providerType = registry.providerType(forId: providerId) else { continue }
-
-            let apiKey = UserDefaults.standard.string(forKey: providerType.apiKeyStorageKey) ?? ""
-            if apiKey.isEmpty { continue }
-
-            let storedModel = UserDefaults.standard.string(forKey: providerType.modelStorageKey)
-            let model = firstNonEmpty([preferredModel, storedModel, providerType.defaultModel]) ?? providerType.defaultModel
-
-            return LLMConfig(
-                apiKey: apiKey,
-                model: model,
-                providerId: providerId,
-                temperature: nil,
-                maxTokens: nil
-            )
+        guard let providerType = registry.providerType(forId: managerProviderId) else {
+            return nil
         }
 
-        return nil
+        let apiKey = UserDefaults.standard.string(forKey: providerType.apiKeyStorageKey) ?? ""
+        if apiKey.isEmpty {
+            return nil
+        }
+
+        let storedModel = UserDefaults.standard.string(forKey: providerType.modelStorageKey)
+        let model = firstNonEmpty([preferredModel, storedModel, providerType.defaultModel]) ?? providerType.defaultModel
+
+        return LLMConfig(
+            apiKey: apiKey,
+            model: model,
+            providerId: managerProviderId,
+            temperature: nil,
+            maxTokens: nil
+        )
     }
 
     private static func firstNonEmpty(_ values: [String?]) -> String? {
