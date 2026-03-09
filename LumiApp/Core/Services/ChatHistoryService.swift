@@ -3,6 +3,51 @@ import MagicKit
 import OSLog
 import SwiftData
 
+extension Notification.Name {
+    static let conversationDidChange = Notification.Name("ChatHistoryService.ConversationDidChange")
+}
+
+enum ConversationChangeType: String {
+    case created
+    case updated
+    case deleted
+}
+
+enum ConversationChangeUserInfoKey {
+    static let type = "type"
+    static let conversationId = "conversationId"
+}
+
+/// 模型性能统计数据
+struct ModelPerformanceStats {
+    let providerId: String
+    let modelName: String
+    var sampleCount: Int = 0
+    var totalLatency: Double = 0
+    var totalTTFT: Double = 0
+    var ttftCount: Int = 0
+    var totalInputTokens: Int = 0
+    var inputTokenCount: Int = 0
+    var totalOutputTokens: Int = 0
+    var outputTokenCount: Int = 0
+    
+    var avgLatency: Double {
+        sampleCount > 0 ? totalLatency / Double(sampleCount) : 0
+    }
+    
+    var avgTTFT: Double {
+        ttftCount > 0 ? totalTTFT / Double(ttftCount) : 0
+    }
+    
+    var avgInputTokens: Int {
+        inputTokenCount > 0 ? totalInputTokens / inputTokenCount : 0
+    }
+    
+    var avgOutputTokens: Int {
+        outputTokenCount > 0 ? totalOutputTokens / outputTokenCount : 0
+    }
+}
+
 /// 聊天历史服务 - 使用 SwiftData 存储对话
 final class ChatHistoryService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "💾"
@@ -11,6 +56,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
     private let modelContainer: ModelContainer
     private let modelContext: ModelContext
     private let llmService: LLMService
+    private let storageQueue = DispatchQueue(label: "com.coffic.lumi.chat-history.storage", qos: .utility)
 
     /// 使用 LLM 服务和模型容器初始化
     init(llmService: LLMService, modelContainer: ModelContainer) {
@@ -41,6 +87,33 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         }
     }
 
+    private func notifyConversationChanged(type: ConversationChangeType, conversationId: UUID) {
+        let userInfo: [String: String] = [
+            ConversationChangeUserInfoKey.type: type.rawValue,
+            ConversationChangeUserInfoKey.conversationId: conversationId.uuidString,
+        ]
+
+        let postOnCurrentThread = {
+            NotificationCenter.default.post(
+                name: .conversationDidChange,
+                object: nil,
+                userInfo: userInfo
+            )
+        }
+
+        if Thread.isMainThread {
+            postOnCurrentThread()
+        } else {
+            Task { @MainActor in
+                NotificationCenter.default.post(
+                    name: .conversationDidChange,
+                    object: nil,
+                    userInfo: userInfo
+                )
+            }
+        }
+    }
+
     // MARK: - 创建对话
 
     /// 创建新对话
@@ -53,6 +126,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         )
 
         saveConversation(conversation)
+        notifyConversationChanged(type: .created, conversationId: conversation.id)
 
         if Self.verbose {
             os_log("\(Self.t)✨ 创建新对话：\(title)")
@@ -69,6 +143,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         conversation.updatedAt = Date()
 
         saveConversation(conversation)
+        notifyConversationChanged(type: .updated, conversationId: conversation.id)
 
         if Self.verbose {
             os_log("\(Self.t)✏️ 对话标题已更新：\(newTitle)")
@@ -243,13 +318,160 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         }
     }
 
+    /// 后台队列保存消息，避免阻塞主线程
+    /// - Parameters:
+    ///   - message: 要保存的消息
+    ///   - conversationId: 对话 ID
+    /// - Returns: 保存后的消息
+    func saveMessageAsync(_ message: ChatMessage, toConversationId conversationId: UUID) async -> ChatMessage? {
+        await withCheckedContinuation { continuation in
+            storageQueue.async { [weak self] in
+                guard let self = self else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                // 在后台队列中使用独立 context，避免与主线程 context 争用
+                let context = ModelContext(self.modelContainer)
+                let descriptor = FetchDescriptor<Conversation>(
+                    predicate: #Predicate { $0.id == conversationId }
+                )
+
+                guard let fetchedConversation = try? context.fetch(descriptor).first else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                let messageEntity = ChatMessageEntity.fromChatMessage(message)
+                messageEntity.conversation = fetchedConversation
+                fetchedConversation.updatedAt = Date()
+                context.insert(messageEntity)
+
+                do {
+                    try context.save()
+                    continuation.resume(returning: messageEntity.toChatMessage())
+                } catch {
+                    os_log(.error, "\(Self.t)❌ 异步保存消息失败：\(error.localizedDescription)")
+                    continuation.resume(returning: nil)
+                }
+            }
+        }
+    }
+
+    /// 后台加载对话消息，避免阻塞主线程
+    /// - Parameter conversationId: 对话 ID
+    /// - Returns: 消息列表；若会话不存在返回 nil
+    func loadMessagesAsync(forConversationId conversationId: UUID) async -> [ChatMessage]? {
+        await withCheckedContinuation { continuation in
+            storageQueue.async { [weak self] in
+                guard let self = self else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                let context = ModelContext(self.modelContainer)
+                let descriptor = FetchDescriptor<Conversation>(
+                    predicate: #Predicate { $0.id == conversationId }
+                )
+
+                guard let fetchedConversation = try? context.fetch(descriptor).first else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                let messageEntities = fetchedConversation.messages.sorted { $0.timestamp < $1.timestamp }
+                let messages = messageEntities.compactMap { $0.toChatMessage() }
+                continuation.resume(returning: messages)
+            }
+        }
+    }
+
+    /// 分页加载消息（从最新消息开始，按时间倒序）
+    /// - Parameters:
+    ///   - conversationId: 对话 ID
+    ///   - limit: 每页数量
+    ///   - beforeTimestamp: 加载此时间戳之前的消息（nil 表示从最新开始）
+    /// - Returns: (消息列表, 是否还有更多)
+    func loadMessagesPage(
+        forConversationId conversationId: UUID,
+        limit: Int,
+        beforeTimestamp: Date? = nil
+    ) async -> (messages: [ChatMessage], hasMore: Bool) {
+        await withCheckedContinuation { continuation in
+            storageQueue.async { [weak self] in
+                guard let self = self else {
+                    continuation.resume(returning: ([], false))
+                    return
+                }
+
+                let context = ModelContext(self.modelContainer)
+                let descriptor = FetchDescriptor<Conversation>(
+                    predicate: #Predicate { $0.id == conversationId }
+                )
+
+                guard let fetchedConversation = try? context.fetch(descriptor).first else {
+                    continuation.resume(returning: ([], false))
+                    return
+                }
+
+                // 按时间倒序排序（最新的在前）
+                var sortedMessages = fetchedConversation.messages.sorted { $0.timestamp > $1.timestamp }
+
+                // 如果指定了时间戳，过滤出更早的消息
+                if let beforeTimestamp = beforeTimestamp {
+                    sortedMessages = sortedMessages.filter { $0.timestamp < beforeTimestamp }
+                }
+
+                // 取一页数据
+                let pageMessages = sortedMessages.prefix(limit + 1)
+                let hasMore = pageMessages.count > limit
+                let messagesToReturn = Array(pageMessages.prefix(limit))
+
+                // 转换并恢复正序（最早的在前，最新的在后）
+                let messages = messagesToReturn.reversed().compactMap { $0.toChatMessage() }
+
+                if Self.verbose {
+                    os_log("\(Self.t)📄 [\(conversationId)] 分页加载消息: \(messages.count) 条, hasMore: \(hasMore)")
+                }
+
+                continuation.resume(returning: (messages, hasMore))
+            }
+        }
+    }
+
+    /// 获取会话消息总数
+    /// - Parameter conversationId: 对话 ID
+    /// - Returns: 消息数量
+    func getMessageCount(forConversationId conversationId: UUID) async -> Int {
+        await withCheckedContinuation { continuation in
+            storageQueue.async { [weak self] in
+                guard let self = self else {
+                    continuation.resume(returning: 0)
+                    return
+                }
+
+                let context = ModelContext(self.modelContainer)
+                let descriptor = FetchDescriptor<Conversation>(
+                    predicate: #Predicate { $0.id == conversationId }
+                )
+
+                guard let fetchedConversation = try? context.fetch(descriptor).first else {
+                    continuation.resume(returning: 0)
+                    return
+                }
+
+                continuation.resume(returning: fetchedConversation.messages.count)
+            }
+        }
+    }
+
     // MARK: - 加载对话
 
     /// 获取所有对话
     func fetchAllConversations() -> [Conversation] {
         let context = getContext()
         let descriptor = FetchDescriptor<Conversation>(
-            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
 
         do {
@@ -260,6 +482,40 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
             return conversations
         } catch {
             os_log(.error, "\(Self.t)❌ 获取对话失败：\(error.localizedDescription)")
+            return []
+        }
+    }
+
+    /// 分页获取对话
+    /// - Parameters:
+    ///   - limit: 每页数量
+    ///   - offset: 偏移量
+    ///   - projectId: 可选项目 ID；为 nil 时拉取全部对话
+    /// - Returns: 当前页对话数据
+    func fetchConversationsPage(limit: Int, offset: Int, projectId: String? = nil) -> [Conversation] {
+        let context = getContext()
+
+        guard limit > 0, offset >= 0 else { return [] }
+
+        var descriptor: FetchDescriptor<Conversation>
+        if let projectId {
+            descriptor = FetchDescriptor<Conversation>(
+                predicate: #Predicate { $0.projectId == projectId },
+                sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+            )
+        } else {
+            descriptor = FetchDescriptor<Conversation>(
+                sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+            )
+        }
+
+        descriptor.fetchLimit = limit
+        descriptor.fetchOffset = offset
+
+        do {
+            return try context.fetch(descriptor)
+        } catch {
+            os_log(.error, "\(Self.t)❌ 分页获取对话失败：\(error.localizedDescription)")
             return []
         }
     }
@@ -285,7 +541,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         let context = getContext()
         let descriptor = FetchDescriptor<Conversation>(
             predicate: #Predicate { $0.projectId == projectId },
-            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
 
         do {
@@ -333,6 +589,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
 
         do {
             try context.save()
+            notifyConversationChanged(type: .deleted, conversationId: conversation.id)
             if Self.verbose {
                 os_log("\(Self.t)🗑️ 对话已删除：\(conversation.title)")
             }
@@ -397,6 +654,66 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         }
         
         return result
+    }
+    
+    /// 获取每个供应商和模型的详细性能统计
+    /// - Returns: 字典，键为 (providerId, modelName)，值为详细统计数据
+    func getModelDetailedStats() -> [String: ModelPerformanceStats] {
+        let context = getContext()
+        
+        // 获取所有有性能数据的消息
+        let descriptor = FetchDescriptor<ChatMessageEntity>(
+            predicate: #Predicate { $0.latency != nil && $0.providerId != nil && $0.modelName != nil }
+        )
+
+        guard let messageEntities = try? context.fetch(descriptor) else {
+            os_log(.error, "\(Self.t)❌ 获取消息失败")
+            return [:]
+        }
+
+        // 按 providerId 和 modelName 分组统计
+        var statsDict: [String: ModelPerformanceStats] = [:]
+        
+        for entity in messageEntities {
+            guard let providerId = entity.providerId,
+                  let modelName = entity.modelName,
+                  let latency = entity.latency else {
+                continue
+            }
+            
+            let key = "\(providerId)|\(modelName)"
+            var stats = statsDict[key] ?? ModelPerformanceStats(
+                providerId: providerId,
+                modelName: modelName,
+                sampleCount: 0,
+                totalLatency: 0,
+                totalTTFT: 0,
+                totalInputTokens: 0,
+                totalOutputTokens: 0
+            )
+            
+            stats.sampleCount += 1
+            stats.totalLatency += latency
+            
+            if let ttft = entity.timeToFirstToken {
+                stats.totalTTFT += ttft
+                stats.ttftCount += 1
+            }
+            
+            if let inputTokens = entity.inputTokens {
+                stats.totalInputTokens += inputTokens
+                stats.inputTokenCount += 1
+            }
+            
+            if let outputTokens = entity.outputTokens {
+                stats.totalOutputTokens += outputTokens
+                stats.outputTokenCount += 1
+            }
+            
+            statsDict[key] = stats
+        }
+
+        return statsDict
     }
 
     // MARK: - 工具方法

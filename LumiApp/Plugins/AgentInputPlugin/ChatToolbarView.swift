@@ -13,6 +13,9 @@ struct ChatToolbarView: View, SuperLog {
     @EnvironmentObject var agentProvider: AgentProvider
     @EnvironmentObject var projectViewModel: ProjectViewModel
 
+    /// 处理状态 ViewModel
+    @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
+
     /// 输入框本地状态 ViewModel
     @ObservedObject var inputViewModel: InputViewModel
 
@@ -81,7 +84,7 @@ extension ChatToolbarView {
     /// 发送/停止按钮视图
     @ViewBuilder
     private var actionButton: some View {
-        if agentProvider.isProcessing {
+        if processingStateViewModel.isProcessing {
             // 停止按钮 - 在处理中显示（仅图标）
             Button(action: {
                 agentProvider.cancelCurrentTask()
@@ -147,15 +150,47 @@ extension ChatToolbarView {
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
             }
-            .foregroundColor(agentProvider.chatMode == .build ? DesignTokens.Color.semantic.textSecondary : Color.orange)
+            .foregroundColor(modeForegroundColor)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(agentProvider.chatMode == .build ? Color.black.opacity(0.05) : Color.orange.opacity(0.1))
+            .background(modeBackgroundColor)
             .cornerRadius(6)
         }
         .menuStyle(.borderlessButton)
         .frame(width: 80)
-        .help(agentProvider.chatMode == .build ? "构建模式：可执行工具和修改代码" : "对话模式：只聊天，不执行任何操作")
+        .help(modeHelpText)
+    }
+
+    /// 根据当前模式返回前景色
+    private var modeForegroundColor: Color {
+        switch agentProvider.chatMode {
+        case .chat:
+            return Color.orange
+        case .build, .buildMultiTask:
+            return DesignTokens.Color.semantic.textSecondary
+        }
+    }
+
+    /// 根据当前模式返回背景色
+    private var modeBackgroundColor: Color {
+        switch agentProvider.chatMode {
+        case .chat:
+            return Color.orange.opacity(0.1)
+        case .build, .buildMultiTask:
+            return Color.black.opacity(0.05)
+        }
+    }
+
+    /// 根据当前模式返回帮助文本
+    private var modeHelpText: String {
+        switch agentProvider.chatMode {
+        case .chat:
+            return "对话模式：只聊天，不执行任何操作"
+        case .build:
+            return "构建模式：可执行工具和修改代码"
+        case .buildMultiTask:
+            return "构建模式（多任务）：可执行工具、修改代码，并使用多 Worker 协作"
+        }
     }
 
     /// 模型选择器视图

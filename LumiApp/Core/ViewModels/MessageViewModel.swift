@@ -24,6 +24,23 @@ final class MessageViewModel: ObservableObject, SuperLog {
     /// 标记是否已生成标题
     @Published public fileprivate(set) var hasGeneratedTitle: Bool = false
 
+    // MARK: - 分页状态
+
+    /// 每页消息数量
+    public static let pageSize: Int = 80
+
+    /// 是否还有更多历史消息可加载
+    @Published public fileprivate(set) var hasMoreMessages: Bool = false
+
+    /// 是否正在加载更多消息
+    @Published public fileprivate(set) var isLoadingMore: Bool = false
+
+    /// 最早加载的消息时间戳（用于分页游标）
+    private var oldestLoadedTimestamp: Date?
+
+    /// 当前会话的消息总数
+    @Published public fileprivate(set) var totalMessageCount: Int = 0
+
     // MARK: - 内部方法（仅供外部使用）
 
     /// 设置消息列表（内部使用）
@@ -74,6 +91,109 @@ final class MessageViewModel: ObservableObject, SuperLog {
         }
 
         return loadedMessages
+    }
+
+    /// 按会话 ID 异步加载消息（后台 I/O）- 全量加载（兼容旧代码）
+    /// - Parameter conversationId: 会话 ID
+    /// - Returns: 会话是否存在
+    @discardableResult
+    func loadMessages(conversationId: UUID) async -> Bool {
+        guard let loadedMessages = await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) else {
+            return false
+        }
+        messages = loadedMessages
+        return true
+    }
+
+    /// 分页加载消息（初始加载最近消息）
+    /// - Parameter conversationId: 会话 ID
+    /// - Returns: 是否成功加载
+    @discardableResult
+    func loadMessagesPaginated(conversationId: UUID) async -> Bool {
+        // 重置分页状态
+        oldestLoadedTimestamp = nil
+        hasMoreMessages = false
+        isLoadingMore = false
+
+        // 获取消息总数
+        totalMessageCount = await chatHistoryService.getMessageCount(forConversationId: conversationId)
+
+        // 加载第一页（最近的消息）
+        let result = await chatHistoryService.loadMessagesPage(
+            forConversationId: conversationId,
+            limit: Self.pageSize,
+            beforeTimestamp: nil
+        )
+
+        messages = result.messages
+        hasMoreMessages = result.hasMore
+
+        // 更新最早加载的时间戳
+        if let firstMessage = messages.first {
+            oldestLoadedTimestamp = firstMessage.timestamp
+        }
+
+        if Self.verbose {
+            os_log("\(Self.t)📄 [\(conversationId)] 分页加载完成: \(self.messages.count)/\(self.totalMessageCount) 条, hasMore: \(self.hasMoreMessages)")
+        }
+
+        return !messages.isEmpty || totalMessageCount == 0
+    }
+
+    /// 加载更多历史消息（上滑时调用）
+    /// - Parameter conversationId: 会话 ID
+    /// - Returns: 新加载的消息数量
+    @discardableResult
+    func loadMoreMessages(conversationId: UUID) async -> Int {
+        guard hasMoreMessages, !isLoadingMore else {
+            return 0
+        }
+
+        isLoadingMore = true
+        defer { isLoadingMore = false }
+
+        // 使用最早加载消息的时间戳作为游标
+        let beforeTimestamp = oldestLoadedTimestamp
+
+        let result = await chatHistoryService.loadMessagesPage(
+            forConversationId: conversationId,
+            limit: Self.pageSize,
+            beforeTimestamp: beforeTimestamp
+        )
+
+        // 新加载的消息插入到列表前面（更早的消息）
+        let newMessages = result.messages
+        messages.insert(contentsOf: newMessages, at: 0)
+        hasMoreMessages = result.hasMore
+
+        // 更新最早加载的时间戳
+        if let firstMessage = newMessages.first {
+            oldestLoadedTimestamp = firstMessage.timestamp
+        }
+
+        if Self.verbose {
+            os_log("\(Self.t)📄 [\(conversationId)] 加载更多消息: +\(newMessages.count) 条, 总计: \(self.messages.count) 条")
+        }
+
+        return newMessages.count
+    }
+
+    /// 重置分页状态
+    func resetPagination() {
+        hasMoreMessages = false
+        isLoadingMore = false
+        oldestLoadedTimestamp = nil
+        totalMessageCount = 0
+    }
+
+    /// 设置是否还有更多消息（内部使用）
+    func setHasMoreMessagesInternal(_ value: Bool) {
+        hasMoreMessages = value
+    }
+
+    /// 设置消息总数（内部使用）
+    func setTotalMessageCountInternal(_ value: Int) {
+        totalMessageCount = value
     }
 
     /// 保存消息到指定会话

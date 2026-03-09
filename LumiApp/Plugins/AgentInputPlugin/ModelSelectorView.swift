@@ -1,3 +1,4 @@
+import AppKit
 import MagicKit
 import OSLog
 import SwiftUI
@@ -16,8 +17,8 @@ struct ModelSelectorView: View, SuperLog {
     /// 智能体提供者
     @EnvironmentObject var agentProvider: AgentProvider
 
-    /// 模型性能统计：[(providerId, modelName, avgLatency, sampleCount)]
-    @State private var latencyStats: [(providerId: String, modelName: String, avgLatency: Double, sampleCount: Int)] = []
+    /// 模型性能统计
+    @State private var detailedStats: [String: ModelPerformanceStats] = [:]
 
     var body: some View {
         VStack(spacing: 0) {
@@ -55,18 +56,16 @@ struct ModelSelectorView: View, SuperLog {
                                                 .foregroundColor(.secondary)
                                         }
                                         
-                                        // 显示平均耗时
-                                        if let stat = findLatencyStat(providerId: provider.id, modelName: model) {
-                                            HStack(spacing: 4) {
-                                                Image(systemName: "clock")
-                                                    .font(.caption2)
-                                                Text(formatLatency(stat.avgLatency))
-                                                    .font(.caption2)
-                                                    .foregroundColor(latencyColor(stat.avgLatency))
-                                                if stat.sampleCount > 1 {
-                                                    Text("(\(stat.sampleCount))")
-                                                        .font(.caption2)
-                                                        .foregroundColor(.secondary)
+                                        // 显示性能统计
+                                        if let stat = findDetailedStat(providerId: provider.id, modelName: model) {
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                // 耗时进度条
+                                                if stat.avgTTFT > 0 {
+                                                    ModelLatencyProgressBar(
+                                                        ttft: stat.avgTTFT,
+                                                        totalLatency: stat.avgLatency,
+                                                        sampleCount: stat.sampleCount
+                                                    )
                                                 }
                                             }
                                         }
@@ -79,10 +78,26 @@ struct ModelSelectorView: View, SuperLog {
                                             .foregroundColor(.accentColor)
                                     }
                                 }
-                                .padding(.vertical, 4)
+                                .padding(.vertical, 6)
+                                .padding(.horizontal, 8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .fill(isSelected(providerId: provider.id, model: model) ? Color.accentColor.opacity(0.15) : Color.clear)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .stroke(isSelected(providerId: provider.id, model: model) ? Color.accentColor.opacity(0.3) : Color.clear, lineWidth: 1)
+                                )
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
+                            .onHover { hovering in
+                                if hovering && !isSelected(providerId: provider.id, model: model) {
+                                    NSCursor.pointingHand.push()
+                                } else {
+                                    NSCursor.pop()
+                                }
+                            }
                         }
                     }
                 }
@@ -159,24 +174,94 @@ extension ModelSelectorView {
 
     /// 加载性能统计数据
     private func loadLatencyStats() {
-        latencyStats = agentProvider.chatHistoryService.getModelLatencyStats()
+        detailedStats = agentProvider.chatHistoryService.getModelDetailedStats()
         if Self.verbose {
-            os_log("\(Self.t)📊 加载到 \(latencyStats.count) 个模型的性能统计")
+            os_log("\(Self.t)📊 加载到 \(detailedStats.count) 个模型的性能统计")
         }
     }
 
-    /// 查找指定供应商和模型的性能统计
+    /// 查找指定供应商和模型的详细性能统计
     /// - Parameters:
     ///   - providerId: 供应商 ID
     ///   - modelName: 模型名称
-    /// - Returns: 性能统计数据，如果不存在则返回 nil
-    private func findLatencyStat(providerId: String, modelName: String) -> (providerId: String, modelName: String, avgLatency: Double, sampleCount: Int)? {
-        return latencyStats.first { $0.providerId == providerId && $0.modelName == modelName }
+    /// - Returns: 详细性能统计数据，如果不存在则返回 nil
+    private func findDetailedStat(providerId: String, modelName: String) -> ModelPerformanceStats? {
+        let key = "\(providerId)|\(modelName)"
+        return detailedStats[key]
     }
+}
 
-    /// 格式化耗时显示
-    /// - Parameter latency: 毫秒数
-    /// - Returns: 格式化后的字符串
+// MARK: - Model Latency Progress Bar
+
+/// 模型耗时进度条组件
+struct ModelLatencyProgressBar: View {
+    let ttft: Double
+    let totalLatency: Double
+    let sampleCount: Int
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            // 进度条
+            GeometryReader { geometry in
+                HStack(spacing: 0) {
+                    // TTFT 部分（橙色）
+                    Rectangle()
+                        .fill(Color.orange)
+                        .frame(width: geometry.size.width * ttftRatio)
+                    
+                    // 响应时间部分（蓝色）
+                    Rectangle()
+                        .fill(Color.blue)
+                        .frame(width: geometry.size.width * (1 - ttftRatio))
+                }
+            }
+            .frame(width: 80, height: 3)
+            .clipShape(RoundedRectangle(cornerRadius: 1.5))
+            
+            // 时间信息（一行显示）
+            HStack(spacing: 6) {
+                HStack(spacing: 1) {
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 6, weight: .medium))
+                    Text(formatTTFT(ttft))
+                        .font(.caption2)
+                }
+                .foregroundColor(.orange)
+                
+                HStack(spacing: 1) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 6, weight: .medium))
+                    Text(formatLatency(totalLatency))
+                        .font(.caption2)
+                }
+                .foregroundColor(.blue)
+                
+                if sampleCount > 1 {
+                    Text("(\(sampleCount))")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+        .help(helpText)
+    }
+    
+    /// TTFT 占总耗时的比例
+    private var ttftRatio: Double {
+        guard totalLatency > 0 else { return 0 }
+        return min(ttft / totalLatency, 1.0)
+    }
+    
+    /// 格式化 TTFT
+    private func formatTTFT(_ ttft: Double) -> String {
+        if ttft >= 1000 {
+            return String(format: "%.1fs", ttft / 1000.0)
+        } else {
+            return String(format: "%.0fms", ttft)
+        }
+    }
+    
+    /// 格式化响应时间
     private func formatLatency(_ latency: Double) -> String {
         if latency >= 1000 {
             return String(format: "%.1fs", latency / 1000.0)
@@ -184,18 +269,18 @@ extension ModelSelectorView {
             return String(format: "%.0fms", latency)
         }
     }
-
-    /// 根据耗时获取颜色
-    /// - Parameter latency: 毫秒数
-    /// - Returns: 对应的颜色
-    private func latencyColor(_ latency: Double) -> Color {
-        if latency < 500 {
-            return .green
-        } else if latency < 2000 {
-            return .yellow
-        } else {
-            return .red
-        }
+    
+    /// 帮助文本
+    private var helpText: String {
+        let ttftPercent = String(format: "%.1f", ttftRatio * 100)
+        let responsePercent = String(format: "%.1f", (1 - ttftRatio) * 100)
+        return """
+        ⚡ 首个 Token 延迟 (TTFT): \(formatTTFT(ttft)) (\(ttftPercent)%)
+        🕐 响应时间: \(formatLatency(totalLatency)) (\(responsePercent)%)
+        
+        TTFT 表示从发送请求到收到第一个 token 的时间
+        响应时间表示从第一个 token 到响应完成的时间
+        """
     }
 }
 

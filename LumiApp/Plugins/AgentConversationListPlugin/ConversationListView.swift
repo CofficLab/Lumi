@@ -1,27 +1,33 @@
 import MagicKit
 import OSLog
-import SwiftData
 import SwiftUI
+import Combine
 
 /// 对话列表视图
-/// 使用 List 渲染会话列表，支持会话选择、删除和自动恢复上次选择的会话
+/// 使用分页方式渲染会话列表，避免一次性加载全部历史记录
 struct ConversationListView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "🐶"
     /// 是否输出详细日志
     nonisolated static let verbose = true
 
-    /// 数据上下文：用于查询和删除会话
-    @Environment(\.modelContext) private var modelContext
     /// 会话管理 ViewModel
     @EnvironmentObject var conversationViewModel: ConversationViewModel
 
-    /// 会话列表：按更新时间倒序排列
-    @Query(sort: \Conversation.updatedAt, order: .reverse)
-    private var conversations: [Conversation]
+    /// 当前页已加载的会话
+    @State private var conversations: [Conversation] = []
 
     /// 本地选择的会话 ID
     @State private var localSelectedConversationId: UUID?
+
+    /// 分页状态
+    @State private var nextOffset: Int = 0
+    @State private var hasMore: Bool = true
+    @State private var isLoadingPage: Bool = false
+    @State private var didInitialLoad: Bool = false
+
+    /// 每页大小
+    private let pageSize: Int = 40
 
     /// 折叠状态
     @AppStorage("Sidebar_ConversationList_Expanded") private var isExpanded: Bool = true
@@ -37,7 +43,14 @@ struct ConversationListView: View, SuperLog {
 
                 // 对话列表内容
                 if conversations.isEmpty {
-                    ConversationListEmptyView()
+                    if isLoadingPage {
+                        ProgressView("加载中...")
+                            .font(.system(size: 11))
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                            .padding(.vertical, 12)
+                    } else {
+                        ConversationListEmptyView()
+                    }
                 } else {
                     List(conversations, selection: $localSelectedConversationId) { conversation in
                         ConversationItemView(
@@ -45,16 +58,32 @@ struct ConversationListView: View, SuperLog {
                             onDelete: { handleDelete(conversation) }
                         )
                         .tag(conversation.id)
+                        .onAppear {
+                            handleRowAppear(conversation)
+                        }
+                    }
+
+                    if isLoadingPage {
+                        HStack {
+                            Spacer()
+                            ProgressView()
+                                .controlSize(.small)
+                            Spacer()
+                        }
+                        .padding(.vertical, 8)
                     }
                 }
             }
         }
-        .onAppear(perform: onAppear)
+        .onAppear(perform: performInitialLoadIfNeeded)
         .onChange(of: localSelectedConversationId, handleLocalSelectionChange)
         .onChange(of: conversationViewModel.selectedConversationId, handleConversationSelected)
         .onChange(of: conversations) { _, newConversations in
             // 当会话列表变化时，同步当前选中的会话
             handleConversationsChanged(newConversations)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .conversationDidChange)) { notification in
+            handleConversationDidChangeNotification(notification)
         }
     }
 }
@@ -68,7 +97,7 @@ extension ConversationListView {
 
 extension ConversationListView {
     /// 同步 VM 的选中状态到本地 List
-    /// 在视图出现时调用，确保 List 的选中状态与 VM 一致
+    /// 在分页加载后调用，确保 List 的选中状态与 VM 一致
     private func syncSelectionFromViewModel() {
         let vmId = conversationViewModel.selectedConversationId
 
@@ -93,8 +122,7 @@ extension ConversationListView {
         }
     }
 
-    /// 处理删除会话操作
-    /// 删除后如果当前选中的是被删除的会话，自动切换到最新的会话
+    /// 删除会话，并同步分页列表状态
     /// - Parameter conversation: 要删除的会话
     private func handleDelete(_ conversation: Conversation) {
         if Self.verbose {
@@ -114,13 +142,107 @@ extension ConversationListView {
             }
         }
 
-        // 使用当前视图的 modelContext 删除，确保 @Query 能检测到变化
-        modelContext.delete(conversation)
+        // 从本地分页列表中移除，保持 UI 即时响应
+        conversations.removeAll { $0.id == conversation.id }
+        nextOffset = max(0, nextOffset - 1)
+        if conversations.count < pageSize {
+            hasMore = true
+        }
 
-        do {
-            try modelContext.save()
-        } catch {
-            os_log(.error, "\(self.t)❌ 删除对话失败：\(error.localizedDescription)")
+        conversationViewModel.deleteConversation(conversation)
+    }
+
+    /// 视图首次出现时加载第一页
+    private func performInitialLoadIfNeeded() {
+        guard !didInitialLoad else {
+            syncSelectionFromViewModel()
+            return
+        }
+
+        didInitialLoad = true
+        reloadFromFirstPage()
+    }
+
+    /// 从第一页重新加载
+    private func reloadFromFirstPage() {
+        conversations = []
+        nextOffset = 0
+        hasMore = true
+        loadNextPageIfNeeded()
+    }
+
+    /// 滚动到末尾时触发续页
+    private func handleRowAppear(_ conversation: Conversation) {
+        guard conversation.id == conversations.last?.id else { return }
+        loadNextPageIfNeeded()
+    }
+
+    /// 分页加载下一页
+    private func loadNextPageIfNeeded() {
+        guard hasMore, !isLoadingPage else { return }
+
+        isLoadingPage = true
+        let page = conversationViewModel.fetchConversationsPage(limit: pageSize, offset: nextOffset)
+
+        if nextOffset == 0 {
+            conversations = page
+        } else {
+            let existingIds = Set(conversations.map(\.id))
+            conversations.append(contentsOf: page.filter { !existingIds.contains($0.id) })
+        }
+
+        nextOffset += page.count
+        hasMore = page.count == pageSize
+        isLoadingPage = false
+
+        syncSelectionFromViewModel()
+    }
+
+    /// 增量处理会话变更，避免整页重拉
+    private func handleConversationDidChangeNotification(_ notification: Notification) {
+        guard
+            let userInfo = notification.userInfo,
+            let typeRaw = userInfo[ConversationChangeUserInfoKey.type] as? String,
+            let idRaw = userInfo[ConversationChangeUserInfoKey.conversationId] as? String,
+            let type = ConversationChangeType(rawValue: typeRaw),
+            let conversationId = UUID(uuidString: idRaw)
+        else {
+            return
+        }
+
+        switch type {
+        case .created:
+            handleConversationCreated(conversationId)
+        case .updated:
+            handleConversationUpdated(conversationId)
+        case .deleted:
+            handleConversationDeleted(conversationId)
+        }
+    }
+
+    private func handleConversationCreated(_ conversationId: UUID) {
+        guard let conversation = conversationViewModel.fetchConversation(id: conversationId) else { return }
+        guard !conversations.contains(where: { $0.id == conversationId }) else { return }
+
+        conversations.insert(conversation, at: 0)
+        nextOffset += 1
+        syncSelectionFromViewModel()
+    }
+
+    private func handleConversationUpdated(_ conversationId: UUID) {
+        guard let updatedConversation = conversationViewModel.fetchConversation(id: conversationId) else { return }
+        guard let index = conversations.firstIndex(where: { $0.id == conversationId }) else { return }
+
+        conversations[index] = updatedConversation
+    }
+
+    private func handleConversationDeleted(_ conversationId: UUID) {
+        guard let index = conversations.firstIndex(where: { $0.id == conversationId }) else { return }
+
+        conversations.remove(at: index)
+        nextOffset = max(0, nextOffset - 1)
+        if conversations.count < pageSize {
+            hasMore = true
         }
     }
 }
@@ -133,15 +255,6 @@ extension ConversationListView {
 // MARK: - Event Handler
 
 extension ConversationListView {
-    /// 视图出现时的事件处理
-    func onAppear() {
-        // 同步 VM 的选中状态到本地 List
-        // 注意：不再恢复上次的选择，而是在 RootView 初始化时恢复
-        if !conversations.isEmpty {
-            syncSelectionFromViewModel()
-        }
-    }
-
     /// 处理会话列表变化
     func handleConversationsChanged(_ newConversations: [Conversation]) {
         // 如果当前选中的会话不在新列表中，清除选择
@@ -155,9 +268,6 @@ extension ConversationListView {
 
     /// 处理选择变化：同步到 ConversationViewModel
     func handleLocalSelectionChange() {
-        let localId = localSelectedConversationId?.uuidString ?? "nil"
-        let vmId = conversationViewModel.selectedConversationId?.uuidString ?? "nil"
-
         // 只在值确实不同时才更新，避免循环
         guard localSelectedConversationId != conversationViewModel.selectedConversationId else {
             return
@@ -187,6 +297,11 @@ extension ConversationListView {
         }
 
         if let conversationId = self.conversationViewModel.selectedConversationId {
+            // 新会话通常会成为当前选中项，如果当前分页中没有，先刷新第一页
+            if self.conversations.first(where: { $0.id == conversationId }) == nil {
+                reloadFromFirstPage()
+            }
+
             if self.conversations.first(where: { $0.id == conversationId }) != nil {
                 os_log("\(self.t)👉 同步 VM 选择到 List: \(conversationId)")
                 self.localSelectedConversationId = conversationId

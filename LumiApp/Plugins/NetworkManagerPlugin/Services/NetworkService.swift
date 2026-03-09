@@ -260,68 +260,72 @@ class NetworkService: SuperLog, ObservableObject {
     }
     
     /// Get Wi-Fi Info (SSID, RSSI) via airport utility
-    func getWifiInfo() -> (ssid: String?, rssi: Int) {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport")
-        process.arguments = ["-I"]
-        
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        
-        do {
-            try process.run()
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            if let output = String(data: data, encoding: .utf8) {
-                var ssid: String?
-                var rssi: Int = 0
-                
-                let lines = output.components(separatedBy: .newlines)
-                for line in lines {
-                    let trimmed = line.trimmingCharacters(in: .whitespaces)
-                    if trimmed.hasPrefix("SSID:") {
-                        ssid = trimmed.replacingOccurrences(of: "SSID: ", with: "")
-                    } else if trimmed.hasPrefix("agrCtlRSSI:") {
-                        if let val = Int(trimmed.replacingOccurrences(of: "agrCtlRSSI: ", with: "")) {
-                            rssi = val
+    func getWifiInfo() async -> (ssid: String?, rssi: Int) {
+        await Task.detached(priority: .utility) {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport")
+            process.arguments = ["-I"]
+
+            let pipe = Pipe()
+            process.standardOutput = pipe
+
+            do {
+                try process.run()
+                process.waitUntilExit()
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                if let output = String(data: data, encoding: .utf8) {
+                    var ssid: String?
+                    var rssi: Int = 0
+
+                    let lines = output.components(separatedBy: .newlines)
+                    for line in lines {
+                        let trimmed = line.trimmingCharacters(in: .whitespaces)
+                        if trimmed.hasPrefix("SSID:") {
+                            ssid = trimmed.replacingOccurrences(of: "SSID: ", with: "")
+                        } else if trimmed.hasPrefix("agrCtlRSSI:") {
+                            if let val = Int(trimmed.replacingOccurrences(of: "agrCtlRSSI: ", with: "")) {
+                                rssi = val
+                            }
                         }
                     }
+                    return (ssid, rssi)
                 }
-                return (ssid, rssi)
+            } catch {
+                return (nil, 0)
             }
-        } catch {
-            // Ignore error
-        }
-        return (nil, 0)
+            return (nil, 0)
+        }.value
     }
     
     /// Simple Ping Test
     func ping(host: String = "8.8.8.8") async -> Double {
-        // Ping is tricky to parse accurately across OS versions, but let's try basic one packet
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/sbin/ping")
-        process.arguments = ["-c", "1", "-t", "1", host] // count 1, timeout 1s
-        
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        
-        do {
-            try process.run()
-            process.waitUntilExit()
-            
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            if let output = String(data: data, encoding: .utf8) {
-                // Parse "time=12.345 ms"
-                if let range = output.range(of: "time=") {
-                    let substring = output[range.upperBound...]
-                    let components = substring.components(separatedBy: " ")
-                    if let msString = components.first, let ms = Double(msString) {
-                        return ms
+        await Task.detached(priority: .utility) {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/sbin/ping")
+            process.arguments = ["-c", "1", "-t", "1", host] // count 1, timeout 1s
+
+            let pipe = Pipe()
+            process.standardOutput = pipe
+
+            do {
+                try process.run()
+                process.waitUntilExit()
+
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                if let output = String(data: data, encoding: .utf8) {
+                    // Parse "time=12.345 ms"
+                    if let range = output.range(of: "time=") {
+                        let substring = output[range.upperBound...]
+                        let components = substring.components(separatedBy: " ")
+                        if let msString = components.first, let ms = Double(msString) {
+                            return ms
+                        }
                     }
                 }
+            } catch {
+                return 0
             }
-        } catch {
             return 0
-        }
-        return 0
+        }.value
     }
 }

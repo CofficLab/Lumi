@@ -32,10 +32,22 @@ struct ChatBubble: View {
     let message: ChatMessage
     /// 是否是最后一条消息
     let isLastMessage: Bool
+    /// 与当前 assistant 工具调用关联的工具输出（仅用于 UI 分组展示）
+    let relatedToolOutputs: [ChatMessage]
     @ObservedObject private var expansionState = MessageExpansionState.shared
     @State private var showRawMessage: Bool = false
     /// 智能体提供者（用于获取思考状态）
     @EnvironmentObject var agentProvider: AgentProvider
+    /// 思考状态 ViewModel
+    @EnvironmentObject var thinkingStateViewModel: ThinkingStateViewModel
+
+    init(message: ChatMessage, isLastMessage: Bool, relatedToolOutputs: [ChatMessage] = []) {
+        self.message = message
+        self.isLastMessage = isLastMessage
+        self.relatedToolOutputs = relatedToolOutputs
+    }
+    /// 处理状态 ViewModel
+    @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
 
     // 判断是否是长消息
     private var isLongMessage: Bool {
@@ -64,7 +76,7 @@ struct ChatBubble: View {
         }
         // 如果是最后一条消息且正在流式传输，显示实时思考
         if isLastMessage {
-            return agentProvider.isThinking || !agentProvider.thinkingText.isEmpty
+            return thinkingStateViewModel.isThinking || !thinkingStateViewModel.thinkingText.isEmpty
         }
         return false
     }
@@ -76,7 +88,7 @@ struct ChatBubble: View {
             return storedThinking
         }
         // 否则使用实时的思考文本
-        return agentProvider.thinkingText
+        return thinkingStateViewModel.thinkingText
     }
 
     // 是否正在思考（用于动画）
@@ -86,7 +98,7 @@ struct ChatBubble: View {
             return false
         }
         // 否则使用实时的思考状态
-        return agentProvider.isThinking
+        return thinkingStateViewModel.isThinking
     }
 
     var body: some View {
@@ -122,7 +134,10 @@ struct ChatBubble: View {
                         }
 
                         if hasToolCalls {
-                            AssistantMessageWithToolCallsView(message: message)
+                            AssistantMessageWithToolCallsView(
+                                message: message,
+                                toolOutputMessages: relatedToolOutputs
+                            )
                         } else {
                             MarkdownMessageView(
                                 message: message,
@@ -137,6 +152,12 @@ struct ChatBubble: View {
                             )
                             .messageBubbleStyle(role: message.role, isError: message.isError)
                         }
+                        
+                        // 消息工具栏（底部按钮行）
+                        MessageToolbarView(
+                            message: message,
+                            isAssistantMessage: true
+                        )
                     }
                 } else if message.toolCallID != nil {
                     // 工具输出
@@ -145,16 +166,29 @@ struct ChatBubble: View {
                         message: message,
                         toolType: inferToolType(from: message)
                     )
+                    // 工具输出也显示工具栏
+                    MessageToolbarView(
+                        message: message,
+                        isAssistantMessage: false
+                    )
                 } else {
                     // 用户消息
-                    MarkdownMessageView(
-                        message: message,
-                        showRawMessage: showRawMessage,
-                        isCollapsible: false,
-                        isExpanded: true,
-                        onToggleExpand: {}
-                    )
-                    .messageBubbleStyle(role: message.role, isError: message.isError)
+                    VStack(alignment: .leading, spacing: 4) {
+                        MarkdownMessageView(
+                            message: message,
+                            showRawMessage: showRawMessage,
+                            isCollapsible: false,
+                            isExpanded: true,
+                            onToggleExpand: {}
+                        )
+                        .messageBubbleStyle(role: message.role, isError: message.isError)
+                        
+                        // 消息工具栏（底部按钮行）
+                        MessageToolbarView(
+                            message: message,
+                            isAssistantMessage: false
+                        )
+                    }
                 }
             }
 
@@ -190,6 +224,10 @@ struct AssistantMessageHeader: View {
     let isLongMessage: Bool
     /// 智能体提供者（用于获取心跳状态）
     @EnvironmentObject var agentProvider: AgentProvider
+    /// 处理状态 ViewModel
+    @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
+    /// 思考状态 ViewModel
+    @EnvironmentObject var thinkingStateViewModel: ThinkingStateViewModel
     @State private var isHovered: Bool = false
 
     var body: some View {
@@ -202,12 +240,12 @@ struct AssistantMessageHeader: View {
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
                 // 心跳动画指示器（当正在处理时显示）
-                if agentProvider.isProcessing {
+                if processingStateViewModel.isProcessing {
                     HeartbeatIndicator()
                 }
 
                 // 思考状态指示器
-                if agentProvider.isThinking {
+                if thinkingStateViewModel.isThinking {
                     ThinkingIndicator()
                 }
 
@@ -233,15 +271,36 @@ struct AssistantMessageHeader: View {
             Spacer()
             
             HStack(alignment: .center, spacing: 12) {
-                // 响应时间（如果有）
-                if let latency = message.latency {
-                    HStack(alignment: .center, spacing: 3) {
-                        Image(systemName: "clock")
-                            .font(.system(size: 9, weight: .medium))
-                        Text(formatLatency(latency))
-                            .font(DesignTokens.Typography.caption2)
+                // 性能指标组
+                HStack(alignment: .center, spacing: 8) {
+                    // 耗时进度条（如果有 TTFT 和总耗时）
+                    if let ttft = message.timeToFirstToken, let latency = message.latency {
+                        LatencyProgressBar(ttft: ttft, totalLatency: latency)
                     }
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    
+                    // Token 统计（如果有）
+                    if let inputTokens = message.inputTokens, let outputTokens = message.outputTokens {
+                        TokenProgressBar(inputTokens: inputTokens, outputTokens: outputTokens)
+                    } else if let totalTokens = message.totalTokens {
+                        HStack(alignment: .center, spacing: 2) {
+                            Image(systemName: "text.alignleft")
+                                .font(.system(size: 8, weight: .medium))
+                            Text("\(totalTokens)")
+                                .font(DesignTokens.Typography.caption2)
+                        }
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    }
+                    
+                    // 完成原因（如果有）
+                    if let finishReason = message.finishReason {
+                        HStack(alignment: .center, spacing: 2) {
+                            Image(systemName: "flag.fill")
+                                .font(.system(size: 8, weight: .medium))
+                            Text(formatFinishReason(finishReason))
+                                .font(DesignTokens.Typography.caption2)
+                        }
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    }
                 }
                 
                 // 折叠/展开按钮（仅当内容是长消息时显示）
@@ -311,6 +370,19 @@ struct AssistantMessageHeader: View {
             return String(format: "%.1fs", latency / 1000.0)
         }
     }
+    
+    /// 格式化完成原因
+    private func formatFinishReason(_ reason: String) -> String {
+        let reasonMap: [String: String] = [
+            "stop": "完成",
+            "length": "长度限制",
+            "content_filter": "内容过滤",
+            "tool_calls": "工具调用",
+            "max_tokens": "最大 Token",
+            "temperature": "温度"
+        ]
+        return reasonMap[reason] ?? reason
+    }
 }
 
 // MARK: - Heartbeat Indicator
@@ -318,6 +390,7 @@ struct AssistantMessageHeader: View {
 /// 心跳动画指示器
 struct HeartbeatIndicator: View {
     @EnvironmentObject var agentProvider: AgentProvider
+    @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
     @State private var isAnimating = false
     @State private var pulseScale: CGFloat = 1.0
 
@@ -330,11 +403,11 @@ struct HeartbeatIndicator: View {
             .onAppear {
                 startAnimation()
             }
-            .onChange(of: agentProvider.lastHeartbeatTime) { _, _ in
+            .onChange(of: processingStateViewModel.lastHeartbeatTime) { _, _ in
                 // 收到心跳时触发脉冲动画
                 triggerPulse()
             }
-            .onChange(of: agentProvider.isProcessing) { _, isProcessing in
+            .onChange(of: processingStateViewModel.isProcessing) { _, isProcessing in
                 if isProcessing {
                     startAnimation()
                 } else {
@@ -344,7 +417,7 @@ struct HeartbeatIndicator: View {
     }
 
     private func startAnimation() {
-        guard agentProvider.isProcessing else { return }
+        guard processingStateViewModel.isProcessing else { return }
 
         // 基础呼吸动画
         withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
@@ -587,6 +660,187 @@ extension View {
     .background(Color.black)
 }
 
+// MARK: - Latency Progress Bar
+
+/// 耗时进度条组件
+/// 可视化显示首 token 延迟和响应时间
+struct LatencyProgressBar: View {
+    let ttft: Double
+    let totalLatency: Double
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            // 进度条 - 使用固定尺寸的 ZStack 替代 GeometryReader
+            ZStack(alignment: .leading) {
+                // 背景
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color.gray.opacity(0.2))
+                    .frame(width: 120, height: 4)
+                
+                // TTFT 部分（橙色）
+                HStack(spacing: 0) {
+                    Rectangle()
+                        .fill(Color.orange)
+                        .frame(width: 120 * ttftRatio, height: 4)
+                    
+                    Spacer(minLength: 0)
+                }
+                
+                // 响应时间部分（蓝色）
+                HStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    Rectangle()
+                        .fill(Color.blue)
+                        .frame(width: 120 * (1 - ttftRatio), height: 4)
+                }
+            }
+            .frame(width: 120, height: 4)
+            
+            // 时间信息（一行显示）
+            HStack(spacing: 8) {
+                HStack(spacing: 2) {
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 7, weight: .medium))
+                    Text(formatTTFT(ttft))
+                        .font(DesignTokens.Typography.caption2)
+                        .fixedSize()
+                }
+                .foregroundColor(.orange)
+                
+                HStack(spacing: 2) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 7, weight: .medium))
+                    Text(formatLatency(totalLatency))
+                        .font(DesignTokens.Typography.caption2)
+                        .fixedSize()
+                }
+                .foregroundColor(.blue)
+            }
+        }
+        .fixedSize()
+        .help(helpText)
+    }
+    
+    /// 格式化 TTFT
+    private func formatTTFT(_ ttft: Double) -> String {
+        if ttft >= 1000 {
+            return String(format: "%.1fs", ttft / 1000.0)
+        } else {
+            return String(format: "%.0fms", ttft)
+        }
+    }
+    
+    /// 帮助文本
+    private var helpText: String {
+        let ttftPercent = String(format: "%.1f", ttftRatio * 100)
+        let responsePercent = String(format: "%.1f", (1 - ttftRatio) * 100)
+        return """
+        ⚡ 首个 Token 延迟 (TTFT): \(formatTTFT(ttft)) (\(ttftPercent)%)
+        🕐 响应时间: \(formatLatency(totalLatency)) (\(responsePercent)%)
+        
+        TTFT 表示从发送请求到收到第一个 token 的时间
+        响应时间表示从第一个 token 到响应完成的时间
+        """
+    }
+    
+    /// TTFT 占总耗时的比例
+    private var ttftRatio: Double {
+        guard totalLatency > 0 else { return 0 }
+        return min(ttft / totalLatency, 1.0)
+    }
+    
+    /// 格式化响应时间
+    private func formatLatency(_ latency: Double) -> String {
+        if latency < 1000 {
+            return String(format: "%.0fms", latency)
+        } else {
+            return String(format: "%.1fs", latency / 1000.0)
+        }
+    }
+}
+
+// MARK: - Token Progress Bar
+
+/// Token 进度条组件
+/// 可视化显示输入和输出 token 数量
+struct TokenProgressBar: View {
+    let inputTokens: Int
+    let outputTokens: Int
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            // 进度条 - 使用固定尺寸的 ZStack 替代 GeometryReader
+            ZStack(alignment: .leading) {
+                // 背景
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color.gray.opacity(0.2))
+                    .frame(width: 120, height: 4)
+                
+                // 输入 token 部分（绿色）
+                HStack(spacing: 0) {
+                    Rectangle()
+                        .fill(Color.green)
+                        .frame(width: 120 * inputRatio, height: 4)
+                    
+                    Spacer(minLength: 0)
+                }
+                
+                // 输出 token 部分（紫色）
+                HStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    Rectangle()
+                        .fill(Color.purple)
+                        .frame(width: 120 * (1 - inputRatio), height: 4)
+                }
+            }
+            .frame(width: 120, height: 4)
+            
+            // Token 信息（一行显示）
+            HStack(spacing: 8) {
+                HStack(spacing: 2) {
+                    Image(systemName: "arrow.right.circle.fill")
+                        .font(.system(size: 7, weight: .medium))
+                    Text("\(inputTokens)")
+                        .font(DesignTokens.Typography.caption2)
+                        .fixedSize()
+                }
+                .foregroundColor(.green)
+                
+                HStack(spacing: 2) {
+                    Image(systemName: "arrow.left.circle.fill")
+                        .font(.system(size: 7, weight: .medium))
+                    Text("\(outputTokens)")
+                        .font(DesignTokens.Typography.caption2)
+                        .fixedSize()
+                }
+                .foregroundColor(.purple)
+            }
+        }
+        .fixedSize()
+        .help(helpText)
+    }
+    
+    /// 输入 token 占总 token 的比例
+    private var inputRatio: Double {
+        let total = inputTokens + outputTokens
+        guard total > 0 else { return 0 }
+        return Double(inputTokens) / Double(total)
+    }
+    
+    /// 帮助文本
+    private var helpText: String {
+        let inputPercent = String(format: "%.1f", inputRatio * 100)
+        let outputPercent = String(format: "%.1f", (1 - inputRatio) * 100)
+        return """
+        ➡️ 输入 Token: \(inputTokens) (\(inputPercent)%)
+        ⬅️ 输出 Token: \(outputTokens) (\(outputPercent)%)
+        
+        输入 Token 表示发送给模型的 token 数量
+        输出 Token 表示模型生成的 token 数量
+        """
+    }
+}
+
 #Preview("Assistant Message with Latency") {
     ChatBubble(
         message: ChatMessage(
@@ -594,7 +848,11 @@ extension View {
             content: "I can help you with coding tasks.",
             providerId: "anthropic",
             modelName: "claude-sonnet-4-20250514",
-            latency: 1234.56
+            latency: 1234.56,
+            inputTokens: 100,
+            outputTokens: 200,
+            totalTokens: 300,
+            timeToFirstToken: 234.5
         ),
         isLastMessage: true
     )
@@ -609,7 +867,11 @@ extension View {
             content: "I can help you with coding tasks.",
             providerId: "openai",
             modelName: "gpt-4o",
-            latency: 456.78
+            latency: 456.78,
+            inputTokens: 50,
+            outputTokens: 150,
+            totalTokens: 200,
+            timeToFirstToken: 123.4
         ),
         isLastMessage: true
     )

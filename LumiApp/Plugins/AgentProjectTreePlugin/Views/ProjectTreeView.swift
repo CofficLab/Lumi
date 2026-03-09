@@ -114,7 +114,7 @@ struct ProjectTreeView: View {
         let url = URL(fileURLWithPath: path)
         isLoading = true
         
-        Task {
+        Task.detached(priority: .userInitiated) {
             do {
                 let contents = try FileManager.default.contentsOfDirectory(
                     at: url,

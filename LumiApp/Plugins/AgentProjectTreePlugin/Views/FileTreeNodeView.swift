@@ -121,7 +121,7 @@ struct FileTreeNodeView: View {
     private func loadChildren() {
         logger.info("📂 [\(nodeId)] loadChildren: \(fileName)")
         
-        Task {
+        Task.detached(priority: .userInitiated) {
             do {
                 let contents = try FileManager.default.contentsOfDirectory(
                     at: url,

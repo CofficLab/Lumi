@@ -109,17 +109,19 @@ final class ConversationViewModel: ObservableObject, SuperLog {
             }
             return
         }
+        saveMessage(message, to: conversationId)
+    }
 
-        // 从数据库获取对话
-        guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
-            os_log(.error, "\(Self.t)❌ [\(conversationId)] 对话不存在")
-            return
-        }
-
-        chatHistoryService.saveMessage(message, to: conversation)
-
-        if Self.verbose {
-            os_log("\(Self.t)💾 [\(conversation.id)] 消息已保存：\(message.content.max(50))")
+    /// 保存消息到指定对话
+    /// - Parameters:
+    ///   - message: 要保存的消息
+    ///   - conversationId: 目标对话 ID
+    func saveMessage(_ message: ChatMessage, to conversationId: UUID) {
+        Task(priority: .utility) {
+            let saved = await chatHistoryService.saveMessageAsync(message, toConversationId: conversationId)
+            if Self.verbose, saved != nil {
+                os_log("\(Self.t)💾 [\(conversationId)] 消息已保存：\(message.content.max(50))")
+            }
         }
     }
 
@@ -206,11 +208,27 @@ final class ConversationViewModel: ObservableObject, SuperLog {
         chatHistoryService.fetchAllConversations()
     }
 
+    /// 分页获取对话
+    /// - Parameters:
+    ///   - limit: 每页数量
+    ///   - offset: 偏移量
+    /// - Returns: 当前页数据
+    func fetchConversationsPage(limit: Int, offset: Int) -> [Conversation] {
+        chatHistoryService.fetchConversationsPage(limit: limit, offset: offset)
+    }
+
     /// 获取项目相关的对话
     ///
     /// - Parameter projectId: 项目路径
     /// - Returns: 项目相关的对话列表
     func fetchConversations(forProject projectId: String) -> [Conversation] {
         chatHistoryService.fetchConversations(forProject: projectId)
+    }
+
+    /// 根据 ID 获取会话
+    /// - Parameter id: 会话 ID
+    /// - Returns: 会话，不存在时返回 nil
+    func fetchConversation(id: UUID) -> Conversation? {
+        chatHistoryService.fetchConversation(id: id)
     }
 }

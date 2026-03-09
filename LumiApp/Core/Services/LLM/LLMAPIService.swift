@@ -136,7 +136,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
                 } else {
                     let prefix = bodyString.prefix(200)
                     let suffix = bodyString.suffix(200)
-                    logMessage += "📦 请求体：\n\(prefix)...\n\(suffix)\n"
+                    logMessage += "📦 请求体：\n\(prefix)\n...\n\(suffix)\n"
                 }
             }
             

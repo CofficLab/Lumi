@@ -17,6 +17,9 @@ struct InputAreaView: View, SuperLog {
     /// 智能体提供者
     @EnvironmentObject var agentProvider: AgentProvider
 
+    /// 处理状态 ViewModel
+    @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
+
     /// 命令建议 ViewModel
     @EnvironmentObject var commandSuggestionViewModel: CommandSuggestionViewModel
 
@@ -130,7 +133,7 @@ extension InputAreaView {
     /// 处理中的动态边框叠加层
     @ViewBuilder
     private var processingBorderOverlay: some View {
-        if agentProvider.isProcessing {
+        if processingStateViewModel.isProcessing {
             // 动态渐变边框
             RoundedRectangle(cornerRadius: 12)
                 .stroke(

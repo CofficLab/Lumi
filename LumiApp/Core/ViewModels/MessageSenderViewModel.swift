@@ -7,141 +7,92 @@ import OSLog
 @MainActor
 enum MessageSendEvent: Sendable {
     /// 开始处理队列
-    case processingStarted
+    case processingStarted(conversationId: UUID)
     /// 队列处理完成
-    case processingFinished
+    case processingFinished(conversationId: UUID)
     /// 需要发送消息
-    /// - Parameter message: 待发送的消息
-    case sendMessage(ChatMessage)
+    /// - Parameters:
+    ///   - message: 待发送的消息
+    ///   - conversationId: 所属会话 ID
+    case sendMessage(ChatMessage, conversationId: UUID)
 }
 
 /// 消息发送队列 ViewModel
-/// 负责管理待发送消息队列，按顺序逐个发送消息
-///
-/// ## 设计原则
-///
-/// `MessageSenderViewModel` 只专注于队列管理，不关心消息如何被处理。
-/// 通过 `events` AsyncStream 向外部报告状态变化，由调用方决定如何处理消息。
-///
-/// ## 使用示例
-///
-/// ```swift
-/// // 订阅事件流
-/// for await event in messageSenderViewModel.events {
-///     switch event {
-///     case .processingStarted:
-///         isProcessing = true
-///     case .processingFinished:
-///         isProcessing = false
-///     case .sendMessage(let message):
-///         await handleMessage(message)
-///     }
-/// }
-/// ```
+/// 负责管理待发送消息队列，按会话隔离发送
 @MainActor
 final class MessageSenderViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📤"
-    nonisolated static let verbose = true  // 开启日志以便调试
+    nonisolated static let verbose = true
 
     // MARK: - 事件流
 
-    /// 消息发送事件流
-    /// 外部订阅此流来处理消息发送逻辑
     var events: AsyncStream<MessageSendEvent> {
         AsyncStream { continuation in
             self.eventContinuation = continuation
         }
     }
 
-    /// 事件流延续
     private var eventContinuation: AsyncStream<MessageSendEvent>.Continuation?
 
-    // MARK: - 发送状态
+    // MARK: - 当前会话 UI 状态
 
-    /// 当前会话 ID（用于隔离队列）
     @Published public fileprivate(set) var currentConversationId: UUID?
-
-    /// 待发送消息队列字典（按会话 ID 隔离）
-    /// 每个会话都有自己独立的待发送队列
-    private var pendingMessagesByConversation: [UUID: [ChatMessage]] = [:]
-
-    /// 当前会话的待发送消息队列（包括正在发送的消息）
     @Published public fileprivate(set) var pendingMessages: [ChatMessage] = []
-
-    /// 当前正在处理的消息索引（nil 表示没有正在处理的消息）
     @Published public fileprivate(set) var currentProcessingIndex: Int?
-
-    /// 是否正在发送消息
     @Published public fileprivate(set) var isSending: Bool = false
 
-    /// 取消标记
-    private var isCancelled: Bool = false
+    // MARK: - 按会话隔离的队列状态
 
-    /// 发送任务队列（后台执行）
-    private var sendTask: Task<Void, Never>?
-
-    // MARK: - 初始化
+    private var pendingMessagesByConversation: [UUID: [ChatMessage]] = [:]
+    private var currentProcessingIndexByConversation: [UUID: Int?] = [:]
+    private var isSendingByConversation: [UUID: Bool] = [:]
+    private var cancelledConversations = Set<UUID>()
+    private var sendTasksByConversation: [UUID: Task<Void, Never>] = [:]
 
     init() {}
 
     // MARK: - 会话管理
 
-    /// 切换到指定会话
-    /// - Parameter conversationId: 会话 ID
-    /// - Returns: 切换后队列中的消息数量
     @discardableResult
     func switchToConversation(_ conversationId: UUID) -> Int {
-        // 保存当前会话状态（如果有）
-        if let currentId = currentConversationId {
-            if Self.verbose {
-                let count = pendingMessagesByConversation[currentId]?.count ?? 0
-                os_log("\(Self.t)💾 保存会话 [{\(currentId.uuidString.prefix(8))}] 队列状态：\(count) 条消息")
-            }
-        }
-
-        // 切换到新会话
         currentConversationId = conversationId
 
-        // 如果新会话没有队列，创建空队列
         if pendingMessagesByConversation[conversationId] == nil {
             pendingMessagesByConversation[conversationId] = []
         }
-
-        pendingMessages = pendingMessagesByConversation[conversationId] ?? []
-
-        let queueCount = pendingMessages.count
-
-        if Self.verbose {
-            os_log("\(Self.t)🔄 [\(conversationId.uuidString)] 切换到会话，队列长度：\(queueCount)")
+        if currentProcessingIndexByConversation[conversationId] == nil {
+            currentProcessingIndexByConversation[conversationId] = nil
+        }
+        if isSendingByConversation[conversationId] == nil {
+            isSendingByConversation[conversationId] = false
         }
 
-        return queueCount
+        syncCurrentConversationState()
+
+        if Self.verbose {
+            os_log("\(Self.t)🔄 [\(conversationId.uuidString)] 切换会话，队列长度：\(self.pendingMessages.count)")
+        }
+
+        return pendingMessages.count
     }
 
-    /// 清空当前会话的发送队列
     func clearCurrentConversationQueue() {
         guard let conversationId = currentConversationId else { return }
-        pendingMessagesByConversation[conversationId]?.removeAll()
-        currentProcessingIndex = nil
-        pendingMessages = []
+        pendingMessagesByConversation[conversationId] = []
+        currentProcessingIndexByConversation[conversationId] = nil
+        syncCurrentConversationState()
 
         if Self.verbose {
             os_log("\(Self.t)🗑️ [\(conversationId.uuidString)] 已清空发送队列")
         }
     }
 
-    /// 获取指定会话的队列消息数量
     func getQueueCount(for conversationId: UUID) -> Int {
         pendingMessagesByConversation[conversationId]?.count ?? 0
     }
 
-    // MARK: - 公开方法
+    // MARK: - 发送
 
-    /// 发送用户消息
-    /// - Parameters:
-    ///   - content: 消息内容
-    ///   - images: 图片附件（可选）
-    ///   - onComplete: 发送完成回调
     func sendMessage(
         content: String,
         images: [ImageAttachment] = [],
@@ -151,201 +102,211 @@ final class MessageSenderViewModel: ObservableObject, SuperLog {
             return
         }
 
-        // 检查是否有当前会话
         guard let conversationId = currentConversationId else {
             os_log(.error, "\(Self.t)❌ 当前没有活动对话，请先调用 switchToConversation")
             return
         }
 
-        // 创建用户消息
         let userMessage = ChatMessage(role: .user, content: content, images: images)
-
-        // 添加到待发送队列
         pendingMessagesByConversation[conversationId, default: []].append(userMessage)
 
-        // 同步更新 pendingMessages，触发 UI 更新
-        let updatedMessages = pendingMessagesByConversation[conversationId, default: []]
-        objectWillChange.send()
-        pendingMessages = updatedMessages
+        if currentConversationId == conversationId {
+            syncCurrentConversationState()
+        }
 
-        os_log("\(Self.t)📝 消息已加入队列（队列长度：\(self.pendingMessages.count)）：\(content.max(50))")
+        if Self.verbose {
+            os_log("\(Self.t)📝 [\(conversationId.uuidString.prefix(8))] 消息入队，长度：\(self.pendingMessagesByConversation[conversationId]?.count ?? 0)")
+        }
 
-        // 启动或继续队列处理
-        startOrContinueProcessing()
+        startOrContinueProcessing(for: conversationId)
+        onComplete?()
     }
 
-    /// 启动或继续处理队列
-    private func startOrContinueProcessing() {
-        // 如果已经在处理中，新消息会自动留在队列中等待处理
-        guard !isSending else {
-            os_log("\(Self.t)⏳ 已有消息在处理中，新消息已在队列中等待")
+    private func startOrContinueProcessing(for conversationId: UUID) {
+        if isSendingByConversation[conversationId] == true {
             return
         }
 
-        // 队列为空则退出
-        guard !pendingMessages.isEmpty else { return }
+        guard let queue = pendingMessagesByConversation[conversationId], !queue.isEmpty else {
+            return
+        }
 
-        os_log("\(Self.t)🚀 启动队列处理，当前队列长度：\(self.pendingMessages.count)")
+        cancelledConversations.remove(conversationId)
 
-        // 在后台线程启动发送流程
-        sendTask?.cancel()
-        sendTask = Task.detached(priority: .userInitiated) { [weak self] in
-            await self?.processQueue()
+        sendTasksByConversation[conversationId]?.cancel()
+        sendTasksByConversation[conversationId] = Task.detached(priority: .userInitiated) { [weak self] in
+            await self?.processQueue(for: conversationId)
         }
     }
 
-    /// 处理消息队列
-    private func processQueue() async {
-        os_log("\(Self.t)🔄 processQueue 开始执行")
-
-        // 标记开始处理
+    private func processQueue(for conversationId: UUID) async {
         await MainActor.run {
-            isSending = true
-            isCancelled = false
-            eventContinuation?.yield(.processingStarted)
+            self.isSendingByConversation[conversationId] = true
+            if self.currentConversationId == conversationId {
+                self.syncCurrentConversationState()
+            }
+            self.eventContinuation?.yield(.processingStarted(conversationId: conversationId))
         }
 
-        // 持续处理队列中的消息
-        while !isCancelled {
-            // 获取下一条消息
-            var nextMessage: ChatMessage? = nil
-            
-            await MainActor.run {
-                if !self.pendingMessages.isEmpty {
-                    self.currentProcessingIndex = 0
-                    nextMessage = self.pendingMessages.first
-                    os_log("\(Self.t)📥 取出消息，队列剩余：\(self.pendingMessages.count)")
+        while true {
+            let shouldStop = await MainActor.run { self.cancelledConversations.contains(conversationId) }
+            if shouldStop { break }
+
+            let nextMessage: ChatMessage? = await MainActor.run {
+                guard let queue = self.pendingMessagesByConversation[conversationId], !queue.isEmpty else {
+                    return nil
                 }
+                self.currentProcessingIndexByConversation[conversationId] = 0
+                if self.currentConversationId == conversationId {
+                    self.syncCurrentConversationState()
+                }
+                return queue.first
             }
 
-            // 队列为空，结束处理
-            guard let message = nextMessage else {
-                os_log("\(Self.t)📭 队列为空，结束处理")
-                break
+            guard let message = nextMessage else { break }
+
+            _ = await MainActor.run {
+                self.eventContinuation?.yield(.sendMessage(message, conversationId: conversationId))
             }
 
-            os_log("\(Self.t)📤 开始发送消息：\(message.content.max(30))...")
-
-            // 发送消息 - 通过事件流通知外部
             await MainActor.run {
-                eventContinuation?.yield(.sendMessage(message))
-            }
-
-            // 检查是否被取消
-            if isCancelled {
-                os_log("\(Self.t)🛑 处理被取消")
-                break
-            }
-
-            // 移除已处理的消息
-            await MainActor.run {
-                guard let conversationId = self.currentConversationId else { return }
-                // 检查队列是否为空，避免崩溃
-                guard !self.pendingMessagesByConversation[conversationId, default: []].isEmpty else {
-                    os_log("\(Self.t)⚠️ 队列已空，跳过移除操作")
+                guard var queue = self.pendingMessagesByConversation[conversationId], !queue.isEmpty else {
+                    self.currentProcessingIndexByConversation[conversationId] = nil
+                    if self.currentConversationId == conversationId {
+                        self.syncCurrentConversationState()
+                    }
                     return
                 }
-                self.pendingMessagesByConversation[conversationId]?.removeFirst()
-                // 同步更新 pendingMessages，触发 UI 更新
-                let updatedMessages = self.pendingMessagesByConversation[conversationId] ?? []
-                self.objectWillChange.send()
-                self.pendingMessages = updatedMessages
-                os_log("\(Self.t)🗑️ 移除已处理消息，队列剩余：\(self.pendingMessages.count)")
-                self.currentProcessingIndex = nil
+
+                queue.removeFirst()
+                self.pendingMessagesByConversation[conversationId] = queue
+                self.currentProcessingIndexByConversation[conversationId] = nil
+
+                if self.currentConversationId == conversationId {
+                    self.syncCurrentConversationState()
+                }
             }
         }
 
-        // 标记处理完成
         await MainActor.run {
-            isSending = false
-            currentProcessingIndex = nil
-            eventContinuation?.yield(.processingFinished)
-            os_log("\(Self.t)✅ 队列处理完成，剩余消息：\(self.pendingMessages.count)")
+            self.isSendingByConversation[conversationId] = false
+            self.currentProcessingIndexByConversation[conversationId] = nil
+            self.sendTasksByConversation[conversationId] = nil
+            if self.currentConversationId == conversationId {
+                self.syncCurrentConversationState()
+            }
+            self.eventContinuation?.yield(.processingFinished(conversationId: conversationId))
         }
     }
 
-    /// 取消当前任务并清空队列
     func cancelAll() {
-        isCancelled = true
-        clearCurrentConversationQueue()
-        isSending = false
-        sendTask?.cancel()
-        sendTask = nil
-
-        os_log("\(Self.t)🛑 已取消当前会话所有待发送消息")
+        guard let conversationId = currentConversationId else { return }
+        cancelProcessing(for: conversationId, clearQueue: true)
     }
 
-    /// 清空发送队列（仅清除等待中的消息）
+    func cancelProcessing(for conversationId: UUID, clearQueue: Bool) {
+        cancelledConversations.insert(conversationId)
+
+        if clearQueue {
+            pendingMessagesByConversation[conversationId] = []
+        }
+
+        currentProcessingIndexByConversation[conversationId] = nil
+        isSendingByConversation[conversationId] = false
+
+        sendTasksByConversation[conversationId]?.cancel()
+        sendTasksByConversation[conversationId] = nil
+
+        if currentConversationId == conversationId {
+            syncCurrentConversationState()
+        }
+    }
+
     func clearQueue() {
-        // 只清除等待中的消息，保留正在发送的消息
         guard let conversationId = currentConversationId else { return }
 
-        if currentProcessingIndex != nil, pendingMessages.count > 1 {
-            pendingMessagesByConversation[conversationId] = Array(pendingMessages.prefix(1))
-        } else if currentProcessingIndex == nil {
-            pendingMessagesByConversation[conversationId]?.removeAll()
+        if currentProcessingIndexByConversation[conversationId] != nil,
+           let queue = pendingMessagesByConversation[conversationId],
+           queue.count > 1 {
+            pendingMessagesByConversation[conversationId] = Array(queue.prefix(1))
+        } else {
+            pendingMessagesByConversation[conversationId] = []
         }
 
-        // 同步更新 pendingMessages，触发 UI 更新
-        let updatedMessages = pendingMessagesByConversation[conversationId] ?? []
-        objectWillChange.send()
-        pendingMessages = updatedMessages
-
-        os_log("\(Self.t)🗑️ 发送队列已清空")
+        syncCurrentConversationState()
     }
 
-    /// 获取队列中的消息数量
     func queueCount() -> Int {
         pendingMessages.count
     }
 
-    /// 判断队列是否为空
     func isQueueEmpty() -> Bool {
         pendingMessages.isEmpty
     }
-    
-    /// 移除队列中指定位置的消息
+
     func removeMessage(at index: Int) {
-        // 不能移除正在发送的消息
         guard index != currentProcessingIndex else { return }
         guard let conversationId = currentConversationId else { return }
-        guard pendingMessages.indices.contains(index) else { return }
-        // 检查数组是否为空，避免崩溃
-        guard !pendingMessagesByConversation[conversationId, default: []].isEmpty else { return }
+        guard var queue = pendingMessagesByConversation[conversationId], queue.indices.contains(index) else { return }
 
-        pendingMessagesByConversation[conversationId]?.remove(at: index)
+        queue.remove(at: index)
+        pendingMessagesByConversation[conversationId] = queue
 
-        // 同步更新 pendingMessages，触发 UI 更新
-        let updatedMessages = pendingMessagesByConversation[conversationId] ?? []
-        objectWillChange.send()
-        pendingMessages = updatedMessages
-
-        // 更新当前处理索引
-        if let currentIdx = currentProcessingIndex, index < currentIdx {
-            currentProcessingIndex = currentIdx - 1
+        if let currentIdx = currentProcessingIndexByConversation[conversationId] ?? nil,
+           index < currentIdx {
+            currentProcessingIndexByConversation[conversationId] = currentIdx - 1
         }
 
-        os_log("\(Self.t)🗑️ 已移除队列中的第 \(index) 条消息")
+        syncCurrentConversationState()
     }
 
-    /// 清空所有会话的发送队列（用于完全重置）
     func clearAllQueues() {
+        for (_, task) in sendTasksByConversation {
+            task.cancel()
+        }
+
         pendingMessagesByConversation.removeAll()
+        currentProcessingIndexByConversation.removeAll()
+        isSendingByConversation.removeAll()
+        cancelledConversations.removeAll()
+        sendTasksByConversation.removeAll()
+
         currentProcessingIndex = nil
         isSending = false
-        isCancelled = true
-        sendTask?.cancel()
-        sendTask = nil
-
-        os_log("\(Self.t)🗑️ 所有会话的发送队列已清空")
+        pendingMessages = []
     }
 
-    /// 删除指定会话的发送队列（用于删除会话时清理）
     func removeConversationQueue(_ conversationId: UUID) {
+        cancelProcessing(for: conversationId, clearQueue: true)
         pendingMessagesByConversation.removeValue(forKey: conversationId)
+        currentProcessingIndexByConversation.removeValue(forKey: conversationId)
+        isSendingByConversation.removeValue(forKey: conversationId)
+        cancelledConversations.remove(conversationId)
+
+        if currentConversationId == conversationId {
+            pendingMessages = []
+            currentProcessingIndex = nil
+            isSending = false
+        }
 
         if Self.verbose {
-            os_log("\(Self.t)🗑️ 已删除会话 [{\(conversationId.uuidString.prefix(8))}] 的发送队列")
+            os_log("\(Self.t)🗑️ 已删除会话 [\(conversationId.uuidString.prefix(8))] 的发送队列")
         }
+    }
+
+    // MARK: - Private
+
+    private func syncCurrentConversationState() {
+        guard let conversationId = currentConversationId else {
+            pendingMessages = []
+            currentProcessingIndex = nil
+            isSending = false
+            return
+        }
+
+        objectWillChange.send()
+        pendingMessages = pendingMessagesByConversation[conversationId] ?? []
+        currentProcessingIndex = currentProcessingIndexByConversation[conversationId] ?? nil
+        isSending = isSendingByConversation[conversationId] ?? false
     }
 }
