@@ -4,15 +4,16 @@ import SwiftUI
 /// 根视图容器组件
 /// 为应用提供统一的上下文环境，管理核心服务初始化和环境注入
 ///
-/// ## 单例模式
+/// ## 多窗口支持
 ///
-/// `RootView` 使用单例模式确保所有服务和 ViewModel 只被创建一次。
-/// 通过 `RootViewContainer` 共享同一个实例，避免内存浪费。
+/// `RootView` 现在支持多窗口模式，每个窗口有自己独立的 ViewModel 实例。
+/// 共享的服务层（如 LLMService、ModelContainer）仍然保持单例，
+/// 但窗口级的 ViewModel（如 AgentProvider、MessageViewModel）是每个窗口独立的。
 ///
 /// ## 使用方式
 ///
 /// ```swift
-/// // 主窗口和设置窗口都使用同一个 RootView 实例
+/// // 主窗口和设置窗口都使用 RootView，每个窗口有独立的状态
 /// ContentLayout()
 ///     .inRootView()
 ///
@@ -23,30 +24,37 @@ struct RootView<Content>: View where Content: View {
     /// 视图内容
     var content: Content
 
-    /// 共享的容器实例
+    /// 共享的服务容器（单例）
     @StateObject private var container = RootViewContainer.shared
+
+    /// 窗口级视图容器（每个窗口独立）
+    @StateObject private var windowContainer: WindowViewContainer
 
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
+        // 创建窗口级容器，传入共享服务
+        _windowContainer = StateObject(wrappedValue: WindowViewContainer(services: RootViewContainer.shared.services))
     }
 
     var body: some View {
         content
+            // 共享的全局服务（所有窗口共享）
             .environmentObject(container.appProvider)
-            .environmentObject(container.agentProvider)
             .environmentObject(container.projectViewModel)
-            .environmentObject(PluginProvider.shared)
-            .environmentObject(container.conversationViewModel)
-            .environmentObject(container.messageViewModel)
-            .environmentObject(container.messageSenderViewModel)
             .environmentObject(container.commandSuggestionViewModel)
             .environmentObject(container.toolsViewModel)
             .environmentObject(container.providerRegistry)
-            .environmentObject(container.depthWarningViewModel)
-            .environmentObject(container.processingStateViewModel)
-            .environmentObject(container.errorStateViewModel)
-            .environmentObject(container.permissionRequestViewModel)
-            .environmentObject(container.thinkingStateViewModel)
+            .environmentObject(PluginProvider.shared)
+            // 窗口级 ViewModel（每个窗口独立）
+            .environmentObject(windowContainer.agentProvider)
+            .environmentObject(windowContainer.conversationViewModel)
+            .environmentObject(windowContainer.messageViewModel)
+            .environmentObject(windowContainer.messageSenderViewModel)
+            .environmentObject(windowContainer.depthWarningViewModel)
+            .environmentObject(windowContainer.processingStateViewModel)
+            .environmentObject(windowContainer.errorStateViewModel)
+            .environmentObject(windowContainer.permissionRequestViewModel)
+            .environmentObject(windowContainer.thinkingStateViewModel)
             .environmentObject(MystiqueThemeManager())
             .modelContainer(container.modelContainer)
     }
@@ -68,6 +76,38 @@ final class RootViewContainer: ObservableObject {
     let slashCommandService: SlashCommandService
     let toolService: ToolService
     let providerRegistry: ProviderRegistry
+
+    /// 共享服务集合（用于创建窗口级 ViewModel）
+    var services: Services {
+        Services(
+            modelContainer: modelContainer,
+            contextService: contextService,
+            llmService: llmService,
+            promptService: promptService,
+            slashCommandService: slashCommandService,
+            toolService: toolService,
+            providerRegistry: providerRegistry,
+            toolsViewModel: toolsViewModel,
+            appProvider: appProvider,
+            projectViewModel: projectViewModel,
+            commandSuggestionViewModel: commandSuggestionViewModel
+        )
+    }
+
+    /// 服务集合结构体
+    struct Services {
+        let modelContainer: ModelContainer
+        let contextService: ContextService
+        let llmService: LLMService
+        let promptService: PromptService
+        let slashCommandService: SlashCommandService
+        let toolService: ToolService
+        let providerRegistry: ProviderRegistry
+        let toolsViewModel: ToolsViewModel
+        let appProvider: GlobalProvider
+        let projectViewModel: ProjectViewModel
+        let commandSuggestionViewModel: CommandSuggestionViewModel
+    }
 
     // MARK: - ViewModel
 
