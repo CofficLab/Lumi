@@ -38,9 +38,11 @@ class LLMService: SuperLog, @unchecked Sendable {
     /// 日志标识符
     nonisolated static let emoji = "🤖"
     
-    /// 是否启用详细日志
-    /// 设为 true 时会输出请求/响应的详细信息
-    nonisolated static let verbose = true
+    /// 详细日志级别
+    /// 0: 关闭日志
+    /// 1: 基础日志
+    /// 2: 详细日志（输出请求/响应的详细信息）
+    nonisolated static let verbose = 1
 
     /// 供应商注册表
     ///
@@ -65,7 +67,7 @@ class LLMService: SuperLog, @unchecked Sendable {
     init() {
         self.registry = ProviderRegistry()
         self.llmAPI = LLMAPIService()
-        if Self.verbose {
+        if Self.verbose >= 1 {
             os_log("\(self.t)✅ LLM 服务已初始化")
         }
     }
@@ -126,7 +128,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         }
 
         // 输出调试信息
-        if Self.verbose {
+        if Self.verbose >= 1 {
             os_log("\(self.t)🚀 发送请求到 \(config.providerId): \(config.model)")
 
             if let tools = tools, !tools.isEmpty {
@@ -150,7 +152,7 @@ class LLMService: SuperLog, @unchecked Sendable {
                 additionalHeaders["anthropic-version"] = "2023-06-01"
             }
 
-            if Self.verbose && !additionalHeaders.isEmpty {
+            if Self.verbose >= 1 && !additionalHeaders.isEmpty {
                 os_log("\(self.t)📦 添加额外请求头：\(additionalHeaders)")
             }
 
@@ -170,7 +172,7 @@ class LLMService: SuperLog, @unchecked Sendable {
             let latency = (endTime - startTime) * 1000.0
 
             // 输出响应信息
-            if Self.verbose {
+            if Self.verbose >= 1 {
                 if let toolCalls = toolCalls, !toolCalls.isEmpty {
                     os_log("\(self.t)收到响应：\(content.prefix(10))...，包含 \(toolCalls.count) 个工具调用，耗时：\(String(format: "%.2f", latency))ms")
                 } else {
@@ -255,7 +257,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         }
 
         // 输出调试信息
-        if Self.verbose {
+        if Self.verbose >= 1 {
             os_log("\(self.t)🚀 发送流式请求到 \(config.providerId): \(config.model)")
         }
 
@@ -349,7 +351,7 @@ class LLMService: SuperLog, @unchecked Sendable {
                         if let chunk = try provider.parseStreamChunk(data: chunkData) {
                             // 记录首 token 时间
                             if let ttft = await state.recordFirstToken() {
-                                if Self.verbose {
+                                if Self.verbose >= 1 {
                                     os_log("\(self.t)⏱️ 首 token 延迟: \(String(format: "%.2f", ttft))ms")
                                 }
                             }
@@ -357,7 +359,7 @@ class LLMService: SuperLog, @unchecked Sendable {
                             // 累积内容 - 只累积 textDelta 的内容，跳过 thinkingDelta
                             if let content = chunk.content, chunk.eventType == .textDelta {
                                 await state.appendContent(content)
-                                if Self.verbose {
+                                if Self.verbose >= 2 {
                                     let currentContent = await state.accumulatedContent
                                     if currentContent.count < 200 {
                                         os_log("\(self.t)📝 累积内容: \(content)")
@@ -400,13 +402,13 @@ class LLMService: SuperLog, @unchecked Sendable {
                             onChunk(chunk)
                         } else {
                             // Provider 应该已经处理了所有事件类型，这里不应该再返回 nil
-                            if Self.verbose {
+                            if Self.verbose >= 1 {
                                 let preview = String(data: chunkData, encoding: .utf8)?.prefix(100) ?? "无法解码"
                                 os_log("\(self.t)⚠️ 警告：Provider 返回 nil，原始数据: \(preview)...")
                             }
                         }
                     } catch {
-                        if Self.verbose {
+                        if Self.verbose >= 1 {
                             os_log("\(self.t)⚠️ 解析流式数据块失败: \(error.localizedDescription)")
                         }
                     }
@@ -447,7 +449,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         let finalStopReason = await state.stopReason
         let finalTimeToFirstToken = await state.timeToFirstToken
 
-        if Self.verbose {
+        if Self.verbose >= 1 {
             os_log("\(self.t)✅ 流式响应完成，总耗时：\(String(format: "%.2f", latency))ms, TTFT: \(String(format: "%.2f", finalTimeToFirstToken ?? 0))ms, 内容长度：\(finalContent.count)")
             if finalContent.isEmpty {
                 os_log("\(self.t)⚠️ 警告：累积内容为空！")

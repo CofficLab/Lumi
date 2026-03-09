@@ -374,7 +374,7 @@ class ToolService: SuperLog, @unchecked Sendable {
             if Self.verbose {
                 let resultPreview = result.count > 200 ? String(result.prefix(200)) + "..." : result
                 os_log("\(Self.t)✅ 工具执行成功 (耗时：\(String(format: "%.2f", duration))s)")
-                os_log("\(Self.t)  结果预览：\(resultPreview)")
+                os_log("\(Self.t)  结果预览：\n\(resultPreview)")
             }
 
             return result

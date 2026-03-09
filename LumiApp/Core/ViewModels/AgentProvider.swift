@@ -289,14 +289,6 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             updateMessage(currentMessage, at: index)
 
         case let .streamEvent(eventType, content, rawEvent, messageId):
-            // 处理流式事件（用于调试和展示所有事件）
-
-            // 首先记录所有事件
-            if Self.verbose {
-                let contentPreview = content.isEmpty ? "(空)" : "\(content.prefix(50))..."
-                os_log("\(Self.t)📨 收到事件 [\(eventType.rawValue)]: \(contentPreview)")
-            }
-
             // 处理心跳事件 - 更新心跳时间触发动画
             if eventType == .ping {
                 setLastHeartbeatTime(Date())
@@ -326,9 +318,6 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
             // 处理内容块停止事件 - 不追加到消息内容
             if eventType == .contentBlockStop {
-                if Self.verbose {
-                    os_log("\(Self.t)✅ 内容块结束")
-                }
                 return
             }
 
