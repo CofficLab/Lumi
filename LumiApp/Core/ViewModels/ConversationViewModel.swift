@@ -208,11 +208,27 @@ final class ConversationViewModel: ObservableObject, SuperLog {
         chatHistoryService.fetchAllConversations()
     }
 
+    /// 分页获取对话
+    /// - Parameters:
+    ///   - limit: 每页数量
+    ///   - offset: 偏移量
+    /// - Returns: 当前页数据
+    func fetchConversationsPage(limit: Int, offset: Int) -> [Conversation] {
+        chatHistoryService.fetchConversationsPage(limit: limit, offset: offset)
+    }
+
     /// 获取项目相关的对话
     ///
     /// - Parameter projectId: 项目路径
     /// - Returns: 项目相关的对话列表
     func fetchConversations(forProject projectId: String) -> [Conversation] {
         chatHistoryService.fetchConversations(forProject: projectId)
+    }
+
+    /// 根据 ID 获取会话
+    /// - Parameter id: 会话 ID
+    /// - Returns: 会话，不存在时返回 nil
+    func fetchConversation(id: UUID) -> Conversation? {
+        chatHistoryService.fetchConversation(id: id)
     }
 }

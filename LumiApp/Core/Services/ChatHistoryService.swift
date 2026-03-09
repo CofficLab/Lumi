@@ -3,6 +3,21 @@ import MagicKit
 import OSLog
 import SwiftData
 
+extension Notification.Name {
+    static let conversationDidChange = Notification.Name("ChatHistoryService.ConversationDidChange")
+}
+
+enum ConversationChangeType: String {
+    case created
+    case updated
+    case deleted
+}
+
+enum ConversationChangeUserInfoKey {
+    static let type = "type"
+    static let conversationId = "conversationId"
+}
+
 /// 模型性能统计数据
 struct ModelPerformanceStats {
     let providerId: String
@@ -72,6 +87,17 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         }
     }
 
+    private func notifyConversationChanged(type: ConversationChangeType, conversationId: UUID) {
+        NotificationCenter.default.post(
+            name: .conversationDidChange,
+            object: nil,
+            userInfo: [
+                ConversationChangeUserInfoKey.type: type.rawValue,
+                ConversationChangeUserInfoKey.conversationId: conversationId.uuidString,
+            ]
+        )
+    }
+
     // MARK: - 创建对话
 
     /// 创建新对话
@@ -84,6 +110,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         )
 
         saveConversation(conversation)
+        notifyConversationChanged(type: .created, conversationId: conversation.id)
 
         if Self.verbose {
             os_log("\(Self.t)✨ 创建新对话：\(title)")
@@ -100,6 +127,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         conversation.updatedAt = Date()
 
         saveConversation(conversation)
+        notifyConversationChanged(type: .updated, conversationId: conversation.id)
 
         if Self.verbose {
             os_log("\(Self.t)✏️ 对话标题已更新：\(newTitle)")
@@ -363,6 +391,40 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         }
     }
 
+    /// 分页获取对话
+    /// - Parameters:
+    ///   - limit: 每页数量
+    ///   - offset: 偏移量
+    ///   - projectId: 可选项目 ID；为 nil 时拉取全部对话
+    /// - Returns: 当前页对话数据
+    func fetchConversationsPage(limit: Int, offset: Int, projectId: String? = nil) -> [Conversation] {
+        let context = getContext()
+
+        guard limit > 0, offset >= 0 else { return [] }
+
+        var descriptor: FetchDescriptor<Conversation>
+        if let projectId {
+            descriptor = FetchDescriptor<Conversation>(
+                predicate: #Predicate { $0.projectId == projectId },
+                sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+            )
+        } else {
+            descriptor = FetchDescriptor<Conversation>(
+                sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+            )
+        }
+
+        descriptor.fetchLimit = limit
+        descriptor.fetchOffset = offset
+
+        do {
+            return try context.fetch(descriptor)
+        } catch {
+            os_log(.error, "\(Self.t)❌ 分页获取对话失败：\(error.localizedDescription)")
+            return []
+        }
+    }
+
     /// 根据 ID 获取对话
     func fetchConversation(id: UUID) -> Conversation? {
         let context = getContext()
@@ -432,6 +494,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
 
         do {
             try context.save()
+            notifyConversationChanged(type: .deleted, conversationId: conversation.id)
             if Self.verbose {
                 os_log("\(Self.t)🗑️ 对话已删除：\(conversation.title)")
             }
