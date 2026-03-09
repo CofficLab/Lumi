@@ -7,7 +7,10 @@ struct CreateAndAssignTaskTool: AgentTool, SuperLog {
     nonisolated static let emoji = "🧩"
     nonisolated static let verbose = true
 
-    let name = "create_and_assign_task"
+    /// 工具名称静态常量
+    nonisolated static let toolName = "create_and_assign_task"
+
+    let name = Self.toolName
     let description = """
     Create a specialized worker agent and assign a concrete task.
     Use this when the task benefits from a specialist:

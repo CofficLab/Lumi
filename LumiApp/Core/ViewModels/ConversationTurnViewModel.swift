@@ -138,7 +138,14 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
             os_log("\(Self.t)🚀 [\(conversationId)] 开始处理轮次 (深度：\(depth), 模式：\(chatMode.displayName), 流式：\(self.enableStreaming))")
         }
 
-        let availableTools: [AgentTool] = (chatMode == .build) ? tools : []
+        let availableTools: [AgentTool] = chatMode.allowsTools
+            ? tools.filter { tool in
+                if tool.name == CreateAndAssignTaskTool.toolName {
+                    return chatMode.allowsMultiWorker
+                }
+                return true
+            }
+            : []
 
         do {
             let responseMsg: ChatMessage

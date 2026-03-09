@@ -30,19 +30,19 @@
 			remoteGlobalIDString = 0B2F7D602F3A301C00AD7E94;
 			remoteInfo = LumiFinder;
 		};
-		F5A6406F2F3ED1910039A761 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = F54F8C762F1A3B6500AABB2A /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = F5A640642F3ED1910039A761;
-			remoteInfo = NettoExtension;
-		};
 		A10000082F60000100AAA001 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F54F8C762F1A3B6500AABB2A /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = F54F8C7D2F1A3B6500AABB2A;
 			remoteInfo = Lumi;
+		};
+		F5A6406F2F3ED1910039A761 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F54F8C762F1A3B6500AABB2A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F5A640642F3ED1910039A761;
+			remoteInfo = NettoExtension;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -73,7 +73,7 @@
 
 /* Begin PBXFileReference section */
 		0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LumiFinder.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		A10000012F60000100AAA001 /* LumiTests.xctest */ = {isa = PBXFileReference; explicitFileType = "wrapper.cfbundle"; includeInIndex = 0; path = LumiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000012F60000100AAA001 /* LumiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LumiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F53C3ECB2F1A3CB000929321 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F53C49142F1A42EC00929321 /* Lumi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5A640652F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension */ = {isa = PBXFileReference; explicitFileType = "wrapper.system-extension"; includeInIndex = 0; path = com.coffic.lumi.NettoExtension.systemextension; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -111,12 +111,6 @@
 			);
 			target = F54F8C7D2F1A3B6500AABB2A /* Lumi */;
 		};
-		A10000022F60000100AAA001 /* Exceptions for "LumiTests" folder in "LumiTests" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-			);
-			target = A10000042F60000100AAA001 /* LumiTests */;
-		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -126,6 +120,11 @@
 				0B2F7D692F3A301D00AD7E94 /* Exceptions for "LumiFinder" folder in "LumiFinder" target */,
 			);
 			path = LumiFinder;
+			sourceTree = "<group>";
+		};
+		A10000032F60000100AAA001 /* LumiTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = LumiTests;
 			sourceTree = "<group>";
 		};
 		F5A640682F3ED1910039A761 /* NettoExtension */ = {
@@ -145,18 +144,17 @@
 			path = LumiApp;
 			sourceTree = "<group>";
 		};
-		A10000032F60000100AAA001 /* LumiTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				A10000022F60000100AAA001 /* Exceptions for "LumiTests" folder in "LumiTests" target */,
-			);
-			path = LumiTests;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		0B2F7D5E2F3A301C00AD7E94 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000062F60000100AAA001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -184,13 +182,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				F5A640672F3ED1910039A761 /* NetworkExtension.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		A10000062F60000100AAA001 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -245,6 +236,29 @@
 			productName = LumiFinder;
 			productReference = 0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */;
 			productType = "com.apple.product-type.app-extension";
+		};
+		A10000042F60000100AAA001 /* LumiTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A100000C2F60000100AAA001 /* Build configuration list for PBXNativeTarget "LumiTests" */;
+			buildPhases = (
+				A10000052F60000100AAA001 /* Sources */,
+				A10000062F60000100AAA001 /* Frameworks */,
+				A10000072F60000100AAA001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A10000092F60000100AAA001 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A10000032F60000100AAA001 /* LumiTests */,
+			);
+			name = LumiTests;
+			packageProductDependencies = (
+			);
+			productName = LumiTests;
+			productReference = A10000012F60000100AAA001 /* LumiTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		F54F8C7D2F1A3B6500AABB2A /* Lumi */ = {
 			isa = PBXNativeTarget;
@@ -302,29 +316,6 @@
 			productName = NettoExtension;
 			productReference = F5A640652F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension */;
 			productType = "com.apple.product-type.system-extension";
-		};
-		A10000042F60000100AAA001 /* LumiTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = A100000C2F60000100AAA001 /* Build configuration list for PBXNativeTarget "LumiTests" */;
-			buildPhases = (
-				A10000052F60000100AAA001 /* Sources */,
-				A10000062F60000100AAA001 /* Frameworks */,
-				A10000072F60000100AAA001 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				A10000092F60000100AAA001 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				A10000032F60000100AAA001 /* LumiTests */,
-			);
-			name = LumiTests;
-			packageProductDependencies = (
-			);
-			productName = LumiTests;
-			productReference = A10000012F60000100AAA001 /* LumiTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -391,6 +382,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A10000072F60000100AAA001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F54F8C7C2F1A3B6500AABB2A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -406,17 +404,17 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A10000072F60000100AAA001 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0B2F7D5D2F3A301C00AD7E94 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-/* End PBXResourcesBuildPhase section */
-
-/* Begin PBXSourcesBuildPhase section */
-		0B2F7D5D2F3A301C00AD7E94 /* Sources */ = {
+		A10000052F60000100AAA001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -437,13 +435,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A10000052F60000100AAA001 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -452,15 +443,15 @@
 			target = 0B2F7D602F3A301C00AD7E94 /* LumiFinder */;
 			targetProxy = 0B2F7D662F3A301D00AD7E94 /* PBXContainerItemProxy */;
 		};
-		F5A640702F3ED1910039A761 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = F5A640642F3ED1910039A761 /* NettoExtension */;
-			targetProxy = F5A6406F2F3ED1910039A761 /* PBXContainerItemProxy */;
-		};
 		A10000092F60000100AAA001 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = F54F8C7D2F1A3B6500AABB2A /* Lumi */;
 			targetProxy = A10000082F60000100AAA001 /* PBXContainerItemProxy */;
+		};
+		F5A640702F3ED1910039A761 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F5A640642F3ED1910039A761 /* NettoExtension */;
+			targetProxy = F5A6406F2F3ED1910039A761 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -552,6 +543,50 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		A100000A2F60000100AAA001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.LumiTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Lumi.app/Contents/MacOS/Lumi";
+				TEST_TARGET_NAME = Lumi;
+			};
+			name = Debug;
+		};
+		A100000B2F60000100AAA001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.LumiTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Lumi.app/Contents/MacOS/Lumi";
+				TEST_TARGET_NAME = Lumi;
 			};
 			name = Release;
 		};
@@ -843,50 +878,6 @@
 			};
 			name = Release;
 		};
-		A100000A2F60000100AAA001 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				GENERATE_INFOPLIST_FILE = YES;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/../Frameworks",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.LumiTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Lumi.app/Contents/MacOS/Lumi";
-				TEST_TARGET_NAME = Lumi;
-			};
-			name = Debug;
-		};
-		A100000B2F60000100AAA001 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				GENERATE_INFOPLIST_FILE = YES;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/../Frameworks",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.LumiTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Lumi.app/Contents/MacOS/Lumi";
-				TEST_TARGET_NAME = Lumi;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -895,6 +886,15 @@
 			buildConfigurations = (
 				0B2F7D6B2F3A301D00AD7E94 /* Debug */,
 				0B2F7D6C2F3A301D00AD7E94 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A100000C2F60000100AAA001 /* Build configuration list for PBXNativeTarget "LumiTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A100000A2F60000100AAA001 /* Debug */,
+				A100000B2F60000100AAA001 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -922,15 +922,6 @@
 			buildConfigurations = (
 				F5A640732F3ED1910039A761 /* Debug */,
 				F5A640742F3ED1910039A761 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		A100000C2F60000100AAA001 /* Build configuration list for PBXNativeTarget "LumiTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				A100000A2F60000100AAA001 /* Debug */,
-				A100000B2F60000100AAA001 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

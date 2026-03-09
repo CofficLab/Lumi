@@ -152,6 +152,12 @@ struct ChatBubble: View {
                             )
                             .messageBubbleStyle(role: message.role, isError: message.isError)
                         }
+                        
+                        // 消息工具栏（底部按钮行）
+                        MessageToolbarView(
+                            message: message,
+                            isAssistantMessage: true
+                        )
                     }
                 } else if message.toolCallID != nil {
                     // 工具输出
@@ -160,16 +166,29 @@ struct ChatBubble: View {
                         message: message,
                         toolType: inferToolType(from: message)
                     )
+                    // 工具输出也显示工具栏
+                    MessageToolbarView(
+                        message: message,
+                        isAssistantMessage: false
+                    )
                 } else {
                     // 用户消息
-                    MarkdownMessageView(
-                        message: message,
-                        showRawMessage: showRawMessage,
-                        isCollapsible: false,
-                        isExpanded: true,
-                        onToggleExpand: {}
-                    )
-                    .messageBubbleStyle(role: message.role, isError: message.isError)
+                    VStack(alignment: .leading, spacing: 4) {
+                        MarkdownMessageView(
+                            message: message,
+                            showRawMessage: showRawMessage,
+                            isCollapsible: false,
+                            isExpanded: true,
+                            onToggleExpand: {}
+                        )
+                        .messageBubbleStyle(role: message.role, isError: message.isError)
+                        
+                        // 消息工具栏（底部按钮行）
+                        MessageToolbarView(
+                            message: message,
+                            isAssistantMessage: false
+                        )
+                    }
                 }
             }
 
@@ -254,7 +273,7 @@ struct AssistantMessageHeader: View {
             HStack(alignment: .center, spacing: 12) {
                 // 性能指标组
                 HStack(alignment: .center, spacing: 8) {
-                    // 耗时进度条（如果有TTFT和总耗时）
+                    // 耗时进度条（如果有 TTFT 和总耗时）
                     if let ttft = message.timeToFirstToken, let latency = message.latency {
                         LatencyProgressBar(ttft: ttft, totalLatency: latency)
                     }
