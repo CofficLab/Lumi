@@ -16,8 +16,8 @@ struct ConversationListView: View, SuperLog {
     /// 会话管理 ViewModel
     @EnvironmentObject var conversationViewModel: ConversationViewModel
 
-    /// 会话列表：按更新时间倒序排列
-    @Query(sort: \Conversation.updatedAt, order: .reverse)
+    /// 会话列表：按创建时间倒序排列
+    @Query(sort: \Conversation.createdAt, order: .reverse)
     private var conversations: [Conversation]
 
     /// 本地选择的会话 ID

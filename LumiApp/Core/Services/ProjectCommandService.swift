@@ -253,7 +253,9 @@ actor ProjectCommandExecutor: SuperLog {
         }
         
         // 触发处理
-        await provider.processTurn()
+        if let conversationId = await MainActor.run(body: { provider.conversationViewModel.selectedConversationId }) {
+            await provider.processTurn(conversationId: conversationId)
+        }
         
         return .handled
     }

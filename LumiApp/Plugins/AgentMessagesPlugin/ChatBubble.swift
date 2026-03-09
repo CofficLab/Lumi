@@ -640,22 +640,31 @@ struct LatencyProgressBar: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            // 进度条
-            GeometryReader { geometry in
+            // 进度条 - 使用固定尺寸的 ZStack 替代 GeometryReader
+            ZStack(alignment: .leading) {
+                // 背景
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color.gray.opacity(0.2))
+                    .frame(width: 120, height: 4)
+                
+                // TTFT 部分（橙色）
                 HStack(spacing: 0) {
-                    // TTFT 部分（橙色）
                     Rectangle()
                         .fill(Color.orange)
-                        .frame(width: geometry.size.width * ttftRatio)
+                        .frame(width: 120 * ttftRatio, height: 4)
                     
-                    // 响应时间部分（蓝色）
+                    Spacer(minLength: 0)
+                }
+                
+                // 响应时间部分（蓝色）
+                HStack(spacing: 0) {
+                    Spacer(minLength: 0)
                     Rectangle()
                         .fill(Color.blue)
-                        .frame(width: geometry.size.width * (1 - ttftRatio))
+                        .frame(width: 120 * (1 - ttftRatio), height: 4)
                 }
             }
             .frame(width: 120, height: 4)
-            .clipShape(RoundedRectangle(cornerRadius: 2))
             
             // 时间信息（一行显示）
             HStack(spacing: 8) {
@@ -664,6 +673,7 @@ struct LatencyProgressBar: View {
                         .font(.system(size: 7, weight: .medium))
                     Text(formatTTFT(ttft))
                         .font(DesignTokens.Typography.caption2)
+                        .fixedSize()
                 }
                 .foregroundColor(.orange)
                 
@@ -672,10 +682,12 @@ struct LatencyProgressBar: View {
                         .font(.system(size: 7, weight: .medium))
                     Text(formatLatency(totalLatency))
                         .font(DesignTokens.Typography.caption2)
+                        .fixedSize()
                 }
                 .foregroundColor(.blue)
             }
         }
+        .fixedSize()
         .help(helpText)
     }
     
@@ -727,22 +739,31 @@ struct TokenProgressBar: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            // 进度条
-            GeometryReader { geometry in
+            // 进度条 - 使用固定尺寸的 ZStack 替代 GeometryReader
+            ZStack(alignment: .leading) {
+                // 背景
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color.gray.opacity(0.2))
+                    .frame(width: 120, height: 4)
+                
+                // 输入 token 部分（绿色）
                 HStack(spacing: 0) {
-                    // 输入 token 部分（绿色）
                     Rectangle()
                         .fill(Color.green)
-                        .frame(width: geometry.size.width * inputRatio)
+                        .frame(width: 120 * inputRatio, height: 4)
                     
-                    // 输出 token 部分（紫色）
+                    Spacer(minLength: 0)
+                }
+                
+                // 输出 token 部分（紫色）
+                HStack(spacing: 0) {
+                    Spacer(minLength: 0)
                     Rectangle()
                         .fill(Color.purple)
-                        .frame(width: geometry.size.width * (1 - inputRatio))
+                        .frame(width: 120 * (1 - inputRatio), height: 4)
                 }
             }
             .frame(width: 120, height: 4)
-            .clipShape(RoundedRectangle(cornerRadius: 2))
             
             // Token 信息（一行显示）
             HStack(spacing: 8) {
@@ -751,6 +772,7 @@ struct TokenProgressBar: View {
                         .font(.system(size: 7, weight: .medium))
                     Text("\(inputTokens)")
                         .font(DesignTokens.Typography.caption2)
+                        .fixedSize()
                 }
                 .foregroundColor(.green)
                 
@@ -759,10 +781,12 @@ struct TokenProgressBar: View {
                         .font(.system(size: 7, weight: .medium))
                     Text("\(outputTokens)")
                         .font(DesignTokens.Typography.caption2)
+                        .fixedSize()
                 }
                 .foregroundColor(.purple)
             }
         }
+        .fixedSize()
         .help(helpText)
     }
     

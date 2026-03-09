@@ -109,6 +109,14 @@ final class ConversationViewModel: ObservableObject, SuperLog {
             }
             return
         }
+        saveMessage(message, to: conversationId)
+    }
+
+    /// 保存消息到指定对话
+    /// - Parameters:
+    ///   - message: 要保存的消息
+    ///   - conversationId: 目标对话 ID
+    func saveMessage(_ message: ChatMessage, to conversationId: UUID) {
 
         // 从数据库获取对话
         guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else {

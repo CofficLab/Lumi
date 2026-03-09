@@ -279,7 +279,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
     func fetchAllConversations() -> [Conversation] {
         let context = getContext()
         let descriptor = FetchDescriptor<Conversation>(
-            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
 
         do {
@@ -315,7 +315,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         let context = getContext()
         let descriptor = FetchDescriptor<Conversation>(
             predicate: #Predicate { $0.projectId == projectId },
-            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
 
         do {
