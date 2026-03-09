@@ -41,7 +41,6 @@ struct RootView<Content>: View where Content: View {
             // 共享的全局服务（所有窗口共享）
             .environmentObject(container.appProvider)
             .environmentObject(container.projectViewModel)
-            .environmentObject(container.commandSuggestionViewModel)
             .environmentObject(container.toolsViewModel)
             .environmentObject(container.providerRegistry)
             .environmentObject(PluginProvider.shared)
@@ -50,6 +49,7 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(windowContainer.conversationViewModel)
             .environmentObject(windowContainer.messageViewModel)
             .environmentObject(windowContainer.messageSenderViewModel)
+            .environmentObject(windowContainer.commandSuggestionViewModel)
             .environmentObject(windowContainer.depthWarningViewModel)
             .environmentObject(windowContainer.processingStateViewModel)
             .environmentObject(windowContainer.errorStateViewModel)

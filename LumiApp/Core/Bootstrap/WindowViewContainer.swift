@@ -19,6 +19,7 @@ final class WindowViewContainer: ObservableObject {
     let conversationViewModel: ConversationViewModel
     let messageSenderViewModel: MessageSenderViewModel
     let agentProvider: AgentProvider
+    let commandSuggestionViewModel: CommandSuggestionViewModel
 
     let depthWarningViewModel: DepthWarningViewModel
     let processingStateViewModel: ProcessingStateViewModel
@@ -47,6 +48,8 @@ final class WindowViewContainer: ObservableObject {
         )
 
         self.messageSenderViewModel = MessageSenderViewModel()
+
+        self.commandSuggestionViewModel = CommandSuggestionViewModel(slashCommandService: services.slashCommandService)
 
         let toolExecutionService = ToolExecutionService(toolService: services.toolService)
 

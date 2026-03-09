@@ -101,9 +101,11 @@ final class ProjectViewModel: ObservableObject, SuperLog {
 
     /// 设置当前项目信息
     func setCurrentProjectInfo(name: String, path: String, selected: Bool) {
-        currentProjectName = name
-        currentProjectPath = path
-        isProjectSelected = selected
+        Task { @MainActor in
+            self.currentProjectName = name
+            self.currentProjectPath = path
+            self.isProjectSelected = selected
+        }
     }
 
     /// 应用项目配置
