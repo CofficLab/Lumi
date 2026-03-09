@@ -426,6 +426,7 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
         case "write_file": return "✏️"
         case "list_directory": return "📁"
         case "run_command": return "⚡"
+        case "create_and_assign_task": return "🧩"
         default: return "🔧"
         }
     }

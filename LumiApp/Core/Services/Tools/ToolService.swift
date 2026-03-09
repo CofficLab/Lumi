@@ -121,6 +121,11 @@ class ToolService: SuperLog, @unchecked Sendable {
     ///
     /// 负责检查命令执行的权限和风险等级。
     private(set) var permissionService: PermissionService
+
+    /// LLM 服务（可选）
+    ///
+    /// 当可用时，用于启用 Worker 协作工具。
+    private let llmService: LLMService?
     
     /// Combine 订阅集合
     ///
@@ -136,10 +141,11 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 2. 注册内置工具
     /// 3. 设置 MCP 监听器
     /// 4. 刷新工具列表
-    init() {
+    init(llmService: LLMService? = nil) {
         self.mcpService = MCPService()
         self.shellService = ShellService()
         self.permissionService = PermissionService()
+        self.llmService = llmService
         setupBuiltInTools()
         setupMCPObservers()
         refreshAllTools()
@@ -159,12 +165,19 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// - WriteFileTool: 写入文件
     /// - ShellTool: 执行 Shell 命令
     private func setupBuiltInTools() {
-        builtInTools = [
+        var tools: [AgentTool] = [
             ListDirectoryTool(),
             ReadFileTool(),
             WriteFileTool(),
             ShellTool(),
         ]
+
+        if let llmService {
+            let workerManager = WorkerAgentManager(llmService: llmService)
+            tools.append(CreateAndAssignTaskTool(workerAgentManager: workerManager, toolService: self))
+        }
+
+        builtInTools = tools
     }
 
     /// 设置 MCP 工具监听器

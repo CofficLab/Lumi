@@ -37,6 +37,13 @@
 			remoteGlobalIDString = F5A640642F3ED1910039A761;
 			remoteInfo = NettoExtension;
 		};
+		A10000082F60000100AAA001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F54F8C762F1A3B6500AABB2A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F54F8C7D2F1A3B6500AABB2A;
+			remoteInfo = Lumi;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -66,6 +73,7 @@
 
 /* Begin PBXFileReference section */
 		0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LumiFinder.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000012F60000100AAA001 /* LumiTests.xctest */ = {isa = PBXFileReference; explicitFileType = "wrapper.cfbundle"; includeInIndex = 0; path = LumiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F53C3ECB2F1A3CB000929321 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F53C49142F1A42EC00929321 /* Lumi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5A640652F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension */ = {isa = PBXFileReference; explicitFileType = "wrapper.system-extension"; includeInIndex = 0; path = com.coffic.lumi.NettoExtension.systemextension; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -103,6 +111,12 @@
 			);
 			target = F54F8C7D2F1A3B6500AABB2A /* Lumi */;
 		};
+		A10000022F60000100AAA001 /* Exceptions for "LumiTests" folder in "LumiTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+			);
+			target = A10000042F60000100AAA001 /* LumiTests */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -129,6 +143,14 @@
 				F52C2B202F3EDDE200905557 /* Exceptions for "LumiApp" folder in "NettoExtension" target */,
 			);
 			path = LumiApp;
+			sourceTree = "<group>";
+		};
+		A10000032F60000100AAA001 /* LumiTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A10000022F60000100AAA001 /* Exceptions for "LumiTests" folder in "LumiTests" target */,
+			);
+			path = LumiTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -165,6 +187,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A10000062F60000100AAA001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -173,8 +202,10 @@
 			children = (
 				F53C3ECB2F1A3CB000929321 /* Assets.xcassets */,
 				F5F4DFD42F3ACC5100C76EA0 /* LumiApp */,
+				A10000032F60000100AAA001 /* LumiTests */,
 				0B2F7D622F3A301C00AD7E94 /* LumiFinder */,
 				F53C49142F1A42EC00929321 /* Lumi.app */,
+				A10000012F60000100AAA001 /* LumiTests.xctest */,
 				0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */,
 				F5A640682F3ED1910039A761 /* NettoExtension */,
 				F5F4DFC92F3ABECF00C76EA0 /* Frameworks */,
@@ -272,6 +303,29 @@
 			productReference = F5A640652F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension */;
 			productType = "com.apple.product-type.system-extension";
 		};
+		A10000042F60000100AAA001 /* LumiTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A100000C2F60000100AAA001 /* Build configuration list for PBXNativeTarget "LumiTests" */;
+			buildPhases = (
+				A10000052F60000100AAA001 /* Sources */,
+				A10000062F60000100AAA001 /* Frameworks */,
+				A10000072F60000100AAA001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A10000092F60000100AAA001 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A10000032F60000100AAA001 /* LumiTests */,
+			);
+			name = LumiTests;
+			packageProductDependencies = (
+			);
+			productName = LumiTests;
+			productReference = A10000012F60000100AAA001 /* LumiTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -284,6 +338,10 @@
 				TargetAttributes = {
 					0B2F7D602F3A301C00AD7E94 = {
 						CreatedOnToolsVersion = 26.2;
+					};
+					A10000042F60000100AAA001 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = F54F8C7D2F1A3B6500AABB2A;
 					};
 					F54F8C7D2F1A3B6500AABB2A = {
 						CreatedOnToolsVersion = 16.4;
@@ -318,6 +376,7 @@
 			projectRoot = "";
 			targets = (
 				F54F8C7D2F1A3B6500AABB2A /* Lumi */,
+				A10000042F60000100AAA001 /* LumiTests */,
 				0B2F7D602F3A301C00AD7E94 /* LumiFinder */,
 				F5A640642F3ED1910039A761 /* NettoExtension */,
 			);
@@ -341,6 +400,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F5A640632F3ED1910039A761 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000072F60000100AAA001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -371,6 +437,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A10000052F60000100AAA001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -383,6 +456,11 @@
 			isa = PBXTargetDependency;
 			target = F5A640642F3ED1910039A761 /* NettoExtension */;
 			targetProxy = F5A6406F2F3ED1910039A761 /* PBXContainerItemProxy */;
+		};
+		A10000092F60000100AAA001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F54F8C7D2F1A3B6500AABB2A /* Lumi */;
+			targetProxy = A10000082F60000100AAA001 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -765,6 +843,50 @@
 			};
 			name = Release;
 		};
+		A100000A2F60000100AAA001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.LumiTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Lumi.app/Contents/MacOS/Lumi";
+				TEST_TARGET_NAME = Lumi;
+			};
+			name = Debug;
+		};
+		A100000B2F60000100AAA001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.LumiTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Lumi.app/Contents/MacOS/Lumi";
+				TEST_TARGET_NAME = Lumi;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -800,6 +922,15 @@
 			buildConfigurations = (
 				F5A640732F3ED1910039A761 /* Debug */,
 				F5A640742F3ED1910039A761 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A100000C2F60000100AAA001 /* Build configuration list for PBXNativeTarget "LumiTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A100000A2F60000100AAA001 /* Debug */,
+				A100000B2F60000100AAA001 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
