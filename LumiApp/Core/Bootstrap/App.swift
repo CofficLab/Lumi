@@ -13,7 +13,7 @@ import SwiftUI
 ///
 /// ```text
 /// Lumi App
-/// ├── WindowGroup (主窗口)
+/// ├── WindowGroup (主窗口) - 支持多窗口
 /// │   └── ContentLayout (主内容布局)
 /// └── SettingsWindow (设置窗口)
 ///     └── SettingView (设置视图)
@@ -25,6 +25,7 @@ import SwiftUI
 /// - DebugCommand: 调试相关命令
 /// - SettingsCommand: 打开设置
 /// - ConfigCommand: 配置命令
+/// - WindowCommands: 窗口管理命令
 @main
 struct CoreApp: App {
     /// macOS 应用代理，处理应用级别的生命周期事件
@@ -37,10 +38,11 @@ struct CoreApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: MacAgent
 
     var body: some Scene {
-        // 主窗口
+        // 主窗口 - 支持多窗口
         //
         // 使用隐藏标题栏的窗口风格，提供现代简洁的外观。
         // 工具栏使用统一样式，不显示传统标题。
+        // 每个窗口有独立的状态，可以打开不同的对话或项目。
         WindowGroup {
             ContentLayout()
                 .inRootView()
@@ -51,6 +53,7 @@ struct CoreApp: App {
             DebugCommand()
             SettingsCommand()
             ConfigCommand()
+            WindowCommands()
 
             // 添加检查更新菜单项
             // 位于应用信息菜单之后

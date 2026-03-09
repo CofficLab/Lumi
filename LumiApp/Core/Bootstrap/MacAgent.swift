@@ -113,6 +113,31 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
         NotificationCenter.postApplicationDidResignActive()
     }
 
+    // MARK: - Dock Menu
+
+    /// 返回 Dock 右键菜单
+    ///
+    /// 当用户在 Dock 栏图标上右键点击时显示此菜单
+    func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+        let menu = NSMenu()
+
+        // 新建窗口菜单项
+        let newWindowItem = NSMenuItem(
+            title: "新建窗口",
+            action: #selector(dockNewWindow),
+            keyEquivalent: ""
+        )
+        newWindowItem.target = self
+        menu.addItem(newWindowItem)
+
+        return menu
+    }
+
+    /// Dock 菜单：新建窗口
+    @objc private func dockNewWindow() {
+        WindowManager.shared.openNewWindow()
+    }
+
     // MARK: - Setup
 
     /// 设置各个控制器
