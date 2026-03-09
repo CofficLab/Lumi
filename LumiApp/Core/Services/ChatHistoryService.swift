@@ -3,6 +3,36 @@ import MagicKit
 import OSLog
 import SwiftData
 
+/// 模型性能统计数据
+struct ModelPerformanceStats {
+    let providerId: String
+    let modelName: String
+    var sampleCount: Int = 0
+    var totalLatency: Double = 0
+    var totalTTFT: Double = 0
+    var ttftCount: Int = 0
+    var totalInputTokens: Int = 0
+    var inputTokenCount: Int = 0
+    var totalOutputTokens: Int = 0
+    var outputTokenCount: Int = 0
+    
+    var avgLatency: Double {
+        sampleCount > 0 ? totalLatency / Double(sampleCount) : 0
+    }
+    
+    var avgTTFT: Double {
+        ttftCount > 0 ? totalTTFT / Double(ttftCount) : 0
+    }
+    
+    var avgInputTokens: Int {
+        inputTokenCount > 0 ? totalInputTokens / inputTokenCount : 0
+    }
+    
+    var avgOutputTokens: Int {
+        outputTokenCount > 0 ? totalOutputTokens / outputTokenCount : 0
+    }
+}
+
 /// 聊天历史服务 - 使用 SwiftData 存储对话
 final class ChatHistoryService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "💾"
@@ -397,6 +427,66 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         }
         
         return result
+    }
+    
+    /// 获取每个供应商和模型的详细性能统计
+    /// - Returns: 字典，键为 (providerId, modelName)，值为详细统计数据
+    func getModelDetailedStats() -> [String: ModelPerformanceStats] {
+        let context = getContext()
+        
+        // 获取所有有性能数据的消息
+        let descriptor = FetchDescriptor<ChatMessageEntity>(
+            predicate: #Predicate { $0.latency != nil && $0.providerId != nil && $0.modelName != nil }
+        )
+
+        guard let messageEntities = try? context.fetch(descriptor) else {
+            os_log(.error, "\(Self.t)❌ 获取消息失败")
+            return [:]
+        }
+
+        // 按 providerId 和 modelName 分组统计
+        var statsDict: [String: ModelPerformanceStats] = [:]
+        
+        for entity in messageEntities {
+            guard let providerId = entity.providerId,
+                  let modelName = entity.modelName,
+                  let latency = entity.latency else {
+                continue
+            }
+            
+            let key = "\(providerId)|\(modelName)"
+            var stats = statsDict[key] ?? ModelPerformanceStats(
+                providerId: providerId,
+                modelName: modelName,
+                sampleCount: 0,
+                totalLatency: 0,
+                totalTTFT: 0,
+                totalInputTokens: 0,
+                totalOutputTokens: 0
+            )
+            
+            stats.sampleCount += 1
+            stats.totalLatency += latency
+            
+            if let ttft = entity.timeToFirstToken {
+                stats.totalTTFT += ttft
+                stats.ttftCount += 1
+            }
+            
+            if let inputTokens = entity.inputTokens {
+                stats.totalInputTokens += inputTokens
+                stats.inputTokenCount += 1
+            }
+            
+            if let outputTokens = entity.outputTokens {
+                stats.totalOutputTokens += outputTokens
+                stats.outputTokenCount += 1
+            }
+            
+            statsDict[key] = stats
+        }
+
+        return statsDict
     }
 
     // MARK: - 工具方法

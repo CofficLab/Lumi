@@ -241,15 +241,36 @@ struct AssistantMessageHeader: View {
             Spacer()
             
             HStack(alignment: .center, spacing: 12) {
-                // 响应时间（如果有）
-                if let latency = message.latency {
-                    HStack(alignment: .center, spacing: 3) {
-                        Image(systemName: "clock")
-                            .font(.system(size: 9, weight: .medium))
-                        Text(formatLatency(latency))
-                            .font(DesignTokens.Typography.caption2)
+                // 性能指标组
+                HStack(alignment: .center, spacing: 8) {
+                    // 耗时进度条（如果有TTFT和总耗时）
+                    if let ttft = message.timeToFirstToken, let latency = message.latency {
+                        LatencyProgressBar(ttft: ttft, totalLatency: latency)
                     }
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    
+                    // Token 统计（如果有）
+                    if let inputTokens = message.inputTokens, let outputTokens = message.outputTokens {
+                        TokenProgressBar(inputTokens: inputTokens, outputTokens: outputTokens)
+                    } else if let totalTokens = message.totalTokens {
+                        HStack(alignment: .center, spacing: 2) {
+                            Image(systemName: "text.alignleft")
+                                .font(.system(size: 8, weight: .medium))
+                            Text("\(totalTokens)")
+                                .font(DesignTokens.Typography.caption2)
+                        }
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    }
+                    
+                    // 完成原因（如果有）
+                    if let finishReason = message.finishReason {
+                        HStack(alignment: .center, spacing: 2) {
+                            Image(systemName: "flag.fill")
+                                .font(.system(size: 8, weight: .medium))
+                            Text(formatFinishReason(finishReason))
+                                .font(DesignTokens.Typography.caption2)
+                        }
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    }
                 }
                 
                 // 折叠/展开按钮（仅当内容是长消息时显示）
@@ -318,6 +339,19 @@ struct AssistantMessageHeader: View {
         } else {
             return String(format: "%.1fs", latency / 1000.0)
         }
+    }
+    
+    /// 格式化完成原因
+    private func formatFinishReason(_ reason: String) -> String {
+        let reasonMap: [String: String] = [
+            "stop": "完成",
+            "length": "长度限制",
+            "content_filter": "内容过滤",
+            "tool_calls": "工具调用",
+            "max_tokens": "最大 Token",
+            "temperature": "温度"
+        ]
+        return reasonMap[reason] ?? reason
     }
 }
 
@@ -596,6 +630,163 @@ extension View {
     .background(Color.black)
 }
 
+// MARK: - Latency Progress Bar
+
+/// 耗时进度条组件
+/// 可视化显示首 token 延迟和响应时间
+struct LatencyProgressBar: View {
+    let ttft: Double
+    let totalLatency: Double
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            // 进度条
+            GeometryReader { geometry in
+                HStack(spacing: 0) {
+                    // TTFT 部分（橙色）
+                    Rectangle()
+                        .fill(Color.orange)
+                        .frame(width: geometry.size.width * ttftRatio)
+                    
+                    // 响应时间部分（蓝色）
+                    Rectangle()
+                        .fill(Color.blue)
+                        .frame(width: geometry.size.width * (1 - ttftRatio))
+                }
+            }
+            .frame(width: 120, height: 4)
+            .clipShape(RoundedRectangle(cornerRadius: 2))
+            
+            // 时间信息（一行显示）
+            HStack(spacing: 8) {
+                HStack(spacing: 2) {
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 7, weight: .medium))
+                    Text(formatTTFT(ttft))
+                        .font(DesignTokens.Typography.caption2)
+                }
+                .foregroundColor(.orange)
+                
+                HStack(spacing: 2) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 7, weight: .medium))
+                    Text(formatLatency(totalLatency))
+                        .font(DesignTokens.Typography.caption2)
+                }
+                .foregroundColor(.blue)
+            }
+        }
+        .help(helpText)
+    }
+    
+    /// 格式化 TTFT
+    private func formatTTFT(_ ttft: Double) -> String {
+        if ttft >= 1000 {
+            return String(format: "%.1fs", ttft / 1000.0)
+        } else {
+            return String(format: "%.0fms", ttft)
+        }
+    }
+    
+    /// 帮助文本
+    private var helpText: String {
+        let ttftPercent = String(format: "%.1f", ttftRatio * 100)
+        let responsePercent = String(format: "%.1f", (1 - ttftRatio) * 100)
+        return """
+        ⚡ 首个 Token 延迟 (TTFT): \(formatTTFT(ttft)) (\(ttftPercent)%)
+        🕐 响应时间: \(formatLatency(totalLatency)) (\(responsePercent)%)
+        
+        TTFT 表示从发送请求到收到第一个 token 的时间
+        响应时间表示从第一个 token 到响应完成的时间
+        """
+    }
+    
+    /// TTFT 占总耗时的比例
+    private var ttftRatio: Double {
+        guard totalLatency > 0 else { return 0 }
+        return min(ttft / totalLatency, 1.0)
+    }
+    
+    /// 格式化响应时间
+    private func formatLatency(_ latency: Double) -> String {
+        if latency < 1000 {
+            return String(format: "%.0fms", latency)
+        } else {
+            return String(format: "%.1fs", latency / 1000.0)
+        }
+    }
+}
+
+// MARK: - Token Progress Bar
+
+/// Token 进度条组件
+/// 可视化显示输入和输出 token 数量
+struct TokenProgressBar: View {
+    let inputTokens: Int
+    let outputTokens: Int
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            // 进度条
+            GeometryReader { geometry in
+                HStack(spacing: 0) {
+                    // 输入 token 部分（绿色）
+                    Rectangle()
+                        .fill(Color.green)
+                        .frame(width: geometry.size.width * inputRatio)
+                    
+                    // 输出 token 部分（紫色）
+                    Rectangle()
+                        .fill(Color.purple)
+                        .frame(width: geometry.size.width * (1 - inputRatio))
+                }
+            }
+            .frame(width: 120, height: 4)
+            .clipShape(RoundedRectangle(cornerRadius: 2))
+            
+            // Token 信息（一行显示）
+            HStack(spacing: 8) {
+                HStack(spacing: 2) {
+                    Image(systemName: "arrow.right.circle.fill")
+                        .font(.system(size: 7, weight: .medium))
+                    Text("\(inputTokens)")
+                        .font(DesignTokens.Typography.caption2)
+                }
+                .foregroundColor(.green)
+                
+                HStack(spacing: 2) {
+                    Image(systemName: "arrow.left.circle.fill")
+                        .font(.system(size: 7, weight: .medium))
+                    Text("\(outputTokens)")
+                        .font(DesignTokens.Typography.caption2)
+                }
+                .foregroundColor(.purple)
+            }
+        }
+        .help(helpText)
+    }
+    
+    /// 输入 token 占总 token 的比例
+    private var inputRatio: Double {
+        let total = inputTokens + outputTokens
+        guard total > 0 else { return 0 }
+        return Double(inputTokens) / Double(total)
+    }
+    
+    /// 帮助文本
+    private var helpText: String {
+        let inputPercent = String(format: "%.1f", inputRatio * 100)
+        let outputPercent = String(format: "%.1f", (1 - inputRatio) * 100)
+        return """
+        ➡️ 输入 Token: \(inputTokens) (\(inputPercent)%)
+        ⬅️ 输出 Token: \(outputTokens) (\(outputPercent)%)
+        
+        输入 Token 表示发送给模型的 token 数量
+        输出 Token 表示模型生成的 token 数量
+        """
+    }
+}
+
 #Preview("Assistant Message with Latency") {
     ChatBubble(
         message: ChatMessage(
@@ -603,7 +794,11 @@ extension View {
             content: "I can help you with coding tasks.",
             providerId: "anthropic",
             modelName: "claude-sonnet-4-20250514",
-            latency: 1234.56
+            latency: 1234.56,
+            inputTokens: 100,
+            outputTokens: 200,
+            totalTokens: 300,
+            timeToFirstToken: 234.5
         ),
         isLastMessage: true
     )
@@ -618,7 +813,11 @@ extension View {
             content: "I can help you with coding tasks.",
             providerId: "openai",
             modelName: "gpt-4o",
-            latency: 456.78
+            latency: 456.78,
+            inputTokens: 50,
+            outputTokens: 150,
+            totalTokens: 200,
+            timeToFirstToken: 123.4
         ),
         isLastMessage: true
     )

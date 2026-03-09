@@ -77,13 +77,6 @@ extension ChatMessagesView {
                     handleMessagesChanged(proxy: proxy)
                 }
             }
-            // 优化：监听最后一条消息内容变化（流式更新时）
-            .onChange(of: nonSystemMessages.last?.content) { _, _ in
-                // 只在有流式更新时轻微滚动
-                if processingStateViewModel.isProcessing {
-                    scrollToBottomIfNeeded(proxy: proxy)
-                }
-            }
             .overlay {
                 VStack(spacing: 8) {
                     DepthWarningBanner()

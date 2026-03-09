@@ -359,7 +359,14 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
             toolCalls: receivedToolCalls,
             providerId: responseMsg.providerId,
             modelName: responseMsg.modelName,
-            latency: responseMsg.latency
+            latency: responseMsg.latency,
+            inputTokens: responseMsg.inputTokens,
+            outputTokens: responseMsg.outputTokens,
+            totalTokens: responseMsg.totalTokens,
+            timeToFirstToken: responseMsg.timeToFirstToken,
+            finishReason: responseMsg.finishReason,
+            temperature: responseMsg.temperature,
+            maxTokens: responseMsg.maxTokens
         )
 
         // 通知流式响应结束
