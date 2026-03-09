@@ -3,60 +3,19 @@ import MagicKit
 import OSLog
 import SwiftUI
 
-/// 流式状态管理 Actor
-/// 用于在并发环境中安全地累积流式响应内容
-@MainActor
-final class StreamState: Sendable {
-    private var content: String = ""
-    private var toolCalls: [ToolCall]?
-    private var currentToolCallArguments: String = ""
-
-    func appendContent(_ newContent: String) {
-        content += newContent
-    }
-
-    func setToolCalls(_ calls: [ToolCall]) {
-        toolCalls = calls
-        currentToolCallArguments = ""
-    }
-
-    func appendToolCallArguments(_ partialJson: String) {
-        currentToolCallArguments += partialJson
-    }
-
-    func updateToolCallsWithArguments() {
-        guard !currentToolCallArguments.isEmpty,
-              let calls = toolCalls,
-              let lastCall = calls.last else { return }
-
-        let updatedCall = ToolCall(
-            id: lastCall.id,
-            name: lastCall.name,
-            arguments: currentToolCallArguments
-        )
-        var updatedCalls = calls
-        updatedCalls[updatedCalls.count - 1] = updatedCall
-        toolCalls = updatedCalls
-    }
-
-    func getContent() -> String {
-        content
-    }
-
-    func getToolCalls() -> [ToolCall]? {
-        toolCalls
-    }
-}
-
 @MainActor
 private struct TurnContext {
     var currentDepth: Int = 0
     var pendingToolCalls: [ToolCall] = []
     var currentProviderId: String = ""
+    var chainStartedAt: Date?
+    var consecutiveEmptyToolTurns: Int = 0
+    var lastToolSignature: String?
+    var repeatedToolSignatureCount: Int = 0
+    var recentToolSignatures: [String] = []
 }
 
 /// 对话轮次事件
-@MainActor
 enum ConversationTurnEvent: Sendable {
     case responseReceived(ChatMessage, conversationId: UUID)
     case streamChunk(content: String, messageId: UUID, conversationId: UUID)
@@ -96,7 +55,26 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
     // MARK: - 会话上下文
 
     private var turnContexts: [UUID: TurnContext] = [:]
-    private let maxDepth = 100
+    private let maxDepth = 16
+    private let maxToolResultLength = 4_000
+    private let maxChainDuration: TimeInterval = 120
+    private let maxDepthFinalStepReminder = """
+<system-reminder>
+You have reached the final execution step. Do not call any tools anymore.
+Provide your best final answer using the information already collected.
+If critical information is missing, explicitly state what is missing and ask one concise follow-up question.
+</system-reminder>
+"""
+
+    /// 仅转发必要的流式事件，避免高频无用事件（如 thinking_delta）压垮主线程。
+    private nonisolated static func shouldForwardStreamEvent(_ eventType: StreamEventType) -> Bool {
+        switch eventType {
+        case .ping, .contentBlockStart, .contentBlockStop, .messageDelta, .signatureDelta:
+            return true
+        case .messageStart, .messageStop, .unknown, .contentBlockDelta, .thinkingDelta, .inputJsonDelta, .textDelta:
+            return false
+        }
+    }
 
     // MARK: - 初始化
 
@@ -124,12 +102,33 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
         languagePreference: LanguagePreference,
         autoApproveRisk: Bool
     ) async {
-        guard depth < maxDepth else {
+        guard depth <= maxDepth else {
             eventContinuation?.yield(.maxDepthReached(currentDepth: depth, maxDepth: maxDepth, conversationId: conversationId))
             return
         }
+        let isFinalStep = depth == maxDepth
 
         var context = turnContexts[conversationId] ?? TurnContext()
+        if depth == 0 {
+            context = TurnContext()
+            context.chainStartedAt = Date()
+        }
+        if context.chainStartedAt == nil {
+            context.chainStartedAt = Date()
+        }
+        if let chainStartedAt = context.chainStartedAt,
+           Date().timeIntervalSince(chainStartedAt) > maxChainDuration {
+            context.pendingToolCalls.removeAll()
+            turnContexts[conversationId] = context
+            let error = NSError(
+                domain: "ConversationTurn",
+                code: 412,
+                userInfo: [NSLocalizedDescriptionKey: "对话处理超时（\(Int(maxChainDuration))s），已自动中止。"]
+            )
+            eventContinuation?.yield(.error(error, conversationId: conversationId))
+            os_log(.error, "\(Self.t)❌ [\(conversationId)] 对话处理超时，已中止")
+            return
+        }
         context.currentDepth = depth
         context.currentProviderId = config.providerId
         turnContexts[conversationId] = context
@@ -138,7 +137,7 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
             os_log("\(Self.t)🚀 [\(conversationId)] 开始处理轮次 (深度：\(depth), 模式：\(chatMode.displayName), 流式：\(self.enableStreaming))")
         }
 
-        let availableTools: [AgentTool] = chatMode.allowsTools
+        let availableTools: [AgentTool] = (chatMode.allowsTools && !isFinalStep)
             ? tools.filter { tool in
                 if tool.name == CreateAndAssignTaskTool.toolName {
                     return chatMode.allowsMultiWorker
@@ -147,6 +146,16 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
             }
             : []
 
+        var effectiveMessages = messages
+        if isFinalStep {
+            effectiveMessages.append(
+                ChatMessage(
+                    role: .user,
+                    content: maxDepthFinalStepReminder
+                )
+            )
+        }
+
         do {
             let responseMsg: ChatMessage
 
@@ -154,7 +163,7 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
                 responseMsg = try await processStreamingTurn(
                     conversationId: conversationId,
                     config: config,
-                    messages: messages,
+                    messages: effectiveMessages,
                     availableTools: availableTools,
                     languagePreference: languagePreference
                 )
@@ -162,13 +171,53 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
                 responseMsg = try await processNonStreamingTurn(
                     conversationId: conversationId,
                     config: config,
-                    messages: messages,
+                    messages: effectiveMessages,
                     availableTools: availableTools,
                     languagePreference: languagePreference
                 )
             }
 
+            let hasContent = !responseMsg.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            let hasToolCalls = !(responseMsg.toolCalls?.isEmpty ?? true)
+
+            context = turnContexts[conversationId] ?? TurnContext()
+            if hasToolCalls && !hasContent {
+                context.consecutiveEmptyToolTurns += 1
+            } else {
+                context.consecutiveEmptyToolTurns = 0
+            }
+            turnContexts[conversationId] = context
+
+            // 防止模型陷入“空文本 + 工具调用”循环，导致长时间卡住。
+            if context.consecutiveEmptyToolTurns >= 3 {
+                if let toolCalls = responseMsg.toolCalls, !toolCalls.isEmpty {
+                    emitAbortedToolResults(for: toolCalls, conversationId: conversationId)
+                }
+                context.pendingToolCalls.removeAll()
+                turnContexts[conversationId] = context
+                let error = NSError(
+                    domain: "ConversationTurn",
+                    code: 409,
+                    userInfo: [NSLocalizedDescriptionKey: "检测到连续空响应工具循环，已自动中止本轮。"]
+                )
+                eventContinuation?.yield(.error(error, conversationId: conversationId))
+                os_log(.error, "\(Self.t)❌ [\(conversationId)] 连续空响应工具循环，已中止")
+                return
+            }
+
             if let toolCalls = responseMsg.toolCalls, !toolCalls.isEmpty {
+                if isFinalStep {
+                    emitAbortedToolResults(for: toolCalls, conversationId: conversationId)
+                    var broken = turnContexts[conversationId] ?? TurnContext()
+                    broken.pendingToolCalls.removeAll()
+                    turnContexts[conversationId] = broken
+                    eventContinuation?.yield(.completed(conversationId: conversationId))
+                    if Self.verbose {
+                        os_log("\(Self.t)⚠️ [\(conversationId)] 最后一步仍请求工具，已忽略并结束本轮")
+                    }
+                    return
+                }
+
                 if Self.verbose {
                     os_log("\(Self.t)🔧 [\(conversationId)] 收到 \(toolCalls.count) 个工具调用")
                 }
@@ -178,7 +227,43 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
                 turnContexts[conversationId] = context
 
                 let firstTool = context.pendingToolCalls.removeFirst()
+
+                // 检测重复工具循环（同名 + 同参数）
+                let normalizedArgs = firstTool.arguments
+                    .replacingOccurrences(
+                        of: "\\s+",
+                        with: "",
+                        options: .regularExpression
+                    )
+                let signaturePrefix = String(normalizedArgs.prefix(512))
+                let signature = "\(firstTool.name)|\(signaturePrefix)"
+                if context.lastToolSignature == signature {
+                    context.repeatedToolSignatureCount += 1
+                } else {
+                    context.lastToolSignature = signature
+                    context.repeatedToolSignatureCount = 1
+                }
+                context.recentToolSignatures.append(signature)
+                if context.recentToolSignatures.count > 6 {
+                    context.recentToolSignatures.removeFirst(context.recentToolSignatures.count - 6)
+                }
                 turnContexts[conversationId] = context
+
+                let sameSignatureInWindow = context.recentToolSignatures.filter { $0 == signature }.count
+                if context.repeatedToolSignatureCount >= 3 || sameSignatureInWindow >= 3 {
+                    emitAbortedToolResults(for: toolCalls, conversationId: conversationId)
+                    var broken = turnContexts[conversationId] ?? TurnContext()
+                    broken.pendingToolCalls.removeAll()
+                    turnContexts[conversationId] = broken
+                    let error = NSError(
+                        domain: "ConversationTurn",
+                        code: 410,
+                        userInfo: [NSLocalizedDescriptionKey: "检测到重复工具调用循环，已自动中止本轮。"]
+                    )
+                    eventContinuation?.yield(.error(error, conversationId: conversationId))
+                    os_log(.error, "\(Self.t)❌ [\(conversationId)] 重复工具调用循环，已中止: \(firstTool.name)")
+                    return
+                }
 
                 await handleToolCall(
                     firstTool,
@@ -187,6 +272,11 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
                     autoApproveRisk: autoApproveRisk
                 )
             } else {
+                context = turnContexts[conversationId] ?? TurnContext()
+                context.lastToolSignature = nil
+                context.repeatedToolSignatureCount = 0
+                context.recentToolSignatures.removeAll(keepingCapacity: false)
+                turnContexts[conversationId] = context
                 eventContinuation?.yield(.completed(conversationId: conversationId))
                 if Self.verbose {
                     os_log("\(Self.t)✅ [\(conversationId)] 轮次完成（无工具）")
@@ -213,8 +303,7 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
     ) async throws -> ChatMessage {
         let messageId = UUID()
         eventContinuation?.yield(.streamStarted(messageId: messageId, conversationId: conversationId))
-
-        let streamState = StreamState()
+        let continuation = eventContinuation
 
         let responseMsg = try await llmService.sendStreamingMessage(
             messages: messages,
@@ -222,39 +311,34 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
             tools: availableTools.isEmpty ? nil : availableTools
         ) { [weak self] chunk in
             guard let self = self else { return }
-
-            Task { @MainActor in
-                if let eventType = chunk.eventType {
+            if let eventType = chunk.eventType {
+                if Self.shouldForwardStreamEvent(eventType) {
                     let content: String = (eventType == .inputJsonDelta) ? (chunk.partialJson ?? "") : (chunk.content ?? "")
                     let rawEvent = chunk.rawEvent ?? ""
-                    self.eventContinuation?.yield(.streamEvent(
-                        eventType: eventType,
-                        content: content,
-                        rawEvent: rawEvent,
-                        messageId: messageId,
-                        conversationId: conversationId
-                    ))
-                }
-
-                if let content = chunk.content, chunk.eventType == .textDelta {
-                    streamState.appendContent(content)
-                    self.eventContinuation?.yield(.streamChunk(content: content, messageId: messageId, conversationId: conversationId))
-                }
-
-                if let partialJson = chunk.partialJson {
-                    streamState.appendToolCallArguments(partialJson)
-                }
-
-                if let toolCalls = chunk.toolCalls {
-                    streamState.setToolCalls(toolCalls)
+                    continuation?.yield(
+                        .streamEvent(
+                            eventType: eventType,
+                            content: content,
+                            rawEvent: rawEvent,
+                            messageId: messageId,
+                            conversationId: conversationId
+                        )
+                    )
                 }
             }
+
+            if let content = chunk.content, chunk.eventType == .textDelta {
+                continuation?.yield(
+                    .streamChunk(
+                        content: content,
+                        messageId: messageId,
+                        conversationId: conversationId
+                    )
+                )
+            }
         }
-
-        streamState.updateToolCallsWithArguments()
-
-        let accumulatedContent = streamState.getContent()
-        let receivedToolCalls = streamState.getToolCalls()
+        let accumulatedContent = responseMsg.content
+        let receivedToolCalls = responseMsg.toolCalls
 
         let hasContent = !accumulatedContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let hasToolCalls = receivedToolCalls != nil && !(receivedToolCalls?.isEmpty ?? true)
@@ -393,10 +477,11 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
         do {
             let normalizedToolCall = normalizeToolCallForExecution(toolCall, conversationId: conversationId)
             let result = try await toolExecutionService.executeTool(normalizedToolCall)
+            let trimmedResult = truncateToolResultIfNeeded(result)
 
             let resultMsg = ChatMessage(
                 role: .user,
-                content: result,
+                content: trimmedResult,
                 toolCallID: normalizedToolCall.id
             )
 
@@ -428,6 +513,18 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
         )
     }
 
+    private func emitAbortedToolResults(for toolCalls: [ToolCall], conversationId: UUID) {
+        guard !toolCalls.isEmpty else { return }
+        for toolCall in toolCalls {
+            let abortMessage = ChatMessage(
+                role: .user,
+                content: "[Tool execution aborted by safety guard]",
+                toolCallID: toolCall.id
+            )
+            eventContinuation?.yield(.toolResultReceived(abortMessage, conversationId: conversationId))
+        }
+    }
+
     private func normalizeToolCallForExecution(_ toolCall: ToolCall, conversationId: UUID) -> ToolCall {
         guard toolCall.name == "create_and_assign_task",
               let providerId = turnContexts[conversationId]?.currentProviderId,
@@ -453,6 +550,12 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
             name: toolCall.name,
             arguments: normalizedArguments
         )
+    }
+
+    private func truncateToolResultIfNeeded(_ result: String) -> String {
+        guard result.count > maxToolResultLength else { return result }
+        let prefix = String(result.prefix(maxToolResultLength))
+        return "\(prefix)\n\n... [Tool output truncated to \(maxToolResultLength) characters]"
     }
 
     // MARK: - 工具 Emoji

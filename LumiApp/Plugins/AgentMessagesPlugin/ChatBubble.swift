@@ -317,6 +317,7 @@ struct AssistantMessageHeader: View {
                 }
                 
                 // 切换源码/渲染按钮
+                MarkdownRenderingToggleButton()
                 RawMessageToggleButton(showRawMessage: $showRawMessage)
             }
         }
@@ -608,6 +609,27 @@ struct RawMessageToggleButton: View {
         }
         .buttonStyle(.plain)
         .help(showRawMessage ? String(localized: "Show Rendered", comment: "Toggle to show rendered markdown") : String(localized: "Show Source", comment: "Toggle to show markdown source"))
+    }
+}
+
+/// 全局 Markdown 渲染开关按钮
+struct MarkdownRenderingToggleButton: View {
+    @AppStorage("Agent_RenderMarkdownEnabled") private var renderMarkdownEnabled: Bool = false
+
+    var body: some View {
+        Button(action: { renderMarkdownEnabled.toggle() }) {
+            Image(systemName: renderMarkdownEnabled ? "doc.richtext" : "doc.plaintext")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundColor(renderMarkdownEnabled ? .green : DesignTokens.Color.semantic.textSecondary.opacity(0.6))
+                .padding(6)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.08))
+                )
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(renderMarkdownEnabled ? "Markdown 渲染：已开启" : "Markdown 渲染：已关闭（纯文本模式）")
     }
 }
 

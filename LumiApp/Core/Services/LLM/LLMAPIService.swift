@@ -92,7 +92,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         apiKey: String,
         body: [String: Any],
         additionalHeaders: [String: String] = [:],
-        onChunk: @escaping (Data) -> Void
+        onChunk: @Sendable @escaping (Data) async -> Bool
     ) async throws {
         // 构建请求头
         var headers = [
@@ -170,40 +170,93 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
             os_log("\(self.t)✅ 流式连接已建立，开始接收数据...")
         }
 
-        // 读取 SSE 数据流
-        var buffer = Data()
+        // 读取 SSE 数据流（线性字节状态机，避免逐字节全量 range 扫描）
+        var eventBuffer = Data()
+        var lastBytes: [UInt8] = []
         var chunkCount = 0
+        let chunkCallbackWarnThreshold: TimeInterval = 0.5
+        let chunkCallbackHangWarnThresholdNs: UInt64 = 2_000_000_000
 
         for try await byte in bytes {
-            buffer.append(byte)
+            try Task.checkCancellation()
+            eventBuffer.append(byte)
+            lastBytes.append(byte)
+            if lastBytes.count > 4 {
+                lastBytes.removeFirst(lastBytes.count - 4)
+            }
 
-            // 检查是否收到完整的 SSE 事件（以 \n\n 或 \r\n\r\n 结尾）
-            let newlinePattern = Data([0x0A, 0x0A]) // \n\n
-            let crlfPattern = Data([0x0D, 0x0A, 0x0D, 0x0A]) // \r\n\r\n
+            // 事件分隔符：\n\n 或 \r\n\r\n
+            let hitLF = lastBytes.suffix(2).elementsEqual([0x0A, 0x0A])
+            let hitCRLF = lastBytes.count >= 4 && lastBytes.suffix(4).elementsEqual([0x0D, 0x0A, 0x0D, 0x0A])
 
-            if let range = buffer.range(of: newlinePattern) ?? buffer.range(of: crlfPattern) {
-                let eventData = buffer.subdata(in: 0 ..< range.lowerBound)
-                buffer.removeSubrange(0 ..< range.upperBound)
+            if hitLF || hitCRLF {
+                let delimiterLength = hitCRLF ? 4 : 2
+                guard eventBuffer.count >= delimiterLength else {
+                    eventBuffer.removeAll(keepingCapacity: true)
+                    lastBytes.removeAll(keepingCapacity: true)
+                    continue
+                }
 
-                // 处理 SSE 事件数据
-                if !eventData.isEmpty {
-                    chunkCount += 1
-                    if Self.verbose && chunkCount <= 5 {
-                        let preview = String(data: eventData, encoding: .utf8)?.prefix(200) ?? "无法解码"
-                        os_log("\(self.t)📦 收到 SSE 数据块 #\(chunkCount) (\(eventData.count) bytes): \(preview)...")
+                let eventData = eventBuffer.dropLast(delimiterLength)
+                eventBuffer.removeAll(keepingCapacity: true)
+                lastBytes.removeAll(keepingCapacity: true)
+
+                guard !eventData.isEmpty else { continue }
+                chunkCount += 1
+                if Self.verbose && chunkCount <= 5 {
+                    let preview = String(data: eventData, encoding: .utf8)?.prefix(200) ?? "无法解码"
+                    os_log("\(self.t)📦 收到 SSE 数据块 #\(chunkCount) (\(eventData.count) bytes): \(preview)...")
+                }
+                let callbackStart = CFAbsoluteTimeGetCurrent()
+                let callbackChunkIndex = chunkCount
+                let callbackBytes = eventData.count
+                let loggerTag = self.t
+                let hangWatchdog = Task.detached(priority: .utility) {
+                    try? await Task.sleep(nanoseconds: chunkCallbackHangWarnThresholdNs)
+                    guard !Task.isCancelled else { return }
+                    os_log(.error, "\(loggerTag)⏳ onChunk 回调疑似卡住(>2s): chunk#\(callbackChunkIndex), bytes=\(callbackBytes)")
+                }
+                let shouldContinue = await onChunk(Data(eventData))
+                hangWatchdog.cancel()
+                let callbackElapsed = CFAbsoluteTimeGetCurrent() - callbackStart
+                if callbackElapsed > chunkCallbackWarnThreshold {
+                    os_log(.error, "\(self.t)⏱️ onChunk 回调耗时异常: \(String(format: "%.3f", callbackElapsed))s, chunk#\(chunkCount), bytes=\(eventData.count)")
+                }
+                if !shouldContinue {
+                    if Self.verbose {
+                        os_log("\(self.t)🛑 收到停止信号，主动结束流式读取")
                     }
-                    onChunk(eventData)
+                    return
                 }
             }
         }
 
-        // 处理剩余数据
-        if !buffer.isEmpty {
+        // 处理剩余未以空行结束的事件
+        if !eventBuffer.isEmpty {
             if Self.verbose {
-                let preview = String(data: buffer, encoding: .utf8)?.prefix(200) ?? "无法解码"
-                os_log("\(self.t)📦 处理剩余数据 (\(buffer.count) bytes): \(preview)...")
+                let preview = String(data: eventBuffer, encoding: .utf8)?.prefix(200) ?? "无法解码"
+                os_log("\(self.t)📦 处理剩余数据 (\(eventBuffer.count) bytes): \(preview)...")
             }
-            onChunk(buffer)
+            let callbackStart = CFAbsoluteTimeGetCurrent()
+            let remainingBytes = eventBuffer.count
+            let loggerTag = self.t
+            let hangWatchdog = Task.detached(priority: .utility) {
+                try? await Task.sleep(nanoseconds: chunkCallbackHangWarnThresholdNs)
+                guard !Task.isCancelled else { return }
+                os_log(.error, "\(loggerTag)⏳ onChunk 回调疑似卡住(>2s): remaining bytes=\(remainingBytes)")
+            }
+            let shouldContinue = await onChunk(eventBuffer)
+            hangWatchdog.cancel()
+            let callbackElapsed = CFAbsoluteTimeGetCurrent() - callbackStart
+            if callbackElapsed > chunkCallbackWarnThreshold {
+                os_log(.error, "\(self.t)⏱️ onChunk 回调耗时异常(剩余块): \(String(format: "%.3f", callbackElapsed))s, bytes=\(eventBuffer.count)")
+            }
+            if !shouldContinue {
+                if Self.verbose {
+                    os_log("\(self.t)🛑 收到停止信号，主动结束流式读取")
+                }
+                return
+            }
         }
 
         if Self.verbose {

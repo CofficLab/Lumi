@@ -9,6 +9,7 @@ struct MarkdownMessageView: View {
     let isCollapsible: Bool
     let isExpanded: Bool
     let onToggleExpand: () -> Void
+    @AppStorage("Agent_RenderMarkdownEnabled") private var renderMarkdownEnabled: Bool = false
     
     /// 最大高度（超过后折叠）
     private let maxHeight: CGFloat = 400
@@ -20,6 +21,12 @@ struct MarkdownMessageView: View {
                     .font(.system(.body, design: .monospaced))
                     .textSelection(.enabled)
                     .scrollContentBackground(.hidden)
+                    .applyCollapsible(isCollapsible: isCollapsible, isExpanded: isExpanded, maxHeight: maxHeight)
+            } else if !renderMarkdownEnabled {
+                Text(verbatim: message.content)
+                    .font(.system(.body, design: .default))
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .applyCollapsible(isCollapsible: isCollapsible, isExpanded: isExpanded, maxHeight: maxHeight)
             } else {
                 Markdown(message.content)

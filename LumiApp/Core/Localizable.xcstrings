@@ -2719,6 +2719,12 @@
         }
       }
     },
+    "Markdown 渲染：已关闭（纯文本模式）" : {
+
+    },
+    "Markdown 渲染：已开启" : {
+
+    },
     "Medium" : {
       "localizations" : {
         "zh-Hans" : {
