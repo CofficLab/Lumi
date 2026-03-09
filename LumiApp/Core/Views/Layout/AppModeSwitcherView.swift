@@ -9,6 +9,7 @@ struct AppModeSwitcherView: View, SuperLog {
 
     @EnvironmentObject var app: GlobalProvider
     @EnvironmentObject var pluginProvider: PluginProvider
+    @Environment(\.windowState) var windowState
 
     @State private var mode: AppMode = .app
 
@@ -30,7 +31,8 @@ struct AppModeSwitcherView: View, SuperLog {
 
 extension AppModeSwitcherView {
     func handleOnAppear() {
-        self.mode = app.selectedMode
+        // 优先使用窗口级别的模式状态，如果没有则使用全局状态
+        self.mode = windowState?.selectedMode ?? app.selectedMode
     }
 
     func handleModeChanged() {
@@ -38,6 +40,8 @@ extension AppModeSwitcherView {
             os_log("\(self.t)🤖 模式已切换：\(mode.rawValue)")
         }
         
+        // 同时更新窗口级别和全局级别的模式状态
+        windowState?.selectedMode = mode
         app.selectedMode = mode
     }
 }
