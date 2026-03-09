@@ -1273,28 +1273,32 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
     /// 处理图片上传
     public func handleImageUpload(url: URL) {
-        do {
-            let imageData = try Data(contentsOf: url)
-            let mimeType = mimeTypeForPath(url.pathExtension)
-
-            if Self.verbose {
-                os_log("\(Self.t)📤 添加图片附件：\(url.lastPathComponent) (\(imageData.count) bytes)")
+        Task.detached(priority: .userInitiated) { [weak self] in
+            do {
+                let imageData = try Data(contentsOf: url)
+                let mimeType = Self.mimeTypeForPath(url.pathExtension)
+                let attachment = Attachment.image(
+                    id: UUID(),
+                    data: imageData,
+                    mimeType: mimeType,
+                    url: url
+                )
+                await self?.appendImageAttachment(attachment, fileName: url.lastPathComponent, byteCount: imageData.count)
+            } catch {
+                os_log(.error, "\(Self.t)❌ 无法读取图片：\(error.localizedDescription)")
             }
-
-            let attachment = Attachment.image(
-                id: UUID(),
-                data: imageData,
-                mimeType: mimeType,
-                url: url
-            )
-            pendingAttachments.append(attachment)
-        } catch {
-            os_log(.error, "\(Self.t)❌ 无法读取图片：\(error.localizedDescription)")
         }
     }
 
+    private func appendImageAttachment(_ attachment: Attachment, fileName: String, byteCount: Int) {
+        if Self.verbose {
+            os_log("\(Self.t)📤 添加图片附件：\(fileName) (\(byteCount) bytes)")
+        }
+        pendingAttachments.append(attachment)
+    }
+
     /// 根据文件扩展名获取 MIME 类型
-    private func mimeTypeForPath(_ pathExtension: String) -> String {
+    nonisolated private static func mimeTypeForPath(_ pathExtension: String) -> String {
         switch pathExtension.lowercased() {
         case "jpg", "jpeg":
             return "image/jpeg"

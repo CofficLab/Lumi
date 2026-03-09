@@ -9,6 +9,23 @@ class FileNode: NSObject {
     let isDirectory: Bool
     var children: [FileNode] = []
     var isLoaded = false
+
+    nonisolated fileprivate static func sortedContents(at url: URL) throws -> [URL] {
+        let contents = try FileManager.default.contentsOfDirectory(
+            at: url,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: []
+        )
+
+        return contents.sorted { a, b in
+            let aIsDir = (try? a.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+            let bIsDir = (try? b.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+            if aIsDir == bIsDir {
+                return a.lastPathComponent.localizedStandardCompare(b.lastPathComponent) == .orderedAscending
+            }
+            return aIsDir
+        }
+    }
     
     init(url: URL) {
         self.url = url
@@ -17,27 +34,17 @@ class FileNode: NSObject {
         super.init()
     }
     
-    func loadChildren() {
+    func loadChildren(onLoaded: (() -> Void)? = nil) {
         guard isDirectory && !isLoaded else { return }
         isLoaded = true
-        
-        do {
-            let contents = try FileManager.default.contentsOfDirectory(
-                at: url,
-                includingPropertiesForKeys: [.isDirectoryKey],
-                options: []
-            )
-            
-            children = contents
-                .map { FileNode(url: $0) }
-                .sorted { a, b in
-                    if a.isDirectory == b.isDirectory {
-                        return a.name.localizedStandardCompare(b.name) == .orderedAscending
-                    }
-                    return a.isDirectory
-                }
-        } catch {
-            children = []
+
+        let directoryURL = url
+        Task {
+            let urls = await Task.detached(priority: .userInitiated) {
+                (try? FileNode.sortedContents(at: directoryURL)) ?? []
+            }.value
+            self.children = urls.map { FileNode(url: $0) }
+            onLoaded?()
         }
     }
 }
@@ -52,17 +59,22 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
     var onRename: ((URL, String) -> Void)?
     
     func setRootURL(_ url: URL) {
-        let node = FileNode(url: url)
-        node.loadChildren()
-        rootNodes = node.children
-        outlineView?.reloadData()
+        Task.detached(priority: .userInitiated) {
+            let urls = (try? FileNode.sortedContents(at: url)) ?? []
+            await MainActor.run {
+                self.rootNodes = urls.map { FileNode(url: $0) }
+                self.outlineView?.reloadData()
+            }
+        }
     }
     
     // MARK: - NSOutlineViewDataSource
     
     func outlineView(_ outlineView: NSOutlineView, numberOfChildrenOfItem item: Any?) -> Int {
         if let node = item as? FileNode {
-            node.loadChildren()
+            node.loadChildren { [weak outlineView] in
+                outlineView?.reloadItem(node, reloadChildren: true)
+            }
             return node.children.count
         }
         return rootNodes.count
@@ -261,24 +273,30 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         
         let response = alert.runModal()
         if response == .alertFirstButtonReturn {
-            do {
-                try FileManager.default.removeItem(at: node.url)
-                onDelete?(node.url, node.isDirectory)
-                
-                // 刷新数据
-                if let parent = findParentNode(of: node) {
-                    parent.children.removeAll { $0 === node }
-                    outlineView?.reloadItem(parent, reloadChildren: true)
-                } else {
-                    rootNodes.removeAll { $0 === node }
-                    outlineView?.reloadData()
+            Task.detached(priority: .userInitiated) {
+                do {
+                    try FileManager.default.removeItem(at: node.url)
+                    await MainActor.run {
+                        self.onDelete?(node.url, node.isDirectory)
+
+                        // 刷新数据
+                        if let parent = self.findParentNode(of: node) {
+                            parent.children.removeAll { $0 === node }
+                            self.outlineView?.reloadItem(parent, reloadChildren: true)
+                        } else {
+                            self.rootNodes.removeAll { $0 === node }
+                            self.outlineView?.reloadData()
+                        }
+                    }
+                } catch {
+                    await MainActor.run {
+                        let errorAlert = NSAlert()
+                        errorAlert.messageText = "删除失败"
+                        errorAlert.informativeText = error.localizedDescription
+                        errorAlert.alertStyle = .critical
+                        errorAlert.runModal()
+                    }
                 }
-            } catch {
-                let errorAlert = NSAlert()
-                errorAlert.messageText = "删除失败"
-                errorAlert.informativeText = error.localizedDescription
-                errorAlert.alertStyle = .critical
-                errorAlert.runModal()
             }
         }
     }
@@ -306,17 +324,23 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
             }
             
             let newURL = node.url.deletingLastPathComponent().appendingPathComponent(newName)
-            
-            do {
-                try FileManager.default.moveItem(at: node.url, to: newURL)
-                onRename?(newURL, newName)
-                refreshNode(node, withNewURL: newURL)
-            } catch {
-                let errorAlert = NSAlert()
-                errorAlert.messageText = "重命名失败"
-                errorAlert.informativeText = error.localizedDescription
-                errorAlert.alertStyle = .critical
-                errorAlert.runModal()
+
+            Task.detached(priority: .userInitiated) {
+                do {
+                    try FileManager.default.moveItem(at: node.url, to: newURL)
+                    await MainActor.run {
+                        self.onRename?(newURL, newName)
+                        self.refreshNode(node, withNewURL: newURL)
+                    }
+                } catch {
+                    await MainActor.run {
+                        let errorAlert = NSAlert()
+                        errorAlert.messageText = "重命名失败"
+                        errorAlert.informativeText = error.localizedDescription
+                        errorAlert.alertStyle = .critical
+                        errorAlert.runModal()
+                    }
+                }
             }
         }
     }

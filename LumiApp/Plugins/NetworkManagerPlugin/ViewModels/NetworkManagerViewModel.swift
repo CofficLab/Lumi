@@ -134,7 +134,7 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
     
     private func updateSlowStats() async {
         // WiFi
-        let (ssid, rssi) = NetworkService.shared.getWifiInfo()
+        let (ssid, rssi) = await NetworkService.shared.getWifiInfo()
         networkState.wifiSSID = ssid
         networkState.wifiSignalStrength = rssi
 
