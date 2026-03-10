@@ -62,7 +62,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🧰"
     
     /// 是否启用详细日志
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     // MARK: - Combine Publishers (状态变化通知)
 

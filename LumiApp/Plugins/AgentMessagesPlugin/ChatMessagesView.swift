@@ -120,20 +120,8 @@ struct ChatMessagesView: View, SuperLog {
             }
         }
         .background(.background.opacity(0.8))
-        .onChange(of: selectedConversationId) { _, _ in
-            // 切换会话时重置滚动标志
-            hasAutoScrolledToBottom = false
-            Task {
-                await loadMessagesForSelectedConversation()
-            }
-        }
-        .onChange(of: messages.count) { _, newCount in
-            // 消息数量变化时（新消息到达），自动滚动到底部
-            if newCount > 0 && !hasAutoScrolledToBottom {
-                scrollToBottom()
-            }
-        }
-        .onUserMessageSaved(perform: handleUserMessageSaved)
+        .onChange(of: selectedConversationId, handleConversationChanged)
+        .onMessageSaved(perform: handleMessageSaved)
         .onAppear(perform: self.handleOnAppear)
     }
 
@@ -251,8 +239,8 @@ extension ChatMessagesView {
             if let request = permissionRequestViewModel.pendingPermissionRequest {
                 PermissionRequestView(
                     request: request,
-                    onAllow: { agentProvider.respondToPermissionRequest(allowed: true) },
-                    onDeny: { agentProvider.respondToPermissionRequest(allowed: false) }
+                    onAllow: { Task { await agentProvider.respondToPermissionRequest(allowed: true) } },
+                    onDeny: { Task { await agentProvider.respondToPermissionRequest(allowed: false) } }
                 )
             }
         }
@@ -305,7 +293,7 @@ extension ChatMessagesView {
             }
 
             if Self.verbose {
-                os_log("\(Self.t)📄 [\(conversationId)] 初始加载完成：\(self.messages.count)/\(self.totalMessageCount) 条，hasMore: \(self.hasMoreMessages)")
+                os_log("\(Self.t)✅ [\(conversationId)] 加载完成：\(self.messages.count)/\(self.totalMessageCount) 条，hasMore: \(self.hasMoreMessages)")
             }
         }
     }
@@ -387,7 +375,7 @@ extension ChatMessagesView {
         }
 
         // 提取分页数据
-        let page = allMessages[startIndex..<endIndex]
+        let page = allMessages[startIndex ..< endIndex]
         let hasMore = endIndex < allMessages.count
 
         // 转换回 ChatMessage 并恢复正序（最老的在前）
@@ -427,12 +415,19 @@ extension ChatMessagesView {
     /// 处理用户消息已保存事件
     /// - Parameter message: 已保存的用户消息
     @MainActor
-    func handleUserMessageSaved(_ message: ChatMessage) {
+    func handleMessageSaved(_ message: ChatMessage) {
         if Self.verbose {
-            os_log("\(Self.t)✉️ 用户消息已保存，刷新消息列表")
+            os_log("\(Self.t)✉️ [\(conversationViewModel.selectedConversationId?.uuidString ?? "")] 消息已保存，刷新消息列表")
         }
+
         Task {
             await self.loadMessagesForSelectedConversation()
+        }
+    }
+
+    func handleConversationChanged() {
+        Task {
+            await loadMessagesForSelectedConversation()
         }
     }
 }

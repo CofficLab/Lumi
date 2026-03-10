@@ -60,8 +60,6 @@ struct InputAreaView: View, SuperLog {
                     let text = inputViewModel.text
                     inputViewModel.clear()
                     agentProvider.sendMessage(input: text)
-                    // 发送用户消息已发出事件
-                    NotificationCenter.postUserMessageSent(message: text)
                     // 发送后重置高度
                     editorHeight = MacEditorView.minHeight
                 },
@@ -84,8 +82,6 @@ struct InputAreaView: View, SuperLog {
                         let text = inputViewModel.text
                         inputViewModel.clear()
                         agentProvider.sendMessage(input: text)
-                        // 发送用户消息已发出事件
-                        NotificationCenter.postUserMessageSent(message: text)
                         // 发送后重置高度
                         editorHeight = MacEditorView.minHeight
                     }

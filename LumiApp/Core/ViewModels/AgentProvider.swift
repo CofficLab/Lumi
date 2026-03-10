@@ -40,7 +40,7 @@ enum ConversationRuntimeState: String {
 @MainActor
 final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     nonisolated static let emoji = "🤖"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     // MARK: - 服务依赖
 
@@ -274,7 +274,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
                 let start = CFAbsoluteTimeGetCurrent()
                 let eventName = self.describe(event)
                 let hangWatchdog = Task { [loggerTag = Self.t] in
-                    try? await Task.sleep(nanoseconds: 2_000_000_000)
+                    try? await Task.sleep(nanoseconds: 2000000000)
                     guard !Task.isCancelled else { return }
                     os_log(.error, "\(loggerTag)⏳ 事件处理疑似卡住(>2s): \(eventName)")
                 }
@@ -331,7 +331,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     private var turnTaskPipelineByConversation: [UUID: Task<Void, Never>] = [:]
     private var turnTaskGenerationByConversation: [UUID: Int] = [:]
     @Published private(set) var conversationRuntimeStates: [UUID: ConversationRuntimeState] = [:]
-    private let maxThinkingTextLength = 20_000
+    private let maxThinkingTextLength = 20000
     private let streamUIFlushInterval: TimeInterval = 0.08
     private let thinkingUIFlushInterval: TimeInterval = 0.12
     private let immediateStreamFlushChars = 80
@@ -347,7 +347,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             if conversationViewModel.selectedConversationId == conversationId {
                 appendMessage(message)
             }
-            saveMessage(message, conversationId: conversationId)
+            await saveMessage(message, conversationId: conversationId)
             updateRuntimeState(for: conversationId)
 
         case let .streamStarted(messageId, conversationId):
@@ -518,7 +518,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
                 updateMessage(finalMessage, at: index)
             }
             // 保存到数据库
-            saveMessage(finalMessage, conversationId: conversationId)
+            await saveMessage(finalMessage, conversationId: conversationId)
 
             // 清理流式状态
             streamStateByConversation[conversationId] = StreamSessionState(messageId: nil, messageIndex: nil)
@@ -540,7 +540,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             if conversationViewModel.selectedConversationId == conversationId {
                 appendMessage(result)
             }
-            saveMessage(result, conversationId: conversationId)
+            await saveMessage(result, conversationId: conversationId)
             updateRuntimeState(for: conversationId)
 
         case let .permissionRequested(request, conversationId):
@@ -674,7 +674,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         // 加载上次选择的项目（项目切换会自动应用配置）
         if let savedPath = UserDefaults.standard.string(forKey: "Agent_SelectedProject") {
             projectViewModel.switchProject(to: savedPath)
-            
+
             // 加载项目命令
             Task {
                 await slashCommandService.setCurrentProjectPath(savedPath)
@@ -1012,13 +1012,13 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     }
 
     /// 保存消息到存储
-    func saveMessage(_ message: ChatMessage) {
-        conversationViewModel.saveMessage(message)
+    func saveMessage(_ message: ChatMessage) async {
+        await conversationViewModel.saveMessage(message)
     }
 
     /// 保存消息到指定会话
-    func saveMessage(_ message: ChatMessage, conversationId: UUID) {
-        conversationViewModel.saveMessage(message, to: conversationId)
+    func saveMessage(_ message: ChatMessage, conversationId: UUID) async {
+        await conversationViewModel.saveMessage(message, to: conversationId)
     }
 
     /// 删除指定对话
@@ -1063,10 +1063,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         }
 
         // 2. 保存到数据库
-        conversationViewModel.saveMessage(message, to: conversationId)
-
-        // 3. 发送用户消息已保存通知
-        NotificationCenter.postUserMessageSaved(message: message)
+        await conversationViewModel.saveMessage(message, to: conversationId)
 
         // 4. 启动会话标题生成（如果需要）
         startConversationTitleGenerationIfNeeded(message: message, conversationId: conversationId)
@@ -1197,7 +1194,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         Task {
             let isCommand = await slashCommandService.isSlashCommand(trimmed)
             if isCommand {
-                let result = await slashCommandService.handle(input: trimmed, provider: self)
+                let result = await slashCommandService.handle(input: trimmed)
                 switch result {
                 case .handled:
                     setIsProcessing(false)
@@ -1207,6 +1204,29 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
                 case .notHandled:
                     // 对于未处理的命令，继续通过消息队列发送
                     messageSenderViewModel.sendMessage(content: trimmed, images: allImages)
+                case let .systemMessage(content):
+                    // 添加系统消息
+                    appendSystemMessage(content)
+                    setIsProcessing(false)
+                case let .userMessage(content, triggerProcessing):
+                    // 添加用户消息并触发处理
+                    let message = ChatMessage(role: .user, content: content)
+                    appendMessage(message)
+                    await saveMessage(message)
+                    if triggerProcessing,
+                       let conversationId = conversationViewModel.selectedConversationId {
+                        await processTurn(conversationId: conversationId)
+                    }
+                    setIsProcessing(false)
+                case .clearHistory:
+                    await clearHistory()
+                    setIsProcessing(false)
+                case let .triggerPlanning(task):
+                    await triggerPlanningMode(task: task)
+                    setIsProcessing(false)
+                case let .mcpCommand(subCommand, param):
+                    await handleMCPCommand(subCommand: subCommand, param: param)
+                    setIsProcessing(false)
                 }
             } else {
                 // 通过 MessageSenderViewModel 发送消息
@@ -1215,6 +1235,35 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         }
     }
 
+    // MARK: - MCP 命令处理
+
+    /// 处理 MCP 子命令
+    private func handleMCPCommand(subCommand: String, param: String) async {
+        switch subCommand {
+        case "list":
+            let status = toolsViewModel.getStatusReport()
+            appendSystemMessage(status)
+        case "install":
+            if param.lowercased().hasPrefix("vision") {
+                let parts = param.split(separator: " ")
+                if parts.count >= 2 {
+                    let apiKey = String(parts[1])
+                    toolsViewModel.installVisionMCP(apiKey: apiKey)
+                    appendSystemMessage("Installing and connecting to Vision MCP Server...")
+                } else {
+                    appendSystemMessage("Usage: /mcp install vision <api_key>")
+                }
+            } else {
+                appendSystemMessage("Unknown install target. Currently only 'vision' is supported via command.")
+            }
+        default:
+            appendSystemMessage("""
+            **MCP Commands:**
+            - `/mcp list` - Show all MCP servers and their status
+            - `/mcp install vision <api_key>` - Install and connect to Vision MCP Server
+            """)
+        }
+    }
 
     // MARK: - 对话轮次处理
 
@@ -1258,7 +1307,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
     // MARK: - 权限响应
 
-    public func respondToPermissionRequest(allowed: Bool) {
+    public func respondToPermissionRequest(allowed: Bool) async {
         guard let conversationId = conversationViewModel.selectedConversationId,
               let request = pendingPermissionByConversation[conversationId] else { return }
 
@@ -1285,7 +1334,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             if conversationViewModel.selectedConversationId == conversationId {
                 appendMessage(rejectMessage)
             }
-            saveMessage(rejectMessage, conversationId: conversationId)
+            await saveMessage(rejectMessage, conversationId: conversationId)
             updateRuntimeState(for: conversationId)
         }
     }
@@ -1393,7 +1442,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     }
 
     /// 根据文件扩展名获取 MIME 类型
-    nonisolated private static func mimeTypeForPath(_ pathExtension: String) -> String {
+    private nonisolated static func mimeTypeForPath(_ pathExtension: String) -> String {
         switch pathExtension.lowercased() {
         case "jpg", "jpeg":
             return "image/jpeg"
@@ -1413,10 +1462,5 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     /// 移除指定附件
     public func removeAttachment(id: UUID) {
         pendingAttachments.removeAll { $0.id == id }
-    }
-
-    /// 清空所有附件
-    public func clearAttachments() {
-        pendingAttachments.removeAll()
     }
 }

@@ -204,60 +204,30 @@ actor ProjectCommandExecutor: SuperLog {
         return loadedCommands
     }
     
-    /// 获取命令建议（用于自动补全）
-    func getSuggestions(for input: String) -> [CommandSuggestion] {
-        guard input.hasPrefix("/") else { return [] }
-        
-        let lowercasedInput = input.lowercased()
-        let filtered = loadedCommands.filter { cmd in
-            cmd.slashCommand.lowercased().hasPrefix(lowercasedInput)
-        }
-        
-        return filtered.map { cmd in
-            CommandSuggestion(
-                command: cmd.slashCommand,
-                description: cmd.description,
-                category: categoryForSource(cmd.source)
-            )
-        }
-    }
-    
     /// 执行斜杠命令
     /// - Parameters:
     ///   - input: 用户输入（如 "/commit Hello"）
-    ///   - provider: AgentProvider 实例
-    /// - Returns: 执行结果
-    func executeSlashCommand(_ input: String, provider: AgentProvider) async -> SlashCommandResult {
+    /// - Returns: 执行结果，包含处理后的内容
+    func executeSlashCommand(_ input: String) async -> SlashCommandResult {
         guard input.hasPrefix("/") else { return .notHandled }
-        
+
         let commandName = extractCommandName(from: input)
         let arguments = extractArguments(from: input)
-        
+
         // 查找命令
         guard let command = loadedCommands.first(where: { $0.name == commandName }) else {
             return .notHandled
         }
-        
+
         if Self.verbose {
             os_log("\(Self.t)🚀 执行命令：/\(commandName), 参数：\(arguments)")
         }
-        
+
         // 处理命令内容
         let processedContent = await processCommandContent(command.content, arguments: arguments, projectPath: currentProjectPath)
-        
-        // 将处理后的内容作为用户消息发送
-        let message = ChatMessage(role: .user, content: processedContent)
-        await MainActor.run {
-            provider.appendMessage(message)
-            provider.saveMessage(message)
-        }
-        
-        // 触发处理
-        if let conversationId = await MainActor.run(body: { provider.conversationViewModel.selectedConversationId }) {
-            await provider.processTurn(conversationId: conversationId)
-        }
-        
-        return .handled
+
+        // 返回用户消息，由调用方决定如何处理
+        return .userMessage(processedContent, triggerProcessing: true)
     }
     
     // MARK: - 私有方法

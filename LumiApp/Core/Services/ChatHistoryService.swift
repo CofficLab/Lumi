@@ -127,6 +127,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
 
         saveConversation(conversation)
         notifyConversationChanged(type: .created, conversationId: conversation.id)
+        NotificationCenter.postConversationCreated(conversationId: conversation.id)
 
         if Self.verbose {
             os_log("\(Self.t)✨ 创建新对话：\(title)")
@@ -144,6 +145,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
 
         saveConversation(conversation)
         notifyConversationChanged(type: .updated, conversationId: conversation.id)
+        NotificationCenter.postConversationUpdated(conversationId: conversation.id)
 
         if Self.verbose {
             os_log("\(Self.t)✏️ 对话标题已更新：\(newTitle)")
@@ -311,7 +313,12 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                 os_log("\(Self.t)💾 [\(conversation.id)] 消息已保存：\(message.content.max(10)), 指标: [\(metrics)], 思考过程: \(hasThinking)")
             }
             // 返回保存后的消息
-            return messageEntity.toChatMessage()
+            guard let savedMessage = messageEntity.toChatMessage() else {
+                os_log(.error, "\(Self.t)❌ 消息转换失败")
+                return nil
+            }
+            NotificationCenter.postMessageSaved(message: savedMessage)
+            return savedMessage
         } catch {
             os_log(.error, "\(Self.t)❌ 保存消息失败：\(error.localizedDescription)")
             return nil
@@ -349,6 +356,10 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
 
                 do {
                     try context.save()
+                    // 发送消息已保存事件
+                    if let savedMessage = messageEntity.toChatMessage() {
+                        NotificationCenter.postMessageSaved(message: savedMessage)
+                    }
                     continuation.resume(returning: messageEntity.toChatMessage())
                 } catch {
                     os_log(.error, "\(Self.t)❌ 异步保存消息失败：\(error.localizedDescription)")
@@ -590,6 +601,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         do {
             try context.save()
             notifyConversationChanged(type: .deleted, conversationId: conversation.id)
+            NotificationCenter.postConversationDeleted(conversationId: conversation.id)
             if Self.verbose {
                 os_log("\(Self.t)🗑️ 对话已删除：\(conversation.title)")
             }
