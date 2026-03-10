@@ -3,7 +3,7 @@ import SwiftUI
 import OSLog
 import MagicKit
 
-/// Project Tree Plugin: 显示项目文件树状结构，使用 SwiftUI 开发，性能较差，AgentNativeFileTreePlugin 更好
+/// Project Tree Plugin: 显示项目文件树状结构，使用 SwiftUI 开发
 actor ProjectTreePlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
@@ -11,7 +11,7 @@ actor ProjectTreePlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🌳"
 
     /// Whether to enable this plugin
-    nonisolated static let enable = false
+    nonisolated static let enable = true
 
     /// Whether to enable verbose log output
     nonisolated static let verbose = true

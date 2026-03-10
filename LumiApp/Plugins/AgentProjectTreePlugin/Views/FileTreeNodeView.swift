@@ -3,7 +3,7 @@ import MagicKit
 import OSLog
 
 /// 文件树节点视图 - 使用 DisclosureGroup
-struct FileTreeNodeView: View {
+struct FileNodeView: View {
     let url: URL
     let depth: Int
     let onSelect: (URL) -> Void
@@ -39,7 +39,7 @@ struct FileTreeNodeView: View {
                 content: {
                     if !children.isEmpty {
                         ForEach(children, id: \.self) { childURL in
-                            FileTreeNodeView(
+                            FileNodeView(
                                 url: childURL,
                                 depth: depth + 1,
                                 onSelect: onSelect

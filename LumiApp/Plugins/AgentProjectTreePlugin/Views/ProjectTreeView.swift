@@ -65,7 +65,7 @@ struct ProjectTreeView: View {
     private var fileTreeList: some View {
         List {
             ForEach(rootURLs, id: \.self) { url in
-                FileTreeNodeView(
+                FileNodeView(
                     url: url,
                     depth: 0,
                     onSelect: { selectedURL in
