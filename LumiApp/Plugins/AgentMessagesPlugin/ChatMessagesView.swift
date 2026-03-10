@@ -1,39 +1,60 @@
 import MagicKit
 import OSLog
+import SwiftData
 import SwiftUI
 
-/// 聊天消息列表视图 - 可滚动的聊天历史记录
-struct ChatMessagesView: View, SuperLog {
-    /// 日志标识 emoji
-    nonisolated static let emoji = "💬"
-    /// 是否输出详细日志
-    nonisolated static let verbose = true
+// MARK: - Input Events
 
-    /// 消息管理 ViewModel
-    @EnvironmentObject var messageViewModel: MessageViewModel
+/// 聊天消息列表视图 - 自己管理分页消息状态
+struct ChatMessagesView: View, SuperLog {
+    nonisolated static let emoji = "💬"
+    nonisolated static let verbose = true
+    nonisolated static let pageSize: Int = 20
+
     /// 会话管理 ViewModel
     @EnvironmentObject var conversationViewModel: ConversationViewModel
+
+    /// SwiftData 模型上下文
+    @Environment(\.modelContext) private var modelContext
+
     /// 智能体提供者
     @EnvironmentObject var agentProvider: AgentProvider
-    /// 处理状态 ViewModel
-    @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
+
     /// 权限请求 ViewModel
     @EnvironmentObject var permissionRequestViewModel: PermissionRequestViewModel
 
+    /// 当前显示的消息列表
+    @State private var messages: [ChatMessage] = []
+
+    /// 是否还有更多历史消息可加载
+    @State private var hasMoreMessages: Bool = false
+
+    /// 是否正在加载更多消息
+    @State private var isLoadingMore: Bool = false
+
+    /// 当前会话的消息总数
+    @State private var totalMessageCount: Int = 0
+
+    /// 最早加载的消息时间戳（用于分页游标）
+    @State private var oldestLoadedTimestamp: Date?
+
+    /// 当前选中的会话ID
+    private var selectedConversationId: UUID? {
+        conversationViewModel.selectedConversationId
+    }
+
     /// 非系统消息
     private var nonSystemMessages: [ChatMessage] {
-        messageViewModel.messages.filter { $0.role != .system }
+        messages.filter { $0.role != .system }
     }
 
     private struct DisplayMessageItem: Identifiable {
         let message: ChatMessage
         let relatedToolOutputs: [ChatMessage]
-
         var id: UUID { message.id }
     }
 
     /// UI 渲染层分组：将工具输出并入最近的 assistant tool-calls 消息
-    /// 注意：这只影响展示，不改变底层消息列表和 LLM 通信数据。
     private var displayMessages: [DisplayMessageItem] {
         var items: [DisplayMessageItem] = []
         var index = 0
@@ -56,17 +77,11 @@ struct ChatMessagesView: View, SuperLog {
                     cursor += 1
                 }
 
-                items.append(
-                    DisplayMessageItem(
-                        message: message,
-                        relatedToolOutputs: groupedOutputs
-                    )
-                )
+                items.append(DisplayMessageItem(message: message, relatedToolOutputs: groupedOutputs))
                 index = cursor
                 continue
             }
 
-            // 无法归属到 assistant tool-call 的工具输出，仍按独立消息显示，避免信息丢失
             items.append(DisplayMessageItem(message: message, relatedToolOutputs: []))
             index += 1
         }
@@ -76,7 +91,7 @@ struct ChatMessagesView: View, SuperLog {
 
     /// 是否已选择会话
     private var hasSelectedConversation: Bool {
-        conversationViewModel.selectedConversationId != nil
+        selectedConversationId != nil
     }
 
     /// 消息是否为空
@@ -88,16 +103,19 @@ struct ChatMessagesView: View, SuperLog {
         Group {
             if hasSelectedConversation {
                 if isMessagesEmpty {
-                    emptyMessagesView
+                    EmptyMessagesView()
                 } else {
                     messagesListView
                 }
             } else {
-                emptyStateView
+                EmptyStateView()
             }
         }
         .background(.background.opacity(0.8))
-        .onChange(of: conversationViewModel.selectedConversationId, handleConversationSelected)
+        .onChange(of: selectedConversationId, loadMessagesForSelectedConversation)
+        // 监听用户消息已发出事件
+        .onReceive(NotificationCenter.default.publisher(for: .userMessageSent)) { _ in }
+        .onAppear(perform: self.handleOnAppear)
     }
 }
 
@@ -114,22 +132,16 @@ extension ChatMessagesView {
 
     private func messageScrollContent(proxy: ScrollViewProxy, items: [DisplayMessageItem]) -> some View {
         ScrollView {
-            messageRows(items: items)
+            messageRows(proxy: proxy, items: items)
         }
         .padding(.vertical)
-        .onChange(of: agentProvider.userJustSentMessage) { _, userJustSent in
-            if userJustSent {
-                handleUserSentMessage(proxy: proxy)
-            }
-        }
         .overlay { messageOverlay }
     }
 
-    private func messageRows(items: [DisplayMessageItem]) -> some View {
+    private func messageRows(proxy: ScrollViewProxy, items: [DisplayMessageItem]) -> some View {
         let lastMessageID = items.last?.id
         return LazyVStack(alignment: .leading, spacing: 12) {
-            // 加载更多历史消息按钮
-            if messageViewModel.hasMoreMessages {
+            if hasMoreMessages {
                 loadMoreButton
             }
 
@@ -149,26 +161,21 @@ extension ChatMessagesView {
     private var loadMoreButton: some View {
         HStack {
             Spacer()
-
             Button(action: handleLoadMore) {
                 HStack(spacing: 8) {
-                    if messageViewModel.isLoadingMore {
-                        ProgressView()
-                            .controlSize(.small)
+                    if isLoadingMore {
+                        ProgressView().controlSize(.small)
                     } else {
                         Image(systemName: "arrow.up.circle")
                     }
-
-                    Text(loadMoreButtonText)
-                        .font(.caption)
+                    Text(loadMoreButtonText).font(.caption)
                 }
                 .foregroundStyle(.secondary)
                 .padding(.vertical, 8)
                 .padding(.horizontal, 16)
             }
             .buttonStyle(.plain)
-            .disabled(messageViewModel.isLoadingMore)
-
+            .disabled(isLoadingMore)
             Spacer()
         }
         .padding(.vertical, 8)
@@ -176,151 +183,182 @@ extension ChatMessagesView {
 
     /// 加载更多按钮文本
     private var loadMoreButtonText: String {
-        if messageViewModel.isLoadingMore {
+        if isLoadingMore {
             return "加载中..."
         }
-        let loaded = messageViewModel.messages.count
-        let total = messageViewModel.totalMessageCount
-        return "加载更早消息 (\(loaded)/\(total))"
+        return "加载更早消息 (\(messages.count)/\(totalMessageCount))"
     }
 
     private var messageOverlay: some View {
         VStack(spacing: 8) {
             DepthWarningBanner()
-
             if let request = permissionRequestViewModel.pendingPermissionRequest {
                 PermissionRequestView(
                     request: request,
-                    onAllow: {
-                        agentProvider.respondToPermissionRequest(allowed: true)
-                    },
-                    onDeny: {
-                        agentProvider.respondToPermissionRequest(allowed: false)
-                    }
+                    onAllow: { agentProvider.respondToPermissionRequest(allowed: true) },
+                    onDeny: { agentProvider.respondToPermissionRequest(allowed: false) }
                 )
             }
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
-
-    /// 空状态视图 - 未选择会话时显示（无动态效果）
-    private var emptyStateView: some View {
-        VStack(spacing: 20) {
-            Spacer()
-
-            // 图标
-            Image(systemName: "bubble.left.and.bubble.right.fill")
-                .font(.system(size: 64))
-                .foregroundStyle(.secondary)
-
-            // 标题
-            Text("选择一个会话开始聊天", tableName: "DevAssistant")
-                .font(.title2)
-                .fontWeight(.semibold)
-                .foregroundStyle(.primary)
-
-            // 描述
-            Text("从左侧列表选择一个现有会话，或创建新会话", tableName: "DevAssistant")
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.clear)
-    }
-
-    /// 空消息视图 - 已选择会话但没有消息时显示（带动态效果）
-    private var emptyMessagesView: some View {
-        VStack(spacing: 20) {
-            Spacer()
-
-            // 图标
-            Image(systemName: "text.bubble.fill")
-                .font(.system(size: 56))
-                .foregroundStyle(.tertiary)
-            
-            // 标题
-            Text("暂无消息", tableName: "DevAssistant")
-                .font(.title2)
-                .fontWeight(.semibold)
-                .foregroundStyle(.primary)
-
-            // 描述
-            Text("在下方输入框中输入您的问题，开始与 AI 助手对话", tableName: "DevAssistant")
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.clear)
-    }
 }
 
-// MARK: - Actions
+// MARK: - Message Loading
 
 extension ChatMessagesView {
-    func scrollToBottom(proxy: ScrollViewProxy) {
-        guard let lastMessage = displayMessages.last?.message else { return }
-
-        Task {
-            proxy.scrollTo(lastMessage.id, anchor: .bottom)
+    /// 加载选中会话的消息（分页模式）
+    private func loadMessagesForSelectedConversation() {
+        guard let conversationId = selectedConversationId else {
+            messages = []
+            hasMoreMessages = false
+            totalMessageCount = 0
+            oldestLoadedTimestamp = nil
+            return
         }
-    }
-
-    /// 智能滚动到底部
-    /// 只在用户已经在底部附近时才自动滚动，避免打扰用户阅读历史消息
-    func scrollToBottomIfNeeded(proxy: ScrollViewProxy) {
-        guard let lastMessage = displayMessages.last?.message else { return }
-
-        // 使用动画平滑滚动
-        withAnimation(.easeOut(duration: 0.1)) {
-            proxy.scrollTo(lastMessage.id, anchor: .bottom)
-        }
-    }
-}
-
-// MARK: Event Handler
-
-extension ChatMessagesView {
-    func handleUserSentMessage(proxy: ScrollViewProxy) {
-        if Self.verbose {
-            os_log("\(self.t)📬 用户发送消息，滚动到底部")
-        }
-
-        // 用户发送消息时滚动到底部
-        scrollToBottomIfNeeded(proxy: proxy)
-
-        // 重置标记
-        agentProvider.userJustSentMessage = false
-    }
-
-    func handleConversationSelected() {
-        guard let conversationId = conversationViewModel.selectedConversationId else { return }
 
         if Self.verbose {
-            os_log("\(self.t)✅ [\(conversationId)] 已选择")
-        }
-    }
-
-    /// 处理加载更多历史消息
-    func handleLoadMore() {
-        guard let conversationId = conversationViewModel.selectedConversationId else { return }
-        guard messageViewModel.hasMoreMessages, !messageViewModel.isLoadingMore else { return }
-
-        if Self.verbose {
-            os_log("\(self.t)📄 加载更多历史消息")
+            os_log("\(Self.t)📥 [\(conversationId)] 开始加载消息（分页模式）")
         }
 
         Task {
-            await messageViewModel.loadMoreMessages(conversationId: conversationId)
+            await loadMessagesPaginated(conversationId: conversationId)
         }
+    }
+
+    /// 分页加载消息（初始加载最近消息）
+    private func loadMessagesPaginated(conversationId: UUID) async {
+        // 重置分页状态
+        oldestLoadedTimestamp = nil
+        hasMoreMessages = false
+        isLoadingMore = false
+
+        // 获取消息总数
+        totalMessageCount = await getMessageCount(forConversationId: conversationId)
+
+        // 加载第一页（最近的消息）
+        let result = await loadMessagesPage(
+            forConversationId: conversationId,
+            limit: Self.pageSize,
+            beforeTimestamp: nil
+        )
+
+        await MainActor.run {
+            messages = result.messages
+            hasMoreMessages = result.hasMore
+
+            // 更新最早加载的时间戳
+            if let firstMessage = messages.first {
+                oldestLoadedTimestamp = firstMessage.timestamp
+            }
+
+            if Self.verbose {
+                os_log("\(Self.t)📄 [\(conversationId)] 分页加载完成: \(self.messages.count)/\(self.totalMessageCount) 条, hasMore: \(self.hasMoreMessages)")
+            }
+        }
+    }
+
+    /// 加载更多历史消息（上滑时调用）
+    private func handleLoadMore() {
+        guard let conversationId = selectedConversationId else { return }
+        guard hasMoreMessages, !isLoadingMore else { return }
+
+        if Self.verbose {
+            os_log("\(Self.t)📄 加载更多历史消息")
+        }
+
+        Task {
+            isLoadingMore = true
+            defer { isLoadingMore = false }
+
+            let result = await loadMessagesPage(
+                forConversationId: conversationId,
+                limit: Self.pageSize,
+                beforeTimestamp: oldestLoadedTimestamp
+            )
+
+            await MainActor.run {
+                messages.insert(contentsOf: result.messages, at: 0)
+                hasMoreMessages = result.hasMore
+
+                // 更新最早加载的时间戳
+                if let firstMessage = result.messages.first {
+                    oldestLoadedTimestamp = firstMessage.timestamp
+                }
+
+                if Self.verbose {
+                    os_log("\(Self.t)📄 [\(conversationId)] 加载更多完成: \(self.messages.count)/\(self.totalMessageCount) 条, hasMore: \(self.hasMoreMessages)")
+                }
+            }
+        }
+    }
+
+    /// 从 SwiftData 分页加载消息
+    private func loadMessagesPage(
+        forConversationId conversationId: UUID,
+        limit: Int,
+        beforeTimestamp: Date?
+    ) async -> (messages: [ChatMessage], hasMore: Bool) {
+        let descriptor = FetchDescriptor<Conversation>(
+            predicate: #Predicate { conversation in
+                conversation.id == conversationId
+            }
+        )
+
+        guard let conversation = try? modelContext.fetch(descriptor).first else {
+            return ([], false)
+        }
+
+        // 按时间倒序排列（最新的在前）
+        let allMessages = conversation.messages
+            .sorted { $0.timestamp > $1.timestamp }
+
+        // 计算起始索引
+        let startIndex: Int
+        if let before = beforeTimestamp {
+            // 找到时间戳早于 before 的第一条消息索引
+            startIndex = allMessages.firstIndex { $0.timestamp < before } ?? allMessages.count
+        } else {
+            startIndex = 0
+        }
+
+        let endIndex = min(startIndex + limit, allMessages.count)
+
+        guard endIndex > startIndex else {
+            return ([], false)
+        }
+
+        // 提取分页数据
+        let page = allMessages[startIndex..<endIndex]
+        let hasMore = endIndex < allMessages.count
+
+        // 转换回 ChatMessage 并恢复正序（最老的在前）
+        let chatMessages = page.compactMap { $0.toChatMessage() }.reversed()
+
+        return (Array(chatMessages), hasMore)
+    }
+
+    /// 获取消息总数
+    private func getMessageCount(forConversationId conversationId: UUID) async -> Int {
+        let descriptor = FetchDescriptor<Conversation>(
+            predicate: #Predicate { conversation in
+                conversation.id == conversationId
+            }
+        )
+        return (try? modelContext.fetch(descriptor).first?.messages.count) ?? 0
+    }
+}
+
+// MARK: - Event Handlers
+
+extension ChatMessagesView {
+    func handleOnAppear() {
+        if Self.verbose {
+            os_log("\(Self.t)👀 ChatMessagesView 出现，当前对话ID是：\(conversationViewModel.selectedConversationId?.uuidString ?? "")")
+        }
+        
+        self.loadMessagesForSelectedConversation()
     }
 }
 

@@ -94,6 +94,9 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     /// 思考状态 ViewModel
     let thinkingStateViewModel: ThinkingStateViewModel
 
+    /// 标题生成 ViewModel
+    let titleGenerationViewModel: TitleGenerationViewModel
+
     // MARK: - 订阅管理
 
     private var cancellables = Set<AnyCancellable>()
@@ -155,7 +158,8 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         processingStateViewModel: ProcessingStateViewModel,
         errorStateViewModel: ErrorStateViewModel,
         permissionRequestViewModel: PermissionRequestViewModel,
-        thinkingStateViewModel: ThinkingStateViewModel
+        thinkingStateViewModel: ThinkingStateViewModel,
+        titleGenerationViewModel: TitleGenerationViewModel
     ) {
         self.promptService = promptService
         self.registry = registry
@@ -173,6 +177,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         self.errorStateViewModel = errorStateViewModel
         self.permissionRequestViewModel = permissionRequestViewModel
         self.thinkingStateViewModel = thinkingStateViewModel
+        self.titleGenerationViewModel = titleGenerationViewModel
 
         // 监听会话选择变化
         setupConversationSelectionObserver()
@@ -814,9 +819,10 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         messageViewModel.messages
     }
 
-    /// 标记是否已生成标题（代理到 MessageViewModel）
+    /// 标记是否已生成标题（代理到 TitleGenerationViewModel）
     var hasGeneratedTitle: Bool {
-        messageViewModel.hasGeneratedTitle
+        guard let selectedId = conversationViewModel.selectedConversationId else { return false }
+        return titleGenerationViewModel.hasGeneratedTitle(for: selectedId)
     }
 
     // MARK: - 代理 ProjectViewModel 属性（仅供内部扩展使用）
@@ -976,13 +982,14 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     }
 
     /// 设置聊天消息列表
-    func setMessages(_ messages: [ChatMessage]) {
-        messageViewModel.setMessagesInternal(messages)
+    func setMessages(_ messages: [ChatMessage], reason: String = "设置消息列表") {
+        messageViewModel.setMessages(messages, reason: reason)
     }
 
     /// 设置标题生成标记
     func setHasGeneratedTitle(_ value: Bool) {
-        messageViewModel.setHasGeneratedTitleInternal(value)
+        guard let selectedId = conversationViewModel.selectedConversationId else { return }
+        titleGenerationViewModel.setTitleGenerated(value, for: selectedId)
     }
 
     /// 加载指定对话
@@ -998,16 +1005,8 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             os_log("\(Self.t)🔄 [\(conversationId)] 待发送消息：\(queueCount) 条")
         }
 
-        // 分页加载消息到 MessageViewModel（初始只加载最近的消息）
-        let exists = await messageViewModel.loadMessagesPaginated(conversationId: conversationId)
-        guard exists else {
-            os_log(.error, "\(Self.t)❌ [\(conversationId)] 对话不存在")
-            return
-        }
-
-        if Self.verbose {
-            os_log("\(Self.t)✅ [\(conversationId)] 分页加载完成：\(self.messageViewModel.messages.count)/\(self.messageViewModel.totalMessageCount) 条，hasMore: \(self.messageViewModel.hasMoreMessages)")
-        }
+        // 更新标题生成状态
+        titleGenerationViewModel.updateTitleGenerationStatus(from: messageViewModel.messages, for: conversationId)
 
         refreshSessionScopedUIState(for: conversationId)
     }
@@ -1114,11 +1113,6 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         }
 
         // 4. 设置消息列表（直接设置，避免与 loadConversation 竞争）
-        await MainActor.run {
-            messageViewModel.setMessagesInternal(initialMessages)
-            messageViewModel.setHasMoreMessagesInternal(false)
-            messageViewModel.setTotalMessageCountInternal(initialMessages.count)
-        }
 
         // 5. 选中该会话（这会触发 UI 更新，但消息已经准备好了）
         conversationViewModel.setSelectedConversation(newConversation.id)
@@ -1168,12 +1162,12 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
         // 检查是否满足生成标题的条件
         guard conversation.title.hasPrefix("新会话 "),
-              !messageViewModel.hasGeneratedTitle else {
+              !titleGenerationViewModel.hasGeneratedTitle(for: conversationId) else {
             return
         }
 
         // 标记已生成标题，防止重复生成
-        messageViewModel.setHasGeneratedTitleInternal(true)
+        titleGenerationViewModel.setTitleGenerated(true, for: conversationId)
 
         // 获取 LLM 配置
         let config = getCurrentConfig()
@@ -1316,31 +1310,8 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     /// 获取发送给 LLM 的消息列表
     /// 如果当前是分页加载且还有更多消息未加载，需要加载完整上下文
     private func getMessagesForLLM(conversationId: UUID) async -> [ChatMessage] {
-        // 如果不是当前选中的会话，从数据库全量加载
-        guard conversationViewModel.selectedConversationId == conversationId else {
-            return await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
-        }
-
-        // 如果已经加载了所有消息，直接使用内存中的消息
-        guard messageViewModel.hasMoreMessages else {
-            return messageViewModel.messages
-        }
-
-        // 如果还有更多消息未加载，需要加载完整上下文给 LLM
-        // 注意：这是第一阶段的临时方案，第二阶段应该实现上下文裁剪
-        if Self.verbose {
-            os_log("\(Self.t)⚠️ [\(conversationId)] 分页模式下需要完整上下文，加载所有消息")
-        }
-
-        let allMessages = await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
-
-        // 更新 ViewModel 的消息列表为完整列表
-        await MainActor.run {
-            messageViewModel.setMessagesInternal(allMessages)
-            messageViewModel.setHasMoreMessagesInternal(false)
-        }
-
-        return allMessages
+        // 从数据库全量加载
+        return await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
     }
 
     // MARK: - 模式切换通知
@@ -1402,7 +1373,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
                 languagePreference: languagePreference,
                 includeContext: isProjectSelected
             )
-            setMessages([ChatMessage(role: .system, content: fullSystemPrompt)])
+            setMessages([ChatMessage(role: .system, content: fullSystemPrompt)], reason: "切换项目更新系统提示词")
         }
     }
 

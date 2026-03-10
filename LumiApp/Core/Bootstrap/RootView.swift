@@ -124,6 +124,7 @@ final class RootViewContainer: ObservableObject {
     let errorStateViewModel: ErrorStateViewModel
     let permissionRequestViewModel: PermissionRequestViewModel
     let thinkingStateViewModel: ThinkingStateViewModel
+    let titleGenerationViewModel: TitleGenerationViewModel
 
     // MARK: - 初始化
 
@@ -166,6 +167,7 @@ final class RootViewContainer: ObservableObject {
         self.errorStateViewModel = ErrorStateViewModel()
         self.permissionRequestViewModel = PermissionRequestViewModel()
         self.thinkingStateViewModel = ThinkingStateViewModel()
+        self.titleGenerationViewModel = TitleGenerationViewModel()
 
         // 初始化聊天历史服务（依赖 LLMService）
         let chatHistoryService = ChatHistoryService(
@@ -218,7 +220,8 @@ final class RootViewContainer: ObservableObject {
             processingStateViewModel: self.processingStateViewModel,
             errorStateViewModel: self.errorStateViewModel,
             permissionRequestViewModel: self.permissionRequestViewModel,
-            thinkingStateViewModel: self.thinkingStateViewModel
+            thinkingStateViewModel: self.thinkingStateViewModel,
+            titleGenerationViewModel: self.titleGenerationViewModel
         )
     }
 }

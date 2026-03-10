@@ -5,7 +5,7 @@ import MagicKit
 /// 项目命令加载服务 - 负责从 .agent/commands 目录加载命令
 actor ProjectCommandLoader: SuperLog {
     nonisolated static let emoji = "📜"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
     
     private let fileManager: FileManager
     

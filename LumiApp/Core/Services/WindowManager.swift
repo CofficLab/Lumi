@@ -11,7 +11,7 @@ import OSLog
 final class WindowManager: ObservableObject, SuperLog {
     static let shared = WindowManager()
     nonisolated static let emoji = "🪟"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     // MARK: - Published Properties
 
@@ -34,7 +34,7 @@ final class WindowManager: ObservableObject, SuperLog {
     private init() {
         setupNotifications()
         if Self.verbose {
-            os_log("\(Self.t)窗口管理器初始化完成")
+            os_log("\(Self.t)✅ 窗口管理器初始化完成")
         }
     }
 

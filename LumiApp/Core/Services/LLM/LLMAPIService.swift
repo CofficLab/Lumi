@@ -131,12 +131,14 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
             // 添加请求体
             if let bodyData = request.httpBody,
                let bodyString = String(data: bodyData, encoding: .utf8) {
+                let bodySize = bodyData.count
+                let formattedSize = Self.formatBytes(bodySize)
                 if bodyString.count <= 400 {
-                    logMessage += "📦 请求体：\n\(bodyString)\n"
+                    logMessage += "📦 请求体 (\(formattedSize))：\n\(bodyString)\n"
                 } else {
                     let prefix = bodyString.prefix(200)
                     let suffix = bodyString.suffix(200)
-                    logMessage += "📦 请求体：\n\(prefix)\n...\n\(suffix)\n"
+                    logMessage += "📦 请求体 (\(formattedSize))：\n\(prefix)\n...\n\(suffix)\n"
                 }
             }
             
@@ -204,8 +206,8 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
                 guard !eventData.isEmpty else { continue }
                 chunkCount += 1
                 if Self.verbose && chunkCount <= 5 {
-                    let preview = String(data: eventData, encoding: .utf8)?.prefix(200) ?? "无法解码"
-                    os_log("\(self.t)📦 收到 SSE 数据块 #\(chunkCount) (\(eventData.count) bytes): \(preview)...")
+                    let preview = String(data: eventData, encoding: .utf8)?.prefix(300) ?? "无法解码"
+                    os_log("\(self.t)📦 收到 SSE 数据块 #\(chunkCount) (\(eventData.count) bytes): \n\(preview)...")
                 }
                 let callbackStart = CFAbsoluteTimeGetCurrent()
                 let callbackChunkIndex = chunkCount
@@ -431,6 +433,27 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
                 statusCode: httpResponse.statusCode,
                 message: errorMessage
             )
+        }
+    }
+
+    // MARK: - 辅助方法
+
+    /// 格式化字节大小为人类可读的字符串
+    /// - Parameter bytes: 字节数
+    /// - Returns: 格式化后的字符串，如 "1.5 MB" 或 "500 bytes"
+    nonisolated private static func formatBytes(_ bytes: Int) -> String {
+        let kb = 1024
+        let mb = kb * 1024
+        let gb = mb * 1024
+
+        if bytes >= gb {
+            return String(format: "%.2f GB", Double(bytes) / Double(gb))
+        } else if bytes >= mb {
+            return String(format: "%.2f MB", Double(bytes) / Double(mb))
+        } else if bytes >= kb {
+            return String(format: "%.2f KB", Double(bytes) / Double(kb))
+        } else {
+            return "\(bytes) bytes"
         }
     }
 }

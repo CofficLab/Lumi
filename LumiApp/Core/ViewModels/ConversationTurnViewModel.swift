@@ -118,6 +118,7 @@ If critical information is missing, explicitly state what is missing and ask one
         }
         if let chainStartedAt = context.chainStartedAt,
            Date().timeIntervalSince(chainStartedAt) > maxChainDuration {
+            let elapsed = Date().timeIntervalSince(chainStartedAt)
             context.pendingToolCalls.removeAll()
             turnContexts[conversationId] = context
             let error = NSError(
@@ -126,7 +127,7 @@ If critical information is missing, explicitly state what is missing and ask one
                 userInfo: [NSLocalizedDescriptionKey: "对话处理超时（\(Int(maxChainDuration))s），已自动中止。"]
             )
             eventContinuation?.yield(.error(error, conversationId: conversationId))
-            os_log(.error, "\(Self.t)❌ [\(conversationId)] 对话处理超时，已中止")
+            os_log(.error, "\(Self.t)❌ [\(conversationId)] 对话处理超时，已中止（已运行 \(String(format: "%.1f", elapsed))s，限制 \(Int(self.maxChainDuration))s）")
             return
         }
         context.currentDepth = depth

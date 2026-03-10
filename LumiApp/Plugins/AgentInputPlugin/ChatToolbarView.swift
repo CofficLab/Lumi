@@ -104,6 +104,8 @@ extension ChatToolbarView {
                 let text = inputViewModel.text
                 inputViewModel.clear()
                 agentProvider.sendMessage(input: text)
+                // 发送用户消息已发出事件
+                NotificationCenter.postUserMessageSent(message: text)
             }) {
                 Image(systemName: "paperplane.fill")
                     .font(.system(size: 14))

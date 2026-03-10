@@ -1,5 +1,7 @@
 import SwiftUI
 import Combine
+import OSLog
+import MagicKit
 
 /// 消息展开状态管理器
 @MainActor
@@ -28,7 +30,10 @@ final class MessageExpansionState: ObservableObject {
 }
 
 /// 聊天气泡组件，用于显示用户消息、助手回复和工具输出
-struct ChatBubble: View {
+struct ChatBubble: View, SuperLog {
+    nonisolated static let emoji = "🫧"
+    nonisolated static let verbose = true
+
     let message: ChatMessage
     /// 是否是最后一条消息
     let isLastMessage: Bool
@@ -389,7 +394,10 @@ struct AssistantMessageHeader: View {
 // MARK: - Heartbeat Indicator
 
 /// 心跳动画指示器
-struct HeartbeatIndicator: View {
+struct HeartbeatIndicator: View, SuperLog {
+    nonisolated static let emoji = "💓"
+    nonisolated static let verbose = false
+
     @EnvironmentObject var agentProvider: AgentProvider
     @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
     @State private var isAnimating = false
@@ -450,8 +458,10 @@ struct HeartbeatIndicator: View {
 // MARK: - Thinking Indicator
 
 /// 思考状态指示器
-struct ThinkingIndicator: View {
-    @State private var isAnimating = false
+struct ThinkingIndicator: View, SuperLog {
+    nonisolated static let emoji = "🧠"
+    nonisolated static let verbose = false
+
     @State private var rotation: Double = 0
 
     var body: some View {

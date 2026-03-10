@@ -524,7 +524,7 @@ class LLMService: SuperLog, @unchecked Sendable {
             if finalContent.isEmpty {
                 os_log("\(self.t)⚠️ 警告：累积内容为空！")
             } else {
-                os_log("\(self.t)📝 累积内容预览：\(finalContent.prefix(100))...")
+                os_log("\(self.t)📝 累积内容预览：\n\(finalContent.prefix(100))...")
             }
         }
 

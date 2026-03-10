@@ -27,7 +27,7 @@ struct ShellTool: AgentTool, SuperLog {
     nonisolated static let emoji = "🔧"
     
     /// 是否启用详细日志
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     /// 工具名称
     let name = "run_command"
@@ -90,7 +90,7 @@ struct ShellTool: AgentTool, SuperLog {
         // 评估命令风险
         let riskLevel = Self.evaluateCommandRisk(command: command)
         if Self.verbose {
-            os_log("\(Self.t)👮 \(riskLevel.displayName) -> \(command)")
+            os_log("\(Self.t)👮 \(riskLevel.displayName) \n \(command)")
         }
 
         // 创建临时的 ShellService 执行命令
