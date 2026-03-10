@@ -628,12 +628,25 @@ class FileTreeRowView: NSTableRowView {
     override var wantsUpdateLayer: Bool { true }
     
     override func updateLayer() {
-        layer?.backgroundColor = isHovered ? NSColor.controlBackgroundColor.cgColor : NSColor.clear.cgColor
+        let baseColor = isHovered ? NSColor.controlBackgroundColor.withAlphaComponent(0.9) : .clear
+        let insetRect = bounds.insetBy(dx: 4, dy: 0)
+        let path = NSBezierPath(roundedRect: insetRect, xRadius: 4, yRadius: 4)
+
+        // 手动绘制窄一些的 hover 背景，避免铺满整列
+        let image = NSImage(size: bounds.size)
+        image.lockFocus()
+        baseColor.setFill()
+        path.fill()
+        image.unlockFocus()
+
+        layer?.contents = image
+        layer?.contentsScale = NSScreen.main?.backingScaleFactor ?? 2.0
+        layer?.backgroundColor = NSColor.clear.cgColor
     }
     
     override func drawSelection(in dirtyRect: NSRect) {
         if selectionHighlightStyle != .none {
-            let selectionRect = bounds
+            let selectionRect = bounds.insetBy(dx: 4, dy: 1)
             NSColor.controlAccentColor.withAlphaComponent(0.2).setFill()
             let path = NSBezierPath(roundedRect: selectionRect, xRadius: 4, yRadius: 4)
             path.fill()
@@ -716,8 +729,12 @@ struct FileTreeView: NSViewRepresentable {
         // 先创建并添加列
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("FileColumn"))
         column.title = ""
+        column.resizingMask = .autoresizingMask
         outlineView.addTableColumn(column)
         outlineView.outlineTableColumn = column
+        outlineView.autoresizesOutlineColumn = true
+        outlineView.columnAutoresizingStyle = .uniformColumnAutoresizingStyle
+        outlineView.sizeLastColumnToFit()
         
         outlineView.headerView = nil
         outlineView.intercellSpacing = NSSize(width: 0, height: 2)
@@ -733,6 +750,9 @@ struct FileTreeView: NSViewRepresentable {
     }
     
     func updateNSView(_ nsView: NSScrollView, context: Context) {
+        if let outlineView = nsView.documentView as? NSOutlineView {
+            outlineView.sizeLastColumnToFit()
+        }
         if let url = rootURL, context.coordinator.currentRootURL?.standardizedFileURL != url.standardizedFileURL {
             context.coordinator.setRootURL(url)
         }

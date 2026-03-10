@@ -31,6 +31,7 @@ struct AgentNativeFileTreeContainer: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Header
@@ -64,6 +65,7 @@ struct AgentNativeFileTreeContainer: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(isHovered ? Color.primary.opacity(0.05) : Color.clear)
         .contentShape(Rectangle())
         .onHover { hovering in
