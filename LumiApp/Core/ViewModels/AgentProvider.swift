@@ -363,7 +363,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             thinkingConversationIds.remove(conversationId)
 
             if conversationViewModel.selectedConversationId == conversationId {
-                setThinkingText("")
+                setThinkingText("", for: conversationId)
             }
 
             let placeholderMessage = ChatMessage(
@@ -416,7 +416,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
                     if existing.count < maxThinkingTextLength {
                         let remaining = maxThinkingTextLength - existing.count
                         appendPart = String(content.prefix(remaining))
-                        thinkingTextByConversation[conversationId] = existing + appendPart
+                    thinkingTextByConversation[conversationId] = existing + appendPart
                     }
                     if conversationViewModel.selectedConversationId == conversationId, !appendPart.isEmpty {
                         pendingThinkingTextByConversation[conversationId, default: ""] += appendPart
@@ -435,7 +435,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
                 if rawEvent.contains("\"type\":\"thinking\"") || rawEvent.contains("thinking") {
                     thinkingConversationIds.insert(conversationId)
                     if conversationViewModel.selectedConversationId == conversationId {
-                        setIsThinking(true)
+                        setIsThinking(true, for: conversationId)
                     }
                     if Self.verbose {
                         os_log("\(Self.t)🤔 思考开始")
@@ -526,8 +526,8 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             // 重置思考状态（但保留思考文本，以便在界面上显示）
             thinkingConversationIds.remove(conversationId)
             if conversationViewModel.selectedConversationId == conversationId {
-                setThinkingText(thinkingTextByConversation[conversationId] ?? "")
-                setIsThinking(false)
+                setThinkingText(thinkingTextByConversation[conversationId] ?? "", for: conversationId)
+                setIsThinking(false, for: conversationId)
             }
             pendingStreamTextByConversation[conversationId] = nil
             pendingThinkingTextByConversation[conversationId] = nil
@@ -705,18 +705,18 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     }
 
     /// 设置思考状态
-    func setIsThinking(_ thinking: Bool) {
-        thinkingStateViewModel.setIsThinking(thinking)
+    func setIsThinking(_ thinking: Bool, for conversationId: UUID) {
+        thinkingStateViewModel.setIsThinking(thinking, for: conversationId)
     }
 
     /// 追加思考文本
-    func appendThinkingText(_ text: String) {
-        thinkingStateViewModel.appendThinkingText(text)
+    func appendThinkingText(_ text: String, for conversationId: UUID) {
+        thinkingStateViewModel.appendThinkingText(text, for: conversationId)
     }
 
     /// 设置思考文本
-    func setThinkingText(_ text: String) {
-        thinkingStateViewModel.setThinkingText(text)
+    func setThinkingText(_ text: String, for conversationId: UUID) {
+        thinkingStateViewModel.setThinkingText(text, for: conversationId)
     }
 
     /// 设置待处理权限请求
@@ -738,8 +738,9 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     private func refreshSessionScopedUIState(for conversationId: UUID) {
         setIsProcessing(processingConversationIds.contains(conversationId))
         setLastHeartbeatTime(lastHeartbeatByConversation[conversationId] ?? nil)
-        setIsThinking(thinkingConversationIds.contains(conversationId))
-        setThinkingText(thinkingTextByConversation[conversationId] ?? "")
+        thinkingStateViewModel.setActiveConversation(conversationId)
+        setIsThinking(thinkingConversationIds.contains(conversationId), for: conversationId)
+        setThinkingText(thinkingTextByConversation[conversationId] ?? "", for: conversationId)
         setPendingPermissionRequest(pendingPermissionByConversation[conversationId] ?? nil)
         setDepthWarning(depthWarningByConversation[conversationId] ?? nil)
         setErrorMessage(errorMessageByConversation[conversationId] ?? nil)
@@ -807,7 +808,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             return
         }
         guard conversationViewModel.selectedConversationId == conversationId else { return }
-        appendThinkingText(pending)
+        appendThinkingText(pending, for: conversationId)
         pendingThinkingTextByConversation[conversationId] = ""
         lastThinkingFlushAtByConversation[conversationId] = now
     }
@@ -1126,7 +1127,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         os_log("\(Self.t)🛑 任务已取消")
         // 重置处理状态
         setIsProcessing(false)
-        setIsThinking(false)
+        setIsThinking(false, for: conversationId)
         setPendingPermissionRequest(nil)
         permissionRequestViewModel.setPendingPermissionRequest(nil)
         // 添加取消提示消息

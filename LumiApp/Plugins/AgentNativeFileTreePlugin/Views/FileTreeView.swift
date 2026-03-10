@@ -633,7 +633,7 @@ class FileTreeRowView: NSTableRowView {
     
     override func drawSelection(in dirtyRect: NSRect) {
         if selectionHighlightStyle != .none {
-            let selectionRect = bounds.insetBy(dx: 2, dy: 0)
+            let selectionRect = bounds
             NSColor.controlAccentColor.withAlphaComponent(0.2).setFill()
             let path = NSBezierPath(roundedRect: selectionRect, xRadius: 4, yRadius: 4)
             path.fill()
