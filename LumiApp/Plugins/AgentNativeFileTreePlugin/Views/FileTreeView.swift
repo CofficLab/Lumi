@@ -203,8 +203,16 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         guard let outlineView = notification.object as? NSOutlineView,
               let node = outlineView.item(atRow: outlineView.selectedRow) as? FileNode else { return }
         
-        if !node.isDirectory {
-            onSelect?(node.url)
+        // 触发选中回调
+        onSelect?(node.url)
+        
+        // 目录：展开/折叠
+        if node.isDirectory {
+            if outlineView.isItemExpanded(node) {
+                outlineView.collapseItem(node)
+            } else {
+                outlineView.expandItem(node)
+            }
         }
     }
     

@@ -1,77 +1,64 @@
 import SwiftUI
-import Combine
 import OSLog
 import MagicKit
 
-/// 消息展开状态管理器
-@MainActor
-final class MessageExpansionState: ObservableObject {
-    static let shared = MessageExpansionState()
-    
-    @Published private var expandedStates: [UUID: Bool] = [:]
-    
-    init() {}
-    
-    /// 获取消息的展开状态
-    func isExpanded(id: UUID) -> Bool {
-        expandedStates[id] ?? true  // 默认展开
-    }
-    
-    /// 设置消息的展开状态
-    func setExpanded(id: UUID, expanded: Bool) {
-        expandedStates[id] = expanded
-    }
-    
-    /// 切换消息的展开状态
-    func toggleExpansion(id: UUID) {
-        let current = isExpanded(id: id)
-        expandedStates[id] = !current
-    }
-}
+// MARK: - Chat Bubble
 
 /// 聊天气泡组件，用于显示用户消息、助手回复和工具输出
 struct ChatBubble: View, SuperLog {
+    /// 日志标识 emoji
     nonisolated static let emoji = "🫧"
+    /// 是否启用详细日志
     nonisolated static let verbose = true
 
+    /// 消息对象
     let message: ChatMessage
     /// 是否是最后一条消息
     let isLastMessage: Bool
     /// 与当前 assistant 工具调用关联的工具输出（仅用于 UI 分组展示）
     let relatedToolOutputs: [ChatMessage]
+
     @ObservedObject private var expansionState = MessageExpansionState.shared
     @State private var showRawMessage: Bool = false
+
     /// 智能体提供者（用于获取思考状态）
     @EnvironmentObject var agentProvider: AgentProvider
     /// 思考状态 ViewModel
     @EnvironmentObject var thinkingStateViewModel: ThinkingStateViewModel
+    /// 处理状态 ViewModel
+    @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
 
+    /// 初始化
+    /// - Parameters:
+    ///   - message: 消息对象
+    ///   - isLastMessage: 是否是最后一条消息
+    ///   - relatedToolOutputs: 关联的工具输出
     init(message: ChatMessage, isLastMessage: Bool, relatedToolOutputs: [ChatMessage] = []) {
         self.message = message
         self.isLastMessage = isLastMessage
         self.relatedToolOutputs = relatedToolOutputs
     }
-    /// 处理状态 ViewModel
-    @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
 
-    // 判断是否是长消息
+    // MARK: - Computed Properties
+
+    /// 判断是否是长消息
     private var isLongMessage: Bool {
         let charCount = message.content.count
         let lineCount = message.content.components(separatedBy: "\n").count
         return charCount > 1000 || lineCount > 50
     }
 
-    // 当前消息的展开状态
+    /// 当前消息的展开状态
     private var isExpanded: Bool {
         expansionState.isExpanded(id: message.id)
     }
 
-    // 是否是当前正在流式传输的消息
+    /// 是否是当前正在流式传输的消息
     private var isCurrentStreamingMessage: Bool {
         agentProvider.currentStreamingMessageId == message.id
     }
 
-    // 是否应该显示思考过程
+    /// 是否应该显示思考过程
     private var shouldShowThinkingProcess: Bool {
         // 必须是助手消息
         guard message.role == .assistant else { return false }
@@ -86,7 +73,7 @@ struct ChatBubble: View, SuperLog {
         return false
     }
 
-    // 获取思考过程文本（优先使用存储的，否则使用实时的）
+    /// 获取思考过程文本（优先使用存储的，否则使用实时的）
     private var thinkingText: String {
         // 如果有存储的思考内容，使用它
         if let storedThinking = message.thinkingContent, !storedThinking.isEmpty {
@@ -96,7 +83,7 @@ struct ChatBubble: View, SuperLog {
         return thinkingStateViewModel.thinkingText
     }
 
-    // 是否正在思考（用于动画）
+    /// 是否正在思考（用于动画）
     private var isThinking: Bool {
         // 如果有存储的思考内容，说明思考已完成
         if message.thinkingContent != nil {
@@ -104,6 +91,11 @@ struct ChatBubble: View, SuperLog {
         }
         // 否则使用实时的思考状态
         return thinkingStateViewModel.isThinking
+    }
+
+    /// 检查消息是否包含工具调用
+    private var hasToolCalls: Bool {
+        message.toolCalls != nil && !message.toolCalls!.isEmpty
     }
 
     var body: some View {
@@ -157,7 +149,7 @@ struct ChatBubble: View, SuperLog {
                             )
                             .messageBubbleStyle(role: message.role, isError: message.isError)
                         }
-                        
+
                         // 消息工具栏（底部按钮行）
                         MessageToolbarView(
                             message: message,
@@ -187,7 +179,7 @@ struct ChatBubble: View, SuperLog {
                             onToggleExpand: {}
                         )
                         .messageBubbleStyle(role: message.role, isError: message.isError)
-                        
+
                         // 消息工具栏（底部按钮行）
                         MessageToolbarView(
                             message: message,
@@ -201,483 +193,14 @@ struct ChatBubble: View, SuperLog {
         }
     }
 
-    // MARK: - Helper Properties
-
-    /// 检查消息是否包含工具调用
-    private var hasToolCalls: Bool {
-        message.toolCalls != nil && !message.toolCalls!.isEmpty
-    }
-
-    // MARK: - Infer Tool Type from Tool Call ID
-
+    /// 根据工具调用 ID 推断工具类型
+    /// - Parameter message: 消息对象
+    /// - Returns: 工具类型
     private func inferToolType(from message: ChatMessage) -> ToolOutputView.ToolType? {
         // 根据 toolCallID 查找对应的工具调用
         // 由于消息之间没有直接关联，我们通过工具名称前缀来推断
         // 这是一个简化实现，更好的方式是在消息间建立关联
         return .unknown
-    }
-}
-
-// MARK: - Assistant Message Header
-
-/// 助手消息头部组件
-struct AssistantMessageHeader: View {
-    let message: ChatMessage
-    @Binding var showRawMessage: Bool
-    let isExpanded: Bool
-    let onToggleExpand: () -> Void
-    let isLongMessage: Bool
-    /// 智能体提供者（用于获取心跳状态）
-    @EnvironmentObject var agentProvider: AgentProvider
-    /// 处理状态 ViewModel
-    @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
-    /// 思考状态 ViewModel
-    @EnvironmentObject var thinkingStateViewModel: ThinkingStateViewModel
-    @State private var isHovered: Bool = false
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 8) {
-            // 供应商和模型信息
-            HStack(alignment: .center, spacing: 4) {
-                Text("Lumi")
-                    .font(DesignTokens.Typography.caption1)
-                    .fontWeight(.medium)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-
-                // 心跳动画指示器（当正在处理时显示）
-                if processingStateViewModel.isProcessing {
-                    HeartbeatIndicator()
-                }
-
-                // 思考状态指示器
-                if thinkingStateViewModel.isThinking {
-                    ThinkingIndicator()
-                }
-
-                // 供应商名称（如果有）
-                if let providerId = message.providerId {
-                    Text("·")
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                    Text(formatProviderName(providerId))
-                        .font(DesignTokens.Typography.caption2)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                }
-
-                // 模型名称（如果有）
-                if let modelName = message.modelName {
-                    Text("·")
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                    Text(formatModelName(modelName))
-                        .font(DesignTokens.Typography.caption2)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                }
-            }
-            
-            Spacer()
-            
-            HStack(alignment: .center, spacing: 12) {
-                // 性能指标组
-                HStack(alignment: .center, spacing: 8) {
-                    // 耗时进度条（如果有 TTFT 和总耗时）
-                    if let ttft = message.timeToFirstToken, let latency = message.latency {
-                        LatencyProgressBar(ttft: ttft, totalLatency: latency)
-                    }
-                    
-                    // Token 统计（如果有）
-                    if let inputTokens = message.inputTokens, let outputTokens = message.outputTokens {
-                        TokenProgressBar(inputTokens: inputTokens, outputTokens: outputTokens)
-                    } else if let totalTokens = message.totalTokens {
-                        HStack(alignment: .center, spacing: 2) {
-                            Image(systemName: "text.alignleft")
-                                .font(.system(size: 8, weight: .medium))
-                            Text("\(totalTokens)")
-                                .font(DesignTokens.Typography.caption2)
-                        }
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                    }
-                    
-                    // 完成原因（如果有）
-                    if let finishReason = message.finishReason {
-                        HStack(alignment: .center, spacing: 2) {
-                            Image(systemName: "flag.fill")
-                                .font(.system(size: 8, weight: .medium))
-                            Text(formatFinishReason(finishReason))
-                                .font(DesignTokens.Typography.caption2)
-                        }
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                    }
-                }
-                
-                // 折叠/展开按钮（仅当内容是长消息时显示）
-                if isLongMessage {
-                    if isExpanded {
-                        // 已展开，显示折叠按钮
-                        CollapseButton(action: onToggleExpand)
-                    } else {
-                        // 已折叠，显示提示
-                        Text("已折叠")
-                            .font(DesignTokens.Typography.caption2)
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary.opacity(0.6))
-                    }
-                }
-                
-                // 切换源码/渲染按钮
-                MarkdownRenderingToggleButton()
-                RawMessageToggleButton(showRawMessage: $showRawMessage)
-            }
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 6)
-                .fill(isHovered ? Color.primary.opacity(0.05) : Color.primary.opacity(0.02))
-        )
-        .contentShape(Rectangle())
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHovered = hovering
-            }
-        }
-    }
-    
-    /// 格式化供应商名称（显示友好名称）
-    private func formatProviderName(_ providerId: String) -> String {
-        let providerNames: [String: String] = [
-            "anthropic": "Anthropic",
-            "openai": "OpenAI",
-            "zhipu": "智谱 AI",
-            "deepseek": "深度求索",
-            "aliyun": "阿里云",
-            "azure": "Azure",
-            "google": "Google",
-            "mistral": "Mistral",
-            "groq": "Groq",
-            "ollama": "Ollama"
-        ]
-        return providerNames[providerId] ?? providerId.capitalized
-    }
-    
-    /// 格式化模型名称（简化显示）
-    private func formatModelName(_ name: String) -> String {
-        // 移除日期后缀，例如：claude-sonnet-4-20250514 → claude-sonnet-4
-        // gpt-4o-2024-11-20 → gpt-4o
-        let parts = name.split(separator: "-")
-        if parts.count > 2, let lastPart = parts.last, lastPart.allSatisfy({ $0.isNumber }) {
-            return parts.dropLast().joined(separator: "-")
-        }
-        return name
-    }
-    
-    /// 格式化响应时间
-    private func formatLatency(_ latency: Double) -> String {
-        if latency < 1000 {
-            return String(format: "%.0fms", latency)
-        } else {
-            return String(format: "%.1fs", latency / 1000.0)
-        }
-    }
-    
-    /// 格式化完成原因
-    private func formatFinishReason(_ reason: String) -> String {
-        let reasonMap: [String: String] = [
-            "stop": "完成",
-            "length": "长度限制",
-            "content_filter": "内容过滤",
-            "tool_calls": "工具调用",
-            "max_tokens": "最大 Token",
-            "temperature": "温度"
-        ]
-        return reasonMap[reason] ?? reason
-    }
-}
-
-// MARK: - Heartbeat Indicator
-
-/// 心跳动画指示器
-struct HeartbeatIndicator: View, SuperLog {
-    nonisolated static let emoji = "💓"
-    nonisolated static let verbose = false
-
-    @EnvironmentObject var agentProvider: AgentProvider
-    @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
-    @State private var isAnimating = false
-    @State private var pulseScale: CGFloat = 1.0
-
-    var body: some View {
-        Circle()
-            .fill(Color.green)
-            .frame(width: 6, height: 6)
-            .scaleEffect(pulseScale)
-            .opacity(isAnimating ? 1.0 : 0.4)
-            .onAppear {
-                startAnimation()
-            }
-            .onChange(of: processingStateViewModel.lastHeartbeatTime) { _, _ in
-                // 收到心跳时触发脉冲动画
-                triggerPulse()
-            }
-            .onChange(of: processingStateViewModel.isProcessing) { _, isProcessing in
-                if isProcessing {
-                    startAnimation()
-                } else {
-                    stopAnimation()
-                }
-            }
-    }
-
-    private func startAnimation() {
-        guard processingStateViewModel.isProcessing else { return }
-
-        // 基础呼吸动画
-        withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
-            isAnimating = true
-        }
-    }
-
-    private func stopAnimation() {
-        withAnimation(.easeOut(duration: 0.2)) {
-            isAnimating = false
-            pulseScale = 1.0
-        }
-    }
-
-    private func triggerPulse() {
-        // 心跳脉冲效果
-        withAnimation(.easeOut(duration: 0.3)) {
-            pulseScale = 1.8
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            withAnimation(.easeIn(duration: 0.3)) {
-                pulseScale = 1.0
-            }
-        }
-    }
-}
-
-// MARK: - Thinking Indicator
-
-/// 思考状态指示器
-struct ThinkingIndicator: View, SuperLog {
-    nonisolated static let emoji = "🧠"
-    nonisolated static let verbose = false
-
-    @State private var rotation: Double = 0
-
-    var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: "brain.head.profile")
-                .font(.system(size: 10))
-                .foregroundColor(.orange)
-                .rotationEffect(.degrees(rotation))
-                .onAppear {
-                    withAnimation(.linear(duration: 2.0).repeatForever(autoreverses: false)) {
-                        rotation = 360
-                    }
-                }
-
-            Text("思考中")
-                .font(DesignTokens.Typography.caption2)
-                .foregroundColor(.orange)
-        }
-    }
-}
-
-// MARK: - Thinking Process View
-
-/// 思考过程展示视图（可展开/折叠）
-struct ThinkingProcessView: View {
-    let thinkingText: String
-    let isThinking: Bool
-    @State private var isExpanded: Bool = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // 展开/折叠按钮
-            Button(action: {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    isExpanded.toggle()
-                }
-            }) {
-                HStack(spacing: 6) {
-                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(.orange)
-
-                    Text(isThinking ? "思考过程..." : "思考过程")
-                        .font(DesignTokens.Typography.caption1)
-                        .foregroundColor(.orange)
-
-                    if isThinking {
-                        // 思考中的动画点
-                        HStack(spacing: 2) {
-                            ForEach(0..<3) { i in
-                                Circle()
-                                    .fill(Color.orange)
-                                    .frame(width: 4, height: 4)
-                                    .opacity(isThinking ? 1.0 : 0.5)
-                                    .animation(
-                                        .easeInOut(duration: 0.6)
-                                        .repeatForever(autoreverses: true)
-                                        .delay(Double(i) * 0.2),
-                                        value: isThinking
-                                    )
-                            }
-                        }
-                    }
-
-                    Spacer()
-                }
-            }
-            .buttonStyle(.plain)
-
-            // 思考内容（展开时显示）
-            if isExpanded && !thinkingText.isEmpty {
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(thinkingText)
-                        .font(.system(size: 12, design: .monospaced))
-                        .foregroundColor(Color.gray)
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.gray.opacity(0.1))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.orange.opacity(0.3), lineWidth: 1)
-                )
-            }
-        }
-        .padding(.vertical, 4)
-    }
-}
-
-// MARK: - Collapse Button
-
-/// 折叠按钮（在 Header 中显示）
-struct CollapseButton: View {
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                Image(systemName: "chevron.up")
-                    .font(.system(size: 10, weight: .semibold))
-                Text("折叠")
-                    .font(.system(size: 11, weight: .medium))
-            }
-            .foregroundColor(DesignTokens.Color.semantic.textSecondary.opacity(0.8))
-            .padding(6)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.08))
-            )
-        }
-        .buttonStyle(.plain)
-        .help("折叠消息")
-    }
-}
-
-// MARK: - Role Labels
-
-/// 角色标签
-enum RoleLabel {
-    /// 助手标签
-    static var assistant: some View {
-        Text(String(localized: "Dev Assistant", table: "DevAssistant"))
-            .font(DesignTokens.Typography.caption1)
-            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-    }
-
-    /// 工具标签
-    static var tool: some View {
-        Text(String(localized: "Tool Output", table: "DevAssistant"))
-            .font(DesignTokens.Typography.caption1)
-            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-    }
-}
-
-// MARK: - Raw Message Toggle Button
-
-/// 原始消息切换按钮
-struct RawMessageToggleButton: View {
-    @Binding var showRawMessage: Bool
-
-    var body: some View {
-        Button(action: { showRawMessage.toggle() }) {
-            Image(systemName: showRawMessage ? "text.bubble.fill" : "curlybraces")
-                .font(.system(size: 10, weight: .medium))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary.opacity(0.6))
-                .padding(6)
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.08))
-                )
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .help(showRawMessage ? String(localized: "Show Rendered", comment: "Toggle to show rendered markdown") : String(localized: "Show Source", comment: "Toggle to show markdown source"))
-    }
-}
-
-/// 全局 Markdown 渲染开关按钮
-struct MarkdownRenderingToggleButton: View {
-    @AppStorage("Agent_RenderMarkdownEnabled") private var renderMarkdownEnabled: Bool = false
-
-    var body: some View {
-        Button(action: { renderMarkdownEnabled.toggle() }) {
-            Image(systemName: renderMarkdownEnabled ? "doc.richtext" : "doc.plaintext")
-                .font(.system(size: 10, weight: .medium))
-                .foregroundColor(renderMarkdownEnabled ? .green : DesignTokens.Color.semantic.textSecondary.opacity(0.6))
-                .padding(6)
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.08))
-                )
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .help(renderMarkdownEnabled ? "Markdown 渲染：已开启" : "Markdown 渲染：已关闭（纯文本模式）")
-    }
-}
-
-// MARK: - View Modifiers
-
-extension View {
-    /// 应用消息气泡样式
-    func messageBubbleStyle(role: MessageRole, isError: Bool) -> some View {
-        self
-            .font(DesignTokens.Typography.code)
-            .padding(10)
-            .padding(.trailing, role == .assistant ? 20 : 0)
-            .background(bubbleBackgroundColor(role: role, isError: isError))
-            .foregroundColor(textColor(isError: isError))
-            .cornerRadius(12)
-    }
-
-    /// 气泡背景颜色
-    func bubbleBackgroundColor(role: MessageRole, isError: Bool) -> Color {
-        if isError {
-            return DesignTokens.Color.semantic.error.opacity(0.1)
-        }
-        switch role {
-        case .user:
-            return DesignTokens.Color.semantic.info.opacity(0.1)
-        case .assistant:
-            return DesignTokens.Color.semantic.textTertiary.opacity(0.12)
-        default:
-            return DesignTokens.Color.semantic.textTertiary.opacity(0.1)
-        }
-    }
-
-    /// 文本颜色
-    func textColor(isError: Bool) -> Color {
-        if isError {
-            return DesignTokens.Color.semantic.error
-        }
-        return DesignTokens.Color.semantic.textPrimary
     }
 }
 
@@ -690,187 +213,6 @@ extension View {
     )
     .padding()
     .background(Color.black)
-}
-
-// MARK: - Latency Progress Bar
-
-/// 耗时进度条组件
-/// 可视化显示首 token 延迟和响应时间
-struct LatencyProgressBar: View {
-    let ttft: Double
-    let totalLatency: Double
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            // 进度条 - 使用固定尺寸的 ZStack 替代 GeometryReader
-            ZStack(alignment: .leading) {
-                // 背景
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(width: 120, height: 4)
-                
-                // TTFT 部分（橙色）
-                HStack(spacing: 0) {
-                    Rectangle()
-                        .fill(Color.orange)
-                        .frame(width: 120 * ttftRatio, height: 4)
-                    
-                    Spacer(minLength: 0)
-                }
-                
-                // 响应时间部分（蓝色）
-                HStack(spacing: 0) {
-                    Spacer(minLength: 0)
-                    Rectangle()
-                        .fill(Color.blue)
-                        .frame(width: 120 * (1 - ttftRatio), height: 4)
-                }
-            }
-            .frame(width: 120, height: 4)
-            
-            // 时间信息（一行显示）
-            HStack(spacing: 8) {
-                HStack(spacing: 2) {
-                    Image(systemName: "bolt.fill")
-                        .font(.system(size: 7, weight: .medium))
-                    Text(formatTTFT(ttft))
-                        .font(DesignTokens.Typography.caption2)
-                        .fixedSize()
-                }
-                .foregroundColor(.orange)
-                
-                HStack(spacing: 2) {
-                    Image(systemName: "clock")
-                        .font(.system(size: 7, weight: .medium))
-                    Text(formatLatency(totalLatency))
-                        .font(DesignTokens.Typography.caption2)
-                        .fixedSize()
-                }
-                .foregroundColor(.blue)
-            }
-        }
-        .fixedSize()
-        .help(helpText)
-    }
-    
-    /// 格式化 TTFT
-    private func formatTTFT(_ ttft: Double) -> String {
-        if ttft >= 1000 {
-            return String(format: "%.1fs", ttft / 1000.0)
-        } else {
-            return String(format: "%.0fms", ttft)
-        }
-    }
-    
-    /// 帮助文本
-    private var helpText: String {
-        let ttftPercent = String(format: "%.1f", ttftRatio * 100)
-        let responsePercent = String(format: "%.1f", (1 - ttftRatio) * 100)
-        return """
-        ⚡ 首个 Token 延迟 (TTFT): \(formatTTFT(ttft)) (\(ttftPercent)%)
-        🕐 响应时间: \(formatLatency(totalLatency)) (\(responsePercent)%)
-        
-        TTFT 表示从发送请求到收到第一个 token 的时间
-        响应时间表示从第一个 token 到响应完成的时间
-        """
-    }
-    
-    /// TTFT 占总耗时的比例
-    private var ttftRatio: Double {
-        guard totalLatency > 0 else { return 0 }
-        return min(ttft / totalLatency, 1.0)
-    }
-    
-    /// 格式化响应时间
-    private func formatLatency(_ latency: Double) -> String {
-        if latency < 1000 {
-            return String(format: "%.0fms", latency)
-        } else {
-            return String(format: "%.1fs", latency / 1000.0)
-        }
-    }
-}
-
-// MARK: - Token Progress Bar
-
-/// Token 进度条组件
-/// 可视化显示输入和输出 token 数量
-struct TokenProgressBar: View {
-    let inputTokens: Int
-    let outputTokens: Int
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            // 进度条 - 使用固定尺寸的 ZStack 替代 GeometryReader
-            ZStack(alignment: .leading) {
-                // 背景
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(width: 120, height: 4)
-                
-                // 输入 token 部分（绿色）
-                HStack(spacing: 0) {
-                    Rectangle()
-                        .fill(Color.green)
-                        .frame(width: 120 * inputRatio, height: 4)
-                    
-                    Spacer(minLength: 0)
-                }
-                
-                // 输出 token 部分（紫色）
-                HStack(spacing: 0) {
-                    Spacer(minLength: 0)
-                    Rectangle()
-                        .fill(Color.purple)
-                        .frame(width: 120 * (1 - inputRatio), height: 4)
-                }
-            }
-            .frame(width: 120, height: 4)
-            
-            // Token 信息（一行显示）
-            HStack(spacing: 8) {
-                HStack(spacing: 2) {
-                    Image(systemName: "arrow.right.circle.fill")
-                        .font(.system(size: 7, weight: .medium))
-                    Text("\(inputTokens)")
-                        .font(DesignTokens.Typography.caption2)
-                        .fixedSize()
-                }
-                .foregroundColor(.green)
-                
-                HStack(spacing: 2) {
-                    Image(systemName: "arrow.left.circle.fill")
-                        .font(.system(size: 7, weight: .medium))
-                    Text("\(outputTokens)")
-                        .font(DesignTokens.Typography.caption2)
-                        .fixedSize()
-                }
-                .foregroundColor(.purple)
-            }
-        }
-        .fixedSize()
-        .help(helpText)
-    }
-    
-    /// 输入 token 占总 token 的比例
-    private var inputRatio: Double {
-        let total = inputTokens + outputTokens
-        guard total > 0 else { return 0 }
-        return Double(inputTokens) / Double(total)
-    }
-    
-    /// 帮助文本
-    private var helpText: String {
-        let inputPercent = String(format: "%.1f", inputRatio * 100)
-        let outputPercent = String(format: "%.1f", (1 - inputRatio) * 100)
-        return """
-        ➡️ 输入 Token: \(inputTokens) (\(inputPercent)%)
-        ⬅️ 输出 Token: \(outputTokens) (\(outputPercent)%)
-        
-        输入 Token 表示发送给模型的 token 数量
-        输出 Token 表示模型生成的 token 数量
-        """
-    }
 }
 
 #Preview("Assistant Message with Latency") {
