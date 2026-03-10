@@ -1047,81 +1047,6 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         }
     }
 
-    // MARK: - 会话管理
-
-    /// 创建新对话
-    ///
-    /// 协调多个 ViewModel 完成新会话创建：
-    /// 1. 创建会话记录
-    /// 2. 选中该会话
-    /// 3. 切换消息队列
-    /// 4. 获取并保存欢迎消息
-    ///
-    /// - Parameters:
-    ///   - projectId: 关联的项目 ID（可选）
-    ///   - projectName: 项目名称（可选，用于生成欢迎消息）
-    ///   - projectPath: 项目路径（可选，用于生成欢迎消息）
-    func createNewConversation(
-        projectId: String? = nil,
-        projectName: String? = nil,
-        projectPath: String? = nil
-    ) async {
-        if Self.verbose {
-            os_log("\(Self.t)🚀 开始创建新会话")
-        }
-
-        // 1. 创建会话记录
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MM-dd HH:mm"
-        let newConversation = chatHistoryService.createConversation(
-            projectId: projectId,
-            title: "新会话 " + formatter.string(from: Date())
-        )
-
-        // 2. 切换消息发送队列到新会话
-        messageSenderViewModel.switchToConversation(newConversation.id)
-
-        // 3. 准备系统上下文消息和欢迎消息
-        var initialMessages: [ChatMessage] = []
-
-        // 3.1 添加系统上下文消息（设置项目上下文）
-        let systemMessage = await promptService.getSystemContextMessage(
-            projectName: projectName,
-            projectPath: projectPath,
-            language: languagePreference
-        )
-        if !systemMessage.isEmpty {
-            let sysMsg = ChatMessage(role: .system, content: systemMessage)
-            if let savedSystemMsg = chatHistoryService.saveMessage(sysMsg, to: newConversation) {
-                initialMessages.append(savedSystemMsg)
-            }
-        }
-
-        // 3.2 添加欢迎消息
-        let welcomeMessage = await promptService.getEmptySessionWelcomeMessage(
-            projectName: projectName,
-            projectPath: projectPath,
-            language: languagePreference,
-            conversationId: newConversation.id
-        )
-
-        if !welcomeMessage.isEmpty {
-            let welcomeMsg = ChatMessage(role: .assistant, content: welcomeMessage)
-            if let savedMessage = chatHistoryService.saveMessage(welcomeMsg, to: newConversation) {
-                initialMessages.append(savedMessage)
-            }
-        }
-
-        // 4. 设置消息列表（直接设置，避免与 loadConversation 竞争）
-
-        // 5. 选中该会话（这会触发 UI 更新，但消息已经准备好了）
-        conversationViewModel.setSelectedConversation(newConversation.id)
-
-        if Self.verbose {
-            os_log("\(Self.t)✅ [\(newConversation.id)] 新会话创建完成，初始消息: \(initialMessages.count) 条")
-        }
-    }
-
     // MARK: - 消息发送协调
 
     /// 发送单条消息到 Agent
@@ -1140,7 +1065,10 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         // 2. 保存到数据库
         conversationViewModel.saveMessage(message, to: conversationId)
 
-        // 3. 启动会话标题生成（如果需要）
+        // 3. 发送用户消息已保存通知
+        NotificationCenter.postUserMessageSaved(message: message)
+
+        // 4. 启动会话标题生成（如果需要）
         startConversationTitleGenerationIfNeeded(message: message, conversationId: conversationId)
 
         // 4. 串行入队处理轮次，避免阻塞事件消费循环。
