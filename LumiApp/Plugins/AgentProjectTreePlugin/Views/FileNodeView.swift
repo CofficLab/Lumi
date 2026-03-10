@@ -1,6 +1,82 @@
 import AppKit
 import SwiftUI
 
+/// 自定义行视图（仅用于 ProjectTree 插件）
+@MainActor
+final class ProjectFileTreeRowView: NSTableRowView {
+    private var isHovered: Bool = false {
+        didSet {
+            needsDisplay = true
+        }
+    }
+
+    private var trackingArea: NSTrackingArea?
+
+    override var wantsUpdateLayer: Bool { true }
+
+    override func updateLayer() {
+        layer?.backgroundColor = isHovered ? NSColor.controlBackgroundColor.cgColor : NSColor.clear.cgColor
+    }
+
+    override func drawSelection(in dirtyRect: NSRect) {
+        if selectionHighlightStyle != .none {
+            let selectionRect = bounds.insetBy(dx: 2, dy: 0)
+            NSColor.controlAccentColor.withAlphaComponent(0.2).setFill()
+            let path = NSBezierPath(roundedRect: selectionRect, xRadius: 4, yRadius: 4)
+            path.fill()
+        }
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+
+        if let existing = trackingArea {
+            removeTrackingArea(existing)
+        }
+
+        let options: NSTrackingArea.Options = [.mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect]
+        trackingArea = NSTrackingArea(rect: bounds, options: options, owner: self, userInfo: nil)
+
+        if let area = trackingArea {
+            addTrackingArea(area)
+        }
+
+        if let window = window {
+            let mouseLocation = window.mouseLocationOutsideOfEventStream
+            let pointInBounds = convert(mouseLocation, from: nil)
+            isHovered = bounds.contains(pointInBounds)
+        }
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        isHovered = true
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        isHovered = false
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        isHovered = false
+    }
+}
+
+/// 支持在列表层捕获 Enter 键触发行内重命名
+@MainActor
+final class ProjectFileTreeOutlineView: NSOutlineView {
+    var onEnterKey: (() -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+        // Return(36) / Numpad Enter(76)
+        if event.keyCode == 36 || event.keyCode == 76 {
+            onEnterKey?()
+            return
+        }
+        super.keyDown(with: event)
+    }
+}
+
 /// 项目文件树中的单个节点模型
 /// 包含文件/文件夹的基本信息以及懒加载的子节点
 @MainActor
