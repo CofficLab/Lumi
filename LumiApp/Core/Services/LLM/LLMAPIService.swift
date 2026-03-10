@@ -205,8 +205,8 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
 
                 guard !eventData.isEmpty else { continue }
                 chunkCount += 1
-                if Self.verbose && chunkCount <= 5 {
-                    let preview = String(data: eventData, encoding: .utf8)?.prefix(300) ?? "无法解码"
+                if Self.verbose && chunkCount <= 10 {
+                    let preview = String(data: eventData, encoding: .utf8)?.max(300) ?? "无法解码"
                     os_log("\(self.t)📦 收到 SSE 数据块 #\(chunkCount) (\(eventData.count) bytes): \n\(preview)...")
                 }
                 let callbackStart = CFAbsoluteTimeGetCurrent()

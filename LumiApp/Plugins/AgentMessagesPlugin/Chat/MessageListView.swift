@@ -8,7 +8,7 @@ struct MessageListView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "📜"
     /// 是否启用详细日志
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
     /// 分页大小：每页加载的消息数量
     nonisolated static let pageSize: Int = 50
 
@@ -248,15 +248,15 @@ extension MessageListView {
 extension MessageListView {
     /// 滚动到底部
     func scrollToBottom() {
-        guard let lastMessage = displayItems.last else { return }
-
-        withAnimation(.easeOut(duration: 0.3)) {
-            scrollProxy?.scrollTo(lastMessage.id, anchor: .bottom)
-        }
-
-        if Self.verbose {
-            os_log("\(Self.t)📜 滚动到底部：\(lastMessage.id)")
-        }
+//        guard let lastMessage = displayItems.last else { return }
+//
+//        withAnimation(.easeOut(duration: 0.3)) {
+//            scrollProxy?.scrollTo(lastMessage.id, anchor: .bottom)
+//        }
+//
+//        if Self.verbose {
+//            os_log("\(Self.t)📜 滚动到底部：\(lastMessage.id)")
+//        }
     }
 }
 
