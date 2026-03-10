@@ -21,7 +21,12 @@ final class MessageViewModel: ObservableObject, SuperLog {
     /// 当前会话的消息列表
     @Published public fileprivate(set) var messages: [ChatMessage] = []
 
-    // MARK: - 内部方法
+    // MARK: - 初始化
+
+    /// 使用聊天历史服务初始化
+    init(chatHistoryService: ChatHistoryService) {
+        self.chatHistoryService = chatHistoryService
+    }
 
     /// 设置消息列表
     /// - Parameters:
@@ -36,8 +41,8 @@ final class MessageViewModel: ObservableObject, SuperLog {
         }
     }
 
-    /// 追加消息（内部使用）
-    func appendMessageInternal(_ message: ChatMessage) {
+    /// 追加消息
+    func appendMessage(_ message: ChatMessage) {
         messages.append(message)
 
         if Self.verbose {
@@ -45,8 +50,8 @@ final class MessageViewModel: ObservableObject, SuperLog {
         }
     }
 
-    /// 插入消息（内部使用）
-    func insertMessageInternal(_ message: ChatMessage, at index: Int) {
+    /// 插入消息
+    func insertMessage(_ message: ChatMessage, at index: Int) {
         messages.insert(message, at: index)
 
         if Self.verbose {
@@ -54,8 +59,8 @@ final class MessageViewModel: ObservableObject, SuperLog {
         }
     }
 
-    /// 更新消息（内部使用）
-    func updateMessageInternal(_ message: ChatMessage, at index: Int) {
+    /// 更新消息
+    func updateMessage(_ message: ChatMessage, at index: Int) {
         // 创建新数组以触发 SwiftUI 更新
         var updatedMessages = messages
         updatedMessages[index] = message
@@ -66,12 +71,5 @@ final class MessageViewModel: ObservableObject, SuperLog {
             let logMessage = "\(Self.t)🍋 更新位置 \(index) 的消息 [\(message.role)] 内容: \(contentPreview)"
             os_log("%@", logMessage)
         }
-    }
-
-    // MARK: - 初始化
-
-    /// 使用聊天历史服务初始化
-    init(chatHistoryService: ChatHistoryService) {
-        self.chatHistoryService = chatHistoryService
     }
 }

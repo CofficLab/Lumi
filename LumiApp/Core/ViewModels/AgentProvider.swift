@@ -968,17 +968,17 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
     /// 追加消息到列表
     func appendMessage(_ message: ChatMessage) {
-        messageViewModel.appendMessageInternal(message)
+        messageViewModel.appendMessage(message)
     }
 
     /// 插入消息到指定位置
     func insertMessage(_ message: ChatMessage, at index: Int) {
-        messageViewModel.insertMessageInternal(message, at: index)
+        messageViewModel.insertMessage(message, at: index)
     }
 
     /// 更新指定位置的消息
     func updateMessage(_ message: ChatMessage, at index: Int) {
-        messageViewModel.updateMessageInternal(message, at: index)
+        messageViewModel.updateMessage(message, at: index)
     }
 
     /// 设置聊天消息列表
@@ -1059,7 +1059,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
         // 1. 添加消息到消息列表
         if conversationViewModel.selectedConversationId == conversationId {
-            messageViewModel.appendMessageInternal(message)
+            messageViewModel.appendMessage(message)
         }
 
         // 2. 保存到数据库
