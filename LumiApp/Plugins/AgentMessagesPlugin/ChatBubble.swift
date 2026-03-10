@@ -1,6 +1,6 @@
-import SwiftUI
-import OSLog
 import MagicKit
+import OSLog
+import SwiftUI
 
 // MARK: - Chat Bubble
 
@@ -147,15 +147,15 @@ struct ChatBubble: View, SuperLog {
                                 }
                             )
                             .messageBubbleStyle(role: message.role, isError: message.isError)
-                        }
 
-                        // 消息工具栏（底部按钮行）
-                        MessageToolbarView(
-                            message: message,
-                            isAssistantMessage: true
-                        )
-                        .opacity(isHovered ? 1 : 0)
-                        .animation(.easeInOut(duration: 0.15), value: isHovered)
+                            // 消息工具栏（底部按钮行）
+                            MessageToolbarView(
+                                message: message,
+                                isAssistantMessage: true
+                            )
+                            .opacity(isHovered ? 1 : 0)
+                            .animation(.easeInOut(duration: 0.15), value: isHovered)
+                        }
                     }
                 } else if message.toolCallID != nil {
                     // 工具输出
@@ -164,13 +164,6 @@ struct ChatBubble: View, SuperLog {
                         message: message,
                         toolType: inferToolType(from: message)
                     )
-                    // 工具输出也显示工具栏
-                    MessageToolbarView(
-                        message: message,
-                        isAssistantMessage: false
-                    )
-                    .opacity(isHovered ? 1 : 0)
-                    .animation(.easeInOut(duration: 0.15), value: isHovered)
                 } else {
                     // 用户消息
                     VStack(alignment: .leading, spacing: 4) {
