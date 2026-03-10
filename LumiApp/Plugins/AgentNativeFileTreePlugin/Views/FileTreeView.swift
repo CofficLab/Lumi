@@ -5,6 +5,7 @@ import SwiftUI
 @MainActor
 final class FileTreeOutlineView: NSOutlineView {
     var onEnterKey: (() -> Void)?
+    var onDirectoryClick: ((Any) -> Void)?
 
     override func keyDown(with event: NSEvent) {
         // Return(36) / Numpad Enter(76)
@@ -13,6 +14,35 @@ final class FileTreeOutlineView: NSOutlineView {
             return
         }
         super.keyDown(with: event)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        let location = convert(event.locationInWindow, from: nil)
+        let row = row(at: location)
+        
+        if row >= 0,
+           let item = item(atRow: row) as? FileNode,
+           item.isDirectory {
+            // 先调用父类处理选中
+            super.mouseDown(with: event)
+            
+            // 然后调用目录点击回调处理展开/折叠
+            // 注意：此时展开状态可能还没更新，需要延迟执行
+            DispatchQueue.main.async { [weak self] in
+                guard let self,
+                      let node = item as? FileNode,
+                      node.isDirectory else { return }
+                
+                // 检查当前展开状态并切换
+                if self.isItemExpanded(node) {
+                    self.collapseItem(node)
+                } else {
+                    self.expandItem(node)
+                }
+            }
+        } else {
+            super.mouseDown(with: event)
+        }
     }
 }
 
@@ -196,7 +226,7 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
     }
     
     func outlineView(_ outlineView: NSOutlineView, shouldSelectItem item: Any) -> Bool {
-        item is FileNode
+        return item is FileNode
     }
     
     func outlineViewSelectionDidChange(_ notification: Notification) {
@@ -205,15 +235,6 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         
         // 触发选中回调
         onSelect?(node.url)
-        
-        // 目录：展开/折叠
-        if node.isDirectory {
-            if outlineView.isItemExpanded(node) {
-                outlineView.collapseItem(node)
-            } else {
-                outlineView.expandItem(node)
-            }
-        }
     }
     
     // MARK: - 右键菜单
@@ -671,6 +692,20 @@ struct FileTreeView: NSViewRepresentable {
         outlineView.delegate = context.coordinator
         outlineView.onEnterKey = { [weak coordinator = context.coordinator] in
             coordinator?.beginInlineRenameForSelectedRow()
+        }
+        
+        // 目录点击处理
+        outlineView.onDirectoryClick = { [weak coordinator = context.coordinator] item in
+            guard let coordinator,
+                  let node = item as? FileNode,
+                  node.isDirectory else { return }
+            
+            // 切换展开/折叠
+            if coordinator.outlineView?.isItemExpanded(node) == true {
+                coordinator.outlineView?.collapseItem(node)
+            } else {
+                coordinator.outlineView?.expandItem(node)
+            }
         }
         
         // 启用右键菜单

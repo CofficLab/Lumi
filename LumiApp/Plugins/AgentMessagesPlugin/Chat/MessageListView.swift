@@ -284,6 +284,7 @@ extension MessageListView {
     func handleOnMessageSaved(message: ChatMessage) {
         Task {
             await loadMessages()
+            self.scrollToBottom()
         }
     }
 }

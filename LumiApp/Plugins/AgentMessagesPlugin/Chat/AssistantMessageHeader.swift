@@ -23,7 +23,7 @@ struct AssistantMessageHeader: View, SuperLog {
     /// 是否是长消息
     let isLongMessage: Bool
 
-    /// 智能体提供者（用于获取心跳状态）
+    /// 智能体提供者
     @EnvironmentObject var agentProvider: AgentProvider
     /// 处理状态 ViewModel
     @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
