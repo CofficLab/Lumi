@@ -19,7 +19,7 @@ struct ProjectTreeView: View {
             contentView
         }
         .padding(.vertical, 8)
-        .background(.background.opacity(0.8))
+        .background(.background.opacity(0.2))
         .onChange(of: projectViewModel.currentProjectPath) { _, newPath in
             loadProject(at: newPath)
         }
@@ -58,26 +58,26 @@ struct ProjectTreeView: View {
         } else if rootURLs.isEmpty {
             emptyView
         } else {
-            fileTreeList
-        }
-    }
-    
-    private var fileTreeList: some View {
-        List {
-            ForEach(rootURLs, id: \.self) { url in
-                FileNodeView(
-                    url: url,
-                    depth: 0,
-                    onSelect: { selectedURL in
-                        // 处理文件选择
-                    }
-                )
-                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                .listRowBackground(Color.clear)
+            List {
+                ForEach(rootURLs, id: \.self) { url in
+                    FileNodeView(
+                        url: url,
+                        depth: 0,
+                        onSelect: { selectedURL in
+                            // 处理文件选择
+                        }
+                    )
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                    .listRowBackground(Color.clear)
+                }
             }
+            .environment(\.defaultMinListRowHeight, 0)
+            .listStyle(.plain)
+            .scrollIndicators(.hidden)
+            .listRowBackground(Color.clear)
+            .padding(.horizontal, -8)  
         }
-        .listStyle(.plain)
-        .scrollIndicators(.hidden)
     }
     
     private var loadingView: some View {
