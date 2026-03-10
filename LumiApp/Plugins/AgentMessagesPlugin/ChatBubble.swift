@@ -20,6 +20,7 @@ struct ChatBubble: View, SuperLog {
 
     @ObservedObject private var expansionState = MessageExpansionState.shared
     @State private var showRawMessage: Bool = false
+    @State private var isHovered: Bool = false
 
     /// 智能体提供者（用于获取思考状态）
     @EnvironmentObject var agentProvider: AgentProvider
@@ -153,6 +154,8 @@ struct ChatBubble: View, SuperLog {
                             message: message,
                             isAssistantMessage: true
                         )
+                        .opacity(isHovered ? 1 : 0)
+                        .animation(.easeInOut(duration: 0.15), value: isHovered)
                     }
                 } else if message.toolCallID != nil {
                     // 工具输出
@@ -166,6 +169,8 @@ struct ChatBubble: View, SuperLog {
                         message: message,
                         isAssistantMessage: false
                     )
+                    .opacity(isHovered ? 1 : 0)
+                    .animation(.easeInOut(duration: 0.15), value: isHovered)
                 } else {
                     // 用户消息
                     VStack(alignment: .leading, spacing: 4) {
@@ -183,11 +188,16 @@ struct ChatBubble: View, SuperLog {
                             message: message,
                             isAssistantMessage: false
                         )
+                        .opacity(isHovered ? 1 : 0)
+                        .animation(.easeInOut(duration: 0.15), value: isHovered)
                     }
                 }
             }
 
             Spacer()
+        }
+        .onHover { hovering in
+            isHovered = hovering
         }
     }
 
