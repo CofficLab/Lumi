@@ -25,6 +25,7 @@ struct ConversationListView: View, SuperLog {
     @State private var hasMore: Bool = true
     @State private var isLoadingPage: Bool = false
     @State private var didInitialLoad: Bool = false
+    @State private var lastReloadSelectionId: UUID?
 
     /// 每页大小
     private let pageSize: Int = 40
@@ -299,12 +300,18 @@ extension ConversationListView {
         if let conversationId = self.conversationViewModel.selectedConversationId {
             // 新会话通常会成为当前选中项，如果当前分页中没有，先刷新第一页
             if self.conversations.first(where: { $0.id == conversationId }) == nil {
-                reloadFromFirstPage()
+                if lastReloadSelectionId != conversationId {
+                    lastReloadSelectionId = conversationId
+                    reloadFromFirstPage()
+                } else if Self.verbose {
+                    os_log("\(self.t)⏭️ 跳过重复分页重载: \(conversationId)")
+                }
             }
 
             if self.conversations.first(where: { $0.id == conversationId }) != nil {
                 os_log("\(self.t)👉 同步 VM 选择到 List: \(conversationId)")
                 self.localSelectedConversationId = conversationId
+                lastReloadSelectionId = nil
             }
         }
     }

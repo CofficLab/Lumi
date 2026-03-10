@@ -1,8 +1,8 @@
 import Foundation
-import SwiftData
 import MagicKit
-import SwiftUI
 import OSLog
+import SwiftData
+import SwiftUI
 
 /// 会话管理 ViewModel
 ///
@@ -30,7 +30,7 @@ import OSLog
 final class ConversationViewModel: ObservableObject, SuperLog {
     /// 日志标识符
     nonisolated static let emoji = "💬"
-    
+
     /// 是否启用详细日志
     nonisolated static let verbose = false
 
@@ -50,8 +50,6 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     ///
     /// 获取新会话的欢迎消息内容。
     private let promptService: PromptService
-
-
 
     // MARK: - 会话状态
 
@@ -102,26 +100,24 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     /// 保存消息到当前对话
     ///
     /// - Parameter message: 要保存的消息
-    func saveMessage(_ message: ChatMessage) {
+    func saveMessage(_ message: ChatMessage) async {
         guard let conversationId = selectedConversationId else {
             if Self.verbose {
                 os_log("\(Self.t)⚠️ 当前没有选中会话，跳过保存")
             }
             return
         }
-        saveMessage(message, to: conversationId)
+        await saveMessage(message, to: conversationId)
     }
 
     /// 保存消息到指定对话
     /// - Parameters:
     ///   - message: 要保存的消息
     ///   - conversationId: 目标对话 ID
-    func saveMessage(_ message: ChatMessage, to conversationId: UUID) {
-        Task(priority: .utility) {
-            let saved = await chatHistoryService.saveMessageAsync(message, toConversationId: conversationId)
-            if Self.verbose, saved != nil {
-                os_log("\(Self.t)💾 [\(conversationId)] 消息已保存：\(message.content.max(50))")
-            }
+    func saveMessage(_ message: ChatMessage, to conversationId: UUID) async {
+        let saved = await chatHistoryService.saveMessageAsync(message, toConversationId: conversationId)
+        if Self.verbose, saved != nil {
+            os_log("\(Self.t)💾 [\(conversationId)] 消息已保存：\(message.content.max(50))")
         }
     }
 

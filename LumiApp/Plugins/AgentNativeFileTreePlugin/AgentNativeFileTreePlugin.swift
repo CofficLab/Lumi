@@ -9,7 +9,7 @@ actor AgentNativeFileTreePlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🌲"
     nonisolated static let enable = true
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     static let id: String = "AgentNativeFileTree"
     static let displayName: String = "高性能文件树"

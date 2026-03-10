@@ -42,7 +42,7 @@ class LLMService: SuperLog, @unchecked Sendable {
     /// 0: 关闭日志
     /// 1: 基础日志
     /// 2: 详细日志（输出请求/响应的详细信息）
-    nonisolated static let verbose = 1
+    nonisolated static let verbose = 2
 
     /// 供应商注册表
     ///
@@ -70,6 +70,52 @@ class LLMService: SuperLog, @unchecked Sendable {
         if Self.verbose >= 1 {
             os_log("\(self.t)✅ LLM 服务已初始化")
         }
+    }
+    
+    /// 将原始 SSE 数据块拆分为单事件列表。
+    /// 兼容“多个 event/data 粘在同一个网络块中、且缺少空行分隔”的非标准实现。
+    private nonisolated static func splitSSEEvents(from rawData: Data) -> [Data] {
+        guard let text = String(data: rawData, encoding: .utf8) else {
+            return [rawData]
+        }
+
+        let normalized = text
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+
+        var events: [Data] = []
+        var currentLines: [String] = []
+        var hasDataLine = false
+
+        func flushCurrentEvent() {
+            guard !currentLines.isEmpty else { return }
+            let payload = currentLines
+                .joined(separator: "\n")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if !payload.isEmpty, let data = payload.data(using: .utf8) {
+                events.append(data)
+            }
+            currentLines.removeAll(keepingCapacity: true)
+            hasDataLine = false
+        }
+
+        for rawLine in normalized.split(separator: "\n", omittingEmptySubsequences: false) {
+            let line = String(rawLine)
+            if line.isEmpty {
+                flushCurrentEvent()
+                continue
+            }
+            if line.hasPrefix("event:"), hasDataLine {
+                flushCurrentEvent()
+            }
+            if line.hasPrefix("data:") {
+                hasDataLine = true
+            }
+            currentLines.append(line)
+        }
+
+        flushCurrentEvent()
+        return events.isEmpty ? [rawData] : events
     }
 
     // MARK: - 发送消息
@@ -219,7 +265,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         messages: [ChatMessage],
         config: LLMConfig,
         tools: [AgentTool]? = nil,
-        onChunk: @Sendable @escaping (StreamChunk) -> Void
+        onChunk: @Sendable @escaping (StreamChunk) async -> Void
     ) async throws -> ChatMessage {
         // 验证 API Key
         guard !config.apiKey.isEmpty else {
@@ -269,12 +315,13 @@ class LLMService: SuperLog, @unchecked Sendable {
 
         // 使用 actor 来保护可变状态，确保在闭包中的修改对外部可见
         actor StreamingState {
-            var accumulatedContent = ""
+            var accumulatedContentChunks: [String] = []
+            var accumulatedContentLength: Int = 0
             var accumulatedToolCalls: [ToolCall] = []
             var streamError: String?
             var currentToolCallId: String?
             var currentToolCallName: String?
-            var currentToolCallArguments = ""
+            var currentToolCallArgumentChunks: [String] = []
             var inputTokens: Int?
             var outputTokens: Int?
             var stopReason: String?
@@ -296,7 +343,8 @@ class LLMService: SuperLog, @unchecked Sendable {
             }
             
             func appendContent(_ content: String) {
-                accumulatedContent += content
+                accumulatedContentChunks.append(content)
+                accumulatedContentLength += content.count
             }
             
             func saveCurrentToolCall() {
@@ -305,7 +353,7 @@ class LLMService: SuperLog, @unchecked Sendable {
                     let toolCall = ToolCall(
                         id: currentId,
                         name: currentName,
-                        arguments: currentToolCallArguments.isEmpty ? "{}" : currentToolCallArguments
+                        arguments: currentToolCallArgumentChunks.isEmpty ? "{}" : currentToolCallArgumentChunks.joined()
                     )
                     accumulatedToolCalls.append(toolCall)
                 }
@@ -314,11 +362,11 @@ class LLMService: SuperLog, @unchecked Sendable {
             func startNewToolCall(_ toolCall: ToolCall) {
                 currentToolCallId = toolCall.id
                 currentToolCallName = toolCall.name
-                currentToolCallArguments = ""
+                currentToolCallArgumentChunks = []
             }
             
             func appendToolCallArguments(_ partialJson: String) {
-                currentToolCallArguments += partialJson
+                currentToolCallArgumentChunks.append(partialJson)
             }
             
             func setError(_ error: String) {
@@ -345,44 +393,51 @@ class LLMService: SuperLog, @unchecked Sendable {
                 body: body,
                 additionalHeaders: additionalHeaders
             ) { chunkData in
-                // 使用 Task 来在同步闭包中执行异步操作
-                Task {
-                    do {
-                        if let chunk = try provider.parseStreamChunk(data: chunkData) {
+                do {
+                    try Task.checkCancellation()
+                    var shouldContinue = true
+                    let parseWarnThreshold: Double = 0.3
+                    let callbackWarnThreshold: Double = 0.3
+
+                    for eventData in Self.splitSSEEvents(from: chunkData) {
+                        let parseStart = CFAbsoluteTimeGetCurrent()
+                        if let chunk = try provider.parseStreamChunk(data: eventData) {
+                            let parseElapsed = CFAbsoluteTimeGetCurrent() - parseStart
+                            if parseElapsed > parseWarnThreshold {
+                                os_log(.error, "\(self.t)⏱️ parseStreamChunk 耗时异常: \(String(format: "%.3f", parseElapsed))s, bytes=\(eventData.count)")
+                            }
                             // 记录首 token 时间
-                            if let ttft = await state.recordFirstToken() {
-                                if Self.verbose >= 1 {
-                                    os_log("\(self.t)⏱️ 首 token 延迟: \(String(format: "%.2f", ttft))ms")
-                                }
+                            if let ttft = await state.recordFirstToken(), Self.verbose >= 1 {
+                                os_log("\(self.t)⏱️ 首 token 延迟: \(String(format: "%.2f", ttft))ms")
                             }
 
                             // 累积内容 - 只累积 textDelta 的内容，跳过 thinkingDelta
                             if let content = chunk.content, chunk.eventType == .textDelta {
                                 await state.appendContent(content)
                                 if Self.verbose >= 2 {
-                                    let currentContent = await state.accumulatedContent
-                                    if currentContent.count < 200 {
+                                    let currentContentLength = await state.accumulatedContentLength
+                                    if currentContentLength < 200 {
                                         os_log("\(self.t)📝 累积内容: \(content)")
                                     }
                                 }
                             }
-                            
+
                             // 处理工具调用
                             if let toolCalls = chunk.toolCalls {
                                 // 如果是新的工具调用，保存当前的（如果有）
                                 await state.saveCurrentToolCall()
-                                
+
                                 // 开始新的工具调用
                                 if let firstToolCall = toolCalls.first {
                                     await state.startNewToolCall(firstToolCall)
                                 }
                             }
-                            
+
                             // 处理工具调用参数分片
                             if let partialJson = chunk.partialJson {
                                 await state.appendToolCallArguments(partialJson)
                             }
-                            
+
                             if let error = chunk.error {
                                 await state.setError(error)
                             }
@@ -399,19 +454,37 @@ class LLMService: SuperLog, @unchecked Sendable {
                             }
 
                             // 回调通知外部
-                            onChunk(chunk)
-                        } else {
-                            // Provider 应该已经处理了所有事件类型，这里不应该再返回 nil
-                            if Self.verbose >= 1 {
-                                let preview = String(data: chunkData, encoding: .utf8)?.prefix(100) ?? "无法解码"
-                                os_log("\(self.t)⚠️ 警告：Provider 返回 nil，原始数据: \(preview)...")
+                            let callbackStart = CFAbsoluteTimeGetCurrent()
+                            let eventTypeRaw = chunk.eventType?.rawValue ?? "unknown"
+                            let loggerTag = self.t
+                            let hangWatchdog = Task.detached(priority: .utility) {
+                                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                                guard !Task.isCancelled else { return }
+                                os_log(.error, "\(loggerTag)⏳ onChunk(业务回调)疑似卡住(>2s): event=\(eventTypeRaw)")
                             }
-                        }
-                    } catch {
-                        if Self.verbose >= 1 {
-                            os_log("\(self.t)⚠️ 解析流式数据块失败: \(error.localizedDescription)")
+                            await onChunk(chunk)
+                            hangWatchdog.cancel()
+                            let callbackElapsed = CFAbsoluteTimeGetCurrent() - callbackStart
+                            if callbackElapsed > callbackWarnThreshold {
+                                os_log(.error, "\(self.t)⏱️ onChunk(业务回调)耗时异常: \(String(format: "%.3f", callbackElapsed))s, event=\(chunk.eventType?.rawValue ?? "unknown")")
+                            }
+
+                            if chunk.isDone {
+                                shouldContinue = false
+                                break
+                            }
+                        } else if Self.verbose >= 1 {
+                            // Provider 应该已经处理了所有事件类型，这里不应该再返回 nil
+                            let preview = String(data: eventData, encoding: .utf8)?.prefix(100) ?? "无法解码"
+                            os_log("\(self.t)⚠️ 警告：Provider 返回 nil，原始数据: \(preview)...")
                         }
                     }
+                    return shouldContinue
+                } catch {
+                    if Self.verbose >= 1 {
+                        os_log("\(self.t)⚠️ 解析流式数据块失败: \(error.localizedDescription)")
+                    }
+                    return true
                 }
             }
         } catch {
@@ -421,10 +494,7 @@ class LLMService: SuperLog, @unchecked Sendable {
                 userInfo: [NSLocalizedDescriptionKey: error.localizedDescription]
             )
         }
-        
-        // 给 Task 一点时间来完成处理
-        try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
-        
+
         // 流式结束后，保存最后一个工具调用
         await state.saveCurrentToolCall()
 
@@ -442,7 +512,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         let latency = (endTime - startTime) * 1000.0
 
         // 获取最终状态
-        let finalContent = await state.accumulatedContent
+        let finalContent = await state.accumulatedContentChunks.joined()
         let finalToolCalls = await state.accumulatedToolCalls
         let finalInputTokens = await state.inputTokens
         let finalOutputTokens = await state.outputTokens
@@ -454,7 +524,7 @@ class LLMService: SuperLog, @unchecked Sendable {
             if finalContent.isEmpty {
                 os_log("\(self.t)⚠️ 警告：累积内容为空！")
             } else {
-                os_log("\(self.t)📝 累积内容预览：\(finalContent.prefix(100))...")
+                os_log("\(self.t)📝 累积内容预览：\n\(finalContent.prefix(100))...")
             }
         }
 

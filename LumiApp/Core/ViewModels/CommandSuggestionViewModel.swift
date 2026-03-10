@@ -75,23 +75,28 @@ class CommandSuggestionViewModel: ObservableObject, SuperLog {
 
         // 始终显示静态命令作为基础
         var allSuggestions = staticCommands
-        
+
         // 如果有服务，异步获取动态命令并追加
         if let service = slashCommandService {
             Task {
-                let dynamicSuggestions = await service.getSuggestions(for: input)
-                
+                let dynamicInfos = await service.getSuggestions(for: input)
+
                 if Self.verbose {
-                    os_log("\(Self.t) 找到 \(dynamicSuggestions.count) 个动态建议", )
+                    os_log("\(Self.t) 找到 \(dynamicInfos.count) 个动态建议", )
                 }
-                
+
+                // 将 SlashCommandInfo 转换为 CommandSuggestion
+                let dynamicSuggestions = dynamicInfos.map { info in
+                    CommandSuggestion(command: info.name, description: info.description, category: info.category)
+                }
+
                 await MainActor.run {
                     // 合并静态命令和动态命令
                     // 过滤掉重复的命令（如果动态命令包含静态命令）
                     let dynamicOnly = dynamicSuggestions.filter { dynamic in
                         !staticCommands.contains { $0.command == dynamic.command }
                     }
-                    
+
                     if dynamicOnly.isEmpty {
                         // 如果没有额外的动态命令，只显示静态命令（按输入过滤）
                         let filtered = staticCommands.filter { $0.command.lowercased().hasPrefix(lowercasedInput) }
@@ -104,10 +109,10 @@ class CommandSuggestionViewModel: ObservableObject, SuperLog {
                         let filtered = combined.filter { $0.command.lowercased().hasPrefix(lowercasedInput) }
                         setSuggestions(filtered)
                     }
-                    
+
                     setIsVisible(!suggestions.isEmpty)
                     setSelectedIndex(0)
-                    
+
                     if Self.verbose {
                         os_log("\(Self.t) 显示 \(self.suggestions.count) 个建议", )
                     }

@@ -40,7 +40,7 @@ enum ConversationRuntimeState: String {
 @MainActor
 final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     nonisolated static let emoji = "🤖"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     // MARK: - 服务依赖
 
@@ -93,6 +93,9 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
     /// 思考状态 ViewModel
     let thinkingStateViewModel: ThinkingStateViewModel
+
+    /// 标题生成 ViewModel
+    let titleGenerationViewModel: TitleGenerationViewModel
 
     // MARK: - 订阅管理
 
@@ -155,7 +158,8 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         processingStateViewModel: ProcessingStateViewModel,
         errorStateViewModel: ErrorStateViewModel,
         permissionRequestViewModel: PermissionRequestViewModel,
-        thinkingStateViewModel: ThinkingStateViewModel
+        thinkingStateViewModel: ThinkingStateViewModel,
+        titleGenerationViewModel: TitleGenerationViewModel
     ) {
         self.promptService = promptService
         self.registry = registry
@@ -173,6 +177,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         self.errorStateViewModel = errorStateViewModel
         self.permissionRequestViewModel = permissionRequestViewModel
         self.thinkingStateViewModel = thinkingStateViewModel
+        self.titleGenerationViewModel = titleGenerationViewModel
 
         // 监听会话选择变化
         setupConversationSelectionObserver()
@@ -254,9 +259,8 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             // 标记用户刚刚发送了消息，触发 UI 滚动到底部
             userJustSentMessage = true
 
-            Task {
-                await self.sendMessageToAgent(message: message, conversationId: conversationId)
-            }
+            // 串行处理发送事件，避免同一会话出现并发轮次导致的状态竞争/空转。
+            await self.sendMessageToAgent(message: message, conversationId: conversationId)
         }
     }
 
@@ -267,8 +271,36 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         conversationTurnEventTask = Task { [weak self] in
             guard let self = self else { return }
             for await event in self.conversationTurnViewModel.events {
+                let start = CFAbsoluteTimeGetCurrent()
+                let eventName = self.describe(event)
+                let hangWatchdog = Task { [loggerTag = Self.t] in
+                    try? await Task.sleep(nanoseconds: 2000000000)
+                    guard !Task.isCancelled else { return }
+                    os_log(.error, "\(loggerTag)⏳ 事件处理疑似卡住(>2s): \(eventName)")
+                }
                 await self.handleConversationTurnEvent(event)
+                hangWatchdog.cancel()
+                let elapsed = CFAbsoluteTimeGetCurrent() - start
+                if elapsed > 0.3 {
+                    os_log(.error, "\(Self.t)⏱️ 事件处理耗时异常: \(self.describe(event)) took \(String(format: "%.3f", elapsed))s")
+                }
             }
+        }
+    }
+
+    private func describe(_ event: ConversationTurnEvent) -> String {
+        switch event {
+        case .responseReceived: return "responseReceived"
+        case .streamChunk: return "streamChunk"
+        case .streamEvent: return "streamEvent"
+        case .streamStarted: return "streamStarted"
+        case .streamFinished: return "streamFinished"
+        case .toolResultReceived: return "toolResultReceived"
+        case .permissionRequested: return "permissionRequested"
+        case .maxDepthReached: return "maxDepthReached"
+        case .completed: return "completed"
+        case .error: return "error"
+        case .shouldContinue: return "shouldContinue"
         }
     }
 
@@ -286,13 +318,25 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
     private var streamStateByConversation: [UUID: StreamSessionState] = [:]
     private var thinkingTextByConversation: [UUID: String] = [:]
+    private var pendingStreamTextByConversation: [UUID: String] = [:]
+    private var pendingThinkingTextByConversation: [UUID: String] = [:]
+    private var lastStreamFlushAtByConversation: [UUID: Date] = [:]
+    private var lastThinkingFlushAtByConversation: [UUID: Date] = [:]
     private var thinkingConversationIds = Set<UUID>()
     private var processingConversationIds = Set<UUID>()
     private var pendingPermissionByConversation: [UUID: PermissionRequest] = [:]
     private var depthWarningByConversation: [UUID: DepthWarning] = [:]
     private var errorMessageByConversation: [UUID: String?] = [:]
     private var lastHeartbeatByConversation: [UUID: Date?] = [:]
+    private var turnTaskPipelineByConversation: [UUID: Task<Void, Never>] = [:]
+    private var turnTaskGenerationByConversation: [UUID: Int] = [:]
     @Published private(set) var conversationRuntimeStates: [UUID: ConversationRuntimeState] = [:]
+    private let maxThinkingTextLength = 20000
+    private let streamUIFlushInterval: TimeInterval = 0.08
+    private let thinkingUIFlushInterval: TimeInterval = 0.12
+    private let immediateStreamFlushChars = 80
+    private let immediateThinkingFlushChars = 120
+    private let captureThinkingContent = false
 
     /// 处理对话轮次事件
     /// - Parameter event: 对话轮次事件
@@ -303,19 +347,23 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             if conversationViewModel.selectedConversationId == conversationId {
                 appendMessage(message)
             }
-            saveMessage(message, conversationId: conversationId)
+            await saveMessage(message, conversationId: conversationId)
             updateRuntimeState(for: conversationId)
 
         case let .streamStarted(messageId, conversationId):
             // 流式响应开始，创建空消息占位
             streamStateByConversation[conversationId] = StreamSessionState(messageId: messageId, messageIndex: nil)
+            pendingStreamTextByConversation[conversationId] = ""
+            pendingThinkingTextByConversation[conversationId] = ""
+            lastStreamFlushAtByConversation[conversationId] = Date()
+            lastThinkingFlushAtByConversation[conversationId] = Date()
 
             // 清空上一次的思考文本
             thinkingTextByConversation[conversationId] = ""
             thinkingConversationIds.remove(conversationId)
 
             if conversationViewModel.selectedConversationId == conversationId {
-                setThinkingText("")
+                setThinkingText("", for: conversationId)
             }
 
             let placeholderMessage = ChatMessage(
@@ -331,25 +379,26 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             updateRuntimeState(for: conversationId)
 
         case let .streamChunk(content, messageId, conversationId):
-            // 更新流式消息内容
             guard conversationViewModel.selectedConversationId == conversationId,
-                  streamStateByConversation[conversationId]?.messageId == messageId,
-                  let index = streamStateByConversation[conversationId]?.messageIndex,
-                  index < messages.count else {
+                  streamStateByConversation[conversationId]?.messageId == messageId else {
                 return
             }
 
-            // 获取当前消息并追加内容
-            var currentMessage = messages[index]
-            currentMessage.content += content
-
-            // 更新消息（使用内部方法避免触发过多UI更新）
-            updateMessage(currentMessage, at: index)
+            pendingStreamTextByConversation[conversationId, default: ""] += content
+            flushPendingStreamTextIfNeeded(
+                for: conversationId,
+                force: pendingStreamTextByConversation[conversationId, default: ""].count >= immediateStreamFlushChars
+            )
 
         case let .streamEvent(eventType, content, rawEvent, messageId, conversationId):
             // 处理心跳事件 - 更新心跳时间触发动画
             if eventType == .ping {
                 let now = Date()
+                // 节流心跳 UI 更新，避免高频 ping 导致主线程过载。
+                if let last = lastHeartbeatByConversation[conversationId] ?? nil,
+                   now.timeIntervalSince(last) < 0.8 {
+                    return
+                }
                 lastHeartbeatByConversation[conversationId] = now
                 if conversationViewModel.selectedConversationId == conversationId {
                     setLastHeartbeatTime(now)
@@ -359,11 +408,22 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
             // 处理思考增量事件 - 累积思考文本
             if eventType == .thinkingDelta {
+                guard captureThinkingContent else { return }
                 // 累积思考文本
                 if !content.isEmpty {
-                    thinkingTextByConversation[conversationId, default: ""] += content
-                    if conversationViewModel.selectedConversationId == conversationId {
-                        appendThinkingText(content)
+                    let existing = thinkingTextByConversation[conversationId, default: ""]
+                    var appendPart = ""
+                    if existing.count < maxThinkingTextLength {
+                        let remaining = maxThinkingTextLength - existing.count
+                        appendPart = String(content.prefix(remaining))
+                    thinkingTextByConversation[conversationId] = existing + appendPart
+                    }
+                    if conversationViewModel.selectedConversationId == conversationId, !appendPart.isEmpty {
+                        pendingThinkingTextByConversation[conversationId, default: ""] += appendPart
+                        flushPendingThinkingTextIfNeeded(
+                            for: conversationId,
+                            force: pendingThinkingTextByConversation[conversationId, default: ""].count >= immediateThinkingFlushChars
+                        )
                     }
                 }
                 return
@@ -375,7 +435,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
                 if rawEvent.contains("\"type\":\"thinking\"") || rawEvent.contains("thinking") {
                     thinkingConversationIds.insert(conversationId)
                     if conversationViewModel.selectedConversationId == conversationId {
-                        setIsThinking(true)
+                        setIsThinking(true, for: conversationId)
                     }
                     if Self.verbose {
                         os_log("\(Self.t)🤔 思考开始")
@@ -399,6 +459,11 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
             // 处理 input_json_delta 事件 - 不追加到消息内容
             if eventType == .inputJsonDelta {
+                return
+            }
+
+            // text_delta 已通过 .streamChunk 处理，这里跳过避免重复追加
+            if eventType == .textDelta {
                 return
             }
 
@@ -428,6 +493,9 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             }
 
         case let .streamFinished(message, conversationId):
+            flushPendingStreamTextIfNeeded(for: conversationId, force: true)
+            flushPendingThinkingTextIfNeeded(for: conversationId, force: true)
+
             // 流式响应结束，将思考过程附加到消息
             var finalMessage = message
             let thinkingText = thinkingTextByConversation[conversationId] ?? ""
@@ -450,7 +518,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
                 updateMessage(finalMessage, at: index)
             }
             // 保存到数据库
-            saveMessage(finalMessage, conversationId: conversationId)
+            await saveMessage(finalMessage, conversationId: conversationId)
 
             // 清理流式状态
             streamStateByConversation[conversationId] = StreamSessionState(messageId: nil, messageIndex: nil)
@@ -458,8 +526,13 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             // 重置思考状态（但保留思考文本，以便在界面上显示）
             thinkingConversationIds.remove(conversationId)
             if conversationViewModel.selectedConversationId == conversationId {
-                setIsThinking(false)
+                setThinkingText(thinkingTextByConversation[conversationId] ?? "", for: conversationId)
+                setIsThinking(false, for: conversationId)
             }
+            pendingStreamTextByConversation[conversationId] = nil
+            pendingThinkingTextByConversation[conversationId] = nil
+            lastStreamFlushAtByConversation[conversationId] = nil
+            lastThinkingFlushAtByConversation[conversationId] = nil
             updateRuntimeState(for: conversationId)
 
         case let .toolResultReceived(result, conversationId):
@@ -467,7 +540,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             if conversationViewModel.selectedConversationId == conversationId {
                 appendMessage(result)
             }
-            saveMessage(result, conversationId: conversationId)
+            await saveMessage(result, conversationId: conversationId)
             updateRuntimeState(for: conversationId)
 
         case let .permissionRequested(request, conversationId):
@@ -494,6 +567,10 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
             // 清理流式状态
             streamStateByConversation[conversationId] = StreamSessionState(messageId: nil, messageIndex: nil)
+            pendingStreamTextByConversation[conversationId] = nil
+            pendingThinkingTextByConversation[conversationId] = nil
+            lastStreamFlushAtByConversation[conversationId] = nil
+            lastThinkingFlushAtByConversation[conversationId] = nil
             updateRuntimeState(for: conversationId)
 
         case let .completed(conversationId):
@@ -505,6 +582,10 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
             // 清理流式状态
             streamStateByConversation[conversationId] = StreamSessionState(messageId: nil, messageIndex: nil)
+            pendingStreamTextByConversation[conversationId] = nil
+            pendingThinkingTextByConversation[conversationId] = nil
+            lastStreamFlushAtByConversation[conversationId] = nil
+            lastThinkingFlushAtByConversation[conversationId] = nil
             updateRuntimeState(for: conversationId)
 
         case let .error(error, conversationId):
@@ -518,14 +599,56 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
             // 清理流式状态
             streamStateByConversation[conversationId] = StreamSessionState(messageId: nil, messageIndex: nil)
+            pendingStreamTextByConversation[conversationId] = nil
+            pendingThinkingTextByConversation[conversationId] = nil
+            lastStreamFlushAtByConversation[conversationId] = nil
+            lastThinkingFlushAtByConversation[conversationId] = nil
             updateRuntimeState(for: conversationId)
 
         case let .shouldContinue(depth, conversationId):
             // 继续下一轮
-            Task {
-                await self.processTurn(conversationId: conversationId, depth: depth)
+            enqueueTurnProcessing(conversationId: conversationId, depth: depth)
+        }
+    }
+
+    private func enqueueTurnProcessing(conversationId: UUID, depth: Int) {
+        let previousTask: Task<Void, Never>?
+        if depth == 0 {
+            // 新的用户消息应当抢占旧的续轮链路，避免被历史任务阻塞。
+            if Self.verbose, turnTaskPipelineByConversation[conversationId] != nil {
+                os_log("\(Self.t)🧵 [\(conversationId)] 新消息到达，取消旧轮次链路")
+            }
+            turnTaskPipelineByConversation[conversationId]?.cancel()
+            turnTaskPipelineByConversation[conversationId] = nil
+            previousTask = nil
+        } else {
+            previousTask = turnTaskPipelineByConversation[conversationId]
+        }
+        let generation = (turnTaskGenerationByConversation[conversationId] ?? 0) + 1
+        turnTaskGenerationByConversation[conversationId] = generation
+        if Self.verbose {
+            os_log("\(Self.t)🧵 [\(conversationId)] 轮次入队 depth=\(depth), gen=\(generation)")
+        }
+
+        let task = Task { [weak self] in
+            if let previousTask {
+                await previousTask.value
+            }
+            guard let self else { return }
+            if Self.verbose {
+                os_log("\(Self.t)🧵 [\(conversationId)] 开始执行轮次 depth=\(depth), gen=\(generation)")
+            }
+            await self.processTurn(conversationId: conversationId, depth: depth)
+
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                if self.turnTaskGenerationByConversation[conversationId] == generation {
+                    self.turnTaskPipelineByConversation[conversationId] = nil
+                }
             }
         }
+
+        turnTaskPipelineByConversation[conversationId] = task
     }
 
     // MARK: - 偏好设置加载
@@ -551,7 +674,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         // 加载上次选择的项目（项目切换会自动应用配置）
         if let savedPath = UserDefaults.standard.string(forKey: "Agent_SelectedProject") {
             projectViewModel.switchProject(to: savedPath)
-            
+
             // 加载项目命令
             Task {
                 await slashCommandService.setCurrentProjectPath(savedPath)
@@ -582,18 +705,18 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     }
 
     /// 设置思考状态
-    func setIsThinking(_ thinking: Bool) {
-        thinkingStateViewModel.setIsThinking(thinking)
+    func setIsThinking(_ thinking: Bool, for conversationId: UUID) {
+        thinkingStateViewModel.setIsThinking(thinking, for: conversationId)
     }
 
     /// 追加思考文本
-    func appendThinkingText(_ text: String) {
-        thinkingStateViewModel.appendThinkingText(text)
+    func appendThinkingText(_ text: String, for conversationId: UUID) {
+        thinkingStateViewModel.appendThinkingText(text, for: conversationId)
     }
 
     /// 设置思考文本
-    func setThinkingText(_ text: String) {
-        thinkingStateViewModel.setThinkingText(text)
+    func setThinkingText(_ text: String, for conversationId: UUID) {
+        thinkingStateViewModel.setThinkingText(text, for: conversationId)
     }
 
     /// 设置待处理权限请求
@@ -615,8 +738,9 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     private func refreshSessionScopedUIState(for conversationId: UUID) {
         setIsProcessing(processingConversationIds.contains(conversationId))
         setLastHeartbeatTime(lastHeartbeatByConversation[conversationId] ?? nil)
-        setIsThinking(thinkingConversationIds.contains(conversationId))
-        setThinkingText(thinkingTextByConversation[conversationId] ?? "")
+        thinkingStateViewModel.setActiveConversation(conversationId)
+        setIsThinking(thinkingConversationIds.contains(conversationId), for: conversationId)
+        setThinkingText(thinkingTextByConversation[conversationId] ?? "", for: conversationId)
         setPendingPermissionRequest(pendingPermissionByConversation[conversationId] ?? nil)
         setDepthWarning(depthWarningByConversation[conversationId] ?? nil)
         setErrorMessage(errorMessageByConversation[conversationId] ?? nil)
@@ -650,6 +774,45 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         }
     }
 
+    private func flushPendingStreamTextIfNeeded(for conversationId: UUID, force: Bool = false) {
+        guard let pending = pendingStreamTextByConversation[conversationId], !pending.isEmpty else {
+            return
+        }
+        let now = Date()
+        let lastFlush = lastStreamFlushAtByConversation[conversationId] ?? .distantPast
+        guard force || now.timeIntervalSince(lastFlush) >= streamUIFlushInterval else {
+            return
+        }
+        guard let state = streamStateByConversation[conversationId],
+              let messageId = state.messageId,
+              conversationViewModel.selectedConversationId == conversationId,
+              let index = state.messageIndex,
+              index < messages.count else {
+            return
+        }
+        guard messages[index].id == messageId else { return }
+        var currentMessage = messages[index]
+        currentMessage.content += pending
+        updateMessage(currentMessage, at: index)
+        pendingStreamTextByConversation[conversationId] = ""
+        lastStreamFlushAtByConversation[conversationId] = now
+    }
+
+    private func flushPendingThinkingTextIfNeeded(for conversationId: UUID, force: Bool = false) {
+        guard let pending = pendingThinkingTextByConversation[conversationId], !pending.isEmpty else {
+            return
+        }
+        let now = Date()
+        let lastFlush = lastThinkingFlushAtByConversation[conversationId] ?? .distantPast
+        guard force || now.timeIntervalSince(lastFlush) >= thinkingUIFlushInterval else {
+            return
+        }
+        guard conversationViewModel.selectedConversationId == conversationId else { return }
+        appendThinkingText(pending, for: conversationId)
+        pendingThinkingTextByConversation[conversationId] = ""
+        lastThinkingFlushAtByConversation[conversationId] = now
+    }
+
     // MARK: - 业务方法
 
     /// 当前会话的消息列表（代理到 MessageViewModel）
@@ -657,9 +820,10 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         messageViewModel.messages
     }
 
-    /// 标记是否已生成标题（代理到 MessageViewModel）
+    /// 标记是否已生成标题（代理到 TitleGenerationViewModel）
     var hasGeneratedTitle: Bool {
-        messageViewModel.hasGeneratedTitle
+        guard let selectedId = conversationViewModel.selectedConversationId else { return false }
+        return titleGenerationViewModel.hasGeneratedTitle(for: selectedId)
     }
 
     // MARK: - 代理 ProjectViewModel 属性（仅供内部扩展使用）
@@ -805,27 +969,28 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
     /// 追加消息到列表
     func appendMessage(_ message: ChatMessage) {
-        messageViewModel.appendMessageInternal(message)
+        messageViewModel.appendMessage(message)
     }
 
     /// 插入消息到指定位置
     func insertMessage(_ message: ChatMessage, at index: Int) {
-        messageViewModel.insertMessageInternal(message, at: index)
+        messageViewModel.insertMessage(message, at: index)
     }
 
     /// 更新指定位置的消息
     func updateMessage(_ message: ChatMessage, at index: Int) {
-        messageViewModel.updateMessageInternal(message, at: index)
+        messageViewModel.updateMessage(message, at: index)
     }
 
     /// 设置聊天消息列表
-    func setMessages(_ messages: [ChatMessage]) {
-        messageViewModel.setMessagesInternal(messages)
+    func setMessages(_ messages: [ChatMessage], reason: String = "设置消息列表") {
+        messageViewModel.setMessages(messages, reason: reason)
     }
 
     /// 设置标题生成标记
     func setHasGeneratedTitle(_ value: Bool) {
-        messageViewModel.setHasGeneratedTitleInternal(value)
+        guard let selectedId = conversationViewModel.selectedConversationId else { return }
+        titleGenerationViewModel.setTitleGenerated(value, for: selectedId)
     }
 
     /// 加载指定对话
@@ -841,28 +1006,20 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             os_log("\(Self.t)🔄 [\(conversationId)] 待发送消息：\(queueCount) 条")
         }
 
-        // 分页加载消息到 MessageViewModel（初始只加载最近的消息）
-        let exists = await messageViewModel.loadMessagesPaginated(conversationId: conversationId)
-        guard exists else {
-            os_log(.error, "\(Self.t)❌ [\(conversationId)] 对话不存在")
-            return
-        }
-
-        if Self.verbose {
-            os_log("\(Self.t)✅ [\(conversationId)] 分页加载完成：\(self.messageViewModel.messages.count)/\(self.messageViewModel.totalMessageCount) 条，hasMore: \(self.messageViewModel.hasMoreMessages)")
-        }
+        // 更新标题生成状态
+        titleGenerationViewModel.updateTitleGenerationStatus(from: messageViewModel.messages, for: conversationId)
 
         refreshSessionScopedUIState(for: conversationId)
     }
 
     /// 保存消息到存储
-    func saveMessage(_ message: ChatMessage) {
-        conversationViewModel.saveMessage(message)
+    func saveMessage(_ message: ChatMessage) async {
+        await conversationViewModel.saveMessage(message)
     }
 
     /// 保存消息到指定会话
-    func saveMessage(_ message: ChatMessage, conversationId: UUID) {
-        conversationViewModel.saveMessage(message, to: conversationId)
+    func saveMessage(_ message: ChatMessage, conversationId: UUID) async {
+        await conversationViewModel.saveMessage(message, to: conversationId)
     }
 
     /// 删除指定对话
@@ -891,86 +1048,6 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         }
     }
 
-    // MARK: - 会话管理
-
-    /// 创建新对话
-    ///
-    /// 协调多个 ViewModel 完成新会话创建：
-    /// 1. 创建会话记录
-    /// 2. 选中该会话
-    /// 3. 切换消息队列
-    /// 4. 获取并保存欢迎消息
-    ///
-    /// - Parameters:
-    ///   - projectId: 关联的项目 ID（可选）
-    ///   - projectName: 项目名称（可选，用于生成欢迎消息）
-    ///   - projectPath: 项目路径（可选，用于生成欢迎消息）
-    func createNewConversation(
-        projectId: String? = nil,
-        projectName: String? = nil,
-        projectPath: String? = nil
-    ) async {
-        if Self.verbose {
-            os_log("\(Self.t)🚀 开始创建新会话")
-        }
-
-        // 1. 创建会话记录
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MM-dd HH:mm"
-        let newConversation = chatHistoryService.createConversation(
-            projectId: projectId,
-            title: "新会话 " + formatter.string(from: Date())
-        )
-
-        // 2. 切换消息发送队列到新会话
-        messageSenderViewModel.switchToConversation(newConversation.id)
-
-        // 3. 准备系统上下文消息和欢迎消息
-        var initialMessages: [ChatMessage] = []
-
-        // 3.1 添加系统上下文消息（设置项目上下文）
-        let systemMessage = await promptService.getSystemContextMessage(
-            projectName: projectName,
-            projectPath: projectPath,
-            language: languagePreference
-        )
-        if !systemMessage.isEmpty {
-            let sysMsg = ChatMessage(role: .system, content: systemMessage)
-            if let savedSystemMsg = chatHistoryService.saveMessage(sysMsg, to: newConversation) {
-                initialMessages.append(savedSystemMsg)
-            }
-        }
-
-        // 3.2 添加欢迎消息
-        let welcomeMessage = await promptService.getEmptySessionWelcomeMessage(
-            projectName: projectName,
-            projectPath: projectPath,
-            language: languagePreference,
-            conversationId: newConversation.id
-        )
-
-        if !welcomeMessage.isEmpty {
-            let welcomeMsg = ChatMessage(role: .assistant, content: welcomeMessage)
-            if let savedMessage = chatHistoryService.saveMessage(welcomeMsg, to: newConversation) {
-                initialMessages.append(savedMessage)
-            }
-        }
-
-        // 4. 设置消息列表（直接设置，避免与 loadConversation 竞争）
-        await MainActor.run {
-            messageViewModel.setMessagesInternal(initialMessages)
-            messageViewModel.setHasMoreMessagesInternal(false)
-            messageViewModel.setTotalMessageCountInternal(initialMessages.count)
-        }
-
-        // 5. 选中该会话（这会触发 UI 更新，但消息已经准备好了）
-        conversationViewModel.setSelectedConversation(newConversation.id)
-
-        if Self.verbose {
-            os_log("\(Self.t)✅ [\(newConversation.id)] 新会话创建完成，初始消息: \(initialMessages.count) 条")
-        }
-    }
-
     // MARK: - 消息发送协调
 
     /// 发送单条消息到 Agent
@@ -983,17 +1060,17 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
         // 1. 添加消息到消息列表
         if conversationViewModel.selectedConversationId == conversationId {
-            messageViewModel.appendMessageInternal(message)
+            messageViewModel.appendMessage(message)
         }
 
         // 2. 保存到数据库
-        conversationViewModel.saveMessage(message, to: conversationId)
+        await conversationViewModel.saveMessage(message, to: conversationId)
 
-        // 3. 启动会话标题生成（如果需要）
+        // 4. 启动会话标题生成（如果需要）
         startConversationTitleGenerationIfNeeded(message: message, conversationId: conversationId)
 
-        // 4. 处理消息（等待完成）
-        await processTurn(conversationId: conversationId)
+        // 4. 串行入队处理轮次，避免阻塞事件消费循环。
+        enqueueTurnProcessing(conversationId: conversationId, depth: 0)
 
         if Self.verbose {
             os_log("\(Self.t)✅ 消息发送完成：\(message.content.max(30))...")
@@ -1011,18 +1088,18 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
         // 检查是否满足生成标题的条件
         guard conversation.title.hasPrefix("新会话 "),
-              !messageViewModel.hasGeneratedTitle else {
+              !titleGenerationViewModel.hasGeneratedTitle(for: conversationId) else {
             return
         }
 
         // 标记已生成标题，防止重复生成
-        messageViewModel.setHasGeneratedTitleInternal(true)
+        titleGenerationViewModel.setTitleGenerated(true, for: conversationId)
 
         // 获取 LLM 配置
         let config = getCurrentConfig()
 
         // 在后台 Task 中执行标题生成
-        Task.detached(priority: .utility) { [weak self] in
+        Task { @MainActor [weak self] in
             guard let self = self else { return }
             await self.chatHistoryService.autoGenerateConversationTitleIfNeeded(
                 conversationId: conversationId,
@@ -1039,6 +1116,8 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         guard let conversationId = conversationViewModel.selectedConversationId else { return }
 
         messageSenderViewModel.cancelProcessing(for: conversationId, clearQueue: true)
+        turnTaskPipelineByConversation[conversationId]?.cancel()
+        turnTaskPipelineByConversation[conversationId] = nil
         processingConversationIds.remove(conversationId)
         streamStateByConversation[conversationId] = StreamSessionState(messageId: nil, messageIndex: nil)
         thinkingConversationIds.remove(conversationId)
@@ -1048,7 +1127,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         os_log("\(Self.t)🛑 任务已取消")
         // 重置处理状态
         setIsProcessing(false)
-        setIsThinking(false)
+        setIsThinking(false, for: conversationId)
         setPendingPermissionRequest(nil)
         permissionRequestViewModel.setPendingPermissionRequest(nil)
         // 添加取消提示消息
@@ -1116,7 +1195,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         Task {
             let isCommand = await slashCommandService.isSlashCommand(trimmed)
             if isCommand {
-                let result = await slashCommandService.handle(input: trimmed, provider: self)
+                let result = await slashCommandService.handle(input: trimmed)
                 switch result {
                 case .handled:
                     setIsProcessing(false)
@@ -1126,6 +1205,29 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
                 case .notHandled:
                     // 对于未处理的命令，继续通过消息队列发送
                     messageSenderViewModel.sendMessage(content: trimmed, images: allImages)
+                case let .systemMessage(content):
+                    // 添加系统消息
+                    appendSystemMessage(content)
+                    setIsProcessing(false)
+                case let .userMessage(content, triggerProcessing):
+                    // 添加用户消息并触发处理
+                    let message = ChatMessage(role: .user, content: content)
+                    appendMessage(message)
+                    await saveMessage(message)
+                    if triggerProcessing,
+                       let conversationId = conversationViewModel.selectedConversationId {
+                        await processTurn(conversationId: conversationId)
+                    }
+                    setIsProcessing(false)
+                case .clearHistory:
+                    await clearHistory()
+                    setIsProcessing(false)
+                case let .triggerPlanning(task):
+                    await triggerPlanningMode(task: task)
+                    setIsProcessing(false)
+                case let .mcpCommand(subCommand, param):
+                    await handleMCPCommand(subCommand: subCommand, param: param)
+                    setIsProcessing(false)
                 }
             } else {
                 // 通过 MessageSenderViewModel 发送消息
@@ -1134,6 +1236,35 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         }
     }
 
+    // MARK: - MCP 命令处理
+
+    /// 处理 MCP 子命令
+    private func handleMCPCommand(subCommand: String, param: String) async {
+        switch subCommand {
+        case "list":
+            let status = toolsViewModel.getStatusReport()
+            appendSystemMessage(status)
+        case "install":
+            if param.lowercased().hasPrefix("vision") {
+                let parts = param.split(separator: " ")
+                if parts.count >= 2 {
+                    let apiKey = String(parts[1])
+                    toolsViewModel.installVisionMCP(apiKey: apiKey)
+                    appendSystemMessage("Installing and connecting to Vision MCP Server...")
+                } else {
+                    appendSystemMessage("Usage: /mcp install vision <api_key>")
+                }
+            } else {
+                appendSystemMessage("Unknown install target. Currently only 'vision' is supported via command.")
+            }
+        default:
+            appendSystemMessage("""
+            **MCP Commands:**
+            - `/mcp list` - Show all MCP servers and their status
+            - `/mcp install vision <api_key>` - Install and connect to Vision MCP Server
+            """)
+        }
+    }
 
     // MARK: - 对话轮次处理
 
@@ -1157,31 +1288,33 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     /// 获取发送给 LLM 的消息列表
     /// 如果当前是分页加载且还有更多消息未加载，需要加载完整上下文
     private func getMessagesForLLM(conversationId: UUID) async -> [ChatMessage] {
-        // 如果不是当前选中的会话，从数据库全量加载
-        guard conversationViewModel.selectedConversationId == conversationId else {
-            return await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
-        }
+        // 从数据库全量加载
+        return await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
+    }
 
-        // 如果已经加载了所有消息，直接使用内存中的消息
-        guard messageViewModel.hasMoreMessages else {
-            return messageViewModel.messages
-        }
+    /// 获取指定会话的消息总数
+    /// - Parameter conversationId: 会话 ID
+    /// - Returns: 消息总数
+    func getMessageCount(forConversationId conversationId: UUID) async -> Int {
+        return await chatHistoryService.getMessageCount(forConversationId: conversationId)
+    }
 
-        // 如果还有更多消息未加载，需要加载完整上下文给 LLM
-        // 注意：这是第一阶段的临时方案，第二阶段应该实现上下文裁剪
-        if Self.verbose {
-            os_log("\(Self.t)⚠️ [\(conversationId)] 分页模式下需要完整上下文，加载所有消息")
-        }
-
-        let allMessages = await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
-
-        // 更新 ViewModel 的消息列表为完整列表
-        await MainActor.run {
-            messageViewModel.setMessagesInternal(allMessages)
-            messageViewModel.setHasMoreMessagesInternal(false)
-        }
-
-        return allMessages
+    /// 分页加载会话消息
+    /// - Parameters:
+    ///   - conversationId: 会话 ID
+    ///   - limit: 每页数量限制
+    ///   - beforeTimestamp: 在此时间戳之前的消息（用于加载更早的消息）
+    /// - Returns: (消息列表, 是否还有更多)
+    func loadMessagesPage(
+        forConversationId conversationId: UUID,
+        limit: Int,
+        beforeTimestamp: Date? = nil
+    ) async -> (messages: [ChatMessage], hasMore: Bool) {
+        return await chatHistoryService.loadMessagesPage(
+            forConversationId: conversationId,
+            limit: limit,
+            beforeTimestamp: beforeTimestamp
+        )
     }
 
     // MARK: - 模式切换通知
@@ -1200,7 +1333,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
     // MARK: - 权限响应
 
-    public func respondToPermissionRequest(allowed: Bool) {
+    public func respondToPermissionRequest(allowed: Bool) async {
         guard let conversationId = conversationViewModel.selectedConversationId,
               let request = pendingPermissionByConversation[conversationId] else { return }
 
@@ -1227,7 +1360,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             if conversationViewModel.selectedConversationId == conversationId {
                 appendMessage(rejectMessage)
             }
-            saveMessage(rejectMessage, conversationId: conversationId)
+            await saveMessage(rejectMessage, conversationId: conversationId)
             updateRuntimeState(for: conversationId)
         }
     }
@@ -1243,7 +1376,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
                 languagePreference: languagePreference,
                 includeContext: isProjectSelected
             )
-            setMessages([ChatMessage(role: .system, content: fullSystemPrompt)])
+            setMessages([ChatMessage(role: .system, content: fullSystemPrompt)], reason: "切换项目更新系统提示词")
         }
     }
 
@@ -1335,7 +1468,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     }
 
     /// 根据文件扩展名获取 MIME 类型
-    nonisolated private static func mimeTypeForPath(_ pathExtension: String) -> String {
+    private nonisolated static func mimeTypeForPath(_ pathExtension: String) -> String {
         switch pathExtension.lowercased() {
         case "jpg", "jpeg":
             return "image/jpeg"
@@ -1355,10 +1488,5 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     /// 移除指定附件
     public func removeAttachment(id: UUID) {
         pendingAttachments.removeAll { $0.id == id }
-    }
-
-    /// 清空所有附件
-    public func clearAttachments() {
-        pendingAttachments.removeAll()
     }
 }

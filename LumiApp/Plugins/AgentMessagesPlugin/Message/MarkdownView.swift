@@ -1,18 +1,24 @@
 import SwiftUI
 import MarkdownUI
+import OSLog
+import MagicKit
 
 /// Markdown 消息视图，负责渲染聊天消息内容
 /// 使用 MarkdownUI 库渲染（支持 GitHub Flavored Markdown）
-struct MarkdownMessageView: View {
+struct MarkdownMessageView: View, SuperLog {
+    nonisolated static let emoji = "📝"
+    nonisolated static let verbose = true
+
     let message: ChatMessage
     let showRawMessage: Bool
     let isCollapsible: Bool
     let isExpanded: Bool
     let onToggleExpand: () -> Void
-    
+    @AppStorage("Agent_RenderMarkdownEnabled") private var renderMarkdownEnabled: Bool = true
+
     /// 最大高度（超过后折叠）
     private let maxHeight: CGFloat = 400
-    
+
     var body: some View {
         Group {
             if showRawMessage {
@@ -20,6 +26,12 @@ struct MarkdownMessageView: View {
                     .font(.system(.body, design: .monospaced))
                     .textSelection(.enabled)
                     .scrollContentBackground(.hidden)
+                    .applyCollapsible(isCollapsible: isCollapsible, isExpanded: isExpanded, maxHeight: maxHeight)
+            } else if !renderMarkdownEnabled {
+                Text(verbatim: message.content)
+                    .font(.system(.body, design: .default))
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .applyCollapsible(isCollapsible: isCollapsible, isExpanded: isExpanded, maxHeight: maxHeight)
             } else {
                 Markdown(message.content)

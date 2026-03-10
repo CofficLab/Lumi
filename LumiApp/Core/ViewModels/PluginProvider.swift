@@ -76,6 +76,8 @@ final class PluginProvider: ObservableObject, SuperLog {
     /// 存储所有 Combine 订阅，用于在 deinit 时取消。
     /// 防止内存泄漏。
     private var cancellables = Set<AnyCancellable>()
+    private var sidebarViewsCache: [AnyView]?
+    private var sidebarViewsCacheKey: String?
 
     /// 初始化插件提供者
     ///
@@ -95,6 +97,8 @@ final class PluginProvider: ObservableObject, SuperLog {
         // 订阅设置变化，当设置改变时触发 UI 更新
         settingsStore.$settings
             .sink { [weak self] _ in
+                self?.sidebarViewsCache = nil
+                self?.sidebarViewsCacheKey = nil
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
@@ -127,6 +131,8 @@ final class PluginProvider: ObservableObject, SuperLog {
     ///
     /// - Parameter notification: 通知对象，包含文件选择信息
     @objc private func handleFileSelectionChanged(_ notification: Notification) {
+        sidebarViewsCache = nil
+        sidebarViewsCacheKey = nil
         objectWillChange.send()
     }
 
@@ -331,9 +337,16 @@ final class PluginProvider: ObservableObject, SuperLog {
     ///
     /// - Returns: 侧边栏视图数组
     func getSidebarViews() -> [AnyView] {
-        let views = plugins
-            .filter { isPluginEnabled($0) }
-            .compactMap { $0.addSidebarView() }
+        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
+        let cacheKey = enabledPlugins.map(\.instanceLabel).joined(separator: "|")
+
+        if let sidebarViewsCache, sidebarViewsCacheKey == cacheKey {
+            return sidebarViewsCache
+        }
+
+        let views = enabledPlugins.compactMap { $0.addSidebarView() }
+        sidebarViewsCache = views
+        sidebarViewsCacheKey = cacheKey
 
         if Self.verbose {
             let pluginNames = plugins.map { String(describing: type(of: $0)) }
@@ -476,6 +489,8 @@ final class PluginProvider: ObservableObject, SuperLog {
     /// - 调试时强制重新加载
     func reloadPlugins() {
         isLoaded = false
+        sidebarViewsCache = nil
+        sidebarViewsCacheKey = nil
         autoDiscoverAndRegisterPlugins()
     }
 }

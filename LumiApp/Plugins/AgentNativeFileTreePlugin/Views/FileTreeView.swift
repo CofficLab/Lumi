@@ -5,6 +5,7 @@ import SwiftUI
 @MainActor
 final class FileTreeOutlineView: NSOutlineView {
     var onEnterKey: (() -> Void)?
+    var onDirectoryClick: ((Any) -> Void)?
 
     override func keyDown(with event: NSEvent) {
         // Return(36) / Numpad Enter(76)
@@ -13,6 +14,35 @@ final class FileTreeOutlineView: NSOutlineView {
             return
         }
         super.keyDown(with: event)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        let location = convert(event.locationInWindow, from: nil)
+        let row = row(at: location)
+        
+        if row >= 0,
+           let item = item(atRow: row) as? FileNode,
+           item.isDirectory {
+            // 先调用父类处理选中
+            super.mouseDown(with: event)
+            
+            // 然后调用目录点击回调处理展开/折叠
+            // 注意：此时展开状态可能还没更新，需要延迟执行
+            DispatchQueue.main.async { [weak self] in
+                guard let self,
+                      let node = item as? FileNode,
+                      node.isDirectory else { return }
+                
+                // 检查当前展开状态并切换
+                if self.isItemExpanded(node) {
+                    self.collapseItem(node)
+                } else {
+                    self.expandItem(node)
+                }
+            }
+        } else {
+            super.mouseDown(with: event)
+        }
     }
 }
 
@@ -196,16 +226,15 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
     }
     
     func outlineView(_ outlineView: NSOutlineView, shouldSelectItem item: Any) -> Bool {
-        item is FileNode
+        return item is FileNode
     }
     
     func outlineViewSelectionDidChange(_ notification: Notification) {
         guard let outlineView = notification.object as? NSOutlineView,
               let node = outlineView.item(atRow: outlineView.selectedRow) as? FileNode else { return }
         
-        if !node.isDirectory {
-            onSelect?(node.url)
-        }
+        // 触发选中回调
+        onSelect?(node.url)
     }
     
     // MARK: - 右键菜单
@@ -599,12 +628,25 @@ class FileTreeRowView: NSTableRowView {
     override var wantsUpdateLayer: Bool { true }
     
     override func updateLayer() {
-        layer?.backgroundColor = isHovered ? NSColor.controlBackgroundColor.cgColor : NSColor.clear.cgColor
+        let baseColor = isHovered ? NSColor.controlBackgroundColor.withAlphaComponent(0.9) : .clear
+        let insetRect = bounds.insetBy(dx: 4, dy: 0)
+        let path = NSBezierPath(roundedRect: insetRect, xRadius: 4, yRadius: 4)
+
+        // 手动绘制窄一些的 hover 背景，避免铺满整列
+        let image = NSImage(size: bounds.size)
+        image.lockFocus()
+        baseColor.setFill()
+        path.fill()
+        image.unlockFocus()
+
+        layer?.contents = image
+        layer?.contentsScale = NSScreen.main?.backingScaleFactor ?? 2.0
+        layer?.backgroundColor = NSColor.clear.cgColor
     }
     
     override func drawSelection(in dirtyRect: NSRect) {
         if selectionHighlightStyle != .none {
-            let selectionRect = bounds.insetBy(dx: 2, dy: 0)
+            let selectionRect = bounds.insetBy(dx: 4, dy: 1)
             NSColor.controlAccentColor.withAlphaComponent(0.2).setFill()
             let path = NSBezierPath(roundedRect: selectionRect, xRadius: 4, yRadius: 4)
             path.fill()
@@ -665,6 +707,20 @@ struct FileTreeView: NSViewRepresentable {
             coordinator?.beginInlineRenameForSelectedRow()
         }
         
+        // 目录点击处理
+        outlineView.onDirectoryClick = { [weak coordinator = context.coordinator] item in
+            guard let coordinator,
+                  let node = item as? FileNode,
+                  node.isDirectory else { return }
+            
+            // 切换展开/折叠
+            if coordinator.outlineView?.isItemExpanded(node) == true {
+                coordinator.outlineView?.collapseItem(node)
+            } else {
+                coordinator.outlineView?.expandItem(node)
+            }
+        }
+        
         // 启用右键菜单
         let menu = NSMenu()
         menu.delegate = context.coordinator
@@ -673,8 +729,12 @@ struct FileTreeView: NSViewRepresentable {
         // 先创建并添加列
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("FileColumn"))
         column.title = ""
+        column.resizingMask = .autoresizingMask
         outlineView.addTableColumn(column)
         outlineView.outlineTableColumn = column
+        outlineView.autoresizesOutlineColumn = true
+        outlineView.columnAutoresizingStyle = .uniformColumnAutoresizingStyle
+        outlineView.sizeLastColumnToFit()
         
         outlineView.headerView = nil
         outlineView.intercellSpacing = NSSize(width: 0, height: 2)
@@ -690,6 +750,9 @@ struct FileTreeView: NSViewRepresentable {
     }
     
     func updateNSView(_ nsView: NSScrollView, context: Context) {
+        if let outlineView = nsView.documentView as? NSOutlineView {
+            outlineView.sizeLastColumnToFit()
+        }
         if let url = rootURL, context.coordinator.currentRootURL?.standardizedFileURL != url.standardizedFileURL {
             context.coordinator.setRootURL(url)
         }

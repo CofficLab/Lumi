@@ -3,6 +3,8 @@ import SwiftUI
 import OSLog
 import UniformTypeIdentifiers
 
+// MARK: - Input Events
+
 /// 输入区域视图 - 包含附件预览、编辑器、工具栏
 ///
 /// ## 注意

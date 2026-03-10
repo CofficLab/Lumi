@@ -1,10 +1,19 @@
+import OSLog
+import MagicKit
+import SwiftData
 import SwiftUI
 
 /// 聊天头部视图
 /// 包含项目信息、工具栏按钮和快捷操作，显示在聊天界面顶部
-struct ChatHeaderView: View {
+struct ChatHeaderView: View, SuperLog {
+    nonisolated static let emoji = "📇"
+    nonisolated static let verbose = true
+
     @EnvironmentObject var agentProvider: AgentProvider
     @EnvironmentObject var projectViewModel: ProjectViewModel
+
+    /// SwiftData 模型上下文
+    @Environment(\.modelContext) private var modelContext
 
     /// 项目选择器呈现状态
     @State private var isProjectSelectorPresented = false
@@ -37,23 +46,15 @@ struct ChatHeaderView: View {
 
                 Spacer()
 
-                // 开启新会话按钮
-                newChatButton
-
-                // 风险自动批准开关
-                autoApproveToggle
-
-                // 语言选择器
-                languageSelector
-
-                // MCP Management Button
-                mcpButton
-
-                // 项目管理按钮
-                projectButton
-
-                // 设置按钮
-                settingsButton
+                // 工具栏按钮组
+                HStack(spacing: 12) {
+                    NewChatButton()
+                    AutoApproveToggle()
+                    LanguageSelector()
+                    MCPButton()
+                    ProjectButton()
+                    SettingsButton()
+                }
             }
             .padding(.horizontal, 16)
             .frame(height: AppConfig.headerHeight)
@@ -70,148 +71,27 @@ struct ChatHeaderView: View {
             ProjectSelectorView(isPresented: $isProjectSelectorPresented)
                 .frame(width: 400, height: 500)
         }
+        .onOpenMCPSettings {
+            isMCPSettingsPresented = true
+        }
+        .onOpenProjectSelector {
+            isProjectSelectorPresented = true
+        }
     }
 }
 
 // MARK: - View
 
 extension ChatHeaderView {
-    /// 新会话按钮：点击时创建新会话
-    private var newChatButton: some View {
-        Button(action: {
-            Task {
-                let projectId = agentProvider.isProjectSelected ? agentProvider.currentProjectPath : nil
-                let projectName = agentProvider.isProjectSelected ? agentProvider.currentProjectName : nil
-                let projectPath = agentProvider.isProjectSelected ? agentProvider.currentProjectPath : nil
-                await agentProvider.createNewConversation(
-                    projectId: projectId,
-                    projectName: projectName,
-                    projectPath: projectPath
-                )
-            }
-        }) {
-            Image(systemName: "plus.circle")
-                .font(.system(size: iconSize))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                .frame(width: iconButtonSize, height: iconButtonSize)
-                .background(Color.black.opacity(0.05))
-                .clipShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .help("开启新会话")
-    }
-
-    /// 自动批准开关：控制是否自动批准高风险命令
-    private var autoApproveToggle: some View {
-        HStack(spacing: 6) {
-            Text("Auto")
-                .font(DesignTokens.Typography.caption2)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-
-            Toggle("", isOn: Binding(
-                get: { projectViewModel.autoApproveRisk },
-                set: { projectViewModel.setAutoApproveRisk($0) }
-            ))
-                .toggleStyle(.switch)
-                .controlSize(.mini)
-                .labelsHidden()
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(Color.black.opacity(0.05))
-        .cornerRadius(6)
-        .help("自动批准高风险命令")
-    }
-
-    /// 语言选择器：下拉菜单选择 AI 响应语言
-    private var languageSelector: some View {
-        Menu {
-            ForEach(LanguagePreference.allCases) { lang in
-                Button(action: {
-                    withAnimation {
-                        projectViewModel.setLanguagePreference(lang)
-                    }
-                }) {
-                    HStack {
-                        Text(lang.displayName)
-                        if projectViewModel.languagePreference == lang {
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                }
-            }
-        } label: {
-            HStack(spacing: 4) {
-                Image(systemName: "globe")
-                    .font(.system(size: iconSize))
-                Text(projectViewModel.languagePreference.displayName)
-                    .font(DesignTokens.Typography.caption2)
-                    .fontWeight(.medium)
-            }
-            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Color.black.opacity(0.05))
-            .cornerRadius(6)
-        }
-        .menuStyle(.borderlessButton)
-        .frame(width: 70)
-    }
-
-    /// MCP 管理按钮：打开 MCP 服务器设置
-    private var mcpButton: some View {
-        Button(action: {
-            isMCPSettingsPresented = true
-        }) {
-            Image(systemName: "server.rack")
-                .font(.system(size: iconSize))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                .frame(width: iconButtonSize, height: iconButtonSize)
-                .background(Color.black.opacity(0.05))
-                .clipShape(Circle())
-        }
-        .buttonStyle(.plain)
-    }
-
-    /// 项目管理按钮：打开项目选择器
-    private var projectButton: some View {
-        Button(action: {
-            isProjectSelectorPresented = true
-        }) {
-            Image(systemName: "folder.badge.gearshape")
-                .font(.system(size: iconSize))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                .frame(width: iconButtonSize, height: iconButtonSize)
-                .background(Color.black.opacity(0.05))
-                .clipShape(Circle())
-        }
-        .buttonStyle(.plain)
-    }
-
-    /// 设置按钮：打开应用设置
-    private var settingsButton: some View {
-        Button(action: {
-            NotificationCenter.postOpenSettings()
-        }) {
-            Image(systemName: "gearshape")
-                .font(.system(size: iconSize))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                .frame(width: iconButtonSize, height: iconButtonSize)
-                .background(Color.black.opacity(0.05))
-                .clipShape(Circle())
-        }
-        .buttonStyle(.plain)
-    }
-
-    /// 项目选择提示：未选择项目时显示的提示信息
+    /// 项目选择提示：未选择项目时显示的提示条
     private var projectSelectionHint: some View {
         HStack(spacing: 8) {
-            Image(systemName: "info.circle.fill")
-                .font(.system(size: 12))
+            Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundColor(.orange)
+                .font(.system(size: 12))
 
-            Text("请先选择一个项目才能开始对话")
-                .font(DesignTokens.Typography.caption1)
+            Text("请选择一个项目以开始")
+                .font(DesignTokens.Typography.caption2)
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
             Spacer()
@@ -220,7 +100,7 @@ extension ChatHeaderView {
                 isProjectSelectorPresented = true
             }) {
                 Text("选择项目")
-                    .font(DesignTokens.Typography.caption1)
+                    .font(DesignTokens.Typography.caption2)
                     .fontWeight(.medium)
                     .foregroundColor(.accentColor)
             }
@@ -228,22 +108,15 @@ extension ChatHeaderView {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
-        .background(Color.orange.opacity(0.05))
+        .background(Color.orange.opacity(0.1))
     }
 }
 
 // MARK: - Preview
 
-#if os(macOS)
-#Preview("聊天头部 - 默认状态") {
+#Preview("Chat Header") {
     ChatHeaderView()
-        .frame(width: 800)
+        .padding()
+        .background(Color.black)
         .inRootView()
 }
-
-#Preview("聊天头部 - 窄屏") {
-    ChatHeaderView()
-        .frame(width: 600)
-        .inRootView()
-}
-#endif

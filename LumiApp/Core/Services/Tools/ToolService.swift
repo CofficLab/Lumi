@@ -62,7 +62,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🧰"
     
     /// 是否启用详细日志
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     // MARK: - Combine Publishers (状态变化通知)
 
@@ -387,7 +387,7 @@ class ToolService: SuperLog, @unchecked Sendable {
             if Self.verbose {
                 let resultPreview = result.count > 200 ? String(result.prefix(200)) + "..." : result
                 os_log("\(Self.t)✅ 工具执行成功 (耗时：\(String(format: "%.2f", duration))s)")
-                os_log("\(Self.t)  结果预览：\n\(resultPreview)")
+                os_log("\(Self.t)📺 结果预览：\n\(resultPreview)")
             }
 
             return result
