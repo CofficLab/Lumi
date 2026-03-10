@@ -4,6 +4,8 @@ import OSLog
 
 /// 文件树节点视图 - 自定义递归布局
 struct FileNodeView: View, SuperLog {
+    /// 项目状态 ViewModel，用于处理文件/目录操作
+    @EnvironmentObject private var projectViewModel: ProjectViewModel
     /// 日志前缀的表情符号（文件树节点）
     nonisolated static let emoji = "📁"
     
@@ -12,6 +14,11 @@ struct FileNodeView: View, SuperLog {
     
     let url: URL
     let depth: Int
+    
+    /// 当前选中的文件 URL，用于高亮选中行
+    let selectedURL: URL?
+    
+    /// 选中某个文件节点的回调
     let onSelect: (URL) -> Void
     
     /// 本地展开状态
@@ -37,6 +44,8 @@ struct FileNodeView: View, SuperLog {
     }
     
     var body: some View {
+        let isSelected = selectedURL == url
+        
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 6) {
                 // 展开箭头（仅目录）
@@ -60,7 +69,7 @@ struct FileNodeView: View, SuperLog {
                 // 名称
                 Text(fileName)
                     .font(.system(size: 10))
-                    .foregroundColor(.primary)
+                    .foregroundColor(isSelected ? Color.white : .primary)
                     .lineLimit(1)
                 
                 Spacer()
@@ -70,20 +79,44 @@ struct FileNodeView: View, SuperLog {
             .padding(.leading, CGFloat(depth) * 12)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                isHovering
-                ? Color.primary.opacity(0.06)
-                : Color.clear
+                rowBackground(isSelected: isSelected)
             )
             .contentShape(Rectangle())
+            .contextMenu {
+                Button {
+                    projectViewModel.openInFinder(url)
+                } label: {
+                    Label("在 Finder 中显示", systemImage: "finder")
+                }
+                
+                Button {
+                    projectViewModel.openInVSCode(url)
+                } label: {
+                    Label("在 VS Code 中打开", systemImage: "chevron.left.forwardslash.chevron.right")
+                }
+                
+                Button {
+                    projectViewModel.openInTerminal(url)
+                } label: {
+                    Label("在终端中打开", systemImage: "terminal")
+                }
+                
+                Divider()
+                
+                Button(role: .destructive) {
+                    projectViewModel.deleteItem(at: url)
+                } label: {
+                    Label("移到废纸篓", systemImage: "trash")
+                }
+            }
             .onTapGesture {
                 if isDirectory {
                     isExpanded.toggle()
                     if isExpanded && children.isEmpty {
                         loadChildren()
                     }
-                } else {
-                    onSelect(url)
                 }
+                onSelect(url)
             }
             .onHover { hovering in
                 isHovering = hovering
@@ -95,6 +128,7 @@ struct FileNodeView: View, SuperLog {
                         FileNodeView(
                             url: childURL,
                             depth: depth + 1,
+                            selectedURL: selectedURL,
                             onSelect: onSelect
                         )
                     }
@@ -133,6 +167,21 @@ extension FileNodeView {
 // MARK: - Action
 
 extension FileNodeView {
+    /// 根据选中与 hover 状态计算当前行背景色
+    /// - Parameter isSelected: 当前节点是否被选中
+    /// - Returns: 行背景颜色
+    fileprivate func rowBackground(isSelected: Bool) -> Color {
+        if isSelected {
+            return isHovering
+            ? Color.accentColor.opacity(0.28)
+            : Color.accentColor.opacity(0.22)
+        } else {
+            return isHovering
+            ? Color.primary.opacity(0.06)
+            : Color.clear
+        }
+    }
+    
     /// 加载当前目录下的子节点，并按“目录在前”的规则排序
     private func loadChildren() {
         if Self.verbose {
@@ -185,6 +234,7 @@ extension FileNodeView {
     FileNodeView(
         url: URL(fileURLWithPath: "/tmp"),
         depth: 0,
+        selectedURL: nil,
         onSelect: { _ in }
     )
 }

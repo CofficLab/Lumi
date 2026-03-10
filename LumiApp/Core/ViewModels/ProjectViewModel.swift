@@ -190,16 +190,92 @@ final class ProjectViewModel: ObservableObject, SuperLog {
 
     // MARK: - 文件选择
 
-    /// 选择指定文件
+    /// 选择指定路径（支持文件与目录）
     func selectFile(at url: URL) {
-        setSelectedFileInfo(url: url, path: url.path, content: "", selected: true)
-
-        Task {
-            await loadFileContent(from: url)
+        let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+        
+        // 目录：仅更新选中路径，不加载内容
+        if isDirectory {
+            setSelectedFileInfo(url: url, path: url.path, content: "", selected: false)
+            
+            if Self.verbose {
+                os_log("\(Self.t)📁 已选择目录：\(url.lastPathComponent)")
+            }
+        } else {
+            setSelectedFileInfo(url: url, path: url.path, content: "", selected: true)
+            
+            Task {
+                await loadFileContent(from: url)
+            }
+            
+            if Self.verbose {
+                os_log("\(Self.t)📄 已选择文件：\(url.lastPathComponent)")
+            }
         }
-
+    }
+    
+    /// 将指定文件或目录移到废纸篓
+    /// - Parameter url: 目标文件或目录路径
+    func deleteItem(at url: URL) {
+        do {
+            try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+            if Self.verbose {
+                os_log("\(Self.t)🗑️ 已移到废纸篓：\(url.lastPathComponent)")
+            }
+        } catch {
+            os_log(.error, "\(Self.t)❌ 移到废纸篓失败：\(error.localizedDescription)")
+        }
+    }
+    
+    /// 在 Finder 中显示指定路径
+    /// - Parameter url: 目标文件或目录路径
+    func openInFinder(_ url: URL) {
+        NSWorkspace.shared.activateFileViewerSelecting([url])
+        
         if Self.verbose {
-            os_log("\(Self.t)📄 已选择文件：\(url.lastPathComponent)")
+            os_log("\(Self.t)🔍 在 Finder 中显示：\(url.path)")
+        }
+    }
+    
+    /// 在 VS Code 中打开指定路径
+    /// - Parameter url: 目标文件或目录路径
+    func openInVSCode(_ url: URL) {
+        let process = Process()
+        process.launchPath = "/usr/bin/env"
+        process.arguments = ["open", "-a", "Visual Studio Code", url.path]
+        
+        do {
+            try process.run()
+            if Self.verbose {
+                os_log("\(Self.t)📝 使用 VS Code 打开：\(url.path)")
+            }
+        } catch {
+            os_log(.error, "\(Self.t)❌ 启动 VS Code 失败：\(error.localizedDescription)")
+        }
+    }
+    
+    /// 在终端中打开指定路径
+    /// - Parameter url: 目标文件或目录路径（文件会自动转为其父目录）
+    func openInTerminal(_ url: URL) {
+        let targetURL: URL
+        let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+        if isDirectory {
+            targetURL = url
+        } else {
+            targetURL = url.deletingLastPathComponent()
+        }
+        
+        let process = Process()
+        process.launchPath = "/usr/bin/env"
+        process.arguments = ["open", "-a", "Terminal", targetURL.path]
+        
+        do {
+            try process.run()
+            if Self.verbose {
+                os_log("\(Self.t)💻 在终端中打开：\(targetURL.path)")
+            }
+        } catch {
+            os_log(.error, "\(Self.t)❌ 启动终端失败：\(error.localizedDescription)")
         }
     }
 

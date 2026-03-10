@@ -97,8 +97,9 @@ struct ProjectTreeView: View {
                     FileNodeView(
                         url: url,
                         depth: 0,
+                        selectedURL: projectViewModel.selectedFileURL,
                         onSelect: { selectedURL in
-                            // 处理文件选择
+                            projectViewModel.selectFile(at: selectedURL)
                         }
                     )
                     .listRowSeparator(.hidden)
