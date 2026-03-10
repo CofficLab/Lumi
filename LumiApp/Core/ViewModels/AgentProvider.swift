@@ -1291,6 +1291,31 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         return await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
     }
 
+    /// 获取指定会话的消息总数
+    /// - Parameter conversationId: 会话 ID
+    /// - Returns: 消息总数
+    func getMessageCount(forConversationId conversationId: UUID) async -> Int {
+        return await chatHistoryService.getMessageCount(forConversationId: conversationId)
+    }
+
+    /// 分页加载会话消息
+    /// - Parameters:
+    ///   - conversationId: 会话 ID
+    ///   - limit: 每页数量限制
+    ///   - beforeTimestamp: 在此时间戳之前的消息（用于加载更早的消息）
+    /// - Returns: (消息列表, 是否还有更多)
+    func loadMessagesPage(
+        forConversationId conversationId: UUID,
+        limit: Int,
+        beforeTimestamp: Date? = nil
+    ) async -> (messages: [ChatMessage], hasMore: Bool) {
+        return await chatHistoryService.loadMessagesPage(
+            forConversationId: conversationId,
+            limit: limit,
+            beforeTimestamp: beforeTimestamp
+        )
+    }
+
     // MARK: - 模式切换通知
 
     public func notifyModeChangeToChat() async {
