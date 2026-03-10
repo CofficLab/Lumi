@@ -10,6 +10,18 @@ struct ThinkingProcessView: View {
     /// 是否已展开
     @State private var isExpanded: Bool = false
 
+    /// 折叠状态下展示的预览文本（首行 + 截断）
+    private var previewText: String {
+        let trimmed = thinkingText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        let firstLine = trimmed.components(separatedBy: .newlines).first ?? trimmed
+        if firstLine.count > 40 {
+            let prefix = firstLine.prefix(40)
+            return String(prefix) + "…"
+        }
+        return firstLine
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // 展开/折叠按钮
@@ -21,18 +33,26 @@ struct ThinkingProcessView: View {
                 HStack(spacing: 6) {
                     Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(.orange)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-                    Text(isThinking ? "思考过程..." : "思考过程")
+                    Text(isThinking ? "思考过程…" : "思考过程")
                         .font(DesignTokens.Typography.caption1)
-                        .foregroundColor(.orange)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+
+                    // 折叠时展示一小段预览，降低存在感但能提示有内容
+                    if !isExpanded, !previewText.isEmpty {
+                        Text(previewText)
+                            .font(DesignTokens.Typography.caption2)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary.opacity(0.8))
+                            .lineLimit(1)
+                    }
 
                     if isThinking {
                         // 思考中的动画点
                         HStack(spacing: 2) {
                             ForEach(0..<3) { i in
                                 Circle()
-                                    .fill(Color.orange)
+                                    .fill(DesignTokens.Color.semantic.textSecondary)
                                     .frame(width: 4, height: 4)
                                     .opacity(isThinking ? 1.0 : 0.5)
                                     .animation(
@@ -52,20 +72,21 @@ struct ThinkingProcessView: View {
 
             // 思考内容（展开时显示）
             if isExpanded && !thinkingText.isEmpty {
-                VStack(alignment: .leading, spacing: 0) {
+                ScrollView(showsIndicators: true) {
                     Text(thinkingText)
                         .font(.system(size: 12, design: .monospaced))
-                        .foregroundColor(Color.gray)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .frame(maxHeight: 220)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.gray.opacity(0.1))
+                        .fill(DesignTokens.Color.basePalette.elevatedSurface.opacity(0.6))
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+                        .stroke(DesignTokens.Color.basePalette.subtleBorder.opacity(0.12), lineWidth: 1)
                 )
             }
         }

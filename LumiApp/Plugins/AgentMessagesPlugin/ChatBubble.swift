@@ -66,11 +66,8 @@ struct ChatBubble: View, SuperLog {
         if let storedThinking = message.thinkingContent, !storedThinking.isEmpty {
             return true
         }
-        // 如果是最后一条消息且正在流式传输，显示实时思考
-        if isLastMessage {
-            return thinkingStateViewModel.isThinking || !thinkingStateViewModel.thinkingText.isEmpty
-        }
-        return false
+        // 否则：只要有实时思考文本就展示（绑定到当前流式消息，避免所有历史消息一起显示）
+        return isCurrentStreamingMessage && !thinkingStateViewModel.thinkingText.isEmpty
     }
 
     /// 获取思考过程文本（优先使用存储的，否则使用实时的）
@@ -89,8 +86,8 @@ struct ChatBubble: View, SuperLog {
         if message.thinkingContent != nil {
             return false
         }
-        // 否则使用实时的思考状态
-        return thinkingStateViewModel.isThinking
+        // 否则仅对当前流式消息展示实时思考动画
+        return isCurrentStreamingMessage && thinkingStateViewModel.isThinking
     }
 
     /// 检查消息是否包含工具调用
@@ -119,7 +116,8 @@ struct ChatBubble: View, SuperLog {
                                     expansionState.toggleExpansion(id: message.id)
                                 }
                             },
-                            isLongMessage: isLongMessage
+                            isLongMessage: isLongMessage,
+                            isLastMessage: isLastMessage
                         )
 
                         // 思考过程展示（对最后一条助手消息显示）

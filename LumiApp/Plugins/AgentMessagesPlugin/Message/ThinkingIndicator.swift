@@ -10,19 +10,11 @@ struct ThinkingIndicator: View, SuperLog {
     /// 是否启用详细日志
     nonisolated static let verbose = false
 
-    @State private var rotation: Double = 0
-
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: "brain.head.profile")
                 .font(.system(size: 10))
                 .foregroundColor(.orange)
-                .rotationEffect(.degrees(rotation))
-                .onAppear {
-                    withAnimation(.linear(duration: 2.0).repeatForever(autoreverses: false)) {
-                        rotation = 360
-                    }
-                }
 
             Text("思考中")
                 .font(DesignTokens.Typography.caption2)

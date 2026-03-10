@@ -22,6 +22,8 @@ struct AssistantMessageHeader: View, SuperLog {
     let onToggleExpand: () -> Void
     /// 是否是长消息
     let isLongMessage: Bool
+    /// 是否为最后一条消息（用于实时状态展示）
+    let isLastMessage: Bool
 
     /// 智能体提供者
     @EnvironmentObject var agentProvider: AgentProvider
@@ -59,12 +61,12 @@ struct AssistantMessageHeader: View, SuperLog {
                 }
 
                 // 心跳动画指示器（当正在处理时显示）
-                if processingStateViewModel.isProcessing {
+                if isLastMessage && processingStateViewModel.isProcessing {
                     HeartbeatIndicator()
                 }
 
                 // 思考状态指示器
-                if thinkingStateViewModel.isThinking {
+                if isLastMessage && thinkingStateViewModel.isThinking {
                     ThinkingIndicator()
                 }
             }
