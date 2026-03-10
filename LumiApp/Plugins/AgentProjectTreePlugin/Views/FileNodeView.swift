@@ -8,9 +8,6 @@ struct FileNodeView: View {
     let depth: Int
     let onSelect: (URL) -> Void
     
-    /// 每层缩进量
-    private let indentPerLevel: CGFloat = 16
-    
     /// 本地展开状态
     @State private var isExpanded: Bool = false
     
@@ -65,13 +62,6 @@ struct FileNodeView: View {
     
     private var nodeRow: some View {
         HStack(spacing: 6) {
-            // 缩进
-            HStack(spacing: 0) {
-                ForEach(0..<depth, id: \.self) { _ in
-                    Spacer().frame(width: indentPerLevel)
-                }
-            }
-            
             // 图标
             Image(systemName: iconName)
                 .font(.system(size: 10))
@@ -86,9 +76,8 @@ struct FileNodeView: View {
             
             Spacer()
         }
-        .padding(.horizontal, 6)
+        .padding(.horizontal, 0)
         .padding(.vertical, 3)
-        .contentShape(Rectangle())
         .onTapGesture {
             if !isDirectory {
                 onSelect(url)
