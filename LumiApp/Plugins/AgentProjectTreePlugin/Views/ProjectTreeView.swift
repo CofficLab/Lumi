@@ -4,22 +4,32 @@ import MagicKit
 /// 项目文件树视图 - 使用 List 优化性能
 struct ProjectTreeView: View {
     @EnvironmentObject var projectViewModel: ProjectViewModel
+    
+    /// 当前项目根目录下的一级文件 / 文件夹
     @State private var rootURLs: [URL] = []
+    
+    /// 是否正在加载项目结构
     @State private var isLoading = false
+    
+    /// 侧边栏中文件树区域的折叠状态
+    @AppStorage("Sidebar_ProjectTree_Expanded") private var isExpanded: Bool = true
+    
+    /// 标题栏 hover 状态，用于高亮交互区域
+    @State private var isHeaderHovered: Bool = false
     
     var body: some View {
         VStack(spacing: 0) {
             // 标题栏
             headerView
             
-            Divider()
-                .background(Color.white.opacity(0.1))
-            
-            // 文件树内容
-            contentView
+            if isExpanded {
+                Divider()
+                    .background(Color.white.opacity(0.1))
+                
+                // 文件树内容
+                contentView
+            }
         }
-        .padding(.vertical, 8)
-        .background(.background.opacity(0.2))
         .onChange(of: projectViewModel.currentProjectPath) { _, newPath in
             loadProject(at: newPath)
         }
@@ -31,22 +41,46 @@ struct ProjectTreeView: View {
     // MARK: - Header
     
     private var headerView: some View {
-        HStack {
-            Text("文件树")
-                .font(.system(size: 11, weight: .semibold))
+        HStack(spacing: 6) {
+            // 折叠箭头
+            Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(.secondary)
+                .frame(width: 16, height: 16)
+            
+            // 文件树图标
+            Image(systemName: "folder.fill")
+                .font(.system(size: 13))
+                .foregroundColor(.accentColor)
+            
+            // 标题
+            Text("项目文件")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
             
             Spacer()
             
             Button(action: { loadProject(at: projectViewModel.currentProjectPath) }) {
                 Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 10))
+                    .font(.system(size: 10, weight: .semibold))
                     .foregroundColor(.secondary)
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 4)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(isHeaderHovered ? Color.primary.opacity(0.05) : Color.clear)
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHeaderHovered = hovering
+            }
+        }
+        .onTapGesture {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isExpanded.toggle()
+            }
+        }
     }
     
     // MARK: - Content
