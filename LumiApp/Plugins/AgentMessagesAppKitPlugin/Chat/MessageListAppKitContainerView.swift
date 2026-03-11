@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import OSLog
 import SwiftUI
 import MagicKit
@@ -34,6 +35,8 @@ final class MessageListAppKitContainerView: NSView {
     private var oldestLoadedTimestamp: Date?
     private var isLoadingMore: Bool = false
     private var currentConversationId: UUID?
+    private var transientStatusMessageId: UUID = UUID()
+    private var processingCancellables = Set<AnyCancellable>()
 
     init(
         agentProvider: AgentProvider,
@@ -47,6 +50,7 @@ final class MessageListAppKitContainerView: NSView {
 
         setUpViews()
         setUpObservers()
+        bindProcessingState()
         currentConversationId = conversationViewModel.selectedConversationId
         Task { [weak self] in
             await self?.loadInitialMessages()
@@ -80,6 +84,7 @@ final class MessageListAppKitContainerView: NSView {
         let selectedId = conversationViewModel.selectedConversationId
         guard selectedId != currentConversationId else { return }
         currentConversationId = selectedId
+        transientStatusMessageId = UUID()
 
         Task { [weak self] in
             await self?.loadInitialMessages()
@@ -105,8 +110,21 @@ final class MessageListAppKitContainerView: NSView {
     }
 
     private func rebuildMessageViews() {
+        let clipView = scrollView.contentView
+        let previousOrigin = clipView.bounds.origin
+        let shouldStickToBottom = isNearBottom()
+
         hostingView.rootView = AppKitMessageListContentView(messages: messages)
         layoutDocumentView()
+
+        if shouldStickToBottom {
+            scrollToBottom()
+        } else {
+            let maxY = max(0, hostingView.frame.height - clipView.bounds.height)
+            let targetY = min(previousOrigin.y, maxY)
+            clipView.scroll(to: NSPoint(x: previousOrigin.x, y: targetY))
+            scrollView.reflectScrolledClipView(clipView)
+        }
     }
 
     private func setUpObservers() {
@@ -116,6 +134,24 @@ final class MessageListAppKitContainerView: NSView {
             name: .messageSaved,
             object: nil
         )
+    }
+
+    private func bindProcessingState() {
+        processingCancellables.removeAll()
+
+        processingStateViewModel.$isProcessing
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.applyTransientStatusMessageIfNeeded()
+            }
+            .store(in: &processingCancellables)
+
+        processingStateViewModel.$statusText
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.applyTransientStatusMessageIfNeeded()
+            }
+            .store(in: &processingCancellables)
     }
 
     private func upsertMessage(_ message: ChatMessage) {
@@ -140,9 +176,35 @@ final class MessageListAppKitContainerView: NSView {
         upsertMessage(message)
     }
 
+    private func applyTransientStatusMessageIfNeeded() {
+        guard currentConversationId != nil else { return }
+
+        if processingStateViewModel.isProcessing, !processingStateViewModel.statusText.isEmpty {
+            let statusText = processingStateViewModel.statusText
+            if let index = messages.firstIndex(where: { $0.id == transientStatusMessageId }) {
+                var statusMessage = messages[index]
+                statusMessage.content = statusText
+                messages[index] = statusMessage
+            } else {
+                let statusMessage = ChatMessage(
+                    id: transientStatusMessageId,
+                    role: .status,
+                    content: statusText,
+                    timestamp: Date(),
+                    isTransientStatus: true
+                )
+                messages.append(statusMessage)
+            }
+        } else if messages.contains(where: { $0.id == transientStatusMessageId }) {
+            messages.removeAll { $0.id == transientStatusMessageId }
+        }
+    }
+
     private func layoutDocumentView() {
         let targetWidth = max(0, scrollView.contentView.bounds.width)
-        hostingView.frame = NSRect(x: 0, y: 0, width: targetWidth, height: 1)
+        let currentHeight = max(1, hostingView.frame.height)
+        hostingView.frame = NSRect(x: 0, y: 0, width: targetWidth, height: currentHeight)
+        hostingView.layoutSubtreeIfNeeded()
         let fitting = hostingView.fittingSize
         hostingView.frame = NSRect(x: 0, y: 0, width: targetWidth, height: max(1, fitting.height))
     }
@@ -195,6 +257,7 @@ final class MessageListAppKitContainerView: NSView {
             if let first = allMessages.first {
                 oldestLoadedTimestamp = first.timestamp
             }
+            applyTransientStatusMessageIfNeeded()
             scrollToBottom()
         }
     }
@@ -202,14 +265,16 @@ final class MessageListAppKitContainerView: NSView {
     private func scrollToBottom() {
         layoutSubtreeIfNeeded()
         layoutDocumentView()
-        // 确保 documentView 尺寸已更新后再滚动到底部
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            let clipView = self.scrollView.contentView
-            let maxY = max(0, self.hostingView.frame.height - clipView.bounds.height)
-            clipView.scroll(to: NSPoint(x: 0, y: maxY))
-            self.scrollView.reflectScrolledClipView(clipView)
-        }
+        let clipView = scrollView.contentView
+        let maxY = max(0, hostingView.frame.height - clipView.bounds.height)
+        clipView.scroll(to: NSPoint(x: 0, y: maxY))
+        scrollView.reflectScrolledClipView(clipView)
+    }
+
+    private func isNearBottom(threshold: CGFloat = 120) -> Bool {
+        let clipView = scrollView.contentView
+        let maxY = max(0, hostingView.frame.height - clipView.bounds.height)
+        return (maxY - clipView.bounds.origin.y) < threshold
     }
 }
 

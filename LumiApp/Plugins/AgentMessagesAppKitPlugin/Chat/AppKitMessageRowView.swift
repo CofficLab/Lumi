@@ -83,14 +83,57 @@ struct AppKitMessageRowView: View {
     }
 
     private var header: some View {
-        HStack(spacing: 6) {
-            Text(roleTitle)
-                .font(.caption)
-                .foregroundColor(.secondary)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 6) {
+                Text(roleTitle)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
 
-            Text(message.timestamp, style: .time)
-                .font(.caption2)
-                .foregroundColor(.secondary.opacity(0.8))
+                Text(message.timestamp, style: .time)
+                    .font(.caption2)
+                    .foregroundColor(.secondary.opacity(0.8))
+
+                if isAssistant, let providerId = message.providerId {
+                    Text("·")
+                        .font(.caption2)
+                        .foregroundColor(.secondary.opacity(0.7))
+                    Text(formatProviderName(providerId))
+                        .font(.caption2)
+                        .foregroundColor(.secondary.opacity(0.9))
+                }
+
+                if isAssistant, let modelName = message.modelName {
+                    Text("·")
+                        .font(.caption2)
+                        .foregroundColor(.secondary.opacity(0.7))
+                    Text(formatModelName(modelName))
+                        .font(.caption2)
+                        .foregroundColor(.secondary.opacity(0.9))
+                        .lineLimit(1)
+                }
+            }
+
+            if isAssistant {
+                HStack(spacing: 6) {
+                    if let ttft = message.timeToFirstToken {
+                        metricPill(title: "TTFT", value: formatLatency(ttft))
+                    }
+
+                    if let latency = message.latency {
+                        metricPill(title: "Total", value: formatLatency(latency))
+                    }
+
+                    if let inputTokens = message.inputTokens, let outputTokens = message.outputTokens {
+                        metricPill(title: "Tokens", value: "\(inputTokens)/\(outputTokens)")
+                    } else if let totalTokens = message.totalTokens {
+                        metricPill(title: "Tokens", value: "\(totalTokens)")
+                    }
+
+                    if let finishReason = message.finishReason {
+                        metricPill(title: "Done", value: formatFinishReason(finishReason))
+                    }
+                }
+            }
         }
     }
 
@@ -119,6 +162,63 @@ struct AppKitMessageRowView: View {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .stroke(bubbleBorder, lineWidth: 1)
             )
+    }
+
+    private func metricPill(title: String, value: String) -> some View {
+        HStack(spacing: 4) {
+            Text(title)
+                .font(.caption2)
+                .foregroundColor(.secondary)
+            Text(value)
+                .font(.caption2)
+                .foregroundColor(.primary.opacity(0.9))
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(Color.white.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+    }
+
+    private func formatProviderName(_ providerId: String) -> String {
+        let providerNames: [String: String] = [
+            "anthropic": "Anthropic",
+            "openai": "OpenAI",
+            "zhipu": "Zhipu",
+            "deepseek": "DeepSeek",
+            "aliyun": "Aliyun",
+            "azure": "Azure",
+            "google": "Google",
+            "mistral": "Mistral",
+            "groq": "Groq",
+            "ollama": "Ollama",
+        ]
+        return providerNames[providerId] ?? providerId.capitalized
+    }
+
+    private func formatModelName(_ name: String) -> String {
+        let parts = name.split(separator: "-")
+        if parts.count > 2, let last = parts.last, last.allSatisfy({ $0.isNumber }) {
+            return parts.dropLast().joined(separator: "-")
+        }
+        return name
+    }
+
+    private func formatLatency(_ latencyMs: Double) -> String {
+        if latencyMs < 1000 {
+            return String(format: "%.0fms", latencyMs)
+        }
+        return String(format: "%.1fs", latencyMs / 1000.0)
+    }
+
+    private func formatFinishReason(_ reason: String) -> String {
+        let reasonMap: [String: String] = [
+            "stop": "stop",
+            "length": "length",
+            "content_filter": "filter",
+            "tool_calls": "tools",
+            "max_tokens": "maxTokens",
+        ]
+        return reasonMap[reason] ?? reason
     }
 }
 
