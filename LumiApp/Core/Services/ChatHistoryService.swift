@@ -317,7 +317,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                 os_log(.error, "\(Self.t)❌ 消息转换失败")
                 return nil
             }
-            NotificationCenter.postMessageSaved(message: savedMessage)
+            NotificationCenter.postMessageSaved(message: savedMessage, conversationId: conversation.id)
             return savedMessage
         } catch {
             os_log(.error, "\(Self.t)❌ 保存消息失败：\(error.localizedDescription)")
@@ -358,7 +358,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                     try context.save()
                     // 发送消息已保存事件
                     if let savedMessage = messageEntity.toChatMessage() {
-                        NotificationCenter.postMessageSaved(message: savedMessage)
+                        NotificationCenter.postMessageSaved(message: savedMessage, conversationId: fetchedConversation.id)
                     }
                     continuation.resume(returning: messageEntity.toChatMessage())
                 } catch {

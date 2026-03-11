@@ -400,7 +400,10 @@ extension MessageListView {
 
     /// 处理消息保存事件
     /// - Parameter message: 已保存的消息
-    func handleOnMessageSaved(message: ChatMessage) {
+    func handleOnMessageSaved(message: ChatMessage, conversationId: UUID) {
+        // 仅处理当前会话，避免切换对话时“串话”
+        guard conversationId == selectedConversationId else { return }
+
         Task { @MainActor in
             let existingIndex = messages.firstIndex { $0.id == message.id }
             let isNewMessage = existingIndex == nil
