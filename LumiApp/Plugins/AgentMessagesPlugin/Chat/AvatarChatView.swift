@@ -19,6 +19,8 @@ public struct AvatarChatView: View {
                 AvatarView.user
             } else if role == .status {
                 AvatarView.status
+            } else if role == .system {
+                AvatarView.system
             } else {
                 AvatarView.assistant
             }
@@ -67,6 +69,16 @@ public enum AvatarView {
             .foregroundColor(DesignTokens.Color.semantic.warning)
             .frame(width: 24, height: 24)
             .background(DesignTokens.Color.semantic.warning.opacity(0.12))
+            .clipShape(Circle())
+    }
+
+    /// 系统头像（系统提示/系统消息）
+    public static var system: some View {
+        Image(systemName: "bolt.shield.fill")
+            .font(.system(size: 16))
+            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            .frame(width: 24, height: 24)
+            .background(DesignTokens.Color.semantic.textSecondary.opacity(0.10))
             .clipShape(Circle())
     }
 }
