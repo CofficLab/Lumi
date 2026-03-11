@@ -173,9 +173,6 @@ protocol SuperPlugin: Actor {
     /// 提供工具展示描述符列表。
     @MainActor func toolPresentationDescriptors() -> [ToolPresentationDescriptor]
 
-    /// 提供 MCP 服务器配置列表。
-    @MainActor func mcpServerConfigs() -> [MCPServerConfig]
-
     // MARK: - Lifecycle Hooks
 
     /// 插件注册完成后的回调

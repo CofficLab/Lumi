@@ -10,6 +10,4 @@ extension SuperPlugin {
     @MainActor func workerAgentDescriptors() -> [WorkerAgentDescriptor] { [] }
 
     @MainActor func toolPresentationDescriptors() -> [ToolPresentationDescriptor] { [] }
-
-    @MainActor func mcpServerConfigs() -> [MCPServerConfig] { [] }
 }

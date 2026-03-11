@@ -90,9 +90,6 @@
     "(%lld)" : {
 
     },
-    "******" : {
-
-    },
     "/path/to/db.sqlite" : {
       "localizations" : {
         "zh-Hans" : {
@@ -288,9 +285,6 @@
       }
     },
     "••••••••" : {
-
-    },
-    "=" : {
 
     },
     "0" : {
@@ -1324,9 +1318,6 @@
         }
       }
     },
-    "Connected" : {
-
-    },
     "Connection Name" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1712,9 +1703,6 @@
       }
     },
     "Disconnect" : {
-
-    },
-    "Disconnected" : {
 
     },
     "Disk" : {

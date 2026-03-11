@@ -1,50 +1,46 @@
-
 import Foundation
 import MCP
 import OSLog
 
-/// Adapts an MCP Tool to the AgentTool protocol
+/// Adapts an MCP Tool to the AgentTool protocol.
 final class MCPToolAdapter: AgentTool, @unchecked Sendable {
     let client: Client
     let mcpTool: MCP.Tool
     let serverName: String
-    
+
     init(client: Client, tool: MCP.Tool, serverName: String) {
         self.client = client
         self.mcpTool = tool
         self.serverName = serverName
     }
-    
+
     var name: String {
-        // Follow claude-code convention: mcp__<server_name>__<tool_name>
-        // Sanitize server name to be safe for tool names (only alphanumeric and underscores)
-        let safeServerName = serverName.replacingOccurrences(of: "-", with: "_")
-                                       .replacingOccurrences(of: " ", with: "_")
-                                       .lowercased()
+        let safeServerName = serverName
+            .replacingOccurrences(of: "-", with: "_")
+            .replacingOccurrences(of: " ", with: "_")
+            .lowercased()
         return "mcp__\(safeServerName)__\(mcpTool.name)"
     }
-    
+
     var description: String {
         mcpTool.description ?? ""
     }
-    
+
     var inputSchema: [String: Any] {
-        // Convert MCP.JSONSchema to [String: Any]
         guard let data = try? JSONEncoder().encode(mcpTool.inputSchema),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else {
             return [:]
         }
         return json
     }
-    
+
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         os_log("[MCP] 🔧 开始执行 MCP 工具: \(self.name)")
         os_log("[MCP]   原始工具名: \(self.mcpTool.name)")
 
-        // Convert [String: ToolArgument] to [String: Any]
         let anyArguments: [String: Any] = arguments.mapValues { $0.value }
 
-        // Convert arguments dictionary to MCP.Value
         let mcpArguments: [String: Value]
         do {
             let data = try JSONSerialization.data(withJSONObject: anyArguments)
@@ -59,7 +55,6 @@ final class MCPToolAdapter: AgentTool, @unchecked Sendable {
         let startTime = Date()
 
         do {
-            // 使用原始工具名而不是带前缀的名称
             let result = try await client.callTool(name: mcpTool.name, arguments: mcpArguments)
             let duration = Date().timeIntervalSince(startTime)
 
@@ -71,10 +66,13 @@ final class MCPToolAdapter: AgentTool, @unchecked Sendable {
                     return nil
                 }.joined(separator: "\n")
                 os_log(.error, "[MCP] ❌ 工具返回错误: \(errorMessage)")
-                throw NSError(domain: "MCPToolAdapter", code: 1, userInfo: [NSLocalizedDescriptionKey: errorMessage.isEmpty ? "Unknown error from tool" : errorMessage])
+                throw NSError(
+                    domain: "MCPToolAdapter",
+                    code: 1,
+                    userInfo: [NSLocalizedDescriptionKey: errorMessage.isEmpty ? "Unknown error from tool" : errorMessage]
+                )
             }
 
-            // Combine content into string
             var outputParts: [String] = []
             for content in result.content {
                 switch content {
@@ -101,3 +99,4 @@ final class MCPToolAdapter: AgentTool, @unchecked Sendable {
         }
     }
 }
+

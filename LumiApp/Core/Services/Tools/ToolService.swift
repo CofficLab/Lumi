@@ -12,7 +12,7 @@ import Combine
 /// - **工具注册**: 管理内置工具和 MCP 工具
 /// - **工具执行**: 提供统一的工具执行接口
 /// - **权限管理**: 代理 PermissionService 进行权限检查
-/// - **MCP 集成**: 管理 MCP (Model Context Protocol) 服务器和工具
+/// - **插件集成**: 插件负责提供工具；内核只关心 Tool 抽象
 ///
 /// ## 架构说明
 ///
@@ -72,22 +72,6 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// ViewModel 可以订阅此发布者来更新 UI。
     let toolsPublisher = PassthroughSubject<[AgentTool], Never>()
     
-    /// MCP 配置列表变化通知（代理 MCPService）
-    ///
-    /// 当 MCP 服务器配置发生变化时发送。
-    let mcpConfigsPublisher = PassthroughSubject<[MCPServerConfig], Never>()
-    
-    /// MCP 连接错误变化通知（代理 MCPService）
-    ///
-    /// 当 MCP 服务器连接发生错误时发送。
-    /// 格式: [服务器名称: 错误信息]
-    let mcpConnectionErrorsPublisher = PassthroughSubject<[String: String], Never>()
-    
-    /// MCP 连接客户端数量变化通知（代理 MCPService）
-    ///
-    /// 当 MCP 客户端连接数量变化时发送。
-    let mcpConnectedClientsCountPublisher = PassthroughSubject<Int, Never>()
-
     // MARK: - Properties
 
     /// 所有可用工具（包括内置工具、MCP 工具和插件工具）
@@ -97,19 +81,11 @@ class ToolService: SuperLog, @unchecked Sendable {
 
     /// 内置工具列表（保留接口；当前建议将大部分工具迁移到插件提供）
     private var builtInTools: [AgentTool] = []
-    
-    /// MCP 工具列表（从 MCP 服务器动态获取）
-    private var mcpTools: [AgentTool] = []
 
     /// 插件提供的工具列表
     private var pluginTools: [AgentTool] = []
 
     // MARK: - Dependencies
-
-    /// MCP 服务
-    ///
-    /// 负责管理 MCP 服务器连接和工具。
-    private let mcpService: MCPService
     
     /// Shell 服务
     ///
@@ -130,7 +106,6 @@ class ToolService: SuperLog, @unchecked Sendable {
     ///
     /// 存储所有 Combine 订阅，用于清理。
     private var cancellables = Set<AnyCancellable>()
-    private var syncedPluginMCPConfigNames: Set<String> = []
 
     // MARK: - Initialization
 
@@ -139,18 +114,14 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 执行以下初始化步骤：
     /// 1. 创建依赖服务（MCP、Shell、Permission）
     /// 2. 注册内置工具
-    /// 3. 设置 MCP 监听器
-    /// 4. 设置插件工具监听
-    /// 5. 刷新工具列表
+    /// 3. 设置插件工具监听
+    /// 4. 刷新工具列表
     @MainActor
     init(llmService: LLMService? = nil) {
-        self.mcpService = MCPService()
         self.shellService = ShellService()
         self.permissionService = PermissionService()
         self.llmService = llmService
-        setupMCPObservers()
         setupPluginObservers()
-        syncPluginMCPConfigs()
         refreshAllTools()
 
         if Self.verbose {
@@ -161,45 +132,6 @@ class ToolService: SuperLog, @unchecked Sendable {
     // MARK: - Setup
 
     // 说明：原先 `setupBuiltInTools()` 已迁移到插件（见 `AgentCoreToolsPlugin`）。
-
-    /// 设置 MCP 工具监听器
-    ///
-    /// 订阅 MCP 服务的发布者，监听：
-    /// - 工具列表变化
-    /// - 配置变化
-    /// - 连接错误
-    /// - 客户端连接数
-    private func setupMCPObservers() {
-        // 监听 MCP 工具更新
-        mcpService.toolsPublisher
-            .sink { [weak self] mcpTools in
-                guard let self = self else { return }
-                self.mcpTools = mcpTools
-                Task { @MainActor [weak self] in
-                    self?.refreshAllTools()
-                }
-            }
-            .store(in: &cancellables)
-        
-        // 代理 MCPService 的其他 publishers
-        mcpService.configsPublisher
-            .sink { [weak self] configs in
-                self?.mcpConfigsPublisher.send(configs)
-            }
-            .store(in: &cancellables)
-        
-        mcpService.connectionErrorsPublisher
-            .sink { [weak self] errors in
-                self?.mcpConnectionErrorsPublisher.send(errors)
-            }
-            .store(in: &cancellables)
-        
-        mcpService.connectedClientsPublisher
-            .sink { [weak self] clients in
-                self?.mcpConnectedClientsCountPublisher.send(clients.count)
-            }
-            .store(in: &cancellables)
-    }
 
     /// 设置插件工具监听
     ///
@@ -212,37 +144,19 @@ class ToolService: SuperLog, @unchecked Sendable {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
-                self?.syncPluginMCPConfigs()
                 self?.refreshAllTools()
             }
         }
-    }
 
-    /// 同步插件提供的 MCP 配置到 MCPService。
-    ///
-    /// 仅删除“由插件注入”的旧配置，不影响用户手动添加的配置。
-    @MainActor
-    private func syncPluginMCPConfigs() {
-        let pluginConfigs = PluginProvider.shared.getMCPServerConfigs()
-        let nextNames = Set(pluginConfigs.map(\.name))
-
-        let toRemove = syncedPluginMCPConfigNames.subtracting(nextNames)
-        for name in toRemove {
-            mcpService.removeConfig(name: name)
-        }
-
-        var existingByName: [String: MCPServerConfig] = [:]
-        for config in mcpService.configs {
-            existingByName[config.name] = config
-        }
-
-        for config in pluginConfigs {
-            if existingByName[config.name] != config || !syncedPluginMCPConfigNames.contains(config.name) {
-                mcpService.addConfig(config)
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("toolSourcesDidChange"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.refreshAllTools()
             }
         }
-
-        syncedPluginMCPConfigNames = nextNames
     }
 
     /// 刷新所有工具列表
@@ -256,7 +170,7 @@ class ToolService: SuperLog, @unchecked Sendable {
         let factoryTools = factories.flatMap { $0.makeTools(env: env) }
 
         pluginTools = directTools + factoryTools
-        allTools = builtInTools + mcpTools + pluginTools
+        allTools = builtInTools + pluginTools
         toolsPublisher.send(allTools)
     }
 
@@ -279,11 +193,6 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 获取内置工具数量
     var builtInToolCount: Int {
         return builtInTools.count
-    }
-
-    /// 获取 MCP 工具数量
-    var mcpToolCount: Int {
-        return mcpTools.count
     }
 
     /// 根据名称获取工具
@@ -322,12 +231,8 @@ class ToolService: SuperLog, @unchecked Sendable {
         return builtInTools.map { $0.name }
     }
 
-    /// 获取 MCP 工具名称
-    ///
-    /// - Returns: MCP 工具名称数组
-    var mcpToolNames: [String] {
-        return mcpTools.map { $0.name }
-    }
+    // MARK: - Note
+    // MCP 或其他协议型工具来源应由插件提供；ToolService 不再提供协议专用 API。
 
     /// 按名称搜索工具（支持模糊匹配）
     ///
@@ -430,60 +335,6 @@ class ToolService: SuperLog, @unchecked Sendable {
             os_log(.error, "\(Self.t)❌ 工具执行失败：\(error.localizedDescription)")
             throw error
         }
-    }
-
-    // MARK: - MCP 相关（代理 MCPService）
-
-    /// 获取 MCP 配置列表
-    ///
-    /// 返回所有已配置的 MCP 服务器。
-    var mcpConfigs: [MCPServerConfig] {
-        return mcpService.configs
-    }
-
-    /// 获取 MCP 连接错误
-    ///
-    /// 返回服务器名称到错误信息的映射。
-    var mcpConnectionErrors: [String: String] {
-        return mcpService.connectionErrors
-    }
-
-    /// 获取 MCP 连接客户端数量
-    var mcpConnectedClientsCount: Int {
-        return mcpService.connectedClients.count
-    }
-
-    /// 添加 MCP 服务器配置
-    ///
-    /// - Parameter config: MCP 服务器配置
-    func addMCPConfig(_ config: MCPServerConfig) {
-        mcpService.addConfig(config)
-    }
-
-    /// 移除 MCP 服务器配置
-    ///
-    /// - Parameter name: 配置名称
-    func removeMCPConfig(name: String) {
-        mcpService.removeConfig(name: name)
-    }
-
-    /// 连接所有 MCP 服务器
-    func connectAllMCPServers() async {
-        await mcpService.connectAll()
-    }
-
-    /// 更新 MCP 工具列表
-    ///
-    /// 重新从 MCP 服务器获取可用工具。
-    func updateMCPTools() async {
-        await mcpService.updateTools()
-    }
-
-    /// 获取 MCP 状态报告
-    ///
-    /// - Returns: MCP 服务状态报告字符串
-    func getMCPStatusReport() -> String {
-        return mcpService.getStatusReport()
     }
 
     // MARK: - 权限相关（代理 PermissionService）

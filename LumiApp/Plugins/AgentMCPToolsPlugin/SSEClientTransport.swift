@@ -103,9 +103,6 @@ actor SSEClientTransport: Transport, SuperLog {
     private func handleMessage(event: String?, data: String, id: String?) {
         // Handle 'endpoint' event to set the POST URL
         if event == "endpoint" {
-            // The endpoint event contains the URI for the POST endpoint
-            // It might be relative or absolute
-            // Trimming whitespace/newlines from data
             let endpointString = data.trimmingCharacters(in: .whitespacesAndNewlines)
 
             if let endpoint = URL(string: endpointString, relativeTo: self.url) {
@@ -118,7 +115,6 @@ actor SSEClientTransport: Transport, SuperLog {
         }
 
         if event == "message" || event == nil {
-            // JSON-RPC message
             if let dataBytes = data.data(using: .utf8) {
                 self.messageContinuation.yield(dataBytes)
             }
@@ -132,10 +128,6 @@ actor SSEClientTransport: Transport, SuperLog {
 
     func send(_ data: Data) async throws {
         guard let postURL = endpointURL else {
-            // If we haven't received the endpoint yet, we can't send.
-            // But for some servers, the endpoint might be the same as the SSE URL or a known convention?
-            // MCP spec says the server MUST send an endpoint event.
-            // We should wait? Or throw.
             throw NSError(domain: "SSEClientTransport", code: -1, userInfo: [NSLocalizedDescriptionKey: "Endpoint URL not established. Waiting for 'endpoint' event."])
         }
 
@@ -158,3 +150,4 @@ actor SSEClientTransport: Transport, SuperLog {
         return messageStream
     }
 }
+

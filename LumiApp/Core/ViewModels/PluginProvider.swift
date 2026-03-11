@@ -87,7 +87,6 @@ final class PluginProvider: ObservableObject, SuperLog {
     private var cachedAgentToolFactories: [AnyAgentToolFactory]?
     private var cachedWorkerAgentDescriptors: [WorkerAgentDescriptor]?
     private var cachedToolPresentationDescriptors: [ToolPresentationDescriptor]?
-    private var cachedMCPServerConfigs: [MCPServerConfig]?
 
     /// 初始化插件提供者
     ///
@@ -115,7 +114,6 @@ final class PluginProvider: ObservableObject, SuperLog {
                 self?.cachedAgentToolFactories = nil
                 self?.cachedWorkerAgentDescriptors = nil
                 self?.cachedToolPresentationDescriptors = nil
-                self?.cachedMCPServerConfigs = nil
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
@@ -289,31 +287,6 @@ final class PluginProvider: ObservableObject, SuperLog {
         return sorted
     }
 
-    func getMCPServerConfigs() -> [MCPServerConfig] {
-        if let cachedMCPServerConfigs {
-            return cachedMCPServerConfigs
-        }
-
-        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
-        var items: [(pluginOrder: Int, c: MCPServerConfig)] = []
-
-        for plugin in enabledPlugins {
-            let pluginOrder = type(of: plugin).order
-            let configs = plugin.mcpServerConfigs()
-            for config in configs {
-                items.append((pluginOrder: pluginOrder, c: config))
-            }
-        }
-
-        let sorted = items.sorted { a, b in
-            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
-            return a.c.name < b.c.name
-        }.map(\.c)
-
-        cachedMCPServerConfigs = sorted
-        return sorted
-    }
-
     /// 析构函数，清理资源
     ///
     /// 移除所有 NotificationCenter 观察者，防止内存泄漏。
@@ -356,7 +329,6 @@ final class PluginProvider: ObservableObject, SuperLog {
         cachedConversationTurnMiddlewares = nil
         cachedMessageSendMiddlewares = nil
         cachedToolPresentationDescriptors = nil
-        cachedMCPServerConfigs = nil
         sidebarViewsCache = nil
         sidebarViewsCacheKey = nil
 
@@ -402,7 +374,6 @@ final class PluginProvider: ObservableObject, SuperLog {
         cachedConversationTurnMiddlewares = nil
         cachedMessageSendMiddlewares = nil
         cachedToolPresentationDescriptors = nil
-        cachedMCPServerConfigs = nil
         
         // 调用生命周期钩子
         for plugin in sortedPlugins {

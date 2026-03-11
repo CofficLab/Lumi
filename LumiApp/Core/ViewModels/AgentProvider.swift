@@ -1018,44 +1018,15 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
                 case let .triggerPlanning(task):
                     triggerPlanningMode(task: task)
                     setIsProcessing(false)
-                case let .mcpCommand(subCommand, param):
-                    await handleMCPCommand(subCommand: subCommand, param: param)
+                @unknown default:
+                    // 兜底处理：将未知结果视为未处理命令
+                    messageSenderViewModel.sendMessage(content: trimmed, images: allImages)
                     setIsProcessing(false)
                 }
             } else {
                 // 通过 MessageSenderViewModel 发送消息
                 messageSenderViewModel.sendMessage(content: trimmed, images: allImages)
             }
-        }
-    }
-
-    // MARK: - MCP 命令处理
-
-    /// 处理 MCP 子命令
-    private func handleMCPCommand(subCommand: String, param: String) async {
-        switch subCommand {
-        case "list":
-            let status = toolsViewModel.getStatusReport()
-            appendSystemMessage(status)
-        case "install":
-            if param.lowercased().hasPrefix("vision") {
-                let parts = param.split(separator: " ")
-                if parts.count >= 2 {
-                    let apiKey = String(parts[1])
-                    toolsViewModel.installVisionMCP(apiKey: apiKey)
-                    appendSystemMessage("Installing and connecting to Vision MCP Server...")
-                } else {
-                    appendSystemMessage("Usage: /mcp install vision <api_key>")
-                }
-            } else {
-                appendSystemMessage("Unknown install target. Currently only 'vision' is supported via command.")
-            }
-        default:
-            appendSystemMessage("""
-            **MCP Commands:**
-            - `/mcp list` - Show all MCP servers and their status
-            - `/mcp install vision <api_key>` - Install and connect to Vision MCP Server
-            """)
         }
     }
 

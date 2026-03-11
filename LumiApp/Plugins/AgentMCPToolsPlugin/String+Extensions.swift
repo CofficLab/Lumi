@@ -1,4 +1,3 @@
-
 import Foundation
 
 extension String {
@@ -6,3 +5,4 @@ extension String {
         return self.isEmpty ? nil : self
     }
 }
+
