@@ -59,16 +59,6 @@ struct AssistantMessageHeader: View, SuperLog {
                         .font(DesignTokens.Typography.caption2)
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
-
-                // 心跳动画指示器（当正在处理时显示）
-                if isLastMessage && processingStateViewModel.isProcessing {
-                    HeartbeatIndicator()
-                }
-
-                // 思考状态指示器
-                if isLastMessage && thinkingStateViewModel.isThinking {
-                    ThinkingIndicator()
-                }
             }
 
             Spacer()

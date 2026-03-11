@@ -60,7 +60,7 @@ struct AliyunProvider: LLMProviderProtocol, SuperLog {
         let systemMessage = messages.first(where: { $0.role == .system })?.content ?? systemPrompt
 
         let conversationMessages = messages
-            .filter { $0.role != .system }
+            .filter { $0.role.shouldSendToLLM }
             .map { transformMessage($0) }
 
         var body: [String: Any] = [

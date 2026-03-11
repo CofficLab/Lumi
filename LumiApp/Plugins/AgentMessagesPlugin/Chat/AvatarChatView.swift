@@ -17,6 +17,8 @@ public struct AvatarChatView: View {
                 AvatarView.tool
             } else if role == .user {
                 AvatarView.user
+            } else if role == .status {
+                AvatarView.status
             } else {
                 AvatarView.assistant
             }
@@ -55,6 +57,16 @@ public enum AvatarView {
             .foregroundColor(DesignTokens.Color.semantic.textTertiary)
             .frame(width: 24, height: 24)
             .background(DesignTokens.Color.semantic.textTertiary.opacity(0.1))
+            .clipShape(Circle())
+    }
+
+    /// 状态头像（连接中/等待响应/生成中等 UI 状态）
+    public static var status: some View {
+        Image(systemName: "sparkles")
+            .font(.system(size: 16))
+            .foregroundColor(DesignTokens.Color.semantic.warning)
+            .frame(width: 24, height: 24)
+            .background(DesignTokens.Color.semantic.warning.opacity(0.12))
             .clipShape(Circle())
     }
 }

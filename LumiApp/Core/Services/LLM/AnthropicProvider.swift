@@ -118,9 +118,9 @@ struct AnthropicProvider: LLMProviderProtocol, SuperLog {
         // 提取系统消息
         let systemMessage = messages.first(where: { $0.role == .system })?.content ?? systemPrompt
 
-        // 转换对话消息（排除系统消息）
+        // 转换对话消息（只发送 user/assistant 给 LLM）
         let conversationMessages = messages
-            .filter { $0.role != .system }
+            .filter { $0.role.shouldSendToLLM }
             .map { transformMessage($0) }
 
         var body: [String: Any] = [

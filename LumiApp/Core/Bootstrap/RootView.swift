@@ -172,7 +172,8 @@ final class RootViewContainer: ObservableObject {
         // 初始化聊天历史服务（依赖 LLMService）
         let chatHistoryService = ChatHistoryService(
             llmService: llmService,
-            modelContainer: self.modelContainer
+            modelContainer: self.modelContainer,
+            reason: "RootViewContainer"
         )
 
         // 初始化基础 ViewModel

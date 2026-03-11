@@ -31,7 +31,8 @@ final class WindowViewContainer: ObservableObject {
     init(services: RootViewContainer.Services) {
         self.chatHistoryService = ChatHistoryService(
             llmService: services.llmService,
-            modelContainer: services.modelContainer
+            modelContainer: services.modelContainer,
+            reason: "WindowViewContainer"
         )
 
         self.depthWarningViewModel = DepthWarningViewModel()

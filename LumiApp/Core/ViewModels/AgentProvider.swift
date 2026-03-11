@@ -244,14 +244,16 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         case let .processingStarted(conversationId):
             processingConversationIds.insert(conversationId)
             if conversationViewModel.selectedConversationId == conversationId {
-                setIsProcessing(true)
+                processingStateViewModel.beginSending()
+                upsertStatusMessage(for: conversationId, text: processingStateViewModel.statusText)
             }
             updateRuntimeState(for: conversationId)
 
         case let .processingFinished(conversationId):
             processingConversationIds.remove(conversationId)
             if conversationViewModel.selectedConversationId == conversationId {
-                setIsProcessing(false)
+                processingStateViewModel.finish()
+                removeStatusMessage(for: conversationId)
             }
             updateRuntimeState(for: conversationId)
 
@@ -328,6 +330,9 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     private var depthWarningByConversation: [UUID: DepthWarning] = [:]
     private var errorMessageByConversation: [UUID: String?] = [:]
     private var lastHeartbeatByConversation: [UUID: Date?] = [:]
+    private var streamStartedAtByConversation: [UUID: Date] = [:]
+    private var didReceiveFirstTokenByConversation: Set<UUID> = []
+    private var statusMessageIdByConversation: [UUID: UUID] = [:]
     private var turnTaskPipelineByConversation: [UUID: Task<Void, Never>] = [:]
     private var turnTaskGenerationByConversation: [UUID: Int] = [:]
     @Published private(set) var conversationRuntimeStates: [UUID: ConversationRuntimeState] = [:]
@@ -337,6 +342,41 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     private let immediateStreamFlushChars = 80
     private let immediateThinkingFlushChars = 120
     private let captureThinkingContent = true
+
+    private func upsertStatusMessage(for conversationId: UUID, text: String) {
+        guard conversationViewModel.selectedConversationId == conversationId else { return }
+        guard !text.isEmpty else { return }
+
+        let id = statusMessageIdByConversation[conversationId] ?? UUID()
+        if statusMessageIdByConversation[conversationId] == nil {
+            statusMessageIdByConversation[conversationId] = id
+        }
+
+        if let index = messages.firstIndex(where: { $0.id == id }) {
+            var m = messages[index]
+            m.content = text
+            updateMessage(m, at: index)
+        } else {
+            let m = ChatMessage(
+                id: id,
+                role: .status,
+                content: text,
+                timestamp: Date(),
+                isTransientStatus: true
+            )
+            appendMessage(m)
+        }
+    }
+
+    private func removeStatusMessage(for conversationId: UUID) {
+        guard let id = statusMessageIdByConversation[conversationId] else { return }
+        statusMessageIdByConversation[conversationId] = nil
+        guard conversationViewModel.selectedConversationId == conversationId else { return }
+        let filtered = messages.filter { $0.id != id }
+        if filtered.count != messages.count {
+            setMessages(filtered, reason: "移除状态系统消息")
+        }
+    }
 
     /// 处理对话轮次事件
     /// - Parameter event: 对话轮次事件
@@ -357,6 +397,8 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             pendingThinkingTextByConversation[conversationId] = ""
             lastStreamFlushAtByConversation[conversationId] = Date()
             lastThinkingFlushAtByConversation[conversationId] = Date()
+            streamStartedAtByConversation[conversationId] = Date()
+            didReceiveFirstTokenByConversation.remove(conversationId)
 
             // 清空上一次的思考文本
             thinkingTextByConversation[conversationId] = ""
@@ -364,6 +406,8 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
             if conversationViewModel.selectedConversationId == conversationId {
                 setThinkingText("", for: conversationId)
+                processingStateViewModel.markStreamStarted()
+                upsertStatusMessage(for: conversationId, text: processingStateViewModel.statusText)
             }
 
             let placeholderMessage = ChatMessage(
@@ -382,6 +426,18 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             guard conversationViewModel.selectedConversationId == conversationId,
                   streamStateByConversation[conversationId]?.messageId == messageId else {
                 return
+            }
+
+            // 首 token 到达：用于 UI 侧即时反馈（TTFT）
+            if !didReceiveFirstTokenByConversation.contains(conversationId) {
+                didReceiveFirstTokenByConversation.insert(conversationId)
+                if let startedAt = streamStartedAtByConversation[conversationId] {
+                    let ttftMs = Date().timeIntervalSince(startedAt) * 1000.0
+                    processingStateViewModel.markFirstToken(ttftMs: ttftMs)
+                } else {
+                    processingStateViewModel.markGenerating()
+                }
+                upsertStatusMessage(for: conversationId, text: processingStateViewModel.statusText)
             }
 
             pendingStreamTextByConversation[conversationId, default: ""] += content
@@ -436,6 +492,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
                     thinkingConversationIds.insert(conversationId)
                     if conversationViewModel.selectedConversationId == conversationId {
                         setIsThinking(true, for: conversationId)
+                        upsertStatusMessage(for: conversationId, text: "思考中…")
                     }
                     if Self.verbose {
                         os_log("\(Self.t)🤔 思考开始")
@@ -533,7 +590,14 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             pendingThinkingTextByConversation[conversationId] = nil
             lastStreamFlushAtByConversation[conversationId] = nil
             lastThinkingFlushAtByConversation[conversationId] = nil
+            streamStartedAtByConversation[conversationId] = nil
+            didReceiveFirstTokenByConversation.remove(conversationId)
             updateRuntimeState(for: conversationId)
+
+            if conversationViewModel.selectedConversationId == conversationId {
+                processingStateViewModel.finish()
+                removeStatusMessage(for: conversationId)
+            }
 
         case let .toolResultReceived(result, conversationId):
             // 保存工具结果
@@ -562,7 +626,8 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             processingConversationIds.remove(conversationId)
             if conversationViewModel.selectedConversationId == conversationId {
                 setDepthWarning(warning)
-                setIsProcessing(false)
+                processingStateViewModel.finish()
+                removeStatusMessage(for: conversationId)
             }
 
             // 清理流式状态
@@ -571,13 +636,16 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             pendingThinkingTextByConversation[conversationId] = nil
             lastStreamFlushAtByConversation[conversationId] = nil
             lastThinkingFlushAtByConversation[conversationId] = nil
+            streamStartedAtByConversation[conversationId] = nil
+            didReceiveFirstTokenByConversation.remove(conversationId)
             updateRuntimeState(for: conversationId)
 
         case let .completed(conversationId):
             // 轮次完成
             processingConversationIds.remove(conversationId)
             if conversationViewModel.selectedConversationId == conversationId {
-                setIsProcessing(false)
+                processingStateViewModel.finish()
+                removeStatusMessage(for: conversationId)
             }
 
             // 清理流式状态
@@ -586,6 +654,8 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             pendingThinkingTextByConversation[conversationId] = nil
             lastStreamFlushAtByConversation[conversationId] = nil
             lastThinkingFlushAtByConversation[conversationId] = nil
+            streamStartedAtByConversation[conversationId] = nil
+            didReceiveFirstTokenByConversation.remove(conversationId)
             updateRuntimeState(for: conversationId)
 
         case let .error(error, conversationId):
@@ -594,7 +664,8 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             processingConversationIds.remove(conversationId)
             if conversationViewModel.selectedConversationId == conversationId {
                 setErrorMessage(error.localizedDescription)
-                setIsProcessing(false)
+                processingStateViewModel.finish()
+                removeStatusMessage(for: conversationId)
             }
 
             // 清理流式状态
@@ -603,6 +674,8 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             pendingThinkingTextByConversation[conversationId] = nil
             lastStreamFlushAtByConversation[conversationId] = nil
             lastThinkingFlushAtByConversation[conversationId] = nil
+            streamStartedAtByConversation[conversationId] = nil
+            didReceiveFirstTokenByConversation.remove(conversationId)
             updateRuntimeState(for: conversationId)
 
         case let .shouldContinue(depth, conversationId):

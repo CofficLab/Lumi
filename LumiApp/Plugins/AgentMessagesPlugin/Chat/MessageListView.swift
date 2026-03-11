@@ -18,8 +18,20 @@ struct MessageListView: View, SuperLog {
     /// 会话管理 ViewModel
     @EnvironmentObject var conversationViewModel: ConversationViewModel
 
+    /// 处理状态 ViewModel（用于展示发送/等待首 token/生成中等状态）
+    @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
+
     /// 当前显示的消息列表
     @State private var messages: [ChatMessage] = []
+
+    /// 当前会话的临时状态消息 ID（不落库，仅用于 UI）
+    @State private var transientStatusMessageId: UUID = UUID()
+
+    /// 用户是否接近列表底部（用于决定是否自动滚动）
+    @State private var isNearBottom: Bool = true
+
+    /// 当用户不在底部时累积的“未读新消息”数量
+    @State private var pendingNewMessageCount: Int = 0
 
     /// 是否还有更多历史消息可加载
     @State private var hasMoreMessages: Bool = false
@@ -43,7 +55,7 @@ struct MessageListView: View, SuperLog {
 
     /// 非系统消息
     private var nonSystemMessages: [ChatMessage] {
-        messages.filter { $0.role != .system }
+        messages.filter { $0.role.shouldDisplayInChatList }
     }
 
     /// 显示消息项：包含消息和相关的工具输出
@@ -86,30 +98,96 @@ struct MessageListView: View, SuperLog {
         let lastMessageID = items.last?.id
 
         ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 12) {
-                    if hasMoreMessages {
-                        loadMoreButton
-                    }
+            GeometryReader { viewport in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 12) {
+                        if hasMoreMessages {
+                            loadMoreButton
+                        }
 
-                    ForEach(items) { item in
-                        ChatBubble(
-                            message: item.message,
-                            isLastMessage: item.id == lastMessageID,
-                            relatedToolOutputs: item.relatedToolOutputs
-                        )
-                        .id(item.message.id)
+                        ForEach(items) { item in
+                            ChatBubble(
+                                message: item.message,
+                                isLastMessage: item.id == lastMessageID,
+                                relatedToolOutputs: item.relatedToolOutputs
+                            )
+                            .id(item.message.id)
+                        }
+
+                        // 底部哨兵：用于判断是否接近底部 & 精准滚动到底
+                        GeometryReader { geo in
+                            Color.clear
+                                .preference(
+                                    key: BottomSentinelMaxYKey.self,
+                                    value: geo.frame(in: .named("messageScroll")).maxY
+                                )
+                        }
+                        .frame(height: 0)
+                        .id(BottomSentinelID.value)
+                    }
+                    .padding(.horizontal)
+                }
+                .coordinateSpace(name: "messageScroll")
+                .padding(.vertical)
+                .onAppear {
+                    handleOnAppear(proxy: proxy)
+                }
+                .onPreferenceChange(BottomSentinelMaxYKey.self) { bottomMaxY in
+                    // bottomMaxY 在 scroll 坐标空间内；viewport.size.height 是可视高度
+                    // distanceToBottom 越小，越接近底部
+                    let distanceToBottom = bottomMaxY - viewport.size.height
+                    let near = distanceToBottom < 120
+                    if near != isNearBottom {
+                        isNearBottom = near
+                        if near {
+                            pendingNewMessageCount = 0
+                        }
                     }
                 }
-                .padding(.horizontal)
-            }
-            .padding(.vertical)
-            .onAppear {
-                handleOnAppear(proxy: proxy)
+                .overlay(alignment: .bottomTrailing) {
+                    if pendingNewMessageCount > 0, !isNearBottom {
+                        Button {
+                            pendingNewMessageCount = 0
+                            scrollToBottom(animated: true)
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "arrow.down.circle.fill")
+                                Text("\(pendingNewMessageCount) 条新消息")
+                                    .font(.caption)
+                            }
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 12)
+                            .background(.ultraThinMaterial)
+                            .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.trailing, 16)
+                        .padding(.bottom, 16)
+                    }
+                }
             }
         }
         .onChange(of: selectedConversationId, handleConversationChanged)
+        .onChange(of: processingStateViewModel.isProcessing) { _, _ in
+            applyTransientStatusMessageIfNeeded()
+        }
+        .onChange(of: processingStateViewModel.statusText) { _, _ in
+            applyTransientStatusMessageIfNeeded()
+        }
         .onMessageSaved(perform: handleOnMessageSaved)
+    }
+}
+
+// MARK: - Preference Keys
+
+private enum BottomSentinelID {
+    static let value = "MessageListView.BottomSentinel"
+}
+
+private struct BottomSentinelMaxYKey: PreferenceKey {
+    static let defaultValue: CGFloat = .greatestFiniteMagnitude
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
 
@@ -159,6 +237,36 @@ extension MessageListView {
 // MARK: - Loading
 
 extension MessageListView {
+    private func applyTransientStatusMessageIfNeeded() {
+        guard let _ = selectedConversationId else { return }
+
+        if processingStateViewModel.isProcessing, !processingStateViewModel.statusText.isEmpty {
+            let statusText = processingStateViewModel.statusText
+            if let index = messages.firstIndex(where: { $0.id == transientStatusMessageId }) {
+                var m = messages[index]
+                m.content = statusText
+                // 通过创建新数组触发 SwiftUI 更新
+                var updated = messages
+                updated[index] = m
+                messages = updated
+            } else {
+                let m = ChatMessage(
+                    id: transientStatusMessageId,
+                    role: .status,
+                    content: statusText,
+                    timestamp: Date(),
+                    isTransientStatus: true
+                )
+                messages.append(m)
+            }
+        } else {
+            // 结束后移除临时状态消息
+            if messages.contains(where: { $0.id == transientStatusMessageId }) {
+                messages.removeAll { $0.id == transientStatusMessageId }
+            }
+        }
+    }
+
     /// 加载消息
     func loadMessages() async {
         guard let conversationId = selectedConversationId else {
@@ -203,6 +311,9 @@ extension MessageListView {
             if Self.verbose {
                 os_log("\(Self.t)✅ [\(conversationId)] 加载完成：\(self.messages.count)/\(self.totalMessageCount) 条，hasMore: \(self.hasMoreMessages)")
             }
+
+            // loadMessages 会覆盖本地数组，需要重新注入临时状态消息
+            applyTransientStatusMessageIfNeeded()
         }
     }
 
@@ -247,15 +358,19 @@ extension MessageListView {
 
 extension MessageListView {
     /// 滚动到底部
-    func scrollToBottom() {
-        guard let lastMessage = displayItems.last else { return }
+    func scrollToBottom(animated: Bool = true) {
+        let action = {
+            scrollProxy?.scrollTo(BottomSentinelID.value, anchor: .bottom)
+        }
 
-        withAnimation(.easeOut(duration: 0.3)) {
-            scrollProxy?.scrollTo(lastMessage.id, anchor: .bottom)
+        if animated {
+            withAnimation(.easeOut(duration: 0.3)) { action() }
+        } else {
+            action()
         }
 
         if Self.verbose {
-            os_log("\(Self.t)📜 滚动到底部：\(lastMessage.id)")
+            os_log("\(Self.t)📜 滚动到底部")
         }
     }
 }
@@ -275,6 +390,10 @@ extension MessageListView {
     /// 处理会话变更事件
     func handleConversationChanged() {
         Task {
+            await MainActor.run {
+                // 切换会话时，为临时状态消息生成新 ID，避免串会话
+                transientStatusMessageId = UUID()
+            }
             await loadMessages()
         }
     }
@@ -282,9 +401,33 @@ extension MessageListView {
     /// 处理消息保存事件
     /// - Parameter message: 已保存的消息
     func handleOnMessageSaved(message: ChatMessage) {
-        Task {
-            await loadMessages()
-            self.scrollToBottom()
+        Task { @MainActor in
+            let existingIndex = messages.firstIndex { $0.id == message.id }
+            let isNewMessage = existingIndex == nil
+
+            if let idx = existingIndex {
+                messages[idx] = message
+            } else {
+                // 按时间戳插入，保持顺序稳定
+                if let insertIndex = messages.firstIndex(where: { $0.timestamp > message.timestamp }) {
+                    messages.insert(message, at: insertIndex)
+                } else {
+                    messages.append(message)
+                }
+            }
+
+            // 更新分页游标信息（仅用于按钮文案/判断）
+            totalMessageCount = max(totalMessageCount, messages.count)
+            if let first = messages.first {
+                oldestLoadedTimestamp = first.timestamp
+            }
+
+            // 自动滚动策略：只有用户接近底部时才自动到底
+            if isNearBottom {
+                scrollToBottom(animated: true)
+            } else if isNewMessage {
+                pendingNewMessageCount += 1
+            }
         }
     }
 }

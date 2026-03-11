@@ -147,14 +147,6 @@ struct ChatBubble: View, SuperLog {
                                 }
                             )
                             .messageBubbleStyle(role: message.role, isError: message.isError)
-
-                            // 消息工具栏（底部按钮行）
-                            MessageToolbarView(
-                                message: message,
-                                isAssistantMessage: true
-                            )
-                            .opacity(isHovered ? 1 : 0)
-                            .animation(.easeInOut(duration: 0.15), value: isHovered)
                         }
                     }
                 } else if message.toolCallID != nil {
@@ -165,7 +157,7 @@ struct ChatBubble: View, SuperLog {
                         toolType: inferToolType(from: message)
                     )
                 } else {
-                    // 用户消息
+                    // 用户消息（或状态消息）
                     VStack(alignment: .leading, spacing: 4) {
                         MarkdownMessageView(
                             message: message,
@@ -175,15 +167,22 @@ struct ChatBubble: View, SuperLog {
                             onToggleExpand: {}
                         )
                         .messageBubbleStyle(role: message.role, isError: message.isError)
-
-                        // 消息工具栏（底部按钮行）
-                        MessageToolbarView(
-                            message: message,
-                            isAssistantMessage: false
-                        )
-                        .opacity(isHovered ? 1 : 0)
-                        .animation(.easeInOut(duration: 0.15), value: isHovered)
                     }
+                }
+
+                // 统一在一个地方渲染工具栏，避免分支重复
+                let shouldShowToolbar =
+                    message.shouldShowToolbar &&
+                    message.toolCallID == nil &&
+                    !(message.role == .assistant && hasToolCalls)
+
+                if shouldShowToolbar {
+                    MessageToolbarView(
+                        message: message,
+                        isAssistantMessage: message.role == .assistant
+                    )
+                    .opacity(isHovered ? 1 : 0)
+                    .animation(.easeInOut(duration: 0.15), value: isHovered)
                 }
             }
 

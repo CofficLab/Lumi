@@ -59,12 +59,12 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
     private let storageQueue = DispatchQueue(label: "com.coffic.lumi.chat-history.storage", qos: .utility)
 
     /// 使用 LLM 服务和模型容器初始化
-    init(llmService: LLMService, modelContainer: ModelContainer) {
+    init(llmService: LLMService, modelContainer: ModelContainer, reason: String) {
         self.llmService = llmService
         self.modelContainer = modelContainer
         self.modelContext = ModelContext(modelContainer)
         if Self.verbose {
-            os_log("\(Self.t)✅ 聊天存储已初始化")
+            os_log("\(Self.t)✅ (\(reason)) 聊天存储已初始化")
         }
     }
 
