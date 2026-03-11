@@ -107,6 +107,28 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     private lazy var messageSendCoordinator = MessageSendCoordinator(
         messageSenderViewModel: messageSenderViewModel,
         runtimeStore: runtimeStore,
+        services: .init(
+            getConversationTitle: { [weak self] conversationId in
+                self?.chatHistoryService.fetchConversation(id: conversationId)?.title
+            },
+            hasGeneratedTitle: { [weak self] conversationId in
+                self?.titleGenerationViewModel.hasGeneratedTitle(for: conversationId) ?? false
+            },
+            setTitleGenerated: { [weak self] value, conversationId in
+                self?.titleGenerationViewModel.setTitleGenerated(value, for: conversationId)
+            },
+            getCurrentConfig: { [weak self] in
+                self?.getCurrentConfig() ?? .default
+            },
+            autoGenerateConversationTitleIfNeeded: { [weak self] conversationId, content, config in
+                guard let self else { return }
+                await self.chatHistoryService.autoGenerateConversationTitleIfNeeded(
+                    conversationId: conversationId,
+                    userMessageContent: content,
+                    config: config
+                )
+            }
+        ),
         onUserJustSentMessage: { [weak self] in
             self?.userJustSentMessage = true
         },
@@ -857,46 +879,11 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         // 2. 保存到数据库
         await conversationViewModel.saveMessage(message, to: conversationId)
 
-        // 4. 启动会话标题生成（如果需要）
-        startConversationTitleGenerationIfNeeded(message: message, conversationId: conversationId)
-
         // 4. 串行入队处理轮次，避免阻塞事件消费循环。
         enqueueTurnProcessing(conversationId: conversationId, depth: 0)
 
         if Self.verbose {
             os_log("\(Self.t)✅ 消息发送完成：\(message.content.max(30))...")
-        }
-    }
-
-    /// 启动会话标题生成（如果需要）
-    /// - Parameter message: 用户消息
-    private func startConversationTitleGenerationIfNeeded(message: ChatMessage, conversationId: UUID) {
-        // 只处理用户消息
-        guard message.role == .user else { return }
-
-        // 获取会话以检查标题
-        guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else { return }
-
-        // 检查是否满足生成标题的条件
-        guard conversation.title.hasPrefix("新会话 "),
-              !titleGenerationViewModel.hasGeneratedTitle(for: conversationId) else {
-            return
-        }
-
-        // 标记已生成标题，防止重复生成
-        titleGenerationViewModel.setTitleGenerated(true, for: conversationId)
-
-        // 获取 LLM 配置
-        let config = getCurrentConfig()
-
-        // 在后台 Task 中执行标题生成
-        Task { @MainActor [weak self] in
-            guard let self = self else { return }
-            await self.chatHistoryService.autoGenerateConversationTitleIfNeeded(
-                conversationId: conversationId,
-                userMessageContent: message.content,
-                config: config
-            )
         }
     }
 

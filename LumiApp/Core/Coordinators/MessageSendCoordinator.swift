@@ -5,8 +5,17 @@ import Foundation
 /// 负责消费 `MessageSenderViewModel.events`，并把事件翻译为对各个状态/服务的调用。
 @MainActor
 final class MessageSendCoordinator {
+    struct Services {
+        let getConversationTitle: (UUID) -> String?
+        let hasGeneratedTitle: (UUID) -> Bool
+        let setTitleGenerated: (Bool, UUID) -> Void
+        let getCurrentConfig: () -> LLMConfig
+        let autoGenerateConversationTitleIfNeeded: @Sendable (UUID, String, LLMConfig) async -> Void
+    }
+
     private let messageSenderViewModel: MessageSenderViewModel
     private let runtimeStore: ConversationRuntimeStore
+    private let services: Services
 
     private let onUserJustSentMessage: () -> Void
     private let onProcessingStarted: (UUID) -> Void
@@ -19,6 +28,7 @@ final class MessageSendCoordinator {
     init(
         messageSenderViewModel: MessageSenderViewModel,
         runtimeStore: ConversationRuntimeStore,
+        services: Services,
         onUserJustSentMessage: @escaping () -> Void,
         onProcessingStarted: @escaping (UUID) -> Void,
         onProcessingFinished: @escaping (UUID) -> Void,
@@ -26,6 +36,7 @@ final class MessageSendCoordinator {
     ) {
         self.messageSenderViewModel = messageSenderViewModel
         self.runtimeStore = runtimeStore
+        self.services = services
         self.onUserJustSentMessage = onUserJustSentMessage
         self.onProcessingStarted = onProcessingStarted
         self.onProcessingFinished = onProcessingFinished
@@ -52,7 +63,16 @@ final class MessageSendCoordinator {
         task = Task { [weak self] in
             guard let self else { return }
             for await event in self.messageSenderViewModel.events {
-                let ctx = MessageSendMiddlewareContext(runtimeStore: self.runtimeStore)
+                let ctx = MessageSendMiddlewareContext(
+                    runtimeStore: self.runtimeStore,
+                    services: MessageSendMiddlewareServices(
+                        getConversationTitle: self.services.getConversationTitle,
+                        hasGeneratedTitle: self.services.hasGeneratedTitle,
+                        setTitleGenerated: self.services.setTitleGenerated,
+                        getCurrentConfig: self.services.getCurrentConfig,
+                        autoGenerateConversationTitleIfNeeded: self.services.autoGenerateConversationTitleIfNeeded
+                    )
+                )
                 if let pipeline = self.pipeline {
                     await pipeline.run(event, ctx: ctx) { event, _ in
                         await self.handle(event)
