@@ -6,7 +6,7 @@ import Foundation
 struct WorkerAgent: Identifiable, Sendable, Equatable {
     let id: UUID
     var name: String
-    var type: WorkerAgentType
+    var typeId: String
     var description: String
     var specialty: String
     var config: LLMConfig
@@ -20,7 +20,7 @@ struct WorkerAgent: Identifiable, Sendable, Equatable {
     init(
         id: UUID = UUID(),
         name: String,
-        type: WorkerAgentType,
+        typeId: String,
         description: String,
         specialty: String,
         config: LLMConfig,
@@ -33,7 +33,7 @@ struct WorkerAgent: Identifiable, Sendable, Equatable {
     ) {
         self.id = id
         self.name = name
-        self.type = type
+        self.typeId = typeId
         self.description = description
         self.specialty = specialty
         self.config = config

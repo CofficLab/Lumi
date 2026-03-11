@@ -30,9 +30,8 @@ final class PermissionService: ObservableObject, Sendable {
         }
     }
 
-    /// 评估命令风险等级（由 ShellTool 提供）
+    /// 评估命令风险等级
     func evaluateCommandRisk(command: String) -> CommandRiskLevel {
-        // 直接调用 ShellTool 的静态方法
-        return ShellTool.evaluateCommandRisk(command: command)
+        return CommandRiskEvaluator.evaluate(command: command)
     }
 }

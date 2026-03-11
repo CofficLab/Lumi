@@ -90,20 +90,19 @@ class ToolService: SuperLog, @unchecked Sendable {
 
     // MARK: - Properties
 
-    /// 所有可用工具（包括内置工具和 MCP 工具）
+    /// 所有可用工具（包括内置工具、MCP 工具和插件工具）
     ///
     /// 每次工具列表更新时都会重新计算。
     private(set) var allTools: [AgentTool] = []
 
-    /// 内置工具列表
-    ///
-    /// Lumi 内置的核心工具集。
+    /// 内置工具列表（保留接口；当前建议将大部分工具迁移到插件提供）
     private var builtInTools: [AgentTool] = []
-
-    /// MCP 工具列表
-    ///
-    /// 从 MCP 服务器动态获取的工具。
+    
+    /// MCP 工具列表（从 MCP 服务器动态获取）
     private var mcpTools: [AgentTool] = []
+
+    /// 插件提供的工具列表
+    private var pluginTools: [AgentTool] = []
 
     // MARK: - Dependencies
 
@@ -140,45 +139,26 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 1. 创建依赖服务（MCP、Shell、Permission）
     /// 2. 注册内置工具
     /// 3. 设置 MCP 监听器
-    /// 4. 刷新工具列表
+    /// 4. 设置插件工具监听
+    /// 5. 刷新工具列表
+    @MainActor
     init(llmService: LLMService? = nil) {
         self.mcpService = MCPService()
         self.shellService = ShellService()
         self.permissionService = PermissionService()
         self.llmService = llmService
-        setupBuiltInTools()
         setupMCPObservers()
+        setupPluginObservers()
         refreshAllTools()
 
         if Self.verbose {
-            os_log("\(Self.t)✅ 工具服务已初始化，内置工具：\(self.builtInTools.count) 个")
+            os_log("\(Self.t)✅ 工具服务已初始化，内置工具：\(self.builtInTools.count) 个, 插件工具：\(self.pluginTools.count) 个")
         }
     }
 
     // MARK: - Setup
 
-    /// 注册所有内置工具
-    ///
-    /// 初始化 Lumi 的核心工具集：
-    /// - ListDirectoryTool: 列出目录内容
-    /// - ReadFileTool: 读取文件内容
-    /// - WriteFileTool: 写入文件
-    /// - ShellTool: 执行 Shell 命令
-    private func setupBuiltInTools() {
-        var tools: [AgentTool] = [
-            ListDirectoryTool(),
-            ReadFileTool(),
-            WriteFileTool(),
-            ShellTool(),
-        ]
-
-        if let llmService {
-            let workerManager = WorkerAgentManager(llmService: llmService)
-            tools.append(CreateAndAssignTaskTool(workerAgentManager: workerManager, toolService: self))
-        }
-
-        builtInTools = tools
-    }
+    // 说明：原先 `setupBuiltInTools()` 已迁移到插件（见 `AgentCoreToolsPlugin`）。
 
     /// 设置 MCP 工具监听器
     ///
@@ -193,7 +173,9 @@ class ToolService: SuperLog, @unchecked Sendable {
             .sink { [weak self] mcpTools in
                 guard let self = self else { return }
                 self.mcpTools = mcpTools
-                self.refreshAllTools()
+                Task { @MainActor [weak self] in
+                    self?.refreshAllTools()
+                }
             }
             .store(in: &cancellables)
         
@@ -217,11 +199,34 @@ class ToolService: SuperLog, @unchecked Sendable {
             .store(in: &cancellables)
     }
 
+    /// 设置插件工具监听
+    ///
+    /// 当插件加载完成时，刷新插件工具列表。
+    @MainActor
+    private func setupPluginObservers() {
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("PluginsDidLoad"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.refreshAllTools()
+            }
+        }
+    }
+
     /// 刷新所有工具列表
     ///
-    /// 合并内置工具和 MCP 工具，通知观察者。
+    /// 合并内置工具、MCP 工具和插件工具，通知观察者。
+    @MainActor
     private func refreshAllTools() {
-        allTools = builtInTools + mcpTools
+        let env = AgentToolEnvironment(toolService: self, llmService: llmService)
+        let directTools = PluginProvider.shared.getAgentTools()
+        let factories = PluginProvider.shared.getAgentToolFactories()
+        let factoryTools = factories.flatMap { $0.makeTools(env: env) }
+
+        pluginTools = directTools + factoryTools
+        allTools = builtInTools + mcpTools + pluginTools
         toolsPublisher.send(allTools)
     }
 

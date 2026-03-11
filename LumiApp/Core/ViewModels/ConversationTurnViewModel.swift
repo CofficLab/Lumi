@@ -63,6 +63,7 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
 
     /// 在最近窗口中同一签名出现多少次视为循环
     private let repeatedToolWindowThreshold = 10
+    private let createAndAssignTaskToolName = "create_and_assign_task"
 
     /// 仅转发必要的流式事件，避免高频无用事件（如 thinking_delta）压垮主线程。
     private nonisolated static func shouldForwardStreamEvent(_ eventType: StreamEventType) -> Bool {
@@ -124,7 +125,8 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
 
         let availableTools: [AgentTool] = (chatMode.allowsTools && !isFinalStep)
             ? tools.filter { tool in
-                if tool.name == CreateAndAssignTaskTool.toolName {
+                // 多 Worker 工具仅在允许多 Worker 的模式下启用
+                if tool.name == createAndAssignTaskToolName {
                     return chatMode.allowsMultiWorker
                 }
                 return true
@@ -519,7 +521,7 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
     }
 
     private func normalizeToolCallForExecution(_ toolCall: ToolCall, conversationId: UUID) -> ToolCall {
-        guard toolCall.name == "create_and_assign_task",
+        guard toolCall.name == createAndAssignTaskToolName,
               let providerId = turnContexts[conversationId]?.currentProviderId,
               !providerId.isEmpty else {
             return toolCall
@@ -559,7 +561,7 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
         case "write_file": return "✏️"
         case "list_directory": return "📁"
         case "run_command": return "⚡"
-        case "create_and_assign_task": return "🧩"
+        case createAndAssignTaskToolName: return "🧩"
         default: return "🔧"
         }
     }

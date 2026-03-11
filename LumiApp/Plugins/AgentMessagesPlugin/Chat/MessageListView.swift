@@ -187,7 +187,8 @@ private enum BottomSentinelID {
 private struct BottomSentinelMaxYKey: PreferenceKey {
     static let defaultValue: CGFloat = .greatestFiniteMagnitude
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
+        // 取最大值，避免同一帧内多次更新触发警告
+        value = max(value, nextValue())
     }
 }
 

@@ -34,8 +34,7 @@ struct CreateAndAssignTaskTool: AgentTool, SuperLog {
             "properties": [
                 "workerType": [
                     "type": "string",
-                    "enum": ["code_expert", "document_expert", "test_expert", "architect"],
-                    "description": "Specialist type to use"
+                    "description": "Specialist type id to use (provided by plugins)"
                 ],
                 "taskDescription": [
                     "type": "string",
@@ -60,7 +59,6 @@ struct CreateAndAssignTaskTool: AgentTool, SuperLog {
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let workerTypeRaw = arguments["workerType"]?.value as? String,
-              let workerType = WorkerAgentType(rawValue: workerTypeRaw),
               let taskDescription = arguments["taskDescription"]?.value as? String else {
             throw NSError(
                 domain: "CreateAndAssignTaskTool",
@@ -92,11 +90,11 @@ struct CreateAndAssignTaskTool: AgentTool, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)🛠️ 创建 Worker 任务：type=\(workerType.rawValue)")
+            os_log("\(Self.t)🛠️ 创建 Worker 任务：type=\(workerTypeRaw)")
         }
 
         let result = try await workerAgentManager.executeTask(
-            type: workerType,
+            typeId: workerTypeRaw,
             task: fullTask,
             config: config,
             toolService: toolService
@@ -104,7 +102,7 @@ struct CreateAndAssignTaskTool: AgentTool, SuperLog {
 
         return """
         [worker_result]
-        workerType: \(workerType.rawValue)
+        workerType: \(workerTypeRaw)
         taskDescription: \(taskDescription)
         model: \(config.providerId)/\(config.model)
         result:
@@ -139,15 +137,17 @@ private enum WorkerLLMConfigResolver {
         return LLMConfig(
             apiKey: apiKey,
             model: model,
-            providerId: managerProviderId,
-            temperature: nil,
-            maxTokens: nil
+            providerId: managerProviderId
         )
     }
 
     private static func firstNonEmpty(_ values: [String?]) -> String? {
-        values
-            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .first { !$0.isEmpty }
+        for value in values {
+            if let v = value, !v.isEmpty {
+                return v
+            }
+        }
+        return nil
     }
 }
+

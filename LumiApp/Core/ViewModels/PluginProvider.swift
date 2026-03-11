@@ -79,10 +79,13 @@ final class PluginProvider: ObservableObject, SuperLog {
     private var sidebarViewsCache: [AnyView]?
     private var sidebarViewsCacheKey: String?
 
-    // MARK: - Middleware Cache
+    // MARK: - Middleware / Tools Cache
 
     private var cachedConversationTurnMiddlewares: [AnyConversationTurnMiddleware]?
     private var cachedMessageSendMiddlewares: [AnyMessageSendMiddleware]?
+    private var cachedAgentTools: [AgentTool]?
+    private var cachedAgentToolFactories: [AnyAgentToolFactory]?
+    private var cachedWorkerAgentDescriptors: [WorkerAgentDescriptor]?
 
     /// 初始化插件提供者
     ///
@@ -106,6 +109,9 @@ final class PluginProvider: ObservableObject, SuperLog {
                 self?.sidebarViewsCacheKey = nil
                 self?.cachedConversationTurnMiddlewares = nil
                 self?.cachedMessageSendMiddlewares = nil
+                self?.cachedAgentTools = nil
+                self?.cachedAgentToolFactories = nil
+                self?.cachedWorkerAgentDescriptors = nil
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
@@ -169,6 +175,87 @@ final class PluginProvider: ObservableObject, SuperLog {
         }.map(\.m)
 
         cachedMessageSendMiddlewares = sorted
+        return sorted
+    }
+
+    // MARK: - Agent Tools Aggregation
+
+    func getAgentTools() -> [AgentTool] {
+        if let cachedAgentTools {
+            return cachedAgentTools
+        }
+
+        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
+        var tools: [(pluginOrder: Int, tool: AgentTool)] = []
+
+        for plugin in enabledPlugins {
+            let pluginOrder = type(of: plugin).order
+            let pluginTools = plugin.agentTools()
+            for t in pluginTools {
+                tools.append((pluginOrder: pluginOrder, tool: t))
+            }
+        }
+
+        let sorted = tools.sorted { a, b in
+            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
+            return a.tool.name < b.tool.name
+        }.map(\.tool)
+
+        cachedAgentTools = sorted
+        return sorted
+    }
+
+    func getAgentToolFactories() -> [AnyAgentToolFactory] {
+        if let cachedAgentToolFactories {
+            return cachedAgentToolFactories
+        }
+
+        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
+        var factories: [(pluginOrder: Int, f: AnyAgentToolFactory)] = []
+
+        for plugin in enabledPlugins {
+            let pluginOrder = type(of: plugin).order
+            let fs = plugin.agentToolFactories()
+            for f in fs {
+                factories.append((pluginOrder: pluginOrder, f: f))
+            }
+        }
+
+        let sorted = factories.sorted { a, b in
+            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
+            if a.f.order != b.f.order { return a.f.order < b.f.order }
+            return a.f.id < b.f.id
+        }.map(\.f)
+
+        cachedAgentToolFactories = sorted
+        return sorted
+    }
+
+    // MARK: - Worker Aggregation
+
+    func getWorkerAgentDescriptors() -> [WorkerAgentDescriptor] {
+        if let cachedWorkerAgentDescriptors {
+            return cachedWorkerAgentDescriptors
+        }
+
+        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
+        var items: [(pluginOrder: Int, d: WorkerAgentDescriptor)] = []
+
+        for plugin in enabledPlugins {
+            let pluginOrder = type(of: plugin).order
+            let ds = plugin.workerAgentDescriptors()
+            for d in ds {
+                items.append((pluginOrder: pluginOrder, d: d))
+            }
+        }
+
+        let sorted = items.sorted { a, b in
+            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
+            if a.d.order != b.d.order { return a.d.order < b.d.order }
+            return a.d.id < b.d.id
+        }.map(\.d)
+
+        cachedWorkerAgentDescriptors = sorted
         return sorted
     }
 
