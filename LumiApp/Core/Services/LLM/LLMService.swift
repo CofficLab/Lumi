@@ -42,7 +42,7 @@ class LLMService: SuperLog, @unchecked Sendable {
     /// 0: 关闭日志
     /// 1: 基础日志
     /// 2: 详细日志（输出请求/响应的详细信息）
-    nonisolated static let verbose = 2
+    nonisolated static let verbose = 1
 
     /// 供应商注册表
     ///
@@ -408,7 +408,8 @@ class LLMService: SuperLog, @unchecked Sendable {
                             }
                             // 记录首 token 时间
                             if let ttft = await state.recordFirstToken(), Self.verbose >= 1 {
-                                os_log("\(self.t)⏱️ 首 token 延迟: \(String(format: "%.2f", ttft))ms")
+                                let ttftStr = ttft >= 1000 ? String(format: "%.2fs", ttft / 1000) : String(format: "%.2fms", ttft)
+                                os_log("\(self.t)⏱️ 首 token 延迟: \(ttftStr)")
                             }
 
                             // 累积内容 - 只累积 textDelta 的内容，跳过 thinkingDelta
@@ -521,11 +522,6 @@ class LLMService: SuperLog, @unchecked Sendable {
 
         if Self.verbose >= 1 {
             os_log("\(self.t)✅ 流式响应完成，总耗时：\(String(format: "%.2f", latency))ms, TTFT: \(String(format: "%.2f", finalTimeToFirstToken ?? 0))ms, 内容长度：\(finalContent.count)")
-            if finalContent.isEmpty {
-                os_log("\(self.t)⚠️ 警告：累积内容为空！")
-            } else {
-                os_log("\(self.t)📝 累积内容预览：\n\(finalContent.prefix(100))...")
-            }
         }
 
         // 计算总 token 数

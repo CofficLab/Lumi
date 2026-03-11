@@ -22,7 +22,7 @@ struct ReadFileTool: AgentTool, SuperLog {
     nonisolated static let emoji = "📄"
     
     /// 是否启用详细日志
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     /// 工具名称
     let name = "read_file"
@@ -60,7 +60,7 @@ struct ReadFileTool: AgentTool, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)读取文件：\(path.components(separatedBy: "/").last ?? path)")
+            os_log("\(Self.t)📖 读取文件：\(path.components(separatedBy: "/").last ?? path)")
         }
 
         let fileURL = URL(fileURLWithPath: path)
@@ -92,7 +92,7 @@ struct ReadFileTool: AgentTool, SuperLog {
             }
             return content
         } catch {
-            os_log(.error, "\(Self.t)读取文件失败：\(error.localizedDescription)")
+            os_log(.error, "\(Self.t)❌ 读取文件失败：\(error.localizedDescription)")
             return "Error reading file: \(error.localizedDescription)"
         }
     }

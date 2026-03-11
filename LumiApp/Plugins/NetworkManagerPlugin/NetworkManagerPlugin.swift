@@ -5,7 +5,7 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "🛜"
-    static let enable: Bool = true
+    static let enable = false
     nonisolated static let verbose = true
 
     static let id = "NetworkManager"

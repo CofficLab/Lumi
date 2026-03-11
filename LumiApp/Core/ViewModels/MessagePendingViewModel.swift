@@ -67,8 +67,15 @@ final class MessageViewModel: ObservableObject, SuperLog {
         messages = updatedMessages
 
         if Self.verbose {
-            let contentPreview = message.content.count > 100 ? String(message.content.prefix(100)) + "..." : message.content
-            let logMessage = "\(Self.t)🍋 更新位置 \(index) 的消息 [\(message.role)] 内容: \(contentPreview)"
+            let contentPreview: String
+            if message.content.count > 120 {
+                let head = String(message.content.prefix(50))
+                let tail = String(message.content.suffix(50))
+                contentPreview = "\(head)...\(tail)"
+            } else {
+                contentPreview = message.content
+            }
+            let logMessage = "\(Self.t)🍋 更新位置 \(index) 的消息 [\(message.role)] 长度: \(message.content.count) 内容:\n \(contentPreview)"
             os_log("%@", logMessage)
         }
     }

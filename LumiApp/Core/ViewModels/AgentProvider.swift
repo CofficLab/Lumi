@@ -107,6 +107,12 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     /// 对话轮次事件流任务
     private var conversationTurnEventTask: Task<Void, Never>?
 
+    // MARK: - 用户发送消息标记（用于触发 UI 滚动）
+
+    /// 用户刚刚发送了消息的标记
+    /// 当用户发送消息时设置为 true，UI 监听此属性并滚动到底部后重置为 false
+    @Published public var userJustSentMessage: Bool = false
+
     // MARK: - 附件（图片上传）
 
     public enum Attachment: Identifiable {
@@ -250,6 +256,9 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             updateRuntimeState(for: conversationId)
 
         case let .sendMessage(message, conversationId):
+            // 标记用户刚刚发送了消息，触发 UI 滚动到底部
+            userJustSentMessage = true
+
             // 串行处理发送事件，避免同一会话出现并发轮次导致的状态竞争/空转。
             await self.sendMessageToAgent(message: message, conversationId: conversationId)
         }
@@ -272,7 +281,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
                 await self.handleConversationTurnEvent(event)
                 hangWatchdog.cancel()
                 let elapsed = CFAbsoluteTimeGetCurrent() - start
-                if elapsed > 0.3 {
+                if elapsed > 1 {
                     os_log(.error, "\(Self.t)⏱️ 事件处理耗时异常: \(self.describe(event)) took \(String(format: "%.3f", elapsed))s")
                 }
             }
@@ -327,7 +336,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     private let thinkingUIFlushInterval: TimeInterval = 0.12
     private let immediateStreamFlushChars = 80
     private let immediateThinkingFlushChars = 120
-    private let captureThinkingContent = false
+    private let captureThinkingContent = true
 
     /// 处理对话轮次事件
     /// - Parameter event: 对话轮次事件
