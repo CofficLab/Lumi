@@ -71,6 +71,17 @@ actor AgentCoreToolsPlugin: SuperPlugin {
             ),
         ]
     }
+
+    @MainActor
+    func toolPresentationDescriptors() -> [ToolPresentationDescriptor] {
+        [
+            .init(toolName: "list_directory", displayName: "列出目录", emoji: "📁", category: .listDirectory, order: 0),
+            .init(toolName: "read_file", displayName: "读取文件", emoji: "📖", category: .readFile, order: 10),
+            .init(toolName: "write_file", displayName: "写入文件", emoji: "✍️", category: .writeFile, order: 20),
+            .init(toolName: "run_command", displayName: "Shell 命令", emoji: "⚡", category: .shell, order: 30),
+            .init(toolName: "create_and_assign_task", displayName: "智能助手", emoji: "🧩", category: .agent, order: 40),
+        ]
+    }
 }
 
 @MainActor

@@ -73,7 +73,8 @@ actor PromptService: SuperLog {
         var prompt = baseSystemPrompt
 
         // 动态注入 Worker 类型说明，避免内核硬编码。
-        prompt += "\n\n" + await buildDynamicWorkerTypesPrompt()
+        let workerTypesPrompt = await buildDynamicWorkerTypesPrompt()
+        prompt += "\n\n" + workerTypesPrompt
 
         // 添加语言偏好信息
         prompt += "\n\n" + languagePreference.systemPromptDescription

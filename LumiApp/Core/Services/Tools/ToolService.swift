@@ -130,6 +130,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     ///
     /// 存储所有 Combine 订阅，用于清理。
     private var cancellables = Set<AnyCancellable>()
+    private var syncedPluginMCPConfigNames: Set<String> = []
 
     // MARK: - Initialization
 
@@ -149,6 +150,7 @@ class ToolService: SuperLog, @unchecked Sendable {
         self.llmService = llmService
         setupMCPObservers()
         setupPluginObservers()
+        syncPluginMCPConfigs()
         refreshAllTools()
 
         if Self.verbose {
@@ -210,9 +212,37 @@ class ToolService: SuperLog, @unchecked Sendable {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
+                self?.syncPluginMCPConfigs()
                 self?.refreshAllTools()
             }
         }
+    }
+
+    /// 同步插件提供的 MCP 配置到 MCPService。
+    ///
+    /// 仅删除“由插件注入”的旧配置，不影响用户手动添加的配置。
+    @MainActor
+    private func syncPluginMCPConfigs() {
+        let pluginConfigs = PluginProvider.shared.getMCPServerConfigs()
+        let nextNames = Set(pluginConfigs.map(\.name))
+
+        let toRemove = syncedPluginMCPConfigNames.subtracting(nextNames)
+        for name in toRemove {
+            mcpService.removeConfig(name: name)
+        }
+
+        var existingByName: [String: MCPServerConfig] = [:]
+        for config in mcpService.configs {
+            existingByName[config.name] = config
+        }
+
+        for config in pluginConfigs {
+            if existingByName[config.name] != config || !syncedPluginMCPConfigNames.contains(config.name) {
+                mcpService.addConfig(config)
+            }
+        }
+
+        syncedPluginMCPConfigNames = nextNames
     }
 
     /// 刷新所有工具列表

@@ -86,6 +86,8 @@ final class PluginProvider: ObservableObject, SuperLog {
     private var cachedAgentTools: [AgentTool]?
     private var cachedAgentToolFactories: [AnyAgentToolFactory]?
     private var cachedWorkerAgentDescriptors: [WorkerAgentDescriptor]?
+    private var cachedToolPresentationDescriptors: [ToolPresentationDescriptor]?
+    private var cachedMCPServerConfigs: [MCPServerConfig]?
 
     /// 初始化插件提供者
     ///
@@ -112,6 +114,8 @@ final class PluginProvider: ObservableObject, SuperLog {
                 self?.cachedAgentTools = nil
                 self?.cachedAgentToolFactories = nil
                 self?.cachedWorkerAgentDescriptors = nil
+                self?.cachedToolPresentationDescriptors = nil
+                self?.cachedMCPServerConfigs = nil
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
@@ -259,6 +263,57 @@ final class PluginProvider: ObservableObject, SuperLog {
         return sorted
     }
 
+    func getToolPresentationDescriptors() -> [ToolPresentationDescriptor] {
+        if let cachedToolPresentationDescriptors {
+            return cachedToolPresentationDescriptors
+        }
+
+        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
+        var items: [(pluginOrder: Int, d: ToolPresentationDescriptor)] = []
+
+        for plugin in enabledPlugins {
+            let pluginOrder = type(of: plugin).order
+            let ds = plugin.toolPresentationDescriptors()
+            for d in ds {
+                items.append((pluginOrder: pluginOrder, d: d))
+            }
+        }
+
+        let sorted = items.sorted { a, b in
+            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
+            if a.d.order != b.d.order { return a.d.order < b.d.order }
+            return a.d.toolName < b.d.toolName
+        }.map(\.d)
+
+        cachedToolPresentationDescriptors = sorted
+        return sorted
+    }
+
+    func getMCPServerConfigs() -> [MCPServerConfig] {
+        if let cachedMCPServerConfigs {
+            return cachedMCPServerConfigs
+        }
+
+        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
+        var items: [(pluginOrder: Int, c: MCPServerConfig)] = []
+
+        for plugin in enabledPlugins {
+            let pluginOrder = type(of: plugin).order
+            let configs = plugin.mcpServerConfigs()
+            for config in configs {
+                items.append((pluginOrder: pluginOrder, c: config))
+            }
+        }
+
+        let sorted = items.sorted { a, b in
+            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
+            return a.c.name < b.c.name
+        }.map(\.c)
+
+        cachedMCPServerConfigs = sorted
+        return sorted
+    }
+
     /// 析构函数，清理资源
     ///
     /// 移除所有 NotificationCenter 观察者，防止内存泄漏。
@@ -300,6 +355,8 @@ final class PluginProvider: ObservableObject, SuperLog {
         // 插件列表将被重建，相关缓存一并清空
         cachedConversationTurnMiddlewares = nil
         cachedMessageSendMiddlewares = nil
+        cachedToolPresentationDescriptors = nil
+        cachedMCPServerConfigs = nil
         sidebarViewsCache = nil
         sidebarViewsCacheKey = nil
 
@@ -344,6 +401,8 @@ final class PluginProvider: ObservableObject, SuperLog {
         // 插件已更新，清空聚合缓存，避免 middleware 在插件加载前被读取后永久缓存为空。
         cachedConversationTurnMiddlewares = nil
         cachedMessageSendMiddlewares = nil
+        cachedToolPresentationDescriptors = nil
+        cachedMCPServerConfigs = nil
         
         // 调用生命周期钩子
         for plugin in sortedPlugins {

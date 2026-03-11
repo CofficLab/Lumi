@@ -11,11 +11,18 @@ struct ToolCallView: View {
     // MARK: - Tool Emoji & Color
     
     var emoji: String {
-        toolEmojiMap[toolCall.name] ?? "🔧"
+        ToolPresentationDescriptorResolver.descriptor(for: toolCall.name).emoji
     }
     
     var color: Color {
-        toolColorMap[toolCall.name] ?? .gray
+        switch ToolPresentationDescriptorResolver.descriptor(for: toolCall.name).category {
+        case .shell: return .green
+        case .readFile: return .blue
+        case .writeFile: return .orange
+        case .listDirectory: return .purple
+        case .agent: return .cyan
+        case .unknown: return .gray
+        }
     }
     
     var body: some View {
@@ -173,50 +180,6 @@ struct ToolCallView: View {
         }
     }
 }
-
-// MARK: - Tool Emoji Map
-
-private let toolEmojiMap: [String: String] = [
-    "read_file": "📖",
-    "write_file": "✍️",
-    "run_command": "⚡",
-    "list_directory": "📁",
-    "create_directory": "📂",
-    "move_file": "📦",
-    "search_files": "🔍",
-    "get_file_info": "ℹ️",
-    "bash": "⚡",
-    "glob": "🔎",
-    "edit": "✏️",
-    "str_replace_editor": "✏️",
-    "lsp": "💻",
-    "goto_definition": "➡️",
-    "find_references": "🔗",
-    "document": "📚",
-    "grep": "🔍"
-]
-
-// MARK: - Tool Color Map
-
-private let toolColorMap: [String: Color] = [
-    "read_file": .blue,
-    "write_file": .orange,
-    "run_command": .green,
-    "list_directory": .purple,
-    "create_directory": .purple,
-    "move_file": .cyan,
-    "search_files": .pink,
-    "get_file_info": .gray,
-    "bash": .green,
-    "glob": .pink,
-    "edit": .orange,
-    "str_replace_editor": .orange,
-    "lsp": .indigo,
-    "goto_definition": .blue,
-    "find_references": .purple,
-    "document": .teal,
-    "grep": .pink
-]
 
 // MARK: - View Modifiers
 
