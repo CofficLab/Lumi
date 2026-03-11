@@ -33,6 +33,7 @@ final class MessageListAppKitContainerView: NSView {
     private var totalMessageCount: Int = 0
     private var oldestLoadedTimestamp: Date?
     private var isLoadingMore: Bool = false
+    private var currentConversationId: UUID?
 
     init(
         agentProvider: AgentProvider,
@@ -45,6 +46,8 @@ final class MessageListAppKitContainerView: NSView {
         super.init(frame: .zero)
 
         setUpViews()
+        setUpObservers()
+        currentConversationId = conversationViewModel.selectedConversationId
         Task { [weak self] in
             await self?.loadInitialMessages()
         }
@@ -53,6 +56,10 @@ final class MessageListAppKitContainerView: NSView {
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self, name: .messageSaved, object: nil)
     }
 
     override func layout() {
@@ -69,6 +76,10 @@ final class MessageListAppKitContainerView: NSView {
         self.agentProvider = agentProvider
         self.conversationViewModel = conversationViewModel
         self.processingStateViewModel = processingStateViewModel
+
+        let selectedId = conversationViewModel.selectedConversationId
+        guard selectedId != currentConversationId else { return }
+        currentConversationId = selectedId
 
         Task { [weak self] in
             await self?.loadInitialMessages()
@@ -96,6 +107,37 @@ final class MessageListAppKitContainerView: NSView {
     private func rebuildMessageViews() {
         hostingView.rootView = AppKitMessageListContentView(messages: messages)
         layoutDocumentView()
+    }
+
+    private func setUpObservers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleMessageSaved(_:)),
+            name: .messageSaved,
+            object: nil
+        )
+    }
+
+    private func upsertMessage(_ message: ChatMessage) {
+        if let idx = messages.firstIndex(where: { $0.id == message.id }) {
+            messages[idx] = message
+            return
+        }
+        if let insertIndex = messages.firstIndex(where: { $0.timestamp > message.timestamp }) {
+            messages.insert(message, at: insertIndex)
+        } else {
+            messages.append(message)
+        }
+    }
+
+    @objc
+    private func handleMessageSaved(_ notification: Notification) {
+        guard let message = notification.object as? ChatMessage,
+              let conversationId = notification.userInfo?["conversationId"] as? UUID,
+              conversationId == currentConversationId else {
+            return
+        }
+        upsertMessage(message)
     }
 
     private func layoutDocumentView() {
@@ -153,6 +195,20 @@ final class MessageListAppKitContainerView: NSView {
             if let first = allMessages.first {
                 oldestLoadedTimestamp = first.timestamp
             }
+            scrollToBottom()
+        }
+    }
+
+    private func scrollToBottom() {
+        layoutSubtreeIfNeeded()
+        layoutDocumentView()
+        // 确保 documentView 尺寸已更新后再滚动到底部
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            let clipView = self.scrollView.contentView
+            let maxY = max(0, self.hostingView.frame.height - clipView.bounds.height)
+            clipView.scroll(to: NSPoint(x: 0, y: maxY))
+            self.scrollView.reflectScrolledClipView(clipView)
         }
     }
 }
