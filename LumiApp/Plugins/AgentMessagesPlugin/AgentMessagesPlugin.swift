@@ -11,7 +11,7 @@ actor AgentMessagesPlugin: SuperPlugin {
     static let description = String(localized: "DevAssistant chat messages", table: "DevAssistant")
     static let iconName = "text.bubble.fill"
     static var order: Int { 82 }
-    static let enable: Bool = true
+    static let enable: Bool = false
 
     static let shared = AgentMessagesPlugin()
 
