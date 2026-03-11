@@ -40,6 +40,18 @@ final class ConversationRuntimeStore: ObservableObject {
     var didReceiveFirstTokenByConversation: Set<UUID> = []
     var statusMessageIdByConversation: [UUID: UUID] = [:]
 
+    // MARK: - MessageSend middlewares state
+
+    /// 记录最近一次用户发送消息的时间（用于防抖/节流）。
+    var lastUserSendAtByConversation: [UUID: Date] = [:]
+    /// 记录最近一次用户发送消息的文本内容（用于重复发送去重）。
+    var lastUserSendContentByConversation: [UUID: String] = [:]
+
+    // MARK: - ConversationTurn middlewares state
+
+    /// 记录已做过“后处理”的消息 ID（避免同一条 assistant 消息被重复处理）。
+    var postProcessedMessageIdsByConversation: [UUID: Set<UUID>] = [:]
+
     @Published private(set) var conversationRuntimeStates: [UUID: ConversationRuntimeState] = [:]
 
     func runtimeState(for conversationId: UUID) -> ConversationRuntimeState {
@@ -93,6 +105,11 @@ final class ConversationRuntimeStore: ObservableObject {
 
         statusMessageIdByConversation.removeValue(forKey: conversationId)
         conversationRuntimeStates.removeValue(forKey: conversationId)
+
+        lastUserSendAtByConversation.removeValue(forKey: conversationId)
+        lastUserSendContentByConversation.removeValue(forKey: conversationId)
+
+        postProcessedMessageIdsByConversation.removeValue(forKey: conversationId)
     }
 }
 

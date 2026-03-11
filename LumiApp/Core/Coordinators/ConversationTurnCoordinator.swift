@@ -139,7 +139,18 @@ final class ConversationTurnCoordinator: SuperLog {
 
         let coreMiddlewares: [AnyConversationTurnMiddleware] = [
             AnyConversationTurnMiddleware(PingFilterMiddleware()),
+            AnyConversationTurnMiddleware(PingHeartbeatMiddleware()),
+            AnyConversationTurnMiddleware(StreamStartedInitializeMiddleware()),
+            AnyConversationTurnMiddleware(StreamChunkAccumulateMiddleware()),
             AnyConversationTurnMiddleware(ThinkingDeltaThrottleMiddleware()),
+            AnyConversationTurnMiddleware(ThinkingDeltaCaptureMiddleware()),
+            AnyConversationTurnMiddleware(ContentBlockThinkingStartMiddleware()),
+            AnyConversationTurnMiddleware(StreamEventIgnoreMiddleware()),
+            AnyConversationTurnMiddleware(StreamTextDeltaApplyMiddleware()),
+            AnyConversationTurnMiddleware(StreamFinishedFinalizeMiddleware()),
+            AnyConversationTurnMiddleware(MaxDepthReachedFinalizeMiddleware()),
+            AnyConversationTurnMiddleware(TurnCompletedFinalizeMiddleware()),
+            AnyConversationTurnMiddleware(PersistAndAppendMiddleware()),
             AnyConversationTurnMiddleware(TraceLoggingMiddleware())
         ]
 
@@ -159,62 +170,6 @@ final class ConversationTurnCoordinator: SuperLog {
 
     private func handle(_ event: ConversationTurnEvent) async {
         switch event {
-        case let .responseReceived(message, conversationId):
-            if env.selectedConversationId() == conversationId {
-                messages.appendMessage(message)
-            }
-            await messages.saveMessage(message, conversationId)
-            messages.updateRuntimeState(conversationId)
-
-        case let .toolResultReceived(result, conversationId):
-            if env.selectedConversationId() == conversationId {
-                messages.appendMessage(result)
-            }
-            await messages.saveMessage(result, conversationId)
-            messages.updateRuntimeState(conversationId)
-
-        case let .permissionRequested(request, conversationId):
-            runtimeStore.pendingPermissionByConversation[conversationId] = request
-            if env.selectedConversationId() == conversationId {
-                ui.setPendingPermissionRequest(request, conversationId)
-            }
-            messages.updateRuntimeState(conversationId)
-
-        case let .maxDepthReached(currentDepth, maxDepth, conversationId):
-            let warning = DepthWarning(currentDepth: currentDepth, maxDepth: maxDepth, warningType: .reached)
-            runtimeStore.depthWarningByConversation[conversationId] = warning
-            runtimeStore.processingConversationIds.remove(conversationId)
-
-            if env.selectedConversationId() == conversationId {
-                ui.setDepthWarning(warning, conversationId)
-                ui.onTurnFinishedUI(conversationId)
-            }
-
-            runtimeStore.streamStateByConversation[conversationId] = .init(messageId: nil, messageIndex: nil)
-            runtimeStore.pendingStreamTextByConversation[conversationId] = nil
-            runtimeStore.pendingThinkingTextByConversation[conversationId] = nil
-            runtimeStore.lastStreamFlushAtByConversation[conversationId] = nil
-            runtimeStore.lastThinkingFlushAtByConversation[conversationId] = nil
-            runtimeStore.streamStartedAtByConversation[conversationId] = nil
-            runtimeStore.didReceiveFirstTokenByConversation.remove(conversationId)
-            messages.updateRuntimeState(conversationId)
-
-        case let .completed(conversationId):
-            runtimeStore.processingConversationIds.remove(conversationId)
-
-            if env.selectedConversationId() == conversationId {
-                ui.onTurnFinishedUI(conversationId)
-            }
-
-            runtimeStore.streamStateByConversation[conversationId] = .init(messageId: nil, messageIndex: nil)
-            runtimeStore.pendingStreamTextByConversation[conversationId] = nil
-            runtimeStore.pendingThinkingTextByConversation[conversationId] = nil
-            runtimeStore.lastStreamFlushAtByConversation[conversationId] = nil
-            runtimeStore.lastThinkingFlushAtByConversation[conversationId] = nil
-            runtimeStore.streamStartedAtByConversation[conversationId] = nil
-            runtimeStore.didReceiveFirstTokenByConversation.remove(conversationId)
-            messages.updateRuntimeState(conversationId)
-
         case let .error(error, conversationId):
             let msg = error.localizedDescription
             runtimeStore.errorMessageByConversation[conversationId] = msg
@@ -226,146 +181,6 @@ final class ConversationTurnCoordinator: SuperLog {
             }
 
             runtimeStore.streamStateByConversation[conversationId] = .init(messageId: nil, messageIndex: nil)
-            runtimeStore.pendingStreamTextByConversation[conversationId] = nil
-            runtimeStore.pendingThinkingTextByConversation[conversationId] = nil
-            runtimeStore.lastStreamFlushAtByConversation[conversationId] = nil
-            runtimeStore.lastThinkingFlushAtByConversation[conversationId] = nil
-            runtimeStore.streamStartedAtByConversation[conversationId] = nil
-            runtimeStore.didReceiveFirstTokenByConversation.remove(conversationId)
-            messages.updateRuntimeState(conversationId)
-
-        case let .streamStarted(messageId, conversationId):
-            runtimeStore.streamStateByConversation[conversationId] = .init(messageId: messageId, messageIndex: nil)
-            runtimeStore.pendingStreamTextByConversation[conversationId] = ""
-            runtimeStore.pendingThinkingTextByConversation[conversationId] = ""
-            runtimeStore.lastStreamFlushAtByConversation[conversationId] = Date()
-            runtimeStore.lastThinkingFlushAtByConversation[conversationId] = Date()
-            runtimeStore.streamStartedAtByConversation[conversationId] = Date()
-            runtimeStore.didReceiveFirstTokenByConversation.remove(conversationId)
-
-            runtimeStore.thinkingTextByConversation[conversationId] = ""
-            runtimeStore.thinkingConversationIds.remove(conversationId)
-
-            if env.selectedConversationId() == conversationId {
-                ui.setThinkingText("", conversationId)
-                ui.setIsThinking(false, conversationId)
-                ui.onStreamStartedUI(messageId, conversationId)
-            }
-
-            let placeholderMessage = ChatMessage(id: messageId, role: .assistant, content: "", timestamp: Date())
-            if env.selectedConversationId() == conversationId {
-                messages.appendMessage(placeholderMessage)
-                runtimeStore.streamStateByConversation[conversationId]?.messageIndex = messages.messages().count - 1
-            }
-            messages.updateRuntimeState(conversationId)
-
-        case let .streamChunk(content, messageId, conversationId):
-            guard env.selectedConversationId() == conversationId,
-                  runtimeStore.streamStateByConversation[conversationId]?.messageId == messageId else {
-                return
-            }
-
-            if !runtimeStore.didReceiveFirstTokenByConversation.contains(conversationId) {
-                runtimeStore.didReceiveFirstTokenByConversation.insert(conversationId)
-                if let startedAt = runtimeStore.streamStartedAtByConversation[conversationId] {
-                    let ttftMs = Date().timeIntervalSince(startedAt) * 1000.0
-                    ui.onStreamFirstTokenUI(conversationId, ttftMs)
-                } else {
-                    ui.onStreamFirstTokenUI(conversationId, nil)
-                }
-            }
-
-            runtimeStore.pendingStreamTextByConversation[conversationId, default: ""] += content
-            messages.flushPendingStreamText(
-                conversationId,
-                runtimeStore.pendingStreamTextByConversation[conversationId, default: ""].count >= env.immediateStreamFlushChars
-            )
-
-        case let .streamEvent(eventType, content, rawEvent, messageId, conversationId):
-            if eventType == .ping {
-                let now = Date()
-                if let last = runtimeStore.lastHeartbeatByConversation[conversationId] ?? nil,
-                   now.timeIntervalSince(last) < 0.8 {
-                    return
-                }
-                runtimeStore.lastHeartbeatByConversation[conversationId] = now
-                if env.selectedConversationId() == conversationId {
-                    ui.setLastHeartbeatTime(now)
-                }
-                return
-            }
-
-            if eventType == .thinkingDelta {
-                guard env.captureThinkingContent else { return }
-                if !content.isEmpty {
-                    let existing = runtimeStore.thinkingTextByConversation[conversationId, default: ""]
-                    if existing.count < env.maxThinkingTextLength {
-                        let remaining = env.maxThinkingTextLength - existing.count
-                        let appendPart = String(content.prefix(remaining))
-                        runtimeStore.thinkingTextByConversation[conversationId] = existing + appendPart
-                        if env.selectedConversationId() == conversationId, !appendPart.isEmpty {
-                            runtimeStore.pendingThinkingTextByConversation[conversationId, default: ""] += appendPart
-                            messages.flushPendingThinkingText(
-                                conversationId,
-                                runtimeStore.pendingThinkingTextByConversation[conversationId, default: ""].count >= env.immediateThinkingFlushChars
-                            )
-                        }
-                    }
-                }
-                return
-            }
-
-            if eventType == .contentBlockStart {
-                if rawEvent.contains("\"type\":\"thinking\"") || rawEvent.contains("thinking") {
-                    runtimeStore.thinkingConversationIds.insert(conversationId)
-                    if env.selectedConversationId() == conversationId {
-                        ui.onThinkingStartedUI(conversationId)
-                    }
-                }
-                return
-            }
-
-            if eventType == .contentBlockStop || eventType == .signatureDelta || eventType == .inputJsonDelta || eventType == .textDelta || eventType == .messageDelta {
-                return
-            }
-
-            guard env.selectedConversationId() == conversationId,
-                  runtimeStore.streamStateByConversation[conversationId]?.messageId == messageId,
-                  let index = runtimeStore.streamStateByConversation[conversationId]?.messageIndex,
-                  index < messages.messages().count else {
-                return
-            }
-
-            if eventType == .textDelta {
-                var currentMessage = messages.messages()[index]
-                currentMessage.content += content
-                messages.updateMessage(currentMessage, index)
-            }
-
-        case let .streamFinished(message, conversationId):
-            messages.flushPendingStreamText(conversationId, true)
-            messages.flushPendingThinkingText(conversationId, true)
-
-            var finalMessage = message
-            let thinkingText = runtimeStore.thinkingTextByConversation[conversationId] ?? ""
-            if !thinkingText.isEmpty {
-                finalMessage.thinkingContent = thinkingText
-            }
-
-            if env.selectedConversationId() == conversationId,
-               let index = runtimeStore.streamStateByConversation[conversationId]?.messageIndex,
-               index < messages.messages().count {
-                messages.updateMessage(finalMessage, index)
-            }
-            await messages.saveMessage(finalMessage, conversationId)
-
-            runtimeStore.streamStateByConversation[conversationId] = .init(messageId: nil, messageIndex: nil)
-            runtimeStore.thinkingConversationIds.remove(conversationId)
-
-            if env.selectedConversationId() == conversationId {
-                ui.onStreamFinishedUI(conversationId)
-            }
-
             runtimeStore.pendingStreamTextByConversation[conversationId] = nil
             runtimeStore.pendingThinkingTextByConversation[conversationId] = nil
             runtimeStore.lastStreamFlushAtByConversation[conversationId] = nil

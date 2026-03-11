@@ -127,6 +127,21 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
                     userMessageContent: content,
                     config: config
                 )
+            },
+            isProjectSelected: { [weak self] in
+                self?.projectViewModel.isProjectSelected ?? false
+            },
+            getProjectInfo: { [weak self] in
+                (self?.projectViewModel.currentProjectName ?? "", self?.projectViewModel.currentProjectPath ?? "")
+            },
+            isFileSelected: { [weak self] in
+                self?.projectViewModel.isFileSelected ?? false
+            },
+            getSelectedFileInfo: { [weak self] in
+                (self?.projectViewModel.selectedFilePath ?? "", self?.projectViewModel.selectedFileContent ?? "")
+            },
+            getSelectedText: {
+                TextSelectionManager.shared.selectedText
             }
         ),
         onUserJustSentMessage: { [weak self] in

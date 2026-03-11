@@ -50,6 +50,19 @@ struct MessageSendMiddlewareServices {
     let getCurrentConfig: () -> LLMConfig
     /// 执行“如有需要则生成标题”的核心逻辑。
     let autoGenerateConversationTitleIfNeeded: @Sendable (UUID, String, LLMConfig) async -> Void
+
+    /// 当前是否已选择项目。
+    let isProjectSelected: () -> Bool
+    /// 获取当前项目名称与路径。
+    let getProjectInfo: () -> (name: String, path: String)
+
+    /// 当前是否已选择文件（文件预览/树选中）。
+    let isFileSelected: () -> Bool
+    /// 获取当前选中文件路径与内容（若有）。
+    let getSelectedFileInfo: () -> (path: String, content: String)
+
+    /// 获取系统级“当前选中文本”（若启用文本选择能力）。
+    let getSelectedText: () -> String?
 }
 
 @MainActor

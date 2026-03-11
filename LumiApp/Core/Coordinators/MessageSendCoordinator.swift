@@ -11,6 +11,12 @@ final class MessageSendCoordinator {
         let setTitleGenerated: (Bool, UUID) -> Void
         let getCurrentConfig: () -> LLMConfig
         let autoGenerateConversationTitleIfNeeded: @Sendable (UUID, String, LLMConfig) async -> Void
+
+        let isProjectSelected: () -> Bool
+        let getProjectInfo: () -> (name: String, path: String)
+        let isFileSelected: () -> Bool
+        let getSelectedFileInfo: () -> (path: String, content: String)
+        let getSelectedText: () -> String?
     }
 
     private let messageSenderViewModel: MessageSenderViewModel
@@ -70,7 +76,12 @@ final class MessageSendCoordinator {
                         hasGeneratedTitle: self.services.hasGeneratedTitle,
                         setTitleGenerated: self.services.setTitleGenerated,
                         getCurrentConfig: self.services.getCurrentConfig,
-                        autoGenerateConversationTitleIfNeeded: self.services.autoGenerateConversationTitleIfNeeded
+                        autoGenerateConversationTitleIfNeeded: self.services.autoGenerateConversationTitleIfNeeded,
+                        isProjectSelected: self.services.isProjectSelected,
+                        getProjectInfo: self.services.getProjectInfo,
+                        isFileSelected: self.services.isFileSelected,
+                        getSelectedFileInfo: self.services.getSelectedFileInfo,
+                        getSelectedText: self.services.getSelectedText
                     )
                 )
                 if let pipeline = self.pipeline {
