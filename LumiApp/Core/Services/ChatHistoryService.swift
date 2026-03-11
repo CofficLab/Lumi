@@ -397,7 +397,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         }
     }
 
-    /// 分页加载消息（从最新消息开始，按时间倒序）
+    /// 分页加载消息（从最新消息开始，按时间倒序；直接按消息分页，避免加载整会话）
     /// - Parameters:
     ///   - conversationId: 对话 ID
     ///   - limit: 每页数量
@@ -416,29 +416,33 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                 }
 
                 let context = ModelContext(self.modelContainer)
-                let descriptor = FetchDescriptor<Conversation>(
-                    predicate: #Predicate { $0.id == conversationId }
-                )
 
-                guard let fetchedConversation = try? context.fetch(descriptor).first else {
+                var descriptor: FetchDescriptor<ChatMessageEntity>
+                if let before = beforeTimestamp {
+                    descriptor = FetchDescriptor<ChatMessageEntity>(
+                        predicate: #Predicate<ChatMessageEntity> { msg in
+                            msg.conversation?.id == conversationId && msg.timestamp < before
+                        },
+                        sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+                    )
+                } else {
+                    descriptor = FetchDescriptor<ChatMessageEntity>(
+                        predicate: #Predicate<ChatMessageEntity> { msg in
+                            msg.conversation?.id == conversationId
+                        },
+                        sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+                    )
+                }
+                descriptor.fetchLimit = limit + 1
+
+                guard let fetched = try? context.fetch(descriptor) else {
                     continuation.resume(returning: ([], false))
                     return
                 }
 
-                // 按时间倒序排序（最新的在前）
-                var sortedMessages = fetchedConversation.messages.sorted { $0.timestamp > $1.timestamp }
-
-                // 如果指定了时间戳，过滤出更早的消息
-                if let beforeTimestamp = beforeTimestamp {
-                    sortedMessages = sortedMessages.filter { $0.timestamp < beforeTimestamp }
-                }
-
-                // 取一页数据
-                let pageMessages = sortedMessages.prefix(limit + 1)
-                let hasMore = pageMessages.count > limit
-                let messagesToReturn = Array(pageMessages.prefix(limit))
-
-                // 转换并恢复正序（最早的在前，最新的在后）
+                let hasMore = fetched.count > limit
+                let messagesToReturn = Array(fetched.prefix(limit))
+                // 返回顺序：最早的在前、最新的在后（与列表展示一致）
                 let messages = messagesToReturn.reversed().compactMap { $0.toChatMessage() }
 
                 if Self.verbose {

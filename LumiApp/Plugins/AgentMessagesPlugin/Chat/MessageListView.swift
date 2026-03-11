@@ -223,7 +223,7 @@ extension MessageListView {
         if isLoadingMore {
             return "加载中..."
         }
-        return "加载更早消息 (\(messages.count)/\(totalMessageCount))"
+        return "加载更早消息（已加载 \(messages.count) 条，共 \(totalMessageCount) 条）"
     }
 
     /// 显示消息项：包含消息和相关的工具输出
@@ -279,6 +279,11 @@ extension MessageListView {
         await MainActor.run {
             isLoadingMore = true
         }
+        defer {
+            Task { @MainActor in
+                isLoadingMore = false
+            }
+        }
 
         if Self.verbose {
             os_log("\(Self.t)📥 [\(conversationId)] 开始加载消息")
@@ -301,7 +306,6 @@ extension MessageListView {
         await MainActor.run {
             messages = result.messages
             hasMoreMessages = result.hasMore
-            isLoadingMore = false
 
             // 更新最早加载的时间戳
             if let firstMessage = result.messages.first {
@@ -321,10 +325,9 @@ extension MessageListView {
     func handleLoadMore() {
         guard hasMoreMessages, !isLoadingMore, let conversationId = selectedConversationId else { return }
 
-        Task {
-            await MainActor.run {
-                isLoadingMore = true
-            }
+        Task { @MainActor in
+            isLoadingMore = true
+            defer { isLoadingMore = false }
 
             if Self.verbose {
                 os_log("\(Self.t)📄 [\(conversationId)] 加载更早消息...")
@@ -337,18 +340,15 @@ extension MessageListView {
                 beforeTimestamp: oldestLoadedTimestamp
             )
 
-            await MainActor.run {
-                messages.insert(contentsOf: result.messages, at: 0)
-                hasMoreMessages = result.hasMore
+            messages.insert(contentsOf: result.messages, at: 0)
+            hasMoreMessages = result.hasMore
 
-                // 更新最早加载的时间戳
-                if let firstMessage = result.messages.first {
-                    oldestLoadedTimestamp = firstMessage.timestamp
-                }
+            if let firstMessage = result.messages.first {
+                oldestLoadedTimestamp = firstMessage.timestamp
+            }
 
-                if Self.verbose {
-                    os_log("\(Self.t)📄 [\(conversationId)] 加载更多完成：\(self.messages.count)/\(self.totalMessageCount) 条，hasMore: \(self.hasMoreMessages)")
-                }
+            if Self.verbose {
+                os_log("\(Self.t)📄 [\(conversationId)] 加载更多完成：\(self.messages.count)/\(self.totalMessageCount) 条，hasMore: \(self.hasMoreMessages)")
             }
         }
     }
