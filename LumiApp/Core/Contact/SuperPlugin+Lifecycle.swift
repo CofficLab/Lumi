@@ -1,6 +1,6 @@
 import Foundation
 
-// MARK: - Lifecycle Hooks
+// MARK: - Lifecycle Default Implementation
 
 extension SuperPlugin {
     /// 插件注册完成后的回调
@@ -11,7 +11,7 @@ extension SuperPlugin {
     /// - 初始化插件状态
     /// - 加载持久化配置
     /// - 注册通知观察者
-    nonisolated func onRegister()
+    nonisolated func onRegister() {}
 
     /// 插件被启用时的回调
     ///
@@ -21,7 +21,7 @@ extension SuperPlugin {
     /// - 启动后台任务
     /// - 连接外部服务
     /// - 更新 UI 状态
-    nonisolated func onEnable()
+    nonisolated func onEnable() {}
 
     /// 插件被禁用时的回调
     ///
@@ -31,7 +31,7 @@ extension SuperPlugin {
     /// - 停止后台任务
     /// - 断开外部连接
     /// - 保存状态
-    nonisolated func onDisable()
+    nonisolated func onDisable() {}
 
     /// 插件注册顺序（数字越小越先加载）
     ///
@@ -41,23 +41,5 @@ extension SuperPlugin {
     /// - 0-99: 系统核心插件
     /// - 100-499: 主要功能插件
     /// - 500-999: 辅助功能插件
-    static var order: Int { get }
-}
-
-// MARK: - Lifecycle Default Implementation
-
-extension SuperPlugin {
-    /// 默认实现：注册完成后不执行任何操作
-    nonisolated func onRegister() {}
-
-    /// 默认实现：启用时不执行任何操作
-    nonisolated func onEnable() {}
-
-    /// 默认实现：禁用时不执行任何操作
-    nonisolated func onDisable() {}
-
-    /// 默认注册顺序 (999)
-    ///
-    /// 较高的默认值确保核心插件优先加载。
     static var order: Int { 999 }
 }

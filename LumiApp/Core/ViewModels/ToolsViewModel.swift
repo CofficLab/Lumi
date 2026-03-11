@@ -114,12 +114,6 @@ class ToolsViewModel: ObservableObject, SuperLog {
         toolService.removeMCPConfig(name: name)
     }
 
-    /// 安装 Vision MCP
-    /// - Parameter apiKey: API 密钥
-    func installVisionMCP(apiKey: String) {
-        toolService.installVisionMCP(apiKey: apiKey)
-    }
-
     /// 获取状态报告
     /// - Returns: 状态报告字符串
     func getStatusReport() -> String {

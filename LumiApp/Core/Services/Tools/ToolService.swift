@@ -467,15 +467,6 @@ class ToolService: SuperLog, @unchecked Sendable {
         mcpService.removeConfig(name: name)
     }
 
-    /// 安装 Vision MCP
-    ///
-    /// 安装视觉模型 MCP 工具。
-    ///
-    /// - Parameter apiKey: API 密钥
-    func installVisionMCP(apiKey: String) {
-        mcpService.installVisionMCP(apiKey: apiKey)
-    }
-
     /// 连接所有 MCP 服务器
     func connectAllMCPServers() async {
         await mcpService.connectAll()

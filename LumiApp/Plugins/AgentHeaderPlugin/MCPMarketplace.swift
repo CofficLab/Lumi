@@ -1,4 +1,3 @@
-
 import Foundation
 
 struct MCPMarketplaceItem: Identifiable, Codable, Sendable {
@@ -8,7 +7,7 @@ struct MCPMarketplaceItem: Identifiable, Codable, Sendable {
     let iconName: String
     let command: String
     let args: [String]
-    let requiredEnvVars: [String] // List of env var keys that user needs to provide (e.g. "Z_AI_API_KEY")
+    let requiredEnvVars: [String]
     let documentationURL: String?
     var transportType: MCPTransportType = .stdio
     var url: String?
@@ -16,7 +15,7 @@ struct MCPMarketplaceItem: Identifiable, Codable, Sendable {
 
 final class MCPMarketplace: Sendable {
     static let shared = MCPMarketplace()
-    
+
     let items: [MCPMarketplaceItem] = [
         MCPMarketplaceItem(
             name: "Vision MCP",
@@ -60,6 +59,22 @@ final class MCPMarketplace: Sendable {
             documentationURL: "https://docs.bigmodel.cn/cn/coding-plan/mcp/zread-mcp-server",
             transportType: .sse,
             url: "https://open.bigmodel.cn/api/mcp/zread/sse"
-        )
+        ),
     ]
 }
+
+@MainActor
+extension ToolsViewModel {
+    /// 通过插件能力安装 Vision MCP（避免内核硬编码具体 MCP 市场项）。
+    func installVisionMCP(apiKey: String) {
+        let config = MCPServerConfig(
+            name: "Vision MCP",
+            command: "npx",
+            args: ["-y", "@z_ai/mcp-server"],
+            env: ["Z_AI_API_KEY": apiKey],
+            homepage: "https://docs.bigmodel.cn/cn/coding-plan/mcp/vision-mcp-server"
+        )
+        addConfig(config)
+    }
+}
+

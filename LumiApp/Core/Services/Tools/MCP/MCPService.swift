@@ -277,19 +277,6 @@ class MCPService: SuperLog, @unchecked Sendable {
 
     // MARK: - Helper Methods
 
-    /// 安装 Vision MCP
-    /// - Parameter apiKey: API 密钥
-    func installVisionMCP(apiKey: String) {
-        let config = MCPServerConfig(
-            name: "Vision MCP",
-            command: "npx",
-            args: ["-y", "@z_ai/mcp-server"],
-            env: ["Z_AI_API_KEY": apiKey],
-            homepage: "https://docs.bigmodel.cn/cn/coding-plan/mcp/vision-mcp-server"
-        )
-        addConfig(config)
-    }
-
     /// 获取状态报告（用于调试）
     /// - Returns: 状态报告字符串
     func getStatusReport() -> String {
