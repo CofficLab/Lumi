@@ -92,11 +92,6 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 负责执行 shell 命令。
     private let shellService: ShellService
     
-    /// 权限服务
-    ///
-    /// 负责检查命令执行的权限和风险等级。
-    private(set) var permissionService: PermissionService
-
     /// LLM 服务（可选）
     ///
     /// 当可用时，用于启用 Worker 协作工具。
@@ -112,14 +107,13 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 初始化工具服务
     ///
     /// 执行以下初始化步骤：
-    /// 1. 创建依赖服务（MCP、Shell、Permission）
+    /// 1. 创建依赖服务（Shell）
     /// 2. 注册内置工具
     /// 3. 设置插件工具监听
     /// 4. 刷新工具列表
     @MainActor
     init(llmService: LLMService? = nil) {
         self.shellService = ShellService()
-        self.permissionService = PermissionService()
         self.llmService = llmService
         setupPluginObservers()
         refreshAllTools()
@@ -355,8 +349,8 @@ class ToolService: SuperLog, @unchecked Sendable {
         } else {
             arguments = nil
         }
-        
-        return permissionService.requiresPermission(toolName: toolName, arguments: arguments)
+
+        return requiresPermission(toolName: toolName, arguments: arguments)
     }
     
     /// 检查工具是否需要权限
@@ -368,17 +362,25 @@ class ToolService: SuperLog, @unchecked Sendable {
     ///   - arguments: 参数字典
     /// - Returns: 是否需要权限
     func requiresPermission(toolName: String, arguments: [String: Any]?) -> Bool {
-        return permissionService.requiresPermission(toolName: toolName, arguments: arguments)
+        // 完全由具体工具自己决定风险等级与是否需要用户批准
+        if let tool = tool(named: toolName) {
+            let rawArgs = arguments ?? [:]
+            let toolArgs = rawArgs.mapValues { ToolArgument($0) }
+            if let risk = tool.permissionRiskLevel(arguments: toolArgs) {
+                return risk.requiresPermission
+            }
+        }
+
+        // 如果工具未声明风险，则视为不需要权限
+        return false
     }
 
-    /// 评估命令风险等级
-    ///
-    /// 评估 Shell 命令的危险程度。
-    ///
-    /// - Parameter command: Shell 命令
-    /// - Returns: 风险等级
-    func evaluateCommandRisk(command: String) -> CommandRiskLevel {
-        return permissionService.evaluateCommandRisk(command: command)
+    /// 获取工具定义声明的风险等级（如果有）。
+    func declaredRiskLevel(toolName: String, arguments: [String: Any]?) -> CommandRiskLevel? {
+        guard let tool = tool(named: toolName) else { return nil }
+        let rawArgs = arguments ?? [:]
+        let toolArgs = rawArgs.mapValues { ToolArgument($0) }
+        return tool.permissionRiskLevel(arguments: toolArgs)
     }
 
     // MARK: - Tool Categorization

@@ -60,18 +60,15 @@ final class ToolExecutionService: SuperLog {
     ///   - arguments: 工具参数（JSON 字符串）
     /// - Returns: 风险等级
     func evaluateRisk(toolName: String, arguments: String) -> CommandRiskLevel {
-        guard toolName == "run_command" else {
-            return .medium
+        // 1. 如果工具本身声明了风险等级，则以工具定义为准
+        if let data = arguments.data(using: .utf8),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let declared = toolService.declaredRiskLevel(toolName: toolName, arguments: json) {
+            return declared
         }
 
-        // 解析命令参数
-        guard let data = arguments.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let command = json["command"] as? String else {
-            return .medium
-        }
-
-        return toolService.evaluateCommandRisk(command: command)
+        // 2. 工具未声明时，一律视为高风险，交给用户批准
+        return .high
     }
 
     // MARK: - 工具执行

@@ -1,6 +1,6 @@
 import Foundation
 
-/// 命令风险评估工具（内核模块，供权限系统和 Shell 工具共享）。
+/// 命令风险评估工具（由核心工具插件提供，内核不参与具体策略）。
 enum CommandRiskEvaluator {
     /// 评估命令风险等级
     ///
