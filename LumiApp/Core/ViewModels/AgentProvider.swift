@@ -378,6 +378,39 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         }
     }
 
+    /// 清理与指定会话相关的所有运行时状态，避免内存泄漏
+    private func cleanupConversationState(_ conversationId: UUID) {
+        streamStateByConversation[conversationId] = StreamSessionState(messageId: nil, messageIndex: nil)
+        streamStateByConversation.removeValue(forKey: conversationId)
+
+        thinkingTextByConversation.removeValue(forKey: conversationId)
+        pendingStreamTextByConversation.removeValue(forKey: conversationId)
+        pendingThinkingTextByConversation.removeValue(forKey: conversationId)
+        lastStreamFlushAtByConversation.removeValue(forKey: conversationId)
+        lastThinkingFlushAtByConversation.removeValue(forKey: conversationId)
+
+        thinkingConversationIds.remove(conversationId)
+        processingConversationIds.remove(conversationId)
+
+        pendingPermissionByConversation.removeValue(forKey: conversationId)
+        depthWarningByConversation.removeValue(forKey: conversationId)
+        errorMessageByConversation.removeValue(forKey: conversationId)
+        lastHeartbeatByConversation.removeValue(forKey: conversationId)
+
+        streamStartedAtByConversation.removeValue(forKey: conversationId)
+        didReceiveFirstTokenByConversation.remove(conversationId)
+
+        statusMessageIdByConversation.removeValue(forKey: conversationId)
+        conversationRuntimeStates.removeValue(forKey: conversationId)
+
+        // 取消并移除轮次任务管线
+        if let task = turnTaskPipelineByConversation[conversationId] {
+            task.cancel()
+        }
+        turnTaskPipelineByConversation.removeValue(forKey: conversationId)
+        turnTaskGenerationByConversation.removeValue(forKey: conversationId)
+    }
+
     /// 处理对话轮次事件
     /// - Parameter event: 对话轮次事件
     private func handleConversationTurnEvent(_ event: ConversationTurnEvent) async {
@@ -1113,7 +1146,10 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             messageSenderViewModel.clearCurrentConversationQueue()
         }
 
-        // 2. 删除会话记录
+        // 2. 清理该会话的运行时状态（流式缓存、思考文本、任务管线等）
+        cleanupConversationState(conversation.id)
+
+        // 3. 删除会话记录
         conversationViewModel.deleteConversation(conversation)
 
         if Self.verbose {
