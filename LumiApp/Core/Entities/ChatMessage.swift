@@ -151,6 +151,16 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         }
     }
 
+    /// 是否为工具输出消息（由工具执行产生的消息）
+    var isToolOutput: Bool {
+        toolCallID != nil
+    }
+
+    /// 是否包含工具调用（assistant 发起的 Tool Call 列表）
+    var hasToolCalls: Bool {
+        !(toolCalls?.isEmpty ?? true)
+    }
+
     /// 初始化聊天消息
     ///
     /// - Parameters:

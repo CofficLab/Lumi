@@ -91,16 +91,11 @@ struct ChatBubble: View, SuperLog {
         return isCurrentStreamingMessage && thinkingStateViewModel.isThinking
     }
 
-    /// 检查消息是否包含工具调用
-    private var hasToolCalls: Bool {
-        message.toolCalls != nil && !message.toolCalls!.isEmpty
-    }
-
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             // MARK: - Avatar
 
-            AvatarChatView(role: message.role, isToolOutput: message.toolCallID != nil)
+            AvatarChatView(role: message.role, isToolOutput: message.isToolOutput)
 
             // MARK: - Content
 
@@ -129,7 +124,7 @@ struct ChatBubble: View, SuperLog {
                             )
                         }
 
-                        if hasToolCalls {
+                        if message.hasToolCalls {
                             AssistantMessageWithToolCallsView(
                                 message: message,
                                 toolOutputMessages: relatedToolOutputs
@@ -149,7 +144,7 @@ struct ChatBubble: View, SuperLog {
                             .messageBubbleStyle(role: message.role, isError: message.isError)
                         }
                     }
-                } else if message.toolCallID != nil {
+                } else if message.isToolOutput {
                     // 工具输出
                     RoleLabel.tool
                     ToolOutputView(
@@ -173,8 +168,8 @@ struct ChatBubble: View, SuperLog {
                 // 统一在一个地方渲染工具栏，避免分支重复
                 let shouldShowToolbar =
                     message.shouldShowToolbar &&
-                    message.toolCallID == nil &&
-                    !(message.role == .assistant && hasToolCalls)
+                    !message.isToolOutput &&
+                    !(message.role == .assistant && message.hasToolCalls)
 
                 if shouldShowToolbar {
                     MessageToolbarView(
