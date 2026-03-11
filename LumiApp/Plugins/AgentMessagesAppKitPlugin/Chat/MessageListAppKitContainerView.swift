@@ -6,11 +6,68 @@ import MagicKit
 
 private struct AppKitMessageListContentView: View {
     let messages: [ChatMessage]
+    let agentProvider: AgentProvider
+    let processingStateViewModel: ProcessingStateViewModel
+    let thinkingStateViewModel: ThinkingStateViewModel
+
+    private struct DisplayMessageItem: Identifiable {
+        let message: ChatMessage
+        let relatedToolOutputs: [ChatMessage]
+        var id: UUID { message.id }
+    }
+
+    private var nonSystemMessages: [ChatMessage] {
+        messages.filter { $0.role.shouldDisplayInChatList }
+    }
+
+    private var displayItems: [DisplayMessageItem] {
+        var items: [DisplayMessageItem] = []
+        var index = 0
+
+        while index < nonSystemMessages.count {
+            let message = nonSystemMessages[index]
+
+            if message.role == .assistant,
+               let toolCalls = message.toolCalls,
+               !toolCalls.isEmpty {
+                let toolCallIDs = Set(toolCalls.map(\.id))
+                var groupedOutputs: [ChatMessage] = []
+                var cursor = index + 1
+
+                while cursor < nonSystemMessages.count {
+                    let next = nonSystemMessages[cursor]
+                    guard let toolCallID = next.toolCallID else { break }
+                    guard toolCallIDs.contains(toolCallID) else { break }
+                    groupedOutputs.append(next)
+                    cursor += 1
+                }
+
+                items.append(DisplayMessageItem(message: message, relatedToolOutputs: groupedOutputs))
+                index = cursor
+                continue
+            }
+
+            items.append(DisplayMessageItem(message: message, relatedToolOutputs: []))
+            index += 1
+        }
+
+        return items
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ForEach(messages, id: \.id) { message in
-                AppKitMessageRowView(message: message)
+            let items = displayItems
+            let lastMessageId = items.last?.id
+
+            ForEach(items) { item in
+                AppKitChatBubble(
+                    message: item.message,
+                    isLastMessage: item.id == lastMessageId,
+                    relatedToolOutputs: item.relatedToolOutputs
+                )
+                .environmentObject(agentProvider)
+                .environmentObject(processingStateViewModel)
+                .environmentObject(thinkingStateViewModel)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -23,7 +80,7 @@ final class MessageListAppKitContainerView: NSView {
     private var processingStateViewModel: ProcessingStateViewModel
 
     private let scrollView = NSScrollView()
-    private let hostingView = NSHostingView(rootView: AppKitMessageListContentView(messages: []))
+    private let hostingView: NSHostingView<AppKitMessageListContentView>
 
     private var messages: [ChatMessage] = [] {
         didSet { rebuildMessageViews() }
@@ -46,6 +103,14 @@ final class MessageListAppKitContainerView: NSView {
         self.agentProvider = agentProvider
         self.conversationViewModel = conversationViewModel
         self.processingStateViewModel = processingStateViewModel
+        self.hostingView = NSHostingView(
+            rootView: AppKitMessageListContentView(
+                messages: [],
+                agentProvider: agentProvider,
+                processingStateViewModel: processingStateViewModel,
+                thinkingStateViewModel: agentProvider.thinkingStateViewModel
+            )
+        )
         super.init(frame: .zero)
 
         setUpViews()
@@ -114,7 +179,12 @@ final class MessageListAppKitContainerView: NSView {
         let previousOrigin = clipView.bounds.origin
         let shouldStickToBottom = isNearBottom()
 
-        hostingView.rootView = AppKitMessageListContentView(messages: messages)
+        hostingView.rootView = AppKitMessageListContentView(
+            messages: messages,
+            agentProvider: agentProvider,
+            processingStateViewModel: processingStateViewModel,
+            thinkingStateViewModel: agentProvider.thinkingStateViewModel
+        )
         layoutDocumentView()
 
         if shouldStickToBottom {
