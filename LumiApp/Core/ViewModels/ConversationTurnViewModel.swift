@@ -57,13 +57,6 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
     private var turnContexts: [UUID: TurnContext] = [:]
     private let maxDepth = 16
     private let maxToolResultLength = 4_000
-    private let maxDepthFinalStepReminder = """
-<system-reminder>
-You have reached the final execution step. Do not call any tools anymore.
-Provide your best final answer using the information already collected.
-If critical information is missing, explicitly state what is missing and ask one concise follow-up question.
-</system-reminder>
-"""
 
     /// 连续重复同一工具签名（名称+参数）达到多少次视为循环
     private let repeatedToolSignatureThreshold = 10
@@ -140,12 +133,7 @@ If critical information is missing, explicitly state what is missing and ask one
 
         var effectiveMessages = messages
         if isFinalStep {
-            effectiveMessages.append(
-                ChatMessage(
-                    role: .user,
-                    content: maxDepthFinalStepReminder
-                )
-            )
+            effectiveMessages.append(ChatMessage.maxDepthFinalStepReminderMessage())
         }
 
         do {
@@ -290,6 +278,8 @@ If critical information is missing, explicitly state what is missing and ask one
             failedContext.pendingToolCalls.removeAll()
             turnContexts[conversationId] = failedContext
 
+            let explainMessage = ChatMessage.requestFailedMessage(languagePreference: languagePreference, error: error)
+            eventContinuation?.yield(.responseReceived(explainMessage, conversationId: conversationId))
             eventContinuation?.yield(.error(error, conversationId: conversationId))
             os_log(.error, "\(Self.t)❌ [\(conversationId)] 对话处理失败：\(error.localizedDescription)")
         }

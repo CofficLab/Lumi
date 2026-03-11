@@ -163,6 +163,20 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
 
     // MARK: - Factory Helpers
 
+    /// 达到最大深度时的最后一步提醒（作为一条 user 消息追加，用于提示模型不再调用工具、直接给出最终回答）。
+    static func maxDepthFinalStepReminderMessage() -> ChatMessage {
+        ChatMessage(
+            role: .user,
+            content: """
+            <system-reminder>
+            You have reached the final execution step. Do not call any tools anymore.
+            Provide your best final answer using the information already collected.
+            If critical information is missing, explicitly state what is missing and ask one concise follow-up question.
+            </system-reminder>
+            """
+        )
+    }
+
     /// 系统因达到最大执行深度而终止本轮对话时，用于向用户解释原因的助手消息。
     static func maxDepthToolLimitMessage(languagePreference: LanguagePreference) -> ChatMessage {
         let content: String
@@ -241,6 +255,33 @@ Recommended actions:
 """
         }
 
+        return ChatMessage(
+            role: .assistant,
+            content: content,
+            isError: true
+        )
+    }
+
+    /// 请求失败（如超时、网络错误）时，用于在对话中展示的助手错误消息。
+    static func requestFailedMessage(languagePreference: LanguagePreference, error: Error) -> ChatMessage {
+        let nsError = error as NSError
+        let isTimeout = nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorTimedOut
+        let content: String
+        if isTimeout {
+            switch languagePreference {
+            case .chinese:
+                content = "请求超时，本轮已终止。请检查网络或稍后重试。"
+            case .english:
+                content = "Request timed out; this turn has been terminated. Please check your network or try again later."
+            }
+        } else {
+            switch languagePreference {
+            case .chinese:
+                content = "请求失败，本轮已终止：\(error.localizedDescription)。请检查网络或稍后重试。"
+            case .english:
+                content = "Request failed; this turn has been terminated: \(error.localizedDescription). Please check your network or try again later."
+            }
+        }
         return ChatMessage(
             role: .assistant,
             content: content,
