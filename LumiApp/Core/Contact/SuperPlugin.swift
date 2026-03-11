@@ -240,6 +240,18 @@ protocol SuperPlugin: Actor {
     /// - Note: 在 Agent 模式下，插件可以提供自定义的详情栏底部视图（输入区域），多个插件的底部视图会从上到下垂直堆叠显示
     @MainActor func addDetailBottomView() -> AnyView?
 
+    // MARK: - Middleware Hooks (Agent)
+
+    /// 提供对话轮次事件中间件。
+    ///
+    /// 插件可返回一组中间件，用于拦截/过滤 `ConversationTurnEvent`。
+    @MainActor func conversationTurnMiddlewares() -> [AnyConversationTurnMiddleware]
+
+    /// 提供消息发送事件中间件。
+    ///
+    /// 插件可返回一组中间件，用于拦截/过滤 `MessageSendEvent`。
+    @MainActor func messageSendMiddlewares() -> [AnyMessageSendMiddleware]
+
     // MARK: - Lifecycle Hooks
 
     /// 插件注册完成后的回调
@@ -385,6 +397,18 @@ extension SuperPlugin {
 
     /// 默认实现：不提供详情栏底部视图
     @MainActor func addDetailBottomView() -> AnyView? { nil }
+
+    // MARK: - Middleware Hooks (Agent)
+
+    /// 默认实现：不提供对话轮次事件中间件。
+    ///
+    /// 插件可返回一组 `ConversationTurnMiddleware` 用于拦截/过滤 `ConversationTurnEvent`。
+    @MainActor func conversationTurnMiddlewares() -> [AnyConversationTurnMiddleware] { [] }
+
+    /// 默认实现：不提供消息发送事件中间件。
+    ///
+    /// 插件可返回一组 `MessageSendMiddleware` 用于拦截/过滤 `MessageSendEvent`。
+    @MainActor func messageSendMiddlewares() -> [AnyMessageSendMiddleware] { [] }
 
     // MARK: - Lifecycle Hooks Default Implementation
     

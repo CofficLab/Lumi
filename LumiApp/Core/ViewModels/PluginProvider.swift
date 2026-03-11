@@ -79,6 +79,11 @@ final class PluginProvider: ObservableObject, SuperLog {
     private var sidebarViewsCache: [AnyView]?
     private var sidebarViewsCacheKey: String?
 
+    // MARK: - Middleware Cache
+
+    private var cachedConversationTurnMiddlewares: [AnyConversationTurnMiddleware]?
+    private var cachedMessageSendMiddlewares: [AnyMessageSendMiddleware]?
+
     /// 初始化插件提供者
     ///
     /// - Parameters:
@@ -99,6 +104,8 @@ final class PluginProvider: ObservableObject, SuperLog {
             .sink { [weak self] _ in
                 self?.sidebarViewsCache = nil
                 self?.sidebarViewsCacheKey = nil
+                self?.cachedConversationTurnMiddlewares = nil
+                self?.cachedMessageSendMiddlewares = nil
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
@@ -111,6 +118,58 @@ final class PluginProvider: ObservableObject, SuperLog {
             name: NSNotification.Name("AgentProviderFileSelectionChanged"),
             object: nil
         )
+    }
+
+    // MARK: - Middleware Aggregation
+
+    func getConversationTurnMiddlewares() -> [AnyConversationTurnMiddleware] {
+        if let cachedConversationTurnMiddlewares {
+            return cachedConversationTurnMiddlewares
+        }
+
+        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
+        var middlewares: [(pluginOrder: Int, m: AnyConversationTurnMiddleware)] = []
+        for plugin in enabledPlugins {
+            let pluginOrder = type(of: plugin).order
+            let ms = plugin.conversationTurnMiddlewares()
+            for m in ms {
+                middlewares.append((pluginOrder: pluginOrder, m: m))
+            }
+        }
+
+        let sorted = middlewares.sorted { a, b in
+            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
+            if a.m.order != b.m.order { return a.m.order < b.m.order }
+            return a.m.id < b.m.id
+        }.map(\.m)
+
+        cachedConversationTurnMiddlewares = sorted
+        return sorted
+    }
+
+    func getMessageSendMiddlewares() -> [AnyMessageSendMiddleware] {
+        if let cachedMessageSendMiddlewares {
+            return cachedMessageSendMiddlewares
+        }
+
+        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
+        var middlewares: [(pluginOrder: Int, m: AnyMessageSendMiddleware)] = []
+        for plugin in enabledPlugins {
+            let pluginOrder = type(of: plugin).order
+            let ms = plugin.messageSendMiddlewares()
+            for m in ms {
+                middlewares.append((pluginOrder: pluginOrder, m: m))
+            }
+        }
+
+        let sorted = middlewares.sorted { a, b in
+            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
+            if a.m.order != b.m.order { return a.m.order < b.m.order }
+            return a.m.id < b.m.id
+        }.map(\.m)
+
+        cachedMessageSendMiddlewares = sorted
+        return sorted
     }
 
     /// 析构函数，清理资源
@@ -151,6 +210,12 @@ final class PluginProvider: ObservableObject, SuperLog {
     ///
     /// 扫描完成后会发送 `PluginsDidLoad` 通知。
     private func autoDiscoverAndRegisterPlugins() {
+        // 插件列表将被重建，相关缓存一并清空
+        cachedConversationTurnMiddlewares = nil
+        cachedMessageSendMiddlewares = nil
+        sidebarViewsCache = nil
+        sidebarViewsCacheKey = nil
+
         var count: UInt32 = 0
         guard let classList = objc_copyClassList(&count) else { return }
         defer { free(UnsafeMutableRawPointer(classList)) }
@@ -188,6 +253,10 @@ final class PluginProvider: ObservableObject, SuperLog {
         let sortedPlugins = discoveredItems.map { $0.instance }
         self.plugins = sortedPlugins
         self.isLoaded = true
+
+        // 插件已更新，清空聚合缓存，避免 middleware 在插件加载前被读取后永久缓存为空。
+        cachedConversationTurnMiddlewares = nil
+        cachedMessageSendMiddlewares = nil
         
         // 调用生命周期钩子
         for plugin in sortedPlugins {

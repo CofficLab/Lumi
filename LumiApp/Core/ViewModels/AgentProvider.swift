@@ -59,6 +59,9 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     /// 聊天历史服务
     let chatHistoryService: ChatHistoryService
 
+    /// 会话运行态存储（按会话隔离的临时状态）
+    private let runtimeStore = ConversationRuntimeStore()
+
     // MARK: - ViewModel 引用
 
     /// 消息 ViewModel
@@ -101,11 +104,121 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
     private var cancellables = Set<AnyCancellable>()
 
-    /// 消息发送事件流任务
-    private var messageSendEventTask: Task<Void, Never>?
+    private lazy var messageSendCoordinator = MessageSendCoordinator(
+        messageSenderViewModel: messageSenderViewModel,
+        runtimeStore: runtimeStore,
+        onUserJustSentMessage: { [weak self] in
+            self?.userJustSentMessage = true
+        },
+        onProcessingStarted: { [weak self] conversationId in
+            guard let self else { return }
+            if self.conversationViewModel.selectedConversationId == conversationId {
+                self.processingStateViewModel.beginSending()
+                self.upsertStatusMessage(for: conversationId, text: self.processingStateViewModel.statusText)
+            }
+        },
+        onProcessingFinished: { [weak self] conversationId in
+            guard let self else { return }
+            if self.conversationViewModel.selectedConversationId == conversationId {
+                self.processingStateViewModel.finish()
+                self.removeStatusMessage(for: conversationId)
+            }
+        },
+        sendMessageToAgent: { [weak self] message, conversationId in
+            guard let self else { return }
+            await self.sendMessageToAgent(message: message, conversationId: conversationId)
+        }
+    )
 
-    /// 对话轮次事件流任务
-    private var conversationTurnEventTask: Task<Void, Never>?
+    private lazy var conversationTurnCoordinator = ConversationTurnCoordinator(
+        conversationTurnViewModel: conversationTurnViewModel,
+        runtimeStore: runtimeStore,
+        env: .init(
+            selectedConversationId: { [weak self] in self?.conversationViewModel.selectedConversationId },
+            maxThinkingTextLength: maxThinkingTextLength,
+            immediateStreamFlushChars: immediateStreamFlushChars,
+            immediateThinkingFlushChars: immediateThinkingFlushChars,
+            captureThinkingContent: captureThinkingContent
+        ),
+        messages: .init(
+            messages: { [weak self] in self?.messages ?? [] },
+            appendMessage: { [weak self] m in self?.appendMessage(m) },
+            updateMessage: { [weak self] m, idx in self?.updateMessage(m, at: idx) },
+            saveMessage: { [weak self] m, cid in
+                guard let self else { return }
+                await self.saveMessage(m, conversationId: cid)
+            },
+            flushPendingStreamText: { [weak self] cid, force in
+                self?.flushPendingStreamTextIfNeeded(for: cid, force: force)
+            },
+            flushPendingThinkingText: { [weak self] cid, force in
+                self?.flushPendingThinkingTextIfNeeded(for: cid, force: force)
+            },
+            updateRuntimeState: { [weak self] cid in
+                self?.updateRuntimeState(for: cid)
+            }
+        ),
+        ui: .init(
+            setPendingPermissionRequest: { [weak self] request, _ in
+                self?.setPendingPermissionRequest(request)
+            },
+            setDepthWarning: { [weak self] warning, _ in
+                self?.setDepthWarning(warning)
+            },
+            setErrorMessage: { [weak self] msg, _ in
+                self?.setErrorMessage(msg)
+            },
+            onTurnFinishedUI: { [weak self] conversationId in
+                guard let self else { return }
+                self.processingStateViewModel.finish()
+                self.removeStatusMessage(for: conversationId)
+            },
+            onTurnFailedUI: { [weak self] conversationId, _ in
+                guard let self else { return }
+                self.processingStateViewModel.finish()
+                self.removeStatusMessage(for: conversationId)
+            },
+            onStreamStartedUI: { [weak self] _, conversationId in
+                guard let self else { return }
+                self.processingStateViewModel.markStreamStarted()
+                self.upsertStatusMessage(for: conversationId, text: self.processingStateViewModel.statusText)
+            },
+            onStreamFirstTokenUI: { [weak self] conversationId, ttftMs in
+                guard let self else { return }
+                if let ttftMs {
+                    self.processingStateViewModel.markFirstToken(ttftMs: ttftMs)
+                } else {
+                    self.processingStateViewModel.markGenerating()
+                }
+                self.upsertStatusMessage(for: conversationId, text: self.processingStateViewModel.statusText)
+            },
+            onStreamFinishedUI: { [weak self] conversationId in
+                guard let self else { return }
+                self.setThinkingText(self.runtimeStore.thinkingTextByConversation[conversationId] ?? "", for: conversationId)
+                self.setIsThinking(false, for: conversationId)
+                self.processingStateViewModel.finish()
+                self.removeStatusMessage(for: conversationId)
+            },
+            onThinkingStartedUI: { [weak self] conversationId in
+                guard let self else { return }
+                self.setIsThinking(true, for: conversationId)
+                self.upsertStatusMessage(for: conversationId, text: "思考中…")
+            },
+            setLastHeartbeatTime: { [weak self] date in
+                self?.setLastHeartbeatTime(date)
+            },
+            setIsThinking: { [weak self] isThinking, cid in
+                self?.setIsThinking(isThinking, for: cid)
+            },
+            setThinkingText: { [weak self] text, cid in
+                self?.setThinkingText(text, for: cid)
+            }
+        ),
+        onFallbackEvent: { [weak self] event in
+            guard let self else { return }
+            await self.handleConversationTurnEventFallback(event)
+        }
+    )
 
     // MARK: - 用户发送消息标记（用于触发 UI 滚动）
 
@@ -179,6 +292,13 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         self.thinkingStateViewModel = thinkingStateViewModel
         self.titleGenerationViewModel = titleGenerationViewModel
 
+        // runtimeStore 变化需要触发 AgentProvider 刷新（例如会话列表上的 runtimeState 徽标）
+        runtimeStore.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
         // 监听会话选择变化
         setupConversationSelectionObserver()
 
@@ -186,10 +306,10 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         loadInitialConversationIfNeeded()
 
         // 订阅消息发送事件流
-        subscribeToMessageSendEvents()
+        messageSendCoordinator.start()
 
         // 订阅对话轮次事件流
-        subscribeToConversationTurnEvents()
+        conversationTurnCoordinator.start()
 
         loadPreferences()
     }
@@ -225,117 +345,15 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             .store(in: &cancellables)
     }
 
-    /// 订阅消息发送事件流
-    /// 处理 MessageSenderViewModel 发出的发送消息事件
-    private func subscribeToMessageSendEvents() {
-        messageSendEventTask?.cancel()
-        messageSendEventTask = Task { [weak self] in
-            guard let self = self else { return }
-            for await event in self.messageSenderViewModel.events {
-                await self.handleMessageSendEvent(event)
-            }
-        }
-    }
-
-    /// 处理消息发送事件
-    /// - Parameter event: 消息发送事件
-    private func handleMessageSendEvent(_ event: MessageSendEvent) async {
-        switch event {
-        case let .processingStarted(conversationId):
-            processingConversationIds.insert(conversationId)
-            if conversationViewModel.selectedConversationId == conversationId {
-                processingStateViewModel.beginSending()
-                upsertStatusMessage(for: conversationId, text: processingStateViewModel.statusText)
-            }
-            updateRuntimeState(for: conversationId)
-
-        case let .processingFinished(conversationId):
-            processingConversationIds.remove(conversationId)
-            if conversationViewModel.selectedConversationId == conversationId {
-                processingStateViewModel.finish()
-                removeStatusMessage(for: conversationId)
-            }
-            updateRuntimeState(for: conversationId)
-
-        case let .sendMessage(message, conversationId):
-            // 标记用户刚刚发送了消息，触发 UI 滚动到底部
-            userJustSentMessage = true
-
-            // 串行处理发送事件，避免同一会话出现并发轮次导致的状态竞争/空转。
-            await self.sendMessageToAgent(message: message, conversationId: conversationId)
-        }
-    }
-
-    /// 订阅对话轮次事件流
-    /// 处理 ConversationTurnViewModel 发出的事件
-    private func subscribeToConversationTurnEvents() {
-        conversationTurnEventTask?.cancel()
-        conversationTurnEventTask = Task { [weak self] in
-            guard let self = self else { return }
-            for await event in self.conversationTurnViewModel.events {
-                let start = CFAbsoluteTimeGetCurrent()
-                let eventName = self.describe(event)
-                let hangWatchdog = Task { [loggerTag = Self.t] in
-                    try? await Task.sleep(nanoseconds: 2000000000)
-                    guard !Task.isCancelled else { return }
-                    os_log(.error, "\(loggerTag)⏳ 事件处理疑似卡住(>2s): \(eventName)")
-                }
-                await self.handleConversationTurnEvent(event)
-                hangWatchdog.cancel()
-                let elapsed = CFAbsoluteTimeGetCurrent() - start
-                if elapsed > 1 {
-                    os_log(.error, "\(Self.t)⏱️ 事件处理耗时异常: \(self.describe(event)) took \(String(format: "%.3f", elapsed))s")
-                }
-            }
-        }
-    }
-
-    private func describe(_ event: ConversationTurnEvent) -> String {
-        switch event {
-        case .responseReceived: return "responseReceived"
-        case .streamChunk: return "streamChunk"
-        case .streamEvent: return "streamEvent"
-        case .streamStarted: return "streamStarted"
-        case .streamFinished: return "streamFinished"
-        case .toolResultReceived: return "toolResultReceived"
-        case .permissionRequested: return "permissionRequested"
-        case .maxDepthReached: return "maxDepthReached"
-        case .completed: return "completed"
-        case .error: return "error"
-        case .shouldContinue: return "shouldContinue"
-        }
-    }
-
     /// 当前会话的流式消息 ID（用于 UI 渲染）
     public var currentStreamingMessageId: UUID? {
         guard let selectedId = conversationViewModel.selectedConversationId else { return nil }
-        return streamStateByConversation[selectedId]?.messageId
+        return runtimeStore.streamStateByConversation[selectedId]?.messageId
     }
 
-    /// 每个会话的流式状态
-    private struct StreamSessionState {
-        var messageId: UUID?
-        var messageIndex: Int?
-    }
-
-    private var streamStateByConversation: [UUID: StreamSessionState] = [:]
-    private var thinkingTextByConversation: [UUID: String] = [:]
-    private var pendingStreamTextByConversation: [UUID: String] = [:]
-    private var pendingThinkingTextByConversation: [UUID: String] = [:]
-    private var lastStreamFlushAtByConversation: [UUID: Date] = [:]
-    private var lastThinkingFlushAtByConversation: [UUID: Date] = [:]
-    private var thinkingConversationIds = Set<UUID>()
-    private var processingConversationIds = Set<UUID>()
-    private var pendingPermissionByConversation: [UUID: PermissionRequest] = [:]
-    private var depthWarningByConversation: [UUID: DepthWarning] = [:]
-    private var errorMessageByConversation: [UUID: String?] = [:]
-    private var lastHeartbeatByConversation: [UUID: Date?] = [:]
-    private var streamStartedAtByConversation: [UUID: Date] = [:]
-    private var didReceiveFirstTokenByConversation: Set<UUID> = []
-    private var statusMessageIdByConversation: [UUID: UUID] = [:]
+    private typealias StreamSessionState = ConversationRuntimeStore.StreamSessionState
     private var turnTaskPipelineByConversation: [UUID: Task<Void, Never>] = [:]
     private var turnTaskGenerationByConversation: [UUID: Int] = [:]
-    @Published private(set) var conversationRuntimeStates: [UUID: ConversationRuntimeState] = [:]
     private let maxThinkingTextLength = 20000
     private let streamUIFlushInterval: TimeInterval = 0.08
     private let thinkingUIFlushInterval: TimeInterval = 0.12
@@ -347,9 +365,9 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         guard conversationViewModel.selectedConversationId == conversationId else { return }
         guard !text.isEmpty else { return }
 
-        let id = statusMessageIdByConversation[conversationId] ?? UUID()
-        if statusMessageIdByConversation[conversationId] == nil {
-            statusMessageIdByConversation[conversationId] = id
+        let id = runtimeStore.statusMessageIdByConversation[conversationId] ?? UUID()
+        if runtimeStore.statusMessageIdByConversation[conversationId] == nil {
+            runtimeStore.statusMessageIdByConversation[conversationId] = id
         }
 
         if let index = messages.firstIndex(where: { $0.id == id }) {
@@ -369,8 +387,8 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     }
 
     private func removeStatusMessage(for conversationId: UUID) {
-        guard let id = statusMessageIdByConversation[conversationId] else { return }
-        statusMessageIdByConversation[conversationId] = nil
+        guard let id = runtimeStore.statusMessageIdByConversation[conversationId] else { return }
+        runtimeStore.statusMessageIdByConversation[conversationId] = nil
         guard conversationViewModel.selectedConversationId == conversationId else { return }
         let filtered = messages.filter { $0.id != id }
         if filtered.count != messages.count {
@@ -380,28 +398,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
     /// 清理与指定会话相关的所有运行时状态，避免内存泄漏
     private func cleanupConversationState(_ conversationId: UUID) {
-        streamStateByConversation[conversationId] = StreamSessionState(messageId: nil, messageIndex: nil)
-        streamStateByConversation.removeValue(forKey: conversationId)
-
-        thinkingTextByConversation.removeValue(forKey: conversationId)
-        pendingStreamTextByConversation.removeValue(forKey: conversationId)
-        pendingThinkingTextByConversation.removeValue(forKey: conversationId)
-        lastStreamFlushAtByConversation.removeValue(forKey: conversationId)
-        lastThinkingFlushAtByConversation.removeValue(forKey: conversationId)
-
-        thinkingConversationIds.remove(conversationId)
-        processingConversationIds.remove(conversationId)
-
-        pendingPermissionByConversation.removeValue(forKey: conversationId)
-        depthWarningByConversation.removeValue(forKey: conversationId)
-        errorMessageByConversation.removeValue(forKey: conversationId)
-        lastHeartbeatByConversation.removeValue(forKey: conversationId)
-
-        streamStartedAtByConversation.removeValue(forKey: conversationId)
-        didReceiveFirstTokenByConversation.remove(conversationId)
-
-        statusMessageIdByConversation.removeValue(forKey: conversationId)
-        conversationRuntimeStates.removeValue(forKey: conversationId)
+        runtimeStore.cleanupConversationState(conversationId)
 
         // 取消并移除轮次任务管线
         if let task = turnTaskPipelineByConversation[conversationId] {
@@ -411,309 +408,14 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         turnTaskGenerationByConversation.removeValue(forKey: conversationId)
     }
 
-    /// 处理对话轮次事件
-    /// - Parameter event: 对话轮次事件
-    private func handleConversationTurnEvent(_ event: ConversationTurnEvent) async {
+    /// Fallback：未下沉到 Coordinator 的事件仍由此处理
+    private func handleConversationTurnEventFallback(_ event: ConversationTurnEvent) async {
         switch event {
-        case let .responseReceived(message, conversationId):
-            // 保存助手响应
-            if conversationViewModel.selectedConversationId == conversationId {
-                appendMessage(message)
-            }
-            await saveMessage(message, conversationId: conversationId)
-            updateRuntimeState(for: conversationId)
-
-        case let .streamStarted(messageId, conversationId):
-            // 流式响应开始，创建空消息占位
-            streamStateByConversation[conversationId] = StreamSessionState(messageId: messageId, messageIndex: nil)
-            pendingStreamTextByConversation[conversationId] = ""
-            pendingThinkingTextByConversation[conversationId] = ""
-            lastStreamFlushAtByConversation[conversationId] = Date()
-            lastThinkingFlushAtByConversation[conversationId] = Date()
-            streamStartedAtByConversation[conversationId] = Date()
-            didReceiveFirstTokenByConversation.remove(conversationId)
-
-            // 清空上一次的思考文本
-            thinkingTextByConversation[conversationId] = ""
-            thinkingConversationIds.remove(conversationId)
-
-            if conversationViewModel.selectedConversationId == conversationId {
-                setThinkingText("", for: conversationId)
-                processingStateViewModel.markStreamStarted()
-                upsertStatusMessage(for: conversationId, text: processingStateViewModel.statusText)
-            }
-
-            let placeholderMessage = ChatMessage(
-                id: messageId,
-                role: .assistant,
-                content: "",
-                timestamp: Date()
-            )
-            if conversationViewModel.selectedConversationId == conversationId {
-                appendMessage(placeholderMessage)
-                streamStateByConversation[conversationId]?.messageIndex = messages.count - 1
-            }
-            updateRuntimeState(for: conversationId)
-
-        case let .streamChunk(content, messageId, conversationId):
-            guard conversationViewModel.selectedConversationId == conversationId,
-                  streamStateByConversation[conversationId]?.messageId == messageId else {
-                return
-            }
-
-            // 首 token 到达：用于 UI 侧即时反馈（TTFT）
-            if !didReceiveFirstTokenByConversation.contains(conversationId) {
-                didReceiveFirstTokenByConversation.insert(conversationId)
-                if let startedAt = streamStartedAtByConversation[conversationId] {
-                    let ttftMs = Date().timeIntervalSince(startedAt) * 1000.0
-                    processingStateViewModel.markFirstToken(ttftMs: ttftMs)
-                } else {
-                    processingStateViewModel.markGenerating()
-                }
-                upsertStatusMessage(for: conversationId, text: processingStateViewModel.statusText)
-            }
-
-            pendingStreamTextByConversation[conversationId, default: ""] += content
-            flushPendingStreamTextIfNeeded(
-                for: conversationId,
-                force: pendingStreamTextByConversation[conversationId, default: ""].count >= immediateStreamFlushChars
-            )
-
-        case let .streamEvent(eventType, content, rawEvent, messageId, conversationId):
-            // 处理心跳事件 - 更新心跳时间触发动画
-            if eventType == .ping {
-                let now = Date()
-                // 节流心跳 UI 更新，避免高频 ping 导致主线程过载。
-                if let last = lastHeartbeatByConversation[conversationId] ?? nil,
-                   now.timeIntervalSince(last) < 0.8 {
-                    return
-                }
-                lastHeartbeatByConversation[conversationId] = now
-                if conversationViewModel.selectedConversationId == conversationId {
-                    setLastHeartbeatTime(now)
-                }
-                return
-            }
-
-            // 处理思考增量事件 - 累积思考文本
-            if eventType == .thinkingDelta {
-                guard captureThinkingContent else { return }
-                // 累积思考文本
-                if !content.isEmpty {
-                    let existing = thinkingTextByConversation[conversationId, default: ""]
-                    var appendPart = ""
-                    if existing.count < maxThinkingTextLength {
-                        let remaining = maxThinkingTextLength - existing.count
-                        appendPart = String(content.prefix(remaining))
-                    thinkingTextByConversation[conversationId] = existing + appendPart
-                    }
-                    if conversationViewModel.selectedConversationId == conversationId, !appendPart.isEmpty {
-                        pendingThinkingTextByConversation[conversationId, default: ""] += appendPart
-                        flushPendingThinkingTextIfNeeded(
-                            for: conversationId,
-                            force: pendingThinkingTextByConversation[conversationId, default: ""].count >= immediateThinkingFlushChars
-                        )
-                    }
-                }
-                return
-            }
-
-            // 处理内容块开始事件 - 不追加到消息内容
-            if eventType == .contentBlockStart {
-                // 从 rawEvent 判断是否是思考块
-                if rawEvent.contains("\"type\":\"thinking\"") || rawEvent.contains("thinking") {
-                    thinkingConversationIds.insert(conversationId)
-                    if conversationViewModel.selectedConversationId == conversationId {
-                        setIsThinking(true, for: conversationId)
-                        upsertStatusMessage(for: conversationId, text: "思考中…")
-                    }
-                    if Self.verbose {
-                        os_log("\(Self.t)🤔 思考开始")
-                    }
-                }
-                return
-            }
-
-            // 处理内容块停止事件 - 不追加到消息内容
-            if eventType == .contentBlockStop {
-                return
-            }
-
-            // 处理签名增量事件 - 不追加到消息内容
-            if eventType == .signatureDelta {
-                if Self.verbose {
-                    os_log("\(Self.t)🔏 收到签名")
-                }
-                return
-            }
-
-            // 处理 input_json_delta 事件 - 不追加到消息内容
-            if eventType == .inputJsonDelta {
-                return
-            }
-
-            // text_delta 已通过 .streamChunk 处理，这里跳过避免重复追加
-            if eventType == .textDelta {
-                return
-            }
-
-            // 处理消息增量事件 - 不追加到消息内容（只包含停止原因等元数据）
-            if eventType == .messageDelta {
-                if Self.verbose {
-                    os_log("\(Self.t)📊 消息增量: \(content)")
-                }
-                return
-            }
-
-            guard conversationViewModel.selectedConversationId == conversationId,
-                  streamStateByConversation[conversationId]?.messageId == messageId,
-                  let index = streamStateByConversation[conversationId]?.messageIndex,
-                  index < messages.count else {
-                return
-            }
-
-            // 只追加文本增量事件的内容到消息
-            if eventType == .textDelta {
-                // 获取当前消息并追加事件内容
-                var currentMessage = messages[index]
-                currentMessage.content += content
-
-                // 更新消息
-                updateMessage(currentMessage, at: index)
-            }
-
-        case let .streamFinished(message, conversationId):
-            flushPendingStreamTextIfNeeded(for: conversationId, force: true)
-            flushPendingThinkingTextIfNeeded(for: conversationId, force: true)
-
-            // 流式响应结束，将思考过程附加到消息
-            var finalMessage = message
-            let thinkingText = thinkingTextByConversation[conversationId] ?? ""
-            if !thinkingText.isEmpty {
-                finalMessage.thinkingContent = thinkingText
-                if Self.verbose {
-                    os_log("\(Self.t)💭 保存思考过程到消息: \(thinkingText.prefix(50))...")
-                }
-            } else {
-                if Self.verbose {
-                    os_log("\(Self.t)⚠️ 思考文本为空，不保存思考过程")
-                }
-            }
-
-            // 流式响应结束，保存最终消息
-            if conversationViewModel.selectedConversationId == conversationId,
-               let index = streamStateByConversation[conversationId]?.messageIndex,
-               index < messages.count {
-                // 更新为最终消息（包含工具调用等信息）
-                updateMessage(finalMessage, at: index)
-            }
-            // 保存到数据库
-            await saveMessage(finalMessage, conversationId: conversationId)
-
-            // 清理流式状态
-            streamStateByConversation[conversationId] = StreamSessionState(messageId: nil, messageIndex: nil)
-
-            // 重置思考状态（但保留思考文本，以便在界面上显示）
-            thinkingConversationIds.remove(conversationId)
-            if conversationViewModel.selectedConversationId == conversationId {
-                setThinkingText(thinkingTextByConversation[conversationId] ?? "", for: conversationId)
-                setIsThinking(false, for: conversationId)
-            }
-            pendingStreamTextByConversation[conversationId] = nil
-            pendingThinkingTextByConversation[conversationId] = nil
-            lastStreamFlushAtByConversation[conversationId] = nil
-            lastThinkingFlushAtByConversation[conversationId] = nil
-            streamStartedAtByConversation[conversationId] = nil
-            didReceiveFirstTokenByConversation.remove(conversationId)
-            updateRuntimeState(for: conversationId)
-
-            if conversationViewModel.selectedConversationId == conversationId {
-                processingStateViewModel.finish()
-                removeStatusMessage(for: conversationId)
-            }
-
-        case let .toolResultReceived(result, conversationId):
-            // 保存工具结果
-            if conversationViewModel.selectedConversationId == conversationId {
-                appendMessage(result)
-            }
-            await saveMessage(result, conversationId: conversationId)
-            updateRuntimeState(for: conversationId)
-
-        case let .permissionRequested(request, conversationId):
-            // 设置待处理权限请求
-            pendingPermissionByConversation[conversationId] = request
-            if conversationViewModel.selectedConversationId == conversationId {
-                setPendingPermissionRequest(request)
-            }
-            updateRuntimeState(for: conversationId)
-
-        case let .maxDepthReached(currentDepth, maxDepth, conversationId):
-            // 处理达到最大深度
-            let warning = DepthWarning(
-                currentDepth: currentDepth,
-                maxDepth: maxDepth,
-                warningType: .reached
-            )
-            depthWarningByConversation[conversationId] = warning
-            processingConversationIds.remove(conversationId)
-            if conversationViewModel.selectedConversationId == conversationId {
-                setDepthWarning(warning)
-                processingStateViewModel.finish()
-                removeStatusMessage(for: conversationId)
-            }
-
-            // 清理流式状态
-            streamStateByConversation[conversationId] = StreamSessionState(messageId: nil, messageIndex: nil)
-            pendingStreamTextByConversation[conversationId] = nil
-            pendingThinkingTextByConversation[conversationId] = nil
-            lastStreamFlushAtByConversation[conversationId] = nil
-            lastThinkingFlushAtByConversation[conversationId] = nil
-            streamStartedAtByConversation[conversationId] = nil
-            didReceiveFirstTokenByConversation.remove(conversationId)
-            updateRuntimeState(for: conversationId)
-
-        case let .completed(conversationId):
-            // 轮次完成
-            processingConversationIds.remove(conversationId)
-            if conversationViewModel.selectedConversationId == conversationId {
-                processingStateViewModel.finish()
-                removeStatusMessage(for: conversationId)
-            }
-
-            // 清理流式状态
-            streamStateByConversation[conversationId] = StreamSessionState(messageId: nil, messageIndex: nil)
-            pendingStreamTextByConversation[conversationId] = nil
-            pendingThinkingTextByConversation[conversationId] = nil
-            lastStreamFlushAtByConversation[conversationId] = nil
-            lastThinkingFlushAtByConversation[conversationId] = nil
-            streamStartedAtByConversation[conversationId] = nil
-            didReceiveFirstTokenByConversation.remove(conversationId)
-            updateRuntimeState(for: conversationId)
-
-        case let .error(error, conversationId):
-            // 处理错误
-            errorMessageByConversation[conversationId] = error.localizedDescription
-            processingConversationIds.remove(conversationId)
-            if conversationViewModel.selectedConversationId == conversationId {
-                setErrorMessage(error.localizedDescription)
-                processingStateViewModel.finish()
-                removeStatusMessage(for: conversationId)
-            }
-
-            // 清理流式状态
-            streamStateByConversation[conversationId] = StreamSessionState(messageId: nil, messageIndex: nil)
-            pendingStreamTextByConversation[conversationId] = nil
-            pendingThinkingTextByConversation[conversationId] = nil
-            lastStreamFlushAtByConversation[conversationId] = nil
-            lastThinkingFlushAtByConversation[conversationId] = nil
-            streamStartedAtByConversation[conversationId] = nil
-            didReceiveFirstTokenByConversation.remove(conversationId)
-            updateRuntimeState(for: conversationId)
-
         case let .shouldContinue(depth, conversationId):
             // 继续下一轮
             enqueueTurnProcessing(conversationId: conversationId, depth: depth)
+        default:
+            break
         }
     }
 
@@ -842,54 +544,34 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
     /// 根据当前选中会话同步会话级 UI 状态
     private func refreshSessionScopedUIState(for conversationId: UUID) {
-        setIsProcessing(processingConversationIds.contains(conversationId))
-        setLastHeartbeatTime(lastHeartbeatByConversation[conversationId] ?? nil)
+        setIsProcessing(runtimeStore.processingConversationIds.contains(conversationId))
+        setLastHeartbeatTime(runtimeStore.lastHeartbeatByConversation[conversationId] ?? nil)
         thinkingStateViewModel.setActiveConversation(conversationId)
-        setIsThinking(thinkingConversationIds.contains(conversationId), for: conversationId)
-        setThinkingText(thinkingTextByConversation[conversationId] ?? "", for: conversationId)
-        setPendingPermissionRequest(pendingPermissionByConversation[conversationId] ?? nil)
-        setDepthWarning(depthWarningByConversation[conversationId] ?? nil)
-        setErrorMessage(errorMessageByConversation[conversationId] ?? nil)
+        setIsThinking(runtimeStore.thinkingConversationIds.contains(conversationId), for: conversationId)
+        setThinkingText(runtimeStore.thinkingTextByConversation[conversationId] ?? "", for: conversationId)
+        setPendingPermissionRequest(runtimeStore.pendingPermissionByConversation[conversationId] ?? nil)
+        setDepthWarning(runtimeStore.depthWarningByConversation[conversationId] ?? nil)
+        setErrorMessage(runtimeStore.errorMessageByConversation[conversationId] ?? nil)
     }
 
     func runtimeState(for conversationId: UUID) -> ConversationRuntimeState {
-        conversationRuntimeStates[conversationId] ?? .idle
+        runtimeStore.runtimeState(for: conversationId)
     }
 
     private func updateRuntimeState(for conversationId: UUID) {
-        let hasError = (errorMessageByConversation[conversationId] ?? nil) != nil
-        let hasPermissionRequest = pendingPermissionByConversation[conversationId] != nil
-        let isGenerating = processingConversationIds.contains(conversationId) ||
-            (streamStateByConversation[conversationId]?.messageId != nil)
-
-        let state: ConversationRuntimeState
-        if hasError {
-            state = .error
-        } else if hasPermissionRequest {
-            state = .waitingPermission
-        } else if isGenerating {
-            state = .generating
-        } else {
-            state = .idle
-        }
-
-        if state == .idle {
-            conversationRuntimeStates.removeValue(forKey: conversationId)
-        } else {
-            conversationRuntimeStates[conversationId] = state
-        }
+        runtimeStore.updateRuntimeState(for: conversationId)
     }
 
     private func flushPendingStreamTextIfNeeded(for conversationId: UUID, force: Bool = false) {
-        guard let pending = pendingStreamTextByConversation[conversationId], !pending.isEmpty else {
+        guard let pending = runtimeStore.pendingStreamTextByConversation[conversationId], !pending.isEmpty else {
             return
         }
         let now = Date()
-        let lastFlush = lastStreamFlushAtByConversation[conversationId] ?? .distantPast
+        let lastFlush = runtimeStore.lastStreamFlushAtByConversation[conversationId] ?? .distantPast
         guard force || now.timeIntervalSince(lastFlush) >= streamUIFlushInterval else {
             return
         }
-        guard let state = streamStateByConversation[conversationId],
+        guard let state = runtimeStore.streamStateByConversation[conversationId],
               let messageId = state.messageId,
               conversationViewModel.selectedConversationId == conversationId,
               let index = state.messageIndex,
@@ -900,23 +582,23 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         var currentMessage = messages[index]
         currentMessage.content += pending
         updateMessage(currentMessage, at: index)
-        pendingStreamTextByConversation[conversationId] = ""
-        lastStreamFlushAtByConversation[conversationId] = now
+        runtimeStore.pendingStreamTextByConversation[conversationId] = ""
+        runtimeStore.lastStreamFlushAtByConversation[conversationId] = now
     }
 
     private func flushPendingThinkingTextIfNeeded(for conversationId: UUID, force: Bool = false) {
-        guard let pending = pendingThinkingTextByConversation[conversationId], !pending.isEmpty else {
+        guard let pending = runtimeStore.pendingThinkingTextByConversation[conversationId], !pending.isEmpty else {
             return
         }
         let now = Date()
-        let lastFlush = lastThinkingFlushAtByConversation[conversationId] ?? .distantPast
+        let lastFlush = runtimeStore.lastThinkingFlushAtByConversation[conversationId] ?? .distantPast
         guard force || now.timeIntervalSince(lastFlush) >= thinkingUIFlushInterval else {
             return
         }
         guard conversationViewModel.selectedConversationId == conversationId else { return }
         appendThinkingText(pending, for: conversationId)
-        pendingThinkingTextByConversation[conversationId] = ""
-        lastThinkingFlushAtByConversation[conversationId] = now
+        runtimeStore.pendingThinkingTextByConversation[conversationId] = ""
+        runtimeStore.lastThinkingFlushAtByConversation[conversationId] = now
     }
 
     // MARK: - 业务方法
@@ -1227,10 +909,10 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         messageSenderViewModel.cancelProcessing(for: conversationId, clearQueue: true)
         turnTaskPipelineByConversation[conversationId]?.cancel()
         turnTaskPipelineByConversation[conversationId] = nil
-        processingConversationIds.remove(conversationId)
-        streamStateByConversation[conversationId] = StreamSessionState(messageId: nil, messageIndex: nil)
-        thinkingConversationIds.remove(conversationId)
-        pendingPermissionByConversation[conversationId] = nil
+        runtimeStore.processingConversationIds.remove(conversationId)
+        runtimeStore.streamStateByConversation[conversationId] = StreamSessionState(messageId: nil, messageIndex: nil)
+        runtimeStore.thinkingConversationIds.remove(conversationId)
+        runtimeStore.pendingPermissionByConversation[conversationId] = nil
         updateRuntimeState(for: conversationId)
 
         os_log("\(Self.t)🛑 任务已取消")
@@ -1295,7 +977,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         setIsProcessing(false)
         setErrorMessage(nil)
         if let conversationId = conversationViewModel.selectedConversationId {
-            errorMessageByConversation[conversationId] = nil
+            runtimeStore.errorMessageByConversation[conversationId] = nil
             updateRuntimeState(for: conversationId)
         }
         pendingAttachments.removeAll()
@@ -1329,10 +1011,10 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
                     }
                     setIsProcessing(false)
                 case .clearHistory:
-                    await clearHistory()
+                    clearHistory()
                     setIsProcessing(false)
                 case let .triggerPlanning(task):
-                    await triggerPlanningMode(task: task)
+                    triggerPlanningMode(task: task)
                     setIsProcessing(false)
                 case let .mcpCommand(subCommand, param):
                     await handleMCPCommand(subCommand: subCommand, param: param)
@@ -1444,9 +1126,9 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
     public func respondToPermissionRequest(allowed: Bool) async {
         guard let conversationId = conversationViewModel.selectedConversationId,
-              let request = pendingPermissionByConversation[conversationId] else { return }
+              let request = runtimeStore.pendingPermissionByConversation[conversationId] else { return }
 
-        pendingPermissionByConversation[conversationId] = nil
+        runtimeStore.pendingPermissionByConversation[conversationId] = nil
         permissionRequestViewModel.setPendingPermissionRequest(nil)
         updateRuntimeState(for: conversationId)
 
