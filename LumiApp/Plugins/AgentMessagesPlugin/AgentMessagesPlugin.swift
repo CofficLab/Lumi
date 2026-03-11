@@ -1,8 +1,8 @@
 import MagicKit
 import SwiftUI
 
-/// DevAssistant 消息插件 - 负责显示聊天消息列表
-actor DevAssistantMessagesPlugin: SuperPlugin {
+/// 消息插件 - 负责显示聊天消息列表
+actor AgentMessagesPlugin: SuperPlugin {
     nonisolated static let emoji = "💬"
     nonisolated static let verbose = false
 
@@ -13,7 +13,7 @@ actor DevAssistantMessagesPlugin: SuperPlugin {
     static var order: Int { 82 }
     static let enable: Bool = true
 
-    static let shared = DevAssistantMessagesPlugin()
+    static let shared = AgentMessagesPlugin()
 
     // MARK: - Lifecycle
 
