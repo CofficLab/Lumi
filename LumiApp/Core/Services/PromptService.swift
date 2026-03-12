@@ -344,7 +344,7 @@ actor PromptService: SuperLog {
         switch language {
         case .chinese:
             return """
-            你是 DevAssistant，一个智能编程助手。
+            你是 Lumi，一个智能助手。
             
             \(projectContext)
             
@@ -358,7 +358,7 @@ actor PromptService: SuperLog {
             """
         case .english:
             return """
-            You are DevAssistant, an intelligent coding assistant.
+            You are Lumi, an intelligent assistant.
             
             \(projectContext)
             

@@ -19,7 +19,7 @@ struct ToolPresentationDescriptor: Sendable, Equatable {
     let order: Int
 }
 
-/// 工具展示描述符解析器（插件优先，内置回退）。
+/// 工具展示描述符解析器（必须由插件提供）。
 @MainActor
 enum ToolPresentationDescriptorResolver {
     static func descriptor(for toolName: String) -> ToolPresentationDescriptor {
@@ -29,25 +29,7 @@ enum ToolPresentationDescriptorResolver {
             return pluginDescriptor
         }
 
-        return fallbackDescriptor(for: toolName)
-    }
-
-    private static func fallbackDescriptor(for toolName: String) -> ToolPresentationDescriptor {
-        switch toolName {
-        case "run_command", "run_shell_command", "bash":
-            return .init(toolName: toolName, displayName: "Shell 命令", emoji: "⚡", category: .shell, order: 0)
-        case "read_file":
-            return .init(toolName: toolName, displayName: "读取文件", emoji: "📖", category: .readFile, order: 0)
-        case "write_file":
-            return .init(toolName: toolName, displayName: "写入文件", emoji: "✍️", category: .writeFile, order: 0)
-        case "list_directory", "list_files":
-            return .init(toolName: toolName, displayName: "列出目录", emoji: "📁", category: .listDirectory, order: 0)
-        case "create_and_assign_task", "agent":
-            return .init(toolName: toolName, displayName: "智能助手", emoji: "🧩", category: .agent, order: 0)
-        default:
-            let title = toolName.replacingOccurrences(of: "_", with: " ").capitalized
-            return .init(toolName: toolName, displayName: title, emoji: "🔧", category: .unknown, order: 0)
-        }
+        fatalError("Missing ToolPresentationDescriptor for tool '\(toolName)'. Plugins must provide a descriptor via PluginProvider.getToolPresentationDescriptors().")
     }
 }
 
