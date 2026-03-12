@@ -161,6 +161,14 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         !(toolCalls?.isEmpty ?? true)
     }
 
+    /// 是否应展示在聊天消息列表中
+    func shouldDisplayInChatList() -> Bool {
+        guard role.shouldDisplayInChatList else { return false }
+        // 工具输出明细消息（tool_result）统一不展示
+        if isToolOutput { return false }
+        return true
+    }
+
     // MARK: - Factory Helpers
 
     /// 达到最大深度时的最后一步提醒（作为一条 user 消息追加，用于提示模型不再调用工具、直接给出最终回答）。

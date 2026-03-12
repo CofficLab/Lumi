@@ -46,47 +46,13 @@ struct MessageListView: View, SuperLog {
 
     /// 非系统消息
     private var nonSystemMessages: [ChatMessage] {
-        messages.filter { $0.role.shouldDisplayInChatList }
-    }
-
-    /// 显示消息项：包含消息和相关的工具输出
-    private var displayItems: [DisplayMessageItem] {
-        var items: [DisplayMessageItem] = []
-        var index = 0
-
-        while index < nonSystemMessages.count {
-            let message = nonSystemMessages[index]
-
-            if message.role == .assistant,
-               let toolCalls = message.toolCalls,
-               !toolCalls.isEmpty {
-                let toolCallIDs = Set(toolCalls.map(\.id))
-                var groupedOutputs: [ChatMessage] = []
-                var cursor = index + 1
-
-                while cursor < nonSystemMessages.count {
-                    let next = nonSystemMessages[cursor]
-                    guard let toolCallID = next.toolCallID else { break }
-                    guard toolCallIDs.contains(toolCallID) else { break }
-                    groupedOutputs.append(next)
-                    cursor += 1
-                }
-
-                items.append(DisplayMessageItem(message: message, relatedToolOutputs: groupedOutputs))
-                index = cursor
-                continue
-            }
-
-            items.append(DisplayMessageItem(message: message, relatedToolOutputs: []))
-            index += 1
-        }
-
-        return items
+        // ChatHistoryService 已经完成“是否展示”的过滤；这里直接展示即可
+        messages
     }
 
     var body: some View {
-        let items = displayItems
-        let lastMessageID = items.last?.id
+        let messages = nonSystemMessages
+        let lastMessageID = messages.last?.id
 
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 12) {
@@ -94,13 +60,13 @@ struct MessageListView: View, SuperLog {
                     loadMoreButton
                 }
 
-                ForEach(items) { item in
+                ForEach(messages) { message in
                     ChatBubble(
-                        message: item.message,
-                        isLastMessage: item.id == lastMessageID,
-                        relatedToolOutputs: item.relatedToolOutputs
+                        message: message,
+                        isLastMessage: message.id == lastMessageID,
+                        relatedToolOutputs: []
                     )
-                    .id(item.message.id)
+                    .id(message.id)
                 }
             }
             .padding(.horizontal)
@@ -117,6 +83,24 @@ struct MessageListView: View, SuperLog {
 // MARK: - View
 
 extension MessageListView {
+    // MARK: - Shared Display Item
+    //
+    // MessageListView 本身已直接渲染 nonSystemMessages，不再做 DisplayMessageItem 转换；
+    // 但 AppKit 版本消息列表仍复用该类型做渲染分支，因此保留这个共享 enum。
+    enum DisplayMessageItem: Identifiable {
+        case message(message: ChatMessage, relatedToolOutputs: [ChatMessage])
+        case toolCallSummary(id: UUID, toolCount: Int)
+
+        var id: UUID {
+            switch self {
+            case .message(let message, _):
+                return message.id
+            case .toolCallSummary(let id, _):
+                return id
+            }
+        }
+    }
+
     /// 加载更多消息按钮
     private var loadMoreButton: some View {
         HStack {
@@ -146,14 +130,8 @@ extension MessageListView {
         if isLoadingMore {
             return "加载中..."
         }
-        return "加载更早消息（已加载 \(messages.count) 条，共 \(totalMessageCount) 条）"
-    }
-
-    /// 显示消息项：包含消息和相关的工具输出
-    struct DisplayMessageItem: Identifiable {
-        let message: ChatMessage
-        let relatedToolOutputs: [ChatMessage]
-        var id: UUID { message.id }
+        // messages.count 可能包含被隐藏的工具消息；这里用当前可见消息数，更符合用户直觉
+        return "加载更早消息（已加载 \(nonSystemMessages.count) 条，共 \(totalMessageCount) 条）"
     }
 }
 
@@ -227,13 +205,13 @@ extension MessageListView {
         )
 
         await MainActor.run {
-            messages = result.messages
-            hasMoreMessages = result.hasMore
-
-            // 更新最早加载的时间戳
+            // oldestLoadedTimestamp 作为分页游标必须基于“原始页”，即使该页被过滤也要前进
             if let firstMessage = result.messages.first {
                 oldestLoadedTimestamp = firstMessage.timestamp
             }
+
+            messages = result.messages
+            hasMoreMessages = result.hasMore
 
             if Self.verbose {
                 os_log("\(Self.t)✅ [\(conversationId)] 加载完成：\(self.messages.count)/\(self.totalMessageCount) 条，hasMore: \(self.hasMoreMessages)")
@@ -256,19 +234,20 @@ extension MessageListView {
                 os_log("\(Self.t)📄 [\(conversationId)] 加载更早消息...")
             }
 
-            // 加载下一页（早于当前最早的消息）
+            // 当隐藏工具消息时，可能会遇到“某一页全是工具相关消息”，用户点击后 UI 看起来没变化。
+            // 这里会自动跳过纯工具页，直到拿到至少 1 条可展示消息，或确实没有更多为止。
             let result = await agentProvider.loadMessagesPage(
                 forConversationId: conversationId,
                 limit: Self.pageSize,
                 beforeTimestamp: oldestLoadedTimestamp
             )
 
-            messages.insert(contentsOf: result.messages, at: 0)
-            hasMoreMessages = result.hasMore
-
             if let firstMessage = result.messages.first {
                 oldestLoadedTimestamp = firstMessage.timestamp
             }
+
+            messages.insert(contentsOf: result.messages, at: 0)
+            hasMoreMessages = result.hasMore
 
             if Self.verbose {
                 os_log("\(Self.t)📄 [\(conversationId)] 加载更多完成：\(self.messages.count)/\(self.totalMessageCount) 条，hasMore: \(self.hasMoreMessages)")
@@ -303,6 +282,13 @@ extension MessageListView {
         guard conversationId == selectedConversationId else { return }
 
         Task { @MainActor in
+            // ChatHistoryService 已下沉过滤规则；实时新增也要遵守
+            guard message.shouldDisplayInChatList() else {
+                // 如果之前插入过（旧版本/竞态），确保移除
+                messages.removeAll { $0.id == message.id }
+                return
+            }
+
             let existingIndex = messages.firstIndex { $0.id == message.id }
 
             if let idx = existingIndex {

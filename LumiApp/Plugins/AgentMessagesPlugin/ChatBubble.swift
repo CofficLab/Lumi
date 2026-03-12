@@ -125,7 +125,7 @@ struct ChatBubble: View, SuperLog {
                         }
 
                         if message.hasToolCalls {
-                            AssistantMessageWithToolCallsView(
+                            MessageWithToolCallsView(
                                 message: message,
                                 toolOutputMessages: relatedToolOutputs
                             )

@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// 助手消息与工具调用视图 - 显示助手回复及工具调用列表
-struct AssistantMessageWithToolCallsView: View {
+struct MessageWithToolCallsView: View {
     let message: ChatMessage
     let toolOutputMessages: [ChatMessage]
     @ObservedObject private var expansionState = MessageExpansionState.shared
@@ -79,18 +79,9 @@ struct AssistantMessageWithToolCallsView: View {
 
                     if isToolDetailsExpanded {
                         VStack(alignment: .leading, spacing: 6) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "wrench.and.screwdriver.fill")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                                Text("正在调用工具")
-                                    .font(DesignTokens.Typography.caption1)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                            }
-                            .padding(.bottom, 2)
-
-                            ForEach(Array(toolCalls.enumerated()), id: \.element.id) { index, toolCall in
+                            // SwiftUI 要求 ForEach 的 id 在同一集合内唯一；toolCall.id 在某些提供方下可能重复，
+                            // 这里用 message.id + index + toolCall.id 组合出稳定且必唯一的 key，避免展开/折叠时出现未定义行为甚至卡死。
+                            ForEach(Array(toolCalls.enumerated()), id: \.offset) { index, toolCall in
                                 ToolCallView(toolCall: toolCall, index: index)
                             }
 
@@ -107,11 +98,9 @@ struct AssistantMessageWithToolCallsView: View {
                                 .padding(.top, 8)
                                 .padding(.bottom, 2)
 
-                                ForEach(toolOutputMessages, id: \.id) { output in
-                                    ToolOutputView(
-                                        message: output,
-                                        toolType: toolType(for: output)
-                                    )
+                                // toolOutputMessages.id 理论上应唯一，但在历史合并/重建时可能出现重复，导致 SwiftUI 未定义行为（展开/折叠卡死）。
+                                ForEach(Array(toolOutputMessages.enumerated()), id: \.offset) { _, output in
+                                    ToolOutputView(message: output, toolType: toolType(for: output))
                                 }
                             }
                         }
@@ -171,7 +160,7 @@ struct AssistantMessageWithToolCallsView: View {
         toolCalls: toolCalls
     )
 
-    return AssistantMessageWithToolCallsView(message: message, toolOutputMessages: [])
+    return MessageWithToolCallsView(message: message, toolOutputMessages: [])
         .padding()
         .frame(width: 600)
         .background(Color.black)
@@ -187,7 +176,7 @@ struct AssistantMessageWithToolCallsView: View {
         toolCalls: toolCalls
     )
 
-    return AssistantMessageWithToolCallsView(message: message, toolOutputMessages: [])
+    return MessageWithToolCallsView(message: message, toolOutputMessages: [])
         .padding()
         .frame(width: 600)
         .background(Color.black)

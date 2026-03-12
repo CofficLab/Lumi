@@ -283,7 +283,7 @@ actor PromptService: SuperLog {
         switch language {
         case .chinese:
             return """
-            👋 你好！我是你的智能编程助手 DevAssistant。
+            👋 你好！我是你的智能助手 Lumi。
 
             \(projectContext)
             
@@ -302,7 +302,7 @@ actor PromptService: SuperLog {
             dateFormatter.dateFormat = "MMMM dd, yyyy HH:mm"
             let currentTimeEN = dateFormatter.string(from: Date())
             return """
-            👋 Hello! I'm your intelligent coding assistant, DevAssistant.
+            👋 Hello! I'm your intelligent assistant, Lumi.
 
             \(projectContext)  
             

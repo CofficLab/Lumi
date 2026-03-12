@@ -91,7 +91,7 @@ struct AppKitChatBubble: View, SuperLog {
                         }
 
                         if message.hasToolCalls {
-                            AssistantMessageWithToolCallsView(
+                            MessageWithToolCallsView(
                                 message: message,
                                 toolOutputMessages: relatedToolOutputs
                             )

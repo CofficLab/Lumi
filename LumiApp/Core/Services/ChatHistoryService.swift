@@ -417,33 +417,95 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
 
                 let context = ModelContext(self.modelContainer)
 
-                var descriptor: FetchDescriptor<ChatMessageEntity>
-                if let before = beforeTimestamp {
-                    descriptor = FetchDescriptor<ChatMessageEntity>(
-                        predicate: #Predicate<ChatMessageEntity> { msg in
-                            msg.conversation?.id == conversationId && msg.timestamp < before
-                        },
-                        sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
-                    )
-                } else {
-                    descriptor = FetchDescriptor<ChatMessageEntity>(
-                        predicate: #Predicate<ChatMessageEntity> { msg in
-                            msg.conversation?.id == conversationId
-                        },
-                        sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
-                    )
-                }
-                descriptor.fetchLimit = limit + 1
-
-                guard let fetched = try? context.fetch(descriptor) else {
+                guard limit > 0 else {
                     continuation.resume(returning: ([], false))
                     return
                 }
 
-                let hasMore = fetched.count > limit
-                let messagesToReturn = Array(fetched.prefix(limit))
-                // 返回顺序：最早的在前、最新的在后（与列表展示一致）
-                let messages = messagesToReturn.reversed().compactMap { $0.toChatMessage() }
+                // 下沉“是否展示”的过滤逻辑：此 API 只返回应该展示的消息，
+                // 并在分页时自动跳过被过滤的消息，避免 UI 端再做判断和跳页。
+                var cursor = beforeTimestamp
+                var collected: [ChatMessage] = []
+                var hasMoreVisible = false
+
+                // 批次大小：尽量减少 fetch 次数，但也避免一次拉太多
+                let batchSize = max(limit * 3, limit + 10)
+                // 安全阈值：避免极端情况下长时间循环（例如大量连续 tool output 被过滤）
+                let maxBatches = 20
+
+                for _ in 0..<maxBatches {
+                    var descriptor: FetchDescriptor<ChatMessageEntity>
+                    if let before = cursor {
+                        descriptor = FetchDescriptor<ChatMessageEntity>(
+                            predicate: #Predicate<ChatMessageEntity> { msg in
+                                msg.conversation?.id == conversationId && msg.timestamp < before
+                            },
+                            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+                        )
+                    } else {
+                        descriptor = FetchDescriptor<ChatMessageEntity>(
+                            predicate: #Predicate<ChatMessageEntity> { msg in
+                                msg.conversation?.id == conversationId
+                            },
+                            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+                        )
+                    }
+                    descriptor.fetchLimit = batchSize
+
+                    guard let fetched = try? context.fetch(descriptor), !fetched.isEmpty else {
+                        hasMoreVisible = false
+                        break
+                    }
+
+                    // 推进游标：下一批拉取更早的消息
+                    cursor = fetched.last?.timestamp
+
+                    // fetched 是按 timestamp desc；转换后再按 asc 追加，保证返回顺序“最早→最新”
+                    let convertedAsc = fetched.reversed().compactMap { $0.toChatMessage() }
+
+                    // 过滤并补齐
+                    for msg in convertedAsc where msg.shouldDisplayInChatList() {
+                        collected.append(msg)
+                        if collected.count >= limit { break }
+                    }
+
+                    if collected.count >= limit {
+                        // 继续探测是否还有可展示消息：再拉一小批，看是否能过滤出任何消息
+                        var probeDescriptor: FetchDescriptor<ChatMessageEntity>
+                        if let before = cursor {
+                            probeDescriptor = FetchDescriptor<ChatMessageEntity>(
+                                predicate: #Predicate<ChatMessageEntity> { msg in
+                                    msg.conversation?.id == conversationId && msg.timestamp < before
+                                },
+                                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+                            )
+                        } else {
+                            probeDescriptor = FetchDescriptor<ChatMessageEntity>(
+                                predicate: #Predicate<ChatMessageEntity> { msg in
+                                    msg.conversation?.id == conversationId
+                                },
+                                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+                            )
+                        }
+                        probeDescriptor.fetchLimit = max(10, min(30, batchSize))
+                        if let probeFetched = try? context.fetch(probeDescriptor) {
+                            let probeConverted = probeFetched.compactMap { $0.toChatMessage() }
+                            hasMoreVisible = probeConverted.contains(where: { $0.shouldDisplayInChatList() })
+                        } else {
+                            hasMoreVisible = false
+                        }
+                        break
+                    }
+
+                    // 这一批没收集满，继续下一批；如果 fetched 少于 batchSize，说明原始数据也快到底了
+                    if fetched.count < batchSize {
+                        hasMoreVisible = false
+                        break
+                    }
+                }
+
+                let messages = Array(collected.prefix(limit))
+                let hasMore = hasMoreVisible
 
                 if Self.verbose {
                     os_log("\(Self.t)📄 [\(conversationId)] 分页加载消息: \(messages.count) 条, hasMore: \(hasMore)")

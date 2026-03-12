@@ -27,7 +27,7 @@ struct MessageListViewAppKitExperimental: View, SuperLog {
     }
 
     private var nonSystemMessages: [ChatMessage] {
-        messages.filter { $0.role.shouldDisplayInChatList }
+        messages.filter { $0.shouldDisplayInChatList() }
     }
 
     private var displayItems: [MessageListView.DisplayMessageItem] {
@@ -38,21 +38,11 @@ struct MessageListViewAppKitExperimental: View, SuperLog {
             if message.role == .assistant,
                let toolCalls = message.toolCalls,
                !toolCalls.isEmpty {
-                let toolCallIDs = Set(toolCalls.map(\.id))
-                var groupedOutputs: [ChatMessage] = []
-                var cursor = index + 1
-                while cursor < nonSystemMessages.count {
-                    let next = nonSystemMessages[cursor]
-                    guard let toolCallID = next.toolCallID else { break }
-                    guard toolCallIDs.contains(toolCallID) else { break }
-                    groupedOutputs.append(next)
-                    cursor += 1
-                }
-                items.append(MessageListView.DisplayMessageItem(message: message, relatedToolOutputs: groupedOutputs))
-                index = cursor
+                items.append(.toolCallSummary(id: message.id, toolCount: toolCalls.count))
+                index += 1
                 continue
             }
-            items.append(MessageListView.DisplayMessageItem(message: message, relatedToolOutputs: []))
+            items.append(.message(message: message, relatedToolOutputs: []))
             index += 1
         }
         return items
@@ -81,7 +71,7 @@ struct MessageListViewAppKitExperimental: View, SuperLog {
 
     private var loadMoreButtonText: String {
         if isLoadingMore { return "加载中..." }
-        return "加载更早消息（已加载 \(messages.count) 条，共 \(totalMessageCount) 条）"
+        return "加载更早消息（已加载 \(nonSystemMessages.count) 条，共 \(totalMessageCount) 条）"
     }
 
     private func applyTransientStatusMessageIfNeeded() {
@@ -156,6 +146,10 @@ struct MessageListViewAppKitExperimental: View, SuperLog {
     private func handleOnMessageSaved(message: ChatMessage, conversationId: UUID) {
         guard conversationId == selectedConversationId else { return }
         Task { @MainActor in
+            guard message.shouldDisplayInChatList() else {
+                messages.removeAll { $0.id == message.id }
+                return
+            }
             if let idx = messages.firstIndex(where: { $0.id == message.id }) {
                 messages[idx] = message
             } else {
@@ -255,15 +249,7 @@ private struct MessageListViewAppKitContentView: View {
                         .padding(.vertical, 8)
                     }
                     ForEach(items) { item in
-                        ChatBubble(
-                            message: item.message,
-                            isLastMessage: item.id == lastMessageID,
-                            relatedToolOutputs: item.relatedToolOutputs
-                        )
-                        .id(item.message.id)
-                        .environmentObject(agentProvider)
-                        .environmentObject(agentProvider.thinkingStateViewModel)
-                        .environmentObject(processingStateViewModel)
+                        row(for: item, lastMessageID: lastMessageID)
                     }
                     // 底部锚点：仅用于 scrollToBottom，不做任何高度测量
                     Color.clear
@@ -291,6 +277,31 @@ private struct MessageListViewAppKitContentView: View {
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private func row(for item: MessageListView.DisplayMessageItem, lastMessageID: UUID?) -> some View {
+        switch item {
+        case .message(let message, let relatedToolOutputs):
+            ChatBubble(
+                message: message,
+                isLastMessage: message.id == lastMessageID,
+                relatedToolOutputs: relatedToolOutputs
+            )
+            .id(message.id)
+            .environmentObject(agentProvider)
+            .environmentObject(agentProvider.thinkingStateViewModel)
+            .environmentObject(processingStateViewModel)
+        case .toolCallSummary(_, let toolCount):
+            toolCallSummaryRow(toolCount: toolCount)
+        }
+    }
+
+    private func toolCallSummaryRow(toolCount: Int) -> some View {
+        Text("正在执行 \(toolCount) 个工具：")
+            .font(DesignTokens.Typography.caption1)
+            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            .lineLimit(1)
     }
 }
 

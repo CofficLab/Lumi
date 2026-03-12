@@ -55,7 +55,7 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
     // MARK: - 会话上下文
 
     private var turnContexts: [UUID: TurnContext] = [:]
-    private let maxDepth = 16
+    private let maxDepth = 60
     private let maxToolResultLength = 4_000
 
     /// 连续重复同一工具签名（名称+参数）达到多少次视为循环
