@@ -7,7 +7,7 @@ import SwiftUI
 /// 消息管理 ViewModel
 /// 负责处理所有消息相关的业务逻辑，包括加载、保存、追加、更新、删除消息等
 @MainActor
-final class MessageViewModel: ObservableObject, SuperLog {
+final class MessagePendingViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "💬"
     nonisolated static let verbose = true
 
@@ -37,7 +37,7 @@ final class MessageViewModel: ObservableObject, SuperLog {
         messages = newMessages
 
         if Self.verbose {
-            os_log("\(Self.t)📝 ( \(reason) setMessagesInternal: \(oldCount) → \(newMessages.count) 条消息")
+            os_log("\(Self.t)📝 (\(reason)) setMessages: \(oldCount) → \(newMessages.count) 条消息")
         }
     }
 
@@ -67,9 +67,7 @@ final class MessageViewModel: ObservableObject, SuperLog {
         messages = updatedMessages
 
         if Self.verbose {
-            let contentPreview = message.content.count > 100 ? String(message.content.prefix(100)) + "..." : message.content
-            let logMessage = "\(Self.t)🍋 更新位置 \(index) 的消息 [\(message.role)] 内容: \(contentPreview)"
-            os_log("%@", logMessage)
+            os_log("\(Self.t)🍋 更新位置 \(index) 的消息, 长度: \(message.content.count)")
         }
     }
 }

@@ -25,8 +25,7 @@ import OSLog
 /// // 执行工具
 /// let result = try await executionService.executeTool(toolCall)
 /// ```
-@MainActor
-final class ToolExecutionService: SuperLog {
+final class ToolExecutionService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "⚙️"
     nonisolated static let verbose = true
 
@@ -60,18 +59,15 @@ final class ToolExecutionService: SuperLog {
     ///   - arguments: 工具参数（JSON 字符串）
     /// - Returns: 风险等级
     func evaluateRisk(toolName: String, arguments: String) -> CommandRiskLevel {
-        guard toolName == "run_command" else {
-            return .medium
+        // 1. 如果工具本身声明了风险等级，则以工具定义为准
+        if let data = arguments.data(using: .utf8),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let declared = toolService.declaredRiskLevel(toolName: toolName, arguments: json) {
+            return declared
         }
 
-        // 解析命令参数
-        guard let data = arguments.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let command = json["command"] as? String else {
-            return .medium
-        }
-
-        return toolService.evaluateCommandRisk(command: command)
+        // 2. 工具未声明时，一律视为高风险，交给用户批准
+        return .high
     }
 
     // MARK: - 工具执行
@@ -85,9 +81,7 @@ final class ToolExecutionService: SuperLog {
         let startTime = Date()
 
         // 检查工具是否存在
-        let hasTool = await MainActor.run {
-            toolService.hasTool(named: toolCall.name)
-        }
+        let hasTool = toolService.hasTool(named: toolCall.name)
 
         guard hasTool else {
             throw ToolExecutionError.toolNotFound(toolName: toolCall.name)

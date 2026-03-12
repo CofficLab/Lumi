@@ -118,9 +118,9 @@ struct AnthropicProvider: LLMProviderProtocol, SuperLog {
         // 提取系统消息
         let systemMessage = messages.first(where: { $0.role == .system })?.content ?? systemPrompt
 
-        // 转换对话消息（排除系统消息）
+        // 转换对话消息（只发送 user/assistant 给 LLM）
         let conversationMessages = messages
-            .filter { $0.role != .system }
+            .filter { $0.role.shouldSendToLLM }
             .map { transformMessage($0) }
 
         var body: [String: Any] = [
@@ -475,15 +475,19 @@ struct AnthropicProvider: LLMProviderProtocol, SuperLog {
             }
 
             // 处理消息增量（包含 stop_reason 和 usage）
+            // usage 在 message_delta 中同时包含 input_tokens 和 output_tokens（message_start 可能无 usage 或结构不同，此处作为可靠来源）
             if effectiveEventType == "message_delta" {
-                let stopReason = json?["stop_reason"] as? String
+                let stopReason = (json?["delta"] as? [String: Any])?["stop_reason"] as? String ?? json?["stop_reason"] as? String
+                var inputTokens: Int?
                 var outputTokens: Int?
                 if let usage = json?["usage"] as? [String: Any] {
+                    inputTokens = usage["input_tokens"] as? Int
                     outputTokens = usage["output_tokens"] as? Int
                 }
                 return StreamChunk(
                     eventType: .messageDelta,
                     rawEvent: text,
+                    inputTokens: inputTokens,
                     outputTokens: outputTokens,
                     stopReason: stopReason
                 )

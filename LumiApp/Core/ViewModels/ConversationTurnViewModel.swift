@@ -55,15 +55,15 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
     // MARK: - 会话上下文
 
     private var turnContexts: [UUID: TurnContext] = [:]
-    private let maxDepth = 16
+    private let maxDepth = 60
     private let maxToolResultLength = 4_000
-    private let maxDepthFinalStepReminder = """
-<system-reminder>
-You have reached the final execution step. Do not call any tools anymore.
-Provide your best final answer using the information already collected.
-If critical information is missing, explicitly state what is missing and ask one concise follow-up question.
-</system-reminder>
-"""
+
+    /// 连续重复同一工具签名（名称+参数）达到多少次视为循环
+    private let repeatedToolSignatureThreshold = 10
+
+    /// 在最近窗口中同一签名出现多少次视为循环
+    private let repeatedToolWindowThreshold = 10
+    private let createAndAssignTaskToolName = "create_and_assign_task"
 
     /// 仅转发必要的流式事件，避免高频无用事件（如 thinking_delta）压垮主线程。
     private nonisolated static func shouldForwardStreamEvent(_ eventType: StreamEventType) -> Bool {
@@ -125,7 +125,8 @@ If critical information is missing, explicitly state what is missing and ask one
 
         let availableTools: [AgentTool] = (chatMode.allowsTools && !isFinalStep)
             ? tools.filter { tool in
-                if tool.name == CreateAndAssignTaskTool.toolName {
+                // 多 Worker 工具仅在允许多 Worker 的模式下启用
+                if tool.name == createAndAssignTaskToolName {
                     return chatMode.allowsMultiWorker
                 }
                 return true
@@ -134,12 +135,7 @@ If critical information is missing, explicitly state what is missing and ask one
 
         var effectiveMessages = messages
         if isFinalStep {
-            effectiveMessages.append(
-                ChatMessage(
-                    role: .user,
-                    content: maxDepthFinalStepReminder
-                )
-            )
+            effectiveMessages.append(ChatMessage.maxDepthFinalStepReminderMessage())
         }
 
         do {
@@ -197,6 +193,13 @@ If critical information is missing, explicitly state what is missing and ask one
                     var broken = turnContexts[conversationId] ?? TurnContext()
                     broken.pendingToolCalls.removeAll()
                     turnContexts[conversationId] = broken
+                // 在 UI 中给出明确的助手提示，而不是静默结束
+                let explainMessage = ChatMessage.maxDepthToolLimitMessage(
+                    languagePreference: languagePreference,
+                    currentDepth: depth,
+                    maxDepth: maxDepth
+                )
+                eventContinuation?.yield(.responseReceived(explainMessage, conversationId: conversationId))
                     eventContinuation?.yield(.completed(conversationId: conversationId))
                     if Self.verbose {
                         os_log("\(Self.t)⚠️ [\(conversationId)] 最后一步仍请求工具，已忽略并结束本轮")
@@ -236,11 +239,19 @@ If critical information is missing, explicitly state what is missing and ask one
                 turnContexts[conversationId] = context
 
                 let sameSignatureInWindow = context.recentToolSignatures.filter { $0 == signature }.count
-                if context.repeatedToolSignatureCount >= 3 || sameSignatureInWindow >= 3 {
+                if context.repeatedToolSignatureCount >= repeatedToolSignatureThreshold
+                    || sameSignatureInWindow >= repeatedToolWindowThreshold {
                     emitAbortedToolResults(for: toolCalls, conversationId: conversationId)
                     var broken = turnContexts[conversationId] ?? TurnContext()
                     broken.pendingToolCalls.removeAll()
                     turnContexts[conversationId] = broken
+                    let explainMessage = ChatMessage.repeatedToolLoopMessage(
+                        languagePreference: languagePreference,
+                        tool: firstTool,
+                        repeatedCount: context.repeatedToolSignatureCount,
+                        windowCount: sameSignatureInWindow
+                    )
+                    eventContinuation?.yield(.responseReceived(explainMessage, conversationId: conversationId))
                     let error = NSError(
                         domain: "ConversationTurn",
                         code: 410,
@@ -273,6 +284,8 @@ If critical information is missing, explicitly state what is missing and ask one
             failedContext.pendingToolCalls.removeAll()
             turnContexts[conversationId] = failedContext
 
+            let explainMessage = ChatMessage.requestFailedMessage(languagePreference: languagePreference, error: error)
+            eventContinuation?.yield(.responseReceived(explainMessage, conversationId: conversationId))
             eventContinuation?.yield(.error(error, conversationId: conversationId))
             os_log(.error, "\(Self.t)❌ [\(conversationId)] 对话处理失败：\(error.localizedDescription)")
         }
@@ -512,7 +525,7 @@ If critical information is missing, explicitly state what is missing and ask one
     }
 
     private func normalizeToolCallForExecution(_ toolCall: ToolCall, conversationId: UUID) -> ToolCall {
-        guard toolCall.name == "create_and_assign_task",
+        guard toolCall.name == createAndAssignTaskToolName,
               let providerId = turnContexts[conversationId]?.currentProviderId,
               !providerId.isEmpty else {
             return toolCall
@@ -552,7 +565,7 @@ If critical information is missing, explicitly state what is missing and ask one
         case "write_file": return "✏️"
         case "list_directory": return "📁"
         case "run_command": return "⚡"
-        case "create_and_assign_task": return "🧩"
+        case createAndAssignTaskToolName: return "🧩"
         default: return "🔧"
         }
     }

@@ -17,8 +17,6 @@ struct ChatHeaderView: View, SuperLog {
 
     /// 项目选择器呈现状态
     @State private var isProjectSelectorPresented = false
-    /// MCP 设置呈现状态
-    @State private var isMCPSettingsPresented = false
 
     /// 图标尺寸常量
     private let iconSize: CGFloat = 14
@@ -51,7 +49,6 @@ struct ChatHeaderView: View, SuperLog {
                     NewChatButton()
                     AutoApproveToggle()
                     LanguageSelector()
-                    MCPButton()
                     ProjectButton()
                     SettingsButton()
                 }
@@ -64,15 +61,9 @@ struct ChatHeaderView: View, SuperLog {
                 projectSelectionHint
             }
         }
-        .popover(isPresented: $isMCPSettingsPresented, arrowEdge: .top) {
-            MCPSettingsView()
-        }
         .popover(isPresented: $isProjectSelectorPresented, arrowEdge: .top) {
             ProjectSelectorView(isPresented: $isProjectSelectorPresented)
                 .frame(width: 400, height: 500)
-        }
-        .onOpenMCPSettings {
-            isMCPSettingsPresented = true
         }
         .onOpenProjectSelector {
             isProjectSelectorPresented = true

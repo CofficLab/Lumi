@@ -15,7 +15,7 @@ import SwiftUI
 final class WindowViewContainer: ObservableObject {
     let chatHistoryService: ChatHistoryService
 
-    let messageViewModel: MessageViewModel
+    let messageViewModel: MessagePendingViewModel
     let conversationViewModel: ConversationViewModel
     let messageSenderViewModel: MessageSenderViewModel
     let agentProvider: AgentProvider
@@ -31,7 +31,8 @@ final class WindowViewContainer: ObservableObject {
     init(services: RootViewContainer.Services) {
         self.chatHistoryService = ChatHistoryService(
             llmService: services.llmService,
-            modelContainer: services.modelContainer
+            modelContainer: services.modelContainer,
+            reason: "WindowViewContainer"
         )
 
         self.depthWarningViewModel = DepthWarningViewModel()
@@ -41,7 +42,7 @@ final class WindowViewContainer: ObservableObject {
         self.thinkingStateViewModel = ThinkingStateViewModel()
         self.titleGenerationViewModel = TitleGenerationViewModel()
 
-        self.messageViewModel = MessageViewModel(chatHistoryService: chatHistoryService)
+        self.messageViewModel = MessagePendingViewModel(chatHistoryService: chatHistoryService)
 
         self.conversationViewModel = ConversationViewModel(
             chatHistoryService: chatHistoryService,

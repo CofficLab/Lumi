@@ -2,6 +2,24 @@ import Foundation
 import OSLog
 import MagicKit
 
+private final class LockedDataBuffer: @unchecked Sendable {
+    private let lock = NSLock()
+    private var data = Data()
+
+    func append(_ chunk: Data) {
+        lock.lock()
+        data.append(chunk)
+        lock.unlock()
+    }
+
+    func snapshot() -> Data {
+        lock.lock()
+        let copy = data
+        lock.unlock()
+        return copy
+    }
+}
+
 /// 项目命令加载服务 - 负责从 .agent/commands 目录加载命令
 actor ProjectCommandLoader: SuperLog {
     nonisolated static let emoji = "📜"
@@ -318,24 +336,43 @@ actor ProjectCommandExecutor: SuperLog {
     /// 执行单个命令
     private func executeCommand(_ command: String, workingDirectory: String) async -> String {
         await withCheckedContinuation { continuation in
-            let task = Process()
-            task.executableURL = URL(fileURLWithPath: "/bin/bash")
-            task.arguments = ["-c", command]
-            task.currentDirectoryURL = URL(fileURLWithPath: workingDirectory)
-            
-            let pipe = Pipe()
-            task.standardOutput = pipe
-            task.standardError = pipe
-            
-            do {
-                try task.run()
-                task.waitUntilExit()
-                
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                let output = String(data: data, encoding: .utf8) ?? ""
+            Task.detached(priority: .userInitiated) {
+                let task = Process()
+                task.executableURL = URL(fileURLWithPath: "/bin/bash")
+                task.arguments = ["-c", command]
+                task.currentDirectoryURL = URL(fileURLWithPath: workingDirectory)
+
+                let pipe = Pipe()
+                task.standardOutput = pipe
+                task.standardError = pipe
+
+                let buffer = LockedDataBuffer()
+                let handle = pipe.fileHandleForReading
+                handle.readabilityHandler = { h in
+                    let chunk = h.availableData
+                    if !chunk.isEmpty { buffer.append(chunk) }
+                }
+
+                do {
+                    try task.run()
+                } catch {
+                    handle.readabilityHandler = nil
+                    continuation.resume(returning: "Error: \(error.localizedDescription)")
+                    return
+                }
+
+                await withCheckedContinuation { termCont in
+                    task.terminationHandler = { _ in
+                        termCont.resume()
+                    }
+                }
+
+                handle.readabilityHandler = nil
+                let final = handle.availableData
+                if !final.isEmpty { buffer.append(final) }
+
+                let output = String(data: buffer.snapshot(), encoding: .utf8) ?? ""
                 continuation.resume(returning: output.trimmingCharacters(in: .whitespacesAndNewlines))
-            } catch {
-                continuation.resume(returning: "Error: \(error.localizedDescription)")
             }
         }
     }

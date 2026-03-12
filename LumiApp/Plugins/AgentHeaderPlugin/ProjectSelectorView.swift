@@ -42,7 +42,7 @@ struct ProjectSelectorView: View {
 
             // Content
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
                     // Current Project Section
                     VStack(alignment: .leading, spacing: 8) {
                         Text("当前项目")
@@ -82,7 +82,6 @@ struct ProjectSelectorView: View {
                     }
                     .padding(.bottom)
                 }
-                .padding(.vertical)
             }
         }
         .frame(width: 400, height: 500)

@@ -1,5 +1,8 @@
 import Foundation
 
+/// 工具风险等级元数据由插件定义，内核只消费结果。
+import SwiftUI
+
 /// 工具参数包装器
 ///
 /// 用于在工具调用时传递参数的包装类型。
@@ -88,6 +91,16 @@ protocol AgentTool: Sendable {
     ///
     /// - Throws: 执行过程中可能抛出的错误
     func execute(arguments: [String: ToolArgument]) async throws -> String
+}
+
+extension AgentTool {
+    /// 工具自行评估当前调用的风险等级。
+    ///
+    /// - Parameter arguments: 工具调用参数
+    /// - Returns: 如果返回 nil，则表示“不声明风险”，由上层采用默认策略。
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel? {
+        nil
+    }
 }
 
 /// 工具参数定义辅助结构

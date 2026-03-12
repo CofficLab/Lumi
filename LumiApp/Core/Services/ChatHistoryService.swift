@@ -59,12 +59,12 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
     private let storageQueue = DispatchQueue(label: "com.coffic.lumi.chat-history.storage", qos: .utility)
 
     /// 使用 LLM 服务和模型容器初始化
-    init(llmService: LLMService, modelContainer: ModelContainer) {
+    init(llmService: LLMService, modelContainer: ModelContainer, reason: String) {
         self.llmService = llmService
         self.modelContainer = modelContainer
         self.modelContext = ModelContext(modelContainer)
         if Self.verbose {
-            os_log("\(Self.t)✅ 聊天存储已初始化")
+            os_log("\(Self.t)✅ (\(reason)) 聊天存储已初始化")
         }
     }
 
@@ -317,7 +317,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                 os_log(.error, "\(Self.t)❌ 消息转换失败")
                 return nil
             }
-            NotificationCenter.postMessageSaved(message: savedMessage)
+            NotificationCenter.postMessageSaved(message: savedMessage, conversationId: conversation.id)
             return savedMessage
         } catch {
             os_log(.error, "\(Self.t)❌ 保存消息失败：\(error.localizedDescription)")
@@ -358,7 +358,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                     try context.save()
                     // 发送消息已保存事件
                     if let savedMessage = messageEntity.toChatMessage() {
-                        NotificationCenter.postMessageSaved(message: savedMessage)
+                        NotificationCenter.postMessageSaved(message: savedMessage, conversationId: fetchedConversation.id)
                     }
                     continuation.resume(returning: messageEntity.toChatMessage())
                 } catch {
@@ -397,7 +397,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         }
     }
 
-    /// 分页加载消息（从最新消息开始，按时间倒序）
+    /// 分页加载消息（从最新消息开始，按时间倒序；直接按消息分页，避免加载整会话）
     /// - Parameters:
     ///   - conversationId: 对话 ID
     ///   - limit: 每页数量
@@ -416,30 +416,111 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                 }
 
                 let context = ModelContext(self.modelContainer)
-                let descriptor = FetchDescriptor<Conversation>(
-                    predicate: #Predicate { $0.id == conversationId }
-                )
 
-                guard let fetchedConversation = try? context.fetch(descriptor).first else {
+                guard limit > 0 else {
                     continuation.resume(returning: ([], false))
                     return
                 }
 
-                // 按时间倒序排序（最新的在前）
-                var sortedMessages = fetchedConversation.messages.sorted { $0.timestamp > $1.timestamp }
+                // 下沉“是否展示”的过滤逻辑：此 API 只返回应该展示的消息，
+                // 并在分页时自动跳过被过滤的消息，避免 UI 端再做判断和跳页。
+                var cursor = beforeTimestamp
+                var collected: [ChatMessage] = []
+                var hasMoreVisible = false
 
-                // 如果指定了时间戳，过滤出更早的消息
-                if let beforeTimestamp = beforeTimestamp {
-                    sortedMessages = sortedMessages.filter { $0.timestamp < beforeTimestamp }
+                // 批次大小：尽量减少 fetch 次数，但也避免一次拉太多
+                let batchSize = max(limit * 3, limit + 10)
+                // 安全阈值：避免极端情况下长时间循环（例如大量连续 tool output 被过滤）
+                let maxBatches = 20
+
+                for _ in 0..<maxBatches {
+                    var descriptor: FetchDescriptor<ChatMessageEntity>
+                    if let before = cursor {
+                        descriptor = FetchDescriptor<ChatMessageEntity>(
+                            predicate: #Predicate<ChatMessageEntity> { msg in
+                                msg.conversation?.id == conversationId && msg.timestamp < before
+                            },
+                            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+                        )
+                    } else {
+                        descriptor = FetchDescriptor<ChatMessageEntity>(
+                            predicate: #Predicate<ChatMessageEntity> { msg in
+                                msg.conversation?.id == conversationId
+                            },
+                            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+                        )
+                    }
+                    descriptor.fetchLimit = batchSize
+
+                    guard let fetched = try? context.fetch(descriptor), !fetched.isEmpty else {
+                        hasMoreVisible = false
+                        break
+                    }
+
+                    // fetched 是按 timestamp desc（从新到旧）；转换后再按 asc 追加（从旧到新）
+                    let convertedAsc = fetched.reversed().compactMap { $0.toChatMessage() }
+
+                    // 过滤并补齐，同时记录第一批（最早）已收集消息的时间戳
+                    var firstCollectedTimestamp: Date?
+                    for msg in convertedAsc where msg.shouldDisplayInChatList() {
+                        if firstCollectedTimestamp == nil {
+                            firstCollectedTimestamp = msg.timestamp  // 这批中最早的可展示消息
+                        }
+                        collected.append(msg)
+                        if collected.count >= limit { break }
+                    }
+
+                    if collected.count >= limit {
+                        // 游标必须基于最早那条已收集消息的时间戳，这样下次加载时才会获取比它更早的消息
+                        // 注意：convertedAsc 是从旧到新遍历，所以 firstCollectedTimestamp 是最早的
+                        if let firstCollected = firstCollectedTimestamp {
+                            cursor = firstCollected
+                        }
+
+                        // 继续探测是否还有可展示消息：再拉一小批，看是否能过滤出任何消息
+                        var probeDescriptor: FetchDescriptor<ChatMessageEntity>
+                        if let before = cursor {
+                            probeDescriptor = FetchDescriptor<ChatMessageEntity>(
+                                predicate: #Predicate<ChatMessageEntity> { msg in
+                                    msg.conversation?.id == conversationId && msg.timestamp < before
+                                },
+                                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+                            )
+                        } else {
+                            probeDescriptor = FetchDescriptor<ChatMessageEntity>(
+                                predicate: #Predicate<ChatMessageEntity> { msg in
+                                    msg.conversation?.id == conversationId
+                                },
+                                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+                            )
+                        }
+                        probeDescriptor.fetchLimit = max(10, min(30, batchSize))
+                        if let probeFetched = try? context.fetch(probeDescriptor) {
+                            let probeConverted = probeFetched.compactMap { $0.toChatMessage() }
+                            hasMoreVisible = probeConverted.contains(where: { $0.shouldDisplayInChatList() })
+                        } else {
+                            hasMoreVisible = false
+                        }
+                        break
+                    }
+
+                    // 这一批没收集满，继续下一批
+                    // 游标应该指向这批中最早的可展示消息的时间戳（如果有的话），这样才能继续往前拉
+                    if let firstCollected = firstCollectedTimestamp {
+                        cursor = firstCollected
+                    } else if let lastTimestamp = fetched.last?.timestamp {
+                        // 如果这批没有任何可收集的消息，使用 batch 最后一条（最旧）作为游标
+                        cursor = lastTimestamp
+                    }
+                    // 如果 fetched 少于 batchSize，说明原始数据也快到底了
+                    if fetched.count < batchSize {
+                        hasMoreVisible = false
+                        break
+                    }
                 }
 
-                // 取一页数据
-                let pageMessages = sortedMessages.prefix(limit + 1)
-                let hasMore = pageMessages.count > limit
-                let messagesToReturn = Array(pageMessages.prefix(limit))
-
-                // 转换并恢复正序（最早的在前，最新的在后）
-                let messages = messagesToReturn.reversed().compactMap { $0.toChatMessage() }
+                let messages = Array(collected.prefix(limit))
+                let hasMore = hasMoreVisible
 
                 if Self.verbose {
                     os_log("\(Self.t)📄 [\(conversationId)] 分页加载消息: \(messages.count) 条, hasMore: \(hasMore)")

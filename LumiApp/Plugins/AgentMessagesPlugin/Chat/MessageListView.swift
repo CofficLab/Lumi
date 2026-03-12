@@ -8,7 +8,7 @@ struct MessageListView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "📜"
     /// 是否启用详细日志
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
     /// 分页大小：每页加载的消息数量
     nonisolated static let pageSize: Int = 50
 
@@ -18,8 +18,14 @@ struct MessageListView: View, SuperLog {
     /// 会话管理 ViewModel
     @EnvironmentObject var conversationViewModel: ConversationViewModel
 
+    /// 处理状态 ViewModel（用于展示发送/等待首 token/生成中等状态）
+    @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
+
     /// 当前显示的消息列表
     @State private var messages: [ChatMessage] = []
+
+    /// 当前会话的临时状态消息 ID（不落库，仅用于 UI）
+    @State private var transientStatusMessageId: UUID = UUID()
 
     /// 是否还有更多历史消息可加载
     @State private var hasMoreMessages: Bool = false
@@ -33,9 +39,6 @@ struct MessageListView: View, SuperLog {
     /// 最早加载的消息时间戳（用于分页游标）
     @State private var oldestLoadedTimestamp: Date?
 
-    /// ScrollViewProxy 引用
-    @State private var scrollProxy: ScrollViewProxy?
-
     /// 当前选中的会话 ID
     private var selectedConversationId: UUID? {
         conversationViewModel.selectedConversationId
@@ -43,72 +46,36 @@ struct MessageListView: View, SuperLog {
 
     /// 非系统消息
     private var nonSystemMessages: [ChatMessage] {
-        messages.filter { $0.role != .system }
-    }
-
-    /// 显示消息项：包含消息和相关的工具输出
-    private var displayItems: [DisplayMessageItem] {
-        var items: [DisplayMessageItem] = []
-        var index = 0
-
-        while index < nonSystemMessages.count {
-            let message = nonSystemMessages[index]
-
-            if message.role == .assistant,
-               let toolCalls = message.toolCalls,
-               !toolCalls.isEmpty {
-                let toolCallIDs = Set(toolCalls.map(\.id))
-                var groupedOutputs: [ChatMessage] = []
-                var cursor = index + 1
-
-                while cursor < nonSystemMessages.count {
-                    let next = nonSystemMessages[cursor]
-                    guard let toolCallID = next.toolCallID else { break }
-                    guard toolCallIDs.contains(toolCallID) else { break }
-                    groupedOutputs.append(next)
-                    cursor += 1
-                }
-
-                items.append(DisplayMessageItem(message: message, relatedToolOutputs: groupedOutputs))
-                index = cursor
-                continue
-            }
-
-            items.append(DisplayMessageItem(message: message, relatedToolOutputs: []))
-            index += 1
-        }
-
-        return items
+        // ChatHistoryService 已经完成“是否展示”的过滤；这里直接展示即可
+        messages
     }
 
     var body: some View {
-        let items = displayItems
-        let lastMessageID = items.last?.id
+        let messages = nonSystemMessages
+        let lastMessageID = messages.last?.id
 
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 12) {
-                    if hasMoreMessages {
-                        loadMoreButton
-                    }
-
-                    ForEach(items) { item in
-                        ChatBubble(
-                            message: item.message,
-                            isLastMessage: item.id == lastMessageID,
-                            relatedToolOutputs: item.relatedToolOutputs
-                        )
-                        .id(item.message.id)
-                    }
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 12) {
+                if hasMoreMessages {
+                    loadMoreButton
                 }
-                .padding(.horizontal)
+
+                ForEach(messages) { message in
+                    ChatBubble(
+                        message: message,
+                        isLastMessage: message.id == lastMessageID,
+                        relatedToolOutputs: []
+                    )
+                    .id(message.id)
+                }
             }
-            .padding(.vertical)
-            .onAppear {
-                handleOnAppear(proxy: proxy)
-            }
+            .padding(.horizontal)
         }
+        .padding(.vertical)
+        .onAppear(perform: handleOnAppear)
         .onChange(of: selectedConversationId, handleConversationChanged)
+        .onChange(of: processingStateViewModel.isProcessing, applyTransientStatusMessageIfNeeded)
+        .onChange(of: processingStateViewModel.statusText, applyTransientStatusMessageIfNeeded)
         .onMessageSaved(perform: handleOnMessageSaved)
     }
 }
@@ -116,6 +83,24 @@ struct MessageListView: View, SuperLog {
 // MARK: - View
 
 extension MessageListView {
+    // MARK: - Shared Display Item
+    //
+    // MessageListView 本身已直接渲染 nonSystemMessages，不再做 DisplayMessageItem 转换；
+    // 但 AppKit 版本消息列表仍复用该类型做渲染分支，因此保留这个共享 enum。
+    enum DisplayMessageItem: Identifiable {
+        case message(message: ChatMessage, relatedToolOutputs: [ChatMessage])
+        case toolCallSummary(id: UUID, toolCount: Int)
+
+        var id: UUID {
+            switch self {
+            case .message(let message, _):
+                return message.id
+            case .toolCallSummary(let id, _):
+                return id
+            }
+        }
+    }
+
     /// 加载更多消息按钮
     private var loadMoreButton: some View {
         HStack {
@@ -145,20 +130,44 @@ extension MessageListView {
         if isLoadingMore {
             return "加载中..."
         }
-        return "加载更早消息 (\(messages.count)/\(totalMessageCount))"
-    }
-
-    /// 显示消息项：包含消息和相关的工具输出
-    struct DisplayMessageItem: Identifiable {
-        let message: ChatMessage
-        let relatedToolOutputs: [ChatMessage]
-        var id: UUID { message.id }
+        // messages.count 可能包含被隐藏的工具消息；这里用当前可见消息数，更符合用户直觉
+        return "加载更早消息（已加载 \(nonSystemMessages.count) 条，共 \(totalMessageCount) 条）"
     }
 }
 
 // MARK: - Loading
 
 extension MessageListView {
+    private func applyTransientStatusMessageIfNeeded() {
+        guard let _ = selectedConversationId else { return }
+
+        if processingStateViewModel.isProcessing, !processingStateViewModel.statusText.isEmpty {
+            let statusText = processingStateViewModel.statusText
+            if let index = messages.firstIndex(where: { $0.id == transientStatusMessageId }) {
+                var m = messages[index]
+                m.content = statusText
+                // 通过创建新数组触发 SwiftUI 更新
+                var updated = messages
+                updated[index] = m
+                messages = updated
+            } else {
+                let m = ChatMessage(
+                    id: transientStatusMessageId,
+                    role: .status,
+                    content: statusText,
+                    timestamp: Date(),
+                    isTransientStatus: true
+                )
+                messages.append(m)
+            }
+        } else {
+            // 结束后移除临时状态消息
+            if messages.contains(where: { $0.id == transientStatusMessageId }) {
+                messages.removeAll { $0.id == transientStatusMessageId }
+            }
+        }
+    }
+
     /// 加载消息
     func loadMessages() async {
         guard let conversationId = selectedConversationId else {
@@ -170,6 +179,11 @@ extension MessageListView {
 
         await MainActor.run {
             isLoadingMore = true
+        }
+        defer {
+            Task { @MainActor in
+                isLoadingMore = false
+            }
         }
 
         if Self.verbose {
@@ -191,18 +205,20 @@ extension MessageListView {
         )
 
         await MainActor.run {
-            messages = result.messages
-            hasMoreMessages = result.hasMore
-            isLoadingMore = false
-
-            // 更新最早加载的时间戳
+            // oldestLoadedTimestamp 作为分页游标必须基于“原始页”，即使该页被过滤也要前进
             if let firstMessage = result.messages.first {
                 oldestLoadedTimestamp = firstMessage.timestamp
             }
 
+            messages = result.messages
+            hasMoreMessages = result.hasMore
+
             if Self.verbose {
                 os_log("\(Self.t)✅ [\(conversationId)] 加载完成：\(self.messages.count)/\(self.totalMessageCount) 条，hasMore: \(self.hasMoreMessages)")
             }
+
+            // loadMessages 会覆盖本地数组，需要重新注入临时状态消息
+            applyTransientStatusMessageIfNeeded()
         }
     }
 
@@ -210,52 +226,32 @@ extension MessageListView {
     func handleLoadMore() {
         guard hasMoreMessages, !isLoadingMore, let conversationId = selectedConversationId else { return }
 
-        Task {
-            await MainActor.run {
-                isLoadingMore = true
-            }
+        Task { @MainActor in
+            isLoadingMore = true
+            defer { isLoadingMore = false }
 
             if Self.verbose {
                 os_log("\(Self.t)📄 [\(conversationId)] 加载更早消息...")
             }
 
-            // 加载下一页（早于当前最早的消息）
+            // 当隐藏工具消息时，可能会遇到“某一页全是工具相关消息”，用户点击后 UI 看起来没变化。
+            // 这里会自动跳过纯工具页，直到拿到至少 1 条可展示消息，或确实没有更多为止。
             let result = await agentProvider.loadMessagesPage(
                 forConversationId: conversationId,
                 limit: Self.pageSize,
                 beforeTimestamp: oldestLoadedTimestamp
             )
 
-            await MainActor.run {
-                messages.insert(contentsOf: result.messages, at: 0)
-                hasMoreMessages = result.hasMore
-
-                // 更新最早加载的时间戳
-                if let firstMessage = result.messages.first {
-                    oldestLoadedTimestamp = firstMessage.timestamp
-                }
-
-                if Self.verbose {
-                    os_log("\(Self.t)📄 [\(conversationId)] 加载更多完成：\(self.messages.count)/\(self.totalMessageCount) 条，hasMore: \(self.hasMoreMessages)")
-                }
+            if let firstMessage = result.messages.first {
+                oldestLoadedTimestamp = firstMessage.timestamp
             }
-        }
-    }
-}
 
-// MARK: - Action
+            messages.insert(contentsOf: result.messages, at: 0)
+            hasMoreMessages = result.hasMore
 
-extension MessageListView {
-    /// 滚动到底部
-    func scrollToBottom() {
-        guard let lastMessage = displayItems.last else { return }
-
-        withAnimation(.easeOut(duration: 0.3)) {
-            scrollProxy?.scrollTo(lastMessage.id, anchor: .bottom)
-        }
-
-        if Self.verbose {
-            os_log("\(Self.t)📜 滚动到底部：\(lastMessage.id)")
+            if Self.verbose {
+                os_log("\(Self.t)📄 [\(conversationId)] 加载更多完成：\(self.messages.count)/\(self.totalMessageCount) 条，hasMore: \(self.hasMoreMessages)")
+            }
         }
     }
 }
@@ -263,28 +259,54 @@ extension MessageListView {
 // MARK: - Event Handlers
 
 extension MessageListView {
-    /// 处理视图出现事件
-    /// - Parameter proxy: ScrollView 代理
-    func handleOnAppear(proxy: ScrollViewProxy) {
-        scrollProxy = proxy
-        Task {
-            await loadMessages()
-        }
+    /// 视图出现时加载消息
+    func handleOnAppear() {
+        Task { await loadMessages() }
     }
 
     /// 处理会话变更事件
     func handleConversationChanged() {
         Task {
+            await MainActor.run {
+                // 切换会话时，为临时状态消息生成新 ID，避免串会话
+                transientStatusMessageId = UUID()
+            }
             await loadMessages()
         }
     }
 
     /// 处理消息保存事件
     /// - Parameter message: 已保存的消息
-    func handleOnMessageSaved(message: ChatMessage) {
-        Task {
-            await loadMessages()
-            self.scrollToBottom()
+    func handleOnMessageSaved(message: ChatMessage, conversationId: UUID) {
+        // 仅处理当前会话，避免切换对话时“串话”
+        guard conversationId == selectedConversationId else { return }
+
+        Task { @MainActor in
+            // ChatHistoryService 已下沉过滤规则；实时新增也要遵守
+            guard message.shouldDisplayInChatList() else {
+                // 如果之前插入过（旧版本/竞态），确保移除
+                messages.removeAll { $0.id == message.id }
+                return
+            }
+
+            let existingIndex = messages.firstIndex { $0.id == message.id }
+
+            if let idx = existingIndex {
+                messages[idx] = message
+            } else {
+                // 按时间戳插入，保持顺序稳定
+                if let insertIndex = messages.firstIndex(where: { $0.timestamp > message.timestamp }) {
+                    messages.insert(message, at: insertIndex)
+                } else {
+                    messages.append(message)
+                }
+            }
+
+            // 更新分页游标信息（仅用于按钮文案/判断）
+            totalMessageCount = max(totalMessageCount, messages.count)
+            if let first = messages.first {
+                oldestLoadedTimestamp = first.timestamp
+            }
         }
     }
 }

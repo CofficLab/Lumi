@@ -12,21 +12,25 @@ import Combine
 /// - **工具注册**: 管理内置工具和 MCP 工具
 /// - **工具执行**: 提供统一的工具执行接口
 /// - **权限管理**: 代理 PermissionService 进行权限检查
-/// - **MCP 集成**: 管理 MCP (Model Context Protocol) 服务器和工具
+/// - **插件集成**: 插件负责提供工具；内核只关心 Tool 抽象
 ///
 /// ## 架构说明
 ///
 /// ```text
 /// ToolService
 /// ├── 内置工具 (Built-in Tools)
-/// │   ├── ListDirectoryTool (列出目录)
-/// │   ├── ReadFileTool (读取文件)
-/// │   │   ├── WriteFileTool (写入文件)
-/// │   │   └── ShellTool (执行命令)
+/// │   └── (已迁移到插件提供)
 /// │
-/// └── MCP 工具 (MCP Tools)
-///     ├── 动态从 MCP 服务器获取
-///     └── 支持扩展的外部工具
+/// └── 插件工具 (Plugin Tools)
+///     ├── AgentCoreToolsPlugin
+///     │   ├── ShellTool (执行命令)
+///     │   ├── ListDirectoryTool (列出目录)
+///     │   ├── ReadFileTool (读取文件)
+///     │   └── WriteFileTool (写入文件)
+///     │
+///     └── MCP 工具 (MCP Tools)
+///         ├── 动态从 MCP 服务器获取
+///         └── 支持扩展的外部工具
 /// ```
 ///
 /// ## 线程安全
@@ -72,61 +76,26 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// ViewModel 可以订阅此发布者来更新 UI。
     let toolsPublisher = PassthroughSubject<[AgentTool], Never>()
     
-    /// MCP 配置列表变化通知（代理 MCPService）
-    ///
-    /// 当 MCP 服务器配置发生变化时发送。
-    let mcpConfigsPublisher = PassthroughSubject<[MCPServerConfig], Never>()
-    
-    /// MCP 连接错误变化通知（代理 MCPService）
-    ///
-    /// 当 MCP 服务器连接发生错误时发送。
-    /// 格式: [服务器名称: 错误信息]
-    let mcpConnectionErrorsPublisher = PassthroughSubject<[String: String], Never>()
-    
-    /// MCP 连接客户端数量变化通知（代理 MCPService）
-    ///
-    /// 当 MCP 客户端连接数量变化时发送。
-    let mcpConnectedClientsCountPublisher = PassthroughSubject<Int, Never>()
-
     // MARK: - Properties
 
-    /// 所有可用工具（包括内置工具和 MCP 工具）
+    /// 所有可用工具（包括内置工具、MCP 工具和插件工具）
     ///
     /// 每次工具列表更新时都会重新计算。
     private(set) var allTools: [AgentTool] = []
 
-    /// 内置工具列表
-    ///
-    /// Lumi 内置的核心工具集。
+    /// 内置工具列表（保留接口；当前建议将大部分工具迁移到插件提供）
     private var builtInTools: [AgentTool] = []
 
-    /// MCP 工具列表
-    ///
-    /// 从 MCP 服务器动态获取的工具。
-    private var mcpTools: [AgentTool] = []
+    /// 插件提供的工具列表
+    private var pluginTools: [AgentTool] = []
 
     // MARK: - Dependencies
-
-    /// MCP 服务
-    ///
-    /// 负责管理 MCP 服务器连接和工具。
-    private let mcpService: MCPService
-    
-    /// Shell 服务
-    ///
-    /// 负责执行 shell 命令。
-    private let shellService: ShellService
-    
-    /// 权限服务
-    ///
-    /// 负责检查命令执行的权限和风险等级。
-    private(set) var permissionService: PermissionService
 
     /// LLM 服务（可选）
     ///
     /// 当可用时，用于启用 Worker 协作工具。
     private let llmService: LLMService?
-    
+
     /// Combine 订阅集合
     ///
     /// 存储所有 Combine 订阅，用于清理。
@@ -137,92 +106,96 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 初始化工具服务
     ///
     /// 执行以下初始化步骤：
-    /// 1. 创建依赖服务（MCP、Shell、Permission）
-    /// 2. 注册内置工具
-    /// 3. 设置 MCP 监听器
-    /// 4. 刷新工具列表
+    /// 1. 设置插件工具监听
+    /// 2. 刷新工具列表
+    @MainActor
     init(llmService: LLMService? = nil) {
-        self.mcpService = MCPService()
-        self.shellService = ShellService()
-        self.permissionService = PermissionService()
         self.llmService = llmService
-        setupBuiltInTools()
-        setupMCPObservers()
+        setupPluginObservers()
         refreshAllTools()
 
         if Self.verbose {
-            os_log("\(Self.t)✅ 工具服务已初始化，内置工具：\(self.builtInTools.count) 个")
+            os_log("\(Self.t)✅ 工具服务已初始化，内置工具：\(self.builtInTools.count) 个, 插件工具：\(self.pluginTools.count) 个")
         }
     }
 
     // MARK: - Setup
 
-    /// 注册所有内置工具
-    ///
-    /// 初始化 Lumi 的核心工具集：
-    /// - ListDirectoryTool: 列出目录内容
-    /// - ReadFileTool: 读取文件内容
-    /// - WriteFileTool: 写入文件
-    /// - ShellTool: 执行 Shell 命令
-    private func setupBuiltInTools() {
-        var tools: [AgentTool] = [
-            ListDirectoryTool(),
-            ReadFileTool(),
-            WriteFileTool(),
-            ShellTool(),
-        ]
+    // 说明：原先 `setupBuiltInTools()` 已迁移到插件（见 `AgentCoreToolsPlugin`）。
 
-        if let llmService {
-            let workerManager = WorkerAgentManager(llmService: llmService)
-            tools.append(CreateAndAssignTaskTool(workerAgentManager: workerManager, toolService: self))
+    /// 设置插件工具监听
+    ///
+    /// 当插件加载完成时，刷新插件工具列表。
+    @MainActor
+    private func setupPluginObservers() {
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("PluginsDidLoad"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.refreshAllTools()
+            }
         }
 
-        builtInTools = tools
-    }
-
-    /// 设置 MCP 工具监听器
-    ///
-    /// 订阅 MCP 服务的发布者，监听：
-    /// - 工具列表变化
-    /// - 配置变化
-    /// - 连接错误
-    /// - 客户端连接数
-    private func setupMCPObservers() {
-        // 监听 MCP 工具更新
-        mcpService.toolsPublisher
-            .sink { [weak self] mcpTools in
-                guard let self = self else { return }
-                self.mcpTools = mcpTools
-                self.refreshAllTools()
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("toolSourcesDidChange"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.refreshAllTools()
             }
-            .store(in: &cancellables)
-        
-        // 代理 MCPService 的其他 publishers
-        mcpService.configsPublisher
-            .sink { [weak self] configs in
-                self?.mcpConfigsPublisher.send(configs)
-            }
-            .store(in: &cancellables)
-        
-        mcpService.connectionErrorsPublisher
-            .sink { [weak self] errors in
-                self?.mcpConnectionErrorsPublisher.send(errors)
-            }
-            .store(in: &cancellables)
-        
-        mcpService.connectedClientsPublisher
-            .sink { [weak self] clients in
-                self?.mcpConnectedClientsCountPublisher.send(clients.count)
-            }
-            .store(in: &cancellables)
+        }
     }
 
     /// 刷新所有工具列表
     ///
-    /// 合并内置工具和 MCP 工具，通知观察者。
+    /// 合并内置工具、MCP 工具和插件工具，通知观察者。
+    @MainActor
     private func refreshAllTools() {
-        allTools = builtInTools + mcpTools
+        let env = AgentToolEnvironment(toolService: self, llmService: llmService)
+        let directTools = PluginProvider.shared.getAgentTools()
+        let factories = PluginProvider.shared.getAgentToolFactories()
+        let factoryTools = factories.flatMap { $0.makeTools(env: env) }
+
+        pluginTools = directTools + factoryTools
+        allTools = builtInTools + pluginTools
+        validateToolPresentationDescriptors(allTools: allTools)
         toolsPublisher.send(allTools)
+    }
+
+    /// 校验所有已注册工具都有对应的展示 descriptor。
+    ///
+    /// 说明：
+    /// - ToolCall 的 name 来自运行时（LLM / MCP / 插件工具），编译期无法穷举；
+    /// - 因此采用“插件加载后立即校验”，把问题从“用到才炸”提前到“启动/加载即炸”。
+    @MainActor
+    private func validateToolPresentationDescriptors(allTools: [AgentTool]) {
+        let descriptors = PluginProvider.shared.getToolPresentationDescriptors()
+
+        var descriptorCountByName: [String: Int] = [:]
+        for d in descriptors {
+            descriptorCountByName[d.toolName, default: 0] += 1
+        }
+
+        let duplicateDescriptorNames = descriptorCountByName
+            .filter { $0.value > 1 }
+            .map { $0.key }
+            .sorted()
+        precondition(
+            duplicateDescriptorNames.isEmpty,
+            "Duplicate ToolPresentationDescriptor.toolName: \(duplicateDescriptorNames.joined(separator: ", "))"
+        )
+
+        let descriptorNames = Set(descriptors.map(\.toolName))
+        let toolNames = Set(allTools.map(\.name))
+        let missing = toolNames.subtracting(descriptorNames).sorted()
+
+        precondition(
+            missing.isEmpty,
+            "Missing ToolPresentationDescriptor for tools: \(missing.joined(separator: ", ")). Plugins must provide descriptors via toolPresentationDescriptors()."
+        )
     }
 
     // MARK: - Public API
@@ -244,11 +217,6 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 获取内置工具数量
     var builtInToolCount: Int {
         return builtInTools.count
-    }
-
-    /// 获取 MCP 工具数量
-    var mcpToolCount: Int {
-        return mcpTools.count
     }
 
     /// 根据名称获取工具
@@ -287,12 +255,8 @@ class ToolService: SuperLog, @unchecked Sendable {
         return builtInTools.map { $0.name }
     }
 
-    /// 获取 MCP 工具名称
-    ///
-    /// - Returns: MCP 工具名称数组
-    var mcpToolNames: [String] {
-        return mcpTools.map { $0.name }
-    }
+    // MARK: - Note
+    // MCP 或其他协议型工具来源应由插件提供；ToolService 不再提供协议专用 API。
 
     /// 按名称搜索工具（支持模糊匹配）
     ///
@@ -397,69 +361,6 @@ class ToolService: SuperLog, @unchecked Sendable {
         }
     }
 
-    // MARK: - MCP 相关（代理 MCPService）
-
-    /// 获取 MCP 配置列表
-    ///
-    /// 返回所有已配置的 MCP 服务器。
-    var mcpConfigs: [MCPServerConfig] {
-        return mcpService.configs
-    }
-
-    /// 获取 MCP 连接错误
-    ///
-    /// 返回服务器名称到错误信息的映射。
-    var mcpConnectionErrors: [String: String] {
-        return mcpService.connectionErrors
-    }
-
-    /// 获取 MCP 连接客户端数量
-    var mcpConnectedClientsCount: Int {
-        return mcpService.connectedClients.count
-    }
-
-    /// 添加 MCP 服务器配置
-    ///
-    /// - Parameter config: MCP 服务器配置
-    func addMCPConfig(_ config: MCPServerConfig) {
-        mcpService.addConfig(config)
-    }
-
-    /// 移除 MCP 服务器配置
-    ///
-    /// - Parameter name: 配置名称
-    func removeMCPConfig(name: String) {
-        mcpService.removeConfig(name: name)
-    }
-
-    /// 安装 Vision MCP
-    ///
-    /// 安装视觉模型 MCP 工具。
-    ///
-    /// - Parameter apiKey: API 密钥
-    func installVisionMCP(apiKey: String) {
-        mcpService.installVisionMCP(apiKey: apiKey)
-    }
-
-    /// 连接所有 MCP 服务器
-    func connectAllMCPServers() async {
-        await mcpService.connectAll()
-    }
-
-    /// 更新 MCP 工具列表
-    ///
-    /// 重新从 MCP 服务器获取可用工具。
-    func updateMCPTools() async {
-        await mcpService.updateTools()
-    }
-
-    /// 获取 MCP 状态报告
-    ///
-    /// - Returns: MCP 服务状态报告字符串
-    func getMCPStatusReport() -> String {
-        return mcpService.getStatusReport()
-    }
-
     // MARK: - 权限相关（代理 PermissionService）
 
     /// 检查工具是否需要权限（JSON 字符串版本）
@@ -478,8 +379,8 @@ class ToolService: SuperLog, @unchecked Sendable {
         } else {
             arguments = nil
         }
-        
-        return permissionService.requiresPermission(toolName: toolName, arguments: arguments)
+
+        return requiresPermission(toolName: toolName, arguments: arguments)
     }
     
     /// 检查工具是否需要权限
@@ -491,17 +392,25 @@ class ToolService: SuperLog, @unchecked Sendable {
     ///   - arguments: 参数字典
     /// - Returns: 是否需要权限
     func requiresPermission(toolName: String, arguments: [String: Any]?) -> Bool {
-        return permissionService.requiresPermission(toolName: toolName, arguments: arguments)
+        // 完全由具体工具自己决定风险等级与是否需要用户批准
+        if let tool = tool(named: toolName) {
+            let rawArgs = arguments ?? [:]
+            let toolArgs = rawArgs.mapValues { ToolArgument($0) }
+            if let risk = tool.permissionRiskLevel(arguments: toolArgs) {
+                return risk.requiresPermission
+            }
+        }
+
+        // 如果工具未声明风险，则视为不需要权限
+        return false
     }
 
-    /// 评估命令风险等级
-    ///
-    /// 评估 Shell 命令的危险程度。
-    ///
-    /// - Parameter command: Shell 命令
-    /// - Returns: 风险等级
-    func evaluateCommandRisk(command: String) -> CommandRiskLevel {
-        return permissionService.evaluateCommandRisk(command: command)
+    /// 获取工具定义声明的风险等级（如果有）。
+    func declaredRiskLevel(toolName: String, arguments: [String: Any]?) -> CommandRiskLevel? {
+        guard let tool = tool(named: toolName) else { return nil }
+        let rawArgs = arguments ?? [:]
+        let toolArgs = rawArgs.mapValues { ToolArgument($0) }
+        return tool.permissionRiskLevel(arguments: toolArgs)
     }
 
     // MARK: - Tool Categorization

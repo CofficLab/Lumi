@@ -30,20 +30,6 @@ actor PromptService: SuperLog {
     - create_and_assign_task(workerType, taskDescription, context?, providerId?, model?)
       Note: worker provider is locked to your current manager provider; model may differ.
 
-    Available worker types:
-    1. code_expert
-       - Strengths: code analysis, bug fixing, refactoring, implementation details
-       - Typical tasks: analyze code issues, refactor a function, optimize logic
-    2. document_expert
-       - Strengths: technical documentation, API explanations, structured summaries
-       - Typical tasks: write docs, summarize modules, improve comments
-    3. test_expert
-       - Strengths: test planning, unit/integration tests, quality validation
-       - Typical tasks: design test cases, add tests, check edge cases
-    4. architect
-       - Strengths: system design, architecture review, tradeoff analysis
-       - Typical tasks: architecture evaluation, module boundary decisions
-
     Workflow:
     1. Understand user intent and constraints.
     2. Decide whether direct tool execution or worker delegation is best.
@@ -86,6 +72,10 @@ actor PromptService: SuperLog {
     ) async -> String {
         var prompt = baseSystemPrompt
 
+        // 动态注入 Worker 类型说明，避免内核硬编码。
+        let workerTypesPrompt = await buildDynamicWorkerTypesPrompt()
+        prompt += "\n\n" + workerTypesPrompt
+
         // 添加语言偏好信息
         prompt += "\n\n" + languagePreference.systemPromptDescription
 
@@ -105,6 +95,24 @@ actor PromptService: SuperLog {
     /// 获取基础系统提示词（不包含语言和上下文）
     func getBaseSystemPrompt() -> String {
         return baseSystemPrompt
+    }
+
+    private func buildDynamicWorkerTypesPrompt() async -> String {
+        let descriptors = await MainActor.run {
+            PluginProvider.shared.getWorkerAgentDescriptors()
+        }
+
+        guard !descriptors.isEmpty else {
+            return "Available worker types:\n- none registered"
+        }
+
+        var lines: [String] = ["Available worker types:"]
+        for (index, descriptor) in descriptors.enumerated() {
+            lines.append("\(index + 1). \(descriptor.id) (\(descriptor.displayName))")
+            lines.append("   - Strengths: \(descriptor.specialty)")
+            lines.append("   - Typical tasks: \(descriptor.roleDescription)")
+        }
+        return lines.joined(separator: "\n")
     }
 
     // MARK: - 快捷短语提示词
@@ -275,7 +283,7 @@ actor PromptService: SuperLog {
         switch language {
         case .chinese:
             return """
-            👋 你好！我是你的智能编程助手 DevAssistant。
+            👋 你好！我是你的智能助手 Lumi。
 
             \(projectContext)
             
@@ -294,7 +302,7 @@ actor PromptService: SuperLog {
             dateFormatter.dateFormat = "MMMM dd, yyyy HH:mm"
             let currentTimeEN = dateFormatter.string(from: Date())
             return """
-            👋 Hello! I'm your intelligent coding assistant, DevAssistant.
+            👋 Hello! I'm your intelligent assistant, Lumi.
 
             \(projectContext)  
             
@@ -336,7 +344,7 @@ actor PromptService: SuperLog {
         switch language {
         case .chinese:
             return """
-            你是 DevAssistant，一个智能编程助手。
+            你是 Lumi，一个智能助手。
             
             \(projectContext)
             
@@ -350,7 +358,7 @@ actor PromptService: SuperLog {
             """
         case .english:
             return """
-            You are DevAssistant, an intelligent coding assistant.
+            You are Lumi, an intelligent assistant.
             
             \(projectContext)
             

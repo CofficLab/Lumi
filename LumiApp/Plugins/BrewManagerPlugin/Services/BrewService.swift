@@ -9,6 +9,24 @@ enum BrewError: Error {
 
 actor BrewService {
     static let shared = BrewService()
+
+    private final class LockedDataBuffer: @unchecked Sendable {
+        private let lock = NSLock()
+        private var data = Data()
+
+        func append(_ chunk: Data) {
+            lock.lock()
+            data.append(chunk)
+            lock.unlock()
+        }
+
+        func snapshot() -> Data {
+            lock.lock()
+            let copy = data
+            lock.unlock()
+            return copy
+        }
+    }
     
     private var brewPath: String?
     
@@ -242,25 +260,37 @@ actor BrewService {
         
         let pipe = Pipe()
         task.standardOutput = pipe
-        task.standardError = pipe // 合并 stderr，以便捕获错误信息
-        
-        return try await withCheckedThrowingContinuation { continuation in
-            task.terminationHandler = { process in
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                let output = String(data: data, encoding: .utf8) ?? ""
-                
-                if process.terminationStatus == 0 {
-                    continuation.resume(returning: output)
-                } else {
-                    continuation.resume(throwing: BrewError.commandFailed(output))
-                }
+        task.standardError = pipe // 合并 stderr
+
+        let buffer = LockedDataBuffer()
+        let handle = pipe.fileHandleForReading
+        handle.readabilityHandler = { h in
+            let chunk = h.availableData
+            if !chunk.isEmpty { buffer.append(chunk) }
+        }
+
+        do {
+            try task.run()
+        } catch {
+            handle.readabilityHandler = nil
+            throw error
+        }
+
+        await withCheckedContinuation { continuation in
+            task.terminationHandler = { _ in
+                continuation.resume()
             }
-            
-            do {
-                try task.run()
-            } catch {
-                continuation.resume(throwing: error)
-            }
+        }
+
+        handle.readabilityHandler = nil
+        let final = handle.availableData
+        if !final.isEmpty { buffer.append(final) }
+
+        let output = String(data: buffer.snapshot(), encoding: .utf8) ?? ""
+        if task.terminationStatus == 0 {
+            return output
+        } else {
+            throw BrewError.commandFailed(output)
         }
     }
 }

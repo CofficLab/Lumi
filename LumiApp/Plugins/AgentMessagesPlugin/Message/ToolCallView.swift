@@ -7,15 +7,25 @@ struct ToolCallView: View {
     
     @State private var isExpanded: Bool = false
     @State private var isCopied: Bool = false
+    @State private var formattedParametersCache: String?
+    @State private var isFormatting: Bool = false
+    @State private var displayedParameters: String = ""
     
     // MARK: - Tool Emoji & Color
     
     var emoji: String {
-        toolEmojiMap[toolCall.name] ?? "🔧"
+        ToolPresentationDescriptorResolver.descriptor(for: toolCall.name).emoji
     }
     
     var color: Color {
-        toolColorMap[toolCall.name] ?? .gray
+        switch ToolPresentationDescriptorResolver.descriptor(for: toolCall.name).category {
+        case .shell: return .green
+        case .readFile: return .blue
+        case .writeFile: return .orange
+        case .listDirectory: return .purple
+        case .agent: return .cyan
+        case .unknown: return .gray
+        }
     }
     
     var body: some View {
@@ -53,11 +63,6 @@ struct ToolCallView: View {
                 .background(color.opacity(0.15))
                 .clipShape(Circle())
             
-            // 工具 Emoji
-            Text(emoji)
-                .font(.system(size: 14))
-                .frame(width: 20, height: 20)
-            
             // 工具名称
             Text(toolCall.name)
                 .font(DesignTokens.Typography.caption1)
@@ -76,8 +81,16 @@ struct ToolCallView: View {
         }
         .contentShape(Rectangle())
         .onTapGesture {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                isExpanded.toggle()
+            let willExpand = !isExpanded
+            if willExpand {
+                DispatchQueue.main.async {
+                    isExpanded = true
+                    stageRenderParameters()
+                    startFormattingIfNeeded()
+                }
+            } else {
+                isExpanded = false
+                displayedParameters = ""
             }
         }
     }
@@ -94,16 +107,32 @@ struct ToolCallView: View {
                     .foregroundColor(color.opacity(0.8))
                 
                 // 格式化后的参数
-                if let formattedParams = formattedParameters {
+                if let formattedParams = formattedParametersCache {
                     Text(formattedParams)
                         .font(DesignTokens.Typography.code)
                         .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .textSelection(.enabled)
-                } else {
+                } else if isFormatting {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("正在格式化参数…")
+                            .font(DesignTokens.Typography.caption1)
+                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } else if toolCall.arguments.isEmpty || toolCall.arguments == "{}" {
                     Text("无参数")
                         .font(DesignTokens.Typography.caption1)
                         .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                } else {
+                    // 兜底：直接展示原始参数，避免同步 JSON pretty print 卡死主线程
+                    Text(displayedParameters)
+                        .font(DesignTokens.Typography.code)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .textSelection(.enabled)
                 }
             }
             .padding(12)
@@ -111,6 +140,10 @@ struct ToolCallView: View {
         }
         .frame(maxHeight: 300)
         .background(DesignTokens.Color.semantic.textTertiary.opacity(0.02))
+        .onAppear {
+            stageRenderParameters()
+            startFormattingIfNeeded()
+        }
     }
     
     // MARK: - Copy Button
@@ -157,7 +190,7 @@ struct ToolCallView: View {
     // MARK: - Actions
     
     private func copyParametersToClipboard() {
-        let contentToCopy = formattedParameters ?? toolCall.arguments
+        let contentToCopy = formattedParametersCache ?? toolCall.arguments
         
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(contentToCopy, forType: .string)
@@ -172,51 +205,65 @@ struct ToolCallView: View {
             }
         }
     }
+
+    private func startFormattingIfNeeded() {
+        guard isExpanded else { return }
+        guard formattedParametersCache == nil else { return }
+        guard !toolCall.arguments.isEmpty, toolCall.arguments != "{}" else { return }
+        guard !isFormatting else { return }
+
+        isFormatting = true
+
+        let raw = toolCall.arguments
+        Task.detached(priority: .userInitiated) {
+            let formatted: String? = {
+                guard let data = raw.data(using: .utf8),
+                      let jsonObject = try? JSONSerialization.jsonObject(with: data) else {
+                    return nil
+                }
+                if let prettyData = try? JSONSerialization.data(
+                    withJSONObject: jsonObject,
+                    options: [.prettyPrinted, .sortedKeys]
+                ),
+                let prettyString = String(data: prettyData, encoding: .utf8) {
+                    return prettyString
+                }
+                return nil
+            }()
+
+            await MainActor.run {
+                self.formattedParametersCache = formatted
+                self.isFormatting = false
+                // 如果格式化成功，用格式化结果替换显示（避免用户一直看到截断的原始参数）
+                if let formatted, !formatted.isEmpty {
+                    self.displayedParameters = formatted
+                } else {
+                    self.stageRenderParameters()
+                }
+            }
+        }
+    }
+
+    private func stageRenderParameters() {
+        guard isExpanded else { return }
+        guard formattedParametersCache == nil else { return }
+        guard !toolCall.arguments.isEmpty, toolCall.arguments != "{}" else { return }
+
+        let raw = toolCall.arguments
+        let prefixLimit = 6_000
+        if raw.count <= prefixLimit {
+            displayedParameters = raw
+            return
+        }
+        displayedParameters = String(raw.prefix(prefixLimit)) + "\n…"
+        DispatchQueue.main.async {
+            guard isExpanded else { return }
+            // 如果这期间已经拿到了格式化内容，就不再覆盖
+            guard formattedParametersCache == nil else { return }
+            displayedParameters = raw
+        }
+    }
 }
-
-// MARK: - Tool Emoji Map
-
-private let toolEmojiMap: [String: String] = [
-    "read_file": "📖",
-    "write_file": "✍️",
-    "run_command": "⚡",
-    "list_directory": "📁",
-    "create_directory": "📂",
-    "move_file": "📦",
-    "search_files": "🔍",
-    "get_file_info": "ℹ️",
-    "bash": "⚡",
-    "glob": "🔎",
-    "edit": "✏️",
-    "str_replace_editor": "✏️",
-    "lsp": "💻",
-    "goto_definition": "➡️",
-    "find_references": "🔗",
-    "document": "📚",
-    "grep": "🔍"
-]
-
-// MARK: - Tool Color Map
-
-private let toolColorMap: [String: Color] = [
-    "read_file": .blue,
-    "write_file": .orange,
-    "run_command": .green,
-    "list_directory": .purple,
-    "create_directory": .purple,
-    "move_file": .cyan,
-    "search_files": .pink,
-    "get_file_info": .gray,
-    "bash": .green,
-    "glob": .pink,
-    "edit": .orange,
-    "str_replace_editor": .orange,
-    "lsp": .indigo,
-    "goto_definition": .blue,
-    "find_references": .purple,
-    "document": .teal,
-    "grep": .pink
-]
 
 // MARK: - View Modifiers
 

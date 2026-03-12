@@ -12,6 +12,24 @@ class NetworkService: SuperLog, ObservableObject {
 
     static let shared = NetworkService()
 
+    private final class LockedDataBuffer: @unchecked Sendable {
+        private let lock = NSLock()
+        private var data = Data()
+
+        func append(_ chunk: Data) {
+            lock.lock()
+            data.append(chunk)
+            lock.unlock()
+        }
+
+        func snapshot() -> Data {
+            lock.lock()
+            let copy = data
+            lock.unlock()
+            return copy
+        }
+    }
+
     // Published properties for subscribers
     @Published var downloadSpeed: Double = 0
     @Published var uploadSpeed: Double = 0
@@ -271,9 +289,23 @@ class NetworkService: SuperLog, ObservableObject {
 
             do {
                 try process.run()
-                process.waitUntilExit()
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                if let output = String(data: data, encoding: .utf8) {
+                let buffer = LockedDataBuffer()
+                let handle = pipe.fileHandleForReading
+                handle.readabilityHandler = { h in
+                    let chunk = h.availableData
+                    if !chunk.isEmpty { buffer.append(chunk) }
+                }
+
+                await withCheckedContinuation { continuation in
+                    process.terminationHandler = { _ in
+                        continuation.resume()
+                    }
+                }
+
+                handle.readabilityHandler = nil
+                let final = handle.availableData
+                if !final.isEmpty { buffer.append(final) }
+                if let output = String(data: buffer.snapshot(), encoding: .utf8) {
                     var ssid: String?
                     var rssi: Int = 0
 
@@ -309,10 +341,23 @@ class NetworkService: SuperLog, ObservableObject {
 
             do {
                 try process.run()
-                process.waitUntilExit()
+                let buffer = LockedDataBuffer()
+                let handle = pipe.fileHandleForReading
+                handle.readabilityHandler = { h in
+                    let chunk = h.availableData
+                    if !chunk.isEmpty { buffer.append(chunk) }
+                }
 
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                if let output = String(data: data, encoding: .utf8) {
+                await withCheckedContinuation { continuation in
+                    process.terminationHandler = { _ in
+                        continuation.resume()
+                    }
+                }
+
+                handle.readabilityHandler = nil
+                let final = handle.availableData
+                if !final.isEmpty { buffer.append(final) }
+                if let output = String(data: buffer.snapshot(), encoding: .utf8) {
                     // Parse "time=12.345 ms"
                     if let range = output.range(of: "time=") {
                         let substring = output[range.upperBound...]

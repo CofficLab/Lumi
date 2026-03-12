@@ -4,8 +4,11 @@ import SwiftUI
 struct ToolOutputView: View {
     let content: String
     let toolType: ToolType?
+    private let summaryTextCached: String
+    private let lineCountCached: Int
     @State private var isExpanded: Bool = false
     @State private var isCopied: Bool = false
+    @State private var displayedContent: String = ""
 
     enum ToolType: String, CaseIterable {
         case shell = "Shell"
@@ -38,6 +41,15 @@ struct ToolOutputView: View {
         }
     }
 
+    init(content: String, toolType: ToolType?) {
+        self.content = content
+        self.toolType = toolType
+
+        // 这些计算在列表滚动/展开折叠时会被频繁触发，预先计算并缓存，避免大文本导致主线程卡死。
+        self.summaryTextCached = ToolOutputView.makeSummaryText(from: content)
+        self.lineCountCached = ToolOutputView.makeLineCount(from: content)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // 工具输出头部
@@ -58,6 +70,12 @@ struct ToolOutputView: View {
             }
         }
         .enhancedToolCardStyle()
+        .onAppear {
+            // 默认不渲染大段内容，避免列表初次渲染/滚动时的峰值
+            if displayedContent.isEmpty {
+                displayedContent = ""
+            }
+        }
     }
 
     // MARK: - Tool Output Header
@@ -79,7 +97,7 @@ struct ToolOutputView: View {
             }
 
             // 摘要文本
-            Text(summaryText)
+            Text(summaryTextCached)
                 .font(DesignTokens.Typography.caption1)
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 .lineLimit(1)
@@ -87,8 +105,8 @@ struct ToolOutputView: View {
             Spacer()
 
             // 行数指示器
-            if lineCount > 1 {
-                Text("\(lineCount) 行")
+            if lineCountCached > 1 {
+                Text("\(lineCountCached) 行")
                     .font(DesignTokens.Typography.caption2)
                     .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     .padding(.horizontal, 6)
@@ -107,8 +125,16 @@ struct ToolOutputView: View {
         }
         .contentShape(Rectangle())
         .onTapGesture {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                isExpanded.toggle()
+            let willExpand = !isExpanded
+            if willExpand {
+                // 延后到下一 run loop 再展开，避免同一周期内插入 ScrollView/大文本导致主线程卡死
+                DispatchQueue.main.async {
+                    isExpanded = true
+                    stageRenderContent()
+                }
+            } else {
+                isExpanded = false
+                displayedContent = ""
             }
         }
     }
@@ -118,7 +144,7 @@ struct ToolOutputView: View {
     private var toolOutputContent: some View {
         ScrollView(.vertical, showsIndicators: true) {
             VStack(alignment: .leading, spacing: 0) {
-                Text(content)
+                Text(displayedContent)
                     .font(DesignTokens.Typography.code)
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -128,6 +154,22 @@ struct ToolOutputView: View {
         }
         .frame(maxHeight: 400)
         .background(DesignTokens.Color.semantic.textTertiary.opacity(0.02))
+    }
+
+    private func stageRenderContent() {
+        guard isExpanded else { return }
+        // 先渲染前一小段，下一帧再补全，降低点击瞬间的主线程压力
+        let prefixLimit = 8_000
+        if content.count <= prefixLimit {
+            displayedContent = content
+            return
+        }
+        displayedContent = String(content.prefix(prefixLimit)) + "\n…"
+        DispatchQueue.main.async {
+            // 如果用户立刻折叠，则不再补全
+            guard isExpanded else { return }
+            displayedContent = content
+        }
     }
 
     // MARK: - Copy Button
@@ -150,16 +192,27 @@ struct ToolOutputView: View {
     }
 
     // MARK: - Helper Properties
-
-    private var summaryText: String {
+    private static func makeSummaryText(from content: String) -> String {
         if let firstLine = content.components(separatedBy: .newlines).first {
             return String(firstLine.prefix(70))
         }
         return String(content.prefix(70))
     }
 
-    private var lineCount: Int {
-        content.components(separatedBy: .newlines).filter { !$0.isEmpty }.count
+    private static func makeLineCount(from content: String) -> Int {
+        // 避免 split 成大量数组；只做轻量统计
+        var count = 0
+        var hasNonNewline = false
+        for ch in content {
+            if ch == "\n" {
+                if hasNonNewline { count += 1 }
+                hasNonNewline = false
+            } else {
+                hasNonNewline = true
+            }
+        }
+        if hasNonNewline { count += 1 }
+        return count
     }
 
     // MARK: - Actions
@@ -209,8 +262,7 @@ private extension View {
 extension ToolOutputView {
     /// 从消息创建工具输出视图
     init(message: ChatMessage, toolType: ToolType? = nil) {
-        self.content = message.content
-        self.toolType = toolType ?? .unknown
+        self.init(content: message.content, toolType: toolType ?? .unknown)
     }
 }
 

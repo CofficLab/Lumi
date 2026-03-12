@@ -6,6 +6,7 @@ import SwiftData
 extension Notification.Name {
     /// 消息已保存到数据库的通知
     /// object: ChatMessage (消息对象)
+    /// userInfo: ["conversationId": UUID]
     static let messageSaved = Notification.Name("messageSaved")
 
     /// 对话已创建的通知
@@ -27,11 +28,12 @@ extension NotificationCenter {
     /// 发送消息已保存到数据库的通知
     /// 自动在主线程发送通知
     /// - Parameter message: 消息对象
-    static func postMessageSaved(message: ChatMessage) {
+    static func postMessageSaved(message: ChatMessage, conversationId: UUID) {
         Task { @MainActor in
             NotificationCenter.default.post(
                 name: .messageSaved,
-                object: message
+                object: message,
+                userInfo: ["conversationId": conversationId]
             )
         }
     }
@@ -77,12 +79,13 @@ extension NotificationCenter {
 
 extension View {
     /// 监听消息已保存到数据库的事件
-    /// - Parameter action: 事件处理闭包，参数为消息对象
+    /// - Parameter action: 事件处理闭包，参数为(消息对象, 对话 ID)
     /// - Returns: 修改后的视图
-    func onMessageSaved(perform action: @escaping (ChatMessage) -> Void) -> some View {
+    func onMessageSaved(perform action: @escaping (ChatMessage, UUID) -> Void) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .messageSaved)) { notification in
-            if let message = notification.object as? ChatMessage {
-                action(message)
+            if let message = notification.object as? ChatMessage,
+               let conversationId = notification.userInfo?["conversationId"] as? UUID {
+                action(message, conversationId)
             }
         }
     }

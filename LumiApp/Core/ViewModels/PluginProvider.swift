@@ -79,6 +79,15 @@ final class PluginProvider: ObservableObject, SuperLog {
     private var sidebarViewsCache: [AnyView]?
     private var sidebarViewsCacheKey: String?
 
+    // MARK: - Middleware / Tools Cache
+
+    private var cachedConversationTurnMiddlewares: [AnyConversationTurnMiddleware]?
+    private var cachedMessageSendMiddlewares: [AnyMessageSendMiddleware]?
+    private var cachedAgentTools: [AgentTool]?
+    private var cachedAgentToolFactories: [AnyAgentToolFactory]?
+    private var cachedWorkerAgentDescriptors: [WorkerAgentDescriptor]?
+    private var cachedToolPresentationDescriptors: [ToolPresentationDescriptor]?
+
     /// 初始化插件提供者
     ///
     /// - Parameters:
@@ -99,6 +108,12 @@ final class PluginProvider: ObservableObject, SuperLog {
             .sink { [weak self] _ in
                 self?.sidebarViewsCache = nil
                 self?.sidebarViewsCacheKey = nil
+                self?.cachedConversationTurnMiddlewares = nil
+                self?.cachedMessageSendMiddlewares = nil
+                self?.cachedAgentTools = nil
+                self?.cachedAgentToolFactories = nil
+                self?.cachedWorkerAgentDescriptors = nil
+                self?.cachedToolPresentationDescriptors = nil
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
@@ -111,6 +126,165 @@ final class PluginProvider: ObservableObject, SuperLog {
             name: NSNotification.Name("AgentProviderFileSelectionChanged"),
             object: nil
         )
+    }
+
+    // MARK: - Middleware Aggregation
+
+    func getConversationTurnMiddlewares() -> [AnyConversationTurnMiddleware] {
+        if let cachedConversationTurnMiddlewares {
+            return cachedConversationTurnMiddlewares
+        }
+
+        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
+        var middlewares: [(pluginOrder: Int, m: AnyConversationTurnMiddleware)] = []
+        for plugin in enabledPlugins {
+            let pluginOrder = type(of: plugin).order
+            let ms = plugin.conversationTurnMiddlewares()
+            for m in ms {
+                middlewares.append((pluginOrder: pluginOrder, m: m))
+            }
+        }
+
+        let sorted = middlewares.sorted { a, b in
+            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
+            if a.m.order != b.m.order { return a.m.order < b.m.order }
+            return a.m.id < b.m.id
+        }.map(\.m)
+
+        cachedConversationTurnMiddlewares = sorted
+        return sorted
+    }
+
+    func getMessageSendMiddlewares() -> [AnyMessageSendMiddleware] {
+        if let cachedMessageSendMiddlewares {
+            return cachedMessageSendMiddlewares
+        }
+
+        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
+        var middlewares: [(pluginOrder: Int, m: AnyMessageSendMiddleware)] = []
+        for plugin in enabledPlugins {
+            let pluginOrder = type(of: plugin).order
+            let ms = plugin.messageSendMiddlewares()
+            for m in ms {
+                middlewares.append((pluginOrder: pluginOrder, m: m))
+            }
+        }
+
+        let sorted = middlewares.sorted { a, b in
+            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
+            if a.m.order != b.m.order { return a.m.order < b.m.order }
+            return a.m.id < b.m.id
+        }.map(\.m)
+
+        cachedMessageSendMiddlewares = sorted
+        return sorted
+    }
+
+    // MARK: - Agent Tools Aggregation
+
+    func getAgentTools() -> [AgentTool] {
+        if let cachedAgentTools {
+            return cachedAgentTools
+        }
+
+        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
+        var tools: [(pluginOrder: Int, tool: AgentTool)] = []
+
+        for plugin in enabledPlugins {
+            let pluginOrder = type(of: plugin).order
+            let pluginTools = plugin.agentTools()
+            for t in pluginTools {
+                tools.append((pluginOrder: pluginOrder, tool: t))
+            }
+        }
+
+        let sorted = tools.sorted { a, b in
+            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
+            return a.tool.name < b.tool.name
+        }.map(\.tool)
+
+        cachedAgentTools = sorted
+        return sorted
+    }
+
+    func getAgentToolFactories() -> [AnyAgentToolFactory] {
+        if let cachedAgentToolFactories {
+            return cachedAgentToolFactories
+        }
+
+        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
+        var factories: [(pluginOrder: Int, f: AnyAgentToolFactory)] = []
+
+        for plugin in enabledPlugins {
+            let pluginOrder = type(of: plugin).order
+            let fs = plugin.agentToolFactories()
+            for f in fs {
+                factories.append((pluginOrder: pluginOrder, f: f))
+            }
+        }
+
+        let sorted = factories.sorted { a, b in
+            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
+            if a.f.order != b.f.order { return a.f.order < b.f.order }
+            return a.f.id < b.f.id
+        }.map(\.f)
+
+        cachedAgentToolFactories = sorted
+        return sorted
+    }
+
+    // MARK: - Worker Aggregation
+
+    func getWorkerAgentDescriptors() -> [WorkerAgentDescriptor] {
+        if let cachedWorkerAgentDescriptors {
+            return cachedWorkerAgentDescriptors
+        }
+
+        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
+        var items: [(pluginOrder: Int, d: WorkerAgentDescriptor)] = []
+
+        for plugin in enabledPlugins {
+            let pluginOrder = type(of: plugin).order
+            let ds = plugin.workerAgentDescriptors()
+            for d in ds {
+                items.append((pluginOrder: pluginOrder, d: d))
+            }
+        }
+
+        let sorted = items.sorted { a, b in
+            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
+            if a.d.order != b.d.order { return a.d.order < b.d.order }
+            return a.d.id < b.d.id
+        }.map(\.d)
+
+        cachedWorkerAgentDescriptors = sorted
+        return sorted
+    }
+
+    func getToolPresentationDescriptors() -> [ToolPresentationDescriptor] {
+        if let cachedToolPresentationDescriptors {
+            return cachedToolPresentationDescriptors
+        }
+
+        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
+        var items: [(pluginOrder: Int, d: ToolPresentationDescriptor)] = []
+
+        for plugin in enabledPlugins {
+            let pluginOrder = type(of: plugin).order
+            let ds = plugin.toolPresentationDescriptors()
+            for d in ds {
+                items.append((pluginOrder: pluginOrder, d: d))
+            }
+        }
+
+        let sorted = items.sorted { a, b in
+            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
+            if a.d.order != b.d.order { return a.d.order < b.d.order }
+            return a.d.toolName < b.d.toolName
+        }.map(\.d)
+
+        cachedToolPresentationDescriptors = sorted
+        return sorted
     }
 
     /// 析构函数，清理资源
@@ -151,6 +325,13 @@ final class PluginProvider: ObservableObject, SuperLog {
     ///
     /// 扫描完成后会发送 `PluginsDidLoad` 通知。
     private func autoDiscoverAndRegisterPlugins() {
+        // 插件列表将被重建，相关缓存一并清空
+        cachedConversationTurnMiddlewares = nil
+        cachedMessageSendMiddlewares = nil
+        cachedToolPresentationDescriptors = nil
+        sidebarViewsCache = nil
+        sidebarViewsCacheKey = nil
+
         var count: UInt32 = 0
         guard let classList = objc_copyClassList(&count) else { return }
         defer { free(UnsafeMutableRawPointer(classList)) }
@@ -188,6 +369,11 @@ final class PluginProvider: ObservableObject, SuperLog {
         let sortedPlugins = discoveredItems.map { $0.instance }
         self.plugins = sortedPlugins
         self.isLoaded = true
+
+        // 插件已更新，清空聚合缓存，避免 middleware 在插件加载前被读取后永久缓存为空。
+        cachedConversationTurnMiddlewares = nil
+        cachedMessageSendMiddlewares = nil
+        cachedToolPresentationDescriptors = nil
         
         // 调用生命周期钩子
         for plugin in sortedPlugins {

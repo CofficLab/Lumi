@@ -3,6 +3,24 @@ import SwiftUI
 import OSLog
 import MagicKit
 
+private final class LockedDataBuffer: @unchecked Sendable {
+    private let lock = NSLock()
+    private var data = Data()
+
+    func append(_ chunk: Data) {
+        lock.lock()
+        data.append(chunk)
+        lock.unlock()
+    }
+
+    func snapshot() -> Data {
+        lock.lock()
+        let copy = data
+        lock.unlock()
+        return copy
+    }
+}
+
 struct PortInfo: Identifiable, Hashable {
     let id = UUID()
     let command: String
@@ -37,12 +55,24 @@ final class PortScanner: Sendable, SuperLog {
 
                 do {
                     try task.run()
-                    let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                    if let output = String(data: data, encoding: .utf8) {
+                    let buffer = LockedDataBuffer()
+                    let handle = pipe.fileHandleForReading
+                    handle.readabilityHandler = { h in
+                        let chunk = h.availableData
+                        if !chunk.isEmpty { buffer.append(chunk) }
+                    }
+
+                    task.terminationHandler = { _ in
+                        handle.readabilityHandler = nil
+                        let final = handle.availableData
+                        if !final.isEmpty { buffer.append(final) }
+
+                        if let output = String(data: buffer.snapshot(), encoding: .utf8) {
                         let ports = self.parseLsofOutput(output)
-                        continuation.resume(returning: ports)
-                    } else {
-                        continuation.resume(returning: [])
+                            continuation.resume(returning: ports)
+                        } else {
+                            continuation.resume(returning: [])
+                        }
                     }
                 } catch {
                     if Self.verbose {
