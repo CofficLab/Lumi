@@ -140,7 +140,7 @@ struct AssistantMessage: View, SuperLog {
 
             HStack(alignment: .center, spacing: 12) {
                 // 性能指标组
-                performanceMetricsGroup
+//                performanceMetricsGroup
 
                 // 折叠/展开按钮（仅当内容是长消息时显示）
                 if isLongMessage {

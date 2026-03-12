@@ -80,20 +80,20 @@ private struct DepthProgressIndicator: View {
                 .monospacedDigit()
 
             // 进度条
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    // 背景条
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.3))
-                        .frame(height: 4)
+            // GeometryReader { geometry in
+            //     ZStack(alignment: .leading) {
+            //         // 背景条
+            //         RoundedRectangle(cornerRadius: 2)
+            //             .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.3))
+            //             .frame(height: 4)
 
-                    // 进度
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(warning.iconColor)
-                        .frame(width: geometry.size.width * warning.percentage, height: 4)
-                }
-            }
-            .frame(width: 60, height: 4)
+            //         // 进度
+            //         RoundedRectangle(cornerRadius: 2)
+            //             .fill(warning.iconColor)
+            //             .frame(width: geometry.size.width * warning.percentage, height: 4)
+            //     }
+            // }
+            // .frame(width: 60, height: 4)
         }
     }
 }

@@ -121,12 +121,12 @@ struct ContentViewBody<Content: View>: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onOpenSettings(perform: openSettings)
             .onOpenPluginSettings(perform: openPluginSettings)
-            .background {
-                GeometryReader { proxy in
-                    themeManager.currentVariant.theme.makeGlobalBackground(proxy: proxy)
-                }
-                .ignoresSafeArea()
-            }
+            // .background {
+            //     GeometryReader { proxy in
+            //         themeManager.currentVariant.theme.makeGlobalBackground(proxy: proxy)
+            //     }
+            //     .ignoresSafeArea()
+            // }
             .onAppear(perform: onAppear)
             .onChange(of: columnVisibility) { _, _ in
                 onChangeColumnVisibility()

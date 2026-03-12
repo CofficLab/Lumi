@@ -8,11 +8,11 @@
 
 | 严重程度 | 数量 |
 |----------|------|
-| 🔴 Critical | 7 |
-| 🟠 High | 1 |
+| 🔴 Critical | 9 |
+| 🟠 High | 2 |
 | 🟡 Medium | 4 |
 | 🟢 Low | 2 |
-| **总计** | **14** |
+| **总计** | **17** |
 
 ---
 
@@ -25,8 +25,10 @@
 | 006 | SwiftData actor 隔离违规 | `issue-006-critical-swiftdata-actor-isolation-violation.md` | 并发安全 |
 | 008 | API Key 未安全存储 | `issue-008-api-key-secure-storage.md` | 安全风险 |
 | 010 | Coordinator Task 泄漏 | `issue-010-coordinator-task-leak.md` | 内存泄漏 |
-| **014** | **TaskGroup 取消与错误传播缺失** | `issue-014-taskgroup-cancellation-error-propagation.md` | **并发安全** |
-| **015** | **ConversationTurnViewModel 资源泄漏** | `issue-015-conversation-turn-viewmodel-resource-leak.md` | **内存泄漏** |
+| 014 | TaskGroup 取消与错误传播缺失 | `issue-014-taskgroup-cancellation-error-propagation.md` | 并发安全 |
+| 015 | ConversationTurnViewModel 资源泄漏 | `issue-015-conversation-turn-viewmodel-resource-leak.md` | 内存泄漏 |
+| **016** | **AsyncStream Continuation 资源泄漏** | `issue-016-asyncstream-continuation-resource-leak.md` | **内存泄漏** |
+| **017** | **ToolService NotificationCenter 泄漏** | `issue-017-toolservice-notificationcenter-leak.md` | **内存泄漏** |
 
 ---
 
@@ -35,6 +37,7 @@
 | # | Issue | 文件 | 相关问题 |
 |---|-------|------|----------|
 | 011 | Actor Plugin 无法管理观察者 | `issue-011-actor-plugin-notification-leak.md` | 设计问题 |
+| **018** | **ChatMessageEntity 强制解包崩溃** | `issue-018-chatmessage-entity-force-unwrap-crash.md` | **崩溃风险** |
 
 ---
 
@@ -71,7 +74,9 @@
 - Issue #010: Coordinator Task 泄漏
 - Issue #011: Actor Plugin 无法管理观察者
 - Issue #012: IPCConnection delegate 循环引用
-- **Issue #015: ConversationTurnViewModel 资源泄漏**
+- Issue #015: ConversationTurnViewModel 资源泄漏
+- **Issue #016: AsyncStream Continuation 资源泄漏** 🆕
+- **Issue #017: ToolService NotificationCenter 泄漏** 🆕
 
 ### ⚡ 并发类
 - Issue #002: @unchecked Sendable 并发安全
@@ -81,6 +86,7 @@
 ### 🐛 崩溃/功能类
 - Issue #001: ChatMessage force-unwrap 崩溃
 - Issue #007: StreamChunk middleware 短路
+- **Issue #018: ChatMessageEntity 强制解包崩溃** 🆕
 
 ### 🔧 代码质量类
 - Issue #013: print 语句残留
@@ -97,10 +103,13 @@
 - [ ] Issue #008: 实现 Keychain 存储
 - [ ] Issue #010: 添加 Coordinator deinit
 - [ ] Issue #014: 修复 TaskGroup 取消与错误传播
-- [ ] **Issue #015: 修复 ConversationTurnViewModel 资源泄漏**
+- [ ] Issue #015: 修复 ConversationTurnViewModel 资源泄漏
+- [ ] **Issue #016: 修复 AsyncStream Continuation 泄漏** 🆕
+- [ ] **Issue #017: 修复 ToolService NotificationCenter 泄漏** 🆕
 
 ### Phase 2: P1 - 近期修复（High + Medium）
 - [ ] Issue #011: 重构 Actor Plugin
+- [ ] **Issue #018: 修复 ChatMessageEntity 强制解包** 🆕
 - [ ] Issue #002: 审计 @unchecked Sendable
 - [ ] Issue #003: 修复 TurnContexts 泄漏
 - [ ] Issue #004: 修复日志敏感数据
@@ -146,34 +155,96 @@ grep -rn "Task\.checkCancellation" --include="*.swift" LumiApp/
 # 查找 AsyncStream 使用
 grep -rn "AsyncStream\|AsyncThrowingStream" --include="*.swift" LumiApp/
 
-# 查找 deinit 方法
-grep -rn "deinit" --include="*.swift" LumiApp/Core/ViewModels/
+# 查找 Continuation 使用
+grep -rn "Continuation" --include="*.swift" LumiApp/
+
+# 查找 deinit 实现
+grep -rn "deinit" --include="*.swift" LumiApp/
+
+# 查找 @unchecked Sendable 使用
+grep -rn "@unchecked Sendable" --include="*.swift" LumiApp/
+
+# 查找 fatalError 调用
+grep -rn "fatalError" --include="*.swift" LumiApp/
+
+# 查找 UserDefaults 存储 API Key
+grep -rn "UserDefaults.*apiKey\|apiKey.*UserDefaults" --include="*.swift" LumiApp/
 ```
 
 ---
 
-## 📋 Issue 发现历史
+## 📝 Issue 模板
 
-| 日期 | Issue | 发现方式 |
-|------|-------|----------|
-| 2026-03-12 | #014 | 代码审计 - TaskGroup 使用分析 |
-| 2026-03-12 | #015 | 代码审计 - ConversationTurnViewModel 分析 |
-| - | #001-#013 | 前期审计 |
+```markdown
+# Issue #XXX: [严重程度] - [简短描述]
+
+## 📋 问题概述
+
+[问题描述]
+
+## 🔴 严重程度：[Critical/High/Medium/Low]
+
+**风险等级**: ⚠️ 可能导致：
+- [影响1]
+- [影响2]
+
+**优先级**: P[0-2]
 
 ---
 
-## 📝 新增 Issue 指南
+## 📍 问题位置
 
-发现新问题时，请：
+### 文件: `LumiApp/[路径]`
 
-1. 创建文件：`issue-XXX-description.md`（XXX 为三位数字编号）
-2. 包含以下章节：
-   - 问题概述
-   - 严重程度
-   - 问题位置汇总
-   - 问题分析（含代码示例）
-   - 为什么这是严重问题
-   - 修复方案
-   - 检查清单
-   - 相关问题
-3. 更新本 README.md 的统计表和列表
+| 属性 | 值 |
+|------|-----|
+| 行号 | X-Y |
+| 问题 | [问题描述] |
+
+---
+
+## 🐛 问题分析
+
+### 问题代码
+
+```swift
+// 问题代码示例
+```
+
+### 根因分析
+
+[详细分析]
+
+---
+
+## ✅ 修复方案
+
+### 方案 1: [名称]（推荐）
+
+```swift
+// 修复代码
+```
+
+---
+
+## 🔄 相关 Issue
+
+- Issue #XXX: [相关问题描述]
+
+---
+
+**创建日期**: YYYY-MM-DD
+**更新日期**: YYYY-MM-DD
+**创建者**: [作者]
+**标签**: `bug`, `[其他标签]`
+```
+
+---
+
+## 🆕 最近新增
+
+| Issue | 日期 | 描述 |
+|-------|------|------|
+| #016 | 2026-03-12 | AsyncStream Continuation 资源泄漏 - ViewModel 未正确关闭流 |
+| #017 | 2026-03-12 | ToolService NotificationCenter 泄漏 - 服务未移除观察者 |
+| #018 | 2026-03-12 | ChatMessageEntity 强制解包崩溃 - 数据损坏时应用崩溃 |

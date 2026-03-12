@@ -202,21 +202,21 @@ struct ModelLatencyProgressBar: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             // 进度条
-            GeometryReader { geometry in
-                HStack(spacing: 0) {
-                    // TTFT 部分（橙色）
-                    Rectangle()
-                        .fill(Color.orange)
-                        .frame(width: geometry.size.width * ttftRatio)
+            // GeometryReader { geometry in
+            //     HStack(spacing: 0) {
+            //         // TTFT 部分（橙色）
+            //         Rectangle()
+            //             .fill(Color.orange)
+            //             .frame(width: geometry.size.width * ttftRatio)
                     
-                    // 响应时间部分（蓝色）
-                    Rectangle()
-                        .fill(Color.blue)
-                        .frame(width: geometry.size.width * (1 - ttftRatio))
-                }
-            }
-            .frame(width: 80, height: 3)
-            .clipShape(RoundedRectangle(cornerRadius: 1.5))
+            //         // 响应时间部分（蓝色）
+            //         Rectangle()
+            //             .fill(Color.blue)
+            //             .frame(width: geometry.size.width * (1 - ttftRatio))
+            //     }
+            // }
+            // .frame(width: 80, height: 3)
+            // .clipShape(RoundedRectangle(cornerRadius: 1.5))
             
             // 时间信息（一行显示）
             HStack(spacing: 6) {

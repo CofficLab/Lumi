@@ -44,14 +44,7 @@ struct MessageListView: View, SuperLog {
         conversationViewModel.selectedConversationId
     }
 
-    /// 非系统消息
-    private var nonSystemMessages: [ChatMessage] {
-        // ChatHistoryService 已经完成“是否展示”的过滤；这里直接展示即可
-        messages
-    }
-
     var body: some View {
-        let messages = nonSystemMessages
         let lastMessageID = messages.last?.id
 
         ScrollView {
@@ -84,6 +77,7 @@ struct MessageListView: View, SuperLog {
 
 extension MessageListView {
     // MARK: - Shared Display Item
+
     //
     // MessageListView 本身已直接渲染 nonSystemMessages，不再做 DisplayMessageItem 转换；
     // 但 AppKit 版本消息列表仍复用该类型做渲染分支，因此保留这个共享 enum。
@@ -93,9 +87,9 @@ extension MessageListView {
 
         var id: UUID {
             switch self {
-            case .message(let message, _):
+            case let .message(message, _):
                 return message.id
-            case .toolCallSummary(let id, _):
+            case let .toolCallSummary(id, _):
                 return id
             }
         }
