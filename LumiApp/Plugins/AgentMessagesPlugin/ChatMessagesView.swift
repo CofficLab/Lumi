@@ -8,8 +8,14 @@ struct ChatMessagesView: View, SuperLog {
     nonisolated static let emoji = "💬"
     nonisolated static let verbose = true
 
-    /// 是否使用 AppKit 消息列表（false = SwiftUI 版本）
-    private static let useAppKitMessageList = true
+    enum MessageListImplementation {
+        case swiftUI
+        case appKitStable
+        case appKitExperimental
+    }
+
+    /// 选择消息列表实现
+    private static let messageListImplementation: MessageListImplementation = .appKitExperimental
 
     /// 会话管理 ViewModel
     @EnvironmentObject var conversationViewModel: ConversationViewModel
@@ -44,10 +50,13 @@ struct ChatMessagesView: View, SuperLog {
 
     @ViewBuilder
     private var messageListView: some View {
-        if Self.useAppKitMessageList {
-            MessageListViewAppKit()
-        } else {
+        switch Self.messageListImplementation {
+        case .swiftUI:
             MessageListView()
+        case .appKitStable:
+            MessageListViewAppKitStable()
+        case .appKitExperimental:
+            MessageListViewAppKitExperimental()
         }
     }
 

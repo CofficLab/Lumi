@@ -3,10 +3,9 @@ import MagicKit
 import OSLog
 import SwiftUI
 
-// MARK: - MessageListViewAppKitExperimental
-
-/// 消息列表视图组件（实验版：用于逐步提高 SwiftUI 占比定位卡死原因）
-struct MessageListViewAppKitExperimental: View, SuperLog {
+/// 消息列表视图组件（稳定版：外层 AppKit NSScrollView，内部 SwiftUI 气泡）
+/// 该文件用于备份已验证“不再卡死”的实现；后续实验请改 MessageListViewAppKitExperimental。
+struct MessageListViewAppKitStable: View, SuperLog {
     nonisolated static let emoji = "📜"
     nonisolated static let verbose = true
     nonisolated static let pageSize: Int = 50
@@ -62,7 +61,7 @@ struct MessageListViewAppKitExperimental: View, SuperLog {
         let items = displayItems
         let lastMessageID = items.last?.id
 
-        MessageListViewAppKitRepresentable(
+        MessageListViewAppKitStableRepresentable(
             items: items,
             lastMessageID: lastMessageID,
             agentProvider: agentProvider,
@@ -171,11 +170,7 @@ struct MessageListViewAppKitExperimental: View, SuperLog {
     }
 }
 
-// MARK: - AppKit Representable & Container
-
-// 说明：本文件当前固定使用 AppKit 的 NSScrollView 容器；若后续需要进一步提高 AppKit 使用率，可继续往容器内迁移更多逻辑。
-
-private struct MessageListViewAppKitRepresentable: NSViewRepresentable {
+private struct MessageListViewAppKitStableRepresentable: NSViewRepresentable {
     let items: [MessageListView.DisplayMessageItem]
     let lastMessageID: UUID?
     let agentProvider: AgentProvider
@@ -185,8 +180,8 @@ private struct MessageListViewAppKitRepresentable: NSViewRepresentable {
     let loadMoreButtonText: String
     let onLoadMore: () -> Void
 
-    func makeNSView(context: Context) -> MessageListViewAppKitContainerView {
-        let view = MessageListViewAppKitContainerView(frame: .zero)
+    func makeNSView(context: Context) -> MessageListViewAppKitStableContainerView {
+        let view = MessageListViewAppKitStableContainerView(frame: .zero)
         view.updateContent(
             items: items,
             lastMessageID: lastMessageID,
@@ -200,7 +195,7 @@ private struct MessageListViewAppKitRepresentable: NSViewRepresentable {
         return view
     }
 
-    func updateNSView(_ nsView: MessageListViewAppKitContainerView, context: Context) {
+    func updateNSView(_ nsView: MessageListViewAppKitStableContainerView, context: Context) {
         nsView.updateContent(
             items: items,
             lastMessageID: lastMessageID,
@@ -214,7 +209,7 @@ private struct MessageListViewAppKitRepresentable: NSViewRepresentable {
     }
 }
 
-private struct MessageListViewAppKitContentView: View {
+private struct MessageListViewAppKitStableContentView: View {
     let items: [MessageListView.DisplayMessageItem]
     let lastMessageID: UUID?
     let agentProvider: AgentProvider
@@ -265,7 +260,7 @@ private struct MessageListViewAppKitContentView: View {
     }
 }
 
-private final class MessageListViewAppKitContainerView: NSView {
+private final class MessageListViewAppKitStableContainerView: NSView {
     private let scrollView = NSScrollView()
     private let hostingView = NSHostingView(rootView: AnyView(EmptyView()))
 
@@ -300,7 +295,7 @@ private final class MessageListViewAppKitContainerView: NSView {
         let shouldStickToBottom = isNearBottom()
 
         hostingView.rootView = AnyView(
-            MessageListViewAppKitContentView(
+            MessageListViewAppKitStableContentView(
                 items: items,
                 lastMessageID: lastMessageID,
                 agentProvider: agentProvider,
@@ -323,7 +318,6 @@ private final class MessageListViewAppKitContainerView: NSView {
             scrollView.reflectScrolledClipView(clipView)
         }
 
-        // 延迟再测一次：最后一条长 MD 可能尚未完成布局，fittingSize 偏小导致底部被截断
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             self.layoutDocumentView()
@@ -357,7 +351,6 @@ private final class MessageListViewAppKitContainerView: NSView {
         hostingView.frame = NSRect(x: 0, y: 0, width: targetWidth, height: currentHeight)
         hostingView.layoutSubtreeIfNeeded()
         let fitting = hostingView.fittingSize
-        // 为了避免最后一条长 Markdown 消息在视觉上被“吃掉一行”，在内容高度基础上增加少量底部余量
         let extraBottomPadding: CGFloat = 64
         hostingView.frame = NSRect(
             x: 0,
@@ -382,3 +375,4 @@ private final class MessageListViewAppKitContainerView: NSView {
         return (maxY - clipView.bounds.origin.y) < threshold
     }
 }
+
