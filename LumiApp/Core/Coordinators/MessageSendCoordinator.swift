@@ -17,6 +17,7 @@ final class MessageSendCoordinator {
         let isFileSelected: () -> Bool
         let getSelectedFileInfo: () -> (path: String, content: String)
         let getSelectedText: () -> String?
+        let getMessageCount: (UUID) -> Int
     }
 
     private let messageSenderViewModel: MessageSenderViewModel
@@ -81,7 +82,8 @@ final class MessageSendCoordinator {
                         getProjectInfo: self.services.getProjectInfo,
                         isFileSelected: self.services.isFileSelected,
                         getSelectedFileInfo: self.services.getSelectedFileInfo,
-                        getSelectedText: self.services.getSelectedText
+                        getSelectedText: self.services.getSelectedText,
+                        getMessageCount: self.services.getMessageCount
                     )
                 )
                 if let pipeline = self.pipeline {

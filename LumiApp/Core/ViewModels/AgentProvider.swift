@@ -142,6 +142,9 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
             },
             getSelectedText: {
                 TextSelectionManager.shared.selectedText
+            },
+            getMessageCount: { [weak self] conversationId in
+                self?.messageViewModel.messages.count ?? 0
             }
         ),
         onUserJustSentMessage: { [weak self] in
