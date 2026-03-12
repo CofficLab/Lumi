@@ -1,4 +1,6 @@
 import Foundation
+import OSLog
+import MagicKit
 
 /// 自动生成会话标题中间件
 ///
@@ -6,9 +8,11 @@ import Foundation
 /// - 用户发送消息（`MessageSendEvent.sendMessage`）
 ///
 /// 行为：
-/// - 若对话标题仍是默认“新会话 …”，且未生成过标题，则异步触发一次标题生成。
+/// - 若对话标题仍是默认"新会话 …"，且未生成过标题，则异步触发一次标题生成。
 @MainActor
-struct AutoTitleGenerationMiddleware: MessageSendMiddleware {
+struct AutoTitleGenerationMiddleware: MessageSendMiddleware, SuperLog {
+    nonisolated static let emoji = "🏷️"
+    nonisolated static let verbose = true
     let id: String = "agent.auto-title.generate"
     let order: Int = 100
 
@@ -17,19 +21,37 @@ struct AutoTitleGenerationMiddleware: MessageSendMiddleware {
         ctx: MessageSendMiddlewareContext,
         next: @escaping @MainActor (MessageSendEvent, MessageSendMiddlewareContext) async -> Void
     ) async {
-        if case let .sendMessage(message, conversationId) = event, message.role == .user {
-            let title = ctx.services.getConversationTitle(conversationId) ?? ""
-            let shouldGenerate = title.hasPrefix("新会话 ") && !ctx.services.hasGeneratedTitle(conversationId)
+        guard case let .sendMessage(message, conversationId) = event, message.role == .user else {
+            await next(event, ctx)
+            return
+        }
 
-            if shouldGenerate {
-                ctx.services.setTitleGenerated(true, conversationId)
-                let config = ctx.services.getCurrentConfig()
-                let content = message.content
-                let autoGenerate = ctx.services.autoGenerateConversationTitleIfNeeded
+        let title = ctx.services.getConversationTitle(conversationId) ?? ""
+        let shouldGenerate = title.hasPrefix("新会话 ") && !ctx.services.hasGeneratedTitle(conversationId)
 
-                // 生成标题属于“后台辅助任务”，尽量不与 UI/流式渲染竞争主线程与高优先级执行资源。
-                Task.detached(priority: .background) {
-                    await autoGenerate(conversationId, content, config)
+        if shouldGenerate {
+            if Self.verbose {
+                os_log("\(Self.t)🎯 [\(conversationId)] 检测到需要生成标题")
+            }
+
+            ctx.services.setTitleGenerated(true, conversationId)
+            let config = ctx.services.getCurrentConfig()
+            let content = message.content
+            let autoGenerate = ctx.services.autoGenerateConversationTitleIfNeeded
+
+            // 生成标题属于"后台辅助任务"，尽量不与 UI/流式渲染竞争主线程与高优先级执行资源。
+            Task.detached(priority: .background) {
+                if Self.verbose {
+                    os_log("\(Self.t)🔄 [\(conversationId)] 开始后台生成标题...")
+                }
+                await autoGenerate(conversationId, content, config)
+            }
+        } else {
+            if Self.verbose {
+                if title.hasPrefix("新会话 ") == false {
+                    os_log("\(Self.t)⏭️ 会话已有自定义标题，跳过生成")
+                } else if ctx.services.hasGeneratedTitle(conversationId) {
+                    os_log("\(Self.t)⏭️ 会话已生成过标题，跳过生成")
                 }
             }
         }
@@ -37,4 +59,3 @@ struct AutoTitleGenerationMiddleware: MessageSendMiddleware {
         await next(event, ctx)
     }
 }
-
