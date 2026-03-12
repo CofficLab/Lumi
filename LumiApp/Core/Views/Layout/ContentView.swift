@@ -24,16 +24,16 @@ struct ContentView: View {
     @StateObject private var windowState: WindowState
 
     /// 默认选中的导航 ID
-    var defaultNavigationId: String? = nil
+    var defaultNavigationId: String?
 
     /// 默认侧边栏可见性
-    var defaultSidebarVisibility: Bool? = nil
+    var defaultSidebarVisibility: Bool?
 
     /// 初始选中的会话 ID
-    var initialConversationId: UUID? = nil
+    var initialConversationId: UUID?
 
     /// 初始项目路径
-    var initialProjectPath: String? = nil
+    var initialProjectPath: String?
 
     /// 初始化
     init(
@@ -121,12 +121,12 @@ struct ContentViewBody<Content: View>: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onOpenSettings(perform: openSettings)
             .onOpenPluginSettings(perform: openPluginSettings)
-            // .background {
-            //     GeometryReader { proxy in
-            //         themeManager.currentVariant.theme.makeGlobalBackground(proxy: proxy)
-            //     }
-            //     .ignoresSafeArea()
-            // }
+            .background {
+                GeometryReader { proxy in
+                    themeManager.currentVariant.theme.makeGlobalBackground(proxy: proxy)
+                }
+                .ignoresSafeArea()
+            }
             .onAppear(perform: onAppear)
             .onChange(of: columnVisibility) { _, _ in
                 onChangeColumnVisibility()
