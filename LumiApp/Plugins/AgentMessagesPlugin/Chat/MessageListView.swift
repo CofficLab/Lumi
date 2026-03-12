@@ -125,7 +125,7 @@ extension MessageListView {
             return "加载中..."
         }
         // messages.count 可能包含被隐藏的工具消息；这里用当前可见消息数，更符合用户直觉
-        return "加载更早消息（已加载 \(nonSystemMessages.count) 条，共 \(totalMessageCount) 条）"
+        return "加载更早消息（已加载 \(messages.count) 条，共 \(totalMessageCount) 条）"
     }
 }
 
