@@ -21,11 +21,16 @@ struct UserMessageHeader: View, SuperLog {
 
     @State private var isHovered: Bool = false
 
+    /// 当前 macOS 登录用户名称
+    private var currentUserName: String {
+        NSFullUserName().isEmpty ? NSUserName() : NSFullUserName()
+    }
+
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
             // 用户标识
             HStack(alignment: .center, spacing: 4) {
-                Text("你")
+                Text(currentUserName)
                     .font(DesignTokens.Typography.caption1)
                     .fontWeight(.medium)
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)

@@ -1,4 +1,4 @@
-# Issue: 严重崩溃风险 - ChatMessageEntity 中使用 try! 强制解包
+# Issue #001: 严重崩溃风险 - ChatMessageEntity 中使用 try! 强制解包
 
 ## 📋 问题概述
 
@@ -85,22 +85,6 @@ if let imagesData = imagesData {
 }
 ```
 
-### 方案 3: 添加数据验证和迁移逻辑
-
-```swift
-var images: [ImageAttachment] = []
-if let imagesData = imagesData {
-    do {
-        images = try JSONDecoder().decode([ImageAttachment].self, from: imagesData)
-    } catch {
-        os_log(.error, "图片数据解码失败，尝试迁移或修复: %{public}@", error.localizedDescription)
-        // 这里可以添加数据迁移或修复逻辑
-        images = []
-        // 可选：标记该消息需要修复
-    }
-}
-```
-
 ---
 
 ## 🔍 相关检查
@@ -122,19 +106,23 @@ grep -rn "as!" --include="*.swift" LumiApp/
 
 ## 📝 修复优先级
 
-- [ ] **P0 - 立即修复**: 替换 `try!` 为安全的错误处理方式
-- [ ] **P1 - 后续优化**: 添加数据解码失败的日志和监控
-- [ ] **P2 - 长期改进**: 实现数据版本管理和迁移机制
+| 优先级 | 任务 | 预计工作量 |
+|--------|------|-----------|
+| **P0** | 替换 `try!` 为安全的错误处理方式 | 1 小时 |
+| **P1** | 添加数据解码失败的日志和监控 | 2 小时 |
+| **P2** | 实现数据版本管理和迁移机制 | 1-2 天 |
 
 ---
 
-## 📚 参考资源
+## 🔄 相关 Issue
 
-- [Swift Error Handling Best Practices](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/errorhandling/)
-- [JSONDecoder Documentation](https://developer.apple.com/documentation/foundation/jsondecoder)
+- **Issue #002**: 系统性并发安全隐患 - @unchecked Sendable
+- **Issue #003**: TurnContexts 内存泄漏问题
+- **Issue #004**: 详细日志敏感数据泄露
 
 ---
 
 **创建日期**: 2026-03-12
+**更新日期**: 2026-03-12
 **创建者**: DevAssistant (自动分析生成)
 **标签**: `bug`, `crash`, `high-priority`, `data-safety`
