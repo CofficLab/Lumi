@@ -1,7 +1,8 @@
 import SwiftUI
 import MagicKit
+import OSLog
 
-actor TextActionsPlugin: SuperPlugin {
+actor TextActionsPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🖱️"
     nonisolated static let verbose = true
 
@@ -9,7 +10,7 @@ actor TextActionsPlugin: SuperPlugin {
     static let displayName = String(localized: "Text Actions", table: "TextActions")
     static let description = String(localized: "Selected text actions menu", table: "TextActions")
     static let iconName = "cursorarrow.click.2"
-    nonisolated static let enable = false
+    nonisolated static let enable: Bool = true
     static var order: Int { 60 }
     
     static let shared = TextActionsPlugin()
@@ -19,15 +20,19 @@ actor TextActionsPlugin: SuperPlugin {
     nonisolated func onRegister() {
         // Initialize settings default if not set
         if UserDefaults.standard.object(forKey: "TextActionsEnabled") == nil {
-            UserDefaults.standard.set(false, forKey: "TextActionsEnabled")
+            UserDefaults.standard.set(true, forKey: "TextActionsEnabled")
         }
     }
     
     nonisolated func onEnable() {
         Task { @MainActor in
-            if UserDefaults.standard.bool(forKey: "TextActionsEnabled") {
-                TextSelectionManager.shared.startMonitoring()
-                _ = TextActionMenuController.shared
+            // Always start monitoring when plugin is enabled
+            // The user can toggle the feature on/off in settings view
+            TextSelectionManager.shared.startMonitoring()
+            _ = TextActionMenuController.shared
+            
+            if Self.verbose {
+                os_log("\(Self.t)✅ Text Actions plugin enabled")
             }
         }
     }

@@ -82,7 +82,7 @@ struct SystemMessage: View, SuperLog {
 
     private func formatTimestamp(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
+        formatter.dateFormat = "HH:mm:ss"
         return formatter.string(for: date) ?? ""
     }
 }

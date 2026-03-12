@@ -66,13 +66,13 @@ struct CoreApp: App {
         //
         // 单独的设置窗口，大小固定为 780x600。
         // 使用紧凑型工具栏样式，节省空间。
-//        Window("设置", id: SettingsWindowID.settings) {
-//            SettingView()
-//                .inRootView()
-//        }
-//        .windowStyle(.hiddenTitleBar)
-//        .windowToolbarStyle(.unifiedCompact)
-//        .defaultSize(width: 780, height: 600)
+        Window("设置", id: SettingsWindowID.settings) {
+            SettingView()
+                .inRootView()
+        }
+        .windowStyle(.hiddenTitleBar)
+        .windowToolbarStyle(.unifiedCompact)
+        .defaultSize(width: 780, height: 600)
     }
 
     /// Sparkle 更新控制器

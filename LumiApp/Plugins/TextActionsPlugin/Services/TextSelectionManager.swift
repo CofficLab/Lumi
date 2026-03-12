@@ -8,7 +8,7 @@ import OSLog
 @MainActor
 class TextSelectionManager: ObservableObject, SuperLog {
     nonisolated static let emoji = "✂️"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
     
     static let shared = TextSelectionManager()
     
@@ -105,12 +105,10 @@ class TextSelectionManager: ObservableObject, SuperLog {
         // For simplicity, we'll use the current mouse location as the anchor
         let mouseLoc = NSEvent.mouseLocation
         // Convert screen coordinates (bottom-left origin) to window coordinates (top-left origin) logic happens in the view
-        // But here we just return the screen rect.
-        // Let's assume a small rect around the mouse cursor for now.
-        // Ideally we would use kAXBoundsForRangeParameterizedAttribute but that's complex.
+        // But here we'll use screen coordinates directly for the popup
+        let screenHeight = NSScreen.main?.frame.height ?? 0
+        let convertedPoint = CGPoint(x: mouseLoc.x, y: screenHeight - mouseLoc.y)
         
-        let rect = CGRect(x: mouseLoc.x, y: mouseLoc.y, width: 0, height: 0)
-        
-        return (text, rect)
+        return (text, CGRect(origin: convertedPoint, size: .zero))
     }
 }
