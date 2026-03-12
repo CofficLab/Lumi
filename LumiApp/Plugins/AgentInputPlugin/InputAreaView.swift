@@ -37,9 +37,6 @@ struct InputAreaView: View, SuperLog {
     /// 编辑器动态高度
     @State private var editorHeight: CGFloat = MacEditorView.minHeight
 
-    /// 动画相位状态（用于渐变边框动画）
-    @State private var gradientPhase: CGFloat = 0
-
     var body: some View {
         VStack(spacing: 8) {
             // 附件预览区域
@@ -124,8 +121,6 @@ struct InputAreaView: View, SuperLog {
         .onFileDroppedToChat { fileURL in
             handleFileDrop(fileURL: fileURL)
         }
-        // 视图出现时启动动画
-        .onAppear(perform: onAppear)
     }
 }
 
@@ -136,44 +131,17 @@ extension InputAreaView {
     @ViewBuilder
     private var processingBorderOverlay: some View {
         if processingStateViewModel.isProcessing {
-            // 动态渐变边框
+            // 暂时禁用无限动画边框，避免持续触发渲染事务
             RoundedRectangle(cornerRadius: 12)
                 .stroke(
-                    AngularGradient(
-                        gradient: Gradient(colors: [
-                            Color.blue.opacity(0.3),
-                            Color.purple.opacity(0.5),
-                            Color.blue.opacity(0.3)
-                        ]),
-                        center: .center,
-                        startAngle: .degrees(gradientPhase * 360),
-                        endAngle: .degrees(360.0 + (gradientPhase * 360.0))
-                    ),
+                    Color.blue.opacity(0.35),
                     lineWidth: 2
                 )
-                .onAppear {
-                    withAnimation(.linear(duration: 2).repeatForever()) {
-                        gradientPhase = 1
-                    }
-                }
-                .onDisappear {
-                    gradientPhase = 0
-                }
         } else {
             // 默认静态边框
             RoundedRectangle(cornerRadius: 12)
                 .stroke(Color.black.opacity(0.1), lineWidth: 1)
         }
-    }
-}
-
-// MARK: - Event Handler
-
-extension InputAreaView {
-    /// 视图出现时的事件处理
-    /// 启动渐变边框动画
-    func onAppear() {
-        gradientPhase = 0
     }
 }
 

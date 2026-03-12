@@ -101,19 +101,15 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
             updateHeight(for: textView)
         }
 
-        // 更新光标位置（延迟到下一个 runloop 确保文本已更新）
+        // updateNSView 本身运行在主线程，这里直接设置可避免额外调度开销
         let targetPosition = min(cursorPosition, text.count)
         if textView.selectedRange().location != targetPosition || textChanged {
-            DispatchQueue.main.async {
-                textView.setSelectedRange(NSRange(location: targetPosition, length: 0))
-            }
+            textView.setSelectedRange(NSRange(location: targetPosition, length: 0))
         }
 
         if isFocused {
-            DispatchQueue.main.async {
-                if let window = nsView.window, window.firstResponder != textView {
-                    window.makeFirstResponder(textView)
-                }
+            if let window = nsView.window, window.firstResponder != textView {
+                window.makeFirstResponder(textView)
             }
         }
     }
