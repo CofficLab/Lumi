@@ -3,10 +3,13 @@ import OSLog
 import SwiftUI
 
 /// 聊天消息列表视图组件
-/// 使用自治的 MessageListView 管理消息展示
+/// 使用自治的 MessageListView 管理消息展示；可选择 SwiftUI 或 AppKit 实现
 struct ChatMessagesView: View, SuperLog {
     nonisolated static let emoji = "💬"
     nonisolated static let verbose = true
+
+    /// 是否使用 AppKit 消息列表（false = SwiftUI 版本）
+    private static let useAppKitMessageList = true
 
     /// 会话管理 ViewModel
     @EnvironmentObject var conversationViewModel: ConversationViewModel
@@ -30,13 +33,22 @@ struct ChatMessagesView: View, SuperLog {
     var body: some View {
         Group {
             if hasSelectedConversation {
-                MessageListView()
+                messageListView
                     .overlay(alignment: .top) { messageOverlay }
             } else {
                 EmptyStateView()
             }
         }
         .background(.background.opacity(0.8))
+    }
+
+    @ViewBuilder
+    private var messageListView: some View {
+        if Self.useAppKitMessageList {
+            MessageListViewAppKit()
+        } else {
+            MessageListView()
+        }
     }
 
     /// 消息叠加层视图：显示深度警告和权限请求

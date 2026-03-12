@@ -3,6 +3,20 @@ import MarkdownUI
 import OSLog
 import MagicKit
 
+// MARK: - Environment: 禁用消息内部滚动（由外层列表统一滚动，避免长消息“吸住”滚轮）
+
+private struct PreferOuterScrollKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// 为 true 时（如 AppKit 消息列表）：消息内不使用可滚动控件，由外层列表统一滚动，避免长 MD 消息“吸住”滚轮。
+    var preferOuterScroll: Bool {
+        get { self[PreferOuterScrollKey.self] }
+        set { self[PreferOuterScrollKey.self] = newValue }
+    }
+}
+
 /// Markdown 消息视图，负责渲染聊天消息内容
 /// 使用 MarkdownUI 库渲染（支持 GitHub Flavored Markdown）
 struct MarkdownMessageView: View, SuperLog {
@@ -15,6 +29,7 @@ struct MarkdownMessageView: View, SuperLog {
     let isExpanded: Bool
     let onToggleExpand: () -> Void
     @AppStorage("Agent_RenderMarkdownEnabled") private var renderMarkdownEnabled: Bool = true
+    @Environment(\.preferOuterScroll) private var preferOuterScroll
 
     /// 最大高度（超过后折叠）
     private let maxHeight: CGFloat = 400
@@ -22,10 +37,7 @@ struct MarkdownMessageView: View, SuperLog {
     var body: some View {
         Group {
             if showRawMessage {
-                TextEditor(text: .constant(message.content))
-                    .font(.system(.body, design: .monospaced))
-                    .textSelection(.enabled)
-                    .scrollContentBackground(.hidden)
+                rawMessageContent
                     .applyCollapsible(isCollapsible: isCollapsible, isExpanded: isExpanded, maxHeight: maxHeight)
             } else if !renderMarkdownEnabled {
                 Text(verbatim: message.content)
@@ -34,8 +46,7 @@ struct MarkdownMessageView: View, SuperLog {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .applyCollapsible(isCollapsible: isCollapsible, isExpanded: isExpanded, maxHeight: maxHeight)
             } else {
-                Markdown(message.content)
-                    .textSelection(.enabled)
+                markdownContent
                     .applyCollapsible(isCollapsible: isCollapsible, isExpanded: isExpanded, maxHeight: maxHeight)
             }
         }
@@ -61,6 +72,36 @@ struct MarkdownMessageView: View, SuperLog {
         let estimatedLines = message.content.components(separatedBy: "\n").count
         let estimatedHeight = CGFloat(estimatedLines * 20) // 每行约 20pt
         return estimatedHeight > maxHeight
+    }
+
+    /// 原始消息内容：preferOuterScroll 时用 Text 避免内部 ScrollView 吸住滚轮
+    private var rawMessageContent: some View {
+        Group {
+            if preferOuterScroll {
+                Text(verbatim: message.content)
+                    .font(.system(.body, design: .monospaced))
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                TextEditor(text: .constant(message.content))
+                    .font(.system(.body, design: .monospaced))
+                    .textSelection(.enabled)
+                    .scrollContentBackground(.hidden)
+            }
+        }
+    }
+
+    /// Markdown 内容：preferOuterScroll 时禁用内部滚动，让外层列表滚动
+    @ViewBuilder
+    private var markdownContent: some View {
+        if preferOuterScroll {
+            Markdown(message.content)
+                .textSelection(.enabled)
+                .scrollDisabled(true)
+        } else {
+            Markdown(message.content)
+                .textSelection(.enabled)
+        }
     }
 }
 

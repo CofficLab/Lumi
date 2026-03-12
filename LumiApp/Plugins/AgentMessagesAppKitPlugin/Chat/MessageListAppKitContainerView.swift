@@ -74,13 +74,31 @@ private struct AppKitMessageListContentView: View {
     }
 }
 
+/// 根视图：注入 preferOuterScroll，避免长 MD 消息内部滚动“吸住”滚轮
+private struct AppKitMessageListRootView: View {
+    let messages: [ChatMessage]
+    let agentProvider: AgentProvider
+    let processingStateViewModel: ProcessingStateViewModel
+    let thinkingStateViewModel: ThinkingStateViewModel
+
+    var body: some View {
+        AppKitMessageListContentView(
+            messages: messages,
+            agentProvider: agentProvider,
+            processingStateViewModel: processingStateViewModel,
+            thinkingStateViewModel: thinkingStateViewModel
+        )
+        .environment(\.preferOuterScroll, true)
+    }
+}
+
 final class MessageListAppKitContainerView: NSView {
     private var agentProvider: AgentProvider
     private var conversationViewModel: ConversationViewModel
     private var processingStateViewModel: ProcessingStateViewModel
 
     private let scrollView = NSScrollView()
-    private let hostingView: NSHostingView<AppKitMessageListContentView>
+    private let hostingView: NSHostingView<AppKitMessageListRootView>
 
     private var messages: [ChatMessage] = [] {
         didSet { rebuildMessageViews() }
@@ -104,7 +122,7 @@ final class MessageListAppKitContainerView: NSView {
         self.conversationViewModel = conversationViewModel
         self.processingStateViewModel = processingStateViewModel
         self.hostingView = NSHostingView(
-            rootView: AppKitMessageListContentView(
+            rootView: AppKitMessageListRootView(
                 messages: [],
                 agentProvider: agentProvider,
                 processingStateViewModel: processingStateViewModel,
@@ -179,7 +197,7 @@ final class MessageListAppKitContainerView: NSView {
         let previousOrigin = clipView.bounds.origin
         let shouldStickToBottom = isNearBottom()
 
-        hostingView.rootView = AppKitMessageListContentView(
+        hostingView.rootView = AppKitMessageListRootView(
             messages: messages,
             agentProvider: agentProvider,
             processingStateViewModel: processingStateViewModel,
@@ -204,6 +222,24 @@ final class MessageListAppKitContainerView: NSView {
             name: .messageSaved,
             object: nil
         )
+
+        // 监听选中会话变化：解决启动时 selectedConversationId 晚于容器 init 恢复导致的空白列表
+        conversationViewModel.$selectedConversationId
+            .receive(on: RunLoop.main)
+            .sink { [weak self] newId in
+                guard let self else { return }
+                guard newId != self.currentConversationId else { return }
+                self.currentConversationId = newId
+                self.transientStatusMessageId = UUID()
+                if newId != nil {
+                    Task { [weak self] in
+                        await self?.loadInitialMessages()
+                    }
+                } else {
+                    self.messages = []
+                }
+            }
+            .store(in: &processingCancellables)
     }
 
     private func bindProcessingState() {

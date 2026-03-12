@@ -1,7 +1,6 @@
 import MagicKit
 import OSLog
 import SwiftUI
-import AppKit
 
 /// 消息列表视图组件
 /// 自治组件，自己管理消息加载和分页状态
@@ -9,11 +8,9 @@ struct MessageListView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "📜"
     /// 是否启用详细日志
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
     /// 分页大小：每页加载的消息数量
     nonisolated static let pageSize: Int = 50
-    /// 是否使用 AppKit 消息列表实现（用于快速切换）
-    nonisolated static let useAppKitImplementation: Bool = true
 
     /// 智能体提供者
     @EnvironmentObject var agentProvider: AgentProvider
@@ -97,35 +94,10 @@ struct MessageListView: View, SuperLog {
     }
 
     var body: some View {
-        Group {
-            if Self.useAppKitImplementation {
-                let items = displayItems
-                let lastMessageID = items.last?.id
-                InternalMessageListAppKitView(
-                    items: items,
-                    lastMessageID: lastMessageID,
-                    agentProvider: agentProvider,
-                    processingStateViewModel: processingStateViewModel
-                )
-            } else {
-                swiftUIBody
-            }
-        }
-        .onChange(of: selectedConversationId, handleConversationChanged)
-        .onChange(of: processingStateViewModel.isProcessing) { _, _ in
-            applyTransientStatusMessageIfNeeded()
-        }
-        .onChange(of: processingStateViewModel.statusText) { _, _ in
-            applyTransientStatusMessageIfNeeded()
-        }
-        .onMessageSaved(perform: handleOnMessageSaved)
-    }
-
-    private var swiftUIBody: some View {
         let items = displayItems
         let lastMessageID = items.last?.id
 
-        return ScrollViewReader { proxy in
+        ScrollViewReader { proxy in
             GeometryReader { viewport in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 12) {
@@ -195,6 +167,10 @@ struct MessageListView: View, SuperLog {
                 }
             }
         }
+        .onChange(of: selectedConversationId, handleConversationChanged)
+        .onChange(of: processingStateViewModel.isProcessing, applyTransientStatusMessageIfNeeded)
+        .onChange(of: processingStateViewModel.statusText, applyTransientStatusMessageIfNeeded)
+        .onMessageSaved(perform: handleOnMessageSaved)
     }
 }
 
@@ -470,146 +446,4 @@ extension MessageListView {
         .padding()
         .background(Color.black)
         .frame(width: 1200, height: 1200)
-}
-
-// MARK: - Internal AppKit Implementation
-
-private struct InternalMessageListAppKitContentView: View {
-    let items: [MessageListView.DisplayMessageItem]
-    let lastMessageID: UUID?
-    let agentProvider: AgentProvider
-    let processingStateViewModel: ProcessingStateViewModel
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            ForEach(items) { item in
-                ChatBubble(
-                    message: item.message,
-                    isLastMessage: item.id == lastMessageID,
-                    relatedToolOutputs: item.relatedToolOutputs
-                )
-                .environmentObject(agentProvider)
-                .environmentObject(agentProvider.thinkingStateViewModel)
-                .environmentObject(processingStateViewModel)
-            }
-        }
-        .padding(.horizontal)
-        .padding(.vertical)
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-private struct InternalMessageListAppKitView: NSViewRepresentable {
-    let items: [MessageListView.DisplayMessageItem]
-    let lastMessageID: UUID?
-    let agentProvider: AgentProvider
-    let processingStateViewModel: ProcessingStateViewModel
-
-    func makeNSView(context: Context) -> InternalMessageListAppKitContainerView {
-        let view = InternalMessageListAppKitContainerView()
-        view.updateContent(
-            items: items,
-            lastMessageID: lastMessageID,
-            agentProvider: agentProvider,
-            processingStateViewModel: processingStateViewModel
-        )
-        return view
-    }
-
-    func updateNSView(_ nsView: InternalMessageListAppKitContainerView, context: Context) {
-        nsView.updateContent(
-            items: items,
-            lastMessageID: lastMessageID,
-            agentProvider: agentProvider,
-            processingStateViewModel: processingStateViewModel
-        )
-    }
-}
-
-private final class InternalMessageListAppKitContainerView: NSView {
-    private let scrollView = NSScrollView()
-    private let hostingView = NSHostingView(rootView: AnyView(EmptyView()))
-
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        setUpViews()
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    override func layout() {
-        super.layout()
-        scrollView.frame = bounds
-        layoutDocumentView()
-    }
-
-    func updateContent(
-        items: [MessageListView.DisplayMessageItem],
-        lastMessageID: UUID?,
-        agentProvider: AgentProvider,
-        processingStateViewModel: ProcessingStateViewModel
-    ) {
-        let clipView = scrollView.contentView
-        let previousOrigin = clipView.bounds.origin
-        let shouldStickToBottom = isNearBottom()
-
-        hostingView.rootView = AnyView(
-            InternalMessageListAppKitContentView(
-                items: items,
-                lastMessageID: lastMessageID,
-                agentProvider: agentProvider,
-                processingStateViewModel: processingStateViewModel
-            )
-        )
-
-        layoutDocumentView()
-
-        if shouldStickToBottom {
-            scrollToBottom()
-        } else {
-            let maxY = max(0, hostingView.frame.height - clipView.bounds.height)
-            let targetY = min(previousOrigin.y, maxY)
-            clipView.scroll(to: NSPoint(x: previousOrigin.x, y: targetY))
-            scrollView.reflectScrolledClipView(clipView)
-        }
-    }
-
-    private func setUpViews() {
-        scrollView.borderType = .noBorder
-        scrollView.hasVerticalScroller = true
-        scrollView.autohidesScrollers = true
-        scrollView.drawsBackground = false
-        scrollView.documentView = hostingView
-        scrollView.hasHorizontalScroller = false
-        addSubview(scrollView)
-        scrollView.frame = bounds
-        scrollView.autoresizingMask = [.width, .height]
-    }
-
-    private func layoutDocumentView() {
-        let targetWidth = max(0, scrollView.contentView.bounds.width)
-        let currentHeight = max(1, hostingView.frame.height)
-        hostingView.frame = NSRect(x: 0, y: 0, width: targetWidth, height: currentHeight)
-        hostingView.layoutSubtreeIfNeeded()
-        let fitting = hostingView.fittingSize
-        hostingView.frame = NSRect(x: 0, y: 0, width: targetWidth, height: max(1, fitting.height))
-    }
-
-    private func scrollToBottom() {
-        layoutSubtreeIfNeeded()
-        layoutDocumentView()
-        let clipView = scrollView.contentView
-        let maxY = max(0, hostingView.frame.height - clipView.bounds.height)
-        clipView.scroll(to: NSPoint(x: 0, y: maxY))
-        scrollView.reflectScrolledClipView(clipView)
-    }
-
-    private func isNearBottom(threshold: CGFloat = 120) -> Bool {
-        let clipView = scrollView.contentView
-        let maxY = max(0, hostingView.frame.height - clipView.bounds.height)
-        return (maxY - clipView.bounds.origin.y) < threshold
-    }
 }

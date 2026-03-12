@@ -48,7 +48,7 @@ struct AssistantMessageWithToolCallsView: View {
                     } label: {
                         HStack(spacing: 8) {
                             Text(executionSummaryTitle(for: toolCalls))
-                                .font(DesignTokens.Typography.body)
+                                .font(DesignTokens.Typography.caption1)
                                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                                 .lineLimit(1)
 

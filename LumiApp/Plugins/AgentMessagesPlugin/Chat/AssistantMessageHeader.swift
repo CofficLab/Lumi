@@ -115,17 +115,6 @@ struct AssistantMessageHeader: View, SuperLog {
                 }
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
-
-            // 完成原因（如果有）
-            if let finishReason = message.finishReason {
-                HStack(alignment: .center, spacing: 2) {
-                    Image(systemName: "flag.fill")
-                        .font(.system(size: 8, weight: .medium))
-                    Text(formatFinishReason(finishReason))
-                        .font(DesignTokens.Typography.caption2)
-                }
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-            }
         }
     }
 

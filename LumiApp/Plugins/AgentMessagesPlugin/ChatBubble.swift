@@ -152,7 +152,7 @@ struct ChatBubble: View, SuperLog {
                         toolType: inferToolType(from: message)
                     )
                 } else {
-                    // 用户消息（或状态消息）
+                    // 用户消息（或状态消息：等待响应…、生成中等，与「正在执行 x 个工具」统一字号）
                     VStack(alignment: .leading, spacing: 4) {
                         MarkdownMessageView(
                             message: message,
@@ -161,6 +161,7 @@ struct ChatBubble: View, SuperLog {
                             isExpanded: true,
                             onToggleExpand: {}
                         )
+                        .font(message.role == .status ? DesignTokens.Typography.caption1 : nil)
                         .messageBubbleStyle(role: message.role, isError: message.isError)
                     }
                 }
