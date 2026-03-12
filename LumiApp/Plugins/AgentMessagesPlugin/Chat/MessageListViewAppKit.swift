@@ -60,9 +60,12 @@ struct MessageListViewAppKit: View, SuperLog {
     }
 
     var body: some View {
+        let items = displayItems
+        let lastMessageID = items.last?.id
+
         MessageListViewAppKitRepresentable(
-            items: displayItems,
-            lastMessageID: displayItems.last?.id,
+            items: items,
+            lastMessageID: lastMessageID,
             agentProvider: agentProvider,
             processingStateViewModel: processingStateViewModel,
             hasMoreMessages: hasMoreMessages,
@@ -170,6 +173,8 @@ struct MessageListViewAppKit: View, SuperLog {
 }
 
 // MARK: - AppKit Representable & Container
+
+// 说明：本文件当前固定使用 AppKit 的 NSScrollView 容器；若后续需要进一步提高 AppKit 使用率，可继续往容器内迁移更多逻辑。
 
 private struct MessageListViewAppKitRepresentable: NSViewRepresentable {
     let items: [MessageListView.DisplayMessageItem]
@@ -318,6 +323,21 @@ private final class MessageListViewAppKitContainerView: NSView {
             clipView.scroll(to: NSPoint(x: previousOrigin.x, y: targetY))
             scrollView.reflectScrolledClipView(clipView)
         }
+
+        // 延迟再测一次：最后一条长 MD 可能尚未完成布局，fittingSize 偏小导致底部被截断
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.layoutDocumentView()
+            if shouldStickToBottom {
+                self.scrollToBottom()
+            } else {
+                let cv = self.scrollView.contentView
+                let maxY = max(0, self.hostingView.frame.height - cv.bounds.height)
+                let targetY = min(previousOrigin.y, maxY)
+                cv.scroll(to: NSPoint(x: previousOrigin.x, y: targetY))
+                self.scrollView.reflectScrolledClipView(cv)
+            }
+        }
     }
 
     private func setUpViews() {
@@ -338,7 +358,14 @@ private final class MessageListViewAppKitContainerView: NSView {
         hostingView.frame = NSRect(x: 0, y: 0, width: targetWidth, height: currentHeight)
         hostingView.layoutSubtreeIfNeeded()
         let fitting = hostingView.fittingSize
-        hostingView.frame = NSRect(x: 0, y: 0, width: targetWidth, height: max(1, fitting.height))
+        // 为了避免最后一条长 Markdown 消息在视觉上被“吃掉一行”，在内容高度基础上增加少量底部余量
+        let extraBottomPadding: CGFloat = 64
+        hostingView.frame = NSRect(
+            x: 0,
+            y: 0,
+            width: targetWidth,
+            height: max(1, fitting.height + extraBottomPadding)
+        )
     }
 
     private func scrollToBottom() {
