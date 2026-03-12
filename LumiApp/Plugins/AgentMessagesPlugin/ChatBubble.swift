@@ -101,77 +101,41 @@ struct ChatBubble: View, SuperLog {
 
             VStack(alignment: .leading, spacing: 4) {
                 if message.role == .assistant {
-                    // 助手消息：显示 Header（包含供应商、模型信息和响应时间）
+                    AssistantMessage(
+                        message: message,
+                        isLastMessage: isLastMessage,
+                        relatedToolOutputs: relatedToolOutputs,
+                        showRawMessage: $showRawMessage
+                    )
+                } else {
+                    // 用户/系统/状态消息
                     VStack(alignment: .leading, spacing: 4) {
-                        AssistantMessageHeader(
-                            message: message,
-                            showRawMessage: $showRawMessage,
-                            isExpanded: isExpanded,
-                            onToggleExpand: {
-                                Task { @MainActor in
-                                    expansionState.toggleExpansion(id: message.id)
-                                }
-                            },
-                            isLongMessage: isLongMessage,
-                            isLastMessage: isLastMessage
-                        )
-
-                        // 思考过程展示（对最后一条助手消息显示）
-                        if shouldShowThinkingProcess {
-                            ThinkingProcessView(
-                                thinkingText: thinkingText,
-                                isThinking: isThinking
-                            )
-                        }
-
-                        if message.hasToolCalls {
-                            MessageWithToolCallsView(
+                        switch message.role {
+                        case .user:
+                            UserMessage(
                                 message: message,
-                                toolOutputMessages: relatedToolOutputs
+                                showRawMessage: $showRawMessage
                             )
-                        } else {
+                        case .system:
+                            SystemMessage(
+                                message: message,
+                                showRawMessage: $showRawMessage
+                            )
+                        case .status:
+                            StatusMessage(
+                                message: message,
+                                showRawMessage: $showRawMessage
+                            )
+                        default:
                             MarkdownMessageView(
                                 message: message,
                                 showRawMessage: showRawMessage,
-                                isCollapsible: isLongMessage,
-                                isExpanded: isExpanded,
-                                onToggleExpand: {
-                                    Task { @MainActor in
-                                        expansionState.toggleExpansion(id: message.id)
-                                    }
-                                }
+                                isCollapsible: false,
+                                isExpanded: true,
+                                onToggleExpand: {}
                             )
                             .messageBubbleStyle(role: message.role, isError: message.isError)
                         }
-                    }
-                } else if message.isToolOutput {
-                    // 工具输出
-                    RoleLabel.tool
-                    ToolOutputView(
-                        message: message,
-                        toolType: inferToolType(from: message)
-                    )
-                } else {
-                    // 用户消息（或状态消息：等待响应…、生成中等，与「正在执行 x 个工具」统一字号）
-                    VStack(alignment: .leading, spacing: 4) {
-                        // 用户消息：显示 Header（包含用户标识和时间信息）
-                        if message.role == .user {
-                            UserMessageHeader(
-                                message: message,
-                                showRawMessage: $showRawMessage,
-                                isLastMessage: isLastMessage
-                            )
-                        }
-
-                        MarkdownMessageView(
-                            message: message,
-                            showRawMessage: showRawMessage,
-                            isCollapsible: false,
-                            isExpanded: true,
-                            onToggleExpand: {}
-                        )
-                        .font(message.role == .status ? DesignTokens.Typography.caption1 : nil)
-                        .messageBubbleStyle(role: message.role, isError: message.isError)
                     }
                 }
 
@@ -198,15 +162,6 @@ struct ChatBubble: View, SuperLog {
         }
     }
 
-    /// 根据工具调用 ID 推断工具类型
-    /// - Parameter message: 消息对象
-    /// - Returns: 工具类型
-    private func inferToolType(from message: ChatMessage) -> ToolOutputView.ToolType? {
-        // 根据 toolCallID 查找对应的工具调用
-        // 由于消息之间没有直接关联，我们通过工具名称前缀来推断
-        // 这是一个简化实现，更好的方式是在消息间建立关联
-        return .unknown
-    }
 }
 
 // MARK: - Preview

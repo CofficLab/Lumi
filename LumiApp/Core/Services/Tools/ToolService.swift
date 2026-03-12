@@ -161,7 +161,41 @@ class ToolService: SuperLog, @unchecked Sendable {
 
         pluginTools = directTools + factoryTools
         allTools = builtInTools + pluginTools
+        validateToolPresentationDescriptors(allTools: allTools)
         toolsPublisher.send(allTools)
+    }
+
+    /// 校验所有已注册工具都有对应的展示 descriptor。
+    ///
+    /// 说明：
+    /// - ToolCall 的 name 来自运行时（LLM / MCP / 插件工具），编译期无法穷举；
+    /// - 因此采用“插件加载后立即校验”，把问题从“用到才炸”提前到“启动/加载即炸”。
+    @MainActor
+    private func validateToolPresentationDescriptors(allTools: [AgentTool]) {
+        let descriptors = PluginProvider.shared.getToolPresentationDescriptors()
+
+        var descriptorCountByName: [String: Int] = [:]
+        for d in descriptors {
+            descriptorCountByName[d.toolName, default: 0] += 1
+        }
+
+        let duplicateDescriptorNames = descriptorCountByName
+            .filter { $0.value > 1 }
+            .map { $0.key }
+            .sorted()
+        precondition(
+            duplicateDescriptorNames.isEmpty,
+            "Duplicate ToolPresentationDescriptor.toolName: \(duplicateDescriptorNames.joined(separator: ", "))"
+        )
+
+        let descriptorNames = Set(descriptors.map(\.toolName))
+        let toolNames = Set(allTools.map(\.name))
+        let missing = toolNames.subtracting(descriptorNames).sorted()
+
+        precondition(
+            missing.isEmpty,
+            "Missing ToolPresentationDescriptor for tools: \(missing.joined(separator: ", ")). Plugins must provide descriptors via toolPresentationDescriptors()."
+        )
     }
 
     // MARK: - Public API

@@ -2,31 +2,47 @@ import MagicKit
 import OSLog
 import SwiftUI
 
-// MARK: - User Message Header
-
-/// 用户消息头部组件
-/// 显示时间和简单控制按钮
-struct UserMessageHeader: View, SuperLog {
-    /// 日志标识 emoji
-    nonisolated static let emoji = "📋"
-    /// 是否启用详细日志
+// MARK: - User Message
+//
+/// 负责完整渲染一条用户消息（包含头部与正文）
+struct UserMessage: View, SuperLog {
+    nonisolated static let emoji = "👤"
     nonisolated static let verbose = false
 
-    /// 消息对象
     let message: ChatMessage
-    /// 原始消息显示状态绑定
     @Binding var showRawMessage: Bool
-    /// 是否是最后一条消息
-    let isLastMessage: Bool
 
     @State private var isHovered: Bool = false
 
     /// 当前 macOS 登录用户名称
     private var currentUserName: String {
-        NSFullUserName().isEmpty ? NSUserName() : NSFullUserName()
+        let fullName = NSFullUserName()
+        return fullName.isEmpty ? NSUserName() : fullName
     }
 
     var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            header
+
+            MarkdownMessageView(
+                message: message,
+                showRawMessage: showRawMessage,
+                isCollapsible: false,
+                isExpanded: true,
+                onToggleExpand: {}
+            )
+            .messageBubbleStyle(role: message.role, isError: message.isError)
+        }
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHovered = hovering
+            }
+        }
+    }
+
+    // MARK: - Header
+
+    private var header: some View {
         HStack(alignment: .center, spacing: 8) {
             // 用户标识
             HStack(alignment: .center, spacing: 4) {
@@ -45,7 +61,7 @@ struct UserMessageHeader: View, SuperLog {
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
                 // 切换原始消息按钮
-                rawMessageToggleButton
+                RawMessageToggleButton(showRawMessage: $showRawMessage)
             }
         }
         .padding(.horizontal, 8)
@@ -55,19 +71,8 @@ struct UserMessageHeader: View, SuperLog {
                 .fill(isHovered ? Color.primary.opacity(0.05) : Color.primary.opacity(0.02))
         )
         .contentShape(Rectangle())
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHovered = hovering
-            }
-        }
     }
 
-    /// 原始消息切换按钮
-    private var rawMessageToggleButton: some View {
-        RawMessageToggleButton(showRawMessage: $showRawMessage)
-    }
-
-    /// 格式化时间戳
     private func formatTimestamp(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
@@ -75,12 +80,3 @@ struct UserMessageHeader: View, SuperLog {
     }
 }
 
-#Preview("User Message Header") {
-    UserMessageHeader(
-        message: ChatMessage(role: .user, content: "Hello"),
-        showRawMessage: .constant(false),
-        isLastMessage: true
-    )
-    .padding()
-    .background(Color.black)
-}

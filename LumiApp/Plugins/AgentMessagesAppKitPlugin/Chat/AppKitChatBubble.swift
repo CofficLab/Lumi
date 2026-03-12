@@ -69,72 +69,40 @@ struct AppKitChatBubble: View, SuperLog {
 
             VStack(alignment: .leading, spacing: 4) {
                 if message.role == .assistant {
-                    VStack(alignment: .leading, spacing: 4) {
-                        AssistantMessageHeader(
-                            message: message,
-                            showRawMessage: $showRawMessage,
-                            isExpanded: isExpanded,
-                            onToggleExpand: {
-                                Task { @MainActor in
-                                    expansionState.toggleExpansion(id: message.id)
-                                }
-                            },
-                            isLongMessage: isLongMessage,
-                            isLastMessage: isLastMessage
-                        )
-
-                        if shouldShowThinkingProcess {
-                            ThinkingProcessView(
-                                thinkingText: thinkingText,
-                                isThinking: isThinking
-                            )
-                        }
-
-                        if message.hasToolCalls {
-                            MessageWithToolCallsView(
-                                message: message,
-                                toolOutputMessages: relatedToolOutputs
-                            )
-                        } else {
-                            MarkdownMessageView(
-                                message: message,
-                                showRawMessage: showRawMessage,
-                                isCollapsible: isLongMessage,
-                                isExpanded: isExpanded,
-                                onToggleExpand: {
-                                    Task { @MainActor in
-                                        expansionState.toggleExpansion(id: message.id)
-                                    }
-                                }
-                            )
-                            .messageBubbleStyle(role: message.role, isError: message.isError)
-                        }
-                    }
-                } else if message.isToolOutput {
-                    AppKitRoleLabel.tool
-                    ToolOutputView(
+                    AssistantMessage(
                         message: message,
-                        toolType: inferToolType(from: message)
+                        isLastMessage: isLastMessage,
+                        relatedToolOutputs: relatedToolOutputs,
+                        showRawMessage: $showRawMessage
                     )
                 } else {
                     VStack(alignment: .leading, spacing: 4) {
-                        // 用户消息：显示 Header（包含用户标识和时间信息）
-                        if message.role == .user {
-                            UserMessageHeader(
+                        switch message.role {
+                        case .user:
+                            UserMessage(
                                 message: message,
-                                showRawMessage: $showRawMessage,
-                                isLastMessage: isLastMessage
+                                showRawMessage: $showRawMessage
                             )
+                        case .system:
+                            SystemMessage(
+                                message: message,
+                                showRawMessage: $showRawMessage
+                            )
+                        case .status:
+                            StatusMessage(
+                                message: message,
+                                showRawMessage: $showRawMessage
+                            )
+                        default:
+                            MarkdownMessageView(
+                                message: message,
+                                showRawMessage: showRawMessage,
+                                isCollapsible: false,
+                                isExpanded: true,
+                                onToggleExpand: {}
+                            )
+                            .messageBubbleStyle(role: message.role, isError: message.isError)
                         }
-
-                        MarkdownMessageView(
-                            message: message,
-                            showRawMessage: showRawMessage,
-                            isCollapsible: false,
-                            isExpanded: true,
-                            onToggleExpand: {}
-                        )
-                        .messageBubbleStyle(role: message.role, isError: message.isError)
                     }
                 }
 
@@ -160,8 +128,5 @@ struct AppKitChatBubble: View, SuperLog {
         }
     }
 
-    private func inferToolType(from message: ChatMessage) -> ToolOutputView.ToolType? {
-        .unknown
-    }
 }
 
