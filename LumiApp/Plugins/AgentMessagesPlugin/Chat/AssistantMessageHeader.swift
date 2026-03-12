@@ -74,6 +74,10 @@ struct AssistantMessageHeader: View, SuperLog {
 
                 // 切换源码/渲染按钮
                 markdownRenderingToggleButton
+                // 时间戳
+                Text(formatTimestamp(message.timestamp))
+                    .font(DesignTokens.Typography.caption2)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
                 // 切换原始消息按钮
                 rawMessageToggleButton
@@ -142,6 +146,13 @@ struct AssistantMessageHeader: View, SuperLog {
     }
 
     // MARK: - Helper Methods
+
+    /// 格式化时间戳
+    private func formatTimestamp(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(for: date) ?? ""
+    }
 
     /// 格式化供应商名称（显示友好名称）
     /// - Parameter providerId: 供应商标识
