@@ -259,7 +259,9 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         
         // 选中当前行
         outlineView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
-        
+
+        let useMenuIcons = ProcessInfo.processInfo.operatingSystemVersion.majorVersion >= 26
+
         // 在 Finder 中显示
         let revealItem = NSMenuItem(
             title: "在 Finder 中显示",
@@ -268,9 +270,9 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         )
         revealItem.target = self
         revealItem.representedObject = node
-        revealItem.image = NSImage(systemSymbolName: "folder", accessibilityDescription: nil)
+        if useMenuIcons { revealItem.image = NSImage(systemSymbolName: "folder", accessibilityDescription: nil) }
         menu.addItem(revealItem)
-        
+
         // 在 VS Code 中打开
         let vscodeItem = NSMenuItem(
             title: "在 VS Code 中打开",
@@ -279,11 +281,22 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         )
         vscodeItem.target = self
         vscodeItem.representedObject = node
-        vscodeItem.image = NSImage(systemSymbolName: "chevron.left.forwardslash.chevron.right", accessibilityDescription: nil)
+        if useMenuIcons { vscodeItem.image = NSImage(systemSymbolName: "chevron.left.forwardslash.chevron.right", accessibilityDescription: nil) }
         menu.addItem(vscodeItem)
-        
+
+        // 在终端中打开
+        let terminalItem = NSMenuItem(
+            title: "在终端中打开",
+            action: #selector(handleOpenInTerminal(_:)),
+            keyEquivalent: ""
+        )
+        terminalItem.target = self
+        terminalItem.representedObject = node
+        if useMenuIcons { terminalItem.image = NSImage(systemSymbolName: "terminal", accessibilityDescription: nil) }
+        menu.addItem(terminalItem)
+
         menu.addItem(NSMenuItem.separator())
-        
+
         // 复制路径
         let copyPathItem = NSMenuItem(
             title: "复制路径",
@@ -292,8 +305,9 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         )
         copyPathItem.target = self
         copyPathItem.representedObject = node
+        if useMenuIcons { copyPathItem.image = NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: nil) }
         menu.addItem(copyPathItem)
-        
+
         // 复制相对路径
         let copyRelativePathItem = NSMenuItem(
             title: "复制相对路径",
@@ -302,11 +316,11 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         )
         copyRelativePathItem.target = self
         copyRelativePathItem.representedObject = node
-        copyRelativePathItem.image = NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: nil)
+        if useMenuIcons { copyRelativePathItem.image = NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: nil) }
         menu.addItem(copyRelativePathItem)
-        
+
         menu.addItem(NSMenuItem.separator())
-        
+
         // 重命名菜单项
         let renameItem = NSMenuItem(
             title: "重命名",
@@ -315,11 +329,11 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         )
         renameItem.target = self
         renameItem.representedObject = node
-        renameItem.image = NSImage(systemSymbolName: "pencil", accessibilityDescription: nil)
+        if useMenuIcons { renameItem.image = NSImage(systemSymbolName: "pencil", accessibilityDescription: nil) }
         menu.addItem(renameItem)
-        
+
         menu.addItem(NSMenuItem.separator())
-        
+
         // 删除菜单项
         let deleteItem = NSMenuItem(
             title: "删除",
@@ -328,7 +342,7 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         )
         deleteItem.target = self
         deleteItem.representedObject = node
-        deleteItem.image = NSImage(systemSymbolName: "trash", accessibilityDescription: nil)
+        if useMenuIcons { deleteItem.image = NSImage(systemSymbolName: "trash", accessibilityDescription: nil) }
         menu.addItem(deleteItem)
     }
     
@@ -550,14 +564,28 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         NSWorkspace.shared.selectFile(node.url.path, inFileViewerRootedAtPath: "")
     }
     
+    @objc private func handleOpenInTerminal(_ sender: NSMenuItem) {
+        guard let node = sender.representedObject as? FileNode else { return }
+        let targetURL: URL
+        if node.isDirectory {
+            targetURL = node.url
+        } else {
+            targetURL = node.url.deletingLastPathComponent()
+        }
+        let process = Process()
+        process.launchPath = "/usr/bin/env"
+        process.arguments = ["open", "-a", "Terminal", targetURL.path]
+        try? process.run()
+    }
+
     @objc private func handleOpenInVSCode(_ sender: NSMenuItem) {
         guard let node = sender.representedObject as? FileNode else { return }
         let path = node.url.path
-        
+
         let task = Process()
         task.launchPath = "/usr/bin/open"
         task.arguments = ["-b", "com.microsoft.VSCode", path]
-        
+
         do {
             try task.run()
         } catch {
