@@ -42,8 +42,14 @@ struct AssistantMessageWithToolCallsView: View {
             if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Button {
-                        withAnimation(.spring(response: 0.28, dampingFraction: 0.8)) {
-                            isToolDetailsExpanded.toggle()
+                        let target = !isToolDetailsExpanded
+                        // 延后到下一 run loop 再展开，避免同一周期内插入大量子视图导致主线程卡死
+                        if target {
+                            DispatchQueue.main.async {
+                                isToolDetailsExpanded = true
+                            }
+                        } else {
+                            isToolDetailsExpanded = false
                         }
                     } label: {
                         HStack(spacing: 8) {

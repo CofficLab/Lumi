@@ -107,8 +107,14 @@ struct ToolOutputView: View {
         }
         .contentShape(Rectangle())
         .onTapGesture {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                isExpanded.toggle()
+            let willExpand = !isExpanded
+            if willExpand {
+                // 延后到下一 run loop 再展开，避免同一周期内插入 ScrollView/大文本导致主线程卡死
+                DispatchQueue.main.async {
+                    isExpanded = true
+                }
+            } else {
+                isExpanded = false
             }
         }
     }

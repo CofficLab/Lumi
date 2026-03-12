@@ -118,6 +118,15 @@ struct AppKitChatBubble: View, SuperLog {
                     )
                 } else {
                     VStack(alignment: .leading, spacing: 4) {
+                        // 用户消息：显示 Header（包含用户标识和时间信息）
+                        if message.role == .user {
+                            UserMessageHeader(
+                                message: message,
+                                showRawMessage: $showRawMessage,
+                                isLastMessage: isLastMessage
+                            )
+                        }
+
                         MarkdownMessageView(
                             message: message,
                             showRawMessage: showRawMessage,

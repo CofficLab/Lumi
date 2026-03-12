@@ -154,6 +154,15 @@ struct ChatBubble: View, SuperLog {
                 } else {
                     // 用户消息（或状态消息：等待响应…、生成中等，与「正在执行 x 个工具」统一字号）
                     VStack(alignment: .leading, spacing: 4) {
+                        // 用户消息：显示 Header（包含用户标识和时间信息）
+                        if message.role == .user {
+                            UserMessageHeader(
+                                message: message,
+                                showRawMessage: $showRawMessage,
+                                isLastMessage: isLastMessage
+                            )
+                        }
+
                         MarkdownMessageView(
                             message: message,
                             showRawMessage: showRawMessage,
