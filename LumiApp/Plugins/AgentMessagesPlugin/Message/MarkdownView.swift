@@ -22,13 +22,13 @@ extension EnvironmentValues {
 struct MarkdownMessageView: View, SuperLog {
     nonisolated static let emoji = "📝"
     nonisolated static let verbose = true
+    static private var renderMarkdownEnabled: Bool = true
 
     let message: ChatMessage
     let showRawMessage: Bool
     let isCollapsible: Bool
     let isExpanded: Bool
     let onToggleExpand: () -> Void
-    static private var renderMarkdownEnabled: Bool = false
     @Environment(\.preferOuterScroll) private var preferOuterScroll
 
     /// 最大高度（超过后折叠）
