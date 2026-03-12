@@ -18,8 +18,14 @@ struct MessageListView: View, SuperLog {
     /// 会话管理 ViewModel
     @EnvironmentObject var conversationViewModel: ConversationViewModel
 
+    /// 处理状态 ViewModel（用于展示发送/等待首 token/生成中等状态）
+    @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
+
     /// 当前显示的消息列表
     @State private var messages: [ChatMessage] = []
+
+    /// 当前会话的临时状态消息 ID（不落库，仅用于 UI）
+    @State private var transientStatusMessageId: UUID = UUID()
 
     /// 是否还有更多历史消息可加载
     @State private var hasMoreMessages: Bool = false
@@ -60,6 +66,8 @@ struct MessageListView: View, SuperLog {
         .padding(.vertical)
         .onAppear(perform: handleOnAppear)
         .onChange(of: selectedConversationId, handleConversationChanged)
+        .onChange(of: processingStateViewModel.isProcessing, applyTransientStatusMessageIfNeeded)
+        .onChange(of: processingStateViewModel.statusText, applyTransientStatusMessageIfNeeded)
         .onMessageSaved(perform: handleOnMessageSaved)
     }
 }
@@ -122,6 +130,36 @@ extension MessageListView {
 // MARK: - Loading
 
 extension MessageListView {
+    private func applyTransientStatusMessageIfNeeded() {
+        guard selectedConversationId != nil else { return }
+
+        if processingStateViewModel.isProcessing, !processingStateViewModel.statusText.isEmpty {
+            let statusText = processingStateViewModel.statusText
+            if let index = messages.firstIndex(where: { $0.id == transientStatusMessageId }) {
+                var m = messages[index]
+                m.content = statusText
+                // 通过创建新数组触发 SwiftUI 更新
+                var updated = messages
+                updated[index] = m
+                messages = updated
+            } else {
+                let m = ChatMessage(
+                    id: transientStatusMessageId,
+                    role: .status,
+                    content: statusText,
+                    timestamp: Date(),
+                    isTransientStatus: true
+                )
+                messages.append(m)
+            }
+        } else {
+            // 结束后移除临时状态消息
+            if messages.contains(where: { $0.id == transientStatusMessageId }) {
+                messages.removeAll { $0.id == transientStatusMessageId }
+            }
+        }
+    }
+
     /// 加载消息
     func loadMessages() async {
         guard let conversationId = selectedConversationId else {
@@ -170,7 +208,8 @@ extension MessageListView {
             if Self.verbose {
                 os_log("\(Self.t)✅ [\(conversationId)] 加载完成：\(self.messages.count)/\(self.totalMessageCount) 条，hasMore: \(self.hasMoreMessages)")
             }
-
+            // loadMessages 会覆盖本地数组，需要重新注入临时状态消息
+            applyTransientStatusMessageIfNeeded()
         }
     }
 
@@ -219,6 +258,10 @@ extension MessageListView {
     /// 处理会话变更事件
     func handleConversationChanged() {
         Task {
+            await MainActor.run {
+                // 切换会话时，为临时状态消息生成新 ID，避免串会话
+                transientStatusMessageId = UUID()
+            }
             await loadMessages()
         }
     }
