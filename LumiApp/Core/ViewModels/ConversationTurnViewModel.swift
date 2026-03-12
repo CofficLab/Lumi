@@ -194,7 +194,11 @@ final class ConversationTurnViewModel: ObservableObject, SuperLog {
                     broken.pendingToolCalls.removeAll()
                     turnContexts[conversationId] = broken
                 // 在 UI 中给出明确的助手提示，而不是静默结束
-                let explainMessage = ChatMessage.maxDepthToolLimitMessage(languagePreference: languagePreference)
+                let explainMessage = ChatMessage.maxDepthToolLimitMessage(
+                    languagePreference: languagePreference,
+                    currentDepth: depth,
+                    maxDepth: maxDepth
+                )
                 eventContinuation?.yield(.responseReceived(explainMessage, conversationId: conversationId))
                     eventContinuation?.yield(.completed(conversationId: conversationId))
                     if Self.verbose {

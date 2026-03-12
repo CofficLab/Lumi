@@ -178,13 +178,13 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     }
 
     /// 系统因达到最大执行深度而终止本轮对话时，用于向用户解释原因的系统消息。
-    static func maxDepthToolLimitMessage(languagePreference: LanguagePreference) -> ChatMessage {
+    static func maxDepthToolLimitMessage(languagePreference: LanguagePreference, currentDepth: Int, maxDepth: Int) -> ChatMessage {
         let content: String
         switch languagePreference {
         case .chinese:
-            content = "由于系统限制，本轮对话已达到最大执行深度，后续的工具调用请求已被忽略。请调整问题或缩小任务范围后再试。"
+            content = "由于系统限制，本轮对话已达到最大执行深度（\(currentDepth)/\(maxDepth)），后续的工具调用请求已被忽略。请调整问题或缩小任务范围后再试。"
         case .english:
-            content = "Due to system safety limits, this turn has reached the maximum execution depth. Additional tool calls have been ignored and the conversation turn has been terminated. Please refine your question or narrow the task scope and try again."
+            content = "Due to system safety limits, this turn has reached the maximum execution depth (\(currentDepth)/\(maxDepth)). Additional tool calls have been ignored and the conversation turn has been terminated. Please refine your question or narrow the task scope and try again."
         }
         return ChatMessage(
             role: .system,
