@@ -112,7 +112,7 @@ extension ConversationListView {
                 }
             } else {
                 // 选中的会话不存在于列表中，清除选择
-                os_log("\(self.t)⚠️ 选中的会话不存在于列表中")
+                os_log("\(self.t)⚠️ [\(selectedId)] 选中的会话不存在于列表中")
                 localSelectedConversationId = nil
             }
         } else {
