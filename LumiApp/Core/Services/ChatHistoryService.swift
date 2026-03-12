@@ -432,8 +432,10 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                 let batchSize = max(limit * 3, limit + 10)
                 // 安全阈值：避免极端情况下长时间循环（例如大量连续 tool output 被过滤）
                 let maxBatches = 20
+                // 记录当前页中“最旧”的一条可见消息时间戳，用于作为下一页游标
+                var oldestVisibleTimestamp: Date?
 
-                for _ in 0..<maxBatches {
+                batchLoop: for _ in 0..<maxBatches {
                     var descriptor: FetchDescriptor<ChatMessageEntity>
                     if let before = cursor {
                         descriptor = FetchDescriptor<ChatMessageEntity>(
@@ -457,61 +459,29 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                         break
                     }
 
-                    // fetched 是按 timestamp desc（从新到旧）；转换后再按 asc 追加（从旧到新）
-                    let convertedAsc = fetched.reversed().compactMap { $0.toChatMessage() }
-
-                    // 过滤并补齐，同时记录第一批（最早）已收集消息的时间戳
-                    var firstCollectedTimestamp: Date?
-                    for msg in convertedAsc where msg.shouldDisplayInChatList() {
-                        if firstCollectedTimestamp == nil {
-                            firstCollectedTimestamp = msg.timestamp  // 这批中最早的可展示消息
+                    // fetched 按 timestamp desc（从新到旧）；我们按从新到旧遍历，
+                    // 收集到 limit 条后，再在返回时整体反转为从旧到新，保证 UI 底部是最新消息。
+                    for entity in fetched {
+                        guard let msg = entity.toChatMessage(), msg.shouldDisplayInChatList() else {
+                            continue
                         }
                         collected.append(msg)
-                        if collected.count >= limit { break }
+                        oldestVisibleTimestamp = msg.timestamp
+                        if collected.count >= limit {
+                            // 当前页已满，停止继续拉取 batch
+                            break batchLoop
+                        }
                     }
 
-                    if collected.count >= limit {
-                        // 游标必须基于最早那条已收集消息的时间戳，这样下次加载时才会获取比它更早的消息
-                        // 注意：convertedAsc 是从旧到新遍历，所以 firstCollectedTimestamp 是最早的
-                        if let firstCollected = firstCollectedTimestamp {
-                            cursor = firstCollected
-                        }
-
-                        // 继续探测是否还有可展示消息：再拉一小批，看是否能过滤出任何消息
-                        var probeDescriptor: FetchDescriptor<ChatMessageEntity>
-                        if let before = cursor {
-                            probeDescriptor = FetchDescriptor<ChatMessageEntity>(
-                                predicate: #Predicate<ChatMessageEntity> { msg in
-                                    msg.conversation?.id == conversationId && msg.timestamp < before
-                                },
-                                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
-                            )
-                        } else {
-                            probeDescriptor = FetchDescriptor<ChatMessageEntity>(
-                                predicate: #Predicate<ChatMessageEntity> { msg in
-                                    msg.conversation?.id == conversationId
-                                },
-                                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
-                            )
-                        }
-                        probeDescriptor.fetchLimit = max(10, min(30, batchSize))
-                        if let probeFetched = try? context.fetch(probeDescriptor) {
-                            let probeConverted = probeFetched.compactMap { $0.toChatMessage() }
-                            hasMoreVisible = probeConverted.contains(where: { $0.shouldDisplayInChatList() })
-                        } else {
-                            hasMoreVisible = false
-                        }
-                        break
-                    }
-
-                    // 这一批没收集满，继续下一批
-                    // 游标应该指向这批中最早的可展示消息的时间戳（如果有的话），这样才能继续往前拉
-                    if let firstCollected = firstCollectedTimestamp {
-                        cursor = firstCollected
+                    // 这一批没收集满，继续下一批。
+                    // 如果这一批有可展示消息，则游标设为当前已收集的“最旧”可展示消息；
+                    // 否则使用本批次中最旧原始消息的时间戳推进游标，避免死循环。
+                    if let oldest = oldestVisibleTimestamp {
+                        cursor = oldest
                     } else if let lastTimestamp = fetched.last?.timestamp {
-                        // 如果这批没有任何可收集的消息，使用 batch 最后一条（最旧）作为游标
                         cursor = lastTimestamp
                     }
+
                     // 如果 fetched 少于 batchSize，说明原始数据也快到底了
                     if fetched.count < batchSize {
                         hasMoreVisible = false
@@ -519,7 +489,31 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                     }
                 }
 
-                let messages = Array(collected.prefix(limit))
+                // collected 当前是从新到旧（最新在前），为了让 UI 底部是最新消息，
+                // 这里统一转换为从旧到新（最旧在前，最新在后）。
+                let pageMessagesDesc = Array(collected.prefix(limit))
+                let messages = Array(pageMessagesDesc.reversed())
+
+                // 探测是否还有更多可展示消息：从当前页最旧一条消息再往前探一小批。
+                if let oldest = oldestVisibleTimestamp {
+                    var probeDescriptor: FetchDescriptor<ChatMessageEntity>
+                    probeDescriptor = FetchDescriptor<ChatMessageEntity>(
+                        predicate: #Predicate<ChatMessageEntity> { msg in
+                            msg.conversation?.id == conversationId && msg.timestamp < oldest
+                        },
+                        sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+                    )
+                    probeDescriptor.fetchLimit = max(10, min(30, batchSize))
+                    if let probeFetched = try? context.fetch(probeDescriptor) {
+                        let probeConverted = probeFetched.compactMap { $0.toChatMessage() }
+                        hasMoreVisible = probeConverted.contains(where: { $0.shouldDisplayInChatList() })
+                    } else {
+                        hasMoreVisible = false
+                    }
+                } else {
+                    hasMoreVisible = false
+                }
+
                 let hasMore = hasMoreVisible
 
                 if Self.verbose {
@@ -552,7 +546,14 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                     return
                 }
 
-                continuation.resume(returning: fetchedConversation.messages.count)
+                // 统一可见性规则：仅统计应在聊天列表中展示的消息数量，
+                // 与分页加载 `loadMessagesPage` 使用相同的过滤条件（shouldDisplayInChatList）。
+                let visibleCount = fetchedConversation.messages
+                    .compactMap { $0.toChatMessage() }
+                    .filter { $0.shouldDisplayInChatList() }
+                    .count
+
+                continuation.resume(returning: visibleCount)
             }
         }
     }

@@ -10,7 +10,7 @@ struct MessageListView: View, SuperLog {
     /// 是否启用详细日志
     nonisolated static let verbose = true
     /// 分页大小：每页加载的消息数量
-    nonisolated static let pageSize: Int = 50
+    nonisolated static let pageSize: Int = 10
 
     /// 智能体提供者
     @EnvironmentObject var agentProvider: AgentProvider
@@ -115,7 +115,6 @@ extension MessageListView {
         if isLoadingMore {
             return "加载中..."
         }
-        // messages.count 可能包含被隐藏的工具消息；这里用当前可见消息数，更符合用户直觉
         return "加载更早消息（已加载 \(messages.count) 条，共 \(totalMessageCount) 条）"
     }
 }
