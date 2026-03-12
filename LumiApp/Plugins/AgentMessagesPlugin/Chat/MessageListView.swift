@@ -39,9 +39,6 @@ struct MessageListView: View, SuperLog {
     /// 最早加载的消息时间戳（用于分页游标）
     @State private var oldestLoadedTimestamp: Date?
 
-    /// ScrollViewProxy 引用（用于滚动到底）
-    @State private var scrollProxy: ScrollViewProxy?
-
     /// 当前选中的会话 ID
     private var selectedConversationId: UUID? {
         conversationViewModel.selectedConversationId
@@ -91,45 +88,30 @@ struct MessageListView: View, SuperLog {
         let items = displayItems
         let lastMessageID = items.last?.id
 
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 12) {
-                    if hasMoreMessages {
-                        loadMoreButton
-                    }
-
-                    ForEach(items) { item in
-                        ChatBubble(
-                            message: item.message,
-                            isLastMessage: item.id == lastMessageID,
-                            relatedToolOutputs: item.relatedToolOutputs
-                        )
-                        .id(item.message.id)
-                    }
-
-                    // 底部锚点：仅用于滚动到底，不再做 Geometry/Preference 测量
-                    Color.clear
-                        .frame(height: 0)
-                        .id(BottomSentinelID.value)
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 12) {
+                if hasMoreMessages {
+                    loadMoreButton
                 }
-                .padding(.horizontal)
+
+                ForEach(items) { item in
+                    ChatBubble(
+                        message: item.message,
+                        isLastMessage: item.id == lastMessageID,
+                        relatedToolOutputs: item.relatedToolOutputs
+                    )
+                    .id(item.message.id)
+                }
             }
-            .padding(.vertical)
-            .onAppear {
-                handleOnAppear(proxy: proxy)
-            }
+            .padding(.horizontal)
         }
+        .padding(.vertical)
+        .onAppear(perform: handleOnAppear)
         .onChange(of: selectedConversationId, handleConversationChanged)
         .onChange(of: processingStateViewModel.isProcessing, applyTransientStatusMessageIfNeeded)
         .onChange(of: processingStateViewModel.statusText, applyTransientStatusMessageIfNeeded)
         .onMessageSaved(perform: handleOnMessageSaved)
     }
-}
-
-// MARK: - Scroll helpers
-
-private enum BottomSentinelID {
-    static let value = "MessageListView.BottomSentinel"
 }
 
 // MARK: - View
@@ -295,37 +277,12 @@ extension MessageListView {
     }
 }
 
-// MARK: - Action
-
-extension MessageListView {
-    /// 滚动到底部
-    func scrollToBottom(animated: Bool = true) {
-        let action = {
-            scrollProxy?.scrollTo(BottomSentinelID.value, anchor: .bottom)
-        }
-
-        if animated {
-            withAnimation(.easeOut(duration: 0.3)) { action() }
-        } else {
-            action()
-        }
-
-        if Self.verbose {
-            os_log("\(Self.t)📜 滚动到底部")
-        }
-    }
-}
-
 // MARK: - Event Handlers
 
 extension MessageListView {
-    /// 处理视图出现事件
-    /// - Parameter proxy: ScrollView 代理
-    func handleOnAppear(proxy: ScrollViewProxy) {
-        scrollProxy = proxy
-        Task {
-            await loadMessages()
-        }
+    /// 视图出现时加载消息
+    func handleOnAppear() {
+        Task { await loadMessages() }
     }
 
     /// 处理会话变更事件
@@ -346,7 +303,6 @@ extension MessageListView {
         guard conversationId == selectedConversationId else { return }
 
         Task { @MainActor in
-            let isNewMessage = !messages.contains(where: { $0.id == message.id })
             let existingIndex = messages.firstIndex { $0.id == message.id }
 
             if let idx = existingIndex {
@@ -364,11 +320,6 @@ extension MessageListView {
             totalMessageCount = max(totalMessageCount, messages.count)
             if let first = messages.first {
                 oldestLoadedTimestamp = first.timestamp
-            }
-
-            // 简化后的自动滚动策略：始终滚到底，避免 PreferenceKey/Geometry 带来的自激问题
-            if isNewMessage {
-                scrollToBottom(animated: true)
             }
         }
     }

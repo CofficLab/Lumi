@@ -65,7 +65,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     // MARK: - ViewModel 引用
 
     /// 消息 ViewModel
-    let messageViewModel: MessageViewModel
+    let messageViewModel: MessagePendingViewModel
 
     /// 会话 ViewModel
     let conversationViewModel: ConversationViewModel
@@ -301,7 +301,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         toolService: ToolService,
         toolsViewModel: ToolsViewModel,
         chatHistoryService: ChatHistoryService,
-        messageViewModel: MessageViewModel,
+        messageViewModel: MessagePendingViewModel,
         conversationViewModel: ConversationViewModel,
         messageSenderViewModel: MessageSenderViewModel,
         projectViewModel: ProjectViewModel,

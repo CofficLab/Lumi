@@ -115,7 +115,7 @@ final class RootViewContainer: ObservableObject {
     let appProvider: GlobalProvider
     let projectViewModel: ProjectViewModel
     let commandSuggestionViewModel: CommandSuggestionViewModel
-    let messageViewModel: MessageViewModel
+    let messageViewModel: MessagePendingViewModel
     let conversationViewModel: ConversationViewModel
     let messageSenderViewModel: MessageSenderViewModel
     let agentProvider: AgentProvider
@@ -182,7 +182,7 @@ final class RootViewContainer: ObservableObject {
         self.commandSuggestionViewModel = CommandSuggestionViewModel(slashCommandService: slashCommandService)
 
         // 创建 MessageViewModel
-        self.messageViewModel = MessageViewModel(chatHistoryService: chatHistoryService)
+        self.messageViewModel = MessagePendingViewModel(chatHistoryService: chatHistoryService)
 
         // 创建 ConversationViewModel
         self.conversationViewModel = ConversationViewModel(
