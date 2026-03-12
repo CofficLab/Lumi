@@ -13,6 +13,23 @@ import MagicKit
 ///
 /// 线程安全：此类通过方法内部同步保证线程安全，因此可以安全地在并发代码中使用
 class ShellService: SuperLog {
+    private final class LockedDataBuffer: @unchecked Sendable {
+        private let lock = NSLock()
+        private var data = Data()
+
+        func append(_ chunk: Data) {
+            lock.lock()
+            data.append(chunk)
+            lock.unlock()
+        }
+
+        func snapshot() -> Data {
+            lock.lock()
+            let copy = data
+            lock.unlock()
+            return copy
+        }
+    }
 
     // MARK: - Logger
 
@@ -48,56 +65,122 @@ class ShellService: SuperLog {
     /// 是否正在运行（供同步访问）
     private(set) var isRunning: Bool = false
 
-    @MainActor
     func execute(_ command: String) async throws -> String {
-        // 更新状态并通过 Publisher 通知
-        isRunning = true
-        runningStatePublisher.send(true)
-
-        defer {
-            isRunning = false
-            runningStatePublisher.send(false)
+        if Self.verbose {
+            os_log("\(Self.t)🐚 执行命令: \n\(command)")
+        }
+        // Capture mutable state on MainActor
+        let workingDirectory = await MainActor.run { self.currentDirectory }
+        if Self.verbose {
+            os_log("\(Self.t)📂 workingDirectory: \(workingDirectory)")
+        }
+        await MainActor.run {
+            isRunning = true
+            runningStatePublisher.send(true)
         }
 
-        // Capture currentDirectory on MainActor before entering detached task
-        let workingDirectory = self.currentDirectory
+        defer {
+            Task { @MainActor in
+                self.isRunning = false
+                self.runningStatePublisher.send(false)
+            }
+        }
 
         return try await Task.detached(priority: .userInitiated) {
+            let startedAt = Date()
             let process = Process()
-            let pipe = Pipe()
-            let errorPipe = Pipe()
+            let stdoutPipe = Pipe()
+            let stderrPipe = Pipe()
 
-            // Use zsh for shell execution
             process.executableURL = URL(fileURLWithPath: "/bin/zsh")
             process.arguments = ["-c", command]
-
-            // Set current working directory
             process.currentDirectoryURL = URL(fileURLWithPath: workingDirectory)
 
-            // Set environment
             var env = ProcessInfo.processInfo.environment
             env["TERM"] = "xterm-256color"
             env["LANG"] = "en_US.UTF-8"
-            // Add Homebrew path
             env["PATH"] = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
             process.environment = env
 
-            process.standardOutput = pipe
-            process.standardError = errorPipe
+            process.standardOutput = stdoutPipe
+            process.standardError = stderrPipe
+
+            let stdoutBuffer = LockedDataBuffer()
+            let stderrBuffer = LockedDataBuffer()
+
+            let stdoutHandle = stdoutPipe.fileHandleForReading
+            let stderrHandle = stderrPipe.fileHandleForReading
+
+            // 持续 drain stdout/stderr，避免 readDataToEndOfFile + 双 pipe 死锁
+            stdoutHandle.readabilityHandler = { handle in
+                let chunk = handle.availableData
+                if !chunk.isEmpty {
+                    stdoutBuffer.append(chunk)
+                    if Self.verbose {
+                        os_log("\(Self.t)📤 stdout +\(chunk.count) bytes")
+                    }
+                }
+            }
+            stderrHandle.readabilityHandler = { handle in
+                let chunk = handle.availableData
+                if !chunk.isEmpty {
+                    stderrBuffer.append(chunk)
+                    if Self.verbose {
+                        os_log("\(Self.t)📥 stderr +\(chunk.count) bytes")
+                    }
+                }
+            }
 
             try process.run()
+            if Self.verbose {
+                os_log("\(Self.t)🚀 process started pid=\(process.processIdentifier)")
+            }
 
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                process.terminationHandler = { _ in
+                    continuation.resume()
+                }
+            }
 
-            process.waitUntilExit()
+            // 清理 handler，确保不再回调
+            stdoutHandle.readabilityHandler = nil
+            stderrHandle.readabilityHandler = nil
 
-            let output = String(data: data, encoding: .utf8) ?? ""
-            let errorOutput = String(data: errorData, encoding: .utf8) ?? ""
+            // 读取最后残留的数据（若有）
+            let finalStdout = stdoutHandle.availableData
+            if !finalStdout.isEmpty {
+                stdoutBuffer.append(finalStdout)
+                if Self.verbose {
+                    os_log("\(Self.t)📤 stdout(final) +\(finalStdout.count) bytes")
+                }
+            }
+            let finalStderr = stderrHandle.availableData
+            if !finalStderr.isEmpty {
+                stderrBuffer.append(finalStderr)
+                if Self.verbose {
+                    os_log("\(Self.t)📥 stderr(final) +\(finalStderr.count) bytes")
+                }
+            }
 
-            let result = output + (errorOutput.isEmpty ? "" : "\nError:\n\(errorOutput)")
+            let stdoutData = stdoutBuffer.snapshot()
+            let stderrData = stderrBuffer.snapshot()
+            let output = String(data: stdoutData, encoding: .utf8) ?? ""
+            let errorOutput = String(data: stderrData, encoding: .utf8) ?? ""
 
-            return result
+            if Self.verbose {
+                let duration = Date().timeIntervalSince(startedAt)
+                os_log("\(Self.t)🧾 exitCode=\(process.terminationStatus) signal=\(process.terminationReason.rawValue) duration=\(String(format: "%.3f", duration))s")
+                os_log("\(Self.t)📊 stdout=\(stdoutData.count) bytes stderr=\(stderrData.count) bytes")
+
+                let outputPreview = output.count > 400 ? String(output.prefix(400)) + "…" : output
+                let errorPreview = errorOutput.count > 400 ? String(errorOutput.prefix(400)) + "…" : errorOutput
+                os_log("\(Self.t)📝 stdout preview:\n\(outputPreview)")
+                if !errorOutput.isEmpty {
+                    os_log("\(Self.t)📝 stderr preview:\n\(errorPreview)")
+                }
+            }
+
+            return output + (errorOutput.isEmpty ? "" : "\nError:\n\(errorOutput)")
         }.value
     }
 }

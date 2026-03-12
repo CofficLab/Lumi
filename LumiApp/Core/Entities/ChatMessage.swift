@@ -177,7 +177,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         )
     }
 
-    /// 系统因达到最大执行深度而终止本轮对话时，用于向用户解释原因的助手消息。
+    /// 系统因达到最大执行深度而终止本轮对话时，用于向用户解释原因的系统消息。
     static func maxDepthToolLimitMessage(languagePreference: LanguagePreference) -> ChatMessage {
         let content: String
         switch languagePreference {
@@ -187,7 +187,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
             content = "Due to system safety limits, this turn has reached the maximum execution depth. Additional tool calls have been ignored and the conversation turn has been terminated. Please refine your question or narrow the task scope and try again."
         }
         return ChatMessage(
-            role: .assistant,
+            role: .system,
             content: content,
             isError: true
         )

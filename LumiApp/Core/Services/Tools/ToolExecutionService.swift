@@ -25,8 +25,7 @@ import OSLog
 /// // 执行工具
 /// let result = try await executionService.executeTool(toolCall)
 /// ```
-@MainActor
-final class ToolExecutionService: SuperLog {
+final class ToolExecutionService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "⚙️"
     nonisolated static let verbose = true
 
@@ -82,9 +81,7 @@ final class ToolExecutionService: SuperLog {
         let startTime = Date()
 
         // 检查工具是否存在
-        let hasTool = await MainActor.run {
-            toolService.hasTool(named: toolCall.name)
-        }
+        let hasTool = toolService.hasTool(named: toolCall.name)
 
         guard hasTool else {
             throw ToolExecutionError.toolNotFound(toolName: toolCall.name)

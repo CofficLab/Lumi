@@ -6,6 +6,23 @@ import Logging
 
 /// 通过标准输入输出与子进程通信的传输层
 actor SubprocessTransport: Transport, SuperLog {
+    private final class LockedDataBuffer: @unchecked Sendable {
+        private let lock = NSLock()
+        private var data = Data()
+
+        func append(_ chunk: Data) {
+            lock.lock()
+            data.append(chunk)
+            lock.unlock()
+        }
+
+        func snapshot() -> Data {
+            lock.lock()
+            let copy = data
+            lock.unlock()
+            return copy
+        }
+    }
     var logger: Logging.Logger
 
     nonisolated static let emoji = "📟"
@@ -169,10 +186,23 @@ actor SubprocessTransport: Transport, SuperLog {
 
         do {
             try process.run()
-            process.waitUntilExit()
+            let buffer = LockedDataBuffer()
+            let handle = pipe.fileHandleForReading
+            handle.readabilityHandler = { h in
+                let chunk = h.availableData
+                if !chunk.isEmpty { buffer.append(chunk) }
+            }
 
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            if let path = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines), !path.isEmpty {
+            let semaphore = DispatchSemaphore(value: 0)
+            process.terminationHandler = { _ in
+                semaphore.signal()
+            }
+            semaphore.wait()
+
+            handle.readabilityHandler = nil
+            let final = handle.availableData
+            if !final.isEmpty { buffer.append(final) }
+            if let path = String(data: buffer.snapshot(), encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines), !path.isEmpty {
                 if FileManager.default.fileExists(atPath: path) {
                     if Self.verbose {
                         os_log("\(Self.t)解析命令 '\(command)' 为: \(path)")

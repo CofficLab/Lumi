@@ -2,12 +2,30 @@ import Foundation
 
 actor RegistryService {
     static let shared = RegistryService()
+
+    private final class LockedDataBuffer: @unchecked Sendable {
+        private let lock = NSLock()
+        private var data = Data()
+
+        func append(_ chunk: Data) {
+            lock.lock()
+            data.append(chunk)
+            lock.unlock()
+        }
+
+        func snapshot() -> Data {
+            lock.lock()
+            let copy = data
+            lock.unlock()
+            return copy
+        }
+    }
     
     private func execute(_ command: String) async throws -> String {
         let task = Task.detached(priority: .userInitiated) {
             let process = Process()
-            let pipe = Pipe()
-            let errorPipe = Pipe()
+            let stdoutPipe = Pipe()
+            let stderrPipe = Pipe()
             
             process.executableURL = URL(fileURLWithPath: "/bin/zsh")
             // Use -l to load user profile/rc files to ensure PATH is correct
@@ -29,18 +47,41 @@ actor RegistryService {
             env["PATH"] = commonPaths.joined(separator: ":") + ":" + existingPath
             process.environment = env
             
-            process.standardOutput = pipe
-            process.standardError = errorPipe
+            process.standardOutput = stdoutPipe
+            process.standardError = stderrPipe
             
             try process.run()
             
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+            let stdoutBuffer = LockedDataBuffer()
+            let stderrBuffer = LockedDataBuffer()
+            let stdoutHandle = stdoutPipe.fileHandleForReading
+            let stderrHandle = stderrPipe.fileHandleForReading
+
+            stdoutHandle.readabilityHandler = { handle in
+                let chunk = handle.availableData
+                if !chunk.isEmpty { stdoutBuffer.append(chunk) }
+            }
+            stderrHandle.readabilityHandler = { handle in
+                let chunk = handle.availableData
+                if !chunk.isEmpty { stderrBuffer.append(chunk) }
+            }
+
+            await withCheckedContinuation { continuation in
+                process.terminationHandler = { _ in
+                    continuation.resume()
+                }
+            }
+
+            stdoutHandle.readabilityHandler = nil
+            stderrHandle.readabilityHandler = nil
+
+            let finalStdout = stdoutHandle.availableData
+            if !finalStdout.isEmpty { stdoutBuffer.append(finalStdout) }
+            let finalStderr = stderrHandle.availableData
+            if !finalStderr.isEmpty { stderrBuffer.append(finalStderr) }
             
-            process.waitUntilExit()
-            
-            let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            let error = String(data: errorData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let output = String(data: stdoutBuffer.snapshot(), encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let error = String(data: stderrBuffer.snapshot(), encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             
             // Some commands output to stderr even on success, or non-zero exit code means something else.
             // But generally check terminationStatus.

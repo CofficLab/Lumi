@@ -16,6 +16,24 @@ enum DockerError: Error, LocalizedError {
 
 actor DockerService {
     static let shared = DockerService()
+
+    private final class LockedDataBuffer: @unchecked Sendable {
+        private let lock = NSLock()
+        private var data = Data()
+
+        func append(_ chunk: Data) {
+            lock.lock()
+            data.append(chunk)
+            lock.unlock()
+        }
+
+        func snapshot() -> Data {
+            lock.lock()
+            let copy = data
+            lock.unlock()
+            return copy
+        }
+    }
     
     private var dockerPath: String?
     
@@ -41,29 +59,52 @@ actor DockerService {
         process.executableURL = URL(fileURLWithPath: dockerPath)
         process.arguments = args
         
-        let outputPipe = Pipe()
-        let errorPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = errorPipe
-        
-        return try await withCheckedThrowingContinuation { continuation in
-            do {
-                try process.run()
-                process.waitUntilExit()
-                
-                let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
-                let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-                
-                if process.terminationStatus == 0 {
-                    let output = String(data: outputData, encoding: .utf8) ?? ""
-                    continuation.resume(returning: output)
-                } else {
-                    let errorMsg = String(data: errorData, encoding: .utf8) ?? "Unknown error"
-                    continuation.resume(throwing: DockerError.commandFailed(errorMsg))
-                }
-            } catch {
-                continuation.resume(throwing: error)
+        let stdoutPipe = Pipe()
+        let stderrPipe = Pipe()
+        process.standardOutput = stdoutPipe
+        process.standardError = stderrPipe
+
+        let stdoutBuffer = LockedDataBuffer()
+        let stderrBuffer = LockedDataBuffer()
+        let stdoutHandle = stdoutPipe.fileHandleForReading
+        let stderrHandle = stderrPipe.fileHandleForReading
+
+        stdoutHandle.readabilityHandler = { handle in
+            let chunk = handle.availableData
+            if !chunk.isEmpty { stdoutBuffer.append(chunk) }
+        }
+        stderrHandle.readabilityHandler = { handle in
+            let chunk = handle.availableData
+            if !chunk.isEmpty { stderrBuffer.append(chunk) }
+        }
+
+        do {
+            try process.run()
+        } catch {
+            stdoutHandle.readabilityHandler = nil
+            stderrHandle.readabilityHandler = nil
+            throw error
+        }
+
+        await withCheckedContinuation { continuation in
+            process.terminationHandler = { _ in
+                continuation.resume()
             }
+        }
+
+        stdoutHandle.readabilityHandler = nil
+        stderrHandle.readabilityHandler = nil
+
+        let finalStdout = stdoutHandle.availableData
+        if !finalStdout.isEmpty { stdoutBuffer.append(finalStdout) }
+        let finalStderr = stderrHandle.availableData
+        if !finalStderr.isEmpty { stderrBuffer.append(finalStderr) }
+
+        if process.terminationStatus == 0 {
+            return String(data: stdoutBuffer.snapshot(), encoding: .utf8) ?? ""
+        } else {
+            let errorMsg = String(data: stderrBuffer.snapshot(), encoding: .utf8) ?? "Unknown error"
+            throw DockerError.commandFailed(errorMsg)
         }
     }
     
