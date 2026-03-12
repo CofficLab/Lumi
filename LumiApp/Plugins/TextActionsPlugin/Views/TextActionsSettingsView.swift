@@ -3,7 +3,8 @@ import SwiftUI
 
 struct TextActionsSettingsView: View {
     @StateObject private var manager = TextSelectionManager.shared
-    @AppStorage("TextActionsEnabled") private var isEnabled = false
+    // Default to true to match onRegister() default
+    @AppStorage("TextActionsEnabled") private var isEnabled = true
 
     var body: some View {
         VStack(spacing: 0) {
@@ -70,7 +71,7 @@ struct TextActionsSettingsView: View {
                                                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                                             Spacer()
                                             Image(systemName: "checkmark")
-                                                .foregroundColor(DesignTokens.Color.semantic.primary)
+                                                .foregroundColor(DesignTokens.Color.semantic.success)
                                         }
                                     }
                                 }
@@ -78,24 +79,16 @@ struct TextActionsSettingsView: View {
                         }
                     }
                 }
-                .padding(DesignTokens.Spacing.md)
+                .padding(DesignTokens.Spacing.lg)
             }
         }
-        .onAppear {
-            manager.checkPermission()
-            if isEnabled {
-                manager.startMonitoring()
-                _ = TextActionMenuController.shared
-            }
-        }
+        .navigationTitle(String(localized: "Text Actions", table: "TextActions"))
     }
 }
 
 // MARK: - Preview
 
-#Preview("App") {
-    ContentLayout()
-        .withNavigation(TextActionsPlugin.id)
-        .inRootView()
-        .withDebugBar()
+#Preview {
+    TextActionsSettingsView()
+        .frame(width: 400, height: 600)
 }
