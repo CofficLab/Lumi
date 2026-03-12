@@ -10,7 +10,7 @@ struct MessageListView: View, SuperLog {
     /// 是否启用详细日志
     nonisolated static let verbose = true
     /// 分页大小：每页加载的消息数量
-    nonisolated static let pageSize: Int = 50
+    nonisolated static let pageSize: Int = 10
 
     /// 智能体提供者
     @EnvironmentObject var agentProvider: AgentProvider
@@ -44,18 +44,11 @@ struct MessageListView: View, SuperLog {
         conversationViewModel.selectedConversationId
     }
 
-    /// 非系统消息
-    private var nonSystemMessages: [ChatMessage] {
-        // ChatHistoryService 已经完成“是否展示”的过滤；这里直接展示即可
-        messages
-    }
-
     var body: some View {
-        let messages = nonSystemMessages
         let lastMessageID = messages.last?.id
 
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 12) {
                 if hasMoreMessages {
                     loadMoreButton
                 }
@@ -66,7 +59,6 @@ struct MessageListView: View, SuperLog {
                         isLastMessage: message.id == lastMessageID,
                         relatedToolOutputs: []
                     )
-                    .id(message.id)
                 }
             }
             .padding(.horizontal)
@@ -84,6 +76,7 @@ struct MessageListView: View, SuperLog {
 
 extension MessageListView {
     // MARK: - Shared Display Item
+
     //
     // MessageListView 本身已直接渲染 nonSystemMessages，不再做 DisplayMessageItem 转换；
     // 但 AppKit 版本消息列表仍复用该类型做渲染分支，因此保留这个共享 enum。
@@ -93,9 +86,9 @@ extension MessageListView {
 
         var id: UUID {
             switch self {
-            case .message(let message, _):
+            case let .message(message, _):
                 return message.id
-            case .toolCallSummary(let id, _):
+            case let .toolCallSummary(id, _):
                 return id
             }
         }
@@ -130,8 +123,7 @@ extension MessageListView {
         if isLoadingMore {
             return "加载中..."
         }
-        // messages.count 可能包含被隐藏的工具消息；这里用当前可见消息数，更符合用户直觉
-        return "加载更早消息（已加载 \(nonSystemMessages.count) 条，共 \(totalMessageCount) 条）"
+        return "加载更早消息（已加载 \(messages.count) 条，共 \(totalMessageCount) 条）"
     }
 }
 
@@ -139,7 +131,7 @@ extension MessageListView {
 
 extension MessageListView {
     private func applyTransientStatusMessageIfNeeded() {
-        guard let _ = selectedConversationId else { return }
+        guard selectedConversationId != nil else { return }
 
         if processingStateViewModel.isProcessing, !processingStateViewModel.statusText.isEmpty {
             let statusText = processingStateViewModel.statusText
@@ -216,7 +208,6 @@ extension MessageListView {
             if Self.verbose {
                 os_log("\(Self.t)✅ [\(conversationId)] 加载完成：\(self.messages.count)/\(self.totalMessageCount) 条，hasMore: \(self.hasMoreMessages)")
             }
-
             // loadMessages 会覆盖本地数组，需要重新注入临时状态消息
             applyTransientStatusMessageIfNeeded()
         }

@@ -66,8 +66,10 @@ struct AgentModeContentView: View {
     /// 中间栏
     private func middleColumn(middleViews: [AnyView]) -> some View {
         VStack(spacing: 0) {
-            ForEach(Array(middleViews.enumerated()), id: \.offset) { _, view in
-                view
+            // 修复：使用稳定 ID 而不是 offset，避免 AttributeGraph 崩溃
+            ForEach(middleViews.indices, id: \.self) { index in
+                middleViews[index]
+                    .id("middle_\(index)")
             }
         }
     }
@@ -104,9 +106,11 @@ struct AgentModeContentView: View {
                 defaultDetailView
             } else {
                 // 显示所有插件提供的头部视图
+                // 修复：使用稳定 ID 而不是 offset，避免 AttributeGraph 崩溃
                 VStack(spacing: 0) {
-                    ForEach(Array(headerViews.enumerated()), id: \.offset) { _, view in
-                        view
+                    ForEach(headerViews.indices, id: \.self) { index in
+                        headerViews[index]
+                            .id("detail_header_\(index)")
                     }
                 }
             }
@@ -123,9 +127,11 @@ struct AgentModeContentView: View {
                 defaultDetailView
             } else {
                 // 显示所有插件提供的中间视图
+                // 修复：使用稳定 ID 而不是 offset，避免 AttributeGraph 崩溃
                 VStack(spacing: 0) {
-                    ForEach(Array(middleViews.enumerated()), id: \.offset) { _, view in
-                        view
+                    ForEach(middleViews.indices, id: \.self) { index in
+                        middleViews[index]
+                            .id("detail_middle_\(index)")
                     }
                 }
             }
@@ -142,9 +148,11 @@ struct AgentModeContentView: View {
                 defaultDetailView
             } else {
                 // 显示所有插件提供的底部视图
+                // 修复：使用稳定 ID 而不是 offset，避免 AttributeGraph 崩溃
                 VStack(spacing: 0) {
-                    ForEach(Array(bottomViews.enumerated()), id: \.offset) { _, view in
-                        view
+                    ForEach(bottomViews.indices, id: \.self) { index in
+                        bottomViews[index]
+                            .id("detail_bottom_\(index)")
                     }
                 }
             }

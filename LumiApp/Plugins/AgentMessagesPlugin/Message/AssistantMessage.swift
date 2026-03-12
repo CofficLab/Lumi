@@ -16,11 +16,6 @@ struct AssistantMessage: View, SuperLog {
     @ObservedObject private var expansionState = MessageExpansionState.shared
     @Binding var showRawMessage: Bool
 
-    /// 智能体提供者（用于获取思考状态）
-    @EnvironmentObject var agentProvider: AgentProvider
-    /// 思考状态 ViewModel
-    @EnvironmentObject var thinkingStateViewModel: ThinkingStateViewModel
-
     // MARK: - Computed
 
     private var isLongMessage: Bool {
@@ -33,31 +28,22 @@ struct AssistantMessage: View, SuperLog {
         expansionState.isExpanded(id: message.id)
     }
 
-    private var isCurrentStreamingMessage: Bool {
-        agentProvider.currentStreamingMessageId == message.id
-    }
-
     private var shouldShowThinkingProcess: Bool {
-        // 只对助手消息生效
-        guard message.role == .assistant else { return false }
-        if let storedThinking = message.thinkingContent, !storedThinking.isEmpty {
-            return true
+        if let storedThinking = message.thinkingContent {
+            return !storedThinking.isEmpty
         }
-        return isCurrentStreamingMessage && !thinkingStateViewModel.thinkingText.isEmpty
+        return false
     }
 
     private var thinkingText: String {
         if let storedThinking = message.thinkingContent, !storedThinking.isEmpty {
             return storedThinking
         }
-        return thinkingStateViewModel.thinkingText
+        return ""
     }
 
     private var isThinking: Bool {
-        if message.thinkingContent != nil {
-            return false
-        }
-        return isCurrentStreamingMessage && thinkingStateViewModel.isThinking
+        false
     }
 
     // MARK: - Body
@@ -140,7 +126,7 @@ struct AssistantMessage: View, SuperLog {
 
             HStack(alignment: .center, spacing: 12) {
                 // 性能指标组
-                performanceMetricsGroup
+//                performanceMetricsGroup
 
                 // 折叠/展开按钮（仅当内容是长消息时显示）
                 if isLongMessage {

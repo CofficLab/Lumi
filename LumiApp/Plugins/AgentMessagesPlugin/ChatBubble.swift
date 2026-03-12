@@ -22,13 +22,6 @@ struct ChatBubble: View, SuperLog {
     @State private var showRawMessage: Bool = false
     @State private var isHovered: Bool = false
 
-    /// 智能体提供者（用于获取思考状态）
-    @EnvironmentObject var agentProvider: AgentProvider
-    /// 思考状态 ViewModel
-    @EnvironmentObject var thinkingStateViewModel: ThinkingStateViewModel
-    /// 处理状态 ViewModel
-    @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
-
     /// 初始化
     /// - Parameters:
     ///   - message: 消息对象
@@ -52,43 +45,6 @@ struct ChatBubble: View, SuperLog {
     /// 当前消息的展开状态
     private var isExpanded: Bool {
         expansionState.isExpanded(id: message.id)
-    }
-
-    /// 是否是当前正在流式传输的消息
-    private var isCurrentStreamingMessage: Bool {
-        agentProvider.currentStreamingMessageId == message.id
-    }
-
-    /// 是否应该显示思考过程
-    private var shouldShowThinkingProcess: Bool {
-        // 必须是助手消息
-        guard message.role == .assistant else { return false }
-        // 如果有存储的思考内容，显示它
-        if let storedThinking = message.thinkingContent, !storedThinking.isEmpty {
-            return true
-        }
-        // 否则：只要有实时思考文本就展示（绑定到当前流式消息，避免所有历史消息一起显示）
-        return isCurrentStreamingMessage && !thinkingStateViewModel.thinkingText.isEmpty
-    }
-
-    /// 获取思考过程文本（优先使用存储的，否则使用实时的）
-    private var thinkingText: String {
-        // 如果有存储的思考内容，使用它
-        if let storedThinking = message.thinkingContent, !storedThinking.isEmpty {
-            return storedThinking
-        }
-        // 否则使用实时的思考文本
-        return thinkingStateViewModel.thinkingText
-    }
-
-    /// 是否正在思考（用于动画）
-    private var isThinking: Bool {
-        // 如果有存储的思考内容，说明思考已完成
-        if message.thinkingContent != nil {
-            return false
-        }
-        // 否则仅对当前流式消息展示实时思考动画
-        return isCurrentStreamingMessage && thinkingStateViewModel.isThinking
     }
 
     var body: some View {

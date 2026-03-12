@@ -22,13 +22,13 @@ extension EnvironmentValues {
 struct MarkdownMessageView: View, SuperLog {
     nonisolated static let emoji = "📝"
     nonisolated static let verbose = true
+    static private var renderMarkdownEnabled: Bool = true
 
     let message: ChatMessage
     let showRawMessage: Bool
     let isCollapsible: Bool
     let isExpanded: Bool
     let onToggleExpand: () -> Void
-    @AppStorage("Agent_RenderMarkdownEnabled") private var renderMarkdownEnabled: Bool = true
     @Environment(\.preferOuterScroll) private var preferOuterScroll
 
     /// 最大高度（超过后折叠）
@@ -39,7 +39,7 @@ struct MarkdownMessageView: View, SuperLog {
             if showRawMessage {
                 rawMessageContent
                     .applyCollapsible(isCollapsible: isCollapsible, isExpanded: isExpanded, maxHeight: maxHeight)
-            } else if !renderMarkdownEnabled {
+            } else if !Self.renderMarkdownEnabled {
                 Text(verbatim: message.content)
                     .font(.system(.body, design: .default))
                     .textSelection(.enabled)
@@ -197,123 +197,4 @@ extension View {
             self
         }
     }
-}
-
-#Preview {
-    VStack(alignment: .leading, spacing: 16) {
-        MarkdownMessageView(
-            message: ChatMessage(role: .assistant, content: """
-                ## Try MarkdownUI
-                
-                **MarkdownUI** is a native Markdown renderer for SwiftUI
-                compatible with the [GitHub Flavored Markdown Spec](https://github.github.com/gfm/).
-                
-                ### Code Example
-                
-                ```swift
-                let hello = "world"
-                print(hello)
-                ```
-                
-                - List item 1
-                - List item 2
-                """),
-            showRawMessage: false,
-            isCollapsible: true,
-            isExpanded: true,
-            onToggleExpand: {}
-        )
-
-        MarkdownMessageView(
-            message: ChatMessage(role: .assistant, content: "# Hello\nThis is a *markdown* message."),
-            showRawMessage: true,
-            isCollapsible: false,
-            isExpanded: true,
-            onToggleExpand: {}
-        )
-    }
-    .padding()
-}
-
-#Preview("Long Message") {
-    let longContent = """
-        # 这是一个很长的消息示例
-        
-        ## 第一章：介绍
-        
-        Swift 是一种强大的编程语言，由 Apple 开发用于构建 iOS、macOS、watchOS 和 tvOS 应用。
-        
-        ### 主要特性
-        
-        - 类型安全
-        - 推断类型
-        - 字符串插值
-        - 可选类型
-        - 错误处理
-        
-        ## 第二章：代码示例
-        
-        ```swift
-        import Foundation
-        import SwiftUI
-        
-        struct ContentView: View {
-            var body: some View {
-                VStack {
-                    Text("Hello, World!")
-                        .padding()
-                    
-                    Button("Click Me") {
-                        print("Button clicked!")
-                    }
-                }
-            }
-        }
-        
-        @main
-        struct MyApp: App {
-            var body: some Scene {
-                WindowGroup {
-                    ContentView()
-                }
-            }
-        }
-        ```
-        
-        ## 第三章：更多内容
-        
-        这里有很多很多很多很多很多很多很多很多很多很多很多很多很多很多很多很多很多很多很多很多很多很多很多很多很多很多很多很多很多很多很多很多很多很多很多很多文字。
-        
-        ### 列表
-        
-        1. 第一项
-        2. 第二项
-        3. 第三项
-        4. 第四项
-        5. 第五项
-        
-        > 这是一段引用文字，用于测试折叠功能。
-        
-        ### 表格
-        
-        | 列 1 | 列 2 | 列 3 |
-        |-----|-----|-----|
-        | A   | B   | C   |
-        | D   | E   | F   |
-        | G   | H   | I   |
-        
-        ## 结论
-        
-        这是一个非常长的消息，用于测试折叠和展开功能。当消息内容超过一定高度时，应该自动折叠，并显示"展开"按钮。
-        """
-    
-    return MarkdownMessageView(
-        message: ChatMessage(role: .assistant, content: longContent),
-        showRawMessage: false,
-        isCollapsible: true,
-        isExpanded: false,
-        onToggleExpand: {}
-    )
-    .padding()
-    .frame(width: 600)
 }
