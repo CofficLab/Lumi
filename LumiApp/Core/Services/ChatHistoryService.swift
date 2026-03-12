@@ -457,19 +457,26 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                         break
                     }
 
-                    // 推进游标：下一批拉取更早的消息
-                    cursor = fetched.last?.timestamp
-
-                    // fetched 是按 timestamp desc；转换后再按 asc 追加，保证返回顺序“最早→最新”
+                    // fetched 是按 timestamp desc（从新到旧）；转换后再按 asc 追加（从旧到新）
                     let convertedAsc = fetched.reversed().compactMap { $0.toChatMessage() }
 
-                    // 过滤并补齐
+                    // 过滤并补齐，同时记录第一批（最早）已收集消息的时间戳
+                    var firstCollectedTimestamp: Date?
                     for msg in convertedAsc where msg.shouldDisplayInChatList() {
+                        if firstCollectedTimestamp == nil {
+                            firstCollectedTimestamp = msg.timestamp  // 这批中最早的可展示消息
+                        }
                         collected.append(msg)
                         if collected.count >= limit { break }
                     }
 
                     if collected.count >= limit {
+                        // 游标必须基于最早那条已收集消息的时间戳，这样下次加载时才会获取比它更早的消息
+                        // 注意：convertedAsc 是从旧到新遍历，所以 firstCollectedTimestamp 是最早的
+                        if let firstCollected = firstCollectedTimestamp {
+                            cursor = firstCollected
+                        }
+
                         // 继续探测是否还有可展示消息：再拉一小批，看是否能过滤出任何消息
                         var probeDescriptor: FetchDescriptor<ChatMessageEntity>
                         if let before = cursor {
@@ -497,7 +504,15 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                         break
                     }
 
-                    // 这一批没收集满，继续下一批；如果 fetched 少于 batchSize，说明原始数据也快到底了
+                    // 这一批没收集满，继续下一批
+                    // 游标应该指向这批中最早的可展示消息的时间戳（如果有的话），这样才能继续往前拉
+                    if let firstCollected = firstCollectedTimestamp {
+                        cursor = firstCollected
+                    } else if let lastTimestamp = fetched.last?.timestamp {
+                        // 如果这批没有任何可收集的消息，使用 batch 最后一条（最旧）作为游标
+                        cursor = lastTimestamp
+                    }
+                    // 如果 fetched 少于 batchSize，说明原始数据也快到底了
                     if fetched.count < batchSize {
                         hasMoreVisible = false
                         break
