@@ -37,7 +37,7 @@ final class MessageViewModel: ObservableObject, SuperLog {
         messages = newMessages
 
         if Self.verbose {
-            os_log("\(Self.t)📝 ( \(reason) setMessagesInternal: \(oldCount) → \(newMessages.count) 条消息")
+            os_log("\(Self.t)📝 (\(reason)) setMessages: \(oldCount) → \(newMessages.count) 条消息")
         }
     }
 

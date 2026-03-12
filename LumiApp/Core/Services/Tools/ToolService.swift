@@ -19,14 +19,18 @@ import Combine
 /// ```text
 /// ToolService
 /// ├── 内置工具 (Built-in Tools)
-/// │   ├── ListDirectoryTool (列出目录)
-/// │   ├── ReadFileTool (读取文件)
-/// │   │   ├── WriteFileTool (写入文件)
-/// │   │   └── ShellTool (执行命令)
+/// │   └── (已迁移到插件提供)
 /// │
-/// └── MCP 工具 (MCP Tools)
-///     ├── 动态从 MCP 服务器获取
-///     └── 支持扩展的外部工具
+/// └── 插件工具 (Plugin Tools)
+///     ├── AgentCoreToolsPlugin
+///     │   ├── ShellTool (执行命令)
+///     │   ├── ListDirectoryTool (列出目录)
+///     │   ├── ReadFileTool (读取文件)
+///     │   └── WriteFileTool (写入文件)
+///     │
+///     └── MCP 工具 (MCP Tools)
+///         ├── 动态从 MCP 服务器获取
+///         └── 支持扩展的外部工具
 /// ```
 ///
 /// ## 线程安全
@@ -86,17 +90,12 @@ class ToolService: SuperLog, @unchecked Sendable {
     private var pluginTools: [AgentTool] = []
 
     // MARK: - Dependencies
-    
-    /// Shell 服务
-    ///
-    /// 负责执行 shell 命令。
-    private let shellService: ShellService
-    
+
     /// LLM 服务（可选）
     ///
     /// 当可用时，用于启用 Worker 协作工具。
     private let llmService: LLMService?
-    
+
     /// Combine 订阅集合
     ///
     /// 存储所有 Combine 订阅，用于清理。
@@ -107,13 +106,10 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 初始化工具服务
     ///
     /// 执行以下初始化步骤：
-    /// 1. 创建依赖服务（Shell）
-    /// 2. 注册内置工具
-    /// 3. 设置插件工具监听
-    /// 4. 刷新工具列表
+    /// 1. 设置插件工具监听
+    /// 2. 刷新工具列表
     @MainActor
     init(llmService: LLMService? = nil) {
-        self.shellService = ShellService()
         self.llmService = llmService
         setupPluginObservers()
         refreshAllTools()

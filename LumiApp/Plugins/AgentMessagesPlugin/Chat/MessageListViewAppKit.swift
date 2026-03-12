@@ -223,45 +223,74 @@ private struct MessageListViewAppKitContentView: View {
     let isLoadingMore: Bool
     let loadMoreButtonText: String
     let onLoadMore: () -> Void
+    /// 由 AppKit 容器根据“是否接近底部”决定是否需要贴底滚动
+    let shouldScrollToBottom: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if hasMoreMessages {
-                HStack {
-                    Spacer()
-                    Button(action: onLoadMore) {
-                        HStack(spacing: 8) {
-                            if isLoadingMore {
-                                ProgressView().controlSize(.small)
-                            } else {
-                                Image(systemName: "arrow.up.circle")
+        // 在 AppKit 容器内部引入 ScrollViewReader + scrollToBottom，
+        // 仍然不用 PreferenceKey，near-bottom 判定继续由 AppKit 负责。
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 12) {
+                    if hasMoreMessages {
+                        HStack {
+                            Spacer()
+                            Button(action: onLoadMore) {
+                                HStack(spacing: 8) {
+                                    if isLoadingMore {
+                                        ProgressView().controlSize(.small)
+                                    } else {
+                                        Image(systemName: "arrow.up.circle")
+                                    }
+                                    Text(loadMoreButtonText).font(.caption)
+                                }
+                                .foregroundStyle(.secondary)
+                                .padding(.vertical, 8)
+                                .padding(.horizontal, 16)
                             }
-                            Text(loadMoreButtonText).font(.caption)
+                            .buttonStyle(.plain)
+                            .disabled(isLoadingMore)
+                            Spacer()
                         }
-                        .foregroundStyle(.secondary)
                         .padding(.vertical, 8)
-                        .padding(.horizontal, 16)
                     }
-                    .buttonStyle(.plain)
-                    .disabled(isLoadingMore)
-                    Spacer()
+                    ForEach(items) { item in
+                        ChatBubble(
+                            message: item.message,
+                            isLastMessage: item.id == lastMessageID,
+                            relatedToolOutputs: item.relatedToolOutputs
+                        )
+                        .id(item.message.id)
+                        .environmentObject(agentProvider)
+                        .environmentObject(agentProvider.thinkingStateViewModel)
+                        .environmentObject(processingStateViewModel)
+                    }
+                    // 底部锚点：仅用于 scrollToBottom，不做任何高度测量
+                    Color.clear
+                        .frame(height: 0)
+                        .id("MessageListViewAppKit.bottom")
                 }
-                .padding(.vertical, 8)
+                .padding(.horizontal)
+                .padding(.vertical)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            ForEach(items) { item in
-                ChatBubble(
-                    message: item.message,
-                    isLastMessage: item.id == lastMessageID,
-                    relatedToolOutputs: item.relatedToolOutputs
-                )
-                .environmentObject(agentProvider)
-                .environmentObject(agentProvider.thinkingStateViewModel)
-                .environmentObject(processingStateViewModel)
+            .onChange(of: shouldScrollToBottom) { _, newValue in
+                guard newValue else { return }
+                withAnimation(.easeOut(duration: 0.25)) {
+                    proxy.scrollTo("MessageListViewAppKit.bottom", anchor: .bottom)
+                }
+            }
+            .onAppear {
+                // 初次加载时如果需要，也贴一次底
+                if shouldScrollToBottom {
+                    DispatchQueue.main.async {
+                        withAnimation(.easeOut(duration: 0.25)) {
+                            proxy.scrollTo("MessageListViewAppKit.bottom", anchor: .bottom)
+                        }
+                    }
+                }
             }
         }
-        .padding(.horizontal)
-        .padding(.vertical)
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -308,15 +337,14 @@ private final class MessageListViewAppKitContainerView: NSView {
                 hasMoreMessages: hasMoreMessages,
                 isLoadingMore: isLoadingMore,
                 loadMoreButtonText: loadMoreButtonText,
-                onLoadMore: onLoadMore
+                onLoadMore: onLoadMore,
+                shouldScrollToBottom: shouldStickToBottom
             )
         )
 
         layoutDocumentView()
 
-        if shouldStickToBottom {
-            scrollToBottom()
-        } else {
+        if !shouldStickToBottom {
             let maxY = max(0, hostingView.frame.height - clipView.bounds.height)
             let targetY = min(previousOrigin.y, maxY)
             clipView.scroll(to: NSPoint(x: previousOrigin.x, y: targetY))

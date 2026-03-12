@@ -27,12 +27,6 @@ struct MessageListView: View, SuperLog {
     /// 当前会话的临时状态消息 ID（不落库，仅用于 UI）
     @State private var transientStatusMessageId: UUID = UUID()
 
-    /// 用户是否接近列表底部（用于决定是否自动滚动）
-    @State private var isNearBottom: Bool = true
-
-    /// 当用户不在底部时累积的“未读新消息”数量
-    @State private var pendingNewMessageCount: Int = 0
-
     /// 是否还有更多历史消息可加载
     @State private var hasMoreMessages: Bool = false
 
@@ -45,7 +39,7 @@ struct MessageListView: View, SuperLog {
     /// 最早加载的消息时间戳（用于分页游标）
     @State private var oldestLoadedTimestamp: Date?
 
-    /// ScrollViewProxy 引用
+    /// ScrollViewProxy 引用（用于滚动到底）
     @State private var scrollProxy: ScrollViewProxy?
 
     /// 当前选中的会话 ID
@@ -98,73 +92,31 @@ struct MessageListView: View, SuperLog {
         let lastMessageID = items.last?.id
 
         ScrollViewReader { proxy in
-            GeometryReader { viewport in
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 12) {
-                        if hasMoreMessages {
-                            loadMoreButton
-                        }
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 12) {
+                    if hasMoreMessages {
+                        loadMoreButton
+                    }
 
-                        ForEach(items) { item in
-                            ChatBubble(
-                                message: item.message,
-                                isLastMessage: item.id == lastMessageID,
-                                relatedToolOutputs: item.relatedToolOutputs
-                            )
-                            .id(item.message.id)
-                        }
+                    ForEach(items) { item in
+                        ChatBubble(
+                            message: item.message,
+                            isLastMessage: item.id == lastMessageID,
+                            relatedToolOutputs: item.relatedToolOutputs
+                        )
+                        .id(item.message.id)
+                    }
 
-                        // 底部哨兵：用于判断是否接近底部 & 精准滚动到底
-                        GeometryReader { geo in
-                            Color.clear
-                                .preference(
-                                    key: BottomSentinelMaxYKey.self,
-                                    value: geo.frame(in: .named("messageScroll")).maxY
-                                )
-                        }
+                    // 底部锚点：仅用于滚动到底，不再做 Geometry/Preference 测量
+                    Color.clear
                         .frame(height: 0)
                         .id(BottomSentinelID.value)
-                    }
-                    .padding(.horizontal)
                 }
-                .coordinateSpace(name: "messageScroll")
-                .padding(.vertical)
-                .onAppear {
-                    handleOnAppear(proxy: proxy)
-                }
-                .onPreferenceChange(BottomSentinelMaxYKey.self) { bottomMaxY in
-                    // bottomMaxY 在 scroll 坐标空间内；viewport.size.height 是可视高度
-                    // distanceToBottom 越小，越接近底部
-                    let distanceToBottom = bottomMaxY - viewport.size.height
-                    let near = distanceToBottom < 120
-                    if near != isNearBottom {
-                        isNearBottom = near
-                        if near {
-                            pendingNewMessageCount = 0
-                        }
-                    }
-                }
-                .overlay(alignment: .bottomTrailing) {
-                    if pendingNewMessageCount > 0, !isNearBottom {
-                        Button {
-                            pendingNewMessageCount = 0
-                            scrollToBottom(animated: true)
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "arrow.down.circle.fill")
-                                Text("\(pendingNewMessageCount) 条新消息")
-                                    .font(.caption)
-                            }
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 12)
-                            .background(.ultraThinMaterial)
-                            .clipShape(Capsule())
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.trailing, 16)
-                        .padding(.bottom, 16)
-                    }
-                }
+                .padding(.horizontal)
+            }
+            .padding(.vertical)
+            .onAppear {
+                handleOnAppear(proxy: proxy)
             }
         }
         .onChange(of: selectedConversationId, handleConversationChanged)
@@ -174,18 +126,10 @@ struct MessageListView: View, SuperLog {
     }
 }
 
-// MARK: - Preference Keys
+// MARK: - Scroll helpers
 
 private enum BottomSentinelID {
     static let value = "MessageListView.BottomSentinel"
-}
-
-private struct BottomSentinelMaxYKey: PreferenceKey {
-    static let defaultValue: CGFloat = .greatestFiniteMagnitude
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        // 取最大值，避免同一帧内多次更新触发警告
-        value = max(value, nextValue())
-    }
 }
 
 // MARK: - View
@@ -402,8 +346,8 @@ extension MessageListView {
         guard conversationId == selectedConversationId else { return }
 
         Task { @MainActor in
+            let isNewMessage = !messages.contains(where: { $0.id == message.id })
             let existingIndex = messages.firstIndex { $0.id == message.id }
-            let isNewMessage = existingIndex == nil
 
             if let idx = existingIndex {
                 messages[idx] = message
@@ -422,11 +366,9 @@ extension MessageListView {
                 oldestLoadedTimestamp = first.timestamp
             }
 
-            // 自动滚动策略：只有用户接近底部时才自动到底
-            if isNearBottom {
+            // 简化后的自动滚动策略：始终滚到底，避免 PreferenceKey/Geometry 带来的自激问题
+            if isNewMessage {
                 scrollToBottom(animated: true)
-            } else if isNewMessage {
-                pendingNewMessageCount += 1
             }
         }
     }

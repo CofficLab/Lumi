@@ -15,7 +15,7 @@ struct ChatMessagesView: View, SuperLog {
     }
 
     /// 选择消息列表实现
-    private static let messageListImplementation: MessageListImplementation = .appKitExperimental
+    private static let messageListImplementation: MessageListImplementation = .swiftUI
 
     /// 会话管理 ViewModel
     @EnvironmentObject var conversationViewModel: ConversationViewModel
