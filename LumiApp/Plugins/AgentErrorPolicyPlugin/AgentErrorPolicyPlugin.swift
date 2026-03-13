@@ -9,7 +9,7 @@ actor AgentErrorPolicyPlugin: SuperPlugin {
     static let displayName: String = "Agent Error Policy"
     static let description: String = "对回合错误进行分类、去噪与用户提示策略（通过中间件解耦）。"
     static let iconName: String = "exclamationmark.triangle"
-    static let isConfigurable: Bool = true
+    static let isConfigurable: Bool = false
     static let enable: Bool = true
     static var order: Int { 525 }
 

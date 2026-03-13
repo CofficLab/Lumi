@@ -29,7 +29,7 @@ actor FilePreviewStatusBarPlugin: SuperPlugin, SuperLog {
     static let iconName: String = "info.circle.fill"
 
     /// Whether it is configurable
-    static let isConfigurable: Bool = true
+    static let isConfigurable: Bool = false
 
     /// Registration order (after FilePreviewPlugin to appear at the bottom of middle column)
     static var order: Int { 77 }

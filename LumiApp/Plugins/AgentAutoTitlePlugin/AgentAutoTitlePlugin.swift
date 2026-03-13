@@ -9,7 +9,7 @@ actor AgentAutoTitlePlugin: SuperPlugin {
     static let displayName: String = "Agent Auto Title"
     static let description: String = "通过中间件在合适时机自动生成会话标题。"
     static let iconName: String = "text.book.closed"
-    static let isConfigurable: Bool = true
+    static let isConfigurable: Bool = false
     static let enable: Bool = true
     static var order: Int { 520 }
 

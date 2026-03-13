@@ -149,6 +149,9 @@ protocol SuperPlugin: Actor {
     /// 添加详情栏底部视图（用于 Agent 模式）
     @MainActor func addDetailBottomView() -> AnyView?
 
+    /// 添加状态栏视图（用于 Agent 模式底部状态栏）
+    @MainActor func addStatusBarView() -> AnyView?
+
     // MARK: - Middleware Hooks (Agent)
 
     /// 提供对话轮次事件中间件。

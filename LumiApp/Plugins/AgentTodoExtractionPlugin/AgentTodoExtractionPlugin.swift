@@ -9,7 +9,7 @@ actor AgentTodoExtractionPlugin: SuperPlugin {
     static let displayName: String = "Agent Todo Extraction"
     static let description: String = "从回复中提取待办（规则法），用于快速回顾与跟进。"
     static let iconName: String = "checklist"
-    static let isConfigurable: Bool = true
+    static let isConfigurable: Bool = false
     static let enable: Bool = true
     static var order: Int { 540 }
 

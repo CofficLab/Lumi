@@ -14,6 +14,27 @@ struct AgentModeContentView: View {
     @EnvironmentObject var pluginProvider: PluginProvider
 
     var body: some View {
+        VStack(spacing: 0) {
+            // 主内容区域（三栏布局）
+            mainContent
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            
+            // 底部状态栏
+            statusBar
+        }
+        .ignoresSafeArea()
+        .task {
+            if Self.verbose {
+                let middleViews = pluginProvider.getMiddleViews()
+                os_log("\(Self.emoji) Agent Mode: 右侧栏视图数量=\(middleViews.count)")
+            }
+        }
+    }
+
+    // MARK: - 主内容区域
+    
+    /// 主内容区域（三栏布局）
+    private var mainContent: some View {
         HSplitView {
             // 第一栏：左侧栏（统一侧边栏，顶部显示模式切换）
             if sidebarVisibility {
@@ -25,11 +46,26 @@ struct AgentModeContentView: View {
             middleAndDetailColumns
         }
         .id("agentModeHSplitView")
-        .ignoresSafeArea()
-        .task {
-            if Self.verbose {
-                let middleViews = pluginProvider.getMiddleViews()
-                os_log("\(Self.emoji) Agent Mode: 右侧栏视图数量=\(middleViews.count)")
+    }
+
+    // MARK: - 底部状态栏
+    
+    /// 底部状态栏
+    private var statusBar: some View {
+        let statusBarViews = pluginProvider.getStatusBarViews()
+        
+        return Group {
+            if !statusBarViews.isEmpty {
+                HStack(spacing: 12) {
+                    ForEach(statusBarViews.indices, id: \.self) { index in
+                        statusBarViews[index]
+                            .id("status_bar_\(index)")
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(DesignTokens.Material.glassThin)
             }
         }
     }

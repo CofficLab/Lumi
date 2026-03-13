@@ -9,7 +9,7 @@ actor AgentPermissionPolicyPlugin: SuperPlugin {
     static let displayName: String = "Agent Permission Policy"
     static let description: String = "权限请求去噪、合并与展示策略（通过中间件解耦）。"
     static let iconName: String = "hand.raised"
-    static let isConfigurable: Bool = true
+    static let isConfigurable: Bool = false
     static let enable: Bool = true
     static var order: Int { 530 }
 

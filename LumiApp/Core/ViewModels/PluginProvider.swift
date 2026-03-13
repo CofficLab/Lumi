@@ -598,6 +598,27 @@ final class PluginProvider: ObservableObject, SuperLog {
         return views
     }
 
+    /// 获取所有插件提供的状态栏视图（用于 Agent 模式底部状态栏）
+    ///
+    /// 收集所有启用插件提供的状态栏视图。
+    /// 状态栏位于 Agent 模式底部，用于显示状态信息、操作提示等内容。
+    /// 多个插件的状态栏视图会水平排列显示。
+    ///
+    /// - Returns: 状态栏视图数组
+    func getStatusBarViews() -> [AnyView] {
+        let views = plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addStatusBarView() }
+
+        if Self.verbose {
+            let pluginNames = plugins.map { String(describing: type(of: $0)) }
+            let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
+            os_log("\(self.t) getStatusBarViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 状态栏视图数量=\(views.count)")
+        }
+
+        return views
+    }
+
     /// 获取所有插件的设置视图信息
     ///
     /// 收集所有可配置且已启用插件的设置视图。

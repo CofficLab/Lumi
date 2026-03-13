@@ -31,7 +31,7 @@ actor TimeStatusPlugin: SuperPlugin, SuperLog {
     static let iconName: String = "clock"
 
     /// Whether it is configurable
-    static let isConfigurable: Bool = true
+    static let isConfigurable: Bool = false
     
     /// Registration order
     static var order: Int { 6 }
