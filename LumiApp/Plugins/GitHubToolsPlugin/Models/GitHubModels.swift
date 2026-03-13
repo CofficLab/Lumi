@@ -246,6 +246,77 @@ struct GitHubMilestone: Codable, Sendable {
     }
 }
 
+/// GitHub Issue 评论
+struct GitHubIssueComment: Codable, Sendable {
+    /// 评论 ID
+    let id: Int
+    /// 评论者
+    let user: GitHubUser
+    /// 评论内容（支持 Markdown）
+    let body: String
+    /// 评论创建时间
+    let createdAt: String
+    /// 评论更新时间
+    let updatedAt: String
+    /// 评论 HTML URL
+    let htmlUrl: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, user, body
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+        case htmlUrl = "html_url"
+    }
+}
+
+/// 创建 Issue 请求
+struct CreateIssueRequest: Codable {
+    /// Issue 标题（必需）
+    let title: String
+    /// Issue 描述（可选）
+    let body: String?
+    /// 标签名称数组（可选）
+    let labels: [String]?
+    /// 指派的用户（可选）
+    let assignees: [String]?
+    /// 里程碑编号（可选）
+    let milestone: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case title, body, labels, assignees, milestone
+    }
+}
+
+/// 更新 Issue 请求
+struct UpdateIssueRequest: Codable {
+    /// Issue 标题（可选）
+    let title: String?
+    /// Issue 描述（可选）
+    let body: String?
+    /// Issue 状态（可选）
+    let state: String?
+    /// 标签名称数组（可选）
+    let labels: [String]?
+    /// 指派的用户数组（可选）
+    let assignees: [String]?
+    /// 里程碑编号（可选，nil 表示移除）
+    let milestone: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case title, body, state, labels, assignees, milestone
+    }
+}
+
+/// 创建评论请求
+struct CreateIssueCommentRequest: Codable {
+    /// 评论内容（支持 Markdown）
+    let body: String
+
+    enum CodingKeys: String, CodingKey {
+        case body
+    }
+}
+
 // MARK: - 错误类型
 
 /// GitHub API 错误
