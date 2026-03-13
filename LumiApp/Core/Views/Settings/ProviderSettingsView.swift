@@ -238,10 +238,6 @@ private struct ModelRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: DesignTokens.Spacing.sm) {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 18))
-                    .foregroundColor(isSelected ? DesignTokens.Color.semantic.primary : DesignTokens.Color.semantic.textTertiary)
-
                 Text(model)
                     .font(DesignTokens.Typography.body)
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
