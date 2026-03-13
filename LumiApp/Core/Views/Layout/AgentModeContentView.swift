@@ -25,8 +25,8 @@ struct AgentModeContentView: View {
         .ignoresSafeArea()
         .task {
             if Self.verbose {
-                let middleViews = pluginProvider.getMiddleViews()
-                os_log("\(Self.emoji) Agent Mode: 右侧栏视图数量=\(middleViews.count)")
+                let rightViews = pluginProvider.getRightViews()
+                os_log("\(Self.emoji) Agent Mode: 右侧栏视图数量=\(rightViews.count)")
             }
         }
     }
@@ -43,7 +43,7 @@ struct AgentModeContentView: View {
             }
 
             // 第二栏 + 第三栏：嵌套 HSplitView
-            middleAndDetailColumns
+            rightAndDetailColumns
         }
         .id("agentModeHSplitView")
     }
@@ -78,11 +78,11 @@ struct AgentModeContentView: View {
     }
 
     /// 右侧栏和详情栏（嵌套 HSplitView）
-    private var middleAndDetailColumns: some View {
-        let middleViews = pluginProvider.getMiddleViews()
+    private var rightAndDetailColumns: some View {
+        let rightViews = pluginProvider.getRightViews()
 
         return Group {
-            if middleViews.isEmpty {
+            if rightViews.isEmpty {
                 // 如果没有右侧栏视图，直接显示详情栏
                 detailColumn
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -94,10 +94,10 @@ struct AgentModeContentView: View {
                         .frame(minWidth: 200, idealWidth: 300)
 
                     // 第三栏：右侧栏
-                    middleColumn(middleViews: middleViews)
+                    rightColumn(rightViews: rightViews)
                         .frame(minWidth: 200, idealWidth: 300)
                 }
-                .id("agentModeMiddleDetailHSplitView")
+                .id("agentModeRightDetailHSplitView")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
@@ -106,12 +106,12 @@ struct AgentModeContentView: View {
     }
 
     /// 右侧栏
-    private func middleColumn(middleViews: [AnyView]) -> some View {
+    private func rightColumn(rightViews: [AnyView]) -> some View {
         VStack(spacing: 0) {
             // 修复：使用稳定 ID 而不是 offset，避免 AttributeGraph 崩溃
-            ForEach(middleViews.indices, id: \.self) { index in
-                middleViews[index]
-                    .id("middle_\(index)")
+            ForEach(rightViews.indices, id: \.self) { index in
+                rightViews[index]
+                    .id("right_\(index)")
             }
         }
     }

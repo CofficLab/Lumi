@@ -137,8 +137,8 @@ protocol SuperPlugin: Actor {
     /// 添加侧边栏视图（用于 Agent 模式）
     @MainActor func addSidebarView() -> AnyView?
 
-    /// 添加中间栏视图（用于 Agent 模式）
-    @MainActor func addMiddleView() -> AnyView?
+    /// 添加右侧栏视图（用于 Agent 模式）
+    @MainActor func addRightView() -> AnyView?
 
     /// 添加详情栏头部视图（用于 Agent 模式）
     @MainActor func addDetailHeaderView() -> AnyView?
