@@ -23,7 +23,7 @@ struct AgentNativeFileTreeContainer: View {
                     FileTreeView(
                         rootURL: URL(fileURLWithPath: projectViewModel.currentProjectPath),
                         onSelect: { url in
-                            // 处理文件选择
+                            projectViewModel.selectFile(at: url)
                         }
                     )
                 } else {

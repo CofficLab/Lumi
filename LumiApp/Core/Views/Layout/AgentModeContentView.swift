@@ -53,10 +53,11 @@ struct AgentModeContentView: View {
                 HSplitView {
                     // 第二栏：中间栏
                     middleColumn(middleViews: middleViews)
-                        .frame(minWidth: 200, idealWidth: 300, maxWidth: 600)
+                        .frame(minWidth: 200, idealWidth: 300)
 
                     // 第三栏：详情栏
                     detailColumn
+                        .frame(minWidth: 200, idealWidth: 300)
                 }
             }
         }
