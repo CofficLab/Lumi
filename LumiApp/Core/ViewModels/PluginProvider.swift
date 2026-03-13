@@ -48,10 +48,7 @@ final class PluginProvider: ObservableObject, SuperLog {
     nonisolated static let emoji = "🔌"
 
     /// 是否启用详细日志输出
-    ///
-    /// 设为 true 时会输出详细的插件加载和调试信息。
-    /// 建议在调试时开启，发布时关闭。
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     /// 已加载的插件列表
     ///

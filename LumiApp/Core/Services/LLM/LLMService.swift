@@ -42,7 +42,7 @@ class LLMService: SuperLog, @unchecked Sendable {
     /// 0: 关闭日志
     /// 1: 基础日志
     /// 2: 详细日志（输出请求/响应的详细信息）
-    nonisolated static let verbose = 1
+    nonisolated static let verbose = 0
 
     /// 供应商注册表
     ///

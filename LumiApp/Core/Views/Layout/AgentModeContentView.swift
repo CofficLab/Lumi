@@ -18,7 +18,7 @@ struct AgentModeContentView: View {
             // 主内容区域（三栏布局）
             mainContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            
+
             // 底部状态栏
             statusBar
         }
@@ -32,7 +32,7 @@ struct AgentModeContentView: View {
     }
 
     // MARK: - 主内容区域
-    
+
     /// 主内容区域（三栏布局）
     private var mainContent: some View {
         HSplitView {
@@ -49,11 +49,11 @@ struct AgentModeContentView: View {
     }
 
     // MARK: - 底部状态栏
-    
+
     /// 底部状态栏
     private var statusBar: some View {
         let statusBarViews = pluginProvider.getStatusBarViews()
-        
+
         return Group {
             if !statusBarViews.isEmpty {
                 HStack(spacing: 12) {
@@ -79,30 +79,22 @@ struct AgentModeContentView: View {
 
     /// 右侧栏和详情栏（嵌套 HSplitView）
     private var rightAndDetailColumns: some View {
-        let rightViews = pluginProvider.getRightViews()
+        let detailViews = pluginProvider.getDetailViews()
 
-        return Group {
-            if rightViews.isEmpty {
-                // 如果没有右侧栏视图，直接显示详情栏
+        return HSplitView {
+            // 第二栏：详情栏（仅当有插件提供详情视图时显示）
+            if !detailViews.isEmpty {
                 detailContentColumn
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                // 有右侧栏时，使用 HSplitView 分隔
-                HSplitView {
-                    // 第二栏：详情栏（简单的 VStack 堆积）
-                    detailContentColumn
-                        .frame(minWidth: 200, idealWidth: 300)
-
-                    // 第三栏：右侧栏（支持头部、中间、底部）
-                    rightColumn
-                        .frame(minWidth: 200, idealWidth: 300)
-                }
-                .id("agentModeDetailRightHSplitView")
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .frame(minWidth: 200, idealWidth: 300)
             }
+
+            // 第三栏：右侧栏（支持头部、中间、底部）
+            rightColumn
+                .frame(minWidth: 200, idealWidth: 300)
         }
-        .ignoresSafeArea()
+        .id("agentModeDetailRightHSplitView")
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea()
     }
 
     /// 右侧栏（支持头部、中间、底部）
@@ -123,23 +115,21 @@ struct AgentModeContentView: View {
             // 右侧栏底部
             rightBottomContent()
         }
-        .ignoresSafeArea()
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     /// 详情栏内容（简单的 VStack 堆积）
     private var detailContentColumn: some View {
-        let rightViews = pluginProvider.getRightViews()
-        
+        let detailViews = pluginProvider.getDetailViews()
+
         return VStack(spacing: 0) {
-            // 修复：使用稳定 ID 而不是 offset，避免 AttributeGraph 崩溃
-            ForEach(rightViews.indices, id: \.self) { index in
-                rightViews[index]
+            ForEach(detailViews.indices, id: \.self) { index in
+                detailViews[index]
                     .id("detail_\(index)")
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-    
+
     /// 右侧栏头部内容视图
     @ViewBuilder
     private func rightHeaderContent() -> some View {
