@@ -6,6 +6,7 @@ import OSLog
 ///
 /// 封装代码搜索和文件查找功能。
 final class CodeSearchService: @unchecked Sendable, SuperLog {
+    nonisolated static let verbose = false
     nonisolated static let emoji = "🔍"
     static let shared = CodeSearchService()
 

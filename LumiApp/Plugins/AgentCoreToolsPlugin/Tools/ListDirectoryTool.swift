@@ -4,6 +4,7 @@ import OSLog
 import SwiftUI
 
 struct ListDirectoryTool: AgentTool, SuperLog {
+    nonisolated static let emoji = "📁"
     nonisolated static let verbose = true
 
     let name = "ls"

@@ -9,6 +9,8 @@ import MagicKit
 /// 负责获取和管理菜单栏图标
 @MainActor
 class MenuBarManagerService: ObservableObject, SuperLog {
+    nonisolated static let emoji = "🍎"
+    nonisolated static let verbose = false
     static let shared = MenuBarManagerService()
     
     // MARK: - Published Properties

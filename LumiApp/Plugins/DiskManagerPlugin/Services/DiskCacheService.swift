@@ -21,6 +21,8 @@ struct ScanCache: Codable {
 // MARK: - Cache Service
 
 actor ScanCacheService: SuperLog {
+    nonisolated static let emoji = "💾"
+    nonisolated static let verbose = false
     static let shared = ScanCacheService()
     
     private let cacheDirectory: URL

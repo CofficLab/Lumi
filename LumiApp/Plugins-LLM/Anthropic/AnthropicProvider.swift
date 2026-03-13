@@ -29,6 +29,7 @@ import MagicKit
 /// - 支持 Tool Calls: ✅
 /// - 支持图片输入: ✅ (base64 编码)
 final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
+    nonisolated static let emoji = "🤖"
     
     /// 是否启用详细日志
     nonisolated static let verbose = true

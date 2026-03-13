@@ -6,6 +6,7 @@ import OSLog
 ///
 /// 封装 Git 命令的执行和结果解析。
 final class GitService: @unchecked Sendable, SuperLog {
+    nonisolated static let verbose = false
     nonisolated static let emoji = "📦"
     static let shared = GitService()
 

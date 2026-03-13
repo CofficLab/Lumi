@@ -29,6 +29,7 @@ final class DeepSeekProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     static let availableModels = [
         "deepseek-chat",       // DeepSeek Chat
         "deepseek-coder",      // DeepSeek Coder
+        "deepseek-reasoner"
     ]
 
     // MARK: - SuperLLMProvider
