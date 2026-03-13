@@ -250,11 +250,3 @@ Refer to existing plugin implementations (such as `GitHubToolsPlugin`, `CPUManag
 ## 📄 License
 
 This project is licensed under the GNU General Public License v3.0 - see [LICENSE](LICENSE) file for details.
-
-**Key points:**
-
-- ✅ You can use, modify, and distribute this software
-- ✅ Patent protection included
-- ⚠️ Derivative works must be released under the same license (GPLv3)
-- ⚠️ Commercial use allowed, but source code must be made available
-- ❌ Cannot be used in closed-source proprietary software
