@@ -514,22 +514,22 @@ final class PluginProvider: ObservableObject, SuperLog {
         return views
     }
 
-    /// 获取所有插件提供的中间栏视图（用于 Agent 模式）
+    /// 获取所有插件提供的右侧栏视图（用于 Agent 模式）
     ///
-    /// 收集所有启用插件提供的中间栏视图。
-    /// 中间栏位于侧边栏和详情栏之间，用于展示文件预览等内容。
-    /// 多个插件的中间栏会从上到下垂直堆叠显示。
+    /// 收集所有启用插件提供的右侧栏视图。
+    /// 右侧栏位于详情栏右侧，用于展示文件预览等内容。
+    /// 多个插件的右侧栏会从上到下垂直堆叠显示。
     ///
-    /// - Returns: 中间栏视图数组
-    func getMiddleViews() -> [AnyView] {
+    /// - Returns: 右侧栏视图数组
+    func getRightViews() -> [AnyView] {
         let views = plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addMiddleView() }
+            .compactMap { $0.addRightView() }
 
         if Self.verbose {
             let pluginNames = plugins.map { String(describing: type(of: $0)) }
             let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
-            os_log("\(self.t) getMiddleViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 中间栏视图数量=\(views.count)")
+            os_log("\(self.t) getRightViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 右侧栏视图数量=\(views.count)")
         }
 
         return views

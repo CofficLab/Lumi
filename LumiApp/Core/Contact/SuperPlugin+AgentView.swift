@@ -7,8 +7,8 @@ extension SuperPlugin {
     /// 默认实现：不提供侧边栏视图
     @MainActor func addSidebarView() -> AnyView? { nil }
 
-    /// 默认实现：不提供中间栏视图
-    @MainActor func addMiddleView() -> AnyView? { nil }
+    /// 默认实现：不提供右侧栏视图
+    @MainActor func addRightView() -> AnyView? { nil }
 
     /// 默认实现：不提供详情栏头部视图
     @MainActor func addDetailHeaderView() -> AnyView? { nil }
