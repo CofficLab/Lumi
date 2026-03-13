@@ -64,6 +64,7 @@ struct AgentModeContentView: View {
             }
         }
         .ignoresSafeArea()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     /// 中间栏
