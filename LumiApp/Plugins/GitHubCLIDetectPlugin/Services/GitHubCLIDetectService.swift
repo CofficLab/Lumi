@@ -18,6 +18,9 @@ final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
     /// 检测是否安装了 gh 命令行工具
     /// - Returns: 如果已安装返回 true
     func isInstalled() -> Bool {
+        if Self.verbose {
+            os_log("\(self.t)🔍 开始检查 gh 安装...")
+        }
         let installed = checkGHInstallation()
         if Self.verbose {
             os_log("\(self.t)🔍 gh 安装状态：\(installed ? "已安装" : "未安装")")
@@ -57,23 +60,41 @@ final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
 
     /// 检查 gh 是否安装
     private func checkGHInstallation() -> Bool {
+        if Self.verbose {
+            os_log("\(self.t)🔍 执行 which gh 命令...")
+        }
+
         let process = Process()
         let pipe = Pipe()
 
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/which")
-        process.arguments = ["gh"]
+        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+        process.arguments = ["-c", "which gh"]
         process.standardOutput = pipe
         process.standardError = pipe
 
-        // 继承当前环境，确保 PATH 包含 homebrew 路径
-        process.environment = ProcessInfo.processInfo.environment
+        // 设置与 ShellService 相同的 PATH 环境变量
+        var env = ProcessInfo.processInfo.environment
+        env["PATH"] = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+        process.environment = env
 
         do {
             try process.run()
             process.waitUntilExit()
 
-            if process.terminationStatus == 0 {
+            let terminationStatus = process.terminationStatus
+            if Self.verbose {
+                os_log("\(self.t)🔍 which gh 终止状态：\(terminationStatus)")
+            }
+
+            if terminationStatus == 0 {
                 return true
+            } else {
+                // 读取错误输出
+                let errorData = pipe.fileHandleForReading.readDataToEndOfFile()
+                let errorOutput = String(data: errorData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "无输出"
+                if Self.verbose {
+                    os_log("\(self.t)❌ which gh 错误输出：\(errorOutput)")
+                }
             }
         } catch {
             if Self.verbose {
@@ -89,12 +110,14 @@ final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
         let process = Process()
         let pipe = Pipe()
 
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/which")
-        process.arguments = ["gh"]
+        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+        process.arguments = ["-c", "which gh"]
         process.standardOutput = pipe
 
-        // 继承当前环境，确保 PATH 包含 homebrew 路径
-        process.environment = ProcessInfo.processInfo.environment
+        // 设置与 ShellService 相同的 PATH 环境变量
+        var env = ProcessInfo.processInfo.environment
+        env["PATH"] = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+        process.environment = env
 
         do {
             try process.run()
@@ -123,8 +146,10 @@ final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
         process.standardOutput = pipe
         process.standardError = pipe
 
-        // 继承当前环境，确保 PATH 包含 homebrew 路径
-        process.environment = ProcessInfo.processInfo.environment
+        // 设置与 ShellService 相同的 PATH 环境变量
+        var env = ProcessInfo.processInfo.environment
+        env["PATH"] = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+        process.environment = env
 
         do {
             try process.run()

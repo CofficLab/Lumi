@@ -7,7 +7,7 @@ import OSLog
 /// 检测用户系统是否安装了 GitHub CLI (gh) 命令行工具
 struct GitHubCLICheckTool: AgentTool, SuperLog {
     nonisolated static let emoji = "🔍"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     let name = "github_cli_check"
     let description = "检测用户系统是否安装了 GitHub CLI (gh) 命令行工具，返回安装状态、版本号和安装路径。"
