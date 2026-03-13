@@ -21,6 +21,8 @@ struct ChatBubble: View, SuperLog {
     @ObservedObject private var expansionState = MessageExpansionState.shared
     @State private var showRawMessage: Bool = false
     @State private var isHovered: Bool = false
+    @State private var isToolbarHovered: Bool = false
+    @State private var isToolbarVisible: Bool = false
 
     /// 初始化
     /// - Parameters:
@@ -106,8 +108,16 @@ struct ChatBubble: View, SuperLog {
                         message: message,
                         isAssistantMessage: message.role == .assistant
                     )
-                    .opacity(isHovered ? 1 : 0)
-                    .animation(.easeInOut(duration: 0.15), value: isHovered)
+                    .opacity(isToolbarVisible ? 1 : 0)
+                    .animation(.easeInOut(duration: 0.15), value: isToolbarVisible)
+                    .onHover { hovering in
+                        isToolbarHovered = hovering
+                        if hovering {
+                            isToolbarVisible = true
+                        } else {
+                            scheduleHideToolbar()
+                        }
+                    }
                 }
             }
 
@@ -115,6 +125,21 @@ struct ChatBubble: View, SuperLog {
         }
         .onHover { hovering in
             isHovered = hovering
+            if hovering {
+                isToolbarVisible = true
+            } else {
+                scheduleHideToolbar()
+            }
+        }
+    }
+
+    /// 延迟隐藏工具栏，避免鼠标从气泡移到按钮时瞬间消失
+    private func scheduleHideToolbar() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+            // 使用当前最新的 hover 状态，而不是调度时的快照
+            if !isHovered && !isToolbarHovered {
+                isToolbarVisible = false
+            }
         }
     }
 
