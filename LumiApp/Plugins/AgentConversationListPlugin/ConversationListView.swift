@@ -9,7 +9,7 @@ struct ConversationListView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "🐶"
     /// 是否输出详细日志
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     /// 会话管理 ViewModel
     @EnvironmentObject var conversationViewModel: ConversationViewModel

@@ -22,7 +22,7 @@ enum MessageSendEvent: Sendable {
 @MainActor
 final class MessageSenderViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📤"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     // MARK: - 事件流
 
