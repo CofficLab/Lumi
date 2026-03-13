@@ -3,7 +3,7 @@ import MagicKit
 
 /// 高性能文件树容器视图
 struct AgentNativeFileTreeContainer: View {
-    @EnvironmentObject var projectViewModel: ProjectViewModel
+    @EnvironmentObject var ProjectVM: ProjectVM
 
     /// 折叠状态
     @AppStorage("Sidebar_FileTree_Expanded") private var isExpanded: Bool = true
@@ -19,11 +19,11 @@ struct AgentNativeFileTreeContainer: View {
                     .background(Color.white.opacity(0.1))
 
                 // 文件树
-                if !projectViewModel.currentProjectPath.isEmpty {
+                if !ProjectVM.currentProjectPath.isEmpty {
                     FileTreeView(
-                        rootURL: URL(fileURLWithPath: projectViewModel.currentProjectPath),
+                        rootURL: URL(fileURLWithPath: ProjectVM.currentProjectPath),
                         onSelect: { url in
-                            projectViewModel.selectFile(at: url)
+                            ProjectVM.selectFile(at: url)
                         }
                     )
                 } else {
@@ -55,8 +55,8 @@ struct AgentNativeFileTreeContainer: View {
                 Spacer()
             }
 
-            if !projectViewModel.currentProjectPath.isEmpty {
-                Text(projectViewModel.currentProjectPath)
+            if !ProjectVM.currentProjectPath.isEmpty {
+                Text(ProjectVM.currentProjectPath)
                     .font(.system(size: 9))
                     .foregroundColor(.secondary.opacity(0.7))
                     .lineLimit(1)
@@ -97,6 +97,6 @@ struct AgentNativeFileTreeContainer: View {
 
 #Preview {
     AgentNativeFileTreeContainer()
-        .environmentObject(ProjectViewModel())
+        .environmentObject(ProjectVM())
         .frame(width: 250, height: 400)
 }

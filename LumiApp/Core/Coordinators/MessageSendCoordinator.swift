@@ -2,7 +2,7 @@ import Foundation
 
 /// 消息发送事件协调器
 ///
-/// 负责消费 `MessageSenderViewModel.events`，并把事件翻译为对各个状态/服务的调用。
+/// 负责消费 `MessageSenderVM.events`，并把事件翻译为对各个状态/服务的调用。
 @MainActor
 final class MessageSendCoordinator {
     struct Services {
@@ -20,7 +20,7 @@ final class MessageSendCoordinator {
         let getMessageCount: (UUID) -> Int
     }
 
-    private let messageSenderViewModel: MessageSenderViewModel
+    private let MessageSenderVM: MessageSenderVM
     private let runtimeStore: ConversationRuntimeStore
     private let services: Services
 
@@ -33,7 +33,7 @@ final class MessageSendCoordinator {
     private var pipeline: MiddlewarePipeline<MessageSendEvent, MessageSendMiddlewareContext>?
 
     init(
-        messageSenderViewModel: MessageSenderViewModel,
+        MessageSenderVM: MessageSenderVM,
         runtimeStore: ConversationRuntimeStore,
         services: Services,
         onUserJustSentMessage: @escaping () -> Void,
@@ -41,7 +41,7 @@ final class MessageSendCoordinator {
         onProcessingFinished: @escaping (UUID) -> Void,
         sendMessageToAgent: @escaping (ChatMessage, UUID) async -> Void
     ) {
-        self.messageSenderViewModel = messageSenderViewModel
+        self.MessageSenderVM = MessageSenderVM
         self.runtimeStore = runtimeStore
         self.services = services
         self.onUserJustSentMessage = onUserJustSentMessage
@@ -69,7 +69,7 @@ final class MessageSendCoordinator {
 
         task = Task { [weak self] in
             guard let self else { return }
-            for await event in self.messageSenderViewModel.events {
+            for await event in self.MessageSenderVM.events {
                 let ctx = MessageSendMiddlewareContext(
                     runtimeStore: self.runtimeStore,
                     services: MessageSendMiddlewareServices(

@@ -8,7 +8,7 @@ struct ChatMessagesView: View, SuperLog {
     nonisolated static let verbose = true
 
     /// 会话管理 ViewModel
-    @EnvironmentObject var conversationViewModel: ConversationViewModel
+    @EnvironmentObject var ConversationVM: ConversationVM
 
     /// 权限请求 ViewModel
     @EnvironmentObject var permissionRequestViewModel: PermissionRequestVM
@@ -18,7 +18,7 @@ struct ChatMessagesView: View, SuperLog {
 
     /// 当前选中的会话 ID
     private var selectedConversationId: UUID? {
-        conversationViewModel.selectedConversationId
+        ConversationVM.selectedConversationId
     }
 
     /// 是否已选择会话

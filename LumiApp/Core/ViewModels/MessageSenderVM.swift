@@ -20,7 +20,7 @@ enum MessageSendEvent: Sendable {
 /// 消息发送队列 ViewModel
 /// 负责管理待发送消息队列，按会话隔离发送
 @MainActor
-final class MessageSenderViewModel: ObservableObject, SuperLog {
+final class MessageSenderVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📤"
     nonisolated static let verbose = false
 

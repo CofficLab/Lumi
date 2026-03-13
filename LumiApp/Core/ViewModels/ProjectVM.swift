@@ -7,7 +7,7 @@ import MagicKit
 /// 项目管理 ViewModel
 /// 负责管理项目状态、文件选择和项目配置
 @MainActor
-final class ProjectViewModel: ObservableObject, SuperLog {
+final class ProjectVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose = false
 

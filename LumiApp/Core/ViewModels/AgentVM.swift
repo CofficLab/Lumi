@@ -21,7 +21,7 @@ enum ConversationRuntimeState: String {
 ///
 /// ## 职责划分
 ///
-/// - **ConversationViewModel**: 只维护 `selectedConversationId`，管理会话的增删改查
+/// - **ConversationVM**: 只维护 `selectedConversationId`，管理会话的增删改查
 /// - **MessageViewModel**: 只管理消息列表的加载、追加、更新
 /// - **AgentVM**: 协调多个 ViewModel，处理需要协作的复杂业务逻辑
 ///
@@ -31,8 +31,8 @@ enum ConversationRuntimeState: String {
 /// // 新建会话 - 需要协调多个 VM，由 AgentVM 处理
 /// await agentVM.createNewConversation(projectId: projectId)
 ///
-/// // 选择会话 - 只涉及 ConversationViewModel，直接调用
-/// conversationViewModel.setSelectedConversation(id)
+/// // 选择会话 - 只涉及 ConversationVM，直接调用
+/// ConversationVM.setSelectedConversation(id)
 ///
 /// // 加载消息 - 只涉及 MessageViewModel，直接调用
 /// messageViewModel.loadMessages(for: conversation)
@@ -65,13 +65,13 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     let messageViewModel: MessagePendingVM
 
     /// 会话 ViewModel
-    let conversationViewModel: ConversationViewModel
+    let ConversationVM: ConversationVM
 
     /// 消息发送 ViewModel
-    var messageSenderViewModel: MessageSenderViewModel
+    var MessageSenderVM: MessageSenderVM
 
     /// 项目 ViewModel
-    let projectViewModel: ProjectViewModel
+    let ProjectVM: ProjectVM
 
     /// 对话轮次 ViewModel
     let conversationTurnViewModel: ConversationTurnVM
@@ -102,7 +102,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     private var cancellables = Set<AnyCancellable>()
 
     private lazy var messageSendCoordinator = MessageSendCoordinator(
-        messageSenderViewModel: messageSenderViewModel,
+        MessageSenderVM: MessageSenderVM,
         runtimeStore: runtimeStore,
         services: .init(
             getConversationTitle: { [weak self] conversationId in
@@ -126,16 +126,16 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
                 )
             },
             isProjectSelected: { [weak self] in
-                self?.projectViewModel.isProjectSelected ?? false
+                self?.ProjectVM.isProjectSelected ?? false
             },
             getProjectInfo: { [weak self] in
-                (self?.projectViewModel.currentProjectName ?? "", self?.projectViewModel.currentProjectPath ?? "")
+                (self?.ProjectVM.currentProjectName ?? "", self?.ProjectVM.currentProjectPath ?? "")
             },
             isFileSelected: { [weak self] in
-                self?.projectViewModel.isFileSelected ?? false
+                self?.ProjectVM.isFileSelected ?? false
             },
             getSelectedFileInfo: { [weak self] in
-                (self?.projectViewModel.selectedFilePath ?? "", self?.projectViewModel.selectedFileContent ?? "")
+                (self?.ProjectVM.selectedFilePath ?? "", self?.ProjectVM.selectedFileContent ?? "")
             },
             getSelectedText: {
                 TextSelectionManager.shared.selectedText
@@ -149,14 +149,14 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         },
         onProcessingStarted: { [weak self] conversationId in
             guard let self else { return }
-            if self.conversationViewModel.selectedConversationId == conversationId {
+            if self.ConversationVM.selectedConversationId == conversationId {
                 self.processingStateViewModel.beginSending()
                 self.upsertStatusMessage(for: conversationId, text: self.processingStateViewModel.statusText)
             }
         },
         onProcessingFinished: { [weak self] conversationId in
             guard let self else { return }
-            if self.conversationViewModel.selectedConversationId == conversationId {
+            if self.ConversationVM.selectedConversationId == conversationId {
                 self.processingStateViewModel.finish()
                 self.removeStatusMessage(for: conversationId)
             }
@@ -171,7 +171,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         conversationTurnViewModel: conversationTurnViewModel,
         runtimeStore: runtimeStore,
         env: .init(
-            selectedConversationId: { [weak self] in self?.conversationViewModel.selectedConversationId },
+            selectedConversationId: { [weak self] in self?.ConversationVM.selectedConversationId },
             maxThinkingTextLength: maxThinkingTextLength,
             immediateStreamFlushChars: immediateStreamFlushChars,
             immediateThinkingFlushChars: immediateThinkingFlushChars,
@@ -288,9 +288,9 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     ///   - mcpService: MCP 服务
     ///   - chatHistoryService: 聊天历史服务
     ///   - messageViewModel: 消息 ViewModel
-    ///   - conversationViewModel: 会话 ViewModel
-    ///   - messageSenderViewModel: 消息发送 ViewModel
-    ///   - projectViewModel: 项目 ViewModel
+    ///   - ConversationVM: 会话 ViewModel
+    ///   - MessageSenderVM: 消息发送 ViewModel
+    ///   - ProjectVM: 项目 ViewModel
     ///   - conversationTurnViewModel: 对话轮次 ViewModel
     init(
         promptService: PromptService,
@@ -298,9 +298,9 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         toolService: ToolService,
         chatHistoryService: ChatHistoryService,
         messageViewModel: MessagePendingVM,
-        conversationViewModel: ConversationViewModel,
-        messageSenderViewModel: MessageSenderViewModel,
-        projectViewModel: ProjectViewModel,
+        ConversationVM: ConversationVM,
+        MessageSenderVM: MessageSenderVM,
+        ProjectVM: ProjectVM,
         conversationTurnViewModel: ConversationTurnVM,
         slashCommandService: SlashCommandService,
         depthWarningViewModel: DepthWarningVM,
@@ -315,9 +315,9 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         self.toolService = toolService
         self.chatHistoryService = chatHistoryService
         self.messageViewModel = messageViewModel
-        self.conversationViewModel = conversationViewModel
-        self.messageSenderViewModel = messageSenderViewModel
-        self.projectViewModel = projectViewModel
+        self.ConversationVM = ConversationVM
+        self.MessageSenderVM = MessageSenderVM
+        self.ProjectVM = ProjectVM
         self.conversationTurnViewModel = conversationTurnViewModel
         self.slashCommandService = slashCommandService
         self.depthWarningViewModel = depthWarningViewModel
@@ -350,9 +350,9 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     }
 
     /// 加载初始会话消息
-    /// 在初始化时，如果 ConversationViewModel 已经恢复了上次选择的会话，立即加载消息
+    /// 在初始化时，如果 ConversationVM 已经恢复了上次选择的会话，立即加载消息
     private func loadInitialConversationIfNeeded() {
-        if let selectedId = conversationViewModel.selectedConversationId {
+        if let selectedId = ConversationVM.selectedConversationId {
             if Self.verbose {
                 os_log("\(Self.t)📥 [\(selectedId)] 初始化会话")
             }
@@ -366,7 +366,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     /// 设置会话选择监听
     /// 当 selectedConversationId 变化时，自动加载对应会话的消息
     private func setupConversationSelectionObserver() {
-        conversationViewModel.$selectedConversationId
+        ConversationVM.$selectedConversationId
             .dropFirst() // 跳过初始值
             .removeDuplicates()
             .sink { [weak self] conversationId in
@@ -382,7 +382,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
 
     /// 当前会话的流式消息 ID（用于 UI 渲染）
     public var currentStreamingMessageId: UUID? {
-        guard let selectedId = conversationViewModel.selectedConversationId else { return nil }
+        guard let selectedId = ConversationVM.selectedConversationId else { return nil }
         return runtimeStore.streamStateByConversation[selectedId]?.messageId
     }
 
@@ -397,7 +397,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     private let captureThinkingContent = true
 
     private func upsertStatusMessage(for conversationId: UUID, text: String) {
-        guard conversationViewModel.selectedConversationId == conversationId else { return }
+        guard ConversationVM.selectedConversationId == conversationId else { return }
         guard !text.isEmpty else { return }
 
         let id = runtimeStore.statusMessageIdByConversation[conversationId] ?? UUID()
@@ -424,7 +424,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     private func removeStatusMessage(for conversationId: UUID) {
         guard let id = runtimeStore.statusMessageIdByConversation[conversationId] else { return }
         runtimeStore.statusMessageIdByConversation[conversationId] = nil
-        guard conversationViewModel.selectedConversationId == conversationId else { return }
+        guard ConversationVM.selectedConversationId == conversationId else { return }
         let filtered = messages.filter { $0.id != id }
         if filtered.count != messages.count {
             setMessages(filtered, reason: "移除状态系统消息")
@@ -501,22 +501,22 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         // 加载语言偏好
         if let data = UserDefaults.standard.data(forKey: "Agent_LanguagePreference"),
            let preference = try? JSONDecoder().decode(LanguagePreference.self, from: data) {
-            projectViewModel.setLanguagePreference(preference)
+            ProjectVM.setLanguagePreference(preference)
         }
 
         // 加载聊天模式
         if let modeRaw = UserDefaults.standard.string(forKey: "Agent_ChatMode"),
            let mode = ChatMode(rawValue: modeRaw) {
-            projectViewModel.setChatMode(mode)
+            ProjectVM.setChatMode(mode)
         }
 
         // 加载自动批准风险 - 使用 bool 类型读取
         let autoApprove = UserDefaults.standard.bool(forKey: "Agent_AutoApproveRisk")
-        projectViewModel.setAutoApproveRisk(autoApprove)
+        ProjectVM.setAutoApproveRisk(autoApprove)
 
         // 加载上次选择的项目（项目切换会自动应用配置）
         if let savedPath = UserDefaults.standard.string(forKey: "Agent_SelectedProject") {
-            projectViewModel.switchProject(to: savedPath)
+            ProjectVM.switchProject(to: savedPath)
 
             // 加载项目命令
             Task {
@@ -608,7 +608,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         }
         guard let state = runtimeStore.streamStateByConversation[conversationId],
               let messageId = state.messageId,
-              conversationViewModel.selectedConversationId == conversationId,
+              ConversationVM.selectedConversationId == conversationId,
               let index = state.messageIndex,
               index < messages.count else {
             return
@@ -630,7 +630,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         guard force || now.timeIntervalSince(lastFlush) >= thinkingUIFlushInterval else {
             return
         }
-        guard conversationViewModel.selectedConversationId == conversationId else { return }
+        guard ConversationVM.selectedConversationId == conversationId else { return }
         appendThinkingText(pending, for: conversationId)
         runtimeStore.pendingThinkingTextByConversation[conversationId] = ""
         runtimeStore.lastThinkingFlushAtByConversation[conversationId] = now
@@ -645,59 +645,59 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
 
     /// 标记是否已生成标题（代理到 TitleGenerationViewModel）
     var hasGeneratedTitle: Bool {
-        guard let selectedId = conversationViewModel.selectedConversationId else { return false }
+        guard let selectedId = ConversationVM.selectedConversationId else { return false }
         return titleGenerationViewModel.hasGeneratedTitle(for: selectedId)
     }
 
-    // MARK: - 代理 ProjectViewModel 属性（仅供内部扩展使用）
+    // MARK: - 代理 ProjectVM 属性（仅供内部扩展使用）
 
-    /// 当前项目名称（代理到 ProjectViewModel）
+    /// 当前项目名称（代理到 ProjectVM）
     var currentProjectName: String {
-        projectViewModel.currentProjectName
+        ProjectVM.currentProjectName
     }
 
-    /// 当前项目路径（代理到 ProjectViewModel）
+    /// 当前项目路径（代理到 ProjectVM）
     var currentProjectPath: String {
-        projectViewModel.currentProjectPath
+        ProjectVM.currentProjectPath
     }
 
-    /// 是否已选择项目（代理到 ProjectViewModel）
+    /// 是否已选择项目（代理到 ProjectVM）
     var isProjectSelected: Bool {
-        projectViewModel.isProjectSelected
+        ProjectVM.isProjectSelected
     }
 
-    /// 当前项目的供应商 ID（代理到 ProjectViewModel）
+    /// 当前项目的供应商 ID（代理到 ProjectVM）
     var selectedProviderId: String {
-        projectViewModel.currentProviderId
+        ProjectVM.currentProviderId
     }
 
-    /// 当前项目的模型名称（代理到 ProjectViewModel）
+    /// 当前项目的模型名称（代理到 ProjectVM）
     var currentModel: String {
-        projectViewModel.currentModel
+        ProjectVM.currentModel
     }
 
-    /// 语言偏好（代理到 ProjectViewModel）
+    /// 语言偏好（代理到 ProjectVM）
     var languagePreference: LanguagePreference {
-        projectViewModel.languagePreference
+        ProjectVM.languagePreference
     }
 
-    /// 聊天模式（代理到 ProjectViewModel）
+    /// 聊天模式（代理到 ProjectVM）
     var chatMode: ChatMode {
-        projectViewModel.chatMode
+        ProjectVM.chatMode
     }
 
-    /// 自动批准风险（代理到 ProjectViewModel）
+    /// 自动批准风险（代理到 ProjectVM）
     var autoApproveRisk: Bool {
-        projectViewModel.autoApproveRisk
+        ProjectVM.autoApproveRisk
     }
 
-    // MARK: - 项目管理（协调 ProjectViewModel）
+    // MARK: - 项目管理（协调 ProjectVM）
 
     /// 设置供应商并保存到项目配置
     func setSelectedProviderId(_ providerId: String) {
         guard isProjectSelected, !currentProjectPath.isEmpty else { return }
 
-        projectViewModel.saveProjectConfig(
+        ProjectVM.saveProjectConfig(
             path: currentProjectPath,
             providerId: providerId,
             model: currentModel
@@ -712,7 +712,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     func setSelectedModel(_ model: String) {
         guard isProjectSelected, !currentProjectPath.isEmpty else { return }
 
-        projectViewModel.saveProjectConfig(
+        ProjectVM.saveProjectConfig(
             path: currentProjectPath,
             providerId: selectedProviderId,
             model: model
@@ -725,19 +725,19 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
 
     /// 获取最近使用的项目列表
     func getRecentProjects() -> [RecentProject] {
-        projectViewModel.getRecentProjects()
+        ProjectVM.getRecentProjects()
     }
 
-    // MARK: - 文件选择（协调 ProjectViewModel）
+    // MARK: - 文件选择（协调 ProjectVM）
 
     /// 选择指定文件
     func selectFile(at url: URL) {
-        projectViewModel.selectFile(at: url)
+        ProjectVM.selectFile(at: url)
     }
 
     /// 清除文件选择
     func clearFileSelection() {
-        projectViewModel.clearFileSelection()
+        ProjectVM.clearFileSelection()
     }
 
     // MARK: - 供应商配置
@@ -788,7 +788,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         }
     }
 
-    // MARK: - 消息便捷方法（代理到 ConversationViewModel）
+    // MARK: - 消息便捷方法（代理到 ConversationVM）
 
     /// 追加消息到列表
     func appendMessage(_ message: ChatMessage) {
@@ -812,19 +812,19 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
 
     /// 设置标题生成标记
     func setHasGeneratedTitle(_ value: Bool) {
-        guard let selectedId = conversationViewModel.selectedConversationId else { return }
+        guard let selectedId = ConversationVM.selectedConversationId else { return }
         titleGenerationViewModel.setTitleGenerated(value, for: selectedId)
     }
 
     /// 加载指定对话
-    /// 协调 ConversationViewModel 和 MessageViewModel 完成加载（分页模式）
+    /// 协调 ConversationVM 和 MessageViewModel 完成加载（分页模式）
     func loadConversation(_ conversationId: UUID) async {
         if Self.verbose {
             os_log("\(Self.t)📥 [\(conversationId)] 开始加载对话（分页模式）")
         }
 
         // 切换消息发送队列到新会话
-        let queueCount = messageSenderViewModel.switchToConversation(conversationId)
+        let queueCount = MessageSenderVM.switchToConversation(conversationId)
         if Self.verbose {
             os_log("\(Self.t)🔄 [\(conversationId)] 待发送消息：\(queueCount) 条")
         }
@@ -837,12 +837,12 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
 
     /// 保存消息到存储
     func saveMessage(_ message: ChatMessage) async {
-        await conversationViewModel.saveMessage(message)
+        await ConversationVM.saveMessage(message)
     }
 
     /// 保存消息到指定会话
     func saveMessage(_ message: ChatMessage, conversationId: UUID) async {
-        await conversationViewModel.saveMessage(message, to: conversationId)
+        await ConversationVM.saveMessage(message, to: conversationId)
     }
 
     /// 删除指定对话
@@ -856,18 +856,18 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         }
 
         // 1. 清理该会话的待发送队列
-        messageSenderViewModel.removeConversationQueue(conversation.id)
+        MessageSenderVM.removeConversationQueue(conversation.id)
 
         // 如果删除的是选中的对话，清理当前队列
-        if conversationViewModel.selectedConversationId == conversation.id {
-            messageSenderViewModel.clearCurrentConversationQueue()
+        if ConversationVM.selectedConversationId == conversation.id {
+            MessageSenderVM.clearCurrentConversationQueue()
         }
 
         // 2. 清理该会话的运行时状态（流式缓存、思考文本、任务管线等）
         cleanupConversationState(conversation.id)
 
         // 3. 删除会话记录
-        conversationViewModel.deleteConversation(conversation)
+        ConversationVM.deleteConversation(conversation)
 
         if Self.verbose {
             os_log("\(Self.t)✅ 对话已删除：\(conversation.title)")
@@ -877,7 +877,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     // MARK: - 消息发送协调
 
     /// 发送单条消息到 Agent
-    /// 协调 MessageViewModel 和 ConversationViewModel 完成消息发送
+    /// 协调 MessageViewModel 和 ConversationVM 完成消息发送
     /// - Parameter message: 要发送的消息
     func sendMessageToAgent(message: ChatMessage, conversationId: UUID) async {
         if Self.verbose {
@@ -885,12 +885,12 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         }
 
         // 1. 添加消息到消息列表
-        if conversationViewModel.selectedConversationId == conversationId {
+        if ConversationVM.selectedConversationId == conversationId {
             messageViewModel.appendMessage(message)
         }
 
         // 2. 保存到数据库
-        await conversationViewModel.saveMessage(message, to: conversationId)
+        await ConversationVM.saveMessage(message, to: conversationId)
 
         // 4. 串行入队处理轮次，避免阻塞事件消费循环。
         enqueueTurnProcessing(conversationId: conversationId, depth: 0)
@@ -904,9 +904,9 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
 
     /// 取消当前正在进行的任务
     public func cancelCurrentTask() {
-        guard let conversationId = conversationViewModel.selectedConversationId else { return }
+        guard let conversationId = ConversationVM.selectedConversationId else { return }
 
-        messageSenderViewModel.cancelProcessing(for: conversationId, clearQueue: true)
+        MessageSenderVM.cancelProcessing(for: conversationId, clearQueue: true)
         turnTaskPipelineByConversation[conversationId]?.cancel()
         turnTaskPipelineByConversation[conversationId] = nil
         runtimeStore.processingConversationIds.remove(conversationId)
@@ -938,7 +938,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             // 添加计划模式消息
             appendMessage(ChatMessage(role: .user, content: planPrompt))
             // 直接处理对话轮次
-            if let conversationId = conversationViewModel.selectedConversationId {
+            if let conversationId = ConversationVM.selectedConversationId {
                 await processTurn(conversationId: conversationId)
             }
         }
@@ -976,7 +976,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
 
         setIsProcessing(false)
         setErrorMessage(nil)
-        if let conversationId = conversationViewModel.selectedConversationId {
+        if let conversationId = ConversationVM.selectedConversationId {
             runtimeStore.errorMessageByConversation[conversationId] = nil
             updateRuntimeState(for: conversationId)
         }
@@ -995,7 +995,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
                     setIsProcessing(false)
                 case .notHandled:
                     // 对于未处理的命令，继续通过消息队列发送
-                    messageSenderViewModel.sendMessage(content: trimmed, images: allImages)
+                    MessageSenderVM.sendMessage(content: trimmed, images: allImages)
                 case let .systemMessage(content):
                     // 添加系统消息
                     appendSystemMessage(content)
@@ -1006,7 +1006,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
                     appendMessage(message)
                     await saveMessage(message)
                     if triggerProcessing,
-                       let conversationId = conversationViewModel.selectedConversationId {
+                       let conversationId = ConversationVM.selectedConversationId {
                         await processTurn(conversationId: conversationId)
                     }
                     setIsProcessing(false)
@@ -1018,12 +1018,12 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
                     setIsProcessing(false)
                 @unknown default:
                     // 兜底处理：将未知结果视为未处理命令
-                    messageSenderViewModel.sendMessage(content: trimmed, images: allImages)
+                    MessageSenderVM.sendMessage(content: trimmed, images: allImages)
                     setIsProcessing(false)
                 }
             } else {
-                // 通过 MessageSenderViewModel 发送消息
-                messageSenderViewModel.sendMessage(content: trimmed, images: allImages)
+                // 通过 MessageSenderVM 发送消息
+                MessageSenderVM.sendMessage(content: trimmed, images: allImages)
             }
         }
     }
@@ -1096,7 +1096,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     // MARK: - 权限响应
 
     public func respondToPermissionRequest(allowed: Bool) async {
-        guard let conversationId = conversationViewModel.selectedConversationId,
+        guard let conversationId = ConversationVM.selectedConversationId,
               let request = runtimeStore.pendingPermissionByConversation[conversationId] else { return }
 
         runtimeStore.pendingPermissionByConversation[conversationId] = nil
@@ -1119,7 +1119,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
                 content: "用户拒绝了执行 \(request.toolName) 的权限请求",
                 toolCallID: request.toolCallID
             )
-            if conversationViewModel.selectedConversationId == conversationId {
+            if ConversationVM.selectedConversationId == conversationId {
                 appendMessage(rejectMessage)
             }
             await saveMessage(rejectMessage, conversationId: conversationId)
@@ -1147,7 +1147,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     /// 切换到指定项目
     public func switchProjectWithPrompt(to path: String) {
         // 使用内核的 AgentVM 执行实际的项目切换
-        projectViewModel.switchProject(to: path)
+        ProjectVM.switchProject(to: path)
 
         // 更新本地状态（镜像 AgentVM）
         let languagePreference = self.languagePreference

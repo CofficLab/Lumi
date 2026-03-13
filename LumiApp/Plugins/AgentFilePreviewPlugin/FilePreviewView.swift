@@ -5,11 +5,11 @@ import SwiftUI
 /// 文件预览视图
 struct FilePreviewView: View {
     @EnvironmentObject var agentProvider: AgentVM
-    @EnvironmentObject var projectViewModel: ProjectViewModel
+    @EnvironmentObject var ProjectVM: ProjectVM
 
     /// 判断当前选择的文件是否为可预览的类型
     private var isPreviewableFile: Bool {
-        guard let url = projectViewModel.selectedFileURL else { return false }
+        guard let url = ProjectVM.selectedFileURL else { return false }
         let fileName = url.lastPathComponent
         let fileExtension = url.pathExtension.lowercased()
 
@@ -24,13 +24,13 @@ struct FilePreviewView: View {
 
     /// 获取当前文件扩展名
     private var fileExtension: String {
-        guard let url = projectViewModel.selectedFileURL else { return "" }
+        guard let url = ProjectVM.selectedFileURL else { return "" }
         return url.pathExtension.lowercased()
     }
 
     /// 获取当前文件完整名称
     private var fileName: String {
-        guard let url = projectViewModel.selectedFileURL else { return "" }
+        guard let url = ProjectVM.selectedFileURL else { return "" }
         return url.lastPathComponent
     }
 
@@ -43,11 +43,11 @@ struct FilePreviewView: View {
                 .background(Color.white.opacity(0.1))
 
             // 文件预览内容
-            if projectViewModel.isFileSelected {
+            if ProjectVM.isFileSelected {
                 if isPreviewableFile {
                     filePreviewContent
                 } else {
-                    FilePreviewUnsupportedView(fileName: "\(projectViewModel.selectedFileURL?.lastPathComponent ?? "")")
+                    FilePreviewUnsupportedView(fileName: "\(ProjectVM.selectedFileURL?.lastPathComponent ?? "")")
                 }
             } else {
                 FilePreviewEmptyStateView()
@@ -106,13 +106,13 @@ struct FilePreviewView: View {
     private var fileInfoSection: some View {
         VStack(alignment: .leading, spacing: 4) {
             // 文件名
-            Text(projectViewModel.selectedFileURL?.lastPathComponent ?? "")
+            Text(ProjectVM.selectedFileURL?.lastPathComponent ?? "")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 .lineLimit(2)
 
             // 文件路径
-            Text(projectViewModel.selectedFilePath)
+            Text(ProjectVM.selectedFilePath)
                 .font(.system(size: 9))
                 .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                 .lineLimit(1)
@@ -122,7 +122,7 @@ struct FilePreviewView: View {
 
     private var fileContentSection: some View {
         FileContentSectionView(
-            content: projectViewModel.selectedFileContent,
+            content: ProjectVM.selectedFileContent,
             fileExtension: fileExtension,
             fileName: fileName
         )

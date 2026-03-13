@@ -18,7 +18,7 @@ import SwiftUI
 /// ## 架构模式
 ///
 /// ```
-/// ConversationViewModel
+/// ConversationVM
 /// ├── ChatHistoryService
 /// │   └── 持久化操作
 /// ├── LLMService
@@ -27,7 +27,7 @@ import SwiftUI
 ///     └── 欢迎消息
 /// ```
 @MainActor
-final class ConversationViewModel: ObservableObject, SuperLog {
+final class ConversationVM: ObservableObject, SuperLog {
     /// 日志标识符
     nonisolated static let emoji = "💬"
 

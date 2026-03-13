@@ -16,7 +16,7 @@ struct MessageListView: View, SuperLog {
     @EnvironmentObject var agentProvider: AgentVM
 
     /// 会话管理 ViewModel
-    @EnvironmentObject var conversationViewModel: ConversationViewModel
+    @EnvironmentObject var ConversationVM: ConversationVM
 
     /// 处理状态 ViewModel（用于展示发送/等待首 token/生成中等状态）
     @EnvironmentObject var processingStateViewModel: ProcessingStateVM
@@ -41,7 +41,7 @@ struct MessageListView: View, SuperLog {
 
     /// 当前选中的会话 ID
     private var selectedConversationId: UUID? {
-        conversationViewModel.selectedConversationId
+        ConversationVM.selectedConversationId
     }
 
     var body: some View {

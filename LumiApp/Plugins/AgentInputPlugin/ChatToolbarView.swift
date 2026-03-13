@@ -11,7 +11,7 @@ struct ChatToolbarView: View, SuperLog {
 
     /// 智能体提供者
     @EnvironmentObject var agentProvider: AgentVM
-    @EnvironmentObject var projectViewModel: ProjectViewModel
+    @EnvironmentObject var ProjectVM: ProjectVM
 
     /// 处理状态 ViewModel
     @EnvironmentObject var processingStateViewModel: ProcessingStateVM
@@ -57,8 +57,8 @@ extension ChatToolbarView {
         HStack(spacing: 6) {
             // 从 PromptService 获取快捷短语
             let phrases = agentProvider.promptService.getQuickPhrases(
-                projectName: projectViewModel.currentProjectName,
-                projectPath: projectViewModel.currentProjectPath
+                projectName: ProjectVM.currentProjectName,
+                projectPath: ProjectVM.currentProjectPath
             )
 
             // 英文 Commit
@@ -124,7 +124,7 @@ extension ChatToolbarView {
             ForEach(ChatMode.allCases) { mode in
                 Button(action: {
                     withAnimation {
-                        projectViewModel.setChatMode(mode)
+                        ProjectVM.setChatMode(mode)
                     }
                 }) {
                     HStack {

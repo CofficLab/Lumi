@@ -7,7 +7,7 @@ import SwiftUI
 /// 每个窗口创建时都会实例化一个 `WindowViewContainer`，包含：
 /// - 独立的 `AgentVM` - 管理对话状态和消息处理
 /// - 独立的 `MessageViewModel` - 管理消息列表
-/// - 独立的 `ConversationViewModel` - 管理会话列表
+/// - 独立的 `ConversationVM` - 管理会话列表
 /// - 独立的 `ChatHistoryService` - 管理当前窗口的数据库上下文
 ///
 /// 共享的服务（如 LLMService、ModelContainer）通过 `RootViewContainer.Services` 传入
@@ -16,8 +16,8 @@ final class WindowViewContainer: ObservableObject {
     let chatHistoryService: ChatHistoryService
 
     let messageViewModel: MessagePendingVM
-    let conversationViewModel: ConversationViewModel
-    let messageSenderViewModel: MessageSenderViewModel
+    let ConversationVM: ConversationVM
+    let MessageSenderVM: MessageSenderVM
     let agentProvider: AgentVM
     let commandSuggestionViewModel: CommandSuggestionVM
 
@@ -44,13 +44,13 @@ final class WindowViewContainer: ObservableObject {
 
         self.messageViewModel = MessagePendingVM(chatHistoryService: chatHistoryService)
 
-        self.conversationViewModel = ConversationViewModel(
+        self.ConversationVM = Lumi.ConversationVM(
             chatHistoryService: chatHistoryService,
             llmService: services.llmService,
             promptService: services.promptService
         )
 
-        self.messageSenderViewModel = MessageSenderViewModel()
+        self.MessageSenderVM = Lumi.MessageSenderVM()
 
         self.commandSuggestionViewModel = CommandSuggestionVM(slashCommandService: services.slashCommandService)
 
@@ -68,9 +68,9 @@ final class WindowViewContainer: ObservableObject {
             toolService: services.toolService,
             chatHistoryService: chatHistoryService,
             messageViewModel: messageViewModel,
-            conversationViewModel: conversationViewModel,
-            messageSenderViewModel: messageSenderViewModel,
-            projectViewModel: services.projectViewModel,
+            ConversationVM: ConversationVM,
+            MessageSenderVM: MessageSenderVM,
+            ProjectVM: services.ProjectVM,
             conversationTurnViewModel: conversationTurnViewModel,
             slashCommandService: services.slashCommandService,
             depthWarningViewModel: depthWarningViewModel,

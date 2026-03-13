@@ -32,7 +32,7 @@ struct InputView: View, SuperLog {
     var body: some View {
         VStack(spacing: 8) {
             // 待发送消息队列（放在外层，避免影响输入框焦点）
-            PendingMessagesView(messageSenderViewModel: agentProvider.messageSenderViewModel)
+            PendingMessagesView(MessageSenderVM: agentProvider.MessageSenderVM)
 
             // 输入区域
             InputAreaView(

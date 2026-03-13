@@ -40,14 +40,14 @@ struct RootView<Content>: View where Content: View {
         content
             // 共享的全局服务（所有窗口共享）
             .environmentObject(container.appProvider)
-            .environmentObject(container.projectViewModel)
+            .environmentObject(container.ProjectVM)
             .environmentObject(container.providerRegistry)
             .environmentObject(PluginVM.shared)
             // 窗口级 ViewModel（每个窗口独立）
             .environmentObject(windowContainer.agentProvider)
-            .environmentObject(windowContainer.conversationViewModel)
+            .environmentObject(windowContainer.ConversationVM)
             .environmentObject(windowContainer.messageViewModel)
-            .environmentObject(windowContainer.messageSenderViewModel)
+            .environmentObject(windowContainer.MessageSenderVM)
             .environmentObject(windowContainer.commandSuggestionViewModel)
             .environmentObject(windowContainer.depthWarningViewModel)
             .environmentObject(windowContainer.processingStateViewModel)
@@ -87,7 +87,7 @@ final class RootViewContainer: ObservableObject {
             toolService: toolService,
             providerRegistry: providerRegistry,
             appProvider: appProvider,
-            projectViewModel: projectViewModel,
+            ProjectVM: ProjectVM,
             commandSuggestionViewModel: commandSuggestionViewModel
         )
     }
@@ -102,18 +102,18 @@ final class RootViewContainer: ObservableObject {
         let toolService: ToolService
         let providerRegistry: ProviderRegistry
         let appProvider: GlobalVM
-        let projectViewModel: ProjectViewModel
+        let ProjectVM: ProjectVM
         let commandSuggestionViewModel: CommandSuggestionVM
     }
 
     // MARK: - ViewModel
 
     let appProvider: GlobalVM
-    let projectViewModel: ProjectViewModel
+    let ProjectVM: ProjectVM
     let commandSuggestionViewModel: CommandSuggestionVM
     let messageViewModel: MessagePendingVM
-    let conversationViewModel: ConversationViewModel
-    let messageSenderViewModel: MessageSenderViewModel
+    let ConversationVM: ConversationVM
+    let MessageSenderVM: MessageSenderVM
     let agentProvider: AgentVM
     let depthWarningViewModel: DepthWarningVM
     let processingStateViewModel: ProcessingStateVM
@@ -171,21 +171,21 @@ final class RootViewContainer: ObservableObject {
 
         // 初始化基础 ViewModel
         self.appProvider = GlobalVM()
-        self.projectViewModel = ProjectViewModel(contextService: contextService)
+        self.ProjectVM = Lumi.ProjectVM(contextService: contextService)
         self.commandSuggestionViewModel = CommandSuggestionVM(slashCommandService: slashCommandService)
 
         // 创建 MessageViewModel
         self.messageViewModel = MessagePendingVM(chatHistoryService: chatHistoryService)
 
-        // 创建 ConversationViewModel
-        self.conversationViewModel = ConversationViewModel(
+        // 创建 ConversationVM
+        self.ConversationVM = Lumi.ConversationVM(
             chatHistoryService: chatHistoryService,
             llmService: llmService,
             promptService: promptService
         )
 
-        // 创建 MessageSenderViewModel
-        self.messageSenderViewModel = MessageSenderViewModel()
+        // 创建 MessageSenderVM
+        self.MessageSenderVM = Lumi.MessageSenderVM()
 
         // 初始化工具执行服务
         let toolExecutionService = ToolExecutionService(toolService: toolService)
@@ -204,9 +204,9 @@ final class RootViewContainer: ObservableObject {
             toolService: toolService,
             chatHistoryService: chatHistoryService,
             messageViewModel: messageViewModel,
-            conversationViewModel: conversationViewModel,
-            messageSenderViewModel: self.messageSenderViewModel,
-            projectViewModel: projectViewModel,
+            ConversationVM: ConversationVM,
+            MessageSenderVM: self.MessageSenderVM,
+            ProjectVM: ProjectVM,
             conversationTurnViewModel: conversationTurnViewModel,
             slashCommandService: slashCommandService,
             depthWarningViewModel: self.depthWarningViewModel,

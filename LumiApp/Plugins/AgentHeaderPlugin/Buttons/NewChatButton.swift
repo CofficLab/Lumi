@@ -15,7 +15,7 @@ struct NewChatButton: View, SuperLog {
     @EnvironmentObject var agentProvider: AgentVM
 
     /// 环境对象：项目 ViewModel
-    @EnvironmentObject var projectViewModel: ProjectViewModel
+    @EnvironmentObject var ProjectVM: ProjectVM
 
     /// 环境对象：SwiftData 模型上下文
     @Environment(\.modelContext) private var modelContext
@@ -54,7 +54,7 @@ extension NewChatButton {
         await agentProvider.promptService.getSystemContextMessage(
             projectName: projectName,
             projectPath: projectPath,
-            language: projectViewModel.languagePreference
+            language: ProjectVM.languagePreference
         )
     }
 
@@ -67,7 +67,7 @@ extension NewChatButton {
         await agentProvider.promptService.getEmptySessionWelcomeMessage(
             projectName: projectName,
             projectPath: projectPath,
-            language: projectViewModel.languagePreference
+            language: ProjectVM.languagePreference
         )
     }
 
@@ -125,7 +125,7 @@ extension NewChatButton {
         try? modelContext.save()
 
         // 2. 切换消息发送队列到新会话
-        agentProvider.messageSenderViewModel.switchToConversation(newConversation.id)
+        agentProvider.MessageSenderVM.switchToConversation(newConversation.id)
 
         // 3. 准备系统上下文消息和欢迎消息
         var initialMessages: [ChatMessage] = []
@@ -156,7 +156,7 @@ extension NewChatButton {
         }
 
         // 4. 选中该会话（这会触发 UI 更新，但消息已经准备好了）
-        agentProvider.conversationViewModel.setSelectedConversation(newConversation.id)
+        agentProvider.ConversationVM.setSelectedConversation(newConversation.id)
 
         if Self.verbose {
             os_log("\(Self.t)✅ [\(newConversation.id)] 新会话创建完成，初始消息：\(initialMessages.count) 条")

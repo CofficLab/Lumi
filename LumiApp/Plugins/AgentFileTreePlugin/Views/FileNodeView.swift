@@ -5,7 +5,7 @@ import OSLog
 /// 文件树节点视图 - 自定义递归布局
 struct FileNodeView: View, SuperLog {
     /// 项目状态 ViewModel，用于处理文件/目录操作
-    @EnvironmentObject private var projectViewModel: ProjectViewModel
+    @EnvironmentObject private var ProjectVM: ProjectVM
     /// 日志前缀的表情符号（文件树节点）
     nonisolated static let emoji = "📁"
     
@@ -84,19 +84,19 @@ struct FileNodeView: View, SuperLog {
             .contentShape(Rectangle())
             .contextMenu {
                 Button {
-                    projectViewModel.openInFinder(url)
+                    ProjectVM.openInFinder(url)
                 } label: {
                     Label("在 Finder 中显示", systemImage: "finder")
                 }
                 
                 Button {
-                    projectViewModel.openInVSCode(url)
+                    ProjectVM.openInVSCode(url)
                 } label: {
                     Label("在 VS Code 中打开", systemImage: "chevron.left.forwardslash.chevron.right")
                 }
                 
                 Button {
-                    projectViewModel.openInTerminal(url)
+                    ProjectVM.openInTerminal(url)
                 } label: {
                     Label("在终端中打开", systemImage: "terminal")
                 }
@@ -104,7 +104,7 @@ struct FileNodeView: View, SuperLog {
                 Divider()
                 
                 Button(role: .destructive) {
-                    projectViewModel.deleteItem(at: url)
+                    ProjectVM.deleteItem(at: url)
                 } label: {
                     Label("移到废纸篓", systemImage: "trash")
                 }
