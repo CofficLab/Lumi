@@ -17,7 +17,7 @@ actor GitHubToolsPlugin: SuperPlugin, SuperLog {
 
     static let id: String = "GitHubTools"
     static let displayName: String = "GitHub Tools"
-    static let description: String = "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索）。"
+    static let description: String = "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue）。"
     static let iconName: String = "github"
     static let isConfigurable: Bool = true
     static let enable: Bool = true
@@ -55,6 +55,7 @@ private struct GitHubToolsFactory: AgentToolFactory {
             GitHubSearchTool(),
             GitHubFileContentTool(),
             GitHubTrendingTool(),
+            GitHubIssueListTool(),
         ]
     }
 }

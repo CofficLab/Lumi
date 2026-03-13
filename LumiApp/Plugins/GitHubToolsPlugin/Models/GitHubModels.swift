@@ -149,6 +149,103 @@ struct GitHubTrendingRepo: Sendable {
     let trendLanguage: String?
 }
 
+// MARK: - GitHub Issue
+
+/// GitHub Issue 状态
+enum GitHubIssueState: String, Codable, Sendable {
+    case open
+    case closed
+    case all
+}
+
+/// GitHub Issue 信息
+struct GitHubIssue: Codable, Sendable {
+    /// Issue ID
+    let id: Int
+    /// Issue 编号（仓库内唯一）
+    let number: Int
+    /// Issue 标题
+    let title: String
+    /// Issue 描述
+    let body: String?
+    /// Issue 状态
+    let state: GitHubIssueState
+    /// Issue 创建者
+    let user: GitHubUser
+    /// Issue 网页 URL
+    let htmlUrl: String
+    /// 关联的 Issue URL（如果有）
+    let repositoryUrl: String?
+    /// Issue 创建时间
+    let createdAt: String
+    /// Issue 更新时间
+    let updatedAt: String
+    /// Issue 关闭时间
+    let closedAt: String?
+    /// 评论数量
+    let comments: Int
+    /// 标签列表
+    let labels: [GitHubLabel]
+    /// 关联的里程碑（可选）
+    let milestone: GitHubMilestone?
+    /// 被引用的 Issue/PR 列表
+    let pulledThrough: [String]?
+
+    enum CodingKeys: String, CodingKey {
+        case id, number, title, body, state, user
+        case htmlUrl = "html_url"
+        case repositoryUrl = "repository_url"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+        case closedAt = "closed_at"
+        case comments, labels, milestone
+        case pulledThrough = "pull_request"
+    }
+}
+
+/// GitHub 标签
+struct GitHubLabel: Codable, Sendable {
+    /// 标签 ID
+    let id: Int
+    /// 标签名称
+    let name: String
+    /// 标签颜色（6 位十六进制）
+    let color: String
+    /// 标签描述
+    let description: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, color, description
+    }
+}
+
+/// GitHub 里程碑
+struct GitHubMilestone: Codable, Sendable {
+    /// 里程碑 ID
+    let id: Int
+    /// 里程碑编号
+    let number: Int
+    /// 里程碑标题
+    let title: String
+    /// 里程碑描述
+    let description: String?
+    /// 里程碑状态
+    let state: GitHubIssueState
+    /// 里程碑创建时间
+    let createdAt: String
+    /// 里程碑截止时间
+    let dueOn: String?
+    /// 里程碑关闭时间
+    let closedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, number, title, description, state
+        case createdAt = "created_at"
+        case dueOn = "due_on"
+        case closedAt = "closed_at"
+    }
+}
+
 // MARK: - 错误类型
 
 /// GitHub API 错误

@@ -103,6 +103,32 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         return result.items
     }
 
+    /// 获取仓库 Issue 列表
+    /// - Parameters:
+    ///   - owner: 仓库所有者
+    ///   - repo: 仓库名称
+    ///   - state: Issue 状态（open/closed/all）
+    ///   - page: 页码
+    ///   - perPage: 每页数量
+    /// - Returns: GitHubIssue 数组
+    func getIssues(
+        owner: String,
+        repo: String,
+        state: GitHubIssueState = .open,
+        page: Int = 1,
+        perPage: Int = 10
+    ) async throws -> [GitHubIssue] {
+        let endpoint = "/repos/\(owner)/\(repo)/issues"
+        var params: [String: String] = [
+            "state": state.rawValue,
+            "page": "\(page)",
+            "per_page": "\(perPage)"
+        ]
+        // 排除 PR（PR 在 GitHub API 中也是 issue，通过 filter 排除）
+        params["filter"] = "all"
+        return try await fetch(endpoint, params: params)
+    }
+
     // MARK: - 私有方法
 
     /// 发送 GET 请求
