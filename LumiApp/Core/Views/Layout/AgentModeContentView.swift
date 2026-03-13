@@ -1,7 +1,7 @@
 import OSLog
 import SwiftUI
 
-/// Agent 模式内容视图（三栏布局：侧边栏 + 中间栏 + 详情栏）
+/// Agent 模式内容视图（三栏布局：左侧栏 + 详情栏 + 右侧栏）
 struct AgentModeContentView: View {
     /// emoji 标识符
     nonisolated static let emoji = "🤖"
@@ -15,7 +15,7 @@ struct AgentModeContentView: View {
 
     var body: some View {
         HSplitView {
-            // 第一栏：侧边栏（统一侧边栏，顶部显示模式切换）
+            // 第一栏：左侧栏（统一侧边栏，顶部显示模式切换）
             if sidebarVisibility {
                 sidebarColumn
                     .frame(minWidth: 200, idealWidth: 220, maxWidth: 400)
@@ -29,38 +29,37 @@ struct AgentModeContentView: View {
         .task {
             if Self.verbose {
                 let middleViews = pluginProvider.getMiddleViews()
-                os_log("\(Self.emoji) Agent Mode: 中间栏视图数量=\(middleViews.count)")
+                os_log("\(Self.emoji) Agent Mode: 右侧栏视图数量=\(middleViews.count)")
             }
         }
     }
 
     // MARK: - 子视图
 
-    /// 侧边栏列
+    /// 左侧栏列
     private var sidebarColumn: some View {
         UnifiedSidebar(sidebarVisibility: $sidebarVisibility)
     }
 
-    /// 中间栏和详情栏（嵌套 HSplitView）
+    /// 右侧栏和详情栏（嵌套 HSplitView）
     private var middleAndDetailColumns: some View {
         let middleViews = pluginProvider.getMiddleViews()
 
         return Group {
             if middleViews.isEmpty {
-                // 如果没有中间栏视图，直接显示详情栏
+                // 如果没有右侧栏视图，直接显示详情栏
                 detailColumn
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                // 有中间栏时，使用 HSplitView 分隔
+                // 有右侧栏时，使用 HSplitView 分隔
                 HSplitView {
-                    // 第二栏：中间栏
-                    middleColumn(middleViews: middleViews)
-                        .frame(minWidth: 200, idealWidth: 300)
-
-                    // 第三栏：详情栏
+                    // 第二栏：详情栏
                     detailColumn
                         .frame(minWidth: 200, idealWidth: 300)
-                        .frame(maxHeight: .infinity)
+
+                    // 第三栏：右侧栏
+                    middleColumn(middleViews: middleViews)
+                        .frame(minWidth: 200, idealWidth: 300)
                 }
                 .id("agentModeMiddleDetailHSplitView")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -70,7 +69,7 @@ struct AgentModeContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// 中间栏
+    /// 右侧栏
     private func middleColumn(middleViews: [AnyView]) -> some View {
         VStack(spacing: 0) {
             // 修复：使用稳定 ID 而不是 offset，避免 AttributeGraph 崩溃
