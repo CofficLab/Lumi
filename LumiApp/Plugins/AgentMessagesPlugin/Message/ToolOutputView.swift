@@ -3,47 +3,14 @@ import SwiftUI
 /// 增强版工具输出视图 - 带有更多交互功能
 struct ToolOutputView: View {
     let content: String
-    let toolType: ToolType?
     private let summaryTextCached: String
     private let lineCountCached: Int
     @State private var isExpanded: Bool = false
     @State private var isCopied: Bool = false
     @State private var displayedContent: String = ""
 
-    enum ToolType: String, CaseIterable {
-        case shell = "Shell"
-        case readFile = "Read File"
-        case writeFile = "Write File"
-        case listDirectory = "List Directory"
-        case agent = "Agent"
-        case unknown = "Tool"
-
-        var icon: String {
-            switch self {
-            case .shell: return "terminal"
-            case .readFile: return "doc.text"
-            case .writeFile: return "doc.badge.plus"
-            case .listDirectory: return "folder"
-            case .agent: return "cpu"
-            case .unknown: return "wrench.and.screwdriver"
-            }
-        }
-
-        var color: Color {
-            switch self {
-            case .shell: return .green
-            case .readFile: return .blue
-            case .writeFile: return .orange
-            case .listDirectory: return .purple
-            case .agent: return .cyan
-            case .unknown: return .gray
-            }
-        }
-    }
-
-    init(content: String, toolType: ToolType?) {
+    init(content: String) {
         self.content = content
-        self.toolType = toolType
 
         // 这些计算在列表滚动/展开折叠时会被频繁触发，预先计算并缓存，避免大文本导致主线程卡死。
         self.summaryTextCached = ToolOutputView.makeSummaryText(from: content)
@@ -70,31 +37,19 @@ struct ToolOutputView: View {
             }
         }
         .enhancedToolCardStyle()
-        .onAppear {
-            // 默认不渲染大段内容，避免列表初次渲染/滚动时的峰值
-            if displayedContent.isEmpty {
-                displayedContent = ""
-            }
-        }
     }
 
     // MARK: - Tool Output Header
 
     private var toolOutputHeader: some View {
         HStack(spacing: 8) {
-            // 工具类型图标
-            if let toolType = toolType {
-                Image(systemName: toolType.icon)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(toolType.color)
-                    .frame(width: 20, height: 20)
-                    .background(toolType.color.opacity(0.15))
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
-            } else {
-                Image(systemName: "gearshape.2.fill")
-                    .font(.system(size: 11))
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-            }
+            // 工具类型图标（统一样式）
+            Image(systemName: "gearshape.2.fill")
+                .font(.system(size: 11))
+                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                .frame(width: 20, height: 20)
+                .background(DesignTokens.Color.semantic.textTertiary.opacity(0.15))
+                .clipShape(RoundedRectangle(cornerRadius: 4))
 
             // 摘要文本
             Text(summaryTextCached)
@@ -261,8 +216,8 @@ private extension View {
 
 extension ToolOutputView {
     /// 从消息创建工具输出视图
-    init(message: ChatMessage, toolType: ToolType? = nil) {
-        self.init(content: message.content, toolType: toolType ?? .unknown)
+    init(message: ChatMessage) {
+        self.init(content: message.content)
     }
 }
 
@@ -270,14 +225,8 @@ extension ToolOutputView {
 
 #Preview("Simple Output") {
     VStack(alignment: .leading, spacing: 12) {
-        ToolOutputView(
-            content: "Successfully completed operation",
-            toolType: .shell
-        )
-        ToolOutputView(
-            content: "Error: File not found",
-            toolType: .readFile
-        )
+        ToolOutputView(content: "Successfully completed operation")
+        ToolOutputView(content: "Error: File not found")
     }
     .padding()
     .frame(width: 600)
@@ -292,8 +241,7 @@ extension ToolOutputView {
             Path: /Users/angel/Code/Coffic/Lumi
             Files: 142
             Size: 2.3 GB
-            """,
-            toolType: .listDirectory
+            """
         )
 
         ToolOutputView(
@@ -305,26 +253,11 @@ extension ToolOutputView {
                     Text("Hello, World!")
                 }
             }
-            """,
-            toolType: .readFile
+            """
         )
     }
     .padding()
     .frame(width: 600)
-    .background(Color.black)
-}
-
-#Preview("All Tool Types") {
-    VStack(alignment: .leading, spacing: 12) {
-        ForEach(ToolOutputView.ToolType.allCases, id: \.self) { type in
-            ToolOutputView(
-                content: "Example output for \(type.rawValue)",
-                toolType: type
-            )
-        }
-    }
-    .padding()
-    .frame(width: 600, height: 500)
     .background(Color.black)
 }
 
@@ -360,8 +293,7 @@ extension ToolOutputView {
         8. BrewManagerPlugin
         9. ClipboardManagerPlugin
         10. DatabaseManagerPlugin
-        """,
-        toolType: .listDirectory
+        """
     )
     .padding()
     .frame(width: 600)

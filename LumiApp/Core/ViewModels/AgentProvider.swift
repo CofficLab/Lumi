@@ -53,9 +53,6 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     /// 工具服务
     let toolService: ToolService
 
-    /// Tools ViewModel
-    let toolsViewModel: ToolsViewModel
-
     /// 聊天历史服务
     let chatHistoryService: ChatHistoryService
 
@@ -299,7 +296,6 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         promptService: PromptService,
         registry: ProviderRegistry,
         toolService: ToolService,
-        toolsViewModel: ToolsViewModel,
         chatHistoryService: ChatHistoryService,
         messageViewModel: MessagePendingViewModel,
         conversationViewModel: ConversationViewModel,
@@ -317,7 +313,6 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         self.promptService = promptService
         self.registry = registry
         self.toolService = toolService
-        self.toolsViewModel = toolsViewModel
         self.chatHistoryService = chatHistoryService
         self.messageViewModel = messageViewModel
         self.conversationViewModel = conversationViewModel

@@ -74,19 +74,6 @@ actor AgentWorkerToolsPlugin: SuperPlugin {
             ),
         ]
     }
-
-    @MainActor
-    func toolPresentationDescriptors() -> [ToolPresentationDescriptor] {
-        [
-            .init(
-                toolName: CreateAndAssignTaskTool.toolName,
-                displayName: "智能助手",
-                emoji: "🧩",
-                category: .agent,
-                order: 0
-            )
-        ]
-    }
 }
 
 @MainActor

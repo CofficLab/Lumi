@@ -54,10 +54,7 @@ struct AssistantMessage: View, SuperLog {
                 // 助手角色下的工具输出消息：使用工具视图渲染
                 VStack(alignment: .leading, spacing: 4) {
                     RoleLabel.tool
-                    ToolOutputView(
-                        message: message,
-                        toolType: .unknown
-                    )
+                    ToolOutputView(message: message)
                 }
             } else {
                 VStack(alignment: .leading, spacing: 4) {

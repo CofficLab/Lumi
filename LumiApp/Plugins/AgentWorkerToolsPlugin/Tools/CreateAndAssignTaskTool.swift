@@ -4,7 +4,6 @@ import OSLog
 
 /// Manager 专用工具：创建 Worker 并分配任务
 struct CreateAndAssignTaskTool: AgentTool, SuperLog {
-    nonisolated static let emoji = "🧩"
     nonisolated static let verbose = true
 
     /// 工具名称静态常量

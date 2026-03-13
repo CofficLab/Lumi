@@ -7,6 +7,33 @@ struct FilePreviewView: View {
     @EnvironmentObject var agentProvider: AgentProvider
     @EnvironmentObject var projectViewModel: ProjectViewModel
 
+    /// 判断当前选择的文件是否为可预览的类型
+    private var isPreviewableFile: Bool {
+        guard let url = projectViewModel.selectedFileURL else { return false }
+        let fileName = url.lastPathComponent
+        let fileExtension = url.pathExtension.lowercased()
+
+        // 首先检查是否是 Git 配置文件（通过完整文件名判断）
+        if SupportedFileType.isPreviewable(fileName: fileName) {
+            return true
+        }
+
+        // 然后通过扩展名判断
+        return SupportedFileType.isPreviewable(fileExtension)
+    }
+
+    /// 获取当前文件扩展名
+    private var fileExtension: String {
+        guard let url = projectViewModel.selectedFileURL else { return "" }
+        return url.pathExtension.lowercased()
+    }
+
+    /// 获取当前文件完整名称
+    private var fileName: String {
+        guard let url = projectViewModel.selectedFileURL else { return "" }
+        return url.lastPathComponent
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // 标题栏
@@ -16,9 +43,15 @@ struct FilePreviewView: View {
                 .background(Color.white.opacity(0.1))
 
             // 文件预览内容
-            filePreviewContent
-
-            Spacer()
+            if projectViewModel.isFileSelected {
+                if isPreviewableFile {
+                    filePreviewContent
+                } else {
+                    FilePreviewUnsupportedView(fileName: "\(projectViewModel.selectedFileURL?.lastPathComponent ?? "")")
+                }
+            } else {
+                FilePreviewEmptyStateView()
+            }
         }
         .padding(.vertical, 8)
         .background(DesignTokens.Material.glassThick)
@@ -88,28 +121,11 @@ struct FilePreviewView: View {
     }
 
     private var fileContentSection: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            // 内容标签
-            HStack {
-                Text("内容")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-
-                Spacer()
-
-                // 字符数统计
-                Text("\(projectViewModel.selectedFileContent.count) 字符")
-                    .font(.system(size: 9))
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-            }
-
-            // 文件内容
-            Text(projectViewModel.selectedFileContent)
-                .font(.system(size: 9, design: .monospaced))
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                .lineSpacing(2)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
+        FileContentSectionView(
+            content: projectViewModel.selectedFileContent,
+            fileExtension: fileExtension,
+            fileName: fileName
+        )
     }
 }
 

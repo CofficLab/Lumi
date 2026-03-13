@@ -102,23 +102,3 @@ extension AgentTool {
         nil
     }
 }
-
-/// 工具参数定义辅助结构
-///
-/// 用于更方便地定义工具参数。
-struct ToolParam {
-    /// 参数类型
-    ///
-    /// JSON Schema 类型："string", "number", "boolean", "object", "array"
-    let type: String
-    
-    /// 参数描述
-    ///
-    /// 说明参数的用途和含义
-    let description: String
-    
-    /// 是否必需
-    ///
-    /// true 表示调用时必须提供此参数
-    let required: Bool
-}

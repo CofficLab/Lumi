@@ -145,7 +145,12 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
             // 添加请求头
             logMessage += "📋 请求头：\n"
             for (key, value) in headers {
-                logMessage += "  - \(key): \(value)\n"
+                // 隐藏敏感信息（以 "key" 结尾的字段）
+                if key.lowercased().hasSuffix("key") {
+                    logMessage += "  - \(key): ***\n"
+                } else {
+                    logMessage += "  - \(key): \(value)\n"
+                }
             }
             
             os_log("\(logMessage)")

@@ -66,7 +66,6 @@ final class WindowViewContainer: ObservableObject {
             promptService: services.promptService,
             registry: services.providerRegistry,
             toolService: services.toolService,
-            toolsViewModel: services.toolsViewModel,
             chatHistoryService: chatHistoryService,
             messageViewModel: messageViewModel,
             conversationViewModel: conversationViewModel,

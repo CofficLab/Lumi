@@ -24,6 +24,7 @@ struct AgentModeContentView: View {
             // 第二栏 + 第三栏：嵌套 HSplitView
             middleAndDetailColumns
         }
+        .id("agentModeHSplitView")
         .ignoresSafeArea()
         .task {
             if Self.verbose {
@@ -53,11 +54,13 @@ struct AgentModeContentView: View {
                 HSplitView {
                     // 第二栏：中间栏
                     middleColumn(middleViews: middleViews)
-                        .frame(minWidth: 200, idealWidth: 300, maxWidth: 600)
+                        .frame(minWidth: 200, idealWidth: 300)
 
                     // 第三栏：详情栏
                     detailColumn
+                        .frame(minWidth: 200, idealWidth: 300)
                 }
+                .id("agentModeMiddleDetailHSplitView")
             }
         }
         .ignoresSafeArea()

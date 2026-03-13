@@ -12,7 +12,7 @@ actor FilePreviewPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "📄"
 
     /// Whether to enable this plugin
-    nonisolated static let enable = false
+    nonisolated static let enable = true
 
     /// Whether to enable verbose log output
     nonisolated static let verbose = false
@@ -30,7 +30,7 @@ actor FilePreviewPlugin: SuperPlugin, SuperLog {
     static let iconName: String = "doc.fill"
 
     /// Whether it is configurable
-    static let isConfigurable: Bool = false
+    static let isConfigurable: Bool = true
 
     /// Registration order
     static var order: Int { 76 }

@@ -8,6 +8,4 @@ extension SuperPlugin {
     @MainActor func agentToolFactories() -> [AnyAgentToolFactory] { [] }
 
     @MainActor func workerAgentDescriptors() -> [WorkerAgentDescriptor] { [] }
-
-    @MainActor func toolPresentationDescriptors() -> [ToolPresentationDescriptor] { [] }
 }

@@ -100,7 +100,7 @@ struct MessageWithToolCallsView: View {
 
                                 // toolOutputMessages.id 理论上应唯一，但在历史合并/重建时可能出现重复，导致 SwiftUI 未定义行为（展开/折叠卡死）。
                                 ForEach(Array(toolOutputMessages.enumerated()), id: \.offset) { _, output in
-                                    ToolOutputView(message: output, toolType: toolType(for: output))
+                                    ToolOutputView(message: output)
                                 }
                             }
                         }
@@ -140,13 +140,7 @@ struct MessageWithToolCallsView: View {
         return "正在执行 \(toolCalls.count) 个工具："
     }
 
-    private func toolType(for output: ChatMessage) -> ToolOutputView.ToolType? {
-        guard let toolCallID = output.toolCallID,
-              let toolCall = message.toolCalls?.first(where: { $0.id == toolCallID }) else {
-            return .unknown
-        }
-        return toolCall.toolType
-    }
+
 }
 
 #Preview("Assistant with Tool Calls") {
