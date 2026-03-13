@@ -761,12 +761,20 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
 
         // 从 UserDefaults 获取 API Key
         let apiKey = UserDefaults.standard.string(forKey: providerType.apiKeyStorageKey) ?? ""
-
-        return LLMConfig(
+        
+        var config = LLMConfig(
             apiKey: apiKey,
             model: currentModel,
             providerId: selectedProviderId
         )
+        
+        // 对于支持 Plan 的供应商（目前仅 Aliyun），加载已保存的 Plan ID
+        if providerType.id == AliyunProvider.id {
+            let storedPlanId = UserDefaults.standard.string(forKey: AliyunProvider.planStorageKey)
+            config.planId = storedPlanId ?? AliyunProvider.defaultPlanId
+        }
+        
+        return config
     }
 
     /// 获取指定供应商的 API Key

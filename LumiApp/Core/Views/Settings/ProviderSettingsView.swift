@@ -12,12 +12,15 @@ struct ProviderSettingsView: View, SuperLog {
 
     /// 当前选中的供应商 ID
     @State private var selectedProviderId: String = "anthropic"
-
+    
     /// API Key 输入
     @State private var apiKey: String = ""
-
+    
     /// 选中的模型
     @State private var selectedModel: String = ""
+    
+    /// 选中的 Plan（仅对支持 Plan 的供应商生效，例如阿里云）
+    @State private var selectedPlanId: String?
 
     // MARK: - Environment
 
@@ -38,6 +41,11 @@ struct ProviderSettingsView: View, SuperLog {
     private var selectedProviderType: (any SuperLLMProvider.Type)? {
         registry.providerType(forId: selectedProviderId)
     }
+    
+    /// 当前供应商可用的 Plan 列表
+    private var availablePlans: [ProviderPlan] {
+        registry.plans(forProviderId: selectedProviderId)
+    }
 
     // MARK: - Body
 
@@ -49,6 +57,11 @@ struct ProviderSettingsView: View, SuperLog {
 
                 // 供应商信息卡片
                 providerInfoCard
+                
+                // Plan 选择（仅对支持 Plan 的供应商显示）
+                if !availablePlans.isEmpty {
+                    planSection
+                }
 
                 // API Key 配置
                 apiKeySection
@@ -167,17 +180,54 @@ extension ProviderSettingsView {
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
             VStack(spacing: DesignTokens.Spacing.xs) {
-                if let provider = selectedProvider {
-                    ForEach(provider.availableModels, id: \.self) { model in
-                        ModelRow(
-                            model: model,
-                            isDefault: selectedModel == model,
-                            isSelected: selectedModel == model
-                        ) {
-                            selectedModel = model
-                            saveModel()
-                        }
+                let models: [String] = {
+                    guard let provider = selectedProvider else { return [] }
+                    if let planId = selectedPlanId,
+                       let plan = availablePlans.first(where: { $0.id == planId }) {
+                        return plan.availableModels
+                    } else {
+                        return provider.availableModels
                     }
+                }()
+
+                ForEach(models, id: \.self) { model in
+                    ModelRow(
+                        model: model,
+                        isDefault: selectedModel == model,
+                        isSelected: selectedModel == model
+                    ) {
+                        selectedModel = model
+                        saveModel()
+                    }
+                }
+            }
+        }
+    }
+
+    /// Plan 选择区域 - 显示当前供应商支持的所有可用 Plan
+    private var planSection: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+            Text("Plan")
+                .font(DesignTokens.Typography.callout)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                ForEach(availablePlans) { plan in
+                    Button {
+                        selectedPlanId = plan.id
+                        savePlan()
+                    } label: {
+                        Text(plan.displayName)
+                            .font(DesignTokens.Typography.caption1)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(selectedPlanId == plan.id ? DesignTokens.Color.semantic.primary : Color.white.opacity(0.05))
+                            )
+                            .foregroundColor(selectedPlanId == plan.id ? .white : DesignTokens.Color.semantic.textSecondary)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -194,6 +244,18 @@ extension ProviderSettingsView {
         apiKey = UserDefaults.standard.string(forKey: providerType.apiKeyStorageKey) ?? ""
         selectedModel = UserDefaults.standard.string(forKey: providerType.modelStorageKey)
             ?? providerType.defaultModel
+        
+        // 加载 Plan（目前仅 Aliyun 使用）
+        if providerType.id == AliyunProvider.id {
+            let storedPlanId = UserDefaults.standard.string(forKey: AliyunProvider.planStorageKey)
+            let effectivePlanId = storedPlanId ?? AliyunProvider.defaultPlanId
+            selectedPlanId = effectivePlanId
+            if storedPlanId == nil {
+                UserDefaults.standard.set(effectivePlanId, forKey: AliyunProvider.planStorageKey)
+            }
+        } else {
+            selectedPlanId = nil
+        }
     }
 
     /// 保存 API Key 到 UserDefaults
@@ -206,6 +268,14 @@ extension ProviderSettingsView {
     private func saveModel() {
         guard let providerType = selectedProviderType else { return }
         UserDefaults.standard.set(selectedModel, forKey: providerType.modelStorageKey)
+    }
+    
+    /// 保存选中的 Plan 到 UserDefaults（目前仅 Aliyun 使用）
+    private func savePlan() {
+        guard let providerType = selectedProviderType else { return }
+        guard providerType.id == AliyunProvider.id else { return }
+        guard let planId = selectedPlanId else { return }
+        UserDefaults.standard.set(planId, forKey: AliyunProvider.planStorageKey)
     }
 }
 

@@ -155,11 +155,18 @@ class LLMService: SuperLog, @unchecked Sendable {
             os_log(.error, "\(self.t)未找到供应商：\(config.providerId)")
             throw NSError(domain: "LLMService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Provider not found: \(config.providerId)"])
         }
-
-        // 构建 API URL
-        guard let url = URL(string: provider.baseURL) else {
-            os_log(.error, "\(self.t)无效的 URL: \(provider.baseURL)")
-            throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL: \(provider.baseURL)"])
+        
+        // 构建 API URL（支持按 Plan 选择 Base URL）
+        let baseURLString: String
+        if config.providerId == AliyunProvider.id {
+            baseURLString = AliyunProvider.baseURL(for: config.planId)
+        } else {
+            baseURLString = provider.baseURL
+        }
+        
+        guard let url = URL(string: baseURLString) else {
+            os_log(.error, "\(self.t)无效的 URL: \(baseURLString)")
+            throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL: \(baseURLString)"])
         }
 
         // 构建请求体
@@ -284,11 +291,18 @@ class LLMService: SuperLog, @unchecked Sendable {
             os_log(.error, "\(self.t)未找到供应商：\(config.providerId)")
             throw NSError(domain: "LLMService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Provider not found: \(config.providerId)"])
         }
-
-        // 构建 API URL
-        guard let url = URL(string: provider.baseURL) else {
-            os_log(.error, "\(self.t)无效的 URL: \(provider.baseURL)")
-            throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL: \(provider.baseURL)"])
+        
+        // 构建 API URL（支持按 Plan 选择 Base URL）
+        let baseURLString: String
+        if config.providerId == AliyunProvider.id {
+            baseURLString = AliyunProvider.baseURL(for: config.planId)
+        } else {
+            baseURLString = provider.baseURL
+        }
+        
+        guard let url = URL(string: baseURLString) else {
+            os_log(.error, "\(self.t)无效的 URL: \(baseURLString)")
+            throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL: \(baseURLString)"])
         }
 
         // 构建流式请求体

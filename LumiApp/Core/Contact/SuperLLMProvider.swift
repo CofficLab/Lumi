@@ -39,6 +39,12 @@ protocol SuperLLMProvider: Sendable {
     ///
     /// 简短描述供应商的特点和优势。
     static var description: String { get }
+    
+    /// 供应商支持的计划列表（可选）
+    ///
+    /// 对于大多数供应商，此列表为空；仅在如阿里云这类有 Plan 概念的供应商中使用。
+    /// 默认实现由协议扩展提供空数组，避免非 Plan 供应商做额外适配。
+    static var plans: [ProviderPlan] { get }
 
     // MARK: - Configuration
 
@@ -149,6 +155,11 @@ protocol SuperLLMProvider: Sendable {
     ///
     /// 用于日志输出时区分不同供应商的日志。
     static var logEmoji: String { get }
+}
+
+// 默认实现：大多数供应商不支持 Plan
+extension SuperLLMProvider {
+    static var plans: [ProviderPlan] { [] }
 }
 
 // MARK: - Stream Event Type
