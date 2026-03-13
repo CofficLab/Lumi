@@ -2,9 +2,9 @@ import SwiftUI
 import Foundation
 
 /// 思考状态 ViewModel
-/// 专门管理思考状态和思考文本，避免因 AgentProvider 其他状态变化导致不必要的视图重新渲染
+/// 专门管理思考状态和思考文本，避免因 AgentVM 其他状态变化导致不必要的视图重新渲染
 @MainActor
-final class ThinkingStateViewModel: ObservableObject {
+final class ThinkingStateVM: ObservableObject {
     /// 是否正在思考（用于显示思考状态）
     @Published public fileprivate(set) var isThinking: Bool = false
 

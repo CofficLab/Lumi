@@ -8,7 +8,7 @@ import SwiftUI
 ///
 /// `RootView` 现在支持多窗口模式，每个窗口有自己独立的 ViewModel 实例。
 /// 共享的服务层（如 LLMService、ModelContainer）仍然保持单例，
-/// 但窗口级的 ViewModel（如 AgentProvider、MessageViewModel）是每个窗口独立的。
+/// 但窗口级的 ViewModel（如 AgentVM、MessageViewModel）是每个窗口独立的。
 ///
 /// ## 使用方式
 ///
@@ -42,7 +42,7 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(container.appProvider)
             .environmentObject(container.projectViewModel)
             .environmentObject(container.providerRegistry)
-            .environmentObject(PluginProvider.shared)
+            .environmentObject(PluginVM.shared)
             // 窗口级 ViewModel（每个窗口独立）
             .environmentObject(windowContainer.agentProvider)
             .environmentObject(windowContainer.conversationViewModel)
@@ -101,26 +101,26 @@ final class RootViewContainer: ObservableObject {
         let slashCommandService: SlashCommandService
         let toolService: ToolService
         let providerRegistry: ProviderRegistry
-        let appProvider: GlobalProvider
+        let appProvider: GlobalVM
         let projectViewModel: ProjectViewModel
-        let commandSuggestionViewModel: CommandSuggestionViewModel
+        let commandSuggestionViewModel: CommandSuggestionVM
     }
 
     // MARK: - ViewModel
 
-    let appProvider: GlobalProvider
+    let appProvider: GlobalVM
     let projectViewModel: ProjectViewModel
-    let commandSuggestionViewModel: CommandSuggestionViewModel
-    let messageViewModel: MessagePendingViewModel
+    let commandSuggestionViewModel: CommandSuggestionVM
+    let messageViewModel: MessagePendingVM
     let conversationViewModel: ConversationViewModel
     let messageSenderViewModel: MessageSenderViewModel
-    let agentProvider: AgentProvider
-    let depthWarningViewModel: DepthWarningViewModel
-    let processingStateViewModel: ProcessingStateViewModel
-    let errorStateViewModel: ErrorStateViewModel
-    let permissionRequestViewModel: PermissionRequestViewModel
-    let thinkingStateViewModel: ThinkingStateViewModel
-    let titleGenerationViewModel: TitleGenerationViewModel
+    let agentProvider: AgentVM
+    let depthWarningViewModel: DepthWarningVM
+    let processingStateViewModel: ProcessingStateVM
+    let errorStateViewModel: ErrorStateVM
+    let permissionRequestViewModel: PermissionRequestVM
+    let thinkingStateViewModel: ThinkingStateVM
+    let titleGenerationViewModel: TitleGenerationVM
 
     // MARK: - 初始化
 
@@ -155,12 +155,12 @@ final class RootViewContainer: ObservableObject {
         // ========================================
 
         // 初始化状态 ViewModels
-        self.depthWarningViewModel = DepthWarningViewModel()
-        self.processingStateViewModel = ProcessingStateViewModel()
-        self.errorStateViewModel = ErrorStateViewModel()
-        self.permissionRequestViewModel = PermissionRequestViewModel()
-        self.thinkingStateViewModel = ThinkingStateViewModel()
-        self.titleGenerationViewModel = TitleGenerationViewModel()
+        self.depthWarningViewModel = DepthWarningVM()
+        self.processingStateViewModel = ProcessingStateVM()
+        self.errorStateViewModel = ErrorStateVM()
+        self.permissionRequestViewModel = PermissionRequestVM()
+        self.thinkingStateViewModel = ThinkingStateVM()
+        self.titleGenerationViewModel = TitleGenerationVM()
 
         // 初始化聊天历史服务（依赖 LLMService）
         let chatHistoryService = ChatHistoryService(
@@ -170,12 +170,12 @@ final class RootViewContainer: ObservableObject {
         )
 
         // 初始化基础 ViewModel
-        self.appProvider = GlobalProvider()
+        self.appProvider = GlobalVM()
         self.projectViewModel = ProjectViewModel(contextService: contextService)
-        self.commandSuggestionViewModel = CommandSuggestionViewModel(slashCommandService: slashCommandService)
+        self.commandSuggestionViewModel = CommandSuggestionVM(slashCommandService: slashCommandService)
 
         // 创建 MessageViewModel
-        self.messageViewModel = MessagePendingViewModel(chatHistoryService: chatHistoryService)
+        self.messageViewModel = MessagePendingVM(chatHistoryService: chatHistoryService)
 
         // 创建 ConversationViewModel
         self.conversationViewModel = ConversationViewModel(
@@ -191,14 +191,14 @@ final class RootViewContainer: ObservableObject {
         let toolExecutionService = ToolExecutionService(toolService: toolService)
 
         // 初始化对话轮次 ViewModel
-        let conversationTurnViewModel = ConversationTurnViewModel(
+        let conversationTurnViewModel = ConversationTurnVM(
             llmService: llmService,
             toolExecutionService: toolExecutionService,
             promptService: promptService
         )
 
-        // 初始化 AgentProvider
-        self.agentProvider = AgentProvider(
+        // 初始化 AgentVM
+        self.agentProvider = AgentVM(
             promptService: promptService,
             registry: providerRegistry,
             toolService: toolService,

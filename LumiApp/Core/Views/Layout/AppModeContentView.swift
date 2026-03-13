@@ -5,8 +5,8 @@ import SwiftUI
 struct AppModeContentView: View {
     @Binding var sidebarVisibility: Bool
 
-    @EnvironmentObject var app: GlobalProvider
-    @EnvironmentObject var pluginProvider: PluginProvider
+    @EnvironmentObject var app: GlobalVM
+    @EnvironmentObject var pluginProvider: PluginVM
 
     var body: some View {
         HStack(spacing: 0) {
@@ -33,7 +33,7 @@ struct AppModeContentView: View {
     private func detailContent() -> some View {
         VStack(spacing: 0) {
             // 显示当前选中的导航内容
-            app.getCurrentNavigationView(pluginProvider: pluginProvider)
+            app.getCurrentNavigationView(pluginVM: pluginProvider)
         }
         .frame(maxHeight: .infinity)
     }

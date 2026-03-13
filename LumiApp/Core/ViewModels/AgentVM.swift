@@ -11,25 +11,25 @@ enum ConversationRuntimeState: String {
     case error
 }
 
-/// Agent 模式提供者，管理 Agent 模式下的核心状态和服务
+/// Agent 模式 VM，管理 Agent 模式下的核心状态和服务
 ///
 /// ## 设计原则
 ///
-/// `AgentProvider` 作为协调者，负责管理需要多个 ViewModel 协作的复杂操作。
+/// `AgentVM` 作为协调者，负责管理需要多个 ViewModel 协作的复杂操作。
 /// 如果某个操作只涉及单个 ViewModel，应该由该 ViewModel 自己处理；
-/// 如果某个操作需要协调多个 ViewModel，则应该由 `AgentProvider` 提供。
+/// 如果某个操作需要协调多个 ViewModel，则应该由 `AgentVM` 提供。
 ///
 /// ## 职责划分
 ///
 /// - **ConversationViewModel**: 只维护 `selectedConversationId`，管理会话的增删改查
 /// - **MessageViewModel**: 只管理消息列表的加载、追加、更新
-/// - **AgentProvider**: 协调多个 ViewModel，处理需要协作的复杂业务逻辑
+/// - **AgentVM**: 协调多个 ViewModel，处理需要协作的复杂业务逻辑
 ///
 /// ## 示例
 ///
 /// ```swift
-/// // 新建会话 - 需要协调多个 VM，由 AgentProvider 处理
-/// await agentProvider.createNewConversation(projectId: projectId)
+/// // 新建会话 - 需要协调多个 VM，由 AgentVM 处理
+/// await agentVM.createNewConversation(projectId: projectId)
 ///
 /// // 选择会话 - 只涉及 ConversationViewModel，直接调用
 /// conversationViewModel.setSelectedConversation(id)
@@ -38,7 +38,7 @@ enum ConversationRuntimeState: String {
 /// messageViewModel.loadMessages(for: conversation)
 /// ```
 @MainActor
-final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
+final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     nonisolated static let emoji = "🤖"
     nonisolated static let verbose = false
 
@@ -62,7 +62,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     // MARK: - ViewModel 引用
 
     /// 消息 ViewModel
-    let messageViewModel: MessagePendingViewModel
+    let messageViewModel: MessagePendingVM
 
     /// 会话 ViewModel
     let conversationViewModel: ConversationViewModel
@@ -74,28 +74,28 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
     let projectViewModel: ProjectViewModel
 
     /// 对话轮次 ViewModel
-    let conversationTurnViewModel: ConversationTurnViewModel
+    let conversationTurnViewModel: ConversationTurnVM
 
     /// Slash 命令服务
     let slashCommandService: SlashCommandService
 
     /// 深度警告 ViewModel
-    let depthWarningViewModel: DepthWarningViewModel
+    let depthWarningViewModel: DepthWarningVM
 
     /// 处理状态 ViewModel
-    let processingStateViewModel: ProcessingStateViewModel
+    let processingStateViewModel: ProcessingStateVM
 
     /// 错误状态 ViewModel
-    let errorStateViewModel: ErrorStateViewModel
+    let errorStateViewModel: ErrorStateVM
 
     /// 权限请求 ViewModel
-    let permissionRequestViewModel: PermissionRequestViewModel
+    let permissionRequestViewModel: PermissionRequestVM
 
     /// 思考状态 ViewModel
-    let thinkingStateViewModel: ThinkingStateViewModel
+    let thinkingStateViewModel: ThinkingStateVM
 
     /// 标题生成 ViewModel
-    let titleGenerationViewModel: TitleGenerationViewModel
+    let titleGenerationViewModel: TitleGenerationVM
 
     // MARK: - 订阅管理
 
@@ -280,7 +280,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
     // MARK: - 初始化
 
-    /// 初始化 AgentProvider
+    /// 初始化 AgentVM
     /// - Parameters:
     ///   - promptService: 提示词服务
     ///   - registry: 供应商注册表
@@ -297,18 +297,18 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         registry: ProviderRegistry,
         toolService: ToolService,
         chatHistoryService: ChatHistoryService,
-        messageViewModel: MessagePendingViewModel,
+        messageViewModel: MessagePendingVM,
         conversationViewModel: ConversationViewModel,
         messageSenderViewModel: MessageSenderViewModel,
         projectViewModel: ProjectViewModel,
-        conversationTurnViewModel: ConversationTurnViewModel,
+        conversationTurnViewModel: ConversationTurnVM,
         slashCommandService: SlashCommandService,
-        depthWarningViewModel: DepthWarningViewModel,
-        processingStateViewModel: ProcessingStateViewModel,
-        errorStateViewModel: ErrorStateViewModel,
-        permissionRequestViewModel: PermissionRequestViewModel,
-        thinkingStateViewModel: ThinkingStateViewModel,
-        titleGenerationViewModel: TitleGenerationViewModel
+        depthWarningViewModel: DepthWarningVM,
+        processingStateViewModel: ProcessingStateVM,
+        errorStateViewModel: ErrorStateVM,
+        permissionRequestViewModel: PermissionRequestVM,
+        thinkingStateViewModel: ThinkingStateVM,
+        titleGenerationViewModel: TitleGenerationVM
     ) {
         self.promptService = promptService
         self.registry = registry
@@ -327,7 +327,7 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
         self.thinkingStateViewModel = thinkingStateViewModel
         self.titleGenerationViewModel = titleGenerationViewModel
 
-        // runtimeStore 变化需要触发 AgentProvider 刷新（例如会话列表上的 runtimeState 徽标）
+        // runtimeStore 变化需要触发 AgentVM 刷新（例如会话列表上的 runtimeState 徽标）
         runtimeStore.objectWillChange
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
@@ -1146,10 +1146,10 @@ final class AgentProvider: ObservableObject, SuperLog, LLMConfigProvider {
 
     /// 切换到指定项目
     public func switchProjectWithPrompt(to path: String) {
-        // 使用内核的 AgentProvider 执行实际的项目切换
+        // 使用内核的 AgentVM 执行实际的项目切换
         projectViewModel.switchProject(to: path)
 
-        // 更新本地状态（镜像 AgentProvider）
+        // 更新本地状态（镜像 AgentVM）
         let languagePreference = self.languagePreference
 
         Task {

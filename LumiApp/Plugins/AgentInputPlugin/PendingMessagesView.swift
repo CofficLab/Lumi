@@ -21,7 +21,7 @@ struct PendingMessagesView: View, SuperLog {
     /// 数据上下文
     @Environment(\.modelContext) private var modelContext
     /// 智能体提供者
-    @EnvironmentObject var agentProvider: AgentProvider
+    @EnvironmentObject var agentProvider: AgentVM
 
     /// 缓存的会话标题
     @State private var cachedConversationTitle: String?

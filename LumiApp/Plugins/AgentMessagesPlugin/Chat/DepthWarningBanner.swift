@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 深度警告横幅组件
 public struct DepthWarningBanner: View {
-    @EnvironmentObject var depthWarningViewModel: DepthWarningViewModel
+    @EnvironmentObject var depthWarningViewModel: DepthWarningVM
 
     public var body: some View {
         if let warning = depthWarningViewModel.depthWarning {

@@ -2,9 +2,9 @@ import SwiftUI
 import Foundation
 
 /// 处理状态 ViewModel
-/// 专门管理处理状态和心跳时间，避免因 AgentProvider 其他状态变化导致不必要的视图重新渲染
+/// 专门管理处理状态和心跳时间，避免因 AgentVM 其他状态变化导致不必要的视图重新渲染
 @MainActor
-final class ProcessingStateViewModel: ObservableObject {
+final class ProcessingStateVM: ObservableObject {
     enum Phase: String, Sendable {
         case idle
         case sending

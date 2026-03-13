@@ -3,7 +3,7 @@ import Foundation
 
 /// 深度警告 ViewModel
 @MainActor
-final class DepthWarningViewModel: ObservableObject {
+final class DepthWarningVM: ObservableObject {
     /// 当前深度警告
     @Published public fileprivate(set) var depthWarning: DepthWarning?
 

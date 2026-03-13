@@ -11,10 +11,10 @@ struct ChatMessagesView: View, SuperLog {
     @EnvironmentObject var conversationViewModel: ConversationViewModel
 
     /// 权限请求 ViewModel
-    @EnvironmentObject var permissionRequestViewModel: PermissionRequestViewModel
+    @EnvironmentObject var permissionRequestViewModel: PermissionRequestVM
 
     /// 智能体提供者
-    @EnvironmentObject var agentProvider: AgentProvider
+    @EnvironmentObject var agentProvider: AgentVM
 
     /// 当前选中的会话 ID
     private var selectedConversationId: UUID? {

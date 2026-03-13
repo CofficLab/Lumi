@@ -8,7 +8,7 @@ import ObjectiveC.runtime
 /// 使用 Objective‑C Runtime 扫描所有以 `LLMPlugin` 结尾的类，
 /// 找出实现了 `SuperLLMProviderPlugin` 协议的类型，并调用其
 /// `registerProviders(to:)` 方法把具体的 LLM 供应商类型注册到 `ProviderRegistry`。
-enum LLMPluginsProvider: SuperLog {
+enum LLMPluginsVM: SuperLog {
 
     nonisolated static let emoji = "🧩"
     nonisolated static let verbose = true

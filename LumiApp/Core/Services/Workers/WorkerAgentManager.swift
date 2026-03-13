@@ -80,7 +80,7 @@ actor WorkerAgentManager: SuperLog {
 
     private func resolveDescriptor(typeId: String) async -> WorkerAgentDescriptor? {
         await MainActor.run {
-            PluginProvider.shared.getWorkerAgentDescriptors().first { $0.id == typeId }
+            PluginVM.shared.getWorkerAgentDescriptors().first { $0.id == typeId }
         }
     }
 }

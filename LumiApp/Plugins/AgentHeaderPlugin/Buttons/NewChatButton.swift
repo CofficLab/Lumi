@@ -12,7 +12,7 @@ struct NewChatButton: View, SuperLog {
     nonisolated static let verbose = false
 
     /// 环境对象：Agent 提供者
-    @EnvironmentObject var agentProvider: AgentProvider
+    @EnvironmentObject var agentProvider: AgentVM
 
     /// 环境对象：项目 ViewModel
     @EnvironmentObject var projectViewModel: ProjectViewModel

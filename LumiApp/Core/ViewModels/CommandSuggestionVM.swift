@@ -13,7 +13,7 @@ struct CommandSuggestion: Identifiable, Equatable {
 
 /// 命令建议视图模型 - 提供斜杠命令自动补全功能
 @MainActor
-class CommandSuggestionViewModel: ObservableObject, SuperLog {
+class CommandSuggestionVM: ObservableObject, SuperLog {
     nonisolated static let verbose = true
     nonisolated static let emoji = "🔍"
     

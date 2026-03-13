@@ -10,8 +10,8 @@ struct ContentView: View {
     /// 是否启用详细日志输出
     nonisolated static let verbose = false
 
-    @EnvironmentObject var app: GlobalProvider
-    @EnvironmentObject var pluginProvider: PluginProvider
+    @EnvironmentObject var app: GlobalVM
+    @EnvironmentObject var pluginProvider: PluginVM
     @EnvironmentObject var themeManager: MystiqueThemeManager
 
     /// 打开窗口的环境变量
@@ -83,8 +83,8 @@ struct ContentView: View {
 struct ContentViewBody<Content: View>: View {
     @Binding var sidebarVisibility: Bool
     @Binding var columnVisibility: NavigationSplitViewVisibility
-    @ObservedObject var app: GlobalProvider
-    @ObservedObject var pluginProvider: PluginProvider
+    @ObservedObject var app: GlobalVM
+    @ObservedObject var pluginProvider: PluginVM
     @ObservedObject var themeManager: MystiqueThemeManager
     let content: Content
     let openSettings: () -> Void
@@ -95,8 +95,8 @@ struct ContentViewBody<Content: View>: View {
     init(
         sidebarVisibility: Binding<Bool>,
         columnVisibility: Binding<NavigationSplitViewVisibility>,
-        app: GlobalProvider,
-        pluginProvider: PluginProvider,
+        app: GlobalVM,
+        pluginProvider: PluginVM,
         themeManager: MystiqueThemeManager,
         @ViewBuilder content: () -> Content,
         openSettings: @escaping () -> Void,

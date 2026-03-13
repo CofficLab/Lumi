@@ -7,7 +7,7 @@ import SwiftUI
 ///
 /// - 仅存放**不落库**的运行时状态（流式占位、thinking、processing、权限请求、错误、心跳等）。
 /// - 所有状态均以 `conversationId` 为 key 做会话隔离，支持多会话并发与快速切换。
-/// - 由上层协调者（如 `AgentProvider` 或 Coordinator）负责把这些状态投影到各个 UI ViewModel。
+/// - 由上层协调者（如 `AgentVM` 或 Coordinator）负责把这些状态投影到各个 UI ViewModel。
 ///
 /// ## 职责边界
 ///

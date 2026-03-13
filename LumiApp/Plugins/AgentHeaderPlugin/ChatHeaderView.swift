@@ -9,7 +9,7 @@ struct ChatHeaderView: View, SuperLog {
     nonisolated static let emoji = "📇"
     nonisolated static let verbose = true
 
-    @EnvironmentObject var agentProvider: AgentProvider
+    @EnvironmentObject var agentProvider: AgentVM
     @EnvironmentObject var projectViewModel: ProjectViewModel
 
     /// SwiftData 模型上下文

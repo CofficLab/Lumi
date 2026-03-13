@@ -7,7 +7,7 @@ struct MessageToolbarView: View {
     /// 是否显示在助手消息上
     let isAssistantMessage: Bool
     
-    @EnvironmentObject private var agentProvider: AgentProvider
+    @EnvironmentObject private var agentProvider: AgentVM
     @State private var showCopyFeedback = false
     
     var body: some View {

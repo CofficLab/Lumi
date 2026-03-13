@@ -13,9 +13,9 @@ struct HeartbeatIndicator: View, SuperLog {
     nonisolated static let verbose = false
 
     /// 智能体提供者
-    @EnvironmentObject var agentProvider: AgentProvider
+    @EnvironmentObject var agentProvider: AgentVM
     /// 处理状态 ViewModel
-    @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
+    @EnvironmentObject var processingStateViewModel: ProcessingStateVM
     @State private var isAnimating = false
     @State private var pulseScale: CGFloat = 1.0
 

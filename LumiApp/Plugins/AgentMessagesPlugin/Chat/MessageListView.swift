@@ -13,13 +13,13 @@ struct MessageListView: View, SuperLog {
     nonisolated static let pageSize: Int = 10
 
     /// 智能体提供者
-    @EnvironmentObject var agentProvider: AgentProvider
+    @EnvironmentObject var agentProvider: AgentVM
 
     /// 会话管理 ViewModel
     @EnvironmentObject var conversationViewModel: ConversationViewModel
 
     /// 处理状态 ViewModel（用于展示发送/等待首 token/生成中等状态）
-    @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
+    @EnvironmentObject var processingStateViewModel: ProcessingStateVM
 
     /// 当前显示的消息列表
     @State private var messages: [ChatMessage] = []

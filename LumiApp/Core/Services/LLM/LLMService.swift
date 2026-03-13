@@ -67,7 +67,7 @@ class LLMService: SuperLog, @unchecked Sendable {
     init() {
         let registry = ProviderRegistry()
         // 通过 LLM 插件系统注册所有可用供应商
-        LLMPluginsProvider.registerAllProviders(to: registry)
+        LLMPluginsVM.registerAllProviders(to: registry)
         self.registry = registry
         self.llmAPI = LLMAPIService()
         if Self.verbose >= 1 {

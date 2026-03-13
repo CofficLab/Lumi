@@ -2,7 +2,7 @@ import Combine
 import SwiftUI
 
 /// 状态栏图标视图模型
-class StatusBarIconViewModel: ObservableObject {
+class StatusBarIconVM: ObservableObject {
     @Published var isActive: Bool = false
     @Published var activeSources: Set<String> = []
 

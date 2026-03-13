@@ -10,11 +10,11 @@ struct ChatToolbarView: View, SuperLog {
     nonisolated static let verbose = false
 
     /// 智能体提供者
-    @EnvironmentObject var agentProvider: AgentProvider
+    @EnvironmentObject var agentProvider: AgentVM
     @EnvironmentObject var projectViewModel: ProjectViewModel
 
     /// 处理状态 ViewModel
-    @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
+    @EnvironmentObject var processingStateViewModel: ProcessingStateVM
 
     /// 输入框本地状态 ViewModel
     @ObservedObject var inputViewModel: InputViewModel

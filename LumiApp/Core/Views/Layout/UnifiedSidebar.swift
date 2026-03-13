@@ -5,8 +5,8 @@ import SwiftUI
 struct UnifiedSidebar: View {
     @Binding var sidebarVisibility: Bool
 
-    @EnvironmentObject var app: GlobalProvider
-    @EnvironmentObject var pluginProvider: PluginProvider
+    @EnvironmentObject var app: GlobalVM
+    @EnvironmentObject var pluginProvider: PluginVM
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {

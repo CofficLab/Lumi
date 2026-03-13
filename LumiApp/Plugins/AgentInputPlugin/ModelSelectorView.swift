@@ -15,7 +15,7 @@ struct ModelSelectorView: View, SuperLog {
     @Environment(\.dismiss) private var dismiss
 
     /// 智能体提供者
-    @EnvironmentObject var agentProvider: AgentProvider
+    @EnvironmentObject var agentProvider: AgentVM
 
     /// 模型性能统计
     @State private var detailedStats: [String: ModelPerformanceStats] = [:]

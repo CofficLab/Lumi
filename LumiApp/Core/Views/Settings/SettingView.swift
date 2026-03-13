@@ -3,8 +3,8 @@ import SwiftUI
 /// 设置界面视图，包含侧边栏导航和详情区域
 /// 在独立窗口中显示
 struct SettingView: View {
-    /// 插件提供者
-    @EnvironmentObject private var pluginProvider: PluginProvider
+    /// 插件 VM
+    @EnvironmentObject private var pluginProvider: PluginVM
 
     /// 默认显示的标签
     var defaultTab: SettingTab = .about

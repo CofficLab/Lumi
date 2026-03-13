@@ -10,8 +10,8 @@ struct AgentModeContentView: View {
 
     @Binding var sidebarVisibility: Bool
 
-    @EnvironmentObject var app: GlobalProvider
-    @EnvironmentObject var pluginProvider: PluginProvider
+    @EnvironmentObject var app: GlobalVM
+    @EnvironmentObject var pluginProvider: PluginVM
 
     var body: some View {
         VStack(spacing: 0) {

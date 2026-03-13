@@ -53,7 +53,7 @@ final class MessageSendCoordinator {
     func start() {
         task?.cancel()
 
-        let pluginMiddlewares = PluginProvider.shared.getMessageSendMiddlewares()
+        let pluginMiddlewares = PluginVM.shared.getMessageSendMiddlewares()
             .sorted { a, b in
                 if a.order != b.order { return a.order < b.order }
                 return a.id < b.id

@@ -5,8 +5,8 @@ struct PluginSettingsView: View {
     /// 插件设置存储
     private let settingsStore = PluginSettingsStore.shared
 
-    /// 插件提供者
-    @EnvironmentObject var pluginProvider: PluginProvider
+    /// 插件 VM
+    @EnvironmentObject var pluginProvider: PluginVM
 
     /// 插件启用状态
     @State private var pluginStates: [String: Bool] = [:]
