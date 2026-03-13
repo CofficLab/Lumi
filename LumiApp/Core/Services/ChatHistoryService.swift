@@ -51,7 +51,7 @@ struct ModelPerformanceStats {
 /// 聊天历史服务 - 使用 SwiftData 存储对话
 final class ChatHistoryService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "💾"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     private let modelContainer: ModelContainer
     private let modelContext: ModelContext

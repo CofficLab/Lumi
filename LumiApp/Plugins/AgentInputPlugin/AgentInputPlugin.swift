@@ -31,7 +31,7 @@ actor AgentInputPlugin: SuperPlugin {
     // MARK: - UI
 
     @MainActor
-    func addDetailBottomView() -> AnyView? {
+    func addRightBottomView() -> AnyView? {
         return AnyView(InputView())
     }
 }

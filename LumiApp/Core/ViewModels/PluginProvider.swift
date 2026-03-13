@@ -48,9 +48,6 @@ final class PluginProvider: ObservableObject, SuperLog {
     nonisolated static let emoji = "🔌"
 
     /// 是否启用详细日志输出
-    ///
-    /// 设为 true 时会输出详细的插件加载和调试信息。
-    /// 建议在调试时开启，发布时关闭。
     nonisolated static let verbose = false
 
     /// 已加载的插件列表
@@ -514,85 +511,85 @@ final class PluginProvider: ObservableObject, SuperLog {
         return views
     }
 
-    /// 获取所有插件提供的中间栏视图（用于 Agent 模式）
+    /// 获取所有插件提供的右侧栏头部视图（用于 Agent 模式）
     ///
-    /// 收集所有启用插件提供的中间栏视图。
-    /// 中间栏位于侧边栏和详情栏之间，用于展示文件预览等内容。
-    /// 多个插件的中间栏会从上到下垂直堆叠显示。
-    ///
-    /// - Returns: 中间栏视图数组
-    func getMiddleViews() -> [AnyView] {
-        let views = plugins
-            .filter { isPluginEnabled($0) }
-            .compactMap { $0.addMiddleView() }
-
-        if Self.verbose {
-            let pluginNames = plugins.map { String(describing: type(of: $0)) }
-            let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
-            os_log("\(self.t) getMiddleViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 中间栏视图数量=\(views.count)")
-        }
-
-        return views
-    }
-
-    /// 获取所有插件提供的详情栏头部视图（用于 Agent 模式）
-    ///
-    /// 收集所有启用插件提供的详情栏头部视图。
-    /// 详情栏头部位于详情栏顶部，用于显示聊天头部等信息。
+    /// 收集所有启用插件提供的右侧栏头部视图。
+    /// 右侧栏头部位于右侧栏顶部，用于显示聊天头部等信息。
     /// 多个插件的头部视图会从上到下垂直堆叠显示。
     ///
-    /// - Returns: 详情栏头部视图数组
-    func getDetailHeaderViews() -> [AnyView] {
+    /// - Returns: 右侧栏头部视图数组
+    func getRightHeaderViews() -> [AnyView] {
         let views = plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addDetailHeaderView() }
+            .compactMap { $0.addRightHeaderView() }
 
         if Self.verbose {
             let pluginNames = plugins.map { String(describing: type(of: $0)) }
             let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
-            os_log("\(self.t) getDetailHeaderViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 详情栏头部视图数量=\(views.count)")
+            os_log("\(self.t) getRightHeaderViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 右侧栏头部视图数量=\(views.count)")
         }
 
         return views
     }
 
-    /// 获取所有插件提供的详情栏中间视图（用于 Agent 模式）
+    /// 获取所有插件提供的右侧栏中间视图（用于 Agent 模式）
     ///
-    /// 收集所有启用插件提供的详情栏中间视图。
-    /// 详情栏中间位于详情栏中部，用于显示消息列表等内容。
+    /// 收集所有启用插件提供的右侧栏中间视图。
+    /// 右侧栏中间位于右侧栏中部，用于显示消息列表等内容。
     /// 多个插件的中间视图会从上到下垂直堆叠显示。
     ///
-    /// - Returns: 详情栏中间视图数组
-    func getDetailMiddleViews() -> [AnyView] {
+    /// - Returns: 右侧栏中间视图数组
+    func getRightMiddleViews() -> [AnyView] {
         let views = plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addDetailMiddleView() }
+            .compactMap { $0.addRightMiddleView() }
 
         if Self.verbose {
             let pluginNames = plugins.map { String(describing: type(of: $0)) }
             let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
-            os_log("\(self.t) getDetailMiddleViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 详情栏中间视图数量=\(views.count)")
+            os_log("\(self.t) getRightMiddleViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 右侧栏中间视图数量=\(views.count)")
         }
 
         return views
     }
 
-    /// 获取所有插件提供的详情栏底部视图（用于 Agent 模式）
+    /// 获取所有插件提供的右侧栏底部视图（用于 Agent 模式）
     ///
-    /// 收集所有启用插件提供的详情栏底部视图。
-    /// 详情栏底部位于详情栏底部，用于显示输入区域等内容。
+    /// 收集所有启用插件提供的右侧栏底部视图。
+    /// 右侧栏底部位于右侧栏底部，用于显示输入区域等内容。
     /// 多个插件的底部视图会从上到下垂直堆叠显示。
     ///
-    /// - Returns: 详情栏底部视图数组
-    func getDetailBottomViews() -> [AnyView] {
+    /// - Returns: 右侧栏底部视图数组
+    func getRightBottomViews() -> [AnyView] {
         let views = plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addDetailBottomView() }
+            .compactMap { $0.addRightBottomView() }
 
         if Self.verbose {
             let pluginNames = plugins.map { String(describing: type(of: $0)) }
             let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
-            os_log("\(self.t) getDetailBottomViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 详情栏底部视图数量=\(views.count)")
+            os_log("\(self.t) getRightBottomViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 右侧栏底部视图数量=\(views.count)")
+        }
+
+        return views
+    }
+
+    /// 获取所有插件提供的状态栏视图（用于 Agent 模式底部状态栏）
+    ///
+    /// 收集所有启用插件提供的状态栏视图。
+    /// 状态栏位于 Agent 模式底部，用于显示状态信息、操作提示等内容。
+    /// 多个插件的状态栏视图会水平排列显示。
+    ///
+    /// - Returns: 状态栏视图数组
+    func getStatusBarViews() -> [AnyView] {
+        let views = plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addStatusBarView() }
+
+        if Self.verbose {
+            let pluginNames = plugins.map { String(describing: type(of: $0)) }
+            let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
+            os_log("\(self.t) getStatusBarViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 状态栏视图数量=\(views.count)")
         }
 
         return views

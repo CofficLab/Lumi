@@ -137,17 +137,17 @@ protocol SuperPlugin: Actor {
     /// 添加侧边栏视图（用于 Agent 模式）
     @MainActor func addSidebarView() -> AnyView?
 
-    /// 添加中间栏视图（用于 Agent 模式）
-    @MainActor func addMiddleView() -> AnyView?
+    /// 添加右侧栏头部视图（用于 Agent 模式）
+    @MainActor func addRightHeaderView() -> AnyView?
 
-    /// 添加详情栏头部视图（用于 Agent 模式）
-    @MainActor func addDetailHeaderView() -> AnyView?
+    /// 添加右侧栏中间视图（用于 Agent 模式）
+    @MainActor func addRightMiddleView() -> AnyView?
 
-    /// 添加详情栏中间视图（用于 Agent 模式）
-    @MainActor func addDetailMiddleView() -> AnyView?
+    /// 添加右侧栏底部视图（用于 Agent 模式）
+    @MainActor func addRightBottomView() -> AnyView?
 
-    /// 添加详情栏底部视图（用于 Agent 模式）
-    @MainActor func addDetailBottomView() -> AnyView?
+    /// 添加状态栏视图（用于 Agent 模式底部状态栏）
+    @MainActor func addStatusBarView() -> AnyView?
 
     // MARK: - Middleware Hooks (Agent)
 
@@ -205,20 +205,4 @@ extension SuperPlugin {
     static var isConfigurable: Bool { false }
 
     static var enable: Bool { true }
-}
-
-// MARK: - Preview
-
-#Preview("App - Small Screen") {
-    ContentLayout()
-        .hideSidebar()
-        .inRootView()
-        .frame(width: 800, height: 600)
-}
-
-#Preview("App - Big Screen") {
-    ContentLayout()
-        .hideSidebar()
-        .inRootView()
-        .frame(width: 1200, height: 1200)
 }

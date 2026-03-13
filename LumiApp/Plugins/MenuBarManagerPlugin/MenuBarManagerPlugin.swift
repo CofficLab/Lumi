@@ -33,7 +33,7 @@ actor MenuBarManagerPlugin: SuperPlugin, SuperLog {
     nonisolated(unsafe) static var iconName: String = "menubar.rectangle"
 
     /// 是否可配置
-    nonisolated(unsafe) static var isConfigurable: Bool = true
+    nonisolated(unsafe) static var isConfigurable: Bool = false
 
     /// 注册顺序
     nonisolated(unsafe) static var order: Int { 20 }

@@ -9,7 +9,7 @@ actor AgentSendGuardPlugin: SuperPlugin {
     static let displayName: String = "Agent Send Guard"
     static let description: String = "发送前规范化、去重、防抖（通过中间件解耦）。"
     static let iconName: String = "shield"
-    static let isConfigurable: Bool = true
+    static let isConfigurable: Bool = false
     static let enable: Bool = true
     static var order: Int { 510 }
 

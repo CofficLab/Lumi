@@ -23,14 +23,14 @@ enum CommandRiskEvaluator {
             "dd", "mkfs", "format",
             "kill", "killall",
             "reboot", "shutdown",
-            "sudo", "doas"
+            "sudo", "doas",
+            "chown", "chmod"
         ]
 
         let mediumRiskCommands = [
             "curl", "wget", "fetch",
             "brew", "npm", "pip",
-            "git", "svn",
-            "chmod", "chown"
+            "git", "svn"
         ]
 
         let lowRiskCommands = [
@@ -53,4 +53,3 @@ enum CommandRiskEvaluator {
         return .medium
     }
 }
-
