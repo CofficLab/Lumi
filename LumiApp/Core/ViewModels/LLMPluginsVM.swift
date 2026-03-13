@@ -5,15 +5,14 @@ import ObjectiveC.runtime
 
 /// LLM 插件加载器
 ///
-/// 使用 Objective‑C Runtime 扫描所有以 `LLMPlugin` 结尾的类，
-/// 找出实现了 `SuperLLMProviderPlugin` 协议的类型，并调用其
-/// `registerProviders(to:)` 方法把具体的 LLM 供应商类型注册到 `ProviderRegistry`。
+/// 使用 Objective‑C Runtime 扫描所有实现 `SuperLLMProvider` 的类，
+/// 并将其注册到 `ProviderRegistry`。
 enum LLMPluginsVM: SuperLog {
 
     nonisolated static let emoji = "🧩"
     nonisolated static let verbose = true
 
-    /// 扫描并注册所有 LLM 提供者插件
+    /// 扫描并注册所有 LLM 供应商
     ///
     /// - Parameter registry: 要注册到的供应商注册表实例
     static func registerAllProviders(to registry: ProviderRegistry) {
@@ -26,43 +25,38 @@ enum LLMPluginsVM: SuperLog {
         }
 
         let classes = UnsafeBufferPointer(start: classList, count: Int(count))
-        var discoveredTypes: [(type: SuperLLMProviderPlugin.Type, name: String, order: Int)] = []
+        var discoveredTypes: [(type: SuperLLMProvider.Type, name: String)] = []
 
         for i in 0 ..< classes.count {
             let cls: AnyClass = classes[i]
             let className = NSStringFromClass(cls)
 
-            // 仅匹配 Lumi 命名空间且以 LLMPlugin 结尾的类
+            // 仅匹配 Lumi 命名空间且以 Provider 结尾的类
             guard className.hasPrefix("Lumi."),
-                  className.hasSuffix("LLMPlugin") else {
+                  className.hasSuffix("Provider") else {
                 continue
             }
 
-            // 尝试转换为 SuperLLMProviderPlugin 类型
-            guard let pluginType = cls as? SuperLLMProviderPlugin.Type else {
+            // 尝试转换为 SuperLLMProvider 类型
+            guard let providerType = cls as? SuperLLMProvider.Type else {
                 continue
             }
 
-            // 跳过静态关闭的插件
-            guard pluginType.enable else {
-                continue
-            }
-
-            discoveredTypes.append((type: pluginType, name: className, order: pluginType.order))
+            discoveredTypes.append((type: providerType, name: className))
         }
 
-        // 按顺序排序，确保核心/基础插件优先注册
-        discoveredTypes.sort { $0.order < $1.order }
+        // 稳定排序，避免运行时枚举顺序导致 UI 抖动
+        discoveredTypes.sort { $0.type.id < $1.type.id }
 
         for item in discoveredTypes {
-            item.type.registerProviders(to: registry)
+            registry.register(item.type)
             if Self.verbose {
-                os_log("\(self.t)✅ Registered LLM providers from plugin: \(item.name) (order: \(item.order))")
+                os_log("\(self.t)✅ Registered LLM provider: \(item.name) (id: \(item.type.id))")
             }
         }
 
         if Self.verbose {
-            os_log("\(self.t)🔍 LLM plugins loaded: \(discoveredTypes.count)")
+            os_log("\(self.t)🔍 LLM providers loaded: \(discoveredTypes.count)")
         }
     }
 }

@@ -7,7 +7,7 @@ import OSLog
 /// Zhipu AI (智谱 AI) API 供应商实现
 ///
 /// Zhipu AI 提供了兼容 Anthropic 的 API 接口。
-struct ZhipuProvider: SuperLLMProvider, SuperLog {
+final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🔴"
     nonisolated static let verbose = true
 
@@ -31,7 +31,11 @@ struct ZhipuProvider: SuperLLMProvider, SuperLog {
         "glm-4.5-air",
     ]
 
-    // MARK: - LLMProviderProtocol
+    // MARK: - SuperLLMProvider
+
+    override init() {
+        super.init()
+    }
 
     var baseURL: String {
         "https://open.bigmodel.cn/api/anthropic/v1/messages"

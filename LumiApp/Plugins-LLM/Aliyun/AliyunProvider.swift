@@ -9,7 +9,7 @@ import OSLog
 /// 提供通义千问、GLM、MiniMax、Kimi 等大模型服务
 /// API 地址：https://coding.dashscope.aliyuncs.com/apps/anthropic
 /// 兼容 Anthropic API 格式
-struct AliyunProvider: SuperLLMProvider, SuperLog {
+final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🔵"
     nonisolated static let verbose = true
 
@@ -35,7 +35,11 @@ struct AliyunProvider: SuperLLMProvider, SuperLog {
         "kimi-k2.5",          // Kimi K2.5
     ]
 
-    // MARK: - LLMProviderProtocol
+    // MARK: - SuperLLMProvider
+
+    override init() {
+        super.init()
+    }
 
     var baseURL: String {
         "https://coding.dashscope.aliyuncs.com/apps/anthropic/v1/messages"

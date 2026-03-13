@@ -28,7 +28,7 @@ import MagicKit
 /// - 最大输出: 8192 tokens
 /// - 支持 Tool Calls: ✅
 /// - 支持图片输入: ✅ (base64 编码)
-struct AnthropicProvider: SuperLLMProvider, SuperLog {
+final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
     
     /// 是否启用详细日志
     nonisolated static let verbose = true
@@ -69,9 +69,11 @@ struct AnthropicProvider: SuperLLMProvider, SuperLog {
         "claude-3-haiku-20240307",
     ]
 
-    // MARK: - LLMProviderProtocol
+    // MARK: - SuperLLMProvider
 
-    init() {}
+    override init() {
+        super.init()
+    }
 
     /// API 基础 URL
     var baseURL: String {

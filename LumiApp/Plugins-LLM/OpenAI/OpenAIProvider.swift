@@ -7,7 +7,7 @@ import MagicKit
 /// OpenAI API 供应商实现
 ///
 /// 此实现也适用于兼容 OpenAI API 格式的其他服务（如 DeepSeek）。
-struct OpenAIProvider: SuperLLMProvider {
+final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
     nonisolated static let emoji = "🟢"
     nonisolated static let verbose = false
@@ -34,9 +34,11 @@ struct OpenAIProvider: SuperLLMProvider {
         "gpt-3.5-turbo",       // GPT-3.5 Turbo
     ]
 
-    // MARK: - LLMProviderProtocol
+    // MARK: - SuperLLMProvider
 
-    init() {}
+    override init() {
+        super.init()
+    }
 
     var baseURL: String {
         "https://api.openai.com/v1/chat/completions"

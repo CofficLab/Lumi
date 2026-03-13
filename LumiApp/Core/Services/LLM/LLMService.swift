@@ -66,7 +66,7 @@ class LLMService: SuperLog, @unchecked Sendable {
     /// 创建供应商注册表和 API 服务实例。
     init() {
         let registry = ProviderRegistry()
-        // 通过 LLM 插件系统注册所有可用供应商
+        // 通过 LLM 插件系统自动发现并注册所有可用供应商
         LLMPluginsVM.registerAllProviders(to: registry)
         self.registry = registry
         self.llmAPI = LLMAPIService()
