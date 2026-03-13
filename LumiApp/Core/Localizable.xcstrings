@@ -431,6 +431,7 @@
       }
     },
     "Activity Status" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1792,6 +1793,7 @@
       }
     },
     "Display the status of long-running operations in the status bar" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
