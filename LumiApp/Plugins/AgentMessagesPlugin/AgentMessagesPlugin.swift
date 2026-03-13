@@ -32,7 +32,7 @@ actor AgentMessagesPlugin: SuperPlugin {
     // MARK: - UI
 
     @MainActor
-    func addDetailMiddleView() -> AnyView? {
+    func addRightMiddleView() -> AnyView? {
         return AnyView(ChatMessagesView())
     }
 }
