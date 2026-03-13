@@ -14,9 +14,6 @@ struct GitHubPluginSettingsView: View, SuperLog {
     /// GitHub Token 输入
     @State private var token: String = ""
 
-    /// 是否显示 Token
-    @State private var showToken: Bool = false
-
     /// 是否已保存
     @State private var isSaved: Bool = false
 
@@ -103,32 +100,23 @@ extension GitHubPluginSettingsView {
                 .font(DesignTokens.Typography.callout)
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-            // Token 输入框
-            Group {
-                if showToken {
-                    TextField("输入 GitHub Token", text: $token)
-                        .textFieldStyle(.plain)
-                } else {
-                    SecureField("输入 GitHub Token", text: $token)
-                        .textFieldStyle(.plain)
-                }
-            }
-            .textContentType(.password)
-            .font(DesignTokens.Typography.body)
-            .padding(DesignTokens.Spacing.sm)
-            .background(
-                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                    .fill(DesignTokens.Material.glass)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                    )
-            )
+            // Token 输入框（明文显示）
+            TextField("输入 GitHub Token", text: $token)
+                .textFieldStyle(.plain)
+                .textContentType(.password)
+                .font(DesignTokens.Typography.body)
+                .padding(DesignTokens.Spacing.sm)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                        .fill(DesignTokens.Material.glass)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                        )
+                )
 
-            // 显示开关和保存状态
+            // 保存状态
             HStack(spacing: DesignTokens.Spacing.sm) {
-                Toggle("显示 Token", isOn: $showToken)
-
                 if isSaved {
                     HStack(spacing: 4) {
                         Image(systemName: "checkmark.circle.fill")
