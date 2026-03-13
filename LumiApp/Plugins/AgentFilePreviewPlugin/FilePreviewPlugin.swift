@@ -30,7 +30,7 @@ actor FilePreviewPlugin: SuperPlugin, SuperLog {
     static let iconName: String = "doc.fill"
 
     /// Whether it is configurable
-    static let isConfigurable: Bool = false
+    static let isConfigurable: Bool = true
 
     /// Registration order
     static var order: Int { 76 }

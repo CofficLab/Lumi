@@ -30,6 +30,7 @@ struct ProjectTreeView: View {
                 contentView
             }
         }
+        .frame(maxHeight: .infinity)
         .onChange(of: projectViewModel.currentProjectPath) { _, newPath in
             loadProject(at: newPath)
         }
