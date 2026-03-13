@@ -22,6 +22,7 @@ struct SettingView: View {
     enum SettingTab: String, CaseIterable, Hashable {
         case general = "通用"
         case theme = "主题"
+        case provider = "供应商"
         case plugins = "插件管理"
         case about = "关于"
 
@@ -29,6 +30,7 @@ struct SettingView: View {
             switch self {
             case .general: return "gearshape"
             case .theme: return "paintbrush.fill"
+            case .provider: return "cpu"
             case .plugins: return "puzzlepiece.extension"
             case .about: return "info.circle"
             }
@@ -94,6 +96,8 @@ struct SettingView: View {
                             GeneralSettingView()
                         case .theme:
                             ThemeSettingView()
+                        case .provider:
+                            ProviderSettingsView()
                         case .plugins:
                             PluginSettingsView()
                         case .about:
