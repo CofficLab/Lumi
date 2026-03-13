@@ -34,13 +34,11 @@ class ProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
 
     /// 初始化供应商注册表
     ///
-    /// 创建新的注册表实例并注册所有内置供应商。
+    /// 创建新的注册表实例，具体供应商由外部插件通过 `register(...)` 注入。
     init() {
         if Self.verbose {
             os_log("\(self.t) 供应商注册表已初始化")
         }
-
-        self.registerAllProviders()
     }
 
     // MARK: - Registered Provider Types
@@ -48,20 +46,20 @@ class ProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
     /// 已注册的供应商类型列表
     ///
     /// 按注册顺序存储所有供应商类型。
-    private(set) var providerTypes: [any LLMProviderProtocol.Type] = []
+    private(set) var providerTypes: [any SuperLLMProvider.Type] = []
     
     /// 供应商实例缓存
     ///
     /// 以供应商 ID 为键，缓存已创建的供应商实例。
     /// 避免重复创建相同的供应商实例。
-    private var providerInstances: [String: any LLMProviderProtocol] = [:]
+    private var providerInstances: [String: any SuperLLMProvider] = [:]
 
     // MARK: - Registration
 
     /// 注册单个供应商类型
     ///
     /// - Parameter providerType: 要注册的供应商类型
-    func register<T: LLMProviderProtocol>(_ providerType: T.Type) {
+    func register<T: SuperLLMProvider>(_ providerType: T.Type) {
         providerTypes.append(providerType)
         if Self.verbose {
             os_log("\(self.t) 已注册供应商：\(providerType.displayName) (ID: \(providerType.id))")
@@ -71,27 +69,9 @@ class ProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
     /// 批量注册供应商类型
     ///
     /// - Parameter providerTypes: 要注册的供应商类型数组
-    func register(_ providerTypes: [any LLMProviderProtocol.Type]) {
+    func register(_ providerTypes: [any SuperLLMProvider.Type]) {
         for type in providerTypes {
             register(type)
-        }
-    }
-
-    /// 注册所有内置供应商
-    ///
-    /// 自动注册 Lumi 内置的所有 LLM 供应商。
-    /// 当前包括：Anthropic, OpenAI, DeepSeek, Zhipu, Aliyun
-    func registerAllProviders() {
-        register([
-            AnthropicProvider.self,
-            OpenAIProvider.self,
-            DeepSeekProvider.self,
-            ZhipuProvider.self,
-            AliyunProvider.self,
-        ])
-
-        if Self.verbose {
-            os_log("\(self.t) 已注册 \(self.providerTypes.count) 个供应商")
         }
     }
 
@@ -101,7 +81,7 @@ class ProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
     ///
     /// - Parameter id: 供应商 ID
     /// - Returns: 供应商类型，如果未找到则返回 nil
-    func providerType(forId id: String) -> (any LLMProviderProtocol.Type)? {
+    func providerType(forId id: String) -> (any SuperLLMProvider.Type)? {
         for type in providerTypes {
             if type.id == id {
                 return type
@@ -133,31 +113,19 @@ class ProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
     ///
     /// - Parameter id: 供应商 ID
     /// - Returns: 供应商实例，如果未找到则返回 nil
-    func createProvider(id: String) -> (any LLMProviderProtocol)? {
+    func createProvider(id: String) -> (any SuperLLMProvider)? {
         // 优先返回缓存的实例
         if let cached = providerInstances[id] {
             return cached
         }
 
-        // 根据 ID 创建新实例
-        let instance: any LLMProviderProtocol
-        switch id {
-        case AnthropicProvider.id:
-            instance = AnthropicProvider()
-        case OpenAIProvider.id:
-            instance = OpenAIProvider()
-        case DeepSeekProvider.id:
-            instance = DeepSeekProvider()
-        case ZhipuProvider.id:
-            instance = ZhipuProvider()
-        case AliyunProvider.id:
-            instance = AliyunProvider()
-        default:
+        // 在已注册类型中查找匹配的供应商
+        guard let type = providerTypes.first(where: { $0.id == id }) else {
             os_log(.error, "\(self.t) 未知的供应商 ID: \(id)")
             return nil
         }
 
-        // 缓存新创建的实例
+        let instance = type.init()
         providerInstances[id] = instance
         return instance
     }

@@ -146,9 +146,9 @@ final class RootViewContainer: ObservableObject {
 
         // 初始化工具服务
         self.toolService = ToolService(llmService: llmService)
-
-        // 初始化供应商注册表
-        self.providerRegistry = ProviderRegistry()
+        
+        // 复用 LLMService 中的供应商注册表（已通过插件完成注册）
+        self.providerRegistry = llmService.providerRegistry
 
         // ========================================
         // ViewModel 层

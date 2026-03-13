@@ -2,50 +2,46 @@ import Foundation
 import MagicKit
 import OSLog
 
-// MARK: - 阿里云供应商
+// MARK: - Zhipu AI 供应商
 
-/// 阿里云 DashScope 供应商实现
+/// Zhipu AI (智谱 AI) API 供应商实现
 ///
-/// 提供通义千问、GLM、MiniMax、Kimi 等大模型服务
-/// API 地址：https://coding.dashscope.aliyuncs.com/apps/anthropic
-/// 兼容 Anthropic API 格式
-struct AliyunProvider: LLMProviderProtocol, SuperLog {
-    nonisolated static let emoji = "🔵"
+/// Zhipu AI 提供了兼容 Anthropic 的 API 接口。
+struct ZhipuProvider: SuperLLMProvider, SuperLog {
+    nonisolated static let emoji = "🔴"
     nonisolated static let verbose = true
 
     // MARK: - 基础信息
 
-    static let id = "aliyun"
-    static let displayName = "阿里云"
-    static let iconName = "cloud.fill"
-    static let description = "通义千问、GLM、MiniMax、Kimi 等大模型"
+    static let id = "zhipu"
+    static let displayName = "Zhipu AI"
+    static let iconName = "sparkles"
+    static let description = "智谱 AI (GLM)"
 
     // MARK: - 配置相关
 
-    static let apiKeyStorageKey = "DevAssistant_ApiKey_Aliyun"
-    static let modelStorageKey = "DevAssistant_Model_Aliyun"
+    static let apiKeyStorageKey = "DevAssistant_ApiKey_Zhipu"
+    static let modelStorageKey = "DevAssistant_Model_Zhipu"
 
-    static let defaultModel = "qwen3.5-plus"
+    static let defaultModel = "glm-4.7"
 
     static let availableModels = [
-        "qwen3.5-plus",       // 通义千问 3.5 Plus
-        "glm-4.7",            // GLM-4.7
-        "glm-5",              // GLM-5
-        "MiniMax-M2.5",       // MiniMax M2.5
-        "kimi-k2.5",          // Kimi K2.5
+        "glm-4.7",
+        "glm-4.6",
+        "glm-4.5-air",
     ]
 
     // MARK: - LLMProviderProtocol
 
     var baseURL: String {
-        "https://coding.dashscope.aliyuncs.com/apps/anthropic/v1/messages"
+        "https://open.bigmodel.cn/api/anthropic/v1/messages"
     }
 
     func buildRequest(url: URL, apiKey: String) -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        // 阿里云 Coding Plan 使用 Authorization: Bearer <API Key> 格式
-        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.addValue(apiKey, forHTTPHeaderField: "x-api-key")
+        request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         return request
     }
@@ -56,7 +52,7 @@ struct AliyunProvider: LLMProviderProtocol, SuperLog {
         tools: [AgentTool]?,
         systemPrompt: String
     ) throws -> [String: Any] {
-        // 阿里云兼容 Anthropic 格式
+        // Zhipu 兼容 Anthropic 格式
         let systemMessage = messages.first(where: { $0.role == .system })?.content ?? systemPrompt
 
         let conversationMessages = messages
@@ -78,7 +74,7 @@ struct AliyunProvider: LLMProviderProtocol, SuperLog {
     }
 
     func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
-        // 阿里云响应格式与 Anthropic 兼容
+        // Zhipu 响应格式与 Anthropic 兼容
         struct AnthropicResponse: Decodable {
             struct Content: Decodable {
                 let type: String
@@ -89,19 +85,6 @@ struct AliyunProvider: LLMProviderProtocol, SuperLog {
 
                 enum CodingKeys: String, CodingKey {
                     case type, text, id, name, input
-                }
-
-                init(from decoder: Decoder) throws {
-                    let container = try decoder.container(keyedBy: CodingKeys.self)
-                    type = try container.decode(String.self, forKey: .type)
-                    text = try container.decodeIfPresent(String.self, forKey: .text)
-                    id = try container.decodeIfPresent(String.self, forKey: .id)
-                    name = try container.decodeIfPresent(String.self, forKey: .name)
-                    if let inputContainer = try? container.decodeIfPresent([String: AnySendable].self, forKey: .input) {
-                        input = inputContainer.mapValues { v in AnySendable(value: v.value) }
-                    } else {
-                        input = nil
-                    }
                 }
             }
 
@@ -148,19 +131,19 @@ struct AliyunProvider: LLMProviderProtocol, SuperLog {
     }
 
     /// 解析流式响应数据块
-    /// Aliyun 兼容 Anthropic 流式格式
+    /// Zhipu 兼容 Anthropic 流式格式
     func parseStreamChunk(data: Data) throws -> StreamChunk? {
         // 复用 Anthropic 的解析逻辑
         let anthropicProvider = AnthropicProvider()
         return try anthropicProvider.parseStreamChunk(data: data)
     }
 
-    static var logEmoji: String { "🔵" }
+    static var logEmoji: String { "🔴" }
 }
 
 // MARK: - 消息转换
 
-extension AliyunProvider {
+extension ZhipuProvider {
     func transformMessage(_ message: ChatMessage) -> [String: Any] {
         // 工具结果消息
         if let toolCallID = message.toolCallID {
@@ -211,7 +194,7 @@ extension AliyunProvider {
             ]
         }
 
-        // 处理消息中的图片
+        // Handle images in message
         if !message.images.isEmpty {
             if Self.verbose {
                 os_log("\(Self.t)🖼️ 消息包含 \(message.images.count) 张图片，正在转换...")
@@ -219,7 +202,7 @@ extension AliyunProvider {
 
             var content: [[String: Any]] = []
 
-            // 先添加文本内容（如果非空）
+            // Add text content first (if not empty)
             if !message.content.isEmpty {
                 content.append([
                     "type": "text",
@@ -227,11 +210,11 @@ extension AliyunProvider {
                 ])
             }
 
-            // 添加所有图片
+            // Add all images
             for (index, image) in message.images.enumerated() {
                 let base64Data = image.data.base64EncodedString()
                 if Self.verbose {
-                    os_log("\(Self.t)  图片 \(index + 1): \(image.mimeType), base64 长度：\(base64Data.count)")
+                    os_log("\(Self.t)  图片 \(index + 1): \(image.mimeType), base64长度: \(base64Data.count)")
                 }
                 content.append([
                     "type": "image",
@@ -253,13 +236,13 @@ extension AliyunProvider {
             ]
         }
 
-        // 兼容旧版 marker 格式
-        // Marker 格式：[IMAGE_BASE64:<mime_type>:<data>]
+        // Fallback for legacy marker format (backward compatibility)
+        // Marker format: [IMAGE_BASE64:<mime_type>:<data>]
         if message.content.contains("[IMAGE_BASE64:") {
             var content: [[String: Any]] = []
             let components = message.content.components(separatedBy: "[IMAGE_BASE64:")
 
-            // 第一个组件是图片之前的文本
+            // First component is text before any image
             if !components[0].isEmpty {
                 content.append([
                     "type": "text",
@@ -268,7 +251,7 @@ extension AliyunProvider {
             }
 
             for component in components.dropFirst() {
-                // component 格式：<mime_type>:<data>]<rest_of_text>
+                // component format: <mime_type>:<data>]<rest_of_text>
                 if let closeBracketIndex = component.firstIndex(of: "]") {
                     let imagePart = component[..<closeBracketIndex]
                     let textPart = component[component.index(after: closeBracketIndex)...]
@@ -289,7 +272,7 @@ extension AliyunProvider {
                     }
 
                     if !textPart.isEmpty {
-                        // 清理可能添加的换行符
+                        // Clean up newlines that might have been added
                         let cleanText = String(textPart).trimmingCharacters(in: .whitespacesAndNewlines)
                         if !cleanText.isEmpty {
                             content.append([
@@ -316,7 +299,7 @@ extension AliyunProvider {
 
 // MARK: - 工具格式
 
-extension AliyunProvider {
+extension ZhipuProvider {
     func formatTool(_ tool: AgentTool) -> [String: Any] {
         [
             "name": tool.name,

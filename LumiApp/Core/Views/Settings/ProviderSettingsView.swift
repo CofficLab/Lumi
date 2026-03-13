@@ -35,7 +35,7 @@ struct ProviderSettingsView: View, SuperLog {
     }
 
     /// 当前供应商类型
-    private var selectedProviderType: (any LLMProviderProtocol.Type)? {
+    private var selectedProviderType: (any SuperLLMProvider.Type)? {
         registry.providerType(forId: selectedProviderId)
     }
 
