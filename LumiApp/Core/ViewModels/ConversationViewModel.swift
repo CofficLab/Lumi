@@ -63,13 +63,22 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     /// var selectedConversation: [Conversation]
     /// ```
     ///
+    /// 存储键名：根据构建配置使用不同的键，避免调试环境和正式环境数据互相影响
+    private static let selectedConversationKey: String = {
+        #if DEBUG
+        return "Conversation_SelectedId_Debug"
+        #else
+        return "Conversation_SelectedId"
+        #endif
+    }()
+
     /// ID 变化时会自动持久化到 UserDefaults。
     @Published public fileprivate(set) var selectedConversationId: UUID? {
         didSet {
             if let id = selectedConversationId {
-                UserDefaults.standard.set(id.uuidString, forKey: "Conversation_SelectedId")
+                UserDefaults.standard.set(id.uuidString, forKey: Self.selectedConversationKey)
             } else {
-                UserDefaults.standard.removeObject(forKey: "Conversation_SelectedId")
+                UserDefaults.standard.removeObject(forKey: Self.selectedConversationKey)
             }
         }
     }

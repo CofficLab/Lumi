@@ -1,7 +1,13 @@
 import SwiftUI
+import MagicKit
 
-/// 供应商设置视图 - 配置 LLM 供应商的 API 密钥
-struct ProviderSettingsView: View {
+/// 供应商设置视图 - 配置 LLM 供应商的 API 密钥和模型选择
+struct ProviderSettingsView: View, SuperLog {
+    // MARK: - SuperLog
+
+    nonisolated static let emoji = "⚙️"
+    nonisolated static let verbose = false
+
     // MARK: - State
 
     /// 当前选中的供应商 ID
@@ -54,9 +60,7 @@ struct ProviderSettingsView: View {
             }
             .padding(DesignTokens.Spacing.lg)
         }
-        .onAppear {
-            loadSettings()
-        }
+        .onAppear(perform: onAppear)
         .onChange(of: selectedProviderId) { _, _ in
             loadSettings()
         }
@@ -64,10 +68,12 @@ struct ProviderSettingsView: View {
             saveApiKey()
         }
     }
+}
 
-    // MARK: - View Components
+// MARK: - View
 
-    /// 供应商选择器
+extension ProviderSettingsView {
+    /// 供应商选择器 - 显示所有可用的 LLM 供应商按钮
     private var providerSelector: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
             Text("LLM 供应商")
@@ -89,7 +95,7 @@ struct ProviderSettingsView: View {
         }
     }
 
-    /// 供应商信息卡片
+    /// 供应商信息卡片 - 显示当前选中供应商的图标、名称和描述
     private var providerInfoCard: some View {
         HStack(spacing: DesignTokens.Spacing.md) {
             Image(systemName: selectedProvider?.iconName ?? "dot.square")
@@ -130,7 +136,7 @@ struct ProviderSettingsView: View {
         )
     }
 
-    /// API Key 配置区域
+    /// API Key 配置区域 - 提供文本输入框供用户输入 API 密钥
     private var apiKeySection: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
             Text("API 密钥")
@@ -153,7 +159,7 @@ struct ProviderSettingsView: View {
         }
     }
 
-    /// 模型选择区域
+    /// 模型选择区域 - 显示当前供应商支持的所有可用模型
     private var modelSection: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
             Text("可用模型")
@@ -176,9 +182,12 @@ struct ProviderSettingsView: View {
             }
         }
     }
+}
 
-    // MARK: - Actions
+// MARK: - Action
 
+extension ProviderSettingsView {
+    /// 加载当前供应商的设置信息（API Key 和选中的模型）
     private func loadSettings() {
         guard let providerType = selectedProviderType else { return }
 
@@ -187,19 +196,31 @@ struct ProviderSettingsView: View {
             ?? providerType.defaultModel
     }
 
+    /// 保存 API Key 到 UserDefaults
     private func saveApiKey() {
         guard let providerType = selectedProviderType else { return }
         UserDefaults.standard.set(apiKey, forKey: providerType.apiKeyStorageKey)
     }
 
+    /// 保存选中的模型到 UserDefaults
     private func saveModel() {
         guard let providerType = selectedProviderType else { return }
         UserDefaults.standard.set(selectedModel, forKey: providerType.modelStorageKey)
     }
 }
 
+// MARK: - Event Handler
+
+extension ProviderSettingsView {
+    /// 视图出现时的事件处理 - 加载供应商设置
+    func onAppear() {
+        loadSettings()
+    }
+}
+
 // MARK: - Provider Button
 
+/// 供应商选择按钮组件
 private struct ProviderButton: View {
     let provider: ProviderInfo
     let isSelected: Bool
@@ -227,6 +248,7 @@ private struct ProviderButton: View {
 
 // MARK: - Model Row
 
+/// 模型选择行组件 - 支持 hover 效果和选中/默认状态高亮
 private struct ModelRow: View {
     let model: String
     let isDefault: Bool
@@ -281,8 +303,16 @@ private struct ModelRow: View {
 
 // MARK: - Preview
 
-#Preview("Settings") {
+#Preview("App - Small Screen") {
     ProviderSettingsView()
-        .frame(width: 500, height: 600)
         .inRootView()
+        .frame(width: 500)
+        .frame(height: 600)
+}
+
+#Preview("App - Big Screen") {
+    ProviderSettingsView()
+        .inRootView()
+        .frame(width: 1200)
+        .frame(height: 1200)
 }
