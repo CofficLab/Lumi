@@ -9,7 +9,7 @@ struct NewChatButton: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "🆕"
     /// 是否启用详细日志
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     /// 环境对象：Agent 提供者
     @EnvironmentObject var agentProvider: AgentProvider

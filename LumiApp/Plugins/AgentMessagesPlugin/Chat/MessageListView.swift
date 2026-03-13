@@ -8,7 +8,7 @@ struct MessageListView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "📜"
     /// 是否启用详细日志
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
     /// 分页大小：每页加载的消息数量
     nonisolated static let pageSize: Int = 10
 
