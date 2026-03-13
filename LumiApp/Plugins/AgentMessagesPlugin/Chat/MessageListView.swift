@@ -8,7 +8,7 @@ struct MessageListView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "📜"
     /// 是否启用详细日志
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
     /// 分页大小：每页加载的消息数量
     nonisolated static let pageSize: Int = 10
 
@@ -45,36 +45,41 @@ struct MessageListView: View, SuperLog {
     }
 
     var body: some View {
-        let lastMessageID = messages.last?.id
+        ScrollViewReader { proxy in
+            let lastMessageID = messages.last?.id
 
-        Group {
-            if messages.isEmpty {
-                EmptyMessagesView()
-            } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 12) {
-                        if hasMoreMessages {
-                            loadMoreButton
-                        }
+            Group {
+                if messages.isEmpty {
+                    EmptyMessagesView()
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 12) {
+                            if hasMoreMessages {
+                                loadMoreButton
+                            }
 
-                        ForEach(messages) { message in
-                            ChatBubble(
-                                message: message,
-                                isLastMessage: message.id == lastMessageID,
-                                relatedToolOutputs: []
-                            )
+                            ForEach(messages) { message in
+                                ChatBubble(
+                                    message: message,
+                                    isLastMessage: message.id == lastMessageID,
+                                    relatedToolOutputs: []
+                                )
+                            }
                         }
+                        .padding(.horizontal)
                     }
-                    .padding(.horizontal)
+                    .padding(.vertical)
                 }
-                .padding(.vertical)
+            }
+            .onAppear(perform: handleOnAppear)
+            .onChange(of: selectedConversationId, handleConversationChanged)
+            .onChange(of: processingStateViewModel.isProcessing, applyTransientStatusMessageIfNeeded)
+            .onChange(of: processingStateViewModel.statusText, applyTransientStatusMessageIfNeeded)
+            .onMessageSaved(perform: handleOnMessageSaved)
+            .onAgentInputDidSendMessage {
+                handleUserDidSendMessageEvent(proxy: proxy)
             }
         }
-        .onAppear(perform: handleOnAppear)
-        .onChange(of: selectedConversationId, handleConversationChanged)
-        .onChange(of: processingStateViewModel.isProcessing, applyTransientStatusMessageIfNeeded)
-        .onChange(of: processingStateViewModel.statusText, applyTransientStatusMessageIfNeeded)
-        .onMessageSaved(perform: handleOnMessageSaved)
     }
 }
 
@@ -212,8 +217,6 @@ extension MessageListView {
                 os_log("\(Self.t)📄 [\(conversationId)] 加载更早消息...")
             }
 
-            // 当隐藏工具消息时，可能会遇到“某一页全是工具相关消息”，用户点击后 UI 看起来没变化。
-            // 这里会自动跳过纯工具页，直到拿到至少 1 条可展示消息，或确实没有更多为止。
             let result = await agentProvider.loadMessagesPage(
                 forConversationId: conversationId,
                 limit: Self.pageSize,
@@ -284,6 +287,30 @@ extension MessageListView {
             totalMessageCount = max(totalMessageCount, messages.count)
             if let first = messages.first {
                 oldestLoadedTimestamp = first.timestamp
+            }
+        }
+    }
+
+    /// 处理来自 AgentInput 插件的「用户发送新消息」事件（用于自动滚动到底部）
+    /// - Parameter proxy: 用于控制滚动的 ScrollViewProxy
+    func handleUserDidSendMessageEvent(proxy: ScrollViewProxy) {
+        if Self.verbose {
+            os_log("\(Self.t)📜 收到 AgentInput 用户发送消息事件，准备滚动到底部")
+        }
+
+        // 延迟一点时间，让新消息完成插入并刷新到本地 messages
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            guard let last = messages.last else {
+                if Self.verbose {
+                    os_log("\(Self.t)⚠️ 滚动失败：messages 为空")
+                }
+                return
+            }
+            if Self.verbose {
+                os_log("\(Self.t)📜 滚动到最后一条用户消息：\(last.id.uuidString)")
+            }
+            withAnimation(.easeOut(duration: 0.2)) {
+                proxy.scrollTo(last.id, anchor: .bottom)
             }
         }
     }

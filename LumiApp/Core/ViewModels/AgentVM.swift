@@ -970,6 +970,9 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             os_log("\(Self.t)🚀 用户发送消息")
         }
 
+        // 发送全局输入事件，供 UI（如消息列表）监听并执行自动滚动等行为
+        NotificationCenter.postAgentUserDidSendMessage()
+
         // 清除之前的深度警告
         depthWarningViewModel.dismissDepthWarning()
 
