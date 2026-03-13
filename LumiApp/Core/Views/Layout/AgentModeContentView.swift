@@ -67,8 +67,8 @@ struct AgentModeContentView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(DesignTokens.Material.glassThick)
                 .frame(height: 32)
+                .background(DesignTokens.Material.glassUltraThick)
             }
         }
     }
