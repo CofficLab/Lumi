@@ -65,6 +65,9 @@ final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
         process.standardOutput = pipe
         process.standardError = pipe
 
+        // 继承当前环境，确保 PATH 包含 homebrew 路径
+        process.environment = ProcessInfo.processInfo.environment
+
         do {
             try process.run()
             process.waitUntilExit()
@@ -89,6 +92,9 @@ final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
         process.executableURL = URL(fileURLWithPath: "/usr/bin/which")
         process.arguments = ["gh"]
         process.standardOutput = pipe
+
+        // 继承当前环境，确保 PATH 包含 homebrew 路径
+        process.environment = ProcessInfo.processInfo.environment
 
         do {
             try process.run()
@@ -116,6 +122,9 @@ final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
         process.arguments = ["-c", "gh --version"]
         process.standardOutput = pipe
         process.standardError = pipe
+
+        // 继承当前环境，确保 PATH 包含 homebrew 路径
+        process.environment = ProcessInfo.processInfo.environment
 
         do {
             try process.run()
