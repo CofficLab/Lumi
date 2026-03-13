@@ -73,12 +73,12 @@ actor FilePreviewPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    /// Add right view for Agent mode - 显示文件预览
-    /// - Returns: FilePreviewView to be added to the right column (only when file is selected)
-    @MainActor func addRightView() -> AnyView? {
+    /// Add detail view - 显示文件预览
+    /// - Returns: FilePreviewView to be shown in the detail panel
+    @MainActor func addDetailView() -> AnyView? {
         // 始终返回文件预览视图，由 FilePreviewView 自行判断是否显示内容
         if Self.verbose {
-            os_log("\(self.t) 提供 FilePreviewView")
+            os_log("\(self.t) 提供 FilePreviewView (详情视图)")
         }
         return AnyView(FilePreviewView())
     }

@@ -84,17 +84,17 @@ struct AgentModeContentView: View {
         return Group {
             if rightViews.isEmpty {
                 // 如果没有右侧栏视图，直接显示详情栏
-                detailColumn
+                detailContentColumn
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 // 有右侧栏时，使用 HSplitView 分隔
                 HSplitView {
-                    // 第二栏：详情栏
-                    detailColumn
+                    // 第二栏：右侧栏（支持头部、中间、底部）
+                    rightColumn
                         .frame(minWidth: 200, idealWidth: 300)
 
-                    // 第三栏：右侧栏
-                    rightColumn(rightViews: rightViews)
+                    // 第三栏：详情栏（简单的 VStack 堆积）
+                    detailContentColumn
                         .frame(minWidth: 200, idealWidth: 300)
                 }
                 .id("agentModeRightDetailHSplitView")
@@ -105,18 +105,42 @@ struct AgentModeContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// 右侧栏
-    private func rightColumn(rightViews: [AnyView]) -> some View {
+    /// 右侧栏（支持头部、中间、底部）
+    private var rightColumn: some View {
         VStack(spacing: 0) {
+            // 右侧栏头部
+            detailHeaderContent()
+
+            Divider()
+                .background(Color.white.opacity(0.1))
+
+            // 右侧栏中间（消息列表）
+            detailMiddleContent()
+
+            Divider()
+                .background(Color.white.opacity(0.1))
+
+            // 右侧栏底部（输入区域）
+            detailBottomContent()
+        }
+        .ignoresSafeArea()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// 详情栏内容（简单的 VStack 堆积）
+    private var detailContentColumn: some View {
+        let rightViews = pluginProvider.getRightViews()
+        
+        return VStack(spacing: 0) {
             // 修复：使用稳定 ID 而不是 offset，避免 AttributeGraph 崩溃
             ForEach(rightViews.indices, id: \.self) { index in
                 rightViews[index]
-                    .id("right_\(index)")
+                    .id("detail_\(index)")
             }
         }
     }
-
-    /// 详情栏
+    
+    /// 详情栏（支持头部、中间、底部）
     private var detailColumn: some View {
         VStack(spacing: 0) {
             // 详情栏头部
