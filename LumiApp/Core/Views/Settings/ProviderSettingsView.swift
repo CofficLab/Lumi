@@ -165,7 +165,7 @@ struct ProviderSettingsView: View {
                     ForEach(provider.availableModels, id: \.self) { model in
                         ModelRow(
                             model: model,
-                            isDefault: model == provider.defaultModel,
+                            isDefault: selectedModel == model,
                             isSelected: selectedModel == model
                         ) {
                             selectedModel = model
