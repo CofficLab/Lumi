@@ -50,12 +50,6 @@ struct ModelSelectorView: View, SuperLog {
                                     VStack(alignment: .leading) {
                                         Text(model)
                                             .font(.body)
-                                        if isDefaultModel(providerId: provider.id, model: model) {
-                                            Text("Default")
-                                                .font(.caption)
-                                                .foregroundColor(.secondary)
-                                        }
-                                        
                                         // 显示性能统计
                                         if let stat = findDetailedStat(providerId: provider.id, modelName: model) {
                                             VStack(alignment: .leading, spacing: 4) {
