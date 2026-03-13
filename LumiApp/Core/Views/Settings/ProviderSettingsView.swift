@@ -233,6 +233,8 @@ private struct ModelRow: View {
     let isSelected: Bool
     let action: () -> Void
 
+    @State private var isHovered: Bool = false
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: DesignTokens.Spacing.sm) {
@@ -262,17 +264,22 @@ private struct ModelRow: View {
             .padding(DesignTokens.Spacing.sm)
             .background(
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                    .fill(isSelected ? DesignTokens.Color.semantic.primary.opacity(0.08) : Color.white.opacity(0.05))
+                    .fill(isSelected ? DesignTokens.Color.semantic.primary.opacity(0.08) : isHovered ? Color.white.opacity(0.08) : Color.white.opacity(0.05))
                     .overlay(
                         RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
                             .stroke(
-                                isSelected ? DesignTokens.Color.semantic.primary : Color.white.opacity(0.1),
+                                isSelected ? DesignTokens.Color.semantic.primary : isHovered ? DesignTokens.Color.semantic.primary.opacity(0.5) : Color.white.opacity(0.1),
                                 lineWidth: isSelected ? 1.5 : 1
                             )
                     )
             )
         }
         .buttonStyle(.plain)
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHovered = hovering
+            }
+        }
     }
 }
 
