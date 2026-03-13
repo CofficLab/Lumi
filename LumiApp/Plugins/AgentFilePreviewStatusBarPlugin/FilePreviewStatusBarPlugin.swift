@@ -3,7 +3,7 @@ import SwiftUI
 import OSLog
 import MagicKit
 
-/// File Preview Status Bar Plugin: 显示文件预览底部状态栏
+/// File Preview Status Bar Plugin: 显示文件预览状态栏信息（类似 VS Code）
 actor FilePreviewStatusBarPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
@@ -11,7 +11,7 @@ actor FilePreviewStatusBarPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "📊"
 
     /// Whether to enable this plugin
-    nonisolated static let enable = false
+    nonisolated static let enable = true
 
     /// Whether to enable verbose log output
     nonisolated static let verbose = false
@@ -23,7 +23,7 @@ actor FilePreviewStatusBarPlugin: SuperPlugin, SuperLog {
     static let displayName: String = "文件预览状态栏"
 
     /// Plugin functional description
-    static let description: String = "显示文件预览底部状态栏（文件类型、字符数等）"
+    static let description: String = "在 Agent 模式底部状态栏显示文件信息（文件类型、字符数等）"
 
     /// Plugin icon name
     static let iconName: String = "info.circle.fill"
@@ -31,8 +31,8 @@ actor FilePreviewStatusBarPlugin: SuperPlugin, SuperLog {
     /// Whether it is configurable
     static let isConfigurable: Bool = false
 
-    /// Registration order (after FilePreviewPlugin to appear at the bottom of middle column)
-    static var order: Int { 77 }
+    /// Registration order (higher number = loaded later, appears on the right side of status bar)
+    static var order: Int { 91 }
 
     // MARK: - Instance
 
@@ -51,9 +51,9 @@ actor FilePreviewStatusBarPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    /// Add middle view for Agent mode - 显示文件预览状态栏
-    /// - Returns: FilePreviewStatusBarView to be added to the bottom of middle column
-    @MainActor func addMiddleView() -> AnyView? {
+    /// Add status bar view for Agent mode - 显示文件预览状态栏
+    /// - Returns: FilePreviewStatusBarView to be added to the bottom status bar
+    @MainActor func addStatusBarView() -> AnyView? {
         if Self.verbose {
             os_log("\(self.t) 提供 FilePreviewStatusBarView")
         }
