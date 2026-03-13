@@ -47,23 +47,29 @@ struct MessageListView: View, SuperLog {
     var body: some View {
         let lastMessageID = messages.last?.id
 
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                if hasMoreMessages {
-                    loadMoreButton
-                }
+        Group {
+            if messages.isEmpty {
+                EmptyMessagesView()
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        if hasMoreMessages {
+                            loadMoreButton
+                        }
 
-                ForEach(messages) { message in
-                    ChatBubble(
-                        message: message,
-                        isLastMessage: message.id == lastMessageID,
-                        relatedToolOutputs: []
-                    )
+                        ForEach(messages) { message in
+                            ChatBubble(
+                                message: message,
+                                isLastMessage: message.id == lastMessageID,
+                                relatedToolOutputs: []
+                            )
+                        }
+                    }
+                    .padding(.horizontal)
                 }
+                .padding(.vertical)
             }
-            .padding(.horizontal)
         }
-        .padding(.vertical)
         .onAppear(perform: handleOnAppear)
         .onChange(of: selectedConversationId, handleConversationChanged)
         .onChange(of: processingStateViewModel.isProcessing, applyTransientStatusMessageIfNeeded)
@@ -75,25 +81,6 @@ struct MessageListView: View, SuperLog {
 // MARK: - View
 
 extension MessageListView {
-    // MARK: - Shared Display Item
-
-    //
-    // MessageListView 本身已直接渲染 nonSystemMessages，不再做 DisplayMessageItem 转换；
-    // 但 AppKit 版本消息列表仍复用该类型做渲染分支，因此保留这个共享 enum。
-    enum DisplayMessageItem: Identifiable {
-        case message(message: ChatMessage, relatedToolOutputs: [ChatMessage])
-        case toolCallSummary(id: UUID, toolCount: Int)
-
-        var id: UUID {
-            switch self {
-            case let .message(message, _):
-                return message.id
-            case let .toolCallSummary(id, _):
-                return id
-            }
-        }
-    }
-
     /// 加载更多消息按钮
     private var loadMoreButton: some View {
         HStack {
