@@ -29,7 +29,7 @@ actor StatusBarPlugin: SuperPlugin, SuperLog {
     static let iconName: String = "info.circle.fill"
 
     /// Whether it is configurable
-    static let isConfigurable: Bool = true
+    static let isConfigurable: Bool = false
 
     /// Registration order
     static var order: Int { 90 }
