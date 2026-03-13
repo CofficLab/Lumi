@@ -5,9 +5,9 @@ import SwiftUI
 /// 为每个窗口提供独立的 ViewModel 实例，实现多窗口状态隔离
 ///
 /// 每个窗口创建时都会实例化一个 `WindowViewContainer`，包含：
-/// - 独立的 `AgentProvider` - 管理对话状态和消息处理
+/// - 独立的 `AgentVM` - 管理对话状态和消息处理
 /// - 独立的 `MessageViewModel` - 管理消息列表
-/// - 独立的 `ConversationViewModel` - 管理会话列表
+/// - 独立的 `ConversationVM` - 管理会话列表
 /// - 独立的 `ChatHistoryService` - 管理当前窗口的数据库上下文
 ///
 /// 共享的服务（如 LLMService、ModelContainer）通过 `RootViewContainer.Services` 传入
@@ -15,18 +15,18 @@ import SwiftUI
 final class WindowViewContainer: ObservableObject {
     let chatHistoryService: ChatHistoryService
 
-    let messageViewModel: MessagePendingViewModel
-    let conversationViewModel: ConversationViewModel
-    let messageSenderViewModel: MessageSenderViewModel
-    let agentProvider: AgentProvider
-    let commandSuggestionViewModel: CommandSuggestionViewModel
+    let messageViewModel: MessagePendingVM
+    let ConversationVM: ConversationVM
+    let MessageSenderVM: MessageSenderVM
+    let agentProvider: AgentVM
+    let commandSuggestionViewModel: CommandSuggestionVM
 
-    let depthWarningViewModel: DepthWarningViewModel
-    let processingStateViewModel: ProcessingStateViewModel
-    let errorStateViewModel: ErrorStateViewModel
-    let permissionRequestViewModel: PermissionRequestViewModel
-    let thinkingStateViewModel: ThinkingStateViewModel
-    let titleGenerationViewModel: TitleGenerationViewModel
+    let depthWarningViewModel: DepthWarningVM
+    let processingStateViewModel: ProcessingStateVM
+    let errorStateViewModel: ErrorStateVM
+    let permissionRequestViewModel: PermissionRequestVM
+    let thinkingStateViewModel: ThinkingStateVM
+    let titleGenerationViewModel: TitleGenerationVM
 
     init(services: RootViewContainer.Services) {
         self.chatHistoryService = ChatHistoryService(
@@ -35,42 +35,42 @@ final class WindowViewContainer: ObservableObject {
             reason: "WindowViewContainer"
         )
 
-        self.depthWarningViewModel = DepthWarningViewModel()
-        self.processingStateViewModel = ProcessingStateViewModel()
-        self.errorStateViewModel = ErrorStateViewModel()
-        self.permissionRequestViewModel = PermissionRequestViewModel()
-        self.thinkingStateViewModel = ThinkingStateViewModel()
-        self.titleGenerationViewModel = TitleGenerationViewModel()
+        self.depthWarningViewModel = DepthWarningVM()
+        self.processingStateViewModel = ProcessingStateVM()
+        self.errorStateViewModel = ErrorStateVM()
+        self.permissionRequestViewModel = PermissionRequestVM()
+        self.thinkingStateViewModel = ThinkingStateVM()
+        self.titleGenerationViewModel = TitleGenerationVM()
 
-        self.messageViewModel = MessagePendingViewModel(chatHistoryService: chatHistoryService)
+        self.messageViewModel = MessagePendingVM(chatHistoryService: chatHistoryService)
 
-        self.conversationViewModel = ConversationViewModel(
+        self.ConversationVM = Lumi.ConversationVM(
             chatHistoryService: chatHistoryService,
             llmService: services.llmService,
             promptService: services.promptService
         )
 
-        self.messageSenderViewModel = MessageSenderViewModel()
+        self.MessageSenderVM = Lumi.MessageSenderVM()
 
-        self.commandSuggestionViewModel = CommandSuggestionViewModel(slashCommandService: services.slashCommandService)
+        self.commandSuggestionViewModel = CommandSuggestionVM(slashCommandService: services.slashCommandService)
 
         let toolExecutionService = ToolExecutionService(toolService: services.toolService)
 
-        let conversationTurnViewModel = ConversationTurnViewModel(
+        let conversationTurnViewModel = ConversationTurnVM(
             llmService: services.llmService,
             toolExecutionService: toolExecutionService,
             promptService: services.promptService
         )
 
-        self.agentProvider = AgentProvider(
+        self.agentProvider = AgentVM(
             promptService: services.promptService,
             registry: services.providerRegistry,
             toolService: services.toolService,
             chatHistoryService: chatHistoryService,
             messageViewModel: messageViewModel,
-            conversationViewModel: conversationViewModel,
-            messageSenderViewModel: messageSenderViewModel,
-            projectViewModel: services.projectViewModel,
+            ConversationVM: ConversationVM,
+            MessageSenderVM: MessageSenderVM,
+            ProjectVM: services.ProjectVM,
             conversationTurnViewModel: conversationTurnViewModel,
             slashCommandService: services.slashCommandService,
             depthWarningViewModel: depthWarningViewModel,

@@ -7,7 +7,7 @@ import MagicKit
 /// DeepSeek API 供应商实现
 ///
 /// DeepSeek 兼容 OpenAI API 格式，因此继承 OpenAI 的实现逻辑。
-struct DeepSeekProvider: LLMProviderProtocol {
+final class DeepSeekProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
     nonisolated static let emoji = "🔵"
     nonisolated static let verbose = false
@@ -29,9 +29,14 @@ struct DeepSeekProvider: LLMProviderProtocol {
     static let availableModels = [
         "deepseek-chat",       // DeepSeek Chat
         "deepseek-coder",      // DeepSeek Coder
+        "deepseek-reasoner"
     ]
 
-    // MARK: - LLMProviderProtocol
+    // MARK: - SuperLLMProvider
+
+    override init() {
+        super.init()
+    }
 
     var baseURL: String {
         "https://api.deepseek.com/chat/completions"

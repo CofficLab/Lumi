@@ -147,8 +147,8 @@ class ToolService: SuperLog, @unchecked Sendable {
     @MainActor
     private func refreshAllTools() {
         let env = AgentToolEnvironment(toolService: self, llmService: llmService)
-        let directTools = PluginProvider.shared.getAgentTools()
-        let factories = PluginProvider.shared.getAgentToolFactories()
+        let directTools = PluginVM.shared.getAgentTools()
+        let factories = PluginVM.shared.getAgentToolFactories()
         let factoryTools = factories.flatMap { $0.makeTools(env: env) }
 
         pluginTools = directTools + factoryTools

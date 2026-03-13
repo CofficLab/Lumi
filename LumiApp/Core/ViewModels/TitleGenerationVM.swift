@@ -5,7 +5,7 @@ import MagicKit
 /// 标题生成 ViewModel
 /// 专门管理会话标题生成状态，避免与消息管理逻辑耦合
 @MainActor
-final class TitleGenerationViewModel: ObservableObject, SuperLog {
+final class TitleGenerationVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "🏷️"
     nonisolated static let verbose = true
 

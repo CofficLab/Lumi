@@ -8,17 +8,17 @@ struct ChatMessagesView: View, SuperLog {
     nonisolated static let verbose = true
 
     /// 会话管理 ViewModel
-    @EnvironmentObject var conversationViewModel: ConversationViewModel
+    @EnvironmentObject var ConversationVM: ConversationVM
 
     /// 权限请求 ViewModel
-    @EnvironmentObject var permissionRequestViewModel: PermissionRequestViewModel
+    @EnvironmentObject var permissionRequestViewModel: PermissionRequestVM
 
     /// 智能体提供者
-    @EnvironmentObject var agentProvider: AgentProvider
+    @EnvironmentObject var agentProvider: AgentVM
 
     /// 当前选中的会话 ID
     private var selectedConversationId: UUID? {
-        conversationViewModel.selectedConversationId
+        ConversationVM.selectedConversationId
     }
 
     /// 是否已选择会话

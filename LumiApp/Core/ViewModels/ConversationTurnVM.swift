@@ -32,7 +32,7 @@ enum ConversationTurnEvent: Sendable {
 
 /// 对话轮次处理 ViewModel
 @MainActor
-final class ConversationTurnViewModel: ObservableObject, SuperLog {
+final class ConversationTurnVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "🔄"
     nonisolated static let verbose = true
 

@@ -13,7 +13,7 @@ struct CommandSuggestion: Identifiable, Equatable {
 
 /// 命令建议视图模型 - 提供斜杠命令自动补全功能
 @MainActor
-class CommandSuggestionViewModel: ObservableObject, SuperLog {
+class CommandSuggestionVM: ObservableObject, SuperLog {
     nonisolated static let verbose = true
     nonisolated static let emoji = "🔍"
     
@@ -24,7 +24,7 @@ class CommandSuggestionViewModel: ObservableObject, SuperLog {
     /// Slash 命令服务引用（弱引用避免循环）
     weak var slashCommandService: SlashCommandService?
     
-    /// 静态命令（当服务不可用或没有项目命令时使用）
+    /// 静态命令
     private let staticCommands: [CommandSuggestion] = [
         CommandSuggestion(command: "/clear", description: "Clear chat history", category: "System"),
         CommandSuggestion(command: "/help", description: "Show all available commands", category: "System"),
@@ -72,9 +72,6 @@ class CommandSuggestionViewModel: ObservableObject, SuperLog {
         }
 
         let lowercasedInput = input.lowercased()
-
-        // 始终显示静态命令作为基础
-        var allSuggestions = staticCommands
 
         // 如果有服务，异步获取动态命令并追加
         if let service = slashCommandService {

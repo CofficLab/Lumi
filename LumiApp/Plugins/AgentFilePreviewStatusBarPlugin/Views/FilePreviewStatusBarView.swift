@@ -3,11 +3,11 @@ import MagicKit
 
 /// 文件预览底部状态栏视图（类似 VS Code）
 struct FilePreviewStatusBarView: View {
-    @EnvironmentObject var projectViewModel: ProjectViewModel
+    @EnvironmentObject var ProjectVM: ProjectVM
 
     /// 判断当前选择的文件是否为可预览的类型
     private var isPreviewableFile: Bool {
-        guard let url = projectViewModel.selectedFileURL else { return false }
+        guard let url = ProjectVM.selectedFileURL else { return false }
         let fileName = url.lastPathComponent
         let fileExtension = url.pathExtension.lowercased()
 
@@ -22,13 +22,13 @@ struct FilePreviewStatusBarView: View {
 
     /// 获取当前文件扩展名
     private var fileExtension: String {
-        guard let url = projectViewModel.selectedFileURL else { return "" }
+        guard let url = ProjectVM.selectedFileURL else { return "" }
         return url.pathExtension.lowercased()
     }
 
     /// 获取当前文件完整名称
     private var fileName: String {
-        guard let url = projectViewModel.selectedFileURL else { return "" }
+        guard let url = ProjectVM.selectedFileURL else { return "" }
         return url.lastPathComponent
     }
 
@@ -39,13 +39,13 @@ struct FilePreviewStatusBarView: View {
 
     /// 获取当前文件内容
     private var fileContent: String {
-        projectViewModel.selectedFileContent
+        ProjectVM.selectedFileContent
     }
 
     var body: some View {
         HStack(spacing: 12) {
             // 左侧：内容类型标签（仅当选择了可预览文件时显示）
-            if projectViewModel.isFileSelected && isPreviewableFile {
+            if ProjectVM.isFileSelected && isPreviewableFile {
                 Text(fileTypeDescription)
                     .font(.system(size: 9, weight: .medium))
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
@@ -60,7 +60,7 @@ struct FilePreviewStatusBarView: View {
             Spacer()
 
             // 右侧：字符数统计（仅当选择了可预览文件时显示）
-            if projectViewModel.isFileSelected && isPreviewableFile {
+            if ProjectVM.isFileSelected && isPreviewableFile {
                 Text("\(fileContent.count) 字符")
                     .font(.system(size: 9))
                     .foregroundColor(DesignTokens.Color.semantic.textTertiary)

@@ -15,7 +15,7 @@ struct ModelSelectorView: View, SuperLog {
     @Environment(\.dismiss) private var dismiss
 
     /// 智能体提供者
-    @EnvironmentObject var agentProvider: AgentProvider
+    @EnvironmentObject var agentProvider: AgentVM
 
     /// 模型性能统计
     @State private var detailedStats: [String: ModelPerformanceStats] = [:]
@@ -50,12 +50,6 @@ struct ModelSelectorView: View, SuperLog {
                                     VStack(alignment: .leading) {
                                         Text(model)
                                             .font(.body)
-                                        if isDefaultModel(providerId: provider.id, model: model) {
-                                            Text("Default")
-                                                .font(.caption)
-                                                .foregroundColor(.secondary)
-                                        }
-                                        
                                         // 显示性能统计
                                         if let stat = findDetailedStat(providerId: provider.id, modelName: model) {
                                             VStack(alignment: .leading, spacing: 4) {

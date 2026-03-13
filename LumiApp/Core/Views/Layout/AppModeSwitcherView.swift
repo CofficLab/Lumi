@@ -7,8 +7,8 @@ struct AppModeSwitcherView: View, SuperLog {
     nonisolated static let emoji = "🔄"
     nonisolated static let verbose = true
 
-    @EnvironmentObject var app: GlobalProvider
-    @EnvironmentObject var pluginProvider: PluginProvider
+    @EnvironmentObject var app: GlobalVM
+    @EnvironmentObject var pluginProvider: PluginVM
     @Environment(\.windowState) var windowState
 
     @State private var mode: AppMode = .app

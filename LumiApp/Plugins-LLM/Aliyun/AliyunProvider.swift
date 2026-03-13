@@ -9,7 +9,7 @@ import OSLog
 /// 提供通义千问、GLM、MiniMax、Kimi 等大模型服务
 /// API 地址：https://coding.dashscope.aliyuncs.com/apps/anthropic
 /// 兼容 Anthropic API 格式
-struct AliyunProvider: LLMProviderProtocol, SuperLog {
+final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🔵"
     nonisolated static let verbose = true
 
@@ -24,6 +24,8 @@ struct AliyunProvider: LLMProviderProtocol, SuperLog {
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_Aliyun"
     static let modelStorageKey = "DevAssistant_Model_Aliyun"
+    /// Plan 选择的存储键（仅 Aliyun 使用）
+    static let planStorageKey = "DevAssistant_Plan_Aliyun"
 
     static let defaultModel = "qwen3.5-plus"
 
@@ -35,10 +37,54 @@ struct AliyunProvider: LLMProviderProtocol, SuperLog {
         "kimi-k2.5",          // Kimi K2.5
     ]
 
-    // MARK: - LLMProviderProtocol
+    /// Aliyun Coding Plan 的标识符
+    static let codingPlanId = "coding"
+
+    /// Aliyun 支持的 Plan 列表（目前仅 Coding Plan）
+    static var plans: [ProviderPlan] {
+        [
+            ProviderPlan(
+                id: codingPlanId,
+                displayName: "Coding Plan",
+                baseURL: "https://coding.dashscope.aliyuncs.com/apps/anthropic/v1/messages",
+                availableModels: availableModels
+            )
+        ]
+    }
+
+    /// Aliyun 默认 Plan（当前为 Coding Plan）
+    static var defaultPlanId: String {
+        codingPlanId
+    }
+
+    /// 根据 Plan ID 获取对应的 Base URL（未知或 nil 时回退到默认 Plan）
+    static func baseURL(for planId: String?) -> String {
+        let targetId = planId ?? defaultPlanId
+        if let plan = plans.first(where: { $0.id == targetId }) {
+            return plan.baseURL
+        }
+        // 回退到默认 Plan，保证兼容性
+        return plans.first?.baseURL ?? "https://coding.dashscope.aliyuncs.com/apps/anthropic/v1/messages"
+    }
+
+    /// 根据 Plan ID 获取可用模型列表（未知或 nil 时回退到默认 Plan）
+    static func models(for planId: String?) -> [String] {
+        let targetId = planId ?? defaultPlanId
+        if let plan = plans.first(where: { $0.id == targetId }) {
+            return plan.availableModels
+        }
+        return availableModels
+    }
+
+    // MARK: - SuperLLMProvider
+
+    override init() {
+        super.init()
+    }
 
     var baseURL: String {
-        "https://coding.dashscope.aliyuncs.com/apps/anthropic/v1/messages"
+        // 实例级别的 baseURL 保持默认 Plan 行为，确保旧调用兼容
+        Self.baseURL(for: nil)
     }
 
     func buildRequest(url: URL, apiKey: String) -> URLRequest {

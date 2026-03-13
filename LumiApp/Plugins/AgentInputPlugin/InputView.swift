@@ -18,7 +18,7 @@ struct InputView: View, SuperLog {
     nonisolated static let verbose = false
 
     /// 智能体提供者
-    @EnvironmentObject var agentProvider: AgentProvider
+    @EnvironmentObject var agentProvider: AgentVM
 
     /// 输入框本地状态 ViewModel（与 agentProvider 解耦，避免每次击键触发全局重庆染）
     @StateObject private var inputViewModel = InputViewModel()
@@ -32,7 +32,7 @@ struct InputView: View, SuperLog {
     var body: some View {
         VStack(spacing: 8) {
             // 待发送消息队列（放在外层，避免影响输入框焦点）
-            PendingMessagesView(messageSenderViewModel: agentProvider.messageSenderViewModel)
+            PendingMessagesView(MessageSenderVM: agentProvider.MessageSenderVM)
 
             // 输入区域
             InputAreaView(

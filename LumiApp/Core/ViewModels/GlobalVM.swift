@@ -2,9 +2,9 @@ import Combine
 import SwiftData
 import SwiftUI
 
-/// 全局服务提供者，管理应用状态和全局服务
+/// 全局服务 VM，管理应用状态和全局服务
 ///
-/// GlobalProvider 是 Lumi 应用的核心状态管理类，负责：
+/// GlobalVM 是 Lumi 应用的核心状态管理类，负责：
 /// - 应用级别的状态（加载状态、错误信息）
 /// - 主题管理
 /// - 导航状态
@@ -20,19 +20,19 @@ import SwiftUI
 /// ## 使用示例
 ///
 /// ```swift
-/// @StateObject private var globalProvider = GlobalProvider()
+/// @StateObject private var globalVM = GlobalVM()
 ///
 /// // 切换主题
-/// globalProvider.themeManager.setTheme(.aurora)
+/// globalVM.themeManager.setTheme(.aurora)
 ///
 /// // 切换模式
-/// globalProvider.selectedMode = .agent
+/// globalVM.selectedMode = .agent
 ///
 /// // 显示错误
-/// globalProvider.showError("网络连接失败")
+/// globalVM.showError("网络连接失败")
 /// ```
 @MainActor
-final class GlobalProvider: ObservableObject {
+final class GlobalVM: ObservableObject {
     // MARK: - 应用状态
 
     /// 当前选中的设置标签
@@ -131,14 +131,13 @@ final class GlobalProvider: ObservableObject {
     ///
     /// 根据 selectedNavigationId 从插件提供的导航入口中查找对应的视图。
     ///
-    /// - Parameter pluginProvider: 插件提供者
-    /// - Returns: 当前选中导航的内容视图，如果未找到则返回 EmptyView
-    func getCurrentNavigationView(pluginProvider: PluginProvider) -> AnyView {
+    /// - Parameter pluginVM: 插件 VM
+    func getCurrentNavigationView(pluginVM: PluginVM) -> AnyView {
         guard let selectedId = selectedNavigationId else {
             return AnyView(EmptyView())
         }
 
-        let entries = pluginProvider.getNavigationEntries()
+        let entries = pluginVM.getNavigationEntries()
         guard let selectedEntry = entries.first(where: { $0.id == selectedId }) else {
             return AnyView(EmptyView())
         }
@@ -150,14 +149,14 @@ final class GlobalProvider: ObservableObject {
     ///
     /// 根据 selectedNavigationId 获取导航项的标题。
     ///
-    /// - Parameter pluginProvider: 插件提供者
+    /// - Parameter pluginVM: 插件 VM
     /// - Returns: 当前选中导航的标题，如果未找到则返回空字符串
-    func getCurrentNavigationTitle(pluginProvider: PluginProvider) -> String {
+    func getCurrentNavigationTitle(pluginVM: PluginVM) -> String {
         guard let selectedId = selectedNavigationId else {
             return ""
         }
 
-        let entries = pluginProvider.getNavigationEntries()
+        let entries = pluginVM.getNavigationEntries()
         return entries.first(where: { $0.id == selectedId })?.title ?? ""
     }
 }

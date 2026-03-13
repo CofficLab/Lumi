@@ -18,7 +18,7 @@ import SwiftUI
 /// ## 架构模式
 ///
 /// ```
-/// ConversationViewModel
+/// ConversationVM
 /// ├── ChatHistoryService
 /// │   └── 持久化操作
 /// ├── LLMService
@@ -27,7 +27,7 @@ import SwiftUI
 ///     └── 欢迎消息
 /// ```
 @MainActor
-final class ConversationViewModel: ObservableObject, SuperLog {
+final class ConversationVM: ObservableObject, SuperLog {
     /// 日志标识符
     nonisolated static let emoji = "💬"
 
@@ -132,7 +132,7 @@ final class ConversationViewModel: ObservableObject, SuperLog {
 
     /// 删除指定对话
     /// - Parameter conversation: 要删除的对话
-    /// - Note: 调用方（如 AgentProvider）需要负责清理相关的消息发送队列
+    /// - Note: 调用方（如 AgentVM）需要负责清理相关的消息发送队列
     func deleteConversation(_ conversation: Conversation) {
         os_log("\(Self.t)🗑️ 开始删除对话：\(conversation.title)")
 

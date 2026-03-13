@@ -8,7 +8,7 @@ import MagicKit
 /// 此类可以在后台线程执行
 class LLMAPIService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
     
     /// URLSession 配置
     private nonisolated let session: URLSession
@@ -211,7 +211,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
                 guard !eventData.isEmpty else { continue }
                 chunkCount += 1
                 // 避免 Xcode 控制台缓存海量日志导致卡顿/内存上涨：只打印前几个块用于诊断
-                if Self.verbose && chunkCount <= 5 {
+                if Self.verbose && chunkCount < 5 {
                     let decoded = String(data: eventData, encoding: .utf8) ?? "无法解码"
                     let preview = decoded.count > 300 ? String(decoded.prefix(300)) + "..." : decoded
                     os_log("\(self.t)📦 收到 SSE 数据块 #\(chunkCount) (\(eventData.count) bytes): \n\(preview)")

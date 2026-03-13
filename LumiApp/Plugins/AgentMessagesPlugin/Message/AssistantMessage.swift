@@ -122,8 +122,16 @@ struct AssistantMessage: View, SuperLog {
             Spacer()
 
             HStack(alignment: .center, spacing: 12) {
-                // 性能指标组
+                // 性能指标组（暂时隐藏）
 //                performanceMetricsGroup
+
+                // 复制按钮
+                CopyMessageButton(
+                    content: message.content,
+                    showFeedback: .constant(false)
+                )
+
+                // 用户消息才显示重发，这里是助手消息，不需要重发按钮
 
                 // 折叠/展开按钮（仅当内容是长消息时显示）
                 if isLongMessage {

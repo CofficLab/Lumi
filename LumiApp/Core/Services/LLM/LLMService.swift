@@ -42,7 +42,7 @@ class LLMService: SuperLog, @unchecked Sendable {
     /// 0: 关闭日志
     /// 1: 基础日志
     /// 2: 详细日志（输出请求/响应的详细信息）
-    nonisolated static let verbose = 0
+    nonisolated static let verbose = 2
 
     /// 供应商注册表
     ///
@@ -65,7 +65,10 @@ class LLMService: SuperLog, @unchecked Sendable {
     ///
     /// 创建供应商注册表和 API 服务实例。
     init() {
-        self.registry = ProviderRegistry()
+        let registry = ProviderRegistry()
+        // 通过 LLM 插件系统自动发现并注册所有可用供应商
+        LLMPluginsVM.registerAllProviders(to: registry)
+        self.registry = registry
         self.llmAPI = LLMAPIService()
         if Self.verbose >= 1 {
             os_log("\(self.t)✅ LLM 服务已初始化")
@@ -152,11 +155,18 @@ class LLMService: SuperLog, @unchecked Sendable {
             os_log(.error, "\(self.t)未找到供应商：\(config.providerId)")
             throw NSError(domain: "LLMService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Provider not found: \(config.providerId)"])
         }
-
-        // 构建 API URL
-        guard let url = URL(string: provider.baseURL) else {
-            os_log(.error, "\(self.t)无效的 URL: \(provider.baseURL)")
-            throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL: \(provider.baseURL)"])
+        
+        // 构建 API URL（支持按 Plan 选择 Base URL）
+        let baseURLString: String
+        if config.providerId == AliyunProvider.id {
+            baseURLString = AliyunProvider.baseURL(for: config.planId)
+        } else {
+            baseURLString = provider.baseURL
+        }
+        
+        guard let url = URL(string: baseURLString) else {
+            os_log(.error, "\(self.t)无效的 URL: \(baseURLString)")
+            throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL: \(baseURLString)"])
         }
 
         // 构建请求体
@@ -281,11 +291,18 @@ class LLMService: SuperLog, @unchecked Sendable {
             os_log(.error, "\(self.t)未找到供应商：\(config.providerId)")
             throw NSError(domain: "LLMService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Provider not found: \(config.providerId)"])
         }
-
-        // 构建 API URL
-        guard let url = URL(string: provider.baseURL) else {
-            os_log(.error, "\(self.t)无效的 URL: \(provider.baseURL)")
-            throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL: \(provider.baseURL)"])
+        
+        // 构建 API URL（支持按 Plan 选择 Base URL）
+        let baseURLString: String
+        if config.providerId == AliyunProvider.id {
+            baseURLString = AliyunProvider.baseURL(for: config.planId)
+        } else {
+            baseURLString = provider.baseURL
+        }
+        
+        guard let url = URL(string: baseURLString) else {
+            os_log(.error, "\(self.t)无效的 URL: \(baseURLString)")
+            throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL: \(baseURLString)"])
         }
 
         // 构建流式请求体
@@ -347,22 +364,46 @@ class LLMService: SuperLog, @unchecked Sendable {
                 accumulatedContentLength += content.count
             }
             
-            func saveCurrentToolCall() {
-                if let currentId = currentToolCallId,
-                   let currentName = currentToolCallName {
-                    let toolCall = ToolCall(
-                        id: currentId,
-                        name: currentName,
-                        arguments: currentToolCallArgumentChunks.isEmpty ? "{}" : currentToolCallArgumentChunks.joined()
-                    )
-                    accumulatedToolCalls.append(toolCall)
-                }
-            }
-            
-            func startNewToolCall(_ toolCall: ToolCall) {
+            func startNewToolCall(_ toolCall: ToolCall, hasPartialJson: Bool = false) {
                 currentToolCallId = toolCall.id
                 currentToolCallName = toolCall.name
-                currentToolCallArgumentChunks = []
+                // 如果工具调用已经有完整的参数，且后续不会有 partialJson，则直接使用
+                // 否则，清空累积器，等待后续的 partialJson 累积
+                if !hasPartialJson && !toolCall.arguments.isEmpty && toolCall.arguments != "{}" {
+                    // 已经有完整参数，设置累积器为当前参数（不再累积）
+                    currentToolCallArgumentChunks = [toolCall.arguments]
+                } else {
+                    currentToolCallArgumentChunks = []
+                }
+            }
+
+            /// 完成当前工具调用，使用累积的参数或预设的参数
+            func finalizeCurrentToolCall() -> ToolCall? {
+                guard let currentId = currentToolCallId,
+                      let currentName = currentToolCallName else {
+                    return nil
+                }
+                let arguments: String
+                if currentToolCallArgumentChunks.isEmpty {
+                    arguments = "{}"
+                } else if currentToolCallArgumentChunks.count == 1 {
+                    // 只有一个分片，直接使用
+                    arguments = currentToolCallArgumentChunks[0]
+                } else {
+                    // 多个分片，需要合并
+                    arguments = currentToolCallArgumentChunks.joined()
+                }
+                return ToolCall(id: currentId, name: currentName, arguments: arguments)
+            }
+
+            func saveCurrentToolCall() {
+                if let toolCall = finalizeCurrentToolCall() {
+                    accumulatedToolCalls.append(toolCall)
+                    // 清空当前状态，避免重复保存
+                    currentToolCallId = nil
+                    currentToolCallName = nil
+                    currentToolCallArgumentChunks = []
+                }
             }
             
             func appendToolCallArguments(_ partialJson: String) {
@@ -430,7 +471,9 @@ class LLMService: SuperLog, @unchecked Sendable {
 
                                 // 开始新的工具调用
                                 if let firstToolCall = toolCalls.first {
-                                    await state.startNewToolCall(firstToolCall)
+                                    // 如果同时有 partialJson，说明参数还需要后续累积
+                                    let hasPartialJson = chunk.partialJson != nil
+                                    await state.startNewToolCall(firstToolCall, hasPartialJson: hasPartialJson)
                                 }
                             }
 

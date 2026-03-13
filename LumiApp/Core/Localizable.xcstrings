@@ -1506,9 +1506,6 @@
     "Database Type" : {
 
     },
-    "Default" : {
-
-    },
     "Default Content" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3345,6 +3342,9 @@
           }
         }
       }
+    },
+    "Plan" : {
+
     },
     "Port" : {
 

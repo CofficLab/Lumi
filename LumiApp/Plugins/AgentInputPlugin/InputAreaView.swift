@@ -17,13 +17,13 @@ struct InputAreaView: View, SuperLog {
     nonisolated static let verbose = true
 
     /// 智能体提供者
-    @EnvironmentObject var agentProvider: AgentProvider
+    @EnvironmentObject var agentProvider: AgentVM
 
     /// 处理状态 ViewModel
-    @EnvironmentObject var processingStateViewModel: ProcessingStateViewModel
+    @EnvironmentObject var processingStateViewModel: ProcessingStateVM
 
     /// 命令建议 ViewModel
-    @EnvironmentObject var commandSuggestionViewModel: CommandSuggestionViewModel
+    @EnvironmentObject var commandSuggestionViewModel: CommandSuggestionVM
 
     /// 输入框本地状态 ViewModel（与 agentProvider 解耦，避免击键触发全局重庆染）
     @ObservedObject var inputViewModel: InputViewModel

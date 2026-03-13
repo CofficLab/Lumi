@@ -56,6 +56,13 @@ struct LLMConfig: Codable, Sendable, Equatable {
     /// 用于在 ProviderRegistry 中查找对应的供应商实现。
     var providerId: String
     
+    /// 供应商计划 ID（可选）
+    ///
+    /// 某些供应商（如阿里云）支持多个 Plan。
+    /// 对于不支持 Plan 的供应商，该字段为 nil。
+    /// 对于阿里云，如果未设置则等价于使用默认 Plan（当前为 Coding Plan）。
+    var planId: String? = nil
+    
     /// 温度参数
     ///
     /// 控制生成文本的随机性。
@@ -73,8 +80,8 @@ struct LLMConfig: Codable, Sendable, Equatable {
     ///
     /// 使用 Anthropic Claude 作为默认供应商。
     static let `default` = LLMConfig(
-        apiKey: "", 
-        model: "claude-sonnet-4-20250514", 
+        apiKey: "",
+        model: "claude-sonnet-4-20250514",
         providerId: "anthropic",
         temperature: nil,
         maxTokens: nil

@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 附件预览视图 - 显示待发送的图片缩略图
 struct AttachmentPreviewView: View {
-    let attachments: [AgentProvider.Attachment]
+    let attachments: [AgentVM.Attachment]
     let onRemove: (UUID) -> Void
 
     var body: some View {

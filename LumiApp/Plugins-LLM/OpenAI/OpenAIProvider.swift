@@ -7,7 +7,7 @@ import MagicKit
 /// OpenAI API 供应商实现
 ///
 /// 此实现也适用于兼容 OpenAI API 格式的其他服务（如 DeepSeek）。
-struct OpenAIProvider: LLMProviderProtocol {
+final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
     nonisolated static let emoji = "🟢"
     nonisolated static let verbose = false
@@ -34,7 +34,11 @@ struct OpenAIProvider: LLMProviderProtocol {
         "gpt-3.5-turbo",       // GPT-3.5 Turbo
     ]
 
-    // MARK: - LLMProviderProtocol
+    // MARK: - SuperLLMProvider
+
+    override init() {
+        super.init()
+    }
 
     var baseURL: String {
         "https://api.openai.com/v1/chat/completions"
@@ -179,22 +183,51 @@ struct OpenAIProvider: LLMProviderProtocol {
 
                 // 处理文本内容
                 if let content = delta["content"] as? String {
-                    return StreamChunk(content: content)
+                    return StreamChunk(content: content, eventType: .textDelta)
                 }
 
                 // 处理工具调用
                 if let toolCalls = delta["tool_calls"] as? [[String: Any]] {
-                    let parsedToolCalls = toolCalls.compactMap { tc -> ToolCall? in
-                        guard let id = tc["id"] as? String,
-                              let function = tc["function"] as? [String: Any],
-                              let name = function["name"] as? String else {
-                            return nil
+                    var resultToolCalls: [ToolCall] = []
+                    var partialJson: String? = nil
+
+                    for tc in toolCalls {
+                        guard let function = tc["function"] as? [String: Any] else {
+                            continue
                         }
-                        let arguments = function["arguments"] as? String ?? "{}"
-                        return ToolCall(id: id, name: name, arguments: arguments)
+
+                        let id = tc["id"] as? String
+                        let name = function["name"] as? String
+                        let arguments = function["arguments"] as? String
+
+                        // 如果有 id 和 name，说明是一个新的工具调用开始
+                        if let toolId = id, let toolName = name {
+                            let toolCall = ToolCall(
+                                id: toolId,
+                                name: toolName,
+                                arguments: arguments ?? "{}"
+                            )
+                            resultToolCalls.append(toolCall)
+                        }
+
+                        // 如果有 arguments 分片，单独返回
+                        if let args = arguments {
+                            partialJson = args
+                        }
                     }
-                    if !parsedToolCalls.isEmpty {
-                        return StreamChunk(toolCalls: parsedToolCalls)
+
+                    // 优先返回工具调用（如果有）
+                    if !resultToolCalls.isEmpty {
+                        return StreamChunk(
+                            toolCalls: resultToolCalls,
+                            partialJson: partialJson,
+                            eventType: .contentBlockStart
+                        )
+                    }
+
+                    // 如果只有参数分片（没有 id/name），返回 partialJson
+                    if let partial = partialJson {
+                        return StreamChunk(partialJson: partial, eventType: .inputJsonDelta)
                     }
                 }
             }
@@ -265,3 +298,4 @@ extension OpenAIProvider {
         ]
     }
 }
+

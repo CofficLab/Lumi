@@ -12,7 +12,7 @@ struct ConversationListView: View, SuperLog {
     nonisolated static let verbose = false
 
     /// 会话管理 ViewModel
-    @EnvironmentObject var conversationViewModel: ConversationViewModel
+    @EnvironmentObject var ConversationVM: ConversationVM
 
     /// 当前页已加载的会话
     @State private var conversations: [Conversation] = []
@@ -78,7 +78,7 @@ struct ConversationListView: View, SuperLog {
         }
         .onAppear(perform: performInitialLoadIfNeeded)
         .onChange(of: localSelectedConversationId, handleLocalSelectionChange)
-        .onChange(of: conversationViewModel.selectedConversationId, handleConversationSelected)
+        .onChange(of: ConversationVM.selectedConversationId, handleConversationSelected)
         .onChange(of: conversations) { _, newConversations in
             // 当会话列表变化时，同步当前选中的会话
             handleConversationsChanged(newConversations)
@@ -100,7 +100,7 @@ extension ConversationListView {
     /// 同步 VM 的选中状态到本地 List
     /// 在分页加载后调用，确保 List 的选中状态与 VM 一致
     private func syncSelectionFromViewModel() {
-        let vmId = conversationViewModel.selectedConversationId
+        let vmId = ConversationVM.selectedConversationId
 
         // 如果 VM 有选中的会话，同步到本地
         if let selectedId = vmId {
@@ -150,7 +150,7 @@ extension ConversationListView {
             hasMore = true
         }
 
-        conversationViewModel.deleteConversation(conversation)
+        ConversationVM.deleteConversation(conversation)
     }
 
     /// 视图首次出现时加载第一页
@@ -183,7 +183,7 @@ extension ConversationListView {
         guard hasMore, !isLoadingPage else { return }
 
         isLoadingPage = true
-        let page = conversationViewModel.fetchConversationsPage(limit: pageSize, offset: nextOffset)
+        let page = ConversationVM.fetchConversationsPage(limit: pageSize, offset: nextOffset)
 
         if nextOffset == 0 {
             conversations = page
@@ -222,7 +222,7 @@ extension ConversationListView {
     }
 
     private func handleConversationCreated(_ conversationId: UUID) {
-        guard let conversation = conversationViewModel.fetchConversation(id: conversationId) else { return }
+        guard let conversation = ConversationVM.fetchConversation(id: conversationId) else { return }
         guard !conversations.contains(where: { $0.id == conversationId }) else { return }
 
         conversations.insert(conversation, at: 0)
@@ -231,7 +231,7 @@ extension ConversationListView {
     }
 
     private func handleConversationUpdated(_ conversationId: UUID) {
-        guard let updatedConversation = conversationViewModel.fetchConversation(id: conversationId) else { return }
+        guard let updatedConversation = ConversationVM.fetchConversation(id: conversationId) else { return }
         guard let index = conversations.firstIndex(where: { $0.id == conversationId }) else { return }
 
         conversations[index] = updatedConversation
@@ -267,10 +267,10 @@ extension ConversationListView {
         }
     }
 
-    /// 处理选择变化：同步到 ConversationViewModel
+    /// 处理选择变化：同步到 ConversationVM
     func handleLocalSelectionChange() {
         // 只在值确实不同时才更新，避免循环
-        guard localSelectedConversationId != conversationViewModel.selectedConversationId else {
+        guard localSelectedConversationId != ConversationVM.selectedConversationId else {
             return
         }
 
@@ -278,26 +278,26 @@ extension ConversationListView {
             if Self.verbose {
                 os_log("\(self.t)👉 [\(newId)] 从 List 选择会话")
             }
-            self.conversationViewModel.setSelectedConversation(newId)
+            self.ConversationVM.setSelectedConversation(newId)
         } else {
             if Self.verbose {
                 os_log("\(self.t)👉 清除会话选择")
             }
-            self.conversationViewModel.setSelectedConversation(nil)
+            self.ConversationVM.setSelectedConversation(nil)
         }
     }
 
     func handleConversationSelected() {
         let localId = localSelectedConversationId?.uuidString ?? "nil"
-        let vmId = conversationViewModel.selectedConversationId?.uuidString ?? "nil"
+        let vmId = ConversationVM.selectedConversationId?.uuidString ?? "nil"
         os_log("\(self.t)🔄 handleConversationSelected called: local=\(localId), vm=\(vmId)")
 
         // 只在值确实不同时才更新，避免循环
-        guard localSelectedConversationId != conversationViewModel.selectedConversationId else {
+        guard localSelectedConversationId != ConversationVM.selectedConversationId else {
             return
         }
 
-        if let conversationId = self.conversationViewModel.selectedConversationId {
+        if let conversationId = self.ConversationVM.selectedConversationId {
             // 新会话通常会成为当前选中项，如果当前分页中没有，先刷新第一页
             if self.conversations.first(where: { $0.id == conversationId }) == nil {
                 if lastReloadSelectionId != conversationId {

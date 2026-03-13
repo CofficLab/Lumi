@@ -6,6 +6,7 @@ import OSLog
 
 @MainActor
 class ClipboardMonitor: ObservableObject, SuperLog {
+    nonisolated static let emoji = "📋"
     nonisolated static let verbose = false
     
     static let shared = ClipboardMonitor()

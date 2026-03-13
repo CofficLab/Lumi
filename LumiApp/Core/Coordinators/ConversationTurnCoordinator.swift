@@ -10,7 +10,7 @@ final class ConversationTurnCoordinator: SuperLog {
     nonisolated static let emoji = "🔁"
     nonisolated static let verbose = false
 
-    private let conversationTurnViewModel: ConversationTurnViewModel
+    private let conversationTurnViewModel: ConversationTurnVM
     private let runtimeStore: ConversationRuntimeStore
     private let env: Environment
     private let messages: MessageActions
@@ -57,7 +57,7 @@ final class ConversationTurnCoordinator: SuperLog {
     }
 
     init(
-        conversationTurnViewModel: ConversationTurnViewModel,
+        conversationTurnViewModel: ConversationTurnVM,
         runtimeStore: ConversationRuntimeStore,
         env: Environment,
         messages: MessageActions,
@@ -131,7 +131,7 @@ final class ConversationTurnCoordinator: SuperLog {
     }
 
     private func rebuildPipeline() {
-        let pluginMiddlewares = PluginProvider.shared.getConversationTurnMiddlewares()
+        let pluginMiddlewares = PluginVM.shared.getConversationTurnMiddlewares()
             .sorted { a, b in
                 if a.order != b.order { return a.order < b.order }
                 return a.id < b.id

@@ -3,7 +3,7 @@ import MagicKit
 
 /// 项目文件树视图 - 使用 List 优化性能
 struct ProjectTreeView: View {
-    @EnvironmentObject var projectViewModel: ProjectViewModel
+    @EnvironmentObject var ProjectVM: ProjectVM
     
     /// 当前项目根目录下的一级文件 / 文件夹
     @State private var rootURLs: [URL] = []
@@ -31,11 +31,11 @@ struct ProjectTreeView: View {
             }
         }
         .frame(maxHeight: .infinity)
-        .onChange(of: projectViewModel.currentProjectPath) { _, newPath in
+        .onChange(of: ProjectVM.currentProjectPath) { _, newPath in
             loadProject(at: newPath)
         }
         .onAppear {
-            loadProject(at: projectViewModel.currentProjectPath)
+            loadProject(at: ProjectVM.currentProjectPath)
         }
     }
     
@@ -61,7 +61,7 @@ struct ProjectTreeView: View {
             
             Spacer()
             
-            Button(action: { loadProject(at: projectViewModel.currentProjectPath) }) {
+            Button(action: { loadProject(at: ProjectVM.currentProjectPath) }) {
                 Image(systemName: "arrow.clockwise")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundColor(.secondary)
@@ -98,9 +98,9 @@ struct ProjectTreeView: View {
                     FileNodeView(
                         url: url,
                         depth: 0,
-                        selectedURL: projectViewModel.selectedFileURL,
+                        selectedURL: ProjectVM.selectedFileURL,
                         onSelect: { selectedURL in
-                            projectViewModel.selectFile(at: selectedURL)
+                            ProjectVM.selectFile(at: selectedURL)
                         }
                     )
                     .listRowSeparator(.hidden)
@@ -184,6 +184,6 @@ struct ProjectTreeView: View {
 
 #Preview {
     ProjectTreeView()
-        .environmentObject(ProjectViewModel())
+        .environmentObject(ProjectVM())
         .frame(width: 250, height: 400)
 }

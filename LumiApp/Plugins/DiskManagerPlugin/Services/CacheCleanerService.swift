@@ -5,6 +5,8 @@ import MagicKit
 
 @MainActor
 class CacheCleanerService: ObservableObject, SuperLog {
+    nonisolated static let emoji = "🗑️"
+    nonisolated static let verbose = false
     static let shared = CacheCleanerService()
 
     @Published var categories: [CacheCategory] = []

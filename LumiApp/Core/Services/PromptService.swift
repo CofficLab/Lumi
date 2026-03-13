@@ -99,7 +99,7 @@ actor PromptService: SuperLog {
 
     private func buildDynamicWorkerTypesPrompt() async -> String {
         let descriptors = await MainActor.run {
-            PluginProvider.shared.getWorkerAgentDescriptors()
+            PluginVM.shared.getWorkerAgentDescriptors()
         }
 
         guard !descriptors.isEmpty else {

@@ -124,7 +124,7 @@ struct LogoVariantModifier: ViewModifier {
 /// 状态栏图标视图
 /// 显示 Logo 图标和插件提供的内容视图
 struct StatusBarIconView: View {
-    @ObservedObject var viewModel: StatusBarIconViewModel
+    @ObservedObject var viewModel: StatusBarIconVM
 
     var body: some View {
         HStack(spacing: 4) {

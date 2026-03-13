@@ -6,9 +6,9 @@ import SwiftUI
 import ObjectiveC.runtime
 import Combine
 
-/// 插件提供者，管理插件的生命周期和 UI 贡献
+/// 插件 VM，管理插件的生命周期和 UI 贡献
 ///
-/// PluginProvider 是 Lumi 插件系统的核心管理器，负责：
+/// PluginVM 是 Lumi 插件系统的核心管理器，负责：
 /// - 自动发现并注册所有插件
 /// - 管理插件的生命周期（注册、启用、禁用）
 /// - 聚合所有插件提供的 UI 扩展点
@@ -16,7 +16,7 @@ import Combine
 ///
 /// ## 插件发现机制
 ///
-/// PluginProvider 使用 Objective-C Runtime 扫描所有以 "Lumi." 开头
+/// PluginVM 使用 Objective-C Runtime 扫描所有以 "Lumi." 开头
 /// 且以 "Plugin" 结尾的类，自动创建实例并注册。
 /// 插件按 `order` 属性排序，确保按正确顺序加载。
 ///
@@ -29,18 +29,18 @@ import Combine
 ///
 /// ```swift
 /// // 获取侧边栏视图
-/// let sidebarViews = PluginProvider.shared.getSidebarViews()
+/// let sidebarViews = PluginVM.shared.getSidebarViews()
 ///
 /// // 检查插件是否启用
-/// let isEnabled = PluginProvider.shared.isPluginEnabled(somePlugin)
+/// let isEnabled = PluginVM.shared.isPluginEnabled(somePlugin)
 /// ```
 @MainActor
-final class PluginProvider: ObservableObject, SuperLog {
+final class PluginVM: ObservableObject, SuperLog {
     /// 全局单例
     ///
-    /// 整个应用共享同一个 PluginProvider 实例。
+    /// 整个应用共享同一个 PluginVM 实例。
     /// 使用 `shared` 属性访问全局实例。
-    static let shared = PluginProvider()
+    static let shared = PluginVM()
 
     /// 日志标识符
     ///
@@ -84,7 +84,7 @@ final class PluginProvider: ObservableObject, SuperLog {
     private var cachedAgentToolFactories: [AnyAgentToolFactory]?
     private var cachedWorkerAgentDescriptors: [WorkerAgentDescriptor]?
 
-    /// 初始化插件提供者
+    /// 初始化插件 VM
     ///
     /// - Parameters:
     ///   - settingsStore: 插件设置存储实例，默认使用单例
@@ -118,7 +118,7 @@ final class PluginProvider: ObservableObject, SuperLog {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleFileSelectionChanged),
-            name: NSNotification.Name("AgentProviderFileSelectionChanged"),
+            name: NSNotification.Name("AgentVMFileSelectionChanged"),
             object: nil
         )
     }
@@ -263,7 +263,7 @@ final class PluginProvider: ObservableObject, SuperLog {
     deinit {
         NotificationCenter.default.removeObserver(
             self,
-            name: NSNotification.Name("AgentProviderFileSelectionChanged"),
+            name: NSNotification.Name("AgentVMFileSelectionChanged"),
             object: nil
         )
     }

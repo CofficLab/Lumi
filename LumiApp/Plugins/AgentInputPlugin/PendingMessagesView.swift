@@ -7,7 +7,7 @@ import OSLog
 /// 显示在输入框上方，展示等待发送的消息列表（不包括正在发送的消息）
 ///
 /// ## 性能优化说明
-/// 此视图使用独立的 ViewModel 来隔离 `MessageSenderViewModel` 的状态变化，
+/// 此视图使用独立的 ViewModel 来隔离 `MessageSenderVM` 的状态变化，
 /// 避免每次 `pendingMessages` 变化时触发整个输入区域的重新渲染。
 struct PendingMessagesView: View, SuperLog {
     /// 日志标识 emoji
@@ -16,19 +16,19 @@ struct PendingMessagesView: View, SuperLog {
     nonisolated static let verbose = true
 
     /// 消息发送队列 ViewModel（直接订阅，确保 pendingMessages 变化时视图能刻刷新）
-    @ObservedObject var messageSenderViewModel: MessageSenderViewModel
+    @ObservedObject var MessageSenderVM: MessageSenderVM
 
     /// 数据上下文
     @Environment(\.modelContext) private var modelContext
     /// 智能体提供者
-    @EnvironmentObject var agentProvider: AgentProvider
+    @EnvironmentObject var agentProvider: AgentVM
 
     /// 缓存的会话标题
     @State private var cachedConversationTitle: String?
 
     var body: some View {
-        let pendingMessages = messageSenderViewModel.pendingMessages
-        let currentProcessingIndex = messageSenderViewModel.currentProcessingIndex
+        let pendingMessages = MessageSenderVM.pendingMessages
+        let currentProcessingIndex = MessageSenderVM.currentProcessingIndex
 
         // 只显示队列中等待发送的消息（排除当前正在处理的消息）
         let waitingMessages = pendingMessages.enumerated()
@@ -78,7 +78,7 @@ struct PendingMessagesView: View, SuperLog {
                                 message: message,
                                 index: index,
                                 onRemove: {
-                                    messageSenderViewModel.removeMessage(at: index)
+                                    MessageSenderVM.removeMessage(at: index)
                                 }
                             )
                         }
@@ -96,7 +96,7 @@ struct PendingMessagesView: View, SuperLog {
                     .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
             )
             .onAppear(perform: updateConversationTitle)
-            .onChange(of: agentProvider.conversationViewModel.selectedConversationId) { _, _ in
+            .onChange(of: agentProvider.ConversationVM.selectedConversationId) { _, _ in
                 updateConversationTitle()
             }
         }
@@ -105,7 +105,7 @@ struct PendingMessagesView: View, SuperLog {
     // MARK: - Event Handler
 
     private func updateConversationTitle() {
-        guard let conversationId = agentProvider.conversationViewModel.selectedConversationId else {
+        guard let conversationId = agentProvider.ConversationVM.selectedConversationId else {
             cachedConversationTitle = nil
             return
         }

@@ -3,7 +3,7 @@ import UniformTypeIdentifiers
 
 /// 项目选择器视图
 struct ProjectSelectorView: View {
-    @EnvironmentObject var agentProvider: AgentProvider
+    @EnvironmentObject var agentProvider: AgentVM
 
     @Binding var isPresented: Bool
 
@@ -261,7 +261,7 @@ struct ProjectSelectorView: View {
     }
 
     private func loadRecentProjects() {
-        // 使用 AgentProvider 加载最近项目
+        // 使用 AgentVM 加载最近项目
         recentProjects = agentProvider.getRecentProjects()
             .prefix(maxRecentProjects)
             .filter { project in

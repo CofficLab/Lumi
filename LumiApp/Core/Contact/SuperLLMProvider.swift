@@ -1,47 +1,21 @@
 import Foundation
 import OSLog
 
-// MARK: - LLM Provider Protocol
+// MARK: - Super LLM Provider
 
-/// LLM 供应商协议
+/// LLM 供应商协议（超级接口）
 ///
 /// 定义 LLM 供应商必须实现的接口，用于统一不同供应商的接入方式。
 /// 添加新的 LLM 供应商时，只需：
 /// 1. 创建遵循此协议的新结构体/类
-/// 2. 在 ProviderRegistry 中注册该供应商
-///
-/// ## 协议要求
-///
-/// 供应商需要提供：
-/// - **基本信息**: ID、名称、图标、描述
-/// - **配置键名**: 用于 UserDefaults 存储的键
-/// - **模型信息**: 默认模型和可用模型列表
-/// - **API 接口**: 构建请求、解析响应
-///
-/// ## 实现示例
-///
-/// ```swift
-/// struct MyProvider: LLMProviderProtocol {
-///     static let id = "myprovider"
-///     static let displayName = "My Provider"
-///     static let iconName = "sparkles"
-///     static let description = "My custom LLM provider"
-///
-///     static let apiKeyStorageKey = "DevAssistant_ApiKey_MyProvider"
-///     static let modelStorageKey = "DevAssistant_Model_MyProvider"
-///     static let defaultModel = "my-model"
-///     static let availableModels = ["my-model", "my-model-v2"]
-///
-///     var baseURL: String { "https://api.myprovider.com/v1/chat" }
-///     
-///     func buildRequest(url: URL, apiKey: String) -> URLRequest { ... }
-///     func buildRequestBody(...) throws -> [String: Any] { ... }
-///     func parseResponse(data: Data) throws -> (String, [ToolCall]?) { ... }
-///     
-///     static var logEmoji: String { "✨" }
-/// }
-/// ```
-protocol LLMProviderProtocol: Sendable {
+/// 2. 在 `ProviderRegistry` 中注册该供应商（通常通过 LLM 插件完成）
+protocol SuperLLMProvider: Sendable {
+
+    /// 供应商实例构造函数
+    ///
+    /// 要求所有供应商类型都提供一个无参构造方法，以便注册表
+    /// 可以通过类型元数据创建实例。
+    init()
 
     // MARK: - Basic Info
 
@@ -65,6 +39,12 @@ protocol LLMProviderProtocol: Sendable {
     ///
     /// 简短描述供应商的特点和优势。
     static var description: String { get }
+    
+    /// 供应商支持的计划列表（可选）
+    ///
+    /// 对于大多数供应商，此列表为空；仅在如阿里云这类有 Plan 概念的供应商中使用。
+    /// 默认实现由协议扩展提供空数组，避免非 Plan 供应商做额外适配。
+    static var plans: [ProviderPlan] { get }
 
     // MARK: - Configuration
 
@@ -177,6 +157,11 @@ protocol LLMProviderProtocol: Sendable {
     static var logEmoji: String { get }
 }
 
+// 默认实现：大多数供应商不支持 Plan
+extension SuperLLMProvider {
+    static var plans: [ProviderPlan] { [] }
+}
+
 // MARK: - Stream Event Type
 
 /// 流式事件类型
@@ -244,3 +229,4 @@ struct StreamChunk: Sendable {
         self.stopReason = stopReason
     }
 }
+

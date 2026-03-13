@@ -7,7 +7,7 @@ import MagicKit
 /// 项目管理 ViewModel
 /// 负责管理项目状态、文件选择和项目配置
 @MainActor
-final class ProjectViewModel: ObservableObject, SuperLog {
+final class ProjectVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose = false
 
@@ -302,7 +302,7 @@ final class ProjectViewModel: ObservableObject, SuperLog {
         isFileSelected = selected
 
         // 发送文件选择变化通知
-        NotificationCenter.default.post(name: NSNotification.Name("AgentProviderFileSelectionChanged"), object: nil)
+        NotificationCenter.default.post(name: NSNotification.Name("AgentVMFileSelectionChanged"), object: nil)
     }
 
     /// 设置文件内容

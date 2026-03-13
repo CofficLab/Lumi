@@ -21,6 +21,8 @@ struct ChatBubble: View, SuperLog {
     @ObservedObject private var expansionState = MessageExpansionState.shared
     @State private var showRawMessage: Bool = false
     @State private var isHovered: Bool = false
+    @State private var isToolbarHovered: Bool = false
+    @State private var isToolbarVisible: Bool = false
 
     /// 初始化
     /// - Parameters:
@@ -95,20 +97,6 @@ struct ChatBubble: View, SuperLog {
                     }
                 }
 
-                // 统一在一个地方渲染工具栏，避免分支重复
-                let shouldShowToolbar =
-                    message.shouldShowToolbar &&
-                    !message.isToolOutput &&
-                    !(message.role == .assistant && message.hasToolCalls)
-
-                if shouldShowToolbar {
-                    MessageToolbarView(
-                        message: message,
-                        isAssistantMessage: message.role == .assistant
-                    )
-                    .opacity(isHovered ? 1 : 0)
-                    .animation(.easeInOut(duration: 0.15), value: isHovered)
-                }
             }
 
             Spacer()

@@ -7,7 +7,7 @@ import SwiftUI
 /// 消息管理 ViewModel
 /// 负责处理所有消息相关的业务逻辑，包括加载、保存、追加、更新、删除消息等
 @MainActor
-final class MessagePendingViewModel: ObservableObject, SuperLog {
+final class MessagePendingVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "💬"
     nonisolated static let verbose = true
 
