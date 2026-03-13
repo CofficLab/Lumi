@@ -140,14 +140,14 @@ protocol SuperPlugin: Actor {
     /// 添加右侧栏视图（用于 Agent 模式）
     @MainActor func addRightView() -> AnyView?
 
-    /// 添加详情栏头部视图（用于 Agent 模式）
-    @MainActor func addDetailHeaderView() -> AnyView?
+    /// 添加右侧栏头部视图（用于 Agent 模式）
+    @MainActor func addRightHeaderView() -> AnyView?
 
-    /// 添加详情栏中间视图（用于 Agent 模式）
-    @MainActor func addDetailMiddleView() -> AnyView?
+    /// 添加右侧栏中间视图（用于 Agent 模式）
+    @MainActor func addRightMiddleView() -> AnyView?
 
-    /// 添加详情栏底部视图（用于 Agent 模式）
-    @MainActor func addDetailBottomView() -> AnyView?
+    /// 添加右侧栏底部视图（用于 Agent 模式）
+    @MainActor func addRightBottomView() -> AnyView?
 
     /// 添加状态栏视图（用于 Agent 模式底部状态栏）
     @MainActor func addStatusBarView() -> AnyView?

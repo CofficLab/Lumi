@@ -35,14 +35,14 @@ extension SuperPlugin {
     /// 默认实现：不提供右侧栏视图
     @MainActor func addRightView() -> AnyView? { nil }
 
-    /// 默认实现：不提供详情栏头部视图
-    @MainActor func addDetailHeaderView() -> AnyView? { nil }
+    /// 默认实现：不提供右侧栏头部视图
+    @MainActor func addRightHeaderView() -> AnyView? { nil }
 
-    /// 默认实现：不提供详情栏中间视图
-    @MainActor func addDetailMiddleView() -> AnyView? { nil }
+    /// 默认实现：不提供右侧栏中间视图
+    @MainActor func addRightMiddleView() -> AnyView? { nil }
 
-    /// 默认实现：不提供详情栏底部视图
-    @MainActor func addDetailBottomView() -> AnyView? { nil }
+    /// 默认实现：不提供右侧栏底部视图
+    @MainActor func addRightBottomView() -> AnyView? { nil }
 
     /// 默认实现：不提供状态栏视图
     @MainActor func addStatusBarView() -> AnyView? { nil }

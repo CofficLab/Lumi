@@ -109,19 +109,19 @@ struct AgentModeContentView: View {
     private var rightColumn: some View {
         VStack(spacing: 0) {
             // 右侧栏头部
-            detailHeaderContent()
+            rightHeaderContent()
 
             Divider()
                 .background(Color.white.opacity(0.1))
 
-            // 右侧栏中间（消息列表）
-            detailMiddleContent()
+            // 右侧栏中间
+            rightMiddleContent()
 
             Divider()
                 .background(Color.white.opacity(0.1))
 
-            // 右侧栏底部（输入区域）
-            detailBottomContent()
+            // 右侧栏底部
+            rightBottomContent()
         }
         .ignoresSafeArea()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -140,32 +140,10 @@ struct AgentModeContentView: View {
         }
     }
     
-    /// 详情栏（支持头部、中间、底部）
-    private var detailColumn: some View {
-        VStack(spacing: 0) {
-            // 详情栏头部
-            detailHeaderContent()
-
-            Divider()
-                .background(Color.white.opacity(0.1))
-
-            // 详情栏中间（消息列表）
-            detailMiddleContent()
-
-            Divider()
-                .background(Color.white.opacity(0.1))
-
-            // 详情栏底部（输入区域）
-            detailBottomContent()
-        }
-        .ignoresSafeArea()
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    /// Agent 模式的详情头部内容视图
+    /// 右侧栏头部内容视图
     @ViewBuilder
-    private func detailHeaderContent() -> some View {
-        let headerViews = pluginProvider.getDetailHeaderViews()
+    private func rightHeaderContent() -> some View {
+        let headerViews = pluginProvider.getRightHeaderViews()
         Group {
             if headerViews.isEmpty {
                 // 如果没有插件提供头部视图，显示默认内容
@@ -176,17 +154,17 @@ struct AgentModeContentView: View {
                 VStack(spacing: 0) {
                     ForEach(headerViews.indices, id: \.self) { index in
                         headerViews[index]
-                            .id("detail_header_\(index)")
+                            .id("right_header_\(index)")
                     }
                 }
             }
         }
     }
 
-    /// Agent 模式的详情中间内容视图（消息列表）
+    /// 右侧栏中间内容视图
     @ViewBuilder
-    private func detailMiddleContent() -> some View {
-        let middleViews = pluginProvider.getDetailMiddleViews()
+    private func rightMiddleContent() -> some View {
+        let middleViews = pluginProvider.getRightMiddleViews()
         Group {
             if middleViews.isEmpty {
                 // 如果没有插件提供中间视图，显示默认内容
@@ -197,17 +175,17 @@ struct AgentModeContentView: View {
                 VStack(spacing: 0) {
                     ForEach(middleViews.indices, id: \.self) { index in
                         middleViews[index]
-                            .id("detail_middle_\(index)")
+                            .id("right_middle_\(index)")
                     }
                 }
             }
         }
     }
 
-    /// Agent 模式的详情底部内容视图（输入区域）
+    /// 右侧栏底部内容视图（输入区域）
     @ViewBuilder
-    private func detailBottomContent() -> some View {
-        let bottomViews = pluginProvider.getDetailBottomViews()
+    private func rightBottomContent() -> some View {
+        let bottomViews = pluginProvider.getRightBottomViews()
         Group {
             if bottomViews.isEmpty {
                 // 如果没有插件提供底部视图，显示默认内容
@@ -218,7 +196,7 @@ struct AgentModeContentView: View {
                 VStack(spacing: 0) {
                     ForEach(bottomViews.indices, id: \.self) { index in
                         bottomViews[index]
-                            .id("detail_bottom_\(index)")
+                            .id("right_bottom_\(index)")
                     }
                 }
             }
