@@ -23,7 +23,11 @@ import Foundation
 /// │                 │  │  (详情栏底部)           │      │
 /// │                 │  └─────────────────────────┘      │
 /// ├─────────────────────────────────────────────────────┤
-/// │  RightView (右侧栏，如文件预览)                      │
+/// │  RightHeaderView (右侧栏头部)                        │
+/// ├─────────────────────────────────────────────────────┤
+/// │  RightMiddleView (右侧栏中间)                        │
+/// ├─────────────────────────────────────────────────────┤
+/// │  RightBottomView (右侧栏底部)                        │
 /// ├─────────────────────────────────────────────────────┤
 /// │  StatusBarView (底部状态栏)                          │
 /// └─────────────────────────────────────────────────────┘
@@ -31,9 +35,6 @@ import Foundation
 extension SuperPlugin {
     /// 默认实现：不提供侧边栏视图
     @MainActor func addSidebarView() -> AnyView? { nil }
-
-    /// 默认实现：不提供右侧栏视图
-    @MainActor func addRightView() -> AnyView? { nil }
 
     /// 默认实现：不提供右侧栏头部视图
     @MainActor func addRightHeaderView() -> AnyView? { nil }

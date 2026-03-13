@@ -25,8 +25,10 @@ struct AgentModeContentView: View {
         .ignoresSafeArea()
         .task {
             if Self.verbose {
-                let rightViews = pluginProvider.getRightViews()
-                os_log("\(Self.emoji) Agent Mode: 右侧栏视图数量=\(rightViews.count)")
+                let rightHeaderViews = pluginProvider.getRightHeaderViews()
+                let rightMiddleViews = pluginProvider.getRightMiddleViews()
+                let rightBottomViews = pluginProvider.getRightBottomViews()
+                os_log("\(Self.emoji) Agent Mode: 右侧栏头部=\(rightHeaderViews.count), 中间=\(rightMiddleViews.count), 底部=\(rightBottomViews.count)")
             }
         }
     }
