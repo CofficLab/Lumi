@@ -192,7 +192,7 @@ final class ConversationViewModel: ObservableObject, SuperLog {
     /// 应用启动时从 UserDefaults 恢复上次选中的会话 ID。
     /// 不验证会话是否存在于数据库，由调用方处理验证。
     func restoreSelectedConversation() {
-        guard let savedId = UserDefaults.standard.string(forKey: "Conversation_SelectedId"),
+        guard let savedId = UserDefaults.standard.string(forKey: Self.selectedConversationKey),
               let uuid = UUID(uuidString: savedId) else {
             return
         }
