@@ -11,33 +11,16 @@ struct ToolCallView: View {
     @State private var isFormatting: Bool = false
     @State private var displayedParameters: String = ""
     
-    // MARK: - Tool Emoji & Color
-    
-    var emoji: String {
-        ToolPresentationDescriptorResolver.descriptor(for: toolCall.name).emoji
-    }
-    
-    var color: Color {
-        switch ToolPresentationDescriptorResolver.descriptor(for: toolCall.name).category {
-        case .shell: return .green
-        case .readFile: return .blue
-        case .writeFile: return .orange
-        case .listDirectory: return .purple
-        case .agent: return .cyan
-        case .unknown: return .gray
-        }
-    }
-    
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // 工具调用头部
             toolCallHeader
                 .padding(12)
-                .background(color.opacity(0.08))
+                .background(Color.accentColor.opacity(0.08))
                 .overlay(
                     Rectangle()
                         .frame(height: 1)
-                        .foregroundColor(color.opacity(0.2)),
+                        .foregroundColor(Color.accentColor.opacity(0.2)),
                     alignment: .bottom
                 )
             
@@ -47,7 +30,7 @@ struct ToolCallView: View {
                 toolCallContent
             }
         }
-        .toolCallCardStyle(color: color)
+        .toolCallCardStyle()
     }
     
     // MARK: - Tool Call Header
@@ -58,16 +41,16 @@ struct ToolCallView: View {
             Text("\(index + 1)")
                 .font(DesignTokens.Typography.caption2)
                 .fontWeight(.semibold)
-                .foregroundColor(color)
+                .foregroundColor(Color.accentColor)
                 .frame(width: 18, height: 18)
-                .background(color.opacity(0.15))
+                .background(Color.accentColor.opacity(0.15))
                 .clipShape(Circle())
             
             // 工具名称
             Text(toolCall.name)
                 .font(DesignTokens.Typography.caption1)
                 .fontWeight(.medium)
-                .foregroundColor(color)
+                .foregroundColor(Color.accentColor)
             
             Spacer()
             
@@ -77,7 +60,7 @@ struct ToolCallView: View {
             // 展开/折叠指示器
             Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(color.opacity(0.6))
+                .foregroundColor(Color.accentColor.opacity(0.6))
         }
         .contentShape(Rectangle())
         .onTapGesture {
@@ -104,7 +87,7 @@ struct ToolCallView: View {
                 Text("参数")
                     .font(DesignTokens.Typography.caption1)
                     .fontWeight(.semibold)
-                    .foregroundColor(color.opacity(0.8))
+                    .foregroundColor(Color.accentColor.opacity(0.8))
                 
                 // 格式化后的参数
                 if let formattedParams = formattedParametersCache {
@@ -156,10 +139,10 @@ struct ToolCallView: View {
                     .font(DesignTokens.Typography.caption2)
             }
             .font(.system(size: 10))
-            .foregroundColor(isCopied ? .green : color.opacity(0.7))
+            .foregroundColor(isCopied ? .green : Color.accentColor.opacity(0.7))
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
-            .background(isCopied ? Color.green.opacity(0.1) : color.opacity(0.08))
+            .background(isCopied ? Color.green.opacity(0.1) : Color.accentColor.opacity(0.08))
             .cornerRadius(4)
         }
         .buttonStyle(.plain)
@@ -269,17 +252,17 @@ struct ToolCallView: View {
 
 private extension View {
     /// 应用工具调用卡片样式
-    func toolCallCardStyle(color: Color) -> some View {
+    func toolCallCardStyle() -> some View {
         self
             .background(
                 RoundedRectangle(cornerRadius: 10)
                     .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.04))
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
-                            .stroke(color.opacity(0.2), lineWidth: 1)
+                            .stroke(Color.accentColor.opacity(0.2), lineWidth: 1)
                     )
             )
-            .shadow(color: color.opacity(0.1), radius: 3, x: 0, y: 1)
+            .shadow(color: Color.accentColor.opacity(0.1), radius: 3, x: 0, y: 1)
             .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }

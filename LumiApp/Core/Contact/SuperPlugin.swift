@@ -170,9 +170,6 @@ protocol SuperPlugin: Actor {
     /// 提供 Worker 描述符列表。
     @MainActor func workerAgentDescriptors() -> [WorkerAgentDescriptor]
 
-    /// 提供工具展示描述符列表。
-    @MainActor func toolPresentationDescriptors() -> [ToolPresentationDescriptor]
-
     // MARK: - Lifecycle Hooks
 
     /// 插件注册完成后的回调

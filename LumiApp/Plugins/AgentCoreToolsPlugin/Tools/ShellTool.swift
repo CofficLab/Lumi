@@ -11,7 +11,6 @@ import OSLog
 /// - 实际的 Shell 执行由插件内的 ShellService.shared 单例处理
 /// - 内核只认识 Tool 抽象，不关心具体实现细节
 struct ShellTool: AgentTool, SuperLog {
-    nonisolated static let emoji = "🔧"
     nonisolated static let verbose = false
 
     let name = "run_command"

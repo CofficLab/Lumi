@@ -20,16 +20,6 @@ actor AgentCoreToolsPlugin: SuperPlugin {
     func agentToolFactories() -> [AnyAgentToolFactory] {
         [AnyAgentToolFactory(CoreToolsFactory())]
     }
-
-    @MainActor
-    func toolPresentationDescriptors() -> [ToolPresentationDescriptor] {
-        [
-            .init(toolName: "ls", displayName: "列出目录", emoji: "📁", category: .listDirectory, order: 0),
-            .init(toolName: "read_file", displayName: "读取文件", emoji: "📖", category: .readFile, order: 10),
-            .init(toolName: "write_file", displayName: "写入文件", emoji: "✍️", category: .writeFile, order: 20),
-            .init(toolName: "run_command", displayName: "Shell 命令", emoji: "⚡", category: .shell, order: 30),
-        ]
-    }
 }
 
 @MainActor

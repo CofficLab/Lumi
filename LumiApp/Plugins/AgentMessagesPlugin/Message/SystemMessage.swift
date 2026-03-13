@@ -20,10 +20,7 @@ struct SystemMessage: View, SuperLog {
                 // 工具输出消息：使用专用样式，不展示 System 头部
                 VStack(alignment: .leading, spacing: 4) {
                     RoleLabel.tool
-                    ToolOutputView(
-                        message: message,
-                        toolType: .unknown
-                    )
+                    ToolOutputView(message: message)
                 }
             } else {
                 VStack(alignment: .leading, spacing: 4) {

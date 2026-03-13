@@ -41,7 +41,6 @@ struct RootView<Content>: View where Content: View {
             // 共享的全局服务（所有窗口共享）
             .environmentObject(container.appProvider)
             .environmentObject(container.projectViewModel)
-            .environmentObject(container.toolsViewModel)
             .environmentObject(container.providerRegistry)
             .environmentObject(PluginProvider.shared)
             // 窗口级 ViewModel（每个窗口独立）
@@ -87,7 +86,6 @@ final class RootViewContainer: ObservableObject {
             slashCommandService: slashCommandService,
             toolService: toolService,
             providerRegistry: providerRegistry,
-            toolsViewModel: toolsViewModel,
             appProvider: appProvider,
             projectViewModel: projectViewModel,
             commandSuggestionViewModel: commandSuggestionViewModel
@@ -103,7 +101,6 @@ final class RootViewContainer: ObservableObject {
         let slashCommandService: SlashCommandService
         let toolService: ToolService
         let providerRegistry: ProviderRegistry
-        let toolsViewModel: ToolsViewModel
         let appProvider: GlobalProvider
         let projectViewModel: ProjectViewModel
         let commandSuggestionViewModel: CommandSuggestionViewModel
@@ -111,7 +108,6 @@ final class RootViewContainer: ObservableObject {
 
     // MARK: - ViewModel
 
-    let toolsViewModel: ToolsViewModel
     let appProvider: GlobalProvider
     let projectViewModel: ProjectViewModel
     let commandSuggestionViewModel: CommandSuggestionViewModel
@@ -157,9 +153,6 @@ final class RootViewContainer: ObservableObject {
         // ========================================
         // ViewModel 层
         // ========================================
-
-        // 创建 Tools ViewModel
-        self.toolsViewModel = ToolsViewModel(toolService: toolService)
 
         // 初始化状态 ViewModels
         self.depthWarningViewModel = DepthWarningViewModel()
@@ -209,7 +202,6 @@ final class RootViewContainer: ObservableObject {
             promptService: promptService,
             registry: providerRegistry,
             toolService: toolService,
-            toolsViewModel: toolsViewModel,
             chatHistoryService: chatHistoryService,
             messageViewModel: messageViewModel,
             conversationViewModel: conversationViewModel,

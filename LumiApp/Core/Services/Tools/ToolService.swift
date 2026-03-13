@@ -68,22 +68,14 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 是否启用详细日志
     nonisolated static let verbose = false
 
-    // MARK: - Combine Publishers (状态变化通知)
-
-    /// 工具列表变化通知
-    ///
-    /// 当工具列表（内置 + MCP）发生变化时发送。
-    /// ViewModel 可以订阅此发布者来更新 UI。
-    let toolsPublisher = PassthroughSubject<[AgentTool], Never>()
-    
     // MARK: - Properties
 
-    /// 所有可用工具（包括内置工具、MCP 工具和插件工具）
+    /// 所有可用工具
     ///
     /// 每次工具列表更新时都会重新计算。
     private(set) var allTools: [AgentTool] = []
 
-    /// 内置工具列表（保留接口；当前建议将大部分工具迁移到插件提供）
+    /// 内置工具列表
     private var builtInTools: [AgentTool] = []
 
     /// 插件提供的工具列表
@@ -161,41 +153,6 @@ class ToolService: SuperLog, @unchecked Sendable {
 
         pluginTools = directTools + factoryTools
         allTools = builtInTools + pluginTools
-        validateToolPresentationDescriptors(allTools: allTools)
-        toolsPublisher.send(allTools)
-    }
-
-    /// 校验所有已注册工具都有对应的展示 descriptor。
-    ///
-    /// 说明：
-    /// - ToolCall 的 name 来自运行时（LLM / MCP / 插件工具），编译期无法穷举；
-    /// - 因此采用“插件加载后立即校验”，把问题从“用到才炸”提前到“启动/加载即炸”。
-    @MainActor
-    private func validateToolPresentationDescriptors(allTools: [AgentTool]) {
-        let descriptors = PluginProvider.shared.getToolPresentationDescriptors()
-
-        var descriptorCountByName: [String: Int] = [:]
-        for d in descriptors {
-            descriptorCountByName[d.toolName, default: 0] += 1
-        }
-
-        let duplicateDescriptorNames = descriptorCountByName
-            .filter { $0.value > 1 }
-            .map { $0.key }
-            .sorted()
-        precondition(
-            duplicateDescriptorNames.isEmpty,
-            "Duplicate ToolPresentationDescriptor.toolName: \(duplicateDescriptorNames.joined(separator: ", "))"
-        )
-
-        let descriptorNames = Set(descriptors.map(\.toolName))
-        let toolNames = Set(allTools.map(\.name))
-        let missing = toolNames.subtracting(descriptorNames).sorted()
-
-        precondition(
-            missing.isEmpty,
-            "Missing ToolPresentationDescriptor for tools: \(missing.joined(separator: ", ")). Plugins must provide descriptors via toolPresentationDescriptors()."
-        )
     }
 
     // MARK: - Public API
@@ -207,16 +164,6 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 返回完整的工具列表，包括内置和 MCP 工具。
     var tools: [AgentTool] {
         return allTools
-    }
-
-    /// 获取工具总数
-    var toolCount: Int {
-        return allTools.count
-    }
-
-    /// 获取内置工具数量
-    var builtInToolCount: Int {
-        return builtInTools.count
     }
 
     /// 根据名称获取工具
@@ -239,55 +186,6 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// - Returns: 如果工具存在则返回 true
     func hasTool(named name: String) -> Bool {
         return tool(named: name) != nil
-    }
-
-    /// 获取所有工具名称
-    ///
-    /// - Returns: 工具名称数组
-    var allToolNames: [String] {
-        return allTools.map { $0.name }
-    }
-
-    /// 获取内置工具名称
-    ///
-    /// - Returns: 内置工具名称数组
-    var builtInToolNames: [String] {
-        return builtInTools.map { $0.name }
-    }
-
-    // MARK: - Note
-    // MCP 或其他协议型工具来源应由插件提供；ToolService 不再提供协议专用 API。
-
-    /// 按名称搜索工具（支持模糊匹配）
-    ///
-    /// 在工具名称和描述中进行模糊搜索。
-    ///
-    /// - Parameter query: 搜索关键词
-    /// - Returns: 匹配的工具数组
-    func searchTools(query: String) -> [AgentTool] {
-        let lowercaseQuery = query.lowercased()
-        return allTools.filter { tool in
-            tool.name.lowercased().contains(lowercaseQuery) ||
-            tool.description.lowercased().contains(lowercaseQuery)
-        }
-    }
-
-    /// 获取工具描述信息
-    ///
-    /// - Parameter name: 工具名称
-    /// - Returns: 工具的描述，如果工具不存在则返回 nil
-    func description(forTool name: String) -> String? {
-        return tool(named: name)?.description
-    }
-
-    /// 获取工具输入模式
-    ///
-    /// 返回工具的 JSON Schema，用于 UI 生成输入表单。
-    ///
-    /// - Parameter name: 工具名称
-    /// - Returns: 工具的输入模式，如果工具不存在则返回 nil
-    func inputSchema(forTool name: String) -> [String: Any]? {
-        return tool(named: name)?.inputSchema
     }
 
     /// 执行工具（JSON 字符串参数版本）
@@ -411,46 +309,6 @@ class ToolService: SuperLog, @unchecked Sendable {
         let rawArgs = arguments ?? [:]
         let toolArgs = rawArgs.mapValues { ToolArgument($0) }
         return tool.permissionRiskLevel(arguments: toolArgs)
-    }
-
-    // MARK: - Tool Categorization
-
-    /// 获取文件操作相关工具
-    ///
-    /// 过滤出与文件操作相关的工具：
-    /// - 包含 "file" 的工具
-    /// - 包含 "read" 的工具
-    /// - 包含 "write" 的工具
-    /// - 包含 "ls" 的工具
-    var fileOperationTools: [AgentTool] {
-        return allTools.filter { tool in
-            tool.name.contains("file") ||
-            tool.name.contains("read") ||
-            tool.name.contains("write") ||
-            tool.name.contains("ls")
-        }
-    }
-
-    /// 获取 shell/命令相关工具
-    ///
-    /// 过滤出与 Shell 命令相关的工具：
-    /// - 包含 "shell" 的工具
-    /// - 包含 "command" 的工具
-    /// - 包含 "run" 的工具
-    var shellTools: [AgentTool] {
-        return allTools.filter { tool in
-            tool.name.contains("shell") ||
-            tool.name.contains("command") ||
-            tool.name.contains("run")
-        }
-    }
-
-    /// 获取其他工具（非文件和 shell）
-    ///
-    /// 排除文件操作和 Shell 命令后的其他工具。
-    var otherTools: [AgentTool] {
-        let fileAndShellNames = fileOperationTools.map { $0.name } + shellTools.map { $0.name }
-        return allTools.filter { !fileAndShellNames.contains($0.name) }
     }
 }
 
