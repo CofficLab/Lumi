@@ -33,7 +33,7 @@ struct ShellTool: AgentTool, SuperLog {
 
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel? {
         guard let command = arguments["command"]?.value as? String else {
-            return .medium
+            return .high
         }
         return CommandRiskEvaluator.evaluate(command: command)
     }
