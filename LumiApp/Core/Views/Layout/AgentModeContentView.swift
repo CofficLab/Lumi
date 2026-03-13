@@ -89,15 +89,15 @@ struct AgentModeContentView: View {
             } else {
                 // 有右侧栏时，使用 HSplitView 分隔
                 HSplitView {
-                    // 第二栏：右侧栏（支持头部、中间、底部）
-                    rightColumn
-                        .frame(minWidth: 200, idealWidth: 300)
-
-                    // 第三栏：详情栏（简单的 VStack 堆积）
+                    // 第二栏：详情栏（简单的 VStack 堆积）
                     detailContentColumn
                         .frame(minWidth: 200, idealWidth: 300)
+
+                    // 第三栏：右侧栏（支持头部、中间、底部）
+                    rightColumn
+                        .frame(minWidth: 200, idealWidth: 300)
                 }
-                .id("agentModeRightDetailHSplitView")
+                .id("agentModeDetailRightHSplitView")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
