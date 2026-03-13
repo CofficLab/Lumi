@@ -5,11 +5,15 @@ extension DesignTokens {
     /// 材质令牌 - 定义背景材质和毛玻璃效果
     enum Material {
         /// 玻璃态材质 (超薄)
-        static let glass = SwiftUI.Material.ultraThinMaterial
+        static let glassUltra = SwiftUI.Material.ultraThinMaterial
         /// 玻璃态材质 (薄)
-        static let glassThick = SwiftUI.Material.thinMaterial
-        /// 玻璃态材质 (极薄)
-        static let glassThin = SwiftUI.Material.ultraThinMaterial
+        static let glassThin = SwiftUI.Material.thinMaterial
+        /// 玻璃态材质 (中等)
+        static let glass = SwiftUI.Material.regularMaterial
+        /// 玻璃态材质 (厚)
+        static let glassThick = SwiftUI.Material.thickMaterial
+        /// 玻璃态材质 (超厚)
+        static let glassUltraThick = SwiftUI.Material.ultraThickMaterial
 
         /// 神秘氛围材质（根据配色方案调整）
         /// - Parameter scheme: 当前配色方案
