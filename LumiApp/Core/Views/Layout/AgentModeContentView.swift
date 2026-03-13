@@ -49,6 +49,7 @@ struct AgentModeContentView: View {
             if middleViews.isEmpty {
                 // 如果没有中间栏视图，直接显示详情栏
                 detailColumn
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 // 有中间栏时，使用 HSplitView 分隔
                 HSplitView {
@@ -59,8 +60,10 @@ struct AgentModeContentView: View {
                     // 第三栏：详情栏
                     detailColumn
                         .frame(minWidth: 200, idealWidth: 300)
+                        .frame(maxHeight: .infinity)
                 }
                 .id("agentModeMiddleDetailHSplitView")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .ignoresSafeArea()
