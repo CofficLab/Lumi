@@ -214,12 +214,31 @@ class LLMService: SuperLog, @unchecked Sendable {
             }
 
             // 发送聊天请求
-            let data = try await llmAPI.sendChatRequest(
-                url: url,
-                apiKey: config.apiKey,
-                body: body,
-                additionalHeaders: additionalHeaders
-            )
+            let data: Data
+            do {
+                data = try await llmAPI.sendChatRequest(
+                    url: url,
+                    apiKey: config.apiKey,
+                    body: body,
+                    additionalHeaders: additionalHeaders
+                )
+            } catch {
+                // 记录失败请求日志（通过内核级 LoggerCenter，若未注册实现则为 no-op）
+                Task.detached(priority: .utility) {
+                    LLMRequestLoggerCenter.shared.log(
+                        providerId: config.providerId,
+                        model: config.model,
+                        url: url,
+                        method: "POST",
+                        statusCode: nil,
+                        durationMs: (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0,
+                        requestBody: try? JSONSerialization.data(withJSONObject: body),
+                        responseBody: nil,
+                        error: error
+                    )
+                }
+                throw error
+            }
 
             // 解析响应
             let (content, toolCalls) = try provider.parseResponse(data: data)
@@ -227,6 +246,21 @@ class LLMService: SuperLog, @unchecked Sendable {
             // 计算总耗时（毫秒）
             let endTime = CFAbsoluteTimeGetCurrent()
             let latency = (endTime - startTime) * 1000.0
+
+            // 记录成功请求日志（不阻塞主调用链）
+            Task.detached(priority: .utility) {
+                LLMRequestLoggerCenter.shared.log(
+                    providerId: config.providerId,
+                    model: config.model,
+                    url: url,
+                    method: "POST",
+                    statusCode: 200, // 目前由 LLMAPIService 校验 2xx，否则抛错
+                    durationMs: latency,
+                    requestBody: try? JSONSerialization.data(withJSONObject: body),
+                    responseBody: data,
+                    error: nil
+                )
+            }
 
             // 输出响应信息
             if Self.verbose >= 1 {
@@ -556,6 +590,21 @@ class LLMService: SuperLog, @unchecked Sendable {
         // 计算总耗时
         let endTime = CFAbsoluteTimeGetCurrent()
         let latency = (endTime - startTime) * 1000.0
+
+        // 记录流式请求日志（仅记录元数据，不聚合响应体）
+        Task.detached(priority: .utility) {
+            LLMRequestLoggerCenter.shared.log(
+                providerId: config.providerId,
+                model: config.model,
+                url: url,
+                method: "POST",
+                statusCode: nil,
+                durationMs: latency,
+                requestBody: try? JSONSerialization.data(withJSONObject: body),
+                responseBody: nil,
+                error: nil
+            )
+        }
 
         // 获取最终状态
         let finalContent = await state.accumulatedContentChunks.joined()
