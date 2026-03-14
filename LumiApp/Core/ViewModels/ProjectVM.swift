@@ -72,7 +72,7 @@ final class ProjectVM: ObservableObject, SuperLog {
     /// 清除当前项目，恢复到未选择任何项目的状态
     func clearProject() {
         setCurrentProjectInfo(name: "", path: "", selected: false)
-        UserDefaults.standard.removeObject(forKey: "Agent_SelectedProject")
+        AppSettingsStore.shared.removeObject(forKey: "Agent_SelectedProject")
         clearFileSelection()
 
         Task {
@@ -98,7 +98,7 @@ final class ProjectVM: ObservableObject, SuperLog {
 
         setCurrentProjectInfo(name: projectName, path: path, selected: true)
 
-        UserDefaults.standard.set(path, forKey: "Agent_SelectedProject")
+        AppSettingsStore.shared.set(path, forKey: "Agent_SelectedProject")
         saveRecentProject(name: projectName, path: path)
 
         // 获取并应用项目配置
@@ -186,7 +186,7 @@ final class ProjectVM: ObservableObject, SuperLog {
         projects = Array(projects.prefix(5))
 
         if let data = try? JSONEncoder().encode(projects) {
-            UserDefaults.standard.set(data, forKey: "Agent_RecentProjects")
+            AppSettingsStore.shared.set(data, forKey: "Agent_RecentProjects")
         }
 
         if Self.verbose {
@@ -196,7 +196,7 @@ final class ProjectVM: ObservableObject, SuperLog {
 
     /// 获取最近使用的项目列表
     func getRecentProjects() -> [RecentProject] {
-        guard let data = UserDefaults.standard.data(forKey: "Agent_RecentProjects"),
+        guard let data = AppSettingsStore.shared.data(forKey: "Agent_RecentProjects"),
               let projects = try? JSONDecoder().decode([RecentProject].self, from: data) else {
             return []
         }
@@ -333,7 +333,7 @@ final class ProjectVM: ObservableObject, SuperLog {
     // MARK: - 语言偏好
 
     private func loadLanguagePreference() {
-        if let data = UserDefaults.standard.data(forKey: "Agent_LanguagePreference"),
+        if let data = AppSettingsStore.shared.data(forKey: "Agent_LanguagePreference"),
            let preference = try? JSONDecoder().decode(LanguagePreference.self, from: data) {
             Task { @MainActor in
                 self.languagePreference = preference
@@ -345,7 +345,7 @@ final class ProjectVM: ObservableObject, SuperLog {
         Task { @MainActor in
             self.languagePreference = preference
             if let encoded = try? JSONEncoder().encode(self.languagePreference) {
-                UserDefaults.standard.set(encoded, forKey: "Agent_LanguagePreference")
+                AppSettingsStore.shared.set(encoded, forKey: "Agent_LanguagePreference")
             }
         }
     }
@@ -353,7 +353,7 @@ final class ProjectVM: ObservableObject, SuperLog {
     // MARK: - 聊天模式
 
     private func loadChatMode() {
-        if let rawValue = UserDefaults.standard.string(forKey: "Agent_ChatMode"),
+        if let rawValue = AppSettingsStore.shared.string(forKey: "Agent_ChatMode"),
            let mode = ChatMode(rawValue: rawValue) {
             Task { @MainActor in
                 self.chatMode = mode
@@ -364,7 +364,7 @@ final class ProjectVM: ObservableObject, SuperLog {
     func setChatMode(_ mode: ChatMode) {
         Task { @MainActor in
             self.chatMode = mode
-            UserDefaults.standard.set(self.chatMode.rawValue, forKey: "Agent_ChatMode")
+            AppSettingsStore.shared.set(self.chatMode.rawValue, forKey: "Agent_ChatMode")
         }
     }
 
@@ -372,7 +372,7 @@ final class ProjectVM: ObservableObject, SuperLog {
 
     /// 加载自动批准风险设置
     private func loadAutoApproveRisk() {
-        let enabled = UserDefaults.standard.bool(forKey: "Agent_AutoApproveRisk")
+        let enabled = AppSettingsStore.shared.bool(forKey: "Agent_AutoApproveRisk")
         Task { @MainActor in
             self.autoApproveRisk = enabled
         }
@@ -381,7 +381,7 @@ final class ProjectVM: ObservableObject, SuperLog {
     func setAutoApproveRisk(_ enabled: Bool) {
         Task { @MainActor in
             self.autoApproveRisk = enabled
-            UserDefaults.standard.set(enabled, forKey: "Agent_AutoApproveRisk")
+            AppSettingsStore.shared.set(enabled, forKey: "Agent_AutoApproveRisk")
         }
     }
 }

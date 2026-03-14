@@ -31,7 +31,7 @@ class InputService: ObservableObject, SuperLog {
         }
 
         // Load config
-        if let data = UserDefaults.standard.data(forKey: configKey),
+        if let data = AppSettingsStore.shared.data(forKey: configKey),
            let decoded = try? JSONDecoder().decode(InputConfig.self, from: data) {
             self.config = decoded
         } else {
@@ -121,7 +121,7 @@ class InputService: ObservableObject, SuperLog {
 
     private func saveConfig() {
         if let data = try? JSONEncoder().encode(config) {
-            UserDefaults.standard.set(data, forKey: configKey)
+            AppSettingsStore.shared.set(data, forKey: configKey)
         }
     }
 

@@ -284,9 +284,9 @@ struct ProjectSelectorView: View {
     }
 
     private func saveRecentProjects() {
-        // 直接保存到 UserDefaults
+        // 直接保存到应用设置存储
         if let encoded = try? JSONEncoder().encode(recentProjects) {
-            UserDefaults.standard.set(encoded, forKey: "Agent_RecentProjects")
+            AppSettingsStore.shared.set(encoded, forKey: "Agent_RecentProjects")
         }
     }
 }

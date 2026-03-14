@@ -539,23 +539,23 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     /// 加载保存的偏好设置
     private func loadPreferences() {
         // 加载语言偏好
-        if let data = UserDefaults.standard.data(forKey: "Agent_LanguagePreference"),
+        if let data = AppSettingsStore.shared.data(forKey: "Agent_LanguagePreference"),
            let preference = try? JSONDecoder().decode(LanguagePreference.self, from: data) {
             ProjectVM.setLanguagePreference(preference)
         }
 
         // 加载聊天模式
-        if let modeRaw = UserDefaults.standard.string(forKey: "Agent_ChatMode"),
+        if let modeRaw = AppSettingsStore.shared.string(forKey: "Agent_ChatMode"),
            let mode = ChatMode(rawValue: modeRaw) {
             ProjectVM.setChatMode(mode)
         }
 
         // 加载自动批准风险 - 使用 bool 类型读取
-        let autoApprove = UserDefaults.standard.bool(forKey: "Agent_AutoApproveRisk")
+        let autoApprove = AppSettingsStore.shared.bool(forKey: "Agent_AutoApproveRisk")
         ProjectVM.setAutoApproveRisk(autoApprove)
 
         // 加载上次选择的项目（项目切换会自动应用配置）
-        if let savedPath = UserDefaults.standard.string(forKey: "Agent_SelectedProject") {
+        if let savedPath = AppSettingsStore.shared.string(forKey: "Agent_SelectedProject") {
             ProjectVM.switchProject(to: savedPath)
 
             // 加载项目命令
@@ -799,8 +799,8 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             return LLMConfig.default
         }
 
-        // 从 UserDefaults 获取 API Key
-        let apiKey = UserDefaults.standard.string(forKey: providerType.apiKeyStorageKey) ?? ""
+        // 从应用设置存储获取 API Key
+        let apiKey = AppSettingsStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
         
         var config = LLMConfig(
             apiKey: apiKey,
@@ -810,7 +810,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         
         // 对于支持 Plan 的供应商（目前仅 Aliyun），加载已保存的 Plan ID
         if providerType.id == AliyunProvider.id {
-            let storedPlanId = UserDefaults.standard.string(forKey: AliyunProvider.planStorageKey)
+            let storedPlanId = AppSettingsStore.shared.string(forKey: AliyunProvider.planStorageKey)
             config.planId = storedPlanId ?? AliyunProvider.defaultPlanId
         }
         
@@ -822,7 +822,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         guard let providerType = registry.providerType(forId: providerId) else {
             return ""
         }
-        return UserDefaults.standard.string(forKey: providerType.apiKeyStorageKey) ?? ""
+        return AppSettingsStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
     }
 
     /// 设置指定供应商的 API Key
@@ -830,7 +830,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         guard let providerType = registry.providerType(forId: providerId) else {
             return
         }
-        UserDefaults.standard.set(apiKey, forKey: providerType.apiKeyStorageKey)
+        AppSettingsStore.shared.set(apiKey, forKey: providerType.apiKeyStorageKey)
         if Self.verbose {
             os_log("\(Self.t) 已设置 \(providerType.displayName) 的 API Key")
         }

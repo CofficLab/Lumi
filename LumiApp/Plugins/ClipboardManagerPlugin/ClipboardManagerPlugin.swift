@@ -19,14 +19,14 @@ actor ClipboardManagerPlugin: SuperPlugin {
     
     nonisolated func onRegister() {
         // Initialize defaults
-        if UserDefaults.standard.object(forKey: "ClipboardMonitoringEnabled") == nil {
-            UserDefaults.standard.set(true, forKey: "ClipboardMonitoringEnabled")
+        if AppSettingsStore.shared.object(forKey: "ClipboardMonitoringEnabled") == nil {
+            AppSettingsStore.shared.set(true, forKey: "ClipboardMonitoringEnabled")
         }
     }
     
     nonisolated func onEnable() {
         Task { @MainActor in
-            if UserDefaults.standard.bool(forKey: "ClipboardMonitoringEnabled") {
+            if AppSettingsStore.shared.bool(forKey: "ClipboardMonitoringEnabled") {
                 ClipboardMonitor.shared.startMonitoring()
             }
         }

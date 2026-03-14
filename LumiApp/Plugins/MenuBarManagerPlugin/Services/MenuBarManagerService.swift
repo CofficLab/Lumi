@@ -156,11 +156,11 @@ class MenuBarManagerService: ObservableObject, SuperLog {
     
     private func saveSettings() {
         // 保存 hiddenItems 到 UserDefaults
-        UserDefaults.standard.set(Array(hiddenItems), forKey: "MenuBarManager_HiddenItems")
+        AppSettingsStore.shared.set(Array(hiddenItems), forKey: "MenuBarManager_HiddenItems")
     }
     
     private func loadSettings() {
-        if let saved = UserDefaults.standard.array(forKey: "MenuBarManager_HiddenItems") as? [String] {
+        if let saved = AppSettingsStore.shared.array(forKey: "MenuBarManager_HiddenItems") as? [String] {
             hiddenItems = Set(saved)
         }
     }

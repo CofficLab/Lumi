@@ -12,7 +12,7 @@ public class ProjectConfigStore {
 
     /// 获取所有项目配置
     public func getAllConfigs() -> [ProjectConfig] {
-        guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
+        guard let data = AppSettingsStore.shared.data(forKey: userDefaultsKey),
               let configs = try? JSONDecoder().decode([ProjectConfig].self, from: data) else {
             return []
         }
@@ -40,7 +40,7 @@ public class ProjectConfigStore {
 
         // 保存到 UserDefaults
         if let encoded = try? JSONEncoder().encode(configs) {
-            UserDefaults.standard.set(encoded, forKey: userDefaultsKey)
+            AppSettingsStore.shared.set(encoded, forKey: userDefaultsKey)
         }
     }
 
@@ -50,7 +50,7 @@ public class ProjectConfigStore {
         configs.removeAll { $0.projectPath == projectPath }
 
         if let encoded = try? JSONEncoder().encode(configs) {
-            UserDefaults.standard.set(encoded, forKey: userDefaultsKey)
+            AppSettingsStore.shared.set(encoded, forKey: userDefaultsKey)
         }
     }
 

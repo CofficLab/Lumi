@@ -241,17 +241,17 @@ extension ProviderSettingsView {
     private func loadSettings() {
         guard let providerType = selectedProviderType else { return }
 
-        apiKey = UserDefaults.standard.string(forKey: providerType.apiKeyStorageKey) ?? ""
-        selectedModel = UserDefaults.standard.string(forKey: providerType.modelStorageKey)
+        apiKey = AppSettingsStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
+        selectedModel = AppSettingsStore.shared.string(forKey: providerType.modelStorageKey)
             ?? providerType.defaultModel
         
         // 加载 Plan（目前仅 Aliyun 使用）
         if providerType.id == AliyunProvider.id {
-            let storedPlanId = UserDefaults.standard.string(forKey: AliyunProvider.planStorageKey)
+            let storedPlanId = AppSettingsStore.shared.string(forKey: AliyunProvider.planStorageKey)
             let effectivePlanId = storedPlanId ?? AliyunProvider.defaultPlanId
             selectedPlanId = effectivePlanId
             if storedPlanId == nil {
-                UserDefaults.standard.set(effectivePlanId, forKey: AliyunProvider.planStorageKey)
+                AppSettingsStore.shared.set(effectivePlanId, forKey: AliyunProvider.planStorageKey)
             }
         } else {
             selectedPlanId = nil
@@ -261,13 +261,13 @@ extension ProviderSettingsView {
     /// 保存 API Key 到 UserDefaults
     private func saveApiKey() {
         guard let providerType = selectedProviderType else { return }
-        UserDefaults.standard.set(apiKey, forKey: providerType.apiKeyStorageKey)
+        AppSettingsStore.shared.set(apiKey, forKey: providerType.apiKeyStorageKey)
     }
 
     /// 保存选中的模型到 UserDefaults
     private func saveModel() {
         guard let providerType = selectedProviderType else { return }
-        UserDefaults.standard.set(selectedModel, forKey: providerType.modelStorageKey)
+        AppSettingsStore.shared.set(selectedModel, forKey: providerType.modelStorageKey)
     }
     
     /// 保存选中的 Plan 到 UserDefaults（目前仅 Aliyun 使用）
@@ -275,7 +275,7 @@ extension ProviderSettingsView {
         guard let providerType = selectedProviderType else { return }
         guard providerType.id == AliyunProvider.id else { return }
         guard let planId = selectedPlanId else { return }
-        UserDefaults.standard.set(planId, forKey: AliyunProvider.planStorageKey)
+        AppSettingsStore.shared.set(planId, forKey: AliyunProvider.planStorageKey)
     }
 }
 

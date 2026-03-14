@@ -38,12 +38,12 @@ class PluginSettingsStore: ObservableObject {
 
     /// 加载所有插件设置
     private func loadSettings() -> [String: Bool] {
-        UserDefaults.standard.object(forKey: userDefaultsKey) as? [String: Bool] ?? [:]
+        AppSettingsStore.shared.object(forKey: userDefaultsKey) as? [String: Bool] ?? [:]
     }
 
     /// 保存插件设置
     private func saveSettings(_ settings: [String: Bool]) {
-        UserDefaults.standard.set(settings, forKey: userDefaultsKey)
+        AppSettingsStore.shared.set(settings, forKey: userDefaultsKey)
     }
 }
 

@@ -72,13 +72,13 @@ final class ConversationVM: ObservableObject, SuperLog {
         #endif
     }()
 
-    /// ID 变化时会自动持久化到 UserDefaults。
+    /// ID 变化时会自动持久化到应用设置存储。
     @Published public fileprivate(set) var selectedConversationId: UUID? {
         didSet {
             if let id = selectedConversationId {
-                UserDefaults.standard.set(id.uuidString, forKey: Self.selectedConversationKey)
+                AppSettingsStore.shared.set(id.uuidString, forKey: Self.selectedConversationKey)
             } else {
-                UserDefaults.standard.removeObject(forKey: Self.selectedConversationKey)
+                AppSettingsStore.shared.removeObject(forKey: Self.selectedConversationKey)
             }
         }
     }
@@ -191,10 +191,10 @@ final class ConversationVM: ObservableObject, SuperLog {
 
     /// 恢复上次选择的会话
     ///
-    /// 应用启动时从 UserDefaults 恢复上次选中的会话 ID。
+    /// 应用启动时从应用设置存储恢复上次选中的会话 ID。
     /// 仅负责从本地存储中还原字符串，不做有效性校验。
     func restoreSelectedConversation() {
-        guard let savedId = UserDefaults.standard.string(forKey: Self.selectedConversationKey),
+        guard let savedId = AppSettingsStore.shared.string(forKey: Self.selectedConversationKey),
               let uuid = UUID(uuidString: savedId) else {
             return
         }

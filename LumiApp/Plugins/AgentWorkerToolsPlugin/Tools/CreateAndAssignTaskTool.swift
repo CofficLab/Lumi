@@ -126,12 +126,12 @@ private enum WorkerLLMConfigResolver {
             return nil
         }
 
-        let apiKey = UserDefaults.standard.string(forKey: providerType.apiKeyStorageKey) ?? ""
+        let apiKey = AppSettingsStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
         if apiKey.isEmpty {
             return nil
         }
 
-        let storedModel = UserDefaults.standard.string(forKey: providerType.modelStorageKey)
+        let storedModel = AppSettingsStore.shared.string(forKey: providerType.modelStorageKey)
         let model = firstNonEmpty([preferredModel, storedModel, providerType.defaultModel]) ?? providerType.defaultModel
 
         return LLMConfig(

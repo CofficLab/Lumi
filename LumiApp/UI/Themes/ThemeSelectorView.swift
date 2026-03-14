@@ -296,13 +296,13 @@ extension Themes.Variant {
 
     /// 保存主题选择到 UserDefaults
     func save() {
-        UserDefaults.standard.set(identifier, forKey: Self.themeKey)
+        AppSettingsStore.shared.set(identifier, forKey: Self.themeKey)
     }
 
     /// 从 UserDefaults 加载保存的主题
     /// - Returns: 保存的主题，如果没有保存则返回默认的 .midnight
     static func loadSaved() -> Themes.Variant {
-        let savedValue = UserDefaults.standard.string(forKey: themeKey)
+        let savedValue = AppSettingsStore.shared.string(forKey: themeKey)
         switch savedValue {
         case "midnight": return .midnight
         case "aurora": return .aurora

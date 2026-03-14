@@ -19,7 +19,7 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
 
     /// GitHub Token（从插件设置读取）
     private var accessToken: String? {
-        UserDefaults.standard.string(forKey: "GitHubToken")
+        AppSettingsStore.shared.string(forKey: "GitHubToken")
     }
 
     private init() {
