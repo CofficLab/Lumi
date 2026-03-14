@@ -276,7 +276,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         }
     }
 
-    public var pendingAttachments: [Attachment] = []
+    @Published public var pendingAttachments: [Attachment] = []
 
     // MARK: - 初始化
 
