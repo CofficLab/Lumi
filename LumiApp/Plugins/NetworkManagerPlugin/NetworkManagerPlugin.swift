@@ -19,12 +19,8 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let shared = NetworkManagerPlugin()
 
-    init() {
-        // Ensure HistoryService is created synchronously on initialization
-        Task { @MainActor in
-            _ = NetworkHistoryService.shared
-        }
-    }
+    // 不在 init 中创建 Task，避免时序与竞态。NetworkHistoryService.shared 在首次被
+    // 访问时（如状态栏/仪表盘）会自行初始化。
 
     // MARK: - UI Contributions
 

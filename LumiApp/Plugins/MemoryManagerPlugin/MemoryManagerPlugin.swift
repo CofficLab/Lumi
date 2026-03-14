@@ -20,13 +20,9 @@ actor MemoryManagerPlugin: SuperPlugin, SuperLog {
     static let shared = MemoryManagerPlugin()
     
     // MARK: - Lifecycle
-    
-    init() {
-        Task { @MainActor in
-            MemoryHistoryService.shared.startRecording()
-        }
-    }
-    
+    // 不在 init 中创建 Task，避免时序与竞态。MemoryHistoryService.shared 在首次被访问时
+    // 会自行初始化并在其 init 内调用 startRecording()，由状态栏等 UI 访问时触发即可。
+
     // MARK: - UI
     
     @MainActor func addStatusBarPopupView() -> AnyView? {
