@@ -689,7 +689,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         return titleGenerationViewModel.hasGeneratedTitle(for: selectedId)
     }
 
-    // MARK: - 代理 ProjectVM 属性（仅供内部扩展使用）
+    // MARK: - 代理 ProjectVM 属性
 
     /// 当前项目名称（代理到 ProjectVM）
     var currentProjectName: String {
