@@ -116,7 +116,6 @@ struct ProjectSelectorView: View {
 
                 Spacer()
             }
-            .padding()
         }
         .padding(.horizontal)
     }
@@ -157,7 +156,6 @@ struct ProjectSelectorView: View {
                             .font(.system(size: 12))
                             .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     }
-                    .padding()
                 }
                 .buttonStyle(.plain)
 
