@@ -1970,6 +1970,9 @@
         }
       }
     },
+    "Enter API Key for %@" : {
+
+    },
     "ENV:" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3345,9 +3348,6 @@
           }
         }
       }
-    },
-    "Plan" : {
-
     },
     "Port" : {
 
@@ -5646,6 +5646,9 @@
           }
         }
       }
+    },
+    "输入 %@ 的 API Key" : {
+
     },
     "输入 API Key" : {
 

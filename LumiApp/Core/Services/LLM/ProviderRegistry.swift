@@ -106,17 +106,6 @@ class ProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
         }
     }
 
-    /// 获取指定供应商的所有计划
-    ///
-    /// - Parameter id: 供应商 ID
-    /// - Returns: 计划列表；如果供应商不支持 Plan，则返回空数组
-    func plans(forProviderId id: String) -> [ProviderPlan] {
-        guard let type = providerType(forId: id) else {
-            return []
-        }
-        return type.plans
-    }
-
     /// 创建供应商实例
     ///
     /// 根据供应商 ID 创建对应的供应商实例。
@@ -163,30 +152,10 @@ struct ProviderInfo: Identifiable, Equatable, Sendable {
     let description: String
     
     /// 可用模型列表
-    ///
-    /// 对于支持 Plan 的供应商，这是默认 Plan 下的模型列表；
-    /// UI 在支持 Plan 后可以根据具体 Plan 使用更细粒度的数据。
     let availableModels: [String]
     
     /// 默认模型
     let defaultModel: String
-}
-
-/// 供应商计划信息模型
-///
-/// 用于描述支持 Plan 的供应商下的单个 Plan 元数据。
-struct ProviderPlan: Identifiable, Equatable, Sendable {
-    /// 计划唯一 ID（例如 "coding"）
-    let id: String
-    
-    /// 显示名称（例如 "Coding Plan"）
-    let displayName: String
-    
-    /// 此 Plan 对应的 API 基础 URL
-    let baseURL: String
-    
-    /// 此 Plan 下可用的模型列表
-    let availableModels: [String]
 }
 
 // MARK: - Provider Registration Extension

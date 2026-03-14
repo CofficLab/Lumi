@@ -157,8 +157,8 @@ class LLMService: SuperLog, @unchecked Sendable {
             throw NSError(domain: "LLMService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Provider not found: \(config.providerId)"])
         }
         
-        // 构建 API URL（支持按 Plan 选择 Base URL）
-        let baseURLString = provider.baseURL(for: config.planId)
+        // 构建 API URL
+        let baseURLString = provider.baseURL
         
         guard let url = URL(string: baseURLString) else {
             os_log(.error, "\(self.t)无效的 URL: \(baseURLString)")
@@ -323,8 +323,8 @@ class LLMService: SuperLog, @unchecked Sendable {
             throw NSError(domain: "LLMService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Provider not found: \(config.providerId)"])
         }
         
-        // 构建 API URL（支持按 Plan 选择 Base URL）
-        let baseURLString = provider.baseURL(for: config.planId)
+        // 构建 API URL
+        let baseURLString = provider.baseURL
         
         guard let url = URL(string: baseURLString) else {
             os_log(.error, "\(self.t)无效的 URL: \(baseURLString)")

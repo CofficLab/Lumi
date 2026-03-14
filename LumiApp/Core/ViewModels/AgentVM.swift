@@ -805,22 +805,14 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             return LLMConfig.default
         }
 
-        // 从应用设置存储获取 API Key
+        // 从应用设置存储获取 API Key（按供应商维度）
         let apiKey = AppSettingsStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
-        
-        var config = LLMConfig(
+
+        let config = LLMConfig(
             apiKey: apiKey,
             model: currentModel,
             providerId: selectedProviderId
         )
-        
-        // 对于支持 Plan 的供应商，加载已保存的 Plan ID（如果有）
-        if !providerType.plans.isEmpty {
-            let storageKey = "Agent_ProviderPlan_\(providerType.id)"
-            let storedPlanId = AppSettingsStore.shared.string(forKey: storageKey)
-            config.planId = storedPlanId
-        }
-        
         return config
     }
 

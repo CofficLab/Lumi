@@ -284,10 +284,19 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
             failedContext.pendingToolCalls.removeAll()
             turnContexts[conversationId] = failedContext
 
-            let explainMessage = ChatMessage.requestFailedMessage(languagePreference: languagePreference, error: error)
-            eventContinuation?.yield(.responseReceived(explainMessage, conversationId: conversationId))
-            eventContinuation?.yield(.error(error, conversationId: conversationId))
-            os_log(.error, "\(Self.t)❌ [\(conversationId)] 对话处理失败：\(error.localizedDescription)")
+            // 针对 API Key 为空的配置错误，使用专门的 system 消息，并在 UI 中渲染内嵌的 API Key 配置视图
+            if let configError = error as? LLMConfigValidationError,
+               case .apiKeyEmpty = configError {
+                let explainMessage = ChatMessage.apiKeyMissingSystemMessage(languagePreference: languagePreference)
+                eventContinuation?.yield(.responseReceived(explainMessage, conversationId: conversationId))
+                eventContinuation?.yield(.error(error, conversationId: conversationId))
+                os_log(.error, "\(Self.t)❌ [\(conversationId)] 配置校验失败：API Key 为空")
+            } else {
+                let explainMessage = ChatMessage.requestFailedMessage(languagePreference: languagePreference, error: error)
+                eventContinuation?.yield(.responseReceived(explainMessage, conversationId: conversationId))
+                eventContinuation?.yield(.error(error, conversationId: conversationId))
+                os_log(.error, "\(Self.t)❌ [\(conversationId)] 对话处理失败：\(error.localizedDescription)")
+            }
         }
     }
 

@@ -18,6 +18,11 @@ import Foundation
 /// - **图片附件**: 支持在消息中附带图片
 /// - **性能指标**: 记录请求延迟等信息
 struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
+    // MARK: - 内置系统消息内容标记
+    ///
+    /// 用于在 UI 中渲染专用视图的系统消息占位符内容。
+    /// 这些特殊内容不会直接展示给用户，而是由 UI 组件识别后渲染对应的自定义视图。
+    static let apiKeyMissingSystemContentKey = "__LUMI_API_KEY_MISSING__"
     /// 消息唯一标识符
     ///
     /// 使用 UUID 生成，确保每条消息有唯一 ID。
@@ -291,6 +296,16 @@ Recommended actions:
         return ChatMessage(
             role: .assistant,
             content: content,
+            isError: true
+        )
+    }
+
+    /// 当前供应商未配置 API Key 时，用于在对话中展示的系统消息。
+    /// 这条消息本身只携带一个内部内容标记，实际说明文案和配置 UI 由前端 SystemMessage 组件负责渲染。
+    static func apiKeyMissingSystemMessage(languagePreference: LanguagePreference) -> ChatMessage {
+        ChatMessage(
+            role: .system,
+            content: Self.apiKeyMissingSystemContentKey,
             isError: true
         )
     }
