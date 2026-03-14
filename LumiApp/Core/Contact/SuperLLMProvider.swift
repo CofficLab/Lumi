@@ -73,9 +73,10 @@ protocol SuperLLMProvider: Sendable {
 
     // MARK: - API
 
-    /// API 基础 URL
+    /// API 基础 URL（默认 Plan）
     ///
-    /// 完整的 API 端点地址。
+    /// 对于不支持 Plan 的供应商，这是唯一的 Base URL。
+    /// 支持 Plan 的供应商可以忽略此属性，或将其指向默认 Plan。
     var baseURL: String { get }
 
     /// 构建 API 请求
@@ -160,6 +161,25 @@ protocol SuperLLMProvider: Sendable {
 // 默认实现：大多数供应商不支持 Plan
 extension SuperLLMProvider {
     static var plans: [ProviderPlan] { [] }
+
+    /// 根据 Plan 获取 API 基础 URL
+    ///
+    /// 默认实现：
+    /// - 如果 provider 不支持 Plan，直接返回 `baseURL`
+    /// - 如果支持 Plan：
+    ///   - 有传入 planId 且能匹配，则返回对应 Plan 的 baseURL
+    ///   - 否则返回第一个 Plan 的 baseURL
+    func baseURL(for planId: String?) -> String {
+        let allPlans = Self.plans
+        if allPlans.isEmpty {
+            return baseURL
+        }
+        if let planId,
+           let matched = allPlans.first(where: { $0.id == planId }) {
+            return matched.baseURL
+        }
+        return allPlans.first?.baseURL ?? baseURL
+    }
 }
 
 // MARK: - Stream Event Type

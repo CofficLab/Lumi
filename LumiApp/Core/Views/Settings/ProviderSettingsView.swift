@@ -245,14 +245,11 @@ extension ProviderSettingsView {
         selectedModel = AppSettingsStore.shared.string(forKey: providerType.modelStorageKey)
             ?? providerType.defaultModel
         
-        // 加载 Plan（目前仅 Aliyun 使用）
-        if providerType.id == AliyunProvider.id {
-            let storedPlanId = AppSettingsStore.shared.string(forKey: AliyunProvider.planStorageKey)
-            let effectivePlanId = storedPlanId ?? AliyunProvider.defaultPlanId
-            selectedPlanId = effectivePlanId
-            if storedPlanId == nil {
-                AppSettingsStore.shared.set(effectivePlanId, forKey: AliyunProvider.planStorageKey)
-            }
+        // 加载 Plan（仅对支持 Plan 的供应商生效）
+        if !providerType.plans.isEmpty {
+            let storageKey = "Agent_ProviderPlan_\(providerType.id)"
+            let storedPlanId = AppSettingsStore.shared.string(forKey: storageKey)
+            selectedPlanId = storedPlanId
         } else {
             selectedPlanId = nil
         }
@@ -270,12 +267,14 @@ extension ProviderSettingsView {
         AppSettingsStore.shared.set(selectedModel, forKey: providerType.modelStorageKey)
     }
     
-    /// 保存选中的 Plan 到 UserDefaults（目前仅 Aliyun 使用）
+    /// 保存选中的 Plan 到 UserDefaults（仅对支持 Plan 的供应商生效）
     private func savePlan() {
         guard let providerType = selectedProviderType else { return }
-        guard providerType.id == AliyunProvider.id else { return }
         guard let planId = selectedPlanId else { return }
-        AppSettingsStore.shared.set(planId, forKey: AliyunProvider.planStorageKey)
+        guard !providerType.plans.isEmpty else { return }
+
+        let storageKey = "Agent_ProviderPlan_\(providerType.id)"
+        AppSettingsStore.shared.set(planId, forKey: storageKey)
     }
 }
 

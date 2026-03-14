@@ -158,12 +158,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         }
         
         // 构建 API URL（支持按 Plan 选择 Base URL）
-        let baseURLString: String
-        if config.providerId == AliyunProvider.id {
-            baseURLString = AliyunProvider.baseURL(for: config.planId)
-        } else {
-            baseURLString = provider.baseURL
-        }
+        let baseURLString = provider.baseURL(for: config.planId)
         
         guard let url = URL(string: baseURLString) else {
             os_log(.error, "\(self.t)无效的 URL: \(baseURLString)")
@@ -329,12 +324,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         }
         
         // 构建 API URL（支持按 Plan 选择 Base URL）
-        let baseURLString: String
-        if config.providerId == AliyunProvider.id {
-            baseURLString = AliyunProvider.baseURL(for: config.planId)
-        } else {
-            baseURLString = provider.baseURL
-        }
+        let baseURLString = provider.baseURL(for: config.planId)
         
         guard let url = URL(string: baseURLString) else {
             os_log(.error, "\(self.t)无效的 URL: \(baseURLString)")

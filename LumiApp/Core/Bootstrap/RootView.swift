@@ -171,7 +171,10 @@ final class RootViewContainer: ObservableObject {
 
         // 初始化基础 ViewModel
         self.appProvider = GlobalVM()
-        self.ProjectVM = Lumi.ProjectVM(contextService: contextService)
+        self.ProjectVM = Lumi.ProjectVM(
+            contextService: contextService,
+            providerRegistry: providerRegistry
+        )
         self.commandSuggestionViewModel = CommandSuggestionVM(slashCommandService: slashCommandService)
 
         // 创建 MessageViewModel

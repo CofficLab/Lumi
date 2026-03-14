@@ -25,7 +25,11 @@ final class ProjectVM: ObservableObject, SuperLog {
     // MARK: - 项目配置
 
     /// 当前项目的供应商 ID
-    @Published public fileprivate(set) var currentProviderId: String = "anthropic"
+    ///
+    /// 默认值不再硬编码，而是由插件注册的供应商决定：
+    /// - 如果存在至少一个供应商，使用第一个供应商的 ID
+    /// - 如果没有任何供应商，保持为空字符串，Agent 模式将无法正常运行
+    @Published public fileprivate(set) var currentProviderId: String = ""
 
     /// 当前项目的模型名称
     @Published public fileprivate(set) var currentModel: String = ""
@@ -59,12 +63,18 @@ final class ProjectVM: ObservableObject, SuperLog {
     // MARK: - 初始化
 
     private let contextService: ContextService
+    private let providerRegistry: ProviderRegistry?
 
-    init(contextService: ContextService = ContextService()) {
+    init(
+        contextService: ContextService = ContextService(),
+        providerRegistry: ProviderRegistry? = nil
+    ) {
         self.contextService = contextService
+        self.providerRegistry = providerRegistry
         loadLanguagePreference()
         loadChatMode()
         loadAutoApproveRisk()
+        initializeDefaultProviderIfNeeded()
     }
 
     // MARK: - 项目管理
@@ -169,11 +179,44 @@ final class ProjectVM: ObservableObject, SuperLog {
 
     /// 获取指定供应商的默认模型
     private func getDefaultModel(for providerId: String) -> String {
+        // 优先使用注入的 ProviderRegistry（由插件系统填充）
+        if let registry = providerRegistry,
+           let providerType = registry.providerType(forId: providerId) {
+            return providerType.defaultModel
+        }
+
+        // 兜底：本地扫描插件（用于 Preview / 测试等环境）
         let registry = ProviderRegistry()
+        LLMPluginsVM.registerAllProviders(to: registry)
         guard let providerType = registry.providerType(forId: providerId) else {
             return ""
         }
         return providerType.defaultModel
+    }
+
+    /// 在未选择任何项目时，为 Agent 模式提供默认供应商和模型
+    ///
+    /// 规则：
+    /// - 如果插件系统已注册供应商，选择第一个供应商及其默认模型
+    /// - 如果没有任何供应商注册，则保持空值，Agent 模式将无法正常运行
+    private func initializeDefaultProviderIfNeeded() {
+        // 已经有值（例如稍后会通过项目配置覆盖）则不处理
+        guard currentProviderId.isEmpty, currentModel.isEmpty else { return }
+
+        // 优先使用注入的 ProviderRegistry
+        if let registry = providerRegistry, let firstType = registry.providerTypes.first {
+            currentProviderId = firstType.id
+            currentModel = firstType.defaultModel
+            return
+        }
+
+        // 兜底：本地扫描插件（用于 Preview / 测试等环境）
+        let registry = ProviderRegistry()
+        LLMPluginsVM.registerAllProviders(to: registry)
+        if let firstType = registry.providerTypes.first {
+            currentProviderId = firstType.id
+            currentModel = firstType.defaultModel
+        }
     }
 
     /// 保存最近使用的项目

@@ -808,10 +808,11 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             providerId: selectedProviderId
         )
         
-        // 对于支持 Plan 的供应商（目前仅 Aliyun），加载已保存的 Plan ID
-        if providerType.id == AliyunProvider.id {
-            let storedPlanId = AppSettingsStore.shared.string(forKey: AliyunProvider.planStorageKey)
-            config.planId = storedPlanId ?? AliyunProvider.defaultPlanId
+        // 对于支持 Plan 的供应商，加载已保存的 Plan ID（如果有）
+        if !providerType.plans.isEmpty {
+            let storageKey = "Agent_ProviderPlan_\(providerType.id)"
+            let storedPlanId = AppSettingsStore.shared.string(forKey: storageKey)
+            config.planId = storedPlanId
         }
         
         return config
