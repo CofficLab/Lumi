@@ -121,6 +121,20 @@ extension FinderSync {
             return
         }
 
+        let alert = NSAlert()
+        alert.messageText = String(localized: "Confirm Move to Trash", table: "FinderSync")
+        alert.informativeText = items.count == 1
+            ? String(format: String(localized: "Move \"%@\" to Trash?", table: "FinderSync"), items[0].lastPathComponent)
+            : String(format: String(localized: "Move %d items to Trash?", table: "FinderSync"), items.count)
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: String(localized: "Move to Trash", table: "FinderSync"))
+        alert.addButton(withTitle: String(localized: "Cancel", table: "FinderSync"))
+
+        guard alert.runModal() == .alertFirstButtonReturn else {
+            if Self.verbose { os_log("\(Self.t)用户取消删除") }
+            return
+        }
+
         for url in items {
             do {
                 try FileManager.default.trashItem(at: url, resultingItemURL: nil)
