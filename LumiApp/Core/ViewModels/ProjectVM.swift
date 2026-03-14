@@ -69,6 +69,21 @@ final class ProjectVM: ObservableObject, SuperLog {
 
     // MARK: - 项目管理
 
+    /// 清除当前项目，恢复到未选择任何项目的状态
+    func clearProject() {
+        setCurrentProjectInfo(name: "", path: "", selected: false)
+        UserDefaults.standard.removeObject(forKey: "Agent_SelectedProject")
+        clearFileSelection()
+
+        Task {
+            await contextService.setProjectRoot(nil)
+        }
+
+        if Self.verbose {
+            os_log("\(Self.t)📁 已清除当前项目")
+        }
+    }
+
     /// 切换到指定项目
     func switchProject(to path: String) {
         let projectURL = URL(fileURLWithPath: path)

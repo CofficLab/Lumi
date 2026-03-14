@@ -364,7 +364,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     }
 
     /// 设置会话选择监听
-    /// 当 selectedConversationId 变化时，自动加载对应会话的消息
+    /// 当 selectedConversationId 变化时，自动加载对应会话的消息，并加载该会话关联的项目
     private func setupConversationSelectionObserver() {
         ConversationVM.$selectedConversationId
             .dropFirst() // 跳过初始值
@@ -375,9 +375,49 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
                     guard let id = conversationId else { return }
                     await self.loadConversation(id)
                     self.refreshSessionScopedUIState(for: id)
+                    self.applyProjectForConversation(id: id)
                 }
             }
             .store(in: &cancellables)
+    }
+
+    /// 根据选中会话关联的项目加载或清除当前项目（不追加聊天消息）
+    private func applyProjectForConversation(id: UUID) {
+        guard let conversation = ConversationVM.fetchConversation(id: id) else { return }
+        let path = conversation.projectId?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let path = path, !path.isEmpty {
+            ProjectVM.switchProject(to: path)
+            Task {
+                let languagePreference = self.languagePreference
+                let fullSystemPrompt = await promptService.buildSystemPrompt(
+                    languagePreference: languagePreference,
+                    includeContext: true
+                )
+                let currentMessages = messages
+                if !currentMessages.isEmpty, currentMessages[0].role == .system {
+                    updateMessage(ChatMessage(role: .system, content: fullSystemPrompt), at: 0)
+                } else {
+                    insertMessage(ChatMessage(role: .system, content: fullSystemPrompt), at: 0)
+                }
+                await slashCommandService.setCurrentProjectPath(path)
+            }
+        } else {
+            ProjectVM.clearProject()
+            Task {
+                let languagePreference = self.languagePreference
+                let fullSystemPrompt = await promptService.buildSystemPrompt(
+                    languagePreference: languagePreference,
+                    includeContext: true
+                )
+                let currentMessages = messages
+                if !currentMessages.isEmpty, currentMessages[0].role == .system {
+                    updateMessage(ChatMessage(role: .system, content: fullSystemPrompt), at: 0)
+                } else {
+                    insertMessage(ChatMessage(role: .system, content: fullSystemPrompt), at: 0)
+                }
+                await slashCommandService.setCurrentProjectPath(nil)
+            }
+        }
     }
 
     /// 当前会话的流式消息 ID（用于 UI 渲染）
@@ -1262,6 +1302,37 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             if Self.verbose {
                 os_log("\(Self.t)📁 已切换项目：\(projectName)")
             }
+        }
+    }
+
+    /// 清除当前项目，恢复到未选择任何项目的状态
+    public func clearCurrentProject() {
+        guard isProjectSelected else { return }
+        ConversationVM.setSelectedConversation(nil)
+        ProjectVM.clearProject()
+
+        Task {
+            let languagePreference = self.languagePreference
+            let fullSystemPrompt = await promptService.buildSystemPrompt(
+                languagePreference: languagePreference,
+                includeContext: true
+            )
+            let currentMessages = messages
+            if !currentMessages.isEmpty, currentMessages[0].role == .system {
+                updateMessage(ChatMessage(role: .system, content: fullSystemPrompt), at: 0)
+            } else {
+                insertMessage(ChatMessage(role: .system, content: fullSystemPrompt), at: 0)
+            }
+            await slashCommandService.setCurrentProjectPath(nil)
+
+            let clearMessage: String
+            switch languagePreference {
+            case .chinese:
+                clearMessage = "✅ 已取消选择项目，当前未关联任何项目。"
+            case .english:
+                clearMessage = "✅ Project cleared. No project is currently selected."
+            }
+            appendMessage(ChatMessage(role: .assistant, content: clearMessage))
         }
     }
 

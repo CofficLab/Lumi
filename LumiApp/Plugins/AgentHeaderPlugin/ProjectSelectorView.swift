@@ -115,6 +115,21 @@ struct ProjectSelectorView: View {
                 }
 
                 Spacer()
+
+                // 已选择项目时显示「删除」按钮，清除后恢复到未选择状态
+                if !agentProvider.currentProjectName.isEmpty {
+                    Button(action: {
+                        agentProvider.clearCurrentProject()
+                        isPresented = false
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .symbolRenderingMode(.hierarchical)
+                    }
+                    .buttonStyle(.plain)
+                    .help("取消选择当前项目")
+                }
             }
         }
         .padding(.horizontal)
