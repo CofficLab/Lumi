@@ -141,10 +141,11 @@ class LLMService: SuperLog, @unchecked Sendable {
     ///   - NSError (code 400): 无效的 Base URL
     ///   - NSError (code 500): API 请求失败
     func sendMessage(messages: [ChatMessage], config: LLMConfig, tools: [AgentTool]? = nil) async throws -> ChatMessage {
-        // 验证 API Key
-        guard !config.apiKey.isEmpty else {
-            os_log(.error, "\(self.t)API Key 为空")
-            throw NSError(domain: "LLMService", code: 401, userInfo: [NSLocalizedDescriptionKey: "API Key is missing"])
+        do {
+            try config.validate()
+        } catch {
+            os_log(.error, "\(self.t)配置校验失败：\(error.localizedDescription)")
+            throw error
         }
 
         // 记录开始时间，用于计算延迟
@@ -277,10 +278,11 @@ class LLMService: SuperLog, @unchecked Sendable {
         tools: [AgentTool]? = nil,
         onChunk: @Sendable @escaping (StreamChunk) async -> Void
     ) async throws -> ChatMessage {
-        // 验证 API Key
-        guard !config.apiKey.isEmpty else {
-            os_log(.error, "\(self.t)API Key 为空")
-            throw NSError(domain: "LLMService", code: 401, userInfo: [NSLocalizedDescriptionKey: "API Key is missing"])
+        do {
+            try config.validate()
+        } catch {
+            os_log(.error, "\(self.t)配置校验失败：\(error.localizedDescription)")
+            throw error
         }
 
         // 记录开始时间
