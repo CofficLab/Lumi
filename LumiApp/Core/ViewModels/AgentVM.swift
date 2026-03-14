@@ -1072,6 +1072,59 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         return await chatHistoryService.getMessageCount(forConversationId: conversationId)
     }
 
+    // MARK: - 会话管理
+
+    /// 创建一个新会话
+    ///
+    /// - 创建会话记录（带项目上下文）
+    /// - 切换消息发送队列到新会话
+    /// - 生成系统上下文和欢迎消息
+    /// - 选中新会话
+    @MainActor
+    public func createNewConversation() async {
+        let projectId = isProjectSelected ? currentProjectPath : nil
+        let projectName = isProjectSelected ? currentProjectName : nil
+        let projectPath = isProjectSelected ? currentProjectPath : nil
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd HH:mm"
+
+        // 1. 使用 ChatHistoryService 创建会话记录
+        let conversation = chatHistoryService.createConversation(
+            projectId: projectId,
+            title: "新会话 " + formatter.string(from: Date())
+        )
+
+        // 2. 切换消息发送队列到新会话
+        MessageSenderVM.switchToConversation(conversation.id)
+
+        // 3. 生成系统上下文和欢迎消息
+        Task { [promptService, ProjectVM, ConversationVM] in
+            let systemMessage = await promptService.getSystemContextMessage(
+                projectName: projectName,
+                projectPath: projectPath,
+                language: ProjectVM.languagePreference
+            )
+            if !systemMessage.isEmpty {
+                let msg = ChatMessage(role: .system, content: systemMessage)
+                await ConversationVM.saveMessage(msg, to: conversation.id)
+            }
+
+            let welcomeMessage = await promptService.getEmptySessionWelcomeMessage(
+                projectName: projectName,
+                projectPath: projectPath,
+                language: ProjectVM.languagePreference
+            )
+            if !welcomeMessage.isEmpty {
+                let msg = ChatMessage(role: .assistant, content: welcomeMessage)
+                await ConversationVM.saveMessage(msg, to: conversation.id)
+            }
+        }
+
+        // 4. 选中该会话
+        ConversationVM.setSelectedConversation(conversation.id)
+    }
+
     /// 分页加载会话消息
     /// - Parameters:
     ///   - conversationId: 会话 ID
