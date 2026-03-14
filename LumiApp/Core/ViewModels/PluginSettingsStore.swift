@@ -20,8 +20,8 @@ class PluginSettingsStore: ObservableObject {
     /// - Parameter pluginId: 插件ID
     /// - Returns: true 表示启用，false 表示禁用
     func isPluginEnabled(_ pluginId: String) -> Bool {
-        // 如果没有设置，默认启用
-        return settings[pluginId] ?? true
+        // 如果没有设置，默认禁用
+        return settings[pluginId] ?? false
     }
 
     /// 设置插件的启用状态
