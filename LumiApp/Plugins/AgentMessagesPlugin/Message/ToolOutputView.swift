@@ -3,95 +3,112 @@ import SwiftUI
 /// 增强版工具输出视图 - 带有更多交互功能
 struct ToolOutputView: View {
     let content: String
+    private let timestamp: Date?
     private let summaryTextCached: String
     private let lineCountCached: Int
     @State private var isExpanded: Bool = false
-    @State private var isCopied: Bool = false
     @State private var displayedContent: String = ""
+    @State private var isHeaderHovered: Bool = false
 
-    init(content: String) {
+    init(content: String, timestamp: Date? = nil) {
         self.content = content
-
-        // 这些计算在列表滚动/展开折叠时会被频繁触发，预先计算并缓存，避免大文本导致主线程卡死。
+        self.timestamp = timestamp
         self.summaryTextCached = ToolOutputView.makeSummaryText(from: content)
         self.lineCountCached = ToolOutputView.makeLineCount(from: content)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // 工具输出头部
+        VStack(alignment: .leading, spacing: 4) {
+            // 工具输出头部（与用户消息 header 同风格）
             toolOutputHeader
-                .padding(12)
-                .background(DesignTokens.Color.semantic.textTertiary.opacity(0.3))
-                .overlay(
-                    Rectangle()
-                        .frame(height: 1)
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary.opacity(0.1)),
-                    alignment: .bottom
-                )
 
             // 可折叠内容
             if isExpanded {
-                Divider()
                 toolOutputContent
             }
         }
-        .enhancedToolCardStyle()
     }
 
-    // MARK: - Tool Output Header
+    // MARK: - Tool Output Header（与 Assistant / User / System 消息一致的 header 样式）
 
     private var toolOutputHeader: some View {
-        HStack(spacing: 8) {
-            // 工具类型图标（统一样式）
-            Image(systemName: "gearshape.2.fill")
-                .font(.system(size: 11))
-                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                .frame(width: 20, height: 20)
-                .background(DesignTokens.Color.semantic.textTertiary.opacity(0.15))
-                .clipShape(RoundedRectangle(cornerRadius: 4))
+        HStack(alignment: .center, spacing: 8) {
+            // 左侧：工具输出标识 · 行数（与 Assistant 的 Lumi · provider · model 结构一致）
+            HStack(alignment: .center, spacing: 4) {
+                Text("工具输出")
+                    .font(DesignTokens.Typography.caption1)
+                    .fontWeight(.medium)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
-            // 摘要文本
-            Text(summaryTextCached)
-                .font(DesignTokens.Typography.caption1)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                .lineLimit(1)
+                if lineCountCached > 1 {
+                    Text("·")
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    Text("\(lineCountCached) 行")
+                        .font(DesignTokens.Typography.caption2)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                }
+            }
 
             Spacer()
 
-            // 行数指示器
-            if lineCountCached > 1 {
-                Text("\(lineCountCached) 行")
-                    .font(DesignTokens.Typography.caption2)
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(DesignTokens.Color.semantic.textTertiary.opacity(0.1))
-                    .cornerRadius(4)
-            }
+            HStack(alignment: .center, spacing: 12) {
+                // 复制按钮（与 User / Assistant 一致）
+                CopyMessageButton(
+                    content: content,
+                    showFeedback: .constant(false)
+                )
 
-            // 复制按钮
-            copyButton
-
-            // 展开/折叠指示器
-            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            let willExpand = !isExpanded
-            if willExpand {
-                // 延后到下一 run loop 再展开，避免同一周期内插入 ScrollView/大文本导致主线程卡死
-                DispatchQueue.main.async {
-                    isExpanded = true
-                    stageRenderContent()
+                // 折叠/展开（与 Assistant 一致：展开时显示折叠按钮，折叠时显示「已折叠」文案）
+                if isExpanded {
+                    CollapseButton(action: toggleExpanded)
+                } else {
+                    Text("已折叠")
+                        .font(DesignTokens.Typography.caption2)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary.opacity(0.6))
                 }
-            } else {
-                isExpanded = false
-                displayedContent = ""
+
+                // 时间戳
+                if let timestamp = timestamp {
+                    Text(formatTimestamp(timestamp))
+                        .font(DesignTokens.Typography.caption2)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                }
             }
         }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(isHeaderHovered ? Color.primary.opacity(0.05) : Color.primary.opacity(0.02))
+        )
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHeaderHovered = hovering
+            }
+        }
+        .onTapGesture {
+            toggleExpanded()
+        }
+    }
+
+    private func toggleExpanded() {
+        let willExpand = !isExpanded
+        if willExpand {
+            DispatchQueue.main.async {
+                isExpanded = true
+                stageRenderContent()
+            }
+        } else {
+            isExpanded = false
+            displayedContent = ""
+        }
+    }
+
+    private func formatTimestamp(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        return formatter.string(for: date) ?? ""
     }
 
     // MARK: - Tool Output Content
@@ -127,25 +144,6 @@ struct ToolOutputView: View {
         }
     }
 
-    // MARK: - Copy Button
-
-    private var copyButton: some View {
-        Button(action: copyToClipboard) {
-            HStack(spacing: 4) {
-                Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
-                Text(isCopied ? "已复制" : "复制")
-                    .font(DesignTokens.Typography.caption2)
-            }
-            .font(.system(size: 10))
-            .foregroundColor(isCopied ? .green : DesignTokens.Color.semantic.textSecondary)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 3)
-            .background(isCopied ? Color.green.opacity(0.1) : DesignTokens.Color.semantic.textTertiary.opacity(0.05))
-            .cornerRadius(4)
-        }
-        .buttonStyle(.plain)
-    }
-
     // MARK: - Helper Properties
     private static func makeSummaryText(from content: String) -> String {
         if let firstLine = content.components(separatedBy: .newlines).first {
@@ -170,46 +168,6 @@ struct ToolOutputView: View {
         return count
     }
 
-    // MARK: - Actions
-
-    private func copyToClipboard() {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(content, forType: .string)
-
-        withAnimation(.easeInOut(duration: 0.2)) {
-            isCopied = true
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isCopied = false
-            }
-        }
-    }
-}
-
-// MARK: - View Modifiers
-
-private extension View {
-    /// 应用增强版工具卡片样式
-    func enhancedToolCardStyle() -> some View {
-        self
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.04))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(DesignTokens.Color.semantic.textTertiary.opacity(0.12), lineWidth: 1)
-                    )
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
-                    .opacity(0.3)
-            )
-            .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-    }
 }
 
 // MARK: - Convenience Initializers
@@ -217,7 +175,7 @@ private extension View {
 extension ToolOutputView {
     /// 从消息创建工具输出视图
     init(message: ChatMessage) {
-        self.init(content: message.content)
+        self.init(content: message.content, timestamp: message.timestamp)
     }
 }
 

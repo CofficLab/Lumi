@@ -43,7 +43,7 @@ actor WorkerAgentService: SuperLog {
             for toolCall in toolCalls {
                 let toolResult = try await executeToolCall(toolCall)
                 messages.append(ChatMessage(
-                    role: .user,
+                    role: .tool,
                     content: toolResult,
                     toolCallID: toolCall.id
                 ))

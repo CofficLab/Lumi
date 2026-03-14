@@ -13,7 +13,7 @@ public struct AvatarChatView: View {
 
     public var body: some View {
         Group {
-            if isToolOutput {
+            if isToolOutput || role == .tool {
                 AvatarView.tool
             } else if role == .user {
                 AvatarView.user

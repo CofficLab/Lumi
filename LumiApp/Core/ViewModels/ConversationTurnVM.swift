@@ -479,7 +479,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
             let trimmedResult = truncateToolResultIfNeeded(result)
 
             let resultMsg = ChatMessage(
-                role: .user,
+                role: .tool,
                 content: trimmedResult,
                 toolCallID: normalizedToolCall.id
             )
@@ -516,7 +516,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         guard !toolCalls.isEmpty else { return }
         for toolCall in toolCalls {
             let abortMessage = ChatMessage(
-                role: .user,
+                role: .tool,
                 content: "[Tool execution aborted by safety guard]",
                 toolCallID: toolCall.id
             )

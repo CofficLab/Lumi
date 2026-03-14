@@ -1179,7 +1179,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         } else {
             // 拒绝执行，添加拒绝消息
             let rejectMessage = ChatMessage(
-                role: .user,
+                role: .tool,
                 content: "用户拒绝了执行 \(request.toolName) 的权限请求",
                 toolCallID: request.toolCallID
             )

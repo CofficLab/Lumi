@@ -72,7 +72,7 @@ struct SystemMessage: View, SuperLog {
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 6)
-                .fill(isHovered ? Color.primary.opacity(0.04) : Color.primary.opacity(0.015))
+                .fill(isHovered ? Color.primary.opacity(0.05) : Color.primary.opacity(0.02))
         )
         .contentShape(Rectangle())
     }

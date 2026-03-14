@@ -15,6 +15,7 @@ struct AssistantMessage: View, SuperLog {
 
     @ObservedObject private var expansionState = MessageExpansionState.shared
     @Binding var showRawMessage: Bool
+    @State private var isHeaderHovered: Bool = false
 
     // MARK: - Computed
 
@@ -151,9 +152,14 @@ struct AssistantMessage: View, SuperLog {
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 6)
-                .fill(Color.primary.opacity(0.02))
+                .fill(isHeaderHovered ? Color.primary.opacity(0.05) : Color.primary.opacity(0.02))
         )
         .contentShape(Rectangle())
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHeaderHovered = hovering
+            }
+        }
     }
 
     private var performanceMetricsGroup: some View {

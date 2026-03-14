@@ -146,7 +146,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         switch role {
         case .user, .assistant:
             return true
-        case .system, .status:
+        case .system, .status, .tool:
             return false
         }
     }
@@ -164,8 +164,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     /// 是否应展示在聊天消息列表中
     func shouldDisplayInChatList() -> Bool {
         guard role.shouldDisplayInChatList else { return false }
-        // 工具输出明细消息（tool_result）统一不展示
-        if isToolOutput { return false }
+        if isToolOutput { return true }
         return true
     }
 

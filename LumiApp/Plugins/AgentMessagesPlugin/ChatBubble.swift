@@ -65,6 +65,9 @@ struct ChatBubble: View, SuperLog {
                         relatedToolOutputs: relatedToolOutputs,
                         showRawMessage: $showRawMessage
                     )
+                } else if message.role == .tool || message.isToolOutput {
+                    // 工具输出消息：header 与 Lumi 一致，头像与「工具输出」+ 操作同一行
+                    ToolOutputView(message: message)
                 } else {
                     // 用户/系统/状态消息
                     VStack(alignment: .leading, spacing: 4) {
@@ -84,6 +87,8 @@ struct ChatBubble: View, SuperLog {
                                 message: message,
                                 showRawMessage: $showRawMessage
                             )
+                        case .tool:
+                            ToolOutputView(message: message)
                         default:
                             MarkdownMessageView(
                                 message: message,

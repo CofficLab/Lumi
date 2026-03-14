@@ -116,7 +116,7 @@ final class ToolExecutionService: SuperLog, @unchecked Sendable {
         }
 
         return ChatMessage(
-            role: .user,
+            role: .tool,
             content: errorContent,
             toolCallID: toolCall.id
         )
@@ -127,7 +127,7 @@ final class ToolExecutionService: SuperLog, @unchecked Sendable {
     /// - Returns: 错误消息对象
     func createToolNotFoundMessage(for toolCall: ToolCall) -> ChatMessage {
         ChatMessage(
-            role: .user,
+            role: .tool,
             content: "Error: Tool '\(toolCall.name)' not found.",
             toolCallID: toolCall.id
         )
