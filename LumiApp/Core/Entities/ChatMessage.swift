@@ -272,8 +272,7 @@ Recommended actions:
 
     /// 请求失败（如超时、网络错误）时，用于在对话中展示的助手错误消息。
     static func requestFailedMessage(languagePreference: LanguagePreference, error: Error) -> ChatMessage {
-        let nsError = error as NSError
-        let isTimeout = nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorTimedOut
+        let isTimeout = Self.isTimeoutError(error)
         let content: String
         if isTimeout {
             switch languagePreference {
@@ -295,6 +294,17 @@ Recommended actions:
             content: content,
             isError: true
         )
+    }
+
+    /// 判断是否为请求超时错误（含被 APIError.requestFailed 包装的 URLError.timedOut）。
+    private static func isTimeoutError(_ error: Error) -> Bool {
+        let nse = error as NSError
+        if nse.domain == NSURLErrorDomain && nse.code == NSURLErrorTimedOut { return true }
+        if let apiError = error as? APIError, case .requestFailed(let underlying) = apiError {
+            let inner = underlying as NSError
+            return inner.domain == NSURLErrorDomain && inner.code == NSURLErrorTimedOut
+        }
+        return false
     }
 
     /// 初始化聊天消息
