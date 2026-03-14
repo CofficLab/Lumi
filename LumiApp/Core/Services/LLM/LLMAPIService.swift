@@ -1,6 +1,30 @@
 import Foundation
 import OSLog
 import MagicKit
+import Security
+
+/// URLSession 委托：强制使用系统默认的 TLS 证书校验（系统信任库）。
+/// 拒绝自签名、过期或域名不匹配的证书，降低中间人攻击风险。
+private final class TLSValidationDelegate: NSObject, URLSessionDelegate {
+    func urlSession(
+        _ session: URLSession,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+              let serverTrust = challenge.protectionSpace.serverTrust else {
+            completionHandler(.performDefaultHandling, nil)
+            return
+        }
+        var error: CFError?
+        let isValid = SecTrustEvaluateWithError(serverTrust, &error)
+        if isValid {
+            completionHandler(.useCredential, URLCredential(trust: serverTrust))
+        } else {
+            completionHandler(.cancelAuthenticationChallenge, nil)
+        }
+    }
+}
 
 /// LLM API 服务
 ///
@@ -13,25 +37,31 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
     /// URLSession 配置
     private nonisolated let session: URLSession
     private nonisolated let decoder: JSONDecoder
-    
+    private nonisolated let tlsDelegate: TLSValidationDelegate
+
     // MARK: - 重试配置
-    
+
     /// 最大重试次数
     private nonisolated let maxRetries: Int = 3
-    
+
     /// 初始重试等待时间（秒）
     private nonisolated let baseRetryDelay: Double = 1.0
-    
+
     /// 重试退避倍数（指数增长）
     private nonisolated let retryBackoffMultiplier: Double = 2.0
-    
+
     init() {
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 300  // 5 分钟超时（LLM 需要更多时间）
         configuration.timeoutIntervalForResource = 600  // 10 分钟资源超时
-        self.session = URLSession(configuration: configuration)
+        self.tlsDelegate = TLSValidationDelegate()
+        self.session = URLSession(
+            configuration: configuration,
+            delegate: tlsDelegate,
+            delegateQueue: nil
+        )
         self.decoder = JSONDecoder()
-        
+
         if Self.verbose {
             os_log("\(self.t)✅ LLM API 服务已初始化（最大重试次数：\(self.maxRetries)）")
         }

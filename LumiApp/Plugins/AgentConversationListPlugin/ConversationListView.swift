@@ -313,6 +313,8 @@ extension ConversationListView {
                 self.localSelectedConversationId = conversationId
                 lastReloadSelectionId = nil
             }
+        } else {
+            self.localSelectedConversationId = nil
         }
     }
 }

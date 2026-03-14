@@ -69,7 +69,7 @@ enum AppConfig {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
     }
 
-    /// 获取数据库文件夹目录
+    /// 获取数据库文件夹目录（应用主库与插件子目录的根目录）
     /// - Returns: 数据库目录的 URL
     static func getDBFolderURL() -> URL {
         let appSupport = getCurrentAppSupportDir()
@@ -89,6 +89,25 @@ enum AppConfig {
         }
         
         return dbDirectory
+    }
+
+    /// 获取指定插件的数据库/存储目录（插件自行管理该目录下的文件或数据库）
+    /// 路径为：getDBFolderURL() / pluginName
+    /// - Parameter pluginName: 插件名称，建议与插件模块名一致（如 "GitHubToolsPlugin"）
+    /// - Returns: 该插件的存储目录 URL，不存在时会自动创建
+    static func getPluginDBFolderURL(pluginName: String) -> URL {
+        let base = getDBFolderURL()
+        let sanitized = pluginName.trimmingCharacters(in: .whitespacesAndNewlines)
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .filter { !$0.isEmpty }
+            .joined(separator: "_")
+        let name = sanitized.isEmpty ? "Plugin" : sanitized
+        let pluginDir = base.appendingPathComponent(name, isDirectory: true)
+        let fileManager = FileManager.default
+        if !fileManager.fileExists(atPath: pluginDir.path) {
+            try? fileManager.createDirectory(at: pluginDir, withIntermediateDirectories: true, attributes: nil)
+        }
+        return pluginDir
     }
     
     /// 获取数据库文件路径（包含具体文件名）

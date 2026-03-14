@@ -12,6 +12,7 @@ struct AgentModeContentView: View {
 
     @EnvironmentObject var app: GlobalVM
     @EnvironmentObject var pluginProvider: PluginVM
+    @EnvironmentObject var providerRegistry: ProviderRegistry
 
     var body: some View {
         VStack(spacing: 0) {
@@ -81,23 +82,30 @@ struct AgentModeContentView: View {
     }
 
     /// 右侧栏和详情栏（嵌套 HSplitView）
+    @ViewBuilder
     private var rightAndDetailColumns: some View {
-        let detailViews = pluginProvider.getDetailViews()
+        if providerRegistry.providerTypes.isEmpty {
+            // 没有任何 LLM 供应商可用时，仅在右侧区域显示提示，保留左侧栏以便用户切换模式
+            missingProviderView
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            let detailViews = pluginProvider.getDetailViews()
 
-        return HSplitView {
-            // 第二栏：详情栏（仅当有插件提供详情视图时显示）
-            if !detailViews.isEmpty {
-                detailContentColumn
+            HSplitView {
+                // 第二栏：详情栏（仅当有插件提供详情视图时显示）
+                if !detailViews.isEmpty {
+                    detailContentColumn
+                        .frame(minWidth: 200, idealWidth: 300)
+                }
+
+                // 第三栏：右侧栏（支持头部、中间、底部）
+                rightColumn
                     .frame(minWidth: 200, idealWidth: 300)
             }
-
-            // 第三栏：右侧栏（支持头部、中间、底部）
-            rightColumn
-                .frame(minWidth: 200, idealWidth: 300)
+            .id("agentModeDetailRightHSplitView")
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .ignoresSafeArea()
         }
-        .id("agentModeDetailRightHSplitView")
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .ignoresSafeArea()
     }
 
     /// 右侧栏（支持头部、中间、底部）
@@ -209,6 +217,25 @@ struct AgentModeContentView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// 缺少供应商插件时的提示视图
+    private var missingProviderView: some View {
+        VStack(spacing: 12) {
+            Spacer()
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 32, weight: .bold))
+                .foregroundColor(.yellow)
+            Text("Agent 模式不可用")
+                .font(.title2)
+                .fontWeight(.semibold)
+            Text("当前没有任何 LLM 供应商插件已注册。\n请安装并启用至少一个提供 LLM 供应商的插件后重试。")
+                .font(.body)
+                .multilineTextAlignment(.center)
+                .foregroundColor(.secondary)
+            Spacer()
+        }
+        .padding()
     }
 }
 

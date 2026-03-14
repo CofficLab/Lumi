@@ -232,7 +232,7 @@ extension GitHubPluginSettingsView {
 extension GitHubPluginSettingsView {
     /// 加载 GitHub Token
     private func loadToken() {
-        token = UserDefaults.standard.string(forKey: "GitHubToken") ?? ""
+        token = AppSettingsStore.shared.string(forKey: "GitHubToken") ?? ""
         apiLimitInfo = token.isEmpty ? "未认证" : "已认证"
 
         if Self.verbose {
@@ -242,7 +242,7 @@ extension GitHubPluginSettingsView {
 
     /// 保存 GitHub Token 到 UserDefaults
     private func saveToken() {
-        UserDefaults.standard.set(token, forKey: "GitHubToken")
+        AppSettingsStore.shared.set(token, forKey: "GitHubToken")
         apiLimitInfo = token.isEmpty ? "未认证" : "已认证"
 
         if !isSaved {

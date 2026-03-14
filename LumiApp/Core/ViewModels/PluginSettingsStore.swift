@@ -20,8 +20,8 @@ class PluginSettingsStore: ObservableObject {
     /// - Parameter pluginId: 插件ID
     /// - Returns: true 表示启用，false 表示禁用
     func isPluginEnabled(_ pluginId: String) -> Bool {
-        // 如果没有设置，默认启用
-        return settings[pluginId] ?? true
+        // 如果没有设置，默认禁用
+        return settings[pluginId] ?? false
     }
 
     /// 设置插件的启用状态
@@ -38,12 +38,12 @@ class PluginSettingsStore: ObservableObject {
 
     /// 加载所有插件设置
     private func loadSettings() -> [String: Bool] {
-        UserDefaults.standard.object(forKey: userDefaultsKey) as? [String: Bool] ?? [:]
+        AppSettingsStore.shared.object(forKey: userDefaultsKey) as? [String: Bool] ?? [:]
     }
 
     /// 保存插件设置
     private func saveSettings(_ settings: [String: Bool]) {
-        UserDefaults.standard.set(settings, forKey: userDefaultsKey)
+        AppSettingsStore.shared.set(settings, forKey: userDefaultsKey)
     }
 }
 

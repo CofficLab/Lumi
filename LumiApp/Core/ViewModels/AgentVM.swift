@@ -276,7 +276,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         }
     }
 
-    public var pendingAttachments: [Attachment] = []
+    @Published public var pendingAttachments: [Attachment] = []
 
     // MARK: - 初始化
 
@@ -364,7 +364,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     }
 
     /// 设置会话选择监听
-    /// 当 selectedConversationId 变化时，自动加载对应会话的消息
+    /// 当 selectedConversationId 变化时，自动加载对应会话的消息，并加载该会话关联的项目
     private func setupConversationSelectionObserver() {
         ConversationVM.$selectedConversationId
             .dropFirst() // 跳过初始值
@@ -375,9 +375,49 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
                     guard let id = conversationId else { return }
                     await self.loadConversation(id)
                     self.refreshSessionScopedUIState(for: id)
+                    self.applyProjectForConversation(id: id)
                 }
             }
             .store(in: &cancellables)
+    }
+
+    /// 根据选中会话关联的项目加载或清除当前项目（不追加聊天消息）
+    private func applyProjectForConversation(id: UUID) {
+        guard let conversation = ConversationVM.fetchConversation(id: id) else { return }
+        let path = conversation.projectId?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let path = path, !path.isEmpty {
+            ProjectVM.switchProject(to: path)
+            Task {
+                let languagePreference = self.languagePreference
+                let fullSystemPrompt = await promptService.buildSystemPrompt(
+                    languagePreference: languagePreference,
+                    includeContext: true
+                )
+                let currentMessages = messages
+                if !currentMessages.isEmpty, currentMessages[0].role == .system {
+                    updateMessage(ChatMessage(role: .system, content: fullSystemPrompt), at: 0)
+                } else {
+                    insertMessage(ChatMessage(role: .system, content: fullSystemPrompt), at: 0)
+                }
+                await slashCommandService.setCurrentProjectPath(path)
+            }
+        } else {
+            ProjectVM.clearProject()
+            Task {
+                let languagePreference = self.languagePreference
+                let fullSystemPrompt = await promptService.buildSystemPrompt(
+                    languagePreference: languagePreference,
+                    includeContext: true
+                )
+                let currentMessages = messages
+                if !currentMessages.isEmpty, currentMessages[0].role == .system {
+                    updateMessage(ChatMessage(role: .system, content: fullSystemPrompt), at: 0)
+                } else {
+                    insertMessage(ChatMessage(role: .system, content: fullSystemPrompt), at: 0)
+                }
+                await slashCommandService.setCurrentProjectPath(nil)
+            }
+        }
     }
 
     /// 当前会话的流式消息 ID（用于 UI 渲染）
@@ -499,23 +539,23 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     /// 加载保存的偏好设置
     private func loadPreferences() {
         // 加载语言偏好
-        if let data = UserDefaults.standard.data(forKey: "Agent_LanguagePreference"),
+        if let data = AppSettingsStore.shared.data(forKey: "Agent_LanguagePreference"),
            let preference = try? JSONDecoder().decode(LanguagePreference.self, from: data) {
             ProjectVM.setLanguagePreference(preference)
         }
 
         // 加载聊天模式
-        if let modeRaw = UserDefaults.standard.string(forKey: "Agent_ChatMode"),
+        if let modeRaw = AppSettingsStore.shared.string(forKey: "Agent_ChatMode"),
            let mode = ChatMode(rawValue: modeRaw) {
             ProjectVM.setChatMode(mode)
         }
 
         // 加载自动批准风险 - 使用 bool 类型读取
-        let autoApprove = UserDefaults.standard.bool(forKey: "Agent_AutoApproveRisk")
+        let autoApprove = AppSettingsStore.shared.bool(forKey: "Agent_AutoApproveRisk")
         ProjectVM.setAutoApproveRisk(autoApprove)
 
         // 加载上次选择的项目（项目切换会自动应用配置）
-        if let savedPath = UserDefaults.standard.string(forKey: "Agent_SelectedProject") {
+        if let savedPath = AppSettingsStore.shared.string(forKey: "Agent_SelectedProject") {
             ProjectVM.switchProject(to: savedPath)
 
             // 加载项目命令
@@ -649,7 +689,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         return titleGenerationViewModel.hasGeneratedTitle(for: selectedId)
     }
 
-    // MARK: - 代理 ProjectVM 属性（仅供内部扩展使用）
+    // MARK: - 代理 ProjectVM 属性
 
     /// 当前项目名称（代理到 ProjectVM）
     var currentProjectName: String {
@@ -695,13 +735,16 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
 
     /// 设置供应商并保存到项目配置
     func setSelectedProviderId(_ providerId: String) {
-        guard isProjectSelected, !currentProjectPath.isEmpty else { return }
-
-        ProjectVM.saveProjectConfig(
-            path: currentProjectPath,
-            providerId: providerId,
-            model: currentModel
-        )
+        if isProjectSelected, !currentProjectPath.isEmpty {
+            ProjectVM.saveProjectConfig(
+                path: currentProjectPath,
+                providerId: providerId,
+                model: currentModel
+            )
+        } else {
+            // 未选择项目时，更新全局供应商配置
+            ProjectVM.setGlobalProviderId(providerId)
+        }
 
         if Self.verbose {
             os_log("\(Self.t)⚙️ 已设置供应商：\(providerId)")
@@ -710,13 +753,16 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
 
     /// 设置模型并保存到项目配置
     func setSelectedModel(_ model: String) {
-        guard isProjectSelected, !currentProjectPath.isEmpty else { return }
-
-        ProjectVM.saveProjectConfig(
-            path: currentProjectPath,
-            providerId: selectedProviderId,
-            model: model
-        )
+        if isProjectSelected, !currentProjectPath.isEmpty {
+            ProjectVM.saveProjectConfig(
+                path: currentProjectPath,
+                providerId: selectedProviderId,
+                model: model
+            )
+        } else {
+            // 未选择项目时，更新全局模型配置
+            ProjectVM.setGlobalModel(model)
+        }
 
         if Self.verbose {
             os_log("\(Self.t)⚙️ 已设置模型：\(model)")
@@ -759,21 +805,14 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             return LLMConfig.default
         }
 
-        // 从 UserDefaults 获取 API Key
-        let apiKey = UserDefaults.standard.string(forKey: providerType.apiKeyStorageKey) ?? ""
-        
-        var config = LLMConfig(
+        // 从应用设置存储获取 API Key（按供应商维度）
+        let apiKey = AppSettingsStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
+
+        let config = LLMConfig(
             apiKey: apiKey,
             model: currentModel,
             providerId: selectedProviderId
         )
-        
-        // 对于支持 Plan 的供应商（目前仅 Aliyun），加载已保存的 Plan ID
-        if providerType.id == AliyunProvider.id {
-            let storedPlanId = UserDefaults.standard.string(forKey: AliyunProvider.planStorageKey)
-            config.planId = storedPlanId ?? AliyunProvider.defaultPlanId
-        }
-        
         return config
     }
 
@@ -782,7 +821,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         guard let providerType = registry.providerType(forId: providerId) else {
             return ""
         }
-        return UserDefaults.standard.string(forKey: providerType.apiKeyStorageKey) ?? ""
+        return AppSettingsStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
     }
 
     /// 设置指定供应商的 API Key
@@ -790,7 +829,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         guard let providerType = registry.providerType(forId: providerId) else {
             return
         }
-        UserDefaults.standard.set(apiKey, forKey: providerType.apiKeyStorageKey)
+        AppSettingsStore.shared.set(apiKey, forKey: providerType.apiKeyStorageKey)
         if Self.verbose {
             os_log("\(Self.t) 已设置 \(providerType.displayName) 的 API Key")
         }
@@ -1072,6 +1111,59 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         return await chatHistoryService.getMessageCount(forConversationId: conversationId)
     }
 
+    // MARK: - 会话管理
+
+    /// 创建一个新会话
+    ///
+    /// - 创建会话记录（带项目上下文）
+    /// - 切换消息发送队列到新会话
+    /// - 生成系统上下文和欢迎消息
+    /// - 选中新会话
+    @MainActor
+    public func createNewConversation() async {
+        let projectId = isProjectSelected ? currentProjectPath : nil
+        let projectName = isProjectSelected ? currentProjectName : nil
+        let projectPath = isProjectSelected ? currentProjectPath : nil
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd HH:mm"
+
+        // 1. 使用 ChatHistoryService 创建会话记录
+        let conversation = chatHistoryService.createConversation(
+            projectId: projectId,
+            title: "新会话 " + formatter.string(from: Date())
+        )
+
+        // 2. 切换消息发送队列到新会话
+        MessageSenderVM.switchToConversation(conversation.id)
+
+        // 3. 生成系统上下文和欢迎消息
+        Task { [promptService, ProjectVM, ConversationVM] in
+            let systemMessage = await promptService.getSystemContextMessage(
+                projectName: projectName,
+                projectPath: projectPath,
+                language: ProjectVM.languagePreference
+            )
+            if !systemMessage.isEmpty {
+                let msg = ChatMessage(role: .system, content: systemMessage)
+                await ConversationVM.saveMessage(msg, to: conversation.id)
+            }
+
+            let welcomeMessage = await promptService.getEmptySessionWelcomeMessage(
+                projectName: projectName,
+                projectPath: projectPath,
+                language: ProjectVM.languagePreference
+            )
+            if !welcomeMessage.isEmpty {
+                let msg = ChatMessage(role: .assistant, content: welcomeMessage)
+                await ConversationVM.saveMessage(msg, to: conversation.id)
+            }
+        }
+
+        // 4. 选中该会话
+        ConversationVM.setSelectedConversation(conversation.id)
+    }
+
     /// 分页加载会话消息
     /// - Parameters:
     ///   - conversationId: 会话 ID
@@ -1126,7 +1218,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         } else {
             // 拒绝执行，添加拒绝消息
             let rejectMessage = ChatMessage(
-                role: .user,
+                role: .tool,
                 content: "用户拒绝了执行 \(request.toolName) 的权限请求",
                 toolCallID: request.toolCallID
             )
@@ -1209,6 +1301,37 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             if Self.verbose {
                 os_log("\(Self.t)📁 已切换项目：\(projectName)")
             }
+        }
+    }
+
+    /// 清除当前项目，恢复到未选择任何项目的状态
+    public func clearCurrentProject() {
+        guard isProjectSelected else { return }
+        ConversationVM.setSelectedConversation(nil)
+        ProjectVM.clearProject()
+
+        Task {
+            let languagePreference = self.languagePreference
+            let fullSystemPrompt = await promptService.buildSystemPrompt(
+                languagePreference: languagePreference,
+                includeContext: true
+            )
+            let currentMessages = messages
+            if !currentMessages.isEmpty, currentMessages[0].role == .system {
+                updateMessage(ChatMessage(role: .system, content: fullSystemPrompt), at: 0)
+            } else {
+                insertMessage(ChatMessage(role: .system, content: fullSystemPrompt), at: 0)
+            }
+            await slashCommandService.setCurrentProjectPath(nil)
+
+            let clearMessage: String
+            switch languagePreference {
+            case .chinese:
+                clearMessage = "✅ 已取消选择项目，当前未关联任何项目。"
+            case .english:
+                clearMessage = "✅ Project cleared. No project is currently selected."
+            }
+            appendMessage(ChatMessage(role: .assistant, content: clearMessage))
         }
     }
 

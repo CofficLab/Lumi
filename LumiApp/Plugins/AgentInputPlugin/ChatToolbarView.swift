@@ -201,7 +201,7 @@ extension ChatToolbarView {
             HStack(spacing: 4) {
                 Image(systemName: "globe")
                     .font(.system(size: 14))
-                Text(agentProvider.currentModel)
+                Text(currentModelDisplayText)
                     .font(.system(size: 12))
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -216,6 +216,19 @@ extension ChatToolbarView {
             .cornerRadius(6)
         }
         .buttonStyle(.plain)
+    }
+
+    /// 当前显示的「供应商 + 模型」文案
+    private var currentModelDisplayText: String {
+        let model = agentProvider.currentModel
+        guard !model.isEmpty else {
+            return "未选择模型"
+        }
+        if let providerType = agentProvider.registry.providerType(forId: agentProvider.selectedProviderId) {
+            return "\(providerType.displayName) · \(model)"
+        } else {
+            return model
+        }
     }
 
     /// 图片上传按钮视图

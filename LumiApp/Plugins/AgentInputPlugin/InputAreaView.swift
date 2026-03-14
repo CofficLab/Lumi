@@ -19,6 +19,9 @@ struct InputAreaView: View, SuperLog {
     /// 智能体提供者
     @EnvironmentObject var agentProvider: AgentVM
 
+    /// 会话管理 ViewModel
+    @EnvironmentObject var ConversationVM: ConversationVM
+
     /// 处理状态 ViewModel
     @EnvironmentObject var processingStateViewModel: ProcessingStateVM
 
@@ -37,6 +40,11 @@ struct InputAreaView: View, SuperLog {
     /// 编辑器动态高度
     @State private var editorHeight: CGFloat = MacEditorView.minHeight
 
+    /// 是否允许输入/发送（必须先选中会话）
+    private var canChat: Bool {
+        ConversationVM.selectedConversationId != nil
+    }
+
     var body: some View {
         VStack(spacing: 8) {
             // 附件预览区域
@@ -54,6 +62,7 @@ struct InputAreaView: View, SuperLog {
                 text: $inputViewModel.text,
                 height: $editorHeight,
                 onSubmit: {
+                    guard canChat else { return }
                     let text = inputViewModel.text
                     inputViewModel.clear()
                     agentProvider.sendMessage(input: text)
@@ -71,6 +80,7 @@ struct InputAreaView: View, SuperLog {
                     }
                 },
                 onEnter: {
+                    guard canChat else { return }
                     if commandSuggestionViewModel.isVisible,
                        let suggestion = commandSuggestionViewModel.getCurrentSuggestion() {
                         inputViewModel.set(suggestion.command + " ")
@@ -89,6 +99,8 @@ struct InputAreaView: View, SuperLog {
             .frame(height: editorHeight)
             .padding(.horizontal, 4)
             .padding(.top, 8)
+            .allowsHitTesting(canChat)
+            .opacity(canChat ? 1 : 0.6)
             // 添加高度变化动画
             .animation(.easeInOut(duration: 0.15), value: editorHeight)
             // 监听文本变化以触发命令建议
@@ -101,6 +113,8 @@ struct InputAreaView: View, SuperLog {
                 inputViewModel: inputViewModel,
                 isModelSelectorPresented: $isModelSelectorPresented
             )
+            .allowsHitTesting(canChat)
+            .opacity(canChat ? 1 : 0.6)
         }
         .background(.background)
         .cornerRadius(12)
@@ -108,6 +122,28 @@ struct InputAreaView: View, SuperLog {
             // 动态边框 - 处理中时显示动画边框
             processingBorderOverlay
         )
+        .overlay {
+            if !canChat {
+                ZStack {
+                    // 半透明背景，盖住输入区域，防止误操作
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(.background.opacity(0.9))
+
+                    VStack(spacing: 8) {
+                        Image(systemName: "bubble.left.and.bubble.right")
+                            .font(.system(size: 18))
+                            .foregroundStyle(.secondary)
+
+                        Text("请先创建或选择一个对话", tableName: "DevAssistant")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 8)
+                    }
+                    .padding(.horizontal, 16)
+                }
+            }
+        }
         .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
         .overlay(alignment: .bottomLeading) {
             CommandSuggestionView { suggestion in

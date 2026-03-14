@@ -2,6 +2,13 @@ import SwiftUI
 
 /// 空状态视图 - 未选择会话时显示
 struct EmptyStateView: View {
+    @EnvironmentObject private var ConversationVM: ConversationVM
+    @EnvironmentObject private var agentProvider: AgentVM
+
+    private var hasAnyConversation: Bool {
+        !ConversationVM.fetchAllConversations().isEmpty
+    }
+
     var body: some View {
         VStack(spacing: 20) {
             Spacer()
@@ -12,17 +19,34 @@ struct EmptyStateView: View {
                 .foregroundStyle(.secondary)
 
             // 标题
-            Text("选择一个会话开始聊天", tableName: "DevAssistant")
+            Text(hasAnyConversation ? "选择一个会话开始聊天" : "暂无对话", tableName: "DevAssistant")
                 .font(.title2)
                 .fontWeight(.semibold)
                 .foregroundStyle(.primary)
 
-            // 描述
-            Text("从左侧列表选择一个现有会话，或创建新会话", tableName: "DevAssistant")
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
+            if hasAnyConversation {
+                // 描述
+                Text("从左侧列表选择一个现有会话，或创建新会话", tableName: "DevAssistant")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
+            } else {
+                Button {
+                    Task {
+                        await agentProvider.createNewConversation()
+                    }
+                } label: {
+                    Label("新建对话", systemImage: "plus.circle.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(Color.accentColor)
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+                .buttonStyle(.plain)
+            }
 
             Spacer()
         }
@@ -34,4 +58,6 @@ struct EmptyStateView: View {
 #Preview {
     EmptyStateView()
         .frame(width: 600, height: 400)
+        .inRootView()
 }
+

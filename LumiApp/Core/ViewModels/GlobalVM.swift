@@ -80,7 +80,7 @@ final class GlobalVM: ObservableObject {
         didSet {
             // 保存模式到 UserDefaults
             // 应用重启后会恢复上次选择的模式
-            UserDefaults.standard.set(selectedMode.rawValue, forKey: "App_SelectedMode")
+            AppSettingsStore.shared.set(selectedMode.rawValue, forKey: "App_SelectedMode")
         }
     }
 
@@ -100,7 +100,7 @@ final class GlobalVM: ObservableObject {
     init() {
         // 从 UserDefaults 加载上次选择的模式
         // 如果没有保存的记录，使用默认值 .app
-        if let savedModeRawValue = UserDefaults.standard.string(forKey: "App_SelectedMode"),
+        if let savedModeRawValue = AppSettingsStore.shared.string(forKey: "App_SelectedMode"),
            let savedMode = AppMode(rawValue: savedModeRawValue) {
             selectedMode = savedMode
         }

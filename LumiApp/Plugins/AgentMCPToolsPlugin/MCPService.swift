@@ -24,7 +24,7 @@ final class MCPService: SuperLog, @unchecked Sendable {
     private let storageKey = "MCPService_Configs"
 
     init() {
-        if let data = UserDefaults.standard.data(forKey: storageKey),
+        if let data = AppSettingsStore.shared.data(forKey: storageKey),
            let savedConfigs = try? JSONDecoder().decode([MCPServerConfig].self, from: data)
         {
             self.configs = savedConfigs

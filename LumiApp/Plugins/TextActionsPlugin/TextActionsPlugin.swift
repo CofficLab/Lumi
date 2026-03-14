@@ -19,8 +19,8 @@ actor TextActionsPlugin: SuperPlugin, SuperLog {
     
     nonisolated func onRegister() {
         // Initialize settings default if not set
-        if UserDefaults.standard.object(forKey: "TextActionsEnabled") == nil {
-            UserDefaults.standard.set(true, forKey: "TextActionsEnabled")
+        if AppSettingsStore.shared.object(forKey: "TextActionsEnabled") == nil {
+            AppSettingsStore.shared.set(true, forKey: "TextActionsEnabled")
         }
     }
     

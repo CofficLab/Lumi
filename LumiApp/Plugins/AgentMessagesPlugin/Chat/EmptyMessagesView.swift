@@ -2,6 +2,8 @@ import SwiftUI
 
 /// 空消息视图 - 已选择会话但没有消息时显示
 struct EmptyMessagesView: View {
+    @EnvironmentObject private var ConversationVM: ConversationVM
+
     var body: some View {
         VStack(spacing: 20) {
             Spacer()
@@ -24,6 +26,14 @@ struct EmptyMessagesView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
 
+            // 当前对话 ID
+            if let id = ConversationVM.selectedConversationId {
+                Text(id.uuidString)
+                    .font(.caption)
+                    .fontDesign(.monospaced)
+                    .foregroundStyle(.tertiary)
+            }
+
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -34,4 +44,5 @@ struct EmptyMessagesView: View {
 #Preview {
     EmptyMessagesView()
         .frame(width: 600, height: 400)
+        .inRootView()
 }

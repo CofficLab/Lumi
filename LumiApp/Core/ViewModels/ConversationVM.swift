@@ -72,13 +72,13 @@ final class ConversationVM: ObservableObject, SuperLog {
         #endif
     }()
 
-    /// ID 变化时会自动持久化到 UserDefaults。
+    /// ID 变化时会自动持久化到应用设置存储。
     @Published public fileprivate(set) var selectedConversationId: UUID? {
         didSet {
             if let id = selectedConversationId {
-                UserDefaults.standard.set(id.uuidString, forKey: Self.selectedConversationKey)
+                AppSettingsStore.shared.set(id.uuidString, forKey: Self.selectedConversationKey)
             } else {
-                UserDefaults.standard.removeObject(forKey: Self.selectedConversationKey)
+                AppSettingsStore.shared.removeObject(forKey: Self.selectedConversationKey)
             }
         }
     }
@@ -100,8 +100,10 @@ final class ConversationVM: ObservableObject, SuperLog {
         self.llmService = llmService
         self.promptService = promptService
 
-        // 恢复上次选择的会话
+        // 恢复上次选择的会话（仅从 UserDefaults 读出原始 ID）
         restoreSelectedConversation()
+        // 启动时自愈：如果恢复出的 ID 在数据库中已不存在，则自动修正为一个「有效」对话或清空
+        selfHealSelectedConversationIfNeeded()
     }
 
     // MARK: - 会话管理
@@ -189,10 +191,10 @@ final class ConversationVM: ObservableObject, SuperLog {
 
     /// 恢复上次选择的会话
     ///
-    /// 应用启动时从 UserDefaults 恢复上次选中的会话 ID。
-    /// 不验证会话是否存在于数据库，由调用方处理验证。
+    /// 应用启动时从应用设置存储恢复上次选中的会话 ID。
+    /// 仅负责从本地存储中还原字符串，不做有效性校验。
     func restoreSelectedConversation() {
-        guard let savedId = UserDefaults.standard.string(forKey: Self.selectedConversationKey),
+        guard let savedId = AppSettingsStore.shared.string(forKey: Self.selectedConversationKey),
               let uuid = UUID(uuidString: savedId) else {
             return
         }
@@ -201,6 +203,47 @@ final class ConversationVM: ObservableObject, SuperLog {
 
         if Self.verbose {
             os_log("\(Self.t)✅ [\(uuid)] 已恢复会话选择")
+        }
+    }
+
+    /// 启动时自愈当前选中会话
+    ///
+    /// - 如果 `selectedConversationId` 指向的会话在数据库中已不存在：
+    ///   - 若还有其他会话：自动切换到最新的一个
+    ///   - 若一个会话都没有：清空选中状态
+    /// - 如果本地没有记录任何选中 ID，但数据库中存在会话：
+    ///   - 自动选中最新的一个，避免用户打开时看到完全空白状态
+    private func selfHealSelectedConversationIfNeeded() {
+        // 情况 1：有记录的 ID，但数据库中不存在对应会话
+        if let id = selectedConversationId,
+           fetchConversation(id: id) == nil {
+            if Self.verbose {
+                os_log("\(Self.t)⚠️ [\(id)] 恢复的会话在数据库中不存在，尝试自动修正")
+            }
+
+            let all = fetchAllConversations()
+            if let first = all.first {
+                // 切换到最新的一个有效会话
+                selectedConversationId = first.id
+                if Self.verbose {
+                    os_log("\(Self.t)✅ 已自动切换到最新对话：\(first.id)")
+                }
+            } else {
+                // 没有任何会话，清空状态
+                selectedConversationId = nil
+            }
+            return
+        }
+
+        // 情况 2：没有记录选中 ID，但数据库中已经有对话
+        if selectedConversationId == nil {
+            let all = fetchAllConversations()
+            if let first = all.first {
+                selectedConversationId = first.id
+                if Self.verbose {
+                    os_log("\(Self.t)✅ 未记录选中会话，已自动选中最新对话：\(first.id)")
+                }
+            }
         }
     }
 

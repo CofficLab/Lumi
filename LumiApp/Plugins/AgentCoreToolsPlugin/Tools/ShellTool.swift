@@ -42,11 +42,7 @@ struct ShellTool: AgentTool, SuperLog {
     @MainActor
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let command = arguments["command"]?.value as? String else {
-            throw NSError(
-                domain: "ShellTool",
-                code: 400,
-                userInfo: [NSLocalizedDescriptionKey: "Missing 'command' argument"]
-            )
+            throw ShellToolError.missingCommand
         }
 
         let riskLevel = CommandRiskEvaluator.evaluate(command: command)
@@ -54,13 +50,27 @@ struct ShellTool: AgentTool, SuperLog {
             os_log("\(Self.t)👮 \(riskLevel.displayName) \n \(command)")
         }
 
-        // 使用插件内共享的 ShellService 单例
         let shellService = ShellService.shared
         do {
-            let output = try await shellService.execute(command)
-            return output
+            return try await shellService.execute(command)
         } catch {
-            return "Error executing command: \(error.localizedDescription)"
+            os_log("Shell execution failed: %{public}@", error.localizedDescription)
+            throw ShellToolError.executionFailed(underlying: error)
+        }
+    }
+}
+
+/// Shell 工具执行失败时抛出的错误，便于调用方区分成功与失败并做 UI 展示。
+enum ShellToolError: Error, LocalizedError {
+    case missingCommand
+    case executionFailed(underlying: Error)
+
+    var errorDescription: String? {
+        switch self {
+        case .missingCommand:
+            return "Missing 'command' argument"
+        case .executionFailed(let error):
+            return error.localizedDescription
         }
     }
 }

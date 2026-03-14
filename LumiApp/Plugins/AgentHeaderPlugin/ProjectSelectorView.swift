@@ -115,8 +115,22 @@ struct ProjectSelectorView: View {
                 }
 
                 Spacer()
+
+                // 已选择项目时显示「删除」按钮，清除后恢复到未选择状态
+                if !agentProvider.currentProjectName.isEmpty {
+                    Button(action: {
+                        agentProvider.clearCurrentProject()
+                        isPresented = false
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .symbolRenderingMode(.hierarchical)
+                    }
+                    .buttonStyle(.plain)
+                    .help("取消选择当前项目")
+                }
             }
-            .padding()
         }
         .padding(.horizontal)
     }
@@ -157,7 +171,6 @@ struct ProjectSelectorView: View {
                             .font(.system(size: 12))
                             .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     }
-                    .padding()
                 }
                 .buttonStyle(.plain)
 
@@ -271,9 +284,9 @@ struct ProjectSelectorView: View {
     }
 
     private func saveRecentProjects() {
-        // 直接保存到 UserDefaults
+        // 直接保存到应用设置存储
         if let encoded = try? JSONEncoder().encode(recentProjects) {
-            UserDefaults.standard.set(encoded, forKey: "Agent_RecentProjects")
+            AppSettingsStore.shared.set(encoded, forKey: "Agent_RecentProjects")
         }
     }
 }

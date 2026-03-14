@@ -25,7 +25,11 @@ final class ProjectVM: ObservableObject, SuperLog {
     // MARK: - 项目配置
 
     /// 当前项目的供应商 ID
-    @Published public fileprivate(set) var currentProviderId: String = "anthropic"
+    ///
+    /// 默认值不再硬编码，而是由插件注册的供应商决定：
+    /// - 如果存在至少一个供应商，使用第一个供应商的 ID
+    /// - 如果没有任何供应商，保持为空字符串，Agent 模式将无法正常运行
+    @Published public fileprivate(set) var currentProviderId: String = ""
 
     /// 当前项目的模型名称
     @Published public fileprivate(set) var currentModel: String = ""
@@ -59,15 +63,41 @@ final class ProjectVM: ObservableObject, SuperLog {
     // MARK: - 初始化
 
     private let contextService: ContextService
+    private let providerRegistry: ProviderRegistry?
 
-    init(contextService: ContextService = ContextService()) {
+    private enum GlobalConfigKeys {
+        static let providerId = "Agent_GlobalProviderId"
+        static let model = "Agent_GlobalModel"
+    }
+
+    init(
+        contextService: ContextService = ContextService(),
+        providerRegistry: ProviderRegistry? = nil
+    ) {
         self.contextService = contextService
+        self.providerRegistry = providerRegistry
         loadLanguagePreference()
         loadChatMode()
         loadAutoApproveRisk()
+        loadGlobalOrDefaultProviderIfNeeded()
     }
 
     // MARK: - 项目管理
+
+    /// 清除当前项目，恢复到未选择任何项目的状态
+    func clearProject() {
+        setCurrentProjectInfo(name: "", path: "", selected: false)
+        AppSettingsStore.shared.removeObject(forKey: "Agent_SelectedProject")
+        clearFileSelection()
+
+        Task {
+            await contextService.setProjectRoot(nil)
+        }
+
+        if Self.verbose {
+            os_log("\(Self.t)📁 已清除当前项目")
+        }
+    }
 
     /// 切换到指定项目
     func switchProject(to path: String) {
@@ -83,7 +113,7 @@ final class ProjectVM: ObservableObject, SuperLog {
 
         setCurrentProjectInfo(name: projectName, path: path, selected: true)
 
-        UserDefaults.standard.set(path, forKey: "Agent_SelectedProject")
+        AppSettingsStore.shared.set(path, forKey: "Agent_SelectedProject")
         saveRecentProject(name: projectName, path: path)
 
         // 获取并应用项目配置
@@ -154,11 +184,76 @@ final class ProjectVM: ObservableObject, SuperLog {
 
     /// 获取指定供应商的默认模型
     private func getDefaultModel(for providerId: String) -> String {
+        // 优先使用注入的 ProviderRegistry（由插件系统填充）
+        if let registry = providerRegistry,
+           let providerType = registry.providerType(forId: providerId) {
+            return providerType.defaultModel
+        }
+
+        // 兜底：本地扫描插件（用于 Preview / 测试等环境）
         let registry = ProviderRegistry()
+        LLMPluginsVM.registerAllProviders(to: registry)
         guard let providerType = registry.providerType(forId: providerId) else {
             return ""
         }
         return providerType.defaultModel
+    }
+
+    /// 在未选择任何项目时，为 Agent 模式提供默认供应商和模型
+    ///
+    /// 规则：
+    /// - 如果插件系统已注册供应商，选择第一个供应商及其默认模型
+    /// - 如果没有任何供应商注册，则保持空值，Agent 模式将无法正常运行
+    private func initializeDefaultProviderIfNeeded() {
+        // 已经有值（例如稍后会通过项目配置覆盖）则不处理
+        guard currentProviderId.isEmpty, currentModel.isEmpty else { return }
+
+        // 优先使用注入的 ProviderRegistry
+        if let registry = providerRegistry, let firstType = registry.providerTypes.first {
+            currentProviderId = firstType.id
+            currentModel = firstType.defaultModel
+            return
+        }
+
+        // 兜底：本地扫描插件（用于 Preview / 测试等环境）
+        let registry = ProviderRegistry()
+        LLMPluginsVM.registerAllProviders(to: registry)
+        if let firstType = registry.providerTypes.first {
+            currentProviderId = firstType.id
+            currentModel = firstType.defaultModel
+        }
+    }
+
+    /// 加载全局 LLM 配置（未选择项目时使用），若不存在则回退到默认供应商
+    private func loadGlobalOrDefaultProviderIfNeeded() {
+        // 已经由项目配置覆盖，直接跳过
+        guard currentProviderId.isEmpty, currentModel.isEmpty else { return }
+
+        // 尝试读取全局配置
+        let globalProviderId = AppSettingsStore.shared.string(forKey: GlobalConfigKeys.providerId)
+        let globalModel = AppSettingsStore.shared.string(forKey: GlobalConfigKeys.model)
+
+        if let pid = globalProviderId, !pid.isEmpty,
+           let model = globalModel, !model.isEmpty {
+            currentProviderId = pid
+            currentModel = model
+            return
+        }
+
+        // 全局配置不存在时，按原有规则初始化默认供应商和模型
+        initializeDefaultProviderIfNeeded()
+    }
+
+    /// 在未选择项目时，保存全局供应商 ID
+    func setGlobalProviderId(_ providerId: String) {
+        currentProviderId = providerId
+        AppSettingsStore.shared.set(providerId, forKey: GlobalConfigKeys.providerId)
+    }
+
+    /// 在未选择项目时，保存全局模型名称
+    func setGlobalModel(_ model: String) {
+        currentModel = model
+        AppSettingsStore.shared.set(model, forKey: GlobalConfigKeys.model)
     }
 
     /// 保存最近使用的项目
@@ -171,7 +266,7 @@ final class ProjectVM: ObservableObject, SuperLog {
         projects = Array(projects.prefix(5))
 
         if let data = try? JSONEncoder().encode(projects) {
-            UserDefaults.standard.set(data, forKey: "Agent_RecentProjects")
+            AppSettingsStore.shared.set(data, forKey: "Agent_RecentProjects")
         }
 
         if Self.verbose {
@@ -181,7 +276,7 @@ final class ProjectVM: ObservableObject, SuperLog {
 
     /// 获取最近使用的项目列表
     func getRecentProjects() -> [RecentProject] {
-        guard let data = UserDefaults.standard.data(forKey: "Agent_RecentProjects"),
+        guard let data = AppSettingsStore.shared.data(forKey: "Agent_RecentProjects"),
               let projects = try? JSONDecoder().decode([RecentProject].self, from: data) else {
             return []
         }
@@ -318,7 +413,7 @@ final class ProjectVM: ObservableObject, SuperLog {
     // MARK: - 语言偏好
 
     private func loadLanguagePreference() {
-        if let data = UserDefaults.standard.data(forKey: "Agent_LanguagePreference"),
+        if let data = AppSettingsStore.shared.data(forKey: "Agent_LanguagePreference"),
            let preference = try? JSONDecoder().decode(LanguagePreference.self, from: data) {
             Task { @MainActor in
                 self.languagePreference = preference
@@ -330,7 +425,7 @@ final class ProjectVM: ObservableObject, SuperLog {
         Task { @MainActor in
             self.languagePreference = preference
             if let encoded = try? JSONEncoder().encode(self.languagePreference) {
-                UserDefaults.standard.set(encoded, forKey: "Agent_LanguagePreference")
+                AppSettingsStore.shared.set(encoded, forKey: "Agent_LanguagePreference")
             }
         }
     }
@@ -338,7 +433,7 @@ final class ProjectVM: ObservableObject, SuperLog {
     // MARK: - 聊天模式
 
     private func loadChatMode() {
-        if let rawValue = UserDefaults.standard.string(forKey: "Agent_ChatMode"),
+        if let rawValue = AppSettingsStore.shared.string(forKey: "Agent_ChatMode"),
            let mode = ChatMode(rawValue: rawValue) {
             Task { @MainActor in
                 self.chatMode = mode
@@ -349,7 +444,7 @@ final class ProjectVM: ObservableObject, SuperLog {
     func setChatMode(_ mode: ChatMode) {
         Task { @MainActor in
             self.chatMode = mode
-            UserDefaults.standard.set(self.chatMode.rawValue, forKey: "Agent_ChatMode")
+            AppSettingsStore.shared.set(self.chatMode.rawValue, forKey: "Agent_ChatMode")
         }
     }
 
@@ -357,7 +452,7 @@ final class ProjectVM: ObservableObject, SuperLog {
 
     /// 加载自动批准风险设置
     private func loadAutoApproveRisk() {
-        let enabled = UserDefaults.standard.bool(forKey: "Agent_AutoApproveRisk")
+        let enabled = AppSettingsStore.shared.bool(forKey: "Agent_AutoApproveRisk")
         Task { @MainActor in
             self.autoApproveRisk = enabled
         }
@@ -366,7 +461,7 @@ final class ProjectVM: ObservableObject, SuperLog {
     func setAutoApproveRisk(_ enabled: Bool) {
         Task { @MainActor in
             self.autoApproveRisk = enabled
-            UserDefaults.standard.set(enabled, forKey: "Agent_AutoApproveRisk")
+            AppSettingsStore.shared.set(enabled, forKey: "Agent_AutoApproveRisk")
         }
     }
 }

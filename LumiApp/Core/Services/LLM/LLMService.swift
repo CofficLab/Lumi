@@ -141,10 +141,11 @@ class LLMService: SuperLog, @unchecked Sendable {
     ///   - NSError (code 400): 无效的 Base URL
     ///   - NSError (code 500): API 请求失败
     func sendMessage(messages: [ChatMessage], config: LLMConfig, tools: [AgentTool]? = nil) async throws -> ChatMessage {
-        // 验证 API Key
-        guard !config.apiKey.isEmpty else {
-            os_log(.error, "\(self.t)API Key 为空")
-            throw NSError(domain: "LLMService", code: 401, userInfo: [NSLocalizedDescriptionKey: "API Key is missing"])
+        do {
+            try config.validate()
+        } catch {
+            os_log(.error, "\(self.t)配置校验失败：\(error.localizedDescription)")
+            throw error
         }
 
         // 记录开始时间，用于计算延迟
@@ -156,13 +157,8 @@ class LLMService: SuperLog, @unchecked Sendable {
             throw NSError(domain: "LLMService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Provider not found: \(config.providerId)"])
         }
         
-        // 构建 API URL（支持按 Plan 选择 Base URL）
-        let baseURLString: String
-        if config.providerId == AliyunProvider.id {
-            baseURLString = AliyunProvider.baseURL(for: config.planId)
-        } else {
-            baseURLString = provider.baseURL
-        }
+        // 构建 API URL
+        let baseURLString = provider.baseURL
         
         guard let url = URL(string: baseURLString) else {
             os_log(.error, "\(self.t)无效的 URL: \(baseURLString)")
@@ -213,12 +209,31 @@ class LLMService: SuperLog, @unchecked Sendable {
             }
 
             // 发送聊天请求
-            let data = try await llmAPI.sendChatRequest(
-                url: url,
-                apiKey: config.apiKey,
-                body: body,
-                additionalHeaders: additionalHeaders
-            )
+            let data: Data
+            do {
+                data = try await llmAPI.sendChatRequest(
+                    url: url,
+                    apiKey: config.apiKey,
+                    body: body,
+                    additionalHeaders: additionalHeaders
+                )
+            } catch {
+                // 记录失败请求日志（通过内核级 LoggerCenter，若未注册实现则为 no-op）
+                Task.detached(priority: .utility) {
+                    LLMRequestLoggerCenter.shared.log(
+                        providerId: config.providerId,
+                        model: config.model,
+                        url: url,
+                        method: "POST",
+                        statusCode: nil,
+                        durationMs: (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0,
+                        requestBody: try? JSONSerialization.data(withJSONObject: body),
+                        responseBody: nil,
+                        error: error
+                    )
+                }
+                throw error
+            }
 
             // 解析响应
             let (content, toolCalls) = try provider.parseResponse(data: data)
@@ -226,6 +241,21 @@ class LLMService: SuperLog, @unchecked Sendable {
             // 计算总耗时（毫秒）
             let endTime = CFAbsoluteTimeGetCurrent()
             let latency = (endTime - startTime) * 1000.0
+
+            // 记录成功请求日志（不阻塞主调用链）
+            Task.detached(priority: .utility) {
+                LLMRequestLoggerCenter.shared.log(
+                    providerId: config.providerId,
+                    model: config.model,
+                    url: url,
+                    method: "POST",
+                    statusCode: 200, // 目前由 LLMAPIService 校验 2xx，否则抛错
+                    durationMs: latency,
+                    requestBody: try? JSONSerialization.data(withJSONObject: body),
+                    responseBody: data,
+                    error: nil
+                )
+            }
 
             // 输出响应信息
             if Self.verbose >= 1 {
@@ -277,10 +307,11 @@ class LLMService: SuperLog, @unchecked Sendable {
         tools: [AgentTool]? = nil,
         onChunk: @Sendable @escaping (StreamChunk) async -> Void
     ) async throws -> ChatMessage {
-        // 验证 API Key
-        guard !config.apiKey.isEmpty else {
-            os_log(.error, "\(self.t)API Key 为空")
-            throw NSError(domain: "LLMService", code: 401, userInfo: [NSLocalizedDescriptionKey: "API Key is missing"])
+        do {
+            try config.validate()
+        } catch {
+            os_log(.error, "\(self.t)配置校验失败：\(error.localizedDescription)")
+            throw error
         }
 
         // 记录开始时间
@@ -292,13 +323,8 @@ class LLMService: SuperLog, @unchecked Sendable {
             throw NSError(domain: "LLMService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Provider not found: \(config.providerId)"])
         }
         
-        // 构建 API URL（支持按 Plan 选择 Base URL）
-        let baseURLString: String
-        if config.providerId == AliyunProvider.id {
-            baseURLString = AliyunProvider.baseURL(for: config.planId)
-        } else {
-            baseURLString = provider.baseURL
-        }
+        // 构建 API URL
+        let baseURLString = provider.baseURL
         
         guard let url = URL(string: baseURLString) else {
             os_log(.error, "\(self.t)无效的 URL: \(baseURLString)")
@@ -554,6 +580,21 @@ class LLMService: SuperLog, @unchecked Sendable {
         // 计算总耗时
         let endTime = CFAbsoluteTimeGetCurrent()
         let latency = (endTime - startTime) * 1000.0
+
+        // 记录流式请求日志（仅记录元数据，不聚合响应体）
+        Task.detached(priority: .utility) {
+            LLMRequestLoggerCenter.shared.log(
+                providerId: config.providerId,
+                model: config.model,
+                url: url,
+                method: "POST",
+                statusCode: nil,
+                durationMs: latency,
+                requestBody: try? JSONSerialization.data(withJSONObject: body),
+                responseBody: nil,
+                error: nil
+            )
+        }
 
         // 获取最终状态
         let finalContent = await state.accumulatedContentChunks.joined()
