@@ -65,6 +65,11 @@ final class ProjectVM: ObservableObject, SuperLog {
     private let contextService: ContextService
     private let providerRegistry: ProviderRegistry?
 
+    private enum GlobalConfigKeys {
+        static let providerId = "Agent_GlobalProviderId"
+        static let model = "Agent_GlobalModel"
+    }
+
     init(
         contextService: ContextService = ContextService(),
         providerRegistry: ProviderRegistry? = nil
@@ -74,7 +79,7 @@ final class ProjectVM: ObservableObject, SuperLog {
         loadLanguagePreference()
         loadChatMode()
         loadAutoApproveRisk()
-        initializeDefaultProviderIfNeeded()
+        loadGlobalOrDefaultProviderIfNeeded()
     }
 
     // MARK: - 项目管理
@@ -217,6 +222,38 @@ final class ProjectVM: ObservableObject, SuperLog {
             currentProviderId = firstType.id
             currentModel = firstType.defaultModel
         }
+    }
+
+    /// 加载全局 LLM 配置（未选择项目时使用），若不存在则回退到默认供应商
+    private func loadGlobalOrDefaultProviderIfNeeded() {
+        // 已经由项目配置覆盖，直接跳过
+        guard currentProviderId.isEmpty, currentModel.isEmpty else { return }
+
+        // 尝试读取全局配置
+        let globalProviderId = AppSettingsStore.shared.string(forKey: GlobalConfigKeys.providerId)
+        let globalModel = AppSettingsStore.shared.string(forKey: GlobalConfigKeys.model)
+
+        if let pid = globalProviderId, !pid.isEmpty,
+           let model = globalModel, !model.isEmpty {
+            currentProviderId = pid
+            currentModel = model
+            return
+        }
+
+        // 全局配置不存在时，按原有规则初始化默认供应商和模型
+        initializeDefaultProviderIfNeeded()
+    }
+
+    /// 在未选择项目时，保存全局供应商 ID
+    func setGlobalProviderId(_ providerId: String) {
+        currentProviderId = providerId
+        AppSettingsStore.shared.set(providerId, forKey: GlobalConfigKeys.providerId)
+    }
+
+    /// 在未选择项目时，保存全局模型名称
+    func setGlobalModel(_ model: String) {
+        currentModel = model
+        AppSettingsStore.shared.set(model, forKey: GlobalConfigKeys.model)
     }
 
     /// 保存最近使用的项目

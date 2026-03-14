@@ -735,13 +735,16 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
 
     /// 设置供应商并保存到项目配置
     func setSelectedProviderId(_ providerId: String) {
-        guard isProjectSelected, !currentProjectPath.isEmpty else { return }
-
-        ProjectVM.saveProjectConfig(
-            path: currentProjectPath,
-            providerId: providerId,
-            model: currentModel
-        )
+        if isProjectSelected, !currentProjectPath.isEmpty {
+            ProjectVM.saveProjectConfig(
+                path: currentProjectPath,
+                providerId: providerId,
+                model: currentModel
+            )
+        } else {
+            // 未选择项目时，更新全局供应商配置
+            ProjectVM.setGlobalProviderId(providerId)
+        }
 
         if Self.verbose {
             os_log("\(Self.t)⚙️ 已设置供应商：\(providerId)")
@@ -750,13 +753,16 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
 
     /// 设置模型并保存到项目配置
     func setSelectedModel(_ model: String) {
-        guard isProjectSelected, !currentProjectPath.isEmpty else { return }
-
-        ProjectVM.saveProjectConfig(
-            path: currentProjectPath,
-            providerId: selectedProviderId,
-            model: model
-        )
+        if isProjectSelected, !currentProjectPath.isEmpty {
+            ProjectVM.saveProjectConfig(
+                path: currentProjectPath,
+                providerId: selectedProviderId,
+                model: model
+            )
+        } else {
+            // 未选择项目时，更新全局模型配置
+            ProjectVM.setGlobalModel(model)
+        }
 
         if Self.verbose {
             os_log("\(Self.t)⚙️ 已设置模型：\(model)")
