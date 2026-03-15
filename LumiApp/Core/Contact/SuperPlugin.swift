@@ -165,11 +165,6 @@ protocol SuperPlugin: Actor {
     /// 提供 Agent 工具工厂列表（带依赖注入）。
     @MainActor func agentToolFactories() -> [AnyAgentToolFactory]
 
-    // MARK: - Worker Hooks
-
-    /// 提供 Worker 描述符列表。
-    @MainActor func workerAgentDescriptors() -> [WorkerAgentDescriptor]
-
     // MARK: - Lifecycle Hooks
 
     /// 插件注册完成后的回调

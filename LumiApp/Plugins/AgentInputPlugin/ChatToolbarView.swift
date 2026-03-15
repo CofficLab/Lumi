@@ -166,7 +166,7 @@ extension ChatToolbarView {
         switch agentProvider.chatMode {
         case .chat:
             return Color.orange
-        case .build, .buildMultiTask:
+        case .build:
             return DesignTokens.Color.semantic.textSecondary
         }
     }
@@ -176,7 +176,7 @@ extension ChatToolbarView {
         switch agentProvider.chatMode {
         case .chat:
             return Color.orange.opacity(0.1)
-        case .build, .buildMultiTask:
+        case .build:
             return Color.black.opacity(0.05)
         }
     }
@@ -188,8 +188,6 @@ extension ChatToolbarView {
             return "对话模式：只聊天，不执行任何操作"
         case .build:
             return "构建模式：可执行工具和修改代码"
-        case .buildMultiTask:
-            return "构建模式（多任务）：可执行工具、修改代码，并使用多 Worker 协作"
         }
     }
 

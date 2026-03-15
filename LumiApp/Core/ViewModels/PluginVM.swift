@@ -82,8 +82,6 @@ final class PluginVM: ObservableObject, SuperLog {
     private var cachedMessageSendMiddlewares: [AnyMessageSendMiddleware]?
     private var cachedAgentTools: [AgentTool]?
     private var cachedAgentToolFactories: [AnyAgentToolFactory]?
-    private var cachedWorkerAgentDescriptors: [WorkerAgentDescriptor]?
-
     /// 初始化插件 VM
     ///
     /// - Parameters:
@@ -108,7 +106,6 @@ final class PluginVM: ObservableObject, SuperLog {
                 self?.cachedMessageSendMiddlewares = nil
                 self?.cachedAgentTools = nil
                 self?.cachedAgentToolFactories = nil
-                self?.cachedWorkerAgentDescriptors = nil
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
@@ -227,35 +224,6 @@ final class PluginVM: ObservableObject, SuperLog {
         cachedAgentToolFactories = sorted
         return sorted
     }
-
-    // MARK: - Worker Aggregation
-
-    func getWorkerAgentDescriptors() -> [WorkerAgentDescriptor] {
-        if let cachedWorkerAgentDescriptors {
-            return cachedWorkerAgentDescriptors
-        }
-
-        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
-        var items: [(pluginOrder: Int, d: WorkerAgentDescriptor)] = []
-
-        for plugin in enabledPlugins {
-            let pluginOrder = type(of: plugin).order
-            let ds = plugin.workerAgentDescriptors()
-            for d in ds {
-                items.append((pluginOrder: pluginOrder, d: d))
-            }
-        }
-
-        let sorted = items.sorted { a, b in
-            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
-            if a.d.order != b.d.order { return a.d.order < b.d.order }
-            return a.d.id < b.d.id
-        }.map(\.d)
-
-        cachedWorkerAgentDescriptors = sorted
-        return sorted
-    }
-
 
     /// 析构函数，清理资源
     ///

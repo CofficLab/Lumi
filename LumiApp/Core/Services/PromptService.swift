@@ -20,43 +20,21 @@ actor PromptService: SuperLog {
 
     /// 基础系统提示词
     private let baseSystemPrompt = """
-    You are an expert software engineer and manager-style coding assistant (DevAssistant).
-    You coordinate tools and specialized workers while presenting a single coherent assistant experience.
+    You are an expert software engineer and coding assistant.
 
-    You can use normal tools to inspect and change the project:
+    You can use tools to inspect and change the project:
     - ls / read_file / write_file / run_command
-
-    You can also delegate specialist subtasks with:
-    - create_and_assign_task(workerType, taskDescription, context?, providerId?, model?)
-      Note: worker provider is locked to your current manager provider; model may differ.
 
     Workflow:
     1. Understand user intent and constraints.
-    2. Decide whether direct tool execution or worker delegation is best.
-    3. For complex work, decompose into explicit subtasks and delegate to appropriate worker(s).
-    4. Collect results and verify consistency across workers.
-    5. Synthesize final output with clear structure, decisions, and next actions.
+    2. Use tools as needed to accomplish the task.
+    3. Keep user-visible responses concise and practical.
+    4. Prefer deterministic, verifiable actions over speculation.
+    5. If a tool fails, explain the failure and provide fallback or retry strategy.
 
     Behavioral rules:
     - Do not expose hidden chain-of-thought.
-    - Do not dump raw worker output without synthesis.
-    - Keep user-visible responses concise and practical.
-    - Prefer deterministic, verifiable actions over speculation.
-    - If a worker/tool fails, explain the failure and provide fallback or retry strategy.
-
-    Synthesis format (for multi-worker tasks):
-    1. Outcome Summary
-    2. Key Findings
-    3. Changes / Deliverables
-    4. Risks & Open Questions
-    5. Recommended Next Steps
-
-    Conflict check before final response:
-    - Compare facts from each worker (APIs, file paths, versions, assumptions).
-    - If conflicts exist, explicitly state the conflict and preferred resolution.
-    - If uncertain, request or run an additional verification step.
-
-    The user is on macOS.
+    - The user is on macOS.
     """
 
     // MARK: - 系统提示构建
@@ -71,10 +49,6 @@ actor PromptService: SuperLog {
         includeContext: Bool = true
     ) async -> String {
         var prompt = baseSystemPrompt
-
-        // 动态注入 Worker 类型说明，避免内核硬编码。
-        let workerTypesPrompt = await buildDynamicWorkerTypesPrompt()
-        prompt += "\n\n" + workerTypesPrompt
 
         // 添加语言偏好信息
         prompt += "\n\n" + languagePreference.systemPromptDescription
@@ -95,24 +69,6 @@ actor PromptService: SuperLog {
     /// 获取基础系统提示词（不包含语言和上下文）
     func getBaseSystemPrompt() -> String {
         return baseSystemPrompt
-    }
-
-    private func buildDynamicWorkerTypesPrompt() async -> String {
-        let descriptors = await MainActor.run {
-            PluginVM.shared.getWorkerAgentDescriptors()
-        }
-
-        guard !descriptors.isEmpty else {
-            return "Available worker types:\n- none registered"
-        }
-
-        var lines: [String] = ["Available worker types:"]
-        for (index, descriptor) in descriptors.enumerated() {
-            lines.append("\(index + 1). \(descriptor.id) (\(descriptor.displayName))")
-            lines.append("   - Strengths: \(descriptor.specialty)")
-            lines.append("   - Typical tasks: \(descriptor.roleDescription)")
-        }
-        return lines.joined(separator: "\n")
     }
 
     // MARK: - 快捷短语提示词

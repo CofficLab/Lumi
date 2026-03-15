@@ -1,11 +1,9 @@
 import Foundation
 
-// MARK: - Agent Tools & Worker Default Implementation
+// MARK: - Agent Tools Default Implementation
 
 extension SuperPlugin {
     @MainActor func agentTools() -> [AgentTool] { [] }
 
     @MainActor func agentToolFactories() -> [AnyAgentToolFactory] { [] }
-
-    @MainActor func workerAgentDescriptors() -> [WorkerAgentDescriptor] { [] }
 }

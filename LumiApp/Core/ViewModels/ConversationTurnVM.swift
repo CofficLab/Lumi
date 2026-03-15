@@ -63,7 +63,6 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
 
     /// 在最近窗口中同一签名出现多少次视为循环
     private let repeatedToolWindowThreshold = 10
-    private let createAndAssignTaskToolName = "create_and_assign_task"
 
     /// 仅转发必要的流式事件；thinkingDelta 需转发以便 ThinkingDeltaCaptureMiddleware 写入 runtimeStore，供落库时写入 thinkingContent。
     private nonisolated static func shouldForwardStreamEvent(_ eventType: StreamEventType) -> Bool {
@@ -123,15 +122,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
             os_log("\(Self.t)🚀 [\(conversationId)] 开始处理轮次 (深度：\(depth), 模式：\(chatMode.displayName), 流式：\(self.enableStreaming))")
         }
 
-        let availableTools: [AgentTool] = (chatMode.allowsTools && !isFinalStep)
-            ? tools.filter { tool in
-                // 多 Worker 工具仅在允许多 Worker 的模式下启用
-                if tool.name == createAndAssignTaskToolName {
-                    return chatMode.allowsMultiWorker
-                }
-                return true
-            }
-            : []
+        let availableTools: [AgentTool] = (chatMode.allowsTools && !isFinalStep) ? tools : []
 
         var effectiveMessages = messages
         if isFinalStep {
@@ -354,9 +345,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         var finalContent = accumulatedContent
 
         if !hasContent && hasToolCalls {
-            let toolSummary = receivedToolCalls!.map { tc in
-                "\(self.toolEmoji(for: tc.name)) \(tc.name)"
-            }.joined(separator: "\n")
+            let toolSummary = receivedToolCalls!.map(\.name).joined(separator: "\n")
 
             let prefix = languagePreference == .chinese
                 ? "正在执行 \(receivedToolCalls!.count) 个工具："
@@ -419,9 +408,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
     ) -> ChatMessage {
         guard let toolCalls = response.toolCalls else { return response }
 
-        let toolSummary = toolCalls.map { tc in
-            "\(toolEmoji(for: tc.name)) \(tc.name)"
-        }.joined(separator: "\n")
+        let toolSummary = toolCalls.map(\.name).joined(separator: "\n")
 
         let prefix = languagePreference == .chinese
             ? "正在执行 \(toolCalls.count) 个工具："
@@ -534,30 +521,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
     }
 
     private func normalizeToolCallForExecution(_ toolCall: ToolCall, conversationId: UUID) -> ToolCall {
-        guard toolCall.name == createAndAssignTaskToolName,
-              let providerId = turnContexts[conversationId]?.currentProviderId,
-              !providerId.isEmpty else {
-            return toolCall
-        }
-
-        guard let data = toolCall.arguments.data(using: .utf8),
-              var json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
-            return toolCall
-        }
-
-        // Worker provider is always aligned with current manager provider.
-        json["providerId"] = providerId
-
-        guard let normalizedData = try? JSONSerialization.data(withJSONObject: json),
-              let normalizedArguments = String(data: normalizedData, encoding: .utf8) else {
-            return toolCall
-        }
-
-        return ToolCall(
-            id: toolCall.id,
-            name: toolCall.name,
-            arguments: normalizedArguments
-        )
+        toolCall
     }
 
     private func truncateToolResultIfNeeded(_ result: String) -> String {
@@ -566,16 +530,4 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         return "\(prefix)\n\n... [Tool output truncated to \(maxToolResultLength) characters]"
     }
 
-    // MARK: - 工具 Emoji
-
-    private func toolEmoji(for toolName: String) -> String {
-        switch toolName {
-        case "read_file": return "📄"
-        case "write_file": return "✏️"
-        case "list_directory": return "📁"
-        case "run_command": return "⚡"
-        case createAndAssignTaskToolName: return "🧩"
-        default: return "🔧"
-        }
-    }
 }
