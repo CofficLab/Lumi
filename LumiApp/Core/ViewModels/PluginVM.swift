@@ -82,8 +82,6 @@ final class PluginVM: ObservableObject, SuperLog {
     private var cachedMessageSendMiddlewares: [AnyMessageSendMiddleware]?
     private var cachedAgentTools: [AgentTool]?
     private var cachedAgentToolFactories: [AnyAgentToolFactory]?
-    private var cachedWorkerAgentDescriptors: [WorkerAgentDescriptor]?
-
     /// 初始化插件 VM
     ///
     /// - Parameters:
@@ -108,7 +106,6 @@ final class PluginVM: ObservableObject, SuperLog {
                 self?.cachedMessageSendMiddlewares = nil
                 self?.cachedAgentTools = nil
                 self?.cachedAgentToolFactories = nil
-                self?.cachedWorkerAgentDescriptors = nil
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
@@ -227,35 +224,6 @@ final class PluginVM: ObservableObject, SuperLog {
         cachedAgentToolFactories = sorted
         return sorted
     }
-
-    // MARK: - Worker Aggregation
-
-    func getWorkerAgentDescriptors() -> [WorkerAgentDescriptor] {
-        if let cachedWorkerAgentDescriptors {
-            return cachedWorkerAgentDescriptors
-        }
-
-        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
-        var items: [(pluginOrder: Int, d: WorkerAgentDescriptor)] = []
-
-        for plugin in enabledPlugins {
-            let pluginOrder = type(of: plugin).order
-            let ds = plugin.workerAgentDescriptors()
-            for d in ds {
-                items.append((pluginOrder: pluginOrder, d: d))
-            }
-        }
-
-        let sorted = items.sorted { a, b in
-            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
-            if a.d.order != b.d.order { return a.d.order < b.d.order }
-            return a.d.id < b.d.id
-        }.map(\.d)
-
-        cachedWorkerAgentDescriptors = sorted
-        return sorted
-    }
-
 
     /// 析构函数，清理资源
     ///
@@ -530,6 +498,25 @@ final class PluginVM: ObservableObject, SuperLog {
         }
 
         return views
+    }
+
+    /// 获取右侧栏头部左侧视图（首个提供该视图的插件）
+    ///
+    /// 用于与 trailing 小功能项组合成单一 header，便于拆分为多插件（如项目管理、语言切换）。
+    func getRightHeaderLeadingView() -> AnyView? {
+        plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addRightHeaderLeadingView() }
+            .first
+    }
+
+    /// 获取所有插件提供的右侧栏头部右侧小功能项（扁平合并）
+    ///
+    /// 多个插件可各自注入小功能（如项目按钮、语言选择器），在 header 内水平排列。
+    func getRightHeaderTrailingItems() -> [AnyView] {
+        plugins
+            .filter { isPluginEnabled($0) }
+            .flatMap { $0.addRightHeaderTrailingItems() }
     }
 
     /// 获取所有插件提供的右侧栏中间视图（用于 Agent 模式）

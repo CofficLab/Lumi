@@ -1,10 +1,11 @@
 import Foundation
+import MagicKit
 import OSLog
 import Combine
 
 /// MLX 本地模型 Provider
 ///
-/// 将 MLX 本地模型集成到 Lumi 的 LLM 供应商体系中。
+/// 将 MLX 本地模型集成到 LLM 供应商体系中。
 /// 实现 SuperLLMProvider 协议，使得本地模型可以像
 /// Anthropic、OpenAI 等云服务一样被调用。
 ///
@@ -14,13 +15,10 @@ import Combine
 /// - 支持工具调用
 /// - 支持图片输入（VLM 模型）
 @available(macOS 14.0, *)
-public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchecked Sendable {
-
-    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "MLXProvider")
-
-    nonisolated static let emoji = "💻"
-    nonisolated static let logEmoji: String = "💻"
+public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLog, @unchecked Sendable {
+    nonisolated public static let emoji = "💻"
     nonisolated static let verbose = true
+    public static var logEmoji: String { emoji }
 
     // MARK: - Provider Info
 
@@ -28,13 +26,13 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
     public static var id: String { "mlx" }
 
     /// 显示名称
-    public static var displayName: String { "Local" }
+    public static var displayName: String { "MLX" }
 
     /// 图标名称（SF Symbols）
     public static var iconName: String { "cpu" }
 
     /// 供应商描述
-    public static var description: String { "本地运行的 MLX 模型（无需网络）" }
+    public static var description: String { "本地运行的模型（无需网络）" }
 
     /// API Key 存储键名 - 本地模型不需要 API Key
     public static var apiKeyStorageKey: String { "" }
@@ -88,7 +86,9 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
     // MARK: - Initialization
 
     public init() {
-        Self.logger.info("MLXProvider 已初始化")
+        if Self.verbose {
+            os_log("\(self.t)✅ MLX Provider 已初始化")
+        }
     }
 
     private func ensureServices() async {
@@ -102,6 +102,11 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
     }
 
     // MARK: - Public Methods
+
+    /// 根据模型 ID 返回展示名（用于输入栏等）
+    public func displayName(forModelId modelId: String) -> String? {
+        MLXModels.model(id: modelId)?.displayName
+    }
 
     /// 检查模型是否已下载
     public func isModelDownloaded(id: String) -> Bool {
@@ -118,14 +123,18 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
         }
 
         if isModelDownloaded(id: id) {
-            Self.logger.info("模型已下载：\(id)")
+            if Self.verbose {
+                os_log("\(self.t)✅ 模型已下载：\(id)")
+            }
             return
         }
 
         await downloadManager.download(modelId: id)
 
         if downloadManager.status == .completed {
-            Self.logger.info("模型下载完成：\(id)")
+            if Self.verbose {
+                os_log("\(self.t)✅ 模型下载完成：\(id)")
+            }
         } else if case .failed(let error) = downloadManager.status {
             throw MLXError.downloadFailed(error)
         }
@@ -161,14 +170,18 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
         try await service.loadModel(id: id)
         currentModelId = id
 
-        Self.logger.info("模型已加载：\(id)")
+        if Self.verbose {
+            os_log("\(self.t)✅ 模型已加载：\(id)")
+        }
     }
 
     /// 卸载模型
     public func unloadModel() async {
         await MainActor.run { self.inferenceService?.unloadModel() }
         currentModelId = nil
-        Self.logger.info("模型已卸载")
+        if Self.verbose {
+            os_log("\(self.t)✅ 模型已卸载")
+        }
     }
 
     /// 获取当前加载的模型 ID
@@ -231,7 +244,8 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
     }
 
     func getCachedModels() async -> Set<String> {
-        modelManager?.cachedModelIds ?? []
+        await ensureServices()
+        return modelManager?.cachedModelIds ?? []
     }
 
     func getDownloadStatus() -> LocalDownloadStatus {
@@ -256,6 +270,10 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
         case .generating: return .generating
         case .error(let s): return .error(s)
         }
+    }
+
+    func getLoadedModelId() async -> String? {
+        await MainActor.run { self.currentModelId }
     }
 
     /// 内部流式对话（返回 MLX 的 GenerationChunk 流）
@@ -319,7 +337,9 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
     /// 删除模型
     public func deleteModel(id: String) throws {
         try modelManager?.deleteModel(id: id)
-        Self.logger.info("模型已删除：\(id)")
+        if Self.verbose {
+            os_log("\(self.t)✅ 模型已删除：\(id)")
+        }
     }
 
     /// 获取可用模型列表（根据 RAM 过滤，供内部/扩展使用）
@@ -340,7 +360,9 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
     /// 清空缓存
     public func clearCache() throws {
         try modelManager?.clearAllCache()
-        Self.logger.info("缓存已清空")
+        if Self.verbose {
+            os_log("\(self.t)✅ 缓存已清空")
+        }
     }
 
     /// 本地模型下载目录（供设置页“打开下载目录”使用）

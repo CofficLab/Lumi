@@ -23,7 +23,7 @@ import Foundation
 /// │                 │  │  (详情栏底部)           │      │
 /// │                 │  └─────────────────────────┘      │
 /// ├─────────────────────────────────────────────────────┤
-/// │  RightHeaderView (右侧栏头部)                        │
+/// │  RightHeaderView (右侧栏头部，leading+trailing 插件注入) │
 /// ├─────────────────────────────────────────────────────┤
 /// │  RightMiddleView (右侧栏中间)                        │
 /// ├─────────────────────────────────────────────────────┤
@@ -38,6 +38,12 @@ extension SuperPlugin {
 
     /// 默认实现：不提供右侧栏头部视图
     @MainActor func addRightHeaderView() -> AnyView? { nil }
+
+    /// 默认实现：不提供右侧栏头部左侧视图
+    @MainActor func addRightHeaderLeadingView() -> AnyView? { nil }
+
+    /// 默认实现：不提供右侧栏头部右侧小功能项
+    @MainActor func addRightHeaderTrailingItems() -> [AnyView] { [] }
 
     /// 默认实现：不提供右侧栏中间视图
     @MainActor func addRightMiddleView() -> AnyView? { nil }

@@ -23,6 +23,12 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     /// 用于在 UI 中渲染专用视图的系统消息占位符内容。
     /// 这些特殊内容不会直接展示给用户，而是由 UI 组件识别后渲染对应的自定义视图。
     static let apiKeyMissingSystemContentKey = "__LUMI_API_KEY_MISSING__"
+    /// 本地模型正在加载时的系统消息占位符，由 UI 渲染「正在加载模型」专用视图。
+    static let loadingLocalModelSystemContentKey = "__LUMI_LOADING_LOCAL_MODEL__"
+    /// 本地模型已就绪（加载完成）时的系统消息占位符，由 UI 渲染「模型已就绪」状态，不再显示加载动画。
+    static let loadingLocalModelDoneSystemContentKey = "__LUMI_LOADING_LOCAL_MODEL_DONE__"
+    /// 本地模型加载失败（如未下载）时的系统消息占位符，由 UI 渲染「加载失败」状态。
+    static let loadingLocalModelFailedSystemContentKey = "__LUMI_LOADING_LOCAL_MODEL_FAILED__"
     /// 消息唯一标识符
     ///
     /// 使用 UUID 生成，确保每条消息有唯一 ID。
@@ -307,6 +313,21 @@ Recommended actions:
             role: .system,
             content: Self.apiKeyMissingSystemContentKey,
             isError: true
+        )
+    }
+
+    /// 本地模型未就绪、即将自动加载时，用于在对话中展示的系统提示。
+    /// 内容为占位键，由 SystemMessage 组件渲染专用「正在加载模型」视图；providerId/modelName 用于展示模型信息。
+    static func loadingLocalModelSystemMessage(
+        languagePreference: LanguagePreference,
+        providerId: String? = nil,
+        modelName: String? = nil
+    ) -> ChatMessage {
+        ChatMessage(
+            role: .system,
+            content: Self.loadingLocalModelSystemContentKey,
+            providerId: providerId,
+            modelName: modelName
         )
     }
 

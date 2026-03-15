@@ -67,7 +67,27 @@ final class MessagePendingVM: ObservableObject, SuperLog {
         messages = updatedMessages
 
         if Self.verbose {
-            os_log("\(Self.t)🍋 更新位置 \(index) 的消息, 长度: \(message.content.count)")
+            let suffixLen = 80
+            let contentSuffix = message.content.count <= suffixLen
+                ? message.content
+                : String(message.content.suffix(suffixLen))
+            var parts: [String] = [
+                "位置 \(index)",
+                "长度 \(message.content.count)",
+                "role=\(message.role)",
+                "isError=\(message.isError)",
+                "结尾: …\(contentSuffix)"
+            ]
+            if let p = message.providerId { parts.append("provider=\(p)") }
+            if let m = message.modelName { parts.append("model=\(m)") }
+            if let n = message.toolCalls?.count, n > 0 { parts.append("toolCalls=\(n)") }
+            if let ms = message.latency { parts.append("latency=\(Int(ms))ms") }
+            if let t = message.totalTokens { parts.append("tokens=\(t)") }
+            else if let i = message.inputTokens, let o = message.outputTokens { parts.append("in=\(i) out=\(o)") }
+            else if let o = message.outputTokens { parts.append("outTokens=\(o)") }
+            else if let i = message.inputTokens { parts.append("inTokens=\(i)") }
+            if message.isTransientStatus { parts.append("transient") }
+            os_log("\(Self.t)🍋 更新消息: \(parts.joined(separator: ", "))")
         }
     }
 }

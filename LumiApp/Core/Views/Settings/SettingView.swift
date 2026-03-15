@@ -5,6 +5,10 @@ import SwiftUI
 struct SettingView: View {
     /// 插件 VM
     @EnvironmentObject private var pluginProvider: PluginVM
+    @EnvironmentObject var themeManager: MystiqueThemeManager
+
+    /// 导航分栏视图的列可见性状态
+    @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
 
     /// 默认显示的标签
     var defaultTab: SettingTab = .about
@@ -15,14 +19,12 @@ struct SettingView: View {
         case plugin(String)
     }
 
-    /// 当前选中的项
-    @State private var selection: SettingsSelection?
-
     /// 设置标签枚举
     enum SettingTab: String, CaseIterable, Hashable {
         case general = "通用"
         case theme = "主题"
-        case provider = "供应商"
+        case localProvider = "本地供应商"
+        case remoteProvider = "云端供应商"
         case plugins = "插件管理"
         case about = "关于"
 
@@ -30,10 +32,48 @@ struct SettingView: View {
             switch self {
             case .general: return "gearshape"
             case .theme: return "paintbrush.fill"
-            case .provider: return "cpu"
+            case .localProvider: return "cpu"
+            case .remoteProvider: return "network"
             case .plugins: return "puzzlepiece.extension"
             case .about: return "info.circle"
             }
+        }
+    }
+
+    /// 当前选中的项
+    @State private var selection: SettingsSelection?
+
+    /// AppSettingsStore key
+    private static let selectedTabKey = "SettingView.selectedTab"
+    private static let selectedPluginKey = "SettingView.selectedPlugin"
+
+    /// 从 AppSettingsStore 读取上次选中的项
+    private func loadSavedSelection() -> SettingsSelection? {
+        // 先尝试读取插件
+        if let pluginId = AppSettingsStore.shared.string(forKey: Self.selectedPluginKey) {
+            return .plugin(pluginId)
+        }
+
+        // 再尝试读取核心设置项
+        if let tabRawValue = AppSettingsStore.shared.string(forKey: Self.selectedTabKey),
+           let tab = SettingTab(rawValue: tabRawValue) {
+            return .core(tab)
+        }
+
+        return nil
+    }
+
+    /// 保存选中的项到 AppSettingsStore
+    private func saveSelection(_ selection: SettingsSelection?) {
+        guard let sel = selection else { return }
+
+        switch sel {
+        case let .core(tab):
+            AppSettingsStore.shared.set(tab.rawValue, forKey: Self.selectedTabKey)
+            AppSettingsStore.shared.removeObject(forKey: Self.selectedPluginKey)
+        case let .plugin(pluginId):
+            AppSettingsStore.shared.set(pluginId, forKey: Self.selectedPluginKey)
+            AppSettingsStore.shared.removeObject(forKey: Self.selectedTabKey)
         }
     }
 
@@ -41,7 +81,7 @@ struct SettingView: View {
     /// - Parameter defaultTab: 默认选中的标签
     init(defaultTab: SettingTab = .about) {
         self.defaultTab = defaultTab
-        self._selection = State(initialValue: .core(defaultTab))
+        self._selection = State(initialValue: nil)
     }
 
     /// 应用信息
@@ -55,7 +95,7 @@ struct SettingView: View {
     }
 
     var body: some View {
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             // 侧边栏
             VStack(spacing: 0) {
                 // 应用信息头部
@@ -84,26 +124,29 @@ struct SettingView: View {
                     }
                 }
             }
-            .navigationSplitViewColumnWidth(min: 150, ideal: 200)
+            .navigationSplitViewColumnWidth(min: 200, ideal: 200, max: 300)
+            .ignoresSafeArea()
         } detail: {
             // 详情区域
             Group {
                 if let sel = selection {
                     switch sel {
-                    case .core(let tab):
+                    case let .core(tab):
                         switch tab {
                         case .general:
                             GeneralSettingView()
                         case .theme:
                             ThemeSettingView()
-                        case .provider:
-                            ProviderSettingsView()
+                        case .localProvider:
+                            LocalProviderSettingsView()
+                        case .remoteProvider:
+                            RemoteProviderSettingsView()
                         case .plugins:
                             PluginSettingsView()
                         case .about:
                             AboutView()
                         }
-                    case .plugin(let id):
+                    case let .plugin(id):
                         if let item = pluginSettings.first(where: { $0.id == id }) {
                             item.view
                         } else {
@@ -116,7 +159,26 @@ struct SettingView: View {
                         .foregroundColor(.secondary)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .ignoresSafeArea(edges: .top)
+        }
+        .onAppear {
+            // 加载上次选中的项
+            if let savedSelection = loadSavedSelection() {
+                selection = savedSelection
+            } else {
+                selection = .core(defaultTab)
+            }
+        }
+        .onChange(of: selection) { _, newValue in
+            // 保存选中的项
+            saveSelection(newValue)
+        }
+        .ignoresSafeArea()
+        .background {
+            GeometryReader { proxy in
+                themeManager.currentVariant.theme.makeGlobalBackground(proxy: proxy)
+            }
+            .ignoresSafeArea()
         }
     }
 
@@ -149,7 +211,6 @@ struct SettingView: View {
 
             Spacer().frame(height: 16)
         }
-        .frame(maxWidth: .infinity)
     }
 }
 

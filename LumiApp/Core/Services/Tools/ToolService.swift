@@ -84,8 +84,6 @@ class ToolService: SuperLog, @unchecked Sendable {
     // MARK: - Dependencies
 
     /// LLM 服务（可选）
-    ///
-    /// 当可用时，用于启用 Worker 协作工具。
     private let llmService: LLMService?
 
     /// Combine 订阅集合

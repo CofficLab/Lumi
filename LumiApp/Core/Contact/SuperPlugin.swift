@@ -140,6 +140,12 @@ protocol SuperPlugin: Actor {
     /// 添加右侧栏头部视图（用于 Agent 模式）
     @MainActor func addRightHeaderView() -> AnyView?
 
+    /// 添加右侧栏头部左侧视图（用于 Agent 模式，与 trailing 组合成单一 header）
+    @MainActor func addRightHeaderLeadingView() -> AnyView?
+
+    /// 添加右侧栏头部右侧小功能视图列表（用于 Agent 模式，多个插件可各自注入）
+    @MainActor func addRightHeaderTrailingItems() -> [AnyView]
+
     /// 添加右侧栏中间视图（用于 Agent 模式）
     @MainActor func addRightMiddleView() -> AnyView?
 
@@ -164,11 +170,6 @@ protocol SuperPlugin: Actor {
 
     /// 提供 Agent 工具工厂列表（带依赖注入）。
     @MainActor func agentToolFactories() -> [AnyAgentToolFactory]
-
-    // MARK: - Worker Hooks
-
-    /// 提供 Worker 描述符列表。
-    @MainActor func workerAgentDescriptors() -> [WorkerAgentDescriptor]
 
     // MARK: - Lifecycle Hooks
 

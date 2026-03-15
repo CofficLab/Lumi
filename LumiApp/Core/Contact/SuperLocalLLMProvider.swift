@@ -20,6 +20,8 @@ public struct LocalModelInfo: Identifiable, Sendable, Equatable {
     public let supportsTools: Bool
     /// 推荐优先级（越小越靠前），默认 0
     public let priority: Int
+    /// 系列名称（可选），用于设置页按系列分组展示，如「Qwen 系列」「Mistral 系列」
+    public let series: String?
 
     public init(
         id: String,
@@ -30,7 +32,8 @@ public struct LocalModelInfo: Identifiable, Sendable, Equatable {
         expectedBytes: Int64,
         supportsVision: Bool = false,
         supportsTools: Bool = true,
-        priority: Int = 0
+        priority: Int = 0,
+        series: String? = nil
     ) {
         self.id = id
         self.displayName = displayName
@@ -41,6 +44,7 @@ public struct LocalModelInfo: Identifiable, Sendable, Equatable {
         self.supportsVision = supportsVision
         self.supportsTools = supportsTools
         self.priority = priority
+        self.series = series
     }
 }
 
@@ -105,8 +109,14 @@ protocol SuperLocalLLMProvider: SuperLLMProvider {
     /// 当前推理状态（可选，用于“已加载”等展示）
     func getModelState() async -> LocalLLMState
 
+    /// 当前已加载到内存的模型 ID（nil 表示未加载），用于设置页加载/卸载按钮状态
+    func getLoadedModelId() async -> String?
+
     /// 本地模型下载/缓存目录（用于设置页“打开下载目录”）
     func getCacheDirectoryURL() -> URL
+
+    /// 根据模型 ID 返回展示名（用于输入栏等）；默认返回 nil，使用 ID 展示
+    func displayName(forModelId modelId: String) -> String?
 
     /// 非流式发送（可选实现；默认通过 streamChat 消费流后返回最终消息）
     func sendMessage(
@@ -118,9 +128,15 @@ protocol SuperLocalLLMProvider: SuperLLMProvider {
     ) async throws -> ChatMessage
 }
 
-// MARK: - Default: sendMessage via streamChat
+// MARK: - Defaults
 
 extension SuperLocalLLMProvider {
+    /// 默认：无模型加载
+    func getLoadedModelId() async -> String? { nil }
+
+    /// 默认：不解析展示名，返回 nil
+    func displayName(forModelId modelId: String) -> String? { nil }
+
     /// 默认实现：消费 streamChat 流并返回最终消息
     func sendMessage(
         messages: [ChatMessage],

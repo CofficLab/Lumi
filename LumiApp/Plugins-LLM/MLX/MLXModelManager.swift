@@ -73,17 +73,17 @@ public final class MLXModelManager: ObservableObject, SuperLog {
         _MLXModels.availableModels(for: self.systemRAM)
     }
 
-    /// 刷新已缓存的模型列表
+    /// 刷新已缓存的模型列表（定时器每 5 秒调用，用于发现外部下载/删除的模型）
     public func refreshCachedModels() {
-        self.cachedModelIds.removeAll()
-
+        var newIds: Set<String> = []
         for model in _MLXModels.recommended {
             if _MLXModels.isModelCached(id: model.id) {
-                self.cachedModelIds.insert(model.id)
+                newIds.insert(model.id)
             }
         }
-
-        if Self.verbose {
+        let changed = newIds != self.cachedModelIds
+        self.cachedModelIds = newIds
+        if Self.verbose, changed {
             os_log("\(self.t)✅ 刷新缓存模型：\(self.cachedModelIds.count) 个")
         }
     }

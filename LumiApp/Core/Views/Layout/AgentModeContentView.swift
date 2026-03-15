@@ -1,3 +1,4 @@
+import AppKit
 import OSLog
 import SwiftUI
 
@@ -49,6 +50,7 @@ struct AgentModeContentView: View {
             rightAndDetailColumns
         }
         .id("agentModeHSplitView")
+        .background(SplitViewAutosaveConfigurator(autosaveName: "AgentMode_MainSplit"))
     }
 
     // MARK: - 底部状态栏
@@ -101,10 +103,13 @@ struct AgentModeContentView: View {
                 // 第三栏：右侧栏（支持头部、中间、底部）
                 rightColumn
                     .frame(minWidth: 200, idealWidth: 300)
+                    .frame(maxHeight: .infinity)
+                    .ignoresSafeArea()
             }
             .id("agentModeDetailRightHSplitView")
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .ignoresSafeArea()
+            .background(SplitViewAutosaveConfigurator(autosaveName: "AgentMode_DetailRightSplit"))
         }
     }
 
@@ -141,23 +146,33 @@ struct AgentModeContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// 右侧栏头部内容视图
+    /// 右侧栏头部内容视图（统一 header，支持插件注入 leading / trailing 小功能）
     @ViewBuilder
     private func rightHeaderContent() -> some View {
-        let headerViews = pluginProvider.getRightHeaderViews()
+        let leadingView = pluginProvider.getRightHeaderLeadingView()
+        let trailingItems = pluginProvider.getRightHeaderTrailingItems()
+        let useComposedHeader = leadingView != nil || !trailingItems.isEmpty
+
         Group {
-            if headerViews.isEmpty {
-                // 如果没有插件提供头部视图，显示默认内容
-                defaultDetailView
+            if useComposedHeader {
+                AgentRightHeaderView(leadingView: leadingView, trailingItems: trailingItems)
+                    .frame(minHeight: AppConfig.headerHeight)
             } else {
-                // 显示所有插件提供的头部视图
-                // 修复：使用稳定 ID 而不是 offset，避免 AttributeGraph 崩溃
-                VStack(spacing: 0) {
-                    ForEach(headerViews.indices, id: \.self) { index in
-                        headerViews[index]
-                            .id("right_header_\(index)")
+                // 兼容：无插件使用新 API 时，仍使用旧版整块头部视图堆叠
+                let headerViews = pluginProvider.getRightHeaderViews()
+                Group {
+                    if headerViews.isEmpty {
+                        defaultDetailView
+                    } else {
+                        VStack(spacing: 0) {
+                            ForEach(headerViews.indices, id: \.self) { index in
+                                headerViews[index]
+                                    .id("right_header_\(index)")
+                            }
+                        }
                     }
                 }
+                .frame(height: AppConfig.headerHeight)
             }
         }
     }
@@ -172,7 +187,6 @@ struct AgentModeContentView: View {
                 defaultDetailView
             } else {
                 // 显示所有插件提供的中间视图
-                // 修复：使用稳定 ID 而不是 offset，避免 AttributeGraph 崩溃
                 VStack(spacing: 0) {
                     ForEach(middleViews.indices, id: \.self) { index in
                         middleViews[index]
@@ -242,4 +256,36 @@ struct AgentModeContentView: View {
 #Preview("Agent Mode") {
     AgentModeContentView(sidebarVisibility: .constant(true))
         .inRootView()
+}
+
+private struct SplitViewAutosaveConfigurator: NSViewRepresentable {
+    let autosaveName: String
+
+    func makeNSView(context: Context) -> NSView {
+        NSView(frame: .zero)
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async {
+            guard let splitView = nearestSplitView(from: nsView) else {
+                return
+            }
+
+            if splitView.autosaveName != autosaveName {
+                splitView.identifier = NSUserInterfaceItemIdentifier(autosaveName)
+                splitView.autosaveName = autosaveName
+            }
+        }
+    }
+
+    private func nearestSplitView(from view: NSView) -> NSSplitView? {
+        var current: NSView? = view
+        while let node = current {
+            if let splitView = node as? NSSplitView {
+                return splitView
+            }
+            current = node.superview
+        }
+        return nil
+    }
 }

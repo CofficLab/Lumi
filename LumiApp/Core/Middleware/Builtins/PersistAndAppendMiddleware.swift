@@ -21,6 +21,17 @@ final class PersistAndAppendMiddleware: ConversationTurnMiddleware {
     ) async {
         switch event {
         case let .responseReceived(message, conversationId):
+            let list = ctx.actions.messages()
+            if let idx = list.lastIndex(where: { $0.content == ChatMessage.loadingLocalModelSystemContentKey }) {
+                var updated = list[idx]
+                if message.isError {
+                    updated.content = ChatMessage.loadingLocalModelFailedSystemContentKey
+                } else {
+                    updated.content = ChatMessage.loadingLocalModelDoneSystemContentKey
+                }
+                ctx.actions.updateMessage(updated, idx)
+                await ctx.actions.saveMessage(updated, conversationId)
+            }
             if ctx.env.selectedConversationId() == conversationId {
                 ctx.actions.appendMessage(message)
             }

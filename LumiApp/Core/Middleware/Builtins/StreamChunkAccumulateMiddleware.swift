@@ -29,6 +29,14 @@ final class StreamChunkAccumulateMiddleware: ConversationTurnMiddleware {
             } else {
                 ctx.ui.onStreamFirstTokenUI(conversationId, nil)
             }
+            // 收到首个 token 时再更新「正在加载模型」为「模型已就绪」，避免未下载时误显示就绪
+            let list = ctx.actions.messages()
+            if let idx = list.lastIndex(where: { $0.content == ChatMessage.loadingLocalModelSystemContentKey }) {
+                var updated = list[idx]
+                updated.content = ChatMessage.loadingLocalModelDoneSystemContentKey
+                ctx.actions.updateMessage(updated, idx)
+                await ctx.actions.saveMessage(updated, conversationId)
+            }
         }
 
         ctx.runtimeStore.pendingStreamTextByConversation[conversationId, default: ""] += content

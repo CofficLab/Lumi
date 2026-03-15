@@ -15,14 +15,6 @@ public enum LanguagePreference: String, CaseIterable, Identifiable, Codable, Sen
         }
     }
 
-    /// 本地化名称
-    public var localizedName: String {
-        switch self {
-        case .chinese: return "中文"
-        case .english: return "English"
-        }
-    }
-
     /// 系统提示中的语言描述
     public var systemPromptDescription: String {
         switch self {

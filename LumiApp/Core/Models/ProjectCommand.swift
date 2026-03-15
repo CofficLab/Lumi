@@ -37,18 +37,6 @@ struct ProjectCommand: Identifiable, Equatable {
 
     let source: Source
 
-    /// 显示名称（用于 UI）
-    var displayName: String {
-        switch source {
-        case .project:
-            return "/\(name)"
-        case .user:
-            return "/\(name) (user)"
-        case let .plugin(pluginName):
-            return "/\(name) (\(pluginName))"
-        }
-    }
-
     /// 是否支持参数
     var supportsArguments: Bool {
         content.contains("$ARGUMENTS") ||

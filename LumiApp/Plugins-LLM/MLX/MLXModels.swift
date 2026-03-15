@@ -20,7 +20,8 @@ public enum MLXModels {
             expectedBytes: 600_000_000,
             supportsVision: false,
             supportsTools: true,
-            priority: 0
+            priority: 0,
+            series: "Qwen 系列"
         ),
         LocalModelInfo(
             id: "mlx-community/Qwen3.5-4B-OptiQ-4bit",
@@ -31,7 +32,8 @@ public enum MLXModels {
             expectedBytes: 2_500_000_000,
             supportsVision: false,
             supportsTools: true,
-            priority: 1
+            priority: 1,
+            series: "Qwen 系列"
         ),
         LocalModelInfo(
             id: "mlx-community/Qwen3.5-9B-4bit",
@@ -42,7 +44,8 @@ public enum MLXModels {
             expectedBytes: 6_000_000_000,
             supportsVision: false,
             supportsTools: true,
-            priority: 2
+            priority: 2,
+            series: "Qwen 系列"
         ),
         LocalModelInfo(
             id: "mlx-community/Qwen3.5-14B-4bit",
@@ -53,7 +56,20 @@ public enum MLXModels {
             expectedBytes: 9_000_000_000,
             supportsVision: false,
             supportsTools: true,
-            priority: 3
+            priority: 3,
+            series: "Qwen 系列"
+        ),
+        LocalModelInfo(
+            id: "mlx-community/Qwen2-VL-7B-Instruct-4bit",
+            displayName: "Qwen2 VL 7B",
+            description: "支持图片理解的视觉语言模型",
+            size: "~5 GB",
+            minRAM: 16,
+            expectedBytes: 5_000_000_000,
+            supportsVision: true,
+            supportsTools: false,
+            priority: 10,
+            series: "Qwen 系列"
         ),
 
         // Mistral 系列 - 轻量高效
@@ -66,7 +82,8 @@ public enum MLXModels {
             expectedBytes: 7_000_000_000,
             supportsVision: false,
             supportsTools: true,
-            priority: 4
+            priority: 4,
+            series: "Mistral 系列"
         ),
 
         // Llama 系列 - 通用能力强
@@ -79,7 +96,8 @@ public enum MLXModels {
             expectedBytes: 2_000_000_000,
             supportsVision: false,
             supportsTools: true,
-            priority: 5
+            priority: 5,
+            series: "Llama 系列"
         ),
         LocalModelInfo(
             id: "mlx-community/Llama-3.3-70B-Instruct-4bit",
@@ -90,20 +108,8 @@ public enum MLXModels {
             expectedBytes: 40_000_000_000,
             supportsVision: false,
             supportsTools: true,
-            priority: 6
-        ),
-
-        // VLM 视觉模型
-        LocalModelInfo(
-            id: "mlx-community/Qwen2-VL-7B-Instruct-4bit",
-            displayName: "Qwen2 VL 7B",
-            description: "支持图片理解的视觉语言模型",
-            size: "~5 GB",
-            minRAM: 16,
-            expectedBytes: 5_000_000_000,
-            supportsVision: true,
-            supportsTools: false,
-            priority: 10
+            priority: 6,
+            series: "Llama 系列"
         ),
     ]
 
