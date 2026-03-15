@@ -109,6 +109,9 @@ protocol SuperLocalLLMProvider: SuperLLMProvider {
     /// 当前推理状态（可选，用于“已加载”等展示）
     func getModelState() async -> LocalLLMState
 
+    /// 当前已加载到内存的模型 ID（nil 表示未加载），用于设置页加载/卸载按钮状态
+    func getLoadedModelId() async -> String?
+
     /// 本地模型下载/缓存目录（用于设置页“打开下载目录”）
     func getCacheDirectoryURL() -> URL
 
@@ -122,9 +125,12 @@ protocol SuperLocalLLMProvider: SuperLLMProvider {
     ) async throws -> ChatMessage
 }
 
-// MARK: - Default: sendMessage via streamChat
+// MARK: - Defaults
 
 extension SuperLocalLLMProvider {
+    /// 默认：无模型加载
+    func getLoadedModelId() async -> String? { nil }
+
     /// 默认实现：消费 streamChat 流并返回最终消息
     func sendMessage(
         messages: [ChatMessage],

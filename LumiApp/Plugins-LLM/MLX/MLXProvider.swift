@@ -34,7 +34,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
     public static var iconName: String { "cpu" }
 
     /// 供应商描述
-    public static var description: String { "本地运行的 MLX 模型（无需网络）" }
+    public static var description: String { "本地运行的模型（无需网络）" }
 
     /// API Key 存储键名 - 本地模型不需要 API Key
     public static var apiKeyStorageKey: String { "" }
@@ -231,7 +231,8 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
     }
 
     func getCachedModels() async -> Set<String> {
-        modelManager?.cachedModelIds ?? []
+        await ensureServices()
+        return modelManager?.cachedModelIds ?? []
     }
 
     func getDownloadStatus() -> LocalDownloadStatus {
@@ -256,6 +257,10 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
         case .generating: return .generating
         case .error(let s): return .error(s)
         }
+    }
+
+    func getLoadedModelId() async -> String? {
+        await MainActor.run { self.currentModelId }
     }
 
     /// 内部流式对话（返回 MLX 的 GenerationChunk 流）

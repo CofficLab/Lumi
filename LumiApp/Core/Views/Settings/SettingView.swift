@@ -15,9 +15,6 @@ struct SettingView: View {
         case plugin(String)
     }
 
-    /// 当前选中的项
-    @State private var selection: SettingsSelection?
-
     /// 设置标签枚举
     enum SettingTab: String, CaseIterable, Hashable {
         case general = "通用"
@@ -37,11 +34,48 @@ struct SettingView: View {
         }
     }
 
+    /// 当前选中的项
+    @State private var selection: SettingsSelection?
+
+    /// AppSettingsStore key
+    private static let selectedTabKey = "SettingView.selectedTab"
+    private static let selectedPluginKey = "SettingView.selectedPlugin"
+
+    /// 从 AppSettingsStore 读取上次选中的项
+    private func loadSavedSelection() -> SettingsSelection? {
+        // 先尝试读取插件
+        if let pluginId = AppSettingsStore.shared.string(forKey: Self.selectedPluginKey) {
+            return .plugin(pluginId)
+        }
+
+        // 再尝试读取核心设置项
+        if let tabRawValue = AppSettingsStore.shared.string(forKey: Self.selectedTabKey),
+           let tab = SettingTab(rawValue: tabRawValue) {
+            return .core(tab)
+        }
+
+        return nil
+    }
+
+    /// 保存选中的项到 AppSettingsStore
+    private func saveSelection(_ selection: SettingsSelection?) {
+        guard let sel = selection else { return }
+
+        switch sel {
+        case .core(let tab):
+            AppSettingsStore.shared.set(tab.rawValue, forKey: Self.selectedTabKey)
+            AppSettingsStore.shared.removeObject(forKey: Self.selectedPluginKey)
+        case .plugin(let pluginId):
+            AppSettingsStore.shared.set(pluginId, forKey: Self.selectedPluginKey)
+            AppSettingsStore.shared.removeObject(forKey: Self.selectedTabKey)
+        }
+    }
+
     /// 初始化方法
     /// - Parameter defaultTab: 默认选中的标签
     init(defaultTab: SettingTab = .about) {
         self.defaultTab = defaultTab
-        self._selection = State(initialValue: .core(defaultTab))
+        self._selection = State(initialValue: nil)
     }
 
     /// 应用信息
@@ -117,6 +151,18 @@ struct SettingView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .onAppear {
+            // 加载上次选中的项
+            if let savedSelection = loadSavedSelection() {
+                selection = savedSelection
+            } else {
+                selection = .core(defaultTab)
+            }
+        }
+        .onChange(of: selection) { _, newValue in
+            // 保存选中的项
+            saveSelection(newValue)
         }
     }
 
