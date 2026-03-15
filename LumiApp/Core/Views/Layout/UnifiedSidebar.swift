@@ -19,7 +19,7 @@ struct UnifiedSidebar: View {
                     .padding(.horizontal, DesignTokens.Spacing.sm)
             }
             .frame(height: AppConfig.headerHeight)
-            .padding(.top, 16)
+            .padding(.top, ProcessInfo.processInfo.operatingSystemVersion.majorVersion < 26 ? 16 : 0)
 
             Divider()
                 .background(Color.white.opacity(0.1))

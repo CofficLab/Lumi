@@ -101,6 +101,8 @@ struct AgentModeContentView: View {
                 // 第三栏：右侧栏（支持头部、中间、底部）
                 rightColumn
                     .frame(minWidth: 200, idealWidth: 300)
+                    .frame(maxHeight: .infinity)
+                    .ignoresSafeArea()
             }
             .id("agentModeDetailRightHSplitView")
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -160,6 +162,7 @@ struct AgentModeContentView: View {
                 }
             }
         }
+        .frame(height: AppConfig.headerHeight)
     }
 
     /// 右侧栏中间内容视图
@@ -172,7 +175,6 @@ struct AgentModeContentView: View {
                 defaultDetailView
             } else {
                 // 显示所有插件提供的中间视图
-                // 修复：使用稳定 ID 而不是 offset，避免 AttributeGraph 崩溃
                 VStack(spacing: 0) {
                     ForEach(middleViews.indices, id: \.self) { index in
                         middleViews[index]

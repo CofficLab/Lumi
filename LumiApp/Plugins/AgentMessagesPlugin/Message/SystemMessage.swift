@@ -34,13 +34,14 @@ struct SystemMessage: View, SuperLog {
                         .messageBubbleStyle(role: message.role, isError: true)
                 }
             } else if message.content == ChatMessage.loadingLocalModelSystemContentKey
-                || message.content == ChatMessage.loadingLocalModelDoneSystemContentKey {
-                // 专门的「正在加载/已就绪」本地模型系统消息，展示模型基本信息
+                || message.content == ChatMessage.loadingLocalModelDoneSystemContentKey
+                || message.content == ChatMessage.loadingLocalModelFailedSystemContentKey {
+                // 专门的「正在加载/已就绪/加载失败」本地模型系统消息，展示模型基本信息
                 VStack(alignment: .leading, spacing: 4) {
                     header
 
                     LoadingLocalModelSystemMessageView(message: message)
-                        .messageBubbleStyle(role: message.role, isError: false)
+                        .messageBubbleStyle(role: message.role, isError: message.content == ChatMessage.loadingLocalModelFailedSystemContentKey)
                 }
             } else {
                 VStack(alignment: .leading, spacing: 4) {
@@ -218,9 +219,16 @@ private struct LoadingLocalModelSystemMessageView: View {
         message.content == ChatMessage.loadingLocalModelSystemContentKey
     }
 
+    private var isFailed: Bool {
+        message.content == ChatMessage.loadingLocalModelFailedSystemContentKey
+    }
+
     private var statusText: String {
         if isLoading {
             return agentProvider.languagePreference == .chinese ? "正在加载模型…" : "Loading model…"
+        }
+        if isFailed {
+            return agentProvider.languagePreference == .chinese ? "加载失败" : "Load failed"
         }
         return agentProvider.languagePreference == .chinese ? "模型已就绪" : "Model ready"
     }
@@ -360,6 +368,10 @@ private struct LoadingLocalModelSystemMessageView: View {
             ProgressView()
                 .scaleEffect(0.75)
                 .controlSize(.small)
+        } else if isFailed {
+            Image(systemName: "xmark.circle.fill")
+                .font(.system(size: 14))
+                .foregroundColor(DesignTokens.Color.semantic.error)
         } else {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 14))

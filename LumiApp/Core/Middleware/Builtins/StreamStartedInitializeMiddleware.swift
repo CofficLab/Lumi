@@ -33,14 +33,8 @@ final class StreamStartedInitializeMiddleware: ConversationTurnMiddleware {
             ctx.ui.onStreamStartedUI(messageId, conversationId)
         }
 
-        // 若上一条是「正在加载模型」系统消息，则更新为「模型已就绪」，避免一直显示加载中
-        let list = ctx.actions.messages()
-        if let idx = list.lastIndex(where: { $0.content == ChatMessage.loadingLocalModelSystemContentKey }) {
-            var updated = list[idx]
-            updated.content = ChatMessage.loadingLocalModelDoneSystemContentKey
-            ctx.actions.updateMessage(updated, idx)
-            await ctx.actions.saveMessage(updated, conversationId)
-        }
+        // 不在此处更新「模型已就绪」：streamStarted 在 sendStreamingMessage 之前发出，模型可能尚未加载或未下载。
+        // 改为在收到首个 streamChunk 时再更新（StreamChunkAccumulateMiddleware），确保模型真正已就绪。
 
         let placeholderMessage = ChatMessage(id: messageId, role: .assistant, content: "", timestamp: Date())
         if ctx.env.selectedConversationId() == conversationId {

@@ -27,6 +27,8 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     static let loadingLocalModelSystemContentKey = "__LUMI_LOADING_LOCAL_MODEL__"
     /// 本地模型已就绪（加载完成）时的系统消息占位符，由 UI 渲染「模型已就绪」状态，不再显示加载动画。
     static let loadingLocalModelDoneSystemContentKey = "__LUMI_LOADING_LOCAL_MODEL_DONE__"
+    /// 本地模型加载失败（如未下载）时的系统消息占位符，由 UI 渲染「加载失败」状态。
+    static let loadingLocalModelFailedSystemContentKey = "__LUMI_LOADING_LOCAL_MODEL_FAILED__"
     /// 消息唯一标识符
     ///
     /// 使用 UUID 生成，确保每条消息有唯一 ID。

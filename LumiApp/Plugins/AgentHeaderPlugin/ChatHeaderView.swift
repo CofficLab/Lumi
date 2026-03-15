@@ -54,7 +54,6 @@ struct ChatHeaderView: View, SuperLog {
                 }
             }
             .padding(.horizontal, 16)
-            .frame(height: AppConfig.headerHeight)
 
             // 项目选择提示：未选择项目时显示
             if !agentProvider.isProjectSelected {
