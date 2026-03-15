@@ -104,7 +104,7 @@ struct LocalModelSectionView: View {
                         }
                     }
                 }
-                // 4. 模型列表（未下载）
+                // 4. 模型列表（展示所有模型）
                 Label("模型列表", systemImage: "list.bullet")
                     .font(DesignTokens.Typography.callout)
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
@@ -178,30 +178,27 @@ struct LocalModelSectionView: View {
                     }
                 }
             }
-            // 模型列表（仅显示未下载的模型）
+            // 模型列表（展示该系列下全部模型，已下载/未下载均显示）
             if let section = localModelsBySeries.first(where: { $0.seriesName == selectedSeriesName }) ?? localModelsBySeries.first {
-                // 过滤掉已下载的模型
-                let undownloadedModels = section.models.filter { !localCachedIds.contains($0.id) }
-                if !undownloadedModels.isEmpty {
-                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                        ForEach(undownloadedModels) { model in
-                            LocalModelRow(
-                                model: model,
-                                isCached: false,
-                                isSelected: false,
-                                isDownloading: downloadingModelId == model.id,
-                                downloadStatus: downloadingModelId == model.id ? localDownloadStatus : nil,
-                                isDownloadDisabled: downloadingModelId != nil,
-                                isThisModelLoaded: false,
-                                hasAnyModelLoaded: loadedModelId != nil,
-                                isLoading: false,
-                                isLoadDisabled: false,
-                                onSelect: { },
-                                onDownload: { Task { await onDownload(model.id) } },
-                                onLoad: { },
-                                onUnload: { }
-                            )
-                        }
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                    ForEach(section.models) { model in
+                        let isCached = localCachedIds.contains(model.id)
+                        LocalModelRow(
+                            model: model,
+                            isCached: isCached,
+                            isSelected: false,
+                            isDownloading: downloadingModelId == model.id,
+                            downloadStatus: downloadingModelId == model.id ? localDownloadStatus : nil,
+                            isDownloadDisabled: downloadingModelId != nil,
+                            isThisModelLoaded: loadedModelId == model.id,
+                            hasAnyModelLoaded: loadedModelId != nil,
+                            isLoading: loadingModelId == model.id,
+                            isLoadDisabled: loadingModelId != nil,
+                            onSelect: { },
+                            onDownload: { Task { await onDownload(model.id) } },
+                            onLoad: { Task { await onLoad(model.id) } },
+                            onUnload: { Task { await onUnload() } }
+                        )
                     }
                 }
             }

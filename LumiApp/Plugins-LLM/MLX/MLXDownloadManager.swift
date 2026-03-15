@@ -232,7 +232,7 @@ public final class MLXDownloadManager: NSObject, ObservableObject {
     private func filterFiles(_ files: [HFFileEntry]) -> [HFFileEntry] {
         let requiredExts: Set<String> = [".safetensors", ".json", ".txt", ".py", ".tiktoken"]
         let requiredNames: Set<String> = ["config.json", "tokenizer.json", "tokenizer_config.json",
-                                          "generation_config.json", "special_tokens_map.json"]
+                                          "generation_config.json", "special_tokens_map.json", "chat_template.jinja"]
         let exclude: [String] = ["README.md", "LICENSE", ".git", "onnx/", "flax_", "tf_", "pytorch_"]
 
         return files.filter { file in
