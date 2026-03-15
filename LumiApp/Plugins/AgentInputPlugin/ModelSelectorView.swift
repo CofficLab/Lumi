@@ -20,6 +20,17 @@ struct ModelSelectorView: View, SuperLog {
     /// 模型性能统计
     @State private var detailedStats: [String: ModelPerformanceStats] = [:]
 
+    /// 当前选中的 Tab：0 本地，1 远程
+    @State private var selectedTab = 0
+
+    private var localProviders: [ProviderInfo] {
+        agentProvider.registry.allProviders().filter(\.isLocal)
+    }
+
+    private var remoteProviders: [ProviderInfo] {
+        agentProvider.registry.allProviders().filter { !$0.isLocal }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -38,62 +49,23 @@ struct ModelSelectorView: View, SuperLog {
 
             Divider()
 
+            // Tab: 本地 / 远程
+            Picker("", selection: $selectedTab) {
+                Text("本地供应商").tag(0)
+                Text("远程供应商").tag(1)
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+
+            Divider()
+
             // List of Providers and Models
-            List {
-                ForEach(agentProvider.registry.allProviders()) { provider in
-                    Section(header: sectionHeader(for: provider)) {
-                        ForEach(provider.availableModels, id: \.self) { model in
-                            Button(action: {
-                                selectModel(providerId: provider.id, model: model)
-                            }) {
-                                HStack {
-                                    VStack(alignment: .leading) {
-                                        Text(model)
-                                            .font(.body)
-                                        // 显示性能统计
-                                        if let stat = findDetailedStat(providerId: provider.id, modelName: model) {
-                                            VStack(alignment: .leading, spacing: 4) {
-                                                // 耗时进度条
-                                                if stat.avgTTFT > 0 {
-                                                    ModelLatencyProgressBar(
-                                                        ttft: stat.avgTTFT,
-                                                        totalLatency: stat.avgLatency,
-                                                        sampleCount: stat.sampleCount
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    Spacer()
-
-                                    if isSelected(providerId: provider.id, model: model) {
-                                        Image(systemName: "checkmark")
-                                            .foregroundColor(.accentColor)
-                                    }
-                                }
-                                .padding(.vertical, 6)
-                                .padding(.horizontal, 8)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .fill(isSelected(providerId: provider.id, model: model) ? Color.accentColor.opacity(0.15) : Color.clear)
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .stroke(isSelected(providerId: provider.id, model: model) ? Color.accentColor.opacity(0.3) : Color.clear, lineWidth: 1)
-                                )
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .onHover { hovering in
-                                if hovering && !isSelected(providerId: provider.id, model: model) {
-                                    NSCursor.pointingHand.push()
-                                } else {
-                                    NSCursor.pop()
-                                }
-                            }
-                        }
-                    }
+            Group {
+                if selectedTab == 0 {
+                    providerList(providers: localProviders, emptyMessage: "暂无本地供应商")
+                } else {
+                    providerList(providers: remoteProviders, emptyMessage: "暂无远程供应商")
                 }
             }
             .listStyle(.sidebar)
@@ -102,6 +74,72 @@ struct ModelSelectorView: View, SuperLog {
         .background(DesignTokens.Material.glass)
         .task {
             loadLatencyStats()
+        }
+    }
+
+    /// 供应商与模型列表（共用结构）
+    @ViewBuilder
+    private func providerList(providers: [ProviderInfo], emptyMessage: String) -> some View {
+        if providers.isEmpty {
+            ContentUnavailableView {
+                Label(emptyMessage, systemImage: "tray")
+            }
+        } else {
+            List {
+                ForEach(providers) { provider in
+                    Section(header: sectionHeader(for: provider)) {
+                        ForEach(provider.availableModels, id: \.self) { model in
+                            modelRow(provider: provider, model: model)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// 单行模型：名称、性能条、选中态
+    @ViewBuilder
+    private func modelRow(provider: ProviderInfo, model: String) -> some View {
+        Button(action: {
+            selectModel(providerId: provider.id, model: model)
+        }) {
+            HStack {
+                VStack(alignment: .leading) {
+                    Text(model)
+                        .font(.body)
+                    if let stat = findDetailedStat(providerId: provider.id, modelName: model), stat.avgTTFT > 0 {
+                        ModelLatencyProgressBar(
+                            ttft: stat.avgTTFT,
+                            totalLatency: stat.avgLatency,
+                            sampleCount: stat.sampleCount
+                        )
+                    }
+                }
+                Spacer()
+                if isSelected(providerId: provider.id, model: model) {
+                    Image(systemName: "checkmark")
+                        .foregroundColor(.accentColor)
+                }
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(isSelected(providerId: provider.id, model: model) ? Color.accentColor.opacity(0.15) : Color.clear)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(isSelected(providerId: provider.id, model: model) ? Color.accentColor.opacity(0.3) : Color.clear, lineWidth: 1)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            if hovering && !isSelected(providerId: provider.id, model: model) {
+                NSCursor.pointingHand.push()
+            } else {
+                NSCursor.pop()
+            }
         }
     }
 }

@@ -92,16 +92,19 @@ class ProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
 
     /// 获取所有已注册供应商的信息
     ///
-    /// - Returns: 供应商信息数组，包含 ID、名称、图标、描述、可用模型等
+    /// - Returns: 供应商信息数组，包含 ID、名称、图标、描述、可用模型、是否本地等
     func allProviders() -> [ProviderInfo] {
         providerTypes.map { type in
-            ProviderInfo(
+            let instance = createProvider(id: type.id)
+            let isLocal = (instance as? any SuperLocalLLMProvider) != nil
+            return ProviderInfo(
                 id: type.id,
                 displayName: type.displayName,
                 iconName: type.iconName,
                 description: type.description,
                 availableModels: type.availableModels,
-                defaultModel: type.defaultModel
+                defaultModel: type.defaultModel,
+                isLocal: isLocal
             )
         }
     }
@@ -156,6 +159,9 @@ struct ProviderInfo: Identifiable, Equatable, Sendable {
     
     /// 默认模型
     let defaultModel: String
+    
+    /// 是否为本地供应商（如 MLX 等本地推理）
+    let isLocal: Bool
 }
 
 // MARK: - Provider Registration Extension
