@@ -28,7 +28,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
     public static var id: String { "mlx" }
 
     /// 显示名称
-    public static var displayName: String { "MLX Local" }
+    public static var displayName: String { "Local" }
 
     /// 图标名称（SF Symbols）
     public static var iconName: String { "cpu" }
@@ -77,11 +77,12 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
         throw MLXError.notSupported("本地模型请使用流式或本地 sendMessage")
     }
 
-    /// 推荐模型列表（本地定义，避免依赖）
+    /// 推荐模型列表（本地定义，避免依赖；与 MLXModels.recommended 子集一致）
     private static let recommendedModels: [MLXModelInfo] = [
         MLXModelInfo(
             id: "mlx-community/Qwen3.5-9B-4bit",
             name: "Qwen 3.5 9B",
+            description: "阿里云最新模型，中文能力强，支持工具调用",
             size: "~6 GB",
             minRAM: 16,
             expectedBytes: 6_000_000_000,
@@ -92,6 +93,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
         MLXModelInfo(
             id: "mlx-community/Qwen3.5-14B-4bit",
             name: "Qwen 3.5 14B",
+            description: "更强的中文模型，适合复杂任务",
             size: "~9 GB",
             minRAM: 24,
             expectedBytes: 9_000_000_000,
@@ -102,6 +104,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
         MLXModelInfo(
             id: "mlx-community/Mistral-Nemo-12B-Instruct-4bit",
             name: "Mistral Nemo 12B",
+            description: "轻量高效，适合日常使用",
             size: "~7 GB",
             minRAM: 16,
             expectedBytes: 7_000_000_000,
@@ -112,6 +115,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
         MLXModelInfo(
             id: "mlx-community/Llama-3.2-3B-Instruct-4bit",
             name: "Llama 3.2 3B",
+            description: "超轻量，适合低配置设备",
             size: "~2 GB",
             minRAM: 8,
             expectedBytes: 2_000_000_000,
@@ -273,7 +277,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
 
     func getAvailableModels() async -> [LocalModelInfo] {
         let list = modelManager?.availableModels() ?? Self.recommendedModels
-        return list.map { LocalModelInfo(id: $0.id, displayName: $0.name, size: $0.size, minRAM: $0.minRAM, expectedBytes: $0.expectedBytes) }
+        return list.map { LocalModelInfo(id: $0.id, displayName: $0.name, description: $0.description, size: $0.size, minRAM: $0.minRAM, expectedBytes: $0.expectedBytes) }
     }
 
     func getCachedModels() async -> Set<String> {

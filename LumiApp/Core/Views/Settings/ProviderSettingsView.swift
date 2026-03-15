@@ -500,6 +500,12 @@ private struct LocalModelRow: View {
                                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         }
                     }
+                    if !model.description.isEmpty {
+                        Text(model.description)
+                            .font(DesignTokens.Typography.caption2)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .lineLimit(2)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }

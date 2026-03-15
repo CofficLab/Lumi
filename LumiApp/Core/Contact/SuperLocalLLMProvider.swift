@@ -4,17 +4,20 @@ import Foundation
 
 /// 本地模型信息（内核用，与具体插件解耦）
 ///
-/// 用于设置页展示可用模型列表、大小、内存要求等。
+/// 用于设置页展示可用模型列表、大小、内存要求、描述等。
 struct LocalModelInfo: Identifiable, Sendable, Equatable {
     let id: String
     let displayName: String
+    /// 模型描述（可选，用于设置页展示）
+    let description: String
     let size: String
     let minRAM: Int
     let expectedBytes: Int64
 
-    init(id: String, displayName: String, size: String, minRAM: Int, expectedBytes: Int64) {
+    init(id: String, displayName: String, description: String = "", size: String, minRAM: Int, expectedBytes: Int64) {
         self.id = id
         self.displayName = displayName
+        self.description = description
         self.size = size
         self.minRAM = minRAM
         self.expectedBytes = expectedBytes
