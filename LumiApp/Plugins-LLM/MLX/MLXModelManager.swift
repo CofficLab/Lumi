@@ -69,7 +69,7 @@ public final class MLXModelManager: ObservableObject, SuperLog {
     // MARK: - Public Methods
 
     /// 获取可用的模型列表（根据 RAM 过滤）
-    public func availableModels() -> [MLXModelInfo] {
+    public func availableModels() -> [LocalModelInfo] {
         _MLXModels.availableModels(for: self.systemRAM)
     }
 

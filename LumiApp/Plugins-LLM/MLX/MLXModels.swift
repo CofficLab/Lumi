@@ -1,60 +1,6 @@
 import Foundation
 import Darwin
 
-/// MLX 本地模型信息
-///
-/// 包含模型的基本信息、大小要求和功能特性。
-public struct MLXModelInfo: Identifiable, Equatable, Sendable {
-    /// 模型唯一标识符（HuggingFace ID）
-    public let id: String
-
-    /// 显示名称
-    public let name: String
-
-    /// 模型描述
-    public let description: String
-
-    /// 文件大小（人类可读）
-    public let size: String
-
-    /// 最小内存要求（GB）
-    public let minRAM: Int
-
-    /// 预期下载字节数
-    public let expectedBytes: Int64
-
-    /// 是否支持视觉输入（VLM）
-    public let supportsVision: Bool
-
-    /// 是否支持工具调用
-    public let supportsTools: Bool
-
-    /// 推荐优先级（越小越推荐）
-    public let priority: Int
-
-    public init(
-        id: String,
-        name: String,
-        description: String = "",
-        size: String,
-        minRAM: Int,
-        expectedBytes: Int64,
-        supportsVision: Bool = false,
-        supportsTools: Bool = true,
-        priority: Int = 0
-    ) {
-        self.id = id
-        self.name = name
-        self.description = description
-        self.size = size
-        self.minRAM = minRAM
-        self.expectedBytes = expectedBytes
-        self.supportsVision = supportsVision
-        self.supportsTools = supportsTools
-        self.priority = priority
-    }
-}
-
 /// MLX 推荐模型列表
 ///
 /// 按内存要求分类，提供适合不同设备的模型选择。
@@ -63,72 +9,94 @@ public enum MLXModels {
     // MARK: - 推荐模型（按优先级排序）
 
     /// 所有推荐模型（按 priority 排序）
-    public static let recommended: [MLXModelInfo] = [
+    public static let recommended: [LocalModelInfo] = [
         // Qwen 系列 - 中文友好，性价比高
-        MLXModelInfo(
+        LocalModelInfo(
+            id: "mlx-community/Qwen3.5-0.8B-OptiQ-4bit",
+            displayName: "Qwen 3.5 0.8B OptiQ",
+            description: "极小体积，适合入门与低内存设备",
+            size: "~0.6 GB",
+            minRAM: 4,
+            expectedBytes: 600_000_000,
+            supportsVision: false,
+            supportsTools: true,
+            priority: 0
+        ),
+        LocalModelInfo(
+            id: "mlx-community/Qwen3.5-4B-OptiQ-4bit",
+            displayName: "Qwen 3.5 4B OptiQ",
+            description: "轻量中文模型，OptiQ 量化",
+            size: "~2.5 GB",
+            minRAM: 8,
+            expectedBytes: 2_500_000_000,
+            supportsVision: false,
+            supportsTools: true,
+            priority: 1
+        ),
+        LocalModelInfo(
             id: "mlx-community/Qwen3.5-9B-4bit",
-            name: "Qwen 3.5 9B",
+            displayName: "Qwen 3.5 9B",
             description: "阿里云最新模型，中文能力强，支持工具调用",
             size: "~6 GB",
             minRAM: 16,
             expectedBytes: 6_000_000_000,
             supportsVision: false,
             supportsTools: true,
-            priority: 1
+            priority: 2
         ),
-        MLXModelInfo(
+        LocalModelInfo(
             id: "mlx-community/Qwen3.5-14B-4bit",
-            name: "Qwen 3.5 14B",
+            displayName: "Qwen 3.5 14B",
             description: "更强的中文模型，适合复杂任务",
             size: "~9 GB",
             minRAM: 24,
             expectedBytes: 9_000_000_000,
             supportsVision: false,
             supportsTools: true,
-            priority: 2
+            priority: 3
         ),
 
         // Mistral 系列 - 轻量高效
-        MLXModelInfo(
+        LocalModelInfo(
             id: "mlx-community/Mistral-Nemo-12B-Instruct-4bit",
-            name: "Mistral Nemo 12B",
+            displayName: "Mistral Nemo 12B",
             description: "轻量高效，适合日常使用",
             size: "~7 GB",
             minRAM: 16,
             expectedBytes: 7_000_000_000,
             supportsVision: false,
             supportsTools: true,
-            priority: 3
+            priority: 4
         ),
 
         // Llama 系列 - 通用能力强
-        MLXModelInfo(
+        LocalModelInfo(
             id: "mlx-community/Llama-3.2-3B-Instruct-4bit",
-            name: "Llama 3.2 3B",
+            displayName: "Llama 3.2 3B",
             description: "超轻量，适合低配置设备",
             size: "~2 GB",
             minRAM: 8,
             expectedBytes: 2_000_000_000,
             supportsVision: false,
             supportsTools: true,
-            priority: 4
+            priority: 5
         ),
-        MLXModelInfo(
+        LocalModelInfo(
             id: "mlx-community/Llama-3.3-70B-Instruct-4bit",
-            name: "Llama 3.3 70B",
+            displayName: "Llama 3.3 70B",
             description: "最强开源模型，需要高配置",
             size: "~40 GB",
             minRAM: 64,
             expectedBytes: 40_000_000_000,
             supportsVision: false,
             supportsTools: true,
-            priority: 5
+            priority: 6
         ),
 
         // VLM 视觉模型
-        MLXModelInfo(
+        LocalModelInfo(
             id: "mlx-community/Qwen2-VL-7B-Instruct-4bit",
-            name: "Qwen2 VL 7B",
+            displayName: "Qwen2 VL 7B",
             description: "支持图片理解的视觉语言模型",
             size: "~5 GB",
             minRAM: 16,
@@ -144,23 +112,23 @@ public enum MLXModels {
     /// 根据系统 RAM 获取可用模型列表
     /// - Parameter systemRAM: 系统内存（GB），为 nil 时自动检测
     /// - Returns: 可用模型列表（按优先级排序）
-    public static func availableModels(for systemRAM: Int? = nil) -> [MLXModelInfo] {
+    public static func availableModels(for systemRAM: Int? = nil) -> [LocalModelInfo] {
         let ram = systemRAM ?? detectSystemRAM()
         return recommended
             .filter { $0.minRAM <= ram }
-            .sorted { $0.priority < $1.priority }
+            .sorted { $0.minRAM != $1.minRAM ? $0.minRAM < $1.minRAM : $0.priority < $1.priority }
     }
 
     /// 获取支持视觉的模型
-    public static let visionModels: [MLXModelInfo] = recommended.filter { $0.supportsVision }
+    public static var visionModels: [LocalModelInfo] { recommended.filter { $0.supportsVision } }
 
     /// 获取支持工具调用的模型
-    public static let toolModels: [MLXModelInfo] = recommended.filter { $0.supportsTools }
+    public static var toolModels: [LocalModelInfo] { recommended.filter { $0.supportsTools } }
 
     // MARK: - 按 ID 查找
 
     /// 根据 ID 查找模型
-    public static func model(id: String) -> MLXModelInfo? {
+    public static func model(id: String) -> LocalModelInfo? {
         recommended.first { $0.id == id }
     }
 

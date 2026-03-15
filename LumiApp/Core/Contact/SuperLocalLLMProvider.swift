@@ -5,22 +5,42 @@ import Foundation
 /// 本地模型信息（内核用，与具体插件解耦）
 ///
 /// 用于设置页展示可用模型列表、大小、内存要求、描述等。
-struct LocalModelInfo: Identifiable, Sendable, Equatable {
-    let id: String
-    let displayName: String
+/// 插件可选的 supportsVision、supportsTools、priority 用于排序与按能力过滤。
+public struct LocalModelInfo: Identifiable, Sendable, Equatable {
+    public let id: String
+    public let displayName: String
     /// 模型描述（可选，用于设置页展示）
-    let description: String
-    let size: String
-    let minRAM: Int
-    let expectedBytes: Int64
+    public let description: String
+    public let size: String
+    public let minRAM: Int
+    public let expectedBytes: Int64
+    /// 是否支持视觉输入（VLM），默认 false
+    public let supportsVision: Bool
+    /// 是否支持工具调用，默认 true
+    public let supportsTools: Bool
+    /// 推荐优先级（越小越靠前），默认 0
+    public let priority: Int
 
-    init(id: String, displayName: String, description: String = "", size: String, minRAM: Int, expectedBytes: Int64) {
+    public init(
+        id: String,
+        displayName: String,
+        description: String = "",
+        size: String,
+        minRAM: Int,
+        expectedBytes: Int64,
+        supportsVision: Bool = false,
+        supportsTools: Bool = true,
+        priority: Int = 0
+    ) {
         self.id = id
         self.displayName = displayName
         self.description = description
         self.size = size
         self.minRAM = minRAM
         self.expectedBytes = expectedBytes
+        self.supportsVision = supportsVision
+        self.supportsTools = supportsTools
+        self.priority = priority
     }
 }
 

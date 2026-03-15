@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import MagicKit
+import Darwin
 
 /// 供应商设置视图 - 配置 LLM 供应商的 API 密钥和模型选择
 struct ProviderSettingsView: View, SuperLog {
@@ -226,6 +227,9 @@ extension ProviderSettingsView {
                     .buttonStyle(.borderless)
                 }
 
+                // 本机信息：便于用户对比模型所需配置
+                localMachineInfoBlock
+
                 if localActionError != nil {
                     Text(localActionError!)
                         .font(DesignTokens.Typography.caption1)
@@ -274,6 +278,78 @@ extension ProviderSettingsView {
                 }
             }
         }
+    }
+
+    /// 本机信息区块：芯片、电脑内存、磁盘、系统版本，单行紧凑
+    private var localMachineInfoBlock: some View {
+        let chip = Self.localChipName()
+        let ramGB = Int(ProcessInfo.processInfo.physicalMemory / (1024 * 1024 * 1024))
+        let diskGB = Self.localDiskTotalGB()
+        let osVer = ProcessInfo.processInfo.operatingSystemVersion
+        let osString = "macOS \(osVer.majorVersion).\(osVer.minorVersion).\(osVer.patchVersion)"
+        let style = DesignTokens.Typography.caption2
+        let color = DesignTokens.Color.semantic.textSecondary
+        return HStack(spacing: 6) {
+            Label(chip, systemImage: "cpu")
+                .font(style)
+                .foregroundColor(color)
+            Text("·").font(style).foregroundColor(color)
+            Label("内存 \(ramGB) GB", systemImage: "memorychip")
+                .font(style)
+                .foregroundColor(color)
+            Text("·").font(style).foregroundColor(color)
+            Label("磁盘 \(diskGB) GB", systemImage: "internaldrive")
+                .font(style)
+                .foregroundColor(color)
+            Text("·").font(style).foregroundColor(color)
+            Label(osString, systemImage: "desktopcomputer")
+                .font(style)
+                .foregroundColor(color)
+        }
+        .padding(.horizontal, DesignTokens.Spacing.sm)
+        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.08))
+        )
+    }
+
+    /// 本机芯片名称（sysctl machdep.cpu.brand_string；Apple Silicon 若为空则显示 "Apple Silicon"）
+    private static func localChipName() -> String {
+        var size: Int = 0
+        sysctlbyname("machdep.cpu.brand_string", nil, &size, nil, 0)
+        guard size > 0 else {
+            #if arch(arm64)
+            return "Apple Silicon"
+            #else
+            return "Intel"
+            #endif
+        }
+        var model = [CChar](repeating: 0, count: size)
+        guard sysctlbyname("machdep.cpu.brand_string", &model, &size, nil, 0) == 0 else {
+            #if arch(arm64)
+            return "Apple Silicon"
+            #else
+            return "Intel"
+            #endif
+        }
+        let name = String(cString: model).trimmingCharacters(in: .whitespacesAndNewlines)
+        if name.isEmpty || name == "Apple processor" {
+            #if arch(arm64)
+            return "Apple Silicon"
+            #else
+            return "Intel"
+            #endif
+        }
+        return name
+    }
+
+    /// 本机系统盘总容量（GB，按十进制 1 GB = 10⁹ 字节，与厂商/Finder 标称一致）
+    private static func localDiskTotalGB() -> Int {
+        guard let attrs = try? FileManager.default.attributesOfFileSystem(forPath: "/"),
+              let total = attrs[.systemSize] as? Int64 else { return 0 }
+        return Int(total / 1_000_000_000)
     }
 }
 
@@ -481,21 +557,28 @@ private struct LocalModelRow: View {
             .frame(width: 20, height: 20)
 
             Button(action: onSelect) {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(model.displayName)
                         .font(DesignTokens.Typography.body)
                         .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    // 体积、内存要求、下载状态
                     HStack(spacing: 6) {
-                        Text(model.size)
+                        Text("体积 \(model.size)")
+                            .font(DesignTokens.Typography.caption2)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        Text("·")
+                            .font(DesignTokens.Typography.caption2)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        Text("电脑内存 ≥ \(model.minRAM) GB")
                             .font(DesignTokens.Typography.caption2)
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         if isDownloading, case .downloading(let fraction) = downloadStatus {
-                            Text("\(Int(fraction * 100))%")
+                            Text("· \(Int(fraction * 100))%")
                                 .font(DesignTokens.Typography.caption2)
                                 .foregroundColor(DesignTokens.Color.semantic.primary)
                                 .monospacedDigit()
                         } else if isCached {
-                            Text("已缓存")
+                            Text("· 已缓存")
                                 .font(DesignTokens.Typography.caption2)
                                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         }
@@ -505,6 +588,17 @@ private struct LocalModelRow: View {
                             .font(DesignTokens.Typography.caption2)
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                             .lineLimit(2)
+                    }
+                    // 能力标签：工具调用、视觉
+                    if model.supportsTools || model.supportsVision {
+                        HStack(spacing: 6) {
+                            if model.supportsTools {
+                                capabilityTag("工具调用")
+                            }
+                            if model.supportsVision {
+                                capabilityTag("视觉")
+                            }
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -535,6 +629,18 @@ private struct LocalModelRow: View {
     private var downloadProgressFraction: Double {
         guard case .downloading(let fraction) = downloadStatus else { return 0 }
         return fraction
+    }
+
+    private func capabilityTag(_ title: String) -> some View {
+        Text(title)
+            .font(DesignTokens.Typography.caption2)
+            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.15))
+            )
     }
 }
 
