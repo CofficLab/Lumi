@@ -545,12 +545,6 @@ class LLMService: SuperLog, @unchecked Sendable {
                             // 累积内容 - 只累积 textDelta 的内容，跳过 thinkingDelta
                             if let content = chunk.content, chunk.eventType == .textDelta {
                                 await state.appendContent(content)
-                                if Self.verbose >= 2 {
-                                    let currentContentLength = await state.accumulatedContentLength
-                                    if currentContentLength < 200 {
-                                        os_log("\(self.t)📝 累积内容: \(content)")
-                                    }
-                                }
                             }
 
                             // 处理工具调用

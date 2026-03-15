@@ -8,9 +8,8 @@ import ObjectiveC.runtime
 /// 使用 Objective‑C Runtime 扫描所有实现 `SuperLLMProvider` 的类，
 /// 并将其注册到 `ProviderRegistry`。
 enum LLMPluginsVM: SuperLog {
-
     nonisolated static let emoji = "🧩"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     /// 扫描并注册所有 LLM 供应商
     ///
