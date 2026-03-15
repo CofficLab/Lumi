@@ -35,6 +35,8 @@ struct ProviderSettingsView: View, SuperLog {
     @State private var downloadingModelId: String?
     /// 轮询得到的下载状态（用于 UI 实时更新）
     @State private var localDownloadStatus: LocalDownloadStatus = .idle
+    /// 当前选中的本地模型系列 Tab（如「Qwen 系列」）
+    @State private var selectedSeriesName: String = ""
 
     // MARK: - Environment
 
@@ -54,6 +56,15 @@ struct ProviderSettingsView: View, SuperLog {
     /// 当前供应商类型
     private var selectedProviderType: (any SuperLLMProvider.Type)? {
         registry.providerType(forId: selectedProviderId)
+    }
+
+    /// 本地模型按系列分组（系列顺序：Qwen、Mistral、Llama、其他）
+    private var localModelsBySeries: [LocalModelsSection] {
+        let order = ["Qwen 系列", "Mistral 系列", "Llama 系列"]
+        let grouped = Dictionary(grouping: localAvailableModels) { $0.series ?? "其他" }
+        let ordered = order.filter { grouped[$0] != nil }
+        let others = grouped.keys.filter { !order.contains($0) }.sorted()
+        return (ordered + others).map { LocalModelsSection(seriesName: $0, models: grouped[$0] ?? []) }
     }
 
     // MARK: - Body
@@ -240,35 +251,60 @@ extension ProviderSettingsView {
                     ProgressView()
                         .scaleEffect(0.8)
                 } else {
-                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                        ForEach(localAvailableModels) { model in
-                            LocalModelRow(
-                                model: model,
-                                isCached: localCachedIds.contains(model.id),
-                                isSelected: selectedModel == model.id,
-                                isDownloading: downloadingModelId == model.id,
-                                downloadStatus: downloadingModelId == model.id ? localDownloadStatus : nil,
-                                isDownloadDisabled: downloadingModelId != nil,
-                                onSelect: {
-                                    selectedModel = model.id
-                                    saveModel()
-                                },
-                                onDownload: {
-                                    Task { await downloadLocalModel(id: model.id) }
-                                },
-                                onLoad: {
-                                    Task { await loadLocalModel(id: model.id) }
-                                },
-                                onUnload: {
-                                    Task { await unloadLocalModel() }
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                        // 系列 Tab 横向展示
+                        HStack(spacing: DesignTokens.Spacing.sm) {
+                            ForEach(localModelsBySeries) { section in
+                                SeriesTabButton(
+                                    title: section.seriesName,
+                                    isSelected: selectedSeriesName == section.seriesName
+                                ) {
+                                    selectedSeriesName = section.seriesName
                                 }
-                            )
+                            }
+                        }
+                        // 当前系列下的模型列表
+                        if let section = localModelsBySeries.first(where: { $0.seriesName == selectedSeriesName }) ?? localModelsBySeries.first {
+                            VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                                ForEach(section.models) { model in
+                                    LocalModelRow(
+                                        model: model,
+                                        isCached: localCachedIds.contains(model.id),
+                                        isSelected: selectedModel == model.id,
+                                        isDownloading: downloadingModelId == model.id,
+                                        downloadStatus: downloadingModelId == model.id ? localDownloadStatus : nil,
+                                        isDownloadDisabled: downloadingModelId != nil,
+                                        onSelect: {
+                                            selectedModel = model.id
+                                            saveModel()
+                                        },
+                                        onDownload: {
+                                            Task { await downloadLocalModel(id: model.id) }
+                                        },
+                                        onLoad: {
+                                            Task { await loadLocalModel(id: model.id) }
+                                        },
+                                        onUnload: {
+                                            Task { await unloadLocalModel() }
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
+            .onChange(of: localAvailableModels.count) { _, count in
+                if count > 0,
+                   selectedSeriesName.isEmpty || !localModelsBySeries.contains(where: { $0.seriesName == selectedSeriesName }) {
+                    selectedSeriesName = localModelsBySeries.first?.seriesName ?? ""
+                }
+            }
             .task(id: selectedProviderId) {
                 await refreshLocalModels()
+                if !localAvailableModels.isEmpty {
+                    selectedSeriesName = localModelsBySeries.first?.seriesName ?? ""
+                }
             }
             .task(id: localProvider != nil ? "poll" : "nop") {
                 guard localProvider != nil else { return }
@@ -642,6 +678,39 @@ private struct LocalModelRow: View {
                     .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.15))
             )
     }
+}
+
+// MARK: - Series Tab Button
+
+/// 系列 Tab 按钮，横向排列
+private struct SeriesTabButton: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(DesignTokens.Typography.caption1)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(isSelected ? DesignTokens.Color.semantic.primary : Color.white.opacity(0.05))
+                )
+                .foregroundColor(isSelected ? .white : DesignTokens.Color.semantic.textSecondary)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Local Models Section
+
+/// 本地模型按系列分组，用于设置页展示
+private struct LocalModelsSection: Identifiable {
+    let seriesName: String
+    let models: [LocalModelInfo]
+    var id: String { seriesName }
 }
 
 // MARK: - Preview
