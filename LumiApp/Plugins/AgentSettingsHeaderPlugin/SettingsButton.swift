@@ -1,17 +1,15 @@
 import SwiftUI
 
-/// 项目管理按钮：打开项目选择器
-/// 自治组件，使用 NotificationCenter 发送事件
-struct ProjectButton: View {
-    /// 图标尺寸常量
+/// 设置按钮：打开应用设置
+struct SettingsButton: View {
     private let iconSize: CGFloat = 14
     private let iconButtonSize: CGFloat = 28
 
     var body: some View {
         Button(action: {
-            NotificationCenter.postOpenProjectSelector()
+            NotificationCenter.postOpenSettings()
         }) {
-            Image(systemName: "folder.badge.gearshape")
+            Image(systemName: "gearshape")
                 .font(.system(size: iconSize))
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 .frame(width: iconButtonSize, height: iconButtonSize)
@@ -22,10 +20,8 @@ struct ProjectButton: View {
     }
 }
 
-// MARK: - Preview
-
-#Preview("Project Button") {
-    ProjectButton()
+#Preview("Settings Button") {
+    SettingsButton()
         .padding()
         .background(Color.black)
 }

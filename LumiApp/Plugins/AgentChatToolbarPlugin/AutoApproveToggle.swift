@@ -26,8 +26,6 @@ struct AutoApproveToggle: View {
     }
 }
 
-// MARK: - Preview
-
 #Preview("Auto Approve Toggle") {
     AutoApproveToggle()
         .padding()

@@ -1,16 +1,15 @@
 import SwiftUI
 
-/// 设置按钮：打开应用设置
-struct SettingsButton: View {
-    /// 图标尺寸常量
+/// 项目管理按钮：打开项目选择器
+struct ProjectButton: View {
     private let iconSize: CGFloat = 14
     private let iconButtonSize: CGFloat = 28
 
     var body: some View {
         Button(action: {
-            NotificationCenter.postOpenSettings()
+            NotificationCenter.postOpenProjectSelector()
         }) {
-            Image(systemName: "gearshape")
+            Image(systemName: "folder.badge.gearshape")
                 .font(.system(size: iconSize))
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 .frame(width: iconButtonSize, height: iconButtonSize)
@@ -21,10 +20,8 @@ struct SettingsButton: View {
     }
 }
 
-// MARK: - Preview
-
-#Preview("Settings Button") {
-    SettingsButton()
+#Preview("Project Button") {
+    ProjectButton()
         .padding()
         .background(Color.black)
 }

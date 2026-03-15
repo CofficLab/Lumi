@@ -4,7 +4,6 @@ import SwiftUI
 struct LanguageSelector: View {
     @EnvironmentObject var ProjectVM: ProjectVM
 
-    /// 图标尺寸常量
     private let iconSize: CGFloat = 14
 
     var body: some View {
@@ -41,8 +40,6 @@ struct LanguageSelector: View {
         .frame(width: 70)
     }
 }
-
-// MARK: - Preview
 
 #Preview("Language Selector") {
     LanguageSelector()

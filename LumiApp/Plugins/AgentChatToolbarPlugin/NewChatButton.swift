@@ -1,26 +1,15 @@
-import OSLog
 import MagicKit
 import SwiftUI
 
 /// 新会话按钮视图组件
-/// 点击时创建新会话，使用 AgentVM 内核方法完成所有操作
-struct NewChatButton: View, SuperLog {
-    /// 日志标识 emoji
-    nonisolated static let emoji = "🆕"
-    /// 是否启用详细日志
-    nonisolated static let verbose = false
-
-    /// 环境对象：Agent 提供者
+struct NewChatButton: View {
     @EnvironmentObject var agentProvider: AgentVM
 
-    /// 图标尺寸常量
     private let iconSize: CGFloat = 14
     private let iconButtonSize: CGFloat = 28
 
     enum Style {
-        /// 顶部栏图标按钮
         case iconOnly
-        /// 空态等场景的大按钮
         case cta
     }
 
@@ -70,4 +59,3 @@ struct NewChatButton: View, SuperLog {
         .inRootView()
         .frame(width: 1200, height: 1200)
 }
-

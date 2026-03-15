@@ -250,7 +250,6 @@ struct ProjectSelectorView: View {
         switch result {
         case .success(let urls):
             if let url = urls.first {
-                // Start accessing security-scoped resource
                 guard url.startAccessingSecurityScopedResource() else {
                     return
                 }
@@ -259,11 +258,9 @@ struct ProjectSelectorView: View {
                 Task { @MainActor in
                     agentProvider.switchProjectWithPrompt(to: path)
                     isPresented = false
-                    // Reload recent projects
                     loadRecentProjects()
                 }
 
-                // Stop accessing after a delay
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     url.stopAccessingSecurityScopedResource()
                 }
@@ -274,24 +271,19 @@ struct ProjectSelectorView: View {
     }
 
     private func loadRecentProjects() {
-        // 使用 AgentVM 加载最近项目
-        recentProjects = agentProvider.getRecentProjects()
+        recentProjects = Array(agentProvider.getRecentProjects()
             .prefix(maxRecentProjects)
             .filter { project in
-                // 过滤掉当前项目
                 project.path != agentProvider.currentProjectPath
-            }
+            })
     }
 
     private func saveRecentProjects() {
-        // 直接保存到应用设置存储
         if let encoded = try? JSONEncoder().encode(recentProjects) {
             AppSettingsStore.shared.set(encoded, forKey: "Agent_RecentProjects")
         }
     }
 }
-
-// MARK: - Preview
 
 #Preview("Project Selector") {
     ProjectSelectorView(isPresented: .constant(true))
