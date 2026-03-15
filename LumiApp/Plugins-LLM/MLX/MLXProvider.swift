@@ -1,4 +1,5 @@
 import Foundation
+import MagicKit
 import OSLog
 import Combine
 
@@ -14,13 +15,10 @@ import Combine
 /// - 支持工具调用
 /// - 支持图片输入（VLM 模型）
 @available(macOS 14.0, *)
-public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchecked Sendable {
-
-    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "MLXProvider")
-
-    nonisolated static let emoji = "💻"
-    nonisolated static let logEmoji: String = "💻"
+public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLog, @unchecked Sendable {
+    nonisolated public static let emoji = "💻"
     nonisolated static let verbose = true
+    public static var logEmoji: String { emoji }
 
     // MARK: - Provider Info
 
@@ -88,7 +86,9 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
     // MARK: - Initialization
 
     public init() {
-        Self.logger.info("MLXProvider 已初始化")
+        if Self.verbose {
+            os_log("\(self.t)✅ MLX Provider 已初始化")
+        }
     }
 
     private func ensureServices() async {
@@ -123,14 +123,18 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
         }
 
         if isModelDownloaded(id: id) {
-            Self.logger.info("模型已下载：\(id)")
+            if Self.verbose {
+                os_log("\(self.t)✅ 模型已下载：\(id)")
+            }
             return
         }
 
         await downloadManager.download(modelId: id)
 
         if downloadManager.status == .completed {
-            Self.logger.info("模型下载完成：\(id)")
+            if Self.verbose {
+                os_log("\(self.t)✅ 模型下载完成：\(id)")
+            }
         } else if case .failed(let error) = downloadManager.status {
             throw MLXError.downloadFailed(error)
         }
@@ -166,14 +170,18 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
         try await service.loadModel(id: id)
         currentModelId = id
 
-        Self.logger.info("模型已加载：\(id)")
+        if Self.verbose {
+            os_log("\(self.t)✅ 模型已加载：\(id)")
+        }
     }
 
     /// 卸载模型
     public func unloadModel() async {
         await MainActor.run { self.inferenceService?.unloadModel() }
         currentModelId = nil
-        Self.logger.info("模型已卸载")
+        if Self.verbose {
+            os_log("\(self.t)✅ 模型已卸载")
+        }
     }
 
     /// 获取当前加载的模型 ID
@@ -329,7 +337,9 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
     /// 删除模型
     public func deleteModel(id: String) throws {
         try modelManager?.deleteModel(id: id)
-        Self.logger.info("模型已删除：\(id)")
+        if Self.verbose {
+            os_log("\(self.t)✅ 模型已删除：\(id)")
+        }
     }
 
     /// 获取可用模型列表（根据 RAM 过滤，供内部/扩展使用）
@@ -350,7 +360,9 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
     /// 清空缓存
     public func clearCache() throws {
         try modelManager?.clearAllCache()
-        Self.logger.info("缓存已清空")
+        if Self.verbose {
+            os_log("\(self.t)✅ 缓存已清空")
+        }
     }
 
     /// 本地模型下载目录（供设置页“打开下载目录”使用）

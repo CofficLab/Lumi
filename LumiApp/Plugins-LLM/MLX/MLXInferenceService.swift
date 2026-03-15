@@ -1,8 +1,8 @@
 import Foundation
+import MagicKit
 import OSLog
 import Combine
 import MLXLLM
-import MLXVLM
 @preconcurrency import MLXLMCommon
 
 /// MLX 推理服务
@@ -14,9 +14,9 @@ import MLXVLM
 /// - 支持图片输入（VLM）
 @available(macOS 14.0, *)
 @MainActor
-public final class MLXInferenceService: ObservableObject {
-
-    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "MLXInferenceService")
+public final class MLXInferenceService: ObservableObject, SuperLog {
+    nonisolated public static let emoji = "🧠"
+    nonisolated static let verbose = true
 
     // MARK: - Published Properties
 
@@ -37,7 +37,9 @@ public final class MLXInferenceService: ObservableObject {
     // MARK: - Initialization
 
     public init() {
-        Self.logger.info("MLXInferenceService 已初始化")
+        if Self.verbose {
+            os_log("\(self.t)✅ MLX 推理服务已初始化")
+        }
     }
 
     deinit {
@@ -71,6 +73,8 @@ public final class MLXInferenceService: ObservableObject {
         }
 
         guard FileManager.default.fileExists(atPath: modelDir.path) else {
+            await updateState(.error("模型未下载"))
+            self.currentModelId = nil
             throw InferenceError.modelNotDownloaded
         }
 
@@ -79,7 +83,9 @@ public final class MLXInferenceService: ObservableObject {
             self.modelContainer = try await loadModelContainer(configuration: configuration)
 
             await updateState(.ready)
-            Self.logger.info("模型加载成功：\(id)")
+            if Self.verbose {
+                os_log("\(self.t)✅ 模型加载成功：\(id)")
+            }
         } catch {
             await updateState(.error(error.localizedDescription))
             throw InferenceError.loadFailed(error.localizedDescription)
@@ -98,7 +104,9 @@ public final class MLXInferenceService: ObservableObject {
             self.tokensPerSecond = 0
         }
 
-        Self.logger.info("模型已卸载")
+        if Self.verbose {
+            os_log("\(self.t)✅ 模型已卸载")
+        }
     }
 
     /// 流式对话生成
@@ -124,6 +132,10 @@ public final class MLXInferenceService: ObservableObject {
 
                 await self.updateState(.generating)
                 self.tokensPerSecond = 0
+
+                if Self.verbose {
+                    os_log("\(self.t)✅ 流式连接已建立，开始接收数据...")
+                }
 
                 do {
                     // Build MLX Chat.Message array, attaching images to the last user message
@@ -231,22 +243,32 @@ public final class MLXInferenceService: ObservableObject {
         // Try VLM first (for models with vision support), then fall back to LLM
         // The global loadModelContainer function tries MLXVLM first internally
         do {
-            Self.logger.info("尝试加载 VLM 模型...")
+            if Self.verbose {
+                os_log("\(self.t)尝试加载 VLM 模型...")
+            }
             let container = try await MLXLMCommon.loadModelContainer(configuration: configuration) { progress in
                 // Progress callback - can be used for loading UI
             }
-            Self.logger.info("VLM 模型加载成功")
+            if Self.verbose {
+                os_log("\(self.t)✅ VLM 模型加载成功")
+            }
             return container
         } catch {
-            Self.logger.info("VLM 加载失败，尝试 LLM: \(error.localizedDescription)")
+            if Self.verbose {
+                os_log("\(self.t)VLM 加载失败，尝试 LLM: \(error.localizedDescription)")
+            }
         }
 
         // Fallback to LLM
-        Self.logger.info("尝试加载 LLM 模型...")
+        if Self.verbose {
+            os_log("\(self.t)尝试加载 LLM 模型...")
+        }
         let container = try await MLXLMCommon.loadModelContainer(configuration: configuration) { progress in
             // Progress callback
         }
-        Self.logger.info("LLM 模型加载成功")
+        if Self.verbose {
+            os_log("\(self.t)✅ LLM 模型加载成功")
+        }
         return container
     }
 }
