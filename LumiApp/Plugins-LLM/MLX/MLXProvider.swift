@@ -103,6 +103,11 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, @unchec
 
     // MARK: - Public Methods
 
+    /// 根据模型 ID 返回展示名（用于输入栏等）
+    public func displayName(forModelId modelId: String) -> String? {
+        MLXModels.model(id: modelId)?.displayName
+    }
+
     /// 检查模型是否已下载
     public func isModelDownloaded(id: String) -> Bool {
         let cacheDir = cacheDirectory(for: id)

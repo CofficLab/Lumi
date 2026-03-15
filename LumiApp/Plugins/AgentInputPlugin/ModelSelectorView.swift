@@ -102,7 +102,7 @@ struct ModelSelectorView: View, SuperLog {
                             ForEach(grouped.keys.sorted(), id: \.self) { seriesName in
                                 Section(header: Text(seriesName).font(.subheadline).foregroundColor(.secondary)) {
                                     ForEach(grouped[seriesName] ?? [], id: \.id) { info in
-                                        modelRow(provider: provider, model: info.id)
+                                        modelRow(provider: provider, model: info.id, displayName: info.displayName)
                                     }
                                 }
                             }
@@ -118,14 +118,18 @@ struct ModelSelectorView: View, SuperLog {
     }
 
     /// 单行模型：名称、性能条、选中态
+    /// - Parameters:
+    ///   - provider: 供应商信息
+    ///   - model: 模型 ID（用于选中/保存）
+    ///   - displayName: 可选展示名；本地模型用 displayName，远程用 nil 则显示 model
     @ViewBuilder
-    private func modelRow(provider: ProviderInfo, model: String) -> some View {
+    private func modelRow(provider: ProviderInfo, model: String, displayName: String? = nil) -> some View {
         Button(action: {
             selectModel(providerId: provider.id, model: model)
         }) {
             HStack {
                 VStack(alignment: .leading) {
-                    Text(model)
+                    Text(displayName ?? model)
                         .font(.body)
                     if let stat = findDetailedStat(providerId: provider.id, modelName: model), stat.avgTTFT > 0 {
                         ModelLatencyProgressBar(

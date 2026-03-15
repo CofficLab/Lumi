@@ -115,6 +115,9 @@ protocol SuperLocalLLMProvider: SuperLLMProvider {
     /// 本地模型下载/缓存目录（用于设置页“打开下载目录”）
     func getCacheDirectoryURL() -> URL
 
+    /// 根据模型 ID 返回展示名（用于输入栏等）；默认返回 nil，使用 ID 展示
+    func displayName(forModelId modelId: String) -> String?
+
     /// 非流式发送（可选实现；默认通过 streamChat 消费流后返回最终消息）
     func sendMessage(
         messages: [ChatMessage],
@@ -130,6 +133,9 @@ protocol SuperLocalLLMProvider: SuperLLMProvider {
 extension SuperLocalLLMProvider {
     /// 默认：无模型加载
     func getLoadedModelId() async -> String? { nil }
+
+    /// 默认：不解析展示名，返回 nil
+    func displayName(forModelId modelId: String) -> String? { nil }
 
     /// 默认实现：消费 streamChat 流并返回最终消息
     func sendMessage(

@@ -222,11 +222,17 @@ extension ChatToolbarView {
         guard !model.isEmpty else {
             return "未选择模型"
         }
-        if let providerType = agentProvider.registry.providerType(forId: agentProvider.selectedProviderId) {
-            return "\(providerType.displayName) · \(model)"
-        } else {
+        guard let providerType = agentProvider.registry.providerType(forId: agentProvider.selectedProviderId) else {
             return model
         }
+        let modelLabel: String
+        if let localProvider = agentProvider.registry.createProvider(id: agentProvider.selectedProviderId) as? any SuperLocalLLMProvider,
+           let name = localProvider.displayName(forModelId: model) {
+            modelLabel = name
+        } else {
+            modelLabel = model
+        }
+        return "\(providerType.displayName) · \(modelLabel)"
     }
 
     /// 图片上传按钮视图
