@@ -188,9 +188,9 @@ struct LocalModelRow: View {
             return DesignTokens.Color.semantic.primary.opacity(0.08)
         }
         if isHovered {
-            return Color.blue.opacity(0.1)
+            return DesignTokens.Color.semantic.textSecondary.opacity(0.08)
         }
-        return Color.white.opacity(0.5)
+        return DesignTokens.Color.semantic.textSecondary.opacity(0.05)
     }
 
     private func capabilityTag(_ title: String, systemImage: String) -> some View {
