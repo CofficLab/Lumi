@@ -7,6 +7,9 @@ struct SettingView: View {
     @EnvironmentObject private var pluginProvider: PluginVM
     @EnvironmentObject var themeManager: MystiqueThemeManager
 
+    /// 导航分栏视图的列可见性状态
+    @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
+
     /// 默认显示的标签
     var defaultTab: SettingTab = .about
 
@@ -65,10 +68,10 @@ struct SettingView: View {
         guard let sel = selection else { return }
 
         switch sel {
-        case .core(let tab):
+        case let .core(tab):
             AppSettingsStore.shared.set(tab.rawValue, forKey: Self.selectedTabKey)
             AppSettingsStore.shared.removeObject(forKey: Self.selectedPluginKey)
-        case .plugin(let pluginId):
+        case let .plugin(pluginId):
             AppSettingsStore.shared.set(pluginId, forKey: Self.selectedPluginKey)
             AppSettingsStore.shared.removeObject(forKey: Self.selectedTabKey)
         }
@@ -92,7 +95,7 @@ struct SettingView: View {
     }
 
     var body: some View {
-        NavigationSplitView(columnVisibility: .constant(.all)) {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             // 侧边栏
             VStack(spacing: 0) {
                 // 应用信息头部
@@ -121,15 +124,14 @@ struct SettingView: View {
                     }
                 }
             }
-            .navigationSplitViewColumnWidth(min: 150, ideal: 200)
-            .toolbar(removing: .sidebarToggle)
+            .navigationSplitViewColumnWidth(min: 200, ideal: 200, max: 300)
             .ignoresSafeArea()
         } detail: {
             // 详情区域
             Group {
                 if let sel = selection {
                     switch sel {
-                    case .core(let tab):
+                    case let .core(tab):
                         switch tab {
                         case .general:
                             GeneralSettingView()
@@ -144,7 +146,7 @@ struct SettingView: View {
                         case .about:
                             AboutView()
                         }
-                    case .plugin(let id):
+                    case let .plugin(id):
                         if let item = pluginSettings.first(where: { $0.id == id }) {
                             item.view
                         } else {
@@ -157,7 +159,7 @@ struct SettingView: View {
                         .foregroundColor(.secondary)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .ignoresSafeArea(edges: .top)
         }
         .onAppear {
             // 加载上次选中的项
@@ -209,8 +211,6 @@ struct SettingView: View {
 
             Spacer().frame(height: 16)
         }
-        .frame(maxWidth: .infinity)
-        .ignoresSafeArea()
     }
 }
 

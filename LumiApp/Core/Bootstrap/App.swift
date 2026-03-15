@@ -71,7 +71,6 @@ struct CoreApp: App {
                 .ignoresSafeArea()
                 .inRootView()
         }
-        .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
         .defaultSize(width: 780, height: 600)
     }
