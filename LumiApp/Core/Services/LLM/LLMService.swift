@@ -141,23 +141,54 @@ class LLMService: SuperLog, @unchecked Sendable {
     ///   - NSError (code 400): 无效的 Base URL
     ///   - NSError (code 500): API 请求失败
     func sendMessage(messages: [ChatMessage], config: LLMConfig, tools: [AgentTool]? = nil) async throws -> ChatMessage {
-        do {
-            try config.validate()
-        } catch {
-            os_log(.error, "\(self.t)配置校验失败：\(error.localizedDescription)")
-            throw error
-        }
-
         // 记录开始时间，用于计算延迟
         let startTime = CFAbsoluteTimeGetCurrent()
 
-        // 从注册表获取供应商实例
+        // 从注册表获取供应商实例（先取 provider，本地供应商不校验 API Key）
         guard let provider = registry.createProvider(id: config.providerId) else {
             os_log(.error, "\(self.t)未找到供应商：\(config.providerId)")
             throw NSError(domain: "LLMService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Provider not found: \(config.providerId)"])
         }
-        
-        // 构建 API URL
+
+        // 仅远程供应商需要校验 API Key；本地供应商无需 API Key
+        let isLocal = (provider as? any SuperLocalLLMProvider) != nil
+        if !isLocal {
+            do {
+                try config.validate()
+            } catch {
+                os_log(.error, "\(self.t)配置校验失败：\(error.localizedDescription)")
+                throw error
+            }
+        }
+
+        // 本地供应商：走 sendMessage，不经过 HTTP
+        if let local = provider as? any SuperLocalLLMProvider {
+            let images = messages.last(where: { $0.role == .user }).map(\.images) ?? []
+            let msg = try await local.sendMessage(
+                messages: messages,
+                model: config.model,
+                tools: tools,
+                systemPrompt: nil,
+                images: images
+            )
+            let latency = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+            Task.detached(priority: .utility) {
+                LLMRequestLoggerCenter.shared.log(
+                    providerId: config.providerId,
+                    model: config.model,
+                    url: URL(string: "file:///local")!,
+                    method: "POST",
+                    statusCode: nil,
+                    durationMs: latency,
+                    requestBody: nil,
+                    responseBody: nil,
+                    error: nil
+                )
+            }
+            return msg
+        }
+
+        // 构建 API URL（远程供应商）
         let baseURLString = provider.baseURL
         
         guard let url = URL(string: baseURLString) else {
@@ -307,23 +338,55 @@ class LLMService: SuperLog, @unchecked Sendable {
         tools: [AgentTool]? = nil,
         onChunk: @Sendable @escaping (StreamChunk) async -> Void
     ) async throws -> ChatMessage {
-        do {
-            try config.validate()
-        } catch {
-            os_log(.error, "\(self.t)配置校验失败：\(error.localizedDescription)")
-            throw error
-        }
-
         // 记录开始时间
         let startTime = CFAbsoluteTimeGetCurrent()
 
-        // 从注册表获取供应商实例
+        // 从注册表获取供应商实例（先取 provider，本地供应商不校验 API Key）
         guard let provider = registry.createProvider(id: config.providerId) else {
             os_log(.error, "\(self.t)未找到供应商：\(config.providerId)")
             throw NSError(domain: "LLMService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Provider not found: \(config.providerId)"])
         }
-        
-        // 构建 API URL
+
+        // 仅远程供应商需要校验 API Key；本地供应商无需 API Key
+        let isLocalStream = (provider as? any SuperLocalLLMProvider) != nil
+        if !isLocalStream {
+            do {
+                try config.validate()
+            } catch {
+                os_log(.error, "\(self.t)配置校验失败：\(error.localizedDescription)")
+                throw error
+            }
+        }
+
+        // 本地供应商：走 streamChat，不经过 HTTP
+        if let local = provider as? any SuperLocalLLMProvider {
+            let images = messages.last(where: { $0.role == .user }).map(\.images) ?? []
+            let msg = try await local.streamChat(
+                messages: messages,
+                model: config.model,
+                tools: tools,
+                systemPrompt: nil,
+                images: images,
+                onChunk: onChunk
+            )
+            let latency = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+            Task.detached(priority: .utility) {
+                LLMRequestLoggerCenter.shared.log(
+                    providerId: config.providerId,
+                    model: config.model,
+                    url: URL(string: "file:///local")!,
+                    method: "local",
+                    statusCode: nil,
+                    durationMs: latency,
+                    requestBody: nil,
+                    responseBody: nil,
+                    error: nil
+                )
+            }
+            return msg
+        }
+
+        // 构建 API URL（远程供应商）
         let baseURLString = provider.baseURL
         
         guard let url = URL(string: baseURLString) else {
@@ -482,12 +545,6 @@ class LLMService: SuperLog, @unchecked Sendable {
                             // 累积内容 - 只累积 textDelta 的内容，跳过 thinkingDelta
                             if let content = chunk.content, chunk.eventType == .textDelta {
                                 await state.appendContent(content)
-                                if Self.verbose >= 2 {
-                                    let currentContentLength = await state.accumulatedContentLength
-                                    if currentContentLength < 200 {
-                                        os_log("\(self.t)📝 累积内容: \(content)")
-                                    }
-                                }
                             }
 
                             // 处理工具调用

@@ -65,12 +65,12 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
     private let repeatedToolWindowThreshold = 10
     private let createAndAssignTaskToolName = "create_and_assign_task"
 
-    /// 仅转发必要的流式事件，避免高频无用事件（如 thinking_delta）压垮主线程。
+    /// 仅转发必要的流式事件；thinkingDelta 需转发以便 ThinkingDeltaCaptureMiddleware 写入 runtimeStore，供落库时写入 thinkingContent。
     private nonisolated static func shouldForwardStreamEvent(_ eventType: StreamEventType) -> Bool {
         switch eventType {
-        case .ping, .contentBlockStart, .contentBlockStop, .messageDelta, .signatureDelta:
+        case .ping, .contentBlockStart, .contentBlockStop, .messageDelta, .signatureDelta, .thinkingDelta:
             return true
-        case .messageStart, .messageStop, .unknown, .contentBlockDelta, .thinkingDelta, .inputJsonDelta, .textDelta:
+        case .messageStart, .messageStop, .unknown, .contentBlockDelta, .inputJsonDelta, .textDelta:
             return false
         }
     }

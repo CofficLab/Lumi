@@ -1,5 +1,7 @@
 import SwiftUI
+import AppKit
 import MagicKit
+import Darwin
 
 /// 供应商设置视图 - 配置 LLM 供应商的 API 密钥和模型选择
 struct ProviderSettingsView: View, SuperLog {
@@ -18,6 +20,21 @@ struct ProviderSettingsView: View, SuperLog {
     
     /// 选中的模型
     @State private var selectedModel: String = ""
+
+    /// 当前选中的本地供应商实例（用于展示本地模型列表、下载、加载）
+    @State private var localProvider: (any SuperLocalLLMProvider)?
+    /// 本地可用模型列表
+    @State private var localAvailableModels: [LocalModelInfo] = []
+    /// 已缓存模型 ID
+    @State private var localCachedIds: Set<String> = []
+    /// 本地模型加载中
+    @State private var localModelsLoading = false
+    /// 下载/加载错误信息
+    @State private var localActionError: String?
+    /// 当前正在下载的模型 ID（用于显示该行进度）
+    @State private var downloadingModelId: String?
+    /// 轮询得到的下载状态（用于 UI 实时更新）
+    @State private var localDownloadStatus: LocalDownloadStatus = .idle
 
     // MARK: - Environment
 
@@ -50,11 +67,17 @@ struct ProviderSettingsView: View, SuperLog {
                 // 供应商信息卡片
                 providerInfoCard
 
-                // API Key 配置
-                apiKeySection
+                // API Key 配置（仅远程供应商需要，本地模型无需 API Key）
+                if localProvider == nil {
+                    apiKeySection
+                }
 
-                // 模型选择
-                modelSection
+                // 模型：本地供应商只显示一个区块（列表+下载/加载），远程只显示可用模型列表
+                if localProvider != nil {
+                    localModelSection
+                } else {
+                    modelSection
+                }
 
                 Spacer()
             }
@@ -63,6 +86,7 @@ struct ProviderSettingsView: View, SuperLog {
         .onAppear(perform: onAppear)
         .onChange(of: selectedProviderId) { _, _ in
             loadSettings()
+            updateLocalProvider()
         }
         .onChange(of: apiKey) { _, _ in
             saveApiKey()
@@ -185,6 +209,148 @@ extension ProviderSettingsView {
             }
         }
     }
+
+    /// 本地模型区域 - 选中本地供应商时作为唯一的模型区块：列表、已缓存、下载、加载
+    @ViewBuilder
+    private var localModelSection: some View {
+        if localProvider != nil {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                HStack {
+                    Text("模型")
+                        .font(DesignTokens.Typography.callout)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    Spacer()
+                    Button("打开下载目录") {
+                        guard let local = localProvider else { return }
+                        NSWorkspace.shared.open(local.getCacheDirectoryURL())
+                    }
+                    .buttonStyle(.borderless)
+                }
+
+                // 本机信息：便于用户对比模型所需配置
+                localMachineInfoBlock
+
+                if localActionError != nil {
+                    Text(localActionError!)
+                        .font(DesignTokens.Typography.caption1)
+                        .foregroundColor(DesignTokens.Color.semantic.error)
+                }
+
+                if localModelsLoading {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                } else {
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                        ForEach(localAvailableModels) { model in
+                            LocalModelRow(
+                                model: model,
+                                isCached: localCachedIds.contains(model.id),
+                                isSelected: selectedModel == model.id,
+                                isDownloading: downloadingModelId == model.id,
+                                downloadStatus: downloadingModelId == model.id ? localDownloadStatus : nil,
+                                isDownloadDisabled: downloadingModelId != nil,
+                                onSelect: {
+                                    selectedModel = model.id
+                                    saveModel()
+                                },
+                                onDownload: {
+                                    Task { await downloadLocalModel(id: model.id) }
+                                },
+                                onLoad: {
+                                    Task { await loadLocalModel(id: model.id) }
+                                },
+                                onUnload: {
+                                    Task { await unloadLocalModel() }
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+            .task(id: selectedProviderId) {
+                await refreshLocalModels()
+            }
+            .task(id: localProvider != nil ? "poll" : "nop") {
+                guard localProvider != nil else { return }
+                while !Task.isCancelled {
+                    localDownloadStatus = localProvider?.getDownloadStatus() ?? .idle
+                    try? await Task.sleep(for: .milliseconds(350))
+                }
+            }
+        }
+    }
+
+    /// 本机信息区块：芯片、电脑内存、磁盘、系统版本，单行紧凑
+    private var localMachineInfoBlock: some View {
+        let chip = Self.localChipName()
+        let ramGB = Int(ProcessInfo.processInfo.physicalMemory / (1024 * 1024 * 1024))
+        let diskGB = Self.localDiskTotalGB()
+        let osVer = ProcessInfo.processInfo.operatingSystemVersion
+        let osString = "macOS \(osVer.majorVersion).\(osVer.minorVersion).\(osVer.patchVersion)"
+        let style = DesignTokens.Typography.caption2
+        let color = DesignTokens.Color.semantic.textSecondary
+        return HStack(spacing: 6) {
+            Label(chip, systemImage: "cpu")
+                .font(style)
+                .foregroundColor(color)
+            Text("·").font(style).foregroundColor(color)
+            Label("内存 \(ramGB) GB", systemImage: "memorychip")
+                .font(style)
+                .foregroundColor(color)
+            Text("·").font(style).foregroundColor(color)
+            Label("磁盘 \(diskGB) GB", systemImage: "internaldrive")
+                .font(style)
+                .foregroundColor(color)
+            Text("·").font(style).foregroundColor(color)
+            Label(osString, systemImage: "desktopcomputer")
+                .font(style)
+                .foregroundColor(color)
+        }
+        .padding(.horizontal, DesignTokens.Spacing.sm)
+        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.08))
+        )
+    }
+
+    /// 本机芯片名称（sysctl machdep.cpu.brand_string；Apple Silicon 若为空则显示 "Apple Silicon"）
+    private static func localChipName() -> String {
+        var size: Int = 0
+        sysctlbyname("machdep.cpu.brand_string", nil, &size, nil, 0)
+        guard size > 0 else {
+            #if arch(arm64)
+            return "Apple Silicon"
+            #else
+            return "Intel"
+            #endif
+        }
+        var model = [CChar](repeating: 0, count: size)
+        guard sysctlbyname("machdep.cpu.brand_string", &model, &size, nil, 0) == 0 else {
+            #if arch(arm64)
+            return "Apple Silicon"
+            #else
+            return "Intel"
+            #endif
+        }
+        let name = String(cString: model).trimmingCharacters(in: .whitespacesAndNewlines)
+        if name.isEmpty || name == "Apple processor" {
+            #if arch(arm64)
+            return "Apple Silicon"
+            #else
+            return "Intel"
+            #endif
+        }
+        return name
+    }
+
+    /// 本机系统盘总容量（GB，按十进制 1 GB = 10⁹ 字节，与厂商/Finder 标称一致）
+    private static func localDiskTotalGB() -> Int {
+        guard let attrs = try? FileManager.default.attributesOfFileSystem(forPath: "/"),
+              let total = attrs[.systemSize] as? Int64 else { return 0 }
+        return Int(total / 1_000_000_000)
+    }
 }
 
 // MARK: - Action
@@ -210,6 +376,59 @@ extension ProviderSettingsView {
         guard let providerType = selectedProviderType else { return }
         AppSettingsStore.shared.set(selectedModel, forKey: providerType.modelStorageKey)
     }
+
+    /// 根据当前选中的供应商 ID 更新本地供应商引用
+    private func updateLocalProvider() {
+        localProvider = registry.createProvider(id: selectedProviderId) as? any SuperLocalLLMProvider
+        localActionError = nil
+    }
+
+    /// 刷新本地模型列表与已缓存集合
+    private func refreshLocalModels() async {
+        guard let local = localProvider else {
+            localAvailableModels = []
+            localCachedIds = []
+            return
+        }
+        localModelsLoading = true
+        localActionError = nil
+        defer { localModelsLoading = false }
+        do {
+            localAvailableModels = await local.getAvailableModels()
+            localCachedIds = await local.getCachedModels()
+        } catch {
+            localActionError = error.localizedDescription
+        }
+    }
+
+    private func downloadLocalModel(id: String) async {
+        guard let local = localProvider else { return }
+        localActionError = nil
+        downloadingModelId = id
+        defer { downloadingModelId = nil }
+        do {
+            try await local.downloadModel(id: id)
+            localCachedIds = await local.getCachedModels()
+        } catch {
+            localActionError = error.localizedDescription
+        }
+    }
+
+    private func loadLocalModel(id: String) async {
+        guard let local = localProvider else { return }
+        localActionError = nil
+        do {
+            try await local.loadModel(id: id)
+        } catch {
+            localActionError = error.localizedDescription
+        }
+    }
+
+    private func unloadLocalModel() async {
+        guard let local = localProvider else { return }
+        localActionError = nil
+        await local.unloadModel()
+    }
 }
 
 // MARK: - Event Handler
@@ -218,6 +437,7 @@ extension ProviderSettingsView {
     /// 视图出现时的事件处理 - 加载供应商设置
     func onAppear() {
         loadSettings()
+        updateLocalProvider()
     }
 }
 
@@ -301,6 +521,126 @@ private struct ModelRow: View {
                 isHovered = hovering
             }
         }
+    }
+}
+
+// MARK: - Local Model Row
+
+/// 本地模型行：显示名称、大小、已缓存、下载进度/加载按钮
+private struct LocalModelRow: View {
+    let model: LocalModelInfo
+    let isCached: Bool
+    let isSelected: Bool
+    let isDownloading: Bool
+    let downloadStatus: LocalDownloadStatus?
+    let isDownloadDisabled: Bool
+    let onSelect: () -> Void
+    let onDownload: () -> Void
+    let onLoad: () -> Void
+    let onUnload: () -> Void
+
+    var body: some View {
+        HStack(spacing: DesignTokens.Spacing.sm) {
+            // 状态图标
+            Group {
+                if isDownloading {
+                    ProgressView()
+                        .controlSize(.small)
+                } else if isCached {
+                    Image(systemName: "arrow.down.circle.fill")
+                        .foregroundStyle(DesignTokens.Color.semantic.primary.opacity(0.8))
+                } else {
+                    Image(systemName: "circle")
+                        .foregroundStyle(DesignTokens.Color.semantic.textSecondary)
+                }
+            }
+            .frame(width: 20, height: 20)
+
+            Button(action: onSelect) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(model.displayName)
+                        .font(DesignTokens.Typography.body)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    // 体积、内存要求、下载状态
+                    HStack(spacing: 6) {
+                        Text("体积 \(model.size)")
+                            .font(DesignTokens.Typography.caption2)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        Text("·")
+                            .font(DesignTokens.Typography.caption2)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        Text("电脑内存 ≥ \(model.minRAM) GB")
+                            .font(DesignTokens.Typography.caption2)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        if isDownloading, case .downloading(let fraction) = downloadStatus {
+                            Text("· \(Int(fraction * 100))%")
+                                .font(DesignTokens.Typography.caption2)
+                                .foregroundColor(DesignTokens.Color.semantic.primary)
+                                .monospacedDigit()
+                        } else if isCached {
+                            Text("· 已缓存")
+                                .font(DesignTokens.Typography.caption2)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        }
+                    }
+                    if !model.description.isEmpty {
+                        Text(model.description)
+                            .font(DesignTokens.Typography.caption2)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .lineLimit(2)
+                    }
+                    // 能力标签：工具调用、视觉
+                    if model.supportsTools || model.supportsVision {
+                        HStack(spacing: 6) {
+                            if model.supportsTools {
+                                capabilityTag("工具调用")
+                            }
+                            if model.supportsVision {
+                                capabilityTag("视觉")
+                            }
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+
+            if isDownloading {
+                ProgressView(value: downloadProgressFraction)
+                    .frame(width: 60)
+            } else if !isCached {
+                Button("下载", action: onDownload)
+                    .font(DesignTokens.Typography.caption1)
+                    .disabled(isDownloadDisabled)
+            } else {
+                Button("加载", action: onLoad)
+                    .font(DesignTokens.Typography.caption1)
+                Button("卸载", action: onUnload)
+                    .font(DesignTokens.Typography.caption1)
+            }
+        }
+        .padding(DesignTokens.Spacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                .fill(isSelected ? DesignTokens.Color.semantic.primary.opacity(0.08) : Color.white.opacity(0.05))
+        )
+    }
+
+    private var downloadProgressFraction: Double {
+        guard case .downloading(let fraction) = downloadStatus else { return 0 }
+        return fraction
+    }
+
+    private func capabilityTag(_ title: String) -> some View {
+        Text(title)
+            .font(DesignTokens.Typography.caption2)
+            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.15))
+            )
     }
 }
 

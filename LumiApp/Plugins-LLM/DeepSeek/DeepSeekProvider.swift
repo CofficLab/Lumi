@@ -57,7 +57,18 @@ final class DeepSeekProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
         systemPrompt: String
     ) throws -> [String: Any] {
         // DeepSeek 兼容 OpenAI 格式
-        let finalMessages = messages.map { transformMessage($0) }
+        var finalMessages = messages.map { transformMessage($0) }
+
+        // deepseek-reasoner（思考模式）要求每条 assistant 消息都带 reasoning_content，否则 400
+        if model == "deepseek-reasoner" {
+            for (i, msg) in messages.enumerated() where msg.role == .assistant {
+                var dict = finalMessages[i] as? [String: Any] ?? [:]
+                if dict["reasoning_content"] == nil {
+                    dict["reasoning_content"] = msg.thinkingContent ?? ""
+                }
+                finalMessages[i] = dict
+            }
+        }
 
         var body: [String: Any] = [
             "model": model,
@@ -129,11 +140,93 @@ final class DeepSeekProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     }
 
     /// 解析流式响应数据块
-    /// DeepSeek 兼容 OpenAI 流式格式
+    /// DeepSeek reasoner 在 delta 中返回 reasoning_content（思考内容），需识别为 thinkingDelta；
+    /// 其余与 OpenAI 流式格式兼容（content、tool_calls、[DONE]）。
     func parseStreamChunk(data: Data) throws -> StreamChunk? {
-        // 复用 OpenAI 的解析逻辑
-        let openAIProvider = OpenAIProvider()
-        return try openAIProvider.parseStreamChunk(data: data)
+        guard let text = String(data: data, encoding: .utf8) else {
+            return nil
+        }
+
+        var eventData: String?
+        let lines = text.components(separatedBy: "\n")
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("data: ") {
+                eventData = String(trimmed.dropFirst(6))
+            }
+        }
+
+        guard let data = eventData else {
+            return nil
+        }
+
+        if data == "[DONE]" {
+            return StreamChunk(isDone: true)
+        }
+
+        guard let jsonData = data.data(using: .utf8) else {
+            return nil
+        }
+
+        do {
+            let json = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any]
+
+            if let error = json?["error"] as? [String: Any],
+               let errorMessage = error["message"] as? String {
+                return StreamChunk(error: errorMessage)
+            }
+
+            guard let choices = json?["choices"] as? [[String: Any]],
+                  let firstChoice = choices.first,
+                  let delta = firstChoice["delta"] as? [String: Any] else {
+                return nil
+            }
+
+            // deepseek-reasoner：先处理 reasoning_content，映射为 thinkingDelta
+            if let reasoningContent = delta["reasoning_content"] as? String {
+                return StreamChunk(content: reasoningContent, eventType: .thinkingDelta)
+            }
+
+            // 与 OpenAI 一致：文本内容
+            if let content = delta["content"] as? String {
+                return StreamChunk(content: content, eventType: .textDelta)
+            }
+
+            // 与 OpenAI 一致：工具调用
+            if let toolCalls = delta["tool_calls"] as? [[String: Any]] {
+                var resultToolCalls: [ToolCall] = []
+                var partialJson: String?
+
+                for tc in toolCalls {
+                    guard let function = tc["function"] as? [String: Any] else { continue }
+                    let id = tc["id"] as? String
+                    let name = function["name"] as? String
+                    let arguments = function["arguments"] as? String
+                    if let toolId = id, let toolName = name {
+                        resultToolCalls.append(ToolCall(
+                            id: toolId,
+                            name: toolName,
+                            arguments: arguments ?? "{}"
+                        ))
+                    }
+                    if let args = arguments { partialJson = args }
+                }
+                if !resultToolCalls.isEmpty {
+                    return StreamChunk(
+                        toolCalls: resultToolCalls,
+                        partialJson: partialJson,
+                        eventType: .contentBlockStart
+                    )
+                }
+                if let partial = partialJson {
+                    return StreamChunk(partialJson: partial, eventType: .inputJsonDelta)
+                }
+            }
+
+            return nil
+        } catch {
+            return nil
+        }
     }
 
     static var logEmoji: String { "🔵" }

@@ -96,20 +96,25 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
             textView.delegate = nil
             textView.string = text
             textView.delegate = context.coordinator
-            
-            // 文本变化后更新高度
-            updateHeight(for: textView)
         }
 
-        // updateNSView 本身运行在主线程，这里直接设置可避免额外调度开销
         let targetPosition = min(cursorPosition, text.count)
-        if textView.selectedRange().location != targetPosition || textChanged {
-            textView.setSelectedRange(NSRange(location: targetPosition, length: 0))
-        }
+        let needsSelectionUpdate = textView.selectedRange().location != targetPosition || textChanged
+        let needsFocus = isFocused && nsView.window.map { $0.firstResponder != textView } ?? false
 
-        if isFocused {
-            if let window = nsView.window, window.firstResponder != textView {
-                window.makeFirstResponder(textView)
+        // 将高度/选区/焦点的更新推迟到当前 view 更新结束后，避免 “Modifying state during view update”
+        if textChanged || needsSelectionUpdate || needsFocus {
+            let position = targetPosition
+            DispatchQueue.main.async {
+                if textChanged, let tv = nsView.documentView as? EditorTextView {
+                    updateHeight(for: tv)
+                }
+                if needsSelectionUpdate, let tv = nsView.documentView as? EditorTextView {
+                    tv.setSelectedRange(NSRange(location: position, length: 0))
+                }
+                if needsFocus, let window = nsView.window, window.firstResponder != textView {
+                    window.makeFirstResponder(textView)
+                }
             }
         }
     }

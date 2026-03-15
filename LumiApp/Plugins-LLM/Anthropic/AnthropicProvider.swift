@@ -415,9 +415,9 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
             return nil
         }
 
-        // 解析 SSE 格式
+        // 解析 SSE 格式（SSE 规范允许多行 data:，需拼接后解析）
         var eventType: String?
-        var eventData: String?
+        var eventDataLines: [String] = []
 
         let lines = text.components(separatedBy: "\n")
         for line in lines {
@@ -426,11 +426,12 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
                 eventType = afterPrefix.trimmingCharacters(in: .whitespaces)
             } else if line.hasPrefix("data:") {
                 let afterPrefix = String(line.dropFirst(5))
-                eventData = afterPrefix.trimmingCharacters(in: .whitespaces)
+                eventDataLines.append(afterPrefix.trimmingCharacters(in: .whitespaces))
             }
         }
 
-        guard let data = eventData else {
+        let data = eventDataLines.isEmpty ? nil : eventDataLines.joined(separator: "\n")
+        guard let data = data, !data.isEmpty else {
             return nil
         }
 

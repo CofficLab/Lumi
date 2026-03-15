@@ -1,6 +1,7 @@
 import Foundation
 
 /// 处理 thinking delta：在允许捕获时累积 thinking 文本，并做 UI 增量刷新，然后短路事件下游。
+/// 注意：累积长度超过 env.maxThinkingTextLength 时，超出部分会被截断且不会写入数据库。
 @MainActor
 final class ThinkingDeltaCaptureMiddleware: ConversationTurnMiddleware {
     let id: String = "core.thinkingDeltaCapture"
