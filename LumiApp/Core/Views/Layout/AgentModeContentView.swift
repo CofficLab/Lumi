@@ -1,3 +1,4 @@
+import AppKit
 import OSLog
 import SwiftUI
 
@@ -49,6 +50,7 @@ struct AgentModeContentView: View {
             rightAndDetailColumns
         }
         .id("agentModeHSplitView")
+        .background(SplitViewAutosaveConfigurator(autosaveName: "AgentMode_MainSplit"))
     }
 
     // MARK: - 底部状态栏
@@ -107,6 +109,7 @@ struct AgentModeContentView: View {
             .id("agentModeDetailRightHSplitView")
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .ignoresSafeArea()
+            .background(SplitViewAutosaveConfigurator(autosaveName: "AgentMode_DetailRightSplit"))
         }
     }
 
@@ -253,4 +256,36 @@ struct AgentModeContentView: View {
 #Preview("Agent Mode") {
     AgentModeContentView(sidebarVisibility: .constant(true))
         .inRootView()
+}
+
+private struct SplitViewAutosaveConfigurator: NSViewRepresentable {
+    let autosaveName: String
+
+    func makeNSView(context: Context) -> NSView {
+        NSView(frame: .zero)
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async {
+            guard let splitView = nearestSplitView(from: nsView) else {
+                return
+            }
+
+            if splitView.autosaveName != autosaveName {
+                splitView.identifier = NSUserInterfaceItemIdentifier(autosaveName)
+                splitView.autosaveName = autosaveName
+            }
+        }
+    }
+
+    private func nearestSplitView(from view: NSView) -> NSSplitView? {
+        var current: NSView? = view
+        while let node = current {
+            if let splitView = node as? NSSplitView {
+                return splitView
+            }
+            current = node.superview
+        }
+        return nil
+    }
 }
