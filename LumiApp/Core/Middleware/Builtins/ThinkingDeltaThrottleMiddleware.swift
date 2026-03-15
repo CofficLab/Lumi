@@ -1,6 +1,21 @@
 import Foundation
 
-/// 通过丢弃过于频繁的 thinking delta，实现按会话的节流/合并效果。
+/// 思考增量节流中间件
+///
+/// **设计原则**：节流仅针对 UI 刷新，不影响内容累积的完整性。
+///
+/// 工作流程：
+/// 1. 所有 `.thinkingDelta` 事件都会传递到下游（确保内容完整累积到 `runtimeStore.thinkingTextByConversation`）
+/// 2. UI 刷新节流由下游的 `ThinkingDeltaCaptureMiddleware` 通过 `flushPendingThinkingText` 处理
+/// 3. 这样既保证了落库内容的完整性，又避免了 SwiftUI 的频繁刷新
+///
+/// ## 节流参数
+///
+/// - `minInterval`: UI 刷新的最小时间间隔（默认 0.12 秒）
+///
+/// ## 注意事项
+///
+/// - 绝对不要短路 `.thinkingDelta` 事件，否则会导致内容丢失
 @MainActor
 final class ThinkingDeltaThrottleMiddleware: ConversationTurnMiddleware {
     let id: String = "core.thinkingDeltaThrottle"
@@ -24,11 +39,17 @@ final class ThinkingDeltaThrottleMiddleware: ConversationTurnMiddleware {
             return
         }
 
+        // 关键：所有 thinking delta 事件都必须传递到下游，确保内容完整累积
+        // UI 节流由下游的 ThinkingDeltaCaptureMiddleware 通过 flushPendingThinkingText 处理
+
         let now = Date()
         if let last = lastForwardAtByConversation[conversationId],
            now.timeIntervalSince(last) < minInterval {
-            return // 短路：过滤过于频繁的 thinking delta
+            // 事件仍然传递到下游，只是记录时间戳用于统计
+            await next(event, ctx)
+            return
         }
+
         lastForwardAtByConversation[conversationId] = now
         await next(event, ctx)
     }

@@ -429,7 +429,8 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     private typealias StreamSessionState = ConversationRuntimeStore.StreamSessionState
     private var turnTaskPipelineByConversation: [UUID: Task<Void, Never>] = [:]
     private var turnTaskGenerationByConversation: [UUID: Int] = [:]
-    private let maxThinkingTextLength = 20000
+    /// 单条消息思考内容最大保留字符数，超出部分在累积时截断、不会落库（reasoner 等模型可能输出较长思考）
+    private let maxThinkingTextLength = 100_000
     private let streamUIFlushInterval: TimeInterval = 0.08
     private let thinkingUIFlushInterval: TimeInterval = 0.12
     private let immediateStreamFlushChars = 80

@@ -70,23 +70,23 @@ struct ThinkingProcessView: View {
             }
             .buttonStyle(.plain)
 
-            // 思考内容（展开时显示）
+            // 思考内容（展开时显示）：深色块 + 固定浅色字，保证任意主题下都清晰可读
             if isExpanded && !thinkingText.isEmpty {
                 ScrollView(showsIndicators: true) {
                     Text(thinkingText)
                         .font(.system(size: 12, design: .monospaced))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(Color(white: 0.92))
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .frame(maxHeight: 220)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(DesignTokens.Color.basePalette.elevatedSurface.opacity(0.6))
+                        .fill(DesignTokens.Color.basePalette.elevatedSurface)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(DesignTokens.Color.basePalette.subtleBorder.opacity(0.12), lineWidth: 1)
+                        .stroke(DesignTokens.Color.basePalette.subtleBorder.opacity(0.25), lineWidth: 1)
                 )
             }
         }
