@@ -5,6 +5,7 @@ import SwiftUI
 struct SettingView: View {
     /// 插件 VM
     @EnvironmentObject private var pluginProvider: PluginVM
+    @EnvironmentObject var themeManager: MystiqueThemeManager
 
     /// 默认显示的标签
     var defaultTab: SettingTab = .about
@@ -91,7 +92,7 @@ struct SettingView: View {
     }
 
     var body: some View {
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: .constant(.all)) {
             // 侧边栏
             VStack(spacing: 0) {
                 // 应用信息头部
@@ -121,6 +122,8 @@ struct SettingView: View {
                 }
             }
             .navigationSplitViewColumnWidth(min: 150, ideal: 200)
+            .toolbar(removing: .sidebarToggle)
+            .ignoresSafeArea()
         } detail: {
             // 详情区域
             Group {
@@ -168,6 +171,13 @@ struct SettingView: View {
             // 保存选中的项
             saveSelection(newValue)
         }
+        .ignoresSafeArea()
+        .background {
+            GeometryReader { proxy in
+                themeManager.currentVariant.theme.makeGlobalBackground(proxy: proxy)
+            }
+            .ignoresSafeArea()
+        }
     }
 
     // MARK: - View
@@ -200,6 +210,7 @@ struct SettingView: View {
             Spacer().frame(height: 16)
         }
         .frame(maxWidth: .infinity)
+        .ignoresSafeArea()
     }
 }
 

@@ -68,10 +68,11 @@ struct CoreApp: App {
         // 使用紧凑型工具栏样式，节省空间。
         Window("设置", id: SettingsWindowID.settings) {
             SettingView()
+                .ignoresSafeArea()
                 .inRootView()
         }
         .windowStyle(.hiddenTitleBar)
-        .windowToolbarStyle(.unifiedCompact)
+        .windowToolbarStyle(.unified(showsTitle: false))
         .defaultSize(width: 780, height: 600)
     }
 
