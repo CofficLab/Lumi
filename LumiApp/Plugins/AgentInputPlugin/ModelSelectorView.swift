@@ -23,6 +23,9 @@ struct ModelSelectorView: View, SuperLog {
     /// 当前选中的 Tab：0 本地，1 远程
     @State private var selectedTab = 0
 
+    /// 本地供应商的模型详情（按 providerId -> [LocalModelInfo]），用于按系列展示
+    @State private var localModelInfosByProvider: [String: [LocalModelInfo]] = [:]
+
     private var localProviders: [ProviderInfo] {
         agentProvider.registry.allProviders().filter(\.isLocal)
     }
@@ -75,9 +78,14 @@ struct ModelSelectorView: View, SuperLog {
         .task {
             loadLatencyStats()
         }
+        .task(id: selectedTab) {
+            if selectedTab == 0 {
+                await loadLocalModelInfos()
+            }
+        }
     }
 
-    /// 供应商与模型列表（共用结构）
+    /// 供应商与模型列表（共用结构）；本地供应商有缓存时按系列分组展示
     @ViewBuilder
     private func providerList(providers: [ProviderInfo], emptyMessage: String) -> some View {
         if providers.isEmpty {
@@ -88,8 +96,20 @@ struct ModelSelectorView: View, SuperLog {
             List {
                 ForEach(providers) { provider in
                     Section(header: sectionHeader(for: provider)) {
-                        ForEach(provider.availableModels, id: \.self) { model in
-                            modelRow(provider: provider, model: model)
+                        if provider.isLocal, let infos = localModelInfosByProvider[provider.id], !infos.isEmpty {
+                            let fallbackSeries = "其他"
+                            let grouped = Dictionary(grouping: infos) { $0.series ?? fallbackSeries }
+                            ForEach(grouped.keys.sorted(), id: \.self) { seriesName in
+                                Section(header: Text(seriesName).font(.subheadline).foregroundColor(.secondary)) {
+                                    ForEach(grouped[seriesName] ?? [], id: \.id) { info in
+                                        modelRow(provider: provider, model: info.id)
+                                    }
+                                }
+                            }
+                        } else {
+                            ForEach(provider.availableModels, id: \.self) { model in
+                                modelRow(provider: provider, model: model)
+                            }
                         }
                     }
                 }
@@ -210,6 +230,19 @@ extension ModelSelectorView {
         if Self.verbose {
             os_log("\(Self.t)📊 加载到 \(detailedStats.count) 个模型的性能统计")
         }
+    }
+
+    /// 加载本地供应商的模型详情（含系列），用于按系列展示
+    private func loadLocalModelInfos() async {
+        let registry = agentProvider.registry
+        let localIds = registry.allProviders().filter(\.isLocal).map(\.id)
+        var result: [String: [LocalModelInfo]] = [:]
+        for id in localIds {
+            guard let provider = registry.createProvider(id: id) as? any SuperLocalLLMProvider else { continue }
+            let infos = await provider.getAvailableModels()
+            result[id] = infos
+        }
+        localModelInfosByProvider = result
     }
 
     /// 查找指定供应商和模型的详细性能统计

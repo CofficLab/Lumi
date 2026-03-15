@@ -58,13 +58,11 @@ struct ProviderSettingsView: View, SuperLog {
         registry.providerType(forId: selectedProviderId)
     }
 
-    /// 本地模型按系列分组（系列顺序：Qwen、Mistral、Llama、其他）
+    /// 本地模型按系列分组，顺序由协议数据决定（按系列名排序，无系列归为「其他」）
     private var localModelsBySeries: [LocalModelsSection] {
-        let order = ["Qwen 系列", "Mistral 系列", "Llama 系列"]
-        let grouped = Dictionary(grouping: localAvailableModels) { $0.series ?? "其他" }
-        let ordered = order.filter { grouped[$0] != nil }
-        let others = grouped.keys.filter { !order.contains($0) }.sorted()
-        return (ordered + others).map { LocalModelsSection(seriesName: $0, models: grouped[$0] ?? []) }
+        let fallbackSeries = "其他"
+        let grouped = Dictionary(grouping: localAvailableModels) { $0.series ?? fallbackSeries }
+        return grouped.keys.sorted().map { LocalModelsSection(seriesName: $0, models: grouped[$0] ?? []) }
     }
 
     // MARK: - Body

@@ -21,6 +21,14 @@ final class PersistAndAppendMiddleware: ConversationTurnMiddleware {
     ) async {
         switch event {
         case let .responseReceived(message, conversationId):
+            // 若上一条是「正在加载模型」系统消息，则更新为「模型已就绪」（非流式路径下没有 streamStarted）
+            let list = ctx.actions.messages()
+            if let idx = list.lastIndex(where: { $0.content == ChatMessage.loadingLocalModelSystemContentKey }) {
+                var updated = list[idx]
+                updated.content = ChatMessage.loadingLocalModelDoneSystemContentKey
+                ctx.actions.updateMessage(updated, idx)
+                await ctx.actions.saveMessage(updated, conversationId)
+            }
             if ctx.env.selectedConversationId() == conversationId {
                 ctx.actions.appendMessage(message)
             }

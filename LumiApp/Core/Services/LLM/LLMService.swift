@@ -121,6 +121,55 @@ class LLMService: SuperLog, @unchecked Sendable {
         return events.isEmpty ? [rawData] : events
     }
 
+    /// 判断当前配置是否为本地供应商且模型未就绪（将触发加载或等待）。
+    /// 用于在发送前展示「正在加载模型」等系统提示。
+    func needsLocalModelLoad(config: LLMConfig) async -> Bool {
+        guard let provider = registry.createProvider(id: config.providerId) as? any SuperLocalLLMProvider else {
+            return false
+        }
+        let state = await provider.getModelState()
+        return state != .ready
+    }
+
+    /// 确保本地模型已就绪：若为 .loading/.generating 则轮询等待，若为 .idle/.error 则尝试加载，超时或失败则抛出。
+    private func ensureLocalModelReady(
+        local: any SuperLocalLLMProvider,
+        modelId: String,
+        timeoutSeconds: Double = 300,
+        pollIntervalSeconds: Double = 1
+    ) async throws {
+        var state = await local.getModelState()
+        if state == .ready { return }
+
+        if state == .loading || state == .generating {
+            let deadline = CFAbsoluteTimeGetCurrent() + timeoutSeconds
+            while CFAbsoluteTimeGetCurrent() < deadline {
+                try Task.checkCancellation()
+                state = await local.getModelState()
+                if state == .ready { return }
+                if case .error = state { break }
+                try await Task.sleep(nanoseconds: UInt64(pollIntervalSeconds * 1_000_000_000))
+            }
+            if state != .ready {
+                throw NSError(domain: "LLMService", code: 500, userInfo: [NSLocalizedDescriptionKey: "加载超时，请稍后重试或到设置中查看"])
+            }
+            return
+        }
+
+        do {
+            try await local.loadModel(id: modelId)
+        } catch {
+            throw NSError(domain: "LLMService", code: 500, userInfo: [NSLocalizedDescriptionKey: error.localizedDescription])
+        }
+
+        state = await local.getModelState()
+        if state != .ready {
+            let msg: String
+            if case .error(let s) = state { msg = s } else { msg = "模型未就绪" }
+            throw NSError(domain: "LLMService", code: 500, userInfo: [NSLocalizedDescriptionKey: msg])
+        }
+    }
+
     // MARK: - 发送消息
 
     /// 发送消息到指定的 LLM 供应商
@@ -163,6 +212,7 @@ class LLMService: SuperLog, @unchecked Sendable {
 
         // 本地供应商：走 sendMessage，不经过 HTTP
         if let local = provider as? any SuperLocalLLMProvider {
+            try await ensureLocalModelReady(local: local, modelId: config.model)
             let images = messages.last(where: { $0.role == .user }).map(\.images) ?? []
             let msg = try await local.sendMessage(
                 messages: messages,
@@ -360,6 +410,7 @@ class LLMService: SuperLog, @unchecked Sendable {
 
         // 本地供应商：走 streamChat，不经过 HTTP
         if let local = provider as? any SuperLocalLLMProvider {
+            try await ensureLocalModelReady(local: local, modelId: config.model)
             let images = messages.last(where: { $0.role == .user }).map(\.images) ?? []
             let msg = try await local.streamChat(
                 messages: messages,

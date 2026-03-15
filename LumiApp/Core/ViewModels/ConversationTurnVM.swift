@@ -129,6 +129,15 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
             effectiveMessages.append(ChatMessage.maxDepthFinalStepReminderMessage())
         }
 
+        if await llmService.needsLocalModelLoad(config: config) {
+            let loadingMessage = ChatMessage.loadingLocalModelSystemMessage(
+                languagePreference: languagePreference,
+                providerId: config.providerId,
+                modelName: config.model
+            )
+            eventContinuation?.yield(.responseReceived(loadingMessage, conversationId: conversationId))
+        }
+
         do {
             let responseMsg: ChatMessage
 
