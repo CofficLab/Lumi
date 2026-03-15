@@ -59,6 +59,14 @@ final class BackgroundAgentTaskStore: @unchecked Sendable {
         return (try? context.fetch(descriptor)) ?? []
     }
 
+    func fetchById(_ id: UUID) -> BackgroundAgentTask? {
+        let context = ModelContext(container)
+        let descriptor = FetchDescriptor<BackgroundAgentTask>(
+            predicate: #Predicate { $0.id == id }
+        )
+        return (try? context.fetch(descriptor).first) ?? nil
+    }
+
     private func updateTask(
         id: UUID,
         mutate: (BackgroundAgentTask) -> Void

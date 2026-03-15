@@ -41,7 +41,11 @@ private struct BackgroundAgentTaskToolFactory: AgentToolFactory {
     let order: Int = 0
 
     func makeTools(env: AgentToolEnvironment) -> [AgentTool] {
-        [CreateBackgroundAgentTaskTool()]
+        [
+            CreateBackgroundAgentTaskTool(),
+            ListBackgroundAgentTasksTool(),
+            GetBackgroundAgentTaskDetailTool()
+        ]
     }
 }
 

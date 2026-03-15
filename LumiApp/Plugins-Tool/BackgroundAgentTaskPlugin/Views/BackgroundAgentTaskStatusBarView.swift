@@ -94,15 +94,16 @@ private struct BackgroundAgentTaskRowView: View {
     var body: some View {
         let status = BackgroundAgentTaskStatus(rawOrDefault: task.statusRawValue)
 
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
+            // 顶部：状态 + 时间
             HStack(spacing: 6) {
                 Image(systemName: iconName(for: status))
                     .foregroundColor(color(for: status))
                     .font(.system(size: 11))
 
-                Text(task.originalPrompt)
-                    .lineLimit(1)
-                    .font(.system(size: 12))
+                Text(statusText(for: status))
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
 
                 Spacer()
 
@@ -113,16 +114,38 @@ private struct BackgroundAgentTaskRowView: View {
                 }
             }
 
-            if let summary = task.resultSummary, !summary.isEmpty {
-                Text(summary)
-                    .font(.system(size: 11))
+            // 指令全文
+            VStack(alignment: .leading, spacing: 2) {
+                Text("指令")
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(.secondary)
-                    .lineLimit(2)
+                Text(task.originalPrompt)
+                    .font(.system(size: 12))
+                    .foregroundColor(.primary)
+                    .textSelection(.enabled)
+            }
+
+            // 结果 / 错误全文
+            if let summary = task.resultSummary, !summary.isEmpty {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("执行结果")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.secondary)
+                    Text(summary)
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                        .textSelection(.enabled)
+                }
             } else if let error = task.errorDescription, !error.isEmpty {
-                Text(error)
-                    .font(.system(size: 11))
-                    .foregroundColor(.red)
-                    .lineLimit(2)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("错误信息")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.secondary)
+                    Text(error)
+                        .font(.system(size: 11))
+                        .foregroundColor(.red)
+                        .textSelection(.enabled)
+                }
             }
         }
         .padding(.vertical, 4)
@@ -151,6 +174,19 @@ private struct BackgroundAgentTaskRowView: View {
             return .green
         case .failed:
             return .red
+        }
+    }
+
+    private func statusText(for status: BackgroundAgentTaskStatus) -> String {
+        switch status {
+        case .pending:
+            return "等待中"
+        case .running:
+            return "执行中"
+        case .succeeded:
+            return "已完成"
+        case .failed:
+            return "失败"
         }
     }
 }
