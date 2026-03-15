@@ -24,6 +24,13 @@ struct LocalModelSectionView: View {
     let onUnload: () async -> Void
     let onOpenCacheDirectory: () -> Void
 
+    private enum MainTab {
+        case downloaded
+        case all
+    }
+
+    @State private var selectedMainTab: MainTab = .downloaded
+
     private var localModelsBySeries: [LocalModelsSection] {
         let fallbackSeries = "其他"
         let grouped = Dictionary(grouping: localAvailableModels) { $0.series ?? fallbackSeries }
@@ -33,91 +40,90 @@ struct LocalModelSectionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
             headerRow
-            // 1. 本机配置
-            localMachineInfoBlock
             errorAndFeedbackBlock
             if localModelsLoading {
                 loadingPlaceholder
             } else {
-                // 2. 已加载的模型（始终显示）
-                Label("已加载", systemImage: "cpu.fill")
-                    .font(DesignTokens.Typography.callout)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                if let id = loadedModelId,
-                   let info = localAvailableModels.first(where: { $0.id == id }) {
-                    LocalModelRow(
-                        model: info,
-                        isCached: true,
-                        isSelected: false,
-                        isDownloading: false,
-                        downloadStatus: nil,
-                        isDownloadDisabled: false,
-                        isThisModelLoaded: true,
-                        hasAnyModelLoaded: true,
-                        isLoading: false,
-                        isLoadDisabled: false,
-                        onSelect: { },
-                        onDownload: { },
-                        onLoad: { },
-                        onUnload: { Task { await onUnload() } }
-                    )
-                } else {
-                    // 空状态友好提示
-                    HStack(spacing: DesignTokens.Spacing.sm) {
-                        Image(systemName: "tray")
-                            .font(.system(size: 16))
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary.opacity(0.6))
-                        Text("暂无已加载的模型")
-                            .font(DesignTokens.Typography.caption1)
+                switch selectedMainTab {
+                case .downloaded:
+                    localMachineInfoBlock
+                    let downloadedModels = localAvailableModels.filter { localCachedIds.contains($0.id) }
+                    if !downloadedModels.isEmpty {
+                        Label("已下载", systemImage: "arrow.down.circle.fill")
+                            .font(DesignTokens.Typography.callout)
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        Text("从下方列表中选择模型并点击「加载」按钮")
-                            .font(DesignTokens.Typography.caption2)
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary.opacity(0.8))
-                    }
-                    .padding(DesignTokens.Spacing.sm)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                // 3. 已下载的模型（始终显示所有已下载的，包括已加载的）
-                let downloadedModels = localAvailableModels.filter { localCachedIds.contains($0.id) }
-                if !downloadedModels.isEmpty {
-                    Label("已下载", systemImage: "arrow.down.circle.fill")
-                        .font(DesignTokens.Typography.callout)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                        ForEach(downloadedModels) { model in
-                            LocalModelRow(
-                                model: model,
-                                isCached: true,
-                                isSelected: false,
-                                isDownloading: false,
-                                downloadStatus: nil,
-                                isDownloadDisabled: false,
-                                isThisModelLoaded: false,
-                                hasAnyModelLoaded: loadedModelId != nil,
-                                isLoading: loadingModelId == model.id,
-                                isLoadDisabled: loadingModelId != nil,
-                                onSelect: { },
-                                onDownload: { },
-                                onLoad: { Task { await onLoad(model.id) } },
-                                onUnload: { }
-                            )
+                        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                            ForEach(downloadedModels) { model in
+                                LocalModelRow(
+                                    model: model,
+                                    isCached: true,
+                                    isSelected: false,
+                                    isDownloading: false,
+                                    downloadStatus: nil,
+                                    isDownloadDisabled: false,
+                                    isThisModelLoaded: loadedModelId == model.id,
+                                    hasAnyModelLoaded: loadedModelId != nil,
+                                    isLoading: loadingModelId == model.id,
+                                    isLoadDisabled: loadingModelId != nil,
+                                    onSelect: { },
+                                    onDownload: { },
+                                    onLoad: { Task { await onLoad(model.id) } },
+                                    onUnload: { Task { await onUnload() } }
+                                )
+                            }
                         }
+                    } else {
+                        HStack(spacing: DesignTokens.Spacing.sm) {
+                            Image(systemName: "tray")
+                                .font(.system(size: 16))
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary.opacity(0.6))
+                            Text("暂无已下载的模型")
+                                .font(DesignTokens.Typography.caption1)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        }
+                        .padding(DesignTokens.Spacing.sm)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                case .all:
+                    availableModelsList
                 }
-                // 4. 模型列表（展示所有模型）
-                Label("模型列表", systemImage: "list.bullet")
-                    .font(DesignTokens.Typography.callout)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                availableModelsList
             }
         }
     }
 
     private var headerRow: some View {
         HStack {
-            Label("本机信息", systemImage: "cpu")
-                .font(DesignTokens.Typography.callout)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                Button {
+                    selectedMainTab = .downloaded
+                } label: {
+                    Text("已下载")
+                        .font(DesignTokens.Typography.caption1)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(selectedMainTab == .downloaded ? DesignTokens.Color.semantic.primary : Color.white.opacity(0.05))
+                        )
+                        .foregroundColor(selectedMainTab == .downloaded ? .white : DesignTokens.Color.semantic.textSecondary)
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    selectedMainTab = .all
+                } label: {
+                    Text("模型列表")
+                        .font(DesignTokens.Typography.caption1)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(selectedMainTab == .all ? DesignTokens.Color.semantic.primary : Color.white.opacity(0.05))
+                        )
+                        .foregroundColor(selectedMainTab == .all ? .white : DesignTokens.Color.semantic.textSecondary)
+                }
+                .buttonStyle(.plain)
+            }
             Spacer()
             Button(action: onOpenCacheDirectory) {
                 Label("打开下载目录", systemImage: "folder")
@@ -206,71 +212,8 @@ struct LocalModelSectionView: View {
     }
 
     private var localMachineInfoBlock: some View {
-        let chip = Self.localChipName()
-        let ramGB = Int(ProcessInfo.processInfo.physicalMemory / (1024 * 1024 * 1024))
-        let diskGB = Self.localDiskTotalGB()
-        let osVer = ProcessInfo.processInfo.operatingSystemVersion
-        let osString = "macOS \(osVer.majorVersion).\(osVer.minorVersion).\(osVer.patchVersion)"
-        let style = DesignTokens.Typography.caption2
-        let color = DesignTokens.Color.semantic.textSecondary
-        return HStack(spacing: 6) {
-            Label(chip, systemImage: "cpu")
-                .font(style)
-                .foregroundColor(color)
-            Text("·").font(style).foregroundColor(color)
-            Label("内存 \(ramGB) GB", systemImage: "memorychip")
-                .font(style)
-                .foregroundColor(color)
-            Text("·").font(style).foregroundColor(color)
-            Label("磁盘 \(diskGB) GB", systemImage: "internaldrive")
-                .font(style)
-                .foregroundColor(color)
-            Text("·").font(style).foregroundColor(color)
-            Label(osString, systemImage: "desktopcomputer")
-                .font(style)
-                .foregroundColor(color)
-        }
-        .padding(.horizontal, DesignTokens.Spacing.sm)
-        .padding(.vertical, 4)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.08))
-        )
+        LocalMachineInfoView()
     }
 
-    private static func localChipName() -> String {
-        var size: Int = 0
-        sysctlbyname("machdep.cpu.brand_string", nil, &size, nil, 0)
-        guard size > 0 else {
-            #if arch(arm64)
-            return "Apple Silicon"
-            #else
-            return "Intel"
-            #endif
-        }
-        var model = [CChar](repeating: 0, count: size)
-        guard sysctlbyname("machdep.cpu.brand_string", &model, &size, nil, 0) == 0 else {
-            #if arch(arm64)
-            return "Apple Silicon"
-            #else
-            return "Intel"
-            #endif
-        }
-        let name = String(cString: model).trimmingCharacters(in: .whitespacesAndNewlines)
-        if name.isEmpty || name == "Apple processor" {
-            #if arch(arm64)
-            return "Apple Silicon"
-            #else
-            return "Intel"
-            #endif
-        }
-        return name
-    }
-
-    private static func localDiskTotalGB() -> Int {
-        guard let attrs = try? FileManager.default.attributesOfFileSystem(forPath: "/"),
-              let total = attrs[.systemSize] as? Int64 else { return 0 }
-        return Int(total / 1_000_000_000)
-    }
 }
+

@@ -55,11 +55,6 @@ struct LocalProviderSettingsView: View {
             }
     }
 
-    /// 当前选中的供应商信息（仅在本地供应商列表中查找）
-    private var selectedProvider: ProviderInfo? {
-        localProviders.first(where: { $0.id == selectedProviderId })
-    }
-
     /// 当前供应商类型
     private var selectedProviderType: (any SuperLLMProvider.Type)? {
         registry.providerType(forId: selectedProviderId)
@@ -72,9 +67,6 @@ struct LocalProviderSettingsView: View {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.xl) {
                 // 本地供应商选择器
                 providerSelector
-
-                // 供应商信息卡片
-                providerInfoCard
 
                 // 本地：已加载/列表/下载/加载
                 LocalModelSectionView(
@@ -148,14 +140,16 @@ extension LocalProviderSettingsView {
                 .font(DesignTokens.Typography.callout)
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-            HStack(spacing: DesignTokens.Spacing.sm) {
-                ForEach(localProviders) { provider in
-                    ProviderButton(
-                        provider: provider,
-                        isSelected: selectedProviderId == provider.id
-                    ) {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            selectedProviderId = provider.id
+            if localProviders.count > 1 {
+                HStack(spacing: DesignTokens.Spacing.sm) {
+                    ForEach(localProviders) { provider in
+                        ProviderButton(
+                            provider: provider,
+                            isSelected: selectedProviderId == provider.id
+                        ) {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                selectedProviderId = provider.id
+                            }
                         }
                     }
                 }
@@ -163,46 +157,6 @@ extension LocalProviderSettingsView {
         }
     }
 
-    /// 供应商信息卡片 - 显示当前选中供应商的图标、名称和描述
-    private var providerInfoCard: some View {
-        HStack(spacing: DesignTokens.Spacing.md) {
-            Image(systemName: selectedProvider?.iconName ?? "dot.square")
-                .font(.system(size: 28))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [DesignTokens.Color.semantic.primary, DesignTokens.Color.semantic.primarySecondary],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 44, height: 44)
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(DesignTokens.Color.semantic.primary.opacity(0.1))
-                )
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(selectedProvider?.displayName ?? "未知供应商")
-                    .font(DesignTokens.Typography.callout)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-
-                Text(selectedProvider?.description ?? "")
-                    .font(DesignTokens.Typography.caption1)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-            }
-
-            Spacer()
-        }
-        .padding(DesignTokens.Spacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                .fill(DesignTokens.Material.glass)
-                .overlay(
-                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                )
-        )
-    }
 }
 
 // MARK: - Actions

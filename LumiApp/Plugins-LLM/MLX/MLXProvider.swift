@@ -5,7 +5,7 @@ import Combine
 
 /// MLX 本地模型 Provider
 ///
-/// 将 MLX 本地模型集成到 Lumi 的 LLM 供应商体系中。
+/// 将 MLX 本地模型集成到 LLM 供应商体系中。
 /// 实现 SuperLLMProvider 协议，使得本地模型可以像
 /// Anthropic、OpenAI 等云服务一样被调用。
 ///
@@ -26,7 +26,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
     public static var id: String { "mlx" }
 
     /// 显示名称
-    public static var displayName: String { "Local" }
+    public static var displayName: String { "MLX" }
 
     /// 图标名称（SF Symbols）
     public static var iconName: String { "cpu" }
