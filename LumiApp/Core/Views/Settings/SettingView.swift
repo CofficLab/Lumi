@@ -1,7 +1,6 @@
 import SwiftUI
 
 /// 设置界面视图，包含侧边栏导航和详情区域
-/// 在独立窗口中显示
 struct SettingView: View {
     /// 插件 VM
     @EnvironmentObject private var pluginProvider: PluginVM
@@ -17,27 +16,6 @@ struct SettingView: View {
     enum SettingsSelection: Hashable {
         case core(SettingTab)
         case plugin(String)
-    }
-
-    /// 设置标签枚举
-    enum SettingTab: String, CaseIterable, Hashable {
-        case general = "通用"
-        case theme = "主题"
-        case localProvider = "本地供应商"
-        case remoteProvider = "云端供应商"
-        case plugins = "插件管理"
-        case about = "关于"
-
-        var icon: String {
-            switch self {
-            case .general: return "gearshape"
-            case .theme: return "paintbrush.fill"
-            case .localProvider: return "cpu"
-            case .remoteProvider: return "network"
-            case .plugins: return "puzzlepiece.extension"
-            case .about: return "info.circle"
-            }
-        }
     }
 
     /// 当前选中的项
@@ -99,7 +77,7 @@ struct SettingView: View {
             // 侧边栏
             VStack(spacing: 0) {
                 // 应用信息头部
-                sidebarHeader
+                SettingsSidebarHeaderView()
 
                 GlassDivider()
 
@@ -132,20 +110,7 @@ struct SettingView: View {
                 if let sel = selection {
                     switch sel {
                     case let .core(tab):
-                        switch tab {
-                        case .general:
-                            GeneralSettingView()
-                        case .theme:
-                            ThemeSettingView()
-                        case .localProvider:
-                            LocalProviderSettingsView()
-                        case .remoteProvider:
-                            RemoteProviderSettingsView()
-                        case .plugins:
-                            PluginSettingsView()
-                        case .about:
-                            AboutView()
-                        }
+                        tab.destinationView
                     case let .plugin(id):
                         if let item = pluginSettings.first(where: { $0.id == id }) {
                             item.view
@@ -174,42 +139,13 @@ struct SettingView: View {
             // 保存选中的项
             saveSelection(newValue)
         }
+        // 当左侧侧边栏未被隐藏时，详情区域忽略顶部安全区域
+        .ignoresSafeArea(edges: columnVisibility == .detailOnly ? [] : .top)
         .background {
             GeometryReader { proxy in
                 themeManager.currentVariant.theme.makeGlobalBackground(proxy: proxy)
             }
             .ignoresSafeArea()
-        }
-    }
-
-    // MARK: - View
-
-    /// 侧边栏头部 - 应用信息
-    private var sidebarHeader: some View {
-        VStack(alignment: .center, spacing: 12) {
-            Spacer().frame(height: 50)
-
-            // App 图标
-            LogoView(variant: .about)
-                .frame(width: 64, height: 64)
-
-            // App 名称
-            Text(appInfo.name)
-                .font(.headline)
-                .fontWeight(.semibold)
-
-            // 版本和 Build 信息
-            VStack(alignment: .center, spacing: 2) {
-                Text("v\(appInfo.version ?? "Unknown")")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-
-                Text("Build \(appInfo.build ?? "Unknown")")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
-
-            Spacer().frame(height: 16)
         }
     }
 }
