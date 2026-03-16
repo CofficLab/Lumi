@@ -28,6 +28,14 @@ final class ProcessingStateVM: ObservableObject {
     /// 状态提示文本（用于 UI 展示）
     @Published public fileprivate(set) var statusText: String = ""
 
+    /// 是否有需要展示的活动加载状态
+    ///
+    /// - 当正在处理且存在非空状态文案时为 true
+    /// - 仅作为 UI 辅助，不参与业务逻辑判断
+    var hasActiveLoading: Bool {
+        isProcessing && !statusText.isEmpty
+    }
+
     /// 设置是否正在处理
     func setIsProcessing(_ processing: Bool) {
         isProcessing = processing

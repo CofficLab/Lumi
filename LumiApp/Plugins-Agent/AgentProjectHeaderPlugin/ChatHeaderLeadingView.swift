@@ -12,18 +12,20 @@ struct ChatHeaderLeadingView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 12) {
-                Image(systemName: "hammer.fill")
-                    .font(.system(size: iconSize))
-                    .foregroundColor(.accentColor)
-                    .padding(4)
-                    .background(Color.accentColor.opacity(0.1))
-                    .clipShape(Circle())
+            if !projectVM.currentProjectPath.isEmpty {
+                HStack(spacing: 12) {
+                    Image(systemName: "hammer.fill")
+                        .font(.system(size: iconSize))
+                        .foregroundColor(.accentColor)
+                        .padding(4)
+                        .background(Color.accentColor.opacity(0.1))
+                        .clipShape(Circle())
 
-                Text(projectVM.currentProjectName.isEmpty ? "Lumi" : projectVM.currentProjectName)
-                    .font(DesignTokens.Typography.body)
-                    .fontWeight(.medium)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    Text(projectVM.currentProjectName.isEmpty ? "Lumi" : projectVM.currentProjectName)
+                        .font(DesignTokens.Typography.body)
+                        .fontWeight(.medium)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                }
             }
 
             if projectVM.currentProjectPath.isEmpty {
@@ -61,8 +63,9 @@ struct ChatHeaderLeadingView: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(Color.orange.opacity(0.1))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color.orange.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 }

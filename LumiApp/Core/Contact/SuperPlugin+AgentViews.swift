@@ -36,9 +36,6 @@ extension SuperPlugin {
     /// 默认实现：不提供侧边栏视图
     @MainActor func addSidebarView() -> AnyView? { nil }
 
-    /// 默认实现：不提供右侧栏头部视图
-    @MainActor func addRightHeaderView() -> AnyView? { nil }
-
     /// 默认实现：不提供右侧栏头部左侧视图
     @MainActor func addRightHeaderLeadingView() -> AnyView? { nil }
 

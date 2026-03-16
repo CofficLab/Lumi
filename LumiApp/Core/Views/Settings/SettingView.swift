@@ -159,7 +159,8 @@ struct SettingView: View {
                         .foregroundColor(.secondary)
                 }
             }
-            .ignoresSafeArea(edges: .top)
+            // 当左侧侧边栏未被隐藏时，详情区域忽略顶部安全区域
+            .ignoresSafeArea(edges: columnVisibility == .detailOnly ? [] : .top)
         }
         .onAppear {
             // 加载上次选中的项
@@ -173,7 +174,6 @@ struct SettingView: View {
             // 保存选中的项
             saveSelection(newValue)
         }
-        .ignoresSafeArea()
         .background {
             GeometryReader { proxy in
                 themeManager.currentVariant.theme.makeGlobalBackground(proxy: proxy)
@@ -187,7 +187,7 @@ struct SettingView: View {
     /// 侧边栏头部 - 应用信息
     private var sidebarHeader: some View {
         VStack(alignment: .center, spacing: 12) {
-            Spacer().frame(height: 20)
+            Spacer().frame(height: 50)
 
             // App 图标
             LogoView(variant: .about)

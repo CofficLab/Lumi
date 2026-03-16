@@ -26,6 +26,23 @@ struct EmptyMessagesView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
 
+            // 示例引导
+            VStack(alignment: .leading, spacing: 6) {
+                Text("例如：", tableName: "DevAssistant")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("· 帮我解释这段错误日志", tableName: "DevAssistant")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("· 帮我为这个项目设计一个测试计划", tableName: "DevAssistant")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal, 40)
+
             // 当前对话 ID
             if let id = ConversationVM.selectedConversationId {
                 Text(id.uuidString)

@@ -48,27 +48,35 @@ struct MessageListView: View, SuperLog {
         ScrollViewReader { proxy in
             let lastMessageID = messages.last?.id
 
-            Group {
-                if messages.isEmpty {
-                    EmptyMessagesView()
-                } else {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 12) {
-                            if hasMoreMessages {
-                                loadMoreButton
-                            }
+            VStack(spacing: 8) {
+                ProcessingBannerView()
 
-                            ForEach(messages) { message in
-                                ChatBubble(
-                                    message: message,
-                                    isLastMessage: message.id == lastMessageID,
-                                    relatedToolOutputs: []
-                                )
-                            }
+                Group {
+                    if messages.isEmpty {
+                        if isLoadingMore, selectedConversationId != nil {
+                            loadingOverlay
+                        } else {
+                            EmptyMessagesView()
                         }
-                        .padding(.horizontal)
+                    } else {
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 12) {
+                                if hasMoreMessages {
+                                    loadMoreButton
+                                }
+
+                                ForEach(messages) { message in
+                                    ChatBubble(
+                                        message: message,
+                                        isLastMessage: message.id == lastMessageID,
+                                        relatedToolOutputs: []
+                                    )
+                                }
+                            }
+                            .padding(.horizontal)
+                        }
+                        .padding(.vertical)
                     }
-                    .padding(.vertical)
                 }
             }
             .onAppear(perform: handleOnAppear)
@@ -86,6 +94,17 @@ struct MessageListView: View, SuperLog {
 // MARK: - View
 
 extension MessageListView {
+    /// 首次加载时的简易 Loading 覆盖层
+    private var loadingOverlay: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+            Text("正在加载历史消息…")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     /// 加载更多消息按钮
     private var loadMoreButton: some View {
         HStack {

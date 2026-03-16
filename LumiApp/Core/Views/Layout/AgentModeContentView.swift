@@ -27,10 +27,9 @@ struct AgentModeContentView: View {
         .ignoresSafeArea()
         .task {
             if Self.verbose {
-                let rightHeaderViews = pluginProvider.getRightHeaderViews()
                 let rightMiddleViews = pluginProvider.getRightMiddleViews()
                 let rightBottomViews = pluginProvider.getRightBottomViews()
-                os_log("\(Self.emoji) Agent Mode: 右侧栏头部=\(rightHeaderViews.count), 中间=\(rightMiddleViews.count), 底部=\(rightBottomViews.count)")
+                os_log("\(Self.emoji) Agent Mode: 右侧栏中间=\(rightMiddleViews.count), 底部=\(rightBottomViews.count)")
             }
         }
     }
@@ -146,35 +145,14 @@ struct AgentModeContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// 右侧栏头部内容视图（统一 header，支持插件注入 leading / trailing 小功能）
+    /// 右侧栏头部内容视图（统一 header，支持插件注入 leading / trailing）
     @ViewBuilder
     private func rightHeaderContent() -> some View {
         let leadingView = pluginProvider.getRightHeaderLeadingView()
         let trailingItems = pluginProvider.getRightHeaderTrailingItems()
-        let useComposedHeader = leadingView != nil || !trailingItems.isEmpty
 
-        Group {
-            if useComposedHeader {
-                AgentRightHeaderView(leadingView: leadingView, trailingItems: trailingItems)
-                    .frame(minHeight: AppConfig.headerHeight)
-            } else {
-                // 兼容：无插件使用新 API 时，仍使用旧版整块头部视图堆叠
-                let headerViews = pluginProvider.getRightHeaderViews()
-                Group {
-                    if headerViews.isEmpty {
-                        defaultDetailView
-                    } else {
-                        VStack(spacing: 0) {
-                            ForEach(headerViews.indices, id: \.self) { index in
-                                headerViews[index]
-                                    .id("right_header_\(index)")
-                            }
-                        }
-                    }
-                }
-                .frame(height: AppConfig.headerHeight)
-            }
-        }
+        AgentRightHeaderView(leadingView: leadingView, trailingItems: trailingItems)
+            .frame(minHeight: AppConfig.headerHeight)
     }
 
     /// 右侧栏中间内容视图

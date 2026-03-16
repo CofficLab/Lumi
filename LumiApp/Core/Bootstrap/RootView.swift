@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import MagicAlert
 
 /// 根视图容器组件
 /// 为应用提供统一的上下文环境，管理核心服务初始化和环境注入
@@ -38,6 +39,7 @@ struct RootView<Content>: View where Content: View {
 
     var body: some View {
         content
+            .withMagicToast()
             // 共享的全局服务（所有窗口共享）
             .environmentObject(container.appProvider)
             .environmentObject(container.ProjectVM)
