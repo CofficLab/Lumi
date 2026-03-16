@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Manage Lumi registries" : {
+
+    },
     "Registry Manager" : {
       "localizations" : {
         "zh-Hans" : {

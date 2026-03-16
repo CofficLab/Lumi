@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Manage your menu bar items" : {
+
+    },
     "Menu Bar Manager" : {
       "localizations" : {
         "zh-Hans" : {

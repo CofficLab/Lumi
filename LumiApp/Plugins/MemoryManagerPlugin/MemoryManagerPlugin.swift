@@ -1,22 +1,22 @@
-import SwiftUI
 import MagicKit
+import SwiftUI
 
 actor MemoryManagerPlugin: SuperPlugin, SuperLog {
     
     // MARK: - Plugin Properties
     
     nonisolated static let emoji = "💾"
-    nonisolated static let enable = true
-    nonisolated static let verbose = true
+    nonisolated static let enable: Bool = true
+    nonisolated static let verbose: Bool = true
     
     static let id = "MemoryManager"
+    static let navigationId: String? = nil
     static let displayName = String(localized: "Memory Monitor", table: "MemoryManager")
     static let description = String(localized: "Real-time monitoring of system memory usage", table: "MemoryManager")
     static let iconName = "memorychip"
     static var order: Int { 32 }
     
     nonisolated var instanceLabel: String { Self.id }
-    
     static let shared = MemoryManagerPlugin()
     
     // MARK: - Lifecycle

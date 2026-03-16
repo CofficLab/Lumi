@@ -5,8 +5,8 @@ actor HostsManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "📝"
-    nonisolated static let enable = false
-    nonisolated static let verbose = true
+    nonisolated static let enable: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id = "HostsManager"
     static let navigationId = "hosts_manager"

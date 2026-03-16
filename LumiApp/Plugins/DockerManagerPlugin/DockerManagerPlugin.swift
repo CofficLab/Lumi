@@ -5,8 +5,8 @@ actor DockerManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "🐳"
-    static let enable = false
-    nonisolated static let verbose = true
+    nonisolated static let enable: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id = "DockerManager"
     static let navigationId = "docker_manager"

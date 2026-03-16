@@ -1,55 +1,30 @@
-import Foundation
 import MagicKit
 import SwiftUI
+import Foundation
 import Combine
-import MagicKit
 import OSLog
 
 /// Time Status Plugin: Displays the current time in the status bar
 actor TimeStatusPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
-    /// Log identifier
     nonisolated static let emoji = "🕐"
 
-    /// Whether to enable this plugin
-    nonisolated static let enable = true
+    nonisolated static let enable: Bool = true
+    nonisolated static let verbose: Bool = true
 
-    /// Whether to enable verbose log output
-    nonisolated static let verbose = true
-
-    /// Plugin unique identifier
-    static let id: String = "TimeStatusPlugin"
-
-    /// Plugin display name
+    static let id: String = "TimeStatus"
+    static let navigationId: String? = nil
     static let displayName: String = String(localized: "Time Status", table: "TimeStatus")
-
-    /// Plugin functional description
     static let description: String = String(localized: "Displays the current time in the status bar", table: "TimeStatus")
-
-    /// Plugin icon name
     static let iconName: String = "clock"
-
-    /// Whether it is configurable
     static let isConfigurable: Bool = false
-    
-    /// Registration order
     static var order: Int { 6 }
 
     // MARK: - Instance
 
-    /// Plugin instance label (used to identify unique instances)
-    nonisolated var instanceLabel: String {
-        Self.id
-    }
-
-    /// Plugin singleton instance
+    nonisolated var instanceLabel: String { Self.id }
     static let shared = TimeStatusPlugin()
-
-    /// Initialization method
-    init() {}
-
-    // MARK: - UI Contributions
 }
 
 
