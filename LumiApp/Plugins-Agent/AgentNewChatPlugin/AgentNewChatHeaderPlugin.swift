@@ -10,7 +10,7 @@ actor AgentNewChatHeaderPlugin: SuperPlugin {
     static let displayName = String(localized: "New Chat Button", table: "AgentChatToolbar")
     static let description = String(localized: "Create new chat from header", table: "AgentChatToolbar")
     static let iconName = "bubble.left.and.bubble.right"
-    static var order: Int { 82 }
+    static var order: Int { 60 }
     static let enable: Bool = true
 
     static let shared = AgentNewChatHeaderPlugin()

@@ -20,9 +20,6 @@ actor AgentLanguageHeaderPlugin: SuperPlugin {
     nonisolated func onDisable() {}
 
     @MainActor
-    func addRightHeaderView() -> AnyView? { nil }
-
-    @MainActor
     func addRightHeaderLeadingView() -> AnyView? { nil }
 
     @MainActor
