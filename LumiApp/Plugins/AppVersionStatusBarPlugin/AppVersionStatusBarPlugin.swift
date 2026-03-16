@@ -1,47 +1,27 @@
-import Foundation
-import SwiftUI
-import OSLog
 import MagicKit
+import SwiftUI
+import Foundation
+import OSLog
 
 /// 版本状态栏插件：在 Agent 模式底部状态栏显示当前 App 版本
 actor AppVersionStatusBarPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
-    /// Log identifier
     nonisolated static let emoji = "📦"
+    nonisolated static let enable: Bool = true
+    nonisolated static let verbose: Bool = false
 
-    /// Whether to enable this plugin
-    nonisolated static let enable = true
-
-    /// Whether to enable verbose log output
-    nonisolated static let verbose = false
-
-    /// Plugin unique identifier
     static let id: String = "AppVersionStatusBar"
-
-    /// Plugin display name
-    static let displayName: String = "App 版本"
-
-    /// Plugin functional description
-    static let description: String = "在状态栏显示当前应用版本信息"
-
-    /// Plugin icon name
+    static let navigationId: String? = nil
+    static let displayName: String = String(localized: "App Version", table: "AppVersionStatusBar")
+    static let description: String = String(localized: "Display current app version in status bar", table: "AppVersionStatusBar")
     static let iconName: String = "tag.fill"
-
-    /// Whether it is configurable
     static let isConfigurable: Bool = false
-
-    /// Registration order
     static var order: Int { 95 }
 
     // MARK: - Instance
 
-    /// Plugin instance label (used to identify unique instances)
-    nonisolated var instanceLabel: String {
-        Self.id
-    }
-
-    /// Plugin singleton instance
+    nonisolated var instanceLabel: String { Self.id }
     static let shared = AppVersionStatusBarPlugin()
 
     // MARK: - UI Contributions

@@ -1,18 +1,20 @@
-import SwiftUI
 import MagicKit
+import SwiftUI
 import OSLog
 
 actor TextActionsPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🖱️"
-    nonisolated static let verbose = true
+    nonisolated static let verbose: Bool = true
 
     static let id = "TextActions"
+    static let navigationId = "text_actions"
     static let displayName = String(localized: "Text Actions", table: "TextActions")
     static let description = String(localized: "Selected text actions menu", table: "TextActions")
     static let iconName = "cursorarrow.click.2"
     nonisolated static let enable: Bool = true
     static var order: Int { 60 }
     
+    nonisolated var instanceLabel: String { Self.id }
     static let shared = TextActionsPlugin()
     
     // MARK: - Lifecycle

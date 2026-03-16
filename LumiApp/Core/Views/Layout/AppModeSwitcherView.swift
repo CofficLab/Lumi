@@ -31,8 +31,16 @@ struct AppModeSwitcherView: View, SuperLog {
 
 extension AppModeSwitcherView {
     func handleOnAppear() {
-        // 优先使用窗口级别的模式状态，如果没有则使用全局状态
-        self.mode = windowState?.selectedMode ?? app.selectedMode
+        // 优先从 AppSettingsStore 中恢复上次选择的模式
+        if let savedModeRawValue = AppSettingsStore.shared.string(forKey: "App_SelectedMode"),
+           let savedMode = AppMode(rawValue: savedModeRawValue) {
+            self.mode = savedMode
+            windowState?.selectedMode = savedMode
+            app.selectedMode = savedMode
+        } else {
+            // 如果没有持久化记录，则优先使用窗口级别的模式状态，如果没有则使用全局状态
+            self.mode = windowState?.selectedMode ?? app.selectedMode
+        }
     }
 
     func handleModeChanged() {
@@ -43,6 +51,9 @@ extension AppModeSwitcherView {
         // 同时更新窗口级别和全局级别的模式状态
         windowState?.selectedMode = mode
         app.selectedMode = mode
+
+        // 持久化当前选择的模式到 AppSettingsStore
+        AppSettingsStore.shared.set(mode.rawValue, forKey: "App_SelectedMode")
     }
 }
 

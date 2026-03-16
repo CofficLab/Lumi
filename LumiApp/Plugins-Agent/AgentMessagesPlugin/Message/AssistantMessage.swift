@@ -16,6 +16,11 @@ struct AssistantMessage: View, SuperLog {
     @ObservedObject private var expansionState = MessageExpansionState.shared
     @Binding var showRawMessage: Bool
     @State private var isHeaderHovered: Bool = false
+    private static let timestampFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        return formatter
+    }()
 
     // MARK: - Computed
 
@@ -106,7 +111,7 @@ struct AssistantMessage: View, SuperLog {
                 if let providerId = message.providerId {
                     Text("·")
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                    Text(formatProviderName(providerId))
+                    Text(providerId)
                         .font(DesignTokens.Typography.caption2)
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
@@ -201,25 +206,7 @@ struct AssistantMessage: View, SuperLog {
     // MARK: - Helper Methods (Header)
 
     private func formatTimestamp(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss"
-        return formatter.string(for: date) ?? ""
-    }
-
-    private func formatProviderName(_ providerId: String) -> String {
-        let providerNames: [String: String] = [
-            "anthropic": "Anthropic",
-            "openai": "OpenAI",
-            "zhipu": "智谱 AI",
-            "deepseek": "深度求索",
-            "aliyun": "阿里云",
-            "azure": "Azure",
-            "google": "Google",
-            "mistral": "Mistral",
-            "groq": "Groq",
-            "ollama": "Ollama",
-        ]
-        return providerNames[providerId] ?? providerId.capitalized
+        Self.timestampFormatter.string(from: date)
     }
 
     private func formatModelName(_ name: String) -> String {

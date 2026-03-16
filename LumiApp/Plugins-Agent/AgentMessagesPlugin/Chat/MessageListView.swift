@@ -8,7 +8,7 @@ struct MessageListView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "📜"
     /// 是否启用详细日志
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
     /// 分页大小：每页加载的消息数量
     nonisolated static let pageSize: Int = 10
 
@@ -48,35 +48,33 @@ struct MessageListView: View, SuperLog {
         ScrollViewReader { proxy in
             let lastMessageID = messages.last?.id
 
-            VStack(spacing: 8) {
-                ProcessingBannerView()
-
-                Group {
-                    if messages.isEmpty {
-                        if isLoadingMore, selectedConversationId != nil {
-                            loadingOverlay
-                        } else {
-                            EmptyMessagesView()
-                        }
+            Group {
+                if messages.isEmpty {
+                    if isLoadingMore, selectedConversationId != nil {
+                        loadingOverlay
                     } else {
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: 12) {
-                                if hasMoreMessages {
-                                    loadMoreButton
-                                }
-
-                                ForEach(messages) { message in
-                                    ChatBubble(
-                                        message: message,
-                                        isLastMessage: message.id == lastMessageID,
-                                        relatedToolOutputs: []
-                                    )
-                                }
-                            }
-                            .padding(.horizontal)
-                        }
-                        .padding(.vertical)
+                        EmptyMessagesView()
                     }
+                } else {
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 12) {
+                            if hasMoreMessages {
+                                loadMoreButton
+                            }
+
+                            ForEach(messages) { message in
+                                ChatBubble(
+                                    message: message,
+                                    isLastMessage: message.id == lastMessageID,
+                                    relatedToolOutputs: []
+                                )
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                    // 消息列表统一接管滚动，避免消息内部可滚动区域抢占滚轮造成卡顿感
+                    .environment(\.preferOuterScroll, true)
+                    .padding(.vertical)
                 }
             }
             .onAppear(perform: handleOnAppear)

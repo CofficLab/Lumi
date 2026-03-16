@@ -1,47 +1,27 @@
-import Foundation
 import MagicKit
-import OSLog
 import SwiftUI
+import Foundation
+import OSLog
 
 /// Project Info Plugin: Displays detailed information of the current project in a list view
 actor ProjectInfoPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
-    /// Log identifier
     nonisolated static let emoji = "📋"
+    nonisolated static let enable: Bool = true
+    nonisolated static let verbose: Bool = true
 
-    /// Whether to enable this plugin
-    nonisolated static let enable = true
-
-    /// Whether to enable verbose log output
-    nonisolated static let verbose = true
-
-    /// Plugin unique identifier
-    static let id: String = "ProjectInfoPlugin"
-
-    /// Plugin display name
-    static let displayName: String = "Project Info"
-
-    /// Plugin functional description
-    static let description: String = "Displays detailed information of the current tab and project in a list view"
-
-    /// Plugin icon name
+    static let id: String = "ProjectInfo"
+    static let navigationId: String? = nil
+    static let displayName: String = String(localized: "Project Info", table: "ProjectInfo")
+    static let description: String = String(localized: "Displays detailed information of the current tab and project in a list view", table: "ProjectInfo")
     static let iconName: String = "info.bubble"
-
-    /// Whether it is configurable
     static let isConfigurable: Bool = false
-    
-    /// Registration order
     static var order: Int { 3 }
 
     // MARK: - Instance
 
-    /// Plugin instance label (used to identify unique instances)
-    nonisolated var instanceLabel: String {
-        Self.id
-    }
-
-    /// Plugin singleton instance
+    nonisolated var instanceLabel: String { Self.id }
     static let shared = ProjectInfoPlugin()
 
     /// Initialization method

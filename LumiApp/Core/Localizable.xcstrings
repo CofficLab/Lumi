@@ -2675,6 +2675,9 @@
         }
       }
     },
+    "Manage all your package registries in one place" : {
+
+    },
     "Manage clipboard history and snippets" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2692,6 +2695,7 @@
       }
     },
     "Manage network permissions for macOS applications." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

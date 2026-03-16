@@ -42,7 +42,7 @@ struct AgentModeContentView: View {
             // 第一栏：左侧栏（统一侧边栏，顶部显示模式切换）
             if sidebarVisibility {
                 sidebarColumn
-                    .frame(minWidth: 200, idealWidth: 220, maxWidth: 400)
+                    .frame(minWidth: 210, idealWidth: 220, maxWidth: 400)
             }
 
             // 第二栏 + 第三栏：嵌套 HSplitView

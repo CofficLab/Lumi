@@ -1,30 +1,31 @@
-import SwiftUI
 import MagicKit
+import SwiftUI
 
-actor TerminalPlugin: SuperPlugin {
+actor TerminalPlugin: SuperPlugin, SuperLog {
+    // MARK: - Plugin Properties
+
     nonisolated static let emoji = "💻"
-    nonisolated static let verbose = true
+    nonisolated static let enable: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id = "Terminal"
-    static let navigationId = "terminal"
+    static let navigationId: String = "terminal"
     static let displayName = String(localized: "Terminal", table: "Terminal")
     static let description = String(localized: "Interactive terminal emulator", table: "Terminal")
     static let iconName = "terminal"
-    nonisolated static let enable = true
+    static let isConfigurable: Bool = false
     static var order: Int { 90 }
-    
+
+    nonisolated var instanceLabel: String { Self.id }
     static let shared = TerminalPlugin()
-    
+
     // MARK: - Lifecycle
     
-    nonisolated func onRegister() {
-    }
+    nonisolated func onRegister() {}
     
-    nonisolated func onEnable() {
-    }
+    nonisolated func onEnable() {}
     
-    nonisolated func onDisable() {
-    }
+    nonisolated func onDisable() {}
     
     // MARK: - UI
     

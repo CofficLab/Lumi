@@ -5,8 +5,8 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "🛜"
-    static let enable = true
-    nonisolated static let verbose = true
+    nonisolated static let enable: Bool = true
+    nonisolated static let verbose: Bool = true
 
     static let id = "NetworkManager"
     static let navigationId = "network_manager"
@@ -17,7 +17,7 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
 
     nonisolated var instanceLabel: String { Self.id }
 
-    nonisolated static let shared = NetworkManagerPlugin()
+    static let shared = NetworkManagerPlugin()
 
     // 不在 init 中创建 Task，避免时序与竞态。NetworkHistoryService.shared 在首次被
     // 访问时（如状态栏/仪表盘）会自行初始化。
