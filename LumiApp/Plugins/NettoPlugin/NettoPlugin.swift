@@ -8,7 +8,7 @@ actor NettoPlugin: SuperPlugin {
     static let displayName = String(localized: "Netto Firewall")
     static let description = String(localized: "Manage network permissions for macOS applications.")
     static let iconName = "shield.lefthalf.filled"
-    nonisolated static let enable = true
+    nonisolated static let enable = false
     static let order: Int = 99
     
     nonisolated var instanceLabel: String { Self.id }
