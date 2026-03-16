@@ -1,25 +1,19 @@
 import SwiftUI
 
-/// 设置界面视图，包含侧边栏导航和详情区域
+/// 设置界面视图，使用 HStack 实现左右并排布局
 struct SettingView: View {
     /// 插件 VM
-    @EnvironmentObject private var pluginProvider: PluginVM
+    @EnvironmentObject var pluginProvider: PluginVM
     @EnvironmentObject var themeManager: MystiqueThemeManager
-
-    /// 导航分栏视图的列可见性状态
-    @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
 
     /// 默认显示的标签
     var defaultTab: SettingTab = .about
 
-    /// 设置选择枚举
-    enum SettingsSelection: Hashable {
-        case core(SettingTab)
-        case plugin(String)
-    }
-
     /// 当前选中的项
     @State private var selection: SettingsSelection?
+
+    /// 侧边栏宽度
+    private let sidebarWidth: CGFloat = 220
 
     /// AppSettingsStore key
     private static let selectedTabKey = "SettingView.selectedTab"
@@ -72,60 +66,84 @@ struct SettingView: View {
         pluginProvider.getPluginSettingsViews()
     }
 
-    var body: some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
-            // 侧边栏
-            VStack(spacing: 0) {
-                // 应用信息头部
-                SettingsSidebarHeaderView()
+    /// 侧边栏内容视图
+    private var sidebarView: some View {
+        VStack(spacing: 0) {
+            // 应用信息头部
+            SettingsSidebarHeaderView()
 
-                GlassDivider()
+            GlassDivider()
 
-                // 设置列表
-                List(selection: $selection) {
-                    Section {
-                        ForEach(SettingTab.allCases, id: \.self) { tab in
-                            NavigationLink(value: SettingsSelection.core(tab)) {
-                                Label(tab.rawValue, systemImage: tab.icon)
-                            }
+            // 设置列表
+            ScrollView {
+                LazyVStack(spacing: 4) {
+                    // 核心设置项
+                    ForEach(SettingTab.allCases, id: \.self) { tab in
+                        SidebarItemView(
+                            label: Label(tab.rawValue, systemImage: tab.icon),
+                            isSelected: selection == .core(tab)
+                        ) {
+                            selection = .core(tab)
                         }
                     }
 
+                    // 插件设置项
                     if !pluginSettings.isEmpty {
-                        Section("插件设置") {
-                            ForEach(pluginSettings, id: \.id) { item in
-                                NavigationLink(value: SettingsSelection.plugin(item.id)) {
-                                    Label(item.name, systemImage: item.icon)
-                                }
+                        Divider()
+                            .padding(.vertical, 8)
+
+                        ForEach(pluginSettings, id: \.id) { item in
+                            SidebarItemView(
+                                label: Label(item.name, systemImage: item.icon),
+                                isSelected: selection == .plugin(item.id)
+                            ) {
+                                selection = .plugin(item.id)
                             }
                         }
                     }
                 }
+                .padding(.vertical, 8)
             }
-            .navigationSplitViewColumnWidth(min: 200, ideal: 200, max: 300)
-            .ignoresSafeArea()
-        } detail: {
-            // 详情区域
-            Group {
-                if let sel = selection {
-                    switch sel {
-                    case let .core(tab):
-                        tab.destinationView
-                    case let .plugin(id):
-                        if let item = pluginSettings.first(where: { $0.id == id }) {
-                            item.view
-                        } else {
-                            Text("插件未找到或已禁用")
-                                .foregroundColor(.secondary)
-                        }
+        }
+        .padding()
+        .frame(width: sidebarWidth)
+        .background(.background.opacity(0.6))
+    }
+
+    /// 详情区域视图
+    private var detailView: some View {
+        Group {
+            if let sel = selection {
+                switch sel {
+                case let .core(tab):
+                    tab.destinationView
+                case let .plugin(id):
+                    if let item = pluginSettings.first(where: { $0.id == id }) {
+                        item.view
+                    } else {
+                        Text("插件未找到或已禁用")
+                            .foregroundColor(.secondary)
                     }
-                } else {
-                    Text("请选择设置项")
-                        .foregroundColor(.secondary)
                 }
+            } else {
+                Text("请选择设置项")
+                    .foregroundColor(.secondary)
             }
-            // 当左侧侧边栏未被隐藏时，详情区域忽略顶部安全区域
-            .ignoresSafeArea(edges: columnVisibility == .detailOnly ? [] : .top)
+        }
+        .background(.background.opacity(0.8))
+    }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            // 左侧侧边栏
+            sidebarView
+
+            // 垂直分割线
+            Divider()
+
+            // 右侧详情区域
+            detailView
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .onAppear {
             // 加载上次选中的项
@@ -139,8 +157,6 @@ struct SettingView: View {
             // 保存选中的项
             saveSelection(newValue)
         }
-        // 当左侧侧边栏未被隐藏时，详情区域忽略顶部安全区域
-        .ignoresSafeArea(edges: columnVisibility == .detailOnly ? [] : .top)
         .background {
             GeometryReader { proxy in
                 themeManager.currentVariant.theme.makeGlobalBackground(proxy: proxy)
