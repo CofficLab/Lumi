@@ -1,0 +1,156 @@
+---
+alwaysApply: true
+---
+
+# 插件国际化 (i18n) 规则
+
+## 核心原则
+
+**每个插件必须维护独立的 `*.xcstrings` 文件，插件内使用的所有本地化字符串必须放入该文件。**
+
+**禁止使用 `Core.xcstrings`，没有任何例外。**
+
+## 文件命名规范
+
+- 文件名：`<PluginName>.xcstrings`
+- 位置：插件根目录下，与 `<PluginName>Plugin.swift` 同级
+- 示例：`AppManagerPlugin/AppManager.xcstrings`
+
+## 文件结构参考
+
+```
+LumiApp/Plugins/
+└── AppManagerPlugin/
+    ├── AppManagerPlugin.swift
+    ├── AppManagerView.swift
+    ├── AppManagerViewModel.swift
+    ├── AppManager.xcstrings        # ✅ 插件专属翻译文件
+    └── ...
+```
+
+## 使用规则
+
+### ✅ 正确做法
+
+1. **插件内所有 UI 文本必须使用本地化**
+   ```swift
+   // ✅ 正确：使用插件自己的 xcstrings
+   Text("App Manager", tableName: "AppManager")
+   Text("%lld Apps", tableName: "AppManager")
+   ```
+
+2. **新增字符串时，立即添加到插件的 xcstrings 文件**
+   - 添加英文原文作为 key
+   - 提供 `zh-Hans` (简体中文) 翻译
+   - 提供 `zh-HK` (繁体中文) 翻译
+
+3. **使用 `tableName` 参数指定插件名称**
+   ```swift
+   Text("Confirm Uninstall", tableName: "AppManager")
+   ```
+
+4. **即使是通用词汇也要放入插件自己的 xcstrings**
+   ```swift
+   // ✅ 正确：即使是 "Cancel"、"OK"、"Error" 也要放入插件自己的文件
+   Text("Cancel", tableName: "AppManager")
+   Text("OK", tableName: "AppManager")
+   Text("Error", tableName: "AppManager")
+   ```
+
+### ❌ 错误做法
+
+1. **禁止使用 Core.xcstrings（任何情况）**
+   ```swift
+   // ❌ 错误：使用了 Core 的翻译表
+   Text("Cancel")  // 没有指定 tableName，默认使用 Core
+   ```
+
+2. **禁止使用其他插件的翻译表**
+   ```swift
+   // ❌ 错误：使用了其他插件的翻译表
+   Text("App Manager", tableName: "DevAssistant")
+   ```
+
+3. **禁止硬编码中文文本**
+   ```swift
+   // ❌ 错误：硬编码中文
+   Text("应用管理器")
+   
+   // ✅ 正确：使用本地化
+   Text("App Manager", tableName: "AppManager")
+   ```
+
+4. **禁止多个插件共享同一个 xcstrings 文件**
+
+## 翻译格式要求
+
+### JSON 结构
+
+```json
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Key Text": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "简体中文翻译"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "繁體中文翻譯"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}
+```
+
+### 翻译原则
+
+- **占位符保持不变**: `%@`, `%lld`, `%d`, `%1$@` 等必须原样保留
+- **技术术语**: API、SQLite、Host 等专有名词可保持英文
+- **UI 文本**: 简洁明了，符合 macOS 应用习惯
+- **状态标记**: `state` 必须为 `translated`
+
+## 创建新插件时的检查清单
+
+- [ ] 在插件根目录创建 `<PluginName>.xcstrings` 文件
+- [ ] 设置 `sourceLanguage` 为 `en`
+- [ ] 添加所有 UI 字符串的英文原文作为 key（包括通用词汇如 Cancel、OK、Error）
+- [ ] 为每个 key 提供 `zh-Hans` 和 `zh-HK` 翻译
+- [ ] 在所有 `Text()` 调用中使用 `tableName: "<PluginName>"` 参数
+- [ ] 验证 JSON 格式正确（可使用 `scripts/validate.py`）
+
+## 维护工具
+
+使用项目提供的 i18n 工具脚本进行维护：
+
+```bash
+# 检查插件翻译文件缺失
+python3 scripts/check_missing.py LumiApp/Plugins/AppManagerPlugin/AppManager.xcstrings
+
+# 验证文件格式
+python3 scripts/validate.py LumiApp/Plugins/AppManagerPlugin/AppManager.xcstrings
+
+# 添加新翻译
+python3 scripts/add_translation.py LumiApp/Plugins/AppManagerPlugin/AppManager.xcstrings "Key" "中文" "中文"
+
+# 清理过期条目
+python3 scripts/clean_stale.py LumiApp/Plugins/AppManagerPlugin/AppManager.xcstrings
+```
+
+## ⛔ 禁止使用 Core.xcstrings
+
+**任何情况下都禁止使用 `Core.xcstrings`：**
+
+- ❌ 通用词汇（Cancel、OK、Error、Loading 等）→ 放入插件自己的 xcstrings
+- ❌ 全局状态提示 → 放入插件自己的 xcstrings
+- ❌ 被多个插件共享的功能文本 → 每个插件各自维护自己的翻译
+
+每个插件必须是**完全自包含**的，包括其所有翻译资源。

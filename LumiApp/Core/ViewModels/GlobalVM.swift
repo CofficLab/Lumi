@@ -161,20 +161,6 @@ final class GlobalVM: ObservableObject {
     }
 }
 
-/// 设置标签枚举
-///
-/// 定义设置面板中的各个标签页。
-enum SettingTab: String, CaseIterable {
-    case about = "关于"
-
-    /// 标签对应的 SF Symbols 图标名称
-    var icon: String {
-        switch self {
-        case .about: return "info.circle"
-        }
-    }
-}
-
 // MARK: - Preview
 
 #Preview("App - Small Screen") {

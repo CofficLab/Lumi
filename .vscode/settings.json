@@ -20,6 +20,7 @@
         "xcarchive",
         "xcodeproj",
         "xcrun",
+        "xcstrings",
         "zhipu"
     ]
 }
