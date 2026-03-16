@@ -53,7 +53,7 @@ actor PluginNamePlugin: SuperPlugin, SuperLog {
     nonisolated static let isConfigurable: Bool = false
     
     static let id = "PluginName"
-    static let navigationId: String? = "plugin_name"
+    static let navigationId = "plugin_name"
     static let displayName = String(localized: "Plugin Display Name")
     static let description = String(localized: "Plugin description text")
     static let iconName = "puzzlepiece.extension"
@@ -84,10 +84,9 @@ actor PluginNamePlugin: SuperPlugin, SuperLog {
     
     @MainActor
     func addNavigationEntries() -> [NavigationEntry]? {
-        guard let navigationId = Self.navigationId else { return nil }
         return [
             NavigationEntry.create(
-                id: navigationId,
+                id: Self.navigationId,
                 title: Self.displayName,
                 icon: Self.iconName,
                 pluginId: Self.id
@@ -117,7 +116,7 @@ actor PluginNamePlugin: SuperPlugin, SuperLog {
 | `enable` | `Bool` | ✅ | 插件启用状态，默认 `true` |
 | `verbose` | `Bool` | ✅ | 日志详细程度，默认 `false` |
 | `id` | `String` | ✅ | 插件唯一标识符 |
-| `navigationId` | `String?` | ✅ | 导航标识符，无可导航界面时为 `nil` |
+| `navigationId` | `String` | ✅ | 导航标识符，使用 `id` 值即可 |
 | `displayName` | `String` | ✅ | 显示名称，必须本地化 |
 | `description` | `String` | ✅ | 描述文本，必须本地化 |
 | `iconName` | `String` | ✅ | SF Symbols 图标名称 |
@@ -243,10 +242,9 @@ static let order: Int = 100
 ```swift
 @MainActor
 func addNavigationEntries() -> [NavigationEntry]? {
-    guard let navigationId = Self.navigationId else { return nil }
     return [
         NavigationEntry.create(
-            id: navigationId,
+            id: Self.navigationId,
             title: Self.displayName,
             icon: Self.iconName,
             pluginId: Self.id
@@ -268,13 +266,15 @@ func addStatusBarPopupView() -> AnyView? {
 
 ### 5.3 无导航界面的插件
 
+对于仅提供状态栏或后台功能的插件，`navigationId` 使用与 `id` 相同的值即可，系统会根据实际情况处理：
+
 ```swift
-// 对于仅提供状态栏或后台功能的插件
-static let navigationId: String? = nil
+static let id = "MemoryManager"
+static let navigationId = "MemoryManager"  // 与 id 相同
 
 @MainActor
 func addNavigationEntries() -> [NavigationEntry]? {
-    return nil  // 或省略此方法
+    return nil  // 不提供导航条目
 }
 ```
 
@@ -411,6 +411,9 @@ actor BadPlugin: SuperPlugin {
     nonisolated func onEnable() { }
     // 缺少 onRegister 和 onDisable
 }
+
+// 7. navigationId 使用可选类型
+static let navigationId: String? = "plugin_name"  // 应该用 String
 ```
 
 ### ✅ 正确示例
@@ -428,7 +431,7 @@ actor GoodPlugin: SuperPlugin, SuperLog {
     nonisolated static let isConfigurable: Bool = false
     
     static let id = "GoodPlugin"
-    static let navigationId: String? = "good_plugin"
+    static let navigationId = "good_plugin"
     static let displayName = String(localized: "Good Plugin")
     static let description = String(localized: "A well-structured plugin")
     static let iconName = "star"
@@ -459,10 +462,9 @@ actor GoodPlugin: SuperPlugin, SuperLog {
     
     @MainActor
     func addNavigationEntries() -> [NavigationEntry]? {
-        guard let navigationId = Self.navigationId else { return nil }
         return [
             NavigationEntry.create(
-                id: navigationId,
+                id: Self.navigationId,
                 title: Self.displayName,
                 icon: Self.iconName,
                 pluginId: Self.id
@@ -490,6 +492,7 @@ actor GoodPlugin: SuperPlugin, SuperLog {
 
 - [ ] 遵循标准目录结构
 - [ ] 实现所有必需属性
+- [ ] `navigationId` 使用 `String` 类型（不是 `String?`）
 - [ ] 统一使用 `SuperLog` 协议（如需要日志）
 - [ ] `enable` 属性有显式类型注解
 - [ ] `order` 使用计算属性
