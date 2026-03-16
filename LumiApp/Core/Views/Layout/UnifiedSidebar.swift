@@ -14,8 +14,10 @@ struct UnifiedSidebar: View {
             // MARK: - 模式切换器（顶部）
 
             HStack {
+                Spacer()
                 AppModeSwitcherView()
                     .fixedSize()
+                    .padding(.trailing)
             }
             .frame(maxWidth: .infinity, alignment: .center)
             .frame(height: AppConfig.headerHeight)
