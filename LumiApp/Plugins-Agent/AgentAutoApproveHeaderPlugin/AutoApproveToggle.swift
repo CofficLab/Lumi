@@ -1,4 +1,5 @@
 import SwiftUI
+import MagicAlert
 
 /// 自动批准开关：控制是否自动批准高风险命令
 struct AutoApproveToggle: View {
@@ -12,7 +13,13 @@ struct AutoApproveToggle: View {
 
             Toggle("", isOn: Binding(
                 get: { ProjectVM.autoApproveRisk },
-                set: { ProjectVM.setAutoApproveRisk($0) }
+                set: { newValue in
+                    ProjectVM.setAutoApproveRisk(newValue)
+                    let message = newValue
+                        ? "已开启自动批准高风险命令"
+                        : "已关闭自动批准高风险命令"
+                    alert_info(message)
+                }
             ))
                 .toggleStyle(.switch)
                 .controlSize(.mini)
