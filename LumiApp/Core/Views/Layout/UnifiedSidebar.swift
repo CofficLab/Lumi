@@ -14,12 +14,11 @@ struct UnifiedSidebar: View {
             // MARK: - 模式切换器（顶部）
 
             HStack {
-                Spacer()
                 AppModeSwitcherView()
-                    .padding(.horizontal, DesignTokens.Spacing.sm)
+                    .fixedSize()
             }
+            .frame(maxWidth: .infinity, alignment: .center)
             .frame(height: AppConfig.headerHeight)
-            .padding(.top, ProcessInfo.processInfo.operatingSystemVersion.majorVersion < 26 ? 16 : 0)
 
             Divider()
                 .background(Color.white.opacity(0.1))
