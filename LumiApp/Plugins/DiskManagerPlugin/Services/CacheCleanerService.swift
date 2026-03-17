@@ -3,15 +3,14 @@ import Foundation
 import MagicKit
 import OSLog
 
-@MainActor
-class CacheCleanerService: ObservableObject, SuperLog {
+/// 缓存清理服务 - 在后台执行扫描和清理操作
+class CacheCleanerService: @unchecked Sendable, SuperLog {
     nonisolated static let emoji = "🗑️"
     nonisolated static let verbose = true
     static let shared = CacheCleanerService()
 
-    @Published var categories: [CacheCategory] = []
-    @Published var isScanning = false
-    @Published var scanProgress: String = ""
+    // 注意：状态管理已移至 ViewModel，Service 只负责后台操作
+    private init() {}
 
     private struct CacheScanRule {
         let level: CacheCategory.SafetyLevel
@@ -52,16 +51,14 @@ class CacheCleanerService: ObservableObject, SuperLog {
 
     // MARK: - 公开 API
 
-    func scanCaches() async {
-        isScanning = true
-        scanProgress = String(localized: "Initializing...")
+    func scanCaches() async -> [CacheCategory] {
+        if Self.verbose {
+            os_log("\(self.t)开始扫描缓存分类")
+        }
 
         // 在后台执行扫描操作
         let rules = scanRules
         let results = await Task.detached(priority: .utility) {
-            if Self.verbose {
-                os_log("\(self.t)开始扫描缓存分类")
-            }
             return await withTaskGroup(of: CacheCategory?.self, returning: [CacheCategory].self) { group in
                 for rule in rules {
                     group.addTask(priority: .utility) {
@@ -79,16 +76,11 @@ class CacheCleanerService: ObservableObject, SuperLog {
             }
         }.value
 
-        // 更新 UI 状态
-        await MainActor.run {
-            self.categories = results
-            self.isScanning = false
-            self.scanProgress = ""
+        if Self.verbose {
+            os_log("\(self.t)缓存扫描完成：\(results.count) 个分类")
         }
 
-        if Self.verbose {
-            os_log("\(self.t)缓存扫描完成：\(self.categories.count) 个分类")
-        }
+        return results
     }
 
     func cleanup(paths: [CachePath]) async throws -> Int64 {
@@ -113,11 +105,6 @@ class CacheCleanerService: ObservableObject, SuperLog {
         if Self.verbose {
             os_log("\(self.t)清理完成，释放 \(ByteCountFormatter.string(fromByteCount: freedSpace, countStyle: .file))")
         }
-
-        // 在后台重新扫描以更新状态
-        await Task.detached(priority: .utility) {
-            await self.scanCaches()
-        }.value
 
         return freedSpace
     }

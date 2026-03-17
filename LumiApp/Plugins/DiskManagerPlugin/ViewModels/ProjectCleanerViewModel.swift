@@ -1,12 +1,11 @@
 import Foundation
-import Combine
 import OSLog
 import MagicKit
 import SwiftUI
 
 @MainActor
 final class ProjectCleanerViewModel: ObservableObject, SuperLog {
-    nonisolated static let emoji = "📁"
+    nonisolated static let emoji = "📋"
     nonisolated static let verbose = true
 
     @Published var projects: [ProjectInfo] = []
@@ -28,14 +27,9 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
     }
 
     private let service = ProjectCleanerService.shared
-    private var cancellables = Set<AnyCancellable>()
 
     init() {
-        // Subscribe to service scanning state
-        service.$isScanning
-            .receive(on: RunLoop.main)
-            .assign(to: \.isScanning, on: self)
-            .store(in: &cancellables)
+        // Service 不再发布状态，所有状态由 ViewModel 管理
     }
 
     func scanProjects() async {
@@ -43,11 +37,16 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
             os_log("\(self.t)开始扫描项目")
         }
 
-        selectedItemIds = []
+        await MainActor.run {
+            self.isScanning = true
+            self.selectedItemIds = []
+        }
+
         let result = await service.scanProjects()
 
         await MainActor.run {
             self.projects = result
+            self.isScanning = false
 
             if Self.verbose {
                 os_log("\(self.t)项目扫描完成：\(result.count) 个项目")
@@ -72,7 +71,6 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
 
     func cleanSelected() {
         guard !selectedItemIds.isEmpty else { return }
-        isCleaning = true
 
         var itemsToClean: [CleanableItem] = []
         for project in projects {
@@ -90,24 +88,22 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
         }
 
         Task {
+            await MainActor.run { self.isCleaning = true }
+
             do {
                 try await service.cleanProjects(itemsToClean)
 
-                await MainActor.run {
-                    if Self.verbose {
-                        os_log("\(self.t)项目清理完成")
-                    }
-                    self.isCleaning = false
-                    self.showCleanConfirmation = false
+                if Self.verbose {
+                    os_log("\(self.t)项目清理完成")
                 }
+
                 await scanProjects() // Rescan to update status
             } catch {
-                await MainActor.run {
-                    os_log(.error, "\(self.t)项目清理失败：\(error.localizedDescription)")
-                    self.isCleaning = false
-                    // TODO: Show error
-                }
+                os_log(.error, "\(self.t)项目清理失败：\(error.localizedDescription)")
+                // TODO: Show error
             }
+
+            await MainActor.run { self.isCleaning = false }
         }
     }
 

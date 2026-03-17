@@ -2,17 +2,13 @@ import Foundation
 import OSLog
 import MagicKit
 
-@MainActor
-class XcodeCleanService: ObservableObject, SuperLog {
+/// Xcode 清理服务 - 在后台执行扫描和清理操作
+class XcodeCleanService: @unchecked Sendable, SuperLog {
     nonisolated static let emoji = "🧼"
     nonisolated static let verbose = true
 
     static let shared = XcodeCleanService()
     private let fileManager = FileManager.default
-
-    @Published var isScanning = false
-    @Published var scanProgress: String = ""
-    @Published var scanStats: ScanStats = ScanStats()
 
     // For testing purposes
     var customRootDirectory: URL?
@@ -64,40 +60,35 @@ class XcodeCleanService: ObservableObject, SuperLog {
 
     // MARK: - Scanning
 
-    func scanAllCategories() async -> [XcodeCleanCategory: [XcodeCleanItem]] {
-        await MainActor.run {
-            self.isScanning = true
-            self.scanProgress = String(localized: "Initializing...")
-            self.scanStats = ScanStats()
+    /// 扫描所有类别 - 返回结果，状态由 ViewModel 管理
+    func scanAllCategories() async -> (scanStats: ScanStats, itemsByCategory: [XcodeCleanCategory: [XcodeCleanItem]]) {
+        if Self.verbose {
+            os_log("\(self.t)开始扫描 Xcode 缓存")
         }
 
         var results: [XcodeCleanCategory: [XcodeCleanItem]] = [:]
+        var stats = ScanStats()
 
         for category in XcodeCleanCategory.allCases {
-            await MainActor.run {
-                self.scanProgress = category.displayName
-                self.scanStats.currentCategory = category.displayName
-            }
+            stats.currentCategory = category.displayName
 
             let items = await scan(category: category)
             results[category] = items
 
-            await MainActor.run {
-                self.scanStats.scannedCategories += 1
-                self.scanStats.totalItems += items.count
+            stats.scannedCategories += 1
+            stats.totalItems += items.count
+
+            if Self.verbose {
+                let size = items.reduce(0 as Int64) { $0 + $1.size }
+                os_log("\(self.t)已扫描 \(category.rawValue)：\(items.count) 项，\(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
             }
         }
 
-        await MainActor.run {
-            self.isScanning = false
-            self.scanProgress = ""
-        }
-
         if Self.verbose {
-            os_log("\(self.t)扫描完成：总计 \(self.scanStats.totalItems) 项")
+            os_log("\(self.t)扫描完成，总计 \(stats.totalItems) 项")
         }
 
-        return results
+        return (stats, results)
     }
 
     func scan(category: XcodeCleanCategory) async -> [XcodeCleanItem] {

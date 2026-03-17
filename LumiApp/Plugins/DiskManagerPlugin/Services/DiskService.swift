@@ -3,32 +3,21 @@ import AppKit
 import OSLog
 import MagicKit
 
-// MARK: - DiskService
-
-@MainActor
-class DiskService: ObservableObject, SuperLog {
+/// 磁盘服务 - 在后台执行扫描和清理操作
+class DiskService: @unchecked Sendable, SuperLog {
     nonisolated static let emoji = "💽"
     nonisolated static let verbose = true
     static let shared = DiskService()
 
-    @Published var currentScan: ScanProgress?
-    @Published var scanHistory: [ScanResult] = []
-    
     private let coordinator = ScanCoordinator()
-    
+
+    // 注意：状态管理已移至 ViewModel，Service 只负责后台操作
     private init() {
         if Self.verbose {
             os_log("\(self.t)Disk service initialized")
         }
-        
-        // Bind coordinator's progress update
-        Task {
-            for await progress in coordinator.progressStream {
-                self.currentScan = progress
-            }
-        }
     }
-    
+
     // MARK: - Public API
 
     func getDiskUsage() async -> DiskUsage? {
@@ -58,7 +47,7 @@ class DiskService: ObservableObject, SuperLog {
         if Self.verbose {
             os_log("\(self.t)Request scanning path: \(path) (forceRefresh: \(forceRefresh))")
         }
-        
+
         // Try to read cache
         if !forceRefresh {
             if let cached = await ScanCacheService.shared.load(for: path) {
@@ -68,37 +57,35 @@ class DiskService: ObservableObject, SuperLog {
                 return cached
             }
         }
-        
+
         // Execute scan
         os_log("\(self.t)开始扫描路径：\((path as NSString).lastPathComponent)")
         let result = await coordinator.scan(path)
         os_log("\(self.t)扫描完成：\((path as NSString).lastPathComponent)，\(result.largeFiles.count) 个大文件，\(ByteCountFormatter.string(fromByteCount: result.totalSize, countStyle: .file))")
-        
+
         // Save cache
         await ScanCacheService.shared.save(result, for: path)
-        
+
         return result
     }
 
     /// Cancel current scan
-    func cancelScan() {
-        Task {
-            await coordinator.cancelCurrentScan()
-        }
+    func cancelScan() async {
+        await coordinator.cancelCurrentScan()
     }
-    
+
     /// Delete file
     func deleteFile(at url: URL) async throws {
         try await Task.detached(priority: .utility) {
             try FileManager.default.removeItem(at: url)
         }.value
     }
-    
+
     /// Reveal in Finder
     func revealInFinder(url: URL) {
         NSWorkspace.shared.activateFileViewerSelecting([url])
     }
-    
+
     /// Calculate the size of the specified directory (does not generate directory tree, only counts total size)
     func calculateSize(for url: URL) async -> Int64 {
         return await Task.detached(priority: .userInitiated) {

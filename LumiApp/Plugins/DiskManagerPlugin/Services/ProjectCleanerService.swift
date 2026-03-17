@@ -2,14 +2,15 @@ import Foundation
 import OSLog
 import MagicKit
 
-@MainActor
-class ProjectCleanerService: ObservableObject, SuperLog {
+/// 项目清理服务 - 在后台执行扫描和清理操作
+class ProjectCleanerService: @unchecked Sendable, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose = true
     static let shared = ProjectCleanerService()
     private let fileManager = FileManager.default
 
-    @Published var isScanning = false
+    // 注意：状态管理已移至 ViewModel，Service 只负责后台操作
+    private init() {}
 
     // Common development directories
     private let defaultScanPaths = [
@@ -22,10 +23,6 @@ class ProjectCleanerService: ObservableObject, SuperLog {
     ]
 
     func scanProjects() async -> [ProjectInfo] {
-        await MainActor.run {
-            self.isScanning = true
-        }
-
         if Self.verbose {
             os_log("\(self.t)开始扫描项目目录")
         }
@@ -34,10 +31,6 @@ class ProjectCleanerService: ObservableObject, SuperLog {
         let result = await Task.detached(priority: .utility) {
             await Self.scanProjectsDetached(pathsToScan)
         }.value
-
-        await MainActor.run {
-            self.isScanning = false
-        }
 
         if Self.verbose {
             os_log("\(self.t)项目扫描完成：\(result.count) 个项目")

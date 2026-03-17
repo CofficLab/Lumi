@@ -26,24 +26,9 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
     }
 
     private let service = XcodeCleanService.shared
-    private var cancellables = Set<AnyCancellable>()
 
     init() {
-        // Subscribe to service scanning state
-        service.$isScanning
-            .receive(on: RunLoop.main)
-            .assign(to: \.isScanning, on: self)
-            .store(in: &cancellables)
-
-        service.$scanProgress
-            .receive(on: RunLoop.main)
-            .assign(to: \.scanProgress, on: self)
-            .store(in: &cancellables)
-
-        service.$scanStats
-            .receive(on: RunLoop.main)
-            .assign(to: \.scanStats, on: self)
-            .store(in: &cancellables)
+        // Service 不再发布状态，所有状态由 ViewModel 管理
     }
 
     func scanAll() async {
@@ -51,22 +36,32 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
             os_log("\(self.t)开始扫描 Xcode 缓存")
         }
 
-        itemsByCategory = [:]
-        errorMessage = nil
+        await MainActor.run {
+            self.isScanning = true
+            self.itemsByCategory = [:]
+            self.errorMessage = nil
+        }
 
-        let results = await service.scanAllCategories()
+        let (stats, results) = await service.scanAllCategories()
 
         // Apply auto selection for each category
+        var processedResults: [XcodeCleanCategory: [XcodeCleanItem]] = [:]
         for (category, items) in results {
             var processedItems = items
             applyAutoSelection(for: category, items: &processedItems)
-            itemsByCategory[category] = processedItems
+            processedResults[category] = processedItems
 
             if Self.verbose {
                 let size = processedItems.reduce(0 as Int64) { $0 + $1.size }
                 let sizeString = ByteCountFormatter.string(fromByteCount: size, countStyle: .file)
                 os_log("\(self.t)已扫描 \(category.rawValue)：\(processedItems.count) 项，\(sizeString)")
             }
+        }
+
+        await MainActor.run {
+            self.itemsByCategory = processedResults
+            self.scanStats = stats
+            self.isScanning = false
         }
 
         if Self.verbose {
