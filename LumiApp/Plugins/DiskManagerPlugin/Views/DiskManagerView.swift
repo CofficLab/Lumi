@@ -92,33 +92,23 @@ struct ViewModeSelector: View {
             HStack(spacing: 12) {
                 Spacer()
                 ViewModeButton(title: "大文件", icon: "doc.text", isSelected: selectedMode == 0) {
-                withAnimation {
-                        selectedMode = 0
-                    }
+                    selectedMode = 0
                 }
 
                 ViewModeButton(title: "目录分析", icon: "folder", isSelected: selectedMode == 1) {
-                    withAnimation {
-                        selectedMode = 1
-                    }
+                    selectedMode = 1
                 }
 
                 ViewModeButton(title: "系统清理", icon: "gear", isSelected: selectedMode == 2) {
-                    withAnimation {
-                        selectedMode = 2
-                    }
+                    selectedMode = 2
                 }
 
                 ViewModeButton(title: "Xcode 清理", icon: "hammer", isSelected: selectedMode == 4) {
-                    withAnimation {
-                        selectedMode = 4
-                    }
+                    selectedMode = 4
                 }
 
                 ViewModeButton(title: "项目清理", icon: "scissors", isSelected: selectedMode == 5) {
-                    withAnimation {
-                        selectedMode = 5
-                    }
+                    selectedMode = 5
                 }
 
                 Spacer()

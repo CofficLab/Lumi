@@ -3,12 +3,14 @@ import OSLog
 import MagicKit
 
 @MainActor
-class ProjectCleanerService: SuperLog {
+class ProjectCleanerService: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose = true
     static let shared = ProjectCleanerService()
     private let fileManager = FileManager.default
-    
+
+    @Published var isScanning = false
+
     // Common development directories
     private let defaultScanPaths = [
         "\(NSHomeDirectory())/Code",
@@ -20,6 +22,10 @@ class ProjectCleanerService: SuperLog {
     ]
 
     func scanProjects() async -> [ProjectInfo] {
+        await MainActor.run {
+            self.isScanning = true
+        }
+
         if Self.verbose {
             os_log("\(self.t)开始扫描项目目录")
         }
@@ -28,6 +34,10 @@ class ProjectCleanerService: SuperLog {
         let result = await Task.detached(priority: .utility) {
             await Self.scanProjectsDetached(pathsToScan)
         }.value
+
+        await MainActor.run {
+            self.isScanning = false
+        }
 
         if Self.verbose {
             os_log("\(self.t)项目扫描完成：\(result.count) 个项目")

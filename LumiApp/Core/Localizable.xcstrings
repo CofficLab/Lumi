@@ -243,7 +243,7 @@
         }
       }
     },
-    "%lld 个文件" : {
+    "%lld 个项目" : {
 
     },
     "%lld 字符" : {
@@ -780,9 +780,6 @@
         }
       }
     },
-    "Are you sure you want to delete the selected build artifacts (node_modules, target, etc)?\nThis will free up space but require rebuilding projects." : {
-
-    },
     "Are you sure you want to delete the selected files? This action cannot be undone." : {
       "localizations" : {
         "zh-Hans" : {
@@ -972,6 +969,7 @@
       }
     },
     "Clean Now" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -988,6 +986,7 @@
       }
     },
     "Cleaning..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1197,6 +1196,7 @@
       }
     },
     "Click scan to start analyzing system junk" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2140,6 +2140,7 @@
       }
     },
     "Free up disk space by cleaning obsolete build and support files" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3037,6 +3038,7 @@
       }
     },
     "No Cleanable Projects Found" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3086,6 +3088,7 @@
       }
     },
     "No items to clean" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3446,6 +3449,7 @@
       }
     },
     "Project Cleaner" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3591,6 +3595,7 @@
       }
     },
     "Ready" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3643,6 +3648,7 @@
       }
     },
     "Rescan" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3837,6 +3843,7 @@
       }
     },
     "Scan and clean system caches, logs, and junk files" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3887,6 +3894,7 @@
       }
     },
     "Scanned: Code, Projects, Developer, etc." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3920,6 +3928,7 @@
       }
     },
     "Scanning projects in common directories..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4148,6 +4157,7 @@
 
     },
     "Selected for cleanup" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4164,6 +4174,7 @@
       }
     },
     "Selected: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4441,6 +4452,7 @@
 
     },
     "System Cleanup" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5029,7 +5041,11 @@
         }
       }
     },
+    "Xcode 环境很干净！" : {
+
+    },
     "Your Xcode environment is clean!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5118,6 +5134,15 @@
 
     },
     "最近项目" : {
+
+    },
+    "准备分析目录..." : {
+
+    },
+    "准备就绪" : {
+
+    },
+    "准备扫描大文件..." : {
 
     },
     "删除" : {
@@ -5280,6 +5305,9 @@
     "已复制" : {
 
     },
+    "已扫描：Code、Projects、Developer 等目录" : {
+
+    },
     "已折叠" : {
 
     },
@@ -5290,6 +5318,15 @@
 
     },
     "已认证用户" : {
+
+    },
+    "已选择：%@" : {
+
+    },
+    "已选择清理" : {
+
+    },
+    "开发者缓存目录" : {
 
     },
     "开启新会话" : {
@@ -5396,7 +5433,19 @@
         }
       }
     },
+    "打开系统设置" : {
+
+    },
     "执行结果" : {
+
+    },
+    "扫描范围：Code、Projects、Developer 等目录" : {
+
+    },
+    "扫描范围：Xcode 相关缓存目录" : {
+
+    },
+    "扫描范围：用户主目录" : {
 
     },
     "折叠" : {
@@ -5602,6 +5651,9 @@
     "暂无项目" : {
 
     },
+    "未发现可清理的项目" : {
+
+    },
     "未认证用户" : {
 
     },
@@ -5642,7 +5694,7 @@
         }
       }
     },
-    "正在准备扫描..." : {
+    "正在分析目录结构" : {
 
     },
     "正在加载历史消息…" : {
@@ -5651,10 +5703,25 @@
     "正在加载模型列表…" : {
 
     },
-    "正在扫描：%@" : {
+    "正在扫描 Xcode 缓存" : {
+
+    },
+    "正在扫描大文件" : {
+
+    },
+    "正在扫描常见目录中的项目..." : {
+
+    },
+    "正在扫描系统缓存" : {
+
+    },
+    "正在扫描项目..." : {
 
     },
     "正在格式化参数…" : {
+
+    },
+    "没有发现可清理的缓存文件" : {
 
     },
     "浏览" : {
@@ -5691,6 +5758,12 @@
           }
         }
       }
+    },
+    "清理中..." : {
+
+    },
+    "点击扫描按钮开始分析系统缓存" : {
+
     },
     "版本 %@" : {
 
@@ -5733,6 +5806,9 @@
 
     },
     "移除此消息" : {
+
+    },
+    "立即清理" : {
 
     },
     "等待发送" : {
@@ -5936,7 +6012,13 @@
     "重新发送该消息" : {
 
     },
+    "重新扫描" : {
+
+    },
     "错误信息" : {
+
+    },
+    "项" : {
 
     },
     "项目文件" : {

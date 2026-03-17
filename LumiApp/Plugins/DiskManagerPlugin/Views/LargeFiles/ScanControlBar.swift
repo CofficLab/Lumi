@@ -37,16 +37,14 @@ struct ScanControlBar: View {
                 } else {
                     viewModel.startScan()
                 }
-            }) {
-                Label {
-                    Text(viewModel.isScanning ? scanningText : scanText)
-                } icon: {
+            }, label: {
+                Label(title: { Text(viewModel.isScanning ? scanningText : scanText) }, icon: {
                     Image(systemName: viewModel.isScanning ? scanningIcon : icon)
-                }
+                })
                 .font(.headline)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-            }
+            })
             .buttonStyle(.borderedProminent)
             .tint(viewModel.isScanning ? DesignTokens.Color.semantic.error : DesignTokens.Color.semantic.info)
 
@@ -69,4 +67,3 @@ struct ScanControlBar: View {
     ScanControlBar(forDirectoryTree: DiskManagerViewModel())
         .padding()
 }
-

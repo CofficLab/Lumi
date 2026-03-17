@@ -13,6 +13,8 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
     @Published var isCleaning = false
     @Published var errorMessage: String?
     @Published var isPermissionError = false
+    @Published var scanProgress: String = ""
+    @Published var scanStats: XcodeCleanService.ScanStats = XcodeCleanService.ScanStats()
 
     // Statistics
     var totalSize: Int64 {
@@ -24,70 +26,79 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
     }
 
     private let service = XcodeCleanService.shared
+    private var cancellables = Set<AnyCancellable>()
+
+    init() {
+        // Subscribe to service scanning state
+        service.$isScanning
+            .receive(on: RunLoop.main)
+            .assign(to: \.isScanning, on: self)
+            .store(in: &cancellables)
+
+        service.$scanProgress
+            .receive(on: RunLoop.main)
+            .assign(to: \.scanProgress, on: self)
+            .store(in: &cancellables)
+
+        service.$scanStats
+            .receive(on: RunLoop.main)
+            .assign(to: \.scanStats, on: self)
+            .store(in: &cancellables)
+    }
 
     func scanAll() async {
         if Self.verbose {
             os_log("\(self.t)开始扫描 Xcode 缓存")
         }
-        isScanning = true
-        errorMessage = nil
+
         itemsByCategory = [:]
-        
-        await withTaskGroup(of: (XcodeCleanCategory, [XcodeCleanItem]).self) { group in
-            for category in XcodeCleanCategory.allCases {
-                group.addTask {
-                    let items = await self.service.scan(category: category)
-                    return (category, items)
-                }
-            }
+        errorMessage = nil
 
-            for await (category, items) in group {
-                var processedItems = items
+        let results = await service.scanAllCategories()
 
-                // Apply smart selection policy
-                applyAutoSelection(for: category, items: &processedItems)
+        // Apply auto selection for each category
+        for (category, items) in results {
+            var processedItems = items
+            applyAutoSelection(for: category, items: &processedItems)
+            itemsByCategory[category] = processedItems
 
-                self.itemsByCategory[category] = processedItems
-
-                if Self.verbose {
-                    let size = processedItems.reduce(0 as Int64) { $0 + $1.size }
-                    os_log("\(self.t)已扫描 \(category.rawValue)：\(processedItems.count) 项，\(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
-                }
+            if Self.verbose {
+                let size = processedItems.reduce(0 as Int64) { $0 + $1.size }
+                let sizeString = ByteCountFormatter.string(fromByteCount: size, countStyle: .file)
+                os_log("\(self.t)已扫描 \(category.rawValue)：\(processedItems.count) 项，\(sizeString)")
             }
         }
 
         if Self.verbose {
             os_log("\(self.t)扫描完成，总计 \(ByteCountFormatter.string(fromByteCount: self.totalSize, countStyle: .file))")
         }
-
-        isScanning = false
     }
-    
+
     func toggleSelection(for item: XcodeCleanItem) {
         guard var items = itemsByCategory[item.category] else { return }
-        
+
         if let index = items.firstIndex(where: { $0.id == item.id }) {
             items[index].isSelected.toggle()
             itemsByCategory[item.category] = items
         }
     }
-    
+
     func selectAll(in category: XcodeCleanCategory) {
         guard var items = itemsByCategory[category] else { return }
-        for i in 0..<items.count {
-            items[i].isSelected = true
+        for index in 0..<items.count {
+            items[index].isSelected = true
         }
         itemsByCategory[category] = items
     }
-    
+
     func deselectAll(in category: XcodeCleanCategory) {
         guard var items = itemsByCategory[category] else { return }
-        for i in 0..<items.count {
-            items[i].isSelected = false
+        for index in 0..<items.count {
+            items[index].isSelected = false
         }
         itemsByCategory[category] = items
     }
-    
+
     func cleanSelected() async {
         isCleaning = true
         errorMessage = nil
@@ -96,7 +107,8 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
 
         if Self.verbose {
             let size = itemsToDelete.reduce(0 as Int64) { $0 + $1.size }
-            os_log("\(self.t)开始清理 \(itemsToDelete.count) 项，共 \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
+            let sizeString = ByteCountFormatter.string(fromByteCount: size, countStyle: .file)
+            os_log("\(self.t)开始清理 \(itemsToDelete.count) 项，共 \(sizeString)")
         }
 
         do {
@@ -114,7 +126,10 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
                 nsError.localizedDescription.contains("许可")
             isPermissionError = isPermission
             if isPermission {
-                errorMessage = String(localized: "Xcode cleanup requires Full Disk Access. Please grant permission in System Settings.", table: "DiskManager")
+                errorMessage = String(
+                    localized: "Xcode cleanup requires Full Disk Access. Please grant permission in System Settings.",
+                    table: "DiskManager"
+                )
             } else {
                 errorMessage = String(localized: "Cleanup failed: \(error.localizedDescription)")
             }
@@ -122,43 +137,41 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
 
         isCleaning = false
     }
-    
+
     // MARK: - Auto Selection Logic
-    
+
     private func applyAutoSelection(for category: XcodeCleanCategory, items: inout [XcodeCleanItem]) {
         switch category {
         case .derivedData, .simulatorCaches, .logs:
             // Select all by default
-            for i in 0..<items.count {
-                items[i].isSelected = true
+            for index in 0..<items.count {
+                items[index].isSelected = true
             }
-            
+
         case .iOSDeviceSupport, .watchOSDeviceSupport, .tvOSDeviceSupport:
             // Keep the latest version, select others
             // Sort: Version from high to low
             // Simple parsing: Assume the name starts with the version number
-            
-            let sortedIndices = items.indices.sorted { (i, j) -> Bool in
-                let v1 = items[i].name
-                let v2 = items[j].name
-                return v1.compare(v2, options: .numeric) == .orderedDescending // Descending
+
+            let sortedIndices = items.indices.sorted { (firstIndex, secondIndex) -> Bool in
+                let firstVersion = items[firstIndex].name
+                let secondVersion = items[secondIndex].name
+                return firstVersion.compare(secondVersion, options: .numeric) == .orderedDescending // Descending
             }
-            
+
             // Select all except the first one (latest)
-            for (rank, index) in sortedIndices.enumerated() {
-                if rank > 0 { // 0 is the latest
-                    items[index].isSelected = true
-                }
+            for (rank, index) in sortedIndices.enumerated() where rank > 0 {
+                items[index].isSelected = true
             }
-            
+
         case .archives:
             // Deselect all by default
             break
         }
     }
-    
+
     // MARK: - Formatting
-    
+
     func formatBytes(_ bytes: Int64) -> String {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useAll]

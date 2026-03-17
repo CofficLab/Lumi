@@ -15,7 +15,7 @@ struct LargeFilesListView: View {
             VStack {
                 // 扫描进度
                 if viewModel.isScanning {
-                    ScanProgressView(viewModel: viewModel)
+                    LargeFilesScanProgressView(viewModel: viewModel)
                 }
 
                 // 错误消息

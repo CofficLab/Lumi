@@ -11,7 +11,7 @@ struct DirectoryTreeView: View {
 
             // 扫描进度
             if viewModel.isScanning {
-                ScanProgressView(viewModel: viewModel)
+                DirectoryTreeScanProgressView(viewModel: viewModel)
             }
 
             // 错误消息

@@ -8,13 +8,13 @@ import SwiftUI
 final class ProjectCleanerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose = true
+
     @Published var projects: [ProjectInfo] = []
     @Published var selectedItemIds: Set<UUID> = []
-    
     @Published var isScanning = false
     @Published var isCleaning = false
     @Published var showCleanConfirmation = false
-    
+
     var totalSelectedSize: Int64 {
         var total: Int64 = 0
         for project in projects {
@@ -26,31 +26,42 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
         }
         return total
     }
-    
-    func scanProjects() {
+
+    private let service = ProjectCleanerService.shared
+    private var cancellables = Set<AnyCancellable>()
+
+    init() {
+        // Subscribe to service scanning state
+        service.$isScanning
+            .receive(on: RunLoop.main)
+            .assign(to: \.isScanning, on: self)
+            .store(in: &cancellables)
+    }
+
+    func scanProjects() async {
         if Self.verbose {
             os_log("\(self.t)开始扫描项目")
         }
-        isScanning = true
+
         selectedItemIds = []
-        Task {
-            let result = await ProjectCleanerService.shared.scanProjects()
-            await MainActor.run {
-                self.projects = result
-                self.isScanning = false
-                if Self.verbose {
-                    os_log("\(self.t)项目扫描完成：\(result.count) 个项目")
-                }
-                // Select all cleanable items by default
-                for project in result {
-                    for item in project.cleanableItems {
-                        self.selectedItemIds.insert(item.id)
-                    }
+        let result = await service.scanProjects()
+
+        await MainActor.run {
+            self.projects = result
+
+            if Self.verbose {
+                os_log("\(self.t)项目扫描完成：\(result.count) 个项目")
+            }
+
+            // Select all cleanable items by default
+            for project in result {
+                for item in project.cleanableItems {
+                    self.selectedItemIds.insert(item.id)
                 }
             }
         }
     }
-    
+
     func toggleSelection(_ id: UUID) {
         if selectedItemIds.contains(id) {
             selectedItemIds.remove(id)
@@ -58,11 +69,11 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
             selectedItemIds.insert(id)
         }
     }
-    
+
     func cleanSelected() {
         guard !selectedItemIds.isEmpty else { return }
         isCleaning = true
-        
+
         var itemsToClean: [CleanableItem] = []
         for project in projects {
             for item in project.cleanableItems {
@@ -71,24 +82,25 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
                 }
             }
         }
-        
+
         if Self.verbose {
             let size = itemsToClean.reduce(0 as Int64) { $0 + $1.size }
-            os_log("\(self.t)开始清理 \(itemsToClean.count) 项，预估 \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
+            let sizeString = ByteCountFormatter.string(fromByteCount: size, countStyle: .file)
+            os_log("\(self.t)开始清理 \(itemsToClean.count) 项，预估 \(sizeString)")
         }
-        
+
         Task {
             do {
-                try await ProjectCleanerService.shared.cleanProjects(itemsToClean)
-                
+                try await service.cleanProjects(itemsToClean)
+
                 await MainActor.run {
                     if Self.verbose {
                         os_log("\(self.t)项目清理完成")
                     }
                     self.isCleaning = false
                     self.showCleanConfirmation = false
-                    self.scanProjects() // Rescan to update status
                 }
+                await scanProjects() // Rescan to update status
             } catch {
                 await MainActor.run {
                     os_log(.error, "\(self.t)项目清理失败：\(error.localizedDescription)")
@@ -98,7 +110,7 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
             }
         }
     }
-    
+
     func formatBytes(_ bytes: Int64) -> String {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useAll]
