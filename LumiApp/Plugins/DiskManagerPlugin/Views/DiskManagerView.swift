@@ -4,6 +4,7 @@ import SwiftUI
 struct DiskManagerView: View {
     @StateObject private var viewModel = DiskManagerViewModel()
     @StateObject private var largeFilesViewModel = LargeFilesViewModel()
+    @StateObject private var directoryTreeViewModel = DirectoryTreeViewModel()
     @State private var selectedViewMode = 0
 
     var body: some View {
@@ -24,7 +25,7 @@ struct DiskManagerView: View {
                 if selectedViewMode == 0 {
                     LargeFilesListView(viewModel: largeFilesViewModel)
                 } else if selectedViewMode == 1 {
-                    DirectoryTreeView(viewModel: viewModel)
+                    DirectoryTreeView(viewModel: directoryTreeViewModel)
                 } else if selectedViewMode == 2 {
                     CacheCleanerView()
                 } else if selectedViewMode == 4 {

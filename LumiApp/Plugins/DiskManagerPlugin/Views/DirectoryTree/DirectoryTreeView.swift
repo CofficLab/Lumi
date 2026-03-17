@@ -2,12 +2,12 @@ import SwiftUI
 
 /// 目录树视图
 struct DirectoryTreeView: View {
-    @ObservedObject var viewModel: DiskManagerViewModel
+    @ObservedObject var viewModel: DirectoryTreeViewModel
 
     var body: some View {
         VStack(spacing: 16) {
             // 扫描控制区域
-            ScanControlBar(forDirectoryTree: viewModel)
+            DirectoryTreeScanControlBar(viewModel: viewModel)
 
             // 扫描进度
             if viewModel.isScanning {
@@ -24,11 +24,7 @@ struct DirectoryTreeView: View {
             // 目录列表
             VStack {
                 if viewModel.rootEntries.isEmpty && !viewModel.isScanning {
-                    DirEmptyStateView(
-                        title: "暂无数据",
-                        description: "点击扫描按钮查看目录结构",
-                        iconName: "folder"
-                    )
+                    EmptyDirectoryTreeView(viewModel: viewModel)
                 } else if !viewModel.isScanning {
                     List(viewModel.rootEntries, children: \.children) { entry in
                         DirectoryTreeRow(entry: entry, viewModel: viewModel)
@@ -45,7 +41,7 @@ struct DirectoryTreeView: View {
 /// 目录树行视图
 struct DirectoryTreeRow: View {
     let entry: DirectoryEntry
-    @ObservedObject var viewModel: DiskManagerViewModel
+    @ObservedObject var viewModel: DirectoryTreeViewModel
 
     var body: some View {
         HStack {
@@ -58,15 +54,11 @@ struct DirectoryTreeRow: View {
 
             Spacer()
 
-            Text(formatBytes(entry.size))
+            Text(viewModel.formatBytes(entry.size))
                 .font(.monospacedDigit(.caption)())
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
         }
         .padding(.vertical, 2)
-    }
-
-    private func formatBytes(_ bytes: Int64) -> String {
-        DiskManagerViewModel.byteFormatter.string(fromByteCount: bytes)
     }
 }
 
