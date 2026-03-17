@@ -4,7 +4,7 @@ import MagicKit
 
 actor XcodeCleanService: SuperLog {
     nonisolated static let emoji = "🧼"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     static let shared = XcodeCleanService()
     private let fileManager = FileManager.default
@@ -101,9 +101,12 @@ actor XcodeCleanService: SuperLog {
                 items.append(item)
             }
 
+            if Self.verbose {
+                os_log("\(self.t)扫描完成：\(category.rawValue)，\(items.count) 项")
+            }
             return items
         } catch {
-            os_log(.error, "\(self.t)Scan failed: \(category.rawValue) - \(error.localizedDescription)")
+            os_log(.error, "\(self.t)扫描失败：\(category.rawValue) - \(error.localizedDescription)")
             return []
         }
     }
@@ -136,19 +139,15 @@ actor XcodeCleanService: SuperLog {
     // MARK: - Cleaning
 
     func delete(items: [XcodeCleanItem]) async throws {
-        if Self.verbose {
-            os_log("\(self.t)Starting deletion of \(items.count) items")
-        }
+        os_log("\(self.t)开始删除 \(items.count) 项")
 
         for item in items {
             if Self.verbose {
-                os_log("\(self.t)Deleting: \(item.name)")
+                os_log("\(self.t)  └─ 删除：\(item.name)")
             }
             try fileManager.removeItem(at: item.path)
         }
 
-        if Self.verbose {
-            os_log("\(self.t)Deletion complete")
-        }
+        os_log("\(self.t)删除完成：\(items.count) 项")
     }
 }

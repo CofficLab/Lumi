@@ -6,7 +6,7 @@ import MagicKit
 @MainActor
 class CacheCleanerService: ObservableObject, SuperLog {
     nonisolated static let emoji = "🗑️"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
     static let shared = CacheCleanerService()
 
     @Published var categories: [CacheCategory] = []
@@ -53,6 +53,7 @@ class CacheCleanerService: ObservableObject, SuperLog {
     // MARK: - Public API
 
     func scanCaches() async {
+        os_log("\(self.t)开始扫描缓存分类")
         isScanning = true
         scanProgress = String(localized: "Initializing...")
 
@@ -74,11 +75,13 @@ class CacheCleanerService: ObservableObject, SuperLog {
         }
 
         categories = results.sorted { $0.safetyLevel < $1.safetyLevel }
+        os_log("\(self.t)缓存扫描完成：\(self.categories.count) 个分类")
         isScanning = false
         scanProgress = ""
     }
     
     func cleanup(paths: [CachePath]) async throws -> Int64 {
+        os_log("\(self.t)开始清理 \(paths.count) 个缓存路径")
         let freedSpace = await Task.detached(priority: .utility) {
             var total: Int64 = 0
             let fileManager = FileManager.default
@@ -87,12 +90,13 @@ class CacheCleanerService: ObservableObject, SuperLog {
                     try fileManager.removeItem(atPath: item.path)
                     total += item.size
                 } catch {
-                    os_log(.error, "\(Self.t)Cleanup failed: \(item.path) - \(error.localizedDescription)")
+                    os_log(.error, "\(Self.t)清理失败：\(item.path) - \(error.localizedDescription)")
                 }
             }
             return total
         }.value
 
+        os_log("\(self.t)清理完成，释放 \(ByteCountFormatter.string(fromByteCount: freedSpace, countStyle: .file))")
         // Rescan to update status
         await scanCaches()
         return freedSpace

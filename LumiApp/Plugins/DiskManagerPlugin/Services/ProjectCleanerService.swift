@@ -1,7 +1,11 @@
 import Foundation
+import OSLog
+import MagicKit
 
 @MainActor
-class ProjectCleanerService {
+class ProjectCleanerService: SuperLog {
+    nonisolated static let emoji = "📁"
+    nonisolated static let verbose = true
     static let shared = ProjectCleanerService()
     private let fileManager = FileManager.default
     
@@ -16,11 +20,19 @@ class ProjectCleanerService {
     ]
 
     func scanProjects() async -> [ProjectInfo] {
+        if Self.verbose {
+            os_log("\(self.t)开始扫描项目目录")
+        }
         let pathsToScan = defaultScanPaths.filter { fileManager.fileExists(atPath: $0) }
 
-        return await Task.detached(priority: .utility) {
+        let result = await Task.detached(priority: .utility) {
             await Self.scanProjectsDetached(pathsToScan)
         }.value
+
+        if Self.verbose {
+            os_log("\(self.t)项目扫描完成：\(result.count) 个项目")
+        }
+        return result
     }
 
     nonisolated private static func scanProjectsDetached(_ pathsToScan: [String]) async -> [ProjectInfo] {
@@ -148,11 +160,17 @@ class ProjectCleanerService {
     }
 
     func cleanProjects(_ items: [CleanableItem]) async throws {
+        if Self.verbose {
+            os_log("\(self.t)开始清理 \(items.count) 个项目依赖")
+        }
         try await Task.detached(priority: .utility) {
             let fileManager = FileManager.default
             for item in items {
                 try fileManager.removeItem(atPath: item.path)
             }
         }.value
+        if Self.verbose {
+            os_log("\(self.t)项目清理完成")
+        }
     }
 }

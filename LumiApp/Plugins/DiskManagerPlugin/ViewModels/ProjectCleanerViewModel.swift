@@ -1,9 +1,13 @@
 import Foundation
 import Combine
+import OSLog
+import MagicKit
 import SwiftUI
 
 @MainActor
-final class ProjectCleanerViewModel: ObservableObject {
+final class ProjectCleanerViewModel: ObservableObject, SuperLog {
+    nonisolated static let emoji = "📁"
+    nonisolated static let verbose = true
     @Published var projects: [ProjectInfo] = []
     @Published var selectedItemIds: Set<UUID> = []
     
@@ -24,6 +28,9 @@ final class ProjectCleanerViewModel: ObservableObject {
     }
     
     func scanProjects() {
+        if Self.verbose {
+            os_log("\(self.t)开始扫描项目")
+        }
         isScanning = true
         selectedItemIds = []
         Task {
@@ -31,6 +38,9 @@ final class ProjectCleanerViewModel: ObservableObject {
             await MainActor.run {
                 self.projects = result
                 self.isScanning = false
+                if Self.verbose {
+                    os_log("\(self.t)项目扫描完成：\(result.count) 个项目")
+                }
                 // Select all cleanable items by default
                 for project in result {
                     for item in project.cleanableItems {
@@ -62,17 +72,26 @@ final class ProjectCleanerViewModel: ObservableObject {
             }
         }
         
+        if Self.verbose {
+            let size = itemsToClean.reduce(0 as Int64) { $0 + $1.size }
+            os_log("\(self.t)开始清理 \(itemsToClean.count) 项，预估 \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
+        }
+        
         Task {
             do {
                 try await ProjectCleanerService.shared.cleanProjects(itemsToClean)
                 
                 await MainActor.run {
+                    if Self.verbose {
+                        os_log("\(self.t)项目清理完成")
+                    }
                     self.isCleaning = false
                     self.showCleanConfirmation = false
                     self.scanProjects() // Rescan to update status
                 }
             } catch {
                 await MainActor.run {
+                    os_log(.error, "\(self.t)项目清理失败：\(error.localizedDescription)")
                     self.isCleaning = false
                     // TODO: Show error
                 }

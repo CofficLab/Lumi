@@ -5,8 +5,8 @@ import MagicKit
 
 @MainActor
 class CacheCleanerViewModel: ObservableObject, SuperLog {
-    nonisolated static let emoji = "🧹"
-    nonisolated static let verbose = false
+    nonisolated static let emoji = "🗑️"
+    nonisolated static let verbose = true
     @Published var categories: [CacheCategory] = []
     @Published var isScanning = false
     @Published var isCleaning = false
@@ -48,8 +48,14 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
     }
     
     func scan() {
+        if Self.verbose {
+            os_log("\(self.t)开始扫描缓存")
+        }
         Task {
             await CacheCleanerService.shared.scanCaches()
+            if Self.verbose {
+                os_log("\(self.t)缓存扫描完成，\(self.categories.count) 个分类")
+            }
             // Select all Safe level by default
             selectAllSafe()
         }
@@ -70,13 +76,22 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
             }
         }
         
+        if Self.verbose {
+            let size = pathsToClean.reduce(0 as Int64) { $0 + $1.size }
+            os_log("\(self.t)开始清理 \(pathsToClean.count) 个路径，预估 \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
+        }
+        
         Task {
             do {
                 let freed = try await CacheCleanerService.shared.cleanup(paths: pathsToClean)
+                if Self.verbose {
+                    os_log("\(self.t)清理完成，释放 \(ByteCountFormatter.string(fromByteCount: freed, countStyle: .file))")
+                }
                 self.lastFreedSpace = freed
                 self.showCleanupComplete = true
                 self.selection.removeAll() // Clear selection
             } catch {
+                os_log(.error, "\(self.t)清理失败：\(error.localizedDescription)")
                 self.alertMessage = String(localized: "Cleanup error: \(error.localizedDescription)")
             }
             self.isCleaning = false

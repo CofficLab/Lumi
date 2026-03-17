@@ -6,7 +6,7 @@ import MagicKit
 @MainActor
 class DiskManagerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "💿"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     @Published var diskUsage: DiskUsage?
     @Published var largeFiles: [LargeFileEntry] = []
@@ -29,7 +29,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
 
     func refreshDiskUsage() {
         if Self.verbose {
-            os_log("\(self.t)Refresh disk usage")
+            os_log("\(self.t)刷新磁盘使用情况")
         }
         Task {
             self.diskUsage = await DiskService.shared.getDiskUsage()
@@ -50,7 +50,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(self.t)Start scan: \(url.path)")
+            os_log("\(self.t)开始扫描：\((url.path as NSString).lastPathComponent)")
         }
 
         isScanning = true
@@ -81,7 +81,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
                             self.rootEntries = result.entries
                             self.isScanning = false
                             if Self.verbose {
-                                os_log("\(self.t)Scan completed, found \(result.largeFiles.count) large files")
+                                os_log("\(self.t)扫描完成，发现 \(result.largeFiles.count) 个大文件")
                             }
                         }
                     }
@@ -101,7 +101,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
 
     func stopScan() {
         if Self.verbose {
-            os_log("\(self.t)Stop scan")
+            os_log("\(self.t)停止扫描")
         }
         scanTask?.cancel()
         DiskService.shared.cancelScan()
@@ -110,7 +110,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
 
     func deleteFile(_ item: LargeFileEntry) {
         if Self.verbose {
-            os_log("\(self.t)Delete file: \(item.name)")
+            os_log("\(self.t)删除文件：\(item.name)")
         }
         Task {
             do {
@@ -122,7 +122,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
                 }
             } catch {
                 await MainActor.run {
-                    os_log(.error, "\(self.t)Failed to delete file: \(error.localizedDescription)")
+                    os_log(.error, "\(self.t)删除文件失败：\(error.localizedDescription)")
                     self.errorMessage = String(localized: "Delete failed: \(error.localizedDescription)")
                 }
             }

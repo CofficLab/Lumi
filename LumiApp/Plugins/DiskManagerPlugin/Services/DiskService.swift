@@ -59,14 +59,16 @@ class DiskService: ObservableObject, SuperLog {
         if !forceRefresh {
             if let cached = await ScanCacheService.shared.load(for: path) {
                 if Self.verbose {
-                    os_log("\(self.t)Cache hit")
+                    os_log("\(self.t)缓存命中：\((path as NSString).lastPathComponent)")
                 }
                 return cached
             }
         }
         
         // Execute scan
+        os_log("\(self.t)开始扫描路径：\((path as NSString).lastPathComponent)")
         let result = await coordinator.scan(path)
+        os_log("\(self.t)扫描完成：\((path as NSString).lastPathComponent)，\(result.largeFiles.count) 个大文件，\(ByteCountFormatter.string(fromByteCount: result.totalSize, countStyle: .file))")
         
         // Save cache
         await ScanCacheService.shared.save(result, for: path)

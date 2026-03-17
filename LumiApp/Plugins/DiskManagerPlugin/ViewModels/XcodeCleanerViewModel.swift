@@ -6,7 +6,7 @@ import MagicKit
 @MainActor
 class XcodeCleanerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🧹"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     @Published var itemsByCategory: [XcodeCleanCategory: [XcodeCleanItem]] = [:]
     @Published var isScanning = false
@@ -27,7 +27,7 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
 
     func scanAll() async {
         if Self.verbose {
-            os_log("\(self.t)Starting scan of Xcode cache")
+            os_log("\(self.t)开始扫描 Xcode 缓存")
         }
         isScanning = true
         errorMessage = nil
@@ -51,13 +51,13 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
 
                 if Self.verbose {
                     let size = processedItems.reduce(0 as Int64) { $0 + $1.size }
-                    os_log("\(self.t)Scanned \(category.rawValue): \(processedItems.count) items, \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
+                    os_log("\(self.t)已扫描 \(category.rawValue)：\(processedItems.count) 项，\(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
                 }
             }
         }
 
         if Self.verbose {
-            os_log("\(self.t)Scan complete, total: \(ByteCountFormatter.string(fromByteCount: self.totalSize, countStyle: .file))")
+            os_log("\(self.t)扫描完成，总计 \(ByteCountFormatter.string(fromByteCount: self.totalSize, countStyle: .file))")
         }
 
         isScanning = false
@@ -96,17 +96,17 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
 
         if Self.verbose {
             let size = itemsToDelete.reduce(0 as Int64) { $0 + $1.size }
-            os_log("\(self.t)Starting cleanup of \(itemsToDelete.count) items, total \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
+            os_log("\(self.t)开始清理 \(itemsToDelete.count) 项，共 \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
         }
 
         do {
             try await service.delete(items: itemsToDelete)
             if Self.verbose {
-                os_log("\(self.t)Cleanup successful")
+                os_log("\(self.t)清理完成")
             }
             await scanAll()
         } catch {
-            os_log(.error, "\(self.t)Cleanup failed: \(error.localizedDescription)")
+            os_log(.error, "\(self.t)清理失败：\(error.localizedDescription)")
             let nsError = error as NSError
             let isPermission = (nsError.domain == NSCocoaErrorDomain && nsError.code == 513) ||
                 (nsError.domain == NSPOSIXErrorDomain && nsError.code == 13) ||

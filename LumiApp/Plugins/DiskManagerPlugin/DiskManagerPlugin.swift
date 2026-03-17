@@ -1,4 +1,6 @@
+import Foundation
 import MagicKit
+import OSLog
 import SwiftUI
 
 actor DiskManagerPlugin: SuperPlugin, SuperLog {
@@ -22,6 +24,9 @@ actor DiskManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     @MainActor func addNavigationEntries() -> [NavigationEntry]? {
+        if Self.verbose {
+            os_log("\(self.t)注册磁盘管理导航入口")
+        }
         return [
             NavigationEntry.create(
                 id: Self.navigationId,
