@@ -65,10 +65,10 @@ actor CacheManager: SuperLog {
             do {
                 try fileManager.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
                 if Self.verbose {
-                    os_log("\(self.t)Created cache directory: \(cacheDirectory.path)")
+                    os_log("\(self.t)创建缓存目录：\(cacheDirectory.path)")
                 }
             } catch {
-                os_log(.error, "\(self.t)Failed to create cache directory: \(error.localizedDescription)")
+                os_log(.error, "\(self.t)创建缓存目录失败：\(error.localizedDescription)")
             }
         }
     }
@@ -79,7 +79,7 @@ actor CacheManager: SuperLog {
               fileManager.fileExists(atPath: url.path),
               let data = try? Data(contentsOf: url) else {
             if Self.verbose {
-                os_log("\(self.t)No cache file found")
+                os_log("\(self.t)未找到缓存文件")
             }
             return
         }
@@ -88,10 +88,10 @@ actor CacheManager: SuperLog {
             let decoder = JSONDecoder()
             cache = try decoder.decode([String: AppCacheItem].self, from: data)
             if Self.verbose {
-                os_log("\(self.t)Cache loaded successfully: \(self.cache.count) entries")
+                os_log("\(self.t)缓存加载成功：\(self.cache.count) 条")
             }
         } catch {
-            os_log(.error, "\(self.t)Failed to load cache: \(error.localizedDescription)")
+            os_log(.error, "\(self.t)加载缓存失败：\(error.localizedDescription)")
             // 缓存损坏，重置
             cache = [:]
         }
@@ -106,10 +106,10 @@ actor CacheManager: SuperLog {
             let data = try encoder.encode(cache)
             try data.write(to: url, options: .atomic)
             if Self.verbose {
-                os_log("\(self.t)Cache saved successfullself.y: \(self.cache.count) entries")
+                os_log("\(self.t)缓存保存成功：\(self.cache.count) 条")
             }
         } catch {
-            os_log(.error, "\(self.t)Failed to save cache: \(error.localizedDescription)")
+            os_log(.error, "\(self.t)保存缓存失败：\(error.localizedDescription)")
         }
     }
 
@@ -123,7 +123,7 @@ actor CacheManager: SuperLog {
         guard let item = cache[path] else {
             stats.missCount += 1
             if Self.verbose {
-                os_log("\(self.t)Cache miss for: \(path.components(separatedBy: "/").last ?? path)")
+                os_log("\(self.t)缓存未命中：\((path as NSString).lastPathComponent)")
             }
             return nil
         }
@@ -132,13 +132,13 @@ actor CacheManager: SuperLog {
         if abs(item.lastModified - currentModificationDate.timeIntervalSince1970) < 1.0 {
             stats.hitCount += 1
             if Self.verbose {
-                os_log("\(self.t)Cache hit for: \(item.name)")
+                os_log("\(self.t)缓存命中：\(item.name)")
             }
             return item
         } else {
             stats.missCount += 1
             if Self.verbose {
-                os_log("\(self.t)Cache stale for: \(item.name), removing")
+                os_log("\(self.t)缓存已过期：\(item.name)，已移除")
             }
             // 缓存失效，移除
             cache.removeValue(forKey: path)
@@ -161,7 +161,7 @@ actor CacheManager: SuperLog {
         cache[app.bundleURL.path] = item
 
         if Self.verbose {
-            os_log("\(self.t)Cache updated for: \(app.displayName)")
+                os_log("\(self.t)缓存已更新：\(app.displayName)")
         }
     }
 
@@ -174,7 +174,7 @@ actor CacheManager: SuperLog {
 
         if removedCount > 0 {
             if Self.verbose {
-                os_log("\(self.t)Cleaned \(removedCount) invalid cache entries")
+                os_log("\(self.t)清理无效缓存：\(removedCount) 条")
             }
         }
     }
@@ -190,7 +190,7 @@ actor CacheManager: SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(self.t)Cache cleared. Previous stats: \(oldStats.hitCount) hits, \(oldStats.missCount) misses")
+            os_log("\(self.t)缓存已清空。之前统计：\(oldStats.hitCount) 命中，\(oldStats.missCount) 未命中")
         }
     }
 

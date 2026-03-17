@@ -169,7 +169,15 @@ final class AppService: @unchecked Sendable, SuperLog {
 
     /// 扫描应用的关联文件
     func scanRelatedFiles(for app: AppModel) async -> [RelatedFile] {
-        guard let bundleId = app.bundleIdentifier else { return [] }
+        guard let bundleId = app.bundleIdentifier else {
+            if Self.verbose {
+                os_log("\(self.t)跳过扫描：无 Bundle ID (\(app.displayName))")
+            }
+            return []
+        }
+        if Self.verbose {
+            os_log("\(self.t)开始扫描关联文件：\(app.displayName) (\(bundleId))")
+        }
         let home = NSHomeDirectory()
         var relatedFiles: [RelatedFile] = []
 
@@ -235,6 +243,9 @@ final class AppService: @unchecked Sendable, SuperLog {
             }
         }
 
+        if Self.verbose {
+            os_log("\(self.t)关联文件扫描完成：\(app.displayName)，找到 \(relatedFiles.count) 个")
+        }
         return relatedFiles
     }
 
@@ -250,15 +261,23 @@ final class AppService: @unchecked Sendable, SuperLog {
 
     /// 删除指定的文件列表
     func deleteFiles(_ files: [RelatedFile]) async throws {
+        os_log("\(self.t)开始删除 \(files.count) 个文件")
         let fileManager = FileManager.default
         for file in files {
             // 使用 trashItem 放入废纸篓，比较安全
             try fileManager.trashItem(at: URL(fileURLWithPath: file.path), resultingItemURL: nil)
+            if Self.verbose {
+                os_log("\(self.t)  └─ 已移至废纸篓：\((file.path as NSString).lastPathComponent)")
+            }
         }
+        os_log("\(self.t)删除完成：\(files.count) 个文件已移至废纸篓")
     }
 
     /// 保存缓存
     func saveCache() async {
+        if Self.verbose {
+            os_log("\(self.t)保存应用列表缓存")
+        }
         await cacheManager.saveCache()
     }
 

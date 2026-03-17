@@ -1,6 +1,7 @@
-import MagicKit
-import SwiftUI
 import Foundation
+import MagicKit
+import OSLog
+import SwiftUI
 
 /// 应用管理插件
 actor AppManagerPlugin: SuperPlugin, SuperLog {
@@ -8,7 +9,7 @@ actor AppManagerPlugin: SuperPlugin, SuperLog {
     
     nonisolated static let emoji = "📱"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     
     static let id = "AppManager"
     static let navigationId = "app_manager"
@@ -24,6 +25,9 @@ actor AppManagerPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func addNavigationEntries() -> [NavigationEntry]? {
+        if Self.verbose {
+            os_log("\(self.t)注册应用管理导航入口")
+        }
         return [
             NavigationEntry.create(
                 id: Self.navigationId,
