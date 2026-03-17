@@ -25,6 +25,9 @@ struct ContentView: View {
     /// 窗口级状态（每个窗口独立）
     @StateObject private var windowState: WindowState
 
+    /// 左侧栏宽度（持久化到 UserDefaults）
+    @AppStorage("Sidebar_Left_Width") private var sidebarWidth: Double = 220
+
     /// 默认选中的导航 ID
     var defaultNavigationId: String?
 
@@ -66,12 +69,12 @@ struct ContentView: View {
             content: {
                 Group {
                     VStack(spacing: 0) {
-                        // 主内容区域：左侧栏 + 中间栏 + 右侧栏
-                        HSplitView {
-                            // 左侧栏（统一 sidebar），可以根据 sidebarVisibility 隐藏
+                        // 主内容区域：左侧栏 + 中间栏 + 右侧栏（侧边栏宽度由 @AppStorage 持久化）
+                        HStack(spacing: 0) {
                             if windowState.sidebarVisibility {
                                 LeftSidebar(sidebarVisibility: $windowState.sidebarVisibility)
-                                    .frame(minWidth: 210, idealWidth: 220, maxWidth: 400)
+                                    .frame(width: CGFloat(sidebarWidth).clamped(min: 210, max: 400))
+                                SidebarResizeDivider(sidebarWidth: $sidebarWidth, minWidth: 210, maxWidth: 400)
                             }
 
                             // 中间 + 右侧区域（根据模式切换布局）
@@ -83,7 +86,6 @@ struct ContentView: View {
                                     } else if pluginProvider.hasDetailViews() {
                                         HSplitView {
                                             MiddleColumn()
-
                                             RightColumn()
                                         }
                                         .id("unifiedRightSplitView")
@@ -100,9 +102,9 @@ struct ContentView: View {
                                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 }
                             }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
                         .id("unifiedLeftSplitView")
-                        .background(SplitViewAutosaveConfigurator(autosaveName: "UnifiedMode_LeftSplit"))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                         StatusBar()
@@ -125,34 +127,119 @@ struct ContentView: View {
     }
 }
 
+// MARK: - Sidebar Resize Divider
+
+/// 可拖拽的分隔条，用于调整侧边栏宽度，宽度变化自动同步到 @AppStorage
+private struct SidebarResizeDivider: View {
+    @Binding var sidebarWidth: Double
+    let minWidth: CGFloat
+    let maxWidth: CGFloat
+
+    @State private var dragStartWidth: Double?
+
+    var body: some View {
+        Rectangle()
+            .fill(Color.primary.opacity(0.15))
+            .frame(width: 4)
+            .onHover { inside in
+                if inside {
+                    NSCursor.resizeLeftRight.push()
+                } else {
+                    NSCursor.pop()
+                }
+            }
+            .gesture(
+                DragGesture(coordinateSpace: .global)
+                    .onChanged { value in
+                        if dragStartWidth == nil {
+                            dragStartWidth = sidebarWidth
+                        }
+                        if let start = dragStartWidth {
+                            let delta = value.translation.width
+                            let newWidth = (start + Double(delta)).clamped(min: Double(minWidth), max: Double(maxWidth))
+                            sidebarWidth = newWidth
+                        }
+                    }
+                    .onEnded { _ in
+                        dragStartWidth = nil
+                    }
+            )
+    }
+}
+
 // MARK: - SplitView Autosave Helper
 
 /// 为 macOS 的 `HSplitView` / `VSplitView` 配置 `autosaveName`，以持久化分栏宽度
 private struct SplitViewAutosaveConfigurator: NSViewRepresentable {
     let autosaveName: String
 
-    func makeNSView(context: Context) -> NSView {
-        NSView(frame: .zero)
+    func makeNSView(context: Context) -> AutosaveConfiguratorView {
+        AutosaveConfiguratorView(autosaveName: autosaveName)
     }
 
-    func updateNSView(_ nsView: NSView, context: Context) {
-        DispatchQueue.main.async {
-            guard let splitView = nearestSplitView(from: nsView) else { return }
+    func updateNSView(_ nsView: AutosaveConfiguratorView, context: Context) {
+        nsView.autosaveName = autosaveName
+    }
+}
 
-            if splitView.autosaveName != autosaveName {
-                splitView.identifier = NSUserInterfaceItemIdentifier(autosaveName)
-                splitView.autosaveName = autosaveName
-            }
+/// 在 viewDidMoveToWindow 中配置 NSSplitView 的 autosaveName，确保视图已在窗口层级中
+private final class AutosaveConfiguratorView: NSView {
+    var autosaveName: String {
+        didSet { applyAutosaveIfNeeded() }
+    }
+
+    init(autosaveName: String) {
+        self.autosaveName = autosaveName
+        super.init(frame: .zero)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if window != nil {
+            applyAutosaveIfNeeded()
         }
     }
 
-    private func nearestSplitView(from view: NSView) -> NSSplitView? {
-        var current: NSView? = view
+    private var hasApplied = false
+
+    private func applyAutosaveIfNeeded() {
+        guard !hasApplied, !autosaveName.isEmpty, let splitView = findSplitView() else { return }
+        guard splitView.autosaveName != autosaveName else { return }
+
+        splitView.identifier = NSUserInterfaceItemIdentifier(autosaveName)
+        splitView.autosaveName = autosaveName
+        hasApplied = true
+    }
+
+    /// 从当前视图向上查找，或从同层兄弟视图中查找 NSSplitView（SwiftUI .background 与主内容为兄弟关系）
+    private func findSplitView() -> NSSplitView? {
+        // 1. 向上遍历父视图链
+        var current: NSView? = self
         while let node = current {
-            if let splitView = node as? NSSplitView {
-                return splitView
+            if let sv = node as? NSSplitView { return sv }
+            // 2. 检查兄弟视图中是否有 NSSplitView（包括其子视图）
+            if let parent = node.superview {
+                for sibling in parent.subviews where sibling !== node {
+                    if let found = findSplitViewRecursive(in: sibling) {
+                        return found
+                    }
+                }
             }
             current = node.superview
+        }
+        return nil
+    }
+
+    private func findSplitViewRecursive(in view: NSView?) -> NSSplitView? {
+        guard let view = view else { return nil }
+        if let sv = view as? NSSplitView { return sv }
+        for subview in view.subviews {
+            if let found = findSplitViewRecursive(in: subview) { return found }
         }
         return nil
     }
@@ -284,6 +371,14 @@ extension ContentView {
     /// 打开插件设置视图（在独立窗口中）
     func openPluginSettings() {
         openWindow(id: SettingsWindowID.settings)
+    }
+}
+
+// MARK: - Clamped Extension
+
+private extension Comparable {
+    func clamped(min minValue: Self, max maxValue: Self) -> Self {
+        Swift.min(Swift.max(self, minValue), maxValue)
     }
 }
 
