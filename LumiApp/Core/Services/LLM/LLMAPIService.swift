@@ -32,7 +32,7 @@ private final class TLSValidationDelegate: NSObject, URLSessionDelegate {
 /// 此类可以在后台线程执行
 class LLMAPIService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
     
     /// URLSession 配置
     private nonisolated let session: URLSession

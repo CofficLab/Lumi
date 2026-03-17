@@ -74,13 +74,20 @@ class RegistryManagerViewModel: ObservableObject {
             registries[type] = source.url
             
             if type == .docker {
-                showToast(message: "Docker registry updated. Please restart Docker Desktop.")
+                showToast(message: String(localized: "Docker registry updated. Please restart Docker Desktop.", table: "RegistryManager"))
             } else {
-                showToast(message: "Switched \(type.name) registry to \(source.name)")
+                let message = String(localized: "Switched {type} registry to {name}", table: "RegistryManager")
+                    .replacingOccurrences(of: "{type}", with: type.name)
+                    .replacingOccurrences(of: "{name}", with: source.name)
+                showToast(message: message)
             }
         } catch {
-            errorMsg = "Failed to set \(type.name): \(error.localizedDescription)"
-            showToast(message: "Failed: \(error.localizedDescription)")
+            errorMsg = String(localized: "Failed to set {type}: {error}", table: "RegistryManager")
+                .replacingOccurrences(of: "{type}", with: type.name)
+                .replacingOccurrences(of: "{error}", with: error.localizedDescription)
+            let message = String(localized: "Failed: {error}", table: "RegistryManager")
+                .replacingOccurrences(of: "{error}", with: error.localizedDescription)
+            showToast(message: message)
         }
         isLoading[type] = false
     }

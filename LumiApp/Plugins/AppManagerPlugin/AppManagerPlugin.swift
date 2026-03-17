@@ -1,6 +1,7 @@
-import MagicKit
-import SwiftUI
 import Foundation
+import MagicKit
+import OSLog
+import SwiftUI
 
 /// 应用管理插件
 actor AppManagerPlugin: SuperPlugin, SuperLog {
@@ -24,6 +25,9 @@ actor AppManagerPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func addNavigationEntries() -> [NavigationEntry]? {
+        if Self.verbose {
+            os_log("\(self.t)注册应用管理导航入口")
+        }
         return [
             NavigationEntry.create(
                 id: Self.navigationId,

@@ -2,7 +2,20 @@
   "sourceLanguage" : "en",
   "strings" : {
     "Manage Lumi registries" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理 Lumi 镜像仓库"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理 Lumi 映像倉庫"
+          }
+        }
+      }
     },
     "Registry Manager" : {
       "localizations" : {
@@ -16,6 +29,86 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "映像倉庫管理"
+          }
+        }
+      }
+    },
+    "Manage all your package registries in one place" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在一个地方管理所有包仓库"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在一個地方管理所有包倉庫"
+          }
+        }
+      }
+    },
+    "Docker registry updated. Please restart Docker Desktop." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Docker 仓库已更新。请重启 Docker Desktop。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Docker 倉庫已更新。請重啟 Docker Desktop。"
+          }
+        }
+      }
+    },
+    "Switched {type} registry to {name}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已切换 {type} 仓库到 {name}"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已切換 {type} 倉庫到 {name}"
+          }
+        }
+      }
+    },
+    "Failed to set {type}: {error}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置 {type} 失败：{error}"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設置 {type} 失敗：{error}"
+          }
+        }
+      }
+    },
+    "Failed: {error}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "失败：{error}"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "失敗：{error}"
           }
         }
       }

@@ -5,8 +5,8 @@ import MagicKit
 
 @MainActor
 class CacheCleanerViewModel: ObservableObject, SuperLog {
-    nonisolated static let emoji = "🧹"
-    nonisolated static let verbose = false
+    nonisolated static let emoji = "🗑️"
+    nonisolated static let verbose = true
     @Published var categories: [CacheCategory] = []
     @Published var isScanning = false
     @Published var isCleaning = false
@@ -15,9 +15,9 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
     @Published var alertMessage: String?
     @Published var showCleanupComplete = false
     @Published var lastFreedSpace: Int64 = 0
-    
-    private var cancellables = Set<AnyCancellable>()
-    
+
+    private let service = CacheCleanerService.shared
+
     var totalSelectedSize: Int64 {
         var total: Int64 = 0
         for category in categories {
@@ -29,37 +29,28 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
         }
         return total
     }
-    
+
     init() {
-        CacheCleanerService.shared.$categories
-            .receive(on: RunLoop.main)
-            .assign(to: \.categories, on: self)
-            .store(in: &cancellables)
-            
-        CacheCleanerService.shared.$isScanning
-            .receive(on: RunLoop.main)
-            .assign(to: \.isScanning, on: self)
-            .store(in: &cancellables)
-            
-        CacheCleanerService.shared.$scanProgress
-            .receive(on: RunLoop.main)
-            .assign(to: \.scanProgress, on: self)
-            .store(in: &cancellables)
+        // Service 不再发布状态，所有状态由 ViewModel 管理
     }
-    
+
     func scan() {
         Task {
-            await CacheCleanerService.shared.scanCaches()
-            // Select all Safe level by default
+            await MainActor.run { self.isScanning = true }
+            let results = await service.scanCaches()
+            await MainActor.run {
+                self.categories = results
+                self.isScanning = false
+            }
             selectAllSafe()
         }
     }
-    
+
     func cleanSelected() {
         guard !selection.isEmpty else { return }
-        
+
         isCleaning = true
-        
+
         // Collect selected paths
         var pathsToClean: [CachePath] = []
         for category in categories {
@@ -69,17 +60,33 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
                 }
             }
         }
-        
+
+        if Self.verbose {
+            let size = pathsToClean.reduce(0 as Int64) { $0 + $1.size }
+            os_log("\(self.t)开始清理 \(pathsToClean.count) 个路径，预估 \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
+        }
+
         Task {
             do {
-                let freed = try await CacheCleanerService.shared.cleanup(paths: pathsToClean)
-                self.lastFreedSpace = freed
-                self.showCleanupComplete = true
-                self.selection.removeAll() // Clear selection
+                let freed = try await service.cleanup(paths: pathsToClean)
+                if Self.verbose {
+                    os_log("\(self.t)清理完成，释放 \(ByteCountFormatter.string(fromByteCount: freed, countStyle: .file))")
+                }
+                await MainActor.run {
+                    self.lastFreedSpace = freed
+                    self.showCleanupComplete = true
+                    self.selection.removeAll() // Clear selection
+                    self.isCleaning = false
+                }
+                // 重新扫描以更新状态
+                self.scan()
             } catch {
-                self.alertMessage = String(localized: "Cleanup error: \(error.localizedDescription)")
+                await MainActor.run {
+                    os_log(.error, "\(self.t)清理失败：\(error.localizedDescription)")
+                    self.alertMessage = String(localized: "Cleanup error: \(error.localizedDescription)")
+                    self.isCleaning = false
+                }
             }
-            self.isCleaning = false
         }
     }
     

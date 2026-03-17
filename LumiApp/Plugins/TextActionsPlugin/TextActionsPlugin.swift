@@ -4,7 +4,7 @@ import OSLog
 
 actor TextActionsPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🖱️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id = "TextActions"
     static let navigationId = "text_actions"

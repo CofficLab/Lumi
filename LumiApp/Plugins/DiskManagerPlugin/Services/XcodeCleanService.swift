@@ -2,9 +2,10 @@ import Foundation
 import OSLog
 import MagicKit
 
-actor XcodeCleanService: SuperLog {
+/// Xcode 清理服务 - 在后台执行扫描和清理操作
+class XcodeCleanService: @unchecked Sendable, SuperLog {
     nonisolated static let emoji = "🧼"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     static let shared = XcodeCleanService()
     private let fileManager = FileManager.default
@@ -12,24 +13,30 @@ actor XcodeCleanService: SuperLog {
     // For testing purposes
     var customRootDirectory: URL?
 
+    struct ScanStats {
+        var scannedCategories = 0
+        var totalItems = 0
+        var currentCategory: String = ""
+    }
+
     private init() {
         if Self.verbose {
             os_log("\(self.t)Xcode cleaning service initialized")
         }
     }
-    
+
     // MARK: - Paths
-    
+
     private func getPath(for category: XcodeCleanCategory) -> URL? {
         let home = fileManager.homeDirectoryForCurrentUser
         let developer: URL
-        
+
         if let customRoot = customRootDirectory {
             developer = customRoot.appendingPathComponent("Library/Developer")
         } else {
             developer = home.appendingPathComponent("Library/Developer")
         }
-        
+
         switch category {
         case .derivedData:
             return developer.appendingPathComponent("Xcode/DerivedData")
@@ -50,75 +57,112 @@ actor XcodeCleanService: SuperLog {
             return home.appendingPathComponent("Library/Logs/CoreSimulator")
         }
     }
-    
+
     // MARK: - Scanning
-    
-    func scan(category: XcodeCleanCategory) async -> [XcodeCleanItem] {
-        guard let url = getPath(for: category) else { return [] }
+
+    /// 扫描所有类别 - 返回结果，状态由 ViewModel 管理
+    func scanAllCategories() async -> (scanStats: ScanStats, itemsByCategory: [XcodeCleanCategory: [XcodeCleanItem]]) {
+        if Self.verbose {
+            os_log("\(self.t)开始扫描 Xcode 缓存")
+        }
+
+        var results: [XcodeCleanCategory: [XcodeCleanItem]] = [:]
+        var stats = ScanStats()
+
+        for category in XcodeCleanCategory.allCases {
+            stats.currentCategory = category.displayName
+
+            let items = await scan(category: category)
+            results[category] = items
+
+            stats.scannedCategories += 1
+            stats.totalItems += items.count
+
+            if Self.verbose {
+                let size = items.reduce(0 as Int64) { $0 + $1.size }
+                os_log("\(self.t)已扫描 \(category.rawValue)：\(items.count) 项，\(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
+            }
+        }
 
         if Self.verbose {
-            os_log("\(self.t)Scanning \(category.rawValue): \(url.path)")
+            os_log("\(self.t)扫描完成，总计 \(stats.totalItems) 项")
         }
 
-        // If directory doesn't exist, return empty
-        var isDir: ObjCBool = false
-        guard fileManager.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue else {
-            if Self.verbose {
-                os_log("\(self.t)Directory does not exist: \(url.path)")
+        return (stats, results)
+    }
+
+    func scan(category: XcodeCleanCategory) async -> [XcodeCleanItem] {
+        guard let url = getPath(for: category) else { return [] }
+        let tag = self.t
+
+        if Self.verbose {
+            os_log("\(tag)Scanning \(category.rawValue): \(url.path)")
+        }
+
+        // Heavy I/O (directory listing + size enumeration) must not run on MainActor.
+        return await Task.detached(priority: .utility) {
+            let fileManager = FileManager.default
+
+            // If directory doesn't exist, return empty
+            var isDir: ObjCBool = false
+            guard fileManager.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue else {
+                if Self.verbose {
+                    os_log("\(tag)Directory does not exist: \(url.path)")
+                }
+                return []
             }
-            return []
-        }
 
-        do {
-            let contents = try fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: [.contentModificationDateKey], options: [.skipsHiddenFiles])
+            do {
+                let contents = try fileManager.contentsOfDirectory(
+                    at: url,
+                    includingPropertiesForKeys: [.contentModificationDateKey],
+                    options: [.skipsHiddenFiles]
+                )
 
-            var items: [XcodeCleanItem] = []
+                var items: [XcodeCleanItem] = []
+                items.reserveCapacity(contents.count)
 
-            for itemURL in contents {
-                // For Archives, Xcode creates subfolders by date (YYYY-MM-DD). We need to recurse or use the date folder as a unit.
-                // Usually Archives structure is Archives/YYYY-MM-DD/AppName.xcarchive
-                // For simplicity, we list the date folders under Archives.
-                // DevCleaner usually shows by date. Here we show by top-level subdirectories (date or project name).
+                for itemURL in contents {
+                    let size = Self.calculateSize(of: itemURL)
+                    let attributes = try itemURL.resourceValues(forKeys: [.contentModificationDateKey])
+                    let date = attributes.contentModificationDate ?? Date()
 
-                let size = calculateSize(of: itemURL)
-                let attributes = try itemURL.resourceValues(forKeys: [.contentModificationDateKey])
-                let date = attributes.contentModificationDate ?? Date()
+                    var version: String? = nil
+                    if category == .iOSDeviceSupport || category == .watchOSDeviceSupport || category == .tvOSDeviceSupport {
+                        version = itemURL.lastPathComponent
+                    }
 
-                var version: String? = nil
-                if category == .iOSDeviceSupport || category == .watchOSDeviceSupport || category == .tvOSDeviceSupport {
-                    // Try to parse version from folder name, e.g., "15.2 (19C56)"
-                    version = itemURL.lastPathComponent
+                    let item = XcodeCleanItem(
+                        name: itemURL.lastPathComponent,
+                        path: itemURL,
+                        size: size,
+                        category: category,
+                        modificationDate: date,
+                        version: version
+                    )
+                    items.append(item)
                 }
 
-                let item = XcodeCleanItem(
-                    name: itemURL.lastPathComponent,
-                    path: itemURL,
-                    size: size,
-                    category: category,
-                    modificationDate: date,
-                    version: version
-                )
-                items.append(item)
+                if Self.verbose {
+                    os_log("\(tag)扫描完成：\(category.rawValue)，\(items.count) 项")
+                }
+                return items
+            } catch {
+                os_log(.error, "\(self.t)扫描失败：\(category.rawValue) - \(error.localizedDescription)")
+                return []
             }
-
-            return items
-        } catch {
-            os_log(.error, "\(self.t)Scan failed: \(category.rawValue) - \(error.localizedDescription)")
-            return []
-        }
+        }.value
     }
-    
+
     // MARK: - Helpers
-    
-    private func calculateSize(of url: URL) -> Int64 {
-        // Simple recursive size calculation
-        // Note: This might be slow, production environment may need optimization or use URL resource keys
+
+    nonisolated private static func calculateSize(of url: URL, fileManager: FileManager) -> Int64 {
         guard let enumerator = fileManager.enumerator(at: url, includingPropertiesForKeys: [.fileSizeKey, .totalFileAllocatedSizeKey]) else {
             return 0
         }
-        
+
         var totalSize: Int64 = 0
-        
+
         for case let fileURL as URL in enumerator {
             do {
                 let values = try fileURL.resourceValues(forKeys: [.totalFileAllocatedSizeKey, .fileSizeKey])
@@ -129,26 +173,34 @@ actor XcodeCleanService: SuperLog {
                 continue
             }
         }
-        
+
         return totalSize
     }
-    
+
+    nonisolated private static func calculateSize(of url: URL) -> Int64 {
+        let fileManager = FileManager.default
+        return calculateSize(of: url, fileManager: fileManager)
+    }
+
     // MARK: - Cleaning
 
     func delete(items: [XcodeCleanItem]) async throws {
-        if Self.verbose {
-            os_log("\(self.t)Starting deletion of \(items.count) items")
-        }
+        let tag = self.t
+        os_log("\(tag)开始删除 \(items.count) 项")
 
-        for item in items {
-            if Self.verbose {
-                os_log("\(self.t)Deleting: \(item.name)")
+        let urls = items.map(\.path)
+
+        try await Task.detached(priority: .utility) {
+            let fileManager = FileManager.default
+
+            for (idx, url) in urls.enumerated() {
+                if Self.verbose {
+                    os_log("\(tag)  └─ 删除[\(idx + 1)/\(urls.count)]：\(url.lastPathComponent)")
+                }
+                try fileManager.removeItem(at: url)
             }
-            try fileManager.removeItem(at: item.path)
-        }
+        }.value
 
-        if Self.verbose {
-            os_log("\(self.t)Deletion complete")
-        }
+        os_log("\(tag)删除完成：\(items.count) 项")
     }
 }

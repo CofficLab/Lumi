@@ -64,18 +64,22 @@ class AppManagerViewModel: ObservableObject, SuperLog {
 
     /// 从缓存加载应用列表（首次加载时调用）
     func loadFromCache() async {
+        if Self.verbose {
+            os_log("\(self.t)开始从缓存加载应用列表")
+        }
         let apps = await appService.scanInstalledApps(force: false)
         if !apps.isEmpty {
             installedApps = apps
-            if Self.verbose {
-                os_log("\(self.t)从缓存加载 \(apps.count) 个应用")
-            }
+            os_log("\(self.t)从缓存加载 \(apps.count) 个应用")
+        } else if Self.verbose {
+            os_log("\(self.t)缓存为空，需要扫描")
         }
     }
 
     /// 扫描应用
     /// - Parameter force: 是否强制重新扫描
     func scanApps(force: Bool = false) async {
+        os_log("\(self.t)开始扫描应用 (force: \(force))")
         // Cancel previous task if any
         scanTask?.cancel()
         
@@ -138,9 +142,7 @@ class AppManagerViewModel: ObservableObject, SuperLog {
             await appService.saveCache()
         }
 
-        if Self.verbose {
-            os_log("\(self.t)Scan complete: \(self.installedApps.count) apps")
-        }
+        os_log("\(self.t)扫描完成：\(self.installedApps.count) 个应用")
     }
 
     /// 刷新应用列表
@@ -152,11 +154,13 @@ class AppManagerViewModel: ObservableObject, SuperLog {
 
     /// 扫描关联文件
     func scanRelatedFiles(for app: AppModel) {
+        os_log("\(self.t)开始扫描关联文件：\(app.displayName)")
         Task {
             await MainActor.run {
                 isScanningFiles = true
             }
             let files = await appService.scanRelatedFiles(for: app)
+            os_log("\(self.t)关联文件扫描完成：\(app.displayName)，\(files.count) 个")
             await MainActor.run {
                 self.relatedFiles = files
                 // 默认全选
@@ -177,9 +181,9 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     /// 删除选中的文件
     func deleteSelectedFiles() {
         guard !selectedFileIds.isEmpty else { return }
-        isDeleting = true
-
         let filesToDelete = relatedFiles.filter { selectedFileIds.contains($0.id) }
+        os_log("\(self.t)开始删除选中的 \(filesToDelete.count) 个文件")
+        isDeleting = true
 
         Task {
             do {
@@ -200,10 +204,7 @@ class AppManagerViewModel: ObservableObject, SuperLog {
                         self.installedApps.removeAll { $0.bundleURL.path == app.bundleURL.path }
                         self.selectedApp = nil
                         self.relatedFiles = []
-
-                        if Self.verbose {
-                            os_log("\(self.t)App uninstalled: \(app.displayName)")
-                        }
+                        os_log("\(self.t)应用已卸载：\(app.displayName)")
                     } else {
                         // 仅移除了部分文件，重新扫描以刷新状态（或者手动从 relatedFiles 移除）
                         if let app = self.selectedApp {
@@ -216,7 +217,7 @@ class AppManagerViewModel: ObservableObject, SuperLog {
             } catch {
                 await MainActor.run {
                     self.isDeleting = false
-                    os_log(.error, "\(self.t)Uninstall failed: \(error.localizedDescription)")
+                    os_log(.error, "\(self.t)删除文件失败：\(error.localizedDescription)")
                     self.errorMessage = error.localizedDescription
                 }
             }

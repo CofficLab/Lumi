@@ -1,10 +1,17 @@
 import Foundation
+import OSLog
+import MagicKit
 
-@MainActor
-class ProjectCleanerService {
+/// 项目清理服务 - 在后台执行扫描和清理操作
+class ProjectCleanerService: @unchecked Sendable, SuperLog {
+    nonisolated static let emoji = "📁"
+    nonisolated static let verbose = true
     static let shared = ProjectCleanerService()
     private let fileManager = FileManager.default
-    
+
+    // 注意：状态管理已移至 ViewModel，Service 只负责后台操作
+    private init() {}
+
     // Common development directories
     private let defaultScanPaths = [
         "\(NSHomeDirectory())/Code",
@@ -16,11 +23,19 @@ class ProjectCleanerService {
     ]
 
     func scanProjects() async -> [ProjectInfo] {
+        if Self.verbose {
+            os_log("\(self.t)开始扫描项目目录")
+        }
         let pathsToScan = defaultScanPaths.filter { fileManager.fileExists(atPath: $0) }
 
-        return await Task.detached(priority: .utility) {
+        let result = await Task.detached(priority: .utility) {
             await Self.scanProjectsDetached(pathsToScan)
         }.value
+
+        if Self.verbose {
+            os_log("\(self.t)项目扫描完成：\(result.count) 个项目")
+        }
+        return result
     }
 
     nonisolated private static func scanProjectsDetached(_ pathsToScan: [String]) async -> [ProjectInfo] {
@@ -148,11 +163,17 @@ class ProjectCleanerService {
     }
 
     func cleanProjects(_ items: [CleanableItem]) async throws {
+        if Self.verbose {
+            os_log("\(self.t)开始清理 \(items.count) 个项目依赖")
+        }
         try await Task.detached(priority: .utility) {
             let fileManager = FileManager.default
             for item in items {
                 try fileManager.removeItem(atPath: item.path)
             }
         }.value
+        if Self.verbose {
+            os_log("\(self.t)项目清理完成")
+        }
     }
 }

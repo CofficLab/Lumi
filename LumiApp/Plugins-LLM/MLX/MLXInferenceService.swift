@@ -55,7 +55,7 @@ public final class MLXInferenceService: ObservableObject, SuperLog {
             throw InferenceError.alreadyLoading
         }
 
-        await updateState(.loading)
+        updateState(.loading)
         self.currentModelId = id
 
         let cacheBase = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
@@ -73,7 +73,7 @@ public final class MLXInferenceService: ObservableObject, SuperLog {
         }
 
         guard FileManager.default.fileExists(atPath: modelDir.path) else {
-            await updateState(.error("模型未下载"))
+            updateState(.error("模型未下载"))
             self.currentModelId = nil
             throw InferenceError.modelNotDownloaded
         }
@@ -82,12 +82,12 @@ public final class MLXInferenceService: ObservableObject, SuperLog {
             let configuration = ModelConfiguration(directory: modelDir)
             self.modelContainer = try await loadModelContainer(configuration: configuration)
 
-            await updateState(.ready)
+            updateState(.ready)
             if Self.verbose {
                 os_log("\(self.t)✅ 模型加载成功：\(id)")
             }
         } catch {
-            await updateState(.error(error.localizedDescription))
+            updateState(.error(error.localizedDescription))
             throw InferenceError.loadFailed(error.localizedDescription)
         }
     }
@@ -201,12 +201,12 @@ public final class MLXInferenceService: ObservableObject, SuperLog {
                         self.tokensPerSecond = Double(tokenCount) / elapsed
                     }
 
-                    await self.updateState(.ready)
+                    self.updateState(.ready)
 
                 } catch {
                     if !Task.isCancelled {
                         continuation.yield(.error("生成失败：\(error.localizedDescription)"))
-                        await self.updateState(.error(error.localizedDescription))
+                        self.updateState(.error(error.localizedDescription))
                     }
                 }
 

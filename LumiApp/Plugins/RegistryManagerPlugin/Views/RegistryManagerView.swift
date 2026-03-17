@@ -1,5 +1,5 @@
-import SwiftUI
 import MagicKit
+import SwiftUI
 
 struct RegistryManagerView: View {
     @StateObject private var viewModel = RegistryManagerViewModel()
@@ -8,10 +8,10 @@ struct RegistryManagerView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Registry Manager")
+                    Text(String(localized: "Registry Manager", table: "RegistryManager"))
                         .font(.system(size: 26, weight: .bold))
                     
-                    Text("Manage all your package registries in one place")
+                    Text(String(localized: "Manage all your package registries in one place", table: "RegistryManager"))
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }

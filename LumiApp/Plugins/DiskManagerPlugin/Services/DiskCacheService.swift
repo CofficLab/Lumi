@@ -22,7 +22,7 @@ struct ScanCache: Codable {
 
 actor ScanCacheService: SuperLog {
     nonisolated static let emoji = "💾"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
     static let shared = ScanCacheService()
     
     private let cacheDirectory: URL
@@ -54,9 +54,11 @@ actor ScanCacheService: SuperLog {
             do {
                 let data = try JSONEncoder().encode(cache)
                 try data.write(to: fileURL)
-                // os_log("Cached scan result for \(path)")
+                if Self.verbose {
+                    os_log("\(Self.t)缓存已保存：\((path as NSString).lastPathComponent)")
+                }
             } catch {
-                // os_log(.error, "Failed to cache scan result: \(error)")
+                os_log(.error, "\(Self.t)缓存保存失败：\(path) - \(error.localizedDescription)")
             }
         }
     }
@@ -72,7 +74,14 @@ actor ScanCacheService: SuperLog {
             
             if cache.isExpired {
                 try? FileManager.default.removeItem(at: fileURL)
+                if Self.verbose {
+                    os_log("\(self.t)缓存已过期：\((path as NSString).lastPathComponent)")
+                }
                 return nil
+            }
+            
+            if Self.verbose {
+                os_log("\(self.t)缓存命中：\((path as NSString).lastPathComponent)，\(cache.largeFiles.count) 个大文件")
             }
             
             return ScanResult(

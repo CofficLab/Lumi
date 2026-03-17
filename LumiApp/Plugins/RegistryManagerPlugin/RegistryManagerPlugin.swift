@@ -36,3 +36,13 @@ actor RegistryManagerPlugin: SuperPlugin, SuperLog {
         ]
     }
 }
+
+// MARK: - Preview
+
+#Preview("App") {
+    ContentLayout()
+        .hideSidebar()
+        .withNavigation(RegistryManagerPlugin.navigationId)
+        .inRootView()
+        .withDebugBar()
+}

@@ -195,6 +195,7 @@
 
     },
     "%lld files" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -241,6 +242,9 @@
           }
         }
       }
+    },
+    "%lld 个项目" : {
+
     },
     "%lld 字符" : {
 
@@ -776,9 +780,6 @@
         }
       }
     },
-    "Are you sure you want to delete the selected build artifacts (node_modules, target, etc)?\nThis will free up space but require rebuilding projects." : {
-
-    },
     "Are you sure you want to delete the selected files? This action cannot be undone." : {
       "localizations" : {
         "zh-Hans" : {
@@ -796,6 +797,7 @@
       }
     },
     "Are you sure you want to delete this file?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -854,6 +856,7 @@
 
     },
     "Available: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -966,6 +969,7 @@
       }
     },
     "Clean Now" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -982,6 +986,7 @@
       }
     },
     "Cleaning..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1174,6 +1179,7 @@
       }
     },
     "Click scan button to start finding large files" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1190,6 +1196,7 @@
       }
     },
     "Click scan to start analyzing system junk" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1567,6 +1574,7 @@
       }
     },
     "Delete File" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1684,6 +1692,7 @@
       }
     },
     "Directory Analysis" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1700,6 +1709,7 @@
       }
     },
     "Directory structure will be displayed after scanning" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2113,6 +2123,7 @@
       }
     },
     "File \"%@\" will be permanently deleted." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2129,6 +2140,7 @@
       }
     },
     "Free up disk space by cleaning obsolete build and support files" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2364,6 +2376,7 @@
       }
     },
     "Initializing..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2529,6 +2542,7 @@
       }
     },
     "Large Files" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2674,9 +2688,6 @@
           }
         }
       }
-    },
-    "Manage all your package registries in one place" : {
-
     },
     "Manage clipboard history and snippets" : {
       "localizations" : {
@@ -3028,6 +3039,7 @@
       }
     },
     "No Cleanable Projects Found" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3060,6 +3072,7 @@
       }
     },
     "No Data" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3076,6 +3089,7 @@
       }
     },
     "No items to clean" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3092,6 +3106,7 @@
       }
     },
     "No Large Files" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3383,6 +3398,7 @@
 
     },
     "Preparing scan..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3434,6 +3450,7 @@
       }
     },
     "Project Cleaner" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3450,6 +3467,7 @@
       }
     },
     "Project Cleanup" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3578,6 +3596,7 @@
       }
     },
     "Ready" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3629,10 +3648,8 @@
         }
       }
     },
-    "Registry Manager" : {
-
-    },
     "Rescan" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3697,6 +3714,7 @@
       }
     },
     "Reveal in Finder" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3826,6 +3844,7 @@
       }
     },
     "Scan and clean system caches, logs, and junk files" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3842,6 +3861,7 @@
       }
     },
     "Scan Directory: User Home" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3858,6 +3878,7 @@
       }
     },
     "Scan Large Files" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3874,6 +3895,7 @@
       }
     },
     "Scanned: Code, Projects, Developer, etc." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3907,6 +3929,7 @@
       }
     },
     "Scanning projects in common directories..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3923,6 +3946,7 @@
       }
     },
     "Scanning: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4134,6 +4158,7 @@
 
     },
     "Selected for cleanup" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4150,6 +4175,7 @@
       }
     },
     "Selected: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4340,6 +4366,7 @@
 
     },
     "Stop Scan" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4426,6 +4453,7 @@
 
     },
     "System Cleanup" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4874,6 +4902,7 @@
       }
     },
     "Used" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4890,6 +4919,7 @@
       }
     },
     "Used: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4944,6 +4974,7 @@
       }
     },
     "View Mode" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4995,6 +5026,7 @@
       }
     },
     "Xcode Cleanup" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5010,7 +5042,11 @@
         }
       }
     },
+    "Xcode 环境很干净！" : {
+
+    },
     "Your Xcode environment is clean!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5101,10 +5137,22 @@
     "最近项目" : {
 
     },
+    "准备分析目录..." : {
+
+    },
+    "准备就绪" : {
+
+    },
+    "准备扫描大文件..." : {
+
+    },
     "删除" : {
 
     },
     "删除对话" : {
+
+    },
+    "删除文件" : {
 
     },
     "刷新任务列表" : {
@@ -5144,6 +5192,9 @@
 
     },
     "取消选择当前项目" : {
+
+    },
+    "可用：%@" : {
 
     },
     "可用模型" : {
@@ -5194,6 +5245,9 @@
 
     },
     "在访达中打开本地模型缓存文件夹" : {
+
+    },
+    "在访达中显示" : {
 
     },
     "复制" : {
@@ -5252,13 +5306,34 @@
     "已复制" : {
 
     },
+    "已扫描：Code、Projects、Developer 等目录" : {
+
+    },
     "已折叠" : {
+
+    },
+    "已用" : {
+
+    },
+    "已用：%@" : {
 
     },
     "已认证用户" : {
 
     },
+    "已选择：%@" : {
+
+    },
+    "已选择清理" : {
+
+    },
+    "开发者缓存目录" : {
+
+    },
     "开启新会话" : {
+
+    },
+    "开始扫描" : {
 
     },
     "当前没有任何 LLM 供应商插件已注册。\n请安装并启用至少一个提供 LLM 供应商的插件后重试。" : {
@@ -5287,6 +5362,9 @@
 
     },
     "思考过程…" : {
+
+    },
+    "总计：%@" : {
 
     },
     "打开App Support目录" : {
@@ -5356,7 +5434,19 @@
         }
       }
     },
+    "打开系统设置" : {
+
+    },
     "执行结果" : {
+
+    },
+    "扫描范围：Code、Projects、Developer 等目录" : {
+
+    },
+    "扫描范围：Xcode 相关缓存目录" : {
+
+    },
+    "扫描范围：用户主目录" : {
 
     },
     "折叠" : {
@@ -5471,6 +5561,9 @@
         }
       }
     },
+    "文件 \"%@\" 将被永久删除。" : {
+
+    },
     "文件树" : {
 
     },
@@ -5512,6 +5605,9 @@
       }
     },
     "暂无后台任务" : {
+
+    },
+    "暂无大文件" : {
 
     },
     "暂无对话" : {
@@ -5556,6 +5652,9 @@
     "暂无项目" : {
 
     },
+    "未发现可清理的项目" : {
+
+    },
     "未认证用户" : {
 
     },
@@ -5596,13 +5695,34 @@
         }
       }
     },
+    "正在分析目录结构" : {
+
+    },
     "正在加载历史消息…" : {
 
     },
     "正在加载模型列表…" : {
 
     },
+    "正在扫描 Xcode 缓存" : {
+
+    },
+    "正在扫描大文件" : {
+
+    },
+    "正在扫描常见目录中的项目..." : {
+
+    },
+    "正在扫描系统缓存" : {
+
+    },
+    "正在扫描项目..." : {
+
+    },
     "正在格式化参数…" : {
+
+    },
+    "没有发现可清理的缓存文件" : {
 
     },
     "浏览" : {
@@ -5640,6 +5760,12 @@
         }
       }
     },
+    "清理中..." : {
+
+    },
+    "点击扫描按钮开始分析系统缓存" : {
+
+    },
     "版本 %@" : {
 
     },
@@ -5668,6 +5794,9 @@
     "确定要删除对话「%@」吗？此操作将彻底删除该对话的所有消息，且无法恢复。" : {
 
     },
+    "确定要删除此文件吗？" : {
+
+    },
     "磁盘 %lld GB" : {
 
     },
@@ -5678,6 +5807,9 @@
 
     },
     "移除此消息" : {
+
+    },
+    "立即清理" : {
 
     },
     "等待发送" : {
@@ -5881,7 +6013,13 @@
     "重新发送该消息" : {
 
     },
+    "重新扫描" : {
+
+    },
     "错误信息" : {
+
+    },
+    "项" : {
 
     },
     "项目文件" : {
