@@ -1,7 +1,9 @@
 import SwiftUI
+import AppKit
 
 struct XcodeCleanerView: View {
     @StateObject private var viewModel = XcodeCleanerViewModel()
+    @State private var showCleanConfirmation = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -57,14 +59,33 @@ struct XcodeCleanerView: View {
 
                 Spacer()
 
-                if let error = viewModel.errorMessage {
-                    Text(error)
-                        .foregroundColor(DesignTokens.Color.semantic.error)
+                if viewModel.isCleaning {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Cleaning...")
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         .font(.caption)
+                } else if let error = viewModel.errorMessage {
+                    VStack(alignment: .trailing, spacing: 6) {
+                        Text(error)
+                            .foregroundColor(DesignTokens.Color.semantic.error)
+                            .font(.caption)
+                            .multilineTextAlignment(.trailing)
+                        if viewModel.isPermissionError {
+                            Button(action: openFullDiskAccessSettings) {
+                                Text("Open System Settings", tableName: "DiskManager")
+                            }
+                            .buttonStyle(.link)
+                            .font(.caption)
+                        }
+                    }
                 }
 
-                GlassButton(title: LocalizedStringKey("Clean Now"), style: .primary) {
-                    Task { await viewModel.cleanSelected() }
+                GlassButton(
+                    title: viewModel.isCleaning ? LocalizedStringKey("Cleaning...") : LocalizedStringKey("Clean Now"),
+                    style: .primary
+                ) {
+                    showCleanConfirmation = true
                 }
                 .disabled(viewModel.selectedSize == 0 || viewModel.isCleaning)
             }
@@ -73,6 +94,19 @@ struct XcodeCleanerView: View {
         }
         .onAppear {
             Task { await viewModel.scanAll() }
+        }
+        .alert(Text("Confirm Cleanup"), isPresented: $showCleanConfirmation) {
+            Button(role: .cancel) {} label: {
+                Text("Cancel")
+            }
+            Button(role: .destructive) {
+                Task { await viewModel.cleanSelected() }
+            } label: {
+                Text("Clean")
+            }
+        } message: {
+            let template = String(localized: "Are you sure you want to clean %@ of Xcode cache? This action cannot be undone.", table: "DiskManager")
+            Text(String(format: template, viewModel.formatBytes(viewModel.selectedSize)))
         }
     }
 
@@ -91,6 +125,12 @@ struct XcodeCleanerView: View {
                 Task { await viewModel.scanAll() }
             }
             Spacer()
+        }
+    }
+
+    private func openFullDiskAccessSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
+            NSWorkspace.shared.open(url)
         }
     }
 }
