@@ -32,18 +32,22 @@ class DiskService: ObservableObject, SuperLog {
     // MARK: - Public API
 
     func getDiskUsage() async -> DiskUsage? {
+        if Self.verbose {
+            os_log("\(self.t)获取磁盘使用情况")
+        }
         return await Task.detached(priority: .userInitiated) {
             let fileURL = URL(fileURLWithPath: "/")
             do {
                 let values = try fileURL.resourceValues(forKeys: [.volumeTotalCapacityKey, .volumeAvailableCapacityKey])
                 if let total = values.volumeTotalCapacity, let available = values.volumeAvailableCapacity {
                     let used = Int64(total) - Int64(available)
+                    if Self.verbose {
+                        os_log("\(Self.t)磁盘使用：已用 \(ByteCountFormatter.string(fromByteCount: used, countStyle: .file))，可用 \(ByteCountFormatter.string(fromByteCount: Int64(available), countStyle: .file))")
+                    }
                     return DiskUsage(total: Int64(total), used: used, available: Int64(available))
                 }
             } catch {
-                // Since we are in a detached task, we can't easily access 'self.t' or 'os_log' if they are actor-isolated or non-sendable.
-                // But os_log is generally thread-safe. We'll use a simplified log or capture necessary info.
-                // For now, return nil on error.
+                os_log(.error, "\(Self.t)获取磁盘使用失败：\(error.localizedDescription)")
             }
             return nil
         }.value

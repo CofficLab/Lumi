@@ -3,53 +3,35 @@ import SwiftUI
 struct DiskManagerView: View {
     @StateObject private var viewModel = DiskManagerViewModel()
     @State private var selectedViewMode = 0
-    
+
     var body: some View {
         VStack(spacing: 0) {
-            // Header / Dashboard
+            // 头部 / 仪表盘
             if let usage = viewModel.diskUsage {
                 MystiqueGlassCard(padding: EdgeInsets(top: 20, leading: 20, bottom: 20, trailing: 20)) {
                     HStack(spacing: 40) {
                         DiskUsageRingView(percentage: usage.usedPercentage)
                             .frame(width: 100, height: 100)
-                        
+
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Macintosh HD")
                                 .font(.title2)
                                 .fontWeight(.bold)
-                            
+
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("Total: \(viewModel.formatBytes(usage.total))")
-                                Text("Used: \(viewModel.formatBytes(usage.used))")
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                                Text("Available: \(viewModel.formatBytes(usage.available))")
-                                .foregroundColor(DesignTokens.Color.semantic.success)
+                                Text("总计：\(viewModel.formatBytes(usage.total))")
+                                Text("已用：\(viewModel.formatBytes(usage.used))")
+                                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                Text("可用：\(viewModel.formatBytes(usage.available))")
+                                    .foregroundColor(DesignTokens.Color.semantic.success)
                             }
                             .font(.subheadline)
                         }
-                        
+
                         Spacer()
-                        
+
                         VStack {
-                            Button(action: {
-                                if viewModel.isScanning {
-                                    viewModel.stopScan()
-                                } else {
-                                    viewModel.startScan()
-                                }
-                            }) {
-                                Label {
-                                    Text(viewModel.isScanning ? "Stop Scan" : "Scan Large Files")
-                                } icon: {
-                                    Image(systemName: viewModel.isScanning ? "stop.circle" : "magnifyingglass.circle")
-                                }
-                                .font(.headline)
-                                .padding()
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(viewModel.isScanning ? DesignTokens.Color.semantic.error : DesignTokens.Color.semantic.info)
-                            
-                            Text("Scan Directory: User Home")
+                            Text("扫描目录：用户主目录")
                                 .font(.caption)
                                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         }
@@ -58,28 +40,28 @@ struct DiskManagerView: View {
                 .padding()
             } else {
                 ProgressView()
-                // .onAppear moved to bottom
+                // .onAppear 已移至底部
             }
-            
+
             GlassDivider()
-            
-            // View Mode Picker
+
+            // 视图模式选择器
             MystiqueGlassCard(padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
                 Picker(selection: $selectedViewMode) {
-                    Text("Large Files").tag(0)
-                    Text("Directory Analysis").tag(1)
-                    Text("System Cleanup").tag(2)
-                    Text("Xcode Cleanup").tag(4)
-                    Text("Project Cleanup").tag(5)
+                    Text("大文件").tag(0)
+                    Text("目录分析").tag(1)
+                    Text("系统清理").tag(2)
+                    Text("Xcode 清理").tag(4)
+                    Text("项目清理").tag(5)
                 } label: {
-                    Text("View Mode")
+                    Text("视图模式")
                 }
                 .pickerStyle(.segmented)
             }
             .padding(.horizontal)
             .padding(.vertical)
-            
-            // Content
+
+            // 内容
             VStack {
                 if selectedViewMode == 0 {
                     LargeFilesListView(viewModel: viewModel)
@@ -93,23 +75,23 @@ struct DiskManagerView: View {
                     ProjectCleanerView()
                 }
             }
-            
+
             Spacer()
-            
-            // Scanning Progress
+
+            // 扫描进度
             if viewModel.isScanning && selectedViewMode != 2 && selectedViewMode != 5 {
                 VStack(spacing: 8) {
                     ProgressView()
                         .scaleEffect(0.8)
-                    
+
                     if let progress = viewModel.scanProgress {
                         VStack(spacing: 4) {
-                            Text("Scanning: \(progress.currentPath)")
+                            Text("正在扫描：\(progress.currentPath)")
                                 .lineLimit(1)
                                 .truncationMode(.middle)
-                            
+
                             HStack {
-                                Text("\(progress.scannedFiles) files")
+                                Text("\(progress.scannedFiles) 个文件")
                                 Text("•")
                                 Text(viewModel.formatBytes(progress.scannedBytes))
                             }
@@ -117,7 +99,7 @@ struct DiskManagerView: View {
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         }
                     } else {
-                        Text("Preparing scan...")
+                        Text("正在准备扫描...")
                     }
                 }
                 .font(.caption)
@@ -126,8 +108,8 @@ struct DiskManagerView: View {
                 .frame(maxWidth: .infinity)
                 .background(DesignTokens.Material.glass.opacity(0.2))
             }
-            
-            // Error Message
+
+            // 错误消息
             if let error = viewModel.errorMessage {
                 Text(error)
                     .foregroundColor(DesignTokens.Color.semantic.error)
@@ -140,134 +122,7 @@ struct DiskManagerView: View {
     }
 }
 
-struct LargeFilesListView: View {
-    @ObservedObject var viewModel: DiskManagerViewModel
-    
-    var body: some View {
-        if viewModel.largeFiles.isEmpty && !viewModel.isScanning {
-            ContentUnavailableView {
-                Text("No Large Files")
-            } description: {
-                Text("Click scan button to start finding large files")
-            }
-        } else {
-            List {
-                ForEach(viewModel.largeFiles) { file in
-                    LargeFileRow(item: file, viewModel: viewModel)
-                }
-            }
-            .listStyle(.inset)
-        }
-    }
-}
-
-struct DiskUsageRingView: View {
-    let percentage: Double
-    
-    var body: some View {
-        ZStack {
-            Circle()
-                .stroke(DesignTokens.Color.semantic.textTertiary.opacity(0.2), lineWidth: 10)
-            
-            Circle()
-                .trim(from: 0, to: percentage)
-                .stroke(
-                    AngularGradient(
-                        gradient: Gradient(colors: [DesignTokens.Color.semantic.info, DesignTokens.Color.semantic.primary]),
-                        center: .center,
-                        startAngle: .degrees(-90),
-                        endAngle: .degrees(-90 + 360 * percentage)
-                    ),
-                    style: StrokeStyle(lineWidth: 10, lineCap: .round)
-                )
-                .rotationEffect(.degrees(-90))
-            
-            VStack {
-                Text("\(Int(percentage * 100))%")
-                    .font(.title3)
-                    .fontWeight(.bold)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                Text("Used")
-                    .font(.caption2)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-            }
-        }
-    }
-}
-
-struct LargeFileRow: View {
-    let item: LargeFileEntry
-    @ObservedObject var viewModel: DiskManagerViewModel
-    @State private var showDeleteConfirm = false
-    
-    var body: some View {
-        HStack {
-            Image(nsImage: item.icon)
-                .resizable()
-                .frame(width: 32, height: 32)
-            
-            VStack(alignment: .leading) {
-                Text(item.name)
-                    .font(.headline)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                Text(item.path)
-                    .font(.caption)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            }
-            
-            Spacer()
-            
-            VStack(alignment: .trailing) {
-                Text(viewModel.formatBytes(item.size))
-                    .font(.monospacedDigit(.body)())
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                
-                Text(item.fileType.rawValue.capitalized)
-                    .font(.caption2)
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                    .padding(.horizontal, 4)
-                    .background(DesignTokens.Color.semantic.textTertiary.opacity(0.1))
-                    .cornerRadius(4)
-            }
-            
-            HStack(spacing: 12) {
-                Button(action: {
-                    viewModel.revealInFinder(item)
-                }) {
-                    Image(systemName: "folder")
-                        .foregroundColor(DesignTokens.Color.semantic.info)
-                }
-                .buttonStyle(.plain)
-                .help("Reveal in Finder")
-                
-                Button(action: {
-                    showDeleteConfirm = true
-                }) {
-                    Image(systemName: "trash")
-                        .foregroundColor(DesignTokens.Color.semantic.error)
-                }
-                .buttonStyle(.plain)
-                .help("Delete File")
-                .confirmationDialog("Are you sure you want to delete this file?", isPresented: $showDeleteConfirm) {
-                    Button("Delete", role: .destructive) {
-                        viewModel.deleteFile(item)
-                    }
-                    Button("Cancel", role: .cancel) {}
-                } message: {
-                    Text("File \"\(item.name)\" will be permanently deleted.")
-                }
-            }
-            .padding(.leading, 8)
-        }
-        .padding(.vertical, 4)
-    }
-}
-
-// MARK: - Preview
+// MARK: - 预览
 
 #Preview("App") {
     ContentLayout()

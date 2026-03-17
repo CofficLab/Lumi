@@ -48,15 +48,8 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
     }
     
     func scan() {
-        if Self.verbose {
-            os_log("\(self.t)开始扫描缓存")
-        }
         Task {
             await CacheCleanerService.shared.scanCaches()
-            if Self.verbose {
-                os_log("\(self.t)缓存扫描完成，\(self.categories.count) 个分类")
-            }
-            // Select all Safe level by default
             selectAllSafe()
         }
     }

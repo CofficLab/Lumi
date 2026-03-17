@@ -195,6 +195,7 @@
 
     },
     "%lld files" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -241,6 +242,9 @@
           }
         }
       }
+    },
+    "%lld 个文件" : {
+
     },
     "%lld 字符" : {
 
@@ -796,6 +800,7 @@
       }
     },
     "Are you sure you want to delete this file?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -854,6 +859,7 @@
 
     },
     "Available: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1174,6 +1180,7 @@
       }
     },
     "Click scan button to start finding large files" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1567,6 +1574,7 @@
       }
     },
     "Delete File" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1684,6 +1692,7 @@
       }
     },
     "Directory Analysis" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2113,6 +2122,7 @@
       }
     },
     "File \"%@\" will be permanently deleted." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2529,6 +2539,7 @@
       }
     },
     "Large Files" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3089,6 +3100,7 @@
       }
     },
     "No Large Files" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3380,6 +3392,7 @@
 
     },
     "Preparing scan..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3447,6 +3460,7 @@
       }
     },
     "Project Cleanup" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3691,6 +3705,7 @@
       }
     },
     "Reveal in Finder" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3836,6 +3851,7 @@
       }
     },
     "Scan Directory: User Home" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3852,6 +3868,7 @@
       }
     },
     "Scan Large Files" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3917,6 +3934,7 @@
       }
     },
     "Scanning: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4334,6 +4352,7 @@
 
     },
     "Stop Scan" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4868,6 +4887,7 @@
       }
     },
     "Used" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4884,6 +4904,7 @@
       }
     },
     "Used: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4938,6 +4959,7 @@
       }
     },
     "View Mode" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4989,6 +5011,7 @@
       }
     },
     "Xcode Cleanup" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5003,6 +5026,9 @@
           }
         }
       }
+    },
+    "Xcode 清理" : {
+
     },
     "Your Xcode environment is clean!" : {
       "localizations" : {
@@ -5086,6 +5112,9 @@
         }
       }
     },
+    "停止扫描" : {
+
+    },
     "停止生成" : {
 
     },
@@ -5099,6 +5128,9 @@
 
     },
     "删除对话" : {
+
+    },
+    "删除文件" : {
 
     },
     "刷新任务列表" : {
@@ -5138,6 +5170,9 @@
 
     },
     "取消选择当前项目" : {
+
+    },
+    "可用：%@" : {
 
     },
     "可用模型" : {
@@ -5190,10 +5225,16 @@
     "在访达中打开本地模型缓存文件夹" : {
 
     },
+    "在访达中显示" : {
+
+    },
     "复制" : {
 
     },
     "复制消息内容" : {
+
+    },
+    "大文件" : {
 
     },
     "如何创建 Personal Access Token？" : {
@@ -5249,6 +5290,12 @@
     "已折叠" : {
 
     },
+    "已用" : {
+
+    },
+    "已用：%@" : {
+
+    },
     "已认证用户" : {
 
     },
@@ -5281,6 +5328,9 @@
 
     },
     "思考过程…" : {
+
+    },
+    "总计：%@" : {
 
     },
     "打开App Support目录" : {
@@ -5351,6 +5401,12 @@
       }
     },
     "执行结果" : {
+
+    },
+    "扫描大文件" : {
+
+    },
+    "扫描目录：用户主目录" : {
 
     },
     "折叠" : {
@@ -5465,6 +5521,9 @@
         }
       }
     },
+    "文件 \"%@\" 将被永久删除。" : {
+
+    },
     "文件树" : {
 
     },
@@ -5506,6 +5565,9 @@
       }
     },
     "暂无后台任务" : {
+
+    },
+    "暂无大文件" : {
 
     },
     "暂无对话" : {
@@ -5590,10 +5652,16 @@
         }
       }
     },
+    "正在准备扫描..." : {
+
+    },
     "正在加载历史消息…" : {
 
     },
     "正在加载模型列表…" : {
+
+    },
+    "正在扫描：%@" : {
 
     },
     "正在格式化参数…" : {
@@ -5634,6 +5702,9 @@
         }
       }
     },
+    "点击扫描按钮开始查找大文件" : {
+
+    },
     "版本 %@" : {
 
     },
@@ -5659,10 +5730,19 @@
         }
       }
     },
+    "目录分析" : {
+
+    },
     "确定要删除对话「%@」吗？此操作将彻底删除该对话的所有消息，且无法恢复。" : {
 
     },
+    "确定要删除此文件吗？" : {
+
+    },
     "磁盘 %lld GB" : {
+
+    },
+    "视图模式" : {
 
     },
     "视觉" : {
@@ -5695,6 +5775,9 @@
           }
         }
       }
+    },
+    "系统清理" : {
+
     },
     "自动批准高风险命令" : {
 
@@ -5879,6 +5962,9 @@
 
     },
     "项目文件" : {
+
+    },
+    "项目清理" : {
 
     },
     "预览效果" : {

@@ -1,7 +1,7 @@
-import Foundation
 import AppKit
-import OSLog
+import Foundation
 import MagicKit
+import OSLog
 
 @MainActor
 class CacheCleanerService: ObservableObject, SuperLog {
@@ -22,9 +22,9 @@ class CacheCleanerService: ObservableObject, SuperLog {
         let paths: [String]
     }
 
-    // MARK: - Predefined scan rules
-    
-    // Use closure to delay path retrieval (because homeDirectory might change, although unlikely)
+    // MARK: - 预定义扫描规则
+
+    // 使用计算属性延迟获取路径（因为 homeDirectory 可能会变化，虽然不太可能）
     private var scanRules: [CacheScanRule] {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         return [
@@ -33,55 +33,69 @@ class CacheCleanerService: ObservableObject, SuperLog {
             .init(level: .safe, id: "browser_cache", name: String(localized: "Browser Cache"), desc: String(localized: "Clear Chrome, Safari, Firefox and other browser caches"), icon: "safari", paths: [
                 "\(home)/Library/Caches/Google/Chrome",
                 "\(home)/Library/Caches/com.apple.Safari",
-                "\(home)/Library/Caches/Firefox"
+                "\(home)/Library/Caches/Firefox",
             ]),
             .init(level: .safe, id: "dev_cache", name: String(localized: "Developer Tool Cache"), desc: String(localized: "Clear Xcode DerivedData, Archives, and package manager caches"), icon: "hammer", paths: [
                 "\(home)/Library/Developer/Xcode/DerivedData",
                 "\(home)/Library/Developer/Xcode/Archives",
                 "\(home)/.npm/_cacache",
-                "\(home)/.cargo/registry"
+                "\(home)/.cargo/registry",
             ]),
             .init(level: .medium, id: "system_logs", name: String(localized: "System Logs"), desc: String(localized: "Clear system runtime log files"), icon: "doc.text", paths: [
-                "\(home)/Library/Logs"
+                "\(home)/Library/Logs",
             ]),
             .init(level: .safe, id: "trash", name: String(localized: "Trash"), desc: String(localized: "Empty files in the trash"), icon: "trash", paths: [
-                "\(home)/.Trash"
-            ])
+                "\(home)/.Trash",
+            ]),
         ]
     }
 
-    // MARK: - Public API
+    // MARK: - 公开 API
 
     func scanCaches() async {
-        os_log("\(self.t)开始扫描缓存分类")
         isScanning = true
         scanProgress = String(localized: "Initializing...")
 
+        // 在后台执行扫描操作
         let rules = scanRules
-        let results = await withTaskGroup(of: CacheCategory?.self, returning: [CacheCategory].self) { group in
-            for rule in rules {
-                group.addTask(priority: .utility) {
-                    await Self.scanCategory(rule: rule)
-                }
+        let results = await Task.detached(priority: .utility) {
+            if Self.verbose {
+                os_log("\(self.t)开始扫描缓存分类")
             }
+            return await withTaskGroup(of: CacheCategory?.self, returning: [CacheCategory].self) { group in
+                for rule in rules {
+                    group.addTask(priority: .utility) {
+                        await Self.scanCategory(rule: rule)
+                    }
+                }
 
-            var categories: [CacheCategory] = []
-            for await category in group {
-                if let category {
-                    categories.append(category)
+                var categories: [CacheCategory] = []
+                for await category in group {
+                    if let category {
+                        categories.append(category)
+                    }
                 }
+                return categories.sorted { $0.safetyLevel < $1.safetyLevel }
             }
-            return categories
+        }.value
+
+        // 更新 UI 状态
+        await MainActor.run {
+            self.categories = results
+            self.isScanning = false
+            self.scanProgress = ""
         }
 
-        categories = results.sorted { $0.safetyLevel < $1.safetyLevel }
-        os_log("\(self.t)缓存扫描完成：\(self.categories.count) 个分类")
-        isScanning = false
-        scanProgress = ""
+        if Self.verbose {
+            os_log("\(self.t)缓存扫描完成：\(self.categories.count) 个分类")
+        }
     }
-    
+
     func cleanup(paths: [CachePath]) async throws -> Int64 {
-        os_log("\(self.t)开始清理 \(paths.count) 个缓存路径")
+        if Self.verbose {
+            os_log("\(self.t)开始清理 \(paths.count) 个缓存路径")
+        }
+
         let freedSpace = await Task.detached(priority: .utility) {
             var total: Int64 = 0
             let fileManager = FileManager.default
@@ -96,20 +110,29 @@ class CacheCleanerService: ObservableObject, SuperLog {
             return total
         }.value
 
-        os_log("\(self.t)清理完成，释放 \(ByteCountFormatter.string(fromByteCount: freedSpace, countStyle: .file))")
-        // Rescan to update status
-        await scanCaches()
+        if Self.verbose {
+            os_log("\(self.t)清理完成，释放 \(ByteCountFormatter.string(fromByteCount: freedSpace, countStyle: .file))")
+        }
+
+        // 在后台重新扫描以更新状态
+        await Task.detached(priority: .utility) {
+            await self.scanCaches()
+        }.value
+
         return freedSpace
     }
 
-    // MARK: - Private Implementation
-    
-    nonisolated private static func scanCategory(rule: CacheScanRule) async -> CacheCategory? {
+    // MARK: - 私有实现
+
+    private nonisolated static func scanCategory(rule: CacheScanRule) async -> CacheCategory? {
+        if Self.verbose {
+            os_log("\(self.t)开始扫描分类：\(rule.name)")
+        }
         var cachePaths: [CachePath] = []
 
         for path in rule.paths {
             if let info = await getPathInfo(path) {
-                // Special handling: if it's ~/Library/Caches, we don't want to delete the entire folder, but list subfolders
+                // 特殊处理：如果是 ~/Library/Caches，不删除整个文件夹，而是列出子文件夹
                 if path.hasSuffix("/Library/Caches") {
                     let subPaths = await scanSubDirectories(at: path)
                     cachePaths.append(contentsOf: subPaths)
@@ -125,7 +148,7 @@ class CacheCleanerService: ObservableObject, SuperLog {
                 }
             }
         }
-        
+
         if cachePaths.isEmpty {
             return nil
         }
@@ -139,15 +162,15 @@ class CacheCleanerService: ObservableObject, SuperLog {
             safetyLevel: rule.level
         )
     }
-    
-    nonisolated private static func scanSubDirectories(at path: String) async -> [CachePath] {
+
+    private nonisolated static func scanSubDirectories(at path: String) async -> [CachePath] {
         let url = URL(fileURLWithPath: path)
         var results: [CachePath] = []
-        
+
         guard let contents = try? FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) else {
             return []
         }
-        
+
         for content in contents {
             if let info = await getPathInfo(content.path), info.size > 0 {
                 results.append(CachePath(
@@ -160,44 +183,43 @@ class CacheCleanerService: ObservableObject, SuperLog {
                 ))
             }
         }
-        
+
         return results.sorted { $0.size > $1.size }
     }
-    
-    nonisolated private static func getPathInfo(_ path: String) async -> (size: Int64, count: Int)? {
+
+    private nonisolated static func getPathInfo(_ path: String) async -> (size: Int64, count: Int)? {
         let fileManager = FileManager.default
         var isDir: ObjCBool = false
-        
+
         guard fileManager.fileExists(atPath: path, isDirectory: &isDir) else {
             return nil
         }
-        
+
         if !isDir.boolValue {
-            // Single file
+            // 单个文件
             if let attrs = try? fileManager.attributesOfItem(atPath: path),
                let size = attrs[.size] as? Int64 {
                 return (size, 1)
             }
             return nil
         }
-        
-        // Directory: recursively calculate size
-        // For performance, we don't use DiskService's full scan here, but a quick traversal
-        // Or reuse DiskService.scan but don't build a tree?
-        // For simplicity, use Enumerator
-        
+
+        // 目录：递归计算大小
+        // 为了性能，这里不使用 DiskService 的完整扫描，而是快速遍历
+        // 为简单起见，使用 Enumerator
+
         return await Task.detached {
             var localSize: Int64 = 0
             var localCount = 0
-            
+
             guard let enumerator = fileManager.enumerator(atPath: path) else { return nil }
-            
-            // FileManager.DirectoryEnumerator is not thread-safe and not Sendable,
-            // but we are inside a detached Task with a local instance created on that thread (if fileManager is thread safe).
-            // Actually FileManager.default is thread-safe.
-            // However, makeIterator() availability in async context is the issue.
-            // We can iterate using while loop with nextObject() which is the ObjC way and avoids Sequence conformance issues in async
-            
+
+            // FileManager.DirectoryEnumerator 不是线程安全的，也不是 Sendable
+            // 但我们在 detached Task 内部，使用本地实例（如果 fileManager 是线程安全的）
+            // 实际上 FileManager.default 是线程安全的
+            // 问题在于 makeIterator() 在 async 上下文中的可用性
+            // 我们可以使用 while 循环和 nextObject()，这是 ObjC 方式，避免了 async 中的 Sequence 一致性问题
+
             while let _ = enumerator.nextObject() {
                 if let fileAttrs = enumerator.fileAttributes,
                    let fileSize = fileAttrs[.size] as? Int64 {
