@@ -24,6 +24,7 @@ struct AppManagerView: View {
             }
             .frame(minWidth: 400, maxWidth: .infinity)
             .infiniteHeight()
+            .ignoresSafeArea()
             
             // Right: Details
             detailView
@@ -31,8 +32,7 @@ struct AppManagerView: View {
                 .infiniteHeight()
         }
         .infinite()
-        .navigationTitle(String(localized: "App Manager", table: "AppManager"))
-        .searchable(text: $viewModel.searchText, prompt: String(localized: "Search Apps", table: "AppManager"))
+        .ignoresSafeArea()        .navigationTitle(String(localized: "App Manager", table: "AppManager"))
         .onChange(of: viewModel.selectedApp) { _, newApp in
             if let app = newApp {
                 viewModel.scanRelatedFiles(for: app)
@@ -76,23 +76,37 @@ struct AppManagerView: View {
     }
     
     private var toolbar: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(String(localized: "\(viewModel.installedApps.count) Apps", table: "AppManager"))
-                    .font(.subheadline)
+        VStack(alignment: .leading, spacing: 8) {
+            // 第一行：搜索
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                TextField(
+                    String(localized: "Search Apps", table: "AppManager"),
+                    text: $viewModel.searchText
+                )
+                .textFieldStyle(.roundedBorder)
+            }
+
+            // 第二行：统计 + 刷新
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(String(localized: "\(viewModel.installedApps.count) Apps", table: "AppManager"))
+                        .font(.subheadline)
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-                Text(String(localized: "Total Size: \(viewModel.formattedTotalSize)", table: "AppManager"))
-                    .font(.caption)
+                    Text(String(localized: "Total Size: \(viewModel.formattedTotalSize)", table: "AppManager"))
+                        .font(.caption)
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                }
+
+                Spacer()
+
+                GlassButton(title: LocalizedStringKey("Refresh"), style: .secondary) {
+                    viewModel.refresh()
+                }
+                .disabled(viewModel.isLoading)
             }
-            
-            Spacer()
-            
-            GlassButton(title: LocalizedStringKey("Refresh"), style: .secondary) {
-                viewModel.refresh()
-            }
-            .disabled(viewModel.isLoading)
         }
         .padding()
         .background(DesignTokens.Material.glass)

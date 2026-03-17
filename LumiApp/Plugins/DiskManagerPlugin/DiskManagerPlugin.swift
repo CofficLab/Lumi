@@ -5,8 +5,8 @@ actor DiskManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "💿"
-    static let enable = true
-    nonisolated static let verbose = true
+    nonisolated static let enable: Bool = true
+    nonisolated static let verbose: Bool = true
 
     static let id = "DiskManager"
     static let navigationId = "disk_manager"

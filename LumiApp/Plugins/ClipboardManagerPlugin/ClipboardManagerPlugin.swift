@@ -1,29 +1,30 @@
-import SwiftUI
 import MagicKit
+import SwiftUI
 
 actor ClipboardManagerPlugin: SuperPlugin {
     nonisolated static let emoji = "📋"
     nonisolated static let verbose = false
-    
+
     static let id = "ClipboardManager"
     static let navigationId = "clipboard_manager"
     static let displayName = String(localized: "Clipboard")
     static let description = String(localized: "Manage clipboard history and snippets")
     static let iconName = "doc.on.clipboard"
     static var order: Int { 70 }
-    nonisolated static let enable = true
-    
+    nonisolated static let enable: Bool = true
+    nonisolated static let isConfigurable: Bool = true
+
     static let shared = ClipboardManagerPlugin()
-    
+
     // MARK: - Lifecycle
-    
+
     nonisolated func onRegister() {
         // Initialize defaults
         if AppSettingsStore.shared.object(forKey: "ClipboardMonitoringEnabled") == nil {
             AppSettingsStore.shared.set(true, forKey: "ClipboardMonitoringEnabled")
         }
     }
-    
+
     nonisolated func onEnable() {
         Task { @MainActor in
             if AppSettingsStore.shared.bool(forKey: "ClipboardMonitoringEnabled") {
@@ -31,15 +32,15 @@ actor ClipboardManagerPlugin: SuperPlugin {
             }
         }
     }
-    
+
     nonisolated func onDisable() {
         Task { @MainActor in
             ClipboardMonitor.shared.stopMonitoring()
         }
     }
-    
+
     // MARK: - UI
-    
+
     @MainActor
     func addNavigationEntries() -> [NavigationEntry]? {
         return [
@@ -50,7 +51,7 @@ actor ClipboardManagerPlugin: SuperPlugin {
                 pluginId: Self.id
             ) {
                 ClipboardHistoryView()
-            }
+            },
         ]
     }
 }

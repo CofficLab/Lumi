@@ -5,8 +5,8 @@ actor BrewManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
     
     nonisolated static let emoji = "🍺"
-    nonisolated static let enable = true
-    nonisolated static let verbose = true
+    nonisolated static let enable: Bool = false
+    nonisolated static let verbose: Bool = true
     
     static let id = "BrewManager"
     static let navigationId = "brew_manager"
@@ -14,7 +14,7 @@ actor BrewManagerPlugin: SuperPlugin, SuperLog {
     static let description = String(localized: "Manage Homebrew packages and casks", table: "BrewManager")
     static let iconName = "shippingbox"
     static var order: Int { 60 }
-    
+    nonisolated var instanceLabel: String { Self.id }
     static let shared = BrewManagerPlugin()
     
     // MARK: - UI Contributions

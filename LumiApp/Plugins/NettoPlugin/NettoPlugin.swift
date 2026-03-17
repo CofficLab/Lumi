@@ -1,17 +1,22 @@
+import MagicKit
 import SwiftUI
 
-actor NettoPlugin: SuperPlugin {
+actor NettoPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
-    static let id = "NettoPlugin"
-    static let navigationId = "netto_plugin"
-    static let displayName = String(localized: "Netto Firewall")
-    static let description = String(localized: "Manage network permissions for macOS applications.")
+    nonisolated static let emoji = "🛡️"
+    nonisolated static let enable: Bool = false
+    nonisolated static let verbose: Bool = false
+
+    static let id = "Netto"
+    static let navigationId = "netto_firewall"
+    static let displayName = String(localized: "Netto Firewall", table: "Netto")
+    static let description = String(localized: "Manage network permissions for macOS applications.", table: "Netto")
     static let iconName = "shield.lefthalf.filled"
-    nonisolated static let enable = true
-    static let order: Int = 99
+    static var order: Int { 99 }
     
     nonisolated var instanceLabel: String { Self.id }
+    static let shared = NettoPlugin()
     
     // MARK: - UI Contributions
     

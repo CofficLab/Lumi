@@ -45,6 +45,7 @@ struct CoreApp: App {
         // 每个窗口有独立的状态，可以打开不同的对话或项目。
         WindowGroup {
             ContentLayout()
+                .ignoresSafeArea()
                 .inRootView()
         }
         .windowStyle(.hiddenTitleBar)
