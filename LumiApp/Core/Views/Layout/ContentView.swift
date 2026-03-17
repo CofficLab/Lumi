@@ -1,3 +1,4 @@
+import AppKit
 import OSLog
 import SwiftUI
 
@@ -13,6 +14,7 @@ struct ContentView: View {
     @EnvironmentObject var app: GlobalVM
     @EnvironmentObject var pluginProvider: PluginVM
     @EnvironmentObject var themeManager: MystiqueThemeManager
+    @EnvironmentObject var providerRegistry: ProviderRegistry
 
     /// 打开窗口的环境变量
     @Environment(\.openWindow) private var openWindow
@@ -63,11 +65,54 @@ struct ContentView: View {
             themeManager: themeManager,
             content: {
                 Group {
-                    switch windowState.selectedMode {
-                    case .app:
-                        AppModeContentView(sidebarVisibility: $windowState.sidebarVisibility)
-                    case .agent:
-                        AgentModeContentView(sidebarVisibility: $windowState.sidebarVisibility)
+                    VStack(spacing: 0) {
+                        // 主内容区域：左侧栏 + 中间栏 + 右侧栏
+                        HSplitView {
+                            // 左侧栏（统一 sidebar），可以根据 sidebarVisibility 隐藏
+                            if windowState.sidebarVisibility {
+                                LeftSidebar(sidebarVisibility: $windowState.sidebarVisibility)
+                                    .frame(minWidth: 210, idealWidth: 220, maxWidth: 400)
+                            }
+
+                            // 中间 + 右侧区域（根据模式切换布局）
+                            Group {
+                                if app.selectedMode == .agent {
+                                    // Agent 模式：三栏布局（中间 + 右侧）
+                                    if providerRegistry.providerTypes.isEmpty {
+                                        AgentModeUnavailableGuideView()
+                                    } else if pluginProvider.hasDetailViews() {
+                                        HSplitView {
+                                            MiddleColumn()
+
+                                            RightColumn()
+                                        }
+                                        .id("unifiedRightSplitView")
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                        .ignoresSafeArea()
+                                        .background(SplitViewAutosaveConfigurator(autosaveName: "AgentMode_DetailRightSplit"))
+                                    } else {
+                                        RightColumn()
+                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    }
+                                } else {
+                                    // App 模式：仅使用中间栏，不占用右侧栏宽度
+                                    MiddleColumn()
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                }
+                            }
+                        }
+                        .id("unifiedLeftSplitView")
+                        .background(SplitViewAutosaveConfigurator(autosaveName: "UnifiedMode_LeftSplit"))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                        StatusBar()
+                    }
+                    .task {
+                        if ContentView.verbose {
+                            let rightMiddleViews = pluginProvider.getRightMiddleViews()
+                            let rightBottomViews = pluginProvider.getRightBottomViews()
+                            os_log("\(ContentView.emoji) Agent Mode: 右侧栏中间=\(rightMiddleViews.count), 底部=\(rightBottomViews.count)")
+                        }
                     }
                 }
             },
@@ -77,6 +122,39 @@ struct ContentView: View {
             onChangeColumnVisibility: onChangeColumnVisibility
         )
         .environment(\.windowState, windowState)
+    }
+}
+
+// MARK: - SplitView Autosave Helper
+
+/// 为 macOS 的 `HSplitView` / `VSplitView` 配置 `autosaveName`，以持久化分栏宽度
+private struct SplitViewAutosaveConfigurator: NSViewRepresentable {
+    let autosaveName: String
+
+    func makeNSView(context: Context) -> NSView {
+        NSView(frame: .zero)
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async {
+            guard let splitView = nearestSplitView(from: nsView) else { return }
+
+            if splitView.autosaveName != autosaveName {
+                splitView.identifier = NSUserInterfaceItemIdentifier(autosaveName)
+                splitView.autosaveName = autosaveName
+            }
+        }
+    }
+
+    private func nearestSplitView(from view: NSView) -> NSSplitView? {
+        var current: NSView? = view
+        while let node = current {
+            if let splitView = node as? NSSplitView {
+                return splitView
+            }
+            current = node.superview
+        }
+        return nil
     }
 }
 

@@ -1,8 +1,10 @@
+import MagicKit
+import OSLog
 import SwiftUI
 
-/// 统一侧边栏视图 - App 模式和 Agent 模式共用
+/// 左侧栏视图
 /// 顶部显示模式切换，下方根据不同模式显示不同内容
-struct UnifiedSidebar: View {
+struct LeftSidebar: View {
     @Binding var sidebarVisibility: Bool
 
     @EnvironmentObject var app: GlobalVM
@@ -15,7 +17,7 @@ struct UnifiedSidebar: View {
 
             HStack {
                 Spacer()
-                AppModeSwitcherView()
+                ModeSwitcherView()
                     .fixedSize()
                     .padding(.trailing)
             }
@@ -29,6 +31,7 @@ struct UnifiedSidebar: View {
 
             modeContent.frame(maxHeight: .infinity)
         }
+        .background(DesignTokens.Material.glassUltraThick)
         .ignoresSafeArea()
         .onAppear {
             DispatchQueue.main.async {
@@ -123,20 +126,7 @@ struct UnifiedSidebar: View {
 
     /// 空状态视图
     private func emptyState(message: String, subtitle: String) -> some View {
-        VStack(spacing: 12) {
-            Image(systemName: "tray")
-                .font(.system(size: 48))
-                .foregroundColor(DesignTokens.Color.adaptive.textSecondary(for: colorScheme))
-
-            Text(message)
-                .font(.headline)
-                .foregroundColor(DesignTokens.Color.adaptive.textSecondary(for: colorScheme))
-
-            Text(subtitle)
-                .font(.caption)
-                .foregroundColor(DesignTokens.Color.adaptive.textTertiary(for: colorScheme))
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        SidebarEmptyStateView(message: message, subtitle: subtitle)
     }
 
     // MARK: - 私有方法
@@ -216,9 +206,66 @@ struct SidebarRow: View {
 // MARK: - Preview
 
 #if os(macOS)
-    #Preview("Unified Sidebar - App Mode") {
-        UnifiedSidebar(sidebarVisibility: .constant(true))
+    #Preview("Left Sidebar - App Mode") {
+        LeftSidebar(sidebarVisibility: .constant(true))
             .frame(width: 220, height: 600)
             .inRootView()
     }
 #endif
+
+// MARK: - Mode Switcher
+
+/// 应用模式切换器，在 App 模式和 Agent 模式之间切换
+private struct ModeSwitcherView: View, SuperLog {
+    nonisolated static let emoji = "🔄"
+    nonisolated static let verbose = true
+
+    @EnvironmentObject var app: GlobalVM
+    @Environment(\.windowState) var windowState
+
+    @State private var mode: AppMode = .app
+
+    var body: some View {
+        Picker("模式", selection: $mode) {
+            ForEach(AppMode.allCases) { mode in
+                Label(mode.rawValue, systemImage: mode.icon)
+                    .tag(mode)
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .onAppear(perform: handleOnAppear)
+        .onChange(of: self.mode) { _, _ in
+            handleModeChanged()
+        }
+    }
+}
+
+private extension ModeSwitcherView {
+    func handleOnAppear() {
+        // 优先从 AppSettingsStore 中恢复上次选择的模式
+        if let savedModeRawValue = AppSettingsStore.shared.string(forKey: "App_SelectedMode"),
+           let savedMode = AppMode(rawValue: savedModeRawValue)
+        {
+            mode = savedMode
+            windowState?.selectedMode = savedMode
+            app.selectedMode = savedMode
+        } else {
+            // 如果没有持久化记录，则优先使用窗口级别的模式状态，如果没有则使用全局状态
+            mode = windowState?.selectedMode ?? app.selectedMode
+        }
+    }
+
+    func handleModeChanged() {
+        if Self.verbose {
+            os_log("\(t)🤖 模式已切换：\(mode.rawValue)")
+        }
+
+        // 同时更新窗口级别和全局级别的模式状态
+        windowState?.selectedMode = mode
+        app.selectedMode = mode
+
+        // 持久化当前选择的模式到 AppSettingsStore
+        AppSettingsStore.shared.set(mode.rawValue, forKey: "App_SelectedMode")
+    }
+}
