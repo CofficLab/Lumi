@@ -74,6 +74,11 @@ class DiskService: @unchecked Sendable, SuperLog {
         await coordinator.cancelCurrentScan()
     }
 
+    /// Scan progress stream (shared)
+    func progressStream() async -> AsyncStream<ScanProgress> {
+        await coordinator.progressStream
+    }
+
     /// Delete file
     func deleteFile(at url: URL) async throws {
         try await Task.detached(priority: .utility) {

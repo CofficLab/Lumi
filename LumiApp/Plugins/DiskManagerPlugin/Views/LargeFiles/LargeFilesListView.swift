@@ -3,13 +3,13 @@ import MagicKit
 
 /// 大文件列表视图
 struct LargeFilesListView: View {
-    @ObservedObject var viewModel: DiskManagerViewModel
+    @ObservedObject var viewModel: LargeFilesViewModel
 
     var body: some View {
         VStack(spacing: 16) {
             // 扫描控制区域
             if viewModel.largeFiles.isNotEmpty {
-                ScanControlBar(forLargeFiles: viewModel)
+                LargeFilesScanControlBar(viewModel: viewModel)
             }
 
             VStack {
@@ -45,5 +45,5 @@ struct LargeFilesListView: View {
 // MARK: - 预览
 
 #Preview {
-    LargeFilesListView(viewModel: DiskManagerViewModel())
+    LargeFilesListView(viewModel: LargeFilesViewModel())
 }

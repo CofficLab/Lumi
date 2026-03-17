@@ -2,9 +2,9 @@ import SwiftUI
 
 /// 空大文件列表视图
 struct EmptyLargeFilesView: View {
-    @ObservedObject var viewModel: DiskManagerViewModel
+    @ObservedObject var viewModel: LargeFilesViewModel
 
-    init(viewModel: DiskManagerViewModel) {
+    init(viewModel: LargeFilesViewModel) {
         self.viewModel = viewModel
     }
 

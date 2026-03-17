@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 大文件扫描进度视图
 struct LargeFilesScanProgressView: View {
-    @ObservedObject var viewModel: DiskManagerViewModel
+    @ObservedObject var viewModel: LargeFilesViewModel
 
     var body: some View {
         VStack(spacing: 12) {
@@ -102,6 +102,6 @@ struct LargeFilesScanProgressView: View {
 }
 
 #Preview {
-    LargeFilesScanProgressView(viewModel: DiskManagerViewModel())
+    LargeFilesScanProgressView(viewModel: LargeFilesViewModel())
         .padding()
 }
