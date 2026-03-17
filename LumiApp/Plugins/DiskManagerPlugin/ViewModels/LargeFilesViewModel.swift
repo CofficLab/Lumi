@@ -1,7 +1,7 @@
-import Foundation
 import Combine
-import OSLog
+import Foundation
 import MagicKit
+import OSLog
 
 @MainActor
 final class LargeFilesViewModel: ObservableObject, SuperLog {
@@ -13,9 +13,11 @@ final class LargeFilesViewModel: ObservableObject, SuperLog {
     @Published var scanProgress: ScanProgress?
     @Published var errorMessage: String?
 
-    private let service = DiskService.shared
+    private let service = LargeFilesService.shared
     private var scanTask: Task<Void, Never>?
     private var progressTask: Task<Void, Never>?
+    private var progressReceivedCount: Int = 0
+    private var lastProgressLogAt: Date = .distantPast
 
     private let scanPath: String = FileManager.default.homeDirectoryForCurrentUser.path
 
@@ -30,6 +32,8 @@ final class LargeFilesViewModel: ObservableObject, SuperLog {
         largeFiles = []
         scanProgress = nil
         errorMessage = nil
+        progressReceivedCount = 0
+        lastProgressLogAt = .distantPast
 
         progressTask?.cancel()
         progressTask = Task {
@@ -37,6 +41,16 @@ final class LargeFilesViewModel: ObservableObject, SuperLog {
             for await progress in stream {
                 if Task.isCancelled { break }
                 self.scanProgress = progress
+                self.progressReceivedCount += 1
+                if Self.verbose {
+                    let now = Date()
+                    if self.progressReceivedCount == 1 || now.timeIntervalSince(self.lastProgressLogAt) >= 2.0 {
+                        self.lastProgressLogAt = now
+                        os_log(
+                            "\(self.t)[VM] progress recv#\(self.progressReceivedCount) files=\(progress.scannedFiles) dirs=\(progress.scannedDirectories) bytes=\(progress.scannedBytes) path=\(progress.currentPath)"
+                        )
+                    }
+                }
             }
         }
 
@@ -47,17 +61,17 @@ final class LargeFilesViewModel: ObservableObject, SuperLog {
                 priority: .userInitiated
             ) { progressCallback in
                 do {
-                    let result = try await self.service.scan(self.scanPath)
+                    let files = try await self.service.scanLargeFiles(atPath: self.scanPath)
                     progressCallback(1.0)
 
                     if !Task.isCancelled {
                         await MainActor.run {
-                            self.largeFiles = result.largeFiles
+                            self.largeFiles = files
                             self.isScanning = false
                             self.scanProgress = nil
                             self.progressTask?.cancel()
                             if Self.verbose {
-                                os_log("\(self.t)大文件扫描完成，发现 \(result.largeFiles.count) 个大文件")
+                                os_log("\(self.t)大文件扫描完成，发现 \(files.count) 个大文件")
                             }
                         }
                     }
@@ -93,8 +107,7 @@ final class LargeFilesViewModel: ObservableObject, SuperLog {
         }
         Task {
             do {
-                let url = URL(fileURLWithPath: item.path)
-                try await service.deleteFile(at: url)
+                try await service.deleteFile(atPath: item.path)
                 await MainActor.run {
                     self.largeFiles.removeAll { $0.id == item.id }
                 }
@@ -108,8 +121,7 @@ final class LargeFilesViewModel: ObservableObject, SuperLog {
     }
 
     func revealInFinder(_ item: LargeFileEntry) {
-        let url = URL(fileURLWithPath: item.path)
-        service.revealInFinder(url: url)
+        service.revealInFinder(path: item.path)
     }
 
     static let byteFormatter: ByteCountFormatter = {
@@ -123,4 +135,3 @@ final class LargeFilesViewModel: ObservableObject, SuperLog {
         Self.byteFormatter.string(fromByteCount: bytes)
     }
 }
-
