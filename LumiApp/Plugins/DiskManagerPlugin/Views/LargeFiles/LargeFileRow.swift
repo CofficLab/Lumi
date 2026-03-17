@@ -1,59 +1,5 @@
 import SwiftUI
 
-/// 大文件列表视图
-struct LargeFilesListView: View {
-    @ObservedObject var viewModel: DiskManagerViewModel
-
-    var body: some View {
-        VStack(spacing: 16) {
-            // 扫描控制区域
-            HStack {
-                Button(action: {
-                    if viewModel.isScanning {
-                        viewModel.stopScan()
-                    } else {
-                        viewModel.startScan()
-                    }
-                }) {
-                    Label {
-                        Text(viewModel.isScanning ? "停止扫描" : "扫描大文件")
-                    } icon: {
-                        Image(systemName: viewModel.isScanning ? "stop.circle" : "magnifyingglass.circle")
-                    }
-                    .font(.headline)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(viewModel.isScanning ? DesignTokens.Color.semantic.error : DesignTokens.Color.semantic.info)
-
-                Spacer()
-
-                Text("扫描目录：用户主目录")
-                    .font(.caption)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-            }
-            .padding(.horizontal)
-
-            // 文件列表
-            if viewModel.largeFiles.isEmpty && !viewModel.isScanning {
-                ContentUnavailableView {
-                    Text("暂无大文件")
-                } description: {
-                    Text("点击扫描按钮开始查找大文件")
-                }
-            } else {
-                List {
-                    ForEach(viewModel.largeFiles) { file in
-                        LargeFileRow(item: file, viewModel: viewModel)
-                    }
-                }
-                .listStyle(.inset)
-            }
-        }
-    }
-}
-
 /// 大文件行视图
 struct LargeFileRow: View {
     let item: LargeFileEntry
@@ -125,10 +71,4 @@ struct LargeFileRow: View {
         }
         .padding(.vertical, 4)
     }
-}
-
-// MARK: - 预览
-
-#Preview {
-    LargeFilesListView(viewModel: DiskManagerViewModel())
 }

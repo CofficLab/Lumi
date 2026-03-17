@@ -133,14 +133,14 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
         let url = URL(fileURLWithPath: item.path)
         DiskService.shared.revealInFinder(url: url)
     }
-    
-    private static let byteFormatter: ByteCountFormatter = {
+
+    static let byteFormatter: ByteCountFormatter = {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useGB, .useMB, .useKB]
         formatter.countStyle = .file
         return formatter
     }()
-    
+
     func formatBytes(_ bytes: Int64) -> String {
         return Self.byteFormatter.string(fromByteCount: bytes)
     }
