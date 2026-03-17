@@ -1,12 +1,13 @@
 import SwiftUI
 
-// MARK: - 玻璃按钮
 ///
 /// 玻璃态按钮，提供优雅的交互反馈。
 ///
 struct GlassButton: View {
     @Environment(\.colorScheme) private var colorScheme
+
     // MARK: - 配置
+
     enum Style {
         case primary
         case secondary
@@ -40,6 +41,7 @@ struct GlassButton: View {
     @State private var isPressing = false
 
     // MARK: - 主体
+
     var body: some View {
         Button(action: action) {
             buttonLabel
@@ -61,14 +63,14 @@ struct GlassButton: View {
                     .font(buttonFont)
             }
         }
-            .foregroundColor(buttonForegroundColor)
-            .frame(maxWidth: .infinity)
-            .padding(DesignTokens.Spacing.sm)
-            .background(buttonBackground)
-            .overlay(buttonBorder)
-            .cornerRadius(buttonCornerRadius)
-            .scaleEffect(isPressing ? 0.97 : 1.0)
-            .animation(.spring(response: 0.3), value: isPressing)
+        .foregroundColor(buttonForegroundColor)
+        .frame(maxWidth: .infinity)
+        .padding(DesignTokens.Spacing.sm)
+        .background(buttonBackground)
+        .overlay(buttonBorder)
+        .cornerRadius(buttonCornerRadius)
+        .scaleEffect(isPressing ? 0.97 : 1.0)
+        .animation(.spring(response: 0.3), value: isPressing)
     }
 
     private var buttonFont: Font {
@@ -119,7 +121,7 @@ struct GlassButton: View {
                     colors: [
                         SwiftUI.Color.clear,
                         SwiftUI.Color.white.opacity(0.1),
-                        SwiftUI.Color.clear
+                        SwiftUI.Color.clear,
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -135,6 +137,7 @@ struct GlassButton: View {
 }
 
 // MARK: - 按钮样式
+
 private struct GlassButtonStyle: ButtonStyle {
     let style: GlassButton.Style
     @Binding var isHovering: Bool
@@ -152,6 +155,7 @@ private struct GlassButtonStyle: ButtonStyle {
 }
 
 // MARK: - 预览
+
 #Preview("玻璃按钮") {
     VStack(spacing: DesignTokens.Spacing.lg) {
         GlassButton(title: "主按钮", style: .primary) {}

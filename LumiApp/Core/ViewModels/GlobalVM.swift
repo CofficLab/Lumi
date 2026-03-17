@@ -127,6 +127,14 @@ final class GlobalVM: ObservableObject {
 
     // MARK: - 导航管理
 
+    /// 当前导航是否有可显示的内容
+    ///
+    /// - Parameter pluginVM: 插件 VM
+    func hasCurrentNavigationContent(pluginVM: PluginVM) -> Bool {
+        guard let selectedId = selectedNavigationId else { return false }
+        return pluginVM.getNavigationEntries().contains { $0.id == selectedId }
+    }
+
     /// 获取当前导航的内容视图
     ///
     /// 根据 selectedNavigationId 从插件提供的导航入口中查找对应的视图。

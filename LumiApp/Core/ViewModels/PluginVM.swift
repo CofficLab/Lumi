@@ -428,6 +428,15 @@ final class PluginVM: ObservableObject, SuperLog {
             .compactMap { $0.addDetailView() }
     }
 
+    /// 当前是否有 detail 视图
+    ///
+    /// 用于布局决策：有 detail 时使用 MiddleColumn + RightColumn 分栏，无时仅显示 RightColumn。
+    func hasDetailViews() -> Bool {
+        plugins
+            .filter { isPluginEnabled($0) }
+            .contains { $0.addDetailView() != nil }
+    }
+
     /// 获取所有插件提供的状态栏弹窗视图
     ///
     /// 收集所有启用插件提供的状态栏弹窗视图。

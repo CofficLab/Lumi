@@ -1,14 +1,61 @@
 import Foundation
 import SwiftData
 import MagicKit
+import OSLog
 
-final class BackgroundAgentTaskStore: @unchecked Sendable {
-    static let shared = BackgroundAgentTaskStore()
+/// 异步信号量，用于控制并发
+private actor AsyncSemaphore {
+    private var value: Int
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    init(value: Int) {
+        self.value = value
+    }
+
+    func wait() async {
+        if value > 0 {
+            value -= 1
+            return
+        }
+        return await withCheckedContinuation { continuation in
+            waiters.append(continuation)
+        }
+    }
+
+    nonisolated func signal() {
+        Task {
+            await _signal()
+        }
+    }
+
+    private func _signal() {
+        if !waiters.isEmpty {
+            let waiter = waiters.removeFirst()
+            waiter.resume()
+        } else {
+            value += 1
+        }
+    }
+}
+
+actor BackgroundAgentTaskStore: SuperLog {
+    nonisolated static let emoji = "🧵"
+    nonisolated static let verbose = false
+
+    nonisolated static let shared = BackgroundAgentTaskStore()
 
     private let container: ModelContainer
     private let queue = DispatchQueue(label: "BackgroundAgentTaskStore.queue", qos: .utility)
 
+    // 并发控制：最大同时执行 2 个任务
+    private let maxConcurrentTasks = 2
+    private var runningTaskCount = 0
+    private let taskSemaphore: AsyncSemaphore
+
     private init() {
+        // 初始化异步信号量，最大并发数为 2
+        self.taskSemaphore = AsyncSemaphore(value: maxConcurrentTasks)
+
         let schema = Schema([
             BackgroundAgentTask.self
         ])
@@ -30,7 +77,12 @@ final class BackgroundAgentTaskStore: @unchecked Sendable {
         }
     }
 
-    func enqueue(prompt: String) -> UUID {
+    // MARK: - 公共方法
+
+    /// 创建并执行新的后台任务
+    /// - Parameter prompt: 任务指令
+    /// - Returns: 任务 ID
+    nonisolated func enqueue(prompt: String) -> UUID {
         let id = UUID()
         queue.async { [container] in
             let context = ModelContext(container)
@@ -43,14 +95,17 @@ final class BackgroundAgentTaskStore: @unchecked Sendable {
             try? context.save()
         }
 
-        Task.detached(priority: .utility) { [weak self] in
+        Task.detached { [weak self] in
             await self?.runTask(id: id)
         }
 
         return id
     }
 
-    func fetchRecent(limit: Int = 20) -> [BackgroundAgentTask] {
+    /// 获取最近的后台任务列表
+    /// - Parameter limit: 最多返回的任务数量，默认 20
+    /// - Returns: 后台任务数组，按创建时间倒序
+    nonisolated func fetchRecent(limit: Int = 20) -> [BackgroundAgentTask] {
         let context = ModelContext(container)
         var descriptor = FetchDescriptor<BackgroundAgentTask>(
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
@@ -59,7 +114,10 @@ final class BackgroundAgentTaskStore: @unchecked Sendable {
         return (try? context.fetch(descriptor)) ?? []
     }
 
-    func fetchById(_ id: UUID) -> BackgroundAgentTask? {
+    /// 根据 ID 查询后台任务
+    /// - Parameter id: 任务 ID
+    /// - Returns: 任务对象，不存在则返回 nil
+    nonisolated func fetchById(_ id: UUID) -> BackgroundAgentTask? {
         let context = ModelContext(container)
         let descriptor = FetchDescriptor<BackgroundAgentTask>(
             predicate: #Predicate { $0.id == id }
@@ -67,6 +125,10 @@ final class BackgroundAgentTaskStore: @unchecked Sendable {
         return (try? context.fetch(descriptor).first) ?? nil
     }
 
+    /// 更新指定任务的状态
+    /// - Parameters:
+    ///   - id: 任务 ID
+    ///   - mutate: 用于修改任务的闭包
     private func updateTask(
         id: UUID,
         mutate: (BackgroundAgentTask) -> Void
@@ -80,7 +142,31 @@ final class BackgroundAgentTaskStore: @unchecked Sendable {
         try? context.save()
     }
 
+    // MARK: - 任务执行
+
+    /// 执行单个后台任务
+    /// - Parameter id: 任务 ID
     private func runTask(id: UUID) async {
+        // 等待获取执行许可（异步等待直到有可用位置）
+        await taskSemaphore.wait()
+
+        // 增加运行计数
+        runningTaskCount += 1
+
+        if Self.verbose {
+            os_log("\(self.t)开始执行任务，当前并发数：\(self.runningTaskCount)")
+        }
+
+        defer {
+            // 释放信号量并减少计数
+            taskSemaphore.signal()
+            runningTaskCount -= 1
+            if Self.verbose {
+                os_log("\(self.t)任务执行完毕，当前并发数：\(self.runningTaskCount)")
+            }
+        }
+
+        // 更新任务状态为运行中
         updateTask(id: id) { task in
             task.startedAt = Date()
             task.statusRawValue = BackgroundAgentTaskStatus.running.rawValue
@@ -172,6 +258,10 @@ final class BackgroundAgentTaskStore: @unchecked Sendable {
         }
     }
 
+    // MARK: - LLM 配置
+
+    /// 构建当前使用的 LLM 配置
+    /// - Returns: LLMConfig 对象
     private func makeCurrentLLMConfig() -> LLMConfig {
         let registry = ProviderRegistry()
         LLMPluginsVM.registerAllProviders(to: registry)

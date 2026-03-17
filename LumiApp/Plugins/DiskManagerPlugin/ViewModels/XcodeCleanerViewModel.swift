@@ -12,6 +12,7 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
     @Published var isScanning = false
     @Published var isCleaning = false
     @Published var errorMessage: String?
+    @Published var isPermissionError = false
 
     // Statistics
     var totalSize: Int64 {
@@ -89,6 +90,8 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
     
     func cleanSelected() async {
         isCleaning = true
+        errorMessage = nil
+        isPermissionError = false
         let itemsToDelete = itemsByCategory.values.flatMap { $0 }.filter { $0.isSelected }
 
         if Self.verbose {
@@ -101,11 +104,20 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
             if Self.verbose {
                 os_log("\(self.t)Cleanup successful")
             }
-            // Rescan or remove from list directly
             await scanAll()
         } catch {
             os_log(.error, "\(self.t)Cleanup failed: \(error.localizedDescription)")
-            errorMessage = String(localized: "Cleanup failed: \(error.localizedDescription)")
+            let nsError = error as NSError
+            let isPermission = (nsError.domain == NSCocoaErrorDomain && nsError.code == 513) ||
+                (nsError.domain == NSPOSIXErrorDomain && nsError.code == 13) ||
+                nsError.localizedDescription.lowercased().contains("permission") ||
+                nsError.localizedDescription.contains("许可")
+            isPermissionError = isPermission
+            if isPermission {
+                errorMessage = String(localized: "Xcode cleanup requires Full Disk Access. Please grant permission in System Settings.", table: "DiskManager")
+            } else {
+                errorMessage = String(localized: "Cleanup failed: \(error.localizedDescription)")
+            }
         }
 
         isCleaning = false

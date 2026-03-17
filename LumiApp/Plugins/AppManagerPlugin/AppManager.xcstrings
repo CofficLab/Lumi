@@ -82,7 +82,20 @@
       }
     },
     "Manage installed applications" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理已安装的应用"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理已安裝的應用程式"
+          }
+        }
+      }
     },
     "OK" : {
       "localizations" : {
