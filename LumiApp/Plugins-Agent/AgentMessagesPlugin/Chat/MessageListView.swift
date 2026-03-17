@@ -57,7 +57,7 @@ struct MessageListView: View, SuperLog {
                     }
                 } else {
                     ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 12) {
                             if hasMoreMessages {
                                 loadMoreButton
                             }

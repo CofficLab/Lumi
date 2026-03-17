@@ -24,8 +24,14 @@ struct MiddleColumn: View {
                 }
             } else {
                 // App 模式：中间栏承载当前导航内容
-                VStack(spacing: 0) {
-                    app.getCurrentNavigationView(pluginVM: pluginProvider)
+                Group {
+                    if app.hasCurrentNavigationContent(pluginVM: pluginProvider) {
+                        VStack(spacing: 0) {
+                            app.getCurrentNavigationView(pluginVM: pluginProvider)
+                        }
+                    } else {
+                        NavigationEmptyGuideView()
+                    }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
