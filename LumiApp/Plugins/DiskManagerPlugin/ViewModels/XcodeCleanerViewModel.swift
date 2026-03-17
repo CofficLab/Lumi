@@ -26,47 +26,80 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
     }
 
     private let service = XcodeCleanService.shared
+    private var scanTask: Task<Void, Never>?
+    private var progressTask: Task<Void, Never>?
 
     init() {
         // Service 不再发布状态，所有状态由 ViewModel 管理
     }
 
     func scanAll() async {
+        guard !isScanning else { return }
         if Self.verbose {
             os_log("\(self.t)开始扫描 Xcode 缓存")
         }
 
-        await MainActor.run {
-            self.isScanning = true
-            self.itemsByCategory = [:]
-            self.errorMessage = nil
-        }
+        isScanning = true
+        itemsByCategory = [:]
+        errorMessage = nil
+        scanProgress = ""
+        scanStats = XcodeCleanService.ScanStats()
 
-        let (stats, results) = await service.scanAllCategories()
-
-        // Apply auto selection for each category
-        var processedResults: [XcodeCleanCategory: [XcodeCleanItem]] = [:]
-        for (category, items) in results {
-            var processedItems = items
-            applyAutoSelection(for: category, items: &processedItems)
-            processedResults[category] = processedItems
-
-            if Self.verbose {
-                let size = processedItems.reduce(0 as Int64) { $0 + $1.size }
-                let sizeString = ByteCountFormatter.string(fromByteCount: size, countStyle: .file)
-                os_log("\(self.t)已扫描 \(category.rawValue)：\(processedItems.count) 项，\(sizeString)")
+        progressTask?.cancel()
+        progressTask = Task {
+            let stream = await service.progressStream()
+            for await stats in stream {
+                if Task.isCancelled { break }
+                await MainActor.run {
+                    self.scanStats = stats
+                    self.scanProgress = stats.currentCategory
+                }
             }
         }
 
-        await MainActor.run {
-            self.itemsByCategory = processedResults
-            self.scanStats = stats
-            self.isScanning = false
-        }
+        scanTask?.cancel()
+        scanTask = Task {
+            let (stats, results) = await service.scanAllCategories()
 
-        if Self.verbose {
-            os_log("\(self.t)扫描完成，总计 \(ByteCountFormatter.string(fromByteCount: self.totalSize, countStyle: .file))")
+            // Apply auto selection for each category
+            var processedResults: [XcodeCleanCategory: [XcodeCleanItem]] = [:]
+            for (category, items) in results {
+                var processedItems = items
+                applyAutoSelection(for: category, items: &processedItems)
+                processedResults[category] = processedItems
+
+                if Self.verbose {
+                    let size = processedItems.reduce(0 as Int64) { $0 + $1.size }
+                    let sizeString = ByteCountFormatter.string(fromByteCount: size, countStyle: .file)
+                    os_log("\(self.t)已扫描 \(category.rawValue)：\(processedItems.count) 项，\(sizeString)")
+                }
+            }
+
+            if !Task.isCancelled {
+                await MainActor.run {
+                    self.itemsByCategory = processedResults
+                    self.scanStats = stats
+                    self.isScanning = false
+                    self.scanProgress = ""
+                    self.progressTask?.cancel()
+                }
+            }
+
+            if Self.verbose {
+                os_log("\(self.t)扫描完成，总计 \(ByteCountFormatter.string(fromByteCount: self.totalSize, countStyle: .file))")
+            }
         }
+    }
+
+    func stopScan() {
+        if Self.verbose {
+            os_log("\(self.t)停止扫描 Xcode 缓存")
+        }
+        scanTask?.cancel()
+        progressTask?.cancel()
+        Task { await service.cancelScan() }
+        isScanning = false
+        scanProgress = ""
     }
 
     func toggleSelection(for item: XcodeCleanItem) {

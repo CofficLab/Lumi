@@ -7,11 +7,8 @@ struct DirectoryTreeView: View {
     var body: some View {
         VStack(spacing: 16) {
             // 扫描控制区域
-            DirectoryTreeScanControlBar(viewModel: viewModel)
-
-            // 扫描进度
-            if viewModel.isScanning {
-                DirectoryTreeScanProgressView(viewModel: viewModel)
+            if viewModel.isScanning == false && viewModel.rootEntries.isNotEmpty {
+                DirectoryTreeScanControlBar(viewModel: viewModel)
             }
 
             // 错误消息
@@ -21,11 +18,13 @@ struct DirectoryTreeView: View {
                     .padding()
             }
 
-            // 目录列表
-            VStack {
-                if viewModel.rootEntries.isEmpty && !viewModel.isScanning {
+            // 内容区域（扫描/空态/列表互斥显示，避免高度被多个 .infinity 分走）
+            ZStack {
+                if viewModel.isScanning {
+                    DirectoryTreeScanProgressView(viewModel: viewModel)
+                } else if viewModel.rootEntries.isEmpty {
                     EmptyDirectoryTreeView(viewModel: viewModel)
-                } else if !viewModel.isScanning {
+                } else {
                     List(viewModel.rootEntries, children: \.children) { entry in
                         DirectoryTreeRow(entry: entry, viewModel: viewModel)
                     }

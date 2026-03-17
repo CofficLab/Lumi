@@ -90,7 +90,7 @@ struct DirectoryTreeScanProgressView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(DesignTokens.Color.semantic.primary.opacity(0.05))
+                .fill(DesignTokens.Color.semantic.primary.opacity(0.1))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)

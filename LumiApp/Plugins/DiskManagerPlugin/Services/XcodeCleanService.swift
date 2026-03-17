@@ -19,6 +19,8 @@ class XcodeCleanService: @unchecked Sendable, SuperLog {
         var currentCategory: String = ""
     }
 
+    private let coordinator = XcodeScanCoordinator()
+
     private init() {
         if Self.verbose {
             os_log("\(self.t)Xcode cleaning service initialized")
@@ -62,33 +64,17 @@ class XcodeCleanService: @unchecked Sendable, SuperLog {
 
     /// 扫描所有类别 - 返回结果，状态由 ViewModel 管理
     func scanAllCategories() async -> (scanStats: ScanStats, itemsByCategory: [XcodeCleanCategory: [XcodeCleanItem]]) {
-        if Self.verbose {
-            os_log("\(self.t)开始扫描 Xcode 缓存")
+        await coordinator.scanAll { category in
+            await self.scan(category: category)
         }
+    }
 
-        var results: [XcodeCleanCategory: [XcodeCleanItem]] = [:]
-        var stats = ScanStats()
+    func progressStream() async -> AsyncStream<ScanStats> {
+        await coordinator.progressStream()
+    }
 
-        for category in XcodeCleanCategory.allCases {
-            stats.currentCategory = category.displayName
-
-            let items = await scan(category: category)
-            results[category] = items
-
-            stats.scannedCategories += 1
-            stats.totalItems += items.count
-
-            if Self.verbose {
-                let size = items.reduce(0 as Int64) { $0 + $1.size }
-                os_log("\(self.t)已扫描 \(category.rawValue)：\(items.count) 项，\(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
-            }
-        }
-
-        if Self.verbose {
-            os_log("\(self.t)扫描完成，总计 \(stats.totalItems) 项")
-        }
-
-        return (stats, results)
+    func cancelScan() async {
+        await coordinator.cancelCurrentScan()
     }
 
     func scan(category: XcodeCleanCategory) async -> [XcodeCleanItem] {
@@ -202,5 +188,87 @@ class XcodeCleanService: @unchecked Sendable, SuperLog {
         }.value
 
         os_log("\(tag)删除完成：\(items.count) 项")
+    }
+}
+
+// MARK: - Scan Coordinator
+
+actor XcodeScanCoordinator {
+    private var activeTask: Task<(XcodeCleanService.ScanStats, [XcodeCleanCategory: [XcodeCleanItem]]), Never>?
+    private var scanID: UUID = UUID()
+    private var currentStats: XcodeCleanService.ScanStats? {
+        didSet {
+            if let s = currentStats {
+                for (_, cont) in continuations { cont.yield(s) }
+            }
+        }
+    }
+    private var continuations: [UUID: AsyncStream<XcodeCleanService.ScanStats>.Continuation] = [:]
+
+    func progressStream() -> AsyncStream<XcodeCleanService.ScanStats> {
+        let id = UUID()
+        return AsyncStream { continuation in
+            Task { await self.addContinuation(id: id, continuation: continuation) }
+            continuation.onTermination = { _ in
+                Task { await self.removeContinuation(id: id) }
+            }
+        }
+    }
+
+    private func addContinuation(id: UUID, continuation: AsyncStream<XcodeCleanService.ScanStats>.Continuation) {
+        continuations[id] = continuation
+        if let s = currentStats { continuation.yield(s) }
+    }
+
+    private func removeContinuation(id: UUID) {
+        continuations[id] = nil
+    }
+
+    func scanAll(scanCategory: @escaping @Sendable (XcodeCleanCategory) async -> [XcodeCleanItem]) async -> (XcodeCleanService.ScanStats, [XcodeCleanCategory: [XcodeCleanItem]]) {
+        activeTask?.cancel()
+        let myID = UUID()
+        scanID = myID
+        currentStats = XcodeCleanService.ScanStats(scannedCategories: 0, totalItems: 0, currentCategory: String(localized: "Starting scan..."))
+
+        let task = Task { await performScan(scanCategory: scanCategory, id: myID) }
+        activeTask = task
+        let result = await task.value
+
+        currentStats = nil
+        finishAll()
+        return result
+    }
+
+    func cancelCurrentScan() {
+        activeTask?.cancel()
+        activeTask = nil
+        currentStats = nil
+        scanID = UUID()
+        finishAll()
+    }
+
+    private func performScan(scanCategory: @Sendable (XcodeCleanCategory) async -> [XcodeCleanItem], id: UUID) async -> (XcodeCleanService.ScanStats, [XcodeCleanCategory: [XcodeCleanItem]]) {
+        var results: [XcodeCleanCategory: [XcodeCleanItem]] = [:]
+        var stats = XcodeCleanService.ScanStats()
+
+        for category in XcodeCleanCategory.allCases {
+            if Task.isCancelled { break }
+            stats.currentCategory = category.displayName
+            if scanID == id { currentStats = stats } else { break }
+
+            let items = await scanCategory(category)
+            results[category] = items
+
+            stats.scannedCategories += 1
+            stats.totalItems += items.count
+            if scanID == id { currentStats = stats } else { break }
+        }
+
+        return (stats, results)
+    }
+
+    private func finishAll() {
+        for (_, cont) in continuations { cont.finish() }
+        continuations.removeAll()
     }
 }

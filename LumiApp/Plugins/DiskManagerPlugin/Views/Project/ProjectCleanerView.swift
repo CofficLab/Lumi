@@ -7,7 +7,7 @@ struct ProjectCleanerView: View {
     var body: some View {
         VStack(spacing: 16) {
             // 扫描控制区域
-            if !viewModel.projects.isEmpty && !viewModel.isScanning {
+            if viewModel.projects.isNotEmpty && viewModel.isScanning == false {
                 ProjectScanControlBar(viewModel: viewModel)
             }
 

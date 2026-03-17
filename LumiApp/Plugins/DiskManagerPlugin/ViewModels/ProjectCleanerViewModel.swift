@@ -13,6 +13,7 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
     @Published var isScanning = false
     @Published var isCleaning = false
     @Published var showCleanConfirmation = false
+    @Published var scanProgress: String = ""
 
     var totalSelectedSize: Int64 {
         var total: Int64 = 0
@@ -27,38 +28,67 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
     }
 
     private let service = ProjectCleanerService.shared
+    private var scanTask: Task<Void, Never>?
+    private var progressTask: Task<Void, Never>?
 
     init() {
         // Service 不再发布状态，所有状态由 ViewModel 管理
     }
 
     func scanProjects() async {
+        guard !isScanning else { return }
         if Self.verbose {
             os_log("\(self.t)开始扫描项目")
         }
 
-        await MainActor.run {
-            self.isScanning = true
-            self.selectedItemIds = []
+        isScanning = true
+        selectedItemIds = []
+        projects = []
+        scanProgress = ""
+
+        progressTask?.cancel()
+        progressTask = Task {
+            let stream = await service.progressStream()
+            for await progress in stream {
+                if Task.isCancelled { break }
+                self.scanProgress = progress
+            }
         }
 
-        let result = await service.scanProjects()
+        scanTask?.cancel()
+        scanTask = Task {
+            let result = await service.scanProjects()
+            if !Task.isCancelled {
+                await MainActor.run {
+                    self.projects = result
+                    self.isScanning = false
+                    self.scanProgress = ""
+                    self.progressTask?.cancel()
 
-        await MainActor.run {
-            self.projects = result
-            self.isScanning = false
+                    if Self.verbose {
+                        os_log("\(self.t)项目扫描完成：\(result.count) 个项目")
+                    }
 
-            if Self.verbose {
-                os_log("\(self.t)项目扫描完成：\(result.count) 个项目")
-            }
-
-            // Select all cleanable items by default
-            for project in result {
-                for item in project.cleanableItems {
-                    self.selectedItemIds.insert(item.id)
+                    // Select all cleanable items by default
+                    for project in result {
+                        for item in project.cleanableItems {
+                            self.selectedItemIds.insert(item.id)
+                        }
+                    }
                 }
             }
         }
+    }
+
+    func stopScan() {
+        if Self.verbose {
+            os_log("\(self.t)停止扫描项目")
+        }
+        scanTask?.cancel()
+        progressTask?.cancel()
+        Task { await service.cancelScan() }
+        isScanning = false
+        scanProgress = ""
     }
 
     func toggleSelection(_ id: UUID) {
