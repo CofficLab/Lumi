@@ -214,6 +214,9 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             onStreamStartedUI: { [weak self] _, conversationId in
                 guard let self else { return }
                 self.processingStateViewModel.markStreamStarted()
+                if self.ConversationVM.selectedConversationId == conversationId {
+                    self.bumpStreamingRenderVersion()
+                }
             },
             onStreamFirstTokenUI: { [weak self] conversationId, ttftMs in
                 guard let self else { return }
@@ -228,6 +231,10 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
                 self.setThinkingText(self.runtimeStore.thinkingTextByConversation[conversationId] ?? "", for: conversationId)
                 self.setIsThinking(false, for: conversationId)
                 self.processingStateViewModel.finish()
+                self.runtimeStore.streamingTextByConversation[conversationId] = nil
+                if self.ConversationVM.selectedConversationId == conversationId {
+                    self.bumpStreamingRenderVersion()
+                }
             },
             onThinkingStartedUI: { [weak self] conversationId in
                 guard let self else { return }
@@ -418,6 +425,19 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         return runtimeStore.streamStateByConversation[selectedId]?.messageId
     }
 
+    /// 当前选中会话的流式消息快照（仅用于 UI 渲染，不进历史数组）。
+    public var activeStreamingMessageForSelectedConversation: ChatMessage? {
+        guard let conversationId = ConversationVM.selectedConversationId,
+              let state = runtimeStore.streamStateByConversation[conversationId],
+              let messageId = state.messageId
+        else { return nil }
+        let text = runtimeStore.streamingTextByConversation[conversationId] ?? ""
+        return ChatMessage(id: messageId, role: .assistant, content: text, timestamp: Date())
+    }
+
+    /// 流式渲染版本号：流式文本变化时递增，供 UI 精准订阅。
+    @Published public private(set) var streamingRenderVersion: Int = 0
+
     private typealias StreamSessionState = ConversationRuntimeStore.StreamSessionState
     private var turnTaskPipelineByConversation: [UUID: Task<Void, Never>] = [:]
     private var turnTaskGenerationByConversation: [UUID: Int] = [:]
@@ -428,6 +448,10 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     private let immediateStreamFlushChars = 80
     private let immediateThinkingFlushChars = 120
     private let captureThinkingContent = true
+
+    private func bumpStreamingRenderVersion() {
+        streamingRenderVersion &+= 1
+    }
 
     /// 清理与指定会话相关的所有运行时状态，避免内存泄漏
     private func cleanupConversationState(_ conversationId: UUID) {
@@ -604,17 +628,10 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         guard force || now.timeIntervalSince(lastFlush) >= streamUIFlushInterval else {
             return
         }
-        guard let state = runtimeStore.streamStateByConversation[conversationId],
-              let messageId = state.messageId,
-              ConversationVM.selectedConversationId == conversationId,
-              let index = state.messageIndex,
-              index < messages.count else {
-            return
+        runtimeStore.streamingTextByConversation[conversationId, default: ""] += pending
+        if ConversationVM.selectedConversationId == conversationId {
+            bumpStreamingRenderVersion()
         }
-        guard messages[index].id == messageId else { return }
-        var currentMessage = messages[index]
-        currentMessage.content += pending
-        updateMessage(currentMessage, at: index)
         runtimeStore.pendingStreamTextByConversation[conversationId] = ""
         runtimeStore.lastStreamFlushAtByConversation[conversationId] = now
     }
@@ -916,8 +933,11 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         turnTaskPipelineByConversation[conversationId] = nil
         runtimeStore.processingConversationIds.remove(conversationId)
         runtimeStore.streamStateByConversation[conversationId] = StreamSessionState(messageId: nil, messageIndex: nil)
+        runtimeStore.pendingStreamTextByConversation[conversationId] = nil
+        runtimeStore.streamingTextByConversation[conversationId] = nil
         runtimeStore.thinkingConversationIds.remove(conversationId)
         runtimeStore.pendingPermissionByConversation[conversationId] = nil
+        bumpStreamingRenderVersion()
         updateRuntimeState(for: conversationId)
 
         os_log("\(Self.t)🛑 任务已取消")

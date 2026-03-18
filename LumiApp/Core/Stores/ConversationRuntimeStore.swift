@@ -22,6 +22,7 @@ final class ConversationRuntimeStore: ObservableObject {
     }
 
     @Published var streamStateByConversation: [UUID: StreamSessionState] = [:]
+    @Published var streamingTextByConversation: [UUID: String] = [:]
     var thinkingTextByConversation: [UUID: String] = [:]
     var pendingStreamTextByConversation: [UUID: String] = [:]
     var pendingThinkingTextByConversation: [UUID: String] = [:]
@@ -85,6 +86,7 @@ final class ConversationRuntimeStore: ObservableObject {
     func cleanupConversationState(_ conversationId: UUID) {
         streamStateByConversation[conversationId] = StreamSessionState(messageId: nil, messageIndex: nil)
         streamStateByConversation.removeValue(forKey: conversationId)
+        streamingTextByConversation.removeValue(forKey: conversationId)
 
         thinkingTextByConversation.removeValue(forKey: conversationId)
         pendingStreamTextByConversation.removeValue(forKey: conversationId)
@@ -112,4 +114,3 @@ final class ConversationRuntimeStore: ObservableObject {
         postProcessedMessageIdsByConversation.removeValue(forKey: conversationId)
     }
 }
-

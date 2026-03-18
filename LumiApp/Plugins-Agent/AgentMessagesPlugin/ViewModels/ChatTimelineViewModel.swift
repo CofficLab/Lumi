@@ -15,6 +15,8 @@ final class ChatTimelineViewModel: ObservableObject, SuperLog {
     private let conversationVM: ConversationVM
     private var cancellables = Set<AnyCancellable>()
     private let metricUpdateEpsilon: CGFloat = 1
+    private let minMetricUpdateInterval: TimeInterval = 0.05
+    private var lastMetricUpdateAt: Date = .distantPast
 
     init(agentProvider: AgentVM, conversationVM: ConversationVM) {
         self.agentProvider = agentProvider
@@ -30,6 +32,9 @@ final class ChatTimelineViewModel: ObservableObject, SuperLog {
         }
         return rows
     }
+
+    var persistedMessages: [ChatMessage] { state.persistedMessages }
+    var activeStreamingMessage: ChatMessage? { state.activeStreamingMessage }
 
     var selectedConversationId: UUID? { state.selectedConversationId }
     var hasMoreMessages: Bool { state.hasMoreMessages }
@@ -109,6 +114,11 @@ final class ChatTimelineViewModel: ObservableObject, SuperLog {
     }
 
     func updateBottomMetrics(contentBottomY: CGFloat? = nil, viewportBottomY: CGFloat? = nil) {
+        let now = Date()
+        if now.timeIntervalSince(lastMetricUpdateAt) < minMetricUpdateInterval {
+            return
+        }
+
         var didChangeMetric = false
 
         if let contentBottomY {
@@ -125,6 +135,7 @@ final class ChatTimelineViewModel: ObservableObject, SuperLog {
         }
 
         guard didChangeMetric else { return }
+        lastMetricUpdateAt = now
 
         let distanceToBottom = state.contentBottomY - state.viewportBottomY
         let nearBottom = distanceToBottom <= 120
@@ -153,7 +164,7 @@ final class ChatTimelineViewModel: ObservableObject, SuperLog {
             }
             .store(in: &cancellables)
 
-        agentProvider.messageViewModel.$messages
+        agentProvider.$streamingRenderVersion
             .sink { [weak self] _ in
                 self?.refreshActiveStreamingMessage()
             }
@@ -203,8 +214,7 @@ final class ChatTimelineViewModel: ObservableObject, SuperLog {
     private func refreshActiveStreamingMessage() {
         guard let conversationId = state.selectedConversationId,
               conversationId == conversationVM.selectedConversationId,
-              let streamingId = agentProvider.currentStreamingMessageId,
-              let liveMessage = agentProvider.messages.first(where: { $0.id == streamingId })
+              let liveMessage = agentProvider.activeStreamingMessageForSelectedConversation
         else {
             state.activeStreamingMessage = nil
             return
