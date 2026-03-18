@@ -4,20 +4,22 @@ import SwiftUI
 struct MessageWithToolCallsView: View {
     let message: ChatMessage
     let toolOutputMessages: [ChatMessage]
+    @EnvironmentObject var permissionRequestViewModel: PermissionRequestVM
     @ObservedObject private var expansionState = MessageExpansionState.shared
     @State private var showRawMessage: Bool = false
     @State private var isToolDetailsExpanded: Bool = false
+    private var renderMetadata: MessageRenderMetadata {
+        MessageRenderCache.shared.metadata(for: message)
+    }
 
     // 判断是否是长消息
     private var isLongMessage: Bool {
-        let charCount = message.content.count
-        let lineCount = message.content.components(separatedBy: "\n").count
-        return charCount > 1000 || lineCount > 50
+        renderMetadata.isLongMessage
     }
     
     // 当前消息的展开状态
     private var isExpanded: Bool {
-        expansionState.isExpanded(id: message.id)
+        expansionState.isExpanded(id: message.id, defaultExpanded: !renderMetadata.shouldDefaultCollapse)
     }
 
     var body: some View {
@@ -53,12 +55,21 @@ struct MessageWithToolCallsView: View {
                         }
                     } label: {
                         HStack(spacing: 8) {
-                            Text(executionSummaryTitle(for: toolCalls))
-                                .font(DesignTokens.Typography.caption1)
-                                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                                .lineLimit(1)
+                            HStack(spacing: 6) {
+                                Image(systemName: "wrench.and.screwdriver")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                Text(executionSummaryTitle(for: toolCalls))
+                                    .font(DesignTokens.Typography.caption1)
+                                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                                    .lineLimit(1)
+                            }
 
                             Spacer()
+
+                            Text(toolExecutionStatusText(for: toolCalls))
+                                .font(DesignTokens.Typography.caption1)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
                             Image(systemName: isToolDetailsExpanded ? "chevron.up" : "chevron.down")
                                 .font(.system(size: 11, weight: .semibold))
@@ -78,7 +89,13 @@ struct MessageWithToolCallsView: View {
                     .buttonStyle(.plain)
 
                     if isToolDetailsExpanded {
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ToolExecutionTimelineView(
+                                toolCalls: toolCalls,
+                                toolOutputs: toolOutputMessages,
+                                waitingPermissionToolCallId: permissionRequestViewModel.pendingPermissionRequest?.toolCallID
+                            )
+
                             // SwiftUI 要求 ForEach 的 id 在同一集合内唯一；toolCall.id 在某些提供方下可能重复，
                             // 这里用 message.id + index + toolCall.id 组合出稳定且必唯一的 key，避免展开/折叠时出现未定义行为甚至卡死。
                             ForEach(Array(toolCalls.enumerated()), id: \.offset) { index, toolCall in
@@ -86,24 +103,13 @@ struct MessageWithToolCallsView: View {
                             }
 
                             if !toolOutputMessages.isEmpty {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "gearshape.2.fill")
-                                        .font(.system(size: 12))
-                                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                                    Text(String(localized: "Tool Output", table: "DevAssistant"))
-                                        .font(DesignTokens.Typography.caption1)
-                                        .fontWeight(.medium)
-                                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                                }
-                                .padding(.top, 8)
-                                .padding(.bottom, 2)
-
                                 // toolOutputMessages.id 理论上应唯一，但在历史合并/重建时可能出现重复，导致 SwiftUI 未定义行为（展开/折叠卡死）。
                                 ForEach(Array(toolOutputMessages.enumerated()), id: \.offset) { _, output in
                                     ToolOutputView(message: output)
                                 }
                             }
                         }
+                        .padding(.top, 2)
                     }
                 }
                 .padding(.top, (message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || shouldHideMessageBody) ? 0 : 8)
@@ -138,6 +144,28 @@ struct MessageWithToolCallsView: View {
             return firstLine
         }
         return "正在执行 \(toolCalls.count) 个工具："
+    }
+
+    private func toolExecutionStatusText(for toolCalls: [ToolCall]) -> String {
+        let callIds = Set(toolCalls.map(\.id))
+        let outputs = toolOutputMessages.filter { output in
+            guard let id = output.toolCallID else { return false }
+            return callIds.contains(id)
+        }
+
+        if let waitingId = permissionRequestViewModel.pendingPermissionRequest?.toolCallID,
+           callIds.contains(waitingId) {
+            return "待授权"
+        }
+
+        if outputs.count < toolCalls.count {
+            return "执行中"
+        }
+
+        let hasFailure = outputs.contains { msg in
+            msg.isError || msg.content.localizedCaseInsensitiveContains("error") || msg.content.localizedCaseInsensitiveContains("aborted")
+        }
+        return hasFailure ? "部分失败" : "已完成"
     }
 
 

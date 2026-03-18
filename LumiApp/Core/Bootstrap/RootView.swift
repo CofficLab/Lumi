@@ -56,6 +56,7 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(windowContainer.errorStateViewModel)
             .environmentObject(windowContainer.permissionRequestViewModel)
             .environmentObject(windowContainer.thinkingStateViewModel)
+            .environmentObject(windowContainer.chatTimelineViewModel)
             .environmentObject(MystiqueThemeManager())
             .modelContainer(container.modelContainer)
     }

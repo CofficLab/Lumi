@@ -13,6 +13,12 @@ struct ChatMessagesView: View, SuperLog {
     /// 权限请求 ViewModel
     @EnvironmentObject var permissionRequestViewModel: PermissionRequestVM
 
+    /// 处理状态 ViewModel
+    @EnvironmentObject var processingStateViewModel: ProcessingStateVM
+
+    /// 思考状态 ViewModel
+    @EnvironmentObject var thinkingStateViewModel: ThinkingStateVM
+
     /// 智能体提供者
     @EnvironmentObject var agentProvider: AgentVM
 
@@ -42,6 +48,9 @@ struct ChatMessagesView: View, SuperLog {
     private var messageOverlay: some View {
         VStack(spacing: 8) {
             DepthWarningBanner()
+            if processingStateViewModel.hasActiveLoading || thinkingStateViewModel.isThinking {
+                statusOverlay
+            }
             if let request = permissionRequestViewModel.pendingPermissionRequest {
                 PermissionRequestView(
                     request: request,
@@ -51,6 +60,30 @@ struct ChatMessagesView: View, SuperLog {
             }
         }
         .padding()
+    }
+
+    private var statusOverlay: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "bolt.horizontal.circle.fill")
+                .foregroundStyle(.secondary)
+            Text(statusOverlayText)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    private var statusOverlayText: String {
+        if processingStateViewModel.hasActiveLoading {
+            return processingStateViewModel.statusText
+        }
+        if thinkingStateViewModel.isThinking {
+            return "思考中…"
+        }
+        return ""
     }
 }
 

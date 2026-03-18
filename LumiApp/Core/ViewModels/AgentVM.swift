@@ -151,14 +151,12 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             guard let self else { return }
             if self.ConversationVM.selectedConversationId == conversationId {
                 self.processingStateViewModel.beginSending()
-                self.upsertStatusMessage(for: conversationId, text: self.processingStateViewModel.statusText)
             }
         },
         onProcessingFinished: { [weak self] conversationId in
             guard let self else { return }
             if self.ConversationVM.selectedConversationId == conversationId {
                 self.processingStateViewModel.finish()
-                self.removeStatusMessage(for: conversationId)
             }
         },
         sendMessageToAgent: { [weak self] message, conversationId in
@@ -208,17 +206,14 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             onTurnFinishedUI: { [weak self] conversationId in
                 guard let self else { return }
                 self.processingStateViewModel.finish()
-                self.removeStatusMessage(for: conversationId)
             },
             onTurnFailedUI: { [weak self] conversationId, _ in
                 guard let self else { return }
                 self.processingStateViewModel.finish()
-                self.removeStatusMessage(for: conversationId)
             },
             onStreamStartedUI: { [weak self] _, conversationId in
                 guard let self else { return }
                 self.processingStateViewModel.markStreamStarted()
-                self.upsertStatusMessage(for: conversationId, text: self.processingStateViewModel.statusText)
             },
             onStreamFirstTokenUI: { [weak self] conversationId, ttftMs in
                 guard let self else { return }
@@ -227,19 +222,16 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
                 } else {
                     self.processingStateViewModel.markGenerating()
                 }
-                self.upsertStatusMessage(for: conversationId, text: self.processingStateViewModel.statusText)
             },
             onStreamFinishedUI: { [weak self] conversationId in
                 guard let self else { return }
                 self.setThinkingText(self.runtimeStore.thinkingTextByConversation[conversationId] ?? "", for: conversationId)
                 self.setIsThinking(false, for: conversationId)
                 self.processingStateViewModel.finish()
-                self.removeStatusMessage(for: conversationId)
             },
             onThinkingStartedUI: { [weak self] conversationId in
                 guard let self else { return }
                 self.setIsThinking(true, for: conversationId)
-                self.upsertStatusMessage(for: conversationId, text: "思考中…")
             },
             setLastHeartbeatTime: { [weak self] date in
                 self?.setLastHeartbeatTime(date)
@@ -436,41 +428,6 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     private let immediateStreamFlushChars = 80
     private let immediateThinkingFlushChars = 120
     private let captureThinkingContent = true
-
-    private func upsertStatusMessage(for conversationId: UUID, text: String) {
-        guard ConversationVM.selectedConversationId == conversationId else { return }
-        guard !text.isEmpty else { return }
-
-        let id = runtimeStore.statusMessageIdByConversation[conversationId] ?? UUID()
-        if runtimeStore.statusMessageIdByConversation[conversationId] == nil {
-            runtimeStore.statusMessageIdByConversation[conversationId] = id
-        }
-
-        if let index = messages.firstIndex(where: { $0.id == id }) {
-            var m = messages[index]
-            m.content = text
-            updateMessage(m, at: index)
-        } else {
-            let m = ChatMessage(
-                id: id,
-                role: .status,
-                content: text,
-                timestamp: Date(),
-                isTransientStatus: true
-            )
-            appendMessage(m)
-        }
-    }
-
-    private func removeStatusMessage(for conversationId: UUID) {
-        guard let id = runtimeStore.statusMessageIdByConversation[conversationId] else { return }
-        runtimeStore.statusMessageIdByConversation[conversationId] = nil
-        guard ConversationVM.selectedConversationId == conversationId else { return }
-        let filtered = messages.filter { $0.id != id }
-        if filtered.count != messages.count {
-            setMessages(filtered, reason: "移除状态系统消息")
-        }
-    }
 
     /// 清理与指定会话相关的所有运行时状态，避免内存泄漏
     private func cleanupConversationState(_ conversationId: UUID) {

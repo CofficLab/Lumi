@@ -22,16 +22,18 @@ struct AssistantMessage: View, SuperLog {
         return formatter
     }()
 
+    private var renderMetadata: MessageRenderMetadata {
+        MessageRenderCache.shared.metadata(for: message)
+    }
+
     // MARK: - Computed
 
     private var isLongMessage: Bool {
-        let charCount = message.content.count
-        let lineCount = message.content.components(separatedBy: "\n").count
-        return charCount > 1000 || lineCount > 50
+        renderMetadata.isLongMessage
     }
 
     private var isExpanded: Bool {
-        expansionState.isExpanded(id: message.id)
+        expansionState.isExpanded(id: message.id, defaultExpanded: !renderMetadata.shouldDefaultCollapse)
     }
 
     private var shouldShowThinkingProcess: Bool {
@@ -217,4 +219,3 @@ struct AssistantMessage: View, SuperLog {
         return name
     }
 }
-

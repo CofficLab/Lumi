@@ -30,6 +30,9 @@ struct MarkdownMessageView: View, SuperLog {
     let isExpanded: Bool
     let onToggleExpand: () -> Void
     @Environment(\.preferOuterScroll) private var preferOuterScroll
+    private var renderMetadata: MessageRenderMetadata {
+        MessageRenderCache.shared.metadata(for: message)
+    }
 
     /// 最大高度（超过后折叠）
     private let maxHeight: CGFloat = 400
@@ -67,10 +70,7 @@ struct MarkdownMessageView: View, SuperLog {
     
     /// 判断内容是否需要折叠（通过测量内容高度）
     private var contentNeedsCollapse: Bool {
-        // 简单判断：通过字符数估算
-        // 更精确的方式需要使用 GeometryReader 测量实际高度
-        let estimatedLines = message.content.components(separatedBy: "\n").count
-        let estimatedHeight = CGFloat(estimatedLines * 20) // 每行约 20pt
+        let estimatedHeight = CGFloat(renderMetadata.lineCount * 20)
         return estimatedHeight > maxHeight
     }
 
@@ -94,13 +94,34 @@ struct MarkdownMessageView: View, SuperLog {
     /// Markdown 内容：preferOuterScroll 时禁用内部滚动，让外层列表滚动
     @ViewBuilder
     private var markdownContent: some View {
-        if preferOuterScroll {
-            Markdown(message.content)
-                .textSelection(.enabled)
-                .scrollDisabled(true)
-        } else {
-            Markdown(message.content)
-                .textSelection(.enabled)
+        CachedMarkdownContent(
+            content: message.content,
+            preferOuterScroll: preferOuterScroll
+        )
+        .id("\(message.id.uuidString)-\(renderMetadata.contentHash)")
+        .onAppear {
+            ChatPerformanceMetrics.shared.markMarkdownRendered(
+                messageId: message.id,
+                contentHash: renderMetadata.contentHash
+            )
+        }
+    }
+}
+
+private struct CachedMarkdownContent: View {
+    let content: String
+    let preferOuterScroll: Bool
+
+    var body: some View {
+        Group {
+            if preferOuterScroll {
+                Markdown(content)
+                    .textSelection(.enabled)
+                    .scrollDisabled(true)
+            } else {
+                Markdown(content)
+                    .textSelection(.enabled)
+            }
         }
     }
 }

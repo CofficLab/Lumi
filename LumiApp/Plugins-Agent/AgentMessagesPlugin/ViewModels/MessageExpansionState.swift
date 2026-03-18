@@ -23,8 +23,8 @@ final class MessageExpansionState: ObservableObject, SuperLog {
     /// 获取消息的展开状态
     /// - Parameter id: 消息 ID
     /// - Returns: 展开状态
-    func isExpanded(id: UUID) -> Bool {
-        expandedStates[id] ?? true  // 默认展开
+    func isExpanded(id: UUID, defaultExpanded: Bool = true) -> Bool {
+        expandedStates[id] ?? defaultExpanded
     }
 
     /// 设置消息的展开状态

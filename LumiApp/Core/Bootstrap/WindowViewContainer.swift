@@ -20,6 +20,7 @@ final class WindowViewContainer: ObservableObject {
     let MessageSenderVM: MessageSenderVM
     let agentProvider: AgentVM
     let commandSuggestionViewModel: CommandSuggestionVM
+    let chatTimelineViewModel: ChatTimelineViewModel
 
     let depthWarningViewModel: DepthWarningVM
     let processingStateViewModel: ProcessingStateVM
@@ -79,6 +80,11 @@ final class WindowViewContainer: ObservableObject {
             permissionRequestViewModel: permissionRequestViewModel,
             thinkingStateViewModel: thinkingStateViewModel,
             titleGenerationViewModel: titleGenerationViewModel
+        )
+
+        self.chatTimelineViewModel = ChatTimelineViewModel(
+            agentProvider: agentProvider,
+            conversationVM: ConversationVM
         )
     }
 }
