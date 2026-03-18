@@ -7,7 +7,7 @@ struct CacheCleanerView: View {
     var body: some View {
         VStack(spacing: 16) {
             // 扫描控制区域
-            if !viewModel.categories.isEmpty {
+            if viewModel.categories.isNotEmpty && viewModel.isScanning == false {
                 CacheScanControlBar(viewModel: viewModel)
             }
 

@@ -17,6 +17,8 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
     @Published var lastFreedSpace: Int64 = 0
 
     private let service = CacheCleanerService.shared
+    private var scanTask: Task<Void, Never>?
+    private var progressTask: Task<Void, Never>?
 
     var totalSelectedSize: Int64 {
         var total: Int64 = 0
@@ -35,15 +37,41 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
     }
 
     func scan() {
-        Task {
-            await MainActor.run { self.isScanning = true }
-            let results = await service.scanCaches()
-            await MainActor.run {
-                self.categories = results
-                self.isScanning = false
+        guard !isScanning else { return }
+        isScanning = true
+        scanProgress = ""
+        categories = []
+
+        progressTask?.cancel()
+        progressTask = Task {
+            let stream = await service.progressStream()
+            for await progress in stream {
+                if Task.isCancelled { break }
+                await MainActor.run { self.scanProgress = progress }
             }
-            selectAllSafe()
         }
+
+        scanTask?.cancel()
+        scanTask = Task {
+            let results = await service.scanCaches()
+            if !Task.isCancelled {
+                await MainActor.run {
+                    self.categories = results
+                    self.isScanning = false
+                    self.scanProgress = ""
+                    self.progressTask?.cancel()
+                }
+                self.selectAllSafe()
+            }
+        }
+    }
+
+    func stopScan() {
+        scanTask?.cancel()
+        progressTask?.cancel()
+        Task { await service.cancelScan() }
+        isScanning = false
+        scanProgress = ""
     }
 
     func cleanSelected() {

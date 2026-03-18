@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// 缓存清理扫描控制栏
-struct CacheScanControlBar: View {
-    @ObservedObject var viewModel: CacheCleanerViewModel
+/// 大文件扫描控制栏视图 - 用于启动/停止扫描操作
+struct LargeFilesScanControlBar: View {
+    @ObservedObject var viewModel: LargeFilesViewModel
 
     var body: some View {
         HStack {
@@ -10,23 +10,23 @@ struct CacheScanControlBar: View {
                 if viewModel.isScanning {
                     viewModel.stopScan()
                 } else {
-                    viewModel.scan()
+                    viewModel.startScan()
                 }
             }, label: {
                 Label(
-                    title: { Text(viewModel.isScanning ? "停止扫描" : "扫描缓存") },
-                    icon: { Image(systemName: viewModel.isScanning ? "stop.circle" : "doc.badge.gearshape") }
+                    title: { Text(viewModel.isScanning ? "停止扫描" : "扫描大文件") },
+                    icon: { Image(systemName: viewModel.isScanning ? "stop.circle" : "magnifyingglass.circle") }
                 )
                 .font(.headline)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
             })
             .buttonStyle(.borderedProminent)
-            .tint(viewModel.isScanning ? DesignTokens.Color.semantic.error : DesignTokens.Color.semantic.warning)
+            .tint(viewModel.isScanning ? DesignTokens.Color.semantic.error : DesignTokens.Color.semantic.info)
 
             Spacer()
 
-            Text("扫描范围：用户主目录")
+            Text("扫描目录：用户主目录")
                 .font(.caption)
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
         }
@@ -35,6 +35,7 @@ struct CacheScanControlBar: View {
 }
 
 #Preview {
-    CacheScanControlBar(viewModel: CacheCleanerViewModel())
+    LargeFilesScanControlBar(viewModel: LargeFilesViewModel())
         .padding()
 }
+

@@ -3,6 +3,8 @@ import SwiftUI
 /// 磁盘管理器主视图
 struct DiskManagerView: View {
     @StateObject private var viewModel = DiskManagerViewModel()
+    @StateObject private var largeFilesViewModel = LargeFilesViewModel()
+    @StateObject private var directoryTreeViewModel = DirectoryTreeViewModel()
     @State private var selectedViewMode = 0
 
     var body: some View {
@@ -21,9 +23,9 @@ struct DiskManagerView: View {
             // 内容区域 - 各模式自行负责显示状态和进度
             VStack {
                 if selectedViewMode == 0 {
-                    LargeFilesListView(viewModel: viewModel)
+                    LargeFilesListView(viewModel: largeFilesViewModel)
                 } else if selectedViewMode == 1 {
-                    DirectoryTreeView(viewModel: viewModel)
+                    DirectoryTreeView(viewModel: directoryTreeViewModel)
                 } else if selectedViewMode == 2 {
                     CacheCleanerView()
                 } else if selectedViewMode == 4 {

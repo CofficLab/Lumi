@@ -3,8 +3,12 @@ import SwiftUI
 /// Xcode 清理扫描进度视图
 struct XcodeScanProgressView: View {
     @ObservedObject var viewModel: XcodeCleanerViewModel
+    @State private var animate = false
 
     var body: some View {
+        let current = viewModel.scanProgress.isEmpty ? "开发者缓存目录" : viewModel.scanProgress
+        let totalCount = viewModel.itemsByCategory.values.flatMap { $0 }.count
+
         VStack(spacing: 12) {
             // 扫描图标和动画
             ZStack {
@@ -12,40 +16,45 @@ struct XcodeScanProgressView: View {
                 Circle()
                     .stroke(
                         DesignTokens.Color.semantic.info.opacity(0.2),
-                        lineWidth: 8
+                        lineWidth: 10
                     )
-                    .frame(width: 60, height: 60)
+                    .frame(width: 88, height: 88)
+                    .scaleEffect(animate ? 1.06 : 0.96)
+                    .opacity(animate ? 1.0 : 0.6)
+                    .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: animate)
 
                 // 旋转的扫描线
                 Circle()
                     .trim(from: 0, to: 0.7)
                     .stroke(
                         DesignTokens.Color.semantic.info,
-                        style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                        style: StrokeStyle(lineWidth: 6, lineCap: .round)
                     )
-                    .frame(width: 60, height: 60)
-                    .rotationEffect(.degrees(viewModel.isScanning ? 360 : 0))
-                    .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: viewModel.isScanning)
+                    .frame(width: 88, height: 88)
+                    .rotationEffect(.degrees(animate ? 360 : 0))
+                    .animation(.linear(duration: 0.9).repeatForever(autoreverses: false), value: animate)
 
                 // 中心图标
                 Image(systemName: "hammer")
-                    .font(.system(size: 24))
+                    .font(.system(size: 34, weight: .semibold))
                     .foregroundColor(DesignTokens.Color.semantic.info)
             }
 
             // 进度信息
             VStack(spacing: 6) {
                 Text("正在扫描 Xcode 缓存")
-                    .font(.headline)
+                    .font(.title3)
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
                 HStack(spacing: 4) {
                     Image(systemName: "folder.badge.gear")
                         .font(.caption)
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                    Text("开发者缓存目录")
+                    Text(current)
                         .font(.caption)
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
                 }
 
                 Divider()
@@ -53,8 +62,8 @@ struct XcodeScanProgressView: View {
 
                 HStack(spacing: 16) {
                     Label {
-                        Text("\(viewModel.itemsByCategory.values.flatMap { $0 }.count)")
-                            .font(.title3)
+                        Text("\(totalCount)")
+                            .font(.title2)
                             .fontWeight(.bold)
                             .foregroundColor(DesignTokens.Color.semantic.primary)
                     } icon: {
@@ -64,7 +73,7 @@ struct XcodeScanProgressView: View {
 
                     Label {
                         Text(viewModel.formatBytes(viewModel.totalSize))
-                            .font(.title3)
+                            .font(.title2)
                             .fontWeight(.bold)
                             .foregroundColor(DesignTokens.Color.semantic.info)
                     } icon: {
@@ -74,7 +83,7 @@ struct XcodeScanProgressView: View {
                 }
             }
         }
-        .padding(20)
+        .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16)
@@ -84,8 +93,10 @@ struct XcodeScanProgressView: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(DesignTokens.Color.semantic.info.opacity(0.2), lineWidth: 1)
         )
-        .padding(.horizontal)
-        .padding(.vertical)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 12)
+        .onAppear { animate = true }
+        .onDisappear { animate = false }
     }
 }
 

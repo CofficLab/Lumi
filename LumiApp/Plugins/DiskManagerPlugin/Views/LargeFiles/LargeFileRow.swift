@@ -3,7 +3,7 @@ import SwiftUI
 /// 大文件行视图
 struct LargeFileRow: View {
     let item: LargeFileEntry
-    @ObservedObject var viewModel: DiskManagerViewModel
+    @ObservedObject var viewModel: LargeFilesViewModel
     @State private var showDeleteConfirm = false
 
     var body: some View {

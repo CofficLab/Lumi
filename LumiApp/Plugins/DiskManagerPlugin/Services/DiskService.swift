@@ -119,24 +119,7 @@ class DiskService: @unchecked Sendable, SuperLog {
 
 actor ScanCoordinator {
     private var activeTask: Task<ScanResult, Never>?
-    private var currentProgress: ScanProgress? {
-        didSet {
-            if let progress = currentProgress {
-                progressContinuation?.yield(progress)
-            }
-        }
-    }
-    
-    private var progressContinuation: AsyncStream<ScanProgress>.Continuation?
-    let progressStream: AsyncStream<ScanProgress>
-
-    init() {
-        var continuation: AsyncStream<ScanProgress>.Continuation?
-        self.progressStream = AsyncStream { cont in
-            continuation = cont
-        }
-        self.progressContinuation = continuation
-    }
+    init() {}
 
     func scan(_ path: String) async -> ScanResult {
         // Cancel previous task
@@ -147,15 +130,11 @@ actor ScanCoordinator {
         }
         activeTask = task
         let result = await task.value
-        
-        // Clear progress after scan completion
-        currentProgress = nil
         return result
     }
 
     func cancelCurrentScan() {
         activeTask?.cancel()
-        currentProgress = nil
     }
 
     private func performScan(_ path: String) async -> ScanResult {
@@ -164,27 +143,9 @@ actor ScanCoordinator {
         
         let url = URL(fileURLWithPath: path)
         let counter = ProgressCounter()
-        
-        // Start progress timer
-        let progressTimer = Task {
-            while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 500 * 1_000_000) // 0.5s
-                let (files, size) = counter.current
-                self.currentProgress = ScanProgress(
-                    path: path,
-                    currentPath: String(localized: "Scanning..."),
-                    scannedFiles: files,
-                    scannedDirectories: 0,
-                    scannedBytes: size,
-                    startTime: startTime
-                )
-            }
-        }
-        
+
         // Execute scan
         let (rootEntry, allLargeFiles) = await Self.scanRecursiveHelper(url: url, depth: 0, counter: counter)
-        
-        progressTimer.cancel()
         
         // Finalize results
         for file in allLargeFiles {

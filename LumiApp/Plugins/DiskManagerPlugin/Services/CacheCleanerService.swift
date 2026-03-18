@@ -12,7 +12,7 @@ class CacheCleanerService: @unchecked Sendable, SuperLog {
     // 注意：状态管理已移至 ViewModel，Service 只负责后台操作
     private init() {}
 
-    private struct CacheScanRule {
+    struct CacheScanRule {
         let level: CacheCategory.SafetyLevel
         let id: String
         let name: String
@@ -56,31 +56,21 @@ class CacheCleanerService: @unchecked Sendable, SuperLog {
             os_log("\(self.t)开始扫描缓存分类")
         }
 
-        // 在后台执行扫描操作
-        let rules = scanRules
-        let results = await Task.detached(priority: .utility) {
-            return await withTaskGroup(of: CacheCategory?.self, returning: [CacheCategory].self) { group in
-                for rule in rules {
-                    group.addTask(priority: .utility) {
-                        await Self.scanCategory(rule: rule)
-                    }
-                }
-
-                var categories: [CacheCategory] = []
-                for await category in group {
-                    if let category {
-                        categories.append(category)
-                    }
-                }
-                return categories.sorted { $0.safetyLevel < $1.safetyLevel }
-            }
-        }.value
+        let results = await coordinator.scan(rules: scanRules)
 
         if Self.verbose {
             os_log("\(self.t)缓存扫描完成：\(results.count) 个分类")
         }
 
         return results
+    }
+
+    func progressStream() async -> AsyncStream<String> {
+        await coordinator.progressStream()
+    }
+
+    func cancelScan() async {
+        await coordinator.cancelCurrentScan()
     }
 
     func cleanup(paths: [CachePath]) async throws -> Int64 {
@@ -110,14 +100,16 @@ class CacheCleanerService: @unchecked Sendable, SuperLog {
     }
 
     // MARK: - 私有实现
+    private let coordinator = CacheCleanerScanCoordinator()
 
-    private nonisolated static func scanCategory(rule: CacheScanRule) async -> CacheCategory? {
+    fileprivate nonisolated static func scanCategory(rule: CacheScanRule) async -> CacheCategory? {
         if Self.verbose {
             os_log("\(self.t)开始扫描分类：\(rule.name)")
         }
         var cachePaths: [CachePath] = []
 
         for path in rule.paths {
+            if Task.isCancelled { return nil }
             if let info = await getPathInfo(path) {
                 // 特殊处理：如果是 ~/Library/Caches，不删除整个文件夹，而是列出子文件夹
                 if path.hasSuffix("/Library/Caches") {
@@ -159,6 +151,7 @@ class CacheCleanerService: @unchecked Sendable, SuperLog {
         }
 
         for content in contents {
+            if Task.isCancelled { break }
             if let info = await getPathInfo(content.path), info.size > 0 {
                 results.append(CachePath(
                     path: content.path,
@@ -208,6 +201,7 @@ class CacheCleanerService: @unchecked Sendable, SuperLog {
             // 我们可以使用 while 循环和 nextObject()，这是 ObjC 方式，避免了 async 中的 Sequence 一致性问题
 
             while let _ = enumerator.nextObject() {
+                if Task.isCancelled { return nil }
                 if let fileAttrs = enumerator.fileAttributes,
                    let fileSize = fileAttrs[.size] as? Int64 {
                     localSize += fileSize
@@ -216,5 +210,82 @@ class CacheCleanerService: @unchecked Sendable, SuperLog {
             }
             return (localSize, localCount)
         }.value
+    }
+}
+
+// MARK: - Scan Coordinator
+
+actor CacheCleanerScanCoordinator {
+    private var activeTask: Task<[CacheCategory], Never>?
+    private var currentProgress: String? {
+        didSet {
+            if let p = currentProgress {
+                for (_, cont) in progressContinuations { cont.yield(p) }
+            }
+        }
+    }
+
+    private var progressContinuations: [UUID: AsyncStream<String>.Continuation] = [:]
+    private var terminatedIDs: Set<UUID> = []
+
+    func progressStream() -> AsyncStream<String> {
+        let id = UUID()
+        return AsyncStream { continuation in
+            Task { await self.addContinuation(id: id, continuation: continuation) }
+            continuation.onTermination = { _ in
+                Task { await self.removeContinuation(id: id) }
+            }
+        }
+    }
+
+    private func addContinuation(id: UUID, continuation: AsyncStream<String>.Continuation) {
+        if terminatedIDs.contains(id) { return }
+        progressContinuations[id] = continuation
+        if let p = currentProgress { continuation.yield(p) }
+    }
+
+    private func removeContinuation(id: UUID) {
+        terminatedIDs.insert(id)
+        progressContinuations[id] = nil
+    }
+
+    func scan(rules: [CacheCleanerService.CacheScanRule]) async -> [CacheCategory] {
+        activeTask?.cancel()
+        currentProgress = String(localized: "Starting scan...")
+
+        let task = Task { await performScan(rules: rules) }
+        activeTask = task
+        let result = await task.value
+
+        currentProgress = nil
+        finishAllStreams()
+        return result
+    }
+
+    func cancelCurrentScan() {
+        activeTask?.cancel()
+        activeTask = nil
+        currentProgress = nil
+        finishAllStreams()
+    }
+
+    private func performScan(rules: [CacheCleanerService.CacheScanRule]) async -> [CacheCategory] {
+        var categories: [CacheCategory] = []
+
+        for rule in rules {
+            if Task.isCancelled { break }
+            currentProgress = rule.name
+            if let category = await CacheCleanerService.scanCategory(rule: rule) {
+                categories.append(category)
+            }
+        }
+
+        return categories.sorted { $0.safetyLevel < $1.safetyLevel }
+    }
+
+    private func finishAllStreams() {
+        for (_, cont) in progressContinuations { cont.finish() }
+        progressContinuations.removeAll()
+        terminatedIDs.removeAll()
     }
 }

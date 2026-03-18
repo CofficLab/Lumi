@@ -7,18 +7,22 @@ struct ProjectScanControlBar: View {
     var body: some View {
         HStack {
             Button(action: {
-                Task { await viewModel.scanProjects() }
+                if viewModel.isScanning {
+                    viewModel.stopScan()
+                } else {
+                    Task { await viewModel.scanProjects() }
+                }
             }, label: {
-                Label(title: { Text("重新扫描") }, icon: {
-                    Image(systemName: "arrow.clockwise")
-                })
+                Label(
+                    title: { Text(viewModel.isScanning ? "停止扫描" : "扫描项目") },
+                    icon: { Image(systemName: viewModel.isScanning ? "stop.circle" : "folder.badge.gearshape") }
+                )
                 .font(.headline)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
             })
             .buttonStyle(.borderedProminent)
-            .tint(DesignTokens.Color.semantic.info)
-            .disabled(viewModel.isScanning)
+            .tint(viewModel.isScanning ? DesignTokens.Color.semantic.error : DesignTokens.Color.semantic.warning)
 
             Spacer()
 

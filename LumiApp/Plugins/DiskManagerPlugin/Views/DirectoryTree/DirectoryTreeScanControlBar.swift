@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// 缓存清理扫描控制栏
-struct CacheScanControlBar: View {
-    @ObservedObject var viewModel: CacheCleanerViewModel
+/// 目录结构分析控制栏
+struct DirectoryTreeScanControlBar: View {
+    @ObservedObject var viewModel: DirectoryTreeViewModel
 
     var body: some View {
         HStack {
@@ -10,23 +10,23 @@ struct CacheScanControlBar: View {
                 if viewModel.isScanning {
                     viewModel.stopScan()
                 } else {
-                    viewModel.scan()
+                    viewModel.startScan()
                 }
             }, label: {
                 Label(
-                    title: { Text(viewModel.isScanning ? "停止扫描" : "扫描缓存") },
-                    icon: { Image(systemName: viewModel.isScanning ? "stop.circle" : "doc.badge.gearshape") }
+                    title: { Text(viewModel.isScanning ? "停止分析" : "分析目录") },
+                    icon: { Image(systemName: viewModel.isScanning ? "stop.circle" : "folder.badge.gear") }
                 )
                 .font(.headline)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
             })
             .buttonStyle(.borderedProminent)
-            .tint(viewModel.isScanning ? DesignTokens.Color.semantic.error : DesignTokens.Color.semantic.warning)
+            .tint(viewModel.isScanning ? DesignTokens.Color.semantic.error : DesignTokens.Color.semantic.primary)
 
             Spacer()
 
-            Text("扫描范围：用户主目录")
+            Text("扫描目录：用户主目录")
                 .font(.caption)
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
         }
@@ -35,6 +35,7 @@ struct CacheScanControlBar: View {
 }
 
 #Preview {
-    CacheScanControlBar(viewModel: CacheCleanerViewModel())
+    DirectoryTreeScanControlBar(viewModel: DirectoryTreeViewModel())
         .padding()
 }
+

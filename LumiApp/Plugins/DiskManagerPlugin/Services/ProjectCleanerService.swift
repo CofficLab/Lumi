@@ -28,14 +28,20 @@ class ProjectCleanerService: @unchecked Sendable, SuperLog {
         }
         let pathsToScan = defaultScanPaths.filter { fileManager.fileExists(atPath: $0) }
 
-        let result = await Task.detached(priority: .utility) {
-            await Self.scanProjectsDetached(pathsToScan)
-        }.value
+        let result = await coordinator.scanProjects(pathsToScan)
 
         if Self.verbose {
             os_log("\(self.t)项目扫描完成：\(result.count) 个项目")
         }
         return result
+    }
+
+    func progressStream() async -> AsyncStream<String> {
+        await coordinator.progressStream()
+    }
+
+    func cancelScan() async {
+        await coordinator.cancelCurrentScan()
     }
 
     nonisolated private static func scanProjectsDetached(_ pathsToScan: [String]) async -> [ProjectInfo] {
@@ -56,7 +62,8 @@ class ProjectCleanerService: @unchecked Sendable, SuperLog {
         return projects.sorted { $0.totalSize > $1.totalSize }
     }
 
-    nonisolated private static func scanDirectory(_ path: String, depth: Int, maxDepth: Int) async -> [ProjectInfo] {
+    nonisolated fileprivate static func scanDirectory(_ path: String, depth: Int, maxDepth: Int) async -> [ProjectInfo] {
+        if Task.isCancelled { return [] }
         if depth > maxDepth { return [] }
         let fileManager = FileManager.default
 
@@ -77,6 +84,7 @@ class ProjectCleanerService: @unchecked Sendable, SuperLog {
         }
 
         for contentUrl in contents {
+            if Task.isCancelled { break }
             var isDir: ObjCBool = false
             if fileManager.fileExists(atPath: contentUrl.path, isDirectory: &isDir), isDir.boolValue {
                 // Parallel recursion might lead to too many tasks, here using serial recursion to control concurrency
@@ -175,5 +183,80 @@ class ProjectCleanerService: @unchecked Sendable, SuperLog {
         if Self.verbose {
             os_log("\(self.t)项目清理完成")
         }
+    }
+
+    // MARK: - Coordinator
+    private let coordinator = ProjectScanCoordinator()
+}
+
+actor ProjectScanCoordinator {
+    private var activeTask: Task<[ProjectInfo], Never>?
+    private var scanID: UUID = UUID()
+    private var currentProgress: String? {
+        didSet {
+            if let p = currentProgress {
+                for (_, cont) in continuations { cont.yield(p) }
+            }
+        }
+    }
+    private var continuations: [UUID: AsyncStream<String>.Continuation] = [:]
+
+    func progressStream() -> AsyncStream<String> {
+        let id = UUID()
+        return AsyncStream { continuation in
+            Task { await self.addContinuation(id: id, continuation: continuation) }
+            continuation.onTermination = { _ in
+                Task { await self.removeContinuation(id: id) }
+            }
+        }
+    }
+
+    private func addContinuation(id: UUID, continuation: AsyncStream<String>.Continuation) {
+        continuations[id] = continuation
+        if let p = currentProgress { continuation.yield(p) }
+    }
+
+    private func removeContinuation(id: UUID) {
+        continuations[id] = nil
+    }
+
+    func scanProjects(_ paths: [String]) async -> [ProjectInfo] {
+        activeTask?.cancel()
+        let myID = UUID()
+        scanID = myID
+        currentProgress = String(localized: "Starting scan...")
+
+        let task = Task { await performScan(paths: paths, id: myID) }
+        activeTask = task
+        let result = await task.value
+
+        currentProgress = nil
+        finishAll()
+        return result
+    }
+
+    func cancelCurrentScan() {
+        activeTask?.cancel()
+        activeTask = nil
+        currentProgress = nil
+        scanID = UUID()
+        finishAll()
+    }
+
+    private func performScan(paths: [String], id: UUID) async -> [ProjectInfo] {
+        var projects: [ProjectInfo] = []
+        for path in paths {
+            if Task.isCancelled { break }
+            if scanID != id { break }
+            currentProgress = URL(fileURLWithPath: path).lastPathComponent
+            let found = await ProjectCleanerService.scanDirectory(path, depth: 0, maxDepth: 4)
+            projects.append(contentsOf: found)
+        }
+        return projects.sorted { $0.totalSize > $1.totalSize }
+    }
+
+    private func finishAll() {
+        for (_, cont) in continuations { cont.finish() }
+        continuations.removeAll()
     }
 }

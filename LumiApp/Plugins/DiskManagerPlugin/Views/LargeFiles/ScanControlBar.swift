@@ -3,21 +3,11 @@ import SwiftUI
 /// 扫描控制栏视图 - 用于启动/停止扫描操作
 struct ScanControlBar: View {
     @ObservedObject var viewModel: DiskManagerViewModel
-    let scanText: String
-    let scanningText: String
-    let icon: String
-    let scanningIcon: String
-    let description: String
-
-    /// 大文件扫描控制栏
-    init(forLargeFiles viewModel: DiskManagerViewModel) {
-        self.viewModel = viewModel
-        self.scanText = "扫描大文件"
-        self.scanningText = "停止扫描"
-        self.icon = "magnifyingglass.circle"
-        self.scanningIcon = "stop.circle"
-        self.description = "扫描目录：用户主目录"
-    }
+    private let scanText: String
+    private let scanningText: String
+    private let icon: String
+    private let scanningIcon: String
+    private let description: String
 
     /// 目录树扫描控制栏
     init(forDirectoryTree viewModel: DiskManagerViewModel) {
@@ -56,11 +46,6 @@ struct ScanControlBar: View {
         }
         .padding(.horizontal)
     }
-}
-
-#Preview("大文件扫描") {
-    ScanControlBar(forLargeFiles: DiskManagerViewModel())
-        .padding()
 }
 
 #Preview("目录扫描") {

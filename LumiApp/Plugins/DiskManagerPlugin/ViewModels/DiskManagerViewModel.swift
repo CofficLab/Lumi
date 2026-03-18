@@ -19,10 +19,6 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
     private var scanTask: Task<Void, Never>?
     private let service = DiskService.shared
 
-    init() {
-        // Service 不再发布状态，所有状态由 ViewModel 管理
-    }
-
     func refreshDiskUsage() {
         if Self.verbose {
             os_log("\(self.t)刷新磁盘使用情况")
