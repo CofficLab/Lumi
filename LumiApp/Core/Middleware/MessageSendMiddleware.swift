@@ -42,10 +42,6 @@ final class MessageSendMiddlewareContext {
 struct MessageSendMiddlewareServices {
     /// 获取对话标题（用于判断是否仍是默认标题）。
     let getConversationTitle: (UUID) -> String?
-    /// 是否已为该对话生成过标题（用于防止重复生成）。
-    let hasGeneratedTitle: (UUID) -> Bool
-    /// 标记"已生成标题"状态。
-    let setTitleGenerated: (Bool, UUID) -> Void
     /// 获取当前用于生成标题的 LLM 配置。
     let getCurrentConfig: () -> LLMConfig
     /// 执行"如有需要则生成标题"的核心逻辑。

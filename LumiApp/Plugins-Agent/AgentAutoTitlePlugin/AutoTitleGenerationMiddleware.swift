@@ -8,7 +8,7 @@ import MagicKit
 /// - 用户发送消息（`MessageSendEvent.sendMessage`）
 ///
 /// 行为：
-/// - 若对话标题仍是默认"新会话 …"，且未生成过标题，则异步触发一次标题生成。
+/// - 若对话标题仍是默认"新会话 …"，且插件未记录过触发，则异步触发一次标题生成。
 @MainActor
 struct AutoTitleGenerationMiddleware: MessageSendMiddleware, SuperLog {
     nonisolated static let emoji = "🏷️"
@@ -27,14 +27,15 @@ struct AutoTitleGenerationMiddleware: MessageSendMiddleware, SuperLog {
         }
 
         let title = ctx.services.getConversationTitle(conversationId) ?? ""
-        let shouldGenerate = title.hasPrefix("新会话 ") && !ctx.services.hasGeneratedTitle(conversationId)
+        let hasTriggered = await AutoTitleGenerationStore.shared.hasTriggered(conversationId: conversationId)
+        let shouldGenerate = title.hasPrefix("新会话 ") && !hasTriggered
 
         if shouldGenerate {
             if Self.verbose {
                 os_log("\(Self.t)🎯 [\(conversationId)] 检测到需要生成标题")
             }
 
-            ctx.services.setTitleGenerated(true, conversationId)
+            await AutoTitleGenerationStore.shared.markTriggered(conversationId: conversationId)
             let config = ctx.services.getCurrentConfig()
             let content = message.content
             let autoGenerate = ctx.services.autoGenerateConversationTitleIfNeeded
@@ -50,8 +51,8 @@ struct AutoTitleGenerationMiddleware: MessageSendMiddleware, SuperLog {
             if Self.verbose {
                 if title.hasPrefix("新会话 ") == false {
                     os_log("\(Self.t)⏭️ 会话已有自定义标题，跳过生成")
-                } else if ctx.services.hasGeneratedTitle(conversationId) {
-                    os_log("\(Self.t)⏭️ 会话已生成过标题，跳过生成")
+                } else if hasTriggered {
+                    os_log("\(Self.t)⏭️ 插件已触发过标题生成，跳过生成")
                 }
             }
         }

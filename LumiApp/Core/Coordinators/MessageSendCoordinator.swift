@@ -7,8 +7,6 @@ import Foundation
 final class MessageSendCoordinator {
     struct Services {
         let getConversationTitle: (UUID) -> String?
-        let hasGeneratedTitle: (UUID) -> Bool
-        let setTitleGenerated: (Bool, UUID) -> Void
         let getCurrentConfig: () -> LLMConfig
         let autoGenerateConversationTitleIfNeeded: @Sendable (UUID, String, LLMConfig) async -> Void
 
@@ -74,8 +72,6 @@ final class MessageSendCoordinator {
                     runtimeStore: self.runtimeStore,
                     services: MessageSendMiddlewareServices(
                         getConversationTitle: self.services.getConversationTitle,
-                        hasGeneratedTitle: self.services.hasGeneratedTitle,
-                        setTitleGenerated: self.services.setTitleGenerated,
                         getCurrentConfig: self.services.getCurrentConfig,
                         autoGenerateConversationTitleIfNeeded: self.services.autoGenerateConversationTitleIfNeeded,
                         isProjectSelected: self.services.isProjectSelected,

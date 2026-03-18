@@ -27,7 +27,6 @@ final class WindowViewContainer: ObservableObject {
     let errorStateViewModel: ErrorStateVM
     let permissionRequestViewModel: PermissionRequestVM
     let thinkingStateViewModel: ThinkingStateVM
-    let titleGenerationViewModel: TitleGenerationVM
 
     init(services: RootViewContainer.Services) {
         self.chatHistoryService = ChatHistoryService(
@@ -41,7 +40,6 @@ final class WindowViewContainer: ObservableObject {
         self.errorStateViewModel = ErrorStateVM()
         self.permissionRequestViewModel = PermissionRequestVM()
         self.thinkingStateViewModel = ThinkingStateVM()
-        self.titleGenerationViewModel = TitleGenerationVM()
 
         self.messageViewModel = MessagePendingVM(chatHistoryService: chatHistoryService)
 
@@ -78,8 +76,7 @@ final class WindowViewContainer: ObservableObject {
             processingStateViewModel: processingStateViewModel,
             errorStateViewModel: errorStateViewModel,
             permissionRequestViewModel: permissionRequestViewModel,
-            thinkingStateViewModel: thinkingStateViewModel,
-            titleGenerationViewModel: titleGenerationViewModel
+            thinkingStateViewModel: thinkingStateViewModel
         )
 
         self.chatTimelineViewModel = ChatTimelineViewModel(

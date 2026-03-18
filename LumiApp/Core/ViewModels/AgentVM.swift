@@ -94,9 +94,6 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     /// 思考状态 ViewModel
     let thinkingStateViewModel: ThinkingStateVM
 
-    /// 标题生成 ViewModel
-    let titleGenerationViewModel: TitleGenerationVM
-
     // MARK: - 订阅管理
 
     private var cancellables = Set<AnyCancellable>()
@@ -107,12 +104,6 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         services: .init(
             getConversationTitle: { [weak self] conversationId in
                 self?.chatHistoryService.fetchConversation(id: conversationId)?.title
-            },
-            hasGeneratedTitle: { [weak self] conversationId in
-                self?.titleGenerationViewModel.hasGeneratedTitle(for: conversationId) ?? false
-            },
-            setTitleGenerated: { [weak self] value, conversationId in
-                self?.titleGenerationViewModel.setTitleGenerated(value, for: conversationId)
             },
             getCurrentConfig: { [weak self] in
                 self?.getCurrentConfig() ?? .default
@@ -306,8 +297,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         processingStateViewModel: ProcessingStateVM,
         errorStateViewModel: ErrorStateVM,
         permissionRequestViewModel: PermissionRequestVM,
-        thinkingStateViewModel: ThinkingStateVM,
-        titleGenerationViewModel: TitleGenerationVM
+        thinkingStateViewModel: ThinkingStateVM
     ) {
         self.promptService = promptService
         self.registry = registry
@@ -324,7 +314,6 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         self.errorStateViewModel = errorStateViewModel
         self.permissionRequestViewModel = permissionRequestViewModel
         self.thinkingStateViewModel = thinkingStateViewModel
-        self.titleGenerationViewModel = titleGenerationViewModel
 
         // runtimeStore 变化需要触发 AgentVM 刷新（例如会话列表上的 runtimeState 徽标）
         runtimeStore.objectWillChange
@@ -658,12 +647,6 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         messageViewModel.messages
     }
 
-    /// 标记是否已生成标题（代理到 TitleGenerationViewModel）
-    var hasGeneratedTitle: Bool {
-        guard let selectedId = ConversationVM.selectedConversationId else { return false }
-        return titleGenerationViewModel.hasGeneratedTitle(for: selectedId)
-    }
-
     // MARK: - 代理 ProjectVM 属性
 
     /// 当前项目名称（代理到 ProjectVM）
@@ -832,12 +815,6 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         messageViewModel.setMessages(messages, reason: reason)
     }
 
-    /// 设置标题生成标记
-    func setHasGeneratedTitle(_ value: Bool) {
-        guard let selectedId = ConversationVM.selectedConversationId else { return }
-        titleGenerationViewModel.setTitleGenerated(value, for: selectedId)
-    }
-
     /// 加载指定对话
     /// 协调 ConversationVM 和 MessageViewModel 完成加载（分页模式）
     func loadConversation(_ conversationId: UUID) async {
@@ -850,9 +827,6 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         if Self.verbose {
             os_log("\(Self.t)🔄 [\(conversationId)] 待发送消息：\(queueCount) 条")
         }
-
-        // 更新标题生成状态
-        titleGenerationViewModel.updateTitleGenerationStatus(from: messageViewModel.messages, for: conversationId)
 
         refreshSessionScopedUIState(for: conversationId)
     }
