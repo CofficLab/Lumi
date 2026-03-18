@@ -5,6 +5,7 @@ struct MessageWithToolCallsView: View {
     let message: ChatMessage
     let toolOutputMessages: [ChatMessage]
     @EnvironmentObject var permissionRequestViewModel: PermissionRequestVM
+    @EnvironmentObject var timelineViewModel: ChatTimelineViewModel
     @ObservedObject private var expansionState = MessageExpansionState.shared
     @State private var showRawMessage: Bool = false
     @State private var isToolDetailsExpanded: Bool = false
@@ -43,50 +44,72 @@ struct MessageWithToolCallsView: View {
             // 显示工具执行分组（默认折叠）
             if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
-                    Button {
-                        let target = !isToolDetailsExpanded
-                        // 延后到下一 run loop 再展开，避免同一周期内插入大量子视图导致主线程卡死
-                        if target {
-                            DispatchQueue.main.async {
-                                isToolDetailsExpanded = true
-                            }
-                        } else {
-                            isToolDetailsExpanded = false
-                        }
-                    } label: {
-                        HStack(spacing: 8) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "wrench.and.screwdriver")
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                                Text(executionSummaryTitle(for: toolCalls))
-                                    .font(DesignTokens.Typography.caption1)
-                                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                                    .lineLimit(1)
-                            }
-
-                            Spacer()
-
-                            Text(toolExecutionStatusText(for: toolCalls))
+                    HStack(spacing: 8) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "wrench.and.screwdriver")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            Text(executionSummaryTitle(for: toolCalls))
                                 .font(DesignTokens.Typography.caption1)
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-
-                            Image(systemName: isToolDetailsExpanded ? "chevron.up" : "chevron.down")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                                .lineLimit(1)
                         }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 14)
-                                .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.08))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 14)
-                                        .stroke(DesignTokens.Color.semantic.textTertiary.opacity(0.22), lineWidth: 1)
+
+                        Spacer()
+
+                        if message.hasToolCalls {
+                            Button {
+                                timelineViewModel.loadToolOutputs(for: message, forceReload: timelineViewModel.hasLoadedToolOutputs(for: message))
+                                if !isToolDetailsExpanded {
+                                    DispatchQueue.main.async {
+                                        isToolDetailsExpanded = true
+                                    }
+                                }
+                            } label: {
+                                HStack(spacing: 4) {
+                                    if timelineViewModel.isLoadingToolOutputs(for: message) {
+                                        ProgressView()
+                                            .controlSize(.small)
+                                    } else {
+                                        Image(systemName: timelineViewModel.hasLoadedToolOutputs(for: message) ? "arrow.clockwise" : "tray.and.arrow.down")
+                                            .font(.system(size: 11, weight: .semibold))
+                                    }
+                                    Text(toolOutputActionText)
+                                        .font(DesignTokens.Typography.caption1)
+                                }
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(
+                                    Capsule()
+                                        .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.08))
                                 )
-                        )
+                            }
+                            .buttonStyle(.plain)
+                        }
+
+                        Text(toolExecutionStatusText(for: toolCalls))
+                            .font(DesignTokens.Typography.caption1)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+
+                        Image(systemName: isToolDetailsExpanded ? "chevron.up" : "chevron.down")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     }
-                    .buttonStyle(.plain)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.08))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .stroke(DesignTokens.Color.semantic.textTertiary.opacity(0.22), lineWidth: 1)
+                            )
+                    )
+                    .contentShape(RoundedRectangle(cornerRadius: 14))
+                    .onTapGesture {
+                        toggleToolDetailsExpanded()
+                    }
 
                     if isToolDetailsExpanded {
                         VStack(alignment: .leading, spacing: 8) {
@@ -158,6 +181,14 @@ struct MessageWithToolCallsView: View {
             return "待授权"
         }
 
+        if timelineViewModel.isLoadingToolOutputs(for: message) {
+            return "查询中"
+        }
+
+        if !timelineViewModel.hasLoadedToolOutputs(for: message) {
+            return "未查询"
+        }
+
         if outputs.count < toolCalls.count {
             return "执行中"
         }
@@ -166,6 +197,24 @@ struct MessageWithToolCallsView: View {
             msg.isError || msg.content.localizedCaseInsensitiveContains("error") || msg.content.localizedCaseInsensitiveContains("aborted")
         }
         return hasFailure ? "部分失败" : "已完成"
+    }
+
+    private var toolOutputActionText: String {
+        if timelineViewModel.isLoadingToolOutputs(for: message) {
+            return "查询中"
+        }
+        return timelineViewModel.hasLoadedToolOutputs(for: message) ? "刷新输出" : "查看输出"
+    }
+
+    private func toggleToolDetailsExpanded() {
+        let target = !isToolDetailsExpanded
+        if target {
+            DispatchQueue.main.async {
+                isToolDetailsExpanded = true
+            }
+        } else {
+            isToolDetailsExpanded = false
+        }
     }
 
 

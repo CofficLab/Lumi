@@ -175,7 +175,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     /// 是否应展示在聊天消息列表中
     func shouldDisplayInChatList() -> Bool {
         guard role.shouldDisplayInChatList else { return false }
-        if isToolOutput { return true }
+        if role == .tool || isToolOutput { return false }
         return true
     }
 

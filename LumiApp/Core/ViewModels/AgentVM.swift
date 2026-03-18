@@ -1134,6 +1134,16 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         )
     }
 
+    func loadToolOutputMessages(
+        forConversationId conversationId: UUID,
+        toolCallIDs: [String]
+    ) async -> [ChatMessage] {
+        await chatHistoryService.loadToolOutputMessages(
+            forConversationId: conversationId,
+            toolCallIDs: toolCallIDs
+        )
+    }
+
     // MARK: - 模式切换通知
 
     public func notifyModeChangeToChat() async {

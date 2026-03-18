@@ -43,6 +43,62 @@ final class ChatTimelineViewModel: ObservableObject, SuperLog {
     var isNearBottom: Bool { state.isNearBottom }
     var shouldAutoFollow: Bool { state.shouldAutoFollow }
 
+    func toolOutputs(for message: ChatMessage) -> [ChatMessage] {
+        guard let toolCalls = message.toolCalls, !toolCalls.isEmpty else { return [] }
+        let validIDs = Set(toolCalls.map(\.id))
+        guard !validIDs.isEmpty else { return [] }
+
+        return validIDs
+            .compactMap { state.toolOutputsByToolCallID[$0] }
+            .flatMap { $0 }
+            .sorted { lhs, rhs in
+                if lhs.timestamp == rhs.timestamp {
+                    return lhs.id.uuidString < rhs.id.uuidString
+                }
+                return lhs.timestamp < rhs.timestamp
+            }
+    }
+
+    func hasLoadedToolOutputs(for message: ChatMessage) -> Bool {
+        guard let toolCalls = message.toolCalls, !toolCalls.isEmpty else { return false }
+        let ids = toolCalls.map(\.id)
+        return !ids.isEmpty && ids.allSatisfy { state.loadedToolCallIDs.contains($0) }
+    }
+
+    func isLoadingToolOutputs(for message: ChatMessage) -> Bool {
+        guard let toolCalls = message.toolCalls, !toolCalls.isEmpty else { return false }
+        return toolCalls.map(\.id).contains { state.loadingToolCallIDs.contains($0) }
+    }
+
+    func loadToolOutputs(for message: ChatMessage, forceReload: Bool = false) {
+        guard let conversationId = state.selectedConversationId,
+              let toolCalls = message.toolCalls, !toolCalls.isEmpty else { return }
+
+        let requestedIDs = Array(Set(toolCalls.map(\.id)))
+        let targetIDs: [String]
+        if forceReload {
+            targetIDs = requestedIDs
+        } else {
+            targetIDs = requestedIDs.filter { !state.loadedToolCallIDs.contains($0) && !state.loadingToolCallIDs.contains($0) }
+        }
+
+        guard !targetIDs.isEmpty else { return }
+        targetIDs.forEach { state.loadingToolCallIDs.insert($0) }
+
+        Task { @MainActor in
+            let loadedMessages = await agentProvider.loadToolOutputMessages(
+                forConversationId: conversationId,
+                toolCallIDs: targetIDs
+            )
+
+            mergeToolOutputs(loadedMessages)
+            targetIDs.forEach {
+                state.loadingToolCallIDs.remove($0)
+                state.loadedToolCallIDs.insert($0)
+            }
+        }
+    }
+
     func handleOnAppear() {
         Task { await loadMessagesForSelection() }
     }
@@ -53,6 +109,9 @@ final class ChatTimelineViewModel: ObservableObject, SuperLog {
 
     func handleMessageSaved(_ message: ChatMessage, conversationId: UUID) {
         guard conversationId == state.selectedConversationId else { return }
+        if message.role == .tool || message.isToolOutput {
+            mergeToolOutputs([message])
+        }
         guard message.shouldDisplayInChatList() else {
             state.persistedMessages.removeAll { $0.id == message.id }
             refreshActiveStreamingMessage()
@@ -176,6 +235,9 @@ final class ChatTimelineViewModel: ObservableObject, SuperLog {
         state.hasPerformedInitialScroll = false
         state.shouldAutoFollow = true
         state.isNearBottom = true
+        state.toolOutputsByToolCallID = [:]
+        state.loadedToolCallIDs = []
+        state.loadingToolCallIDs = []
         await loadMessagesForSelection()
     }
 
@@ -186,6 +248,9 @@ final class ChatTimelineViewModel: ObservableObject, SuperLog {
             state.hasMoreMessages = false
             state.totalMessageCount = 0
             state.oldestLoadedTimestamp = nil
+            state.toolOutputsByToolCallID = [:]
+            state.loadedToolCallIDs = []
+            state.loadingToolCallIDs = []
             return
         }
 
@@ -209,6 +274,23 @@ final class ChatTimelineViewModel: ObservableObject, SuperLog {
         state.persistedMessages = result.messages
         state.hasMoreMessages = result.hasMore
         refreshActiveStreamingMessage()
+    }
+
+    private func mergeToolOutputs(_ messages: [ChatMessage]) {
+        guard !messages.isEmpty else { return }
+
+        for message in messages {
+            guard let toolCallID = message.toolCallID else { continue }
+            var outputs = state.toolOutputsByToolCallID[toolCallID] ?? []
+            if let idx = outputs.firstIndex(where: { $0.id == message.id }) {
+                outputs[idx] = message
+            } else if let insertIndex = outputs.firstIndex(where: { $0.timestamp > message.timestamp }) {
+                outputs.insert(message, at: insertIndex)
+            } else {
+                outputs.append(message)
+            }
+            state.toolOutputsByToolCallID[toolCallID] = outputs
+        }
     }
 
     private func refreshActiveStreamingMessage() {

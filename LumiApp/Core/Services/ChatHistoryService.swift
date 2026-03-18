@@ -525,6 +525,47 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         }
     }
 
+    /// 按工具调用 ID 查询工具输出消息。
+    /// 仅用于消息详情按需展开，不参与主时间线分页。
+    func loadToolOutputMessages(
+        forConversationId conversationId: UUID,
+        toolCallIDs: [String]
+    ) async -> [ChatMessage] {
+        let normalizedIDs = Array(Set(toolCallIDs.filter { !$0.isEmpty }))
+        guard !normalizedIDs.isEmpty else { return [] }
+
+        return await withCheckedContinuation { continuation in
+            storageQueue.async { [weak self] in
+                guard let self = self else {
+                    continuation.resume(returning: [])
+                    return
+                }
+
+                let context = ModelContext(self.modelContainer)
+                let descriptor = FetchDescriptor<ChatMessageEntity>(
+                    predicate: #Predicate<ChatMessageEntity> { msg in
+                        msg.conversation?.id == conversationId && msg.toolCallID != nil
+                    },
+                    sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+                )
+
+                guard let fetched = try? context.fetch(descriptor) else {
+                    continuation.resume(returning: [])
+                    return
+                }
+
+                let toolCallIDSet = Set(normalizedIDs)
+                let messages = fetched.compactMap { entity -> ChatMessage? in
+                    guard let toolCallID = entity.toolCallID,
+                          toolCallIDSet.contains(toolCallID) else { return nil }
+                    return entity.toChatMessage()
+                }
+
+                continuation.resume(returning: messages)
+            }
+        }
+    }
+
     /// 获取会话消息总数
     /// - Parameter conversationId: 对话 ID
     /// - Returns: 消息数量

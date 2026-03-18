@@ -193,47 +193,14 @@ extension MessageListView {
         }
     }
 
-    /// 将 assistant(toolCalls) 后续关联的 tool 输出合并到同一行渲染，避免重复视觉噪音。
     private func buildDisplayRows(from messages: [ChatMessage]) -> [DisplayRow] {
-        var result: [DisplayRow] = []
-        var consumed = Set<UUID>()
-
-        for (index, message) in messages.enumerated() {
-            guard !consumed.contains(message.id) else { continue }
-
-            if message.role == .assistant, let toolCalls = message.toolCalls, !toolCalls.isEmpty {
-                let validIds = Set(toolCalls.map(\.id))
-                var related: [ChatMessage] = []
-                var cursor = index + 1
-
-                while cursor < messages.count {
-                    let next = messages[cursor]
-                    if consumed.contains(next.id) {
-                        cursor += 1
-                        continue
-                    }
-
-                    let isToolOutput = next.role == .tool || next.isToolOutput
-                    if !isToolOutput { break }
-
-                    if validIds.isEmpty || (next.toolCallID != nil && validIds.contains(next.toolCallID!)) {
-                        related.append(next)
-                        consumed.insert(next.id)
-                        cursor += 1
-                        continue
-                    }
-
-                    break
-                }
-
-                result.append(DisplayRow(id: message.id, message: message, relatedToolOutputs: related))
-                continue
-            }
-
-            result.append(DisplayRow(id: message.id, message: message, relatedToolOutputs: []))
+        messages.map { message in
+            DisplayRow(
+                id: message.id,
+                message: message,
+                relatedToolOutputs: timelineViewModel.toolOutputs(for: message)
+            )
         }
-
-        return result
     }
 
     private func windowedHistoryRows(from messages: [ChatMessage]) -> [ChatMessage] {
