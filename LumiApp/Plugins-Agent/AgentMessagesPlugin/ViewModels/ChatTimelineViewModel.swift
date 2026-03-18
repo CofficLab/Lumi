@@ -110,7 +110,10 @@ final class ChatTimelineViewModel: ObservableObject, SuperLog {
     func handleMessageSaved(_ message: ChatMessage, conversationId: UUID) {
         guard conversationId == state.selectedConversationId else { return }
         if message.role == .tool || message.isToolOutput {
-            mergeToolOutputs([message])
+            if let toolCallID = message.toolCallID,
+               state.loadedToolCallIDs.contains(toolCallID) {
+                mergeToolOutputs([message])
+            }
         }
         guard message.shouldDisplayInChatList() else {
             state.persistedMessages.removeAll { $0.id == message.id }

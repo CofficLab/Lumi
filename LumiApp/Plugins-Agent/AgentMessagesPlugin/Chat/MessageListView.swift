@@ -68,7 +68,7 @@ extension MessageListView {
         let displayRows = buildDisplayRows(from: windowedPersistedRows)
 
         return ScrollView {
-            LazyVStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 12) {
                 if hiddenLoadedHistoryCount > 0 {
                     showEarlierLoadedButton(hiddenCount: hiddenLoadedHistoryCount)
                 }
