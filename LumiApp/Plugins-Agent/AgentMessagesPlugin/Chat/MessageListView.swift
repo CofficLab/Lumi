@@ -2,20 +2,6 @@ import MagicKit
 import OSLog
 import SwiftUI
 
-private struct ContentBottomPreferenceKey: PreferenceKey {
-    static let defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
-    }
-}
-
-private struct ViewportBottomPreferenceKey: PreferenceKey {
-    static let defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
-    }
-}
-
 /// 消息列表视图组件
 struct MessageListView: View, SuperLog {
     nonisolated static let emoji = "📜"
@@ -26,7 +12,6 @@ struct MessageListView: View, SuperLog {
     @EnvironmentObject var timelineViewModel: ChatTimelineViewModel
 
     private let bottomAnchorId = "chat_message_list_bottom_anchor"
-    private let scrollCoordinateSpaceName = "chat_message_scroll_space"
     @State private var historyWindowLimit = Self.defaultHistoryWindowLimit
     private struct DisplayRow: Identifiable {
         let id: UUID
@@ -62,11 +47,9 @@ struct MessageListView: View, SuperLog {
                                 .padding(.bottom, timelineViewModel.isNearBottom ? 10 : 52)
                         }
 
-                        if !timelineViewModel.isNearBottom {
-                            jumpToLatestButton(proxy: proxy)
-                                .padding(.trailing, 16)
-                                .padding(.bottom, 12)
-                        }
+                        jumpToLatestButton(proxy: proxy)
+                            .padding(.trailing, 16)
+                            .padding(.bottom, 12)
                     }
                 }
             }
@@ -85,12 +68,6 @@ struct MessageListView: View, SuperLog {
             }
             .onAgentInputDidSendMessage {
                 handleUserDidSendMessageEvent(proxy: proxy)
-            }
-            .onPreferenceChange(ContentBottomPreferenceKey.self) { value in
-                timelineViewModel.updateBottomMetrics(contentBottomY: value)
-            }
-            .onPreferenceChange(ViewportBottomPreferenceKey.self) { value in
-                timelineViewModel.updateBottomMetrics(viewportBottomY: value)
             }
         }
     }
@@ -127,26 +104,7 @@ extension MessageListView {
                     .id(bottomAnchorId)
             }
             .padding(.horizontal)
-            .background(
-                GeometryReader { geo in
-                    Color.clear
-                        .preference(
-                            key: ContentBottomPreferenceKey.self,
-                            value: geo.frame(in: .named(scrollCoordinateSpaceName)).maxY
-                        )
-                }
-            )
         }
-        .background(
-            GeometryReader { geo in
-                Color.clear
-                    .preference(
-                        key: ViewportBottomPreferenceKey.self,
-                        value: geo.frame(in: .named(scrollCoordinateSpaceName)).maxY
-                    )
-            }
-        )
-        .coordinateSpace(name: scrollCoordinateSpaceName)
         .environment(\.preferOuterScroll, true)
         .padding(.vertical)
     }
@@ -200,6 +158,7 @@ extension MessageListView {
                 .background(.ultraThinMaterial, in: Capsule())
         }
         .buttonStyle(.plain)
+        .opacity(timelineViewModel.shouldAutoFollow ? 0 : 1)
     }
 
     private var loadMoreButton: some View {
