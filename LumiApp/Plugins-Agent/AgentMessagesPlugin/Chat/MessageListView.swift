@@ -24,33 +24,20 @@ struct MessageListView: View, SuperLog {
             let windowedPersistedRows = windowedHistoryRows(from: timelineViewModel.persistedMessages)
             let hiddenLoadedHistoryCount = max(0, timelineViewModel.persistedMessages.count - windowedPersistedRows.count)
             let displayRows = buildDisplayRows(from: windowedPersistedRows)
-            let activeStreamingMessage = timelineViewModel.activeStreamingMessage
             let lastMessageID = displayRows.last?.id
 
             Group {
-                if displayRows.isEmpty, activeStreamingMessage == nil {
+                if displayRows.isEmpty {
                     if timelineViewModel.isLoadingMore, timelineViewModel.selectedConversationId != nil {
                         loadingOverlay
                     } else {
                         EmptyMessagesView()
                     }
                 } else {
-                    ZStack(alignment: .bottomTrailing) {
-                        messageScrollView(
-                            lastMessageID: lastMessageID,
-                            hiddenLoadedHistoryCount: hiddenLoadedHistoryCount
-                        )
-
-                        if let activeStreamingMessage {
-                            activeStreamingPanel(activeStreamingMessage)
-                                .padding(.horizontal, 16)
-                                .padding(.bottom, timelineViewModel.isNearBottom ? 10 : 52)
-                        }
-
-                        jumpToLatestButton(proxy: proxy)
-                            .padding(.trailing, 16)
-                            .padding(.bottom, 12)
-                    }
+                    messageScrollView(
+                        lastMessageID: lastMessageID,
+                        hiddenLoadedHistoryCount: hiddenLoadedHistoryCount
+                    )
                 }
             }
             .onAppear {
@@ -127,15 +114,6 @@ extension MessageListView {
         .padding(.vertical, 4)
     }
 
-    private func activeStreamingPanel(_ message: ChatMessage) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            AvatarChatView(role: .assistant, isToolOutput: false)
-            StreamingAssistantRowView(message: message)
-                .messageBubbleStyle(role: .assistant, isError: message.isError)
-            Spacer(minLength: 0)
-        }
-    }
-
     private var loadingOverlay: some View {
         VStack(spacing: 12) {
             ProgressView()
@@ -144,21 +122,6 @@ extension MessageListView {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private func jumpToLatestButton(proxy: ScrollViewProxy) -> some View {
-        Button {
-            timelineViewModel.enableAutoFollow()
-            scrollToBottom(proxy: proxy, animated: true)
-        } label: {
-            Label("跳转最新", systemImage: "arrow.down")
-                .font(.caption)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 8)
-                .background(.ultraThinMaterial, in: Capsule())
-        }
-        .buttonStyle(.plain)
-        .opacity(timelineViewModel.shouldAutoFollow ? 0 : 1)
     }
 
     private var loadMoreButton: some View {
