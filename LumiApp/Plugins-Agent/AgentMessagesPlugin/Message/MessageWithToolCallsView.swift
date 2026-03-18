@@ -1,31 +1,32 @@
 import SwiftUI
 
-/// 助手消息与工具调用视图 - 显示助手回复及工具调用列表
+/// 助手消息与工具调用视图
 struct MessageWithToolCallsView: View {
     let message: ChatMessage
     let toolOutputMessages: [ChatMessage]
+
     @EnvironmentObject var permissionRequestViewModel: PermissionRequestVM
     @EnvironmentObject var timelineViewModel: ChatTimelineViewModel
+
     @ObservedObject private var expansionState = MessageExpansionState.shared
     @State private var showRawMessage: Bool = false
-    @State private var isToolDetailsExpanded: Bool = false
+    @State private var expandedParameterToolCallIDs = Set<String>()
+    @State private var expandedResultToolCallIDs = Set<String>()
+
     private var renderMetadata: MessageRenderMetadata {
         MessageRenderCache.shared.metadata(for: message)
     }
 
-    // 判断是否是长消息
     private var isLongMessage: Bool {
         renderMetadata.isLongMessage
     }
-    
-    // 当前消息的展开状态
+
     private var isExpanded: Bool {
         expansionState.isExpanded(id: message.id, defaultExpanded: !renderMetadata.shouldDefaultCollapse)
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // 显示助手的文本内容（如果有且不是工具摘要占位）
             if !message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !shouldHideMessageBody {
                 MarkdownMessageView(
                     message: message,
@@ -41,101 +42,97 @@ struct MessageWithToolCallsView: View {
                 .messageBubbleStyle(role: message.role, isError: message.isError)
             }
 
-            // 显示工具执行分组（默认折叠）
             if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 8) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "wrench.and.screwdriver")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                            Text(executionSummaryTitle(for: toolCalls))
-                                .font(DesignTokens.Typography.caption1)
-                                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                                .lineLimit(1)
-                        }
-
-                        Spacer()
-
-                        if message.hasToolCalls {
-                            Button {
-                                timelineViewModel.loadToolOutputs(for: message, forceReload: timelineViewModel.hasLoadedToolOutputs(for: message))
-                                if !isToolDetailsExpanded {
-                                    DispatchQueue.main.async {
-                                        isToolDetailsExpanded = true
-                                    }
-                                }
-                            } label: {
-                                HStack(spacing: 4) {
-                                    if timelineViewModel.isLoadingToolOutputs(for: message) {
-                                        ProgressView()
-                                            .controlSize(.small)
-                                    } else {
-                                        Image(systemName: timelineViewModel.hasLoadedToolOutputs(for: message) ? "arrow.clockwise" : "tray.and.arrow.down")
-                                            .font(.system(size: 11, weight: .semibold))
-                                    }
-                                    Text(toolOutputActionText)
-                                        .font(DesignTokens.Typography.caption1)
-                                }
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(
-                                    Capsule()
-                                        .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.08))
-                                )
-                            }
-                            .buttonStyle(.plain)
-                        }
-
-                        Text(toolExecutionStatusText(for: toolCalls))
-                            .font(DesignTokens.Typography.caption1)
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-
-                        Image(systemName: isToolDetailsExpanded ? "chevron.up" : "chevron.down")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14)
-                            .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.08))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 14)
-                                    .stroke(DesignTokens.Color.semantic.textTertiary.opacity(0.22), lineWidth: 1)
-                            )
-                    )
-                    .contentShape(RoundedRectangle(cornerRadius: 14))
-                    .onTapGesture {
-                        toggleToolDetailsExpanded()
-                    }
-
-                    if isToolDetailsExpanded {
-                        VStack(alignment: .leading, spacing: 8) {
-                            ToolExecutionTimelineView(
-                                toolCalls: toolCalls,
-                                toolOutputs: toolOutputMessages,
-                                waitingPermissionToolCallId: permissionRequestViewModel.pendingPermissionRequest?.toolCallID
-                            )
-
-                            // SwiftUI 要求 ForEach 的 id 在同一集合内唯一；toolCall.id 在某些提供方下可能重复，
-                            // 这里用 message.id + index + toolCall.id 组合出稳定且必唯一的 key，避免展开/折叠时出现未定义行为甚至卡死。
-                            ForEach(Array(toolCalls.enumerated()), id: \.offset) { index, toolCall in
-                                ToolCallView(toolCall: toolCall, index: index)
-                            }
-
-                            if !toolOutputMessages.isEmpty {
-                                // toolOutputMessages.id 理论上应唯一，但在历史合并/重建时可能出现重复，导致 SwiftUI 未定义行为（展开/折叠卡死）。
-                                ForEach(Array(toolOutputMessages.enumerated()), id: \.offset) { _, output in
-                                    ToolOutputView(message: output)
-                                }
-                            }
-                        }
-                        .padding(.top, 2)
+                    ForEach(Array(toolCalls.enumerated()), id: \.offset) { _, toolCall in
+                        toolCallRow(for: toolCall)
                     }
                 }
                 .padding(.top, (message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || shouldHideMessageBody) ? 0 : 8)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func toolCallRow(for toolCall: ToolCall) -> some View {
+        let isParametersExpanded = expandedParameterToolCallIDs.contains(toolCall.id)
+        let isResultsExpanded = expandedResultToolCallIDs.contains(toolCall.id)
+        let isLoadingResult = timelineViewModel.isLoadingToolOutput(for: toolCall.id)
+        let resultMessages = timelineViewModel.toolOutputs(for: toolCall.id)
+        let effectiveResults = resultMessages.isEmpty
+            ? toolOutputMessages.filter { $0.toolCallID == toolCall.id }
+            : resultMessages
+
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: "wrench.and.screwdriver")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+
+                    Text(toolCall.name)
+                        .font(DesignTokens.Typography.caption1)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .lineLimit(1)
+                }
+
+                Spacer()
+
+                Button {
+                    toggleParameterSection(for: toolCall.id)
+                } label: {
+                    compactActionChip(
+                        title: "参数",
+                        systemImage: "slider.horizontal.3",
+                        isActive: isParametersExpanded
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    toggleResultSection(for: toolCall.id)
+                } label: {
+                    if isLoadingResult {
+                        HStack(spacing: 4) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("结果")
+                                .font(DesignTokens.Typography.caption1)
+                        }
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(
+                            Capsule()
+                                .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.08))
+                        )
+                    } else {
+                        compactActionChip(
+                            title: "结果",
+                            systemImage: "doc.text.magnifyingglass",
+                            isActive: isResultsExpanded
+                        )
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.08))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(DesignTokens.Color.semantic.textTertiary.opacity(0.22), lineWidth: 1)
+                    )
+            )
+
+            if isParametersExpanded {
+                ToolCallContentSectionView(toolCall: toolCall, title: "参数")
+            }
+
+            if isResultsExpanded {
+                ToolResultSectionView(outputs: effectiveResults, isLoading: isLoadingResult)
             }
         }
     }
@@ -161,63 +158,149 @@ struct MessageWithToolCallsView: View {
         return lines.count <= toolCount + 1
     }
 
-    private func executionSummaryTitle(for toolCalls: [ToolCall]) -> String {
-        if shouldHideMessageBody {
-            let firstLine = trimmedContent.components(separatedBy: .newlines).first ?? trimmedContent
-            return firstLine
-        }
-        return "正在执行 \(toolCalls.count) 个工具："
-    }
-
-    private func toolExecutionStatusText(for toolCalls: [ToolCall]) -> String {
-        let callIds = Set(toolCalls.map(\.id))
-        let outputs = toolOutputMessages.filter { output in
-            guard let id = output.toolCallID else { return false }
-            return callIds.contains(id)
-        }
-
-        if let waitingId = permissionRequestViewModel.pendingPermissionRequest?.toolCallID,
-           callIds.contains(waitingId) {
-            return "待授权"
-        }
-
-        if timelineViewModel.isLoadingToolOutputs(for: message) {
-            return "查询中"
-        }
-
-        if !timelineViewModel.hasLoadedToolOutputs(for: message) {
-            return "未查询"
-        }
-
-        if outputs.count < toolCalls.count {
-            return "执行中"
-        }
-
-        let hasFailure = outputs.contains { msg in
-            msg.isError || msg.content.localizedCaseInsensitiveContains("error") || msg.content.localizedCaseInsensitiveContains("aborted")
-        }
-        return hasFailure ? "部分失败" : "已完成"
-    }
-
-    private var toolOutputActionText: String {
-        if timelineViewModel.isLoadingToolOutputs(for: message) {
-            return "查询中"
-        }
-        return timelineViewModel.hasLoadedToolOutputs(for: message) ? "刷新输出" : "查看输出"
-    }
-
-    private func toggleToolDetailsExpanded() {
-        let target = !isToolDetailsExpanded
-        if target {
-            DispatchQueue.main.async {
-                isToolDetailsExpanded = true
-            }
+    private func toggleParameterSection(for toolCallID: String) {
+        if expandedParameterToolCallIDs.contains(toolCallID) {
+            expandedParameterToolCallIDs.remove(toolCallID)
         } else {
-            isToolDetailsExpanded = false
+            expandedParameterToolCallIDs.insert(toolCallID)
         }
     }
 
+    private func toggleResultSection(for toolCallID: String) {
+        if expandedResultToolCallIDs.contains(toolCallID) {
+            expandedResultToolCallIDs.remove(toolCallID)
+            return
+        }
 
+        if !timelineViewModel.hasLoadedToolOutput(for: toolCallID) {
+            timelineViewModel.loadToolOutput(for: message, toolCallID: toolCallID)
+        }
+        expandedResultToolCallIDs.insert(toolCallID)
+    }
+
+    @ViewBuilder
+    private func compactActionChip(title: String, systemImage: String, isActive: Bool) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: systemImage)
+                .font(.system(size: 11, weight: .semibold))
+            Text(title)
+                .font(DesignTokens.Typography.caption1)
+        }
+        .foregroundColor(isActive ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            Capsule()
+                .fill(DesignTokens.Color.semantic.textTertiary.opacity(isActive ? 0.14 : 0.08))
+        )
+    }
+}
+
+private struct ToolCallContentSectionView: View {
+    let toolCall: ToolCall
+    let title: String
+
+    private var formattedArguments: String? {
+        guard !toolCall.arguments.isEmpty,
+              toolCall.arguments != "{}",
+              let data = toolCall.arguments.data(using: .utf8),
+              let jsonObject = try? JSONSerialization.jsonObject(with: data) else {
+            return nil
+        }
+
+        if let prettyData = try? JSONSerialization.data(
+            withJSONObject: jsonObject,
+            options: [.prettyPrinted, .sortedKeys]
+        ),
+        let prettyString = String(data: prettyData, encoding: .utf8) {
+            return prettyString
+        }
+
+        return toolCall.arguments
+    }
+
+    var body: some View {
+        if let formattedArguments {
+            GenericToolSectionView(title: title, content: formattedArguments)
+        }
+    }
+}
+
+private struct ToolResultSectionView: View {
+    let outputs: [ChatMessage]
+    let isLoading: Bool
+
+    private var combinedContent: String {
+        outputs
+            .map(\.content)
+            .joined(separator: "\n\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var body: some View {
+        if isLoading {
+            HStack(spacing: 8) {
+                ProgressView()
+                    .controlSize(.small)
+                Text("查询结果中…")
+                    .font(DesignTokens.Typography.caption1)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.05))
+            )
+        } else if !combinedContent.isEmpty {
+            GenericToolSectionView(title: "结果", content: combinedContent)
+        } else {
+            HStack(spacing: 8) {
+                Image(systemName: "info.circle")
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                Text("点击结果后会在这里显示工具输出")
+                    .font(DesignTokens.Typography.caption1)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.05))
+            )
+        }
+    }
+}
+
+private struct GenericToolSectionView: View {
+    let title: String
+    let content: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(DesignTokens.Typography.caption1)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+
+            Text(content)
+                .font(DesignTokens.Typography.code)
+                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .textSelection(.enabled)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(DesignTokens.Color.semantic.textTertiary.opacity(0.14), lineWidth: 1)
+                )
+        )
+    }
 }
 
 #Preview("Assistant with Tool Calls") {

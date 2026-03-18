@@ -79,7 +79,6 @@ struct ChatBubble: View, SuperLog {
                         )
                     }
                 } else if message.role == .tool || message.isToolOutput {
-                    // 工具输出消息：header 与 Lumi 一致，头像与「工具输出」+ 操作同一行
                     ToolOutputView(message: message)
                 } else {
                     // 用户/系统/状态消息

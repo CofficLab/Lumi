@@ -59,10 +59,18 @@ final class ChatTimelineViewModel: ObservableObject, SuperLog {
             }
     }
 
+    func toolOutputs(for toolCallID: String) -> [ChatMessage] {
+        state.toolOutputsByToolCallID[toolCallID] ?? []
+    }
+
     func hasLoadedToolOutputs(for message: ChatMessage) -> Bool {
         guard let toolCalls = message.toolCalls, !toolCalls.isEmpty else { return false }
         let ids = toolCalls.map(\.id)
         return !ids.isEmpty && ids.allSatisfy { state.loadedToolCallIDs.contains($0) }
+    }
+
+    func hasLoadedToolOutput(for toolCallID: String) -> Bool {
+        state.loadedToolCallIDs.contains(toolCallID)
     }
 
     func isLoadingToolOutputs(for message: ChatMessage) -> Bool {
@@ -70,11 +78,25 @@ final class ChatTimelineViewModel: ObservableObject, SuperLog {
         return toolCalls.map(\.id).contains { state.loadingToolCallIDs.contains($0) }
     }
 
-    func loadToolOutputs(for message: ChatMessage, forceReload: Bool = false) {
-        guard let conversationId = state.selectedConversationId,
-              let toolCalls = message.toolCalls, !toolCalls.isEmpty else { return }
+    func isLoadingToolOutput(for toolCallID: String) -> Bool {
+        state.loadingToolCallIDs.contains(toolCallID)
+    }
 
-        let requestedIDs = Array(Set(toolCalls.map(\.id)))
+    func loadToolOutput(for message: ChatMessage, toolCallID: String, forceReload: Bool = false) {
+        guard let toolCalls = message.toolCalls, toolCalls.contains(where: { $0.id == toolCallID }) else { return }
+        loadToolOutputs(for: message, toolCallIDs: [toolCallID], forceReload: forceReload)
+    }
+
+    func loadToolOutputs(for message: ChatMessage, forceReload: Bool = false) {
+        let ids = message.toolCalls?.map(\.id) ?? []
+        loadToolOutputs(for: message, toolCallIDs: ids, forceReload: forceReload)
+    }
+
+    private func loadToolOutputs(for message: ChatMessage, toolCallIDs: [String], forceReload: Bool) {
+        guard let conversationId = state.selectedConversationId,
+              !toolCallIDs.isEmpty else { return }
+
+        let requestedIDs = Array(Set(toolCallIDs))
         let targetIDs: [String]
         if forceReload {
             targetIDs = requestedIDs
