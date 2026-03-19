@@ -277,6 +277,7 @@ private struct ToolResultSectionView: View {
 private struct GenericToolSectionView: View {
     let title: String
     let content: String
+    @Environment(\.chatListIsActivelyScrolling) private var chatListIsActivelyScrolling
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -288,7 +289,7 @@ private struct GenericToolSectionView: View {
                 .font(DesignTokens.Typography.code)
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .textSelection(.enabled)
+                .chatTextSelection(active: !chatListIsActivelyScrolling)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)

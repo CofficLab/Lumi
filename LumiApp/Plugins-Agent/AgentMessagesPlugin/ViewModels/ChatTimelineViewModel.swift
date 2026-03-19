@@ -17,6 +17,13 @@ final class ChatTimelineViewModel: ObservableObject, SuperLog {
     private let metricUpdateEpsilon: CGFloat = 1
     private let minMetricUpdateInterval: TimeInterval = 0.05
     private var lastMetricUpdateAt: Date = .distantPast
+    private let perfLogger = Logger(subsystem: "Lumi", category: "ChatPerf")
+    private var toolOutputLookupCount: Int = 0
+    private var toolOutputLookupDurationMsTotal: Double = 0
+
+    private func emitPerfToConsole(_ message: String) {
+        os_log("%{public}@", log: .default, type: .info, message)
+    }
 
     init(agentProvider: AgentVM, conversationVM: ConversationVM) {
         self.agentProvider = agentProvider
@@ -44,11 +51,12 @@ final class ChatTimelineViewModel: ObservableObject, SuperLog {
     var shouldAutoFollow: Bool { state.shouldAutoFollow }
 
     func toolOutputs(for message: ChatMessage) -> [ChatMessage] {
+        let started = DispatchTime.now().uptimeNanoseconds
         guard let toolCalls = message.toolCalls, !toolCalls.isEmpty else { return [] }
         let validIDs = Set(toolCalls.map(\.id))
         guard !validIDs.isEmpty else { return [] }
 
-        return validIDs
+        let outputs = validIDs
             .compactMap { state.toolOutputsByToolCallID[$0] }
             .flatMap { $0 }
             .sorted { lhs, rhs in
@@ -57,6 +65,24 @@ final class ChatTimelineViewModel: ObservableObject, SuperLog {
                 }
                 return lhs.timestamp < rhs.timestamp
             }
+
+        let durationNs = DispatchTime.now().uptimeNanoseconds - started
+        let durationMs = Double(durationNs) / 1_000_000
+        toolOutputLookupCount += 1
+        toolOutputLookupDurationMsTotal += durationMs
+
+        if durationMs >= 3 {
+            let line = "chat-perf slow-toolOutputs messageId=\(message.id.uuidString) toolCalls=\(toolCalls.count) outputs=\(outputs.count) durationMs=\(String(format: "%.2f", durationMs))"
+            perfLogger.warning("\(line, privacy: .public)")
+            emitPerfToConsole(line)
+        } else if self.toolOutputLookupCount % 120 == 0 {
+            let avg = self.toolOutputLookupDurationMsTotal / Double(max(self.toolOutputLookupCount, 1))
+            let line = "chat-perf toolOutputs-snapshot count=\(self.toolOutputLookupCount) avgMs=\(String(format: "%.2f", avg)) latestOutputs=\(outputs.count)"
+            perfLogger.info("\(line, privacy: .public)")
+            emitPerfToConsole(line)
+        }
+
+        return outputs
     }
 
     func toolOutputs(for toolCallID: String) -> [ChatMessage] {

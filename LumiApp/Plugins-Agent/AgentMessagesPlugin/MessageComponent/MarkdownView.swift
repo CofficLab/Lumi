@@ -17,12 +17,35 @@ extension EnvironmentValues {
     }
 }
 
+extension View {
+    @ViewBuilder
+    func chatTextSelection(active: Bool) -> some View {
+        if active {
+            self.textSelection(.enabled)
+        } else {
+            self.textSelection(.disabled)
+        }
+    }
+}
+
+private struct ChatListIsActivelyScrollingKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// 为 true 时表示外层消息列表正在活跃滚动，可暂时关闭重型交互（例如文本选择）以降低卡顿。
+    var chatListIsActivelyScrolling: Bool {
+        get { self[ChatListIsActivelyScrollingKey.self] }
+        set { self[ChatListIsActivelyScrollingKey.self] = newValue }
+    }
+}
+
 /// Markdown 消息视图，负责渲染聊天消息内容
 /// 使用 MarkdownUI 库渲染（支持 GitHub Flavored Markdown）
 struct MarkdownView: View, SuperLog {
     nonisolated static let emoji = "📝"
     nonisolated static let verbose = true
-    static private var renderMarkdownEnabled: Bool = true
+    static private var renderMarkdownEnabled: Bool = false
 
     let message: ChatMessage
     let showRawMessage: Bool
@@ -30,6 +53,7 @@ struct MarkdownView: View, SuperLog {
     let isExpanded: Bool
     let onToggleExpand: () -> Void
     @Environment(\.preferOuterScroll) private var preferOuterScroll
+    @Environment(\.chatListIsActivelyScrolling) private var chatListIsActivelyScrolling
     private var renderMetadata: MessageRenderMetadata {
         MessageRenderCache.shared.metadata(for: message)
     }
@@ -45,7 +69,7 @@ struct MarkdownView: View, SuperLog {
             } else if !Self.renderMarkdownEnabled {
                 Text(verbatim: message.content)
                     .font(.system(.body, design: .default))
-                    .textSelection(.enabled)
+                    .chatTextSelection(active: !chatListIsActivelyScrolling)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .applyCollapsible(isCollapsible: isCollapsible, isExpanded: isExpanded, maxHeight: maxHeight)
             } else {
@@ -84,13 +108,24 @@ struct MarkdownView: View, SuperLog {
     private var markdownContent: some View {
         CachedMarkdownContent(
             content: message.content,
-            preferOuterScroll: preferOuterScroll
+            preferOuterScroll: preferOuterScroll,
+            chatListIsActivelyScrolling: chatListIsActivelyScrolling
         )
         .id("\(message.id.uuidString)-\(renderMetadata.contentHash)")
         .onAppear {
             ChatPerformanceMetrics.shared.markMarkdownRendered(
                 messageId: message.id,
                 contentHash: renderMetadata.contentHash
+            )
+            ChatPerformanceMetrics.shared.markMarkdownVisibility(
+                messageId: message.id,
+                appeared: true
+            )
+        }
+        .onDisappear {
+            ChatPerformanceMetrics.shared.markMarkdownVisibility(
+                messageId: message.id,
+                appeared: false
             )
         }
     }
@@ -99,16 +134,17 @@ struct MarkdownView: View, SuperLog {
 private struct CachedMarkdownContent: View {
     let content: String
     let preferOuterScroll: Bool
+    let chatListIsActivelyScrolling: Bool
 
     var body: some View {
         Group {
             if preferOuterScroll {
                 Markdown(content)
-                    .textSelection(.enabled)
+                    .chatTextSelection(active: !chatListIsActivelyScrolling)
                     .scrollDisabled(true)
             } else {
                 Markdown(content)
-                    .textSelection(.enabled)
+                    .chatTextSelection(active: !chatListIsActivelyScrolling)
             }
         }
     }
