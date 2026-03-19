@@ -52,7 +52,7 @@ struct ErrorRecoveryBanner: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(Color.red.opacity(0.2), lineWidth: 1)
+                    .stroke(Color.red.opacity(0.7), lineWidth: 1)
             )
             .accessibilityElement(children: .contain)
             .accessibilityLabel("错误提示")
