@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 
 /// GitHub 关闭 Issue 工具
 struct GitHubCloseIssueTool: AgentTool, SuperLog {
@@ -43,7 +42,7 @@ struct GitHubCloseIssueTool: AgentTool, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)🔒 关闭 Issue：\(owner)/\(repo)#\(issueNumber)")
+            GitHubToolsPlugin.logger.info("\(self.t)关闭 Issue：\(owner)/\(repo)#\(issueNumber)")
         }
 
         do {
@@ -54,7 +53,7 @@ struct GitHubCloseIssueTool: AgentTool, SuperLog {
             )
             return formatClosedIssue(issue)
         } catch {
-            os_log(.error, "\(Self.t)关闭 Issue 失败：\(error.localizedDescription)")
+            GitHubToolsPlugin.logger.error("关闭 Issue 失败：\(error.localizedDescription)")
             return "关闭 Issue 失败：\(error.localizedDescription)"
         }
     }

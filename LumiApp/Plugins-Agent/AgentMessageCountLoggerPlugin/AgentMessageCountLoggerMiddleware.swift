@@ -1,5 +1,4 @@
 import Foundation
-import OSLog
 import MagicKit
 
 /// 消息数量日志中间件
@@ -27,7 +26,7 @@ struct AgentMessageCountLoggerMiddleware: MessageSendMiddleware, SuperLog {
         let messageCount = ctx.services.getMessageCount(conversationId)
 
         // 使用 SuperLog 风格输出日志
-        os_log("\(Self.t)🫧 当前消息数量：\(messageCount)")
+        AgentMessageCountLoggerPlugin.logger.info("\(Self.t)🫧 当前消息数量：\(messageCount)")
 
         // 直接传递事件，不修改消息内容
         await next(event, ctx)

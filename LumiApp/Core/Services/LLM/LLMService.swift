@@ -1,39 +1,11 @@
 import Combine
 import SwiftUI
 import Foundation
-import OSLog
 import MagicKit
 
 /// LLM 服务
 ///
 /// Lumi 应用的 AI 助手后端服务，负责与各种 LLM 供应商进行通信。
-///
-/// ## 支持的供应商
-///
-/// - OpenAI (GPT-4, GPT-3.5)
-/// - Anthropic (Claude)
-/// - DeepSeek
-/// - 智谱 (Zhipu)
-/// - 阿里云 (Aliyun)
-///
-/// ## 使用示例
-///
-/// ```swift
-/// let llmService = LLMService()
-///
-/// let messages = [
-///     ChatMessage(role: .user, content: "你好")
-/// ]
-///
-/// let config = LLMConfig(
-///     providerId: "openai",
-///     model: "gpt-4",
-///     apiKey: "sk-..."
-/// )
-///
-/// let response = try await llmService.sendMessage(messages: messages, config: config)
-/// print(response.content)
-/// ```
 class LLMService: SuperLog, @unchecked Sendable {
     /// 日志标识符
     nonisolated static let emoji = "🤖"
@@ -71,7 +43,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         self.registry = registry
         self.llmAPI = LLMAPIService()
         if Self.verbose >= 1 {
-            os_log("\(self.t)✅ LLM 服务已初始化")
+            AppLogger.core.info("\(self.t)LLM 服务已初始化")
         }
     }
     
@@ -195,7 +167,7 @@ class LLMService: SuperLog, @unchecked Sendable {
 
         // 从注册表获取供应商实例（先取 provider，本地供应商不校验 API Key）
         guard let provider = registry.createProvider(id: config.providerId) else {
-            os_log(.error, "\(self.t)未找到供应商：\(config.providerId)")
+            AppLogger.core.error("\(self.t)未找到供应商：\(config.providerId)")
             throw NSError(domain: "LLMService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Provider not found: \(config.providerId)"])
         }
 
@@ -205,7 +177,7 @@ class LLMService: SuperLog, @unchecked Sendable {
             do {
                 try config.validate()
             } catch {
-                os_log(.error, "\(self.t)配置校验失败：\(error.localizedDescription)")
+                AppLogger.core.error("\(self.t)配置校验失败：\(error.localizedDescription)")
                 throw error
             }
         }
@@ -240,9 +212,9 @@ class LLMService: SuperLog, @unchecked Sendable {
 
         // 构建 API URL（远程供应商）
         let baseURLString = provider.baseURL
-        
+        AppLogger.core.info("\(self.t)构建 API URL：\(baseURLString)")
         guard let url = URL(string: baseURLString) else {
-            os_log(.error, "\(self.t)无效的 URL: \(baseURLString)")
+            AppLogger.core.error("\(self.t)无效的 URL: \(baseURLString)")
             throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL: \(baseURLString)"])
         }
 
@@ -256,21 +228,21 @@ class LLMService: SuperLog, @unchecked Sendable {
                 systemPrompt: "" // 系统提示已包含在 messages 中
             )
         } catch {
-            os_log(.error, "\(self.t)构建请求体失败：\(error.localizedDescription)")
+            AppLogger.core.error("\(self.t)构建请求体失败：\(error.localizedDescription)")
             throw error
         }
 
         // 输出调试信息
         if Self.verbose >= 1 {
-            os_log("\(self.t)🚀 发送请求到 \(config.providerId): \(config.model)")
+            AppLogger.core.info("\(self.t)发送请求到 \(config.providerId): \(config.model)")
 
             if let tools = tools, !tools.isEmpty {
-                os_log("\(self.t)📦 发送工具列表 (\(tools.count) 个):")
+                AppLogger.core.info("\(self.t)发送工具列表 (\(tools.count) 个):")
                 for tool in tools {
-                    os_log("\(self.t)  - \(tool.name): \(tool.description)")
+                    AppLogger.core.info("\(self.t)  - \(tool.name): \(tool.description)")
                 }
             } else {
-                os_log("\(self.t)📦 无工具")
+                AppLogger.core.info("\(self.t)无工具")
             }
         }
 
@@ -286,7 +258,7 @@ class LLMService: SuperLog, @unchecked Sendable {
             }
 
             if Self.verbose >= 1 && !additionalHeaders.isEmpty {
-                os_log("\(self.t)📦 添加额外请求头：\(additionalHeaders)")
+                AppLogger.core.info("\(self.t)添加额外请求头：\(additionalHeaders)")
             }
 
             // 发送聊天请求
@@ -341,9 +313,9 @@ class LLMService: SuperLog, @unchecked Sendable {
             // 输出响应信息
             if Self.verbose >= 1 {
                 if let toolCalls = toolCalls, !toolCalls.isEmpty {
-                    os_log("\(self.t)收到响应：\(content.prefix(10))...，包含 \(toolCalls.count) 个工具调用，耗时：\(String(format: "%.2f", latency))ms")
+                    AppLogger.core.info("\(self.t)收到响应：\(content.prefix(10))...，包含 \(toolCalls.count) 个工具调用，耗时：\(String(format: "%.2f", latency))ms")
                 } else {
-                    os_log("\(self.t)收到响应：「\(content.prefix(10))...」，耗时：\(String(format: "%.2f", latency))ms")
+                    AppLogger.core.info("\(self.t)收到响应：「\(content.prefix(10))...」，耗时：\(String(format: "%.2f", latency))ms")
                 }
             }
 
@@ -393,7 +365,7 @@ class LLMService: SuperLog, @unchecked Sendable {
 
         // 从注册表获取供应商实例（先取 provider，本地供应商不校验 API Key）
         guard let provider = registry.createProvider(id: config.providerId) else {
-            os_log(.error, "\(self.t)未找到供应商：\(config.providerId)")
+            AppLogger.core.error("\(self.t)未找到供应商：\(config.providerId)")
             throw NSError(domain: "LLMService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Provider not found: \(config.providerId)"])
         }
 
@@ -403,7 +375,7 @@ class LLMService: SuperLog, @unchecked Sendable {
             do {
                 try config.validate()
             } catch {
-                os_log(.error, "\(self.t)配置校验失败：\(error.localizedDescription)")
+                AppLogger.core.error("\(self.t)配置校验失败：\(error.localizedDescription)")
                 throw error
             }
         }
@@ -441,7 +413,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         let baseURLString = provider.baseURL
         
         guard let url = URL(string: baseURLString) else {
-            os_log(.error, "\(self.t)无效的 URL: \(baseURLString)")
+            AppLogger.core.error("\(self.t)无效的 URL: \(baseURLString)")
             throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL: \(baseURLString)"])
         }
 
@@ -455,13 +427,13 @@ class LLMService: SuperLog, @unchecked Sendable {
                 systemPrompt: ""
             )
         } catch {
-            os_log(.error, "\(self.t)构建流式请求体失败：\(error.localizedDescription)")
+            AppLogger.core.error("\(self.t)构建流式请求体失败：\(error.localizedDescription)")
             throw error
         }
 
         // 输出调试信息
         if Self.verbose >= 1 {
-            os_log("\(self.t)🚀 发送流式请求到 \(config.providerId): \(config.model)")
+            AppLogger.core.info("\(self.t)发送流式请求到 \(config.providerId): \(config.model)")
         }
 
         // 构建额外的请求头
@@ -585,12 +557,12 @@ class LLMService: SuperLog, @unchecked Sendable {
                         if let chunk = try provider.parseStreamChunk(data: eventData) {
                             let parseElapsed = CFAbsoluteTimeGetCurrent() - parseStart
                             if parseElapsed > parseWarnThreshold {
-                                os_log(.error, "\(self.t)⏱️ parseStreamChunk 耗时异常: \(String(format: "%.3f", parseElapsed))s, bytes=\(eventData.count)")
+                                AppLogger.core.error("\(self.t)parseStreamChunk 耗时异常: \(String(format: "%.3f", parseElapsed))s, bytes=\(eventData.count)")
                             }
                             // 记录首 token 时间
                             if let ttft = await state.recordFirstToken(), Self.verbose >= 1 {
                                 let ttftStr = ttft >= 1000 ? String(format: "%.2fs", ttft / 1000) : String(format: "%.2fms", ttft)
-                                os_log("\(self.t)⏱️ 首 token 延迟: \(ttftStr)")
+                                AppLogger.core.info("\(self.t)首 token 延迟: \(ttftStr)")
                             }
 
                             // 累积内容 - 只累积 textDelta 的内容，跳过 thinkingDelta
@@ -634,17 +606,16 @@ class LLMService: SuperLog, @unchecked Sendable {
                             // 回调通知外部
                             let callbackStart = CFAbsoluteTimeGetCurrent()
                             let eventTypeRaw = chunk.eventType?.rawValue ?? "unknown"
-                            let loggerTag = self.t
                             let hangWatchdog = Task.detached(priority: .utility) {
                                 try? await Task.sleep(nanoseconds: 2_000_000_000)
                                 guard !Task.isCancelled else { return }
-                                os_log(.error, "\(loggerTag)⏳ onChunk(业务回调)疑似卡住(>2s): event=\(eventTypeRaw)")
+                                AppLogger.core.error("\(self.t)onChunk(业务回调)疑似卡住(>2s): event=\(eventTypeRaw)")
                             }
                             await onChunk(chunk)
                             hangWatchdog.cancel()
                             let callbackElapsed = CFAbsoluteTimeGetCurrent() - callbackStart
                             if callbackElapsed > callbackWarnThreshold {
-                                os_log(.error, "\(self.t)⏱️ onChunk(业务回调)耗时异常: \(String(format: "%.3f", callbackElapsed))s, event=\(chunk.eventType?.rawValue ?? "unknown")")
+                                AppLogger.core.error("⏱️ onChunk(业务回调)耗时异常: \(String(format: "%.3f", callbackElapsed))s, event=\(chunk.eventType?.rawValue ?? "unknown")")
                             }
 
                             if chunk.isDone {
@@ -654,13 +625,13 @@ class LLMService: SuperLog, @unchecked Sendable {
                         } else if Self.verbose >= 1 {
                             // Provider 应该已经处理了所有事件类型，这里不应该再返回 nil
                             let preview = String(data: eventData, encoding: .utf8)?.prefix(100) ?? "无法解码"
-                            os_log("\(self.t)⚠️ 警告：Provider 返回 nil，原始数据: \(preview)...")
+                            AppLogger.core.warning("\(self.t)警告：Provider 返回 nil，原始数据: \(preview)...")
                         }
                     }
                     return shouldContinue
                 } catch {
                     if Self.verbose >= 1 {
-                        os_log("\(self.t)⚠️ 解析流式数据块失败: \(error.localizedDescription)")
+                        AppLogger.core.warning("\(self.t)解析流式数据块失败: \(error.localizedDescription)")
                     }
                     return true
                 }
@@ -713,7 +684,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         let finalTimeToFirstToken = await state.timeToFirstToken
 
         if Self.verbose >= 1 {
-            os_log("\(self.t)✅ 流式响应完成，总耗时：\(String(format: "%.2f", latency))ms, TTFT: \(String(format: "%.2f", finalTimeToFirstToken ?? 0))ms, 内容长度：\(finalContent.count)")
+            AppLogger.core.info("✅ 流式响应完成，总耗时：\(String(format: "%.2f", latency))ms, TTFT: \(String(format: "%.2f", finalTimeToFirstToken ?? 0))ms, 内容长度：\(finalContent.count)")
         }
 
         // 计算总 token 数

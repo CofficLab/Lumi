@@ -76,19 +76,19 @@ struct GeneralSettingView: View {
             do {
                 if enabled {
                     try SMAppService.mainApp.register()
-                    print("✅ Launch at login enabled")
+                    AppLogger.core.info("✅ Launch at login enabled")
                 } else {
                     try SMAppService.mainApp.unregister()
-                    print("❌ Launch at login disabled")
+                    AppLogger.core.info("❌ Launch at login disabled")
                 }
             } catch {
-                print("❌ Failed to update launch at login: \(error.localizedDescription)")
+                AppLogger.core.error("❌ Failed to update launch at login: \(error.localizedDescription)")
                 // Restore toggle state
                 launchAtLogin.toggle()
             }
         } else {
             // macOS 12 and earlier
-            print("⚠️ Launch at login requires macOS 13.0 or later")
+            AppLogger.core.info("⚠️ Launch at login requires macOS 13.0 or later")
             // Restore toggle state
             launchAtLogin.toggle()
         }

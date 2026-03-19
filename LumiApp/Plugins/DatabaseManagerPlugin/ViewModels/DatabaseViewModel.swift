@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import OSLog
 import MagicKit
 
 @MainActor
@@ -22,7 +21,7 @@ class DatabaseViewModel: ObservableObject, SuperLog {
 
     init() {
         if Self.verbose {
-            os_log("\(Self.t)初始化数据库视图模型")
+            DatabaseManagerPlugin.logger.info("\(Self.t)初始化数据库视图模型")
         }
         // Load mock config
         configs.append(DatabaseConfig(name: "Demo SQLite", type: .sqlite, database: ":memory:")) // In-memory DB
@@ -30,7 +29,7 @@ class DatabaseViewModel: ObservableObject, SuperLog {
     
     func connect(config: DatabaseConfig) async {
         if Self.verbose {
-            os_log("\(self.t)连接数据库: \(config.name)")
+            DatabaseManagerPlugin.logger.info("\(self.t)连接数据库: \(config.name)")
         }
         isLoading = true
         errorMessage = nil
@@ -53,7 +52,7 @@ class DatabaseViewModel: ObservableObject, SuperLog {
             }
 
             if Self.verbose {
-                os_log("\(self.t)数据库连接成功: \(config.name)")
+                DatabaseManagerPlugin.logger.info("\(self.t)数据库连接成功: \(config.name)")
             }
 
             // Create some demo data if in-memory
@@ -61,7 +60,7 @@ class DatabaseViewModel: ObservableObject, SuperLog {
                 try await initDemoData(configId: config.id)
             }
         } catch {
-            os_log(.error, "\(self.t)数据库连接失败: \(error.localizedDescription)")
+            DatabaseManagerPlugin.logger.error("\(self.t)数据库连接失败: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
         }
         isLoading = false
@@ -70,7 +69,7 @@ class DatabaseViewModel: ObservableObject, SuperLog {
     func disconnect() async {
         guard let config = selectedConfig else { return }
         if Self.verbose {
-            os_log("\(self.t)断开数据库连接: \(config.name)")
+            DatabaseManagerPlugin.logger.info("\(self.t)断开数据库连接: \(config.name)")
         }
         await manager.disconnect(configId: config.id)
         isConnected = false
@@ -81,12 +80,12 @@ class DatabaseViewModel: ObservableObject, SuperLog {
     func executeQuery() async {
         guard let config = selectedConfig, let connection = await manager.getConnection(for: config.id) else {
             errorMessage = "未连接到数据库"
-            os_log(.error, "\(self.t)执行查询失败: 未连接到数据库")
+            DatabaseManagerPlugin.logger.error("\(self.t)执行查询失败: 未连接到数据库")
             return
         }
 
         if Self.verbose {
-            os_log("\(self.t)执行查询: \(self.queryText.prefix(50))...")
+            DatabaseManagerPlugin.logger.info("\(self.t)执行查询: \(self.queryText.prefix(50))...")
         }
 
         isLoading = true
@@ -109,18 +108,18 @@ class DatabaseViewModel: ObservableObject, SuperLog {
                     let result = try await connection.query(queryText, params: nil)
                     queryResult = result
                     if Self.verbose {
-                        os_log("\(self.t)查询成功，返回 \(result.rows.count) 行")
+                        DatabaseManagerPlugin.logger.info("\(self.t)查询成功，返回 \(result.rows.count) 行")
                     }
                 } else {
                     let affected = try await connection.execute(queryText, params: nil)
                     queryResult = QueryResult(columns: ["Result"], rows: [[.string("Success. Rows affected: \(affected)")]], rowsAffected: affected)
                     if Self.verbose {
-                        os_log("\(self.t)执行成功，影响 \(affected) 行")
+                        DatabaseManagerPlugin.logger.info("\(self.t)执行成功，影响 \(affected) 行")
                     }
                 }
             }
         } catch {
-            os_log(.error, "\(self.t)查询执行失败: \(error.localizedDescription)")
+            DatabaseManagerPlugin.logger.error("\(self.t)查询执行失败: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
         }
         isLoading = false

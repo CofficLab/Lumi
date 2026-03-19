@@ -1,5 +1,4 @@
 import Foundation
-import OSLog
 import MagicKit
 import Security
 
@@ -63,7 +62,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         self.decoder = JSONDecoder()
 
         if Self.verbose {
-            os_log("\(self.t)✅ LLM API 服务已初始化（最大重试次数：\(self.maxRetries)）")
+            AppLogger.core.info("\(self.t)✅ LLM API 服务已初始化（最大重试次数：\(self.maxRetries)）")
         }
     }
 
@@ -150,7 +149,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
             let jsonData = try JSONSerialization.data(withJSONObject: body)
             request.httpBody = jsonData
         } catch {
-            os_log(.error, "\(self.t)JSON 序列化失败：\(error.localizedDescription)")
+            AppLogger.core.error("\(self.t)JSON 序列化失败：\(error.localizedDescription)")
             throw APIError.jsonSerializationFailed(underlying: error)
         }
 
@@ -183,7 +182,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
                 }
             }
             
-            os_log("\(logMessage)")
+            AppLogger.core.info("\(logMessage)")
         }
 
         // 发送请求并处理流式响应
@@ -204,7 +203,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         }
 
         if Self.verbose {
-            os_log("\(self.t)✅ 流式连接已建立，开始接收数据...")
+            AppLogger.core.info("\(self.t)✅ 流式连接已建立，开始接收数据...")
         }
 
         // 读取 SSE 数据流（线性字节状态机，避免逐字节全量 range 扫描）
@@ -244,7 +243,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
                 if Self.verbose && chunkCount < 50 {
                     let decoded = String(data: eventData, encoding: .utf8) ?? "无法解码"
                     let preview = decoded.count > 300 ? String(decoded.prefix(300)) + "..." : decoded
-                    os_log("\(self.t)📦 收到 SSE 数据块 #\(chunkCount) (\(eventData.count) bytes): \n\(preview)")
+                    AppLogger.core.info("\(self.t)📦 收到 SSE 数据块 #\(chunkCount) (\(eventData.count) bytes): \n\(preview)")
                 }
                 let callbackStart = CFAbsoluteTimeGetCurrent()
                 let callbackChunkIndex = chunkCount
@@ -253,17 +252,17 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
                 let hangWatchdog = Task.detached(priority: .utility) {
                     try? await Task.sleep(nanoseconds: chunkCallbackHangWarnThresholdNs)
                     guard !Task.isCancelled else { return }
-                    os_log(.error, "\(loggerTag)⏳ onChunk 回调疑似卡住(>2s): chunk#\(callbackChunkIndex), bytes=\(callbackBytes)")
+                    AppLogger.core.error("\(loggerTag)⏳ onChunk 回调疑似卡住(>2s): chunk#\(callbackChunkIndex), bytes=\(callbackBytes)")
                 }
                 let shouldContinue = await onChunk(Data(eventData))
                 hangWatchdog.cancel()
                 let callbackElapsed = CFAbsoluteTimeGetCurrent() - callbackStart
                 if callbackElapsed > chunkCallbackWarnThreshold {
-                    os_log(.error, "\(self.t)⏱️ onChunk 回调耗时异常: \(String(format: "%.3f", callbackElapsed))s, chunk#\(chunkCount), bytes=\(eventData.count)")
+                    AppLogger.core.error("\(self.t)⏱️ onChunk 回调耗时异常: \(String(format: "%.3f", callbackElapsed))s, chunk#\(chunkCount), bytes=\(eventData.count)")
                 }
                 if !shouldContinue {
                     if Self.verbose {
-                        os_log("\(self.t)🛑 收到停止信号，主动结束流式读取")
+                        AppLogger.core.info("\(self.t)🛑 收到停止信号，主动结束流式读取")
                     }
                     return
                 }
@@ -274,7 +273,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         if !eventBuffer.isEmpty {
             if Self.verbose {
                 let preview = String(data: eventBuffer, encoding: .utf8)?.prefix(200) ?? "无法解码"
-                os_log("\(self.t)📦 处理剩余数据 (\(eventBuffer.count) bytes): \(preview)...")
+                AppLogger.core.info("\(self.t)📦 处理剩余数据 (\(eventBuffer.count) bytes): \(preview)...")
             }
             let callbackStart = CFAbsoluteTimeGetCurrent()
             let remainingBytes = eventBuffer.count
@@ -282,24 +281,24 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
             let hangWatchdog = Task.detached(priority: .utility) {
                 try? await Task.sleep(nanoseconds: chunkCallbackHangWarnThresholdNs)
                 guard !Task.isCancelled else { return }
-                os_log(.error, "\(loggerTag)⏳ onChunk 回调疑似卡住(>2s): remaining bytes=\(remainingBytes)")
+                AppLogger.core.error("\(loggerTag)⏳ onChunk 回调疑似卡住(>2s): remaining bytes=\(remainingBytes)")
             }
             let shouldContinue = await onChunk(eventBuffer)
             hangWatchdog.cancel()
             let callbackElapsed = CFAbsoluteTimeGetCurrent() - callbackStart
             if callbackElapsed > chunkCallbackWarnThreshold {
-                os_log(.error, "\(self.t)⏱️ onChunk 回调耗时异常(剩余块): \(String(format: "%.3f", callbackElapsed))s, bytes=\(eventBuffer.count)")
+                AppLogger.core.error("\(self.t)⏱️ onChunk 回调耗时异常(剩余块): \(String(format: "%.3f", callbackElapsed))s, bytes=\(eventBuffer.count)")
             }
             if !shouldContinue {
                 if Self.verbose {
-                    os_log("\(self.t)🛑 收到停止信号，主动结束流式读取")
+                    AppLogger.core.info("\(self.t)🛑 收到停止信号，主动结束流式读取")
                 }
                 return
             }
         }
 
         if Self.verbose {
-            os_log("\(self.t)✅ 流式响应接收完成")
+            AppLogger.core.info("\(self.t)✅ 流式响应接收完成")
         }
     }
 
@@ -316,7 +315,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         for attempt in 1...maxRetries {
             do {
                 if Self.verbose && attempt > 1 {
-                    os_log("\(self.t)🔄 重试 LLM 请求 (尝试 \(attempt)/\(self.maxRetries))")
+                    AppLogger.core.info("\(self.t)🔄 重试 LLM 请求 (尝试 \(attempt)/\(self.maxRetries))")
                 }
 
                 let result = try await sendRawRequest(
@@ -327,7 +326,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
                 )
 
                 if Self.verbose && attempt > 1 {
-                    os_log("\(self.t)✅ LLM 重试成功")
+                    AppLogger.core.info("\(self.t)✅ LLM 重试成功")
                 }
 
                 return result
@@ -337,11 +336,11 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
 
                 if attempt < maxRetries && isRetryableError(error) {
                     let delay = calculateRetryDelay(for: attempt)
-                    os_log("\(self.t)⚠️ LLM 请求失败 (\(error.localizedDescription))，\(Int(delay)) 秒后重试...")
+                    AppLogger.core.info("\(self.t)⚠️ LLM 请求失败 (\(error.localizedDescription))，\(Int(delay)) 秒后重试...")
                     try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
                 } else {
                     if Self.verbose {
-                        os_log("\(self.t)❌ LLM 请求最终失败：\(error.localizedDescription)")
+                        AppLogger.core.info("\(self.t)❌ LLM 请求最终失败：\(error.localizedDescription)")
                     }
                     throw error
                 }
@@ -371,12 +370,12 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         }
 
         if Self.verbose {
-            os_log("\(self.t)LLM 请求头:")
+            AppLogger.core.info("\(self.t)LLM 请求头:")
             for (key, value) in headers {
                 let maskedValue = key.lowercased().contains("key") || key.lowercased().contains("auth")
                     ? String(value.prefix(10)) + "..."
                     : value
-                os_log("\(self.t)  \(key): \(maskedValue)")
+                AppLogger.core.info("\(self.t)  \(key): \(maskedValue)")
             }
         }
 
@@ -385,13 +384,13 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
                 let jsonData = try JSONSerialization.data(withJSONObject: body)
                 request.httpBody = jsonData
             } catch {
-                os_log(.error, "\(self.t)JSON 序列化失败：\(error.localizedDescription)")
+                AppLogger.core.error("\(self.t)JSON 序列化失败：\(error.localizedDescription)")
                 throw APIError.jsonSerializationFailed(underlying: error)
             }
         }
 
         if Self.verbose {
-            os_log("\(self.t)发送 LLM \(method.rawValue) 请求到：\(url.absoluteString)")
+            AppLogger.core.info("\(self.t)发送 LLM \(method.rawValue) 请求到：\(url.absoluteString)")
         }
 
         do {
@@ -399,7 +398,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
             try validateResponse(response, data: data)
 
             if Self.verbose {
-                os_log("\(self.t)LLM 请求成功，收到 \(data.count) 字节数据")
+                AppLogger.core.info("\(self.t)LLM 请求成功，收到 \(data.count) 字节数据")
             }
 
             return (data, response)
@@ -407,7 +406,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         } catch let error as APIError {
             throw error
         } catch {
-            os_log(.error, "\(self.t)LLM 请求失败：\(error.localizedDescription)")
+            AppLogger.core.error("\(self.t)LLM 请求失败：\(error.localizedDescription)")
             throw APIError.requestFailed(underlying: error)
         }
     }
@@ -458,7 +457,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
 
         guard (200 ... 299).contains(httpResponse.statusCode) else {
             let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
-            os_log(.error, "\(self.t)LLM API 错误 \(httpResponse.statusCode): \(errorStr.prefix(1000))")
+            AppLogger.core.error("\(self.t)LLM API 错误 \(httpResponse.statusCode): \(errorStr.prefix(1000))")
 
             let errorMessage = """
             HTTP Error (\(httpResponse.statusCode))

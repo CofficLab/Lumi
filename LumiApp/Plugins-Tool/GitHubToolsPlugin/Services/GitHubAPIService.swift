@@ -1,5 +1,4 @@
 import Foundation
-import OSLog
 import MagicKit
 
 /// GitHub API 服务
@@ -308,7 +307,7 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)🌐 GET \(request.url!)")
+            GitHubToolsPlugin.logger.info("\(self.t)GET \(request.url!)")
         }
 
         let (data, response) = try await session.data(for: request)
@@ -318,7 +317,7 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)📥 HTTP \(httpResponse.statusCode)")
+            GitHubToolsPlugin.logger.info("\(self.t)HTTP \(httpResponse.statusCode)")
         }
 
         // 处理错误状态码
@@ -368,7 +367,7 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         request.httpBody = encodedBody
 
         if Self.verbose {
-            os_log("\(Self.t)🌐 POST \(request.url!)")
+            GitHubToolsPlugin.logger.info("\(self.t)POST \(request.url!)")
         }
 
         let (data, response) = try await session.data(for: request)
@@ -378,7 +377,7 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)📥 HTTP \(httpResponse.statusCode)")
+            GitHubToolsPlugin.logger.info("\(self.t)HTTP \(httpResponse.statusCode)")
         }
 
         // 处理错误状态码
@@ -428,7 +427,7 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         request.httpBody = encodedBody
 
         if Self.verbose {
-            os_log("\(Self.t)🌐 PATCH \(request.url!)")
+            GitHubToolsPlugin.logger.info("\(self.t)PATCH \(request.url!)")
         }
 
         let (data, response) = try await session.data(for: request)
@@ -438,7 +437,7 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)📥 HTTP \(httpResponse.statusCode)")
+            GitHubToolsPlugin.logger.info("\(self.t)HTTP \(httpResponse.statusCode)")
         }
 
         // 处理错误状态码

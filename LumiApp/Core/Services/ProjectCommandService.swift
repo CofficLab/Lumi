@@ -1,5 +1,4 @@
 import Foundation
-import OSLog
 import MagicKit
 
 private final class LockedDataBuffer: @unchecked Sendable {
@@ -43,7 +42,7 @@ actor ProjectCommandLoader: SuperLog {
         
         guard fileManager.fileExists(atPath: commandsDir.path) else {
             if Self.verbose {
-                os_log("\(Self.t)⚠️ 项目命令目录不存在：\(commandsDir.path)")
+                AppLogger.core.info("\(Self.t)⚠️ 项目命令目录不存在：\(commandsDir.path)")
             }
             return []
         }
@@ -113,7 +112,7 @@ actor ProjectCommandLoader: SuperLog {
             
             guard let content = try? String(contentsOf: fileURL, encoding: .utf8) else {
                 if Self.verbose {
-                    os_log("\(Self.t)❌ 无法读取命令文件：\(fileURL.path)")
+                    AppLogger.core.info("\(Self.t)❌ 无法读取命令文件：\(fileURL.path)")
                 }
                 continue
             }
@@ -147,7 +146,7 @@ actor ProjectCommandLoader: SuperLog {
             commands.append(command)
             
             if Self.verbose {
-                os_log("\(Self.t)✅ 加载命令：\(command.slashCommand) [\(self.sourceDescription(source))]")
+                AppLogger.core.info("\(Self.t)✅ 加载命令：\(command.slashCommand) [\(self.sourceDescription(source))]")
             }
         }
         
@@ -205,7 +204,7 @@ actor ProjectCommandExecutor: SuperLog {
         loadedCommands = allCommands
         
         if Self.verbose {
-            os_log("\(Self.t)📚 已加载 \(self.loadedCommands.count) 个命令")
+            AppLogger.core.info("\(Self.t)📚 已加载 \(self.loadedCommands.count) 个命令")
         }
     }
     
@@ -238,7 +237,7 @@ actor ProjectCommandExecutor: SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)🚀 执行命令：/\(commandName), 参数：\(arguments)")
+            AppLogger.core.info("\(Self.t)🚀 执行命令：/\(commandName), 参数：\(arguments)")
         }
 
         // 处理命令内容

@@ -1,8 +1,6 @@
 import Combine
 import Foundation
 import MagicKit
-import OSLog
-
 @MainActor
 final class DirectoryTreeViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"
@@ -23,7 +21,7 @@ final class DirectoryTreeViewModel: ObservableObject, SuperLog {
         guard !isScanning else { return }
 
         if Self.verbose {
-            os_log("\(self.t)开始分析目录结构：\((self.scanPath as NSString).lastPathComponent)")
+            DiskManagerPlugin.logger.info("\(self.t)开始分析目录结构：\((self.scanPath as NSString).lastPathComponent)")
         }
 
         isScanning = true
@@ -67,7 +65,7 @@ final class DirectoryTreeViewModel: ObservableObject, SuperLog {
 
     func stopScan() {
         if Self.verbose {
-            os_log("\(self.t)停止分析目录结构")
+            DiskManagerPlugin.logger.info("\(self.t)停止分析目录结构")
         }
         scanTask?.cancel()
         progressTask?.cancel()

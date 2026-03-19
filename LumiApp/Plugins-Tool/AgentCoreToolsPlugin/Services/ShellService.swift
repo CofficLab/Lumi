@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import OSLog
 import MagicKit
 
 /// Shell 服务：负责执行 Shell 命令
@@ -42,7 +41,7 @@ class ShellService: SuperLog {
 
     private init() {
         if Self.verbose {
-            os_log("\(Self.t)✅ Shell 服务已初始化（单例）")
+            AgentCoreToolsPlugin.logger.info("\(self.t) Shell 服务已初始化（单例）")
         }
     }
 
@@ -67,12 +66,12 @@ class ShellService: SuperLog {
 
     func execute(_ command: String) async throws -> String {
         if Self.verbose {
-            os_log("\(Self.t)🐚 执行命令: \n\(command)")
+            AgentCoreToolsPlugin.logger.info("\(self.t) 执行命令: \n\(command)")
         }
         // Capture mutable state on MainActor
         let workingDirectory = await MainActor.run { self.currentDirectory }
         if Self.verbose {
-            os_log("\(Self.t)📂 workingDirectory: \(workingDirectory)")
+            AgentCoreToolsPlugin.logger.info("\(self.t) workingDirectory: \(workingDirectory)")
         }
         await MainActor.run {
             isRunning = true
@@ -117,7 +116,7 @@ class ShellService: SuperLog {
                 if !chunk.isEmpty {
                     stdoutBuffer.append(chunk)
                     if Self.verbose {
-                        os_log("\(Self.t)📤 stdout +\(chunk.count) bytes")
+                        AgentCoreToolsPlugin.logger.info("\(self.t) stdout +\(chunk.count) bytes")
                     }
                 }
             }
@@ -126,14 +125,14 @@ class ShellService: SuperLog {
                 if !chunk.isEmpty {
                     stderrBuffer.append(chunk)
                     if Self.verbose {
-                        os_log("\(Self.t)📥 stderr +\(chunk.count) bytes")
+                        AgentCoreToolsPlugin.logger.info("\(self.t) stderr +\(chunk.count) bytes")
                     }
                 }
             }
 
             try process.run()
             if Self.verbose {
-                os_log("\(Self.t)🚀 process started pid=\(process.processIdentifier)")
+                AgentCoreToolsPlugin.logger.info("\(self.t) process started pid=\(process.processIdentifier)")
             }
 
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
@@ -151,14 +150,14 @@ class ShellService: SuperLog {
             if !finalStdout.isEmpty {
                 stdoutBuffer.append(finalStdout)
                 if Self.verbose {
-                    os_log("\(Self.t)📤 stdout(final) +\(finalStdout.count) bytes")
+                    AgentCoreToolsPlugin.logger.info("\(self.t) stdout(final) +\(finalStdout.count) bytes")
                 }
             }
             let finalStderr = stderrHandle.availableData
             if !finalStderr.isEmpty {
                 stderrBuffer.append(finalStderr)
                 if Self.verbose {
-                    os_log("\(Self.t)📥 stderr(final) +\(finalStderr.count) bytes")
+                    AgentCoreToolsPlugin.logger.info("\(self.t) stderr(final) +\(finalStderr.count) bytes")
                 }
             }
 
@@ -169,14 +168,14 @@ class ShellService: SuperLog {
 
             if Self.verbose {
                 let duration = Date().timeIntervalSince(startedAt)
-                os_log("\(Self.t)🧾 exitCode=\(process.terminationStatus) signal=\(process.terminationReason.rawValue) duration=\(String(format: "%.3f", duration))s")
-                os_log("\(Self.t)📊 stdout=\(stdoutData.count) bytes stderr=\(stderrData.count) bytes")
+                AgentCoreToolsPlugin.logger.info("\(self.t) exitCode=\(process.terminationStatus) signal=\(process.terminationReason.rawValue) duration=\(String(format: "%.3f", duration))s")
+                AgentCoreToolsPlugin.logger.info("\(self.t) stdout=\(stdoutData.count) bytes stderr=\(stderrData.count) bytes")
 
                 let outputPreview = output.count > 400 ? String(output.prefix(400)) + "…" : output
                 let errorPreview = errorOutput.count > 400 ? String(errorOutput.prefix(400)) + "…" : errorOutput
-                os_log("\(Self.t)📝 stdout preview:\n\(outputPreview)")
+                AgentCoreToolsPlugin.logger.info("\(self.t) stdout preview:\n\(outputPreview)")
                 if !errorOutput.isEmpty {
-                    os_log("\(Self.t)📝 stderr preview:\n\(errorPreview)")
+                    AgentCoreToolsPlugin.logger.info("\(self.t) stderr preview:\n\(errorPreview)")
                 }
             }
 

@@ -1,7 +1,6 @@
 import Foundation
 import AppKit
 import Combine
-import OSLog
 import MagicKit
 
 @MainActor
@@ -84,15 +83,15 @@ class ProcessMonitorService: ObservableObject, SuperLog {
         do {
             try task.run()
             if Self.verbose {
-                os_log("\(self.t)nettop process started")
+                NetworkManagerPlugin.logger.info("\(self.t)nettop process started")
             }
         } catch {
-            os_log(.error, "\(self.t)Failed to start nettop: \(error.localizedDescription)")
+            NetworkManagerPlugin.logger.error("\(self.t)Failed to start nettop: \(error.localizedDescription)")
             self.isRunning = false
         }
         #else
         // Linux implementation would go here (using /proc/net/tcp, etc.)
-        os_log(.error, "\(self.t)Process monitoring not supported on this OS")
+        NetworkManagerPlugin.logger.error("\(self.t)Process monitoring not supported on this OS")
         #endif
     }
     
@@ -246,7 +245,7 @@ class ProcessMonitorService: ObservableObject, SuperLog {
         // 回调
         if !resultProcesses.isEmpty {
             if Self.verbose {
-                os_log("\(self.t)Published \(resultProcesses.count) processes")
+                NetworkManagerPlugin.logger.info("\(self.t)Published \(resultProcesses.count) processes")
             }
         }
         

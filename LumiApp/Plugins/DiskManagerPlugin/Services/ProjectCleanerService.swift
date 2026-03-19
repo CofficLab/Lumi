@@ -1,5 +1,4 @@
 import Foundation
-import OSLog
 import MagicKit
 
 /// 项目清理服务 - 在后台执行扫描和清理操作
@@ -24,14 +23,14 @@ class ProjectCleanerService: @unchecked Sendable, SuperLog {
 
     func scanProjects() async -> [ProjectInfo] {
         if Self.verbose {
-            os_log("\(self.t)开始扫描项目目录")
+            DiskManagerPlugin.logger.info("\(self.t)开始扫描项目目录")
         }
         let pathsToScan = defaultScanPaths.filter { fileManager.fileExists(atPath: $0) }
 
         let result = await coordinator.scanProjects(pathsToScan)
 
         if Self.verbose {
-            os_log("\(self.t)项目扫描完成：\(result.count) 个项目")
+            DiskManagerPlugin.logger.info("\(self.t)项目扫描完成：\(result.count) 个项目")
         }
         return result
     }
@@ -172,7 +171,7 @@ class ProjectCleanerService: @unchecked Sendable, SuperLog {
 
     func cleanProjects(_ items: [CleanableItem]) async throws {
         if Self.verbose {
-            os_log("\(self.t)开始清理 \(items.count) 个项目依赖")
+            DiskManagerPlugin.logger.info("\(self.t)开始清理 \(items.count) 个项目依赖")
         }
         try await Task.detached(priority: .utility) {
             let fileManager = FileManager.default
@@ -181,7 +180,7 @@ class ProjectCleanerService: @unchecked Sendable, SuperLog {
             }
         }.value
         if Self.verbose {
-            os_log("\(self.t)项目清理完成")
+            DiskManagerPlugin.logger.info("\(self.t)项目清理完成")
         }
     }
 

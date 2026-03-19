@@ -1,25 +1,38 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Manage your menu bar items" : {
-
-    },
-    "Menu Bar Manager" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "菜单栏管理"
+  "sourceLanguage": "en",
+  "strings": {
+    "Manage your menu bar items": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage your menu bar items"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選單列管理"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage your menu bar items"
+          }
+        }
+      }
+    },
+    "Menu Bar Manager": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "菜单栏管理"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選單列管理"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 import SwiftUI
 
 @MainActor
@@ -119,7 +118,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         turnContexts[conversationId] = context
 
         if Self.verbose {
-            os_log("\(Self.t)🚀 [\(conversationId)] 开始处理轮次 (深度：\(depth), 模式：\(chatMode.displayName), 流式：\(self.enableStreaming))")
+            AppLogger.core.info("\(self.t)[\(conversationId)] 开始处理轮次 (深度：\(depth), 模式：\(chatMode.displayName), 流式：\(self.enableStreaming))")
         }
 
         let availableTools: [AgentTool] = (chatMode.allowsTools && !isFinalStep) ? tools : []
@@ -183,7 +182,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                     userInfo: [NSLocalizedDescriptionKey: "检测到连续空响应工具循环，已自动中止本轮。"]
                 )
                 eventContinuation?.yield(.error(error, conversationId: conversationId))
-                os_log(.error, "\(Self.t)❌ [\(conversationId)] 连续空响应工具循环，已中止")
+                AppLogger.core.error("\(self.t)[\(conversationId)] 连续空响应工具循环，已中止")
                 return
             }
 
@@ -202,13 +201,13 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                 eventContinuation?.yield(.responseReceived(explainMessage, conversationId: conversationId))
                     eventContinuation?.yield(.completed(conversationId: conversationId))
                     if Self.verbose {
-                        os_log("\(Self.t)⚠️ [\(conversationId)] 最后一步仍请求工具，已忽略并结束本轮")
+                        AppLogger.core.warning("\(self.t)[\(conversationId)] 最后一步仍请求工具，已忽略并结束本轮")
                     }
                     return
                 }
 
                 if Self.verbose {
-                    os_log("\(Self.t)🔧 [\(conversationId)] 收到 \(toolCalls.count) 个工具调用")
+                    AppLogger.core.info("\(self.t)[\(conversationId)] 收到 \(toolCalls.count) 个工具调用")
                 }
 
                 context = turnContexts[conversationId] ?? TurnContext()
@@ -258,7 +257,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                         userInfo: [NSLocalizedDescriptionKey: "检测到重复工具调用循环，已自动中止本轮。"]
                     )
                     eventContinuation?.yield(.error(error, conversationId: conversationId))
-                    os_log(.error, "\(Self.t)❌ [\(conversationId)] 重复工具调用循环，已中止: \(firstTool.name)")
+                    AppLogger.core.error("\(self.t)[\(conversationId)] 重复工具调用循环，已中止: \(firstTool.name)")
                     return
                 }
 
@@ -276,7 +275,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                 turnContexts[conversationId] = context
                 eventContinuation?.yield(.completed(conversationId: conversationId))
                 if Self.verbose {
-                    os_log("\(Self.t)✅ [\(conversationId)] 轮次完成（无工具）")
+                    AppLogger.core.info("\(self.t)[\(conversationId)] 轮次完成（无工具）")
                 }
             }
         } catch {
@@ -290,12 +289,12 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                 let explainMessage = ChatMessage.apiKeyMissingSystemMessage(languagePreference: languagePreference)
                 eventContinuation?.yield(.responseReceived(explainMessage, conversationId: conversationId))
                 eventContinuation?.yield(.error(error, conversationId: conversationId))
-                os_log(.error, "\(Self.t)❌ [\(conversationId)] 配置校验失败：API Key 为空")
+                AppLogger.core.error("\(self.t)[\(conversationId)] 配置校验失败：API Key 为空")
             } else {
                 let explainMessage = ChatMessage.requestFailedMessage(languagePreference: languagePreference, error: error)
                 eventContinuation?.yield(.responseReceived(explainMessage, conversationId: conversationId))
                 eventContinuation?.yield(.error(error, conversationId: conversationId))
-                os_log(.error, "\(Self.t)❌ [\(conversationId)] 对话处理失败：\(error.localizedDescription)")
+                AppLogger.core.error("\(self.t)[\(conversationId)] 对话处理失败：\(error.localizedDescription)")
             }
         }
     }
@@ -317,8 +316,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
             messages: messages,
             config: config,
             tools: availableTools.isEmpty ? nil : availableTools
-        ) { [weak self] chunk in
-            guard let self = self else { return }
+        ) { chunk in
             if let eventType = chunk.eventType {
                 if Self.shouldForwardStreamEvent(eventType) {
                     let content: String = (eventType == .inputJsonDelta) ? (chunk.partialJson ?? "") : (chunk.content ?? "")

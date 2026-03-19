@@ -3,10 +3,13 @@ import SwiftUI
 import AppKit
 import Combine
 import Foundation
-import OSLog
+import os
 
 /// 菜单栏管理插件：管理菜单栏图标的显示与隐藏
 actor MenuBarManagerPlugin: SuperPlugin, SuperLog {
+    /// 插件专用 Logger
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.menubar-manager")
+
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "🧊"

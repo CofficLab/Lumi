@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 import SwiftData
 import SwiftUI
 
@@ -37,7 +36,7 @@ final class MessagePendingVM: ObservableObject, SuperLog {
         messages = newMessages
 
         if Self.verbose {
-            os_log("\(Self.t)📝 (\(reason)) setMessages: \(oldCount) → \(newMessages.count) 条消息")
+            AppLogger.core.info("\(Self.t)📝 (\(reason)) setMessages: \(oldCount) → \(newMessages.count) 条消息")
         }
     }
 
@@ -46,7 +45,7 @@ final class MessagePendingVM: ObservableObject, SuperLog {
         messages.append(message)
 
         if Self.verbose {
-            os_log("\(Self.t)📝 appendMessageInternal: 追加 1 条消息，当前共 \(self.messages.count) 条")
+            AppLogger.core.info("\(Self.t)📝 appendMessageInternal: 追加 1 条消息，当前共 \(self.messages.count) 条")
         }
     }
 
@@ -55,7 +54,7 @@ final class MessagePendingVM: ObservableObject, SuperLog {
         messages.insert(message, at: index)
 
         if Self.verbose {
-            os_log("\(Self.t)📝 insertMessageInternal: 在位置 \(index) 插入消息，当前共 \(self.messages.count) 条")
+            AppLogger.core.info("\(Self.t)📝 insertMessageInternal: 在位置 \(index) 插入消息，当前共 \(self.messages.count) 条")
         }
     }
 
@@ -87,7 +86,7 @@ final class MessagePendingVM: ObservableObject, SuperLog {
             else if let o = message.outputTokens { parts.append("outTokens=\(o)") }
             else if let i = message.inputTokens { parts.append("inTokens=\(i)") }
             if message.isTransientStatus { parts.append("transient") }
-            os_log("\(Self.t)🍋 更新消息: \(parts.joined(separator: ", "))")
+            AppLogger.core.info("\(Self.t)🍋 更新消息: \(parts.joined(separator: ", "))")
         }
     }
 }

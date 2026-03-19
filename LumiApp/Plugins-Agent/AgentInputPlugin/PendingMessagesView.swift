@@ -1,8 +1,6 @@
 import MagicKit
 import SwiftUI
 import SwiftData
-import OSLog
-
 /// 待发送消息队列视图
 /// 显示在输入框上方，展示等待发送的消息列表（不包括正在发送的消息）
 ///
@@ -118,7 +116,7 @@ struct PendingMessagesView: View, SuperLog {
             cachedConversationTitle = try modelContext.fetch(descriptor).first?.title
         } catch {
             if Self.verbose {
-                os_log("\(Self.t)❌ 获取会话标题失败：\(error.localizedDescription)")
+                AgentInputPlugin.logger.error("\(Self.t)❌ 获取会话标题失败：\(error.localizedDescription)")
             }
         }
     }

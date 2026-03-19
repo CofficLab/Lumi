@@ -1,6 +1,5 @@
 import Foundation
 import AppKit
-import OSLog
 import MagicKit
 
 /// 目录结构分析服务：扫描、进度、取消、Finder 展示
@@ -15,11 +14,11 @@ final class DirectoryTreeService: @unchecked Sendable, SuperLog {
 
     func scanDirectoryTree(atPath path: String) async throws -> [DirectoryEntry] {
         if Self.verbose {
-            os_log("\(self.t)开始分析目录结构：\((path as NSString).lastPathComponent)")
+            DiskManagerPlugin.logger.info("\(self.t)开始分析目录结构：\((path as NSString).lastPathComponent)")
         }
         let result = await coordinator.scan(path: path)
         if Self.verbose {
-            os_log("\(self.t)目录结构分析完成：\((path as NSString).lastPathComponent)，根节点 \(result.count) 个")
+            DiskManagerPlugin.logger.info("\(self.t)目录结构分析完成：\((path as NSString).lastPathComponent)，根节点 \(result.count) 个")
         }
         return result
     }
@@ -30,7 +29,7 @@ final class DirectoryTreeService: @unchecked Sendable, SuperLog {
 
     func cancelScan() async {
         if Self.verbose {
-            os_log("\(self.t)停止分析目录结构")
+            DiskManagerPlugin.logger.info("\(self.t)停止分析目录结构")
         }
         await coordinator.cancelCurrentScan()
     }
@@ -67,7 +66,7 @@ actor DirectoryTreeScanCoordinator {
     func progressStream() -> AsyncStream<ScanProgress> {
         let id = UUID()
         if DirectoryTreeService.verbose {
-            os_log("\(DirectoryTreeService.t)[Coordinator] progressStream subscribed (\(self.progressContinuations.count + 1))")
+            DiskManagerPlugin.logger.info("\(DirectoryTreeService.t)[Coordinator] progressStream subscribed (\(self.progressContinuations.count + 1))")
         }
         return AsyncStream { continuation in
             Task { await self.addContinuation(id: id, continuation: continuation) }
@@ -87,7 +86,7 @@ actor DirectoryTreeScanCoordinator {
     private func removeContinuation(id: UUID) {
         progressContinuations[id] = nil
         if DirectoryTreeService.verbose {
-            os_log("\(DirectoryTreeService.t)[Coordinator] progressStream unsubscribed (\(self.progressContinuations.count))")
+            DiskManagerPlugin.logger.info("\(DirectoryTreeService.t)[Coordinator] progressStream unsubscribed (\(self.progressContinuations.count))")
         }
     }
 

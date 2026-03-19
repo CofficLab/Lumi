@@ -1,25 +1,38 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Input Manager" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "输入管理器"
+  "sourceLanguage": "en",
+  "strings": {
+    "Input Manager": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "输入管理器"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入管理器"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入管理器"
           }
         }
       }
     },
-    "Manage input-related behaviors" : {
-
+    "Manage input-related behaviors": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage input-related behaviors"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage input-related behaviors"
+          }
+        }
+      }
     }
   },
-  "version" : "1.1"
+  "version": "1.1"
 }

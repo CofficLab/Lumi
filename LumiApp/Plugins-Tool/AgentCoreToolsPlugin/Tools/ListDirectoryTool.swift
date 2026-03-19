@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 import SwiftUI
 
 struct ListDirectoryTool: AgentTool, SuperLog {
@@ -35,7 +34,7 @@ struct ListDirectoryTool: AgentTool, SuperLog {
         let recursive = arguments["recursive"]?.value as? Bool ?? false
 
         if Self.verbose {
-            os_log("\(Self.t)列出目录：\(path.components(separatedBy: "/").last ?? path)（递归：\(recursive ? "是" : "否")）")
+            AgentCoreToolsPlugin.logger.info("\(self.t)列出目录：\(path.components(separatedBy: "/").last ?? path)（递归：\(recursive ? "是" : "否")）")
         }
 
         let fileManager = FileManager.default
@@ -44,7 +43,7 @@ struct ListDirectoryTool: AgentTool, SuperLog {
 
         guard fileManager.fileExists(atPath: path) else {
             if Self.verbose {
-                os_log(.error, "\(Self.t)路径不存在：\(path)")
+                AgentCoreToolsPlugin.logger.error("\(self.t)路径不存在：\(path)")
             }
             return "Error: Path does not exist."
         }
@@ -58,7 +57,7 @@ struct ListDirectoryTool: AgentTool, SuperLog {
                     if count > 500 {
                         result += "... (Too many files, stopping list)\n"
                         if Self.verbose {
-                            os_log("\(Self.t)文件数量过多，已停止列表（限制 500 个）")
+                            AgentCoreToolsPlugin.logger.info("\(self.t)文件数量过多，已停止列表（限制 500 个）")
                         }
                         break
                     }
@@ -88,7 +87,7 @@ struct ListDirectoryTool: AgentTool, SuperLog {
                 }
 
                 if Self.verbose {
-                    os_log("\(Self.t)递归列表完成：\(count) 个项目")
+                    AgentCoreToolsPlugin.logger.info("\(self.t)递归列表完成：\(count) 个项目")
                 }
                 return result.isEmpty ? "(Empty directory)" : result
             } else {
@@ -103,12 +102,12 @@ struct ListDirectoryTool: AgentTool, SuperLog {
                     visibleCount += 1
                 }
                 if Self.verbose {
-                    os_log("\(Self.t)目录列表完成：\(visibleCount) 个项目")
+                    AgentCoreToolsPlugin.logger.info("\(self.t)目录列表完成：\(visibleCount) 个项目")
                 }
                 return result.isEmpty ? "(Empty directory)" : result
             }
         } catch {
-            os_log(.error, "\(Self.t)列出目录失败：\(error.localizedDescription)")
+            AgentCoreToolsPlugin.logger.error("\(self.t)列出目录失败：\(error.localizedDescription)")
             return "Error listing directory: \(error.localizedDescription)"
         }
     }

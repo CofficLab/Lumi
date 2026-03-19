@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 
 /// GitHub 添加 Issue 评论工具
 struct GitHubAddIssueCommentTool: AgentTool, SuperLog {
@@ -48,7 +47,7 @@ struct GitHubAddIssueCommentTool: AgentTool, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)💬 添加 Issue 评论：\(owner)/\(repo)#\(issueNumber)")
+            GitHubToolsPlugin.logger.info("\(self.t)添加 Issue 评论：\(owner)/\(repo)#\(issueNumber)")
         }
 
         do {
@@ -60,7 +59,7 @@ struct GitHubAddIssueCommentTool: AgentTool, SuperLog {
             )
             return formatAddedComment(comment)
         } catch {
-            os_log(.error, "\(Self.t)添加评论失败：\(error.localizedDescription)")
+            GitHubToolsPlugin.logger.error("添加评论失败：\(error.localizedDescription)")
             return "添加评论失败：\(error.localizedDescription)"
         }
     }

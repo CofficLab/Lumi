@@ -1,6 +1,5 @@
 import AppKit
 import MagicKit
-import OSLog
 import SwiftUI
 
 /// macOS 应用代理，协调应用生命周期和各个控制器
@@ -52,7 +51,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     /// 3. 发送应用启动完成通知
     func applicationDidFinishLaunching(_ notification: Notification) {
         if Self.verbose {
-            os_log("\(self.t)应用启动完成")
+            AppLogger.core.info("\(self.t)应用启动完成")
         }
 
         setupControllers()
@@ -71,7 +70,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     /// 3. 发送终止通知
     func applicationWillTerminate(_ notification: Notification) {
         if Self.verbose {
-            os_log("\(self.t)应用即将终止")
+            AppLogger.core.info("\(self.t)应用即将终止")
         }
 
         cleanupApplication()
@@ -89,7 +88,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     /// - 从其他应用切换回来
     func applicationDidBecomeActive(_ notification: Notification) {
         if Self.verbose {
-            os_log("\(self.t)应用变为活跃状态")
+            AppLogger.core.info("\(self.t)应用变为活跃状态")
         }
 
         // 发送应用变为活跃状态的通知
@@ -105,7 +104,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     /// - 应用窗口被最小化
     func applicationDidResignActive(_ notification: Notification) {
         if Self.verbose {
-            os_log("\(self.t)应用变为非活跃状态")
+            AppLogger.core.info("\(self.t)应用变为非活跃状态")
         }
 
         // 发送应用变为非活跃状态的通知

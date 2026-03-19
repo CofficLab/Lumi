@@ -1,5 +1,4 @@
 import MagicKit
-import OSLog
 import SwiftUI
 
 /// 命令建议视图

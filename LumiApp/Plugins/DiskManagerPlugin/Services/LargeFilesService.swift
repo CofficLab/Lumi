@@ -1,6 +1,5 @@
 import Foundation
 import AppKit
-import OSLog
 import MagicKit
 
 /// 大文件相关服务：扫描、进度、删除、Finder 展示
@@ -16,13 +15,13 @@ final class LargeFilesService: @unchecked Sendable, SuperLog {
 
     func scanLargeFiles(atPath path: String, forceRefresh: Bool = true) async throws -> [LargeFileEntry] {
         if Self.verbose {
-            os_log("\(self.t)开始扫描大文件：\((path as NSString).lastPathComponent)")
+            DiskManagerPlugin.logger.info("\(self.t)开始扫描大文件：\((path as NSString).lastPathComponent)")
         }
         // 当前仅实现“扫描”能力；forceRefresh 保留签名以兼容调用方
         _ = forceRefresh
         let result = await coordinator.scanLargeFiles(path: path)
         if Self.verbose {
-            os_log("\(self.t)大文件扫描完成：\((path as NSString).lastPathComponent)，发现 \(result.count) 个大文件")
+            DiskManagerPlugin.logger.info("\(self.t)大文件扫描完成：\((path as NSString).lastPathComponent)，发现 \(result.count) 个大文件")
         }
         return result
     }
@@ -33,14 +32,14 @@ final class LargeFilesService: @unchecked Sendable, SuperLog {
 
     func cancelScan() async {
         if Self.verbose {
-            os_log("\(self.t)停止扫描大文件")
+            DiskManagerPlugin.logger.info("\(self.t)停止扫描大文件")
         }
         await coordinator.cancelCurrentScan()
     }
 
     func deleteFile(atPath path: String) async throws {
         if Self.verbose {
-            os_log("\(self.t)删除大文件：\((path as NSString).lastPathComponent)")
+            DiskManagerPlugin.logger.info("\(self.t)删除大文件：\((path as NSString).lastPathComponent)")
         }
         try await Task.detached(priority: .utility) {
             try FileManager.default.removeItem(at: URL(fileURLWithPath: path))
@@ -50,7 +49,7 @@ final class LargeFilesService: @unchecked Sendable, SuperLog {
     @MainActor
     func revealInFinder(path: String) {
         if Self.verbose {
-            os_log("\(self.t)在访达中显示：\((path as NSString).lastPathComponent)")
+            DiskManagerPlugin.logger.info("\(self.t)在访达中显示：\((path as NSString).lastPathComponent)")
         }
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
     }
@@ -88,7 +87,7 @@ actor LargeFilesScanCoordinator {
     func progressStream() -> AsyncStream<ScanProgress> {
         let id = UUID()
         if LargeFilesService.verbose {
-            os_log("\(LargeFilesService.t)[Coordinator] progressStream subscribed (\(self.streamSubscribers + 1))")
+            DiskManagerPlugin.logger.info("\(LargeFilesService.t)[Coordinator] progressStream subscribed (\(self.streamSubscribers + 1))")
         }
         return AsyncStream { continuation in
             Task { await self.addContinuation(id: id, continuation: continuation) }
@@ -109,13 +108,13 @@ actor LargeFilesScanCoordinator {
     private func removeContinuation(id: UUID) {
         progressContinuations[id] = nil
         if LargeFilesService.verbose {
-            os_log("\(LargeFilesService.t)[Coordinator] progressStream unsubscribed (\(self.streamSubscribers))")
+            DiskManagerPlugin.logger.info("\(LargeFilesService.t)[Coordinator] progressStream unsubscribed (\(self.streamSubscribers))")
         }
     }
 
     func scanLargeFiles(path: String) async -> [LargeFileEntry] {
         if LargeFilesService.verbose {
-            os_log("\(LargeFilesService.t)[Coordinator] scan start: \(path)")
+            DiskManagerPlugin.logger.info("\(LargeFilesService.t)[Coordinator] scan start: \(path)")
         }
         activeTask?.cancel()
 
@@ -145,14 +144,14 @@ actor LargeFilesScanCoordinator {
         currentProgress = nil
         startTime = nil
         if LargeFilesService.verbose {
-            os_log("\(LargeFilesService.t)[Coordinator] scan end: files=\(self.scannedFiles) dirs=\(self.scannedDirectories) bytes=\(self.scannedBytes) emits=\(self.emitCount)")
+            DiskManagerPlugin.logger.info("\(LargeFilesService.t)[Coordinator] scan end: files=\(self.scannedFiles) dirs=\(self.scannedDirectories) bytes=\(self.scannedBytes) emits=\(self.emitCount)")
         }
         return result
     }
 
     func cancelCurrentScan() {
         if LargeFilesService.verbose {
-            os_log("\(LargeFilesService.t)[Coordinator] cancel scan")
+            DiskManagerPlugin.logger.info("\(LargeFilesService.t)[Coordinator] cancel scan")
         }
         activeTask?.cancel()
         activeTask = nil
@@ -249,7 +248,7 @@ actor LargeFilesScanCoordinator {
         let now = Date()
         if reason != "initial", now.timeIntervalSince(lastEmitLogAt) < 2.0 { return }
         lastEmitLogAt = now
-        os_log(
+        DiskManagerPlugin.logger.info(
             "\(LargeFilesService.t)[Coordinator] emit(\(reason)) files=\(self.scannedFiles) dirs=\(self.scannedDirectories) bytes=\(self.scannedBytes) path=\((self.lastPath ?? "").isEmpty ? "-" : (self.lastPath ?? "-"))"
         )
     }

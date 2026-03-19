@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 
 /// GitHub 文件内容获取工具
 struct GitHubFileContentTool: AgentTool, SuperLog {
@@ -49,7 +48,7 @@ struct GitHubFileContentTool: AgentTool, SuperLog {
         let branch = arguments["branch"]?.value as? String ?? "main"
 
         if Self.verbose {
-            os_log("\(Self.t)📄 获取文件：\(owner)/\(repo)/\(path)")
+            GitHubToolsPlugin.logger.info("\(self.t)获取文件：\(owner)/\(repo)/\(path)")
         }
 
         do {
@@ -66,7 +65,7 @@ struct GitHubFileContentTool: AgentTool, SuperLog {
 
             return "📄 **\(fileContent.name)**\n\n```\(content)```"
         } catch {
-            os_log(.error, "\(Self.t)获取文件失败：\(error.localizedDescription)")
+            GitHubToolsPlugin.logger.error("\(self.t)获取文件失败：\(error.localizedDescription)")
             return "获取文件失败：\(error.localizedDescription)"
         }
     }

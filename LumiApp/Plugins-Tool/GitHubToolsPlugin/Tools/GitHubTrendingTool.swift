@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 
 /// GitHub 趋势项目工具
 struct GitHubTrendingTool: AgentTool, SuperLog {
@@ -32,14 +31,14 @@ struct GitHubTrendingTool: AgentTool, SuperLog {
         let limit = arguments["limit"]?.value as? Int ?? 10
 
         if Self.verbose {
-            os_log("\(Self.t)🔥 获取趋势项目：since=\(since)")
+            GitHubToolsPlugin.logger.info("\(Self.t)获取趋势项目：since=\(since)")
         }
 
         do {
             let repos = try await GitHubAPIService.shared.getTrendingRepositories(since: since)
             return formatTrendingRepos(Array(repos.prefix(limit)))
         } catch {
-            os_log(.error, "\(Self.t)获取趋势项目失败：\(error.localizedDescription)")
+            GitHubToolsPlugin.logger.error("\(Self.t)获取趋势项目失败：\(error.localizedDescription)")
             return "获取趋势项目失败：\(error.localizedDescription)"
         }
     }

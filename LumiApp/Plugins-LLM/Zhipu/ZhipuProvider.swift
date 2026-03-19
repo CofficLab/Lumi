@@ -1,6 +1,6 @@
 import Foundation
 import MagicKit
-import OSLog
+import os
 
 // MARK: - Zhipu AI 供应商
 
@@ -8,6 +8,7 @@ import OSLog
 ///
 /// Zhipu AI 提供了兼容 Anthropic 的 API 接口。
 final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.zhipu")
     nonisolated static let emoji = "🔴"
     nonisolated static let verbose = true
 
@@ -201,7 +202,7 @@ extension ZhipuProvider {
         // Handle images in message
         if !message.images.isEmpty {
             if Self.verbose {
-                os_log("\(Self.t)🖼️ 消息包含 \(message.images.count) 张图片，正在转换...")
+                Self.logger.info("\(self.t) 消息包含 \(message.images.count) 张图片，正在转换...")
             }
 
             var content: [[String: Any]] = []
@@ -218,7 +219,7 @@ extension ZhipuProvider {
             for (index, image) in message.images.enumerated() {
                 let base64Data = image.data.base64EncodedString()
                 if Self.verbose {
-                    os_log("\(Self.t)  图片 \(index + 1): \(image.mimeType), base64长度: \(base64Data.count)")
+                    Self.logger.info("\(self.t) 图片 \(index + 1): \(image.mimeType), base64长度: \(base64Data.count)")
                 }
                 content.append([
                     "type": "image",
@@ -231,7 +232,7 @@ extension ZhipuProvider {
             }
 
             if Self.verbose {
-                os_log("\(Self.t)✅ 已将 \(message.images.count) 张图片转换为 API 格式")
+                Self.logger.info("\(self.t) 已将 \(message.images.count) 张图片转换为 API 格式")
             }
 
             return [

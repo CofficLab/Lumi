@@ -1,7 +1,9 @@
 import MagicKit
 import SwiftUI
+import os
 
 actor PortManagerPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.port-manager")
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "🔌"

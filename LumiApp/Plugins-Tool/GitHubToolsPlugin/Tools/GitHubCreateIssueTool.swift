@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 
 /// GitHub 创建 Issue 工具
 struct GitHubCreateIssueTool: AgentTool, SuperLog {
@@ -66,7 +65,7 @@ struct GitHubCreateIssueTool: AgentTool, SuperLog {
         let milestone = arguments["milestone"]?.value as? Int
 
         if Self.verbose {
-            os_log("\(Self.t)✍️ 创建 Issue：\(owner)/\(repo) - \(title)")
+            GitHubToolsPlugin.logger.info("\(Self.t)创建 Issue：\(owner)/\(repo) - \(title)")
         }
 
         do {
@@ -81,7 +80,7 @@ struct GitHubCreateIssueTool: AgentTool, SuperLog {
             )
             return formatCreatedIssue(issue)
         } catch {
-            os_log(.error, "\(Self.t)创建 Issue 失败：\(error.localizedDescription)")
+            GitHubToolsPlugin.logger.error("\(Self.t)创建 Issue 失败：\(error.localizedDescription)")
             return "创建 Issue 失败：\(error.localizedDescription)"
         }
     }

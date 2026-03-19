@@ -1,11 +1,11 @@
 import AppKit
-import OSLog
+import MagicKit
 import SwiftUI
 
 /// 主内容视图，管理应用的整体布局和导航结构
 ///
 /// 支持多窗口模式，每个窗口有独立的 WindowState
-struct ContentView: View {
+struct ContentView: View, SuperLog {
     /// emoji 标识符
     nonisolated static let emoji = "📱"
     /// 是否启用详细日志输出
@@ -113,7 +113,7 @@ struct ContentView: View {
                         if ContentView.verbose {
                             let rightMiddleViews = pluginProvider.getRightMiddleViews()
                             let rightBottomViews = pluginProvider.getRightBottomViews()
-                            os_log("\(ContentView.emoji) Agent Mode: 右侧栏中间=\(rightMiddleViews.count), 底部=\(rightBottomViews.count)")
+                            AppLogger.core.info("\(ContentView.emoji) Agent Mode: 右侧栏中间=\(rightMiddleViews.count), 底部=\(rightBottomViews.count)")
                         }
                     }
                 }
@@ -325,7 +325,7 @@ extension ContentView {
         // 应用默认配置
         if let defaultNavigationId = defaultNavigationId {
             if Self.verbose {
-                os_log("\(Self.emoji) Setting default navigation to: \(defaultNavigationId)")
+                AppLogger.core.info("\(Self.t) Setting default navigation to: \(defaultNavigationId)")
             }
             app.selectedNavigationId = defaultNavigationId
         }

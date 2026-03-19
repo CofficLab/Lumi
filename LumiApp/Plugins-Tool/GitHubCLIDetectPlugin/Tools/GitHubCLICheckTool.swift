@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 
 /// GitHub CLI 安装检测工具
 ///
@@ -21,7 +20,7 @@ struct GitHubCLICheckTool: AgentTool, SuperLog {
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         if Self.verbose {
-            os_log("\(Self.t)🔍 检测 GitHub CLI 安装状态")
+            GitHubCLIDetectPlugin.logger.info("\(Self.t)检测 GitHub CLI 安装状态")
         }
 
         let result = GitHubCLIDetectService.shared.getDetectionDetails()

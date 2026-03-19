@@ -100,7 +100,7 @@ struct HostsManagerView: View {
                     try HostsFileService.shared.backupHosts(to: url)
                 } catch {
                     // Handle error (show alert)
-                    print("Export failed: \(error)")
+                    HostsManagerPlugin.logger.error("Export failed: \(error)")
                 }
             }
         }
@@ -119,7 +119,7 @@ struct HostsManagerView: View {
                         await viewModel.loadHosts()
                     } catch {
                         // Handle error
-                        print("Import failed: \(error)")
+                        HostsManagerPlugin.logger.error("Import failed: \(error)")
                     }
                 }
             }

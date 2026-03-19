@@ -1,6 +1,5 @@
 import Foundation
 import AppKit
-import OSLog
 import MagicKit
 
 /// 磁盘服务 - 在后台执行扫描和清理操作
@@ -14,7 +13,7 @@ class DiskService: @unchecked Sendable, SuperLog {
     // 注意：状态管理已移至 ViewModel，Service 只负责后台操作
     private init() {
         if Self.verbose {
-            os_log("\(self.t)Disk service initialized")
+            DiskManagerPlugin.logger.info("\(self.t)Disk service initialized")
         }
     }
 
@@ -22,7 +21,7 @@ class DiskService: @unchecked Sendable, SuperLog {
 
     func getDiskUsage() async -> DiskUsage? {
         if Self.verbose {
-            os_log("\(self.t)获取磁盘使用情况")
+            DiskManagerPlugin.logger.info("\(self.t)获取磁盘使用情况")
         }
         return await Task.detached(priority: .userInitiated) {
             let fileURL = URL(fileURLWithPath: "/")
@@ -31,12 +30,12 @@ class DiskService: @unchecked Sendable, SuperLog {
                 if let total = values.volumeTotalCapacity, let available = values.volumeAvailableCapacity {
                     let used = Int64(total) - Int64(available)
                     if Self.verbose {
-                        os_log("\(Self.t)磁盘使用：已用 \(ByteCountFormatter.string(fromByteCount: used, countStyle: .file))，可用 \(ByteCountFormatter.string(fromByteCount: Int64(available), countStyle: .file))")
+                        DiskManagerPlugin.logger.info("\(Self.t)磁盘使用：已用 \(ByteCountFormatter.string(fromByteCount: used, countStyle: .file))，可用 \(ByteCountFormatter.string(fromByteCount: Int64(available), countStyle: .file))")
                     }
                     return DiskUsage(total: Int64(total), used: used, available: Int64(available))
                 }
             } catch {
-                os_log(.error, "\(Self.t)获取磁盘使用失败：\(error.localizedDescription)")
+                DiskManagerPlugin.logger.error("\(Self.t)获取磁盘使用失败：\(error.localizedDescription)")
             }
             return nil
         }.value
@@ -45,23 +44,23 @@ class DiskService: @unchecked Sendable, SuperLog {
     /// Scan specified path
     func scan(_ path: String, forceRefresh: Bool = true) async throws -> ScanResult {
         if Self.verbose {
-            os_log("\(self.t)Request scanning path: \(path) (forceRefresh: \(forceRefresh))")
+            DiskManagerPlugin.logger.info("\(self.t)Request scanning path: \(path) (forceRefresh: \(forceRefresh))")
         }
 
         // Try to read cache
         if !forceRefresh {
             if let cached = await ScanCacheService.shared.load(for: path) {
                 if Self.verbose {
-                    os_log("\(self.t)缓存命中：\((path as NSString).lastPathComponent)")
+                    DiskManagerPlugin.logger.info("\(self.t)缓存命中：\((path as NSString).lastPathComponent)")
                 }
                 return cached
             }
         }
 
         // Execute scan
-        os_log("\(self.t)开始扫描路径：\((path as NSString).lastPathComponent)")
+        DiskManagerPlugin.logger.info("\(self.t)开始扫描路径：\((path as NSString).lastPathComponent)")
         let result = await coordinator.scan(path)
-        os_log("\(self.t)扫描完成：\((path as NSString).lastPathComponent)，\(result.largeFiles.count) 个大文件，\(ByteCountFormatter.string(fromByteCount: result.totalSize, countStyle: .file))")
+        DiskManagerPlugin.logger.info("\(self.t)扫描完成：\((path as NSString).lastPathComponent)，\(result.largeFiles.count) 个大文件，\(ByteCountFormatter.string(fromByteCount: result.totalSize, countStyle: .file))")
 
         // Save cache
         await ScanCacheService.shared.save(result, for: path)

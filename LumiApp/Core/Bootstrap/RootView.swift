@@ -53,7 +53,6 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(windowContainer.commandSuggestionViewModel)
             .environmentObject(windowContainer.depthWarningViewModel)
             .environmentObject(windowContainer.processingStateViewModel)
-            .environmentObject(windowContainer.errorStateViewModel)
             .environmentObject(windowContainer.permissionRequestViewModel)
             .environmentObject(windowContainer.thinkingStateViewModel)
             .environmentObject(windowContainer.chatTimelineViewModel)
@@ -120,7 +119,6 @@ final class RootViewContainer: ObservableObject {
     let agentProvider: AgentVM
     let depthWarningViewModel: DepthWarningVM
     let processingStateViewModel: ProcessingStateVM
-    let errorStateViewModel: ErrorStateVM
     let permissionRequestViewModel: PermissionRequestVM
     let thinkingStateViewModel: ThinkingStateVM
 
@@ -159,7 +157,6 @@ final class RootViewContainer: ObservableObject {
         // 初始化状态 ViewModels
         self.depthWarningViewModel = DepthWarningVM()
         self.processingStateViewModel = ProcessingStateVM()
-        self.errorStateViewModel = ErrorStateVM()
         self.permissionRequestViewModel = PermissionRequestVM()
         self.thinkingStateViewModel = ThinkingStateVM()
 
@@ -215,7 +212,6 @@ final class RootViewContainer: ObservableObject {
             slashCommandService: slashCommandService,
             depthWarningViewModel: self.depthWarningViewModel,
             processingStateViewModel: self.processingStateViewModel,
-            errorStateViewModel: self.errorStateViewModel,
             permissionRequestViewModel: self.permissionRequestViewModel,
             thinkingStateViewModel: self.thinkingStateViewModel
         )

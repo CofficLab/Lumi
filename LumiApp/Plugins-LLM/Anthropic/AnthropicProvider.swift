@@ -1,6 +1,6 @@
 import Foundation
-import OSLog
 import MagicKit
+import os
 
 // MARK: - Anthropic Provider
 
@@ -29,6 +29,7 @@ import MagicKit
 /// - 支持 Tool Calls: ✅
 /// - 支持图片输入: ✅ (base64 编码)
 final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.anthropic")
     nonisolated static let emoji = "🤖"
     
     /// 是否启用详细日志
@@ -214,7 +215,7 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
         // Claude 支持图片输入，使用 base64 编码
         if !message.images.isEmpty {
             if Self.verbose {
-                os_log("\(Self.t)🖼️ 消息包含 \(message.images.count) 张图片，正在转换...")
+                Self.logger.info("\(self.t) 消息包含 \(message.images.count) 张图片，正在转换...")
             }
 
             var content: [[String: Any]] = []
@@ -231,7 +232,7 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
             for (index, image) in message.images.enumerated() {
                 let base64Data = image.data.base64EncodedString()
                 if Self.verbose {
-                    os_log("\(Self.t)  图片 \(index + 1): \(image.mimeType), base64长度: \(base64Data.count)")
+                    Self.logger.info("\(self.t) 图片 \(index + 1): \(image.mimeType), base64长度: \(base64Data.count)")
                 }
                 content.append([
                     "type": "image",
@@ -244,7 +245,7 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
             }
 
             if Self.verbose {
-                os_log("\(Self.t)✅ 已将 \(message.images.count) 张图片转换为 API 格式")
+                Self.logger.info("\(self.t) 已将 \(message.images.count) 张图片转换为 API 格式")
             }
 
             return [
@@ -653,7 +654,7 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
             )
         } catch {
             if Self.verbose {
-                os_log("\(Self.t)⚠️ 解析流式数据块失败: \(error.localizedDescription)")
+                Self.logger.warning("解析流式数据块失败: \(error.localizedDescription)")
             }
             return StreamChunk(
                 error: "解析失败: \(error.localizedDescription)",

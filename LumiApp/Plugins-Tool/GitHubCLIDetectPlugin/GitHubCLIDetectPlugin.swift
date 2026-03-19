@@ -1,11 +1,12 @@
 import Foundation
 import MagicKit
-import OSLog
+import os
 
 /// GitHub CLI 检测插件
 ///
 /// 提供一个工具用于检测用户系统是否安装了 GitHub CLI (gh) 命令行工具
 actor GitHubCLIDetectPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.github-cli-detect")
     /// 日志标识符
     nonisolated static let emoji = "🐚"
 

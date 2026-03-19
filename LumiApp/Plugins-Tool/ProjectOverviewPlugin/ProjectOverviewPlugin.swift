@@ -1,10 +1,12 @@
 import Foundation
 import MagicKit
+import os
 
 /// Project Overview plugin
 ///
 /// Provides one Agent tool that returns a short overview of a project (path, type, top-level structure, Git info, key files).
 actor ProjectOverviewPlugin: SuperPlugin {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project-overview")
     static let id: String = "ProjectOverview"
     static let displayName: String = "Project Overview"
     static let description: String = "提供项目总览工具，返回项目类型、顶层结构、Git 信息与关键文件。"

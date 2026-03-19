@@ -1,5 +1,4 @@
 import Foundation
-import OSLog
 import MagicKit
 
 /// 对话轮次事件协调器
@@ -42,7 +41,6 @@ final class ConversationTurnCoordinator: SuperLog {
     struct UIActions {
         let setPendingPermissionRequest: (PermissionRequest?, UUID) -> Void
         let setDepthWarning: (DepthWarning?, UUID) -> Void
-        let setErrorMessage: (String?, UUID) -> Void
         let onTurnFinishedUI: (UUID) -> Void
         let onTurnFailedUI: (UUID, String) -> Void
 
@@ -98,7 +96,7 @@ final class ConversationTurnCoordinator: SuperLog {
                 let hangWatchdog = Task { [loggerTag = Self.t] in
                     try? await Task.sleep(nanoseconds: 2_000_000_000)
                     guard !Task.isCancelled else { return }
-                    os_log(.error, "\(loggerTag)⏳ 事件处理疑似卡住(>2s): \(eventName)")
+                    AppLogger.core.error("\(loggerTag)⏳ 事件处理疑似卡住(>2s): \(eventName)")
                 }
 
                 let ctx = ConversationTurnMiddlewareContext(
@@ -119,7 +117,7 @@ final class ConversationTurnCoordinator: SuperLog {
                 hangWatchdog.cancel()
                 let elapsed = CFAbsoluteTimeGetCurrent() - start
                 if elapsed > 1 {
-                    os_log(.error, "\(Self.t)⏱️ 事件处理耗时异常: \(eventName) took \(String(format: "%.3f", elapsed))s")
+                    AppLogger.core.error("\(Self.t)⏱️ 事件处理耗时异常: \(eventName) took \(String(format: "%.3f", elapsed))s")
                 }
             }
         }
@@ -128,6 +126,11 @@ final class ConversationTurnCoordinator: SuperLog {
     func stop() {
         task?.cancel()
         task = nil
+        
+        if let pluginsDidLoadObserver {
+            NotificationCenter.default.removeObserver(pluginsDidLoadObserver)
+            self.pluginsDidLoadObserver = nil
+        }
     }
 
     private func rebuildPipeline() {
@@ -176,7 +179,6 @@ final class ConversationTurnCoordinator: SuperLog {
             runtimeStore.processingConversationIds.remove(conversationId)
 
             if env.selectedConversationId() == conversationId {
-                ui.setErrorMessage(msg, conversationId)
                 ui.onTurnFailedUI(conversationId, msg)
             }
 

@@ -1,5 +1,4 @@
 import Foundation
-import OSLog
 import MagicKit
 import SwiftUI
 
@@ -38,7 +37,7 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
     func scanProjects() async {
         guard !isScanning else { return }
         if Self.verbose {
-            os_log("\(self.t)开始扫描项目")
+            DiskManagerPlugin.logger.info("\(self.t)开始扫描项目")
         }
 
         isScanning = true
@@ -66,7 +65,7 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
                     self.progressTask?.cancel()
 
                     if Self.verbose {
-                        os_log("\(self.t)项目扫描完成：\(result.count) 个项目")
+                        DiskManagerPlugin.logger.info("\(self.t)项目扫描完成：\(result.count) 个项目")
                     }
 
                     // Select all cleanable items by default
@@ -82,7 +81,7 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
 
     func stopScan() {
         if Self.verbose {
-            os_log("\(self.t)停止扫描项目")
+            DiskManagerPlugin.logger.info("\(self.t)停止扫描项目")
         }
         scanTask?.cancel()
         progressTask?.cancel()
@@ -114,7 +113,7 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
         if Self.verbose {
             let size = itemsToClean.reduce(0 as Int64) { $0 + $1.size }
             let sizeString = ByteCountFormatter.string(fromByteCount: size, countStyle: .file)
-            os_log("\(self.t)开始清理 \(itemsToClean.count) 项，预估 \(sizeString)")
+            DiskManagerPlugin.logger.info("\(self.t)开始清理 \(itemsToClean.count) 项，预估 \(sizeString)")
         }
 
         Task {
@@ -124,12 +123,12 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
                 try await service.cleanProjects(itemsToClean)
 
                 if Self.verbose {
-                    os_log("\(self.t)项目清理完成")
+                    DiskManagerPlugin.logger.info("\(self.t)项目清理完成")
                 }
 
                 await scanProjects() // Rescan to update status
             } catch {
-                os_log(.error, "\(self.t)项目清理失败：\(error.localizedDescription)")
+                DiskManagerPlugin.logger.error("\(self.t)项目清理失败：\(error.localizedDescription)")
                 // TODO: Show error
             }
 

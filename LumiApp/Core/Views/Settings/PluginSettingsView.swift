@@ -40,7 +40,7 @@ struct PluginSettingsView: View {
                                 set: { newValue in
                                     pluginStates[plugin.id] = newValue
                                     settingsStore.setPluginEnabled(plugin.id, enabled: newValue)
-                                    print("Plugin '\(plugin.id)' is now \(newValue ? "enabled" : "disabled")")
+                                    AppLogger.core.info("Plugin '\(plugin.id)' is now \(newValue ? "enabled" : "disabled")")
                                 }
                             )
                         )

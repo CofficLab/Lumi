@@ -1,6 +1,5 @@
 import SwiftUI
 import MagicKit
-import OSLog
 
 /// GitHub 插件设置视图 - 配置 GitHub Token 和 API 选项
 struct GitHubPluginSettingsView: View, SuperLog {
@@ -239,7 +238,7 @@ extension GitHubPluginSettingsView {
         apiLimitInfo = token.isEmpty ? "未认证" : "已认证"
 
         if Self.verbose {
-            os_log("\(Self.emoji) Token 加载状态：\(apiLimitInfo)")
+            GitHubToolsPlugin.logger.info("\(self.t)Token 加载状态：\(apiLimitInfo)")
         }
     }
 
@@ -258,7 +257,7 @@ extension GitHubPluginSettingsView {
         }
 
         if Self.verbose {
-            os_log("\(Self.emoji) Token 已保存，认证状态：\(apiLimitInfo)")
+            GitHubToolsPlugin.logger.info("\(self.t)Token 已保存，认证状态：\(apiLimitInfo)")
         }
     }
 }

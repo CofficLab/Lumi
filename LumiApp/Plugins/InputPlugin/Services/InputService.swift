@@ -2,7 +2,6 @@ import Foundation
 import AppKit
 import Combine
 import Carbon
-import OSLog
 import MagicKit
 
 @MainActor
@@ -28,7 +27,7 @@ class InputService: ObservableObject, SuperLog {
 
     private init() {
         if Self.verbose {
-            os_log("\(Self.t)Input source service initialized")
+            InputPlugin.logger.info("\(Self.t)Input source service initialized")
         }
 
         // Load config
@@ -45,7 +44,7 @@ class InputService: ObservableObject, SuperLog {
         self.currentInputSource = InputSource.current()
 
         if Self.verbose {
-            os_log("\(self.t)Loaded \(self.availableInputSources.count) input sources")
+            InputPlugin.logger.info("\(self.t)Loaded \(self.availableInputSources.count) input sources")
         }
 
         startMonitoring()
@@ -75,13 +74,13 @@ class InputService: ObservableObject, SuperLog {
 
         if let rule = config.rules.first(where: { $0.appBundleID == bundleID }) {
             if Self.verbose {
-                os_log("\(self.t)Switching to input source: \(rule.inputSourceID) for app \(app.localizedName ?? bundleID)")
+                InputPlugin.logger.info("\(self.t)Switching to input source: \(rule.inputSourceID) for app \(app.localizedName ?? bundleID)")
             }
             switchInputSource(to: rule.inputSourceID)
         } else if config.defaultInputSourceID != nil {
             // Optional: Switch to default if no rule exists
             // if Self.verbose {
-            //     os_log("\(self.t)Switching to default input source: \(config.defaultInputSourceID)")
+            //     InputPlugin.logger.info("\(self.t)Switching to default input source: \(config.defaultInputSourceID)")
             // }
             // switchInputSource(to: config.defaultInputSourceID)
         }
@@ -89,13 +88,13 @@ class InputService: ObservableObject, SuperLog {
 
     func switchInputSource(to sourceID: String) {
         guard let source = availableInputSources.first(where: { $0.id == sourceID }) else {
-            os_log(.error, "\(self.t)Input source not found: \(sourceID)")
+            InputPlugin.logger.error("\(self.t)Input source not found: \(sourceID)")
             return
         }
         source.select()
         currentInputSource = source
         if Self.verbose {
-            os_log("\(self.t)Switched to input source: \(source.id)")
+            InputPlugin.logger.info("\(self.t)Switched to input source: \(source.id)")
         }
     }
 
@@ -110,14 +109,14 @@ class InputService: ObservableObject, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(self.t)Added input source rule: \(bundleID) -> \(sourceID)")
+            InputPlugin.logger.info("\(self.t)Added input source rule: \(bundleID) -> \(sourceID)")
         }
     }
 
     func removeRule(id: String) {
         config.rules.removeAll(where: { $0.id == id })
         if Self.verbose {
-            os_log("\(self.t)Removed input source rule: \(id)")
+            InputPlugin.logger.info("\(self.t)Removed input source rule: \(id)")
         }
     }
 
@@ -130,7 +129,7 @@ class InputService: ObservableObject, SuperLog {
     func refreshSources() {
         self.availableInputSources = InputSource.getAll().filter { $0.category == "TISCategoryKeyboardInputSource" && $0.isSelectable }
         if Self.verbose {
-            os_log("\(self.t)Refreshed input source list: \(self.availableInputSources.count) available")
+            InputPlugin.logger.info("\(self.t)Refreshed input source list: \(self.availableInputSources.count) available")
         }
     }
 }

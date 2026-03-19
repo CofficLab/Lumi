@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import OSLog
 import MagicKit
 
 /// Memory monitoring service
@@ -39,7 +38,7 @@ class MemoryService: ObservableObject, SuperLog {
         subscribersCount += 1
         if monitoringTimer == nil {
             if Self.verbose {
-                os_log("\(self.t)Starting Memory monitoring")
+                MemoryManagerPlugin.logger.info("\(self.t) Starting Memory monitoring")
             }
             // Initial fetch
             updateMemoryUsage()
@@ -56,7 +55,7 @@ class MemoryService: ObservableObject, SuperLog {
         subscribersCount = max(0, subscribersCount - 1)
         if subscribersCount == 0 {
             if Self.verbose {
-                os_log("\(self.t)Stopping Memory monitoring")
+                MemoryManagerPlugin.logger.info("\(self.t) Stopping Memory monitoring")
             }
             monitoringTimer?.invalidate()
             monitoringTimer = nil

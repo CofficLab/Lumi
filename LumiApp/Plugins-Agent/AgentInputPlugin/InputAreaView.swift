@@ -1,6 +1,5 @@
 import MagicKit
 import SwiftUI
-import OSLog
 import UniformTypeIdentifiers
 
 // MARK: - Input Events
@@ -194,7 +193,7 @@ extension InputAreaView {
     /// - Parameter fileURL: 拖放的文件 URL
     private func handleFileDrop(fileURL: URL) {
         if Self.verbose {
-            os_log("\(Self.t)📎 handleFileDrop: \(fileURL.path)")
+            AgentInputPlugin.logger.info("\(Self.t)📎 handleFileDrop: \(fileURL.path)")
         }
         
         // 检查是否是图片文件
@@ -211,7 +210,7 @@ extension InputAreaView {
         }
         
         if Self.verbose {
-            os_log("\(Self.t)✅ handleFileDrop 完成，text.count=\(inputViewModel.text.count), cursorPosition=\(inputViewModel.cursorPosition)")
+            AgentInputPlugin.logger.info("\(Self.t)✅ handleFileDrop 完成，text.count=\(inputViewModel.text.count), cursorPosition=\(inputViewModel.cursorPosition)")
         }
     }
 }

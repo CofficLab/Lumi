@@ -1,6 +1,5 @@
 import SwiftUI
 import Foundation
-import OSLog
 import MagicKit
 
 /// 权限请求 ViewModel
@@ -21,13 +20,13 @@ final class PermissionRequestVM: ObservableObject, SuperLog {
         if Self.verbose {
             if let newRequest = request {
                 if oldValue == nil {
-                    os_log("\(Self.t)🔔 权限请求已设置: \(newRequest.toolName)")
+                    AppLogger.core.info("\(Self.t)🔔 权限请求已设置: \(newRequest.toolName)")
                 } else {
-                    os_log("\(Self.t)🔄 权限请求已更新: \(newRequest.toolName)")
+                    AppLogger.core.info("\(Self.t)🔄 权限请求已更新: \(newRequest.toolName)")
                 }
             } else {
                 if oldValue != nil {
-                    os_log("\(Self.t)✅ 权限请求已清除")
+                    AppLogger.core.info("\(Self.t)✅ 权限请求已清除")
                 }
             }
         }

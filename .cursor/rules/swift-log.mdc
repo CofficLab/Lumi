@@ -1,233 +1,221 @@
 ---
-description: Swift 文件日志记录规范（实现 SuperLog 协议，统一日志格式）
+description: Swift 文件日志记录规范（使用 os.Logger，统一日志格式）
 globs: *.swift
 alwaysApply: false
 ---
 # Swift 文件日志记录规范
 
-本规则约束 Swift 文件中的日志记录行为，统一使用 SuperLog 协议来提供一致的日志格式和调试体验。
+本规则约束 Swift 文件中的日志记录行为，统一使用 `os.Logger` 提供一致的日志格式和调试体验。
 
 ## 核心原则
 
-**所有需要日志记录的 Swift 类型都应该实现 `SuperLog` 协议，并遵循统一的日志格式规范。**
+**使用 `os.Logger` 进行日志记录，禁止使用 `os_log`。根据所在模块选用对应的 Logger 实例。**
 
-## 协议实现要求
+**所有日志输出必须加 `self.t` 或 `Self.t` 前缀（来自 SuperLog），用于统一格式：`[QoS] | emoji TypeName | `。**
 
-### 1. 实现 SuperLog 协议
+## Import 要求
 
 ```swift
-struct MyView: View, SuperLog {
-    // 实现必需的静态属性
-    nonisolated static let emoji = "🎯"  // 使用合适的 emoji
-    nonisolated static let verbose = false  // 控制详细日志输出
+import os  // 使用 os.Logger，不使用 import OSLog
+```
 
-    // 使用 self.t 进行日志记录
-    func someFunction() {
+## Logger 分配规则
+
+### 1. Core 模块
+
+使用 `AppLogger.core`（定义在 `LumiApp/Core/Bootstrap/AppLogger.swift`）：
+
+```swift
+// 实现 SuperLog 的类型，日志前加 self.t 前缀
+AppLogger.core.info("\(self.t)操作完成")
+AppLogger.core.error("\(self.t)加载失败：\(error.localizedDescription)")
+AppLogger.core.warning("\(self.t)使用备选数据")
+```
+
+### 2. Plugin 模块
+
+在主插件文件中定义 logger，工具/服务等子文件使用插件 logger：
+
+```swift
+// 主插件文件（如 GitHubToolsPlugin.swift）
+import os
+
+actor GitHubToolsPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.github-tools")
+    nonisolated static let emoji = "🐙"
+    // ...
+}
+
+// 插件内的 Tool/Service 使用（实例方法用 self.t，静态方法用 Self.t）
+GitHubToolsPlugin.logger.info("\(self.t)获取仓库信息：\(owner)/\(repo)")
+GitHubToolsPlugin.logger.error("\(self.t)请求失败：\(error.localizedDescription)")
+```
+
+### 3. LLM Provider / 独立类
+
+在类型内部定义私有 logger：
+
+```swift
+import os
+
+final class AnthropicProvider: SuperLLMProvider, SuperLog {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.anthropic")
+    nonisolated static let emoji = "🤖"
+
+    func transformMessage(_ message: ChatMessage) {
         if Self.verbose {
-            os_log("\(self.t)Some operation started")
+            Self.logger.info("\(self.t)消息包含 \(message.images.count) 张图片")
         }
     }
 }
 ```
 
-### 2. 静态常量定义
+### 4. 扩展 / Finder 等
 
-#### Emoji 定义
-
-- **必须定义**: `nonisolated static let emoji = "🎯"`
-- **唯一性**: 每个类型使用独特的 emoji，便于日志过滤
-- **相关性**: emoji 应与类型功能相关
-- **位置**: 放在类型定义的最上方
-
-#### Verbose 控制
-
-- **必须定义**: `nonisolated static let verbose = false`
-- **类型**: `Bool` 类型，控制详细日志输出
-- **默认值**: 通常设为 `false`，生产环境关闭详细日志
-- **位置**: 与 emoji 定义在一起
-
-### 3. 日志记录规范
-
-#### 使用 self.t 标签
+使用所属模块的 logger，并添加 `import os`：
 
 ```swift
-os_log("\(self.t)Operation completed successfully")
-```
+import os
 
-#### 日志级别控制
-
-```swift
-if Self.verbose {
-    os_log("\(self.t)Detailed debug information")
-} else {
-    os_log("\(self.t)Basic operation info")  // 总是输出的重要信息
+extension FinderSync {
+    func openInVSCode(_ sender: AnyObject?) {
+        if Self.verbose {
+            FinderSync.logger.info("\(self.t)触发操作")
+        }
+    }
 }
 ```
 
-#### 日志内容格式
+## 日志级别
 
-- **前缀**: 使用 `\(self.t)` 作为前缀，自动包含 emoji 和类型名
-- **动词**: 使用主动语态描述操作
-- **时态**: 使用一般现在时或过去时
-- **上下文**: 包含关键参数和状态信息
+| 级别 | 方法 | 用途 |
+|------|------|------|
+| 信息 | `logger.info(...)` | 正常流程、操作记录 |
+| 警告 | `logger.warning(...)` | 非错误但需关注的情况 |
+| 错误 | `logger.error(...)` | 错误、异常、失败 |
+| 严重 | `logger.critical(...)` | 严重错误 |
+
+## Logger 定义格式
+
+```swift
+// subsystem 固定为 "com.coffic.lumi"
+// category 按模块命名：
+//   - 插件: "plugin.xxx"（如 plugin.github-tools, plugin.network）
+//   - LLM: "llm.xxx"（如 llm.anthropic, llm.mlx）
+//   - Finder: "finder"
+private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.xxx")
+```
 
 ## 常见模式
 
-### View 组件日志
+### Plugin Tool 日志
 
 ```swift
-struct UserProfileView: View, SuperLog {
-    nonisolated static let emoji = "👤"
+struct GitHubSearchTool: AgentTool, SuperLog {
+    nonisolated static let emoji = "🔍"
     nonisolated static let verbose = false
 
-    func loadUserData() {
+    func execute(arguments: [String: ToolArgument]) async throws -> String {
         if Self.verbose {
-            os_log("\(self.t)Loading user data...")
+            GitHubToolsPlugin.logger.info("\(self.t)搜索：\(query)")
         }
-
-        // 加载逻辑...
-
-        os_log("\(self.t)User data loaded successfully")
+        // ...
     }
 }
 ```
 
-### 数据提供者日志
+### Service 日志
 
 ```swift
-class DataProvider: SuperLog {
-    nonisolated static let emoji = "🏠"
-    static var verbose = false
+class NetworkService: SuperLog {
+    nonisolated static let emoji = "🌐"
 
     func fetchData() {
         if Self.verbose {
-            os_log("\(self.t)Fetching data from server")
+            NetworkManagerPlugin.logger.info("\(self.t)开始请求")
         }
+        // ...
     }
 }
 ```
 
-### 业务逻辑类日志
+### 错误与警告
 
 ```swift
-class GitManager: SuperLog {
-    nonisolated static let emoji = "🔧"
-    static var verbose = false
+do {
+    try await performTask()
+} catch {
+    PluginName.logger.error("\(self.t)任务失败：\(error.localizedDescription)")
+    throw error
+}
 
-    func commitChanges(_ message: String) {
+// 警告
+if !isValid {
+    PluginName.logger.warning("\(self.t)使用默认配置")
+}
+```
+
+## SuperLog 协议与 t 前缀
+
+实现 `SuperLog` 的类型可获得 `emoji`、`t` 和 `verbose` 用于日志。
+
+**日志输出必须加 `self.t` 或 `Self.t` 前缀**，格式为 `[QoS] | emoji TypeName | `，便于在 Console 中按线程、类型过滤：
+
+- **实例方法**：使用 `self.t`
+- **静态方法**：使用 `Self.t`
+- **闭包中（如 Task.detached、weak self）**：使用 `TypeName.t`
+
+```swift
+struct MyTool: AgentTool, SuperLog {
+    nonisolated static let emoji = "📋"
+    nonisolated static let verbose = false
+
+    func execute() {
         if Self.verbose {
-            os_log("\(self.t)Committing changes with message: \(message)")
+            MyPlugin.logger.info("\(self.t)执行操作")
         }
     }
 }
+
+// 闭包内无 self 时（如 Task.detached），用类型名获取前缀
+Task.detached {
+    NetworkManagerPlugin.logger.error("\(NetworkHistoryService.t)后台保存失败：\(error)")
+}
+```
+
+## 禁止事项
+
+1. **禁止使用 os_log**
+   - ❌ `os_log("...")`
+   - ❌ `os_log(.error, "...")`
+   - ✅ `logger.info(...)` / `logger.error(...)`
+
+2. **禁止 import OSLog**
+   - ✅ `import os`
+
+3. **禁止记录敏感信息**
+   - ❌ 密码、Token、API Key
+   - ✅ 只记录操作结果或脱敏信息
+
+## 日志过滤
+
+通过 Console.app 或 `log stream` 可按住户定义：
+
+```bash
+# 按子系统过滤
+log stream --predicate 'subsystem == "com.coffic.lumi"'
+
+# 按 category 过滤
+log stream --predicate 'subsystem == "com.coffic.lumi" AND category == "plugin.github-tools"'
 ```
 
 ## Emoji 选择指南
 
-### UI 相关
-
-- `🌿` - View 组件 (BranchStatusTile)
-- `📱` - 移动端相关
-- `🖥️` - 桌面端相关
-- `🎛️` - 控制面板
-- `📋` - 表单组件
-
-### 数据相关
-
-- `🏠` - 数据提供者 (DataProvider)
-- `💾` - 数据存储
-- `📊` - 数据分析
-- `🔄` - 数据同步
-
-### 业务功能
-
-- `🔧` - 工具类
-- `📁` - 文件管理
-- `🌳` - 项目管理
-- `📝` - 文本编辑
-- `🔍` - 搜索功能
-
-### 系统相关
-
-- `🍎` - macOS 相关 (MacAgent)
-- `⚙️` - 系统配置
-- `🔗` - 网络连接
-- `🔔` - 通知系统
-
-## 最佳实践
-
-### 1. 日志级别管理
-
-```swift
-// 错误日志 - 总是输出
-os_log(.error, "\(self.t)Failed to load data: \(error.localizedDescription)")
-
-// 警告日志 - 重要但非错误情况
-os_log(.info, "\(self.t)Using fallback data due to network unavailability")
-
-// 调试日志 - 仅开发时需要
-if Self.verbose {
-    os_log("\(self.t)Processing \(items.count) items")
-}
-```
-
-### 2. 性能考虑
-
-```swift
-// 避免在生产环境中进行昂贵的字符串插值
-if Self.verbose {
-    let debugInfo = expensiveDebugString()
-    os_log("\(self.t)Debug info: \(debugInfo)")
-}
-```
-
-### 3. 敏感信息保护
-
-```swift
-// 不要记录敏感信息
-// ❌ 错误：记录密码
-os_log("\(self.t)Authenticating user with password: \(password)")
-
-// ✅ 正确：只记录操作结果
-os_log("\(self.t)User authentication \(success ? "succeeded" : "failed")")
-```
-
-### 4. 日志过滤
-
-由于每个类型都有独特的 emoji，可以通过 emoji 快速过滤相关日志：
-
-```bash
-# 过滤 BranchStatusTile 的日志
-log stream | grep "🌿"
-
-# 过滤 DataProvider 的日志
-log stream | grep "🏠"
-```
-
-## 规则优势
-
-### 1. 统一的日志格式
-
-- 所有日志都有统一的 `\(self.t)` 前缀
-- emoji 提供视觉识别
-- 类型名提供上下文信息
-
-### 2. 便于调试
-
-- 可以通过 emoji 快速定位问题类型
-- verbose 控制提供调试级别的灵活性
-- 结构化的日志内容易于解析
-
-### 3. 性能优化
-
-- `nonisolated static` 属性避免实例开销
-- verbose 控制避免不必要的字符串操作
-- 编译时常量优化
-
-### 4. 维护友好
-
-- 协议化实现保证一致性
-- 静态配置便于全局控制
-- emoji 映射提供功能概览
-
-遵循此规则可以显著提升代码的可调试性、可维护性和开发体验，为生产环境的监控和问题排查提供有力支持。
+- `🐙` - GitHub
+- `📁` - 文件/目录
+- `💾` - 内存/存储
+- `🔌` - 端口/网络
+- `🤖` - Anthropic
+- `🔴` - Zhipu
+- `💻` - MLX / Shell
+- `🛡️` - 安全/防火墙

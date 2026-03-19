@@ -1,5 +1,4 @@
 import MagicKit
-import OSLog
 import SwiftUI
 
 /// 文件预览视图

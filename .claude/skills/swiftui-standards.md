@@ -115,10 +115,11 @@ extension MyView {
 #endif
 ```
 
-### 3. SuperLog 日志协议
+### 3. 日志记录规范
 
-**所有需要日志的类型必须实现 SuperLog 协议：**
+**使用 `os.Logger` 进行日志记录，禁止使用 `os_log`。** 详见 `.cursor/rules/swift-log.mdc`。
 
+**Core 模块使用 AppLogger.core：**
 ```swift
 struct MyView: View, SuperLog {
     nonisolated static let emoji = "🎯"
@@ -126,27 +127,45 @@ struct MyView: View, SuperLog {
 
     func someFunction() {
         if Self.verbose {
-            os_log("\(self.t)Some operation started")
+            AppLogger.core.info("\(Self.emoji) Some operation started")
         }
-        os_log("\(self.t)Operation completed")
+        AppLogger.core.info("\(Self.emoji) Operation completed")
     }
 }
 ```
 
-**协议要求：**
+**Plugin 模块使用插件 logger：**
+```swift
+struct MyTool: AgentTool, SuperLog {
+    nonisolated static let emoji = "🔍"
+    nonisolated static let verbose = false
+
+    func execute() {
+        if Self.verbose {
+            MyPlugin.logger.info("\(Self.emoji) Executing tool")
+        }
+    }
+}
+```
+
+**SuperLog 协议要求：**
 - 实现 `nonisolated static let emoji` - 独特的 emoji 标识
 - 实现 `nonisolated static let verbose` - 详细日志控制
-- 使用 `self.t` 作为日志前缀（自动包含 emoji 和类型名）
+- 日志消息中可包含 `\(Self.emoji)` 作为前缀
 
 **日志级别：**
 ```swift
 // 总是输出
-os_log("\(self.t)Important operation completed")
+AppLogger.core.info("\(Self.emoji) Important operation completed")
 
 // 仅开发时输出
 if Self.verbose {
-    os_log("\(self.t)Detailed debug information")
+    AppLogger.core.info("\(Self.emoji) Detailed debug information")
 }
+
+// 错误和警告
+AppLogger.core.error("Operation failed: \(error.localizedDescription)")
+AppLogger.core.warning("Using fallback configuration")
 ```
 
 ### 4. 事件监听规范
@@ -240,10 +259,11 @@ func handleEvent() {
 - ✅ 状态更新集中在 Setter 分组
 
 ### 日志记录
-- ✅ 通过 emoji 快速过滤日志：`log stream | grep "🌿"`
+- ✅ 使用 `os.Logger`（AppLogger.core 或 PluginName.logger），禁止 os_log
+- ✅ 使用 `import os`，禁止 import OSLog
 - ✅ 使用 verbose 控制调试级别
 - ✅ 避免记录敏感信息
-- ✅ 使用 `nonisolated static` 优化性能
+- ✅ 通过 subsystem/category 过滤：`log stream --predicate 'subsystem == "com.coffic.lumi"'`
 
 ### 事件处理
 - ✅ 使用 `perform:` 语法一行完成
@@ -262,6 +282,6 @@ func handleEvent() {
 2. **命名冲突**：确保 `onXxx` 方法名在项目中唯一
 3. **线程安全**：UI 更新操作使用 `@MainActor`
 4. **内存管理**：避免事件监听中的循环引用
-5. **日志过滤**：利用 emoji 快速定位问题类型
+5. **日志过滤**：利用 Console.app 或 `log stream` 按 subsystem、category 过滤
 
 遵循此规范可以显著提升代码的可读性、可维护性和开发体验。

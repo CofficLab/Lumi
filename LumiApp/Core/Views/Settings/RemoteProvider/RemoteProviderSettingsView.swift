@@ -106,15 +106,24 @@ extension RemoteProviderSettingsView {
     /// 加载当前供应商的设置信息（API Key 和选中的模型）
     private func loadSettings() {
         guard let providerType = selectedProviderType else { return }
-        apiKey = PluginStateStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
+        apiKey = APIKeyStore.shared.getWithMigration(
+            forKey: providerType.apiKeyStorageKey,
+            legacyLoad: { PluginStateStore.shared.string(forKey: providerType.apiKeyStorageKey) },
+            legacyCleanup: {
+                PluginStateStore.shared.removeObject(forKey: $0)
+                PluginStateStore.shared.removeLegacyValue(forKey: $0)
+            }
+        )
         selectedModel = PluginStateStore.shared.string(forKey: providerType.modelStorageKey)
             ?? providerType.defaultModel
     }
 
-    /// 保存 API Key 到 UserDefaults
+    /// 保存 API Key 到 Keychain
     private func saveApiKey() {
         guard let providerType = selectedProviderType else { return }
-        PluginStateStore.shared.set(apiKey, forKey: providerType.apiKeyStorageKey)
+        APIKeyStore.shared.set(apiKey, forKey: providerType.apiKeyStorageKey)
+        PluginStateStore.shared.removeObject(forKey: providerType.apiKeyStorageKey)
+        PluginStateStore.shared.removeLegacyValue(forKey: providerType.apiKeyStorageKey)
     }
 
     /// 保存选中的模型到 UserDefaults

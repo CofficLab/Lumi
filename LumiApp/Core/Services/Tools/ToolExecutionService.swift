@@ -1,7 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
-
 /// 工具执行服务
 /// 负责处理工具调用的执行、权限检查和风险评估
 ///
@@ -96,7 +94,7 @@ final class ToolExecutionService: SuperLog, @unchecked Sendable {
         let duration = Date().timeIntervalSince(startTime)
 
         if Self.verbose {
-            os_log("\(Self.t)✅ 工具 \(toolCall.name) 执行完成 (耗时：\(String(format: "%.2f", duration))s)")
+            AppLogger.core.info("\(Self.t)✅ 工具 \(toolCall.name) 执行完成 (耗时：\(String(format: "%.2f", duration))s)")
         }
 
         return result

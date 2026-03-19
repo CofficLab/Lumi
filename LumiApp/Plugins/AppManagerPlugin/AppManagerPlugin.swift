@@ -1,10 +1,13 @@
 import Foundation
 import MagicKit
-import OSLog
 import SwiftUI
+import os
 
 /// 应用管理插件
 actor AppManagerPlugin: SuperPlugin, SuperLog {
+    /// 插件专用 Logger
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.app-manager")
+
     // MARK: - Plugin Properties
     
     nonisolated static let emoji = "📱"
@@ -26,7 +29,7 @@ actor AppManagerPlugin: SuperPlugin, SuperLog {
     @MainActor
     func addNavigationEntries() -> [NavigationEntry]? {
         if Self.verbose {
-            os_log("\(self.t)注册应用管理导航入口")
+            Self.logger.info("\(self.t)注册应用管理导航入口")
         }
         return [
             NavigationEntry.create(

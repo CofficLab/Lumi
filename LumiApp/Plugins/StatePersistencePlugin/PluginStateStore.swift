@@ -35,6 +35,14 @@ final class PluginStateStore: @unchecked Sendable {
         set(nil, forKey: key)
     }
 
+    func removeLegacyValue(forKey key: String) {
+        let legacyDir = AppConfig.getDBFolderURL().appendingPathComponent("app_settings", isDirectory: true)
+        let legacyFile = legacyDir.appendingPathComponent(sanitizeLegacyKey(key) + ".plist")
+        if fileManager.fileExists(atPath: legacyFile.path) {
+            try? fileManager.removeItem(at: legacyFile)
+        }
+    }
+
     func object(forKey key: String) -> Any? {
         queue.sync {
             var dict = readAll()

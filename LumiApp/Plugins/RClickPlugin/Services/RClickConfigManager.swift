@@ -33,13 +33,13 @@ class RClickConfigManager: ObservableObject {
             let decoded = try JSONDecoder().decode(RClickConfig.self, from: data)
             self.config = decoded
         } catch {
-            print("Failed to decode RClickConfig: \(error)")
+            AppLogger.core.error("Failed to decode RClickConfig: \(error)")
         }
     }
     
     func saveConfig() {
         guard let defaults = userDefaults else {
-            print("Failed to access App Group UserDefaults: \(appGroupId)")
+            AppLogger.core.error("Failed to access App Group UserDefaults: \(self.appGroupId)")
             return
         }
         
@@ -47,7 +47,7 @@ class RClickConfigManager: ObservableObject {
             let data = try JSONEncoder().encode(config)
             defaults.set(data, forKey: configKey)
         } catch {
-            print("Failed to encode RClickConfig: \(error)")
+            AppLogger.core.error("Failed to encode RClickConfig: \(error)")
         }
     }
     

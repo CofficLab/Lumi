@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 import SwiftData
 import SwiftUI
 
@@ -57,7 +56,7 @@ actor CacheManager: SuperLog {
         guard let item = try? context.fetch(descriptor).first else {
             stats.missCount += 1
             if Self.verbose {
-                os_log("\(self.t)缓存未命中：\((path as NSString).lastPathComponent)")
+                AppManagerPlugin.logger.info("\(self.t)缓存未命中：\((path as NSString).lastPathComponent)")
             }
             return nil
         }
@@ -66,13 +65,13 @@ actor CacheManager: SuperLog {
         if abs(item.lastModified - currentModificationDate.timeIntervalSince1970) < 1.0 {
             stats.hitCount += 1
             if Self.verbose {
-                os_log("\(self.t)缓存命中：\(item.name)")
+                AppManagerPlugin.logger.info("\(self.t)缓存命中：\(item.name)")
             }
             return item.toDTO()
         } else {
             stats.missCount += 1
             if Self.verbose {
-                os_log("\(self.t)缓存已过期：\(item.name)，已移除")
+                AppManagerPlugin.logger.info("\(self.t)缓存已过期：\(item.name)，已移除")
             }
             context.delete(item)
             try? context.save()
@@ -112,7 +111,7 @@ actor CacheManager: SuperLog {
         try? context.save()
 
         if Self.verbose {
-            os_log("\(self.t)缓存已更新：\(app.displayName)")
+            AppManagerPlugin.logger.info("\(self.t)缓存已更新：\(app.displayName)")
         }
     }
 
@@ -133,7 +132,7 @@ actor CacheManager: SuperLog {
         if removedCount > 0 {
             try? context.save()
             if Self.verbose {
-                os_log("\(self.t)清理无效缓存：\(removedCount) 条")
+                AppManagerPlugin.logger.info("\(self.t)清理无效缓存：\(removedCount) 条")
             }
         }
     }
@@ -158,7 +157,7 @@ actor CacheManager: SuperLog {
         stats = CacheStats()
 
         if Self.verbose {
-            os_log("\(self.t)缓存已清空。之前统计：\(oldStats.hitCount) 命中，\(oldStats.missCount) 未命中")
+            AppManagerPlugin.logger.info("\(self.t)缓存已清空。之前统计：\(oldStats.hitCount) 命中，\(oldStats.missCount) 未命中")
         }
     }
 

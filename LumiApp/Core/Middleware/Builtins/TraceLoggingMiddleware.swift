@@ -1,7 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
-
 @MainActor
 struct TraceLoggingMiddleware: ConversationTurnMiddleware, SuperLog {
     nonisolated static let emoji = "🧭"
@@ -17,14 +15,14 @@ struct TraceLoggingMiddleware: ConversationTurnMiddleware, SuperLog {
     ) async {
         let start = CFAbsoluteTimeGetCurrent()
         if Self.verbose {
-            os_log("\(Self.t) trace=\(ctx.traceId.uuidString.prefix(8)) event=\(describe(event))")
+            AppLogger.core.info("\(Self.t) trace=\(ctx.traceId.uuidString.prefix(8)) event=\(describe(event))")
         }
 
         await next(event, ctx)
 
         let elapsed = CFAbsoluteTimeGetCurrent() - start
         if Self.verbose, elapsed > 0.5 {
-            os_log(.error, "\(Self.t) trace=\(ctx.traceId.uuidString.prefix(8)) 中间件耗时偏高=\(elapsed)s event=\(describe(event))")
+            AppLogger.core.error("\(Self.t) trace=\(ctx.traceId.uuidString.prefix(8)) 中间件耗时偏高=\(elapsed)s event=\(describe(event))")
         }
     }
 

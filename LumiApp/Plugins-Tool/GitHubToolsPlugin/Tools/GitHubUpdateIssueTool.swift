@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 
 /// GitHub 更新 Issue 工具
 struct GitHubUpdateIssueTool: AgentTool, SuperLog {
@@ -77,7 +76,7 @@ struct GitHubUpdateIssueTool: AgentTool, SuperLog {
         let milestone = arguments["milestone"]?.value as? Int
 
         if Self.verbose {
-            os_log("\(Self.t)✏️ 更新 Issue：\(owner)/\(repo)#\(issueNumber)")
+            GitHubToolsPlugin.logger.info("\(self.t)更新 Issue：\(owner)/\(repo)#\(issueNumber)")
         }
 
         do {
@@ -94,7 +93,7 @@ struct GitHubUpdateIssueTool: AgentTool, SuperLog {
             )
             return formatUpdatedIssue(issue)
         } catch {
-            os_log(.error, "\(Self.t)更新 Issue 失败：\(error.localizedDescription)")
+            GitHubToolsPlugin.logger.error("更新 Issue 失败：\(error.localizedDescription)")
             return "更新 Issue 失败：\(error.localizedDescription)"
         }
     }

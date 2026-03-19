@@ -1,10 +1,13 @@
 import Foundation
 import SwiftUI
-import OSLog
+import os
 import MagicKit
 
 /// Agent Native File Tree Plugin: 使用 NSOutlineView 的高性能文件树
 actor AgentNativeFileTreePlugin: SuperPlugin, SuperLog {
+    /// 插件专用 Logger
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree-native")
+
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "🌲"
@@ -26,7 +29,7 @@ actor AgentNativeFileTreePlugin: SuperPlugin, SuperLog {
 
     init() {
         if Self.verbose {
-            os_log("\(Self.t)✅ AgentNativeFileTreePlugin 初始化完成")
+            Self.logger.info("\(Self.t)✅ AgentNativeFileTreePlugin 初始化完成")
         }
     }
 
@@ -34,7 +37,7 @@ actor AgentNativeFileTreePlugin: SuperPlugin, SuperLog {
 
     @MainActor func addSidebarView() -> AnyView? {
         if Self.verbose {
-            os_log("\(Self.t)📋 addSidebarView 被调用")
+            Self.logger.info("\(Self.t)📋 addSidebarView 被调用")
         }
         return AnyView(AgentNativeFileTreeContainer())
     }

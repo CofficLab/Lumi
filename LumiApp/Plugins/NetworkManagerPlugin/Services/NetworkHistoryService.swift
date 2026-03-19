@@ -1,7 +1,6 @@
 import Foundation
 import Combine
 import MagicKit
-import OSLog
 
 struct NetworkDataPoint: Identifiable, Codable {
     var id: TimeInterval { timestamp }
@@ -160,7 +159,7 @@ class NetworkHistoryService: ObservableObject, SuperLog {
                 let data = try JSONEncoder().encode(history)
                 try data.write(to: url)
             } catch {
-                print("Failed to save network history: \(error.localizedDescription)")
+                NetworkManagerPlugin.logger.error("\(NetworkHistoryService.t)Failed to save network history: \(error.localizedDescription)")
             }
         }
     }

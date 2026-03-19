@@ -1,6 +1,5 @@
 import AppKit
 import MagicKit
-import OSLog
 import Sparkle
 
 /// 更新控制器，负责应用的自动更新功能
@@ -24,7 +23,7 @@ class UpdateController: NSObject, SuperLog {
         super.init()
         setupNotifications()
         if Self.verbose {
-            os_log("\(self.t)更新控制器已初始化")
+            AppLogger.core.info("\(self.t)更新控制器已初始化")
         }
     }
 
@@ -33,7 +32,7 @@ class UpdateController: NSObject, SuperLog {
     /// 检查更新
     func checkForUpdates() {
         if Self.verbose {
-            os_log("\(self.t)开始检查更新...")
+            AppLogger.core.info("\(self.t)开始检查更新...")
         }
         updaterController.checkForUpdates(nil)
     }

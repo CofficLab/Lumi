@@ -1,5 +1,4 @@
 import Foundation
-import OSLog
 import SwiftData
 import MagicKit
 
@@ -50,7 +49,7 @@ actor AutoTitleGenerationStore: SuperLog {
             try context.save()
         } catch {
             if Self.verbose {
-                os_log(.error, "\(Self.t)❌ 保存触发记录失败：\(error.localizedDescription)")
+                AgentAutoTitlePlugin.logger.error("\(Self.t)❌ 保存触发记录失败：\(error.localizedDescription)")
             }
         }
     }

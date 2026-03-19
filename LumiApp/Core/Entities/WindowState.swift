@@ -2,7 +2,6 @@ import Combine
 import Foundation
 import MagicKit
 import SwiftUI
-import OSLog
 
 /// 窗口状态模型
 ///
@@ -58,7 +57,7 @@ final class WindowState: ObservableObject, Identifiable, SuperLog {
         self.createdAt = Date()
 
         if Self.verbose {
-            os_log("\(Self.t)创建窗口状态: \(id.uuidString.prefix(8))")
+            AppLogger.core.info("\(Self.t)创建窗口状态: \(id.uuidString.prefix(8))")
         }
     }
 
@@ -78,7 +77,7 @@ final class WindowState: ObservableObject, Identifiable, SuperLog {
     func switchToConversation(_ conversationId: UUID?) {
         selectedConversationId = conversationId
         if Self.verbose {
-            os_log("\(Self.t)窗口 \(self.id.uuidString.prefix(8)) 切换到会话: \(conversationId?.uuidString.prefix(8) ?? "nil")")
+            AppLogger.core.info("\(Self.t)窗口 \(self.id.uuidString.prefix(8)) 切换到会话: \(conversationId?.uuidString.prefix(8) ?? "nil")")
         }
     }
 
@@ -88,7 +87,7 @@ final class WindowState: ObservableObject, Identifiable, SuperLog {
         updateTitle(from: nil)
         if Self.verbose {
             let pathString = path ?? "nil"
-            os_log("\(Self.t)窗口 \(self.id.uuidString.prefix(8)) 切换到项目: \(pathString)")
+            AppLogger.core.info("\(Self.t)窗口 \(self.id.uuidString.prefix(8)) 切换到项目: \(pathString)")
         }
     }
 
@@ -97,7 +96,7 @@ final class WindowState: ObservableObject, Identifiable, SuperLog {
         selectedMode = mode
         if Self.verbose {
             let modeString = String(describing: mode)
-            os_log("\(Self.t)窗口 \(self.id.uuidString.prefix(8)) 切换到模式: \(modeString)")
+            AppLogger.core.info("\(Self.t)窗口 \(self.id.uuidString.prefix(8)) 切换到模式: \(modeString)")
         }
     }
 
@@ -105,7 +104,7 @@ final class WindowState: ObservableObject, Identifiable, SuperLog {
     func setActive(_ active: Bool) {
         isActive = active
         if Self.verbose {
-            os_log("\(Self.t)窗口 \(self.id.uuidString.prefix(8)) 活跃状态: \(active)")
+            AppLogger.core.info("\(Self.t)窗口 \(self.id.uuidString.prefix(8)) 活跃状态: \(active)")
         }
     }
 }

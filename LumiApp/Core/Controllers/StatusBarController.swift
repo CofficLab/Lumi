@@ -1,6 +1,5 @@
 import AppKit
 import MagicKit
-import OSLog
 import SwiftUI
 
 /// 状态栏控制器
@@ -119,13 +118,13 @@ class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
         // 6. 如果插件已经加载，立即更新状态栏内容
         if pluginProvider?.isLoaded == true {
             if Self.verbose {
-                os_log("\(self.t)插件已加载，立即更新状态栏内容视图")
+                AppLogger.core.info("\(self.t)插件已加载，立即更新状态栏内容视图")
             }
             updateStatusBarContentViews()
         }
 
         if Self.verbose {
-            os_log("\(self.t)状态栏已设置")
+            AppLogger.core.info("\(self.t)状态栏已设置")
         }
     }
 
@@ -188,7 +187,7 @@ class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
         iconViewModel.contentViews = views
 
         if Self.verbose {
-            os_log("\(self.t)更新状态栏内容视图: \(views.count) 个")
+            AppLogger.core.info("\(self.t)更新状态栏内容视图: \(views.count) 个")
         }
     }
 
@@ -211,7 +210,7 @@ class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
         }
 
         if Self.verbose {
-            os_log("\(self.t)状态栏已清理")
+            AppLogger.core.info("\(self.t)状态栏已清理")
         }
     }
 
@@ -222,7 +221,7 @@ class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
     /// 当所有插件加载完成后，更新状态栏内容。
     @objc private func handlePluginsDidLoad() {
         if Self.verbose {
-            os_log("\(self.t)收到插件加载完成通知")
+            AppLogger.core.info("\(self.t)收到插件加载完成通知")
         }
         refreshStatusBarMenu()
     }
@@ -241,7 +240,7 @@ class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
         }
 
         if Self.verbose {
-            os_log("\(self.t)收到状态栏更新请求: source=\(source), isActive=\(isActive)")
+            AppLogger.core.info("\(self.t)收到状态栏更新请求: source=\(source), isActive=\(isActive)")
         }
 
         if isActive {
@@ -314,7 +313,7 @@ class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
         addGlobalEventMonitor()
 
         if Self.verbose {
-            os_log("\(self.t)显示弹窗")
+            AppLogger.core.info("\(self.t)显示弹窗")
         }
     }
 
@@ -356,7 +355,7 @@ class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
     /// - Returns: 是否允许关闭
     func popoverShouldClose(_ popover: NSPopover) -> Bool {
         if Self.verbose {
-            os_log("\(self.t)Popover 应该关闭")
+            AppLogger.core.info("\(self.t)Popover 应该关闭")
         }
         return true
     }
@@ -366,7 +365,7 @@ class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
     /// 清理全局事件监听器。
     func popoverDidClose(_ notification: Notification) {
         if Self.verbose {
-            os_log("\(self.t)Popover 已关闭")
+            AppLogger.core.info("\(self.t)Popover 已关闭")
         }
         removeGlobalEventMonitor()
     }
@@ -411,7 +410,7 @@ class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
         let isActive = !self.activeSources.isEmpty
 
         if Self.verbose {
-            os_log("\(self.t)更新图标状态: isActive=\(isActive), sources=\(self.activeSources)")
+            AppLogger.core.info("\(self.t)更新图标状态: isActive=\(isActive), sources=\(self.activeSources)")
         }
 
         // 更新 ViewModel，触发 SwiftUI 刷新

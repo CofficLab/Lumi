@@ -1,7 +1,5 @@
 import Foundation
 import SwiftUI
-import OSLog
-
 /// SwiftUI 循环调试工具
 /// 用于检测和定位可能导致无限循环的 State/Binding/onChange 问题
 @MainActor
@@ -78,7 +76,7 @@ final class SwiftUILoopDebugger: ObservableObject {
 
         for (action, count) in patternCounts {
             if count >= threshold {
-                os_log("🔄 [LOOP DETECTED] '\(action)' triggered \(count) times in 1 second!")
+                AppLogger.core.info("🔄 [LOOP DETECTED] '\(action)' triggered \(count) times in 1 second!")
                 printRecentCalls()
                 return true
             }
@@ -89,10 +87,10 @@ final class SwiftUILoopDebugger: ObservableObject {
 
     /// 打印最近的调用记录
     func printRecentCalls() {
-        os_log("📋 Recent calls (last 50):")
+        AppLogger.core.info("📋 Recent calls (last 50):")
         for (index, call) in recentCalls.enumerated() {
             let time = String(format: "%.3f", call.timestamp.timeIntervalSince1970.truncatingRemainder(dividingBy: 1000))
-            os_log("  [\(index)] \(time)s - \(call.location): \(call.action)")
+            AppLogger.core.info("  [\(index)] \(time)s - \(call.location): \(call.action)")
         }
     }
 
@@ -112,10 +110,10 @@ final class SwiftUILoopDebugger: ObservableObject {
 
         // 检测循环
         if detectLoop() {
-            os_log("⚠️ Possible infinite loop detected!")
+            AppLogger.core.info("⚠️ Possible infinite loop detected!")
         }
 
-        os_log("🐛 [SwiftUI Debug] \(location) - \(action)")
+        AppLogger.core.info("🐛 [SwiftUI Debug] \(location) - \(action)")
     }
 }
 

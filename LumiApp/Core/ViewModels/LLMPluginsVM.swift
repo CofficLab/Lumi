@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 import ObjectiveC.runtime
 
 /// LLM 插件加载器
@@ -50,12 +49,12 @@ enum LLMPluginsVM: SuperLog {
         for item in discoveredTypes {
             registry.register(item.type)
             if Self.verbose {
-                os_log("\(self.t)✅ Registered LLM provider: \(item.name) (id: \(item.type.id))")
+                AppLogger.core.info("\(self.t)✅ Registered LLM provider: \(item.name) (id: \(item.type.id))")
             }
         }
 
         if Self.verbose {
-            os_log("\(self.t)🔍 LLM providers loaded: \(discoveredTypes.count)")
+            AppLogger.core.info("\(self.t)🔍 LLM providers loaded: \(discoveredTypes.count)")
         }
     }
 }

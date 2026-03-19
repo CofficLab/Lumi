@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import OSLog
 import MagicKit
 
 @MainActor
@@ -91,14 +90,14 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
 
         if Self.verbose {
             let size = pathsToClean.reduce(0 as Int64) { $0 + $1.size }
-            os_log("\(self.t)开始清理 \(pathsToClean.count) 个路径，预估 \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
+            DiskManagerPlugin.logger.info("\(self.t)开始清理 \(pathsToClean.count) 个路径，预估 \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
         }
 
         Task {
             do {
                 let freed = try await service.cleanup(paths: pathsToClean)
                 if Self.verbose {
-                    os_log("\(self.t)清理完成，释放 \(ByteCountFormatter.string(fromByteCount: freed, countStyle: .file))")
+                    DiskManagerPlugin.logger.info("\(self.t)清理完成，释放 \(ByteCountFormatter.string(fromByteCount: freed, countStyle: .file))")
                 }
                 await MainActor.run {
                     self.lastFreedSpace = freed
@@ -110,7 +109,7 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
                 self.scan()
             } catch {
                 await MainActor.run {
-                    os_log(.error, "\(self.t)清理失败：\(error.localizedDescription)")
+                    DiskManagerPlugin.logger.error("\(self.t)清理失败：\(error.localizedDescription)")
                     self.alertMessage = String(localized: "Cleanup error: \(error.localizedDescription)")
                     self.isCleaning = false
                 }

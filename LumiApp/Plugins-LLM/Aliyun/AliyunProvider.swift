@@ -1,6 +1,6 @@
 import Foundation
 import MagicKit
-import OSLog
+import os
 
 // MARK: - 阿里云供应商
 
@@ -10,6 +10,7 @@ import OSLog
 /// API 地址：https://coding.dashscope.aliyuncs.com/apps/anthropic
 /// 兼容 Anthropic API 格式
 final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.aliyun")
     nonisolated static let emoji = "🔵"
     nonisolated static let verbose = true
 
@@ -218,7 +219,7 @@ extension AliyunProvider {
         // 处理消息中的图片
         if !message.images.isEmpty {
             if Self.verbose {
-                os_log("\(Self.t)🖼️ 消息包含 \(message.images.count) 张图片，正在转换...")
+                Self.logger.info("\(self.t) 消息包含 \(message.images.count) 张图片，正在转换...")
             }
 
             var content: [[String: Any]] = []
@@ -235,7 +236,7 @@ extension AliyunProvider {
             for (index, image) in message.images.enumerated() {
                 let base64Data = image.data.base64EncodedString()
                 if Self.verbose {
-                    os_log("\(Self.t)  图片 \(index + 1): \(image.mimeType), base64 长度：\(base64Data.count)")
+                    Self.logger.info("\(self.t) 图片 \(index + 1): \(image.mimeType), base64 长度：\(base64Data.count)")
                 }
                 content.append([
                     "type": "image",
@@ -248,7 +249,7 @@ extension AliyunProvider {
             }
 
             if Self.verbose {
-                os_log("\(Self.t)✅ 已将 \(message.images.count) 张图片转换为 API 格式")
+                Self.logger.info("\(self.t) 已将 \(message.images.count) 张图片转换为 API 格式")
             }
 
             return [

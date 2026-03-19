@@ -1,8 +1,12 @@
 import MagicKit
 import SwiftUI
+import os
 
 /// Agent 输入插件 - 负责显示输入区域（编辑器、工具栏等）
 actor AgentInputPlugin: SuperPlugin {
+    /// 插件专用 Logger
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.input")
+
     nonisolated static let emoji = "✏️"
     nonisolated static let verbose = false
 

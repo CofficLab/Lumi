@@ -1,7 +1,7 @@
 import Foundation
 import MagicKit
-import OSLog
 import Combine
+import os
 
 /// MLX 本地模型 Provider
 ///
@@ -16,6 +16,7 @@ import Combine
 /// - 支持图片输入（VLM 模型）
 @available(macOS 14.0, *)
 public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLog, @unchecked Sendable {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.mlx")
     nonisolated public static let emoji = "💻"
     nonisolated static let verbose = true
     public static var logEmoji: String { emoji }
@@ -87,7 +88,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
 
     public init() {
         if Self.verbose {
-            os_log("\(self.t)✅ MLX Provider 已初始化")
+            Self.logger.info("\(self.t) MLX Provider 已初始化")
         }
     }
 
@@ -124,7 +125,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
 
         if isModelDownloaded(id: id) {
             if Self.verbose {
-                os_log("\(self.t)✅ 模型已下载：\(id)")
+                Self.logger.info("\(self.t) 模型已下载：\(id)")
             }
             return
         }
@@ -133,7 +134,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
 
         if downloadManager.status == .completed {
             if Self.verbose {
-                os_log("\(self.t)✅ 模型下载完成：\(id)")
+                Self.logger.info("\(self.t) 模型下载完成：\(id)")
             }
         } else if case .failed(let error) = downloadManager.status {
             throw MLXError.downloadFailed(error)
@@ -171,7 +172,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
         currentModelId = id
 
         if Self.verbose {
-            os_log("\(self.t)✅ 模型已加载：\(id)")
+            Self.logger.info("\(self.t) 模型已加载：\(id)")
         }
     }
 
@@ -180,7 +181,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
         await MainActor.run { self.inferenceService?.unloadModel() }
         currentModelId = nil
         if Self.verbose {
-            os_log("\(self.t)✅ 模型已卸载")
+            Self.logger.info("\(self.t) 模型已卸载")
         }
     }
 
@@ -338,7 +339,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
     public func deleteModel(id: String) throws {
         try modelManager?.deleteModel(id: id)
         if Self.verbose {
-            os_log("\(self.t)✅ 模型已删除：\(id)")
+            Self.logger.info("\(self.t) 模型已删除：\(id)")
         }
     }
 
@@ -361,7 +362,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
     public func clearCache() throws {
         try modelManager?.clearAllCache()
         if Self.verbose {
-            os_log("\(self.t)✅ 缓存已清空")
+            Self.logger.info("\(self.t) 缓存已清空")
         }
     }
 

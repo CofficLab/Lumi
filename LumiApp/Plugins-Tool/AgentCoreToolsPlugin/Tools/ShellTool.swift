@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 
 /// Shell 命令执行工具
 ///
@@ -47,14 +46,14 @@ struct ShellTool: AgentTool, SuperLog {
 
         let riskLevel = CommandRiskEvaluator.evaluate(command: command)
         if Self.verbose {
-            os_log("\(Self.t)👮 \(riskLevel.displayName) \n \(command)")
+            AgentCoreToolsPlugin.logger.info("\(self.t)\(riskLevel.displayName) \n \(command)")
         }
 
         let shellService = ShellService.shared
         do {
             return try await shellService.execute(command)
         } catch {
-            os_log("Shell execution failed: %{public}@", error.localizedDescription)
+            AgentCoreToolsPlugin.logger.error("\(self.t)Shell execution failed: \(error.localizedDescription)")
             throw ShellToolError.executionFailed(underlying: error)
         }
     }

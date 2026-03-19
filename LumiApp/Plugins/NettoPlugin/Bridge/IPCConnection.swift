@@ -5,7 +5,7 @@ Adapted for Lumi NettoPlugin
 */
 
 import Foundation
-import OSLog
+import os
 import Network
 import NetworkExtension
 
@@ -126,9 +126,7 @@ class IPCConnection: NSObject, @unchecked Sendable {
     }
     
     func log(_ message: String) {
-        // os_log("🧩 IPC.providerSay")
         guard let connection = currentConnection else {
-            // os_log("🧩 Cannot prompt user because the app isn't registered")
             return
         }
         

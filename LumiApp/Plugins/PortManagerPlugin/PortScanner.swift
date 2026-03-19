@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import OSLog
 import MagicKit
 
 private final class LockedDataBuffer: @unchecked Sendable {
@@ -76,7 +75,7 @@ final class PortScanner: Sendable, SuperLog {
                     }
                 } catch {
                     if Self.verbose {
-                        os_log(.error, "\(Self.t)Failed to scan ports: \(error.localizedDescription)")
+                        PortManagerPlugin.logger.error("Failed to scan ports: \(error.localizedDescription)")
                     }
                     continuation.resume(returning: [])
                 }
@@ -134,7 +133,7 @@ final class PortScanner: Sendable, SuperLog {
                     continuation.resume(returning: ())
                 } catch {
                     if Self.verbose {
-                        os_log(.error, "\(Self.t)Failed to kill process \(pid): \(error.localizedDescription)")
+                        PortManagerPlugin.logger.error("Failed to kill process \(pid): \(error.localizedDescription)")
                     }
                     continuation.resume(throwing: error)
                 }

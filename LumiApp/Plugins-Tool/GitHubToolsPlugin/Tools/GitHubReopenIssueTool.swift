@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 
 /// GitHub 重新打开 Issue 工具
 struct GitHubReopenIssueTool: AgentTool, SuperLog {
@@ -43,7 +42,7 @@ struct GitHubReopenIssueTool: AgentTool, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)🔓 重新打开 Issue：\(owner)/\(repo)#\(issueNumber)")
+            GitHubToolsPlugin.logger.info("\(self.t)重新打开 Issue：\(owner)/\(repo)#\(issueNumber)")
         }
 
         do {
@@ -54,7 +53,7 @@ struct GitHubReopenIssueTool: AgentTool, SuperLog {
             )
             return formatReopenedIssue(issue)
         } catch {
-            os_log(.error, "\(Self.t)重新打开 Issue 失败：\(error.localizedDescription)")
+            GitHubToolsPlugin.logger.error("重新打开 Issue 失败：\(error.localizedDescription)")
             return "重新打开 Issue 失败：\(error.localizedDescription)"
         }
     }

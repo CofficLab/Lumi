@@ -1,7 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
-
 /// 消息发送事件
 /// 用于向外部报告队列处理状态
 @MainActor
@@ -70,7 +68,7 @@ final class MessageSenderVM: ObservableObject, SuperLog {
         syncCurrentConversationState()
 
         if Self.verbose {
-            os_log("\(Self.t)🔄 [\(conversationId.uuidString)] 切换会话，队列长度：\(self.pendingMessages.count)")
+            AppLogger.core.info("\(Self.t)🔄 [\(conversationId.uuidString)] 切换会话，队列长度：\(self.pendingMessages.count)")
         }
 
         return pendingMessages.count
@@ -83,7 +81,7 @@ final class MessageSenderVM: ObservableObject, SuperLog {
         syncCurrentConversationState()
 
         if Self.verbose {
-            os_log("\(Self.t)🗑️ [\(conversationId.uuidString)] 已清空发送队列")
+            AppLogger.core.info("\(Self.t)🗑️ [\(conversationId.uuidString)] 已清空发送队列")
         }
     }
 
@@ -103,7 +101,7 @@ final class MessageSenderVM: ObservableObject, SuperLog {
         }
 
         guard let conversationId = currentConversationId else {
-            os_log(.error, "\(Self.t)❌ 当前没有活动对话，请先调用 switchToConversation")
+            AppLogger.core.error("\(Self.t)❌ 当前没有活动对话，请先调用 switchToConversation")
             return
         }
 
@@ -121,7 +119,7 @@ final class MessageSenderVM: ObservableObject, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)📝 [\(conversationId.uuidString.prefix(8))] 消息入队，长度：\(self.pendingMessagesByConversation[conversationId]?.count ?? 0)")
+            AppLogger.core.info("\(Self.t)📝 [\(conversationId.uuidString.prefix(8))] 消息入队，长度：\(self.pendingMessagesByConversation[conversationId]?.count ?? 0)")
         }
 
         startOrContinueProcessing(for: conversationId)
@@ -296,7 +294,7 @@ final class MessageSenderVM: ObservableObject, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)🗑️ 已删除会话 [\(conversationId.uuidString.prefix(8))] 的发送队列")
+            AppLogger.core.info("\(Self.t)🗑️ 已删除会话 [\(conversationId.uuidString.prefix(8))] 的发送队列")
         }
     }
 

@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import OSLog
 import MagicKit
 
 @MainActor
@@ -50,7 +49,7 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
     
     func refreshImages() async {
         if Self.verbose {
-            os_log("\(self.t)刷新镜像列表")
+            DockerManagerPlugin.logger.info("\(self.t)刷新镜像列表")
         }
         isLoading = true
         errorMessage = nil
@@ -60,10 +59,10 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
             self.images = fetched
             filterAndSortImages()
             if Self.verbose {
-                os_log("\(self.t)镜像列表刷新成功: \(fetched.count) 个镜像")
+                DockerManagerPlugin.logger.info("\(self.t)镜像列表刷新成功: \(fetched.count) 个镜像")
             }
         } catch {
-            os_log(.error, "\(self.t)刷新镜像列表失败: \(error.localizedDescription)")
+            DockerManagerPlugin.logger.error("\(self.t)刷新镜像列表失败: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
         }
 
@@ -72,7 +71,7 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
 
     func deleteImage(_ image: DockerImage, force: Bool = false) async {
         if Self.verbose {
-            os_log("\(self.t)删除镜像: \(image.Repository)")
+            DockerManagerPlugin.logger.info("\(self.t)删除镜像: \(image.Repository)")
         }
         do {
             try await service.removeImage(image.imageID, force: force)
@@ -86,17 +85,17 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
                 selectedImageDetail = nil
             }
             if Self.verbose {
-                os_log("\(self.t)镜像删除成功")
+                DockerManagerPlugin.logger.info("\(self.t)镜像删除成功")
             }
         } catch {
-            os_log(.error, "\(self.t)删除镜像失败: \(error.localizedDescription)")
+            DockerManagerPlugin.logger.error("\(self.t)删除镜像失败: \(error.localizedDescription)")
             errorMessage = "删除失败: \(error.localizedDescription)"
         }
     }
 
     func pullImage(_ name: String) async {
         if Self.verbose {
-            os_log("\(self.t)拉取镜像: \(name)")
+            DockerManagerPlugin.logger.info("\(self.t)拉取镜像: \(name)")
         }
         isLoading = true
         errorMessage = nil
@@ -104,7 +103,7 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
             _ = try await service.pullImage(name)
             await refreshImages()
         } catch {
-            os_log(.error, "\(self.t)拉取镜像失败: \(error.localizedDescription)")
+            DockerManagerPlugin.logger.error("\(self.t)拉取镜像失败: \(error.localizedDescription)")
             errorMessage = "拉取失败: \(error.localizedDescription)"
         }
         isLoading = false
@@ -115,7 +114,7 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
         scanResult = nil // Clear previous scan
 
         if Self.verbose {
-            os_log("\(self.t)选中镜像: \(image.Repository)")
+            DockerManagerPlugin.logger.info("\(self.t)选中镜像: \(image.Repository)")
         }
 
         // Fetch details in parallel
@@ -127,7 +126,7 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
             self.selectedImageDetail = d
             self.selectedImageHistory = h
         } catch {
-            os_log(.error, "\(self.t)加载镜像详情失败: \(error.localizedDescription)")
+            DockerManagerPlugin.logger.error("\(self.t)加载镜像详情失败: \(error.localizedDescription)")
         }
     }
     
