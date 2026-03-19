@@ -1,11 +1,8 @@
 import Combine
 import Foundation
-import MagicKit
 
 @MainActor
-final class ChatTimelineViewModel: ObservableObject, SuperLog {
-    nonisolated static let emoji = "🧭"
-    nonisolated static let verbose = false
+final class ChatTimelineViewModel: ObservableObject {
     nonisolated static let pageSize: Int = 10
 
     @Published private(set) var state = ConversationRenderState()
@@ -13,9 +10,6 @@ final class ChatTimelineViewModel: ObservableObject, SuperLog {
     private let agentProvider: AgentVM
     private let conversationVM: ConversationVM
     private var cancellables = Set<AnyCancellable>()
-    private let metricUpdateEpsilon: CGFloat = 1
-    private let minMetricUpdateInterval: TimeInterval = 0.05
-    private var lastMetricUpdateAt: Date = .distantPast
 
     init(agentProvider: AgentVM, conversationVM: ConversationVM) {
         self.agentProvider = agentProvider
@@ -39,7 +33,6 @@ final class ChatTimelineViewModel: ObservableObject, SuperLog {
     var hasMoreMessages: Bool { state.hasMoreMessages }
     var isLoadingMore: Bool { state.isLoadingMore }
     var totalMessageCount: Int { state.totalMessageCount }
-    var isNearBottom: Bool { state.isNearBottom }
     var shouldAutoFollow: Bool { state.shouldAutoFollow }
 
     func toolOutputs(for message: ChatMessage) -> [ChatMessage] {
@@ -200,46 +193,6 @@ final class ChatTimelineViewModel: ObservableObject, SuperLog {
         state.shouldAutoFollow = false
     }
 
-    func updateBottomMetrics(contentBottomY: CGFloat? = nil, viewportBottomY: CGFloat? = nil) {
-        let now = Date()
-        if now.timeIntervalSince(lastMetricUpdateAt) < minMetricUpdateInterval {
-            return
-        }
-
-        var didChangeMetric = false
-
-        if let contentBottomY {
-            if abs(contentBottomY - state.contentBottomY) > metricUpdateEpsilon {
-                state.contentBottomY = contentBottomY
-                didChangeMetric = true
-            }
-        }
-        if let viewportBottomY {
-            if abs(viewportBottomY - state.viewportBottomY) > metricUpdateEpsilon {
-                state.viewportBottomY = viewportBottomY
-                didChangeMetric = true
-            }
-        }
-
-        guard didChangeMetric else { return }
-        lastMetricUpdateAt = now
-
-        let distanceToBottom = state.contentBottomY - state.viewportBottomY
-        let nearBottom = distanceToBottom <= 120
-
-        if state.isNearBottom != nearBottom {
-            state.isNearBottom = nearBottom
-        }
-
-        if nearBottom {
-            if !state.shouldAutoFollow {
-                state.shouldAutoFollow = true
-            }
-        } else if state.shouldAutoFollow {
-            state.shouldAutoFollow = false
-        }
-    }
-
     private func setupBindings() {
         conversationVM.$selectedConversationId
             .removeDuplicates()
@@ -262,7 +215,6 @@ final class ChatTimelineViewModel: ObservableObject, SuperLog {
         state.selectedConversationId = conversationId
         state.hasPerformedInitialScroll = false
         state.shouldAutoFollow = true
-        state.isNearBottom = true
         state.toolOutputsByToolCallID = [:]
         state.loadedToolCallIDs = []
         state.loadingToolCallIDs = []

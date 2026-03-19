@@ -1,9 +1,7 @@
-import MagicKit
 import SwiftUI
 
 /// 消息列表视图组件
-struct MessageListView: View, SuperLog {
-    nonisolated static let emoji = "📜"
+struct MessageListView: View {
     nonisolated static let defaultHistoryWindowLimit = 80
     nonisolated static let historyWindowStep = 40
 
@@ -18,9 +16,6 @@ struct MessageListView: View, SuperLog {
     @State private var shouldPinLatestUserMessageToTop = false
     @State private var keepLatestUserMessageAtTop = false
     @State private var scrollViewportHeight: CGFloat = 0
-    @State private var lastScrollOffsetY: CGFloat = 0
-    @State private var isActivelyScrolling: Bool = false
-    @State private var scrollIdleWorkItem: DispatchWorkItem?
     private struct DisplayRow: Identifiable {
         let id: UUID
         let message: ChatMessage
@@ -84,52 +79,49 @@ extension MessageListView {
         hiddenLoadedHistoryCount: Int,
         focusSpacerHeight: CGFloat
     ) -> some View {
-        return ScrollView {
-            LazyVStack(alignment: .leading, spacing: 12) {
-                GeometryReader { geo in
-                    Color.clear
-                        .preference(
-                            key: MessageListScrollOffsetPreferenceKey.self,
-                            value: geo.frame(in: .named("message_list_scroll_space")).minY
-                        )
-                }
-                .frame(height: 0)
-
-                if hiddenLoadedHistoryCount > 0 {
-                    showEarlierLoadedButton(hiddenCount: hiddenLoadedHistoryCount)
-                }
-
-                if timelineViewModel.hasMoreMessages {
-                    loadMoreButton
-                }
-
-                ForEach(displayRows) { row in
-                    ChatBubble(
-                        message: row.message,
-                        isLastMessage: row.id == lastMessageID,
-                        relatedToolOutputs: row.relatedToolOutputs,
-                        isStreaming: false
-                    )
-                }
-
-                Color.clear
-                    .frame(height: 1)
-                    .id(bottomAnchorId)
-
-                if focusSpacerHeight > 0 {
-                    Color.clear
-                        .frame(height: focusSpacerHeight)
-                }
+        return List {
+            if hiddenLoadedHistoryCount > 0 {
+                showEarlierLoadedButton(hiddenCount: hiddenLoadedHistoryCount)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+                    .listRowSeparator(.hidden)
             }
-            .padding(.horizontal)
+
+            if timelineViewModel.hasMoreMessages {
+                loadMoreButton
+                    .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+                    .listRowSeparator(.hidden)
+            }
+
+            ForEach(displayRows) { row in
+                ChatBubble(
+                    message: row.message,
+                    isLastMessage: row.id == lastMessageID,
+                    relatedToolOutputs: row.relatedToolOutputs,
+                    isStreaming: false
+                )
+                .id(row.id)
+                .padding(.horizontal)
+                .padding(.vertical, 4)
+                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                .listRowSeparator(.hidden)
+            }
+
+            Color.clear
+                .frame(height: 1)
+                .id(bottomAnchorId)
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+
+            if focusSpacerHeight > 0 {
+                Color.clear
+                    .frame(height: focusSpacerHeight)
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
+            }
         }
+        .listStyle(.plain)
         .environment(\.preferOuterScroll, true)
-        .environment(\.chatListIsActivelyScrolling, isActivelyScrolling)
         .padding(.vertical)
-        .coordinateSpace(name: "message_list_scroll_space")
-        .onPreferenceChange(MessageListScrollOffsetPreferenceKey.self) { newOffset in
-            handleScrollOffsetChanged(newOffset)
-        }
         .background(
             GeometryReader { geometry in
                 Color.clear
@@ -257,25 +249,6 @@ extension MessageListView {
         }
     }
 
-    private func handleScrollOffsetChanged(_ newOffset: CGFloat) {
-        let delta = newOffset - lastScrollOffsetY
-
-        if abs(delta) >= 1 {
-            if !isActivelyScrolling {
-                isActivelyScrolling = true
-            }
-
-            scrollIdleWorkItem?.cancel()
-            let work = DispatchWorkItem {
-                isActivelyScrolling = false
-            }
-            scrollIdleWorkItem = work
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18, execute: work)
-        }
-
-        lastScrollOffsetY = newOffset
-    }
-
     private func latestVisibleUserMessageId() -> UUID? {
         windowedHistoryRows(from: timelineViewModel.persistedMessages)
             .last(where: { $0.role == .user })?
@@ -328,14 +301,6 @@ extension MessageListView {
         }
 
         return nil
-    }
-}
-
-private struct MessageListScrollOffsetPreferenceKey: PreferenceKey {
-    static let defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
     }
 }
 

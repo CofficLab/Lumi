@@ -1,5 +1,4 @@
 import Foundation
-import CoreGraphics
 
 /// 聊天时间线渲染态（仅 UI 层，按会话隔离，不落库）。
 struct ConversationRenderState {
@@ -18,9 +17,6 @@ struct ConversationRenderState {
     var loadedToolCallIDs = Set<String>()
     var loadingToolCallIDs = Set<String>()
 
-    var isNearBottom: Bool = true
     var shouldAutoFollow: Bool = true
-    var contentBottomY: CGFloat = 0
-    var viewportBottomY: CGFloat = 0
     var hasPerformedInitialScroll: Bool = false
 }

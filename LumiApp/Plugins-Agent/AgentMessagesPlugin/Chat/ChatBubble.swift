@@ -1,13 +1,9 @@
-import MagicKit
 import SwiftUI
 
 // MARK: - Chat Bubble
 
 /// 聊天气泡组件，用于显示用户消息、助手回复和工具输出
-struct ChatBubble: View, SuperLog {
-    /// 日志标识 emoji
-    nonisolated static let emoji = "🫧"
-
+struct ChatBubble: View {
     /// 消息对象
     let message: ChatMessage
     /// 是否是最后一条消息
@@ -17,11 +13,7 @@ struct ChatBubble: View, SuperLog {
     /// 是否为当前正在流式生成的 assistant 消息
     let isStreaming: Bool
 
-    @ObservedObject private var expansionState = MessageExpansionState.shared
     @State private var showRawMessage: Bool = false
-    @State private var isHovered: Bool = false
-    @State private var isToolbarHovered: Bool = false
-    @State private var isToolbarVisible: Bool = false
 
     /// 初始化
     /// - Parameters:
@@ -38,20 +30,6 @@ struct ChatBubble: View, SuperLog {
         self.isLastMessage = isLastMessage
         self.relatedToolOutputs = relatedToolOutputs
         self.isStreaming = isStreaming
-    }
-
-    // MARK: - Computed Properties
-
-    /// 判断是否是长消息
-    private var isLongMessage: Bool {
-        let charCount = message.content.count
-        let lineCount = message.content.components(separatedBy: "\n").count
-        return charCount > 1000 || lineCount > 50
-    }
-
-    /// 当前消息的展开状态
-    private var isExpanded: Bool {
-        expansionState.isExpanded(id: message.id)
     }
 
     var body: some View {
@@ -114,9 +92,6 @@ struct ChatBubble: View, SuperLog {
             }
 
             Spacer()
-        }
-        .onHover { hovering in
-            isHovered = hovering
         }
     }
 

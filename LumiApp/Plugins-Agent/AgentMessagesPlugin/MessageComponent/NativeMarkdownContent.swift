@@ -4,7 +4,6 @@ import Markdown
 /// 原生 Markdown 渲染视图（自研块级解析 + 轻量行内样式）
 struct NativeMarkdownContent: View {
     let content: String
-    let chatListIsActivelyScrolling: Bool
 
     @State private var blocks: [NativeMarkdownBlock] = []
 
@@ -63,7 +62,7 @@ struct NativeMarkdownContent: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     Text(verbatim: code)
                         .font(.system(.body, design: .monospaced))
-                        .chatTextSelection(active: !chatListIsActivelyScrolling)
+                        .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(10)
                 }
@@ -98,10 +97,10 @@ struct NativeMarkdownContent: View {
             )
         ) {
             return Text(attributed)
-                .chatTextSelection(active: !chatListIsActivelyScrolling)
+                .textSelection(.enabled)
         }
         return Text(verbatim: text)
-            .chatTextSelection(active: !chatListIsActivelyScrolling)
+            .textSelection(.enabled)
     }
 
     private func headingFont(level: Int) -> Font {

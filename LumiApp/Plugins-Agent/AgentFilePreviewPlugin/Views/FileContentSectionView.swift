@@ -40,8 +40,7 @@ struct FileContentSectionView: View {
     private var markdownContentView: some View {
         ScrollView {
             NativeMarkdownContent(
-                content: content,
-                chatListIsActivelyScrolling: false
+                content: content
             )
                 .font(.system(size: 10))
                 .frame(maxWidth: .infinity, alignment: .leading)

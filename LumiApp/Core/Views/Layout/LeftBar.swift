@@ -223,7 +223,7 @@ private struct ModeSwitcherView: View, SuperLog {
     @EnvironmentObject var app: GlobalVM
     @Environment(\.windowState) var windowState
 
-    @State private var mode: AppMode = .app
+    @State private var mode: AppMode = .agent
 
     var body: some View {
         Picker("模式", selection: $mode) {

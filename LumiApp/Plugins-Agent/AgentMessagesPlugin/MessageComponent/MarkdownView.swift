@@ -15,40 +15,14 @@ extension EnvironmentValues {
     }
 }
 
-extension View {
-    @ViewBuilder
-    func chatTextSelection(active: Bool) -> some View {
-        if active {
-            self.textSelection(.enabled)
-        } else {
-            self.textSelection(.disabled)
-        }
-    }
-}
-
-private struct ChatListIsActivelyScrollingKey: EnvironmentKey {
-    static let defaultValue = false
-}
-
-extension EnvironmentValues {
-    /// 为 true 时表示外层消息列表正在活跃滚动，可暂时关闭重型交互（例如文本选择）以降低卡顿。
-    var chatListIsActivelyScrolling: Bool {
-        get { self[ChatListIsActivelyScrollingKey.self] }
-        set { self[ChatListIsActivelyScrollingKey.self] = newValue }
-    }
-}
-
 /// Markdown 消息视图，负责渲染聊天消息内容
 /// 使用内置原生渲染（基于 swift-markdown AST）
-struct MarkdownView: View, SuperLog {
-    nonisolated static let emoji = "📝"
-
+struct MarkdownView: View {
     let message: ChatMessage
     let showRawMessage: Bool
     let isCollapsible: Bool
     let isExpanded: Bool
     let onToggleExpand: () -> Void
-    @Environment(\.chatListIsActivelyScrolling) private var chatListIsActivelyScrolling
     private var renderMetadata: MessageRenderMetadata {
         MessageRenderCache.shared.metadata(for: message)
     }
@@ -92,8 +66,7 @@ struct MarkdownView: View, SuperLog {
 
     private var nativeMarkdownContent: some View {
         NativeMarkdownContent(
-            content: message.content,
-            chatListIsActivelyScrolling: chatListIsActivelyScrolling
+            content: message.content
         )
         .id("native-\(message.id.uuidString)-\(renderMetadata.contentHash)")
     }
