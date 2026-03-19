@@ -5,7 +5,6 @@ import SwiftUI
 struct ChatMessagesView: View {
     /// 会话管理 ViewModel
     @EnvironmentObject var ConversationVM: ConversationVM
-    @EnvironmentObject var errorStateViewModel: ErrorStateVM
 
     var body: some View {
         Group {
@@ -13,7 +12,6 @@ struct ChatMessagesView: View {
                 MessageListView()
                     .overlay(alignment: .top) {
                         VStack(spacing: 8) {
-                            ErrorRecoveryBanner()
                             DepthWarningBanner()
                             PermissionRequestView()
                         }

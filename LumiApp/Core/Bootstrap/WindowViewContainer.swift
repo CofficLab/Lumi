@@ -24,7 +24,6 @@ final class WindowViewContainer: ObservableObject {
 
     let depthWarningViewModel: DepthWarningVM
     let processingStateViewModel: ProcessingStateVM
-    let errorStateViewModel: ErrorStateVM
     let permissionRequestViewModel: PermissionRequestVM
     let thinkingStateViewModel: ThinkingStateVM
 
@@ -37,7 +36,6 @@ final class WindowViewContainer: ObservableObject {
 
         self.depthWarningViewModel = DepthWarningVM()
         self.processingStateViewModel = ProcessingStateVM()
-        self.errorStateViewModel = ErrorStateVM()
         self.permissionRequestViewModel = PermissionRequestVM()
         self.thinkingStateViewModel = ThinkingStateVM()
 
@@ -74,7 +72,6 @@ final class WindowViewContainer: ObservableObject {
             slashCommandService: services.slashCommandService,
             depthWarningViewModel: depthWarningViewModel,
             processingStateViewModel: processingStateViewModel,
-            errorStateViewModel: errorStateViewModel,
             permissionRequestViewModel: permissionRequestViewModel,
             thinkingStateViewModel: thinkingStateViewModel
         )

@@ -41,7 +41,6 @@ final class ConversationTurnCoordinator: SuperLog {
     struct UIActions {
         let setPendingPermissionRequest: (PermissionRequest?, UUID) -> Void
         let setDepthWarning: (DepthWarning?, UUID) -> Void
-        let setErrorMessage: (String?, UUID) -> Void
         let onTurnFinishedUI: (UUID) -> Void
         let onTurnFailedUI: (UUID, String) -> Void
 
@@ -180,7 +179,6 @@ final class ConversationTurnCoordinator: SuperLog {
             runtimeStore.processingConversationIds.remove(conversationId)
 
             if env.selectedConversationId() == conversationId {
-                ui.setErrorMessage(msg, conversationId)
                 ui.onTurnFailedUI(conversationId, msg)
             }
 

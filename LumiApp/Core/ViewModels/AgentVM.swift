@@ -84,8 +84,6 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     /// 处理状态 ViewModel
     let processingStateViewModel: ProcessingStateVM
 
-    /// 错误状态 ViewModel
-    let errorStateViewModel: ErrorStateVM
 
     /// 权限请求 ViewModel
     let permissionRequestViewModel: PermissionRequestVM
@@ -194,9 +192,6 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             setDepthWarning: { [weak self] warning, _ in
                 self?.setDepthWarning(warning)
             },
-            setErrorMessage: { [weak self] msg, _ in
-                self?.setErrorMessage(msg)
-            },
             onTurnFinishedUI: { [weak self] conversationId in
                 guard let self else { return }
                 self.processingStateViewModel.finish()
@@ -292,7 +287,6 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         slashCommandService: SlashCommandService,
         depthWarningViewModel: DepthWarningVM,
         processingStateViewModel: ProcessingStateVM,
-        errorStateViewModel: ErrorStateVM,
         permissionRequestViewModel: PermissionRequestVM,
         thinkingStateViewModel: ThinkingStateVM
     ) {
@@ -308,7 +302,6 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         self.slashCommandService = slashCommandService
         self.depthWarningViewModel = depthWarningViewModel
         self.processingStateViewModel = processingStateViewModel
-        self.errorStateViewModel = errorStateViewModel
         self.permissionRequestViewModel = permissionRequestViewModel
         self.thinkingStateViewModel = thinkingStateViewModel
 
@@ -537,12 +530,6 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     // MARK: - Setter 方法
 
     // MARK: - 公开 Setter 方法
-
-    /// 设置错误消息
-    func setErrorMessage(_ message: String?) {
-        errorStateViewModel.setErrorMessage(message)
-    }
-
     /// 设置是否正在处理
     func setIsProcessing(_ processing: Bool) {
         processingStateViewModel.setIsProcessing(processing)
@@ -592,7 +579,6 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         setThinkingText(runtimeStore.thinkingTextByConversation[conversationId] ?? "", for: conversationId)
         setPendingPermissionRequest(runtimeStore.pendingPermissionByConversation[conversationId] ?? nil)
         setDepthWarning(runtimeStore.depthWarningByConversation[conversationId] ?? nil)
-        setErrorMessage(runtimeStore.errorMessageByConversation[conversationId] ?? nil)
     }
 
     func runtimeState(for conversationId: UUID) -> ConversationRuntimeState {
@@ -989,7 +975,6 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         let allImages = images + attachmentImages
 
         setIsProcessing(false)
-        setErrorMessage(nil)
         if let conversationId = ConversationVM.selectedConversationId {
             runtimeStore.errorMessageByConversation[conversationId] = nil
             updateRuntimeState(for: conversationId)
