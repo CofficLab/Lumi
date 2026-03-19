@@ -223,7 +223,7 @@ private struct ModeSwitcherView: View, SuperLog {
     @EnvironmentObject var app: GlobalVM
     @Environment(\.windowState) var windowState
 
-    @State private var mode: AppMode = .app
+    @State private var mode: AppMode = .agent
 
     var body: some View {
         Picker("模式", selection: $mode) {
@@ -255,7 +255,5 @@ private extension ModeSwitcherView {
         // 同时更新窗口级别和全局级别的模式状态
         windowState?.selectedMode = mode
         app.selectedMode = mode
-
-        // 持久化由插件负责
     }
 }

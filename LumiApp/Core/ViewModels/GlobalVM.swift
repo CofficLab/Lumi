@@ -76,7 +76,7 @@ final class GlobalVM: ObservableObject {
     /// - `.agent`: Agent 模式，AI 助手对话模式
     ///
     /// 模式选择持久化由插件负责。
-    @Published var selectedMode: AppMode = .app
+    @Published var selectedMode: AppMode = .agent
 
     // MARK: - 数据状态
 
