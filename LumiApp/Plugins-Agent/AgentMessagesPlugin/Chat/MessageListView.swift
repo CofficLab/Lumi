@@ -10,8 +10,12 @@ struct MessageListView: View, SuperLog {
     nonisolated static let historyWindowStep = 40
 
     @EnvironmentObject var timelineViewModel: ChatTimelineViewModel
+    @EnvironmentObject var processingStateViewModel: ProcessingStateVM
+    @EnvironmentObject var thinkingStateViewModel: ThinkingStateVM
 
     private let bottomAnchorId = "chat_message_list_bottom_anchor"
+    private let processingStatusRowId = UUID(uuidString: "9D735D22-588A-4B50-9B14-28C358CF5136")!
+    private let thinkingStatusRowId = UUID(uuidString: "7F9E66FA-86F2-4A2A-B311-4A4EA75E1EC4")!
     @State private var historyWindowLimit = Self.defaultHistoryWindowLimit
     private struct DisplayRow: Identifiable {
         let id: UUID
@@ -23,7 +27,7 @@ struct MessageListView: View, SuperLog {
         ScrollViewReader { proxy in
             let windowedPersistedRows = windowedHistoryRows(from: timelineViewModel.persistedMessages)
             let hiddenLoadedHistoryCount = max(0, timelineViewModel.persistedMessages.count - windowedPersistedRows.count)
-            let displayRows = buildDisplayRows(from: windowedPersistedRows)
+            let displayRows = buildDisplayRows(from: windowedPersistedRows, statusRow: statusDisplayRow)
             let lastMessageID = displayRows.last?.id
 
             Group {
@@ -47,7 +51,7 @@ struct MessageListView: View, SuperLog {
             .onChange(of: timelineViewModel.selectedConversationId) { _, _ in
                 historyWindowLimit = Self.defaultHistoryWindowLimit
             }
-            .onChange(of: windowedPersistedRows.last?.id) { _, _ in
+            .onChange(of: displayRows.last?.id) { _, _ in
                 handleLastMessageChanged(proxy: proxy)
             }
             .onMessageSaved { message, conversationId in
@@ -65,7 +69,7 @@ struct MessageListView: View, SuperLog {
 extension MessageListView {
     private func messageScrollView(lastMessageID: UUID?, hiddenLoadedHistoryCount: Int) -> some View {
         let windowedPersistedRows = windowedHistoryRows(from: timelineViewModel.persistedMessages)
-        let displayRows = buildDisplayRows(from: windowedPersistedRows)
+        let displayRows = buildDisplayRows(from: windowedPersistedRows, statusRow: statusDisplayRow)
 
         return ScrollView {
             VStack(alignment: .leading, spacing: 12) {
@@ -193,14 +197,18 @@ extension MessageListView {
         }
     }
 
-    private func buildDisplayRows(from messages: [ChatMessage]) -> [DisplayRow] {
-        messages.map { message in
+    private func buildDisplayRows(from messages: [ChatMessage], statusRow: DisplayRow? = nil) -> [DisplayRow] {
+        var rows = messages.map { message in
             DisplayRow(
                 id: message.id,
                 message: message,
                 relatedToolOutputs: timelineViewModel.toolOutputs(for: message)
             )
         }
+        if let statusRow {
+            rows.append(statusRow)
+        }
+        return rows
     }
 
     private func windowedHistoryRows(from messages: [ChatMessage]) -> [ChatMessage] {
@@ -209,6 +217,32 @@ extension MessageListView {
             return messages
         }
         return Array(messages.suffix(historyWindowLimit))
+    }
+
+    private var statusDisplayRow: DisplayRow? {
+        if processingStateViewModel.hasActiveLoading {
+            let message = ChatMessage(
+                id: processingStatusRowId,
+                role: .status,
+                content: processingStateViewModel.statusText,
+                timestamp: Date(),
+                isTransientStatus: true
+            )
+            return DisplayRow(id: message.id, message: message, relatedToolOutputs: [])
+        }
+
+        if thinkingStateViewModel.isThinking {
+            let message = ChatMessage(
+                id: thinkingStatusRowId,
+                role: .status,
+                content: "思考中…",
+                timestamp: Date(),
+                isTransientStatus: true
+            )
+            return DisplayRow(id: message.id, message: message, relatedToolOutputs: [])
+        }
+
+        return nil
     }
 }
 
