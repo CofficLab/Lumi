@@ -17,7 +17,22 @@
         }
       }
     },
-    "Manage SQLite, MySQL, PostgreSQL, and Redis": {}
+    "Manage SQLite, MySQL, PostgreSQL, and Redis": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage SQLite, MySQL, PostgreSQL, and Redis"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage SQLite, MySQL, PostgreSQL, and Redis"
+          }
+        }
+      }
+    }
   },
   "version": "1.1"
 }

@@ -1,12 +1,38 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Displays detailed information of the current tab and project in a list view" : {
-
+  "sourceLanguage": "en",
+  "strings": {
+    "Displays detailed information of the current tab and project in a list view": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Displays detailed information of the current tab and project in a list view"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Displays detailed information of the current tab and project in a list view"
+          }
+        }
+      }
     },
-    "Project Info" : {
-
+    "Project Info": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Project Info"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Project Info"
+          }
+        }
+      }
     }
   },
-  "version" : "1.1"
+  "version": "1.1"
 }
