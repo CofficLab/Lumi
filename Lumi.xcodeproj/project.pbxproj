@@ -30,6 +30,7 @@
 		F5A640822F3ED7060039A761 /* _ConnectionPoolModule in Frameworks */ = {isa = PBXBuildFile; productRef = F5A640812F3ED7060039A761 /* _ConnectionPoolModule */; };
 		F5A640842F3ED7060039A761 /* _ConnectionPoolTestUtils in Frameworks */ = {isa = PBXBuildFile; productRef = F5A640832F3ED7060039A761 /* _ConnectionPoolTestUtils */; };
 		F5A640872F3ED72C0039A761 /* MySQLNIO in Frameworks */ = {isa = PBXBuildFile; productRef = F5A640862F3ED72C0039A761 /* MySQLNIO */; };
+		F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = F5BE65D02F6BB1130091C1FD /* Markdown */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -178,6 +179,7 @@
 				0B1A4F892F662D8500F15618 /* MLXOptimizers in Frameworks */,
 				0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */,
 				0B1A4F812F662D8500F15618 /* MLXFFT in Frameworks */,
+				F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */,
 				0B1A4F852F662D8500F15618 /* MLXLinalg in Frameworks */,
 				F5A640842F3ED7060039A761 /* _ConnectionPoolTestUtils in Frameworks */,
 				F5A640822F3ED7060039A761 /* _ConnectionPoolModule in Frameworks */,
@@ -317,6 +319,7 @@
 				0B1A4F862F662D8500F15618 /* MLXNN */,
 				0B1A4F882F662D8500F15618 /* MLXOptimizers */,
 				0B1A4F8A2F662D8500F15618 /* MLXRandom */,
+				F5BE65D02F6BB1130091C1FD /* Markdown */,
 			);
 			productName = "SwiftUI-Template";
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -389,6 +392,7 @@
 				0BE04A732F409A6E0028FDF4 /* XCRemoteSwiftPackageReference "swift-sdk" */,
 				0B1A4F7D2F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift" */,
 				0B1A4F922F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */,
+				F5BE65CF2F6BB1130091C1FD /* XCRemoteSwiftPackageReference "swift-markdown" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -1022,6 +1026,14 @@
 				minimumVersion = 1.9.0;
 			};
 		};
+		F5BE65CF2F6BB1130091C1FD /* XCRemoteSwiftPackageReference "swift-markdown" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/swiftlang/swift-markdown.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.7.3;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1118,6 +1130,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F5A640852F3ED72C0039A761 /* XCRemoteSwiftPackageReference "mysql-nio" */;
 			productName = MySQLNIO;
+		};
+		F5BE65D02F6BB1130091C1FD /* Markdown */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F5BE65CF2F6BB1130091C1FD /* XCRemoteSwiftPackageReference "swift-markdown" */;
+			productName = Markdown;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -45,7 +45,8 @@ extension EnvironmentValues {
 struct MarkdownView: View, SuperLog {
     nonisolated static let emoji = "📝"
     nonisolated static let verbose = true
-    static private var renderMarkdownEnabled: Bool = false
+    @AppStorage("agent.messages.markdown.renderer.mode")
+    private var rendererModeRawValue: String = MarkdownRendererMode.thirdParty.rawValue
 
     let message: ChatMessage
     let showRawMessage: Bool
@@ -60,22 +61,26 @@ struct MarkdownView: View, SuperLog {
 
     /// 最大高度（超过后折叠）
     private let maxHeight: CGFloat = 400
+    private var rendererMode: MarkdownRendererMode {
+        MarkdownRendererMode(rawValue: rendererModeRawValue) ?? .thirdParty
+    }
 
     var body: some View {
-        Group {
-            if showRawMessage {
-                rawMessageContent
-                    .applyCollapsible(isCollapsible: isCollapsible, isExpanded: isExpanded, maxHeight: maxHeight)
-            } else if !Self.renderMarkdownEnabled {
-                Text(verbatim: message.content)
-                    .font(.system(.body, design: .default))
-                    .chatTextSelection(active: !chatListIsActivelyScrolling)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .applyCollapsible(isCollapsible: isCollapsible, isExpanded: isExpanded, maxHeight: maxHeight)
-            } else {
-                markdownContent
-                    .applyCollapsible(isCollapsible: isCollapsible, isExpanded: isExpanded, maxHeight: maxHeight)
+        VStack(alignment: .leading, spacing: 6) {
+            if !showRawMessage {
+                rendererSwitch
             }
+
+            Group {
+                if showRawMessage {
+                    rawMessageContent
+                } else if rendererMode == .native {
+                    nativeMarkdownContent
+                } else {
+                    markdownContent
+                }
+            }
+            .applyCollapsible(isCollapsible: isCollapsible, isExpanded: isExpanded, maxHeight: maxHeight)
         }
         .overlay(alignment: .bottom) {
             // 折叠时显示渐变遮罩和展开按钮
@@ -127,6 +132,51 @@ struct MarkdownView: View, SuperLog {
                 messageId: message.id,
                 appeared: false
             )
+        }
+    }
+
+    private var nativeMarkdownContent: some View {
+        NativeMarkdownContent(
+            content: message.content,
+            chatListIsActivelyScrolling: chatListIsActivelyScrolling
+        )
+        .id("native-\(message.id.uuidString)-\(renderMetadata.contentHash)")
+    }
+
+    private var rendererSwitch: some View {
+        HStack {
+            Spacer()
+            Menu {
+                ForEach(MarkdownRendererMode.allCases) { mode in
+                    Button {
+                        rendererModeRawValue = mode.rawValue
+                    } label: {
+                        Label(mode.label, systemImage: rendererMode == mode ? "checkmark" : "")
+                    }
+                }
+            } label: {
+                Label("渲染: \(rendererMode.label)", systemImage: "switch.2")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            .menuStyle(.borderlessButton)
+            .buttonStyle(.plain)
+        }
+    }
+}
+
+private enum MarkdownRendererMode: String, CaseIterable, Identifiable {
+    case thirdParty = "third_party"
+    case native = "native"
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .thirdParty:
+            return "MarkdownUI"
+        case .native:
+            return "原生"
         }
     }
 }
