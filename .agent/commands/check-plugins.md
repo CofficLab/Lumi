@@ -70,9 +70,7 @@
 
 ### 8. 检查国际化
 
-- [ ] `displayName` 和 `description` 是否使用 `String(localized:)` 
-- [ ] 检查 `LumiApp/Core/Localizable.xcstrings` 中是否有对应的本地化条目
-- [ ] 检查是否有硬编码的中英文字符串
+按照 [插件国际化规范](../rules/plugin-i18n.mdc) 的要求检查文档，修复不规范的地方。
 
 ### 9. 检查 Preview 预览
 
