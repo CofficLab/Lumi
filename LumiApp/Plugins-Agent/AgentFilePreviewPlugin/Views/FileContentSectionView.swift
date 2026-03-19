@@ -1,6 +1,5 @@
 import SwiftUI
 import MagicKit
-import MarkdownUI
 
 /// 文件内容渲染视图
 struct FileContentSectionView: View {
@@ -40,10 +39,10 @@ struct FileContentSectionView: View {
     /// Markdown 内容视图
     private var markdownContentView: some View {
         ScrollView {
-            Markdown(content)
-                .textSelection(.enabled)
+            NativeMarkdownContent(
+                content: content
+            )
                 .font(.system(size: 10))
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .scrollIndicators(.hidden)

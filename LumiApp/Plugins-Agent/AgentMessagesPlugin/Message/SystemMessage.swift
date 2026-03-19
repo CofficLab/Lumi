@@ -1,18 +1,12 @@
 import MagicKit
-import OSLog
 import SwiftUI
 
 // MARK: - System Message
 //
 /// 负责完整渲染一条系统消息（包含头部与正文）
-struct SystemMessage: View, SuperLog {
-    nonisolated static let emoji = "🛠"
-    nonisolated static let verbose = false
-
+struct SystemMessage: View {
     let message: ChatMessage
     @Binding var showRawMessage: Bool
-
-    @State private var isHovered: Bool = false
 
     @EnvironmentObject private var agentProvider: AgentVM
     @EnvironmentObject private var providerRegistry: ProviderRegistry
@@ -47,7 +41,7 @@ struct SystemMessage: View, SuperLog {
                 VStack(alignment: .leading, spacing: 4) {
                     header
 
-                    MarkdownMessageView(
+                    MarkdownView(
                         message: message,
                         showRawMessage: showRawMessage,
                         isCollapsible: false,
@@ -58,44 +52,27 @@ struct SystemMessage: View, SuperLog {
                 }
             }
         }
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHovered = hovering
-            }
-        }
     }
 
     // MARK: - Header
 
     private var header: some View {
-        HStack(alignment: .center, spacing: 8) {
-            // 系统标识
+        MessageHeaderView {
             HStack(alignment: .center, spacing: 4) {
                 Text("System")
                     .font(DesignTokens.Typography.caption1)
                     .fontWeight(.medium)
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
-
-            Spacer()
-
+        } trailing: {
             HStack(alignment: .center, spacing: 12) {
-                // 时间戳
                 Text(formatTimestamp(message.timestamp))
                     .font(DesignTokens.Typography.caption2)
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-                // 切换原始消息按钮
                 RawMessageToggleButton(showRawMessage: $showRawMessage)
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 6)
-                .fill(isHovered ? Color.primary.opacity(0.05) : Color.primary.opacity(0.02))
-        )
-        .contentShape(Rectangle())
     }
 
     private func formatTimestamp(_ date: Date) -> String {
@@ -379,4 +356,3 @@ private struct LoadingLocalModelSystemMessageView: View {
         }
     }
 }
-

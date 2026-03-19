@@ -62,26 +62,7 @@ final class ConversationVM: ObservableObject, SuperLog {
     /// @Query(filter: #Predicate<Conversation> { $0.id == viewModel.selectedConversationId })
     /// var selectedConversation: [Conversation]
     /// ```
-    ///
-    /// 存储键名：根据构建配置使用不同的键，避免调试环境和正式环境数据互相影响
-    private static let selectedConversationKey: String = {
-        #if DEBUG
-        return "Conversation_SelectedId_Debug"
-        #else
-        return "Conversation_SelectedId"
-        #endif
-    }()
-
-    /// ID 变化时会自动持久化到应用设置存储。
-    @Published public fileprivate(set) var selectedConversationId: UUID? {
-        didSet {
-            if let id = selectedConversationId {
-                AppSettingsStore.shared.set(id.uuidString, forKey: Self.selectedConversationKey)
-            } else {
-                AppSettingsStore.shared.removeObject(forKey: Self.selectedConversationKey)
-            }
-        }
-    }
+    @Published public fileprivate(set) var selectedConversationId: UUID?
 
     // MARK: - 初始化
 
@@ -100,9 +81,7 @@ final class ConversationVM: ObservableObject, SuperLog {
         self.llmService = llmService
         self.promptService = promptService
 
-        // 恢复上次选择的会话（仅从 UserDefaults 读出原始 ID）
-        restoreSelectedConversation()
-        // 启动时自愈：如果恢复出的 ID 在数据库中已不存在，则自动修正为一个「有效」对话或清空
+        // 启动时如果没有任何插件恢复会话选择，这里会自动选择一个有效会话
         selfHealSelectedConversationIfNeeded()
     }
 
@@ -187,23 +166,6 @@ final class ConversationVM: ObservableObject, SuperLog {
         }
 
         selectedConversationId = id
-    }
-
-    /// 恢复上次选择的会话
-    ///
-    /// 应用启动时从应用设置存储恢复上次选中的会话 ID。
-    /// 仅负责从本地存储中还原字符串，不做有效性校验。
-    func restoreSelectedConversation() {
-        guard let savedId = AppSettingsStore.shared.string(forKey: Self.selectedConversationKey),
-              let uuid = UUID(uuidString: savedId) else {
-            return
-        }
-
-        selectedConversationId = uuid
-
-        if Self.verbose {
-            os_log("\(Self.t)✅ [\(uuid)] 已恢复会话选择")
-        }
     }
 
     /// 启动时自愈当前选中会话

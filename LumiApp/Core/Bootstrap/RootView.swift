@@ -56,6 +56,7 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(windowContainer.errorStateViewModel)
             .environmentObject(windowContainer.permissionRequestViewModel)
             .environmentObject(windowContainer.thinkingStateViewModel)
+            .environmentObject(windowContainer.chatTimelineViewModel)
             .environmentObject(MystiqueThemeManager())
             .modelContainer(container.modelContainer)
     }
@@ -122,7 +123,6 @@ final class RootViewContainer: ObservableObject {
     let errorStateViewModel: ErrorStateVM
     let permissionRequestViewModel: PermissionRequestVM
     let thinkingStateViewModel: ThinkingStateVM
-    let titleGenerationViewModel: TitleGenerationVM
 
     // MARK: - 初始化
 
@@ -162,7 +162,6 @@ final class RootViewContainer: ObservableObject {
         self.errorStateViewModel = ErrorStateVM()
         self.permissionRequestViewModel = PermissionRequestVM()
         self.thinkingStateViewModel = ThinkingStateVM()
-        self.titleGenerationViewModel = TitleGenerationVM()
 
         // 初始化聊天历史服务（依赖 LLMService）
         let chatHistoryService = ChatHistoryService(
@@ -218,8 +217,7 @@ final class RootViewContainer: ObservableObject {
             processingStateViewModel: self.processingStateViewModel,
             errorStateViewModel: self.errorStateViewModel,
             permissionRequestViewModel: self.permissionRequestViewModel,
-            thinkingStateViewModel: self.thinkingStateViewModel,
-            titleGenerationViewModel: self.titleGenerationViewModel
+            thinkingStateViewModel: self.thinkingStateViewModel
         )
     }
 }

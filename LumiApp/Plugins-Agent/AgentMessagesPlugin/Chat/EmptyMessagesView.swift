@@ -43,6 +43,9 @@ struct EmptyMessagesView: View {
             }
             .padding(.horizontal, 40)
 
+            QuickStartActionsView(sendStrategy: .sendInCurrentConversation)
+            .padding(.horizontal, 40)
+
             // 当前对话 ID
             if let id = ConversationVM.selectedConversationId {
                 Text(id.uuidString)

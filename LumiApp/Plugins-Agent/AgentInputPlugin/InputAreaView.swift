@@ -101,6 +101,8 @@ struct InputAreaView: View, SuperLog {
             .padding(.top, 8)
             .allowsHitTesting(canChat)
             .opacity(canChat ? 1 : 0.6)
+            .accessibilityLabel("消息输入框")
+            .accessibilityHint("输入问题或命令，按 Command + 回车发送，Shift + 回车换行")
             // 添加高度变化动画
             .animation(.easeInOut(duration: 0.15), value: editorHeight)
             // 监听文本变化以触发命令建议
@@ -115,6 +117,8 @@ struct InputAreaView: View, SuperLog {
             )
             .allowsHitTesting(canChat)
             .opacity(canChat ? 1 : 0.6)
+            .accessibilityLabel("聊天工具栏")
+            .accessibilityHint("包含模式、模型、附件和发送操作")
         }
         .background(.background)
         .cornerRadius(12)
@@ -157,6 +161,8 @@ struct InputAreaView: View, SuperLog {
         .onFileDroppedToChat { fileURL in
             handleFileDrop(fileURL: fileURL)
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("输入区域")
     }
 }
 

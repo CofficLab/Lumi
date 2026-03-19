@@ -98,6 +98,9 @@ extension ChatToolbarView {
             }
             .buttonStyle(.plain)
             .help("停止生成")
+            .keyboardShortcut(.escape, modifiers: [])
+            .accessibilityLabel("停止生成")
+            .accessibilityHint("停止当前正在进行的回复")
         } else {
             // 发送按钞 - 正常状态
             Button(action: {
@@ -115,6 +118,9 @@ extension ChatToolbarView {
             .buttonStyle(.plain)
             .disabled(inputViewModel.isEmpty || !agentProvider.isProjectSelected)
             .help("发送消息")
+            .keyboardShortcut(.return, modifiers: [.command])
+            .accessibilityLabel("发送消息")
+            .accessibilityHint("发送当前输入内容，快捷键 Command + 回车")
         }
     }
 
@@ -159,6 +165,8 @@ extension ChatToolbarView {
         .menuStyle(.borderlessButton)
         .frame(width: 80)
         .help(modeHelpText)
+        .accessibilityLabel("聊天模式")
+        .accessibilityHint("切换对话模式或构建模式")
     }
 
     /// 根据当前模式返回前景色
@@ -214,6 +222,8 @@ extension ChatToolbarView {
             .cornerRadius(6)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("选择模型")
+        .accessibilityHint("打开模型选择器")
     }
 
     /// 当前显示的「供应商 + 模型」文案
@@ -249,6 +259,8 @@ extension ChatToolbarView {
         }
         .buttonStyle(.plain)
         .help("上传图片")
+        .accessibilityLabel("上传图片")
+        .accessibilityHint("选择本地图片作为附件")
     }
 
     /// Commit 按钮
@@ -281,6 +293,8 @@ extension ChatToolbarView {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityHint("填入快捷提示词")
     }
 
     /// 选择图片文件
@@ -300,4 +314,3 @@ extension ChatToolbarView {
 }
 
 // MARK: - Preview
-

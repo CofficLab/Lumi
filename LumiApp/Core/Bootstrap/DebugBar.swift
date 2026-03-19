@@ -52,12 +52,12 @@ struct PreviewSize: Identifiable, Equatable {
 
     /// 保存用户选择的预设尺寸
     static func save(_ preset: PreviewSize) {
-        AppSettingsStore.shared.set(preset.name, forKey: userDefaultsKey)
+        PluginStateStore.shared.set(preset.name, forKey: userDefaultsKey)
     }
 
     /// 加载用户选择的预设尺寸
     static func load() -> PreviewSize {
-        let savedName = AppSettingsStore.shared.string(forKey: userDefaultsKey)
+        let savedName = PluginStateStore.shared.string(forKey: userDefaultsKey)
         return allCases.first { $0.name == savedName } ?? `default`
     }
 }

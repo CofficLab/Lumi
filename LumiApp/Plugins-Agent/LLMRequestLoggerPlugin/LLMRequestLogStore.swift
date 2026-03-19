@@ -13,7 +13,8 @@ final class LLMRequestLogStore: @unchecked Sendable, LLMRequestLogging {
             LLMRequestLog.self
         ])
 
-        let dbDir = AppConfig.getPluginDBFolderURL(pluginName: "LLMRequestLoggerPlugin")
+        let dbDir = AppConfig.getDBFolderURL().appendingPathComponent("LLMRequestLoggerPlugin", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dbDir, withIntermediateDirectories: true)
         let dbURL = dbDir.appendingPathComponent("LLMRequestLog.sqlite")
 
         let config = ModelConfiguration(
@@ -77,4 +78,3 @@ final class LLMRequestLogStore: @unchecked Sendable, LLMRequestLogging {
         }
     }
 }
-

@@ -1,17 +1,11 @@
 import SwiftUI
-import OSLog
 import MagicKit
 
 // MARK: - Heartbeat Indicator
 
 /// 心跳动画指示器
 /// 在处理状态时显示绿色脉冲圆点，提供视觉反馈
-struct HeartbeatIndicator: View, SuperLog {
-    /// 日志标识 emoji
-    nonisolated static let emoji = "💓"
-    /// 是否启用详细日志
-    nonisolated static let verbose = false
-
+struct HeartbeatIndicator: View {
     /// 智能体提供者
     @EnvironmentObject var agentProvider: AgentVM
     /// 处理状态 ViewModel

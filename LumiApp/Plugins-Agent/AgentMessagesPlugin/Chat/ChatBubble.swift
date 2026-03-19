@@ -1,52 +1,35 @@
-import MagicKit
-import OSLog
 import SwiftUI
 
 // MARK: - Chat Bubble
 
 /// 聊天气泡组件，用于显示用户消息、助手回复和工具输出
-struct ChatBubble: View, SuperLog {
-    /// 日志标识 emoji
-    nonisolated static let emoji = "🫧"
-    /// 是否启用详细日志
-    nonisolated static let verbose = true
-
+struct ChatBubble: View {
     /// 消息对象
     let message: ChatMessage
     /// 是否是最后一条消息
     let isLastMessage: Bool
     /// 与当前 assistant 工具调用关联的工具输出（仅用于 UI 分组展示）
     let relatedToolOutputs: [ChatMessage]
+    /// 是否为当前正在流式生成的 assistant 消息
+    let isStreaming: Bool
 
-    @ObservedObject private var expansionState = MessageExpansionState.shared
     @State private var showRawMessage: Bool = false
-    @State private var isHovered: Bool = false
-    @State private var isToolbarHovered: Bool = false
-    @State private var isToolbarVisible: Bool = false
 
     /// 初始化
     /// - Parameters:
     ///   - message: 消息对象
     ///   - isLastMessage: 是否是最后一条消息
     ///   - relatedToolOutputs: 关联的工具输出
-    init(message: ChatMessage, isLastMessage: Bool, relatedToolOutputs: [ChatMessage] = []) {
+    init(
+        message: ChatMessage,
+        isLastMessage: Bool,
+        relatedToolOutputs: [ChatMessage] = [],
+        isStreaming: Bool = false
+    ) {
         self.message = message
         self.isLastMessage = isLastMessage
         self.relatedToolOutputs = relatedToolOutputs
-    }
-
-    // MARK: - Computed Properties
-
-    /// 判断是否是长消息
-    private var isLongMessage: Bool {
-        let charCount = message.content.count
-        let lineCount = message.content.components(separatedBy: "\n").count
-        return charCount > 1000 || lineCount > 50
-    }
-
-    /// 当前消息的展开状态
-    private var isExpanded: Bool {
-        expansionState.isExpanded(id: message.id)
+        self.isStreaming = isStreaming
     }
 
     var body: some View {
@@ -59,14 +42,18 @@ struct ChatBubble: View, SuperLog {
 
             VStack(alignment: .leading, spacing: 4) {
                 if message.role == .assistant {
-                    AssistantMessage(
-                        message: message,
-                        isLastMessage: isLastMessage,
-                        relatedToolOutputs: relatedToolOutputs,
-                        showRawMessage: $showRawMessage
-                    )
+                    if isStreaming {
+                        StreamingAssistantRowView(message: message)
+                            .messageBubbleStyle(role: message.role, isError: message.isError)
+                    } else {
+                        AssistantMessage(
+                            message: message,
+                            isLastMessage: isLastMessage,
+                            relatedToolOutputs: relatedToolOutputs,
+                            showRawMessage: $showRawMessage
+                        )
+                    }
                 } else if message.role == .tool || message.isToolOutput {
-                    // 工具输出消息：header 与 Lumi 一致，头像与「工具输出」+ 操作同一行
                     ToolOutputView(message: message)
                 } else {
                     // 用户/系统/状态消息
@@ -84,13 +71,12 @@ struct ChatBubble: View, SuperLog {
                             )
                         case .status:
                             StatusMessage(
-                                message: message,
-                                showRawMessage: $showRawMessage
+                                message: message
                             )
                         case .tool:
                             ToolOutputView(message: message)
                         default:
-                            MarkdownMessageView(
+                            MarkdownView(
                                 message: message,
                                 showRawMessage: showRawMessage,
                                 isCollapsible: false,
@@ -105,9 +91,6 @@ struct ChatBubble: View, SuperLog {
             }
 
             Spacer()
-        }
-        .onHover { hovering in
-            isHovered = hovering
         }
     }
 

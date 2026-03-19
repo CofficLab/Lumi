@@ -1,6 +1,4 @@
 import SwiftUI
-import MarkdownUI
-import OSLog
 import MagicKit
 
 // MARK: - Environment: 禁用消息内部滚动（由外层列表统一滚动，避免长消息“吸住”滚轮）
@@ -18,38 +16,28 @@ extension EnvironmentValues {
 }
 
 /// Markdown 消息视图，负责渲染聊天消息内容
-/// 使用 MarkdownUI 库渲染（支持 GitHub Flavored Markdown）
-struct MarkdownMessageView: View, SuperLog {
-    nonisolated static let emoji = "📝"
-    nonisolated static let verbose = true
-    static private var renderMarkdownEnabled: Bool = true
-
+/// 使用内置原生渲染（基于 swift-markdown AST）
+struct MarkdownView: View {
     let message: ChatMessage
     let showRawMessage: Bool
     let isCollapsible: Bool
     let isExpanded: Bool
     let onToggleExpand: () -> Void
-    @Environment(\.preferOuterScroll) private var preferOuterScroll
+    private var renderMetadata: MessageRenderMetadata {
+        MessageRenderCache.shared.metadata(for: message)
+    }
 
     /// 最大高度（超过后折叠）
     private let maxHeight: CGFloat = 400
-
     var body: some View {
         Group {
             if showRawMessage {
                 rawMessageContent
-                    .applyCollapsible(isCollapsible: isCollapsible, isExpanded: isExpanded, maxHeight: maxHeight)
-            } else if !Self.renderMarkdownEnabled {
-                Text(verbatim: message.content)
-                    .font(.system(.body, design: .default))
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .applyCollapsible(isCollapsible: isCollapsible, isExpanded: isExpanded, maxHeight: maxHeight)
             } else {
-                markdownContent
-                    .applyCollapsible(isCollapsible: isCollapsible, isExpanded: isExpanded, maxHeight: maxHeight)
+                nativeMarkdownContent
             }
         }
+        .applyCollapsible(isCollapsible: isCollapsible, isExpanded: isExpanded, maxHeight: maxHeight)
         .overlay(alignment: .bottom) {
             // 折叠时显示渐变遮罩和展开按钮
             if isCollapsible && !isExpanded && contentNeedsCollapse {
@@ -67,41 +55,20 @@ struct MarkdownMessageView: View, SuperLog {
     
     /// 判断内容是否需要折叠（通过测量内容高度）
     private var contentNeedsCollapse: Bool {
-        // 简单判断：通过字符数估算
-        // 更精确的方式需要使用 GeometryReader 测量实际高度
-        let estimatedLines = message.content.components(separatedBy: "\n").count
-        let estimatedHeight = CGFloat(estimatedLines * 20) // 每行约 20pt
+        let estimatedHeight = CGFloat(renderMetadata.lineCount * 20)
         return estimatedHeight > maxHeight
     }
 
     /// 原始消息内容：preferOuterScroll 时用 Text 避免内部 ScrollView 吸住滚轮
     private var rawMessageContent: some View {
-        Group {
-            if preferOuterScroll {
-                Text(verbatim: message.content)
-                    .font(.system(.body, design: .monospaced))
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-                TextEditor(text: .constant(message.content))
-                    .font(.system(.body, design: .monospaced))
-                    .textSelection(.enabled)
-                    .scrollContentBackground(.hidden)
-            }
-        }
+        PlainTextMessageContentView(content: message.content, monospaced: true)
     }
 
-    /// Markdown 内容：preferOuterScroll 时禁用内部滚动，让外层列表滚动
-    @ViewBuilder
-    private var markdownContent: some View {
-        if preferOuterScroll {
-            Markdown(message.content)
-                .textSelection(.enabled)
-                .scrollDisabled(true)
-        } else {
-            Markdown(message.content)
-                .textSelection(.enabled)
-        }
+    private var nativeMarkdownContent: some View {
+        NativeMarkdownContent(
+            content: message.content
+        )
+        .id("native-\(message.id.uuidString)-\(renderMetadata.contentHash)")
     }
 }
 

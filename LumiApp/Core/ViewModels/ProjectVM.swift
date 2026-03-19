@@ -78,7 +78,6 @@ final class ProjectVM: ObservableObject, SuperLog {
         self.providerRegistry = providerRegistry
         loadLanguagePreference()
         loadChatMode()
-        loadAutoApproveRisk()
         loadGlobalOrDefaultProviderIfNeeded()
     }
 
@@ -87,7 +86,7 @@ final class ProjectVM: ObservableObject, SuperLog {
     /// 清除当前项目，恢复到未选择任何项目的状态
     func clearProject() {
         setCurrentProjectInfo(name: "", path: "", selected: false)
-        AppSettingsStore.shared.removeObject(forKey: "Agent_SelectedProject")
+        PluginStateStore.shared.removeObject(forKey: "Agent_SelectedProject")
         clearFileSelection()
 
         Task {
@@ -113,7 +112,7 @@ final class ProjectVM: ObservableObject, SuperLog {
 
         setCurrentProjectInfo(name: projectName, path: path, selected: true)
 
-        AppSettingsStore.shared.set(path, forKey: "Agent_SelectedProject")
+        PluginStateStore.shared.set(path, forKey: "Agent_SelectedProject")
         saveRecentProject(name: projectName, path: path)
 
         // 获取并应用项目配置
@@ -230,8 +229,8 @@ final class ProjectVM: ObservableObject, SuperLog {
         guard currentProviderId.isEmpty, currentModel.isEmpty else { return }
 
         // 尝试读取全局配置
-        let globalProviderId = AppSettingsStore.shared.string(forKey: GlobalConfigKeys.providerId)
-        let globalModel = AppSettingsStore.shared.string(forKey: GlobalConfigKeys.model)
+        let globalProviderId = PluginStateStore.shared.string(forKey: GlobalConfigKeys.providerId)
+        let globalModel = PluginStateStore.shared.string(forKey: GlobalConfigKeys.model)
 
         if let pid = globalProviderId, !pid.isEmpty,
            let model = globalModel, !model.isEmpty {
@@ -247,13 +246,13 @@ final class ProjectVM: ObservableObject, SuperLog {
     /// 在未选择项目时，保存全局供应商 ID
     func setGlobalProviderId(_ providerId: String) {
         currentProviderId = providerId
-        AppSettingsStore.shared.set(providerId, forKey: GlobalConfigKeys.providerId)
+        PluginStateStore.shared.set(providerId, forKey: GlobalConfigKeys.providerId)
     }
 
     /// 在未选择项目时，保存全局模型名称
     func setGlobalModel(_ model: String) {
         currentModel = model
-        AppSettingsStore.shared.set(model, forKey: GlobalConfigKeys.model)
+        PluginStateStore.shared.set(model, forKey: GlobalConfigKeys.model)
     }
 
     /// 保存最近使用的项目
@@ -266,7 +265,7 @@ final class ProjectVM: ObservableObject, SuperLog {
         projects = Array(projects.prefix(5))
 
         if let data = try? JSONEncoder().encode(projects) {
-            AppSettingsStore.shared.set(data, forKey: "Agent_RecentProjects")
+            PluginStateStore.shared.set(data, forKey: "Agent_RecentProjects")
         }
 
         if Self.verbose {
@@ -276,7 +275,7 @@ final class ProjectVM: ObservableObject, SuperLog {
 
     /// 获取最近使用的项目列表
     func getRecentProjects() -> [RecentProject] {
-        guard let data = AppSettingsStore.shared.data(forKey: "Agent_RecentProjects"),
+        guard let data = PluginStateStore.shared.data(forKey: "Agent_RecentProjects"),
               let projects = try? JSONDecoder().decode([RecentProject].self, from: data) else {
             return []
         }
@@ -413,7 +412,7 @@ final class ProjectVM: ObservableObject, SuperLog {
     // MARK: - 语言偏好
 
     private func loadLanguagePreference() {
-        if let data = AppSettingsStore.shared.data(forKey: "Agent_LanguagePreference"),
+        if let data = PluginStateStore.shared.data(forKey: "Agent_LanguagePreference"),
            let preference = try? JSONDecoder().decode(LanguagePreference.self, from: data) {
             Task { @MainActor in
                 self.languagePreference = preference
@@ -425,7 +424,7 @@ final class ProjectVM: ObservableObject, SuperLog {
         Task { @MainActor in
             self.languagePreference = preference
             if let encoded = try? JSONEncoder().encode(self.languagePreference) {
-                AppSettingsStore.shared.set(encoded, forKey: "Agent_LanguagePreference")
+                PluginStateStore.shared.set(encoded, forKey: "Agent_LanguagePreference")
             }
         }
     }
@@ -433,7 +432,7 @@ final class ProjectVM: ObservableObject, SuperLog {
     // MARK: - 聊天模式
 
     private func loadChatMode() {
-        if let rawValue = AppSettingsStore.shared.string(forKey: "Agent_ChatMode"),
+        if let rawValue = PluginStateStore.shared.string(forKey: "Agent_ChatMode"),
            let mode = ChatMode(rawValue: rawValue) {
             Task { @MainActor in
                 self.chatMode = mode
@@ -444,24 +443,20 @@ final class ProjectVM: ObservableObject, SuperLog {
     func setChatMode(_ mode: ChatMode) {
         Task { @MainActor in
             self.chatMode = mode
-            AppSettingsStore.shared.set(self.chatMode.rawValue, forKey: "Agent_ChatMode")
+            PluginStateStore.shared.set(self.chatMode.rawValue, forKey: "Agent_ChatMode")
         }
     }
 
     // MARK: - 自动批准风险
 
-    /// 加载自动批准风险设置
+    /// 加载自动批准风险设置（持久化由插件负责）
     private func loadAutoApproveRisk() {
-        let enabled = AppSettingsStore.shared.bool(forKey: "Agent_AutoApproveRisk")
-        Task { @MainActor in
-            self.autoApproveRisk = enabled
-        }
+        // no-op
     }
 
     func setAutoApproveRisk(_ enabled: Bool) {
         Task { @MainActor in
             self.autoApproveRisk = enabled
-            AppSettingsStore.shared.set(enabled, forKey: "Agent_AutoApproveRisk")
         }
     }
 }

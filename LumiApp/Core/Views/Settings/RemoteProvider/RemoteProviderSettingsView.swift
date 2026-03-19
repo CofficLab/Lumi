@@ -64,7 +64,7 @@ struct RemoteProviderSettingsView: View {
         }
         .onAppear(perform: onAppear)
         .onChange(of: selectedProviderId) { _, newValue in
-            AppSettingsStore.shared.set(newValue, forKey: Self.selectedRemoteProviderKey)
+            PluginStateStore.shared.set(newValue, forKey: Self.selectedRemoteProviderKey)
             loadSettings()
         }
         .onChange(of: apiKey) { _, _ in
@@ -106,21 +106,21 @@ extension RemoteProviderSettingsView {
     /// 加载当前供应商的设置信息（API Key 和选中的模型）
     private func loadSettings() {
         guard let providerType = selectedProviderType else { return }
-        apiKey = AppSettingsStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
-        selectedModel = AppSettingsStore.shared.string(forKey: providerType.modelStorageKey)
+        apiKey = PluginStateStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
+        selectedModel = PluginStateStore.shared.string(forKey: providerType.modelStorageKey)
             ?? providerType.defaultModel
     }
 
     /// 保存 API Key 到 UserDefaults
     private func saveApiKey() {
         guard let providerType = selectedProviderType else { return }
-        AppSettingsStore.shared.set(apiKey, forKey: providerType.apiKeyStorageKey)
+        PluginStateStore.shared.set(apiKey, forKey: providerType.apiKeyStorageKey)
     }
 
     /// 保存选中的模型到 UserDefaults
     private func saveModel() {
         guard let providerType = selectedProviderType else { return }
-        AppSettingsStore.shared.set(selectedModel, forKey: providerType.modelStorageKey)
+        PluginStateStore.shared.set(selectedModel, forKey: providerType.modelStorageKey)
     }
 }
 
@@ -129,7 +129,7 @@ extension RemoteProviderSettingsView {
 extension RemoteProviderSettingsView {
     /// 视图出现时的事件处理 - 加载仅云端供应商的设置
     func onAppear() {
-        if let savedProviderId = AppSettingsStore.shared.string(forKey: Self.selectedRemoteProviderKey),
+        if let savedProviderId = PluginStateStore.shared.string(forKey: Self.selectedRemoteProviderKey),
            !savedProviderId.isEmpty,
            remoteProviders.contains(where: { $0.id == savedProviderId }) {
             selectedProviderId = savedProviderId

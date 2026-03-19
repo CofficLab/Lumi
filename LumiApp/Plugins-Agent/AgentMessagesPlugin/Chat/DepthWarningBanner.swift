@@ -43,6 +43,9 @@ public struct DepthWarningBanner: View {
                     .foregroundColor(warning.iconColor),
                 alignment: .leading
             )
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("深度提醒")
+            .accessibilityHint(warning.warningMessage)
         }
     }
 
@@ -97,4 +100,3 @@ private struct DepthProgressIndicator: View {
         }
     }
 }
-

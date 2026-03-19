@@ -25,12 +25,6 @@ final class StreamFinishedFinalizeMiddleware: ConversationTurnMiddleware {
             finalMessage.thinkingContent = thinkingText
         }
 
-        if ctx.env.selectedConversationId() == conversationId,
-           let index = ctx.runtimeStore.streamStateByConversation[conversationId]?.messageIndex,
-           index < ctx.actions.messages().count {
-            ctx.actions.updateMessage(finalMessage, index)
-        }
-
         await ctx.actions.saveMessage(finalMessage, conversationId)
 
         ctx.runtimeStore.streamStateByConversation[conversationId] = .init(messageId: nil, messageIndex: nil)
@@ -41,6 +35,7 @@ final class StreamFinishedFinalizeMiddleware: ConversationTurnMiddleware {
         }
 
         ctx.runtimeStore.pendingStreamTextByConversation[conversationId] = nil
+        ctx.runtimeStore.streamingTextByConversation[conversationId] = nil
         ctx.runtimeStore.pendingThinkingTextByConversation[conversationId] = nil
         ctx.runtimeStore.lastStreamFlushAtByConversation[conversationId] = nil
         ctx.runtimeStore.lastThinkingFlushAtByConversation[conversationId] = nil
@@ -51,4 +46,3 @@ final class StreamFinishedFinalizeMiddleware: ConversationTurnMiddleware {
         // 短路：streamFinished 已完全处理，不再进入核心 handler。
     }
 }
-

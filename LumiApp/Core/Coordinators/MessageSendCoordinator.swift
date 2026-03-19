@@ -7,10 +7,9 @@ import Foundation
 final class MessageSendCoordinator {
     struct Services {
         let getConversationTitle: (UUID) -> String?
-        let hasGeneratedTitle: (UUID) -> Bool
-        let setTitleGenerated: (Bool, UUID) -> Void
         let getCurrentConfig: () -> LLMConfig
-        let autoGenerateConversationTitleIfNeeded: @Sendable (UUID, String, LLMConfig) async -> Void
+        let generateConversationTitle: @Sendable (String, LLMConfig) async -> String
+        let updateConversationTitleIfUnchanged: @Sendable (UUID, String, String) async -> Bool
 
         let isProjectSelected: () -> Bool
         let getProjectInfo: () -> (name: String, path: String)
@@ -24,7 +23,6 @@ final class MessageSendCoordinator {
     private let runtimeStore: ConversationRuntimeStore
     private let services: Services
 
-    private let onUserJustSentMessage: () -> Void
     private let onProcessingStarted: (UUID) -> Void
     private let onProcessingFinished: (UUID) -> Void
     private let sendMessageToAgent: (ChatMessage, UUID) async -> Void
@@ -36,7 +34,6 @@ final class MessageSendCoordinator {
         MessageSenderVM: MessageSenderVM,
         runtimeStore: ConversationRuntimeStore,
         services: Services,
-        onUserJustSentMessage: @escaping () -> Void,
         onProcessingStarted: @escaping (UUID) -> Void,
         onProcessingFinished: @escaping (UUID) -> Void,
         sendMessageToAgent: @escaping (ChatMessage, UUID) async -> Void
@@ -44,7 +41,6 @@ final class MessageSendCoordinator {
         self.MessageSenderVM = MessageSenderVM
         self.runtimeStore = runtimeStore
         self.services = services
-        self.onUserJustSentMessage = onUserJustSentMessage
         self.onProcessingStarted = onProcessingStarted
         self.onProcessingFinished = onProcessingFinished
         self.sendMessageToAgent = sendMessageToAgent
@@ -74,10 +70,9 @@ final class MessageSendCoordinator {
                     runtimeStore: self.runtimeStore,
                     services: MessageSendMiddlewareServices(
                         getConversationTitle: self.services.getConversationTitle,
-                        hasGeneratedTitle: self.services.hasGeneratedTitle,
-                        setTitleGenerated: self.services.setTitleGenerated,
                         getCurrentConfig: self.services.getCurrentConfig,
-                        autoGenerateConversationTitleIfNeeded: self.services.autoGenerateConversationTitleIfNeeded,
+                        generateConversationTitle: self.services.generateConversationTitle,
+                        updateConversationTitleIfUnchanged: self.services.updateConversationTitleIfUnchanged,
                         isProjectSelected: self.services.isProjectSelected,
                         getProjectInfo: self.services.getProjectInfo,
                         isFileSelected: self.services.isFileSelected,
@@ -115,7 +110,6 @@ final class MessageSendCoordinator {
             runtimeStore.updateRuntimeState(for: conversationId)
 
         case let .sendMessage(message, conversationId):
-            onUserJustSentMessage()
             await sendMessageToAgent(message, conversationId)
         }
     }

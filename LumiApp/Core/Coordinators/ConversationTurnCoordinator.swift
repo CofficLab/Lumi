@@ -182,6 +182,7 @@ final class ConversationTurnCoordinator: SuperLog {
 
             runtimeStore.streamStateByConversation[conversationId] = .init(messageId: nil, messageIndex: nil)
             runtimeStore.pendingStreamTextByConversation[conversationId] = nil
+            runtimeStore.streamingTextByConversation[conversationId] = nil
             runtimeStore.pendingThinkingTextByConversation[conversationId] = nil
             runtimeStore.lastStreamFlushAtByConversation[conversationId] = nil
             runtimeStore.lastThinkingFlushAtByConversation[conversationId] = nil
@@ -210,4 +211,3 @@ final class ConversationTurnCoordinator: SuperLog {
         }
     }
 }
-

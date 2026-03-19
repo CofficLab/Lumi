@@ -24,6 +24,7 @@ final class TurnCompletedFinalizeMiddleware: ConversationTurnMiddleware {
 
         ctx.runtimeStore.streamStateByConversation[conversationId] = .init(messageId: nil, messageIndex: nil)
         ctx.runtimeStore.pendingStreamTextByConversation[conversationId] = nil
+        ctx.runtimeStore.streamingTextByConversation[conversationId] = nil
         ctx.runtimeStore.pendingThinkingTextByConversation[conversationId] = nil
         ctx.runtimeStore.lastStreamFlushAtByConversation[conversationId] = nil
         ctx.runtimeStore.lastThinkingFlushAtByConversation[conversationId] = nil
@@ -34,4 +35,3 @@ final class TurnCompletedFinalizeMiddleware: ConversationTurnMiddleware {
         // 短路：收尾逻辑已处理完毕。
     }
 }
-

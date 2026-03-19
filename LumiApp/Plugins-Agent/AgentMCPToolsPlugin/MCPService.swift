@@ -22,9 +22,11 @@ final class MCPService: SuperLog, @unchecked Sendable {
     private var cachedTools: [String: [MCP.Tool]] = [:]
 
     private let storageKey = "MCPService_Configs"
+    private let settingsStore = AgentMCPPluginLocalStore()
 
     init() {
-        if let data = AppSettingsStore.shared.data(forKey: storageKey),
+        settingsStore.migrateLegacyValueIfMissing(forKey: storageKey)
+        if let data = settingsStore.data(forKey: storageKey),
            let savedConfigs = try? JSONDecoder().decode([MCPServerConfig].self, from: data)
         {
             self.configs = savedConfigs
@@ -103,4 +105,3 @@ final class MCPService: SuperLog, @unchecked Sendable {
         }
     }
 }
-

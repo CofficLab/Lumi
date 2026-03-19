@@ -31,6 +31,20 @@ struct EmptyStateView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
+
+                Button("查看新手引导") {
+                    NotificationCenter.default.post(
+                        name: Notification.Name("AgentOnboarding.Show"),
+                        object: nil
+                    )
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.accent)
+                .accessibilityLabel("查看新手引导")
+                .accessibilityHint("打开首次使用说明")
+
+                QuickStartActionsView(sendStrategy: .createConversationAndSend)
+                    .padding(.top, 4)
             } else {
                 Button {
                     Task {
@@ -46,12 +60,30 @@ struct EmptyStateView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("新建对话")
+                .accessibilityHint("创建一个新的会话")
+
+                Button("查看新手引导") {
+                    NotificationCenter.default.post(
+                        name: Notification.Name("AgentOnboarding.Show"),
+                        object: nil
+                    )
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.accent)
+                .accessibilityLabel("查看新手引导")
+                .accessibilityHint("打开首次使用说明")
+
+                QuickStartActionsView(sendStrategy: .createConversationAndSend)
+                    .padding(.top, 4)
             }
 
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.clear)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("空状态页面")
     }
 }
 
@@ -60,4 +92,3 @@ struct EmptyStateView: View {
         .frame(width: 600, height: 400)
         .inRootView()
 }
-

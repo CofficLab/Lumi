@@ -19,7 +19,6 @@
 		0B1A4F8F2F662D8500F15618 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F8E2F662D8500F15618 /* MLXLMCommon */; };
 		0B1A4F912F662D8500F15618 /* MLXVLM in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F902F662D8500F15618 /* MLXVLM */; };
 		0B2F7D682F3A301D00AD7E94 /* LumiFinder.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		0BE03D7A2F402E0D0028FDF4 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE03D792F402E0D0028FDF4 /* MarkdownUI */; };
 		0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE04A742F409A6E0028FDF4 /* MCP */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
@@ -30,6 +29,7 @@
 		F5A640822F3ED7060039A761 /* _ConnectionPoolModule in Frameworks */ = {isa = PBXBuildFile; productRef = F5A640812F3ED7060039A761 /* _ConnectionPoolModule */; };
 		F5A640842F3ED7060039A761 /* _ConnectionPoolTestUtils in Frameworks */ = {isa = PBXBuildFile; productRef = F5A640832F3ED7060039A761 /* _ConnectionPoolTestUtils */; };
 		F5A640872F3ED72C0039A761 /* MySQLNIO in Frameworks */ = {isa = PBXBuildFile; productRef = F5A640862F3ED72C0039A761 /* MySQLNIO */; };
+		F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = F5BE65D02F6BB1130091C1FD /* Markdown */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -132,11 +132,6 @@
 			path = LumiFinder;
 			sourceTree = "<group>";
 		};
-		A10000032F60000100AAA001 /* LumiTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = LumiTests;
-			sourceTree = "<group>";
-		};
 		F5A640682F3ED1910039A761 /* NettoExtension */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -178,11 +173,11 @@
 				0B1A4F892F662D8500F15618 /* MLXOptimizers in Frameworks */,
 				0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */,
 				0B1A4F812F662D8500F15618 /* MLXFFT in Frameworks */,
+				F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */,
 				0B1A4F852F662D8500F15618 /* MLXLinalg in Frameworks */,
 				F5A640842F3ED7060039A761 /* _ConnectionPoolTestUtils in Frameworks */,
 				F5A640822F3ED7060039A761 /* _ConnectionPoolModule in Frameworks */,
 				F5A640872F3ED72C0039A761 /* MySQLNIO in Frameworks */,
-				0BE03D7A2F402E0D0028FDF4 /* MarkdownUI in Frameworks */,
 				0B1A4F832F662D8500F15618 /* MLXFast in Frameworks */,
 				F5A640802F3ED7060039A761 /* PostgresNIO in Frameworks */,
 				F5826C862F35731C0079B285 /* MagicKit in Frameworks */,
@@ -213,7 +208,6 @@
 			children = (
 				F53C3ECB2F1A3CB000929321 /* Assets.xcassets */,
 				F5F4DFD42F3ACC5100C76EA0 /* LumiApp */,
-				A10000032F60000100AAA001 /* LumiTests */,
 				0B2F7D622F3A301C00AD7E94 /* LumiFinder */,
 				F53C49142F1A42EC00929321 /* Lumi.app */,
 				A10000012F60000100AAA001 /* LumiTests.xctest */,
@@ -270,9 +264,6 @@
 			dependencies = (
 				A10000092F60000100AAA001 /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				A10000032F60000100AAA001 /* LumiTests */,
-			);
 			name = LumiTests;
 			packageProductDependencies = (
 			);
@@ -308,7 +299,6 @@
 				F5A640812F3ED7060039A761 /* _ConnectionPoolModule */,
 				F5A640832F3ED7060039A761 /* _ConnectionPoolTestUtils */,
 				F5A640862F3ED72C0039A761 /* MySQLNIO */,
-				0BE03D792F402E0D0028FDF4 /* MarkdownUI */,
 				0BE04A742F409A6E0028FDF4 /* MCP */,
 				0B1A4F7E2F662D8500F15618 /* MLX */,
 				0B1A4F802F662D8500F15618 /* MLXFFT */,
@@ -317,6 +307,7 @@
 				0B1A4F862F662D8500F15618 /* MLXNN */,
 				0B1A4F882F662D8500F15618 /* MLXOptimizers */,
 				0B1A4F8A2F662D8500F15618 /* MLXRandom */,
+				F5BE65D02F6BB1130091C1FD /* Markdown */,
 			);
 			productName = "SwiftUI-Template";
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -385,10 +376,10 @@
 				F5826C842F35731C0079B285 /* XCRemoteSwiftPackageReference "MagicKit" */,
 				F5A6407E2F3ED7060039A761 /* XCRemoteSwiftPackageReference "postgres-nio" */,
 				F5A640852F3ED72C0039A761 /* XCRemoteSwiftPackageReference "mysql-nio" */,
-				0BE03D782F402E0D0028FDF4 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
 				0BE04A732F409A6E0028FDF4 /* XCRemoteSwiftPackageReference "swift-sdk" */,
 				0B1A4F7D2F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift" */,
 				0B1A4F922F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */,
+				F5BE65CF2F6BB1130091C1FD /* XCRemoteSwiftPackageReference "swift-markdown" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -974,14 +965,6 @@
 				kind = branch;
 			};
 		};
-		0BE03D782F402E0D0028FDF4 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/gonzalezreal/swift-markdown-ui";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.0.0;
-			};
-		};
 		0BE04A732F409A6E0028FDF4 /* XCRemoteSwiftPackageReference "swift-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/modelcontextprotocol/swift-sdk.git";
@@ -1020,6 +1003,14 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 1.9.0;
+			};
+		};
+		F5BE65CF2F6BB1130091C1FD /* XCRemoteSwiftPackageReference "swift-markdown" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/swiftlang/swift-markdown.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.7.3;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -1079,11 +1070,6 @@
 			package = 0B1A4F922F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
 			productName = MLXVLM;
 		};
-		0BE03D792F402E0D0028FDF4 /* MarkdownUI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0BE03D782F402E0D0028FDF4 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
-			productName = MarkdownUI;
-		};
 		0BE04A742F409A6E0028FDF4 /* MCP */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 0BE04A732F409A6E0028FDF4 /* XCRemoteSwiftPackageReference "swift-sdk" */;
@@ -1118,6 +1104,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F5A640852F3ED72C0039A761 /* XCRemoteSwiftPackageReference "mysql-nio" */;
 			productName = MySQLNIO;
+		};
+		F5BE65D02F6BB1130091C1FD /* Markdown */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F5BE65CF2F6BB1130091C1FD /* XCRemoteSwiftPackageReference "swift-markdown" */;
+			productName = Markdown;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

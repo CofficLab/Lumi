@@ -212,67 +212,6 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         }
     }
 
-    /// 自动为对话生成标题（如果需要）
-    ///
-    /// 检查对话是否满足生成标题的条件，如果满足则自动生成并保存
-    ///
-    /// - Parameters:
-    ///   - conversationId: 对话 ID
-    ///   - userMessageContent: 用户消息内容
-    ///   - config: LLM 配置
-    func autoGenerateConversationTitleIfNeeded(
-        conversationId: UUID,
-        userMessageContent: String,
-        config: LLMConfig
-    ) async {
-        // 检查是否满足生成标题的条件
-        let trimmedMessage = userMessageContent.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedMessage.isEmpty else {
-            if Self.verbose {
-                os_log("\(Self.t)⚠️ 消息内容为空，跳过生成标题")
-            }
-            return
-        }
-
-        // 获取对话信息
-        guard let conversation = fetchConversation(id: conversationId) else {
-            if Self.verbose {
-                os_log("\(Self.t)⚠️ 对话 \(conversationId) 不存在，跳过生成标题")
-            }
-            return
-        }
-        
-        // 检查标题是否还是默认的 "新会话 "
-        guard conversation.title.hasPrefix("新会话 ") else {
-            if Self.verbose {
-                os_log("\(Self.t)ℹ️ 对话已有自定义标题，跳过生成标题")
-            }
-            return
-        }
-
-        if Self.verbose {
-            os_log("\(Self.t)🎯 [\(conversationId)] 开始为对话自动生成标题...")
-        }
-
-        // 生成标题
-        let title = await generateConversationTitle(from: trimmedMessage, config: config)
-
-        // 再次检查并更新对话标题（避免并发修改）
-        guard let freshConversation = fetchConversation(id: conversationId),
-              freshConversation.title.hasPrefix("新会话 ") else {
-            if Self.verbose {
-                os_log("\(Self.t)ℹ️ 对话标题已被修改，放弃更新")
-            }
-            return
-        }
-        
-        updateConversationTitle(freshConversation, newTitle: title)
-        
-        if Self.verbose {
-            os_log("\(Self.t)✅ 对话标题已生成：\(title)")
-        }
-    }
-
     // MARK: - 保存消息
 
     /// 保存消息到指定对话
@@ -521,6 +460,47 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                 }
 
                 continuation.resume(returning: (messages, hasMore))
+            }
+        }
+    }
+
+    /// 按工具调用 ID 查询工具输出消息。
+    /// 仅用于消息详情按需展开，不参与主时间线分页。
+    func loadToolOutputMessages(
+        forConversationId conversationId: UUID,
+        toolCallIDs: [String]
+    ) async -> [ChatMessage] {
+        let normalizedIDs = Array(Set(toolCallIDs.filter { !$0.isEmpty }))
+        guard !normalizedIDs.isEmpty else { return [] }
+
+        return await withCheckedContinuation { continuation in
+            storageQueue.async { [weak self] in
+                guard let self = self else {
+                    continuation.resume(returning: [])
+                    return
+                }
+
+                let context = ModelContext(self.modelContainer)
+                let descriptor = FetchDescriptor<ChatMessageEntity>(
+                    predicate: #Predicate<ChatMessageEntity> { msg in
+                        msg.conversation?.id == conversationId && msg.toolCallID != nil
+                    },
+                    sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+                )
+
+                guard let fetched = try? context.fetch(descriptor) else {
+                    continuation.resume(returning: [])
+                    return
+                }
+
+                let toolCallIDSet = Set(normalizedIDs)
+                let messages = fetched.compactMap { entity -> ChatMessage? in
+                    guard let toolCallID = entity.toolCallID,
+                          toolCallIDSet.contains(toolCallID) else { return nil }
+                    return entity.toChatMessage()
+                }
+
+                continuation.resume(returning: messages)
             }
         }
     }

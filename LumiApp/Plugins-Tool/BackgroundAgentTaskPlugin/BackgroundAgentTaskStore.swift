@@ -46,6 +46,7 @@ actor BackgroundAgentTaskStore: SuperLog {
 
     private let container: ModelContainer
     private let queue = DispatchQueue(label: "BackgroundAgentTaskStore.queue", qos: .utility)
+    private let settingsStore = BackgroundAgentTaskPluginLocalStore()
 
     // 并发控制：最大同时执行 2 个任务
     private let maxConcurrentTasks = 2
@@ -60,7 +61,8 @@ actor BackgroundAgentTaskStore: SuperLog {
             BackgroundAgentTask.self
         ])
 
-        let dbDir = AppConfig.getPluginDBFolderURL(pluginName: "BackgroundAgentTaskPlugin")
+        let dbDir = AppConfig.getDBFolderURL().appendingPathComponent("BackgroundAgentTaskPlugin", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dbDir, withIntermediateDirectories: true)
         let dbURL = dbDir.appendingPathComponent("BackgroundAgentTask.sqlite")
 
         let config = ModelConfiguration(
@@ -270,8 +272,10 @@ actor BackgroundAgentTaskStore: SuperLog {
         let globalProviderKey = "Agent_GlobalProviderId"
         let globalModelKey = "Agent_GlobalModel"
 
-        let storedProviderId = AppSettingsStore.shared.string(forKey: globalProviderKey)
-        let storedModel = AppSettingsStore.shared.string(forKey: globalModelKey)
+        settingsStore.migrateLegacyValueIfMissing(forKey: globalProviderKey)
+        settingsStore.migrateLegacyValueIfMissing(forKey: globalModelKey)
+        let storedProviderId = settingsStore.string(forKey: globalProviderKey)
+        let storedModel = settingsStore.string(forKey: globalModelKey)
 
         let providerId: String
         let model: String
@@ -291,7 +295,8 @@ actor BackgroundAgentTaskStore: SuperLog {
             return .default
         }
 
-        let apiKey = AppSettingsStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
+        settingsStore.migrateLegacyValueIfMissing(forKey: providerType.apiKeyStorageKey)
+        let apiKey = settingsStore.string(forKey: providerType.apiKeyStorageKey) ?? ""
 
         return LLMConfig(
             apiKey: apiKey,
@@ -300,4 +305,3 @@ actor BackgroundAgentTaskStore: SuperLog {
         )
     }
 }
-

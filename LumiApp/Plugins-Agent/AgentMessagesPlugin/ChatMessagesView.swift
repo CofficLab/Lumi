@@ -1,56 +1,31 @@
 import MagicKit
-import OSLog
 import SwiftUI
 
 /// 聊天消息列表视图组件
-struct ChatMessagesView: View, SuperLog {
-    nonisolated static let emoji = "💬"
-    nonisolated static let verbose = true
-
+struct ChatMessagesView: View {
     /// 会话管理 ViewModel
     @EnvironmentObject var ConversationVM: ConversationVM
-
-    /// 权限请求 ViewModel
-    @EnvironmentObject var permissionRequestViewModel: PermissionRequestVM
-
-    /// 智能体提供者
-    @EnvironmentObject var agentProvider: AgentVM
-
-    /// 当前选中的会话 ID
-    private var selectedConversationId: UUID? {
-        ConversationVM.selectedConversationId
-    }
-
-    /// 是否已选择会话
-    private var hasSelectedConversation: Bool {
-        selectedConversationId != nil
-    }
+    @EnvironmentObject var errorStateViewModel: ErrorStateVM
 
     var body: some View {
         Group {
-            if hasSelectedConversation {
+            if ConversationVM.selectedConversationId != nil {
                 MessageListView()
-                    .overlay(alignment: .top) { messageOverlay }
+                    .overlay(alignment: .top) {
+                        VStack(spacing: 8) {
+                            ErrorRecoveryBanner()
+                            DepthWarningBanner()
+                            PermissionRequestView()
+                        }
+                        .padding()
+                    }
             } else {
                 EmptyStateView()
             }
         }
         .background(.background.opacity(0.8))
-    }
-
-    /// 消息叠加层视图：显示深度警告和权限请求
-    private var messageOverlay: some View {
-        VStack(spacing: 8) {
-            DepthWarningBanner()
-            if let request = permissionRequestViewModel.pendingPermissionRequest {
-                PermissionRequestView(
-                    request: request,
-                    onAllow: { Task { await agentProvider.respondToPermissionRequest(allowed: true) } },
-                    onDeny: { Task { await agentProvider.respondToPermissionRequest(allowed: false) } }
-                )
-            }
-        }
-        .padding()
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("聊天消息区域")
     }
 }
 

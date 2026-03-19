@@ -94,9 +94,6 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     /// 思考状态 ViewModel
     let thinkingStateViewModel: ThinkingStateVM
 
-    /// 标题生成 ViewModel
-    let titleGenerationViewModel: TitleGenerationVM
-
     // MARK: - 订阅管理
 
     private var cancellables = Set<AnyCancellable>()
@@ -108,22 +105,23 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             getConversationTitle: { [weak self] conversationId in
                 self?.chatHistoryService.fetchConversation(id: conversationId)?.title
             },
-            hasGeneratedTitle: { [weak self] conversationId in
-                self?.titleGenerationViewModel.hasGeneratedTitle(for: conversationId) ?? false
-            },
-            setTitleGenerated: { [weak self] value, conversationId in
-                self?.titleGenerationViewModel.setTitleGenerated(value, for: conversationId)
-            },
             getCurrentConfig: { [weak self] in
                 self?.getCurrentConfig() ?? .default
             },
-            autoGenerateConversationTitleIfNeeded: { [weak self] conversationId, content, config in
-                guard let self else { return }
-                await self.chatHistoryService.autoGenerateConversationTitleIfNeeded(
-                    conversationId: conversationId,
-                    userMessageContent: content,
-                    config: config
-                )
+            generateConversationTitle: { [weak self] content, config in
+                guard let self else { return String(content.prefix(20)) }
+                return await self.chatHistoryService.generateConversationTitle(from: content, config: config)
+            },
+            updateConversationTitleIfUnchanged: { [weak self] conversationId, expectedTitle, newTitle in
+                return await MainActor.run {
+                    guard let self,
+                          let conversation = self.chatHistoryService.fetchConversation(id: conversationId),
+                          conversation.title == expectedTitle else {
+                        return false
+                    }
+                    self.chatHistoryService.updateConversationTitle(conversation, newTitle: newTitle)
+                    return true
+                }
             },
             isProjectSelected: { [weak self] in
                 self?.ProjectVM.isProjectSelected ?? false
@@ -144,21 +142,16 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
                 self?.messageViewModel.messages.count ?? 0
             }
         ),
-        onUserJustSentMessage: { [weak self] in
-            self?.userJustSentMessage = true
-        },
         onProcessingStarted: { [weak self] conversationId in
             guard let self else { return }
             if self.ConversationVM.selectedConversationId == conversationId {
                 self.processingStateViewModel.beginSending()
-                self.upsertStatusMessage(for: conversationId, text: self.processingStateViewModel.statusText)
             }
         },
         onProcessingFinished: { [weak self] conversationId in
             guard let self else { return }
             if self.ConversationVM.selectedConversationId == conversationId {
                 self.processingStateViewModel.finish()
-                self.removeStatusMessage(for: conversationId)
             }
         },
         sendMessageToAgent: { [weak self] message, conversationId in
@@ -208,17 +201,17 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             onTurnFinishedUI: { [weak self] conversationId in
                 guard let self else { return }
                 self.processingStateViewModel.finish()
-                self.removeStatusMessage(for: conversationId)
             },
             onTurnFailedUI: { [weak self] conversationId, _ in
                 guard let self else { return }
                 self.processingStateViewModel.finish()
-                self.removeStatusMessage(for: conversationId)
             },
             onStreamStartedUI: { [weak self] _, conversationId in
                 guard let self else { return }
                 self.processingStateViewModel.markStreamStarted()
-                self.upsertStatusMessage(for: conversationId, text: self.processingStateViewModel.statusText)
+                if self.ConversationVM.selectedConversationId == conversationId {
+                    self.bumpStreamingRenderVersion()
+                }
             },
             onStreamFirstTokenUI: { [weak self] conversationId, ttftMs in
                 guard let self else { return }
@@ -227,19 +220,20 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
                 } else {
                     self.processingStateViewModel.markGenerating()
                 }
-                self.upsertStatusMessage(for: conversationId, text: self.processingStateViewModel.statusText)
             },
             onStreamFinishedUI: { [weak self] conversationId in
                 guard let self else { return }
                 self.setThinkingText(self.runtimeStore.thinkingTextByConversation[conversationId] ?? "", for: conversationId)
                 self.setIsThinking(false, for: conversationId)
                 self.processingStateViewModel.finish()
-                self.removeStatusMessage(for: conversationId)
+                self.runtimeStore.streamingTextByConversation[conversationId] = nil
+                if self.ConversationVM.selectedConversationId == conversationId {
+                    self.bumpStreamingRenderVersion()
+                }
             },
             onThinkingStartedUI: { [weak self] conversationId in
                 guard let self else { return }
                 self.setIsThinking(true, for: conversationId)
-                self.upsertStatusMessage(for: conversationId, text: "思考中…")
             },
             setLastHeartbeatTime: { [weak self] date in
                 self?.setLastHeartbeatTime(date)
@@ -256,12 +250,6 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             await self.handleConversationTurnEventFallback(event)
         }
     )
-
-    // MARK: - 用户发送消息标记（用于触发 UI 滚动）
-
-    /// 用户刚刚发送了消息的标记
-    /// 当用户发送消息时设置为 true，UI 监听此属性并滚动到底部后重置为 false
-    @Published public var userJustSentMessage: Bool = false
 
     // MARK: - 附件（图片上传）
 
@@ -307,8 +295,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         processingStateViewModel: ProcessingStateVM,
         errorStateViewModel: ErrorStateVM,
         permissionRequestViewModel: PermissionRequestVM,
-        thinkingStateViewModel: ThinkingStateVM,
-        titleGenerationViewModel: TitleGenerationVM
+        thinkingStateViewModel: ThinkingStateVM
     ) {
         self.promptService = promptService
         self.registry = registry
@@ -325,7 +312,6 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         self.errorStateViewModel = errorStateViewModel
         self.permissionRequestViewModel = permissionRequestViewModel
         self.thinkingStateViewModel = thinkingStateViewModel
-        self.titleGenerationViewModel = titleGenerationViewModel
 
         // runtimeStore 变化需要触发 AgentVM 刷新（例如会话列表上的 runtimeState 徽标）
         runtimeStore.objectWillChange
@@ -426,6 +412,19 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         return runtimeStore.streamStateByConversation[selectedId]?.messageId
     }
 
+    /// 当前选中会话的流式消息快照（仅用于 UI 渲染，不进历史数组）。
+    public var activeStreamingMessageForSelectedConversation: ChatMessage? {
+        guard let conversationId = ConversationVM.selectedConversationId,
+              let state = runtimeStore.streamStateByConversation[conversationId],
+              let messageId = state.messageId
+        else { return nil }
+        let text = runtimeStore.streamingTextByConversation[conversationId] ?? ""
+        return ChatMessage(id: messageId, role: .assistant, content: text, timestamp: Date())
+    }
+
+    /// 流式渲染版本号：流式文本变化时递增，供 UI 精准订阅。
+    @Published public private(set) var streamingRenderVersion: Int = 0
+
     private typealias StreamSessionState = ConversationRuntimeStore.StreamSessionState
     private var turnTaskPipelineByConversation: [UUID: Task<Void, Never>] = [:]
     private var turnTaskGenerationByConversation: [UUID: Int] = [:]
@@ -437,39 +436,8 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     private let immediateThinkingFlushChars = 120
     private let captureThinkingContent = true
 
-    private func upsertStatusMessage(for conversationId: UUID, text: String) {
-        guard ConversationVM.selectedConversationId == conversationId else { return }
-        guard !text.isEmpty else { return }
-
-        let id = runtimeStore.statusMessageIdByConversation[conversationId] ?? UUID()
-        if runtimeStore.statusMessageIdByConversation[conversationId] == nil {
-            runtimeStore.statusMessageIdByConversation[conversationId] = id
-        }
-
-        if let index = messages.firstIndex(where: { $0.id == id }) {
-            var m = messages[index]
-            m.content = text
-            updateMessage(m, at: index)
-        } else {
-            let m = ChatMessage(
-                id: id,
-                role: .status,
-                content: text,
-                timestamp: Date(),
-                isTransientStatus: true
-            )
-            appendMessage(m)
-        }
-    }
-
-    private func removeStatusMessage(for conversationId: UUID) {
-        guard let id = runtimeStore.statusMessageIdByConversation[conversationId] else { return }
-        runtimeStore.statusMessageIdByConversation[conversationId] = nil
-        guard ConversationVM.selectedConversationId == conversationId else { return }
-        let filtered = messages.filter { $0.id != id }
-        if filtered.count != messages.count {
-            setMessages(filtered, reason: "移除状态系统消息")
-        }
+    private func bumpStreamingRenderVersion() {
+        streamingRenderVersion &+= 1
     }
 
     /// 清理与指定会话相关的所有运行时状态，避免内存泄漏
@@ -540,23 +508,21 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     /// 加载保存的偏好设置
     private func loadPreferences() {
         // 加载语言偏好
-        if let data = AppSettingsStore.shared.data(forKey: "Agent_LanguagePreference"),
+        if let data = PluginStateStore.shared.data(forKey: "Agent_LanguagePreference"),
            let preference = try? JSONDecoder().decode(LanguagePreference.self, from: data) {
             ProjectVM.setLanguagePreference(preference)
         }
 
         // 加载聊天模式
-        if let modeRaw = AppSettingsStore.shared.string(forKey: "Agent_ChatMode"),
+        if let modeRaw = PluginStateStore.shared.string(forKey: "Agent_ChatMode"),
            let mode = ChatMode(rawValue: modeRaw) {
             ProjectVM.setChatMode(mode)
         }
 
-        // 加载自动批准风险 - 使用 bool 类型读取
-        let autoApprove = AppSettingsStore.shared.bool(forKey: "Agent_AutoApproveRisk")
-        ProjectVM.setAutoApproveRisk(autoApprove)
+        // 自动批准风险持久化由插件负责
 
         // 加载上次选择的项目（项目切换会自动应用配置）
-        if let savedPath = AppSettingsStore.shared.string(forKey: "Agent_SelectedProject") {
+        if let savedPath = PluginStateStore.shared.string(forKey: "Agent_SelectedProject") {
             ProjectVM.switchProject(to: savedPath)
 
             // 加载项目命令
@@ -647,17 +613,10 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         guard force || now.timeIntervalSince(lastFlush) >= streamUIFlushInterval else {
             return
         }
-        guard let state = runtimeStore.streamStateByConversation[conversationId],
-              let messageId = state.messageId,
-              ConversationVM.selectedConversationId == conversationId,
-              let index = state.messageIndex,
-              index < messages.count else {
-            return
+        runtimeStore.streamingTextByConversation[conversationId, default: ""] += pending
+        if ConversationVM.selectedConversationId == conversationId {
+            bumpStreamingRenderVersion()
         }
-        guard messages[index].id == messageId else { return }
-        var currentMessage = messages[index]
-        currentMessage.content += pending
-        updateMessage(currentMessage, at: index)
         runtimeStore.pendingStreamTextByConversation[conversationId] = ""
         runtimeStore.lastStreamFlushAtByConversation[conversationId] = now
     }
@@ -682,12 +641,6 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     /// 当前会话的消息列表（代理到 MessageViewModel）
     var messages: [ChatMessage] {
         messageViewModel.messages
-    }
-
-    /// 标记是否已生成标题（代理到 TitleGenerationViewModel）
-    var hasGeneratedTitle: Bool {
-        guard let selectedId = ConversationVM.selectedConversationId else { return false }
-        return titleGenerationViewModel.hasGeneratedTitle(for: selectedId)
     }
 
     // MARK: - 代理 ProjectVM 属性
@@ -807,7 +760,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         }
 
         // 从应用设置存储获取 API Key（按供应商维度）
-        let apiKey = AppSettingsStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
+        let apiKey = PluginStateStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
 
         let config = LLMConfig(
             apiKey: apiKey,
@@ -822,7 +775,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         guard let providerType = registry.providerType(forId: providerId) else {
             return ""
         }
-        return AppSettingsStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
+        return PluginStateStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
     }
 
     /// 设置指定供应商的 API Key
@@ -830,7 +783,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         guard let providerType = registry.providerType(forId: providerId) else {
             return
         }
-        AppSettingsStore.shared.set(apiKey, forKey: providerType.apiKeyStorageKey)
+        PluginStateStore.shared.set(apiKey, forKey: providerType.apiKeyStorageKey)
         if Self.verbose {
             os_log("\(Self.t) 已设置 \(providerType.displayName) 的 API Key")
         }
@@ -858,12 +811,6 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         messageViewModel.setMessages(messages, reason: reason)
     }
 
-    /// 设置标题生成标记
-    func setHasGeneratedTitle(_ value: Bool) {
-        guard let selectedId = ConversationVM.selectedConversationId else { return }
-        titleGenerationViewModel.setTitleGenerated(value, for: selectedId)
-    }
-
     /// 加载指定对话
     /// 协调 ConversationVM 和 MessageViewModel 完成加载（分页模式）
     func loadConversation(_ conversationId: UUID) async {
@@ -876,9 +823,6 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         if Self.verbose {
             os_log("\(Self.t)🔄 [\(conversationId)] 待发送消息：\(queueCount) 条")
         }
-
-        // 更新标题生成状态
-        titleGenerationViewModel.updateTitleGenerationStatus(from: messageViewModel.messages, for: conversationId)
 
         refreshSessionScopedUIState(for: conversationId)
     }
@@ -959,8 +903,11 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         turnTaskPipelineByConversation[conversationId] = nil
         runtimeStore.processingConversationIds.remove(conversationId)
         runtimeStore.streamStateByConversation[conversationId] = StreamSessionState(messageId: nil, messageIndex: nil)
+        runtimeStore.pendingStreamTextByConversation[conversationId] = nil
+        runtimeStore.streamingTextByConversation[conversationId] = nil
         runtimeStore.thinkingConversationIds.remove(conversationId)
         runtimeStore.pendingPermissionByConversation[conversationId] = nil
+        bumpStreamingRenderVersion()
         updateRuntimeState(for: conversationId)
 
         os_log("\(Self.t)🛑 任务已取消")
@@ -1180,6 +1127,16 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             forConversationId: conversationId,
             limit: limit,
             beforeTimestamp: beforeTimestamp
+        )
+    }
+
+    func loadToolOutputMessages(
+        forConversationId conversationId: UUID,
+        toolCallIDs: [String]
+    ) async -> [ChatMessage] {
+        await chatHistoryService.loadToolOutputMessages(
+            forConversationId: conversationId,
+            toolCallIDs: toolCallIDs
         )
     }
 

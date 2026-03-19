@@ -29,7 +29,8 @@ actor CacheManager: SuperLog {
     private init() {
         let schema = Schema([AppCacheItem.self])
 
-        let dbDir = AppConfig.getPluginDBFolderURL(pluginName: "AppManagerPlugin")
+        let dbDir = AppConfig.getDBFolderURL().appendingPathComponent("AppManagerPlugin", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dbDir, withIntermediateDirectories: true)
         let dbURL = dbDir.appendingPathComponent("AppCache.sqlite")
 
         let config = ModelConfiguration(

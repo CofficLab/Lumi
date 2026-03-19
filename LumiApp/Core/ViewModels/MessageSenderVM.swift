@@ -108,7 +108,13 @@ final class MessageSenderVM: ObservableObject, SuperLog {
         }
 
         let userMessage = ChatMessage(role: .user, content: content, images: images)
+        let previousQueueCount = pendingMessagesByConversation[conversationId]?.count ?? 0
         pendingMessagesByConversation[conversationId, default: []].append(userMessage)
+
+        // 对于可立即发送的首条消息，提前标记为正在处理，避免 UI 瞬间误显示“等待发送”队列。
+        if previousQueueCount == 0, isSendingByConversation[conversationId] != true {
+            currentProcessingIndexByConversation[conversationId] = 0
+        }
 
         if currentConversationId == conversationId {
             syncCurrentConversationState()

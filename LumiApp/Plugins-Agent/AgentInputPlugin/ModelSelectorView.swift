@@ -21,7 +21,7 @@ struct ModelSelectorView: View, SuperLog {
     @State private var detailedStats: [String: ModelPerformanceStats] = [:]
 
     /// 当前选中的 Tab：0 本地，1 远程
-    @State private var selectedTab = 0
+    @AppStorage("ModelSelectorView.selectedTab") private var selectedTab = 0
 
     /// 本地供应商的模型详情（按 providerId -> [LocalModelInfo]），用于按系列展示
     @State private var localModelInfosByProvider: [String: [LocalModelInfo]] = [:]
@@ -36,11 +36,16 @@ struct ModelSelectorView: View, SuperLog {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack {
-                Text("Select Model")
-                    .font(.headline)
+            // Header: Tab + Close
+            HStack(spacing: 12) {
+                Picker("", selection: $selectedTab) {
+                    Text("本地供应商").tag(0)
+                    Text("远程供应商").tag(1)
+                }
+                .pickerStyle(.segmented)
+
                 Spacer()
+
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundColor(.secondary)
@@ -49,17 +54,6 @@ struct ModelSelectorView: View, SuperLog {
             }
             .padding()
             .background(Color(nsColor: .controlBackgroundColor))
-
-            Divider()
-
-            // Tab: 本地 / 远程
-            Picker("", selection: $selectedTab) {
-                Text("本地供应商").tag(0)
-                Text("远程供应商").tag(1)
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal)
-            .padding(.vertical, 8)
 
             Divider()
 

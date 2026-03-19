@@ -15,19 +15,19 @@ struct SettingView: View {
     /// 侧边栏宽度
     private let sidebarWidth: CGFloat = 220
 
-    /// AppSettingsStore key
+    /// PluginStateStore key
     private static let selectedTabKey = "SettingView.selectedTab"
     private static let selectedPluginKey = "SettingView.selectedPlugin"
 
-    /// 从 AppSettingsStore 读取上次选中的项
+    /// 从 PluginStateStore 读取上次选中的项
     private func loadSavedSelection() -> SettingsSelection? {
         // 先尝试读取插件
-        if let pluginId = AppSettingsStore.shared.string(forKey: Self.selectedPluginKey) {
+        if let pluginId = PluginStateStore.shared.string(forKey: Self.selectedPluginKey) {
             return .plugin(pluginId)
         }
 
         // 再尝试读取核心设置项
-        if let tabRawValue = AppSettingsStore.shared.string(forKey: Self.selectedTabKey),
+        if let tabRawValue = PluginStateStore.shared.string(forKey: Self.selectedTabKey),
            let tab = SettingTab(rawValue: tabRawValue) {
             return .core(tab)
         }
@@ -35,17 +35,17 @@ struct SettingView: View {
         return nil
     }
 
-    /// 保存选中的项到 AppSettingsStore
+    /// 保存选中的项到 PluginStateStore
     private func saveSelection(_ selection: SettingsSelection?) {
         guard let sel = selection else { return }
 
         switch sel {
         case let .core(tab):
-            AppSettingsStore.shared.set(tab.rawValue, forKey: Self.selectedTabKey)
-            AppSettingsStore.shared.removeObject(forKey: Self.selectedPluginKey)
+            PluginStateStore.shared.set(tab.rawValue, forKey: Self.selectedTabKey)
+            PluginStateStore.shared.removeObject(forKey: Self.selectedPluginKey)
         case let .plugin(pluginId):
-            AppSettingsStore.shared.set(pluginId, forKey: Self.selectedPluginKey)
-            AppSettingsStore.shared.removeObject(forKey: Self.selectedTabKey)
+            PluginStateStore.shared.set(pluginId, forKey: Self.selectedPluginKey)
+            PluginStateStore.shared.removeObject(forKey: Self.selectedTabKey)
         }
     }
 
