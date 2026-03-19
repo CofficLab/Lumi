@@ -27,7 +27,6 @@ final class MessageRenderCache {
         let contentHash = hasher.finalize()
 
         if let existing = metadataByMessageId[message.id], existing.hash == contentHash {
-            ChatPerformanceMetrics.shared.markMetadataCacheHit()
             return existing.metadata
         }
 
@@ -48,7 +47,6 @@ final class MessageRenderCache {
             shouldDefaultCollapse: shouldDefaultCollapse
         )
         metadataByMessageId[message.id] = Entry(hash: contentHash, metadata: metadata)
-        ChatPerformanceMetrics.shared.markMetadataCacheMiss()
         return metadata
     }
 }

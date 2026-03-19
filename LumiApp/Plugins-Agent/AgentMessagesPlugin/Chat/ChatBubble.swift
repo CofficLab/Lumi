@@ -1,5 +1,4 @@
 import MagicKit
-import OSLog
 import SwiftUI
 
 // MARK: - Chat Bubble
@@ -8,8 +7,6 @@ import SwiftUI
 struct ChatBubble: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "🫧"
-    /// 是否启用详细日志
-    nonisolated static let verbose = true
 
     /// 消息对象
     let message: ChatMessage
@@ -120,20 +117,6 @@ struct ChatBubble: View, SuperLog {
         }
         .onHover { hovering in
             isHovered = hovering
-        }
-        .onAppear {
-            ChatPerformanceMetrics.shared.markMessageBubbleVisibility(
-                messageId: message.id,
-                role: message.role,
-                appeared: true
-            )
-        }
-        .onDisappear {
-            ChatPerformanceMetrics.shared.markMessageBubbleVisibility(
-                messageId: message.id,
-                role: message.role,
-                appeared: false
-            )
         }
     }
 

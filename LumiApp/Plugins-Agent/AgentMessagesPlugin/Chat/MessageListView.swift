@@ -1,14 +1,11 @@
 import MagicKit
-import OSLog
 import SwiftUI
 
 /// 消息列表视图组件
 struct MessageListView: View, SuperLog {
     nonisolated static let emoji = "📜"
-    nonisolated static let verbose = true
     nonisolated static let defaultHistoryWindowLimit = 80
     nonisolated static let historyWindowStep = 40
-    nonisolated(unsafe) private static var buildLogCounter: Int = 0
 
     @EnvironmentObject var timelineViewModel: ChatTimelineViewModel
     @EnvironmentObject var processingStateViewModel: ProcessingStateVM
@@ -22,7 +19,6 @@ struct MessageListView: View, SuperLog {
     @State private var keepLatestUserMessageAtTop = false
     @State private var scrollViewportHeight: CGFloat = 0
     @State private var lastScrollOffsetY: CGFloat = 0
-    @State private var lastScrollLogAt: Date = .distantPast
     @State private var isActivelyScrolling: Bool = false
     @State private var scrollIdleWorkItem: DispatchWorkItem?
     private struct DisplayRow: Identifiable {
@@ -211,10 +207,6 @@ extension MessageListView {
 
 extension MessageListView {
     private func handleUserDidSendMessageEvent(proxy: ScrollViewProxy) {
-        if Self.verbose {
-            os_log("\(Self.t)📜 收到 AgentInput 用户发送消息事件，准备将最新用户消息滚动到顶部")
-        }
-
         timelineViewModel.handleUserDidSendMessage()
         shouldPinLatestUserMessageToTop = true
         keepLatestUserMessageAtTop = true
@@ -227,9 +219,6 @@ extension MessageListView {
         guard !windowedHistoryRows(from: timelineViewModel.persistedMessages).isEmpty else { return }
 
         if shouldPinLatestUserMessageToTop {
-            if Self.verbose {
-                os_log("\(Self.t)📜 触发顶部对齐滚动：shouldPinLatestUserMessageToTop=true")
-            }
             scrollLatestUserMessageToTop(proxy: proxy, animated: false)
             shouldPinLatestUserMessageToTop = false
             keepLatestUserMessageAtTop = true
@@ -238,17 +227,11 @@ extension MessageListView {
         }
 
         if timelineViewModel.shouldPerformInitialScrollAfterMessageChange() {
-            if Self.verbose {
-                os_log("\(Self.t)📜 触发初始滚动到底部")
-            }
             scrollToBottom(proxy: proxy, animated: false)
             return
         }
 
         if timelineViewModel.shouldAutoFollow {
-            if Self.verbose {
-                os_log("\(Self.t)📜 触发自动跟随滚动到底部")
-            }
             scrollToBottom(proxy: proxy, animated: true)
         }
     }
@@ -275,27 +258,16 @@ extension MessageListView {
     }
 
     private func handleScrollOffsetChanged(_ newOffset: CGFloat) {
-        let now = Date()
-        let elapsed = now.timeIntervalSince(lastScrollLogAt)
         let delta = newOffset - lastScrollOffsetY
-
-        if elapsed >= 0.2, abs(delta) >= 20 {
-            os_log(
-                "\(Self.t)📜 滚动偏移变化 offset=\(String(format: "%.1f", newOffset)) delta=\(String(format: "%.1f", delta)) rows=\(timelineViewModel.persistedMessages.count)"
-            )
-            lastScrollLogAt = now
-        }
 
         if abs(delta) >= 1 {
             if !isActivelyScrolling {
                 isActivelyScrolling = true
-                os_log("\(Self.t)📜 进入活跃滚动态（临时关闭消息选择以提升滚动性能）")
             }
 
             scrollIdleWorkItem?.cancel()
             let work = DispatchWorkItem {
                 isActivelyScrolling = false
-                os_log("\(Self.t)📜 滚动空闲，恢复消息选择能力")
             }
             scrollIdleWorkItem = work
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.18, execute: work)
@@ -311,12 +283,7 @@ extension MessageListView {
     }
 
     private func buildDisplayRows(from messages: [ChatMessage], statusRow: DisplayRow? = nil) -> [DisplayRow] {
-        let start = DispatchTime.now().uptimeNanoseconds
-        var toolOutputLookupCount = 0
         var rows = messages.map { message in
-            if message.hasToolCalls {
-                toolOutputLookupCount += 1
-            }
             return DisplayRow(
                 id: message.id,
                 message: message,
@@ -326,22 +293,6 @@ extension MessageListView {
         if let statusRow = statusRow {
             rows.append(statusRow)
         }
-
-        let durationNs = DispatchTime.now().uptimeNanoseconds - start
-        let durationMs = Double(durationNs) / 1_000_000
-        Self.buildLogCounter += 1
-        if durationMs >= 8 || Self.buildLogCounter % 30 == 0 {
-            os_log(
-                "\(Self.t)📜 buildDisplayRows 耗时=\(String(format: "%.2f", durationMs))ms rows=\(rows.count) messages=\(messages.count) toolLookup=\(toolOutputLookupCount)"
-            )
-        }
-        ChatPerformanceMetrics.shared.markDisplayRowsBuilt(
-            source: "MessageListView.buildDisplayRows",
-            windowedMessageCount: messages.count,
-            displayRowsCount: rows.count,
-            toolOutputLookupCount: toolOutputLookupCount,
-            durationMs: durationMs
-        )
         return rows
     }
 

@@ -1,6 +1,4 @@
 import SwiftUI
-import MarkdownUI
-import OSLog
 import MagicKit
 
 // MARK: - Environment: 禁用消息内部滚动（由外层列表统一滚动，避免长消息“吸住”滚轮）
@@ -41,19 +39,15 @@ extension EnvironmentValues {
 }
 
 /// Markdown 消息视图，负责渲染聊天消息内容
-/// 使用 MarkdownUI 库渲染（支持 GitHub Flavored Markdown）
+/// 使用内置原生渲染（基于 swift-markdown AST）
 struct MarkdownView: View, SuperLog {
     nonisolated static let emoji = "📝"
-    nonisolated static let verbose = true
-    @AppStorage("agent.messages.markdown.renderer.mode")
-    private var rendererModeRawValue: String = MarkdownRendererMode.thirdParty.rawValue
 
     let message: ChatMessage
     let showRawMessage: Bool
     let isCollapsible: Bool
     let isExpanded: Bool
     let onToggleExpand: () -> Void
-    @Environment(\.preferOuterScroll) private var preferOuterScroll
     @Environment(\.chatListIsActivelyScrolling) private var chatListIsActivelyScrolling
     private var renderMetadata: MessageRenderMetadata {
         MessageRenderCache.shared.metadata(for: message)
@@ -61,27 +55,15 @@ struct MarkdownView: View, SuperLog {
 
     /// 最大高度（超过后折叠）
     private let maxHeight: CGFloat = 400
-    private var rendererMode: MarkdownRendererMode {
-        MarkdownRendererMode(rawValue: rendererModeRawValue) ?? .thirdParty
-    }
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            if !showRawMessage {
-                rendererSwitch
+        Group {
+            if showRawMessage {
+                rawMessageContent
+            } else {
+                nativeMarkdownContent
             }
-
-            Group {
-                if showRawMessage {
-                    rawMessageContent
-                } else if rendererMode == .native {
-                    nativeMarkdownContent
-                } else {
-                    markdownContent
-                }
-            }
-            .applyCollapsible(isCollapsible: isCollapsible, isExpanded: isExpanded, maxHeight: maxHeight)
         }
+        .applyCollapsible(isCollapsible: isCollapsible, isExpanded: isExpanded, maxHeight: maxHeight)
         .overlay(alignment: .bottom) {
             // 折叠时显示渐变遮罩和展开按钮
             if isCollapsible && !isExpanded && contentNeedsCollapse {
@@ -108,95 +90,12 @@ struct MarkdownView: View, SuperLog {
         PlainTextMessageContentView(content: message.content, monospaced: true)
     }
 
-    /// Markdown 内容：preferOuterScroll 时禁用内部滚动，让外层列表滚动
-    @ViewBuilder
-    private var markdownContent: some View {
-        CachedMarkdownContent(
-            content: message.content,
-            preferOuterScroll: preferOuterScroll,
-            chatListIsActivelyScrolling: chatListIsActivelyScrolling
-        )
-        .id("\(message.id.uuidString)-\(renderMetadata.contentHash)")
-        .onAppear {
-            ChatPerformanceMetrics.shared.markMarkdownRendered(
-                messageId: message.id,
-                contentHash: renderMetadata.contentHash
-            )
-            ChatPerformanceMetrics.shared.markMarkdownVisibility(
-                messageId: message.id,
-                appeared: true
-            )
-        }
-        .onDisappear {
-            ChatPerformanceMetrics.shared.markMarkdownVisibility(
-                messageId: message.id,
-                appeared: false
-            )
-        }
-    }
-
     private var nativeMarkdownContent: some View {
         NativeMarkdownContent(
             content: message.content,
             chatListIsActivelyScrolling: chatListIsActivelyScrolling
         )
         .id("native-\(message.id.uuidString)-\(renderMetadata.contentHash)")
-    }
-
-    private var rendererSwitch: some View {
-        HStack {
-            Spacer()
-            Menu {
-                ForEach(MarkdownRendererMode.allCases) { mode in
-                    Button {
-                        rendererModeRawValue = mode.rawValue
-                    } label: {
-                        Label(mode.label, systemImage: rendererMode == mode ? "checkmark" : "")
-                    }
-                }
-            } label: {
-                Label("渲染: \(rendererMode.label)", systemImage: "switch.2")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-            .menuStyle(.borderlessButton)
-            .buttonStyle(.plain)
-        }
-    }
-}
-
-private enum MarkdownRendererMode: String, CaseIterable, Identifiable {
-    case thirdParty = "third_party"
-    case native = "native"
-
-    var id: String { rawValue }
-
-    var label: String {
-        switch self {
-        case .thirdParty:
-            return "MarkdownUI"
-        case .native:
-            return "原生"
-        }
-    }
-}
-
-private struct CachedMarkdownContent: View {
-    let content: String
-    let preferOuterScroll: Bool
-    let chatListIsActivelyScrolling: Bool
-
-    var body: some View {
-        Group {
-            if preferOuterScroll {
-                Markdown(content)
-                    .chatTextSelection(active: !chatListIsActivelyScrolling)
-                    .scrollDisabled(true)
-            } else {
-                Markdown(content)
-                    .chatTextSelection(active: !chatListIsActivelyScrolling)
-            }
-        }
     }
 }
 
