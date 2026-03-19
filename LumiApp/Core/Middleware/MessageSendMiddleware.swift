@@ -44,8 +44,10 @@ struct MessageSendMiddlewareServices {
     let getConversationTitle: (UUID) -> String?
     /// 获取当前用于生成标题的 LLM 配置。
     let getCurrentConfig: () -> LLMConfig
-    /// 执行"如有需要则生成标题"的核心逻辑。
-    let autoGenerateConversationTitleIfNeeded: @Sendable (UUID, String, LLMConfig) async -> Void
+    /// 仅生成标题文本，不做触发判定与持久化更新。
+    let generateConversationTitle: @Sendable (String, LLMConfig) async -> String
+    /// 仅当当前标题仍等于 expectedTitle 时更新为 newTitle，返回是否更新成功。
+    let updateConversationTitleIfUnchanged: @Sendable (UUID, String, String) async -> Bool
 
     /// 当前是否已选择项目。
     let isProjectSelected: () -> Bool

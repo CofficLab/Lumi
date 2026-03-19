@@ -108,13 +108,20 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             getCurrentConfig: { [weak self] in
                 self?.getCurrentConfig() ?? .default
             },
-            autoGenerateConversationTitleIfNeeded: { [weak self] conversationId, content, config in
-                guard let self else { return }
-                await self.chatHistoryService.autoGenerateConversationTitleIfNeeded(
-                    conversationId: conversationId,
-                    userMessageContent: content,
-                    config: config
-                )
+            generateConversationTitle: { [weak self] content, config in
+                guard let self else { return String(content.prefix(20)) }
+                return await self.chatHistoryService.generateConversationTitle(from: content, config: config)
+            },
+            updateConversationTitleIfUnchanged: { [weak self] conversationId, expectedTitle, newTitle in
+                return await MainActor.run {
+                    guard let self,
+                          let conversation = self.chatHistoryService.fetchConversation(id: conversationId),
+                          conversation.title == expectedTitle else {
+                        return false
+                    }
+                    self.chatHistoryService.updateConversationTitle(conversation, newTitle: newTitle)
+                    return true
+                }
             },
             isProjectSelected: { [weak self] in
                 self?.ProjectVM.isProjectSelected ?? false

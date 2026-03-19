@@ -8,7 +8,8 @@ final class MessageSendCoordinator {
     struct Services {
         let getConversationTitle: (UUID) -> String?
         let getCurrentConfig: () -> LLMConfig
-        let autoGenerateConversationTitleIfNeeded: @Sendable (UUID, String, LLMConfig) async -> Void
+        let generateConversationTitle: @Sendable (String, LLMConfig) async -> String
+        let updateConversationTitleIfUnchanged: @Sendable (UUID, String, String) async -> Bool
 
         let isProjectSelected: () -> Bool
         let getProjectInfo: () -> (name: String, path: String)
@@ -73,7 +74,8 @@ final class MessageSendCoordinator {
                     services: MessageSendMiddlewareServices(
                         getConversationTitle: self.services.getConversationTitle,
                         getCurrentConfig: self.services.getCurrentConfig,
-                        autoGenerateConversationTitleIfNeeded: self.services.autoGenerateConversationTitleIfNeeded,
+                        generateConversationTitle: self.services.generateConversationTitle,
+                        updateConversationTitleIfUnchanged: self.services.updateConversationTitleIfUnchanged,
                         isProjectSelected: self.services.isProjectSelected,
                         getProjectInfo: self.services.getProjectInfo,
                         isFileSelected: self.services.isFileSelected,
