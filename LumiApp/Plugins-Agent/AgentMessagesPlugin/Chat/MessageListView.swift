@@ -122,6 +122,8 @@ extension MessageListView {
         .listStyle(.plain)
         .environment(\.preferOuterScroll, true)
         .padding(.vertical)
+        .accessibilityLabel("消息列表")
+        .accessibilityHint("按时间顺序展示会话消息")
         .background(
             GeometryReader { geometry in
                 Color.clear
@@ -148,6 +150,8 @@ extension MessageListView {
                     .padding(.horizontal, 12)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("显示更早消息")
+            .accessibilityHint("展开更早加载的历史消息")
             Spacer()
         }
         .padding(.vertical, 4)
@@ -181,6 +185,8 @@ extension MessageListView {
             }
             .buttonStyle(.plain)
             .disabled(timelineViewModel.isLoadingMore)
+            .accessibilityLabel("加载更早消息")
+            .accessibilityHint("从历史记录中继续加载更早的消息")
             Spacer()
         }
         .padding(.vertical, 8)

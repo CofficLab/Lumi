@@ -77,7 +77,9 @@ struct PermissionRequestView: View {
                 }
             }
             .transition(.opacity)
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("权限请求")
+            .accessibilityHint("请审阅操作风险并选择允许或拒绝")
         }
     }
 }
-

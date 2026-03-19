@@ -1,3 +1,4 @@
+import AppKit
 import ServiceManagement
 import SwiftUI
 
@@ -15,6 +16,8 @@ struct GeneralSettingView: View {
                 startupOptions
 
                 onboardingOptions
+                
+                supportOptions
 
                 Spacer()
             }
@@ -124,6 +127,51 @@ struct GeneralSettingView: View {
             }
             .buttonStyle(.borderedProminent)
         }
+    }
+
+    private var supportOptions: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                Image(systemName: "lifepreserver")
+                    .font(.system(size: 20))
+                    .foregroundColor(DesignTokens.Color.semantic.primary)
+                    .frame(width: 32)
+
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
+                    Text("反馈与支持")
+                        .font(DesignTokens.Typography.bodyEmphasized)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+
+                    Text("遇到问题时可直接提交 Issue，帮助我们快速定位")
+                        .font(DesignTokens.Typography.caption1)
+                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                }
+
+                Spacer()
+            }
+            .padding(.bottom, DesignTokens.Spacing.sm)
+
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                Button("报告问题") {
+                    openURL("https://github.com/CofficLab/Lumi/issues/new/choose")
+                }
+                .buttonStyle(.borderedProminent)
+                .accessibilityLabel("报告问题")
+                .accessibilityHint("在 GitHub 打开问题反馈页面")
+
+                Button("查看 Issue 列表") {
+                    openURL("https://github.com/CofficLab/Lumi/issues")
+                }
+                .buttonStyle(.bordered)
+                .accessibilityLabel("查看 Issue 列表")
+                .accessibilityHint("在浏览器打开公开问题列表")
+            }
+        }
+    }
+
+    private func openURL(_ urlString: String) {
+        guard let url = URL(string: urlString) else { return }
+        NSWorkspace.shared.open(url)
     }
 }
 
