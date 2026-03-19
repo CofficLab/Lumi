@@ -5,7 +5,7 @@ import SwiftUI
 /// 消息列表视图组件
 struct MessageListView: View, SuperLog {
     nonisolated static let emoji = "📜"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
     nonisolated static let defaultHistoryWindowLimit = 80
     nonisolated static let historyWindowStep = 40
 
@@ -17,6 +17,9 @@ struct MessageListView: View, SuperLog {
     private let processingStatusRowId = UUID(uuidString: "9D735D22-588A-4B50-9B14-28C358CF5136")!
     private let thinkingStatusRowId = UUID(uuidString: "7F9E66FA-86F2-4A2A-B311-4A4EA75E1EC4")!
     @State private var historyWindowLimit = Self.defaultHistoryWindowLimit
+    @State private var shouldPinLatestUserMessageToTop = false
+    @State private var keepLatestUserMessageAtTop = false
+    @State private var scrollViewportHeight: CGFloat = 0
     private struct DisplayRow: Identifiable {
         let id: UUID
         let message: ChatMessage
@@ -46,10 +49,14 @@ struct MessageListView: View, SuperLog {
             }
             .onAppear {
                 historyWindowLimit = Self.defaultHistoryWindowLimit
+                shouldPinLatestUserMessageToTop = false
+                keepLatestUserMessageAtTop = false
                 timelineViewModel.handleOnAppear()
             }
             .onChange(of: timelineViewModel.selectedConversationId) { _, _ in
                 historyWindowLimit = Self.defaultHistoryWindowLimit
+                shouldPinLatestUserMessageToTop = false
+                keepLatestUserMessageAtTop = false
             }
             .onChange(of: displayRows.last?.id) { _, _ in
                 handleLastMessageChanged(proxy: proxy)
@@ -70,6 +77,7 @@ extension MessageListView {
     private func messageScrollView(lastMessageID: UUID?, hiddenLoadedHistoryCount: Int) -> some View {
         let windowedPersistedRows = windowedHistoryRows(from: timelineViewModel.persistedMessages)
         let displayRows = buildDisplayRows(from: windowedPersistedRows, statusRow: statusDisplayRow)
+        let focusSpacerHeight = keepLatestUserMessageAtTop ? max(scrollViewportHeight * 0.95, 500) : 0
 
         return ScrollView {
             VStack(alignment: .leading, spacing: 12) {
@@ -93,11 +101,27 @@ extension MessageListView {
                 Color.clear
                     .frame(height: 1)
                     .id(bottomAnchorId)
+
+                if focusSpacerHeight > 0 {
+                    Color.clear
+                        .frame(height: focusSpacerHeight)
+                }
             }
             .padding(.horizontal)
         }
         .environment(\.preferOuterScroll, true)
         .padding(.vertical)
+        .background(
+            GeometryReader { geometry in
+                Color.clear
+                    .onAppear {
+                        scrollViewportHeight = geometry.size.height
+                    }
+                    .onChange(of: geometry.size.height) { _, newHeight in
+                        scrollViewportHeight = newHeight
+                    }
+            }
+        )
     }
 
     private func showEarlierLoadedButton(hiddenCount: Int) -> some View {
@@ -165,17 +189,27 @@ extension MessageListView {
 extension MessageListView {
     private func handleUserDidSendMessageEvent(proxy: ScrollViewProxy) {
         if Self.verbose {
-            os_log("\(Self.t)📜 收到 AgentInput 用户发送消息事件，准备滚动到底部")
+            os_log("\(Self.t)📜 收到 AgentInput 用户发送消息事件，准备将最新用户消息滚动到顶部")
         }
 
         timelineViewModel.handleUserDidSendMessage()
+        shouldPinLatestUserMessageToTop = true
+        keepLatestUserMessageAtTop = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            scrollToBottom(proxy: proxy, animated: true)
+            scrollLatestUserMessageToTop(proxy: proxy, animated: true)
         }
     }
 
     private func handleLastMessageChanged(proxy: ScrollViewProxy) {
         guard !windowedHistoryRows(from: timelineViewModel.persistedMessages).isEmpty else { return }
+
+        if shouldPinLatestUserMessageToTop {
+            scrollLatestUserMessageToTop(proxy: proxy, animated: false)
+            shouldPinLatestUserMessageToTop = false
+            keepLatestUserMessageAtTop = true
+            timelineViewModel.disableAutoFollow()
+            return
+        }
 
         if timelineViewModel.shouldPerformInitialScrollAfterMessageChange() {
             scrollToBottom(proxy: proxy, animated: false)
@@ -195,6 +229,23 @@ extension MessageListView {
         } else {
             proxy.scrollTo(bottomAnchorId, anchor: .bottom)
         }
+    }
+
+    private func scrollLatestUserMessageToTop(proxy: ScrollViewProxy, animated: Bool) {
+        guard let latestUserMessageId = latestVisibleUserMessageId() else { return }
+        if animated {
+            withAnimation(.easeOut(duration: 0.2)) {
+                proxy.scrollTo(latestUserMessageId, anchor: .top)
+            }
+        } else {
+            proxy.scrollTo(latestUserMessageId, anchor: .top)
+        }
+    }
+
+    private func latestVisibleUserMessageId() -> UUID? {
+        windowedHistoryRows(from: timelineViewModel.persistedMessages)
+            .last(where: { $0.role == .user })?
+            .id
     }
 
     private func buildDisplayRows(from messages: [ChatMessage], statusRow: DisplayRow? = nil) -> [DisplayRow] {

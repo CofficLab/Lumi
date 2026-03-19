@@ -142,9 +142,6 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
                 self?.messageViewModel.messages.count ?? 0
             }
         ),
-        onUserJustSentMessage: { [weak self] in
-            self?.userJustSentMessage = true
-        },
         onProcessingStarted: { [weak self] conversationId in
             guard let self else { return }
             if self.ConversationVM.selectedConversationId == conversationId {
@@ -253,12 +250,6 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             await self.handleConversationTurnEventFallback(event)
         }
     )
-
-    // MARK: - 用户发送消息标记（用于触发 UI 滚动）
-
-    /// 用户刚刚发送了消息的标记
-    /// 当用户发送消息时设置为 true，UI 监听此属性并滚动到底部后重置为 false
-    @Published public var userJustSentMessage: Bool = false
 
     // MARK: - 附件（图片上传）
 

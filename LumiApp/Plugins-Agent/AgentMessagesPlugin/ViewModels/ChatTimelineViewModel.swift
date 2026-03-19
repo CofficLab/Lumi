@@ -197,6 +197,10 @@ final class ChatTimelineViewModel: ObservableObject, SuperLog {
         state.shouldAutoFollow = true
     }
 
+    func disableAutoFollow() {
+        state.shouldAutoFollow = false
+    }
+
     func updateBottomMetrics(contentBottomY: CGFloat? = nil, viewportBottomY: CGFloat? = nil) {
         let now = Date()
         if now.timeIntervalSince(lastMetricUpdateAt) < minMetricUpdateInterval {

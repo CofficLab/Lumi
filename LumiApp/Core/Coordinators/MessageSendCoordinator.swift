@@ -23,7 +23,6 @@ final class MessageSendCoordinator {
     private let runtimeStore: ConversationRuntimeStore
     private let services: Services
 
-    private let onUserJustSentMessage: () -> Void
     private let onProcessingStarted: (UUID) -> Void
     private let onProcessingFinished: (UUID) -> Void
     private let sendMessageToAgent: (ChatMessage, UUID) async -> Void
@@ -35,7 +34,6 @@ final class MessageSendCoordinator {
         MessageSenderVM: MessageSenderVM,
         runtimeStore: ConversationRuntimeStore,
         services: Services,
-        onUserJustSentMessage: @escaping () -> Void,
         onProcessingStarted: @escaping (UUID) -> Void,
         onProcessingFinished: @escaping (UUID) -> Void,
         sendMessageToAgent: @escaping (ChatMessage, UUID) async -> Void
@@ -43,7 +41,6 @@ final class MessageSendCoordinator {
         self.MessageSenderVM = MessageSenderVM
         self.runtimeStore = runtimeStore
         self.services = services
-        self.onUserJustSentMessage = onUserJustSentMessage
         self.onProcessingStarted = onProcessingStarted
         self.onProcessingFinished = onProcessingFinished
         self.sendMessageToAgent = sendMessageToAgent
@@ -113,7 +110,6 @@ final class MessageSendCoordinator {
             runtimeStore.updateRuntimeState(for: conversationId)
 
         case let .sendMessage(message, conversationId):
-            onUserJustSentMessage()
             await sendMessageToAgent(message, conversationId)
         }
     }
