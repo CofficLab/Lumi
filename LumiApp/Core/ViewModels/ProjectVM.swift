@@ -78,7 +78,6 @@ final class ProjectVM: ObservableObject, SuperLog {
         self.providerRegistry = providerRegistry
         loadLanguagePreference()
         loadChatMode()
-        loadAutoApproveRisk()
         loadGlobalOrDefaultProviderIfNeeded()
     }
 
@@ -450,18 +449,14 @@ final class ProjectVM: ObservableObject, SuperLog {
 
     // MARK: - 自动批准风险
 
-    /// 加载自动批准风险设置
+    /// 加载自动批准风险设置（持久化由插件负责）
     private func loadAutoApproveRisk() {
-        let enabled = AppSettingsStore.shared.bool(forKey: "Agent_AutoApproveRisk")
-        Task { @MainActor in
-            self.autoApproveRisk = enabled
-        }
+        // no-op
     }
 
     func setAutoApproveRisk(_ enabled: Bool) {
         Task { @MainActor in
             self.autoApproveRisk = enabled
-            AppSettingsStore.shared.set(enabled, forKey: "Agent_AutoApproveRisk")
         }
     }
 }

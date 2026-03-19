@@ -20,6 +20,11 @@ actor AgentAutoApproveHeaderPlugin: SuperPlugin {
     nonisolated func onDisable() {}
 
     @MainActor
+    func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
+        AnyView(AutoApprovePersistenceOverlay(content: content()))
+    }
+
+    @MainActor
     func addRightHeaderLeadingView() -> AnyView? { nil }
 
     @MainActor
@@ -27,4 +32,3 @@ actor AgentAutoApproveHeaderPlugin: SuperPlugin {
         [AnyView(AutoApproveToggle())]
     }
 }
-

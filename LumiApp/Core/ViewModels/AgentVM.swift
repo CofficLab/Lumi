@@ -519,9 +519,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             ProjectVM.setChatMode(mode)
         }
 
-        // 加载自动批准风险 - 使用 bool 类型读取
-        let autoApprove = AppSettingsStore.shared.bool(forKey: "Agent_AutoApproveRisk")
-        ProjectVM.setAutoApproveRisk(autoApprove)
+        // 自动批准风险持久化由插件负责
 
         // 加载上次选择的项目（项目切换会自动应用配置）
         if let savedPath = AppSettingsStore.shared.string(forKey: "Agent_SelectedProject") {

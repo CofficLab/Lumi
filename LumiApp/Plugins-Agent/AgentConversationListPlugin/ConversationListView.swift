@@ -13,6 +13,7 @@ struct ConversationListView: View, SuperLog {
 
     /// 会话管理 ViewModel
     @EnvironmentObject var ConversationVM: ConversationVM
+    private let selectionStore = ConversationListSelectionStore()
 
     /// 当前页已加载的会话
     @State private var conversations: [Conversation] = []
@@ -25,6 +26,7 @@ struct ConversationListView: View, SuperLog {
     @State private var hasMore: Bool = true
     @State private var isLoadingPage: Bool = false
     @State private var didInitialLoad: Bool = false
+    @State private var didRestoreSelection: Bool = false
     @State private var lastReloadSelectionId: UUID?
 
     /// 每页大小
@@ -79,6 +81,9 @@ struct ConversationListView: View, SuperLog {
         .onAppear(perform: performInitialLoadIfNeeded)
         .onChange(of: localSelectedConversationId, handleLocalSelectionChange)
         .onChange(of: ConversationVM.selectedConversationId, handleConversationSelected)
+        .onChange(of: ConversationVM.selectedConversationId) { _, newValue in
+            selectionStore.saveSelectedConversationId(newValue)
+        }
         .onChange(of: conversations) { _, newConversations in
             // 当会话列表变化时，同步当前选中的会话
             handleConversationsChanged(newConversations)
@@ -155,6 +160,8 @@ extension ConversationListView {
 
     /// 视图首次出现时加载第一页
     private func performInitialLoadIfNeeded() {
+        restoreSelectionFromPluginStoreIfNeeded()
+
         guard !didInitialLoad else {
             syncSelectionFromViewModel()
             return
@@ -170,6 +177,21 @@ extension ConversationListView {
         nextOffset = 0
         hasMore = true
         loadNextPageIfNeeded()
+    }
+
+    private func restoreSelectionFromPluginStoreIfNeeded() {
+        guard !didRestoreSelection else { return }
+        didRestoreSelection = true
+
+        guard let storedId = selectionStore.loadSelectedConversationId(),
+              ConversationVM.fetchConversation(id: storedId) != nil else {
+            return
+        }
+
+        ConversationVM.setSelectedConversation(storedId)
+        if Self.verbose {
+            os_log("\(self.t)✅ [\(storedId)] 从插件存储恢复会话选择")
+        }
     }
 
     /// 滚动到末尾时触发续页

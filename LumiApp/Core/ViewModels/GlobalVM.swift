@@ -75,14 +75,8 @@ final class GlobalVM: ObservableObject {
     /// - `.app`: 应用模式，传统的工具应用
     /// - `.agent`: Agent 模式，AI 助手对话模式
     ///
-    /// 模式选择会持久化到 UserDefaults。
-    @Published var selectedMode: AppMode = .app {
-        didSet {
-            // 保存模式到 UserDefaults
-            // 应用重启后会恢复上次选择的模式
-            AppSettingsStore.shared.set(selectedMode.rawValue, forKey: "App_SelectedMode")
-        }
-    }
+    /// 模式选择持久化由插件负责。
+    @Published var selectedMode: AppMode = .app
 
     // MARK: - 数据状态
 
@@ -96,14 +90,9 @@ final class GlobalVM: ObservableObject {
 
     /// 初始化全局提供者
     ///
-    /// 从 UserDefaults 加载上次选择的模式。
+    /// 模式恢复由插件负责。
     init() {
-        // 从 UserDefaults 加载上次选择的模式
-        // 如果没有保存的记录，使用默认值 .app
-        if let savedModeRawValue = AppSettingsStore.shared.string(forKey: "App_SelectedMode"),
-           let savedMode = AppMode(rawValue: savedModeRawValue) {
-            selectedMode = savedMode
-        }
+        // no-op
     }
 
     // MARK: - 错误处理
