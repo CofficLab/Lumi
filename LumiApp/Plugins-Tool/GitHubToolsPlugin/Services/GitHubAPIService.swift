@@ -16,13 +16,16 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
 
     /// URL 会话
     private let session: URLSession
+    private let settingsStore = GitHubPluginLocalStore()
+    private let tokenKey = "GitHubToken"
 
     /// GitHub Token（从插件设置读取）
     private var accessToken: String? {
-        AppSettingsStore.shared.string(forKey: "GitHubToken")
+        settingsStore.string(forKey: tokenKey)
     }
 
     private init() {
+        settingsStore.migrateLegacyValueIfMissing(forKey: tokenKey)
         let config = URLSessionConfiguration.default
         config.httpAdditionalHeaders = [
             "Accept": "application/vnd.github.v3+json",

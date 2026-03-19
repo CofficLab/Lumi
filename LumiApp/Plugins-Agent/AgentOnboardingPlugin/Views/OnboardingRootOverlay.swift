@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 private enum OnboardingNotification {
@@ -9,15 +10,14 @@ final class OnboardingPluginViewModel: ObservableObject {
     @Published var isPresentingOnboarding = false
     @Published var currentStep = 0
 
-    private static let completedKey = "Agent_OnboardingCompleted"
-    private let settingsStore: AppSettingsStore
+    private let store: OnboardingPluginStore
 
-    init(settingsStore: AppSettingsStore = .shared) {
-        self.settingsStore = settingsStore
+    init(store: OnboardingPluginStore = .init(pluginId: "AgentOnboarding")) {
+        self.store = store
     }
 
     private var hasCompletedOnboarding: Bool {
-        settingsStore.bool(forKey: Self.completedKey)
+        store.completed
     }
 
     func presentIfNeededOnLaunch() {
@@ -33,7 +33,7 @@ final class OnboardingPluginViewModel: ObservableObject {
 
     func show(forceReset: Bool) {
         if forceReset {
-            settingsStore.set(false, forKey: Self.completedKey)
+            store.completed = false
         }
         start()
     }
@@ -43,7 +43,7 @@ final class OnboardingPluginViewModel: ObservableObject {
     }
 
     func complete() {
-        settingsStore.set(true, forKey: Self.completedKey)
+        store.completed = true
         isPresentingOnboarding = false
         currentStep = 0
     }
@@ -59,6 +59,63 @@ final class OnboardingPluginViewModel: ObservableObject {
     func previousStep() {
         guard currentStep > 0 else { return }
         currentStep -= 1
+    }
+}
+
+final class OnboardingPluginStore {
+    private let fileManager = FileManager.default
+    private let settingsURL: URL
+    private let stateFileURL: URL
+
+    init(pluginId: String) {
+        let root = AppConfig.getDBFolderURL()
+            .appendingPathComponent(pluginId, isDirectory: true)
+        self.settingsURL = root.appendingPathComponent("settings", isDirectory: true)
+        self.stateFileURL = settingsURL.appendingPathComponent("onboarding_state.plist")
+        prepareDirectories()
+    }
+
+    var completed: Bool {
+        get { readCompletedFlag() }
+        set { writeCompletedFlag(newValue) }
+    }
+
+    private func prepareDirectories() {
+        try? fileManager.createDirectory(at: settingsURL, withIntermediateDirectories: true)
+    }
+
+    private func readCompletedFlag() -> Bool {
+        guard fileManager.fileExists(atPath: stateFileURL.path),
+              let data = try? Data(contentsOf: stateFileURL),
+              let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
+              let dict = plist as? [String: Any],
+              let completed = dict["completed"] as? Bool else {
+            return false
+        }
+        return completed
+    }
+
+    private func writeCompletedFlag(_ completed: Bool) {
+        let payload: [String: Any] = [
+            "completed": completed,
+            "updatedAt": Date()
+        ]
+
+        guard let data = try? PropertyListSerialization.data(fromPropertyList: payload, format: .binary, options: 0) else {
+            return
+        }
+
+        let tempURL = settingsURL.appendingPathComponent("onboarding_state.tmp")
+        do {
+            try data.write(to: tempURL, options: .atomic)
+            if fileManager.fileExists(atPath: stateFileURL.path) {
+                _ = try? fileManager.replaceItemAt(stateFileURL, withItemAt: tempURL)
+            } else {
+                try fileManager.moveItem(at: tempURL, to: stateFileURL)
+            }
+        } catch {
+            try? fileManager.removeItem(at: tempURL)
+        }
     }
 }
 

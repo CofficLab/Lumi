@@ -132,11 +132,6 @@
 			path = LumiFinder;
 			sourceTree = "<group>";
 		};
-		A10000032F60000100AAA001 /* LumiTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = LumiTests;
-			sourceTree = "<group>";
-		};
 		F5A640682F3ED1910039A761 /* NettoExtension */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -213,7 +208,6 @@
 			children = (
 				F53C3ECB2F1A3CB000929321 /* Assets.xcassets */,
 				F5F4DFD42F3ACC5100C76EA0 /* LumiApp */,
-				A10000032F60000100AAA001 /* LumiTests */,
 				0B2F7D622F3A301C00AD7E94 /* LumiFinder */,
 				F53C49142F1A42EC00929321 /* Lumi.app */,
 				A10000012F60000100AAA001 /* LumiTests.xctest */,
@@ -269,9 +263,6 @@
 			);
 			dependencies = (
 				A10000092F60000100AAA001 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				A10000032F60000100AAA001 /* LumiTests */,
 			);
 			name = LumiTests;
 			packageProductDependencies = (

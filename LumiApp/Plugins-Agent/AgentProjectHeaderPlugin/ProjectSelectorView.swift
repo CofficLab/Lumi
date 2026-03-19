@@ -11,6 +11,7 @@ struct ProjectSelectorView: View {
     @State private var isFileImporterPresented = false
 
     private let maxRecentProjects = 5
+    private let settingsStore = AgentProjectHeaderPluginLocalStore()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -280,7 +281,8 @@ struct ProjectSelectorView: View {
 
     private func saveRecentProjects() {
         if let encoded = try? JSONEncoder().encode(recentProjects) {
-            AppSettingsStore.shared.set(encoded, forKey: "Agent_RecentProjects")
+            settingsStore.migrateLegacyValueIfMissing(forKey: "Agent_RecentProjects")
+            settingsStore.set(encoded, forKey: "Agent_RecentProjects")
         }
     }
 }

@@ -24,6 +24,7 @@ class InputService: ObservableObject, SuperLog {
 
     private var cancellables = Set<AnyCancellable>()
     private let configKey = "InputPluginConfig"
+    private let settingsStore = InputPluginLocalStore()
 
     private init() {
         if Self.verbose {
@@ -31,7 +32,8 @@ class InputService: ObservableObject, SuperLog {
         }
 
         // Load config
-        if let data = AppSettingsStore.shared.data(forKey: configKey),
+        settingsStore.migrateLegacyValueIfMissing(forKey: configKey)
+        if let data = settingsStore.data(forKey: configKey),
            let decoded = try? JSONDecoder().decode(InputConfig.self, from: data) {
             self.config = decoded
         } else {
@@ -121,7 +123,7 @@ class InputService: ObservableObject, SuperLog {
 
     private func saveConfig() {
         if let data = try? JSONEncoder().encode(config) {
-            AppSettingsStore.shared.set(data, forKey: configKey)
+            settingsStore.set(data, forKey: configKey)
         }
     }
 

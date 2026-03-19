@@ -15,19 +15,22 @@ actor ClipboardManagerPlugin: SuperPlugin {
     nonisolated static let isConfigurable: Bool = true
 
     static let shared = ClipboardManagerPlugin()
+    nonisolated private static let settingsStore = ClipboardManagerPluginLocalStore()
+    nonisolated private static let monitoringKey = "ClipboardMonitoringEnabled"
 
     // MARK: - Lifecycle
 
     nonisolated func onRegister() {
         // Initialize defaults
-        if AppSettingsStore.shared.object(forKey: "ClipboardMonitoringEnabled") == nil {
-            AppSettingsStore.shared.set(true, forKey: "ClipboardMonitoringEnabled")
+        Self.settingsStore.migrateLegacyValueIfMissing(forKey: Self.monitoringKey)
+        if Self.settingsStore.object(forKey: Self.monitoringKey) == nil {
+            Self.settingsStore.set(true, forKey: Self.monitoringKey)
         }
     }
 
     nonisolated func onEnable() {
         Task { @MainActor in
-            if AppSettingsStore.shared.bool(forKey: "ClipboardMonitoringEnabled") {
+            if Self.settingsStore.bool(forKey: Self.monitoringKey) {
                 ClipboardMonitor.shared.startMonitoring()
             }
         }

@@ -23,6 +23,8 @@ class MenuBarManagerService: ObservableObject, SuperLog {
     
     /// 隐藏的菜单栏项
     @Published var hiddenItems: Set<String> = []
+    private let settingsStore = MenuBarManagerPluginLocalStore()
+    private let hiddenItemsKey = "MenuBarManager_HiddenItems"
     
     // MARK: - Private Properties
     
@@ -155,12 +157,13 @@ class MenuBarManagerService: ObservableObject, SuperLog {
     }
     
     private func saveSettings() {
-        // 保存 hiddenItems 到 UserDefaults
-        AppSettingsStore.shared.set(Array(hiddenItems), forKey: "MenuBarManager_HiddenItems")
+        // 保存 hiddenItems 到插件目录
+        settingsStore.set(Array(hiddenItems), forKey: hiddenItemsKey)
     }
     
     private func loadSettings() {
-        if let saved = AppSettingsStore.shared.array(forKey: "MenuBarManager_HiddenItems") as? [String] {
+        settingsStore.migrateLegacyValueIfMissing(forKey: hiddenItemsKey)
+        if let saved = settingsStore.array(forKey: hiddenItemsKey) as? [String] {
             hiddenItems = Set(saved)
         }
     }

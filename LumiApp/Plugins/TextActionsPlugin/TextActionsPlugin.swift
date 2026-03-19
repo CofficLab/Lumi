@@ -16,13 +16,16 @@ actor TextActionsPlugin: SuperPlugin, SuperLog {
     
     nonisolated var instanceLabel: String { Self.id }
     static let shared = TextActionsPlugin()
+    nonisolated private static let settingsStore = TextActionsPluginLocalStore()
+    nonisolated private static let enabledKey = "TextActionsEnabled"
     
     // MARK: - Lifecycle
     
     nonisolated func onRegister() {
         // Initialize settings default if not set
-        if AppSettingsStore.shared.object(forKey: "TextActionsEnabled") == nil {
-            AppSettingsStore.shared.set(true, forKey: "TextActionsEnabled")
+        Self.settingsStore.migrateLegacyValueIfMissing(forKey: Self.enabledKey)
+        if Self.settingsStore.object(forKey: Self.enabledKey) == nil {
+            Self.settingsStore.set(true, forKey: Self.enabledKey)
         }
     }
     

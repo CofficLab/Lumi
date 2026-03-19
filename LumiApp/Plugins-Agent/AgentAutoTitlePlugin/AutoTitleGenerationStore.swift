@@ -16,7 +16,8 @@ actor AutoTitleGenerationStore: SuperLog {
             AutoTitleGenerationRecord.self
         ])
 
-        let dbDir = AppConfig.getPluginDBFolderURL(pluginName: "AgentAutoTitlePlugin")
+        let dbDir = AppConfig.getDBFolderURL().appendingPathComponent("AgentAutoTitlePlugin", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dbDir, withIntermediateDirectories: true)
         let dbURL = dbDir.appendingPathComponent("AgentAutoTitle.sqlite")
 
         let config = ModelConfiguration(
@@ -54,4 +55,3 @@ actor AutoTitleGenerationStore: SuperLog {
         }
     }
 }
-

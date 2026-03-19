@@ -19,6 +19,8 @@ struct GitHubPluginSettingsView: View, SuperLog {
 
     /// API 限制信息
     @State private var apiLimitInfo: String = "未认证"
+    private let settingsStore = GitHubPluginLocalStore()
+    private let tokenKey = "GitHubToken"
 
     // MARK: - Environment
 
@@ -232,7 +234,8 @@ extension GitHubPluginSettingsView {
 extension GitHubPluginSettingsView {
     /// 加载 GitHub Token
     private func loadToken() {
-        token = AppSettingsStore.shared.string(forKey: "GitHubToken") ?? ""
+        settingsStore.migrateLegacyValueIfMissing(forKey: tokenKey)
+        token = settingsStore.string(forKey: tokenKey) ?? ""
         apiLimitInfo = token.isEmpty ? "未认证" : "已认证"
 
         if Self.verbose {
@@ -240,9 +243,9 @@ extension GitHubPluginSettingsView {
         }
     }
 
-    /// 保存 GitHub Token 到 UserDefaults
+    /// 保存 GitHub Token 到插件本地配置
     private func saveToken() {
-        AppSettingsStore.shared.set(token, forKey: "GitHubToken")
+        settingsStore.set(token, forKey: tokenKey)
         apiLimitInfo = token.isEmpty ? "未认证" : "已认证"
 
         if !isSaved {
