@@ -14,6 +14,8 @@ struct GeneralSettingView: View {
                 // 启动选项
                 startupOptions
 
+                onboardingOptions
+
                 Spacer()
             }
             .padding(.horizontal, DesignTokens.Spacing.lg)
@@ -86,6 +88,41 @@ struct GeneralSettingView: View {
             print("⚠️ Launch at login requires macOS 13.0 or later")
             // Restore toggle state
             launchAtLogin.toggle()
+        }
+    }
+
+    // MARK: - Onboarding
+
+    private var onboardingOptions: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                Image(systemName: "graduationcap")
+                    .font(.system(size: 20))
+                    .foregroundColor(DesignTokens.Color.semantic.primary)
+                    .frame(width: 32)
+
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
+                    Text("新手引导")
+                        .font(DesignTokens.Typography.bodyEmphasized)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+
+                    Text("随时重新查看产品使用指引")
+                        .font(DesignTokens.Typography.caption1)
+                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                }
+
+                Spacer()
+            }
+            .padding(.bottom, DesignTokens.Spacing.sm)
+
+            Button("重新查看新手引导") {
+                NotificationCenter.default.post(
+                    name: Notification.Name("AgentOnboarding.Show"),
+                    object: nil,
+                    userInfo: ["reset": true]
+                )
+            }
+            .buttonStyle(.borderedProminent)
         }
     }
 }

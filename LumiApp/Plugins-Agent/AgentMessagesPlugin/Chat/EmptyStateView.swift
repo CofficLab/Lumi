@@ -31,6 +31,18 @@ struct EmptyStateView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
+
+                Button("查看新手引导") {
+                    NotificationCenter.default.post(
+                        name: Notification.Name("AgentOnboarding.Show"),
+                        object: nil
+                    )
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.accent)
+
+                QuickStartActionsView(sendStrategy: .createConversationAndSend)
+                    .padding(.top, 4)
             } else {
                 Button {
                     Task {
@@ -46,6 +58,18 @@ struct EmptyStateView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
                 .buttonStyle(.plain)
+
+                Button("查看新手引导") {
+                    NotificationCenter.default.post(
+                        name: Notification.Name("AgentOnboarding.Show"),
+                        object: nil
+                    )
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.accent)
+
+                QuickStartActionsView(sendStrategy: .createConversationAndSend)
+                    .padding(.top, 4)
             }
 
             Spacer()
@@ -60,4 +84,3 @@ struct EmptyStateView: View {
         .frame(width: 600, height: 400)
         .inRootView()
 }
-
