@@ -71,8 +71,7 @@ struct ChatBubble: View {
                             )
                         case .status:
                             StatusMessage(
-                                message: message,
-                                showRawMessage: $showRawMessage
+                                message: message
                             )
                         case .tool:
                             ToolOutputView(message: message)

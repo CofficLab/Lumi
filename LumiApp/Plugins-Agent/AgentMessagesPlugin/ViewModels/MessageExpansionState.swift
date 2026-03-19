@@ -1,19 +1,12 @@
 import SwiftUI
 import Combine
-import OSLog
-import MagicKit
 
 // MARK: - Message Expansion State
 
 /// 消息展开状态管理器
 /// 负责管理消息的展开/折叠状态
 @MainActor
-final class MessageExpansionState: ObservableObject, SuperLog {
-    /// 日志标识 emoji
-    nonisolated static let emoji = "📝"
-    /// 是否启用详细日志
-    nonisolated static let verbose = false
-
+final class MessageExpansionState: ObservableObject {
     static let shared = MessageExpansionState()
 
     @Published private var expandedStates: [UUID: Bool] = [:]

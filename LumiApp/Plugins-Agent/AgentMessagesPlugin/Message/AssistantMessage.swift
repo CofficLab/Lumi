@@ -1,21 +1,16 @@
 import MagicKit
-import OSLog
 import SwiftUI
 
 // MARK: - Assistant Message
 //
 /// 负责完整渲染一条助手消息（包含头部、思考过程、工具调用与正文）
-struct AssistantMessage: View, SuperLog {
-    nonisolated static let emoji = "🤖"
-    nonisolated static let verbose = false
-
+struct AssistantMessage: View {
     let message: ChatMessage
     let isLastMessage: Bool
     let relatedToolOutputs: [ChatMessage]
 
     @ObservedObject private var expansionState = MessageExpansionState.shared
     @Binding var showRawMessage: Bool
-    @State private var isHeaderHovered: Bool = false
     private static let timestampFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss"
@@ -102,8 +97,7 @@ struct AssistantMessage: View, SuperLog {
     // MARK: - Subviews
 
     private var headerSection: some View {
-        HStack(alignment: .center, spacing: 8) {
-            // 左侧：供应商和模型信息
+        MessageHeaderView {
             HStack(alignment: .center, spacing: 4) {
                 Text("Lumi")
                     .font(DesignTokens.Typography.caption1)
@@ -126,9 +120,7 @@ struct AssistantMessage: View, SuperLog {
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
             }
-
-            Spacer()
-
+        } trailing: {
             HStack(alignment: .center, spacing: 12) {
                 // 性能指标组（暂时隐藏）
 //                performanceMetricsGroup
@@ -153,18 +145,6 @@ struct AssistantMessage: View, SuperLog {
 
                 // 切换原始消息按钮
                 RawMessageToggleButton(showRawMessage: $showRawMessage)
-            }
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 6)
-                .fill(isHeaderHovered ? Color.primary.opacity(0.05) : Color.primary.opacity(0.02))
-        )
-        .contentShape(Rectangle())
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHeaderHovered = hovering
             }
         }
     }

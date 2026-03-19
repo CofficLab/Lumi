@@ -1,12 +1,8 @@
 import MagicKit
-import OSLog
 import SwiftUI
 
 /// 聊天消息列表视图组件
-struct ChatMessagesView: View, SuperLog {
-    nonisolated static let emoji = "💬"
-    nonisolated static let verbose = true
-
+struct ChatMessagesView: View {
     /// 会话管理 ViewModel
     @EnvironmentObject var ConversationVM: ConversationVM
 
