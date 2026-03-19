@@ -48,7 +48,7 @@ struct ErrorRecoveryBanner: View {
             .padding(12)
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.red.opacity(0.08))
+                    .fill(Color.red.opacity(0.18))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
