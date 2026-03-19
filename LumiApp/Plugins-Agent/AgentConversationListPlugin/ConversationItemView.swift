@@ -95,9 +95,41 @@ extension ConversationItemView {
                     .font(.system(size: 6))
             }
 
-            Text(conversation.updatedAt.formatted(.relative(presentation: .named)))
+            Text(coarseRelativeTime(from: conversation.updatedAt))
                 .font(.system(size: 8))
         }
+    }
+}
+
+private extension ConversationItemView {
+    /// 量化的相对时间展示：减少 UI 因秒级波动导致的频繁跳变
+    /// - 1分钟内：按 10 秒分桶（0-9秒显示“刚刚”，10-19秒显示“10秒前”，以此类推）
+    /// - 1分钟以上：按分钟显示（比如“1分钟前”）
+    func coarseRelativeTime(from date: Date, now: Date = Date()) -> String {
+        let delta = now.timeIntervalSince(date)
+        guard delta >= 0 else { return "刚刚" }
+
+        let seconds = Int(delta)
+        if seconds < 60 {
+            let bucket = (seconds / 10) * 10
+            if bucket <= 0 {
+                return "刚刚"
+            }
+            return "\(bucket)秒前"
+        }
+
+        let minutes = seconds / 60
+        if minutes < 60 {
+            return "\(minutes)分钟前"
+        }
+
+        let hours = minutes / 60
+        if hours < 24 {
+            return "\(hours)小时前"
+        }
+
+        let days = hours / 24
+        return "\(days)天前"
     }
 }
 

@@ -34,61 +34,79 @@ struct ConversationListView: View, SuperLog {
     /// 折叠状态
     @AppStorage("Sidebar_ConversationList_Expanded") private var isExpanded: Bool = true
 
+    private let listTopAnchorId = "conversation_list_top_anchor"
+
     var body: some View {
-        VStack(spacing: 0) {
-            // 标题栏
-            ConversationListHeader(isExpanded: $isExpanded)
+        ScrollViewReader { proxy in
+            VStack(spacing: 0) {
+                // 标题栏
+                ConversationListHeader(isExpanded: $isExpanded)
 
-            if isExpanded {
-                Divider()
-                    .background(Color.white.opacity(0.1))
+                if isExpanded {
+                    Divider()
+                        .background(Color.white.opacity(0.1))
 
-                // 对话列表内容
-                if conversations.isEmpty {
-                    if isLoadingPage {
-                        ProgressView("加载中...")
-                            .font(.system(size: 11))
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                            .padding(.vertical, 12)
+                    // 对话列表内容
+                    if conversations.isEmpty {
+                        if isLoadingPage {
+                            ProgressView("加载中...")
+                                .font(.system(size: 11))
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                                .padding(.vertical, 12)
+                        } else {
+                            ConversationListEmptyView()
+                        }
                     } else {
-                        ConversationListEmptyView()
-                    }
-                } else {
-                    List(conversations, selection: $localSelectedConversationId) { conversation in
-                        ConversationItemView(
-                            conversation: conversation,
-                            onDelete: { handleDelete(conversation) }
-                        )
-                        .tag(conversation.id)
-                        .onAppear {
-                            handleRowAppear(conversation)
-                        }
-                    }
+                        List(selection: $localSelectedConversationId) {
+                            Color.clear
+                                .frame(height: 0)
+                                .id(listTopAnchorId)
+                                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                                .listRowSeparator(.hidden)
 
-                    if isLoadingPage {
-                        HStack {
-                            Spacer()
-                            ProgressView()
-                                .controlSize(.small)
-                            Spacer()
+                            ForEach(conversations, id: \.id) { conversation in
+                                ConversationItemView(
+                                    conversation: conversation,
+                                    onDelete: { handleDelete(conversation) }
+                                )
+                                .id(conversation.id)
+                                .tag(conversation.id)
+                                .onAppear {
+                                    handleRowAppear(conversation)
+                                }
+                            }
                         }
-                        .padding(.vertical, 8)
+                        .listStyle(.plain)
+                        .environment(\.defaultMinListRowHeight, 0)
+
+                        if isLoadingPage {
+                            HStack {
+                                Spacer()
+                                ProgressView()
+                                    .controlSize(.small)
+                                Spacer()
+                            }
+                            .padding(.vertical, 8)
+                        }
                     }
                 }
             }
-        }
-        .onAppear(perform: performInitialLoadIfNeeded)
-        .onChange(of: localSelectedConversationId, handleLocalSelectionChange)
-        .onChange(of: ConversationVM.selectedConversationId, handleConversationSelected)
-        .onChange(of: ConversationVM.selectedConversationId) { _, newValue in
-            selectionStore.saveSelectedConversationId(newValue)
-        }
-        .onChange(of: conversations) { _, newConversations in
-            // 当会话列表变化时，同步当前选中的会话
-            handleConversationsChanged(newConversations)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .conversationDidChange)) { notification in
-            handleConversationDidChangeNotification(notification)
+            .onAppear(perform: performInitialLoadIfNeeded)
+            .onChange(of: localSelectedConversationId, handleLocalSelectionChange)
+            .onChange(of: ConversationVM.selectedConversationId, handleConversationSelected)
+            .onChange(of: ConversationVM.selectedConversationId) { _, newValue in
+                selectionStore.saveSelectedConversationId(newValue)
+            }
+            .onChange(of: conversations) { _, newConversations in
+                // 当会话列表变化时，同步当前选中的会话
+                handleConversationsChanged(newConversations)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .conversationDidChange)) { notification in
+                handleConversationDidChangeNotification(notification)
+            }
+            .onAgentConversationCreated { conversationId in
+                handleAgentConversationCreated(conversationId: conversationId, proxy: proxy)
+            }
         }
     }
 }
@@ -265,6 +283,24 @@ extension ConversationListView {
         nextOffset = max(0, nextOffset - 1)
         if conversations.count < pageSize {
             hasMore = true
+        }
+    }
+
+    private func handleAgentConversationCreated(conversationId: UUID, proxy: ScrollViewProxy) {
+        guard isExpanded else { return }
+
+        // 如果当前分页尚未包含新会话，先刷新第一页再尝试滚动到顶部。
+        let containsRow = conversations.contains(where: { $0.id == conversationId })
+        if !containsRow, !isLoadingPage {
+            reloadFromFirstPage()
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            guard isExpanded else { return }
+            withAnimation(.easeOut(duration: 0.2)) {
+                // 滚动到绝对顶部锚点，避免 List 内部 padding 导致未到顶
+                proxy.scrollTo(listTopAnchorId, anchor: .top)
+            }
         }
     }
 }

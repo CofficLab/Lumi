@@ -1111,6 +1111,9 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
 
         // 4. 选中该会话
         ConversationVM.setSelectedConversation(conversation.id)
+
+        // 通知：Agent 模式新对话已创建（并已切换为选中会话）
+        NotificationCenter.postAgentConversationCreated(conversationId: conversation.id)
     }
 
     /// 分页加载会话消息

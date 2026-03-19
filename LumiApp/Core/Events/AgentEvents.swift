@@ -6,6 +6,10 @@ extension Notification.Name {
     /// 对话选择的通知
     /// object: UUID (对话 ID)
     static let conversationSelected = Notification.Name("conversationSelected")
+
+    /// Agent 模式：新对话被创建的通知
+    /// object: UUID (对话 ID)
+    static let agentConversationCreated = Notification.Name("agentConversationCreated")
 }
 
 // MARK: - NotificationCenter Extension
@@ -19,6 +23,15 @@ extension NotificationCenter {
             object: conversationId
         )
     }
+
+    /// 发送 Agent 模式：新对话被创建的通知
+    /// - Parameter conversationId: 对话 ID
+    static func postAgentConversationCreated(conversationId: UUID) {
+        NotificationCenter.default.post(
+            name: .agentConversationCreated,
+            object: conversationId
+        )
+    }
 }
 
 // MARK: - View Extensions for Agent Events
@@ -29,6 +42,17 @@ extension View {
     /// - Returns: 修改后的视图
     func onConversationSelected(perform action: @escaping (UUID) -> Void) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .conversationSelected)) { notification in
+            if let conversationId = notification.object as? UUID {
+                action(conversationId)
+            }
+        }
+    }
+
+    /// 监听 Agent 模式：新对话被创建的事件
+    /// - Parameter action: 事件处理闭包，参数为对话 ID
+    /// - Returns: 修改后的视图
+    func onAgentConversationCreated(perform action: @escaping (UUID) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .agentConversationCreated)) { notification in
             if let conversationId = notification.object as? UUID {
                 action(conversationId)
             }
