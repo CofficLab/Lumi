@@ -128,6 +128,11 @@ final class ConversationTurnCoordinator: SuperLog {
     func stop() {
         task?.cancel()
         task = nil
+        
+        if let pluginsDidLoadObserver {
+            NotificationCenter.default.removeObserver(pluginsDidLoadObserver)
+            self.pluginsDidLoadObserver = nil
+        }
     }
 
     private func rebuildPipeline() {

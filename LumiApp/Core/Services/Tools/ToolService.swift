@@ -90,6 +90,11 @@ class ToolService: SuperLog, @unchecked Sendable {
     ///
     /// 存储所有 Combine 订阅，用于清理。
     private var cancellables = Set<AnyCancellable>()
+    
+    // MARK: - Notification Observers
+    
+    private var pluginsDidLoadObserver: NSObjectProtocol?
+    private var toolSourcesDidChangeObserver: NSObjectProtocol?
 
     // MARK: - Initialization
 
@@ -118,7 +123,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 当插件加载完成时，刷新插件工具列表。
     @MainActor
     private func setupPluginObservers() {
-        NotificationCenter.default.addObserver(
+        pluginsDidLoadObserver = NotificationCenter.default.addObserver(
             forName: NSNotification.Name("PluginsDidLoad"),
             object: nil,
             queue: .main
@@ -128,7 +133,7 @@ class ToolService: SuperLog, @unchecked Sendable {
             }
         }
 
-        NotificationCenter.default.addObserver(
+        toolSourcesDidChangeObserver = NotificationCenter.default.addObserver(
             forName: NSNotification.Name("toolSourcesDidChange"),
             object: nil,
             queue: .main
@@ -307,6 +312,15 @@ class ToolService: SuperLog, @unchecked Sendable {
         let rawArgs = arguments ?? [:]
         let toolArgs = rawArgs.mapValues { ToolArgument($0) }
         return tool.permissionRiskLevel(arguments: toolArgs)
+    }
+    
+    deinit {
+        if let pluginsDidLoadObserver {
+            NotificationCenter.default.removeObserver(pluginsDidLoadObserver)
+        }
+        if let toolSourcesDidChangeObserver {
+            NotificationCenter.default.removeObserver(toolSourcesDidChangeObserver)
+        }
     }
 }
 
