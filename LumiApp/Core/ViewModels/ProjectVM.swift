@@ -299,6 +299,7 @@ final class ProjectVM: ObservableObject, SuperLog {
             setSelectedFileInfo(url: url, path: url.path, content: "", selected: true)
             
             Task {
+                await contextService.trackOpenFile(url)
                 await loadFileContent(from: url)
             }
             

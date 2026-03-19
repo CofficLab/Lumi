@@ -12,7 +12,7 @@ actor PromptService: SuperLog {
     init(contextService: ContextService) {
         self.contextService = contextService
         if Self.verbose {
-            os_log("\(self.t) 提示词服务已初始化")
+            logInfo("提示词服务已初始化")
         }
     }
 
@@ -60,7 +60,7 @@ actor PromptService: SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(self.t) 构建系统提示词，语言偏好：\(languagePreference.displayName)")
+            logInfo("构建系统提示词，语言偏好：\(languagePreference.displayName)")
         }
 
         return prompt
@@ -69,6 +69,10 @@ actor PromptService: SuperLog {
     /// 获取基础系统提示词（不包含语言和上下文）
     func getBaseSystemPrompt() -> String {
         return baseSystemPrompt
+    }
+
+    private nonisolated func logInfo(_ message: String) {
+        os_log(.info, "[PromptService][INFO] %{public}@", message)
     }
 
     // MARK: - 快捷短语提示词

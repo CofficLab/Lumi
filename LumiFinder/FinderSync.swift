@@ -13,11 +13,19 @@ class FinderSync: FIFinderSync, SuperLog {
     /// 缓存模板列表，用于通过 tag 索引（representedObject 在 Extension 中不可靠）
     var cachedTemplates: [NewFileTemplate] = []
 
+    private enum ConfigLoadReason: String {
+        case appGroupMissing = "app_group_missing"
+        case configNotFound = "config_not_found"
+        case decodeFailed = "decode_failed"
+        case invalidConfig = "invalid_config"
+        case loaded = "loaded"
+    }
+
     override init() {
         super.init()
 
         if Self.verbose {
-            os_log("\(Self.t)从路径启动: \(Bundle.main.bundlePath)")
+            logInfo("从路径启动: \(Bundle.main.bundlePath)")
         }
 
         // Set up the directory we are syncing.
@@ -48,33 +56,22 @@ class FinderSync: FIFinderSync, SuperLog {
 
     override func menu(for menuKind: FIMenuKind) -> NSMenu {
         if Self.verbose {
-            os_log("\(Self.t)菜单调用，类型: \(menuKind.rawValue)")
+            logInfo("菜单调用，类型: \(menuKind.rawValue)")
         }
 
         // Produce a menu for the extension.
         let menu = NSMenu(title: "Lumi")
-        let config = loadConfig()
-
-        if let config = config {
-            if Self.verbose {
-                os_log("\(Self.t)配置已加载，包含 \(config.items.count) 个菜单项")
-            }
-        } else {
-            if Self.verbose {
-                os_log("\(Self.t)配置加载失败或为空，使用默认配置")
-            }
-        }
-
-        // Default items if config is missing or load failed
-        let items = config?.items.filter { $0.isEnabled } ?? [
-            RClickMenuItem(id: "1", type: .openInVSCode, isEnabled: true),
-            RClickMenuItem(id: "2", type: .openInTerminal, isEnabled: true),
-            RClickMenuItem(id: "3", type: .copyPath, isEnabled: true),
-            RClickMenuItem(id: "4", type: .newFile, isEnabled: true),
-        ]
+        let loadResult = loadConfig()
+        let config = loadResult.config
 
         if Self.verbose {
-            os_log("\(Self.t)生成菜单，共 \(items.count) 个启用的菜单项")
+            logInfo("配置加载结果: \(loadResult.reason.rawValue)，菜单项: \(config.items.count)")
+        }
+
+        let items = config.items.filter { $0.isEnabled }
+
+        if Self.verbose {
+            logInfo("生成菜单，共 \(items.count) 个启用的菜单项")
         }
 
         // Only show separator if we have items
@@ -86,7 +83,7 @@ class FinderSync: FIFinderSync, SuperLog {
         let showIcons = SystemUtil.isMacOSVersion(atLeast: 11)
 
         if Self.verbose {
-            os_log("\(Self.t)图标显示: \(showIcons) (要求 macOS 11.0+，当前: \(SystemUtil.macOSVersionString()))")
+            logInfo("图标显示: \(showIcons) (要求 macOS 11.0+，当前: \(SystemUtil.macOSVersionString()))")
         }
 
         func menuIcon(_ name: String) -> NSImage? {
@@ -132,10 +129,7 @@ class FinderSync: FIFinderSync, SuperLog {
                 let newFileMenu = NSMenu(title: "New File")
                 newFileItem.submenu = newFileMenu
 
-                let templates = config?.fileTemplates?.filter { $0.isEnabled } ?? [
-                    NewFileTemplate(id: "t1", name: "文本文档", extensionName: "txt", content: "", isEnabled: true),
-                    NewFileTemplate(id: "t2", name: "Markdown", extensionName: "md", content: "", isEnabled: true),
-                ]
+                let templates = (config.fileTemplates ?? defaultTemplates()).filter { $0.isEnabled }
 
                 // 缓存模板，通过 tag 索引
                 self.cachedTemplates = templates
@@ -173,35 +167,38 @@ class FinderSync: FIFinderSync, SuperLog {
 
     // MARK: - Helpers
 
-    private func loadConfig() -> RClickConfig? {
+    private func loadConfig() -> (config: RClickConfig, reason: ConfigLoadReason) {
         guard let defaults = UserDefaults(suiteName: appGroupId) else {
             if Self.verbose {
-                os_log("\(Self.t)无法访问 UserDefaults，suite: \(self.appGroupId)")
+                logWarn("无法访问 UserDefaults，suite: \(self.appGroupId)")
             }
-            return nil
+            return (defaultConfig(), .appGroupMissing)
         }
 
         guard let data = defaults.data(forKey: configKey) else {
             if Self.verbose {
-                os_log("\(Self.t)未找到配置数据，key: \(self.configKey)")
+                logWarn("未找到配置数据，key: \(self.configKey)")
             }
-            return nil
+            return (defaultConfig(), .configNotFound)
         }
 
         do {
-            return try JSONDecoder().decode(RClickConfig.self, from: data)
+            let decoded = try JSONDecoder().decode(RClickConfig.self, from: data)
+            let sanitized = sanitize(config: decoded)
+            let reason: ConfigLoadReason = sanitized.items.isEmpty ? .invalidConfig : .loaded
+            return (sanitized.items.isEmpty ? defaultConfig() : sanitized, reason)
         } catch {
             if Self.verbose {
-                os_log("\(Self.t)配置解析失败: \(error.localizedDescription)")
+                logError("配置解析失败: \(error.localizedDescription)")
             }
-            return nil
+            return (defaultConfig(), .decodeFailed)
         }
     }
 
     func getSelectedURLs() -> [URL]? {
         let items = FIFinderSyncController.default().selectedItemURLs()
         if Self.verbose {
-            os_log("\(Self.t)获取选中 URL: 找到 \(items?.count ?? 0) 项")
+            logInfo("获取选中 URL: 找到 \(items?.count ?? 0) 项")
         }
         return items
     }
@@ -209,7 +206,7 @@ class FinderSync: FIFinderSync, SuperLog {
     func getCurrentDirectoryURL() -> URL? {
         let url = FIFinderSyncController.default().targetedURL()
         if Self.verbose {
-            os_log("\(Self.t)获取当前目录 URL: \(url?.path ?? "nil")")
+            logInfo("获取当前目录 URL: \(url?.path ?? "nil")")
         }
         return url
     }
@@ -220,28 +217,35 @@ class FinderSync: FIFinderSync, SuperLog {
 
     func openURLs(_ urls: [URL], withAppBundleIdentifier bundleId: String) {
         if Self.verbose {
-            os_log("\(Self.t)打开 URL，数量: \(urls.count)，bundle: \(bundleId)")
+            logInfo("打开 URL，数量: \(urls.count)，bundle: \(bundleId)")
+        }
+
+        guard !urls.isEmpty else {
+            if Self.verbose {
+                logWarn("openURLs 收到空 URL 列表，已跳过")
+            }
+            return
         }
 
         guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) else {
             if Self.verbose {
-                os_log("\(Self.t)未找到 bundle ID 对应的应用: \(bundleId)")
+                logWarn("未找到 bundle ID 对应的应用: \(bundleId)")
             }
             return
         }
 
         if Self.verbose {
-            os_log("\(Self.t)找到应用 URL: \(appURL.path)")
+            logInfo("找到应用 URL: \(appURL.path)")
         }
 
         NSWorkspace.shared.open(urls, withApplicationAt: appURL, configuration: NSWorkspace.OpenConfiguration()) { _, error in
             if let error = error {
                 if Self.verbose {
-                    os_log("\(Self.t)打开 URL 失败: \(error.localizedDescription)")
+                    self.logError("打开 URL 失败: \(error.localizedDescription)")
                 }
             } else {
                 if Self.verbose {
-                    os_log("\(Self.t)成功请求打开")
+                    self.logInfo("成功请求打开")
                 }
             }
         }
@@ -250,34 +254,109 @@ class FinderSync: FIFinderSync, SuperLog {
     func createNewFile(extension ext: String, content: String, namePrefix: String) {
         guard let target = getCurrentDirectoryURL() else {
             if Self.verbose {
-                os_log("\(Self.t)创建文件失败 - 没有目标目录")
+                logWarn("创建文件失败 - 没有目标目录")
             }
             return
         }
 
-        var filename = "\(namePrefix).\(ext)"
+        let safePrefix = sanitizeFileName(namePrefix)
+        let safeExt = sanitizeExtension(ext)
+        var filename = "\(safePrefix).\(safeExt)"
         var fileURL = target.appendingPathComponent(filename)
         var counter = 1
 
         while FileManager.default.fileExists(atPath: fileURL.path) {
-            filename = "\(namePrefix) \(counter).\(ext)"
+            filename = "\(safePrefix) \(counter).\(safeExt)"
             fileURL = target.appendingPathComponent(filename)
             counter += 1
         }
 
         if Self.verbose {
-            os_log("\(Self.t)尝试写入文件: \(fileURL.path)")
+            logInfo("尝试写入文件: \(fileURL.path)")
         }
 
         do {
             try content.write(to: fileURL, atomically: true, encoding: .utf8)
             if Self.verbose {
-                os_log("\(Self.t)文件创建成功")
+                logInfo("文件创建成功")
             }
         } catch {
             if Self.verbose {
-                os_log("\(Self.t)文件创建失败: \(error.localizedDescription)")
+                logError("文件创建失败: \(error.localizedDescription)")
             }
         }
+    }
+
+    private func sanitize(config: RClickConfig) -> RClickConfig {
+        let items = config.items.enumerated().map { index, item in
+            var normalized = item
+            if normalized.id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                normalized.id = "menu-\(index)"
+            }
+            return normalized
+        }
+
+        let templates: [NewFileTemplate]? = config.fileTemplates?.compactMap { template in
+            guard template.isEnabled else { return template }
+
+            let ext = sanitizeExtension(template.extensionName)
+            let name = sanitizeFileName(template.name)
+            guard !name.isEmpty, !ext.isEmpty else { return nil }
+
+            var normalized = template
+            normalized.name = name
+            normalized.extensionName = ext
+            return normalized
+        }
+
+        return RClickConfig(items: items, fileTemplates: templates)
+    }
+
+    private func defaultTemplates() -> [NewFileTemplate] {
+        [
+            NewFileTemplate(id: "t1", name: "文本文档", extensionName: "txt", content: "", isEnabled: true),
+            NewFileTemplate(id: "t2", name: "Markdown", extensionName: "md", content: "", isEnabled: true)
+        ]
+    }
+
+    private func defaultConfig() -> RClickConfig {
+        RClickConfig(
+            items: [
+                RClickMenuItem(id: "1", type: .openInVSCode, isEnabled: true),
+                RClickMenuItem(id: "2", type: .openInTerminal, isEnabled: true),
+                RClickMenuItem(id: "3", type: .copyPath, isEnabled: true),
+                RClickMenuItem(id: "4", type: .newFile, isEnabled: true)
+            ],
+            fileTemplates: defaultTemplates()
+        )
+    }
+
+    private func sanitizeExtension(_ ext: String) -> String {
+        let stripped = ext
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: ".", with: "")
+        let allowed = stripped.unicodeScalars.filter { CharacterSet.alphanumerics.contains($0) || $0 == "-" || $0 == "_" }
+        let value = String(String.UnicodeScalarView(allowed))
+        return value.isEmpty ? "txt" : value
+    }
+
+    private func sanitizeFileName(_ name: String) -> String {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleaned = trimmed
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: ":", with: "_")
+        return cleaned.isEmpty ? "新建文件" : cleaned
+    }
+
+    func logInfo(_ message: String) {
+        os_log(.info, "[FinderSync][INFO] %{public}@", message)
+    }
+
+    func logWarn(_ message: String) {
+        os_log(.default, "[FinderSync][WARN] %{public}@", message)
+    }
+
+    func logError(_ message: String) {
+        os_log(.error, "[FinderSync][ERROR] %{public}@", message)
     }
 }
