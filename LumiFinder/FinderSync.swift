@@ -1,6 +1,7 @@
 import Cocoa
 import FinderSync
 import os
+import MagicKit
 
 class FinderSync: FIFinderSync, SuperLog {
     static let emoji = "🧩"
