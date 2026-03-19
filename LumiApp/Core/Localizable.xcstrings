@@ -4158,9 +4158,6 @@
         }
       }
     },
-    "Select Model" : {
-
-    },
     "Selected for cleanup" : {
       "extractionState" : "stale",
       "localizations" : {
