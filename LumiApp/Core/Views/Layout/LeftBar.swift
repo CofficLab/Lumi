@@ -67,7 +67,7 @@ struct LeftSidebar: View {
                             Button {
                                 app.selectedNavigationId = entry.id
                                 // 持久化用户在 App 模式下选择的导航
-                                AppSettingsStore.shared.set(entry.id, forKey: "App_SelectedNavigationId")
+                                PluginStateStore.shared.set(entry.id, forKey: "App_SelectedNavigationId")
                             } label: {
                                 SidebarRow(title: entry.title, icon: entry.icon, isSelected: app.selectedNavigationId == entry.id)
                             }
@@ -138,7 +138,7 @@ struct LeftSidebar: View {
         let entries = pluginProvider.getNavigationEntries(for: .app)
 
         // 优先从持久化存储中恢复上次选择的导航
-        if let savedId = AppSettingsStore.shared.string(forKey: "App_SelectedNavigationId"),
+        if let savedId = PluginStateStore.shared.string(forKey: "App_SelectedNavigationId"),
            entries.contains(where: { $0.id == savedId }) {
             app.selectedNavigationId = savedId
             return

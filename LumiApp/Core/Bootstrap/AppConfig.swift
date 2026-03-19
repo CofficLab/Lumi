@@ -113,9 +113,21 @@ enum AppConfig {
     /// 获取数据库文件路径（包含具体文件名）
     /// - Returns: 数据库文件的 URL
     static func getDBFileURL() -> URL {
-        let dbDirectory = getDBFolderURL()
-        return dbDirectory.appendingPathComponent("Lumi.db")
+        let coreDirectory = getCoreDBFolderURL()
+        return coreDirectory.appendingPathComponent("Lumi.db")
     }
+
+    /// Core 数据目录
+    /// 路径：getDBFolderURL() / Core
+    static func getCoreDBFolderURL() -> URL {
+        let coreDirectory = getDBFolderURL().appendingPathComponent("Core", isDirectory: true)
+        let fileManager = FileManager.default
+        if !fileManager.fileExists(atPath: coreDirectory.path) {
+            try? fileManager.createDirectory(at: coreDirectory, withIntermediateDirectories: true)
+        }
+        return coreDirectory
+    }
+
 }
 
 // MARK: - Preview

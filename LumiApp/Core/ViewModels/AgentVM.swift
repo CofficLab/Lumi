@@ -508,13 +508,13 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     /// 加载保存的偏好设置
     private func loadPreferences() {
         // 加载语言偏好
-        if let data = AppSettingsStore.shared.data(forKey: "Agent_LanguagePreference"),
+        if let data = PluginStateStore.shared.data(forKey: "Agent_LanguagePreference"),
            let preference = try? JSONDecoder().decode(LanguagePreference.self, from: data) {
             ProjectVM.setLanguagePreference(preference)
         }
 
         // 加载聊天模式
-        if let modeRaw = AppSettingsStore.shared.string(forKey: "Agent_ChatMode"),
+        if let modeRaw = PluginStateStore.shared.string(forKey: "Agent_ChatMode"),
            let mode = ChatMode(rawValue: modeRaw) {
             ProjectVM.setChatMode(mode)
         }
@@ -522,7 +522,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         // 自动批准风险持久化由插件负责
 
         // 加载上次选择的项目（项目切换会自动应用配置）
-        if let savedPath = AppSettingsStore.shared.string(forKey: "Agent_SelectedProject") {
+        if let savedPath = PluginStateStore.shared.string(forKey: "Agent_SelectedProject") {
             ProjectVM.switchProject(to: savedPath)
 
             // 加载项目命令
@@ -760,7 +760,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         }
 
         // 从应用设置存储获取 API Key（按供应商维度）
-        let apiKey = AppSettingsStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
+        let apiKey = PluginStateStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
 
         let config = LLMConfig(
             apiKey: apiKey,
@@ -775,7 +775,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         guard let providerType = registry.providerType(forId: providerId) else {
             return ""
         }
-        return AppSettingsStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
+        return PluginStateStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
     }
 
     /// 设置指定供应商的 API Key
@@ -783,7 +783,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         guard let providerType = registry.providerType(forId: providerId) else {
             return
         }
-        AppSettingsStore.shared.set(apiKey, forKey: providerType.apiKeyStorageKey)
+        PluginStateStore.shared.set(apiKey, forKey: providerType.apiKeyStorageKey)
         if Self.verbose {
             os_log("\(Self.t) 已设置 \(providerType.displayName) 的 API Key")
         }
