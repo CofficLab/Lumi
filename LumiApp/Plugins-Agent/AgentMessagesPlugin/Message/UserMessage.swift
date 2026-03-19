@@ -25,12 +25,9 @@ struct UserMessage: View, SuperLog {
         VStack(alignment: .leading, spacing: 4) {
             header
 
-            MarkdownMessageView(
-                message: message,
-                showRawMessage: showRawMessage,
-                isCollapsible: false,
-                isExpanded: true,
-                onToggleExpand: {}
+            PlainTextMessageContentView(
+                content: message.content,
+                monospaced: false
             )
             .messageBubbleStyle(role: message.role, isError: message.isError)
         }
@@ -111,4 +108,3 @@ struct UserMessage: View, SuperLog {
         agentProvider.sendMessage(input: message.content, images: [])
     }
 }
-

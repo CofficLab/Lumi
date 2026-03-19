@@ -13,7 +13,7 @@ struct StatusMessage: View, SuperLog {
     @Binding var showRawMessage: Bool
 
     var body: some View {
-        MarkdownMessageView(
+        MarkdownView(
             message: message,
             showRawMessage: showRawMessage,
             isCollapsible: false,

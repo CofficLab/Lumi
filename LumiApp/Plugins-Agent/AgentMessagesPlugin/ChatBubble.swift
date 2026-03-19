@@ -102,7 +102,7 @@ struct ChatBubble: View, SuperLog {
                         case .tool:
                             ToolOutputView(message: message)
                         default:
-                            MarkdownMessageView(
+                            MarkdownView(
                                 message: message,
                                 showRawMessage: showRawMessage,
                                 isCollapsible: false,

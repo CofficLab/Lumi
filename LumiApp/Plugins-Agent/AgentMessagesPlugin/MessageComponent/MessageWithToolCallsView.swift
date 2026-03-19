@@ -28,7 +28,7 @@ struct MessageWithToolCallsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if !message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !shouldHideMessageBody {
-                MarkdownMessageView(
+                MarkdownView(
                     message: message,
                     showRawMessage: showRawMessage,
                     isCollapsible: isLongMessage,

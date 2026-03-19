@@ -81,7 +81,7 @@ struct AssistantMessage: View, SuperLog {
                             toolOutputMessages: relatedToolOutputs
                         )
                     } else {
-                        MarkdownMessageView(
+                        MarkdownView(
                             message: message,
                             showRawMessage: showRawMessage,
                             isCollapsible: isLongMessage,

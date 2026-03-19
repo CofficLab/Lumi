@@ -47,7 +47,7 @@ struct SystemMessage: View, SuperLog {
                 VStack(alignment: .leading, spacing: 4) {
                     header
 
-                    MarkdownMessageView(
+                    MarkdownView(
                         message: message,
                         showRawMessage: showRawMessage,
                         isCollapsible: false,

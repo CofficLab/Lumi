@@ -19,7 +19,7 @@ extension EnvironmentValues {
 
 /// Markdown 消息视图，负责渲染聊天消息内容
 /// 使用 MarkdownUI 库渲染（支持 GitHub Flavored Markdown）
-struct MarkdownMessageView: View, SuperLog {
+struct MarkdownView: View, SuperLog {
     nonisolated static let emoji = "📝"
     nonisolated static let verbose = true
     static private var renderMarkdownEnabled: Bool = true
@@ -76,19 +76,7 @@ struct MarkdownMessageView: View, SuperLog {
 
     /// 原始消息内容：preferOuterScroll 时用 Text 避免内部 ScrollView 吸住滚轮
     private var rawMessageContent: some View {
-        Group {
-            if preferOuterScroll {
-                Text(verbatim: message.content)
-                    .font(.system(.body, design: .monospaced))
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-                TextEditor(text: .constant(message.content))
-                    .font(.system(.body, design: .monospaced))
-                    .textSelection(.enabled)
-                    .scrollContentBackground(.hidden)
-            }
-        }
+        PlainTextMessageContentView(content: message.content, monospaced: true)
     }
 
     /// Markdown 内容：preferOuterScroll 时禁用内部滚动，让外层列表滚动
