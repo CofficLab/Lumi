@@ -759,8 +759,15 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             return LLMConfig.default
         }
 
-        // 从应用设置存储获取 API Key（按供应商维度）
-        let apiKey = PluginStateStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
+        // API Key 使用 Keychain，首次读取时自动迁移旧明文存储
+        let apiKey = APIKeyStore.shared.getWithMigration(
+            forKey: providerType.apiKeyStorageKey,
+            legacyLoad: { PluginStateStore.shared.string(forKey: providerType.apiKeyStorageKey) },
+            legacyCleanup: {
+                PluginStateStore.shared.removeObject(forKey: $0)
+                PluginStateStore.shared.removeLegacyValue(forKey: $0)
+            }
+        )
 
         let config = LLMConfig(
             apiKey: apiKey,
@@ -775,7 +782,14 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         guard let providerType = registry.providerType(forId: providerId) else {
             return ""
         }
-        return PluginStateStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
+        return APIKeyStore.shared.getWithMigration(
+            forKey: providerType.apiKeyStorageKey,
+            legacyLoad: { PluginStateStore.shared.string(forKey: providerType.apiKeyStorageKey) },
+            legacyCleanup: {
+                PluginStateStore.shared.removeObject(forKey: $0)
+                PluginStateStore.shared.removeLegacyValue(forKey: $0)
+            }
+        )
     }
 
     /// 设置指定供应商的 API Key
@@ -783,7 +797,10 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         guard let providerType = registry.providerType(forId: providerId) else {
             return
         }
-        PluginStateStore.shared.set(apiKey, forKey: providerType.apiKeyStorageKey)
+        APIKeyStore.shared.set(apiKey, forKey: providerType.apiKeyStorageKey)
+        // 写入 Keychain 后清理旧明文键，避免继续落盘
+        PluginStateStore.shared.removeObject(forKey: providerType.apiKeyStorageKey)
+        PluginStateStore.shared.removeLegacyValue(forKey: providerType.apiKeyStorageKey)
         if Self.verbose {
             os_log("\(Self.t) 已设置 \(providerType.displayName) 的 API Key")
         }

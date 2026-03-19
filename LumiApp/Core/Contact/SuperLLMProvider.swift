@@ -42,9 +42,9 @@ protocol SuperLLMProvider: Sendable {
 
     // MARK: - Configuration
 
-    /// API Key 的 UserDefaults 键名
+    /// API Key 的安全存储键名
     ///
-    /// 用于持久化存储 API Key。
+    /// 用于在安全存储（如 Keychain）中持久化存储 API Key。
     /// 建议格式：`DevAssistant_ApiKey_{ProviderID}`
     static var apiKeyStorageKey: String { get }
 
@@ -216,4 +216,3 @@ struct StreamChunk: Sendable {
         self.stopReason = stopReason
     }
 }
-

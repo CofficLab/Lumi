@@ -31,6 +31,14 @@ final class BackgroundAgentTaskPluginLocalStore: @unchecked Sendable {
 
     func string(forKey key: String) -> String? { object(forKey: key) as? String }
     func object(forKey key: String) -> Any? { queue.sync { readDict()[key] } }
+    func removeObject(forKey key: String) { set(nil, forKey: key) }
+    func removeLegacyValue(forKey key: String) {
+        let legacyDir = AppConfig.getDBFolderURL().appendingPathComponent("app_settings", isDirectory: true)
+        let legacyFile = legacyDir.appendingPathComponent(sanitize(key) + ".plist")
+        if fileManager.fileExists(atPath: legacyFile.path) {
+            try? fileManager.removeItem(at: legacyFile)
+        }
+    }
 
     private func readDict() -> [String: Any] {
         guard fileManager.fileExists(atPath: settingsFileURL.path),
