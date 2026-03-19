@@ -267,7 +267,7 @@ struct ProjectSelectorView: View {
                 }
             }
         case .failure(let error):
-            print("File import 错误：\(error)")
+            AgentProjectHeaderPlugin.logger.error("File import 错误：\(error.localizedDescription)")
         }
     }
 

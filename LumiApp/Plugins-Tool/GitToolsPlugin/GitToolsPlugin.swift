@@ -1,12 +1,15 @@
 import Foundation
 import MagicKit
-import OSLog
 import SwiftUI
+import os
 
 /// Git 工具插件
 ///
 /// 提供 Git 版本控制相关的 Agent 工具（状态/差异/日志）。
 actor GitToolsPlugin: SuperPlugin, SuperLog {
+    /// 插件专用 Logger
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.git-tools")
+
     /// 日志标识符
     nonisolated static let emoji = "📦"
 

@@ -1,5 +1,4 @@
 import MagicKit
-import OSLog
 import SwiftUI
 
 /// 聊天工具栏视图 - 包含模式选择器、模型选择器、图片上传和发送/停止按钮

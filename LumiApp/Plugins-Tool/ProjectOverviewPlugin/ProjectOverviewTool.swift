@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 
 /// Returns an overview of a project for the model: path, type, structure (2 levels), Git info, manifests, README preview, key files.
 struct ProjectOverviewTool: AgentTool, SuperLog {
@@ -31,7 +30,7 @@ struct ProjectOverviewTool: AgentTool, SuperLog {
         let root = URL(fileURLWithPath: path).standardizedFileURL
 
         if Self.verbose {
-            os_log("\(Self.t)Project overview: \(root.path)")
+            ProjectOverviewPlugin.logger.info("\(self.t)Project overview: \(root.path)")
         }
 
         var isDir: ObjCBool = false

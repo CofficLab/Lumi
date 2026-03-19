@@ -1,12 +1,13 @@
 import Foundation
 import MagicKit
-import OSLog
+import os
 import SwiftUI
 
 /// GitHub 工具插件
 ///
 /// 提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索）。
 actor GitHubToolsPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.github-tools")
     /// 日志标识符
     nonisolated static let emoji = "🐙"
 

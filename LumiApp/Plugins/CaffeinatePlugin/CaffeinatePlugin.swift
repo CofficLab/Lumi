@@ -3,11 +3,13 @@ import SwiftUI
 import AppKit
 import Combine
 import Foundation
-import OSLog
+import os
 
 /// 防休眠插件：阻止系统休眠，支持定时和手动控制
-/// 防休眠插件：阻止系统休眠，支持定时和手动控制
 actor CaffeinatePlugin: SuperPlugin, SuperLog {
+    /// 插件专用 Logger
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.caffeinate")
+
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "☕️"

@@ -126,7 +126,7 @@ actor DockerService {
                     let image = try decoder.decode(DockerImage.self, from: data)
                     images.append(image)
                 } catch {
-                    print("Failed to decode image line: \(error)")
+                    DockerManagerPlugin.logger.error("\(DockerManagerPlugin.t)Failed to decode image line: \(error)")
                 }
             }
         }
@@ -176,7 +176,7 @@ actor DockerService {
                     let item = try decoder.decode(DockerImageHistory.self, from: data)
                     history.append(item)
                 } catch {
-                    print("Failed to decode history line: \(error)")
+                    DockerManagerPlugin.logger.error("\(DockerManagerPlugin.t)Failed to decode history line: \(error)")
                 }
             }
         }

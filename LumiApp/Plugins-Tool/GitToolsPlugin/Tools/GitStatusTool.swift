@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 
 /// Git 状态工具
 struct GitStatusTool: AgentTool, SuperLog {
@@ -31,14 +30,14 @@ struct GitStatusTool: AgentTool, SuperLog {
         let path = arguments["path"]?.value as? String
 
         if Self.verbose {
-            os_log("\(Self.t)获取 Git 状态：\(path ?? "当前目录")")
+            GitToolsPlugin.logger.info("\(Self.t)获取 Git 状态：\(path ?? "当前目录")")
         }
 
         do {
             let status = try await GitService.shared.getStatus(path: path)
             return formatStatus(status)
         } catch {
-            os_log(.error, "\(Self.t)获取 Git 状态失败：\(error.localizedDescription)")
+            GitToolsPlugin.logger.error("\(Self.t)获取 Git 状态失败：\(error.localizedDescription)")
             return "获取 Git 状态失败：\(error.localizedDescription)"
         }
     }

@@ -1,10 +1,12 @@
 import Cocoa
 import FinderSync
-import OSLog
+import os
 
 class FinderSync: FIFinderSync, SuperLog {
     static let emoji = "🧩"
     static let verbose = true
+
+    static let logger = Logger(subsystem: "com.coffic.lumi", category: "finder")
 
     let myFolderURL = URL(fileURLWithPath: "/Users")
     let appGroupId = "group.com.coffic.lumi"
@@ -25,7 +27,7 @@ class FinderSync: FIFinderSync, SuperLog {
         super.init()
 
         if Self.verbose {
-            logInfo("从路径启动: \(Bundle.main.bundlePath)")
+            FinderSync.logger.info("\(self.t)从路径启动: \(Bundle.main.bundlePath)")
         }
 
         // Set up the directory we are syncing.
@@ -56,7 +58,7 @@ class FinderSync: FIFinderSync, SuperLog {
 
     override func menu(for menuKind: FIMenuKind) -> NSMenu {
         if Self.verbose {
-            logInfo("菜单调用，类型: \(menuKind.rawValue)")
+            FinderSync.logger.info("\(self.t)菜单调用，类型: \(menuKind.rawValue)")
         }
 
         // Produce a menu for the extension.
@@ -65,13 +67,13 @@ class FinderSync: FIFinderSync, SuperLog {
         let config = loadResult.config
 
         if Self.verbose {
-            logInfo("配置加载结果: \(loadResult.reason.rawValue)，菜单项: \(config.items.count)")
+            FinderSync.logger.info("\(self.t)配置加载结果: \(loadResult.reason.rawValue)，菜单项: \(config.items.count)")
         }
 
         let items = config.items.filter { $0.isEnabled }
 
         if Self.verbose {
-            logInfo("生成菜单，共 \(items.count) 个启用的菜单项")
+            FinderSync.logger.info("\(self.t)生成菜单，共 \(items.count) 个启用的菜单项")
         }
 
         // Only show separator if we have items
@@ -83,7 +85,7 @@ class FinderSync: FIFinderSync, SuperLog {
         let showIcons = SystemUtil.isMacOSVersion(atLeast: 11)
 
         if Self.verbose {
-            logInfo("图标显示: \(showIcons) (要求 macOS 11.0+，当前: \(SystemUtil.macOSVersionString()))")
+            FinderSync.logger.info("\(self.t)图标显示: \(showIcons) (要求 macOS 11.0+，当前: \(SystemUtil.macOSVersionString()))")
         }
 
         func menuIcon(_ name: String) -> NSImage? {
@@ -170,14 +172,14 @@ class FinderSync: FIFinderSync, SuperLog {
     private func loadConfig() -> (config: RClickConfig, reason: ConfigLoadReason) {
         guard let defaults = UserDefaults(suiteName: appGroupId) else {
             if Self.verbose {
-                logWarn("无法访问 UserDefaults，suite: \(self.appGroupId)")
+                FinderSync.logger.warning("\(self.t)无法访问 UserDefaults，suite: \(self.appGroupId)")
             }
             return (defaultConfig(), .appGroupMissing)
         }
 
         guard let data = defaults.data(forKey: configKey) else {
             if Self.verbose {
-                logWarn("未找到配置数据，key: \(self.configKey)")
+                FinderSync.logger.warning("\(self.t)未找到配置数据，key: \(self.configKey)")
             }
             return (defaultConfig(), .configNotFound)
         }
@@ -189,7 +191,7 @@ class FinderSync: FIFinderSync, SuperLog {
             return (sanitized.items.isEmpty ? defaultConfig() : sanitized, reason)
         } catch {
             if Self.verbose {
-                logError("配置解析失败: \(error.localizedDescription)")
+                FinderSync.logger.error("\(self.t)配置解析失败: \(error.localizedDescription)")
             }
             return (defaultConfig(), .decodeFailed)
         }
@@ -198,7 +200,7 @@ class FinderSync: FIFinderSync, SuperLog {
     func getSelectedURLs() -> [URL]? {
         let items = FIFinderSyncController.default().selectedItemURLs()
         if Self.verbose {
-            logInfo("获取选中 URL: 找到 \(items?.count ?? 0) 项")
+            FinderSync.logger.info("\(self.t)获取选中 URL: 找到 \(items?.count ?? 0) 项")
         }
         return items
     }
@@ -206,7 +208,7 @@ class FinderSync: FIFinderSync, SuperLog {
     func getCurrentDirectoryURL() -> URL? {
         let url = FIFinderSyncController.default().targetedURL()
         if Self.verbose {
-            logInfo("获取当前目录 URL: \(url?.path ?? "nil")")
+            FinderSync.logger.info("\(self.t)获取当前目录 URL: \(url?.path ?? "nil")")
         }
         return url
     }
@@ -217,35 +219,35 @@ class FinderSync: FIFinderSync, SuperLog {
 
     func openURLs(_ urls: [URL], withAppBundleIdentifier bundleId: String) {
         if Self.verbose {
-            logInfo("打开 URL，数量: \(urls.count)，bundle: \(bundleId)")
+            FinderSync.logger.info("\(self.t)打开 URL，数量: \(urls.count)，bundle: \(bundleId)")
         }
 
         guard !urls.isEmpty else {
             if Self.verbose {
-                logWarn("openURLs 收到空 URL 列表，已跳过")
+                FinderSync.logger.warning("\(self.t)openURLs 收到空 URL 列表，已跳过")
             }
             return
         }
 
         guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) else {
             if Self.verbose {
-                logWarn("未找到 bundle ID 对应的应用: \(bundleId)")
+                FinderSync.logger.warning("\(self.t)未找到 bundle ID 对应的应用: \(bundleId)")
             }
             return
         }
 
         if Self.verbose {
-            logInfo("找到应用 URL: \(appURL.path)")
+            FinderSync.logger.info("\(self.t)找到应用 URL: \(appURL.path)")
         }
 
         NSWorkspace.shared.open(urls, withApplicationAt: appURL, configuration: NSWorkspace.OpenConfiguration()) { _, error in
             if let error = error {
                 if Self.verbose {
-                    self.logError("打开 URL 失败: \(error.localizedDescription)")
+                    FinderSync.logger.error("\(self.t)打开 URL 失败: \(error.localizedDescription)")
                 }
             } else {
                 if Self.verbose {
-                    self.logInfo("成功请求打开")
+                    FinderSync.logger.info("\(self.t)成功请求打开")
                 }
             }
         }
@@ -254,7 +256,7 @@ class FinderSync: FIFinderSync, SuperLog {
     func createNewFile(extension ext: String, content: String, namePrefix: String) {
         guard let target = getCurrentDirectoryURL() else {
             if Self.verbose {
-                logWarn("创建文件失败 - 没有目标目录")
+                FinderSync.logger.warning("\(self.t)创建文件失败 - 没有目标目录")
             }
             return
         }
@@ -272,17 +274,17 @@ class FinderSync: FIFinderSync, SuperLog {
         }
 
         if Self.verbose {
-            logInfo("尝试写入文件: \(fileURL.path)")
+            FinderSync.logger.info("\(self.t)尝试写入文件: \(fileURL.path)")
         }
 
         do {
             try content.write(to: fileURL, atomically: true, encoding: .utf8)
             if Self.verbose {
-                logInfo("文件创建成功")
+                FinderSync.logger.info("\(self.t)文件创建成功")
             }
         } catch {
             if Self.verbose {
-                logError("文件创建失败: \(error.localizedDescription)")
+                FinderSync.logger.error("\(self.t)文件创建失败: \(error.localizedDescription)")
             }
         }
     }
@@ -346,17 +348,5 @@ class FinderSync: FIFinderSync, SuperLog {
             .replacingOccurrences(of: "/", with: "_")
             .replacingOccurrences(of: ":", with: "_")
         return cleaned.isEmpty ? "新建文件" : cleaned
-    }
-
-    func logInfo(_ message: String) {
-        os_log(.info, "[FinderSync][INFO] %{public}@", message)
-    }
-
-    func logWarn(_ message: String) {
-        os_log(.default, "[FinderSync][WARN] %{public}@", message)
-    }
-
-    func logError(_ message: String) {
-        os_log(.error, "[FinderSync][ERROR] %{public}@", message)
     }
 }

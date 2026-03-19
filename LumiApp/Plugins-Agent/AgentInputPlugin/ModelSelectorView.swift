@@ -1,6 +1,5 @@
 import AppKit
 import MagicKit
-import OSLog
 import SwiftUI
 
 /// 模型选择器视图
@@ -226,7 +225,7 @@ extension ModelSelectorView {
     private func loadLatencyStats() {
         detailedStats = agentProvider.chatHistoryService.getModelDetailedStats()
         if Self.verbose {
-            os_log("\(Self.t)📊 加载到 \(detailedStats.count) 个模型的性能统计")
+            AgentInputPlugin.logger.info("\(Self.t)📊 加载到 \(detailedStats.count) 个模型的性能统计")
         }
     }
 

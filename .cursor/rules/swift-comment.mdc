@@ -122,7 +122,7 @@ Task {
     } catch {
         await MainActor.run {
             self.unpushedCount = 0
-            os_log(.error, "\(self.t)❌ Failed to load unpushed commits count: \(error)")
+            AppLogger.core.error("加载未推送提交数量失败：\(error.localizedDescription)")
         }
     }
 
@@ -189,8 +189,8 @@ var count = 0
 /// 日志标识符
 static let emoji = "🔄"
 
-os_log(.error, "\(self.t)❌ Failed to load unpushed commits count: \(error)")
-os_log("\(self.t)✅ Git pull succeeded")
+AppLogger.core.error("加载未推送提交数量失败：\(error.localizedDescription)")
+AppLogger.core.info("\(Self.emoji) Git pull 成功")
 ```
 
 ## 无需注释的情况
@@ -303,3 +303,4 @@ extension RemoteSyncStatusView {
 3. **注释应该有价值**：如果注释只是重复代码，考虑删除
 4. **中文规范**：使用规范的中文，避免口语化和错别字
 5. **技术术语**：技术术语可以保持英文（如 git push、async/await）
+6. **日志记录**：代码中的日志应使用 `os.Logger`（见 swift-log 规则），禁止使用 `os_log`

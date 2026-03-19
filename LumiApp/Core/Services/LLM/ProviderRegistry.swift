@@ -1,5 +1,4 @@
 import Foundation
-import OSLog
 import MagicKit
 
 /// 供应商注册表
@@ -37,7 +36,7 @@ class ProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
     /// 创建新的注册表实例，具体供应商由外部插件通过 `register(...)` 注入。
     init() {
         if Self.verbose {
-            os_log("\(self.t) 供应商注册表已初始化")
+            AppLogger.core.info("\(self.t) 供应商注册表已初始化")
         }
     }
 
@@ -62,7 +61,7 @@ class ProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
     func register<T: SuperLLMProvider>(_ providerType: T.Type) {
         providerTypes.append(providerType)
         if Self.verbose {
-            os_log("\(self.t) 已注册供应商：\(providerType.displayName) (ID: \(providerType.id))")
+            AppLogger.core.info("\(self.t) 已注册供应商：\(providerType.displayName) (ID: \(providerType.id))")
         }
     }
 
@@ -124,7 +123,7 @@ class ProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
 
         // 在已注册类型中查找匹配的供应商
         guard let type = providerTypes.first(where: { $0.id == id }) else {
-            os_log(.error, "\(self.t) 未知的供应商 ID: \(id)")
+            AppLogger.core.error("\(self.t) 未知的供应商 ID: \(id)")
             return nil
         }
 

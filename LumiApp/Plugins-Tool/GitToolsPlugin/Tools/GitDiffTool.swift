@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 
 /// Git 差异工具
 struct GitDiffTool: AgentTool, SuperLog {
@@ -41,7 +40,7 @@ struct GitDiffTool: AgentTool, SuperLog {
         let file = arguments["file"]?.value as? String
 
         if Self.verbose {
-            os_log("\(Self.t)获取 Git 差异：\(path ?? "当前目录") staged=\(staged) file=\(file ?? "all")")
+            GitToolsPlugin.logger.info("\(Self.t)获取 Git 差异：\(path ?? "当前目录") staged=\(staged) file=\(file ?? "all")")
         }
 
         do {
@@ -52,7 +51,7 @@ struct GitDiffTool: AgentTool, SuperLog {
             )
             return formatDiff(diff)
         } catch {
-            os_log(.error, "\(Self.t)获取 Git 差异失败：\(error.localizedDescription)")
+            GitToolsPlugin.logger.error("\(Self.t)获取 Git 差异失败：\(error.localizedDescription)")
             return "获取 Git 差异失败：\(error.localizedDescription)"
         }
     }

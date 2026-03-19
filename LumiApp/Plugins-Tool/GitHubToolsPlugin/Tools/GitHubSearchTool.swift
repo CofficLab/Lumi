@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 
 /// GitHub 搜索工具
 struct GitHubSearchTool: AgentTool, SuperLog {
@@ -58,7 +57,7 @@ struct GitHubSearchTool: AgentTool, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)🔍 搜索：\(searchQuery)")
+            GitHubToolsPlugin.logger.info("\(Self.t)搜索：\(searchQuery)")
         }
 
         do {

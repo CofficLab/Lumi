@@ -1,7 +1,6 @@
 import AppKit
 import MagicKit
 import Foundation
-import OSLog
 import SwiftUI
 import ObjectiveC.runtime
 import Combine
@@ -294,7 +293,7 @@ final class PluginVM: ObservableObject, SuperLog {
             if pluginType.enable {
                 discoveredItems.append((instance, className, pluginType.order))
                 if Self.verbose {
-                    os_log("\(self.t)🔍 Discovered plugin: \(pluginType.id) (order: \(pluginType.order))")
+                    AppLogger.core.info("\(self.t)🔍 Discovered plugin: \(pluginType.id) (order: \(pluginType.order))")
                 }
             }
         }
@@ -327,7 +326,7 @@ final class PluginVM: ObservableObject, SuperLog {
         )
         
         if Self.verbose {
-            os_log("\(self.t)✅ Auto-discovery complete. Loaded \(sortedPlugins.count) plugins.")
+            AppLogger.core.info("\(self.t)✅ Auto-discovery complete. Loaded \(sortedPlugins.count) plugins.")
         }
     }
     
@@ -482,7 +481,7 @@ final class PluginVM: ObservableObject, SuperLog {
         if Self.verbose {
             let pluginNames = plugins.map { String(describing: type(of: $0)) }
             let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
-            os_log("\(self.t) getSidebarViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 侧边栏视图数量=\(views.count)")
+            AppLogger.core.info("\(self.t) getSidebarViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 侧边栏视图数量=\(views.count)")
         }
 
         return views
@@ -522,7 +521,7 @@ final class PluginVM: ObservableObject, SuperLog {
         if Self.verbose {
             let pluginNames = plugins.map { String(describing: type(of: $0)) }
             let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
-            os_log("\(self.t) getRightMiddleViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 右侧栏中间视图数量=\(views.count)")
+            AppLogger.core.info("\(self.t) getRightMiddleViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 右侧栏中间视图数量=\(views.count)")
         }
 
         return views
@@ -543,7 +542,7 @@ final class PluginVM: ObservableObject, SuperLog {
         if Self.verbose {
             let pluginNames = plugins.map { String(describing: type(of: $0)) }
             let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
-            os_log("\(self.t) getRightBottomViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 右侧栏底部视图数量=\(views.count)")
+            AppLogger.core.info("\(self.t) getRightBottomViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 右侧栏底部视图数量=\(views.count)")
         }
 
         return views
@@ -564,7 +563,7 @@ final class PluginVM: ObservableObject, SuperLog {
         if Self.verbose {
             let pluginNames = plugins.map { String(describing: type(of: $0)) }
             let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
-            os_log("\(self.t) getStatusBarViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 状态栏视图数量=\(views.count)")
+            AppLogger.core.info("\(self.t) getStatusBarViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 状态栏视图数量=\(views.count)")
         }
 
         return views

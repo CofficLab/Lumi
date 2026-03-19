@@ -1,5 +1,4 @@
 import MagicKit
-import OSLog
 import SwiftUI
 
 /// 左侧栏视图
@@ -249,7 +248,7 @@ private extension ModeSwitcherView {
 
     func handleModeChanged() {
         if Self.verbose {
-            os_log("\(t)🤖 模式已切换：\(mode.rawValue)")
+            AppLogger.core.info("\(t)🤖 模式已切换：\(mode.rawValue)")
         }
 
         // 同时更新窗口级别和全局级别的模式状态

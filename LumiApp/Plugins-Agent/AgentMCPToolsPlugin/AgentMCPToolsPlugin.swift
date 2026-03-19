@@ -1,8 +1,12 @@
 import MagicKit
 import SwiftUI
+import os
 
 /// MCP 工具插件：将 MCP 封装成内核可见的 AgentTools（用户无需关心安装/管理）。
 actor AgentMCPToolsPlugin: SuperPlugin {
+    /// 插件专用 Logger
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.mcp-tools")
+
     nonisolated static let emoji = "🐘"
     nonisolated static let verbose = false
 

@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 
 /// Git 日志工具
 struct GitLogTool: AgentTool, SuperLog {
@@ -46,7 +45,7 @@ struct GitLogTool: AgentTool, SuperLog {
         let file = arguments["file"]?.value as? String
 
         if Self.verbose {
-            os_log("\(Self.t)获取 Git 日志：\(path ?? "当前目录") count=\(count)")
+            GitToolsPlugin.logger.info("\(Self.t)获取 Git 日志：\(path ?? "当前目录") count=\(count)")
         }
 
         do {
@@ -58,7 +57,7 @@ struct GitLogTool: AgentTool, SuperLog {
             )
             return formatLog(logs)
         } catch {
-            os_log(.error, "\(Self.t)获取 Git 日志失败：\(error.localizedDescription)")
+            GitToolsPlugin.logger.error("\(Self.t)获取 Git 日志失败：\(error.localizedDescription)")
             return "获取 Git 日志失败：\(error.localizedDescription)"
         }
     }

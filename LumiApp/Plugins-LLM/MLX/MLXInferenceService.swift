@@ -1,9 +1,9 @@
 import Foundation
 import MagicKit
-import OSLog
 import Combine
 import MLXLLM
 @preconcurrency import MLXLMCommon
+import os
 
 /// MLX 推理服务
 ///
@@ -15,6 +15,7 @@ import MLXLLM
 @available(macOS 14.0, *)
 @MainActor
 public final class MLXInferenceService: ObservableObject, SuperLog {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.mlx")
     nonisolated public static let emoji = "🧠"
     nonisolated static let verbose = true
 
@@ -38,7 +39,7 @@ public final class MLXInferenceService: ObservableObject, SuperLog {
 
     public init() {
         if Self.verbose {
-            os_log("\(self.t)✅ MLX 推理服务已初始化")
+            Self.logger.info("\(self.t) MLX 推理服务已初始化")
         }
     }
 
@@ -84,7 +85,7 @@ public final class MLXInferenceService: ObservableObject, SuperLog {
 
             updateState(.ready)
             if Self.verbose {
-                os_log("\(self.t)✅ 模型加载成功：\(id)")
+                Self.logger.info("\(self.t) 模型加载成功：\(id)")
             }
         } catch {
             updateState(.error(error.localizedDescription))
@@ -105,7 +106,7 @@ public final class MLXInferenceService: ObservableObject, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(self.t)✅ 模型已卸载")
+            Self.logger.info("\(self.t) 模型已卸载")
         }
     }
 
@@ -134,7 +135,7 @@ public final class MLXInferenceService: ObservableObject, SuperLog {
                 self.tokensPerSecond = 0
 
                 if Self.verbose {
-                    os_log("\(self.t)✅ 流式连接已建立，开始接收数据...")
+                    Self.logger.info("\(self.t) 流式连接已建立，开始接收数据...")
                 }
 
                 do {
@@ -244,30 +245,30 @@ public final class MLXInferenceService: ObservableObject, SuperLog {
         // The global loadModelContainer function tries MLXVLM first internally
         do {
             if Self.verbose {
-                os_log("\(self.t)尝试加载 VLM 模型...")
+                Self.logger.info("\(self.t) 尝试加载 VLM 模型...")
             }
             let container = try await MLXLMCommon.loadModelContainer(configuration: configuration) { progress in
                 // Progress callback - can be used for loading UI
             }
             if Self.verbose {
-                os_log("\(self.t)✅ VLM 模型加载成功")
+                Self.logger.info("\(self.t) VLM 模型加载成功")
             }
             return container
         } catch {
             if Self.verbose {
-                os_log("\(self.t)VLM 加载失败，尝试 LLM: \(error.localizedDescription)")
+                Self.logger.info("\(self.t) VLM 加载失败，尝试 LLM: \(error.localizedDescription)")
             }
         }
 
         // Fallback to LLM
         if Self.verbose {
-            os_log("\(self.t)尝试加载 LLM 模型...")
+            Self.logger.info("\(self.t) 尝试加载 LLM 模型...")
         }
         let container = try await MLXLMCommon.loadModelContainer(configuration: configuration) { progress in
             // Progress callback
         }
         if Self.verbose {
-            os_log("\(self.t)✅ LLM 模型加载成功")
+            Self.logger.info("\(self.t) LLM 模型加载成功")
         }
         return container
     }

@@ -1,9 +1,10 @@
 import Foundation
-import OSLog
+import os
 
 // MARK: - System Utilities
 
 class SystemUtil {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "finder")
     static let emoji = "🔧"
 
     /// Check if current macOS version meets minimum requirement
@@ -36,15 +37,7 @@ class SystemUtil {
     /// Log current system information
     static func logSystemInfo() {
         let version = macOSVersion()
-        os_log("\(SystemUtil.t)macOS \(version.major).\(version.minor).\(version.patch)")
-        os_log("\(SystemUtil.t)Version string: \(macOSVersionString())")
-    }
-}
-
-// MARK: - Log Helper
-
-extension SystemUtil {
-    static var t: String {
-        return "[\(emoji)] "
+        logger.info("\(emoji) macOS \(version.major).\(version.minor).\(version.patch)")
+        logger.info("\(emoji) Version string: \(macOSVersionString())")
     }
 }

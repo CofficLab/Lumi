@@ -2,7 +2,6 @@ import AppKit
 import ApplicationServices
 import Combine
 import SwiftUI
-import OSLog
 import MagicKit
 
 /// 菜单栏管理服务
@@ -107,7 +106,7 @@ class MenuBarManagerService: ObservableObject, SuperLog {
         if location.y > screenHeight - menuBarHeight {
             // 鼠标在菜单栏上
             // 这里可以触发"显示隐藏项"的逻辑
-            // os_log("Mouse over menu bar")
+            // if Self.verbose { MenuBarManagerPlugin.logger.info("\(Self.t)Mouse over menu bar") }
         }
     }
     

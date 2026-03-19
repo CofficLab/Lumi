@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import AppKit
-import OSLog
 import MagicKit
 
 /// 项目管理 ViewModel
@@ -94,7 +93,7 @@ final class ProjectVM: ObservableObject, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)📁 已清除当前项目")
+            AppLogger.core.info("\(Self.t)📁 已清除当前项目")
         }
     }
 
@@ -124,7 +123,7 @@ final class ProjectVM: ObservableObject, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)📁 已切换项目：\(projectName)")
+            AppLogger.core.info("\(Self.t)📁 已切换项目：\(projectName)")
         }
     }
 
@@ -151,7 +150,7 @@ final class ProjectVM: ObservableObject, SuperLog {
             )
 
             if Self.verbose {
-                os_log("\(Self.t)⚙️ 已应用项目配置：\(config.providerId) / \(self.currentModel)")
+                AppLogger.core.info("\(Self.t)⚙️ 已应用项目配置：\(config.providerId) / \(self.currentModel)")
             }
         }
     }
@@ -177,7 +176,7 @@ final class ProjectVM: ObservableObject, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)💾 已保存项目配置：\(providerId) / \(model)")
+            AppLogger.core.info("\(Self.t)💾 已保存项目配置：\(providerId) / \(model)")
         }
     }
 
@@ -269,7 +268,7 @@ final class ProjectVM: ObservableObject, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)📋 已保存最近项目：\(name)")
+            AppLogger.core.info("\(Self.t)📋 已保存最近项目：\(name)")
         }
     }
 
@@ -293,7 +292,7 @@ final class ProjectVM: ObservableObject, SuperLog {
             setSelectedFileInfo(url: url, path: url.path, content: "", selected: false)
             
             if Self.verbose {
-                os_log("\(Self.t)📁 已选择目录：\(url.lastPathComponent)")
+                AppLogger.core.info("\(Self.t)📁 已选择目录：\(url.lastPathComponent)")
             }
         } else {
             setSelectedFileInfo(url: url, path: url.path, content: "", selected: true)
@@ -304,7 +303,7 @@ final class ProjectVM: ObservableObject, SuperLog {
             }
             
             if Self.verbose {
-                os_log("\(Self.t)📄 已选择文件：\(url.lastPathComponent)")
+                AppLogger.core.info("\(Self.t)📄 已选择文件：\(url.lastPathComponent)")
             }
         }
     }
@@ -315,10 +314,10 @@ final class ProjectVM: ObservableObject, SuperLog {
         do {
             try FileManager.default.trashItem(at: url, resultingItemURL: nil)
             if Self.verbose {
-                os_log("\(Self.t)🗑️ 已移到废纸篓：\(url.lastPathComponent)")
+                AppLogger.core.info("\(Self.t)🗑️ 已移到废纸篓：\(url.lastPathComponent)")
             }
         } catch {
-            os_log(.error, "\(Self.t)❌ 移到废纸篓失败：\(error.localizedDescription)")
+            AppLogger.core.error("\(Self.t)❌ 移到废纸篓失败：\(error.localizedDescription)")
         }
     }
     
@@ -328,7 +327,7 @@ final class ProjectVM: ObservableObject, SuperLog {
         NSWorkspace.shared.activateFileViewerSelecting([url])
         
         if Self.verbose {
-            os_log("\(Self.t)🔍 在 Finder 中显示：\(url.path)")
+            AppLogger.core.info("\(Self.t)🔍 在 Finder 中显示：\(url.path)")
         }
     }
     
@@ -342,10 +341,10 @@ final class ProjectVM: ObservableObject, SuperLog {
         do {
             try process.run()
             if Self.verbose {
-                os_log("\(Self.t)📝 使用 VS Code 打开：\(url.path)")
+                AppLogger.core.info("\(Self.t)📝 使用 VS Code 打开：\(url.path)")
             }
         } catch {
-            os_log(.error, "\(Self.t)❌ 启动 VS Code 失败：\(error.localizedDescription)")
+            AppLogger.core.error("\(Self.t)❌ 启动 VS Code 失败：\(error.localizedDescription)")
         }
     }
     
@@ -367,10 +366,10 @@ final class ProjectVM: ObservableObject, SuperLog {
         do {
             try process.run()
             if Self.verbose {
-                os_log("\(Self.t)💻 在终端中打开：\(targetURL.path)")
+                AppLogger.core.info("\(Self.t)💻 在终端中打开：\(targetURL.path)")
             }
         } catch {
-            os_log(.error, "\(Self.t)❌ 启动终端失败：\(error.localizedDescription)")
+            AppLogger.core.error("\(Self.t)❌ 启动终端失败：\(error.localizedDescription)")
         }
     }
 
@@ -385,7 +384,7 @@ final class ProjectVM: ObservableObject, SuperLog {
             await MainActor.run {
                 setSelectedFileContent("无法加载文件内容：\(error.localizedDescription)")
             }
-            os_log(.error, "\(Self.t)❌ 加载文件失败：\(error.localizedDescription)")
+            AppLogger.core.error("\(Self.t)❌ 加载文件失败：\(error.localizedDescription)")
         }
     }
 

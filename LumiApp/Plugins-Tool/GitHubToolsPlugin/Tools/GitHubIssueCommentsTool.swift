@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 
 /// GitHub Issue 评论列表工具
 struct GitHubIssueCommentsTool: AgentTool, SuperLog {
@@ -54,7 +53,7 @@ struct GitHubIssueCommentsTool: AgentTool, SuperLog {
         let perPage = min(arguments["perPage"]?.value as? Int ?? 10, 100)
 
         if Self.verbose {
-            os_log("\(Self.t)💬 获取 Issue 评论：\(owner)/\(repo)#\(issueNumber)")
+            GitHubToolsPlugin.logger.info("\(self.t)获取 Issue 评论：\(owner)/\(repo)#\(issueNumber)")
         }
 
         do {
@@ -67,7 +66,7 @@ struct GitHubIssueCommentsTool: AgentTool, SuperLog {
             )
             return formatComments(comments)
         } catch {
-            os_log(.error, "\(Self.t)获取 Issue 评论失败：\(error.localizedDescription)")
+            GitHubToolsPlugin.logger.error("\(self.t)获取 Issue 评论失败：\(error.localizedDescription)")
             return "获取 Issue 评论失败：\(error.localizedDescription)"
         }
     }

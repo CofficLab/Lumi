@@ -2,7 +2,6 @@ import Foundation
 import Logging
 import MagicKit
 import MCP
-import OSLog
 
 /// A Transport that communicates via Server-Sent Events (SSE)
 actor SSEClientTransport: Transport, SuperLog {
@@ -31,7 +30,7 @@ actor SSEClientTransport: Transport, SuperLog {
     }
 
     func connect() async throws {
-        os_log("\(Self.t)Connecting to SSE: \(self.url.absoluteString)")
+        AgentMCPToolsPlugin.logger.info("\(Self.t)Connecting to SSE: \(self.url.absoluteString)")
 
         var request = URLRequest(url: url)
         for (key, value) in headers {
@@ -52,7 +51,7 @@ actor SSEClientTransport: Transport, SuperLog {
                     throw NSError(domain: "SSEClientTransport", code: statusCode, userInfo: [NSLocalizedDescriptionKey: "Invalid status code: \(statusCode)"])
                 }
 
-                os_log("\(Self.t)SSE Connected")
+                AgentMCPToolsPlugin.logger.info("\(Self.t)SSE Connected")
 
                 var currentEvent: String?
                 var currentData: String = ""
@@ -92,11 +91,11 @@ actor SSEClientTransport: Transport, SuperLog {
                 }
 
                 // Stream ended
-                os_log("\(Self.t)SSE Stream ended")
+                AgentMCPToolsPlugin.logger.info("\(Self.t)SSE Stream ended")
                 self.messageContinuation.finish()
 
             } catch {
-                os_log(.error, "\(Self.t)SSE Error: \(error.localizedDescription)")
+                AgentMCPToolsPlugin.logger.error("\(Self.t)SSE Error: \(error.localizedDescription)")
                 self.messageContinuation.finish(throwing: error)
             }
         }
@@ -109,9 +108,9 @@ actor SSEClientTransport: Transport, SuperLog {
 
             if let endpoint = URL(string: endpointString, relativeTo: self.url) {
                 self.endpointURL = endpoint
-                os_log("\(Self.t)SSE Endpoint received: \(endpoint.absoluteString)")
+                AgentMCPToolsPlugin.logger.info("\(Self.t)SSE Endpoint received: \(endpoint.absoluteString)")
             } else {
-                os_log(.error, "\(Self.t)Invalid endpoint URL: \(endpointString)")
+                AgentMCPToolsPlugin.logger.error("\(Self.t)Invalid endpoint URL: \(endpointString)")
             }
             return
         }

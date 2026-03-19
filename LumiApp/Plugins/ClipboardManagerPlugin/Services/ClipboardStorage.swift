@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 
 actor ClipboardStorage: SuperLog {
     nonisolated static let emoji = "📋"
@@ -41,7 +40,7 @@ actor ClipboardStorage: SuperLog {
         }
         
         if Self.verbose {
-            os_log("\(Self.t)➕ 已添加剪贴板项：\(item.content.prefix(50))...")
+            ClipboardManagerPlugin.logger.info("\(Self.t)➕ 已添加剪贴板项：\(item.content.prefix(50))...")
         }
         
         save()
@@ -56,7 +55,7 @@ actor ClipboardStorage: SuperLog {
         items.removeAll()
         save()
         if Self.verbose {
-            os_log("\(Self.t)🗑️ 已清空剪贴板历史（共 \(count) 项）")
+            ClipboardManagerPlugin.logger.info("\(Self.t)🗑️ 已清空剪贴板历史（共 \(count) 项）")
         }
     }
     
@@ -65,7 +64,7 @@ actor ClipboardStorage: SuperLog {
             items[index].isPinned.toggle()
             save()
             if Self.verbose {
-                os_log("\(Self.t)📌 已切换固定状态：\(id)")
+                ClipboardManagerPlugin.logger.info("\(Self.t)📌 已切换固定状态：\(id)")
             }
         }
     }
@@ -75,7 +74,7 @@ actor ClipboardStorage: SuperLog {
         items.removeAll { $0.id == id }
         save()
         if Self.verbose {
-            os_log("\(Self.t)🗑️ 已删除剪贴板项：\(id)\(wasPinned ? " (已固定)" : "")")
+            ClipboardManagerPlugin.logger.info("\(Self.t)🗑️ 已删除剪贴板项：\(id)\(wasPinned ? " (已固定)" : "")")
         }
     }
     
@@ -84,17 +83,17 @@ actor ClipboardStorage: SuperLog {
             let data = try JSONEncoder().encode(items)
             try data.write(to: fileURL)
             if Self.verbose {
-                os_log("\(Self.t)💾 已保存剪贴板历史（\(self.items.count) 项）")
+                ClipboardManagerPlugin.logger.info("\(Self.t)💾 已保存剪贴板历史（\(self.items.count) 项）")
             }
         } catch {
-            os_log(.error, "\(Self.t)❌ 保存剪贴板历史失败：\(error.localizedDescription)")
+            ClipboardManagerPlugin.logger.error("\(Self.t)❌ 保存剪贴板历史失败：\(error.localizedDescription)")
         }
     }
     
     private func load() {
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
             if Self.verbose {
-                os_log("\(Self.t)ℹ️ 剪贴板历史文件不存在，从空列表开始")
+                ClipboardManagerPlugin.logger.info("\(Self.t)ℹ️ 剪贴板历史文件不存在，从空列表开始")
             }
             return
         }
@@ -102,10 +101,10 @@ actor ClipboardStorage: SuperLog {
             let data = try Data(contentsOf: fileURL)
             items = try JSONDecoder().decode([ClipboardItem].self, from: data)
             if Self.verbose {
-                os_log("\(Self.t)✅ 已加载 \(self.items.count) 个剪贴板项")
+                ClipboardManagerPlugin.logger.info("\(Self.t)✅ 已加载 \(self.items.count) 个剪贴板项")
             }
         } catch {
-            os_log(.error, "\(Self.t)❌ 加载剪贴板历史失败：\(error.localizedDescription)")
+            ClipboardManagerPlugin.logger.error("\(Self.t)❌ 加载剪贴板历史失败：\(error.localizedDescription)")
         }
     }
 }

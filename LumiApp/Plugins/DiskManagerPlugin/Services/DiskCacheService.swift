@@ -1,5 +1,4 @@
 import Foundation
-import OSLog
 import MagicKit
 
 // MARK: - Cache Model
@@ -55,10 +54,10 @@ actor ScanCacheService: SuperLog {
                 let data = try JSONEncoder().encode(cache)
                 try data.write(to: fileURL)
                 if Self.verbose {
-                    os_log("\(Self.t)缓存已保存：\((path as NSString).lastPathComponent)")
+                    DiskManagerPlugin.logger.info("\(Self.t)缓存已保存：\((path as NSString).lastPathComponent)")
                 }
             } catch {
-                os_log(.error, "\(Self.t)缓存保存失败：\(path) - \(error.localizedDescription)")
+                DiskManagerPlugin.logger.error("\(Self.t)缓存保存失败：\(path) - \(error.localizedDescription)")
             }
         }
     }
@@ -75,13 +74,13 @@ actor ScanCacheService: SuperLog {
             if cache.isExpired {
                 try? FileManager.default.removeItem(at: fileURL)
                 if Self.verbose {
-                    os_log("\(self.t)缓存已过期：\((path as NSString).lastPathComponent)")
+                    DiskManagerPlugin.logger.info("\(self.t)缓存已过期：\((path as NSString).lastPathComponent)")
                 }
                 return nil
             }
             
             if Self.verbose {
-                os_log("\(self.t)缓存命中：\((path as NSString).lastPathComponent)，\(cache.largeFiles.count) 个大文件")
+                DiskManagerPlugin.logger.info("\(self.t)缓存命中：\((path as NSString).lastPathComponent)，\(cache.largeFiles.count) 个大文件")
             }
             
             return ScanResult(

@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 import SwiftData
 
 extension Notification.Name {
@@ -64,7 +63,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         self.modelContainer = modelContainer
         self.modelContext = ModelContext(modelContainer)
         if Self.verbose {
-            os_log("\(Self.t)✅ (\(reason)) 聊天存储已初始化")
+            AppLogger.core.info("\(Self.t)✅ (\(reason)) 聊天存储已初始化")
         }
     }
 
@@ -83,7 +82,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         do {
             try context.save()
         } catch {
-            os_log(.error, "\(Self.t)❌ 保存对话失败：\(error.localizedDescription)")
+            AppLogger.core.error("\(Self.t)❌ 保存对话失败：\(error.localizedDescription)")
         }
     }
 
@@ -130,7 +129,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         NotificationCenter.postConversationCreated(conversationId: conversation.id)
 
         if Self.verbose {
-            os_log("\(Self.t)✨ 创建新对话：\(title)")
+            AppLogger.core.info("\(Self.t)✨ 创建新对话：\(title)")
         }
 
         return conversation
@@ -148,7 +147,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         NotificationCenter.postConversationUpdated(conversationId: conversation.id)
 
         if Self.verbose {
-            os_log("\(Self.t)✏️ 对话标题已更新：\(newTitle)")
+            AppLogger.core.info("\(Self.t)✏️ 对话标题已更新：\(newTitle)")
         }
     }
 
@@ -206,7 +205,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                 return String(generatedTitle.prefix(20))
             }
         } catch {
-            os_log(.error, "\(Self.t)❌ 生成标题失败：\(error.localizedDescription)")
+            AppLogger.core.error("\(Self.t)❌ 生成标题失败：\(error.localizedDescription)")
             // 降级：使用消息的前 20 个字符作为标题
             return String(trimmedMessage.prefix(20))
         }
@@ -230,7 +229,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         )
 
         guard let fetchedConversation = try? context.fetch(descriptor).first else {
-            os_log(.error, "\(Self.t)❌ 无法在当前上下文中找到对话")
+            AppLogger.core.error("\(Self.t)❌ 无法在当前上下文中找到对话")
             return nil
         }
 
@@ -249,17 +248,17 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                     message.totalTokens.map { "总计: \($0)" },
                     message.latency.map { "耗时: \(String(format: "%.0f", $0))ms" }
                 ].compactMap { $0 }.joined(separator: ", ")
-                os_log("\(Self.t)💾 [\(conversation.id)] 消息已保存：\(message.content.max(10)), 指标: [\(metrics)], 思考过程: \(hasThinking)")
+                AppLogger.core.info("\(Self.t)💾 [\(conversation.id)] 消息已保存：\(message.content.max(10)), 指标: [\(metrics)], 思考过程: \(hasThinking)")
             }
             // 返回保存后的消息
             guard let savedMessage = messageEntity.toChatMessage() else {
-                os_log(.error, "\(Self.t)❌ 消息转换失败")
+                AppLogger.core.error("\(Self.t)❌ 消息转换失败")
                 return nil
             }
             NotificationCenter.postMessageSaved(message: savedMessage, conversationId: conversation.id)
             return savedMessage
         } catch {
-            os_log(.error, "\(Self.t)❌ 保存消息失败：\(error.localizedDescription)")
+            AppLogger.core.error("\(Self.t)❌ 保存消息失败：\(error.localizedDescription)")
             return nil
         }
     }
@@ -301,7 +300,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                     }
                     continuation.resume(returning: messageEntity.toChatMessage())
                 } catch {
-                    os_log(.error, "\(Self.t)❌ 异步保存消息失败：\(error.localizedDescription)")
+                    AppLogger.core.error("\(Self.t)❌ 异步保存消息失败：\(error.localizedDescription)")
                     continuation.resume(returning: nil)
                 }
             }
@@ -456,7 +455,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                 let hasMore = hasMoreVisible
 
                 if Self.verbose {
-                    os_log("\(Self.t)📄 [\(conversationId)] 分页加载消息: \(messages.count) 条, hasMore: \(hasMore)")
+                    AppLogger.core.info("\(Self.t)📄 [\(conversationId)] 分页加载消息: \(messages.count) 条, hasMore: \(hasMore)")
                 }
 
                 continuation.resume(returning: (messages, hasMore))
@@ -550,11 +549,11 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         do {
             let conversations = try context.fetch(descriptor)
             if Self.verbose {
-                os_log("\(Self.t)📄 获取到 \(conversations.count) 个对话")
+                AppLogger.core.info("\(Self.t)📄 获取到 \(conversations.count) 个对话")
             }
             return conversations
         } catch {
-            os_log(.error, "\(Self.t)❌ 获取对话失败：\(error.localizedDescription)")
+            AppLogger.core.error("\(Self.t)❌ 获取对话失败：\(error.localizedDescription)")
             return []
         }
     }
@@ -588,7 +587,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         do {
             return try context.fetch(descriptor)
         } catch {
-            os_log(.error, "\(Self.t)❌ 分页获取对话失败：\(error.localizedDescription)")
+            AppLogger.core.error("\(Self.t)❌ 分页获取对话失败：\(error.localizedDescription)")
             return []
         }
     }
@@ -604,7 +603,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
             let conversations = try context.fetch(descriptor)
             return conversations.first
         } catch {
-            os_log(.error, "\(Self.t)❌ 获取对话失败：\(error.localizedDescription)")
+            AppLogger.core.error("\(Self.t)❌ 获取对话失败：\(error.localizedDescription)")
             return nil
         }
     }
@@ -620,11 +619,11 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         do {
             let conversations = try context.fetch(descriptor)
             if Self.verbose {
-                os_log("\(Self.t)📄 获取到项目 \(projectId) 的 \(conversations.count) 个对话")
+                AppLogger.core.info("\(Self.t)📄 获取到项目 \(projectId) 的 \(conversations.count) 个对话")
             }
             return conversations
         } catch {
-            os_log(.error, "\(Self.t)❌ 获取项目对话失败：\(error.localizedDescription)")
+            AppLogger.core.error("\(Self.t)❌ 获取项目对话失败：\(error.localizedDescription)")
             return []
         }
     }
@@ -640,7 +639,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         )
 
         guard let fetchedConversation = try? context.fetch(descriptor).first else {
-            os_log(.error, "\(Self.t)❌ 无法在当前上下文中找到对话")
+            AppLogger.core.error("\(Self.t)❌ 无法在当前上下文中找到对话")
             return []
         }
 
@@ -648,7 +647,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         let messageEntities = fetchedConversation.messages.sorted { $0.timestamp < $1.timestamp }
         let messages = messageEntities.compactMap { $0.toChatMessage() }
         if Self.verbose {
-            os_log("\(Self.t)📄 [\(conversation.id)] 加载到 \(messages.count) 条消息")
+            AppLogger.core.info("\(Self.t)📄 [\(conversation.id)] 加载到 \(messages.count) 条消息")
         }
         return messages
     }
@@ -665,10 +664,10 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
             notifyConversationChanged(type: .deleted, conversationId: conversation.id)
             NotificationCenter.postConversationDeleted(conversationId: conversation.id)
             if Self.verbose {
-                os_log("\(Self.t)🗑️ 对话已删除：\(conversation.title)")
+                AppLogger.core.info("\(Self.t)🗑️ 对话已删除：\(conversation.title)")
             }
         } catch {
-            os_log(.error, "\(Self.t)❌ 删除对话失败：\(error.localizedDescription)")
+            AppLogger.core.error("\(Self.t)❌ 删除对话失败：\(error.localizedDescription)")
         }
     }
 
@@ -685,7 +684,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         )
 
         guard let messageEntities = try? context.fetch(descriptor) else {
-            os_log(.error, "\(Self.t)❌ 获取消息失败")
+            AppLogger.core.error("\(Self.t)❌ 获取消息失败")
             return []
         }
 
@@ -741,7 +740,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         )
 
         guard let messageEntities = try? context.fetch(descriptor) else {
-            os_log(.error, "\(Self.t)❌ 获取消息失败")
+            AppLogger.core.error("\(Self.t)❌ 获取消息失败")
             return [:]
         }
 

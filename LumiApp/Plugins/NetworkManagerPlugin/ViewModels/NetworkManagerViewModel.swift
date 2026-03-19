@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import OSLog
 import MagicKit
 
 @MainActor
@@ -63,7 +62,7 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
 
     init() {
         if Self.verbose {
-            os_log("\(self.t)NetworkManagerViewModel initialized")
+            NetworkManagerPlugin.logger.info("\(self.t)NetworkManagerViewModel initialized")
         }
         startMonitoring()
         
@@ -72,7 +71,7 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] processes in
                 if Self.verbose {
-                    os_log("\(self?.t ?? "")Received process updates: \(processes.count)")
+                    NetworkManagerPlugin.logger.info("\(self?.t ?? NetworkManagerViewModel.t)Received process updates: \(processes.count)")
                 }
                 self?.processes = processes
             }
@@ -100,7 +99,7 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
 
     func startMonitoring() {
         if Self.verbose {
-            os_log("\(self.t)Starting network monitoring")
+            NetworkManagerPlugin.logger.info("\(self.t)Starting network monitoring")
         }
 
         // Subscribe to NetworkService updates

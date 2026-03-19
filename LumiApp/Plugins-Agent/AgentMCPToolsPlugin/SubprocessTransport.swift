@@ -1,6 +1,5 @@
 import Foundation
 import MCP
-import OSLog
 import MagicKit
 import Logging
 
@@ -65,7 +64,7 @@ actor SubprocessTransport: Transport, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)启动子进程: \(executablePath) \(self.arguments.joined(separator: " "))")
+            AgentMCPToolsPlugin.logger.info("\(Self.t)启动子进程: \(executablePath) \(self.arguments.joined(separator: " "))")
         }
 
         let process = Process()
@@ -96,17 +95,17 @@ actor SubprocessTransport: Transport, SuperLog {
         do {
             try process.run()
             if Self.verbose {
-                os_log("\(Self.t)✅ 子进程已启动: \(executablePath)")
+                AgentMCPToolsPlugin.logger.info("\(Self.t)✅ 子进程已启动: \(executablePath)")
             }
         } catch {
-            os_log(.error, "\(Self.t)❌ 运行进程失败 \(executablePath): \(error)")
+            AgentMCPToolsPlugin.logger.error("\(Self.t)❌ 运行进程失败 \(executablePath): \(error)")
             throw error
         }
     }
 
     func disconnect() async {
         if Self.verbose {
-            os_log("\(Self.t)停止子进程: \(self.command)")
+            AgentMCPToolsPlugin.logger.info("\(Self.t)停止子进程: \(self.command)")
         }
         process?.terminate()
         process = nil
@@ -126,7 +125,7 @@ actor SubprocessTransport: Transport, SuperLog {
 
         if Self.verbose {
             if let str = String(data: data, encoding: .utf8) {
-                os_log("\(Self.t)📤 已发送: \(str.prefix(200))")
+                AgentMCPToolsPlugin.logger.info("\(Self.t)📤 已发送: \(str.prefix(200))")
             }
         }
     }
@@ -143,14 +142,14 @@ actor SubprocessTransport: Transport, SuperLog {
                 if let data = line.data(using: .utf8) {
                     if Self.verbose {
                         if let str = String(data: data, encoding: .utf8) {
-                            os_log("\(Self.t)📥 已接收: \(str.prefix(200))")
+                            AgentMCPToolsPlugin.logger.info("\(Self.t)📥 已接收: \(str.prefix(200))")
                         }
                     }
                     messageContinuation.yield(data)
                 }
             }
         } catch {
-            os_log(.error, "\(Self.t)❌ 从 stdout 读取失败: \(error.localizedDescription)")
+            AgentMCPToolsPlugin.logger.error("\(Self.t)❌ 从 stdout 读取失败: \(error.localizedDescription)")
             messageContinuation.finish(throwing: error)
             return
         }
@@ -163,11 +162,11 @@ actor SubprocessTransport: Transport, SuperLog {
         do {
             for try await line in handle.bytes.lines {
                 if Self.verbose {
-                    os_log("\(Self.t)[MCP Stderr] \(line)")
+                    AgentMCPToolsPlugin.logger.info("\(Self.t)[MCP Stderr] \(line)")
                 }
             }
         } catch {
-            os_log(.error, "\(Self.t)❌ 从 stderr 读取失败: \(error.localizedDescription)")
+            AgentMCPToolsPlugin.logger.error("\(Self.t)❌ 从 stderr 读取失败: \(error.localizedDescription)")
         }
     }
 
@@ -205,13 +204,13 @@ actor SubprocessTransport: Transport, SuperLog {
             if let path = String(data: buffer.snapshot(), encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines), !path.isEmpty {
                 if FileManager.default.fileExists(atPath: path) {
                     if Self.verbose {
-                        os_log("\(Self.t)解析命令 '\(command)' 为: \(path)")
+                        AgentMCPToolsPlugin.logger.info("\(Self.t)解析命令 '\(command)' 为: \(path)")
                     }
                     return path
                 }
             }
         } catch {
-            os_log(.error, "\(Self.t)❌ 解析命令失败 \(command): \(error.localizedDescription)")
+            AgentMCPToolsPlugin.logger.error("\(Self.t)❌ 解析命令失败 \(command): \(error.localizedDescription)")
         }
 
         let commonPaths = [
@@ -224,14 +223,14 @@ actor SubprocessTransport: Transport, SuperLog {
         for path in commonPaths {
             if FileManager.default.fileExists(atPath: path) {
                 if Self.verbose {
-                    os_log("\(Self.t)解析命令 '\(command)' 为备用路径: \(path)")
+                    AgentMCPToolsPlugin.logger.info("\(Self.t)解析命令 '\(command)' 为备用路径: \(path)")
                 }
                 return path
             }
         }
 
         if Self.verbose {
-            os_log("\(Self.t)⚠️ 使用最终备用路径命令 '\(command)': /usr/bin/\(command)")
+            AgentMCPToolsPlugin.logger.info("\(Self.t)⚠️ 使用最终备用路径命令 '\(command)': /usr/bin/\(command)")
         }
         return "/usr/bin/\(command)"
     }

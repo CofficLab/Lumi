@@ -1,6 +1,5 @@
 import SwiftUI
 import Combine
-import OSLog
 
 /// Status bar content view for Network Manager plugin
 /// Displays real-time upload/download speeds

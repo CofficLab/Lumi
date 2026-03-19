@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 
 /// GitHub Issue 列表工具
 struct GitHubIssueListTool: AgentTool, SuperLog {
@@ -56,7 +55,7 @@ struct GitHubIssueListTool: AgentTool, SuperLog {
         let perPage = min(arguments["perPage"]?.value as? Int ?? 10, 100)
 
         if Self.verbose {
-            os_log("\(Self.t)📋 获取 Issue 列表：\(owner)/\(repo) state=\(stateRaw)")
+            GitHubToolsPlugin.logger.info("\(Self.t)获取 Issue 列表：\(owner)/\(repo) state=\(stateRaw)")
         }
 
         do {
@@ -69,7 +68,7 @@ struct GitHubIssueListTool: AgentTool, SuperLog {
             )
             return formatIssues(issues)
         } catch {
-            os_log(.error, "\(Self.t)获取 Issue 列表失败：\(error.localizedDescription)")
+            GitHubToolsPlugin.logger.error("\(Self.t)获取 Issue 列表失败：\(error.localizedDescription)")
             return "获取 Issue 列表失败：\(error.localizedDescription)"
         }
     }

@@ -2,7 +2,6 @@ import Foundation
 import Combine
 import SwiftUI
 import MagicKit
-import OSLog
 
 @MainActor
 class BrewManagerViewModel: ObservableObject, SuperLog {
@@ -23,7 +22,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
     
     init() {
         if Self.verbose {
-            os_log("\(self.t) 初始化 BrewManagerViewModel")
+            BrewManagerPlugin.logger.info("\(self.t) 初始化 BrewManagerViewModel")
         }
         checkEnvironment()
     }
@@ -31,17 +30,17 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
     func checkEnvironment() {
         Task {
             if Self.verbose {
-                os_log("\(self.t) 检查 Homebrew 环境")
+                BrewManagerPlugin.logger.info("\(self.t) 检查 Homebrew 环境")
             }
             isBrewInstalled = await service.checkInstalled()
             if isBrewInstalled {
                 if Self.verbose {
-                    os_log("\(self.t) Homebrew 已安装，开始刷新数据")
+                    BrewManagerPlugin.logger.info("\(self.t) Homebrew 已安装，开始刷新数据")
                 }
                 await refresh()
             } else {
                 if Self.verbose {
-                    os_log("\(self.t) ❌ Homebrew not detected")
+                    BrewManagerPlugin.logger.error("\(self.t) ❌ Homebrew not detected")
                 }
                 errorMessage = String(localized: "Homebrew not detected, please install Homebrew first.", table: "BrewManager")
             }
@@ -50,7 +49,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
     
     func refresh() async {
         if Self.verbose {
-            os_log("\(self.t)🔄 Starting to refresh package list")
+            BrewManagerPlugin.logger.info("\(self.t)🔄 Starting to refresh package list")
         }
         isLoading = true
         errorMessage = nil
@@ -62,14 +61,14 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
             let (installedList, outdatedList) = try await (installed, outdated)
             
             if Self.verbose {
-                os_log("\(self.t) ✅ Refresh complete: \(installedList.count) installed, \(outdatedList.count) outdated")
+                BrewManagerPlugin.logger.info("\(self.t) ✅ Refresh complete: \(installedList.count) installed, \(outdatedList.count) outdated")
             }
             
             self.installedPackages = installedList
             self.outdatedPackages = outdatedList
         } catch {
             if Self.verbose {
-                os_log("\(self.t) ❌ Refresh failed: \(error.localizedDescription)")
+                BrewManagerPlugin.logger.error("\(self.t) ❌ Refresh failed: \(error.localizedDescription)")
             }
             self.errorMessage = String(localized: "Refresh failed: \(error.localizedDescription)", table: "BrewManager")
         }
@@ -84,7 +83,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
         }
         
         if Self.verbose {
-            os_log("\(self.t) 🔍 触发搜索: \(self.searchText)")
+            BrewManagerPlugin.logger.info("\(self.t) 🔍 触发搜索: \(self.searchText)")
         }
         isLoading = true
         searchCancellable?.cancel()
@@ -95,13 +94,13 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                 try await Task.sleep(nanoseconds: 500_000_000)
                 
                 if Self.verbose {
-                    os_log("\(self.t) 执行搜索 API 调用: \(self.searchText)")
+                    BrewManagerPlugin.logger.info("\(self.t) 执行搜索 API 调用: \(self.searchText)")
                 }
                 let results = try await service.search(query: searchText)
                 
                 if !Task.isCancelled {
                     if Self.verbose {
-                        os_log("\(self.t) ✅ 搜索完成: 找到 \(results.count) 个结果")
+                        BrewManagerPlugin.logger.info("\(self.t) ✅ 搜索完成: 找到 \(results.count) 个结果")
                     }
                     self.searchResults = results
                     self.isLoading = false
@@ -109,7 +108,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
             } catch {
                 if !Task.isCancelled {
                     if Self.verbose {
-                        os_log("\(self.t) ❌ 搜索失败: \(error.localizedDescription)")
+                        BrewManagerPlugin.logger.error("\(self.t) ❌ 搜索失败: \(error.localizedDescription)")
                     }
                     self.errorMessage = String(localized: "Search failed: \(error.localizedDescription)", table: "BrewManager")
                     self.isLoading = false
@@ -120,18 +119,18 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
     
     func install(package: BrewPackage) async {
         if Self.verbose {
-            os_log("\(self.t) ⬇️ 开始安装: \(package.name)")
+            BrewManagerPlugin.logger.info("\(self.t) ⬇️ 开始安装: \(package.name)")
         }
         isLoading = true
         do {
             try await service.install(name: package.name, isCask: package.isCask)
             if Self.verbose {
-                os_log("\(self.t) ✅ 安装成功: \(package.name)")
+                BrewManagerPlugin.logger.info("\(self.t) ✅ 安装成功: \(package.name)")
             }
             await refresh()
         } catch {
             if Self.verbose {
-                os_log("\(self.t) ❌ 安装失败: \(error.localizedDescription)")
+                BrewManagerPlugin.logger.error("\(self.t) ❌ 安装失败: \(error.localizedDescription)")
             }
             errorMessage = String(localized: "Installation failed: \(error.localizedDescription)", table: "BrewManager")
         }
@@ -140,18 +139,18 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
     
     func uninstall(package: BrewPackage) async {
         if Self.verbose {
-            os_log("\(self.t) 🗑️ 开始卸载: \(package.name)")
+            BrewManagerPlugin.logger.info("\(self.t) 🗑️ 开始卸载: \(package.name)")
         }
         isLoading = true
         do {
             try await service.uninstall(name: package.name, isCask: package.isCask)
             if Self.verbose {
-                os_log("\(self.t) ✅ 卸载成功: \(package.name)")
+                BrewManagerPlugin.logger.info("\(self.t) ✅ 卸载成功: \(package.name)")
             }
             await refresh()
         } catch {
             if Self.verbose {
-                os_log("\(self.t) ❌ 卸载失败: \(error.localizedDescription)")
+                BrewManagerPlugin.logger.error("\(self.t) ❌ 卸载失败: \(error.localizedDescription)")
             }
             errorMessage = String(localized: "Uninstallation failed: \(error.localizedDescription)", table: "BrewManager")
         }
@@ -160,18 +159,18 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
     
     func upgrade(package: BrewPackage) async {
         if Self.verbose {
-            os_log("\(self.t) ⬆️ 开始更新: \(package.name)")
+            BrewManagerPlugin.logger.info("\(self.t) ⬆️ 开始更新: \(package.name)")
         }
         isLoading = true
         do {
             try await service.upgrade(name: package.name, isCask: package.isCask)
             if Self.verbose {
-                os_log("\(self.t) ✅ 更新成功: \(package.name)")
+                BrewManagerPlugin.logger.info("\(self.t) ✅ 更新成功: \(package.name)")
             }
             await refresh()
         } catch {
             if Self.verbose {
-                os_log("\(self.t) ❌ 更新失败: \(error.localizedDescription)")
+                BrewManagerPlugin.logger.error("\(self.t) ❌ 更新失败: \(error.localizedDescription)")
             }
             errorMessage = String(localized: "Update failed: \(error.localizedDescription)", table: "BrewManager")
         }
@@ -180,24 +179,24 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
     
     func upgradeAll() async {
         if Self.verbose {
-            os_log("\(self.t) 🚀 开始全部更新 (\(self.outdatedPackages.count) 个包)")
+            BrewManagerPlugin.logger.info("\(self.t) 🚀 开始全部更新 (\(self.outdatedPackages.count) 个包)")
         }
         isLoading = true
         do {
             // 简单实现：遍历更新
             for package in outdatedPackages {
                 if Self.verbose {
-                    os_log("\(self.t) 正在更新: \(package.name)")
+                    BrewManagerPlugin.logger.info("\(self.t) 正在更新: \(package.name)")
                 }
                 try await service.upgrade(name: package.name, isCask: package.isCask)
             }
             if Self.verbose {
-                os_log("\(self.t) ✅ 全部更新完成")
+                BrewManagerPlugin.logger.info("\(self.t) ✅ 全部更新完成")
             }
             await refresh()
         } catch {
             if Self.verbose {
-                os_log("\(self.t) ❌ 批量更新失败: \(error.localizedDescription)")
+                BrewManagerPlugin.logger.error("\(self.t) ❌ 批量更新失败: \(error.localizedDescription)")
             }
             errorMessage = String(localized: "Batch update failed: \(error.localizedDescription)", table: "BrewManager")
         }

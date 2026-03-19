@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import OSLog
 import MagicKit
 
 /// CPU 监控服务：提供实时 CPU 使用率
@@ -35,7 +34,7 @@ class CPUService: ObservableObject, SuperLog {
         subscribersCount += 1
         if monitoringTimer == nil {
             if Self.verbose {
-                os_log("\(self.t)Starting CPU monitoring")
+                CPUManagerPlugin.logger.info("\(self.t)Starting CPU monitoring")
             }
             // Initial fetch
             updateCPUUsage()
@@ -52,7 +51,7 @@ class CPUService: ObservableObject, SuperLog {
         subscribersCount = max(0, subscribersCount - 1)
         if subscribersCount == 0 {
             if Self.verbose {
-                os_log("\(self.t)Stopping CPU monitoring")
+                CPUManagerPlugin.logger.info("\(self.t)Stopping CPU monitoring")
             }
             monitoringTimer?.invalidate()
             monitoringTimer = nil

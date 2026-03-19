@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 import SwiftUI
 
 /// 文件写入工具
@@ -47,7 +46,7 @@ struct WriteFileTool: AgentTool, SuperLog {
 
         let fileName = path.components(separatedBy: "/").last ?? path
         if Self.verbose {
-            os_log("\(Self.t)写入文件：\(fileName)（\(content.count) 字符）")
+            AgentCoreToolsPlugin.logger.info("\(self.t)写入文件：\(fileName)（\(content.count) 字符）")
         }
 
         let fileURL = URL(fileURLWithPath: path)
@@ -56,15 +55,15 @@ struct WriteFileTool: AgentTool, SuperLog {
         let fileManager = FileManager.default
         if !fileManager.fileExists(atPath: directoryURL.path) {
             if Self.verbose {
-                os_log("\(Self.t)目录不存在，正在创建：\(directoryURL.path)")
+                AgentCoreToolsPlugin.logger.info("\(self.t)目录不存在，正在创建：\(directoryURL.path)")
             }
             do {
                 try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
                 if Self.verbose {
-                    os_log("\(Self.t)目录创建成功")
+                    AgentCoreToolsPlugin.logger.info("\(self.t)目录创建成功")
                 }
             } catch {
-                os_log(.error, "\(Self.t)创建目录失败：\(error.localizedDescription)")
+                AgentCoreToolsPlugin.logger.error("\(self.t)创建目录失败：\(error.localizedDescription)")
                 return "Error creating directory: \(error.localizedDescription)"
             }
         }
@@ -72,11 +71,11 @@ struct WriteFileTool: AgentTool, SuperLog {
         do {
             try content.write(to: fileURL, atomically: true, encoding: .utf8)
             if Self.verbose {
-                os_log("\(Self.t)文件写入成功：\(fileName)")
+                AgentCoreToolsPlugin.logger.info("\(self.t)文件写入成功：\(fileName)")
             }
             return "Successfully wrote to \(path)"
         } catch {
-            os_log(.error, "\(Self.t)写入文件失败：\(error.localizedDescription)")
+            AgentCoreToolsPlugin.logger.error("\(self.t)写入文件失败：\(error.localizedDescription)")
             return "Error writing file: \(error.localizedDescription)"
         }
     }

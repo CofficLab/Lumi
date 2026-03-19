@@ -1,6 +1,6 @@
 import Foundation
-import OSLog
 import MagicKit
+import os
 
 // MARK: - OpenAI 供应商
 
@@ -8,7 +8,7 @@ import MagicKit
 ///
 /// 此实现也适用于兼容 OpenAI API 格式的其他服务（如 DeepSeek）。
 final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
-
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.openai")
     nonisolated static let emoji = "🟢"
     nonisolated static let verbose = false
 
@@ -235,7 +235,7 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
             return nil
         } catch {
             if Self.verbose {
-                os_log("⚠️ 解析流式数据块失败: \(error.localizedDescription)")
+                OpenAIProvider.logger.error("解析流式数据块失败: \(error.localizedDescription)")
             }
             return nil
         }

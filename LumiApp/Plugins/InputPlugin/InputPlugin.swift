@@ -1,7 +1,11 @@
 import MagicKit
 import SwiftUI
+import os
 
 actor InputPlugin: SuperPlugin, SuperLog {
+    /// 插件专用 Logger
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.input-manager")
+
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "⌨️"

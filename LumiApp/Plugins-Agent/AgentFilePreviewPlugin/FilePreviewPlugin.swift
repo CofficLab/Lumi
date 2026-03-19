@@ -1,11 +1,14 @@
 import Foundation
 import SwiftUI
-import OSLog
+import os
 import MagicKit
 import Combine
 
 /// File Preview Plugin: 显示当前选择文件的内容预览
 actor FilePreviewPlugin: SuperPlugin, SuperLog {
+    /// 插件专用 Logger
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-preview")
+
     // MARK: - Plugin Properties
 
     /// Log identifier
@@ -78,7 +81,7 @@ actor FilePreviewPlugin: SuperPlugin, SuperLog {
     @MainActor func addDetailView() -> AnyView? {
         // 始终返回文件预览视图，由 FilePreviewView 自行判断是否显示内容
         if Self.verbose {
-            os_log("\(self.t) 提供 FilePreviewView (详情视图)")
+            Self.logger.info("\(self.t) 提供 FilePreviewView (详情视图)")
         }
         return AnyView(FilePreviewView())
     }

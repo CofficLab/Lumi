@@ -1,7 +1,6 @@
 import Combine
 import Foundation
 import MagicKit
-import OSLog
 import SwiftData
 
 enum ConversationRuntimeState: String {
@@ -340,7 +339,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     private func loadInitialConversationIfNeeded() {
         if let selectedId = ConversationVM.selectedConversationId {
             if Self.verbose {
-                os_log("\(Self.t)📥 [\(selectedId)] 初始化会话")
+                AppLogger.core.info("\(Self.t)📥 [\(selectedId)] 初始化会话")
             }
             Task {
                 await self.loadConversation(selectedId)
@@ -468,7 +467,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         if depth == 0 {
             // 新的用户消息应当抢占旧的续轮链路，避免被历史任务阻塞。
             if Self.verbose, turnTaskPipelineByConversation[conversationId] != nil {
-                os_log("\(Self.t)🧵 [\(conversationId)] 新消息到达，取消旧轮次链路")
+                AppLogger.core.info("\(Self.t)🧵 [\(conversationId)] 新消息到达，取消旧轮次链路")
             }
             turnTaskPipelineByConversation[conversationId]?.cancel()
             turnTaskPipelineByConversation[conversationId] = nil
@@ -479,7 +478,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         let generation = (turnTaskGenerationByConversation[conversationId] ?? 0) + 1
         turnTaskGenerationByConversation[conversationId] = generation
         if Self.verbose {
-            os_log("\(Self.t)🧵 [\(conversationId)] 轮次入队 depth=\(depth), gen=\(generation)")
+            AppLogger.core.info("\(Self.t)🧵 [\(conversationId)] 轮次入队 depth=\(depth), gen=\(generation)")
         }
 
         let task = Task { [weak self] in
@@ -488,7 +487,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             }
             guard let self else { return }
             if Self.verbose {
-                os_log("\(Self.t)🧵 [\(conversationId)] 开始执行轮次 depth=\(depth), gen=\(generation)")
+                AppLogger.core.info("\(Self.t)🧵 [\(conversationId)] 开始执行轮次 depth=\(depth), gen=\(generation)")
             }
             await self.processTurn(conversationId: conversationId, depth: depth)
 
@@ -529,7 +528,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             Task {
                 await slashCommandService.setCurrentProjectPath(savedPath)
                 if Self.verbose {
-                    os_log("\(Self.t)📚 初始化时加载项目命令：\(savedPath)")
+                    AppLogger.core.info("\(Self.t)📚 初始化时加载项目命令：\(savedPath)")
                 }
             }
         }
@@ -701,7 +700,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)⚙️ 已设置供应商：\(providerId)")
+            AppLogger.core.info("\(Self.t)⚙️ 已设置供应商：\(providerId)")
         }
     }
 
@@ -719,7 +718,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)⚙️ 已设置模型：\(model)")
+            AppLogger.core.info("\(Self.t)⚙️ 已设置模型：\(model)")
         }
     }
 
@@ -802,7 +801,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         PluginStateStore.shared.removeObject(forKey: providerType.apiKeyStorageKey)
         PluginStateStore.shared.removeLegacyValue(forKey: providerType.apiKeyStorageKey)
         if Self.verbose {
-            os_log("\(Self.t) 已设置 \(providerType.displayName) 的 API Key")
+            AppLogger.core.info("\(Self.t) 已设置 \(providerType.displayName) 的 API Key")
         }
     }
 
@@ -832,13 +831,13 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     /// 协调 ConversationVM 和 MessageViewModel 完成加载（分页模式）
     func loadConversation(_ conversationId: UUID) async {
         if Self.verbose {
-            os_log("\(Self.t)📥 [\(conversationId)] 开始加载对话（分页模式）")
+            AppLogger.core.info("\(Self.t)📥 [\(conversationId)] 开始加载对话（分页模式）")
         }
 
         // 切换消息发送队列到新会话
         let queueCount = MessageSenderVM.switchToConversation(conversationId)
         if Self.verbose {
-            os_log("\(Self.t)🔄 [\(conversationId)] 待发送消息：\(queueCount) 条")
+            AppLogger.core.info("\(Self.t)🔄 [\(conversationId)] 待发送消息：\(queueCount) 条")
         }
 
         refreshSessionScopedUIState(for: conversationId)
@@ -861,7 +860,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     /// - Parameter conversation: 要删除的对话
     func deleteConversation(_ conversation: Conversation) {
         if Self.verbose {
-            os_log("\(Self.t)🗑️ 开始删除对话：\(conversation.title)")
+            AppLogger.core.info("\(Self.t)🗑️ 开始删除对话：\(conversation.title)")
         }
 
         // 1. 清理该会话的待发送队列
@@ -879,7 +878,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         ConversationVM.deleteConversation(conversation)
 
         if Self.verbose {
-            os_log("\(Self.t)✅ 对话已删除：\(conversation.title)")
+            AppLogger.core.info("\(Self.t)✅ 对话已删除：\(conversation.title)")
         }
     }
 
@@ -890,7 +889,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     /// - Parameter message: 要发送的消息
     func sendMessageToAgent(message: ChatMessage, conversationId: UUID) async {
         if Self.verbose {
-            os_log("\(Self.t)📤 [\(conversationId)] 正在发送消息：\(message.content.max(50))")
+            AppLogger.core.info("\(Self.t)📤 [\(conversationId)] 正在发送消息：\(message.content.max(50))")
         }
 
         // 1. 添加消息到消息列表
@@ -905,7 +904,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         enqueueTurnProcessing(conversationId: conversationId, depth: 0)
 
         if Self.verbose {
-            os_log("\(Self.t)✅ 消息发送完成：\(message.content.max(30))...")
+            AppLogger.core.info("\(Self.t)✅ 消息发送完成：\(message.content.max(30))...")
         }
     }
 
@@ -927,7 +926,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         bumpStreamingRenderVersion()
         updateRuntimeState(for: conversationId)
 
-        os_log("\(Self.t)🛑 任务已取消")
+        AppLogger.core.info("\(Self.t)🛑 任务已取消")
         // 重置处理状态
         setIsProcessing(false)
         setIsThinking(false, for: conversationId)
@@ -971,7 +970,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         guard !trimmed.isEmpty || !pendingAttachments.isEmpty else { return }
 
         if Self.verbose {
-            os_log("\(Self.t)🚀 用户发送消息")
+            AppLogger.core.info("\(Self.t)🚀 用户发送消息")
         }
 
         // 发送全局输入事件，供 UI（如消息列表）监听并执行自动滚动等行为
@@ -1274,7 +1273,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             appendMessage(ChatMessage(role: .assistant, content: switchMessage))
 
             if Self.verbose {
-                os_log("\(Self.t)📁 已切换项目：\(projectName)")
+                AppLogger.core.info("\(Self.t)📁 已切换项目：\(projectName)")
             }
         }
     }
@@ -1326,14 +1325,14 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
                 )
                 await self?.appendImageAttachment(attachment, fileName: url.lastPathComponent, byteCount: imageData.count)
             } catch {
-                os_log(.error, "\(Self.t)❌ 无法读取图片：\(error.localizedDescription)")
+                AppLogger.core.error("\(Self.t)❌ 无法读取图片：\(error.localizedDescription)")
             }
         }
     }
 
     private func appendImageAttachment(_ attachment: Attachment, fileName: String, byteCount: Int) {
         if Self.verbose {
-            os_log("\(Self.t)📤 添加图片附件：\(fileName) (\(byteCount) bytes)")
+            AppLogger.core.info("\(Self.t)📤 添加图片附件：\(fileName) (\(byteCount) bytes)")
         }
         pendingAttachments.append(attachment)
     }

@@ -2,7 +2,6 @@ import Foundation
 import MagicKit
 import AppKit
 import Combine
-import OSLog
 
 @MainActor
 class ClipboardMonitor: ObservableObject, SuperLog {
@@ -14,8 +13,7 @@ class ClipboardMonitor: ObservableObject, SuperLog {
     @Published var lastChangeCount: Int
     private var timer: Timer?
     private let pasteboard = NSPasteboard.general
-    private let logger = Logger(subsystem: "com.lumi.clipboard", category: "Monitor")
-    
+
     // Dependencies
     private let storage = ClipboardStorage.shared
     
@@ -34,7 +32,7 @@ class ClipboardMonitor: ObservableObject, SuperLog {
     func stopMonitoring() {
         timer?.invalidate()
         timer = nil
-        os_log("\(Self.t)Clipboard monitoring stopped")
+        ClipboardManagerPlugin.logger.info("\(Self.t)Clipboard monitoring stopped")
     }
     
     private func checkForChanges() {
@@ -60,7 +58,7 @@ class ClipboardMonitor: ObservableObject, SuperLog {
             }
             
             if Self.verbose {
-                os_log("\(Self.t)Captured text clipboard item")
+                ClipboardManagerPlugin.logger.info("\(Self.t)Captured text clipboard item")
             }
         }
         // Add more types later (Image, File, etc.)

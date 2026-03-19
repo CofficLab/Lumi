@@ -1,8 +1,10 @@
 import Foundation
 import SwiftUI
 import MagicKit
+import os
 
 actor BackgroundAgentTaskPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.background-agent-task")
     nonisolated static let emoji = "🧵"
     nonisolated static let verbose = false
 

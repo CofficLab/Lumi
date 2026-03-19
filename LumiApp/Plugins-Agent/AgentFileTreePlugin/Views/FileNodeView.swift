@@ -1,6 +1,5 @@
 import SwiftUI
 import MagicKit
-import OSLog
 
 /// 文件树节点视图 - 自定义递归布局
 struct FileNodeView: View, SuperLog {
@@ -185,7 +184,7 @@ extension FileNodeView {
     /// 加载当前目录下的子节点，并按“目录在前”的规则排序
     private func loadChildren() {
         if Self.verbose {
-            os_log("\(self.t)loadChildren: \(fileName)")
+            ProjectTreePlugin.logger.info("\(self.t)loadChildren: \(fileName)")
         }
         
         Task.detached(priority: .userInitiated) {
@@ -210,7 +209,7 @@ extension FileNodeView {
                     self.children = sorted
                 }
             } catch {
-                os_log(.error, "\(self.t)loadChildren error: \(error.localizedDescription)")
+                ProjectTreePlugin.logger.error("\(self.t)loadChildren error: \(error.localizedDescription)")
             }
         }
     }

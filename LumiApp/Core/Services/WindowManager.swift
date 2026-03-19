@@ -2,8 +2,6 @@ import AppKit
 import Combine
 import MagicKit
 import SwiftUI
-import OSLog
-
 /// 窗口管理器
 ///
 /// 负责管理所有窗口的生命周期和状态同步
@@ -34,7 +32,7 @@ final class WindowManager: ObservableObject, SuperLog {
     private init() {
         setupNotifications()
         if Self.verbose {
-            os_log("\(Self.t)✅ 窗口管理器初始化完成")
+            AppLogger.core.info("\(Self.t)✅ 窗口管理器初始化完成")
         }
     }
 
@@ -45,7 +43,7 @@ final class WindowManager: ObservableObject, SuperLog {
     func registerWindow(_ state: WindowState) {
         guard !windowStates.contains(where: { $0.id == state.id }) else {
             if Self.verbose {
-                os_log("\(Self.t) 窗口已存在: \(state.id.uuidString.prefix(8))")
+                AppLogger.core.info("\(Self.t) 窗口已存在: \(state.id.uuidString.prefix(8))")
             }
             return
         }
@@ -55,7 +53,7 @@ final class WindowManager: ObservableObject, SuperLog {
 
         if Self.verbose {
             let count = self.windowStates.count
-            os_log("\(Self.t) 注册窗口: \(state.id.uuidString.prefix(8)), 总窗口数: \(count)")
+            AppLogger.core.info("\(Self.t) 注册窗口: \(state.id.uuidString.prefix(8)), 总窗口数: \(count)")
         }
     }
 
@@ -73,7 +71,7 @@ final class WindowManager: ObservableObject, SuperLog {
 
         if Self.verbose {
             let count = self.windowStates.count
-            os_log("\(Self.t) 注销窗口: \(windowId.uuidString.prefix(8)), 剩余窗口数: \(count)")
+            AppLogger.core.info("\(Self.t) 注销窗口: \(windowId.uuidString.prefix(8)), 剩余窗口数: \(count)")
         }
     }
 
@@ -95,7 +93,7 @@ final class WindowManager: ObservableObject, SuperLog {
         NotificationCenter.postWindowActivated(windowId)
 
         if Self.verbose {
-            os_log("\(Self.t) 设置活跃窗口: \(windowId.uuidString.prefix(8))")
+            AppLogger.core.info("\(Self.t) 设置活跃窗口: \(windowId.uuidString.prefix(8))")
         }
     }
 
@@ -135,7 +133,7 @@ final class WindowManager: ObservableObject, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(Self.t) 打开新窗口: \(newState.id.uuidString.prefix(8))")
+            AppLogger.core.info("\(Self.t) 打开新窗口: \(newState.id.uuidString.prefix(8))")
         }
     }
 
@@ -175,7 +173,7 @@ final class WindowManager: ObservableObject, SuperLog {
         NotificationCenter.postWindowEvent(event, from: activeWindowId)
 
         if Self.verbose {
-            os_log("\(Self.t) 广播事件: \(String(describing: event))")
+            AppLogger.core.info("\(Self.t) 广播事件: \(String(describing: event))")
         }
     }
 

@@ -1,8 +1,10 @@
 import Foundation
-import OSLog
+import MagicKit
 
 /// 上下文服务，管理 Agent 模式的上下文信息
-actor ContextService: Sendable {
+actor ContextService: Sendable, SuperLog {
+    nonisolated static let emoji = "📂"
+    nonisolated static let verbose = false
     private struct CachedFilePreview: Sendable {
         let preview: String
         let modifiedAt: Date?
@@ -34,14 +36,14 @@ actor ContextService: Sendable {
         if self.projectRoot?.path != url?.path {
             self.openFiles.removeAll(keepingCapacity: false)
             self.filePreviewCache.removeAll(keepingCapacity: false)
-            logInfo("Project root changed, cleared tracked file context")
+            AppLogger.core.info("\(self.t)Project root changed, cleared tracked file context")
         }
         self.projectRoot = url
     }
 
     func trackOpenFile(_ url: URL) {
         guard url.isFileURL else {
-            logWarn("Ignored non-file URL in trackOpenFile")
+            AppLogger.core.warning("\(self.t)Ignored non-file URL in trackOpenFile")
             return
         }
 
@@ -147,7 +149,7 @@ actor ContextService: Sendable {
     private func trimIfNeeded(_ prompt: String) -> String {
         if prompt.count <= maxContextChars { return prompt }
         let truncated = String(prompt.prefix(maxContextChars))
-        logWarn("Context prompt exceeded budget and was truncated")
+        AppLogger.core.warning("\(self.t)Context prompt exceeded budget and was truncated")
         return truncated + "\n- Context truncated to stay within budget.\n"
     }
 
@@ -188,7 +190,7 @@ actor ContextService: Sendable {
             try process.run()
             process.waitUntilExit()
         } catch {
-            logWarn("Git command failed to start: \(args.joined(separator: " "))")
+            AppLogger.core.warning("\(self.t)Git command failed to start: \(args.joined(separator: " "))")
             return nil
         }
 
@@ -247,13 +249,5 @@ actor ContextService: Sendable {
             return String(filePath.dropFirst(rootPath.count + 1))
         }
         return file.lastPathComponent
-    }
-
-    private func logInfo(_ message: String) {
-        os_log(.info, "[ContextService][INFO] %{public}@", message)
-    }
-
-    private func logWarn(_ message: String) {
-        os_log(.default, "[ContextService][WARN] %{public}@", message)
     }
 }

@@ -1,7 +1,6 @@
 import Foundation
 import SwiftData
 import MagicKit
-import OSLog
 
 /// 异步信号量，用于控制并发
 private actor AsyncSemaphore {
@@ -156,7 +155,7 @@ actor BackgroundAgentTaskStore: SuperLog {
         runningTaskCount += 1
 
         if Self.verbose {
-            os_log("\(self.t)开始执行任务，当前并发数：\(self.runningTaskCount)")
+            BackgroundAgentTaskPlugin.logger.info("\(self.t) 开始执行任务，当前并发数：\(self.runningTaskCount)")
         }
 
         defer {
@@ -164,7 +163,7 @@ actor BackgroundAgentTaskStore: SuperLog {
             taskSemaphore.signal()
             runningTaskCount -= 1
             if Self.verbose {
-                os_log("\(self.t)任务执行完毕，当前并发数：\(self.runningTaskCount)")
+                BackgroundAgentTaskPlugin.logger.info("\(self.t) 任务执行完毕，当前并发数：\(self.runningTaskCount)")
             }
         }
 

@@ -1,6 +1,5 @@
 import AppKit
 import MagicKit
-import OSLog
 import SwiftUI
 
 /// Agent 输入包装视图 - 管理输入区域所需的状态

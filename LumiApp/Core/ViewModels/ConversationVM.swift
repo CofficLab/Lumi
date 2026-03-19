@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 import SwiftData
 import SwiftUI
 
@@ -93,7 +92,7 @@ final class ConversationVM: ObservableObject, SuperLog {
     func saveMessage(_ message: ChatMessage) async {
         guard let conversationId = selectedConversationId else {
             if Self.verbose {
-                os_log("\(Self.t)⚠️ 当前没有选中会话，跳过保存")
+                AppLogger.core.info("\(Self.t)⚠️ 当前没有选中会话，跳过保存")
             }
             return
         }
@@ -107,7 +106,7 @@ final class ConversationVM: ObservableObject, SuperLog {
     func saveMessage(_ message: ChatMessage, to conversationId: UUID) async {
         let saved = await chatHistoryService.saveMessageAsync(message, toConversationId: conversationId)
         if Self.verbose, saved != nil {
-            os_log("\(Self.t)💾 [\(conversationId)] 消息已保存：\(message.content.max(50))")
+            AppLogger.core.info("\(Self.t)💾 [\(conversationId)] 消息已保存：\(message.content.max(50))")
         }
     }
 
@@ -115,7 +114,7 @@ final class ConversationVM: ObservableObject, SuperLog {
     /// - Parameter conversation: 要删除的对话
     /// - Note: 调用方（如 AgentVM）需要负责清理相关的消息发送队列
     func deleteConversation(_ conversation: Conversation) {
-        os_log("\(Self.t)🗑️ 开始删除对话：\(conversation.title)")
+        AppLogger.core.info("\(Self.t)🗑️ 开始删除对话：\(conversation.title)")
 
         // 如果删除的是选中的对话，清理状态
         if selectedConversationId == conversation.id {
@@ -124,7 +123,7 @@ final class ConversationVM: ObservableObject, SuperLog {
 
         chatHistoryService.deleteConversation(conversation)
 
-        os_log("\(Self.t)✅ 对话已删除：\(conversation.title)")
+        AppLogger.core.info("\(Self.t)✅ 对话已删除：\(conversation.title)")
     }
 
     /// 更新对话标题
@@ -136,7 +135,7 @@ final class ConversationVM: ObservableObject, SuperLog {
         chatHistoryService.updateConversationTitle(conversation, newTitle: newTitle)
 
         if Self.verbose {
-            os_log("\(Self.t)✏️ 对话标题已更新：\(newTitle)")
+            AppLogger.core.info("\(Self.t)✏️ 对话标题已更新：\(newTitle)")
         }
     }
 
@@ -160,7 +159,7 @@ final class ConversationVM: ObservableObject, SuperLog {
         // 避免重复设置相同的 ID
         guard selectedConversationId != id else {
             if let existingId = id, Self.verbose {
-                os_log("\(Self.t)⚠️ 会话已选中，跳过重复设置: \(existingId)")
+                AppLogger.core.info("\(Self.t)⚠️ 会话已选中，跳过重复设置: \(existingId)")
             }
             return
         }
@@ -180,7 +179,7 @@ final class ConversationVM: ObservableObject, SuperLog {
         if let id = selectedConversationId,
            fetchConversation(id: id) == nil {
             if Self.verbose {
-                os_log("\(Self.t)⚠️ [\(id)] 恢复的会话在数据库中不存在，尝试自动修正")
+                AppLogger.core.info("\(Self.t)⚠️ [\(id)] 恢复的会话在数据库中不存在，尝试自动修正")
             }
 
             let all = fetchAllConversations()
@@ -188,7 +187,7 @@ final class ConversationVM: ObservableObject, SuperLog {
                 // 切换到最新的一个有效会话
                 selectedConversationId = first.id
                 if Self.verbose {
-                    os_log("\(Self.t)✅ 已自动切换到最新对话：\(first.id)")
+                    AppLogger.core.info("\(Self.t)✅ 已自动切换到最新对话：\(first.id)")
                 }
             } else {
                 // 没有任何会话，清空状态
@@ -203,7 +202,7 @@ final class ConversationVM: ObservableObject, SuperLog {
             if let first = all.first {
                 selectedConversationId = first.id
                 if Self.verbose {
-                    os_log("\(Self.t)✅ 未记录选中会话，已自动选中最新对话：\(first.id)")
+                    AppLogger.core.info("\(Self.t)✅ 未记录选中会话，已自动选中最新对话：\(first.id)")
                 }
             }
         }

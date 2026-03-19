@@ -1,10 +1,13 @@
 import Foundation
 import SwiftUI
-import OSLog
+import os
 import MagicKit
 
 /// File Preview Status Bar Plugin: 显示文件预览状态栏信息（类似 VS Code）
 actor FilePreviewStatusBarPlugin: SuperPlugin, SuperLog {
+    /// 插件专用 Logger
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-preview-statusbar")
+
     // MARK: - Plugin Properties
 
     /// Log identifier
@@ -55,7 +58,7 @@ actor FilePreviewStatusBarPlugin: SuperPlugin, SuperLog {
     /// - Returns: FilePreviewStatusBarView to be added to the bottom status bar
     @MainActor func addStatusBarView() -> AnyView? {
         if Self.verbose {
-            os_log("\(self.t) 提供 FilePreviewStatusBarView")
+            Self.logger.info("\(self.t) 提供 FilePreviewStatusBarView")
         }
         return AnyView(FilePreviewStatusBarView())
     }

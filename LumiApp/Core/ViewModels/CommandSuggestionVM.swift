@@ -1,7 +1,6 @@
 import Combine
 import Foundation
 import SwiftUI
-import OSLog
 import MagicKit
 
 struct CommandSuggestion: Identifiable, Equatable {
@@ -79,7 +78,7 @@ class CommandSuggestionVM: ObservableObject, SuperLog {
                 let dynamicInfos = await service.getSuggestions(for: input)
 
                 if Self.verbose {
-                    os_log("\(Self.t) 找到 \(dynamicInfos.count) 个动态建议", )
+                    AppLogger.core.info("\(Self.t) 找到 \(dynamicInfos.count) 个动态建议")
                 }
 
                 // 将 SlashCommandInfo 转换为 CommandSuggestion
@@ -111,7 +110,7 @@ class CommandSuggestionVM: ObservableObject, SuperLog {
                     setSelectedIndex(0)
 
                     if Self.verbose {
-                        os_log("\(Self.t) 显示 \(self.suggestions.count) 个建议", )
+                        AppLogger.core.info("\(Self.t) 显示 \(self.suggestions.count) 个建议")
                     }
                 }
             }

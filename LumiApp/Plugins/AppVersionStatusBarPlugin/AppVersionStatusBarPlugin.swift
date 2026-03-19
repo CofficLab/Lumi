@@ -1,10 +1,11 @@
 import MagicKit
 import SwiftUI
 import Foundation
-import OSLog
+import os
 
 /// 版本状态栏插件：在 Agent 模式底部状态栏显示当前 App 版本
 actor AppVersionStatusBarPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.app-version-status-bar")
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "📦"
@@ -29,7 +30,7 @@ actor AppVersionStatusBarPlugin: SuperPlugin, SuperLog {
     /// Add status bar view for Agent mode
     @MainActor func addStatusBarView() -> AnyView? {
         if Self.verbose {
-            os_log("\(self.t) 提供 AppVersionStatusBarView")
+            AppVersionStatusBarPlugin.logger.info("\(Self.t)提供 AppVersionStatusBarView")
         }
         return AnyView(AppVersionStatusBarView())
     }

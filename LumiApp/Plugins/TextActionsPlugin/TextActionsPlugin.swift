@@ -1,8 +1,9 @@
 import MagicKit
 import SwiftUI
-import OSLog
+import os
 
 actor TextActionsPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.text-actions")
     nonisolated static let emoji = "🖱️"
     nonisolated static let verbose: Bool = false
 
@@ -37,7 +38,7 @@ actor TextActionsPlugin: SuperPlugin, SuperLog {
             _ = TextActionMenuController.shared
             
             if Self.verbose {
-                os_log("\(Self.t)✅ Text Actions plugin enabled")
+                TextActionsPlugin.logger.info("\(Self.t)Text Actions plugin enabled")
             }
         }
     }

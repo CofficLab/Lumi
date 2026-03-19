@@ -1,10 +1,13 @@
 import Foundation
 import SwiftUI
-import OSLog
+import os
 import MagicKit
 
 /// Project Tree Plugin: 显示项目文件树状结构，使用 SwiftUI 开发
 actor ProjectTreePlugin: SuperPlugin, SuperLog {
+    /// 插件专用 Logger
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree")
+
     // MARK: - Plugin Properties
 
     /// Log identifier
@@ -47,7 +50,7 @@ actor ProjectTreePlugin: SuperPlugin, SuperLog {
     /// Initialization method
     init() {
         if Self.verbose {
-            os_log("\(Self.t)✅ ProjectTreePlugin 初始化完成")
+            Self.logger.info("\(Self.t)✅ ProjectTreePlugin 初始化完成")
         }
     }
 
@@ -57,7 +60,7 @@ actor ProjectTreePlugin: SuperPlugin, SuperLog {
     /// - Returns: ProjectTreeView to be added to the sidebar
     @MainActor func addSidebarView() -> AnyView? {
         if Self.verbose {
-            os_log("\(Self.t)📋 addSidebarView 被调用")
+            Self.logger.info("\(Self.t)📋 addSidebarView 被调用")
         }
         return AnyView(ProjectTreeView())
     }

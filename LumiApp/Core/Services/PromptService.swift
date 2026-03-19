@@ -1,5 +1,4 @@
 import Foundation
-import OSLog
 import MagicKit
 
 /// 提示词服务 - 负责管理和构建系统提示词
@@ -72,7 +71,7 @@ actor PromptService: SuperLog {
     }
 
     private nonisolated func logInfo(_ message: String) {
-        os_log(.info, "[PromptService][INFO] %{public}@", message)
+        AppLogger.core.info("[PromptService][INFO] \(message)")
     }
 
     // MARK: - 快捷短语提示词

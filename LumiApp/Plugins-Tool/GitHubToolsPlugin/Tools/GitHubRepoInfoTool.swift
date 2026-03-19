@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 
 /// GitHub 仓库信息工具
 struct GitHubRepoInfoTool: AgentTool, SuperLog {
@@ -38,7 +37,7 @@ struct GitHubRepoInfoTool: AgentTool, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)🔍 获取仓库信息：\(owner)/\(repo)")
+            GitHubToolsPlugin.logger.info("\(self.t)获取仓库信息：\(owner)/\(repo)")
         }
 
         do {
@@ -48,7 +47,7 @@ struct GitHubRepoInfoTool: AgentTool, SuperLog {
             )
             return formatRepoInfo(repoInfo)
         } catch {
-            os_log(.error, "\(Self.t)获取仓库信息失败：\(error.localizedDescription)")
+            GitHubToolsPlugin.logger.error("\(self.t)获取仓库信息失败：\(error.localizedDescription)")
             return "获取仓库信息失败：\(error.localizedDescription)"
         }
     }

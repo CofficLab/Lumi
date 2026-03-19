@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 
 /// GitHub Issue 详情工具
 struct GitHubIssueDetailTool: AgentTool, SuperLog {
@@ -43,7 +42,7 @@ struct GitHubIssueDetailTool: AgentTool, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)📄 获取 Issue 详情：\(owner)/\(repo)#\(issueNumber)")
+            GitHubToolsPlugin.logger.info("\(self.t)获取 Issue 详情：\(owner)/\(repo)#\(issueNumber)")
         }
 
         do {
@@ -54,7 +53,7 @@ struct GitHubIssueDetailTool: AgentTool, SuperLog {
             )
             return formatIssueDetail(issue)
         } catch {
-            os_log(.error, "\(Self.t)获取 Issue 详情失败：\(error.localizedDescription)")
+            GitHubToolsPlugin.logger.error("获取 Issue 详情失败：\(error.localizedDescription)")
             return "获取 Issue 详情失败：\(error.localizedDescription)"
         }
     }

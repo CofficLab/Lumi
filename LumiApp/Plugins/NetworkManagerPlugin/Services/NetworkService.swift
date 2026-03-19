@@ -1,7 +1,6 @@
 import Foundation
 import SystemConfiguration
 import Darwin
-import OSLog
 import MagicKit
 import Combine
 
@@ -47,7 +46,7 @@ class NetworkService: SuperLog, ObservableObject {
 
     private init() {
         if Self.verbose {
-            os_log("\(Self.t)NetworkService initialized")
+            NetworkManagerPlugin.logger.info("\(Self.t)NetworkService initialized")
         }
 
         // Initialize baseline
@@ -61,7 +60,7 @@ class NetworkService: SuperLog, ObservableObject {
         subscribersCount += 1
         if monitoringTimer == nil {
             if Self.verbose {
-                os_log("\(Self.t)Starting network monitoring")
+                NetworkManagerPlugin.logger.info("\(Self.t)Starting network monitoring")
             }
             // Reset baseline to avoid huge spike if paused for long time
             let (In, Out) = getInterfaceCounters()
@@ -81,7 +80,7 @@ class NetworkService: SuperLog, ObservableObject {
         subscribersCount = max(0, subscribersCount - 1)
         if subscribersCount == 0 {
             if Self.verbose {
-                os_log("\(Self.t)Stopping network monitoring")
+                NetworkManagerPlugin.logger.info("\(Self.t)Stopping network monitoring")
             }
             monitoringTimer?.invalidate()
             monitoringTimer = nil
@@ -229,7 +228,7 @@ class NetworkService: SuperLog, ObservableObject {
                 if let httpResponse = response as? HTTPURLResponse,
                    !(200...299).contains(httpResponse.statusCode) {
                     if Self.verbose {
-                        os_log("\(Self.t)⚠️ HTTP 错误：\(service) - 状态码：\(httpResponse.statusCode)")
+                        NetworkManagerPlugin.logger.info("\(Self.t)⚠️ HTTP 错误：\(service) - 状态码：\(httpResponse.statusCode)")
                     }
                     continue
                 }
@@ -238,19 +237,19 @@ class NetworkService: SuperLog, ObservableObject {
 
                 if let ip = ip, isValidIPv4(ip) {
                     if Self.verbose {
-                        os_log("\(Self.t)✅ 获取公网 IP 成功：\(ip) (来源：\(service))")
+                        NetworkManagerPlugin.logger.info("\(Self.t)✅ 获取公网 IP 成功：\(ip) (来源：\(service))")
                     }
                     return ip
                 }
             } catch {
                 if Self.verbose {
-                    os_log("\(Self.t)⚠️ 获取公网 IP 失败：\(service) - \(error.localizedDescription)")
+                    NetworkManagerPlugin.logger.info("\(Self.t)⚠️ 获取公网 IP 失败：\(service) - \(error.localizedDescription)")
                 }
                 continue
             }
         }
 
-        os_log(.error, "\(Self.t)❌ 所有公网 IP 服务均不可用")
+        NetworkManagerPlugin.logger.error("\(Self.t)❌ 所有公网 IP 服务均不可用")
         return nil
     }
 

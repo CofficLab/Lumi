@@ -1,8 +1,12 @@
 import MagicKit
 import SwiftUI
+import os
 
 /// 项目选择头部插件：右侧栏 header 左侧（当前项目信息、未选项目提示）+ 项目按钮
 actor AgentProjectHeaderPlugin: SuperPlugin {
+    /// 插件专用 Logger
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project-header")
+
     nonisolated static let emoji = "📁"
     nonisolated static let verbose = false
 

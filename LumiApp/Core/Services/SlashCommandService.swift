@@ -1,7 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
-
 /// 斜杠命令信息
 struct SlashCommandInfo {
     let name: String
@@ -57,7 +55,7 @@ actor SlashCommandService: SuperLog {
         if let projectPath = path {
             await commandExecutor.reloadCommands(for: projectPath)
             if Self.verbose {
-                os_log("\(Self.t)📚 已为项目重新加载命令：\(projectPath)")
+                AppLogger.core.info("\(Self.t)📚 已为项目重新加载命令：\(projectPath)")
             }
         }
     }

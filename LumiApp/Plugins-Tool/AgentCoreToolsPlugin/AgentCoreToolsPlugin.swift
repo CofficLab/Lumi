@@ -1,11 +1,13 @@
 import Foundation
 import MagicKit
+import os
 
 /// Agent Core Tools 插件
 ///
 /// 将核心工具集从内核硬编码迁移到插件系统，便于增删与组合。
 /// 该插件不可配置且默认启用，确保基础工具始终可用。
 actor AgentCoreToolsPlugin: SuperPlugin {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-core-tools")
     static let id: String = "AgentCoreTools"
     static let displayName: String = "Agent Core Tools"
     static let description: String = "提供 Lumi 的基础 Agent 工具（文件/命令）。"

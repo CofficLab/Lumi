@@ -1,10 +1,13 @@
 import Foundation
 import MagicKit
-import OSLog
+import os
 import SwiftUI
 
 /// Conversation List Plugin: 显示对话历史列表
 actor ConversationListPlugin: SuperPlugin, SuperLog {
+    /// 插件专用 Logger
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-list")
+
     // MARK: - Plugin Properties
 
     /// Log identifier
@@ -53,7 +56,7 @@ actor ConversationListPlugin: SuperPlugin, SuperLog {
     /// - Returns: ConversationListView to be added to the sidebar
     @MainActor func addSidebarView() -> AnyView? {
         if Self.verbose {
-            os_log("\(self.t) 提供 ConversationListView")
+            Self.logger.info("\(self.t) 提供 ConversationListView")
         }
         return AnyView(ConversationListView())
     }

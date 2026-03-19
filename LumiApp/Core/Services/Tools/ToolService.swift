@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 import Combine
 
 /// 工具服务：负责管理所有可用工具
@@ -110,7 +109,7 @@ class ToolService: SuperLog, @unchecked Sendable {
         refreshAllTools()
 
         if Self.verbose {
-            os_log("\(Self.t)✅ 工具服务已初始化，内置工具：\(self.builtInTools.count) 个, 插件工具：\(self.pluginTools.count) 个")
+            AppLogger.core.info("\(Self.t)✅ 工具服务已初始化，内置工具：\(self.builtInTools.count) 个, 插件工具：\(self.pluginTools.count) 个")
         }
     }
 
@@ -177,7 +176,7 @@ class ToolService: SuperLog, @unchecked Sendable {
         let tool = allTools.first { $0.name == name }
 
         if Self.verbose && tool == nil {
-            os_log(.error, "\(Self.t)❌ 工具 '\(name)' 未找到")
+            AppLogger.core.error("\(Self.t)❌ 工具 '\(name)' 未找到")
         }
 
         return tool
@@ -236,7 +235,7 @@ class ToolService: SuperLog, @unchecked Sendable {
 
         if Self.verbose {
             let argsPreview = arguments.keys.joined(separator: ", ")
-            os_log("\(Self.t)⚙️ 执行工具：\(name)(\(argsPreview))")
+            AppLogger.core.info("\(Self.t)⚙️ 执行工具：\(name)(\(argsPreview))")
         }
 
         // 执行工具并记录耗时
@@ -251,13 +250,13 @@ class ToolService: SuperLog, @unchecked Sendable {
 
             if Self.verbose {
                 let resultPreview = result.count > 200 ? String(result.prefix(200)) + "..." : result
-                os_log("\(Self.t)✅ 工具执行成功 (耗时：\(String(format: "%.2f", duration))s)")
-                os_log("\(Self.t)📺 结果预览：\n\(resultPreview)")
+                AppLogger.core.info("\(Self.t)✅ 工具执行成功 (耗时：\(String(format: "%.2f", duration))s)")
+                AppLogger.core.info("\(Self.t)📺 结果预览：\n\(resultPreview)")
             }
 
             return result
         } catch {
-            os_log(.error, "\(Self.t)❌ 工具执行失败：\(error.localizedDescription)")
+            AppLogger.core.error("\(Self.t)❌ 工具执行失败：\(error.localizedDescription)")
             throw error
         }
     }

@@ -1,7 +1,6 @@
 import AppKit
 import Foundation
 import MagicKit
-import OSLog
 
 /// 缓存清理服务 - 在后台执行扫描和清理操作
 class CacheCleanerService: @unchecked Sendable, SuperLog {
@@ -53,13 +52,13 @@ class CacheCleanerService: @unchecked Sendable, SuperLog {
 
     func scanCaches() async -> [CacheCategory] {
         if Self.verbose {
-            os_log("\(self.t)开始扫描缓存分类")
+            DiskManagerPlugin.logger.info("\(self.t)开始扫描缓存分类")
         }
 
         let results = await coordinator.scan(rules: scanRules)
 
         if Self.verbose {
-            os_log("\(self.t)缓存扫描完成：\(results.count) 个分类")
+            DiskManagerPlugin.logger.info("\(self.t)缓存扫描完成：\(results.count) 个分类")
         }
 
         return results
@@ -75,7 +74,7 @@ class CacheCleanerService: @unchecked Sendable, SuperLog {
 
     func cleanup(paths: [CachePath]) async throws -> Int64 {
         if Self.verbose {
-            os_log("\(self.t)开始清理 \(paths.count) 个缓存路径")
+            DiskManagerPlugin.logger.info("\(self.t)开始清理 \(paths.count) 个缓存路径")
         }
 
         let freedSpace = await Task.detached(priority: .utility) {
@@ -86,14 +85,14 @@ class CacheCleanerService: @unchecked Sendable, SuperLog {
                     try fileManager.removeItem(atPath: item.path)
                     total += item.size
                 } catch {
-                    os_log(.error, "\(Self.t)清理失败：\(item.path) - \(error.localizedDescription)")
+                    DiskManagerPlugin.logger.error("\(Self.t)清理失败：\(item.path) - \(error.localizedDescription)")
                 }
             }
             return total
         }.value
 
         if Self.verbose {
-            os_log("\(self.t)清理完成，释放 \(ByteCountFormatter.string(fromByteCount: freedSpace, countStyle: .file))")
+            DiskManagerPlugin.logger.info("\(self.t)清理完成，释放 \(ByteCountFormatter.string(fromByteCount: freedSpace, countStyle: .file))")
         }
 
         return freedSpace
@@ -104,7 +103,7 @@ class CacheCleanerService: @unchecked Sendable, SuperLog {
 
     fileprivate nonisolated static func scanCategory(rule: CacheScanRule) async -> CacheCategory? {
         if Self.verbose {
-            os_log("\(self.t)开始扫描分类：\(rule.name)")
+            DiskManagerPlugin.logger.info("\(self.t)开始扫描分类：\(rule.name)")
         }
         var cachePaths: [CachePath] = []
 

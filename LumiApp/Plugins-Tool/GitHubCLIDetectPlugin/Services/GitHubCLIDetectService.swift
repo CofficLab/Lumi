@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 
 /// GitHub CLI 检测服务
 ///
@@ -19,11 +18,11 @@ final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
     /// - Returns: 如果已安装返回 true
     func isInstalled() -> Bool {
         if Self.verbose {
-            os_log("\(self.t)🔍 开始检查 gh 安装...")
+            GitHubCLIDetectPlugin.logger.info("\(self.t)开始检查 gh 安装...")
         }
         let installed = checkGHInstallation()
         if Self.verbose {
-            os_log("\(self.t)🔍 gh 安装状态：\(installed ? "已安装" : "未安装")")
+            GitHubCLIDetectPlugin.logger.info("\(self.t)gh 安装状态：\(installed ? "已安装" : "未安装")")
         }
         return installed
     }
@@ -61,7 +60,7 @@ final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
     /// 检查 gh 是否安装
     private func checkGHInstallation() -> Bool {
         if Self.verbose {
-            os_log("\(self.t)🔍 执行 which gh 命令...")
+            GitHubCLIDetectPlugin.logger.info("\(self.t)执行 which gh 命令...")
         }
 
         let process = Process()
@@ -83,7 +82,7 @@ final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
 
             let terminationStatus = process.terminationStatus
             if Self.verbose {
-                os_log("\(self.t)🔍 which gh 终止状态：\(terminationStatus)")
+                GitHubCLIDetectPlugin.logger.info("\(self.t)which gh 终止状态：\(terminationStatus)")
             }
 
             if terminationStatus == 0 {
@@ -93,12 +92,12 @@ final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
                 let errorData = pipe.fileHandleForReading.readDataToEndOfFile()
                 let errorOutput = String(data: errorData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "无输出"
                 if Self.verbose {
-                    os_log("\(self.t)❌ which gh 错误输出：\(errorOutput)")
+                    GitHubCLIDetectPlugin.logger.error("\(self.t)which gh 错误输出：\(errorOutput)")
                 }
             }
         } catch {
             if Self.verbose {
-                os_log("\(self.t)❌ 检查 gh 安装失败：\(error.localizedDescription)")
+                GitHubCLIDetectPlugin.logger.error("\(self.t)检查 gh 安装失败：\(error.localizedDescription)")
             }
         }
 
@@ -129,7 +128,7 @@ final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
             }
         } catch {
             if Self.verbose {
-                os_log("\(self.t)❌ 获取 gh 路径失败：\(error.localizedDescription)")
+                GitHubCLIDetectPlugin.logger.error("\(self.t)获取 gh 路径失败：\(error.localizedDescription)")
             }
         }
 
@@ -169,7 +168,7 @@ final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
             }
         } catch {
             if Self.verbose {
-                os_log("\(self.t)❌ 获取 gh 版本失败：\(error.localizedDescription)")
+                    GitHubCLIDetectPlugin.logger.error("\(self.t)获取 gh 版本失败：\(error.localizedDescription)")
             }
         }
 

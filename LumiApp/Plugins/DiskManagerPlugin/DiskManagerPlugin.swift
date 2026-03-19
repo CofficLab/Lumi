@@ -1,9 +1,12 @@
 import Foundation
 import MagicKit
-import OSLog
 import SwiftUI
+import os
 
 actor DiskManagerPlugin: SuperPlugin, SuperLog {
+    /// 插件专用 Logger
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.disk-manager")
+
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "💿"
@@ -25,7 +28,7 @@ actor DiskManagerPlugin: SuperPlugin, SuperLog {
 
     @MainActor func addNavigationEntries() -> [NavigationEntry]? {
         if Self.verbose {
-            os_log("\(self.t)注册磁盘管理导航入口")
+            Self.logger.info("\(self.t)注册磁盘管理导航入口")
         }
         return [
             NavigationEntry.create(

@@ -1,5 +1,4 @@
 import MagicKit
-import OSLog
 import SwiftUI
 import Combine
 
@@ -113,11 +112,11 @@ extension ConversationListView {
             if conversations.first(where: { $0.id == selectedId }) != nil {
                 if localSelectedConversationId != selectedId {
                     localSelectedConversationId = selectedId
-                    os_log("\(self.t)✅ [\(selectedId)] 同步 VM 选中状态到 List")
+                    ConversationListPlugin.logger.info("\(self.t)✅ [\(selectedId)] 同步 VM 选中状态到 List")
                 }
             } else {
                 // 选中的会话不存在于列表中，清除选择
-                os_log("\(self.t)⚠️ [\(selectedId)] 选中的会话不存在于列表中")
+                ConversationListPlugin.logger.info("\(self.t)⚠️ [\(selectedId)] 选中的会话不存在于列表中")
                 localSelectedConversationId = nil
             }
         } else {
@@ -132,7 +131,7 @@ extension ConversationListView {
     /// - Parameter conversation: 要删除的会话
     private func handleDelete(_ conversation: Conversation) {
         if Self.verbose {
-            os_log("\(self.t)🗑️ 开始删除对话：\(conversation.title)")
+            ConversationListPlugin.logger.info("\(self.t)🗑️ 开始删除对话：\(conversation.title)")
         }
 
         // 如果删除的是当前选中的会话，且还有其他会话，自动切换到最新的
@@ -141,7 +140,7 @@ extension ConversationListView {
             if let nextConversation = remainingConversations.first {
                 localSelectedConversationId = nextConversation.id
                 if Self.verbose {
-                    os_log("\(self.t)🔄 已自动切换到对话：\(nextConversation.title)")
+                    ConversationListPlugin.logger.info("\(self.t)🔄 已自动切换到对话：\(nextConversation.title)")
                 }
             } else {
                 localSelectedConversationId = nil
@@ -190,7 +189,7 @@ extension ConversationListView {
 
         ConversationVM.setSelectedConversation(storedId)
         if Self.verbose {
-            os_log("\(self.t)✅ [\(storedId)] 从插件存储恢复会话选择")
+            ConversationListPlugin.logger.info("\(self.t)✅ [\(storedId)] 从插件存储恢复会话选择")
         }
     }
 
@@ -283,7 +282,7 @@ extension ConversationListView {
         // 如果当前选中的会话不在新列表中，清除选择
         if let localId = localSelectedConversationId {
             if !newConversations.contains(where: { $0.id == localId }) {
-                os_log("\(self.t)⚠️ 当前选中的会话已不在列表中，清除选择")
+                ConversationListPlugin.logger.info("\(self.t)⚠️ 当前选中的会话已不在列表中，清除选择")
                 localSelectedConversationId = nil
             }
         }
@@ -298,12 +297,12 @@ extension ConversationListView {
 
         if let newId = self.localSelectedConversationId {
             if Self.verbose {
-                os_log("\(self.t)👉 [\(newId)] 从 List 选择会话")
+                ConversationListPlugin.logger.info("\(self.t)👉 [\(newId)] 从 List 选择会话")
             }
             self.ConversationVM.setSelectedConversation(newId)
         } else {
             if Self.verbose {
-                os_log("\(self.t)👉 清除会话选择")
+                ConversationListPlugin.logger.info("\(self.t)👉 清除会话选择")
             }
             self.ConversationVM.setSelectedConversation(nil)
         }
@@ -312,7 +311,7 @@ extension ConversationListView {
     func handleConversationSelected() {
         let localId = localSelectedConversationId?.uuidString ?? "nil"
         let vmId = ConversationVM.selectedConversationId?.uuidString ?? "nil"
-        os_log("\(self.t)🔄 handleConversationSelected called: local=\(localId), vm=\(vmId)")
+        ConversationListPlugin.logger.info("\(self.t)🔄 handleConversationSelected called: local=\(localId), vm=\(vmId)")
 
         // 只在值确实不同时才更新，避免循环
         guard localSelectedConversationId != ConversationVM.selectedConversationId else {
@@ -326,12 +325,12 @@ extension ConversationListView {
                     lastReloadSelectionId = conversationId
                     reloadFromFirstPage()
                 } else if Self.verbose {
-                    os_log("\(self.t)⏭️ 跳过重复分页重载: \(conversationId)")
+                    ConversationListPlugin.logger.info("\(self.t)⏭️ 跳过重复分页重载: \(conversationId)")
                 }
             }
 
             if self.conversations.first(where: { $0.id == conversationId }) != nil {
-                os_log("\(self.t)👉 同步 VM 选择到 List: \(conversationId)")
+                ConversationListPlugin.logger.info("\(self.t)👉 同步 VM 选择到 List: \(conversationId)")
                 self.localSelectedConversationId = conversationId
                 lastReloadSelectionId = nil
             }

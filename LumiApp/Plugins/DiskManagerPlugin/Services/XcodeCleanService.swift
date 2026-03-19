@@ -1,5 +1,4 @@
 import Foundation
-import OSLog
 import MagicKit
 
 /// Xcode 清理服务 - 在后台执行扫描和清理操作
@@ -23,7 +22,7 @@ class XcodeCleanService: @unchecked Sendable, SuperLog {
 
     private init() {
         if Self.verbose {
-            os_log("\(self.t)Xcode cleaning service initialized")
+            DiskManagerPlugin.logger.info("\(self.t)Xcode cleaning service initialized")
         }
     }
 
@@ -82,7 +81,7 @@ class XcodeCleanService: @unchecked Sendable, SuperLog {
         let tag = self.t
 
         if Self.verbose {
-            os_log("\(tag)Scanning \(category.rawValue): \(url.path)")
+            DiskManagerPlugin.logger.info("\(tag)Scanning \(category.rawValue): \(url.path)")
         }
 
         // Heavy I/O (directory listing + size enumeration) must not run on MainActor.
@@ -93,7 +92,7 @@ class XcodeCleanService: @unchecked Sendable, SuperLog {
             var isDir: ObjCBool = false
             guard fileManager.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue else {
                 if Self.verbose {
-                    os_log("\(tag)Directory does not exist: \(url.path)")
+                    DiskManagerPlugin.logger.info("\(tag)Directory does not exist: \(url.path)")
                 }
                 return []
             }
@@ -130,11 +129,11 @@ class XcodeCleanService: @unchecked Sendable, SuperLog {
                 }
 
                 if Self.verbose {
-                    os_log("\(tag)扫描完成：\(category.rawValue)，\(items.count) 项")
+                    DiskManagerPlugin.logger.info("\(tag)扫描完成：\(category.rawValue)，\(items.count) 项")
                 }
                 return items
             } catch {
-                os_log(.error, "\(self.t)扫描失败：\(category.rawValue) - \(error.localizedDescription)")
+                DiskManagerPlugin.logger.error("\(self.t)扫描失败：\(category.rawValue) - \(error.localizedDescription)")
                 return []
             }
         }.value
@@ -172,7 +171,7 @@ class XcodeCleanService: @unchecked Sendable, SuperLog {
 
     func delete(items: [XcodeCleanItem]) async throws {
         let tag = self.t
-        os_log("\(tag)开始删除 \(items.count) 项")
+        DiskManagerPlugin.logger.info("\(tag)开始删除 \(items.count) 项")
 
         let urls = items.map(\.path)
 
@@ -181,13 +180,13 @@ class XcodeCleanService: @unchecked Sendable, SuperLog {
 
             for (idx, url) in urls.enumerated() {
                 if Self.verbose {
-                    os_log("\(tag)  └─ 删除[\(idx + 1)/\(urls.count)]：\(url.lastPathComponent)")
+                    DiskManagerPlugin.logger.info("\(tag)  └─ 删除[\(idx + 1)/\(urls.count)]：\(url.lastPathComponent)")
                 }
                 try fileManager.removeItem(at: url)
             }
         }.value
 
-        os_log("\(tag)删除完成：\(items.count) 项")
+        DiskManagerPlugin.logger.info("\(tag)删除完成：\(items.count) 项")
     }
 }
 

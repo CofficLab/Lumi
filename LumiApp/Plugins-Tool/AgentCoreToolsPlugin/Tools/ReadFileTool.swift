@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import OSLog
 import SwiftUI
 
 /// 文件读取工具
@@ -36,7 +35,7 @@ struct ReadFileTool: AgentTool, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(Self.t)📖 读取文件：\(path.components(separatedBy: "/").last ?? path)")
+            AgentCoreToolsPlugin.logger.info("\(self.t)读取文件：\(path.components(separatedBy: "/").last ?? path)")
         }
 
         let fileURL = URL(fileURLWithPath: path)
@@ -45,7 +44,7 @@ struct ReadFileTool: AgentTool, SuperLog {
             let data = try Data(contentsOf: fileURL)
             guard let content = String(data: data, encoding: .utf8) else {
                 if Self.verbose {
-                    os_log(.error, "\(Self.t)文件内容不是有效的 UTF-8 文本")
+                    AgentCoreToolsPlugin.logger.error("\(self.t)文件内容不是有效的 UTF-8 文本")
                 }
                 return "Error: File content is not valid UTF-8 text."
             }
@@ -53,17 +52,17 @@ struct ReadFileTool: AgentTool, SuperLog {
             if content.count > 50_000 {
                 let prefix = content.prefix(50_000)
                 if Self.verbose {
-                    os_log("\(Self.t)文件过大，已截断输出（限制 50KB）")
+                    AgentCoreToolsPlugin.logger.info("\(self.t)文件过大，已截断输出（限制 50KB）")
                 }
                 return "\(prefix)\n... (File truncated due to size limit)"
             }
 
             if Self.verbose {
-                os_log("\(Self.t)文件读取成功：\(content.count) 字符")
+                AgentCoreToolsPlugin.logger.info("\(self.t)文件读取成功：\(content.count) 字符")
             }
             return content
         } catch {
-            os_log(.error, "\(Self.t)❌ 读取文件失败：\(error.localizedDescription)")
+            AgentCoreToolsPlugin.logger.error("\(self.t)读取文件失败：\(error.localizedDescription)")
             return "Error reading file: \(error.localizedDescription)"
         }
     }

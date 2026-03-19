@@ -1,5 +1,4 @@
 import Foundation
-import OSLog
 import MagicKit
 
 /// 对话轮次事件协调器
@@ -98,7 +97,7 @@ final class ConversationTurnCoordinator: SuperLog {
                 let hangWatchdog = Task { [loggerTag = Self.t] in
                     try? await Task.sleep(nanoseconds: 2_000_000_000)
                     guard !Task.isCancelled else { return }
-                    os_log(.error, "\(loggerTag)⏳ 事件处理疑似卡住(>2s): \(eventName)")
+                    AppLogger.core.error("\(loggerTag)⏳ 事件处理疑似卡住(>2s): \(eventName)")
                 }
 
                 let ctx = ConversationTurnMiddlewareContext(
@@ -119,7 +118,7 @@ final class ConversationTurnCoordinator: SuperLog {
                 hangWatchdog.cancel()
                 let elapsed = CFAbsoluteTimeGetCurrent() - start
                 if elapsed > 1 {
-                    os_log(.error, "\(Self.t)⏱️ 事件处理耗时异常: \(eventName) took \(String(format: "%.3f", elapsed))s")
+                    AppLogger.core.error("\(Self.t)⏱️ 事件处理耗时异常: \(eventName) took \(String(format: "%.3f", elapsed))s")
                 }
             }
         }

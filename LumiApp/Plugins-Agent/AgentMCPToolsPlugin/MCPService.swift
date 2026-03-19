@@ -1,7 +1,6 @@
 import Foundation
 import MCP
 import Combine
-import OSLog
 import MagicKit
 
 /// MCP 服务：负责管理 MCP 服务器连接和工具发现（插件内部实现细节）。
@@ -51,7 +50,7 @@ final class MCPService: SuperLog, @unchecked Sendable {
         switch config.transportType ?? .stdio {
         case .sse:
             guard let urlString = config.url, let url = URL(string: urlString) else {
-                if Self.verbose { os_log(.error, "\(Self.t)Invalid URL for SSE transport") }
+                if Self.verbose { AgentMCPToolsPlugin.logger.error("\(Self.t)Invalid URL for SSE transport") }
                 return
             }
 
@@ -71,7 +70,7 @@ final class MCPService: SuperLog, @unchecked Sendable {
         }
 
         do {
-            if Self.verbose { os_log("\(Self.t)Connecting to MCP server: \(config.name)") }
+            if Self.verbose { AgentMCPToolsPlugin.logger.info("\(Self.t)Connecting to MCP server: \(config.name)") }
             try await client.connect(transport: transport)
             connectedClients[config.name] = client
 
@@ -81,7 +80,7 @@ final class MCPService: SuperLog, @unchecked Sendable {
             await updateToolsFromCache()
         } catch {
             if Self.verbose {
-                os_log(.error, "\(Self.t)Failed to connect to MCP server \(config.name): \(error.localizedDescription)")
+                AgentMCPToolsPlugin.logger.error("\(Self.t)Failed to connect to MCP server \(config.name): \(error.localizedDescription)")
             }
         }
     }
@@ -101,7 +100,7 @@ final class MCPService: SuperLog, @unchecked Sendable {
         toolsPublisher.send(tools)
 
         if Self.verbose {
-            os_log("\(Self.t)✅ MCP tools updated: \(newTools.count)")
+            AgentMCPToolsPlugin.logger.info("\(Self.t)✅ MCP tools updated: \(newTools.count)")
         }
     }
 }

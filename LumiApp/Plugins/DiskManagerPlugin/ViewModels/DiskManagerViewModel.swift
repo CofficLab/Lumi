@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import OSLog
 import MagicKit
 
 @MainActor
@@ -21,7 +20,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
 
     func refreshDiskUsage() {
         if Self.verbose {
-            os_log("\(self.t)刷新磁盘使用情况")
+            DiskManagerPlugin.logger.info("\(self.t)刷新磁盘使用情况")
         }
         Task {
             self.diskUsage = await service.getDiskUsage()
@@ -42,7 +41,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
         }
 
         if Self.verbose {
-            os_log("\(self.t)开始扫描：\((url.path as NSString).lastPathComponent)")
+            DiskManagerPlugin.logger.info("\(self.t)开始扫描：\((url.path as NSString).lastPathComponent)")
         }
 
         isScanning = true
@@ -63,7 +62,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
                             self.rootEntries = result.entries
                             self.isScanning = false
                             if Self.verbose {
-                                os_log("\(self.t)扫描完成，发现 \(result.largeFiles.count) 个大文件")
+                                DiskManagerPlugin.logger.info("\(self.t)扫描完成，发现 \(result.largeFiles.count) 个大文件")
                             }
                         }
                     }
@@ -82,7 +81,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
 
     func stopScan() {
         if Self.verbose {
-            os_log("\(self.t)停止扫描")
+            DiskManagerPlugin.logger.info("\(self.t)停止扫描")
         }
         scanTask?.cancel()
         Task { await service.cancelScan() }
@@ -91,7 +90,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
 
     func deleteFile(_ item: LargeFileEntry) {
         if Self.verbose {
-            os_log("\(self.t)删除文件：\(item.name)")
+            DiskManagerPlugin.logger.info("\(self.t)删除文件：\(item.name)")
         }
         Task {
             do {
@@ -103,7 +102,7 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
                 }
             } catch {
                 await MainActor.run {
-                    os_log(.error, "\(self.t)删除文件失败：\(error.localizedDescription)")
+                    DiskManagerPlugin.logger.error("\(self.t)删除文件失败：\(error.localizedDescription)")
                     self.errorMessage = String(localized: "Delete failed: \(error.localizedDescription)")
                 }
             }

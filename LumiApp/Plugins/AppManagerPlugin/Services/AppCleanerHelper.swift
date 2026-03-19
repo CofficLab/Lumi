@@ -1,5 +1,4 @@
 import Foundation
-import OSLog
 import SwiftUI
 import MagicKit
 
@@ -36,7 +35,7 @@ class AppCleanerHelper: SuperLog {
         let bundleID = app.bundleIdentifier ?? ""
 
         if Self.verbose {
-            os_log("\(self.t) 开始扫描应用关联文件：\(appName), BundleID: \(bundleID)")
+            AppManagerPlugin.logger.info("\(self.t) 开始扫描应用关联文件：\(appName), BundleID: \(bundleID)")
         }
 
         // 1. 扫描 Application Support 和 Caches
@@ -88,7 +87,7 @@ class AppCleanerHelper: SuperLog {
         // 去重
         let uniqueFiles = Array(Set(relatedFiles))
         if Self.verbose {
-            os_log("\(self.t) 扫描完成，找到 \(uniqueFiles.count) 个关联文件/文件夹")
+            AppManagerPlugin.logger.info("\(self.t) 扫描完成，找到 \(uniqueFiles.count) 个关联文件/文件夹")
         }
         return uniqueFiles
     }

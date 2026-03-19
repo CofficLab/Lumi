@@ -186,7 +186,7 @@ struct DockerImagesView: View {
             case let .success(url):
                 Task { await viewModel.loadImage(from: url) }
             case let .failure(error):
-                print("Import failed: \(error.localizedDescription)")
+                DockerManagerPlugin.logger.error("\(DockerManagerPlugin.t)Import failed: \(error.localizedDescription)")
             }
         }
         .fileExporter(isPresented: $showFileExporter, document: DockerImageDocument(image: imageToExport), contentType: .data, defaultFilename: imageToExport?.name.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-") ?? "image") { result in
@@ -196,7 +196,7 @@ struct DockerImagesView: View {
                     Task { await viewModel.exportImage(img, to: url) }
                 }
             case let .failure(error):
-                print("Export failed: \(error.localizedDescription)")
+                DockerManagerPlugin.logger.error("\(DockerManagerPlugin.t)Export failed: \(error.localizedDescription)")
             }
         }
         .onAppear {

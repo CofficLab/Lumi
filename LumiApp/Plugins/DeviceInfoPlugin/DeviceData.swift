@@ -141,7 +141,7 @@ class DeviceData: ObservableObject {
                 self.diskUsed = Int64(total - available)
             }
         } catch {
-            print("Error retrieving disk usage: \(error)")
+            AppLogger.core.error("Error retrieving disk usage: \(error)")
         }
     }
 
