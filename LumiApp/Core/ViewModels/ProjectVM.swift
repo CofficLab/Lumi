@@ -140,10 +140,7 @@ final class ProjectVM: ObservableObject, SuperLog {
             self.currentModel = config.model.isEmpty ? self.getDefaultModel(for: config.providerId) : config.model
 
             // 通知供应商设置更新配置
-            NotificationCenter.default.post(
-                name: .projectConfigApplied,
-                object: config
-            )
+            NotificationCenter.postProjectConfigApplied(config)
 
             if Self.verbose {
                 AppLogger.core.info("\(Self.t)⚙️ 已应用项目配置：\(config.providerId) / \(self.currentModel)")
@@ -392,7 +389,7 @@ final class ProjectVM: ObservableObject, SuperLog {
         isFileSelected = selected
 
         // 发送文件选择变化通知
-        NotificationCenter.default.post(name: .fileSelectionChanged, object: nil)
+        NotificationCenter.postFileSelectionChanged()
     }
 
     /// 设置文件内容
