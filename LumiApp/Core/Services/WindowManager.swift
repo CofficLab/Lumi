@@ -112,31 +112,6 @@ final class WindowManager: ObservableObject, SuperLog {
 
     // MARK: - Window Operations
 
-    /// 打开新窗口
-    /// - Parameters:
-    ///   - conversationId: 可选的会话 ID
-    ///   - projectPath: 可选的项目路径
-    func openNewWindow(conversationId: UUID? = nil, projectPath: String? = nil) {
-        // 创建新的窗口状态
-        let newState = WindowState(
-            conversationId: conversationId,
-            projectPath: projectPath
-        )
-
-        // 先注册窗口状态
-        registerWindow(newState)
-
-        // 触发系统新建窗口命令
-        // 使用 performSelector 确保在主线程执行
-        DispatchQueue.main.async {
-            NSApp.sendAction(#selector(NSResponder.newWindowForTab(_:)), to: nil, from: nil)
-        }
-
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t) 打开新窗口: \(newState.id.uuidString.prefix(8))")
-        }
-    }
-
     /// 关闭指定窗口
     /// - Parameter windowId: 窗口 ID
     func closeWindow(_ windowId: UUID) {

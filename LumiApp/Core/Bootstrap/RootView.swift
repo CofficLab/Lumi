@@ -10,7 +10,7 @@ import SwiftUI
 /// ## 架构说明
 ///
 /// 所有服务和 ViewModel 均为全局单例，通过 `RootViewContainer.shared` 管理。
-/// 多窗口场景下，所有窗口共享同一份状态和数据。
+/// 主窗口与设置等窗口通过 `.inRootView()` 注入同一套环境。
 ///
 /// ## 使用方式
 ///
