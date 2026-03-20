@@ -32,6 +32,26 @@ final class TurnCompletedFinalizeMiddleware: ConversationTurnMiddleware {
         ctx.runtimeStore.didReceiveFirstTokenByConversation.remove(conversationId)
 
         ctx.actions.updateRuntimeState(conversationId)
+
+        // 发送对话轮次结束的系统消息
+        let languagePreference = Self.loadLanguagePreference()
+        let turnCompletedMessage = ChatMessage.turnCompletedSystemMessage(
+            languagePreference: languagePreference
+        )
+        if ctx.env.selectedConversationId() == conversationId {
+            ctx.actions.appendMessage(turnCompletedMessage)
+        }
+        await ctx.actions.saveMessage(turnCompletedMessage, conversationId)
+
         // 短路：收尾逻辑已处理完毕。
+    }
+
+    /// 从 PluginStateStore 加载语言偏好设置
+    private static func loadLanguagePreference() -> LanguagePreference {
+        if let data = PluginStateStore.shared.data(forKey: "Agent_LanguagePreference"),
+           let preference = try? JSONDecoder().decode(LanguagePreference.self, from: data) {
+            return preference
+        }
+        return .chinese
     }
 }
