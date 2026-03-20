@@ -37,7 +37,7 @@ enum ConversationRuntimeState: String {
 /// messageViewModel.loadMessages(for: conversation)
 /// ```
 @MainActor
-final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
+final class AgentVM: ObservableObject, SuperLog, SuperLLMConfigProvider {
     nonisolated static let emoji = "🤖"
     nonisolated static let verbose = false
 
@@ -95,150 +95,20 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
 
     private var cancellables = Set<AnyCancellable>()
 
-    private lazy var messageSendCoordinator = MessageSendCoordinator(
-        MessageSenderVM: messageSenderVM,
-        runtimeStore: runtimeStore,
-        services: .init(
-            getConversationTitle: { [weak self] conversationId in
-                self?.chatHistoryService.fetchConversation(id: conversationId)?.title
-            },
-            getCurrentConfig: { [weak self] in
-                self?.getCurrentConfig() ?? .default
-            },
-            generateConversationTitle: { [weak self] content, config in
-                guard let self else { return String(content.prefix(20)) }
-                return await self.chatHistoryService.generateConversationTitle(from: content, config: config)
-            },
-            updateConversationTitleIfUnchanged: { [weak self] conversationId, expectedTitle, newTitle in
-                return await MainActor.run {
-                    guard let self,
-                          let conversation = self.chatHistoryService.fetchConversation(id: conversationId),
-                          conversation.title == expectedTitle else {
-                        return false
-                    }
-                    self.chatHistoryService.updateConversationTitle(conversation, newTitle: newTitle)
-                    return true
-                }
-            },
-            isProjectSelected: { [weak self] in
-                self?.ProjectVM.isProjectSelected ?? false
-            },
-            getProjectInfo: { [weak self] in
-                (self?.ProjectVM.currentProjectName ?? "", self?.ProjectVM.currentProjectPath ?? "")
-            },
-            isFileSelected: { [weak self] in
-                self?.ProjectVM.isFileSelected ?? false
-            },
-            getSelectedFileInfo: { [weak self] in
-                (self?.ProjectVM.selectedFilePath ?? "", self?.ProjectVM.selectedFileContent ?? "")
-            },
-            getSelectedText: {
-                TextSelectionManager.shared.selectedText
-            },
-            getMessageCount: { [weak self] conversationId in
-                self?.messageViewModel.messages.count ?? 0
-            }
-        ),
-        onProcessingStarted: { [weak self] conversationId in
-            guard let self else { return }
-            if self.ConversationVM.selectedConversationId == conversationId {
-                self.processingStateViewModel.beginSending()
-            }
-        },
-        onProcessingFinished: { [weak self] conversationId in
-            guard let self else { return }
-            if self.ConversationVM.selectedConversationId == conversationId {
-                self.processingStateViewModel.finish()
-            }
-        },
-        sendMessageToAgent: { [weak self] message, conversationId in
-            guard let self else { return }
-            await self.sendMessageToAgent(message: message, conversationId: conversationId)
-        }
+    private lazy var messageSendCoordinator = AgentVMCoordinatorBindings.makeMessageSendCoordinator(
+        agent: self,
+        messageSenderViewModel: messageSenderVM,
+        runtimeStore: runtimeStore
     )
 
-    private lazy var conversationTurnCoordinator = ConversationTurnCoordinator(
+    private lazy var conversationTurnCoordinator = AgentVMCoordinatorBindings.makeConversationTurnCoordinator(
+        agent: self,
         conversationTurnViewModel: conversationTurnViewModel,
         runtimeStore: runtimeStore,
-        env: .init(
-            selectedConversationId: { [weak self] in self?.ConversationVM.selectedConversationId },
-            maxThinkingTextLength: maxThinkingTextLength,
-            immediateStreamFlushChars: immediateStreamFlushChars,
-            immediateThinkingFlushChars: immediateThinkingFlushChars,
-            captureThinkingContent: captureThinkingContent
-        ),
-        messages: .init(
-            messages: { [weak self] in self?.messages ?? [] },
-            appendMessage: { [weak self] m in self?.appendMessage(m) },
-            updateMessage: { [weak self] m, idx in self?.updateMessage(m, at: idx) },
-            saveMessage: { [weak self] m, cid in
-                guard let self else { return }
-                await self.saveMessage(m, conversationId: cid)
-            },
-            flushPendingStreamText: { [weak self] cid, force in
-                self?.flushPendingStreamTextIfNeeded(for: cid, force: force)
-            },
-            flushPendingThinkingText: { [weak self] cid, force in
-                self?.flushPendingThinkingTextIfNeeded(for: cid, force: force)
-            },
-            updateRuntimeState: { [weak self] cid in
-                self?.updateRuntimeState(for: cid)
-            }
-        ),
-        ui: .init(
-            setPendingPermissionRequest: { [weak self] request, _ in
-                self?.setPendingPermissionRequest(request)
-            },
-            setDepthWarning: { [weak self] warning, _ in
-                self?.setDepthWarning(warning)
-            },
-            onTurnFinishedUI: { [weak self] conversationId in
-                guard let self else { return }
-                self.processingStateViewModel.finish()
-            },
-            onTurnFailedUI: { [weak self] conversationId, _ in
-                guard let self else { return }
-                self.processingStateViewModel.finish()
-            },
-            onStreamStartedUI: { [weak self] _, conversationId in
-                guard let self else { return }
-                self.processingStateViewModel.markStreamStarted()
-                if self.ConversationVM.selectedConversationId == conversationId {
-                    self.bumpStreamingRenderVersion()
-                }
-            },
-            onStreamFirstTokenUI: { [weak self] conversationId, ttftMs in
-                guard let self else { return }
-                if let ttftMs {
-                    self.processingStateViewModel.markFirstToken(ttftMs: ttftMs)
-                } else {
-                    self.processingStateViewModel.markGenerating()
-                }
-            },
-            onStreamFinishedUI: { [weak self] conversationId in
-                guard let self else { return }
-                self.setThinkingText(self.runtimeStore.thinkingTextByConversation[conversationId] ?? "", for: conversationId)
-                self.setIsThinking(false, for: conversationId)
-                self.processingStateViewModel.finish()
-                self.runtimeStore.streamingTextByConversation[conversationId] = nil
-                if self.ConversationVM.selectedConversationId == conversationId {
-                    self.bumpStreamingRenderVersion()
-                }
-            },
-            onThinkingStartedUI: { [weak self] conversationId in
-                guard let self else { return }
-                self.setIsThinking(true, for: conversationId)
-            },
-            setLastHeartbeatTime: { [weak self] date in
-                self?.setLastHeartbeatTime(date)
-            },
-            setIsThinking: { [weak self] isThinking, cid in
-                self?.setIsThinking(isThinking, for: cid)
-            },
-            setThinkingText: { [weak self] text, cid in
-                self?.setThinkingText(text, for: cid)
-            }
-        ),
+        maxThinkingTextLength: maxThinkingTextLength,
+        immediateStreamFlushChars: immediateStreamFlushChars,
+        immediateThinkingFlushChars: immediateThinkingFlushChars,
+        captureThinkingContent: captureThinkingContent,
         onFallbackEvent: { [weak self] event in
             guard let self else { return }
             await self.handleConversationTurnEventFallback(event)
@@ -428,7 +298,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     private let immediateThinkingFlushChars = 120
     private let captureThinkingContent = true
 
-    private func bumpStreamingRenderVersion() {
+    func bumpStreamingRenderVersion() {
         streamingRenderVersion &+= 1
     }
 
@@ -585,11 +455,11 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         runtimeStore.runtimeState(for: conversationId)
     }
 
-    private func updateRuntimeState(for conversationId: UUID) {
+    func updateRuntimeState(for conversationId: UUID) {
         runtimeStore.updateRuntimeState(for: conversationId)
     }
 
-    private func flushPendingStreamTextIfNeeded(for conversationId: UUID, force: Bool = false) {
+    func flushPendingStreamTextIfNeeded(for conversationId: UUID, force: Bool = false) {
         guard let pending = runtimeStore.pendingStreamTextByConversation[conversationId], !pending.isEmpty else {
             return
         }
@@ -606,7 +476,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         runtimeStore.lastStreamFlushAtByConversation[conversationId] = now
     }
 
-    private func flushPendingThinkingTextIfNeeded(for conversationId: UUID, force: Bool = false) {
+    func flushPendingThinkingTextIfNeeded(for conversationId: UUID, force: Bool = false) {
         guard let pending = runtimeStore.pendingThinkingTextByConversation[conversationId], !pending.isEmpty else {
             return
         }

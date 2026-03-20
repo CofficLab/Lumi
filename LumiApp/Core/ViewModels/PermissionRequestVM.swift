@@ -3,7 +3,6 @@ import Foundation
 import MagicKit
 
 /// 权限请求 ViewModel
-/// 专门管理权限请求状态，避免因 AgentVM 其他状态变化导致不必要的视图重新渲染
 @MainActor
 final class PermissionRequestVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "🔐"

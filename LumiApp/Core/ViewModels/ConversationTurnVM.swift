@@ -35,15 +35,10 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "🔄"
     nonisolated static let verbose = true
 
-    // MARK: - 事件流
+    // MARK: - 事件流（单消费者；勿多处 for-await，否则后续订阅会覆盖 continuation）
 
-    var events: AsyncStream<ConversationTurnEvent> {
-        AsyncStream { continuation in
-            self.eventContinuation = continuation
-        }
-    }
-
-    private var eventContinuation: AsyncStream<ConversationTurnEvent>.Continuation?
+    let events: AsyncStream<ConversationTurnEvent>
+    private let eventContinuation: AsyncStream<ConversationTurnEvent>.Continuation
 
     // MARK: - 服务依赖
 
@@ -80,6 +75,10 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         toolExecutionService: ToolExecutionService,
         promptService: PromptService
     ) {
+        var continuation: AsyncStream<ConversationTurnEvent>.Continuation!
+        self.events = AsyncStream { continuation = $0 }
+        self.eventContinuation = continuation
+
         self.llmService = llmService
         self.toolExecutionService = toolExecutionService
         self.promptService = promptService
@@ -100,7 +99,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         autoApproveRisk: Bool
     ) async {
         guard depth <= maxDepth else {
-            eventContinuation?.yield(.maxDepthReached(currentDepth: depth, maxDepth: maxDepth, conversationId: conversationId))
+            eventContinuation.yield(.maxDepthReached(currentDepth: depth, maxDepth: maxDepth, conversationId: conversationId))
             return
         }
         let isFinalStep = depth == maxDepth
@@ -134,7 +133,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                 providerId: config.providerId,
                 modelName: config.model
             )
-            eventContinuation?.yield(.responseReceived(loadingMessage, conversationId: conversationId))
+            eventContinuation.yield(.responseReceived(loadingMessage, conversationId: conversationId))
         }
 
         do {
@@ -181,7 +180,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                     code: 409,
                     userInfo: [NSLocalizedDescriptionKey: "检测到连续空响应工具循环，已自动中止本轮。"]
                 )
-                eventContinuation?.yield(.error(error, conversationId: conversationId))
+                eventContinuation.yield(.error(error, conversationId: conversationId))
                 AppLogger.core.error("\(self.t)[\(conversationId)] 连续空响应工具循环，已中止")
                 return
             }
@@ -198,8 +197,8 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                     currentDepth: depth,
                     maxDepth: maxDepth
                 )
-                eventContinuation?.yield(.responseReceived(explainMessage, conversationId: conversationId))
-                    eventContinuation?.yield(.completed(conversationId: conversationId))
+                eventContinuation.yield(.responseReceived(explainMessage, conversationId: conversationId))
+                    eventContinuation.yield(.completed(conversationId: conversationId))
                     if Self.verbose {
                         AppLogger.core.warning("\(self.t)[\(conversationId)] 最后一步仍请求工具，已忽略并结束本轮")
                     }
@@ -250,13 +249,13 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                         repeatedCount: context.repeatedToolSignatureCount,
                         windowCount: sameSignatureInWindow
                     )
-                    eventContinuation?.yield(.responseReceived(explainMessage, conversationId: conversationId))
+                    eventContinuation.yield(.responseReceived(explainMessage, conversationId: conversationId))
                     let error = NSError(
                         domain: "ConversationTurn",
                         code: 410,
                         userInfo: [NSLocalizedDescriptionKey: "检测到重复工具调用循环，已自动中止本轮。"]
                     )
-                    eventContinuation?.yield(.error(error, conversationId: conversationId))
+                    eventContinuation.yield(.error(error, conversationId: conversationId))
                     AppLogger.core.error("\(self.t)[\(conversationId)] 重复工具调用循环，已中止: \(firstTool.name)")
                     return
                 }
@@ -273,7 +272,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                 context.repeatedToolSignatureCount = 0
                 context.recentToolSignatures.removeAll(keepingCapacity: false)
                 turnContexts[conversationId] = context
-                eventContinuation?.yield(.completed(conversationId: conversationId))
+                eventContinuation.yield(.completed(conversationId: conversationId))
                 if Self.verbose {
                     AppLogger.core.info("\(self.t)[\(conversationId)] 轮次完成（无工具）")
                 }
@@ -287,13 +286,13 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
             if let configError = error as? LLMConfigValidationError,
                case .apiKeyEmpty = configError {
                 let explainMessage = ChatMessage.apiKeyMissingSystemMessage(languagePreference: languagePreference)
-                eventContinuation?.yield(.responseReceived(explainMessage, conversationId: conversationId))
-                eventContinuation?.yield(.error(error, conversationId: conversationId))
+                eventContinuation.yield(.responseReceived(explainMessage, conversationId: conversationId))
+                eventContinuation.yield(.error(error, conversationId: conversationId))
                 AppLogger.core.error("\(self.t)[\(conversationId)] 配置校验失败：API Key 为空")
             } else {
                 let explainMessage = ChatMessage.requestFailedMessage(languagePreference: languagePreference, error: error)
-                eventContinuation?.yield(.responseReceived(explainMessage, conversationId: conversationId))
-                eventContinuation?.yield(.error(error, conversationId: conversationId))
+                eventContinuation.yield(.responseReceived(explainMessage, conversationId: conversationId))
+                eventContinuation.yield(.error(error, conversationId: conversationId))
                 AppLogger.core.error("\(self.t)[\(conversationId)] 对话处理失败：\(error.localizedDescription)")
             }
         }
@@ -309,8 +308,8 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         languagePreference: LanguagePreference
     ) async throws -> ChatMessage {
         let messageId = UUID()
-        eventContinuation?.yield(.streamStarted(messageId: messageId, conversationId: conversationId))
-        let continuation = eventContinuation
+        eventContinuation.yield(.streamStarted(messageId: messageId, conversationId: conversationId))
+        let streamContinuation = eventContinuation
 
         let responseMsg = try await llmService.sendStreamingMessage(
             messages: messages,
@@ -321,7 +320,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                 if Self.shouldForwardStreamEvent(eventType) {
                     let content: String = (eventType == .inputJsonDelta) ? (chunk.partialJson ?? "") : (chunk.content ?? "")
                     let rawEvent = chunk.rawEvent ?? ""
-                    continuation?.yield(
+                    streamContinuation.yield(
                         .streamEvent(
                             eventType: eventType,
                             content: content,
@@ -334,7 +333,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
             }
 
             if let content = chunk.content, chunk.eventType == .textDelta {
-                continuation?.yield(
+                streamContinuation.yield(
                     .streamChunk(
                         content: content,
                         messageId: messageId,
@@ -379,7 +378,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
             maxTokens: responseMsg.maxTokens
         )
 
-        eventContinuation?.yield(.streamFinished(message: finalMessage, conversationId: conversationId))
+        eventContinuation.yield(.streamFinished(message: finalMessage, conversationId: conversationId))
         return finalMessage
     }
 
@@ -405,7 +404,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
             responseMsg = enhanceEmptyResponseWithToolSummary(responseMsg, languagePreference: languagePreference)
         }
 
-        eventContinuation?.yield(.responseReceived(responseMsg, conversationId: conversationId))
+        eventContinuation.yield(.responseReceived(responseMsg, conversationId: conversationId))
         return responseMsg
     }
 
@@ -460,7 +459,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                 riskLevel: riskLevel
             )
 
-            eventContinuation?.yield(.permissionRequested(permissionRequest, conversationId: conversationId))
+            eventContinuation.yield(.permissionRequested(permissionRequest, conversationId: conversationId))
             return
         }
 
@@ -487,11 +486,11 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                 toolCallID: normalizedToolCall.id
             )
 
-            eventContinuation?.yield(.toolResultReceived(resultMsg, conversationId: conversationId))
+            eventContinuation.yield(.toolResultReceived(resultMsg, conversationId: conversationId))
             await processPendingTools(conversationId: conversationId, languagePreference: languagePreference)
         } catch {
             let errorMsg = toolExecutionService.createErrorMessage(for: toolCall, error: error)
-            eventContinuation?.yield(.toolResultReceived(errorMsg, conversationId: conversationId))
+            eventContinuation.yield(.toolResultReceived(errorMsg, conversationId: conversationId))
             await processPendingTools(conversationId: conversationId, languagePreference: languagePreference)
         }
     }
@@ -500,7 +499,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         var context = turnContexts[conversationId] ?? TurnContext()
 
         guard !context.pendingToolCalls.isEmpty else {
-            eventContinuation?.yield(.shouldContinue(depth: context.currentDepth + 1, conversationId: conversationId))
+            eventContinuation.yield(.shouldContinue(depth: context.currentDepth + 1, conversationId: conversationId))
             return
         }
 
@@ -523,7 +522,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                 content: "[Tool execution aborted by safety guard]",
                 toolCallID: toolCall.id
             )
-            eventContinuation?.yield(.toolResultReceived(abortMessage, conversationId: conversationId))
+            eventContinuation.yield(.toolResultReceived(abortMessage, conversationId: conversationId))
         }
     }
 

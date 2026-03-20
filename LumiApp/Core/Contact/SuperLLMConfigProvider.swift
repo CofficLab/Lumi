@@ -2,8 +2,7 @@ import Foundation
 import MagicKit
 
 /// LLM 配置获取协议
-/// 用于解耦 MessageSenderVM 和 AgentVM
 @MainActor
-protocol LLMConfigProvider: AnyObject {
+protocol SuperLLMConfigProvider: AnyObject {
     func getCurrentConfig() -> LLMConfig
 }

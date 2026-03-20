@@ -23,15 +23,10 @@ final class MessageSenderVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📤"
     nonisolated static let verbose = false
 
-    // MARK: - 事件流
+    // MARK: - 事件流（单消费者；勿多处 for-await，否则后续订阅会覆盖 continuation）
 
-    var events: AsyncStream<MessageSendEvent> {
-        AsyncStream { continuation in
-            self.eventContinuation = continuation
-        }
-    }
-
-    private var eventContinuation: AsyncStream<MessageSendEvent>.Continuation?
+    let events: AsyncStream<MessageSendEvent>
+    private let eventContinuation: AsyncStream<MessageSendEvent>.Continuation
 
     // MARK: - 当前会话 UI 状态
 
@@ -48,7 +43,11 @@ final class MessageSenderVM: ObservableObject, SuperLog {
     private var cancelledConversations = Set<UUID>()
     private var sendTasksByConversation: [UUID: Task<Void, Never>] = [:]
 
-    init() {}
+    init() {
+        var continuation: AsyncStream<MessageSendEvent>.Continuation!
+        self.events = AsyncStream { continuation = $0 }
+        self.eventContinuation = continuation
+    }
 
     // MARK: - 会话管理
 
@@ -151,7 +150,7 @@ final class MessageSenderVM: ObservableObject, SuperLog {
             if self.currentConversationId == conversationId {
                 self.syncCurrentConversationState()
             }
-            self.eventContinuation?.yield(.processingStarted(conversationId: conversationId))
+            self.eventContinuation.yield(.processingStarted(conversationId: conversationId))
         }
 
         while true {
@@ -172,7 +171,7 @@ final class MessageSenderVM: ObservableObject, SuperLog {
             guard let message = nextMessage else { break }
 
             _ = await MainActor.run {
-                self.eventContinuation?.yield(.sendMessage(message, conversationId: conversationId))
+                self.eventContinuation.yield(.sendMessage(message, conversationId: conversationId))
             }
 
             await MainActor.run {
@@ -201,7 +200,7 @@ final class MessageSenderVM: ObservableObject, SuperLog {
             if self.currentConversationId == conversationId {
                 self.syncCurrentConversationState()
             }
-            self.eventContinuation?.yield(.processingFinished(conversationId: conversationId))
+            self.eventContinuation.yield(.processingFinished(conversationId: conversationId))
         }
     }
 
