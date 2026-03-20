@@ -25,11 +25,12 @@ struct ShouldContinueEnqueueMiddleware: ConversationTurnMiddleware, SuperLog {
         }
 
         // 深度超过上限：不再 enqueue，改为走统一 maxDepth 收尾链路。
-        if depth > ctx.env.maxDepth {
+        let guardResult = MaxDepthReachedGuard().evaluate(depth: depth, maxDepth: ctx.env.maxDepth)
+        if case let .reached(currentDepth, maxDepth) = guardResult {
             if Self.verbose {
-                AppLogger.core.info("\(Self.t) ⛔️ depth=\(depth) > max=\(ctx.env.maxDepth)，触发 maxDepthReached [\(conversationId.uuidString.prefix(8))]")
+                AppLogger.core.info("\(Self.t) ⛔️ depth=\(currentDepth) > max=\(maxDepth)，触发 maxDepthReached [\(conversationId.uuidString.prefix(8))]")
             }
-            await next(.maxDepthReached(currentDepth: depth, maxDepth: ctx.env.maxDepth, conversationId: conversationId), ctx)
+            await next(.maxDepthReached(currentDepth: currentDepth, maxDepth: maxDepth, conversationId: conversationId), ctx)
             return
         }
 

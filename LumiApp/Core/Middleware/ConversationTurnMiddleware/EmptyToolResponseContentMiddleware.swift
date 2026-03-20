@@ -24,22 +24,22 @@ struct EmptyToolResponseContentMiddleware: ConversationTurnMiddleware, SuperLog 
                 await next(event, ctx)
                 return
             }
-            if message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-               let toolCalls = message.toolCalls,
-               !(toolCalls.isEmpty) {
+            switch EmptyToolResponseContentGuard().evaluate(
+                content: message.content,
+                toolCalls: message.toolCalls,
+                languagePreference: language
+            ) {
+            case .proceed:
+                await next(event, ctx)
+            case .updatedContent(let updatedContent):
                 var updated = message
-                updated.content = toolSummaryContent(
-                    toolCalls: toolCalls,
-                    languagePreference: language
-                )
+                updated.content = updatedContent
 
-                if Self.verbose {
+                if let toolCalls = message.toolCalls, Self.verbose {
                     AppLogger.core.info("\(Self.t) 空 content + toolCalls，追加工具摘要：\(toolCalls.count) 个")
                 }
 
                 await next(.responseReceived(updated, conversationId: conversationId), ctx)
-            } else {
-                await next(event, ctx)
             }
 
         case let .streamFinished(message, conversationId):
@@ -47,38 +47,27 @@ struct EmptyToolResponseContentMiddleware: ConversationTurnMiddleware, SuperLog 
                 await next(event, ctx)
                 return
             }
-            if message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-               let toolCalls = message.toolCalls,
-               !(toolCalls.isEmpty) {
+            switch EmptyToolResponseContentGuard().evaluate(
+                content: message.content,
+                toolCalls: message.toolCalls,
+                languagePreference: language
+            ) {
+            case .proceed:
+                await next(event, ctx)
+            case .updatedContent(let updatedContent):
                 var updated = message
-                updated.content = toolSummaryContent(
-                    toolCalls: toolCalls,
-                    languagePreference: language
-                )
+                updated.content = updatedContent
 
-                if Self.verbose {
+                if let toolCalls = message.toolCalls, Self.verbose {
                     AppLogger.core.info("\(Self.t) 流式结束 空 content + toolCalls，追加工具摘要：\(toolCalls.count) 个")
                 }
 
                 await next(.streamFinished(message: updated, conversationId: conversationId), ctx)
-            } else {
-                await next(event, ctx)
             }
 
         default:
             await next(event, ctx)
         }
-    }
-
-    private func toolSummaryContent(
-        toolCalls: [ToolCall],
-        languagePreference: LanguagePreference
-    ) -> String {
-        let toolSummary = toolCalls.map(\.name).joined(separator: "\n")
-        let prefix = languagePreference == .chinese
-            ? "正在执行 \(toolCalls.count) 个工具："
-            : "Executing \(toolCalls.count) tools:"
-        return prefix + "\n" + toolSummary
     }
 }
 

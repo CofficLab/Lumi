@@ -23,20 +23,17 @@ struct ToolResultTruncateMiddleware: ConversationTurnMiddleware, SuperLog {
         }
 
         let maxLen = ctx.env.maxToolResultLength
-        guard result.content.count > maxLen else {
+        switch ToolResultTruncateGuard().evaluate(content: result.content, maxLen: maxLen) {
+        case .proceed:
             await next(event, ctx)
-            return
+        case .truncated(let updatedContent):
+            var updated = result
+            updated.content = updatedContent
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t) 截断 tool 输出：\(result.content.count) -> \(maxLen)")
+            }
+            await next(.toolResultReceived(updated, conversationId: conversationId), ctx)
         }
-
-        let prefix = String(result.content.prefix(maxLen))
-        var updated = result
-        updated.content = "\(prefix)\n\n... [Tool output truncated to \(maxLen) characters]"
-
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t) 截断 tool 输出：\(result.content.count) -> \(maxLen)")
-        }
-
-        await next(.toolResultReceived(updated, conversationId: conversationId), ctx)
     }
 }
 

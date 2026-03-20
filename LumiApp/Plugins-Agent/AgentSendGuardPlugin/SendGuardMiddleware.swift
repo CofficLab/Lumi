@@ -1,4 +1,5 @@
 import Foundation
+import MagicKit
 
 /// 发送前防护中间件
 ///
@@ -9,7 +10,10 @@ import Foundation
 /// - 内容规范化：去掉首尾空白；若内容为空但有图片附件，仍允许发送
 /// - 重复发送去重：极短时间内重复发送相同内容时直接短路
 @MainActor
-struct SendGuardMiddleware: MessageSendMiddleware {
+struct SendGuardMiddleware: MessageSendMiddleware, SuperLog {
+    nonisolated static let emoji = "🔒"
+    nonisolated static let verbose = true
+
     let id: String = "agent.send-guard"
     let order: Int = 90
 
@@ -31,15 +35,24 @@ struct SendGuardMiddleware: MessageSendMiddleware {
 
         // 空内容 + 无附件：直接短路
         if normalized.isEmpty, !hasAttachments {
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t) 空内容 + 无附件：直接短路")
+            }
             return
         }
 
         // 极短时间内重复发送相同内容：直接短路（常见于误触/快捷键连按）
         let now = Date()
+        // 只在“模型仍在生成/流式中”时启用去重，避免用户在生成结束后立刻发送第二条消息被误判为重复。
+        let isStreaming = ctx.runtimeStore.streamStateByConversation[conversationId]?.messageId != nil
         if let lastAt = ctx.runtimeStore.lastUserSendAtByConversation[conversationId],
            let lastContent = ctx.runtimeStore.lastUserSendContentByConversation[conversationId],
+           isStreaming,
            now.timeIntervalSince(lastAt) < duplicateWindow,
            lastContent == normalized {
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t) 极短时间内重复发送相同内容：直接短路")
+            }
             return
         }
 
