@@ -13,10 +13,7 @@ enum CancelAgentTaskHandler: SuperLog {
 
         let store = turnVM.runtimeStore
         store.processingConversationIds.remove(conversationId)
-        store.streamStateByConversation[conversationId] = ConversationRuntimeStore.StreamSessionState(
-            messageId: nil,
-            messageIndex: nil
-        )
+        store.streamStateByConversation[conversationId] = ConversationRuntimeStore.StreamSessionState(messageId: nil)
         store.pendingStreamTextByConversation[conversationId] = nil
         store.streamingTextByConversation[conversationId] = nil
         store.thinkingConversationIds.remove(conversationId)

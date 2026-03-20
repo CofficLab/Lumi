@@ -39,7 +39,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
     private var pipelineCancellables = Set<AnyCancellable>()
     private var turnTaskPipelineByConversation: [UUID: Task<Void, Never>] = [:]
     private var turnTaskGenerationByConversation: [UUID: Int] = [:]
-    private let maxThinkingTextLength = 100_000
+    private let maxThinkingTextLength = 100000
     private let streamUIFlushInterval: TimeInterval = 0.08
     private let thinkingUIFlushInterval: TimeInterval = 0.12
     private let immediateStreamFlushChars = 80
@@ -50,7 +50,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
 
     private var turnContexts: [UUID: ConversationTurnContext] = [:]
     private let maxDepth = 60
-    private let maxToolResultLength = 4_000
+    private let maxToolResultLength = 4000
 
     /// 连续重复同一工具签名（名称+参数）达到多少次视为循环
     private let repeatedToolSignatureThreshold = 10
@@ -221,13 +221,13 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                     var broken = turnContexts[conversationId] ?? ConversationTurnContext()
                     broken.pendingToolCalls.removeAll()
                     turnContexts[conversationId] = broken
-                // 在 UI 中给出明确的助手提示，而不是静默结束
-                let explainMessage = ChatMessage.maxDepthToolLimitMessage(
-                    languagePreference: languagePreference,
-                    currentDepth: depth,
-                    maxDepth: maxDepth
-                )
-                eventContinuation.yield(.responseReceived(explainMessage, conversationId: conversationId))
+                    // 在 UI 中给出明确的助手提示，而不是静默结束
+                    let explainMessage = ChatMessage.maxDepthToolLimitMessage(
+                        languagePreference: languagePreference,
+                        currentDepth: depth,
+                        maxDepth: maxDepth
+                    )
+                    eventContinuation.yield(.responseReceived(explainMessage, conversationId: conversationId))
                     eventContinuation.yield(.completed(conversationId: conversationId))
                     if Self.verbose {
                         AppLogger.core.warning("\(self.t)[\(conversationId)] 最后一步仍请求工具，已忽略并结束本轮")
@@ -506,14 +506,13 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         languagePreference: LanguagePreference
     ) async {
         do {
-            let normalizedToolCall = normalizeToolCallForExecution(toolCall, conversationId: conversationId)
-            let result = try await toolExecutionService.executeTool(normalizedToolCall)
+            let result = try await toolExecutionService.executeTool(toolCall)
             let trimmedResult = truncateToolResultIfNeeded(result)
 
             let resultMsg = ChatMessage(
                 role: .tool,
                 content: trimmedResult,
-                toolCallID: normalizedToolCall.id
+                toolCallID: toolCall.id
             )
 
             eventContinuation.yield(.toolResultReceived(resultMsg, conversationId: conversationId))
@@ -554,10 +553,6 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
             )
             eventContinuation.yield(.toolResultReceived(abortMessage, conversationId: conversationId))
         }
-    }
-
-    private func normalizeToolCallForExecution(_ toolCall: ToolCall, conversationId: UUID) -> ToolCall {
-        toolCall
     }
 
     private func truncateToolResultIfNeeded(_ result: String) -> String {

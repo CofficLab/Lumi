@@ -37,13 +37,6 @@ final class ProcessingStateVM: ObservableObject {
         lastHeartbeatTime = date
     }
 
-    func beginSending() {
-        phase = .sending
-        statusText = "连接中…"
-        timeToFirstTokenMs = nil
-        setIsProcessing(true)
-    }
-
     func markStreamStarted() {
         phase = .waitingFirstToken
         statusText = "等待响应…"

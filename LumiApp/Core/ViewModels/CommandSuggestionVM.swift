@@ -25,11 +25,6 @@ class CommandSuggestionVM: ObservableObject, SuperLog {
         self.suggestions = staticCommands
     }
 
-    /// 设置 Slash 命令服务
-    func setSlashCommandService(_ service: SlashCommandService) {
-        self.slashCommandService = service
-    }
-
     // MARK: - Set Methods
 
     func setSuggestions(_ suggestions: [CommandSuggestion]) {

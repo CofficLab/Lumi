@@ -16,7 +16,7 @@ final class StreamStartedInitializeMiddleware: ConversationTurnMiddleware {
             return
         }
 
-        ctx.runtimeStore.streamStateByConversation[conversationId] = .init(messageId: messageId, messageIndex: nil)
+        ctx.runtimeStore.streamStateByConversation[conversationId] = .init(messageId: messageId)
         ctx.runtimeStore.streamingTextByConversation[conversationId] = ""
         ctx.runtimeStore.pendingStreamTextByConversation[conversationId] = ""
         ctx.runtimeStore.pendingThinkingTextByConversation[conversationId] = ""

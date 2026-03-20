@@ -22,7 +22,7 @@ final class TurnCompletedFinalizeMiddleware: ConversationTurnMiddleware {
             ctx.ui.onTurnFinishedUI(conversationId)
         }
 
-        ctx.runtimeStore.streamStateByConversation[conversationId] = .init(messageId: nil, messageIndex: nil)
+        ctx.runtimeStore.streamStateByConversation[conversationId] = .init(messageId: nil)
         ctx.runtimeStore.pendingStreamTextByConversation[conversationId] = nil
         ctx.runtimeStore.streamingTextByConversation[conversationId] = nil
         ctx.runtimeStore.pendingThinkingTextByConversation[conversationId] = nil

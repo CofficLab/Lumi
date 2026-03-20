@@ -18,7 +18,6 @@ import SwiftUI
 final class ConversationRuntimeStore: ObservableObject {
     struct StreamSessionState {
         var messageId: UUID?
-        var messageIndex: Int?
     }
 
     @Published var streamStateByConversation: [UUID: StreamSessionState] = [:]
@@ -39,7 +38,6 @@ final class ConversationRuntimeStore: ObservableObject {
 
     var streamStartedAtByConversation: [UUID: Date] = [:]
     var didReceiveFirstTokenByConversation: Set<UUID> = []
-    var statusMessageIdByConversation: [UUID: UUID] = [:]
 
     // MARK: - MessageSend middlewares state
 
@@ -88,37 +86,6 @@ final class ConversationRuntimeStore: ObservableObject {
         } else {
             conversationRuntimeStates[conversationId] = state
         }
-    }
-
-    func cleanupConversationState(_ conversationId: UUID) {
-        streamStateByConversation[conversationId] = StreamSessionState(messageId: nil, messageIndex: nil)
-        streamStateByConversation.removeValue(forKey: conversationId)
-        streamingTextByConversation.removeValue(forKey: conversationId)
-
-        thinkingTextByConversation.removeValue(forKey: conversationId)
-        pendingStreamTextByConversation.removeValue(forKey: conversationId)
-        pendingThinkingTextByConversation.removeValue(forKey: conversationId)
-        lastStreamFlushAtByConversation.removeValue(forKey: conversationId)
-        lastThinkingFlushAtByConversation.removeValue(forKey: conversationId)
-
-        thinkingConversationIds.remove(conversationId)
-        processingConversationIds.remove(conversationId)
-
-        pendingPermissionByConversation.removeValue(forKey: conversationId)
-        depthWarningByConversation.removeValue(forKey: conversationId)
-        errorMessageByConversation.removeValue(forKey: conversationId)
-        lastHeartbeatByConversation.removeValue(forKey: conversationId)
-
-        streamStartedAtByConversation.removeValue(forKey: conversationId)
-        didReceiveFirstTokenByConversation.remove(conversationId)
-
-        statusMessageIdByConversation.removeValue(forKey: conversationId)
-        conversationRuntimeStates.removeValue(forKey: conversationId)
-
-        lastUserSendAtByConversation.removeValue(forKey: conversationId)
-        lastUserSendContentByConversation.removeValue(forKey: conversationId)
-
-        postProcessedMessageIdsByConversation.removeValue(forKey: conversationId)
     }
 
     /// 供 `ConversationChangedHandler` 投影到各 UI VM 的快照。

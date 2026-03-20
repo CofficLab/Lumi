@@ -1,5 +1,4 @@
 import Foundation
-import SwiftUI
 
 /// 仅负责待发送的图片附件管理（上传、预览所需数据、移除）。
 @MainActor

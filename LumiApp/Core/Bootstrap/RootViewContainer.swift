@@ -134,7 +134,7 @@ final class RootViewContainer: ObservableObject {
         // 消息相关 VM
         // ========================================
 
-        self.messageViewModel = MessagePendingVM(chatHistoryService: chatHistoryService)
+        self.messageViewModel = MessagePendingVM()
 
         self.ConversationVM = Lumi.ConversationVM(
             chatHistoryService: chatHistoryService,

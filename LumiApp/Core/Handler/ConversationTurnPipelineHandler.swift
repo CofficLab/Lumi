@@ -137,7 +137,7 @@ final class ConversationTurnPipelineHandler: SuperLog {
                 ui.onTurnFailedUI(conversationId, msg)
             }
 
-            runtimeStore.streamStateByConversation[conversationId] = .init(messageId: nil, messageIndex: nil)
+            runtimeStore.streamStateByConversation[conversationId] = .init(messageId: nil)
             runtimeStore.pendingStreamTextByConversation[conversationId] = nil
             runtimeStore.streamingTextByConversation[conversationId] = nil
             runtimeStore.pendingThinkingTextByConversation[conversationId] = nil

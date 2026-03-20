@@ -62,7 +62,7 @@ enum SendMessageHandler: SuperLog {
                 vm.pendingMessages.removeFirst()
                 vm.currentProcessingIndex = nil
                 if verbose {
-                    AppLogger.core.info("\(Self.t) ✅ [\(String(conversationId.uuidString.prefix(8)))] 消息发送完成，已从队列移除")
+                    AppLogger.core.info("\(Self.t)✅ [\(String(conversationId.uuidString.prefix(8)))] 消息发送完成，已从队列移除")
                 }
             }
         }

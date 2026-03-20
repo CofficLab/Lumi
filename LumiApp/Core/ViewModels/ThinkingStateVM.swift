@@ -56,14 +56,4 @@ final class ThinkingStateVM: ObservableObject {
             thinkingText = text
         }
     }
-
-    /// 查询指定会话是否正在思考
-    func isThinking(for conversationId: UUID) -> Bool {
-        isThinkingByConversation[conversationId] ?? false
-    }
-
-    /// 查询指定会话的思考文本
-    func thinkingText(for conversationId: UUID) -> String {
-        thinkingTextByConversation[conversationId] ?? ""
-    }
 }

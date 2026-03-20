@@ -27,7 +27,7 @@ final class StreamFinishedFinalizeMiddleware: ConversationTurnMiddleware {
 
         await ctx.actions.saveMessage(finalMessage, conversationId)
 
-        ctx.runtimeStore.streamStateByConversation[conversationId] = .init(messageId: nil, messageIndex: nil)
+        ctx.runtimeStore.streamStateByConversation[conversationId] = .init(messageId: nil)
         ctx.runtimeStore.thinkingConversationIds.remove(conversationId)
 
         if ctx.env.selectedConversationId() == conversationId {

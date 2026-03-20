@@ -25,7 +25,7 @@ final class MaxDepthReachedFinalizeMiddleware: ConversationTurnMiddleware {
             ctx.ui.onTurnFinishedUI(conversationId)
         }
 
-        ctx.runtimeStore.streamStateByConversation[conversationId] = .init(messageId: nil, messageIndex: nil)
+        ctx.runtimeStore.streamStateByConversation[conversationId] = .init(messageId: nil)
         ctx.runtimeStore.pendingStreamTextByConversation[conversationId] = nil
         ctx.runtimeStore.pendingThinkingTextByConversation[conversationId] = nil
         ctx.runtimeStore.lastStreamFlushAtByConversation[conversationId] = nil

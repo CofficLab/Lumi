@@ -1,6 +1,5 @@
 import Foundation
 import MagicKit
-import SwiftUI
 
 /// 仅负责把用户输入（文本 + 附件）入队到 `MessageSenderVM`。
 @MainActor

@@ -1,5 +1,4 @@
 import Foundation
-import Combine
 
 /// 插件设置 VM：管理插件的启用/禁用状态。
 @MainActor
