@@ -1,8 +1,12 @@
 import Foundation
+import MagicKit
 
 /// 处理 streamFinished：刷新 UI 缓冲、拼装最终消息、落库，并清理流式运行态，然后短路事件下游。
 @MainActor
-final class StreamFinishedFinalizeMiddleware: ConversationTurnMiddleware {
+final class StreamFinishedFinalizeMiddleware: ConversationTurnMiddleware, SuperLog {
+    nonisolated static let emoji = "✅"
+    nonisolated static let verbose = true
+
     let id: String = "core.streamFinishedFinalize"
     let order: Int = 20
 
@@ -16,6 +20,10 @@ final class StreamFinishedFinalizeMiddleware: ConversationTurnMiddleware {
             return
         }
 
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t) 流式结束，内容长度=\(message.content.count) 字符")
+        }
+
         ctx.actions.flushPendingStreamText(conversationId, true)
         ctx.actions.flushPendingThinkingText(conversationId, true)
 
@@ -23,6 +31,9 @@ final class StreamFinishedFinalizeMiddleware: ConversationTurnMiddleware {
         let thinkingText = ctx.runtimeStore.thinkingTextByConversation[conversationId] ?? ""
         if !thinkingText.isEmpty {
             finalMessage.thinkingContent = thinkingText
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t) 附加思考内容长度=\(thinkingText.count) 字符")
+            }
         }
 
         await ctx.actions.saveMessage(finalMessage, conversationId)

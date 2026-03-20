@@ -1,4 +1,5 @@
 import Foundation
+import MagicKit
 
 /// 思考增量节流中间件
 ///
@@ -17,7 +18,10 @@ import Foundation
 ///
 /// - 绝对不要短路 `.thinkingDelta` 事件，否则会导致内容丢失
 @MainActor
-final class ThinkingDeltaThrottleMiddleware: ConversationTurnMiddleware {
+final class ThinkingDeltaThrottleMiddleware: ConversationTurnMiddleware, SuperLog {
+    nonisolated static let emoji = "🧠"
+    nonisolated static let verbose = true
+
     let id: String = "core.thinkingDeltaThrottle"
     let order: Int = 5
 
@@ -46,11 +50,17 @@ final class ThinkingDeltaThrottleMiddleware: ConversationTurnMiddleware {
         if let last = lastForwardAtByConversation[conversationId],
            now.timeIntervalSince(last) < minInterval {
             // 事件仍然传递到下游，只是记录时间戳用于统计
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t) 节流传递（<\(String(format: "%.2f", self.minInterval))s)")
+            }
             await next(event, ctx)
             return
         }
 
         lastForwardAtByConversation[conversationId] = now
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t) 放行 thinking delta")
+        }
         await next(event, ctx)
     }
 }

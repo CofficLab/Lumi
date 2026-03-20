@@ -1,8 +1,12 @@
 import Foundation
+import MagicKit
 
 /// 处理 streamChunk：统计首 token 时间、累积 pending stream 文本并触发增量 flush，然后短路事件下游。
 @MainActor
-final class StreamChunkAccumulateMiddleware: ConversationTurnMiddleware {
+final class StreamChunkAccumulateMiddleware: ConversationTurnMiddleware, SuperLog {
+    nonisolated static let emoji = "📦"
+    nonisolated static let verbose = true
+
     let id: String = "core.streamChunkAccumulate"
     let order: Int = 3
 
@@ -26,6 +30,9 @@ final class StreamChunkAccumulateMiddleware: ConversationTurnMiddleware {
             if let startedAt = ctx.runtimeStore.streamStartedAtByConversation[conversationId] {
                 let ttftMs = Date().timeIntervalSince(startedAt) * 1000.0
                 ctx.ui.onStreamFirstTokenUI(conversationId, ttftMs)
+                if Self.verbose {
+                    AppLogger.core.info("\(Self.t) 首 Token 时间=\(String(format: "%.0f", ttftMs))ms")
+                }
             } else {
                 ctx.ui.onStreamFirstTokenUI(conversationId, nil)
             }

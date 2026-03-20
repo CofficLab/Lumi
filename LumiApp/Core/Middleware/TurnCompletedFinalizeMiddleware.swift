@@ -1,8 +1,12 @@
 import Foundation
+import MagicKit
 
 /// 处理 completed：清理流式运行态、结束 UI，并更新运行状态，然后短路事件下游。
 @MainActor
-final class TurnCompletedFinalizeMiddleware: ConversationTurnMiddleware {
+final class TurnCompletedFinalizeMiddleware: ConversationTurnMiddleware, SuperLog {
+    nonisolated static let emoji = "🏁"
+    nonisolated static let verbose = true
+
     let id: String = "core.turnCompletedFinalize"
     let order: Int = 31
 
@@ -14,6 +18,10 @@ final class TurnCompletedFinalizeMiddleware: ConversationTurnMiddleware {
         guard case let .completed(conversationId) = event else {
             await next(event, ctx)
             return
+        }
+
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t) 轮次完成")
         }
 
         ctx.runtimeStore.processingConversationIds.remove(conversationId)

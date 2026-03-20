@@ -1,8 +1,12 @@
 import Foundation
+import MagicKit
 
 /// 处理 maxDepthReached：设置深度告警、清理流式运行态并结束 UI，然后短路事件下游。
 @MainActor
-final class MaxDepthReachedFinalizeMiddleware: ConversationTurnMiddleware {
+final class MaxDepthReachedFinalizeMiddleware: ConversationTurnMiddleware, SuperLog {
+    nonisolated static let emoji = "⚠️"
+    nonisolated static let verbose = true
+
     let id: String = "core.maxDepthReachedFinalize"
     let order: Int = 30
 
@@ -14,6 +18,10 @@ final class MaxDepthReachedFinalizeMiddleware: ConversationTurnMiddleware {
         guard case let .maxDepthReached(currentDepth, maxDepth, conversationId) = event else {
             await next(event, ctx)
             return
+        }
+
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t) 达到最大深度 current=\(currentDepth)/\(maxDepth)")
         }
 
         let warning = DepthWarning(currentDepth: currentDepth, maxDepth: maxDepth, warningType: .reached)

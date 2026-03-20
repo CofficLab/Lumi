@@ -1,8 +1,12 @@
 import Foundation
+import MagicKit
 
 /// 处理 contentBlockStart：识别 thinking block 开始并更新运行态/UI，然后短路事件下游。
 @MainActor
-final class ContentBlockThinkingStartMiddleware: ConversationTurnMiddleware {
+final class ContentBlockThinkingStartMiddleware: ConversationTurnMiddleware, SuperLog {
+    nonisolated static let emoji = "🧠"
+    nonisolated static let verbose = true
+
     let id: String = "core.contentBlockThinkingStart"
     let order: Int = 7
 
@@ -22,6 +26,9 @@ final class ContentBlockThinkingStartMiddleware: ConversationTurnMiddleware {
             ctx.runtimeStore.thinkingConversationIds.insert(conversationId)
             if ctx.env.selectedConversationId() == conversationId {
                 ctx.ui.onThinkingStartedUI(conversationId)
+            }
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t) 思考开始")
             }
         }
 

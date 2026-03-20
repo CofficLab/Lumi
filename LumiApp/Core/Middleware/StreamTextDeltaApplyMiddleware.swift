@@ -1,8 +1,12 @@
 import Foundation
+import MagicKit
 
 /// 处理 streamEvent.textDelta：累积增量文本并按节流策略刷新 UI，然后短路事件下游。
 @MainActor
-final class StreamTextDeltaApplyMiddleware: ConversationTurnMiddleware {
+final class StreamTextDeltaApplyMiddleware: ConversationTurnMiddleware, SuperLog {
+    nonisolated static let emoji = "📝"
+    nonisolated static let verbose = true
+
     let id: String = "core.streamTextDeltaApply"
     let order: Int = 9
 
@@ -29,6 +33,10 @@ final class StreamTextDeltaApplyMiddleware: ConversationTurnMiddleware {
             conversationId,
             ctx.runtimeStore.pendingStreamTextByConversation[conversationId, default: ""].count >= ctx.env.immediateStreamFlushChars
         )
+
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t) 累积文本增量 +\(content.count) 字符")
+        }
 
         // 短路：textDelta 已应用，无需进入核心 handler。
     }

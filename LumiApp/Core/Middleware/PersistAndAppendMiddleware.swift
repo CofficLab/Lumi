@@ -1,4 +1,5 @@
 import Foundation
+import MagicKit
 
 /// 持久化并追加到 UI 的中间件
 ///
@@ -7,10 +8,13 @@ import Foundation
 /// - toolResultReceived
 ///
 /// 目标：
-/// - 统一“追加到消息列表 + 落库 + runtimeState 更新”的逻辑
+/// - 统一"追加到消息列表 + 落库 + runtimeState 更新"的逻辑
 /// - 让核心 handler 更接近纯路由器
 @MainActor
-final class PersistAndAppendMiddleware: ConversationTurnMiddleware {
+final class PersistAndAppendMiddleware: ConversationTurnMiddleware, SuperLog {
+    nonisolated static let emoji = "💾"
+    nonisolated static let verbose = true
+
     let id: String = "core.persistAndAppend"
     let order: Int = 40
 
@@ -21,6 +25,9 @@ final class PersistAndAppendMiddleware: ConversationTurnMiddleware {
     ) async {
         switch event {
         case let .responseReceived(message, conversationId):
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t) 收到响应消息")
+            }
             let list = ctx.actions.messages()
             if let idx = list.lastIndex(where: { $0.content == ChatMessage.loadingLocalModelSystemContentKey }) {
                 var updated = list[idx]
@@ -40,6 +47,9 @@ final class PersistAndAppendMiddleware: ConversationTurnMiddleware {
             return // 短路
 
         case let .toolResultReceived(result, conversationId):
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t) 收到工具执行结果")
+            }
             if ctx.env.selectedConversationId() == conversationId {
                 ctx.actions.appendMessage(result)
             }
