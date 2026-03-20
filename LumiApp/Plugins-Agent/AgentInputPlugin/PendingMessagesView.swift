@@ -14,12 +14,12 @@ struct PendingMessagesView: View, SuperLog {
     nonisolated static let verbose = true
 
     /// 消息发送队列 ViewModel（直接订阅，确保 pendingMessages 变化时视图能刻刷新）
-    @ObservedObject var MessageSenderVM: MessageSenderVM
+    @EnvironmentObject var MessageSenderVM: MessageQueueVM
 
     /// 数据上下文
     @Environment(\.modelContext) private var modelContext
     /// 智能体提供者
-    @EnvironmentObject var agentProvider: AgentVM
+    @EnvironmentObject var agentProvider: WindowAgentCommands
 
     /// 缓存的会话标题
     @State private var cachedConversationTitle: String?

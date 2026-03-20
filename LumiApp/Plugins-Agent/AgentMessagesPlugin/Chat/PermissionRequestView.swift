@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 权限请求视图，用于显示工具执行请求并获取用户批准
 struct PermissionRequestView: View {
-    @EnvironmentObject private var agentProvider: AgentVM
+    @EnvironmentObject private var permissionHandlingVM: PermissionHandlingVM
     @EnvironmentObject private var permissionRequestViewModel: PermissionRequestVM
 
     var body: some View {
@@ -64,11 +64,11 @@ struct PermissionRequestView: View {
                         // MARK: - Actions
                         HStack(spacing: 12) {
                             GlassButton(title: LocalizedStringKey("Deny"), tableName: "DevAssistant", style: .ghost) {
-                                Task { await agentProvider.respondToPermissionRequest(allowed: false) }
+                                Task { await permissionHandlingVM.respondToPermissionRequest(allowed: false) }
                             }
 
                             GlassButton(title: LocalizedStringKey("Allow"), tableName: "DevAssistant", style: .primary) {
-                                Task { await agentProvider.respondToPermissionRequest(allowed: true) }
+                                Task { await permissionHandlingVM.respondToPermissionRequest(allowed: true) }
                             }
                         }
                     }

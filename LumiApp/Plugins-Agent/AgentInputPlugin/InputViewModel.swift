@@ -5,7 +5,7 @@ import Combine
 /// 输入框本地状态 ViewModel
 ///
 /// ## 设计目的
-/// 将输入框文字状态从 `AgentVM` 中分离，使 `MacEditorView` 的每次击键
+/// 将输入框文字状态从 `AgentRuntime` 中分离，使 `MacEditorView` 的每次击键
 /// 只触发订阅了 `InputViewModel` 的视图重渲染，不再广播到整个 `agentProvider`
 /// 订阅者树，消除 LLM 流式输出时输入框卡顿的问题。
 @MainActor

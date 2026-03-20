@@ -8,7 +8,7 @@ import SwiftUI
 struct TurnCompletedDivider: View {
     let message: ChatMessage
 
-    @EnvironmentObject private var agentProvider: AgentVM
+    @EnvironmentObject private var agentProvider: WindowAgentCommands
 
     private var endText: String {
         switch agentProvider.languagePreference {

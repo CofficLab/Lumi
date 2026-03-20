@@ -265,7 +265,7 @@ actor BackgroundAgentTaskStore: SuperLog {
     /// - Returns: LLMConfig 对象
     private func makeCurrentLLMConfig() -> LLMConfig {
         let registry = ProviderRegistry()
-        LLMPluginsVM.registerAllProviders(to: registry)
+        LLMPluginProviderRegistration.registerAllProviders(to: registry)
 
         // 全局配置（与 ProjectVM.GlobalConfigKeys 保持一致）
         let globalProviderKey = "Agent_GlobalProviderId"

@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Chat header 上的可用工具按钮
 struct AvailableToolsButton: View {
-    @EnvironmentObject var agentProvider: AgentVM
+    @EnvironmentObject var agentProvider: WindowAgentCommands
 
     @State private var isPresented = false
 

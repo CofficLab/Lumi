@@ -8,7 +8,7 @@ struct UserMessage: View {
     let message: ChatMessage
     @Binding var showRawMessage: Bool
 
-    @EnvironmentObject private var agentProvider: AgentVM
+    @EnvironmentObject private var inputQueueVM: InputQueueVM
 
     /// 当前 macOS 登录用户名称
     private var currentUserName: String {
@@ -81,6 +81,6 @@ struct UserMessage: View {
     }
 
     private func resend() {
-        agentProvider.sendMessage(input: message.content, images: [])
+        inputQueueVM.enqueueText(message.content)
     }
 }

@@ -4,14 +4,6 @@ import Foundation
 /// 处理状态 ViewModel
 @MainActor
 final class ProcessingStateVM: ObservableObject {
-    enum Phase: String, Sendable {
-        case idle
-        case sending
-        case waitingFirstToken
-        case generating
-        case finishing
-    }
-
     /// 是否正在处理
     @Published public fileprivate(set) var isProcessing: Bool = false
 
@@ -19,7 +11,7 @@ final class ProcessingStateVM: ObservableObject {
     @Published public fileprivate(set) var lastHeartbeatTime: Date?
 
     /// 当前处理阶段（用于 UI 展示）
-    @Published public fileprivate(set) var phase: Phase = .idle
+    @Published public fileprivate(set) var phase: ProcessingStatePhase = .idle
 
     /// 从开始到首 token 的耗时（毫秒），收到首 token 后设置
     @Published public fileprivate(set) var timeToFirstTokenMs: Double?

@@ -1,0 +1,11 @@
+import Foundation
+
+/// `AgentRuntime` runtime 投影快照（供 Handler / 协调逻辑只读使用）。
+struct AgentRuntimeSnapshot: Sendable {
+    let isProcessing: Bool
+    let lastHeartbeatTime: Date?
+    let isThinking: Bool
+    let thinkingText: String
+    let pendingPermissionRequest: PermissionRequest?
+    let depthWarning: DepthWarning?
+}

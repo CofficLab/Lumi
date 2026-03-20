@@ -1,11 +1,9 @@
 import Foundation
 import MagicKit
 
-/// 对话轮次事件协调器
-///
-/// 负责消费 `ConversationTurnViewModel.events`，并将事件交给上层处理；同时提供卡顿看门狗与耗时日志。
+/// 消费 `ConversationTurnVM.events` 并跑中间件链；由 `RootView.task` 挂接生命周期（流式 chunk 高频，不宜用 `onChange` 驱动）。
 @MainActor
-final class ConversationTurnCoordinator: SuperLog {
+final class ConversationTurnPipelineHandler: SuperLog {
     nonisolated static let emoji = "🔁"
     nonisolated static let verbose = false
 
@@ -16,8 +14,7 @@ final class ConversationTurnCoordinator: SuperLog {
     private let ui: UIActions
     private let onFallbackEvent: (ConversationTurnEvent) async -> Void
 
-    private var task: Task<Void, Never>?
-    private var pipeline: MiddlewarePipeline<ConversationTurnEvent, ConversationTurnMiddlewareContext>?
+    private var pipeline: ConversationTurnPipeline?
     private var pluginsDidLoadObserver: NSObjectProtocol?
 
     struct Environment {
@@ -44,11 +41,10 @@ final class ConversationTurnCoordinator: SuperLog {
         let onTurnFinishedUI: (UUID) -> Void
         let onTurnFailedUI: (UUID, String) -> Void
 
-        // streaming / UI hooks
-        let onStreamStartedUI: (UUID, UUID) -> Void // (messageId, conversationId)
-        let onStreamFirstTokenUI: (UUID, Double?) -> Void // (conversationId, ttftMs?)
-        let onStreamFinishedUI: (UUID) -> Void // conversationId
-        let onThinkingStartedUI: (UUID) -> Void // conversationId
+        let onStreamStartedUI: (UUID, UUID) -> Void
+        let onStreamFirstTokenUI: (UUID, Double?) -> Void
+        let onStreamFinishedUI: (UUID) -> Void
+        let onThinkingStartedUI: (UUID) -> Void
         let setLastHeartbeatTime: (Date?) -> Void
         let setIsThinking: (Bool, UUID) -> Void
         let setThinkingText: (String, UUID) -> Void
@@ -70,10 +66,7 @@ final class ConversationTurnCoordinator: SuperLog {
         self.onFallbackEvent = onFallbackEvent
     }
 
-    func start() {
-        task?.cancel()
-
-        // 确保在插件加载完成后重建一次 pipeline（避免启动早期读取 middleware 导致缓存为空）
+    func run() async {
         if pluginsDidLoadObserver == nil {
             pluginsDidLoadObserver = NotificationCenter.default.addObserver(
                 forName: .pluginsDidLoad,
@@ -87,49 +80,44 @@ final class ConversationTurnCoordinator: SuperLog {
         }
 
         rebuildPipeline()
-
-        task = Task { [weak self] in
-            guard let self else { return }
-            for await event in self.conversationTurnViewModel.events {
-                let start = CFAbsoluteTimeGetCurrent()
-                let eventName = self.describe(event)
-                let hangWatchdog = Task { [loggerTag = Self.t] in
-                    try? await Task.sleep(nanoseconds: 2_000_000_000)
-                    guard !Task.isCancelled else { return }
-                    AppLogger.core.error("\(loggerTag)⏳ 事件处理疑似卡住(>2s): \(eventName)")
-                }
-
-                let ctx = ConversationTurnMiddlewareContext(
-                    runtimeStore: self.runtimeStore,
-                    env: self.env,
-                    actions: self.messages,
-                    ui: self.ui
-                )
-
-                if let pipeline = self.pipeline {
-                    await pipeline.run(event, ctx: ctx) { event, _ in
-                        await self.handle(event)
-                    }
-                } else {
-                    await self.handle(event)
-                }
-
-                hangWatchdog.cancel()
-                let elapsed = CFAbsoluteTimeGetCurrent() - start
-                if elapsed > 1 {
-                    AppLogger.core.error("\(Self.t)⏱️ 事件处理耗时异常: \(eventName) took \(String(format: "%.3f", elapsed))s")
-                }
+        defer {
+            if let pluginsDidLoadObserver {
+                NotificationCenter.default.removeObserver(pluginsDidLoadObserver)
+                self.pluginsDidLoadObserver = nil
             }
         }
-    }
 
-    func stop() {
-        task?.cancel()
-        task = nil
-        
-        if let pluginsDidLoadObserver {
-            NotificationCenter.default.removeObserver(pluginsDidLoadObserver)
-            self.pluginsDidLoadObserver = nil
+        for await event in conversationTurnViewModel.events {
+            if Task.isCancelled { break }
+
+            let start = CFAbsoluteTimeGetCurrent()
+            let eventName = describe(event)
+            let hangWatchdog = Task { [loggerTag = Self.t] in
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                guard !Task.isCancelled else { return }
+                AppLogger.core.error("\(loggerTag)⏳ 事件处理疑似卡住(>2s): \(eventName)")
+            }
+
+            let ctx = ConversationTurnMiddlewareContext(
+                runtimeStore: runtimeStore,
+                env: env,
+                actions: messages,
+                ui: ui
+            )
+
+            if let pipeline {
+                await pipeline.run(event, ctx: ctx) { event, _ in
+                    await self.handle(event)
+                }
+            } else {
+                await handle(event)
+            }
+
+            hangWatchdog.cancel()
+            let elapsed = CFAbsoluteTimeGetCurrent() - start
+            if elapsed > 1 {
+                AppLogger.core.error("\(Self.t)⏱️ 事件处理耗时异常: \(eventName) took \(String(format: "%.3f", elapsed))s")
+            }
         }
     }
 
@@ -162,7 +150,7 @@ final class ConversationTurnCoordinator: SuperLog {
             return a.id < b.id
         }
 
-        pipeline = MiddlewarePipeline<ConversationTurnEvent, ConversationTurnMiddlewareContext>(
+        pipeline = ConversationTurnPipeline(
             middlewares: all.map { m in
                 { event, ctx, next in
                     await m.handle(event: event, ctx: ctx, next: next)

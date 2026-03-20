@@ -11,8 +11,7 @@ extension Notification.Name {
 
 extension NotificationCenter {
     /// 发送「用户发送新消息」事件
-    /// 建议由核心 AgentVM 在确认发送请求后调用，而不是由具体 UI 组件调用。
-    static func postAgentUserDidSendMessage() {
+    static func postUserDidSendMessage() {
         NotificationCenter.default.post(name: .agentInputDidSendMessage, object: nil)
     }
 }

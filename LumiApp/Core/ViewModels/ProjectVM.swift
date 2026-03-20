@@ -60,10 +60,8 @@ final class ProjectVM: ObservableObject, SuperLog {
     private let contextService: ContextService
     private let providerRegistry: ProviderRegistry?
 
-    private enum GlobalConfigKeys {
-        static let providerId = "Agent_GlobalProviderId"
-        static let model = "Agent_GlobalModel"
-    }
+    private static let globalConfigProviderIdKey = "Agent_GlobalProviderId"
+    private static let globalConfigModelKey = "Agent_GlobalModel"
 
     init(
         contextService: ContextService = ContextService(),
@@ -183,7 +181,7 @@ final class ProjectVM: ObservableObject, SuperLog {
 
         // 兜底：本地扫描插件（用于 Preview / 测试等环境）
         let registry = ProviderRegistry()
-        LLMPluginsVM.registerAllProviders(to: registry)
+        LLMPluginProviderRegistration.registerAllProviders(to: registry)
         guard let providerType = registry.providerType(forId: providerId) else {
             return ""
         }
@@ -208,7 +206,7 @@ final class ProjectVM: ObservableObject, SuperLog {
 
         // 兜底：本地扫描插件（用于 Preview / 测试等环境）
         let registry = ProviderRegistry()
-        LLMPluginsVM.registerAllProviders(to: registry)
+        LLMPluginProviderRegistration.registerAllProviders(to: registry)
         if let firstType = registry.providerTypes.first {
             currentProviderId = firstType.id
             currentModel = firstType.defaultModel
@@ -221,8 +219,8 @@ final class ProjectVM: ObservableObject, SuperLog {
         guard currentProviderId.isEmpty, currentModel.isEmpty else { return }
 
         // 尝试读取全局配置
-        let globalProviderId = PluginStateStore.shared.string(forKey: GlobalConfigKeys.providerId)
-        let globalModel = PluginStateStore.shared.string(forKey: GlobalConfigKeys.model)
+        let globalProviderId = PluginStateStore.shared.string(forKey: Self.globalConfigProviderIdKey)
+        let globalModel = PluginStateStore.shared.string(forKey: Self.globalConfigModelKey)
 
         if let pid = globalProviderId, !pid.isEmpty,
            let model = globalModel, !model.isEmpty {
@@ -238,13 +236,13 @@ final class ProjectVM: ObservableObject, SuperLog {
     /// 在未选择项目时，保存全局供应商 ID
     func setGlobalProviderId(_ providerId: String) {
         currentProviderId = providerId
-        PluginStateStore.shared.set(providerId, forKey: GlobalConfigKeys.providerId)
+        PluginStateStore.shared.set(providerId, forKey: Self.globalConfigProviderIdKey)
     }
 
     /// 在未选择项目时，保存全局模型名称
     func setGlobalModel(_ model: String) {
         currentModel = model
-        PluginStateStore.shared.set(model, forKey: GlobalConfigKeys.model)
+        PluginStateStore.shared.set(model, forKey: Self.globalConfigModelKey)
     }
 
     /// 保存最近使用的项目

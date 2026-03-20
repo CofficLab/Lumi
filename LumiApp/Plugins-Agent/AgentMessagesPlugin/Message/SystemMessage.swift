@@ -8,7 +8,6 @@ struct SystemMessage: View {
     let message: ChatMessage
     @Binding var showRawMessage: Bool
 
-    @EnvironmentObject private var agentProvider: AgentVM
     @EnvironmentObject private var providerRegistry: ProviderRegistry
 
     var body: some View {
@@ -87,14 +86,15 @@ struct SystemMessage: View {
 /// 当当前供应商未配置 API Key 时，在系统消息中渲染的专用视图。
 /// 提供一个简化的「生成式 UI」卡片，支持直接为当前会话所用的供应商填写 API Key。
 private struct ApiKeyMissingSystemMessageView: View {
-    @EnvironmentObject private var agentProvider: AgentVM
+    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var agentSessionConfig: AgentSessionConfig
     @EnvironmentObject private var providerRegistry: ProviderRegistry
 
     @State private var currentProviderId: String = ""
     @State private var apiKey: String = ""
 
     private var languagePreference: LanguagePreference {
-        agentProvider.languagePreference
+        projectVM.languagePreference
     }
 
     private var titleText: String {
@@ -153,7 +153,7 @@ private struct ApiKeyMissingSystemMessageView: View {
                             get: { apiKey },
                             set: { newValue in
                                 apiKey = newValue
-                                agentProvider.setApiKey(newValue, for: currentProviderId)
+                                agentSessionConfig.setApiKey(newValue, for: currentProviderId)
                             }
                         )
                     )
@@ -174,7 +174,7 @@ private struct ApiKeyMissingSystemMessageView: View {
         }
         .onAppear {
             // 基于当前对话使用的配置初始化供应商 / API Key
-            let config = agentProvider.getCurrentConfig()
+            let config = agentSessionConfig.getCurrentConfig()
             currentProviderId = config.providerId
             apiKey = config.apiKey
         }
@@ -185,7 +185,7 @@ private struct ApiKeyMissingSystemMessageView: View {
 
 /// 本地模型正在加载或已就绪时，在系统消息中渲染的专用视图，展示状态与 LocalModelInfo 字段。
 private struct LoadingLocalModelSystemMessageView: View {
-    @EnvironmentObject private var agentProvider: AgentVM
+    @EnvironmentObject private var projectVM: ProjectVM
     @EnvironmentObject private var providerRegistry: ProviderRegistry
 
     let message: ChatMessage
@@ -202,12 +202,12 @@ private struct LoadingLocalModelSystemMessageView: View {
 
     private var statusText: String {
         if isLoading {
-            return agentProvider.languagePreference == .chinese ? "正在加载模型…" : "Loading model…"
+            return projectVM.languagePreference == .chinese ? "正在加载模型…" : "Loading model…"
         }
         if isFailed {
-            return agentProvider.languagePreference == .chinese ? "加载失败" : "Load failed"
+            return projectVM.languagePreference == .chinese ? "加载失败" : "Load failed"
         }
-        return agentProvider.languagePreference == .chinese ? "模型已就绪" : "Model ready"
+        return projectVM.languagePreference == .chinese ? "模型已就绪" : "Model ready"
     }
 
     private var provider: ProviderInfo? {
@@ -225,7 +225,7 @@ private struct LoadingLocalModelSystemMessageView: View {
     }
 
     private func ramText(minRAM: Int) -> String {
-        agentProvider.languagePreference == .chinese ? "\(minRAM) GB RAM 最低" : "\(minRAM) GB RAM min"
+        projectVM.languagePreference == .chinese ? "\(minRAM) GB RAM 最低" : "\(minRAM) GB RAM min"
     }
 
     var body: some View {
@@ -309,12 +309,12 @@ private struct LoadingLocalModelSystemMessageView: View {
                     .font(DesignTokens.Typography.caption2)
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 if info.supportsVision {
-                    Label(agentProvider.languagePreference == .chinese ? "视觉" : "Vision", systemImage: "eye")
+                    Label(projectVM.languagePreference == .chinese ? "视觉" : "Vision", systemImage: "eye")
                         .font(DesignTokens.Typography.caption2)
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
                 if info.supportsTools {
-                    Label(agentProvider.languagePreference == .chinese ? "工具" : "Tools", systemImage: "wrench.and.screwdriver")
+                    Label(projectVM.languagePreference == .chinese ? "工具" : "Tools", systemImage: "wrench.and.screwdriver")
                         .font(DesignTokens.Typography.caption2)
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }

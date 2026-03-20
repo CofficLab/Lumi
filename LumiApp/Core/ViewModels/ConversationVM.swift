@@ -112,7 +112,7 @@ final class ConversationVM: ObservableObject, SuperLog {
 
     /// 删除指定对话
     /// - Parameter conversation: 要删除的对话
-    /// - Note: 调用方（如 AgentVM）需要负责清理相关的消息发送队列
+    /// - Note: 调用方（如 AgentRuntime）需要负责清理相关的消息发送队列
     func deleteConversation(_ conversation: Conversation) {
         AppLogger.core.info("\(Self.t)🗑️ 开始删除对话：\(conversation.title)")
 

@@ -7,12 +7,18 @@ final class ChatTimelineViewModel: ObservableObject {
 
     @Published private(set) var state = ConversationRenderState()
 
-    private let agentProvider: AgentVM
+    private let streamingRender: AgentStreamingRender
+    private let windowAgentCommands: WindowAgentCommands
     private let conversationVM: ConversationVM
     private var cancellables = Set<AnyCancellable>()
 
-    init(agentProvider: AgentVM, conversationVM: ConversationVM) {
-        self.agentProvider = agentProvider
+    init(
+        streamingRender: AgentStreamingRender,
+        windowAgentCommands: WindowAgentCommands,
+        conversationVM: ConversationVM
+    ) {
+        self.streamingRender = streamingRender
+        self.windowAgentCommands = windowAgentCommands
         self.conversationVM = conversationVM
         self.state.selectedConversationId = conversationVM.selectedConversationId
         setupBindings()
@@ -100,7 +106,7 @@ final class ChatTimelineViewModel: ObservableObject {
         targetIDs.forEach { state.loadingToolCallIDs.insert($0) }
 
         Task { @MainActor in
-            let loadedMessages = await agentProvider.loadToolOutputMessages(
+            let loadedMessages = await windowAgentCommands.loadToolOutputMessages(
                 forConversationId: conversationId,
                 toolCallIDs: targetIDs
             )
@@ -157,7 +163,7 @@ final class ChatTimelineViewModel: ObservableObject {
             state.isLoadingMore = true
             defer { state.isLoadingMore = false }
 
-            let result = await agentProvider.loadMessagesPage(
+            let result = await windowAgentCommands.loadMessagesPage(
                 forConversationId: conversationId,
                 limit: Self.pageSize,
                 beforeTimestamp: state.oldestLoadedTimestamp
@@ -204,7 +210,7 @@ final class ChatTimelineViewModel: ObservableObject {
             }
             .store(in: &cancellables)
 
-        agentProvider.$streamingRenderVersion
+        streamingRender.$streamingRenderVersion
             .sink { [weak self] _ in
                 self?.refreshActiveStreamingMessage()
             }
@@ -237,10 +243,10 @@ final class ChatTimelineViewModel: ObservableObject {
         state.isLoadingMore = true
         defer { state.isLoadingMore = false }
 
-        let count = await agentProvider.getMessageCount(forConversationId: conversationId)
+        let count = await windowAgentCommands.getMessageCount(forConversationId: conversationId)
         state.totalMessageCount = count
 
-        let result = await agentProvider.loadMessagesPage(
+        let result = await windowAgentCommands.loadMessagesPage(
             forConversationId: conversationId,
             limit: Self.pageSize,
             beforeTimestamp: nil
@@ -276,7 +282,7 @@ final class ChatTimelineViewModel: ObservableObject {
     private func refreshActiveStreamingMessage() {
         guard let conversationId = state.selectedConversationId,
               conversationId == conversationVM.selectedConversationId,
-              let liveMessage = agentProvider.activeStreamingMessageForSelectedConversation
+              let liveMessage = streamingRender.activeStreamingMessageForSelectedConversation
         else {
             state.activeStreamingMessage = nil
             return

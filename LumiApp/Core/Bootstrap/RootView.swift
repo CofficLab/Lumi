@@ -1,63 +1,77 @@
+import Combine
+import Foundation
+import MagicAlert
+import MagicKit
 import SwiftData
 import SwiftUI
-import MagicAlert
 
 /// 根视图容器组件
 /// 为应用提供统一的上下文环境，管理核心服务初始化和环境注入
 ///
-/// ## 多窗口支持
+/// ## 架构说明
 ///
-/// `RootView` 现在支持多窗口模式，每个窗口有自己独立的 ViewModel 实例。
-/// 共享的服务层（如 LLMService、ModelContainer）仍然保持单例，
-/// 但窗口级的 ViewModel（如 AgentVM、MessageViewModel）是每个窗口独立的。
+/// 所有服务和 ViewModel 均为全局单例，通过 `RootViewContainer.shared` 管理。
+/// 多窗口场景下，所有窗口共享同一份状态和数据。
 ///
 /// ## 使用方式
 ///
 /// ```swift
-/// // 主窗口和设置窗口都使用 RootView，每个窗口有独立的状态
 /// ContentLayout()
-///     .inRootView()
-///
-/// SettingView()
 ///     .inRootView()
 /// ```
 struct RootView<Content>: View where Content: View {
     /// 视图内容
     var content: Content
 
-    /// 共享的服务容器（单例）
+    /// 全局服务容器（单例）
     @StateObject private var container = RootViewContainer.shared
-
-    /// 窗口级视图容器（每个窗口独立）
-    @StateObject private var windowContainer: WindowViewContainer
 
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
-        // 创建窗口级容器，传入共享服务
-        _windowContainer = StateObject(wrappedValue: WindowViewContainer(services: RootViewContainer.shared.services))
     }
 
     var body: some View {
         content
             .withMagicToast()
-            // 共享的全局服务（所有窗口共享）
+            // 全局服务（所有窗口共享）
             .environmentObject(container.appProvider)
             .environmentObject(container.ProjectVM)
             .environmentObject(container.providerRegistry)
             .environmentObject(PluginVM.shared)
-            // 窗口级 ViewModel（每个窗口独立）
-            .environmentObject(windowContainer.agentProvider)
-            .environmentObject(windowContainer.ConversationVM)
-            .environmentObject(windowContainer.messageViewModel)
-            .environmentObject(windowContainer.MessageSenderVM)
-            .environmentObject(windowContainer.commandSuggestionViewModel)
-            .environmentObject(windowContainer.depthWarningViewModel)
-            .environmentObject(windowContainer.processingStateViewModel)
-            .environmentObject(windowContainer.permissionRequestViewModel)
-            .environmentObject(windowContainer.thinkingStateViewModel)
-            .environmentObject(windowContainer.chatTimelineViewModel)
+            // ViewModel（全局共享）
+            .environmentObject(container.windowAgentCommands)
+            .environmentObject(container.conversationRuntimeStore)
+            .environmentObject(container.agentStreamingRender)
+            .environmentObject(container.agentSessionConfig)
+            .environmentObject(container.ConversationVM)
+            .environmentObject(container.messageViewModel)
+            .environmentObject(container.MessageSenderVM)
+            .environmentObject(container.agentAttachmentsVM)
+            .environmentObject(container.inputQueueVM)
+            .environmentObject(container.permissionHandlingVM)
+            .environmentObject(container.conversationCreationVM)
+            .environmentObject(container.commandSuggestionViewModel)
+            .environmentObject(container.depthWarningViewModel)
+            .environmentObject(container.processingStateViewModel)
+            .environmentObject(container.permissionRequestViewModel)
+            .environmentObject(container.thinkingStateViewModel)
+            .environmentObject(container.chatTimelineViewModel)
+            .environmentObject(container.projectContextRequestVM)
             .environmentObject(MystiqueThemeManager())
             .modelContainer(container.modelContainer)
+            .onAppear {
+                PreferencesLoadHandler.handle(projectVM: container.ProjectVM, slashCommandService: container.slashCommandService)
+                onInitialConversationLoaded()
+            }
+            .onChange(of: container.MessageSenderVM.pendingMessages.count) { oldCount, newCount in
+                onSenderPendingMessagesChanged()
+            }
+            .onChange(of: container.depthWarningViewModel.depthWarning, onDepthWarningStateChanged)
+            .onChange(of: container.projectContextRequestVM.request, onProjectContextRequestChanged)
+            .onChange(of: container.ConversationVM.selectedConversationId, onConversationSelectionChanged)
+            .task(id: ObjectIdentifier(container)) {
+                await container.windowAgentCommands.makeConversationTurnPipelineHandler().run()
+            }
     }
 }
 
@@ -67,6 +81,8 @@ struct RootView<Content>: View where Content: View {
 final class RootViewContainer: ObservableObject {
     /// 共享实例
     static let shared = RootViewContainer()
+
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - 服务
 
@@ -78,49 +94,51 @@ final class RootViewContainer: ObservableObject {
     let toolService: ToolService
     let providerRegistry: ProviderRegistry
 
-    /// 共享服务集合（用于创建窗口级 ViewModel）
-    var services: Services {
-        Services(
-            modelContainer: modelContainer,
-            contextService: contextService,
-            llmService: llmService,
-            promptService: promptService,
-            slashCommandService: slashCommandService,
-            toolService: toolService,
-            providerRegistry: providerRegistry,
-            appProvider: appProvider,
-            ProjectVM: ProjectVM,
-            commandSuggestionViewModel: commandSuggestionViewModel
-        )
-    }
-
-    /// 服务集合结构体
-    struct Services {
-        let modelContainer: ModelContainer
-        let contextService: ContextService
-        let llmService: LLMService
-        let promptService: PromptService
-        let slashCommandService: SlashCommandService
-        let toolService: ToolService
-        let providerRegistry: ProviderRegistry
-        let appProvider: GlobalVM
-        let ProjectVM: ProjectVM
-        let commandSuggestionViewModel: CommandSuggestionVM
-    }
-
     // MARK: - ViewModel
 
     let appProvider: GlobalVM
-    let ProjectVM: ProjectVM
+    let ProjectVM: Lumi.ProjectVM
     let commandSuggestionViewModel: CommandSuggestionVM
-    let messageViewModel: MessagePendingVM
-    let ConversationVM: ConversationVM
-    let MessageSenderVM: MessageSenderVM
-    let agentProvider: AgentVM
+
+    // MARK: - 聊天历史服务
+
+    let chatHistoryService: ChatHistoryService
+
+    // MARK: - UI 状态 VM
+
     let depthWarningViewModel: DepthWarningVM
     let processingStateViewModel: ProcessingStateVM
     let permissionRequestViewModel: PermissionRequestVM
     let thinkingStateViewModel: ThinkingStateVM
+
+    // MARK: - 消息相关 VM
+
+    let messageViewModel: MessagePendingVM
+    let ConversationVM: Lumi.ConversationVM
+    let MessageSenderVM: Lumi.MessageQueueVM
+
+    // MARK: - 输入与附件
+
+    let agentAttachmentsVM: AgentAttachmentsVM
+    let inputQueueVM: InputQueueVM
+
+    // MARK: - 对话轮次相关
+
+    let conversationTurnViewModel: ConversationTurnVM
+    let conversationRuntimeStore: ConversationRuntimeStore
+    let agentStreamingRender: AgentStreamingRender
+    let agentSessionConfig: AgentSessionConfig
+    let windowAgentCommands: WindowAgentCommands
+
+    // MARK: - 权限与对话创建
+
+    let permissionHandlingVM: PermissionHandlingVM
+    let conversationCreationVM: ConversationCreationVM
+    let projectContextRequestVM: ProjectContextRequestVM
+
+    // MARK: - 时间线
+
+    let chatTimelineViewModel: ChatTimelineViewModel
 
     // MARK: - 初始化
 
@@ -135,7 +153,7 @@ final class RootViewContainer: ObservableObject {
         // 初始化上下文服务
         self.contextService = ContextService()
 
-        // 初始化 LLM 服务（内部自动初始化 APIService 和 LLMAPIService）
+        // 初始化 LLM 服务
         self.llmService = LLMService()
 
         // 初始化提示词服务（依赖 ContextService）
@@ -146,75 +164,239 @@ final class RootViewContainer: ObservableObject {
 
         // 初始化工具服务
         self.toolService = ToolService(llmService: llmService)
-        
+
         // 复用 LLMService 中的供应商注册表（已通过插件完成注册）
         self.providerRegistry = llmService.providerRegistry
 
         // ========================================
-        // ViewModel 层
+        // 基础 ViewModel
         // ========================================
 
-        // 初始化状态 ViewModels
-        self.depthWarningViewModel = DepthWarningVM()
-        self.processingStateViewModel = ProcessingStateVM()
-        self.permissionRequestViewModel = PermissionRequestVM()
-        self.thinkingStateViewModel = ThinkingStateVM()
-
-        // 初始化聊天历史服务（依赖 LLMService）
-        let chatHistoryService = ChatHistoryService(
-            llmService: llmService,
-            modelContainer: self.modelContainer,
-            reason: "RootViewContainer"
-        )
-
-        // 初始化基础 ViewModel
         self.appProvider = GlobalVM()
         self.ProjectVM = Lumi.ProjectVM(
             contextService: contextService,
             providerRegistry: providerRegistry
         )
-        self.commandSuggestionViewModel = CommandSuggestionVM(slashCommandService: slashCommandService)
 
-        // 创建 MessageViewModel
+        // ========================================
+        // 聊天历史服务
+        // ========================================
+
+        self.chatHistoryService = ChatHistoryService(
+            llmService: llmService,
+            modelContainer: modelContainer,
+            reason: "RootViewContainer"
+        )
+
+        // ========================================
+        // UI 状态 VM
+        // ========================================
+
+        self.depthWarningViewModel = DepthWarningVM()
+        self.processingStateViewModel = ProcessingStateVM()
+        self.permissionRequestViewModel = PermissionRequestVM()
+        self.thinkingStateViewModel = ThinkingStateVM()
+
+        // ========================================
+        // 消息相关 VM
+        // ========================================
+
         self.messageViewModel = MessagePendingVM(chatHistoryService: chatHistoryService)
 
-        // 创建 ConversationVM
         self.ConversationVM = Lumi.ConversationVM(
             chatHistoryService: chatHistoryService,
             llmService: llmService,
             promptService: promptService
         )
 
-        // 创建 MessageSenderVM
-        self.MessageSenderVM = Lumi.MessageSenderVM()
+        self.MessageSenderVM = Lumi.MessageQueueVM()
 
-        // 初始化工具执行服务
+        // ========================================
+        // 输入与附件
+        // ========================================
+
+        self.agentAttachmentsVM = AgentAttachmentsVM()
+        self.inputQueueVM = InputQueueVM(
+            conversationVM: ConversationVM,
+            messageSenderVM: MessageSenderVM,
+            attachmentsVM: agentAttachmentsVM
+        )
+
+        // ========================================
+        // 命令建议
+        // ========================================
+
+        self.commandSuggestionViewModel = CommandSuggestionVM(slashCommandService: slashCommandService)
+
+        // ========================================
+        // 对话轮次相关
+        // ========================================
+
         let toolExecutionService = ToolExecutionService(toolService: toolService)
 
-        // 初始化对话轮次 ViewModel
-        let conversationTurnViewModel = ConversationTurnVM(
+        self.conversationTurnViewModel = ConversationTurnVM(
             llmService: llmService,
             toolExecutionService: toolExecutionService,
             promptService: promptService
         )
 
-        // 初始化 AgentVM
-        self.agentProvider = AgentVM(
+        self.conversationRuntimeStore = ConversationRuntimeStore()
+
+        self.agentStreamingRender = AgentStreamingRender(
+            runtimeStore: conversationRuntimeStore,
+            conversationVM: ConversationVM
+        )
+
+        self.agentSessionConfig = AgentSessionConfig(
+            projectVM: ProjectVM,
+            registry: providerRegistry,
+            chatHistoryService: chatHistoryService
+        )
+
+        // ========================================
+        // UI Handler
+        // ========================================
+
+        let agentUIHandler = DefaultAgentUIHandler(
+            conversationVM: ConversationVM,
+            processingStateViewModel: processingStateViewModel,
+            permissionRequestViewModel: permissionRequestViewModel,
+            thinkingStateViewModel: thinkingStateViewModel,
+            depthWarningViewModel: depthWarningViewModel
+        )
+
+        // ========================================
+        // WindowAgentCommands
+        // ========================================
+
+        self.windowAgentCommands = WindowAgentCommands(
+            runtimeStore: conversationRuntimeStore,
+            streamingRender: agentStreamingRender,
+            sessionConfig: agentSessionConfig,
             promptService: promptService,
             registry: providerRegistry,
             toolService: toolService,
             chatHistoryService: chatHistoryService,
             messageViewModel: messageViewModel,
             ConversationVM: ConversationVM,
-            MessageSenderVM: self.MessageSenderVM,
-            ProjectVM: ProjectVM,
+            MessageSenderVM: MessageSenderVM,
+            projectVM: ProjectVM,
             conversationTurnViewModel: conversationTurnViewModel,
             slashCommandService: slashCommandService,
-            depthWarningViewModel: self.depthWarningViewModel,
-            processingStateViewModel: self.processingStateViewModel,
-            permissionRequestViewModel: self.permissionRequestViewModel,
-            thinkingStateViewModel: self.thinkingStateViewModel
+            uiHandler: agentUIHandler
         )
+
+        // ========================================
+        // 权限与对话创建
+        // ========================================
+
+        self.permissionHandlingVM = PermissionHandlingVM(
+            runtimeStore: conversationRuntimeStore,
+            conversationVM: ConversationVM,
+            conversationTurnViewModel: conversationTurnViewModel,
+            messageViewModel: messageViewModel,
+            projectVM: ProjectVM,
+            uiHandler: agentUIHandler
+        )
+
+        self.conversationCreationVM = ConversationCreationVM(
+            promptService: promptService,
+            chatHistoryService: chatHistoryService,
+            messageSenderVM: MessageSenderVM,
+            conversationVM: ConversationVM,
+            projectVM: ProjectVM
+        )
+
+        self.projectContextRequestVM = ProjectContextRequestVM()
+
+        // ========================================
+        // 时间线
+        // ========================================
+
+        self.chatTimelineViewModel = ChatTimelineViewModel(
+            streamingRender: agentStreamingRender,
+            windowAgentCommands: windowAgentCommands,
+            conversationVM: ConversationVM
+        )
+
+        // `MessageSenderVM` 嵌套在容器内且非 @Published；若不转发 objectWillChange，RootView 不会因队列变化重绘，
+        // `.onChange(of: MessageSenderVM.pendingMessages.count)` 也不会触发。
+        MessageSenderVM.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+    }
+}
+
+// MARK: - Event Handling
+
+extension RootView {
+    func onSenderPendingMessagesChanged() {
+        SendMessageHandler.handle(
+            vm: container.MessageSenderVM,
+            messageViewModel: container.messageViewModel,
+            conversationVM: container.ConversationVM,
+            runtimeStore: container.conversationRuntimeStore,
+            sessionConfig: container.agentSessionConfig,
+            projectVM: container.ProjectVM,
+            windowAgentCommands: container.windowAgentCommands,
+            slashCommandService: container.slashCommandService,
+            enqueueTurnProcessing: { [weak commands = container.windowAgentCommands] conversationId, depth in
+                commands?.enqueueTurnProcessing(conversationId: conversationId, depth: depth)
+            }
+        )
+    }
+
+    func onDepthWarningStateChanged() {
+        DepthWarningStateHandler.handle()
+    }
+
+    func onProjectContextRequestChanged() {
+        ProjectContextRequestHandler.handle(
+            request: container.projectContextRequestVM.request,
+            container: container
+        )
+    }
+
+    func onInitialConversationLoaded() {
+        guard let conversationId = container.ConversationVM.selectedConversationId else { return }
+
+        let handler = ConversationChangedHandler(
+            windowAgentCommands: container.windowAgentCommands,
+            conversationVM: container.ConversationVM,
+            messageSenderVM: container.MessageSenderVM,
+            projectVM: container.ProjectVM,
+            promptService: container.promptService,
+            slashCommandService: container.slashCommandService,
+            messageViewModel: container.messageViewModel,
+            processingStateViewModel: container.processingStateViewModel,
+            thinkingStateViewModel: container.thinkingStateViewModel,
+            permissionRequestViewModel: container.permissionRequestViewModel,
+            depthWarningViewModel: container.depthWarningViewModel
+        )
+
+        Task { await handler.handle(conversationId: conversationId, applyProjectContext: false) }
+    }
+
+    func onConversationSelectionChanged() {
+        guard let conversationId = container.ConversationVM.selectedConversationId else { return }
+
+        let handler = ConversationChangedHandler(
+            windowAgentCommands: container.windowAgentCommands,
+            conversationVM: container.ConversationVM,
+            messageSenderVM: container.MessageSenderVM,
+            projectVM: container.ProjectVM,
+            promptService: container.promptService,
+            slashCommandService: container.slashCommandService,
+            messageViewModel: container.messageViewModel,
+            processingStateViewModel: container.processingStateViewModel,
+            thinkingStateViewModel: container.thinkingStateViewModel,
+            permissionRequestViewModel: container.permissionRequestViewModel,
+            depthWarningViewModel: container.depthWarningViewModel
+        )
+
+        Task { await handler.handle(conversationId: conversationId, applyProjectContext: true) }
     }
 }
 

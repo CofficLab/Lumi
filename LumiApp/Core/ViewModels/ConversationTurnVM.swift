@@ -2,33 +2,6 @@ import Foundation
 import MagicKit
 import SwiftUI
 
-@MainActor
-private struct TurnContext {
-    var currentDepth: Int = 0
-    var pendingToolCalls: [ToolCall] = []
-    var currentProviderId: String = ""
-    var chainStartedAt: Date?
-    var consecutiveEmptyToolTurns: Int = 0
-    var lastToolSignature: String?
-    var repeatedToolSignatureCount: Int = 0
-    var recentToolSignatures: [String] = []
-}
-
-/// 对话轮次事件
-enum ConversationTurnEvent: Sendable {
-    case responseReceived(ChatMessage, conversationId: UUID)
-    case streamChunk(content: String, messageId: UUID, conversationId: UUID)
-    case streamEvent(eventType: StreamEventType, content: String, rawEvent: String, messageId: UUID, conversationId: UUID)
-    case streamStarted(messageId: UUID, conversationId: UUID)
-    case streamFinished(message: ChatMessage, conversationId: UUID)
-    case toolResultReceived(ChatMessage, conversationId: UUID)
-    case permissionRequested(PermissionRequest, conversationId: UUID)
-    case maxDepthReached(currentDepth: Int, maxDepth: Int, conversationId: UUID)
-    case completed(conversationId: UUID)
-    case error(Error, conversationId: UUID)
-    case shouldContinue(depth: Int, conversationId: UUID)
-}
-
 /// 对话轮次处理 ViewModel
 @MainActor
 final class ConversationTurnVM: ObservableObject, SuperLog {
@@ -48,7 +21,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
 
     // MARK: - 会话上下文
 
-    private var turnContexts: [UUID: TurnContext] = [:]
+    private var turnContexts: [UUID: ConversationTurnContext] = [:]
     private let maxDepth = 60
     private let maxToolResultLength = 4_000
 
@@ -104,9 +77,9 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         }
         let isFinalStep = depth == maxDepth
 
-        var context = turnContexts[conversationId] ?? TurnContext()
+        var context = turnContexts[conversationId] ?? ConversationTurnContext()
         if depth == 0 {
-            context = TurnContext()
+            context = ConversationTurnContext()
             context.chainStartedAt = Date()
         }
         if context.chainStartedAt == nil {
@@ -160,7 +133,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
             let hasContent = !responseMsg.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             let hasToolCalls = !(responseMsg.toolCalls?.isEmpty ?? true)
 
-            context = turnContexts[conversationId] ?? TurnContext()
+            context = turnContexts[conversationId] ?? ConversationTurnContext()
             if hasToolCalls && !hasContent {
                 context.consecutiveEmptyToolTurns += 1
             } else {
@@ -188,7 +161,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
             if let toolCalls = responseMsg.toolCalls, !toolCalls.isEmpty {
                 if isFinalStep {
                     emitAbortedToolResults(for: toolCalls, conversationId: conversationId)
-                    var broken = turnContexts[conversationId] ?? TurnContext()
+                    var broken = turnContexts[conversationId] ?? ConversationTurnContext()
                     broken.pendingToolCalls.removeAll()
                     turnContexts[conversationId] = broken
                 // 在 UI 中给出明确的助手提示，而不是静默结束
@@ -209,7 +182,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                     AppLogger.core.info("\(self.t)[\(conversationId)] 收到 \(toolCalls.count) 个工具调用")
                 }
 
-                context = turnContexts[conversationId] ?? TurnContext()
+                context = turnContexts[conversationId] ?? ConversationTurnContext()
                 context.pendingToolCalls = toolCalls
                 turnContexts[conversationId] = context
 
@@ -240,7 +213,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                 if context.repeatedToolSignatureCount >= repeatedToolSignatureThreshold
                     || sameSignatureInWindow >= repeatedToolWindowThreshold {
                     emitAbortedToolResults(for: toolCalls, conversationId: conversationId)
-                    var broken = turnContexts[conversationId] ?? TurnContext()
+                    var broken = turnContexts[conversationId] ?? ConversationTurnContext()
                     broken.pendingToolCalls.removeAll()
                     turnContexts[conversationId] = broken
                     let explainMessage = ChatMessage.repeatedToolLoopMessage(
@@ -267,7 +240,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                     autoApproveRisk: autoApproveRisk
                 )
             } else {
-                context = turnContexts[conversationId] ?? TurnContext()
+                context = turnContexts[conversationId] ?? ConversationTurnContext()
                 context.lastToolSignature = nil
                 context.repeatedToolSignatureCount = 0
                 context.recentToolSignatures.removeAll(keepingCapacity: false)
@@ -278,7 +251,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                 }
             }
         } catch {
-            var failedContext = turnContexts[conversationId] ?? TurnContext()
+            var failedContext = turnContexts[conversationId] ?? ConversationTurnContext()
             failedContext.pendingToolCalls.removeAll()
             turnContexts[conversationId] = failedContext
 
@@ -496,7 +469,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
     }
 
     private func processPendingTools(conversationId: UUID, languagePreference: LanguagePreference) async {
-        var context = turnContexts[conversationId] ?? TurnContext()
+        var context = turnContexts[conversationId] ?? ConversationTurnContext()
 
         guard !context.pendingToolCalls.isEmpty else {
             eventContinuation.yield(.shouldContinue(depth: context.currentDepth + 1, conversationId: conversationId))

@@ -65,7 +65,7 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// 负责持久化用户的插件配置（启用/禁用状态）。
     /// 当设置变化时，会触发 UI 更新。
-    private let settingsStore: PluginSettingsStore
+    private let settingsStore: PluginSettingsVM
     
     /// Combine 订阅集合
     ///
@@ -89,7 +89,7 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// 如果 `autoDiscover` 为 true，会立即扫描并注册所有插件。
     /// 设为 false 可以延迟加载，常用于测试场景。
-    private init(settingsStore: PluginSettingsStore = PluginSettingsStore.shared, autoDiscover: Bool = true) {
+    private init(settingsStore: PluginSettingsVM = PluginSettingsVM.shared, autoDiscover: Bool = true) {
         self.settingsStore = settingsStore
 
         if autoDiscover {

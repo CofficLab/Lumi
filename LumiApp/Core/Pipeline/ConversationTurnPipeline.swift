@@ -20,18 +20,18 @@ protocol ConversationTurnMiddleware {
 @MainActor
 final class ConversationTurnMiddlewareContext {
     let runtimeStore: ConversationRuntimeStore
-    let env: ConversationTurnCoordinator.Environment
-    let actions: ConversationTurnCoordinator.MessageActions
-    let ui: ConversationTurnCoordinator.UIActions
+    let env: ConversationTurnPipelineHandler.Environment
+    let actions: ConversationTurnPipelineHandler.MessageActions
+    let ui: ConversationTurnPipelineHandler.UIActions
 
     let traceId: UUID
     let startedAt: Date
 
     init(
         runtimeStore: ConversationRuntimeStore,
-        env: ConversationTurnCoordinator.Environment,
-        actions: ConversationTurnCoordinator.MessageActions,
-        ui: ConversationTurnCoordinator.UIActions,
+        env: ConversationTurnPipelineHandler.Environment,
+        actions: ConversationTurnPipelineHandler.MessageActions,
+        ui: ConversationTurnPipelineHandler.UIActions,
         traceId: UUID = UUID(),
         startedAt: Date = Date()
     ) {
@@ -68,3 +68,39 @@ struct AnyConversationTurnMiddleware {
     }
 }
 
+/// 管线中的「下一环」：传入（可能已被上游修改的）事件与上下文，继续向下执行或结束。
+typealias ConversationTurnPipelineNext = @MainActor (ConversationTurnEvent, ConversationTurnMiddlewareContext) async -> Void
+
+/// 管线闭包形态中间件
+typealias ConversationTurnPipelineMiddleware = @MainActor (
+    _ event: ConversationTurnEvent,
+    _ ctx: ConversationTurnMiddlewareContext,
+    _ next: @escaping ConversationTurnPipelineNext
+) async -> Void
+
+/// 对话轮次事件中间件管线
+///
+/// - 中间件可以修改共享的 `ConversationTurnMiddlewareContext`（引用类型），并决定是否调用 `next`。
+/// - `terminal` 表示链尾默认处理逻辑（当没有中间件短路时执行）。
+@MainActor
+final class ConversationTurnPipeline {
+    private let middlewares: [ConversationTurnPipelineMiddleware]
+
+    init(middlewares: [ConversationTurnPipelineMiddleware]) {
+        self.middlewares = middlewares
+    }
+
+    func run(_ event: ConversationTurnEvent, ctx: ConversationTurnMiddlewareContext, terminal: @escaping ConversationTurnPipelineNext) async {
+        func makeNext(_ index: Int) -> ConversationTurnPipelineNext {
+            { @MainActor event, ctx in
+                if index < self.middlewares.count {
+                    await self.middlewares[index](event, ctx, makeNext(index + 1))
+                } else {
+                    await terminal(event, ctx)
+                }
+            }
+        }
+
+        await makeNext(0)(event, ctx)
+    }
+}

@@ -15,8 +15,11 @@ struct InputAreaView: View, SuperLog {
     /// 是否输出详细日志
     nonisolated static let verbose = true
 
-    /// 智能体提供者
-    @EnvironmentObject var agentProvider: AgentVM
+    /// 待发送附件
+    @EnvironmentObject private var agentAttachmentsVM: AgentAttachmentsVM
+
+    /// 入队器：只负责把输入入队
+    @EnvironmentObject private var inputQueueVM: InputQueueVM
 
     /// 会话管理 ViewModel
     @EnvironmentObject var ConversationVM: ConversationVM
@@ -47,11 +50,11 @@ struct InputAreaView: View, SuperLog {
     var body: some View {
         VStack(spacing: 8) {
             // 附件预览区域
-            if !agentProvider.pendingAttachments.isEmpty {
+            if !agentAttachmentsVM.pendingAttachments.isEmpty {
                 AttachmentPreviewView(
-                    attachments: agentProvider.pendingAttachments,
+                    attachments: agentAttachmentsVM.pendingAttachments,
                     onRemove: { id in
-                        agentProvider.removeAttachment(id: id)
+                        agentAttachmentsVM.removeAttachment(id: id)
                     }
                 )
             }
@@ -64,7 +67,7 @@ struct InputAreaView: View, SuperLog {
                     guard canChat else { return }
                     let text = inputViewModel.text
                     inputViewModel.clear()
-                    agentProvider.sendMessage(input: text)
+                    inputQueueVM.enqueueText(text)
                     // 发送后重置高度
                     editorHeight = MacEditorView.minHeight
                 },
@@ -87,7 +90,7 @@ struct InputAreaView: View, SuperLog {
                     } else {
                         let text = inputViewModel.text
                         inputViewModel.clear()
-                        agentProvider.sendMessage(input: text)
+                        inputQueueVM.enqueueText(text)
                         // 发送后重置高度
                         editorHeight = MacEditorView.minHeight
                     }
@@ -202,7 +205,7 @@ extension InputAreaView {
 
         if imageExtensions.contains(fileExtension) {
             // 图片文件：作为附件上传
-            agentProvider.handleImageUpload(url: fileURL)
+            agentAttachmentsVM.handleImageUpload(url: fileURL)
         } else {
             // 非图片文件：将文件路径插入到输入框
             // 使用 append 方法自动处理空格和光标位置
