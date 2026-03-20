@@ -263,22 +263,13 @@ enum SendMessageHandler: SuperLog {
         // 1) 投影到当前消息列表（仅当该会话仍处于选中状态）
         if conversationVM.selectedConversationId == conversationId {
             messageViewModel.appendMessage(message)
-            if verbose {
-                AppLogger.core.info("\(Self.t) 📋 [\(String(conversationId.uuidString.prefix(8)))] 消息已投影到 UI")
-            }
         }
 
         // 2) 落库保存
         await conversationVM.saveMessage(message, to: conversationId)
-        if verbose {
-            AppLogger.core.info("\(Self.t) 💾 [\(String(conversationId.uuidString.prefix(8)))] 消息已保存到数据库")
-        }
 
         // 3) 触发轮次处理（深度从 0 开始）
         enqueueTurnProcessing(conversationId, 0)
-        if verbose {
-            AppLogger.core.info("\(Self.t) 🔄 [\(String(conversationId.uuidString.prefix(8)))] 轮次处理已入队")
-        }
     }
 
     @MainActor

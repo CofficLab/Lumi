@@ -100,7 +100,6 @@ final class ConversationTurnPipelineHandler: SuperLog {
             AnyConversationTurnMiddleware(PingHeartbeatMiddleware()),
             AnyConversationTurnMiddleware(StreamStartedInitializeMiddleware()),
             AnyConversationTurnMiddleware(StreamChunkAccumulateMiddleware()),
-            AnyConversationTurnMiddleware(ThinkingDeltaThrottleMiddleware()),
             AnyConversationTurnMiddleware(ThinkingDeltaCaptureMiddleware()),
             AnyConversationTurnMiddleware(ContentBlockThinkingStartMiddleware()),
             AnyConversationTurnMiddleware(StreamEventIgnoreMiddleware()),
