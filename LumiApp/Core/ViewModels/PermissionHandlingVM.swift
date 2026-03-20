@@ -8,7 +8,7 @@ final class PermissionHandlingVM: ObservableObject {
     private let conversationTurnViewModel: ConversationTurnVM
     private let messageViewModel: MessagePendingVM
     private let projectVM: ProjectVM
-    private let uiHandler: AgentUIHandler
+    private let permissionRequestViewModel: PermissionRequestVM
 
     init(
         runtimeStore: ConversationRuntimeStore,
@@ -16,14 +16,14 @@ final class PermissionHandlingVM: ObservableObject {
         conversationTurnViewModel: ConversationTurnVM,
         messageViewModel: MessagePendingVM,
         projectVM: ProjectVM,
-        uiHandler: AgentUIHandler
+        permissionRequestViewModel: PermissionRequestVM
     ) {
         self.runtimeStore = runtimeStore
         self.conversationVM = conversationVM
         self.conversationTurnViewModel = conversationTurnViewModel
         self.messageViewModel = messageViewModel
         self.projectVM = projectVM
-        self.uiHandler = uiHandler
+        self.permissionRequestViewModel = permissionRequestViewModel
     }
 
     func respondToPermissionRequest(allowed: Bool) async {
@@ -32,7 +32,7 @@ final class PermissionHandlingVM: ObservableObject {
         else { return }
 
         runtimeStore.pendingPermissionByConversation[conversationId] = nil
-        uiHandler.setPendingPermissionRequest(nil, conversationId: conversationId)
+        permissionRequestViewModel.setPendingPermissionRequest(nil)
         runtimeStore.updateRuntimeState(for: conversationId)
 
         if allowed {

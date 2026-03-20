@@ -8,7 +8,7 @@ struct ChatToolbarView: View, SuperLog {
     /// 是否输出详细日志
     nonisolated static let verbose = false
 
-    @EnvironmentObject var agentTurnCoordinator: AgentTurnCoordinator
+    @EnvironmentObject var conversationTurnViewModel: ConversationTurnVM
     @EnvironmentObject var agentSessionConfig: AgentSessionConfig
     @EnvironmentObject var ProjectVM: ProjectVM
     @EnvironmentObject var ConversationVM: ConversationVM
@@ -63,7 +63,7 @@ extension ChatToolbarView {
     private var commitButtons: some View {
         HStack(spacing: 6) {
             // 从 PromptService 获取快捷短语
-            let phrases = agentTurnCoordinator.promptService.getQuickPhrases(
+            let phrases = conversationTurnViewModel.promptService.getQuickPhrases(
                 projectName: ProjectVM.currentProjectName,
                 projectPath: ProjectVM.currentProjectPath
             )

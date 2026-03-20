@@ -60,7 +60,6 @@ final class RootViewContainer: ObservableObject {
     let conversationRuntimeStore: ConversationRuntimeStore
     let agentStreamingRender: AgentStreamingRender
     let agentSessionConfig: AgentSessionConfig
-    let agentTurnCoordinator: AgentTurnCoordinator
 
     // MARK: - 权限与对话创建
 
@@ -167,14 +166,6 @@ final class RootViewContainer: ObservableObject {
         // 对话轮次相关
         // ========================================
 
-        let toolExecutionService = ToolExecutionService(toolService: toolService)
-
-        self.conversationTurnViewModel = ConversationTurnVM(
-            llmService: llmService,
-            toolExecutionService: toolExecutionService,
-            promptService: promptService
-        )
-
         self.conversationRuntimeStore = ConversationRuntimeStore()
 
         self.agentStreamingRender = AgentStreamingRender(
@@ -188,35 +179,25 @@ final class RootViewContainer: ObservableObject {
             chatHistoryService: chatHistoryService
         )
 
-        // ========================================
-        // UI Handler
-        // ========================================
+        let toolExecutionService = ToolExecutionService(toolService: toolService)
 
-        let agentUIHandler = DefaultAgentUIHandler(
-            conversationVM: ConversationVM,
+        self.conversationTurnViewModel = ConversationTurnVM(
+            llmService: llmService,
+            toolExecutionService: toolExecutionService,
+            promptService: promptService,
+            runtimeStore: conversationRuntimeStore,
+            streamingRender: agentStreamingRender,
+            sessionConfig: agentSessionConfig,
+            chatHistoryService: chatHistoryService,
+            toolService: toolService,
+            messageViewModel: messageViewModel,
+            ConversationVM: ConversationVM,
+            messageSenderVM: MessageSenderVM,
+            projectVM: ProjectVM,
             processingStateViewModel: processingStateViewModel,
             permissionRequestViewModel: permissionRequestViewModel,
             thinkingStateViewModel: thinkingStateViewModel,
             depthWarningViewModel: depthWarningViewModel
-        )
-
-        // ========================================
-        // AgentTurnCoordinator
-        // ========================================
-
-        self.agentTurnCoordinator = AgentTurnCoordinator(
-            runtimeStore: conversationRuntimeStore,
-            streamingRender: agentStreamingRender,
-            sessionConfig: agentSessionConfig,
-            promptService: promptService,
-            toolService: toolService,
-            chatHistoryService: chatHistoryService,
-            messageViewModel: messageViewModel,
-            ConversationVM: ConversationVM,
-            MessageSenderVM: MessageSenderVM,
-            projectVM: ProjectVM,
-            conversationTurnViewModel: conversationTurnViewModel,
-            uiHandler: agentUIHandler
         )
 
         // ========================================
@@ -229,7 +210,7 @@ final class RootViewContainer: ObservableObject {
             conversationTurnViewModel: conversationTurnViewModel,
             messageViewModel: messageViewModel,
             projectVM: ProjectVM,
-            uiHandler: agentUIHandler
+            permissionRequestViewModel: permissionRequestViewModel
         )
 
         self.conversationCreationVM = ConversationCreationVM(
@@ -260,7 +241,7 @@ final class RootViewContainer: ObservableObject {
             }
             .store(in: &cancellables)
 
-        agentTurnCoordinator.objectWillChange
+        conversationTurnViewModel.objectWillChange
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
             }

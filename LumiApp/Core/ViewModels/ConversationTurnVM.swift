@@ -1,8 +1,9 @@
+import Combine
 import Foundation
 import MagicKit
 import SwiftUI
 
-/// 对话轮次处理 ViewModel
+/// 对话轮次处理 ViewModel（含轮次任务队列、流水线构建与流式 flush；由 `RootView.task` 挂接事件消费）。
 @MainActor
 final class ConversationTurnVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "🔄"
@@ -17,7 +18,34 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
 
     private let llmService: LLMService
     private let toolExecutionService: ToolExecutionService
-    private let promptService: PromptService
+
+    /// 供工具栏等读取快捷短语（`PromptService` 为 actor，经引用同步调用其非隔离方法）。
+    let promptService: PromptService
+    let toolService: ToolService
+
+    let runtimeStore: ConversationRuntimeStore
+    let streamingRender: AgentStreamingRender
+    let sessionConfig: AgentSessionConfig
+    let chatHistoryService: ChatHistoryService
+    let messageViewModel: MessagePendingVM
+    let ConversationVM: ConversationVM
+    let messageSenderVM: MessageQueueVM
+    let projectVM: ProjectVM
+
+    private let processingStateViewModel: ProcessingStateVM
+    private let permissionRequestViewModel: PermissionRequestVM
+    private let thinkingStateViewModel: ThinkingStateVM
+    private let depthWarningViewModel: DepthWarningVM
+
+    private var pipelineCancellables = Set<AnyCancellable>()
+    private var turnTaskPipelineByConversation: [UUID: Task<Void, Never>] = [:]
+    private var turnTaskGenerationByConversation: [UUID: Int] = [:]
+    private let maxThinkingTextLength = 100_000
+    private let streamUIFlushInterval: TimeInterval = 0.08
+    private let thinkingUIFlushInterval: TimeInterval = 0.12
+    private let immediateStreamFlushChars = 80
+    private let immediateThinkingFlushChars = 120
+    private let captureThinkingContent = true
 
     // MARK: - 会话上下文
 
@@ -46,7 +74,20 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
     init(
         llmService: LLMService,
         toolExecutionService: ToolExecutionService,
-        promptService: PromptService
+        promptService: PromptService,
+        runtimeStore: ConversationRuntimeStore,
+        streamingRender: AgentStreamingRender,
+        sessionConfig: AgentSessionConfig,
+        chatHistoryService: ChatHistoryService,
+        toolService: ToolService,
+        messageViewModel: MessagePendingVM,
+        ConversationVM: ConversationVM,
+        messageSenderVM: MessageQueueVM,
+        projectVM: ProjectVM,
+        processingStateViewModel: ProcessingStateVM,
+        permissionRequestViewModel: PermissionRequestVM,
+        thinkingStateViewModel: ThinkingStateVM,
+        depthWarningViewModel: DepthWarningVM
     ) {
         var continuation: AsyncStream<ConversationTurnEvent>.Continuation!
         self.events = AsyncStream { continuation = $0 }
@@ -55,6 +96,25 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         self.llmService = llmService
         self.toolExecutionService = toolExecutionService
         self.promptService = promptService
+        self.toolService = toolService
+        self.runtimeStore = runtimeStore
+        self.streamingRender = streamingRender
+        self.sessionConfig = sessionConfig
+        self.chatHistoryService = chatHistoryService
+        self.messageViewModel = messageViewModel
+        self.ConversationVM = ConversationVM
+        self.messageSenderVM = messageSenderVM
+        self.projectVM = projectVM
+        self.processingStateViewModel = processingStateViewModel
+        self.permissionRequestViewModel = permissionRequestViewModel
+        self.thinkingStateViewModel = thinkingStateViewModel
+        self.depthWarningViewModel = depthWarningViewModel
+
+        runtimeStore.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &pipelineCancellables)
     }
 
     // MARK: - 对话轮次处理
@@ -509,4 +569,217 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         return "\(prefix)\n\n... [Tool output truncated to \(maxToolResultLength) characters]"
     }
 
+    // MARK: - 轮次流水线编排
+
+    func makeConversationTurnPipelineHandler() -> ConversationTurnPipelineHandler {
+        ConversationTurnPipelineHandler(
+            conversationTurnViewModel: self,
+            runtimeStore: runtimeStore,
+            env: .init(
+                selectedConversationId: { [weak self] in self?.ConversationVM.selectedConversationId },
+                maxThinkingTextLength: maxThinkingTextLength,
+                immediateStreamFlushChars: immediateStreamFlushChars,
+                immediateThinkingFlushChars: immediateThinkingFlushChars,
+                captureThinkingContent: captureThinkingContent
+            ),
+            messages: .init(
+                messages: { [weak self] in self?.messageViewModel.messages ?? [] },
+                appendMessage: { [weak self] m in self?.messageViewModel.appendMessage(m) },
+                updateMessage: { [weak self] m, idx in self?.messageViewModel.updateMessage(m, at: idx) },
+                saveMessage: { [weak self] m, cid in
+                    guard let self else { return }
+                    await self.ConversationVM.saveMessage(m, to: cid)
+                },
+                flushPendingStreamText: { [weak self] cid, force in
+                    self?.flushPendingStreamTextIfNeeded(for: cid, force: force)
+                },
+                flushPendingThinkingText: { [weak self] cid, force in
+                    self?.flushPendingThinkingTextIfNeeded(for: cid, force: force)
+                },
+                updateRuntimeState: { [weak self] cid in
+                    self?.updateRuntimeState(for: cid)
+                }
+            ),
+            ui: conversationTurnPipelineUIActions(),
+            onFallbackEvent: { [weak self] event in
+                guard let self else { return }
+                await self.handleConversationTurnEventFallback(event)
+            }
+        )
+    }
+
+    private func conversationTurnPipelineUIActions() -> ConversationTurnMiddlewareUIActions {
+        let processing = processingStateViewModel
+        let permission = permissionRequestViewModel
+        let thinking = thinkingStateViewModel
+        let depth = depthWarningViewModel
+        return .init(
+            setPendingPermissionRequest: { request, _ in
+                permission.setPendingPermissionRequest(request)
+            },
+            setDepthWarning: { warning, _ in
+                depth.setDepthWarning(warning)
+            },
+            onTurnFinishedUI: { _ in
+                processing.finish()
+            },
+            onTurnFailedUI: { _, _ in
+                processing.finish()
+            },
+            onStreamStartedUI: { [weak self] _, conversationId in
+                guard let self else { return }
+                processing.markStreamStarted()
+                if self.ConversationVM.selectedConversationId == conversationId {
+                    self.streamingRender.bump()
+                }
+            },
+            onStreamFirstTokenUI: { _, ttftMs in
+                if let ttftMs {
+                    processing.markFirstToken(ttftMs: ttftMs)
+                } else {
+                    processing.markGenerating()
+                }
+            },
+            onStreamFinishedUI: { [weak self] conversationId in
+                guard let self else { return }
+                thinking.setThinkingText(
+                    self.runtimeStore.thinkingTextByConversation[conversationId] ?? "",
+                    for: conversationId
+                )
+                thinking.setIsThinking(false, for: conversationId)
+                processing.finish()
+                self.runtimeStore.streamingTextByConversation[conversationId] = nil
+                if self.ConversationVM.selectedConversationId == conversationId {
+                    self.streamingRender.bump()
+                }
+            },
+            onThinkingStartedUI: { conversationId in
+                thinking.setIsThinking(true, for: conversationId)
+            },
+            setLastHeartbeatTime: { date in
+                processing.setLastHeartbeatTime(date)
+            },
+            setIsThinking: { isThinking, cid in
+                thinking.setIsThinking(isThinking, for: cid)
+            },
+            setThinkingText: { text, cid in
+                thinking.setThinkingText(text, for: cid)
+            }
+        )
+    }
+
+    /// 取消任务后重置与轮次相关的 UI VM（权限气泡、处理中、思考态）。
+    func resetUIAfterAgentCancel(for conversationId: UUID) {
+        processingStateViewModel.setIsProcessing(false)
+        thinkingStateViewModel.setIsThinking(false, for: conversationId)
+        permissionRequestViewModel.setPendingPermissionRequest(nil)
+    }
+
+    private func handleConversationTurnEventFallback(_ event: ConversationTurnEvent) async {
+        switch event {
+        case let .shouldContinue(depth, conversationId):
+            enqueueTurnProcessing(conversationId: conversationId, depth: depth)
+        default:
+            break
+        }
+    }
+
+    func enqueueTurnProcessing(conversationId: UUID, depth: Int) {
+        let previousTask: Task<Void, Never>?
+        if depth == 0 {
+            if Self.verbose, turnTaskPipelineByConversation[conversationId] != nil {
+                AppLogger.core.info("\(Self.t)🧵 [\(conversationId)] 新消息到达，取消旧轮次链路")
+            }
+            turnTaskPipelineByConversation[conversationId]?.cancel()
+            turnTaskPipelineByConversation[conversationId] = nil
+            previousTask = nil
+        } else {
+            previousTask = turnTaskPipelineByConversation[conversationId]
+        }
+        let generation = (turnTaskGenerationByConversation[conversationId] ?? 0) + 1
+        turnTaskGenerationByConversation[conversationId] = generation
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t)🧵 [\(conversationId)] 轮次入队 depth=\(depth), gen=\(generation)")
+        }
+
+        let task = Task { [weak self] in
+            if let previousTask {
+                await previousTask.value
+            }
+            guard let self else { return }
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)🧵 [\(conversationId)] 开始执行轮次 depth=\(depth), gen=\(generation)")
+            }
+            await self.runTurnJob(conversationId: conversationId, depth: depth)
+
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                if self.turnTaskGenerationByConversation[conversationId] == generation {
+                    self.turnTaskPipelineByConversation[conversationId] = nil
+                }
+            }
+        }
+
+        turnTaskPipelineByConversation[conversationId] = task
+    }
+
+    func updateRuntimeState(for conversationId: UUID) {
+        runtimeStore.updateRuntimeState(for: conversationId)
+    }
+
+    func flushPendingStreamTextIfNeeded(for conversationId: UUID, force: Bool = false) {
+        guard let pending = runtimeStore.pendingStreamTextByConversation[conversationId], !pending.isEmpty else {
+            return
+        }
+        let now = Date()
+        let lastFlush = runtimeStore.lastStreamFlushAtByConversation[conversationId] ?? .distantPast
+        guard force || now.timeIntervalSince(lastFlush) >= streamUIFlushInterval else {
+            return
+        }
+        runtimeStore.streamingTextByConversation[conversationId, default: ""] += pending
+        if ConversationVM.selectedConversationId == conversationId {
+            streamingRender.bump()
+        }
+        runtimeStore.pendingStreamTextByConversation[conversationId] = ""
+        runtimeStore.lastStreamFlushAtByConversation[conversationId] = now
+    }
+
+    func flushPendingThinkingTextIfNeeded(for conversationId: UUID, force: Bool = false) {
+        guard let pending = runtimeStore.pendingThinkingTextByConversation[conversationId], !pending.isEmpty else {
+            return
+        }
+        let now = Date()
+        let lastFlush = runtimeStore.lastThinkingFlushAtByConversation[conversationId] ?? .distantPast
+        guard force || now.timeIntervalSince(lastFlush) >= thinkingUIFlushInterval else {
+            return
+        }
+        guard ConversationVM.selectedConversationId == conversationId else { return }
+        thinkingStateViewModel.appendThinkingText(pending, for: conversationId)
+        runtimeStore.pendingThinkingTextByConversation[conversationId] = ""
+        runtimeStore.lastThinkingFlushAtByConversation[conversationId] = now
+    }
+
+    func appendPipelineMessage(_ message: ChatMessage) {
+        messageViewModel.appendMessage(message)
+    }
+
+    func cancelTurnPipeline(for conversationId: UUID) {
+        turnTaskPipelineByConversation[conversationId]?.cancel()
+        turnTaskPipelineByConversation[conversationId] = nil
+    }
+
+    private func runTurnJob(conversationId: UUID, depth: Int) async {
+        let messages = await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
+
+        await processTurn(
+            conversationId: conversationId,
+            depth: depth,
+            config: sessionConfig.getCurrentConfig(),
+            messages: messages,
+            chatMode: projectVM.chatMode,
+            tools: toolService.tools,
+            languagePreference: projectVM.languagePreference,
+            autoApproveRisk: projectVM.autoApproveRisk
+        )
+    }
 }

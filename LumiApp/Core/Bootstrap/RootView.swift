@@ -36,7 +36,7 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(container.ProjectVM)
             .environmentObject(container.providerRegistry)
             .environmentObject(container.pluginVM)
-            .environmentObject(container.agentTurnCoordinator)
+            .environmentObject(container.conversationTurnViewModel)
             .environmentObject(container.conversationRuntimeStore)
             .environmentObject(container.agentStreamingRender)
             .environmentObject(container.agentSessionConfig)
@@ -70,7 +70,7 @@ struct RootView<Content>: View where Content: View {
             .onChange(of: container.projectContextRequestVM.request, onProjectContextRequestChanged)
             .onChange(of: container.ConversationVM.selectedConversationId, onConversationSelectionChanged)
             .task(id: ObjectIdentifier(container)) {
-                await container.agentTurnCoordinator.makeConversationTurnPipelineHandler().run()
+                await container.conversationTurnViewModel.makeConversationTurnPipelineHandler().run()
             }
     }
 }
@@ -82,7 +82,7 @@ extension RootView {
         guard let conversationId else { return }
         CancelAgentTaskHandler.handle(
             conversationId: conversationId,
-            coordinator: container.agentTurnCoordinator
+            turnVM: container.conversationTurnViewModel
         )
         container.agentTaskCancellationVM.consumeRequest()
     }
@@ -96,8 +96,8 @@ extension RootView {
             sessionConfig: container.agentSessionConfig,
             projectVM: container.ProjectVM,
             slashCommandService: container.slashCommandService,
-            enqueueTurnProcessing: { [weak coord = container.agentTurnCoordinator] conversationId, depth in
-                coord?.enqueueTurnProcessing(conversationId: conversationId, depth: depth)
+            enqueueTurnProcessing: { [weak turn = container.conversationTurnViewModel] conversationId, depth in
+                turn?.enqueueTurnProcessing(conversationId: conversationId, depth: depth)
             }
         )
     }
