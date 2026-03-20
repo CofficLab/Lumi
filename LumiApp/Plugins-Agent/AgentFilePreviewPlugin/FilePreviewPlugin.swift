@@ -55,7 +55,7 @@ actor FilePreviewPlugin: SuperPlugin, SuperLog {
     init() {
         // 监听文件选择变化通知
         NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("AgentVMFileSelectionChanged"),
+            forName: .fileSelectionChanged,
             object: nil,
             queue: .main
         ) { [weak self] notification in

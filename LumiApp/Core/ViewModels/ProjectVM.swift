@@ -392,7 +392,7 @@ final class ProjectVM: ObservableObject, SuperLog {
         isFileSelected = selected
 
         // 发送文件选择变化通知
-        NotificationCenter.default.post(name: NSNotification.Name("AgentVMFileSelectionChanged"), object: nil)
+        NotificationCenter.default.post(name: .fileSelectionChanged, object: nil)
     }
 
     /// 设置文件内容

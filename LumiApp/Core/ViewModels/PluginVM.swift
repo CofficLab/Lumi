@@ -114,7 +114,7 @@ final class PluginVM: ObservableObject, SuperLog {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleFileSelectionChanged),
-            name: NSNotification.Name("AgentVMFileSelectionChanged"),
+            name: .fileSelectionChanged,
             object: nil
         )
     }
@@ -230,7 +230,7 @@ final class PluginVM: ObservableObject, SuperLog {
     deinit {
         NotificationCenter.default.removeObserver(
             self,
-            name: NSNotification.Name("AgentVMFileSelectionChanged"),
+            name: .fileSelectionChanged,
             object: nil
         )
     }
