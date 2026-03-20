@@ -684,7 +684,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         let finalTimeToFirstToken = await state.timeToFirstToken
 
         if Self.verbose >= 1 {
-            AppLogger.core.info("✅ 流式响应完成，总耗时：\(String(format: "%.2f", latency))ms, TTFT: \(String(format: "%.2f", finalTimeToFirstToken ?? 0))ms, 内容长度：\(finalContent.count)")
+            AppLogger.core.info("\(Self.t)✅ 流式响应完成，总耗时：\(String(format: "%.2f", latency))ms, TTFT: \(String(format: "%.2f", finalTimeToFirstToken ?? 0))ms, 内容长度：\(finalContent.count)")
         }
 
         // 计算总 token 数

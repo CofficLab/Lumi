@@ -121,7 +121,6 @@ extension MessageListView {
         }
         .listStyle(.plain)
         .environment(\.preferOuterScroll, true)
-        .padding(.vertical)
         .accessibilityLabel("消息列表")
         .accessibilityHint("按时间顺序展示会话消息")
         .background(

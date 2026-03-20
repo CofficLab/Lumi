@@ -21,7 +21,7 @@ struct ChatMessagesView: View {
                 EmptyStateView()
             }
         }
-        .background(.background.opacity(0.8))
+        .background(.background.opacity(0.6))
         .accessibilityElement(children: .contain)
         .accessibilityLabel("聊天消息区域")
     }
