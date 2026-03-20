@@ -61,7 +61,6 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
             .store(in: &cancellables)
     }
 
-    private typealias StreamSessionState = ConversationRuntimeStore.StreamSessionState
     private var turnTaskPipelineByConversation: [UUID: Task<Void, Never>] = [:]
     private var turnTaskGenerationByConversation: [UUID: Int] = [:]
     /// 单条消息思考内容最大保留字符数，超出部分在累积时截断、不会落库（reasoner 等模型可能输出较长思考）
@@ -305,26 +304,10 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
         await ConversationVM.saveMessage(message, to: conversationId)
     }
 
-    /// 取消指定会话正在进行的生成（队列、轮次任务、流式缓存与相关 UI）。
-    func cancelTask(for conversationId: UUID) {
-        messageSenderVM.cancelProcessing(for: conversationId, clearQueue: true)
+    /// 取消指定会话的续轮 `Task`（具体取消流程见 `CancelAgentTaskHandler`）。
+    func cancelTurnPipeline(for conversationId: UUID) {
         turnTaskPipelineByConversation[conversationId]?.cancel()
         turnTaskPipelineByConversation[conversationId] = nil
-        runtimeStore.processingConversationIds.remove(conversationId)
-        runtimeStore.streamStateByConversation[conversationId] = StreamSessionState(messageId: nil, messageIndex: nil)
-        runtimeStore.pendingStreamTextByConversation[conversationId] = nil
-        runtimeStore.streamingTextByConversation[conversationId] = nil
-        runtimeStore.thinkingConversationIds.remove(conversationId)
-        runtimeStore.pendingPermissionByConversation[conversationId] = nil
-        streamingRender.bump()
-        updateRuntimeState(for: conversationId)
-
-        AppLogger.core.info("\(Self.t)🛑 任务已取消 [\(String(conversationId.uuidString.prefix(8)))]")
-        uiHandler.setIsProcessing(false)
-        uiHandler.setIsThinking(false, for: conversationId)
-        uiHandler.setPendingPermissionRequest(nil, conversationId: conversationId)
-        let cancelMessage = projectVM.languagePreference == .chinese ? "⚠️ 生成已取消" : "⚠️ Generation cancelled"
-        appendMessage(ChatMessage(role: .assistant, content: cancelMessage))
     }
 
     // MARK: - 对话轮次处理
