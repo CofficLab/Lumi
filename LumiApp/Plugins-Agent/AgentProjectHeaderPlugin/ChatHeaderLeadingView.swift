@@ -3,7 +3,6 @@ import SwiftUI
 
 /// 头部左侧视图：应用图标、当前项目名、未选项目时的提示条
 struct ChatHeaderLeadingView: View {
-    @EnvironmentObject var agentProvider: WindowAgentCommands
     @EnvironmentObject var projectVM: ProjectVM
 
     @State private var isProjectSelectorPresented = false

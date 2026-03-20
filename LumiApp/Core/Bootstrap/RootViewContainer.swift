@@ -60,7 +60,7 @@ final class RootViewContainer: ObservableObject {
     let conversationRuntimeStore: ConversationRuntimeStore
     let agentStreamingRender: AgentStreamingRender
     let agentSessionConfig: AgentSessionConfig
-    let windowAgentCommands: WindowAgentCommands
+    let agentTurnCoordinator: AgentTurnCoordinator
 
     // MARK: - 权限与对话创建
 
@@ -201,10 +201,10 @@ final class RootViewContainer: ObservableObject {
         )
 
         // ========================================
-        // WindowAgentCommands
+        // AgentTurnCoordinator
         // ========================================
 
-        self.windowAgentCommands = WindowAgentCommands(
+        self.agentTurnCoordinator = AgentTurnCoordinator(
             runtimeStore: conversationRuntimeStore,
             streamingRender: agentStreamingRender,
             sessionConfig: agentSessionConfig,
@@ -248,13 +248,19 @@ final class RootViewContainer: ObservableObject {
 
         self.chatTimelineViewModel = ChatTimelineViewModel(
             streamingRender: agentStreamingRender,
-            windowAgentCommands: windowAgentCommands,
+            chatHistoryService: chatHistoryService,
             conversationVM: ConversationVM
         )
 
         // `MessageSenderVM` 嵌套在容器内且非 @Published；若不转发 objectWillChange，RootView 不会因队列变化重绘，
         // `.onChange(of: MessageSenderVM.pendingMessages.count)` 也不会触发。
         MessageSenderVM.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
+        agentTurnCoordinator.objectWillChange
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
             }

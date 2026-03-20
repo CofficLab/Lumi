@@ -16,10 +16,7 @@ struct InputView: View, SuperLog {
     /// 是否输出详细日志
     nonisolated static let verbose = false
 
-    /// 智能体提供者
-    @EnvironmentObject var agentProvider: WindowAgentCommands
-
-    /// 输入框本地状态 ViewModel（与 agentProvider 解耦，避免每次击键触发全局重庆染）
+    /// 输入框本地状态 ViewModel（与全局环境解耦，避免每次击键触发全局重渲染）
     @StateObject private var inputViewModel = InputViewModel()
 
     /// 输入框是否处于聚焦状态

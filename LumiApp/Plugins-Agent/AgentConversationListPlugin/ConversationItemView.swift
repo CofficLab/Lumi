@@ -5,7 +5,7 @@ import SwiftUI
 /// 会话项视图
 /// 显示单个会话的标题、时间戳和项目信息，支持右键菜单删除操作
 struct ConversationItemView: View {
-    @EnvironmentObject var agentProvider: WindowAgentCommands
+    @EnvironmentObject var conversationRuntimeStore: ConversationRuntimeStore
 
     /// 会话模型：包含标题、更新时间、项目 ID 等信息
     let conversation: Conversation
@@ -56,7 +56,7 @@ struct ConversationItemView: View {
 extension ConversationItemView {
     @ViewBuilder
     private var statusIndicator: some View {
-        switch agentProvider.runtimeState(for: conversation.id) {
+        switch conversationRuntimeStore.runtimeState(for: conversation.id) {
         case .generating:
             Image(systemName: "ellipsis.message")
                 .font(.system(size: 9, weight: .semibold))

@@ -7,7 +7,6 @@ struct QuickStartActionsView: View {
     }
 
     @EnvironmentObject private var app: GlobalVM
-    @EnvironmentObject private var agentProvider: WindowAgentCommands
     @EnvironmentObject private var inputQueueVM: InputQueueVM
     @EnvironmentObject private var conversationCreationVM: ConversationCreationVM
     @EnvironmentObject private var projectVM: ProjectVM
@@ -44,7 +43,7 @@ struct QuickStartActionsView: View {
 
         switch projectVM.chatMode {
         case .chat:
-            if agentProvider.isProjectSelected {
+            if projectVM.isProjectSelected {
                 let projectName = normalizedProjectName
                 return [
                     "先帮我总结\(projectName)当前最值得关注的问题",

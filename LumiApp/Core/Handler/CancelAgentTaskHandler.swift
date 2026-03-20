@@ -7,7 +7,7 @@ enum CancelAgentTaskHandler: SuperLog {
     nonisolated static let verbose = false
 
     @MainActor
-    static func handle(conversationId: UUID, windowAgentCommands cmd: WindowAgentCommands) {
+    static func handle(conversationId: UUID, coordinator cmd: AgentTurnCoordinator) {
         cmd.messageSenderVM.cancelProcessing(for: conversationId, clearQueue: true)
         cmd.cancelTurnPipeline(for: conversationId)
 

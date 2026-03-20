@@ -1,12 +1,10 @@
 import Combine
 import Foundation
 import MagicKit
-import SwiftData
-
-/// 窗口内 Agent 对话的命令与副作用（消息、轮次、runtimeStore 等）。
-/// 编排时机由 `RootView` / `Handler` 触发；配置面见 `AgentSessionConfig`，流式刷新信号见 `AgentStreamingRender`。
+/// 窗口内对话轮次编排：续轮任务队列、流水线构建、流式 flush、落库代理等。
+/// 服务类依赖（`promptService` / `toolService`）仅因部分视图仍通过本对象读取；其余请直接使用对应 VM / Service。
 @MainActor
-final class WindowAgentCommands: ObservableObject, SuperLog {
+final class AgentTurnCoordinator: ObservableObject, SuperLog {
     nonisolated static let emoji = "🤖"
     nonisolated static let verbose = false
 
@@ -63,7 +61,6 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
 
     private var turnTaskPipelineByConversation: [UUID: Task<Void, Never>] = [:]
     private var turnTaskGenerationByConversation: [UUID: Int] = [:]
-    /// 单条消息思考内容最大保留字符数，超出部分在累积时截断、不会落库（reasoner 等模型可能输出较长思考）
     private let maxThinkingTextLength = 100_000
     private let streamUIFlushInterval: TimeInterval = 0.08
     private let thinkingUIFlushInterval: TimeInterval = 0.12
@@ -71,7 +68,6 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
     private let immediateThinkingFlushChars = 120
     private let captureThinkingContent = true
 
-    /// 由 `RootView.task` 挂接轮次事件流水线。
     func makeConversationTurnPipelineHandler() -> ConversationTurnPipelineHandler {
         ConversationTurnPipelineHandler(
             conversationTurnViewModel: conversationTurnViewModel,
@@ -84,12 +80,12 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
                 captureThinkingContent: captureThinkingContent
             ),
             messages: .init(
-                messages: { [weak self] in self?.messages ?? [] },
-                appendMessage: { [weak self] m in self?.appendMessage(m) },
-                updateMessage: { [weak self] m, idx in self?.updateMessage(m, at: idx) },
+                messages: { [weak self] in self?.messageViewModel.messages ?? [] },
+                appendMessage: { [weak self] m in self?.messageViewModel.appendMessage(m) },
+                updateMessage: { [weak self] m, idx in self?.messageViewModel.updateMessage(m, at: idx) },
                 saveMessage: { [weak self] m, cid in
                     guard let self else { return }
-                    await self.saveMessage(m, conversationId: cid)
+                    await self.ConversationVM.saveMessage(m, to: cid)
                 },
                 flushPendingStreamText: { [weak self] cid, force in
                     self?.flushPendingStreamTextIfNeeded(for: cid, force: force)
@@ -162,7 +158,6 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
         )
     }
 
-    /// Fallback：未下沉到 Coordinator 的事件仍由此处理
     private func handleConversationTurnEventFallback(_ event: ConversationTurnEvent) async {
         switch event {
         case let .shouldContinue(depth, conversationId):
@@ -172,14 +167,9 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
         }
     }
 
-    /// 触发指定会话的轮次处理
-    /// - Parameters:
-    ///   - conversationId: 会话 ID
-    ///   - depth: 递归深度
     func enqueueTurnProcessing(conversationId: UUID, depth: Int) {
         let previousTask: Task<Void, Never>?
         if depth == 0 {
-            // 新的用户消息应当抢占旧的续轮链路，避免被历史任务阻塞。
             if Self.verbose, turnTaskPipelineByConversation[conversationId] != nil {
                 AppLogger.core.info("\(Self.t)🧵 [\(conversationId)] 新消息到达，取消旧轮次链路")
             }
@@ -214,21 +204,6 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
         }
 
         turnTaskPipelineByConversation[conversationId] = task
-    }
-
-    func runtimeSnapshot(for conversationId: UUID) -> AgentRuntimeSnapshot {
-        .init(
-            isProcessing: runtimeStore.processingConversationIds.contains(conversationId),
-            lastHeartbeatTime: runtimeStore.lastHeartbeatByConversation[conversationId] ?? nil,
-            isThinking: runtimeStore.thinkingConversationIds.contains(conversationId),
-            thinkingText: runtimeStore.thinkingTextByConversation[conversationId] ?? "",
-            pendingPermissionRequest: runtimeStore.pendingPermissionByConversation[conversationId],
-            depthWarning: runtimeStore.depthWarningByConversation[conversationId]
-        )
-    }
-
-    func runtimeState(for conversationId: UUID) -> ConversationRuntimeState {
-        runtimeStore.runtimeState(for: conversationId)
     }
 
     func updateRuntimeState(for conversationId: UUID) {
@@ -267,53 +242,17 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
         runtimeStore.lastThinkingFlushAtByConversation[conversationId] = now
     }
 
-    // MARK: - 业务方法
-
-    /// 当前会话的消息列表（代理到 MessageViewModel）
-    var messages: [ChatMessage] {
-        messageViewModel.messages
-    }
-
-    /// 语言偏好（代理到 projectVM）
-    var languagePreference: LanguagePreference {
-        projectVM.languagePreference
-    }
-
-    /// 是否已选择项目（代理到 projectVM）
-    var isProjectSelected: Bool {
-        projectVM.isProjectSelected
-    }
-
-    /// 追加消息到列表
     func appendMessage(_ message: ChatMessage) {
         messageViewModel.appendMessage(message)
     }
 
-    /// 更新指定位置的消息
-    func updateMessage(_ message: ChatMessage, at index: Int) {
-        messageViewModel.updateMessage(message, at: index)
-    }
-
-    /// 保存消息到当前会话
-    func saveMessage(_ message: ChatMessage) async {
-        await ConversationVM.saveMessage(message)
-    }
-
-    /// 保存消息到指定会话
-    func saveMessage(_ message: ChatMessage, conversationId: UUID) async {
-        await ConversationVM.saveMessage(message, to: conversationId)
-    }
-
-    /// 取消指定会话的续轮 `Task`（具体取消流程见 `CancelAgentTaskHandler`）。
     func cancelTurnPipeline(for conversationId: UUID) {
         turnTaskPipelineByConversation[conversationId]?.cancel()
         turnTaskPipelineByConversation[conversationId] = nil
     }
 
-    // MARK: - 对话轮次处理
-
     func processTurn(conversationId: UUID, depth: Int = 0) async {
-        let messages = await getMessagesForLLM(conversationId: conversationId)
+        let messages = await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
 
         await conversationTurnViewModel.processTurn(
             conversationId: conversationId,
@@ -324,37 +263,6 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
             tools: toolService.tools,
             languagePreference: projectVM.languagePreference,
             autoApproveRisk: projectVM.autoApproveRisk
-        )
-    }
-
-    /// 获取发送给 LLM 的消息列表
-    private func getMessagesForLLM(conversationId: UUID) async -> [ChatMessage] {
-        await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
-    }
-
-    func getMessageCount(forConversationId conversationId: UUID) async -> Int {
-        await chatHistoryService.getMessageCount(forConversationId: conversationId)
-    }
-
-    func loadMessagesPage(
-        forConversationId conversationId: UUID,
-        limit: Int,
-        beforeTimestamp: Date? = nil
-    ) async -> (messages: [ChatMessage], hasMore: Bool) {
-        await chatHistoryService.loadMessagesPage(
-            forConversationId: conversationId,
-            limit: limit,
-            beforeTimestamp: beforeTimestamp
-        )
-    }
-
-    func loadToolOutputMessages(
-        forConversationId conversationId: UUID,
-        toolCallIDs: [String]
-    ) async -> [ChatMessage] {
-        await chatHistoryService.loadToolOutputMessages(
-            forConversationId: conversationId,
-            toolCallIDs: toolCallIDs
         )
     }
 }

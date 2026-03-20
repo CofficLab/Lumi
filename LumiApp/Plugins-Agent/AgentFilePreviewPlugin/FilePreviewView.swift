@@ -3,7 +3,6 @@ import SwiftUI
 
 /// 文件预览视图
 struct FilePreviewView: View {
-    @EnvironmentObject var agentProvider: WindowAgentCommands
     @EnvironmentObject var ProjectVM: ProjectVM
 
     /// 判断当前选择的文件是否为可预览的类型

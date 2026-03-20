@@ -24,12 +24,11 @@ enum SendMessageHandler: SuperLog {
         runtimeStore: ConversationRuntimeStore,
         sessionConfig: AgentSessionConfig,
         projectVM: ProjectVM,
-        windowAgentCommands: WindowAgentCommands?,
         slashCommandService: SlashCommandService,
         enqueueTurnProcessing: @escaping (UUID, Int) -> Void
     ) {
         guard !vm.pendingMessages.isEmpty else { return }
-        guard let conversationId = windowAgentCommands?.ConversationVM.selectedConversationId else {
+        guard let conversationId = conversationVM.selectedConversationId else {
             AppLogger.core.error("\(Self.t) 当前没有选中的会话")
             return
         }

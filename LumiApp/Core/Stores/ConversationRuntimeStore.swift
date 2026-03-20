@@ -113,4 +113,16 @@ final class ConversationRuntimeStore: ObservableObject {
 
         postProcessedMessageIdsByConversation.removeValue(forKey: conversationId)
     }
+
+    /// 供 `ConversationChangedHandler` 投影到各 UI VM 的快照。
+    func agentRuntimeSnapshot(for conversationId: UUID) -> AgentRuntimeSnapshot {
+        AgentRuntimeSnapshot(
+            isProcessing: processingConversationIds.contains(conversationId),
+            lastHeartbeatTime: lastHeartbeatByConversation[conversationId] ?? nil,
+            isThinking: thinkingConversationIds.contains(conversationId),
+            thinkingText: thinkingTextByConversation[conversationId] ?? "",
+            pendingPermissionRequest: pendingPermissionByConversation[conversationId],
+            depthWarning: depthWarningByConversation[conversationId]
+        )
+    }
 }

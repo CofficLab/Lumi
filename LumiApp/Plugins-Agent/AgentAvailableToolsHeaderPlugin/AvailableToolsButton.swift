@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Chat header 上的可用工具按钮
 struct AvailableToolsButton: View {
-    @EnvironmentObject var agentProvider: WindowAgentCommands
+    @EnvironmentObject var agentTurnCoordinator: AgentTurnCoordinator
 
     @State private var isPresented = false
 
@@ -23,7 +23,7 @@ struct AvailableToolsButton: View {
         .buttonStyle(.plain)
         .help(String(localized: "Show tools", table: "AgentAvailableToolsHeader"))
         .sheet(isPresented: $isPresented) {
-            AvailableToolsListSheetView(tools: agentProvider.toolService.tools)
+            AvailableToolsListSheetView(tools: agentTurnCoordinator.toolService.tools)
                 .frame(minWidth: 720, minHeight: 520)
         }
     }

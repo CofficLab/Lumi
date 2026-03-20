@@ -8,10 +8,10 @@ import SwiftUI
 struct TurnCompletedDivider: View {
     let message: ChatMessage
 
-    @EnvironmentObject private var agentProvider: WindowAgentCommands
+    @EnvironmentObject private var projectVM: ProjectVM
 
     private var endText: String {
-        switch agentProvider.languagePreference {
+        switch projectVM.languagePreference {
         case .chinese:
             return "结束"
         case .english:

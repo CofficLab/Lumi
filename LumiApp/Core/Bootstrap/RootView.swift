@@ -36,7 +36,7 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(container.ProjectVM)
             .environmentObject(container.providerRegistry)
             .environmentObject(container.pluginVM)
-            .environmentObject(container.windowAgentCommands)
+            .environmentObject(container.agentTurnCoordinator)
             .environmentObject(container.conversationRuntimeStore)
             .environmentObject(container.agentStreamingRender)
             .environmentObject(container.agentSessionConfig)
@@ -61,17 +61,16 @@ struct RootView<Content>: View where Content: View {
                 PreferencesLoadHandler.handle(projectVM: container.ProjectVM, slashCommandService: container.slashCommandService)
                 onInitialConversationLoaded()
             }
-            .onChange(of: container.MessageSenderVM.pendingMessages.count) { oldCount, newCount in
+            .onChange(of: container.MessageSenderVM.pendingMessages.count) { _, _ in
                 onSenderPendingMessagesChanged()
             }
             .onChange(of: container.agentTaskCancellationVM.conversationIdToCancel) { _, conversationId in
                 onAgentTaskCancellationRequested(conversationId)
             }
-            .onChange(of: container.depthWarningViewModel.depthWarning, onDepthWarningStateChanged)
             .onChange(of: container.projectContextRequestVM.request, onProjectContextRequestChanged)
             .onChange(of: container.ConversationVM.selectedConversationId, onConversationSelectionChanged)
             .task(id: ObjectIdentifier(container)) {
-                await container.windowAgentCommands.makeConversationTurnPipelineHandler().run()
+                await container.agentTurnCoordinator.makeConversationTurnPipelineHandler().run()
             }
     }
 }
@@ -83,7 +82,7 @@ extension RootView {
         guard let conversationId else { return }
         CancelAgentTaskHandler.handle(
             conversationId: conversationId,
-            windowAgentCommands: container.windowAgentCommands
+            coordinator: container.agentTurnCoordinator
         )
         container.agentTaskCancellationVM.consumeRequest()
     }
@@ -96,16 +95,11 @@ extension RootView {
             runtimeStore: container.conversationRuntimeStore,
             sessionConfig: container.agentSessionConfig,
             projectVM: container.ProjectVM,
-            windowAgentCommands: container.windowAgentCommands,
             slashCommandService: container.slashCommandService,
-            enqueueTurnProcessing: { [weak commands = container.windowAgentCommands] conversationId, depth in
-                commands?.enqueueTurnProcessing(conversationId: conversationId, depth: depth)
+            enqueueTurnProcessing: { [weak coord = container.agentTurnCoordinator] conversationId, depth in
+                coord?.enqueueTurnProcessing(conversationId: conversationId, depth: depth)
             }
         )
-    }
-
-    func onDepthWarningStateChanged() {
-        DepthWarningStateHandler.handle()
     }
 
     func onProjectContextRequestChanged() {
@@ -119,7 +113,7 @@ extension RootView {
         guard let conversationId = container.ConversationVM.selectedConversationId else { return }
 
         let handler = ConversationChangedHandler(
-            windowAgentCommands: container.windowAgentCommands,
+            runtimeStore: container.conversationRuntimeStore,
             conversationVM: container.ConversationVM,
             messageSenderVM: container.MessageSenderVM,
             projectVM: container.ProjectVM,
@@ -139,7 +133,7 @@ extension RootView {
         guard let conversationId = container.ConversationVM.selectedConversationId else { return }
 
         let handler = ConversationChangedHandler(
-            windowAgentCommands: container.windowAgentCommands,
+            runtimeStore: container.conversationRuntimeStore,
             conversationVM: container.ConversationVM,
             messageSenderVM: container.MessageSenderVM,
             projectVM: container.ProjectVM,

@@ -6,8 +6,6 @@ import MagicKit
 /// 心跳动画指示器
 /// 在处理状态时显示绿色脉冲圆点，提供视觉反馈
 struct HeartbeatIndicator: View {
-    /// 智能体提供者
-    @EnvironmentObject var agentProvider: WindowAgentCommands
     /// 处理状态 ViewModel
     @EnvironmentObject var processingStateViewModel: ProcessingStateVM
     @State private var isAnimating = false

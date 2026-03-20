@@ -18,8 +18,7 @@ struct PendingMessagesView: View, SuperLog {
 
     /// 数据上下文
     @Environment(\.modelContext) private var modelContext
-    /// 智能体提供者
-    @EnvironmentObject var agentProvider: WindowAgentCommands
+    @EnvironmentObject var ConversationVM: ConversationVM
 
     /// 缓存的会话标题
     @State private var cachedConversationTitle: String?
@@ -94,7 +93,7 @@ struct PendingMessagesView: View, SuperLog {
                     .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
             )
             .onAppear(perform: updateConversationTitle)
-            .onChange(of: agentProvider.ConversationVM.selectedConversationId) { _, _ in
+            .onChange(of: ConversationVM.selectedConversationId) { _, _ in
                 updateConversationTitle()
             }
         }
@@ -103,7 +102,7 @@ struct PendingMessagesView: View, SuperLog {
     // MARK: - Event Handler
 
     private func updateConversationTitle() {
-        guard let conversationId = agentProvider.ConversationVM.selectedConversationId else {
+        guard let conversationId = ConversationVM.selectedConversationId else {
             cachedConversationTitle = nil
             return
         }

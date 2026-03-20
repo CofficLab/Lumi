@@ -8,17 +8,17 @@ final class ChatTimelineViewModel: ObservableObject {
     @Published private(set) var state = ConversationRenderState()
 
     private let streamingRender: AgentStreamingRender
-    private let windowAgentCommands: WindowAgentCommands
+    private let chatHistoryService: ChatHistoryService
     private let conversationVM: ConversationVM
     private var cancellables = Set<AnyCancellable>()
 
     init(
         streamingRender: AgentStreamingRender,
-        windowAgentCommands: WindowAgentCommands,
+        chatHistoryService: ChatHistoryService,
         conversationVM: ConversationVM
     ) {
         self.streamingRender = streamingRender
-        self.windowAgentCommands = windowAgentCommands
+        self.chatHistoryService = chatHistoryService
         self.conversationVM = conversationVM
         self.state.selectedConversationId = conversationVM.selectedConversationId
         setupBindings()
@@ -106,7 +106,7 @@ final class ChatTimelineViewModel: ObservableObject {
         targetIDs.forEach { state.loadingToolCallIDs.insert($0) }
 
         Task { @MainActor in
-            let loadedMessages = await windowAgentCommands.loadToolOutputMessages(
+            let loadedMessages = await chatHistoryService.loadToolOutputMessages(
                 forConversationId: conversationId,
                 toolCallIDs: targetIDs
             )
@@ -163,7 +163,7 @@ final class ChatTimelineViewModel: ObservableObject {
             state.isLoadingMore = true
             defer { state.isLoadingMore = false }
 
-            let result = await windowAgentCommands.loadMessagesPage(
+            let result = await chatHistoryService.loadMessagesPage(
                 forConversationId: conversationId,
                 limit: Self.pageSize,
                 beforeTimestamp: state.oldestLoadedTimestamp
@@ -243,10 +243,10 @@ final class ChatTimelineViewModel: ObservableObject {
         state.isLoadingMore = true
         defer { state.isLoadingMore = false }
 
-        let count = await windowAgentCommands.getMessageCount(forConversationId: conversationId)
+        let count = await chatHistoryService.getMessageCount(forConversationId: conversationId)
         state.totalMessageCount = count
 
-        let result = await windowAgentCommands.loadMessagesPage(
+        let result = await chatHistoryService.loadMessagesPage(
             forConversationId: conversationId,
             limit: Self.pageSize,
             beforeTimestamp: nil

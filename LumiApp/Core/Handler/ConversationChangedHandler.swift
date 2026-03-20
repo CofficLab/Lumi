@@ -6,7 +6,7 @@ import Foundation
 /// - 可选：根据会话关联的项目，应用系统提示词与 slash command 的当前项目路径
 @MainActor
 final class ConversationChangedHandler {
-    private let windowAgentCommands: WindowAgentCommands
+    private let runtimeStore: ConversationRuntimeStore
     private let conversationVM: ConversationVM
     private let messageSenderVM: MessageQueueVM
     private let projectVM: ProjectVM
@@ -20,7 +20,7 @@ final class ConversationChangedHandler {
     private let depthWarningViewModel: DepthWarningVM
 
     init(
-        windowAgentCommands: WindowAgentCommands,
+        runtimeStore: ConversationRuntimeStore,
         conversationVM: ConversationVM,
         messageSenderVM: MessageQueueVM,
         projectVM: ProjectVM,
@@ -32,7 +32,7 @@ final class ConversationChangedHandler {
         permissionRequestViewModel: PermissionRequestVM,
         depthWarningViewModel: DepthWarningVM
     ) {
-        self.windowAgentCommands = windowAgentCommands
+        self.runtimeStore = runtimeStore
         self.conversationVM = conversationVM
         self.messageSenderVM = messageSenderVM
         self.projectVM = projectVM
@@ -50,7 +50,7 @@ final class ConversationChangedHandler {
         _ = messageSenderVM.switchToConversation(conversationId)
 
         // 2) 投影 runtime snapshot -> UI ViewModel
-        let snapshot = windowAgentCommands.runtimeSnapshot(for: conversationId)
+        let snapshot = runtimeStore.agentRuntimeSnapshot(for: conversationId)
         processingStateViewModel.setIsProcessing(snapshot.isProcessing)
         processingStateViewModel.setLastHeartbeatTime(snapshot.lastHeartbeatTime)
 
