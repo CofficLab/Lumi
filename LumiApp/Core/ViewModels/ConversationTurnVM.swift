@@ -375,20 +375,9 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         let accumulatedContent = responseMsg.content
         let receivedToolCalls = responseMsg.toolCalls
 
-        let hasContent = !accumulatedContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let hasToolCalls = receivedToolCalls != nil && !(receivedToolCalls?.isEmpty ?? true)
-
         var finalContent = accumulatedContent
 
-        if !hasContent && hasToolCalls {
-            let toolSummary = receivedToolCalls!.map(\.name).joined(separator: "\n")
-
-            let prefix = languagePreference == .chinese
-                ? "正在执行 \(receivedToolCalls!.count) 个工具："
-                : "Executing \(receivedToolCalls!.count) tools:"
-
-            finalContent = prefix + "\n" + toolSummary
-        }
+        // “空 content + toolCalls” 的展示增强已迁移到中间件：`EmptyToolResponseContentMiddleware`。
 
         let finalMessage = ChatMessage(
             id: messageId,
@@ -427,40 +416,10 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
             tools: availableTools.isEmpty ? nil : availableTools
         )
 
-        let hasContent = !responseMsg.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let hasToolCalls = responseMsg.toolCalls != nil && !(responseMsg.toolCalls?.isEmpty ?? true)
-
-        if !hasContent && hasToolCalls {
-            responseMsg = enhanceEmptyResponseWithToolSummary(responseMsg, languagePreference: languagePreference)
-        }
+        // “空 content + toolCalls” 的展示增强已迁移到中间件：`EmptyToolResponseContentMiddleware`。
 
         eventContinuation.yield(.responseReceived(responseMsg, conversationId: conversationId))
         return responseMsg
-    }
-
-    private func enhanceEmptyResponseWithToolSummary(
-        _ response: ChatMessage,
-        languagePreference: LanguagePreference
-    ) -> ChatMessage {
-        guard let toolCalls = response.toolCalls else { return response }
-
-        let toolSummary = toolCalls.map(\.name).joined(separator: "\n")
-
-        let prefix = languagePreference == .chinese
-            ? "正在执行 \(toolCalls.count) 个工具："
-            : "Executing \(toolCalls.count) tools:"
-
-        let enhancedContent = prefix + "\n" + toolSummary
-
-        return ChatMessage(
-            id: response.id,
-            role: response.role,
-            content: enhancedContent,
-            timestamp: response.timestamp,
-            isError: response.isError,
-            toolCalls: response.toolCalls,
-            toolCallID: response.toolCallID
-        )
     }
 
     // MARK: - 工具调用处理
@@ -507,11 +466,10 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
     ) async {
         do {
             let result = try await toolExecutionService.executeTool(toolCall)
-            let trimmedResult = truncateToolResultIfNeeded(result)
 
             let resultMsg = ChatMessage(
                 role: .tool,
-                content: trimmedResult,
+                content: result,
                 toolCallID: toolCall.id
             )
 
@@ -555,12 +513,6 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         }
     }
 
-    private func truncateToolResultIfNeeded(_ result: String) -> String {
-        guard result.count > maxToolResultLength else { return result }
-        let prefix = String(result.prefix(maxToolResultLength))
-        return "\(prefix)\n\n... [Tool output truncated to \(maxToolResultLength) characters]"
-    }
-
     // MARK: - 轮次流水线编排
 
     func makeConversationTurnPipelineHandler() -> ConversationTurnPipelineHandler {
@@ -569,7 +521,9 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
             runtimeStore: runtimeStore,
             env: .init(
                 selectedConversationId: { [weak self] in self?.ConversationVM.selectedConversationId },
+                languagePreference: { [weak self] in self?.projectVM.languagePreference ?? .chinese },
                 maxThinkingTextLength: maxThinkingTextLength,
+                maxToolResultLength: maxToolResultLength,
                 immediateStreamFlushChars: immediateStreamFlushChars,
                 immediateThinkingFlushChars: immediateThinkingFlushChars,
                 captureThinkingContent: captureThinkingContent
@@ -581,6 +535,9 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                 saveMessage: { [weak self] m, cid in
                     guard let self else { return }
                     await self.ConversationVM.saveMessage(m, to: cid)
+                },
+                enqueueTurnProcessing: { [weak self] cid, depth in
+                    self?.enqueueTurnProcessing(conversationId: cid, depth: depth)
                 },
                 flushPendingStreamText: { [weak self] cid, force in
                     self?.flushPendingStreamTextIfNeeded(for: cid, force: force)
@@ -669,8 +626,6 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
 
     private func handleConversationTurnEventFallback(_ event: ConversationTurnEvent) async {
         switch event {
-        case let .shouldContinue(depth, conversationId):
-            enqueueTurnProcessing(conversationId: conversationId, depth: depth)
         default:
             break
         }

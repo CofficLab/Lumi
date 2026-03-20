@@ -35,3 +35,4 @@ final class ContentBlockThinkingStartMiddleware: ConversationTurnMiddleware, Sup
         // 短路：该事件对核心 handler 不再有意义。
     }
 }
+

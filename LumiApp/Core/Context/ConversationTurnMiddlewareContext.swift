@@ -6,7 +6,9 @@ import MagicKit
 @MainActor
 struct ConversationTurnMiddlewareEnvironment {
     let selectedConversationId: () -> UUID?
+    let languagePreference: () -> LanguagePreference
     let maxThinkingTextLength: Int
+    let maxToolResultLength: Int
     let immediateStreamFlushChars: Int
     let immediateThinkingFlushChars: Int
     let captureThinkingContent: Bool
@@ -18,6 +20,7 @@ struct ConversationTurnMiddlewareMessageActions {
     let appendMessage: (ChatMessage) -> Void
     let updateMessage: (ChatMessage, Int) -> Void
     let saveMessage: (ChatMessage, UUID) async -> Void
+    let enqueueTurnProcessing: (UUID, Int) -> Void
     let flushPendingStreamText: (UUID, Bool) -> Void
     let flushPendingThinkingText: (UUID, Bool) -> Void
     let updateRuntimeState: (UUID) -> Void

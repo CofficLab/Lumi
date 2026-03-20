@@ -63,3 +63,4 @@ final class TurnCompletedFinalizeMiddleware: ConversationTurnMiddleware, SuperLo
         return .chinese
     }
 }
+

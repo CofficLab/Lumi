@@ -104,10 +104,13 @@ final class ConversationTurnPipelineHandler: SuperLog {
             AnyConversationTurnMiddleware(ContentBlockThinkingStartMiddleware()),
             AnyConversationTurnMiddleware(StreamEventIgnoreMiddleware()),
             AnyConversationTurnMiddleware(StreamTextDeltaApplyMiddleware()),
+            AnyConversationTurnMiddleware(EmptyToolResponseContentMiddleware()),
+            AnyConversationTurnMiddleware(ToolResultTruncateMiddleware()),
             AnyConversationTurnMiddleware(StreamFinishedFinalizeMiddleware()),
             AnyConversationTurnMiddleware(MaxDepthReachedFinalizeMiddleware()),
             AnyConversationTurnMiddleware(TurnCompletedFinalizeMiddleware()),
             AnyConversationTurnMiddleware(PersistAndAppendMiddleware()),
+            AnyConversationTurnMiddleware(ShouldContinueEnqueueMiddleware()),
             AnyConversationTurnMiddleware(TraceLoggingMiddleware())
         ]
 

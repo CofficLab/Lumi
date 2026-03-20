@@ -1,5 +1,6 @@
 import Foundation
 import MagicKit
+
 @MainActor
 struct TraceLoggingMiddleware: ConversationTurnMiddleware, SuperLog {
     nonisolated static let emoji = "🧭"

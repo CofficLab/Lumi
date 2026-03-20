@@ -57,3 +57,4 @@ final class StreamFinishedFinalizeMiddleware: ConversationTurnMiddleware, SuperL
         // 短路：streamFinished 已完全处理，不再进入核心 handler。
     }
 }
+
