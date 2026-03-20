@@ -24,10 +24,6 @@ final class ProjectVM: ObservableObject, SuperLog {
     // MARK: - 项目配置
 
     /// 当前项目的供应商 ID
-    ///
-    /// 默认值不再硬编码，而是由插件注册的供应商决定：
-    /// - 如果存在至少一个供应商，使用第一个供应商的 ID
-    /// - 如果没有任何供应商，保持为空字符串，Agent 模式将无法正常运行
     @Published public fileprivate(set) var currentProviderId: String = ""
 
     /// 当前项目的模型名称
@@ -145,7 +141,7 @@ final class ProjectVM: ObservableObject, SuperLog {
 
             // 通知供应商设置更新配置
             NotificationCenter.default.post(
-                name: NSNotification.Name("ProjectConfigApplied"),
+                name: .projectConfigApplied,
                 object: config
             )
 
