@@ -14,7 +14,12 @@ actor AgentOpenInCursorPlugin: SuperPlugin {
     static let description = String(localized: "Open current project in Cursor editor", table: "AgentOpenInCursor")
     static let iconName = "chevron.left.forwardslash.chevron.right"
     static var order: Int { 82 }
-    static let enable: Bool = true
+    
+    /// 用户可在设置中启用/禁用此插件
+    static var isConfigurable: Bool { true }
+    
+    /// 默认启用
+    static var enable: Bool { true }
 
     static let shared = AgentOpenInCursorPlugin()
 
