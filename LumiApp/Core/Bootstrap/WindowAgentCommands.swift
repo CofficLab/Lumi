@@ -11,7 +11,6 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
     nonisolated static let verbose = false
 
     let promptService: PromptService
-    let registry: ProviderRegistry
     let toolService: ToolService
     let chatHistoryService: ChatHistoryService
 
@@ -21,10 +20,9 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
 
     let messageViewModel: MessagePendingVM
     let ConversationVM: ConversationVM
-    var messageSenderVM: MessageQueueVM
+    let messageSenderVM: MessageQueueVM
     let projectVM: ProjectVM
     let conversationTurnViewModel: ConversationTurnVM
-    let slashCommandService: SlashCommandService
     let uiHandler: AgentUIHandler
 
     private var cancellables = Set<AnyCancellable>()
@@ -34,7 +32,6 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
         streamingRender: AgentStreamingRender,
         sessionConfig: AgentSessionConfig,
         promptService: PromptService,
-        registry: ProviderRegistry,
         toolService: ToolService,
         chatHistoryService: ChatHistoryService,
         messageViewModel: MessagePendingVM,
@@ -42,14 +39,12 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
         MessageSenderVM: MessageQueueVM,
         projectVM: ProjectVM,
         conversationTurnViewModel: ConversationTurnVM,
-        slashCommandService: SlashCommandService,
         uiHandler: AgentUIHandler
     ) {
         self.runtimeStore = runtimeStore
         self.streamingRender = streamingRender
         self.sessionConfig = sessionConfig
         self.promptService = promptService
-        self.registry = registry
         self.toolService = toolService
         self.chatHistoryService = chatHistoryService
         self.messageViewModel = messageViewModel
@@ -57,7 +52,6 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
         self.messageSenderVM = MessageSenderVM
         self.projectVM = projectVM
         self.conversationTurnViewModel = conversationTurnViewModel
-        self.slashCommandService = slashCommandService
         self.uiHandler = uiHandler
 
         runtimeStore.objectWillChange
@@ -116,7 +110,7 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
         )
     }
 
-    private func conversationTurnPipelineUIActions() -> ConversationTurnPipelineHandler.UIActions {
+    private func conversationTurnPipelineUIActions() -> ConversationTurnMiddlewareUIActions {
         let ui = uiHandler
         return .init(
             setPendingPermissionRequest: { request, conversationId in
@@ -169,23 +163,10 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
         )
     }
 
-    /// 清理与指定会话相关的所有运行时状态，避免内存泄漏
-    private func cleanupConversationState(_ conversationId: UUID) {
-        runtimeStore.cleanupConversationState(conversationId)
-
-        // 取消并移除轮次任务管线
-        if let task = turnTaskPipelineByConversation[conversationId] {
-            task.cancel()
-        }
-        turnTaskPipelineByConversation.removeValue(forKey: conversationId)
-        turnTaskGenerationByConversation.removeValue(forKey: conversationId)
-    }
-
     /// Fallback：未下沉到 Coordinator 的事件仍由此处理
     private func handleConversationTurnEventFallback(_ event: ConversationTurnEvent) async {
         switch event {
         case let .shouldContinue(depth, conversationId):
-            // 继续下一轮
             enqueueTurnProcessing(conversationId: conversationId, depth: depth)
         default:
             break
@@ -236,54 +217,6 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
         turnTaskPipelineByConversation[conversationId] = task
     }
 
-    // MARK: - 偏好设置加载
-    // 已迁移到 AgentUIHandler / 各 UI VM
-
-    // MARK: - Setter 方法
-
-    // MARK: - 公开 Setter 方法
-    /// 设置是否正在处理
-    func setIsProcessing(_ processing: Bool) {
-        uiHandler.setIsProcessing(processing)
-    }
-
-    /// 设置最后心跳时间
-    func setLastHeartbeatTime(_ date: Date?) {
-        uiHandler.setLastHeartbeatTime(date)
-    }
-
-    /// 设置思考状态
-    func setIsThinking(_ thinking: Bool, for conversationId: UUID) {
-        uiHandler.setIsThinking(thinking, for: conversationId)
-    }
-
-    /// 追加思考文本
-    func appendThinkingText(_ text: String, for conversationId: UUID) {
-        uiHandler.appendThinkingText(text, for: conversationId)
-    }
-
-    /// 设置思考文本
-    func setThinkingText(_ text: String, for conversationId: UUID) {
-        uiHandler.setThinkingText(text, for: conversationId)
-    }
-
-    /// 设置待处理权限请求
-    func setPendingPermissionRequest(_ request: PermissionRequest?) {
-        guard let conversationId = ConversationVM.selectedConversationId else { return }
-        uiHandler.setPendingPermissionRequest(request, conversationId: conversationId)
-    }
-
-    /// 设置深度警告
-    func setDepthWarning(_ warning: DepthWarning?) {
-        guard let conversationId = ConversationVM.selectedConversationId else { return }
-        uiHandler.setDepthWarning(warning, conversationId: conversationId)
-    }
-
-    /// 关闭深度警告
-    func dismissDepthWarning() {
-        uiHandler.dismissDepthWarning()
-    }
-
     func runtimeSnapshot(for conversationId: UUID) -> AgentRuntimeSnapshot {
         .init(
             isProcessing: runtimeStore.processingConversationIds.contains(conversationId),
@@ -294,10 +227,6 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
             depthWarning: runtimeStore.depthWarningByConversation[conversationId]
         )
     }
-
-    /// 提供给 Root 协调器创建消息发送编排器的 runtimeStore 引用。
-    /// - Note: Root 负责"从队列触发执行"，因此需要访问 runtimeStore（但不负责其内部结构）。
-    var runtimeStoreReference: ConversationRuntimeStore { runtimeStore }
 
     func runtimeState(for conversationId: UUID) -> ConversationRuntimeState {
         runtimeStore.runtimeState(for: conversationId)
@@ -334,7 +263,7 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
             return
         }
         guard ConversationVM.selectedConversationId == conversationId else { return }
-        appendThinkingText(pending, for: conversationId)
+        uiHandler.appendThinkingText(pending, for: conversationId)
         runtimeStore.pendingThinkingTextByConversation[conversationId] = ""
         runtimeStore.lastThinkingFlushAtByConversation[conversationId] = now
     }
@@ -346,16 +275,9 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
         messageViewModel.messages
     }
 
-    // MARK: - 代理 ProjectVM 属性
-
     /// 语言偏好（代理到 projectVM）
     var languagePreference: LanguagePreference {
         projectVM.languagePreference
-    }
-
-    /// 聊天模式（代理到 projectVM）
-    var chatMode: ChatMode {
-        projectVM.chatMode
     }
 
     /// 是否已选择项目（代理到 projectVM）
@@ -363,21 +285,9 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
         projectVM.isProjectSelected
     }
 
-    /// 自动批准风险（代理到 projectVM）
-    var autoApproveRisk: Bool {
-        projectVM.autoApproveRisk
-    }
-
-    // MARK: - 消息便捷方法（代理到 ConversationVM）
-
     /// 追加消息到列表
     func appendMessage(_ message: ChatMessage) {
         messageViewModel.appendMessage(message)
-    }
-
-    /// 插入消息到指定位置
-    func insertMessage(_ message: ChatMessage, at index: Int) {
-        messageViewModel.insertMessage(message, at: index)
     }
 
     /// 更新指定位置的消息
@@ -385,12 +295,7 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
         messageViewModel.updateMessage(message, at: index)
     }
 
-    /// 设置聊天消息列表
-    func setMessages(_ messages: [ChatMessage], reason: String = "设置消息列表") {
-        messageViewModel.setMessages(messages, reason: reason)
-    }
-
-    /// 保存消息到存储
+    /// 保存消息到当前会话
     func saveMessage(_ message: ChatMessage) async {
         await ConversationVM.saveMessage(message)
     }
@@ -400,52 +305,8 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
         await ConversationVM.saveMessage(message, to: conversationId)
     }
 
-    /// 删除指定对话
-    /// 协调多个 ViewModel 完成删除操作：
-    /// 1. 清理消息发送队列
-    /// 2. 删除会话记录
-    /// - Parameter conversation: 要删除的对话
-    func deleteConversation(_ conversation: Conversation) {
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t)🗑️ 开始删除对话：\(conversation.title)")
-        }
-
-        // 1. 清理该会话的待发送队列
-        messageSenderVM.removeConversationQueue(conversation.id)
-
-        // 如果删除的是选中的对话，清理当前队列
-        if ConversationVM.selectedConversationId == conversation.id {
-            messageSenderVM.clearCurrentConversationQueue()
-        }
-
-        // 2. 清理该会话的运行时状态（流式缓存、思考文本、任务管线等）
-        cleanupConversationState(conversation.id)
-
-        // 3. 删除会话记录
-        ConversationVM.deleteConversation(conversation)
-
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t)✅ 对话已删除：\(conversation.title)")
-        }
-    }
-
-    // MARK: - 消息发送协调
-
-    /// 发送单条消息到 Agent
-    /// - Note: 此方法已废弃，消息发送流程现在由 SenderPendingMessagesHandler 完全负责
-    /// - Parameters:
-    ///   - message: 要发送的消息
-    ///   - conversationId: 会话 ID
-    func sendMessageToAgent(message: ChatMessage, conversationId: UUID) async {
-        // 空实现，消息发送已由 SenderPendingMessagesHandler 直接处理
-    }
-
-    // MARK: - Cancel Support
-
-    /// 取消当前正在进行的任务
-    public func cancelCurrentTask() {
-        guard let conversationId = ConversationVM.selectedConversationId else { return }
-
+    /// 取消指定会话正在进行的生成（队列、轮次任务、流式缓存与相关 UI）。
+    func cancelTask(for conversationId: UUID) {
         messageSenderVM.cancelProcessing(for: conversationId, clearQueue: true)
         turnTaskPipelineByConversation[conversationId]?.cancel()
         turnTaskPipelineByConversation[conversationId] = nil
@@ -458,39 +319,17 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
         streamingRender.bump()
         updateRuntimeState(for: conversationId)
 
-        AppLogger.core.info("\(Self.t)🛑 任务已取消")
-        // 重置处理状态
-        setIsProcessing(false)
-        setIsThinking(false, for: conversationId)
-        setPendingPermissionRequest(nil)
-        // 添加取消提示消息
+        AppLogger.core.info("\(Self.t)🛑 任务已取消 [\(String(conversationId.uuidString.prefix(8)))]")
+        uiHandler.setIsProcessing(false)
+        uiHandler.setIsThinking(false, for: conversationId)
+        uiHandler.setPendingPermissionRequest(nil, conversationId: conversationId)
         let cancelMessage = projectVM.languagePreference == .chinese ? "⚠️ 生成已取消" : "⚠️ Generation cancelled"
         appendMessage(ChatMessage(role: .assistant, content: cancelMessage))
     }
 
-    // MARK: - SlashCommandService API
-
-    public func appendSystemMessage(_ content: String) {
-        appendMessage(ChatMessage(role: .assistant, content: content))
-    }
-
-    public func triggerPlanningMode(task: String) {
-        Task {
-            let planPrompt = await promptService.getPlanningModePrompt(task: task)
-            // 添加计划模式消息
-            appendMessage(ChatMessage(role: .user, content: planPrompt))
-            // 直接处理对话轮次
-            if let conversationId = ConversationVM.selectedConversationId {
-                await processTurn(conversationId: conversationId)
-            }
-        }
-    }
-
     // MARK: - 对话轮次处理
 
-    /// 处理对话轮次
-    /// - Parameter depth: 当前递归深度
-    public func processTurn(conversationId: UUID, depth: Int = 0) async {
+    func processTurn(conversationId: UUID, depth: Int = 0) async {
         let messages = await getMessagesForLLM(conversationId: conversationId)
 
         await conversationTurnViewModel.processTurn(
@@ -506,33 +345,20 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
     }
 
     /// 获取发送给 LLM 的消息列表
-    /// 如果当前是分页加载且还有更多消息未加载，需要加载完整上下文
     private func getMessagesForLLM(conversationId: UUID) async -> [ChatMessage] {
-        // 从数据库全量加载
-        return await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
+        await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
     }
 
-    /// 获取指定会话的消息总数
-    /// - Parameter conversationId: 会话 ID
-    /// - Returns: 消息总数
     func getMessageCount(forConversationId conversationId: UUID) async -> Int {
-        return await chatHistoryService.getMessageCount(forConversationId: conversationId)
+        await chatHistoryService.getMessageCount(forConversationId: conversationId)
     }
 
-    // MARK: - 会话管理
-
-    /// 分页加载会话消息
-    /// - Parameters:
-    ///   - conversationId: 会话 ID
-    ///   - limit: 每页数量限制
-    ///   - beforeTimestamp: 在此时间戳之前的消息（用于加载更早的消息）
-    /// - Returns: (消息列表, 是否还有更多)
     func loadMessagesPage(
         forConversationId conversationId: UUID,
         limit: Int,
         beforeTimestamp: Date? = nil
     ) async -> (messages: [ChatMessage], hasMore: Bool) {
-        return await chatHistoryService.loadMessagesPage(
+        await chatHistoryService.loadMessagesPage(
             forConversationId: conversationId,
             limit: limit,
             beforeTimestamp: beforeTimestamp
@@ -548,37 +374,4 @@ final class WindowAgentCommands: ObservableObject, SuperLog {
             toolCallIDs: toolCallIDs
         )
     }
-
-    // MARK: - 模式切换通知
-
-    public func notifyModeChangeToChat() async {
-        let message: String
-        switch projectVM.languagePreference {
-        case .chinese:
-            message = "已切换到对话模式。在此模式下，我将只与您进行对话，不会执行任何工具或修改代码。有什么问题我可以帮您解答？"
-        case .english:
-            message = "Switched to Chat mode. In this mode, I will only chat with you without executing any tools or modifying code. How can I help you today?"
-        }
-
-        appendMessage(ChatMessage(role: .assistant, content: message))
-    }
-
-    // MARK: - 历史记录管理
-
-    public func clearHistory() {
-        let languagePreference = projectVM.languagePreference
-        let isProjectSelected = projectVM.isProjectSelected
-
-        Task {
-            let fullSystemPrompt = await promptService.buildSystemPrompt(
-                languagePreference: languagePreference,
-                includeContext: isProjectSelected
-            )
-            setMessages([ChatMessage(role: .system, content: fullSystemPrompt)], reason: "切换项目更新系统提示词")
-        }
-    }
-
-    // MARK: - 项目管理
-
-    // MARK: - 图片/附件相关逻辑已下沉到 `AgentAttachmentsVM`
 }

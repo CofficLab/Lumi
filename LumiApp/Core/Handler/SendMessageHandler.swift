@@ -41,7 +41,7 @@ enum SendMessageHandler: SuperLog {
         vm.currentProcessingIndex = 0
 
         if verbose {
-            AppLogger.core.info("\(Self.t) 📤 [\(String(conversationId.uuidString.prefix(8)))] 开始发送消息：\(message.content.prefix(50))")
+            AppLogger.core.info("\(Self.t)📤 [\(String(conversationId.uuidString.prefix(8)))] 开始发送消息：\(message.content.prefix(50))")
         }
 
         // 异步发送消息
@@ -222,7 +222,7 @@ enum SendMessageHandler: SuperLog {
         enqueueTurnProcessing: @escaping (UUID, Int) -> Void
     ) async {
         if verbose {
-            AppLogger.core.info("\(Self.t) 📨 [\(String(conversationId.uuidString.prefix(8)))] 发送核心消息：\(message.content.prefix(50))")
+            AppLogger.core.info("\(Self.t)📨 [\(String(conversationId.uuidString.prefix(8)))] 发送核心消息：\(message.content.prefix(50))")
         }
 
         let services = makeMiddlewareServices(

@@ -176,7 +176,7 @@ final class AgentRuntime: ObservableObject, SuperLog, SuperLLMConfigProvider {
         )
     }
 
-    private func conversationTurnPipelineUIActions() -> ConversationTurnPipelineHandler.UIActions {
+    private func conversationTurnPipelineUIActions() -> ConversationTurnMiddlewareUIActions {
         let ui = uiHandler
         return .init(
             setPendingPermissionRequest: { request, conversationId in

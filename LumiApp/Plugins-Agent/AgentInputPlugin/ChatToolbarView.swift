@@ -11,6 +11,8 @@ struct ChatToolbarView: View, SuperLog {
     @EnvironmentObject var windowAgentCommands: WindowAgentCommands
     @EnvironmentObject var agentSessionConfig: AgentSessionConfig
     @EnvironmentObject var ProjectVM: ProjectVM
+    @EnvironmentObject var ConversationVM: ConversationVM
+    @EnvironmentObject var agentTaskCancellationVM: AgentTaskCancellationVM
 
     /// 待发送附件
     @EnvironmentObject private var agentAttachmentsVM: AgentAttachmentsVM
@@ -92,7 +94,9 @@ extension ChatToolbarView {
         if processingStateViewModel.isProcessing {
             // 停止按钮 - 在处理中显示（仅图标）
             Button(action: {
-                windowAgentCommands.cancelCurrentTask()
+                if let conversationId = ConversationVM.selectedConversationId {
+                    agentTaskCancellationVM.requestCancel(conversationId: conversationId)
+                }
             }) {
                 Image(systemName: "stop.fill")
                     .font(.system(size: 14))

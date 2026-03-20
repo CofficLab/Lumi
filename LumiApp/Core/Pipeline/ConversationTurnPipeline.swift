@@ -17,33 +17,6 @@ protocol ConversationTurnMiddleware {
     ) async
 }
 
-@MainActor
-final class ConversationTurnMiddlewareContext {
-    let runtimeStore: ConversationRuntimeStore
-    let env: ConversationTurnPipelineHandler.Environment
-    let actions: ConversationTurnPipelineHandler.MessageActions
-    let ui: ConversationTurnPipelineHandler.UIActions
-
-    let traceId: UUID
-    let startedAt: Date
-
-    init(
-        runtimeStore: ConversationRuntimeStore,
-        env: ConversationTurnPipelineHandler.Environment,
-        actions: ConversationTurnPipelineHandler.MessageActions,
-        ui: ConversationTurnPipelineHandler.UIActions,
-        traceId: UUID = UUID(),
-        startedAt: Date = Date()
-    ) {
-        self.runtimeStore = runtimeStore
-        self.env = env
-        self.actions = actions
-        self.ui = ui
-        self.traceId = traceId
-        self.startedAt = startedAt
-    }
-}
-
 /// 类型擦除：便于插件返回不同具体类型的中间件实例集合。
 @MainActor
 struct AnyConversationTurnMiddleware {
