@@ -27,9 +27,17 @@ struct ShouldContinueEnqueueMiddleware: ConversationTurnMiddleware, SuperLog {
             AppLogger.core.info("\(Self.t) ⏩ enqueue next turn depth=\(depth) [\(conversationId.uuidString.prefix(8))]")
         }
 
+        // 深度超过上限：不再 enqueue，改为走统一 maxDepth 收尾链路。
+        if depth > ctx.env.maxDepth {
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t) ⛔️ depth=\(depth) > max=\(ctx.env.maxDepth)，触发 maxDepthReached [\(conversationId.uuidString.prefix(8))]")
+            }
+            await next(.maxDepthReached(currentDepth: depth, maxDepth: ctx.env.maxDepth, conversationId: conversationId), ctx)
+            return
+        }
+
         ctx.actions.enqueueTurnProcessing(conversationId, depth)
-        // 不短路：允许后续 middleware（含插件）继续消费该事件，保持链路语义尽量一致。
-        await next(event, ctx)
+        // 该事件只用于 enqueue 控制流，不需要继续向下游传播。
     }
 }
 

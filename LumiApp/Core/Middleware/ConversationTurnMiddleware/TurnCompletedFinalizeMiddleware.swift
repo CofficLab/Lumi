@@ -39,6 +39,8 @@ final class TurnCompletedFinalizeMiddleware: ConversationTurnMiddleware, SuperLo
         ctx.runtimeStore.streamStartedAtByConversation[conversationId] = nil
         ctx.runtimeStore.didReceiveFirstTokenByConversation.remove(conversationId)
 
+        ctx.runtimeStore.turnContextsByConversation.removeValue(forKey: conversationId)
+
         ctx.actions.updateRuntimeState(conversationId)
 
         // 发送对话轮次结束的系统消息

@@ -48,7 +48,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
 
     // MARK: - 会话上下文
 
-    private var turnContexts: [UUID: ConversationTurnContext] = [:]
+    // 轮次控制上下文已迁移到 `ConversationRuntimeStore.turnContextsByConversation`
     private let maxDepth = 60
     private let maxToolResultLength = 4000
 
@@ -134,7 +134,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         }
         let isFinalStep = depth == maxDepth
 
-        var context = turnContexts[conversationId] ?? ConversationTurnContext()
+        var context = runtimeStore.turnContextsByConversation[conversationId] ?? ConversationTurnContext()
         if depth == 0 {
             context = ConversationTurnContext()
             context.chainStartedAt = Date()
@@ -144,7 +144,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         }
         context.currentDepth = depth
         context.currentProviderId = config.providerId
-        turnContexts[conversationId] = context
+        runtimeStore.turnContextsByConversation[conversationId] = context
 
         if Self.verbose {
             AppLogger.core.info("\(self.t)[\(conversationId)] 开始处理轮次 (深度：\(depth), 模式：\(chatMode.displayName), 流式：\(self.enableStreaming))")
@@ -190,13 +190,13 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
             let hasContent = !responseMsg.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             let hasToolCalls = !(responseMsg.toolCalls?.isEmpty ?? true)
 
-            context = turnContexts[conversationId] ?? ConversationTurnContext()
+            context = runtimeStore.turnContextsByConversation[conversationId] ?? ConversationTurnContext()
             if hasToolCalls && !hasContent {
                 context.consecutiveEmptyToolTurns += 1
             } else {
                 context.consecutiveEmptyToolTurns = 0
             }
-            turnContexts[conversationId] = context
+            runtimeStore.turnContextsByConversation[conversationId] = context
 
             // 防止模型陷入“空文本 + 工具调用”循环，导致长时间卡住。
             if context.consecutiveEmptyToolTurns >= 3 {
@@ -204,7 +204,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                     emitAbortedToolResults(for: toolCalls, conversationId: conversationId)
                 }
                 context.pendingToolCalls.removeAll()
-                turnContexts[conversationId] = context
+                    runtimeStore.turnContextsByConversation[conversationId] = context
                 let error = NSError(
                     domain: "ConversationTurn",
                     code: 409,
@@ -218,9 +218,9 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
             if let toolCalls = responseMsg.toolCalls, !toolCalls.isEmpty {
                 if isFinalStep {
                     emitAbortedToolResults(for: toolCalls, conversationId: conversationId)
-                    var broken = turnContexts[conversationId] ?? ConversationTurnContext()
+                    var broken = runtimeStore.turnContextsByConversation[conversationId] ?? ConversationTurnContext()
                     broken.pendingToolCalls.removeAll()
-                    turnContexts[conversationId] = broken
+                    runtimeStore.turnContextsByConversation[conversationId] = broken
                     // 在 UI 中给出明确的助手提示，而不是静默结束
                     let explainMessage = ChatMessage.maxDepthToolLimitMessage(
                         languagePreference: languagePreference,
@@ -239,52 +239,31 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                     AppLogger.core.info("\(self.t)[\(conversationId)] 收到 \(toolCalls.count) 个工具调用")
                 }
 
-                context = turnContexts[conversationId] ?? ConversationTurnContext()
+                context = runtimeStore.turnContextsByConversation[conversationId] ?? ConversationTurnContext()
                 context.pendingToolCalls = toolCalls
-                turnContexts[conversationId] = context
+                runtimeStore.turnContextsByConversation[conversationId] = context
 
                 let firstTool = context.pendingToolCalls.removeFirst()
 
                 // 检测重复工具循环（同名 + 同参数）
-                let normalizedArgs = firstTool.arguments
-                    .replacingOccurrences(
-                        of: "\\s+",
-                        with: "",
-                        options: .regularExpression
+                let guardResult = RepeatedToolSignatureLoopGuard().evaluate(
+                    firstTool: firstTool,
+                    toolCalls: toolCalls,
+                    languagePreference: languagePreference,
+                    context: &context,
+                    config: .init(
+                        repeatedToolSignatureThreshold: repeatedToolSignatureThreshold,
+                        repeatedToolWindowThreshold: repeatedToolWindowThreshold,
+                        recentWindowMaxCount: 6,
+                        signatureArgsPrefixLength: 512
                     )
-                let signaturePrefix = String(normalizedArgs.prefix(512))
-                let signature = "\(firstTool.name)|\(signaturePrefix)"
-                if context.lastToolSignature == signature {
-                    context.repeatedToolSignatureCount += 1
-                } else {
-                    context.lastToolSignature = signature
-                    context.repeatedToolSignatureCount = 1
-                }
-                context.recentToolSignatures.append(signature)
-                if context.recentToolSignatures.count > 6 {
-                    context.recentToolSignatures.removeFirst(context.recentToolSignatures.count - 6)
-                }
-                turnContexts[conversationId] = context
+                )
 
-                let sameSignatureInWindow = context.recentToolSignatures.filter { $0 == signature }.count
-                if context.repeatedToolSignatureCount >= repeatedToolSignatureThreshold
-                    || sameSignatureInWindow >= repeatedToolWindowThreshold {
+                runtimeStore.turnContextsByConversation[conversationId] = context
+
+                if case let .abort(message, error) = guardResult {
                     emitAbortedToolResults(for: toolCalls, conversationId: conversationId)
-                    var broken = turnContexts[conversationId] ?? ConversationTurnContext()
-                    broken.pendingToolCalls.removeAll()
-                    turnContexts[conversationId] = broken
-                    let explainMessage = ChatMessage.repeatedToolLoopMessage(
-                        languagePreference: languagePreference,
-                        tool: firstTool,
-                        repeatedCount: context.repeatedToolSignatureCount,
-                        windowCount: sameSignatureInWindow
-                    )
-                    eventContinuation.yield(.responseReceived(explainMessage, conversationId: conversationId))
-                    let error = NSError(
-                        domain: "ConversationTurn",
-                        code: 410,
-                        userInfo: [NSLocalizedDescriptionKey: "检测到重复工具调用循环，已自动中止本轮。"]
-                    )
+                    eventContinuation.yield(.responseReceived(message, conversationId: conversationId))
                     eventContinuation.yield(.error(error, conversationId: conversationId))
                     AppLogger.core.error("\(self.t)[\(conversationId)] 重复工具调用循环，已中止: \(firstTool.name)")
                     return
@@ -297,20 +276,20 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                     autoApproveRisk: autoApproveRisk
                 )
             } else {
-                context = turnContexts[conversationId] ?? ConversationTurnContext()
+                context = runtimeStore.turnContextsByConversation[conversationId] ?? ConversationTurnContext()
                 context.lastToolSignature = nil
                 context.repeatedToolSignatureCount = 0
                 context.recentToolSignatures.removeAll(keepingCapacity: false)
-                turnContexts[conversationId] = context
+                runtimeStore.turnContextsByConversation[conversationId] = context
                 eventContinuation.yield(.completed(conversationId: conversationId))
                 if Self.verbose {
                     AppLogger.core.info("\(self.t)[\(conversationId)] 轮次完成（无工具）")
                 }
             }
         } catch {
-            var failedContext = turnContexts[conversationId] ?? ConversationTurnContext()
+            var failedContext = runtimeStore.turnContextsByConversation[conversationId] ?? ConversationTurnContext()
             failedContext.pendingToolCalls.removeAll()
-            turnContexts[conversationId] = failedContext
+            runtimeStore.turnContextsByConversation[conversationId] = failedContext
 
             // 针对 API Key 为空的配置错误，使用专门的 system 消息，并在 UI 中渲染内嵌的 API Key 配置视图
             if let configError = error as? LLMConfigValidationError,
@@ -497,7 +476,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
     }
 
     private func processPendingTools(conversationId: UUID, languagePreference: LanguagePreference) async {
-        var context = turnContexts[conversationId] ?? ConversationTurnContext()
+        var context = runtimeStore.turnContextsByConversation[conversationId] ?? ConversationTurnContext()
 
         guard !context.pendingToolCalls.isEmpty else {
             eventContinuation.yield(.shouldContinue(depth: context.currentDepth + 1, conversationId: conversationId))
@@ -505,7 +484,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         }
 
         let nextTool = context.pendingToolCalls.removeFirst()
-        turnContexts[conversationId] = context
+        runtimeStore.turnContextsByConversation[conversationId] = context
 
         await handleToolCall(
             nextTool,
@@ -536,6 +515,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
             env: .init(
                 selectedConversationId: { [weak self] in self?.ConversationVM.selectedConversationId },
                 languagePreference: { [weak self] in self?.projectVM.languagePreference ?? .chinese },
+                maxDepth: maxDepth,
                 maxThinkingTextLength: maxThinkingTextLength,
                 maxToolResultLength: maxToolResultLength,
                 immediateStreamFlushChars: immediateStreamFlushChars,

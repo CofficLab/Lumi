@@ -41,6 +41,8 @@ final class MaxDepthReachedFinalizeMiddleware: ConversationTurnMiddleware, Super
         ctx.runtimeStore.streamStartedAtByConversation[conversationId] = nil
         ctx.runtimeStore.didReceiveFirstTokenByConversation.remove(conversationId)
 
+        ctx.runtimeStore.turnContextsByConversation.removeValue(forKey: conversationId)
+
         ctx.actions.updateRuntimeState(conversationId)
         // 短路：深度告警及收尾逻辑已处理完毕。
     }

@@ -7,6 +7,7 @@ import MagicKit
 struct ConversationTurnMiddlewareEnvironment {
     let selectedConversationId: () -> UUID?
     let languagePreference: () -> LanguagePreference
+    let maxDepth: Int
     let maxThinkingTextLength: Int
     let maxToolResultLength: Int
     let immediateStreamFlushChars: Int

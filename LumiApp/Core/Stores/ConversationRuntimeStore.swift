@@ -51,6 +51,9 @@ final class ConversationRuntimeStore: ObservableObject {
     /// 记录已做过“后处理”的消息 ID（避免同一条 assistant 消息被重复处理）。
     var postProcessedMessageIdsByConversation: [UUID: Set<UUID>] = [:]
 
+    /// `ConversationTurnVM`/后续 middleware 共享的轮次控制上下文（跨多深度 step 保存）。
+    var turnContextsByConversation: [UUID: ConversationTurnContext] = [:]
+
     @Published private(set) var conversationRuntimeStates: [UUID: ConversationRuntimeState] = [:]
 
     /// 时间线等订阅：流式文本经 throttle 写入 store 后显式递增，避免仅靠全量 `objectWillChange` 难以精准刷新占位气泡。

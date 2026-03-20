@@ -19,6 +19,8 @@ enum CancelAgentTaskHandler: SuperLog {
         store.thinkingConversationIds.remove(conversationId)
         store.pendingPermissionByConversation[conversationId] = nil
 
+        store.turnContextsByConversation.removeValue(forKey: conversationId)
+
         store.bumpStreamingPresentation()
         turnVM.updateRuntimeState(for: conversationId)
 

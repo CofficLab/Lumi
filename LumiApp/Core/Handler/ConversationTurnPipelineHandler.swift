@@ -135,6 +135,7 @@ final class ConversationTurnPipelineHandler: SuperLog {
             let msg = error.localizedDescription
             runtimeStore.errorMessageByConversation[conversationId] = msg
             runtimeStore.processingConversationIds.remove(conversationId)
+            runtimeStore.turnContextsByConversation.removeValue(forKey: conversationId)
 
             if env.selectedConversationId() == conversationId {
                 ui.onTurnFailedUI(conversationId, msg)
