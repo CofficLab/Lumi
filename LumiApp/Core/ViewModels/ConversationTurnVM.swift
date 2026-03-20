@@ -39,24 +39,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
     private var pipelineCancellables = Set<AnyCancellable>()
     private var turnTaskPipelineByConversation: [UUID: Task<Void, Never>] = [:]
     private var turnTaskGenerationByConversation: [UUID: Int] = [:]
-    private let maxThinkingTextLength = 100000
-    private let streamUIFlushInterval: TimeInterval = 0.08
-    private let thinkingUIFlushInterval: TimeInterval = 0.12
-    private let immediateStreamFlushChars = 80
-    private let immediateThinkingFlushChars = 120
     private let captureThinkingContent = true
-
-    // MARK: - 会话上下文
-
-    // 轮次控制上下文已迁移到 `ConversationRuntimeStore.turnContextsByConversation`
-    private let maxDepth = 60
-    private let maxToolResultLength = 4000
-
-    /// 连续重复同一工具签名（名称+参数）达到多少次视为循环
-    private let repeatedToolSignatureThreshold = 10
-
-    /// 在最近窗口中同一签名出现多少次视为循环
-    private let repeatedToolWindowThreshold = 10
 
     /// 仅转发必要的流式事件；thinkingDelta 需转发以便 ThinkingDeltaCaptureMiddleware 写入 runtimeStore，供落库时写入 thinkingContent。
     private nonisolated static func shouldForwardStreamEvent(_ eventType: StreamEventType) -> Bool {
@@ -126,7 +109,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         languagePreference: LanguagePreference,
         autoApproveRisk: Bool
     ) async {
-        let depthGuardResult = MaxDepthReachedGuard().evaluate(depth: depth, maxDepth: maxDepth)
+        let depthGuardResult = MaxDepthReachedGuard().evaluate(depth: depth, maxDepth: AgentConfig.maxDepth)
 
         switch depthGuardResult {
         case let .reached(currentDepth, maxDepth):
@@ -218,7 +201,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                     let explainMessage = ChatMessage.maxDepthToolLimitMessage(
                         languagePreference: languagePreference,
                         currentDepth: depth,
-                        maxDepth: maxDepth
+                        maxDepth: AgentConfig.maxDepth
                     )
                     eventContinuation.yield(.responseReceived(explainMessage, conversationId: conversationId))
                     eventContinuation.yield(.completed(conversationId: conversationId))
@@ -245,8 +228,8 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                     languagePreference: languagePreference,
                     context: &context,
                     config: .init(
-                        repeatedToolSignatureThreshold: repeatedToolSignatureThreshold,
-                        repeatedToolWindowThreshold: repeatedToolWindowThreshold,
+                        repeatedToolSignatureThreshold: AgentConfig.repeatedToolSignatureThreshold,
+                        repeatedToolWindowThreshold: AgentConfig.repeatedToolWindowThreshold,
                         recentWindowMaxCount: 6,
                         signatureArgsPrefixLength: 512
                     )
@@ -487,13 +470,13 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
             env: .init(
                 selectedConversationId: { [weak self] in self?.ConversationVM.selectedConversationId },
                 languagePreference: { [weak self] in self?.projectVM.languagePreference ?? .chinese },
-                maxDepth: maxDepth,
-                maxThinkingTextLength: maxThinkingTextLength,
-                maxToolResultLength: maxToolResultLength,
-                immediateStreamFlushChars: immediateStreamFlushChars,
-                immediateThinkingFlushChars: immediateThinkingFlushChars,
-                streamUIFlushInterval: streamUIFlushInterval,
-                thinkingUIFlushInterval: thinkingUIFlushInterval,
+                maxDepth: AgentConfig.maxDepth,
+                maxThinkingTextLength: AgentConfig.maxThinkingTextLength,
+                maxToolResultLength: AgentConfig.maxToolResultLength,
+                immediateStreamFlushChars: AgentConfig.immediateStreamFlushChars,
+                immediateThinkingFlushChars: AgentConfig.immediateThinkingFlushChars,
+                streamUIFlushInterval: AgentConfig.streamUIFlushInterval,
+                thinkingUIFlushInterval: AgentConfig.thinkingUIFlushInterval,
                 captureThinkingContent: captureThinkingContent
             ),
             messages: .init(
