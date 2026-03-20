@@ -5,6 +5,7 @@ import Markdown
 struct NativeMarkdownContent: View {
     let content: String
 
+    @Environment(\.preferOuterScroll) private var preferOuterScroll
     @State private var blocks: [NativeMarkdownBlock] = []
 
     var body: some View {
@@ -59,12 +60,24 @@ struct NativeMarkdownContent: View {
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
-                ScrollView(.horizontal, showsIndicators: false) {
-                    Text(verbatim: code)
-                        .font(.system(.body, design: .monospaced))
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(10)
+                Group {
+                    if preferOuterScroll {
+                        // 消息列表内避免嵌套 ScrollView：否则会截获滚轮，外层列表无法滚动（见 MarkdownView preferOuterScroll 说明）
+                        Text(verbatim: code)
+                            .font(.system(.body, design: .monospaced))
+                            .textSelection(.enabled)
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(10)
+                    } else {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            Text(verbatim: code)
+                                .font(.system(.body, design: .monospaced))
+                                .textSelection(.enabled)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(10)
+                        }
+                    }
                 }
                 .background(
                     RoundedRectangle(cornerRadius: 8)
