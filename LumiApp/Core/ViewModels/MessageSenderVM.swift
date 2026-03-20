@@ -1,5 +1,6 @@
 import Foundation
 import MagicKit
+
 /// 消息发送事件
 /// 用于向外部报告队列处理状态
 @MainActor

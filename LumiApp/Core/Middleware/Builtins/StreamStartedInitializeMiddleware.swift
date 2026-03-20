@@ -34,9 +34,6 @@ final class StreamStartedInitializeMiddleware: ConversationTurnMiddleware {
             ctx.ui.onStreamStartedUI(messageId, conversationId)
         }
 
-        // 不在此处更新「模型已就绪」：streamStarted 在 sendStreamingMessage 之前发出，模型可能尚未加载或未下载。
-        // 改为在收到首个 streamChunk 时再更新（StreamChunkAccumulateMiddleware），确保模型真正已就绪。
-
         ctx.actions.updateRuntimeState(conversationId)
         // 短路：streamStarted 已处理完毕，不进入核心 handler。
     }

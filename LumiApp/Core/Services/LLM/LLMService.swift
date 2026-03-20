@@ -123,7 +123,7 @@ class LLMService: SuperLog, @unchecked Sendable {
                 try await Task.sleep(nanoseconds: UInt64(pollIntervalSeconds * 1_000_000_000))
             }
             if state != .ready {
-                throw NSError(domain: "LLMService", code: 500, userInfo: [NSLocalizedDescriptionKey: "加载超时，请稍后重试或到设置中查看"])
+                throw LLMServiceError.requestFailed("加载超时，请稍后重试或到设置中查看")
             }
             return
         }
@@ -131,14 +131,14 @@ class LLMService: SuperLog, @unchecked Sendable {
         do {
             try await local.loadModel(id: modelId)
         } catch {
-            throw NSError(domain: "LLMService", code: 500, userInfo: [NSLocalizedDescriptionKey: error.localizedDescription])
+            throw LLMServiceError.requestFailed(error.localizedDescription)
         }
 
         state = await local.getModelState()
         if state != .ready {
             let msg: String
             if case .error(let s) = state { msg = s } else { msg = "模型未就绪" }
-            throw NSError(domain: "LLMService", code: 500, userInfo: [NSLocalizedDescriptionKey: msg])
+            throw LLMServiceError.requestFailed(msg)
         }
     }
 
@@ -157,10 +157,8 @@ class LLMService: SuperLog, @unchecked Sendable {
     /// - Returns: AI 助手的回复消息
     ///
     /// - Throws:
-    ///   - NSError (code 401): API Key 为空
-    ///   - NSError (code 404): 供应商未找到
-    ///   - NSError (code 400): 无效的 Base URL
-    ///   - NSError (code 500): API 请求失败
+    ///   - `LLMConfigValidationError`：`config.validate()` 失败（含 API Key 为空等）
+    ///   - `LLMServiceError`：供应商未找到、Base URL 无效、API / 流式 / 本地模型相关失败
     func sendMessage(messages: [ChatMessage], config: LLMConfig, tools: [AgentTool]? = nil) async throws -> ChatMessage {
         // 记录开始时间，用于计算延迟
         let startTime = CFAbsoluteTimeGetCurrent()
@@ -168,7 +166,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         // 从注册表获取供应商实例（先取 provider，本地供应商不校验 API Key）
         guard let provider = registry.createProvider(id: config.providerId) else {
             AppLogger.core.error("\(self.t)未找到供应商：\(config.providerId)")
-            throw NSError(domain: "LLMService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Provider not found: \(config.providerId)"])
+            throw LLMServiceError.providerNotFound(providerId: config.providerId)
         }
 
         // 仅远程供应商需要校验 API Key；本地供应商无需 API Key
@@ -215,7 +213,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         AppLogger.core.info("\(self.t)构建 API URL：\(baseURLString)")
         guard let url = URL(string: baseURLString) else {
             AppLogger.core.error("\(self.t)无效的 URL: \(baseURLString)")
-            throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL: \(baseURLString)"])
+            throw LLMServiceError.invalidBaseURL(baseURLString)
         }
 
         // 构建请求体
@@ -332,12 +330,7 @@ class LLMService: SuperLog, @unchecked Sendable {
             )
 
         } catch let apiError as APIError {
-            // 转换 API 错误为 NSError，保留错误描述
-            throw NSError(
-                domain: "LLMService",
-                code: 500,
-                userInfo: [NSLocalizedDescriptionKey: apiError.localizedDescription]
-            )
+            throw LLMServiceError.requestFailed(apiError.localizedDescription)
         }
     }
 
@@ -353,7 +346,7 @@ class LLMService: SuperLog, @unchecked Sendable {
     ///   - tools: 可用工具列表
     ///   - onChunk: 收到内容片段时的回调
     /// - Returns: 完整的助手消息（包含累积的内容和工具调用）
-    /// - Throws: API 错误
+    /// - Throws: `LLMConfigValidationError`、`LLMServiceError`，或与构建请求体相关的底层错误
     func sendStreamingMessage(
         messages: [ChatMessage],
         config: LLMConfig,
@@ -366,7 +359,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         // 从注册表获取供应商实例（先取 provider，本地供应商不校验 API Key）
         guard let provider = registry.createProvider(id: config.providerId) else {
             AppLogger.core.error("\(self.t)未找到供应商：\(config.providerId)")
-            throw NSError(domain: "LLMService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Provider not found: \(config.providerId)"])
+            throw LLMServiceError.providerNotFound(providerId: config.providerId)
         }
 
         // 仅远程供应商需要校验 API Key；本地供应商无需 API Key
@@ -414,7 +407,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         
         guard let url = URL(string: baseURLString) else {
             AppLogger.core.error("\(self.t)无效的 URL: \(baseURLString)")
-            throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL: \(baseURLString)"])
+            throw LLMServiceError.invalidBaseURL(baseURLString)
         }
 
         // 构建流式请求体
@@ -637,11 +630,7 @@ class LLMService: SuperLog, @unchecked Sendable {
                 }
             }
         } catch {
-            throw NSError(
-                domain: "LLMService",
-                code: 500,
-                userInfo: [NSLocalizedDescriptionKey: error.localizedDescription]
-            )
+            throw LLMServiceError.requestFailed(error.localizedDescription)
         }
 
         // 流式结束后，保存最后一个工具调用
@@ -649,11 +638,7 @@ class LLMService: SuperLog, @unchecked Sendable {
 
         // 检查流式过程中是否发生错误
         if let error = await state.streamError {
-            throw NSError(
-                domain: "LLMService",
-                code: 500,
-                userInfo: [NSLocalizedDescriptionKey: error]
-            )
+            throw LLMServiceError.requestFailed(error)
         }
 
         // 计算总耗时
