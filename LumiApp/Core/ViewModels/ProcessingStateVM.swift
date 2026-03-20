@@ -14,8 +14,6 @@ final class ProcessingStateVM: ObservableObject {
     @Published public fileprivate(set) var phase: ProcessingStatePhase = .idle
 
     /// 从开始到首 token 的耗时（毫秒），收到首 token 后设置
-    @Published public fileprivate(set) var timeToFirstTokenMs: Double?
-
     /// 状态提示文本（用于 UI 展示）
     @Published public fileprivate(set) var statusText: String = ""
 
@@ -40,12 +38,10 @@ final class ProcessingStateVM: ObservableObject {
     func markStreamStarted() {
         phase = .waitingFirstToken
         statusText = "等待响应…"
-        timeToFirstTokenMs = nil
         setIsProcessing(true)
     }
 
     func markFirstToken(ttftMs: Double) {
-        timeToFirstTokenMs = ttftMs
         phase = .generating
         if ttftMs >= 1000 {
             statusText = String(format: "首 token %.1fs，生成中…", ttftMs / 1000.0)
@@ -66,7 +62,6 @@ final class ProcessingStateVM: ObservableObject {
     func finish() {
         phase = .idle
         statusText = ""
-        timeToFirstTokenMs = nil
         setIsProcessing(false)
         setLastHeartbeatTime(nil)
     }

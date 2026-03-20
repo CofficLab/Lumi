@@ -46,7 +46,7 @@ final class MessageQueueVM: ObservableObject, SuperLog {
         syncCurrentConversationState()
 
         if Self.verbose {
-            AppLogger.core.info("\(Self.t)🔄 [\(conversationId)] 切换会话，队列长度：\(self.pendingMessages.count)")
+            AppLogger.core.info("\(Self.t)🔄 [\(conversationId.uuidString.prefix(8))] 切换会话，队列长度：\(self.pendingMessages.count)")
         }
 
         return pendingMessages.count

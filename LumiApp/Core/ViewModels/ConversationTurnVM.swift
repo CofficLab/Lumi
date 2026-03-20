@@ -648,7 +648,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         let generation = (turnTaskGenerationByConversation[conversationId] ?? 0) + 1
         turnTaskGenerationByConversation[conversationId] = generation
         if Self.verbose {
-            AppLogger.core.info("\(Self.t)🧵 [\(conversationId)] 轮次入队 depth=\(depth), gen=\(generation)")
+            AppLogger.core.info("\(Self.t)🧵 [\(conversationId.uuidString.prefix(8))] 轮次入队 depth=\(depth), gen=\(generation)")
         }
 
         let task = Task { [weak self] in
@@ -657,7 +657,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
             }
             guard let self else { return }
             if Self.verbose {
-                AppLogger.core.info("\(Self.t)🧵 [\(conversationId)] 开始执行轮次 depth=\(depth), gen=\(generation)")
+                AppLogger.core.info("\(Self.t)🧵 [\(conversationId.uuidString.prefix(8))] 开始执行轮次 depth=\(depth), gen=\(generation)")
             }
             await self.runTurnJob(conversationId: conversationId, depth: depth)
 

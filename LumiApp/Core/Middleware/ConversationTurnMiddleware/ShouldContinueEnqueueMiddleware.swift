@@ -2,9 +2,6 @@ import Foundation
 import MagicKit
 
 /// 接管 `.shouldContinue(depth:conversationId:)`：直接 enqueue 下一步轮次。
-///
-/// 目标：让 `ConversationTurnPipelineHandler` 的 terminal fallback 不再负责该控制流，
-/// 进一步将“轮次编排”从 handler 中解耦到中间件层。
 @MainActor
 struct ShouldContinueEnqueueMiddleware: ConversationTurnMiddleware, SuperLog {
     nonisolated static let emoji = "➡️"
@@ -24,7 +21,7 @@ struct ShouldContinueEnqueueMiddleware: ConversationTurnMiddleware, SuperLog {
         }
 
         if Self.verbose {
-            AppLogger.core.info("\(Self.t) ⏩ enqueue next turn depth=\(depth) [\(conversationId.uuidString.prefix(8))]")
+            AppLogger.core.info("\(Self.t) ⏩ [\(conversationId.uuidString.prefix(8))] enqueue next turn depth=\(depth)")
         }
 
         // 深度超过上限：不再 enqueue，改为走统一 maxDepth 收尾链路。
