@@ -185,8 +185,5 @@ final class MessageQueueVM: ObservableObject, SuperLog {
         let oldCount = pendingMessages.count
         pendingMessages = pendingMessagesByConversation[conversationId] ?? []
         currentProcessingIndex = currentProcessingIndexByConversation[conversationId] ?? nil
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t)🔄 syncCurrentConversationState: old=\(oldCount), new=\(self.pendingMessages.count), conversationId=\(String(conversationId.uuidString.prefix(8)))")
-        }
     }
 }

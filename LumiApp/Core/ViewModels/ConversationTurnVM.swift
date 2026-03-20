@@ -116,8 +116,6 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
 
     // MARK: - 对话轮次处理
 
-    var enableStreaming: Bool = true
-
     func processTurn(
         conversationId: UUID,
         depth: Int = 0,
@@ -156,7 +154,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         runtimeStore.turnContextsByConversation[conversationId] = context
 
         if Self.verbose {
-            AppLogger.core.info("\(self.t)[\(conversationId)] 开始处理轮次 (深度：\(depth), 模式：\(chatMode.displayName), 流式：\(self.enableStreaming))")
+            AppLogger.core.info("\(self.t)[\(conversationId.uuidString.prefix(8))] 开始处理轮次 (深度：\(depth), 模式：\(chatMode.displayName), 流式：true)")
         }
 
         let availableTools: [AgentTool] = (chatMode.allowsTools && !isFinalStep) ? tools : []
@@ -178,23 +176,13 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         do {
             let responseMsg: ChatMessage
 
-            if enableStreaming {
-                responseMsg = try await processStreamingTurn(
-                    conversationId: conversationId,
-                    config: config,
-                    messages: effectiveMessages,
-                    availableTools: availableTools,
-                    languagePreference: languagePreference
-                )
-            } else {
-                responseMsg = try await processNonStreamingTurn(
-                    conversationId: conversationId,
-                    config: config,
-                    messages: effectiveMessages,
-                    availableTools: availableTools,
-                    languagePreference: languagePreference
-                )
-            }
+            responseMsg = try await processStreamingTurn(
+                conversationId: conversationId,
+                config: config,
+                messages: effectiveMessages,
+                availableTools: availableTools,
+                languagePreference: languagePreference
+            )
 
             let hasContent = !responseMsg.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             let hasToolCalls = !(responseMsg.toolCalls?.isEmpty ?? true)
@@ -307,7 +295,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                 let explainMessage = ChatMessage.requestFailedMessage(languagePreference: languagePreference, error: error)
                 eventContinuation.yield(.responseReceived(explainMessage, conversationId: conversationId))
                 eventContinuation.yield(.error(error, conversationId: conversationId))
-                AppLogger.core.error("\(self.t)[\(conversationId)] 对话处理失败：\(error.localizedDescription)")
+                AppLogger.core.error("\(self.t)[\(conversationId.uuidString.prefix(8))] 对话处理失败：\(error.localizedDescription)")
             }
         }
     }
@@ -383,27 +371,6 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
 
         eventContinuation.yield(.streamFinished(message: finalMessage, conversationId: conversationId))
         return finalMessage
-    }
-
-    // MARK: - 非流式响应处理
-
-    private func processNonStreamingTurn(
-        conversationId: UUID,
-        config: LLMConfig,
-        messages: [ChatMessage],
-        availableTools: [AgentTool],
-        languagePreference: LanguagePreference
-    ) async throws -> ChatMessage {
-        var responseMsg = try await llmService.sendMessage(
-            messages: messages,
-            config: config,
-            tools: availableTools.isEmpty ? nil : availableTools
-        )
-
-        // “空 content + toolCalls” 的展示增强已迁移到中间件：`EmptyToolResponseContentMiddleware`。
-
-        eventContinuation.yield(.responseReceived(responseMsg, conversationId: conversationId))
-        return responseMsg
     }
 
     // MARK: - 工具调用处理
@@ -637,7 +604,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         let previousTask: Task<Void, Never>?
         if depth == 0 {
             if Self.verbose, turnTaskPipelineByConversation[conversationId] != nil {
-                AppLogger.core.info("\(Self.t)🧵 [\(conversationId)] 新消息到达，取消旧轮次链路")
+                AppLogger.core.info("\(Self.t)🧵 [\(conversationId.uuidString.prefix(8))] 新消息到达，取消旧轮次链路")
             }
             turnTaskPipelineByConversation[conversationId]?.cancel()
             turnTaskPipelineByConversation[conversationId] = nil
