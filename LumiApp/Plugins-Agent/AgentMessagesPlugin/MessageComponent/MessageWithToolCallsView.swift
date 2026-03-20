@@ -35,7 +35,10 @@ struct MessageWithToolCallsView: View {
                     isExpanded: isExpanded,
                     onToggleExpand: {
                         Task { @MainActor in
-                            expansionState.toggleExpansion(id: message.id)
+                            expansionState.toggleExpansion(
+                                id: message.id,
+                                defaultExpanded: !renderMetadata.shouldDefaultCollapse
+                            )
                         }
                     }
                 )

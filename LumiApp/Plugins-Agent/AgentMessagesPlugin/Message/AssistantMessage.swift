@@ -83,7 +83,10 @@ struct AssistantMessage: View {
                             isExpanded: isExpanded,
                             onToggleExpand: {
                                 Task { @MainActor in
-                                    expansionState.toggleExpansion(id: message.id)
+                                    expansionState.toggleExpansion(
+                                        id: message.id,
+                                        defaultExpanded: !renderMetadata.shouldDefaultCollapse
+                                    )
                                 }
                             }
                         )
@@ -174,7 +177,10 @@ struct AssistantMessage: View {
             if isExpanded {
                 CollapseButton(action: {
                     Task { @MainActor in
-                        expansionState.toggleExpansion(id: message.id)
+                        expansionState.toggleExpansion(
+                            id: message.id,
+                            defaultExpanded: !renderMetadata.shouldDefaultCollapse
+                        )
                     }
                 })
             } else {
