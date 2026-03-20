@@ -76,7 +76,7 @@ final class ConversationTurnCoordinator: SuperLog {
         // 确保在插件加载完成后重建一次 pipeline（避免启动早期读取 middleware 导致缓存为空）
         if pluginsDidLoadObserver == nil {
             pluginsDidLoadObserver = NotificationCenter.default.addObserver(
-                forName: NSNotification.Name("PluginsDidLoad"),
+                forName: .pluginsDidLoad,
                 object: nil,
                 queue: nil
             ) { [weak self] _ in

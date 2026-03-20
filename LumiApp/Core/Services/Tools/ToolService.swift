@@ -123,7 +123,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     @MainActor
     private func setupPluginObservers() {
         pluginsDidLoadObserver = NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("PluginsDidLoad"),
+            forName: .pluginsDidLoad,
             object: nil,
             queue: .main
         ) { [weak self] _ in

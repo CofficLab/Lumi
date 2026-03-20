@@ -320,10 +320,7 @@ final class PluginVM: ObservableObject, SuperLog {
         }
         
         // 发送通知，告知其他组件插件加载完成
-        NotificationCenter.default.post(
-            name: NSNotification.Name("PluginsDidLoad"),
-            object: self
-        )
+        NotificationCenter.postPluginsDidLoad()
         
         if Self.verbose {
             AppLogger.core.info("\(self.t)✅ Auto-discovery complete. Loaded \(sortedPlugins.count) plugins.")
