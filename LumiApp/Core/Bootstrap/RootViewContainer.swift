@@ -56,7 +56,8 @@ final class RootViewContainer: ObservableObject {
 
     // MARK: - 对话轮次相关
 
-    let conversationTurnViewModel: ConversationTurnVM
+    let conversationTurnPipelineHandler: ConversationTurnPipelineHandler
+    let conversationTurnServices: ConversationTurnServices
     let conversationRuntimeStore: ConversationRuntimeStore
     let agentSessionConfig: AgentSessionConfig
 
@@ -94,6 +95,11 @@ final class RootViewContainer: ObservableObject {
 
         // 初始化工具服务
         self.toolService = ToolService(llmService: llmService)
+
+        self.conversationTurnServices = ConversationTurnServices(
+            promptService: promptService,
+            toolService: toolService
+        )
 
         // 复用 LLMService 中的供应商注册表（已通过插件完成注册）
         self.providerRegistry = llmService.providerRegistry
@@ -175,17 +181,15 @@ final class RootViewContainer: ObservableObject {
 
         let toolExecutionService = ToolExecutionService(toolService: toolService)
 
-        self.conversationTurnViewModel = ConversationTurnVM(
+        self.conversationTurnPipelineHandler = ConversationTurnPipelineHandler(
             llmService: llmService,
             toolExecutionService: toolExecutionService,
-            promptService: promptService,
             runtimeStore: conversationRuntimeStore,
             sessionConfig: agentSessionConfig,
             chatHistoryService: chatHistoryService,
             toolService: toolService,
             messageViewModel: messageViewModel,
             ConversationVM: ConversationVM,
-            messageSenderVM: MessageSenderVM,
             projectVM: ProjectVM,
             processingStateViewModel: processingStateViewModel,
             permissionRequestViewModel: permissionRequestViewModel,
@@ -200,7 +204,7 @@ final class RootViewContainer: ObservableObject {
         self.permissionHandlingVM = PermissionHandlingVM(
             runtimeStore: conversationRuntimeStore,
             conversationVM: ConversationVM,
-            conversationTurnViewModel: conversationTurnViewModel,
+            conversationTurnPipelineHandler: conversationTurnPipelineHandler,
             permissionRequestViewModel: permissionRequestViewModel
         )
 
@@ -226,12 +230,6 @@ final class RootViewContainer: ObservableObject {
 
 
         MessageSenderVM.objectWillChange
-            .sink { [weak self] _ in
-                self?.objectWillChange.send()
-            }
-            .store(in: &cancellables)
-
-        conversationTurnViewModel.objectWillChange
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
             }

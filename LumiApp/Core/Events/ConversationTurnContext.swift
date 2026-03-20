@@ -1,6 +1,6 @@
 import Foundation
 
-/// `ConversationTurnVM` 内部按会话维护的轮次可变状态（非 VM，与事件模型分列）。
+/// `ConversationTurnVM` 内部按会话维护的轮次可变状态。
 struct ConversationTurnContext {
     var currentDepth: Int = 0
     var pendingToolCalls: [ToolCall] = []

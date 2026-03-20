@@ -1,6 +1,6 @@
 import Foundation
 
-/// 对话轮次处理过程中产生的事件（由 `ConversationTurnVM` 产出，Root 侧流水线消费）。
+/// 对话轮次处理过程中产生的事件。
 enum ConversationTurnEvent: Sendable {
     case responseReceived(ChatMessage, conversationId: UUID)
     case streamChunk(content: String, messageId: UUID, conversationId: UUID)

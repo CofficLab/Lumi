@@ -5,18 +5,18 @@ import Foundation
 final class PermissionHandlingVM: ObservableObject {
     private let runtimeStore: ConversationRuntimeStore
     private let conversationVM: ConversationVM
-    private let conversationTurnViewModel: ConversationTurnVM
+    private let conversationTurnPipelineHandler: ConversationTurnPipelineHandler
     private let permissionRequestViewModel: PermissionRequestVM
 
     init(
         runtimeStore: ConversationRuntimeStore,
         conversationVM: ConversationVM,
-        conversationTurnViewModel: ConversationTurnVM,
+        conversationTurnPipelineHandler: ConversationTurnPipelineHandler,
         permissionRequestViewModel: PermissionRequestVM
     ) {
         self.runtimeStore = runtimeStore
         self.conversationVM = conversationVM
-        self.conversationTurnViewModel = conversationTurnViewModel
+        self.conversationTurnPipelineHandler = conversationTurnPipelineHandler
         self.permissionRequestViewModel = permissionRequestViewModel
     }
 
@@ -29,7 +29,7 @@ final class PermissionHandlingVM: ObservableObject {
         permissionRequestViewModel.setPendingPermissionRequest(nil)
         runtimeStore.updateRuntimeState(for: conversationId)
 
-        conversationTurnViewModel.emitPermissionDecision(
+        conversationTurnPipelineHandler.emitPermissionDecision(
             allowed: allowed,
             request: request,
             conversationId: conversationId

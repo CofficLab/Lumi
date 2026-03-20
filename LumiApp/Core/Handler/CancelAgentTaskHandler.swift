@@ -7,11 +7,17 @@ enum CancelAgentTaskHandler: SuperLog {
     nonisolated static let verbose = false
 
     @MainActor
-    static func handle(conversationId: UUID, turnVM: ConversationTurnVM) {
-        turnVM.messageSenderVM.cancelProcessing(for: conversationId, clearQueue: true)
-        turnVM.cancelTurnPipeline(for: conversationId)
+    static func handle(
+        conversationId: UUID,
+        turnPipelineHandler: ConversationTurnPipelineHandler,
+        messageSenderVM: MessageQueueVM,
+        runtimeStore: ConversationRuntimeStore,
+        projectVM: ProjectVM
+    ) {
+        messageSenderVM.cancelProcessing(for: conversationId, clearQueue: true)
+        turnPipelineHandler.cancelTurnPipeline(for: conversationId)
 
-        let store = turnVM.runtimeStore
+        let store = runtimeStore
         store.processingConversationIds.remove(conversationId)
         store.streamStateByConversation[conversationId] = ConversationRuntimeStore.StreamSessionState(messageId: nil)
         store.pendingStreamTextByConversation[conversationId] = nil
@@ -22,14 +28,14 @@ enum CancelAgentTaskHandler: SuperLog {
         store.turnContextsByConversation.removeValue(forKey: conversationId)
 
         store.bumpStreamingPresentation()
-        turnVM.updateRuntimeState(for: conversationId)
+        turnPipelineHandler.updateRuntimeState(for: conversationId)
 
         AppLogger.core.info("\(Self.t)🛑 任务已取消 [\(String(conversationId.uuidString.prefix(8)))]")
-        turnVM.resetUIAfterAgentCancel(for: conversationId)
+        turnPipelineHandler.resetUIAfterAgentCancel(for: conversationId)
 
-        let cancelMessage = turnVM.projectVM.languagePreference == .chinese
+        let cancelMessage = projectVM.languagePreference == .chinese
             ? "⚠️ 生成已取消"
             : "⚠️ Generation cancelled"
-        turnVM.appendPipelineMessage(ChatMessage(role: .assistant, content: cancelMessage))
+        turnPipelineHandler.appendPipelineMessage(ChatMessage(role: .assistant, content: cancelMessage))
     }
 }

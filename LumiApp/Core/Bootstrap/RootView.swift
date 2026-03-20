@@ -36,7 +36,7 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(container.ProjectVM)
             .environmentObject(container.providerRegistry)
             .environmentObject(container.pluginVM)
-            .environmentObject(container.conversationTurnViewModel)
+            .environmentObject(container.conversationTurnServices)
             .environmentObject(container.conversationRuntimeStore)
             .environmentObject(container.agentSessionConfig)
             .environmentObject(container.ConversationVM)
@@ -69,7 +69,7 @@ struct RootView<Content>: View where Content: View {
             .onChange(of: container.projectContextRequestVM.request, onProjectContextRequestChanged)
             .onChange(of: container.ConversationVM.selectedConversationId, onConversationSelectionChanged)
             .task(id: ObjectIdentifier(container)) {
-                await container.conversationTurnViewModel.makeConversationTurnPipelineHandler().run()
+                await container.conversationTurnPipelineHandler.run()
             }
     }
 }
@@ -81,7 +81,10 @@ extension RootView {
         guard let conversationId else { return }
         CancelAgentTaskHandler.handle(
             conversationId: conversationId,
-            turnVM: container.conversationTurnViewModel
+            turnPipelineHandler: container.conversationTurnPipelineHandler,
+            messageSenderVM: container.MessageSenderVM,
+            runtimeStore: container.conversationRuntimeStore,
+            projectVM: container.ProjectVM
         )
         container.agentTaskCancellationVM.consumeRequest()
     }
@@ -95,8 +98,11 @@ extension RootView {
             sessionConfig: container.agentSessionConfig,
             projectVM: container.ProjectVM,
             slashCommandService: container.slashCommandService,
-            enqueueTurnProcessing: { [weak turn = container.conversationTurnViewModel] conversationId, depth in
-                turn?.enqueueTurnProcessing(conversationId: conversationId, depth: depth)
+            enqueueTurnProcessing: { [weak handler = container.conversationTurnPipelineHandler] conversationId, depth in
+                guard let handler else { return }
+                Task { @MainActor in
+                    handler.enqueueTurnProcessing(conversationId: conversationId, depth: depth)
+                }
             }
         )
     }
