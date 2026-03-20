@@ -55,6 +55,13 @@ final class ConversationRuntimeStore: ObservableObject {
 
     @Published private(set) var conversationRuntimeStates: [UUID: ConversationRuntimeState] = [:]
 
+    /// 时间线等订阅：流式文本经 throttle 写入 store 后显式递增，避免仅靠全量 `objectWillChange` 难以精准刷新占位气泡。
+    @Published private(set) var streamingPresentationVersion: Int = 0
+
+    func bumpStreamingPresentation() {
+        streamingPresentationVersion &+= 1
+    }
+
     func runtimeState(for conversationId: UUID) -> ConversationRuntimeState {
         conversationRuntimeStates[conversationId] ?? .idle
     }

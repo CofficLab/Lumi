@@ -38,7 +38,6 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(container.pluginVM)
             .environmentObject(container.conversationTurnViewModel)
             .environmentObject(container.conversationRuntimeStore)
-            .environmentObject(container.agentStreamingRender)
             .environmentObject(container.agentSessionConfig)
             .environmentObject(container.ConversationVM)
             .environmentObject(container.messageViewModel)

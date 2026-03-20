@@ -24,7 +24,6 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
     let toolService: ToolService
 
     let runtimeStore: ConversationRuntimeStore
-    let streamingRender: AgentStreamingRender
     let sessionConfig: AgentSessionConfig
     let chatHistoryService: ChatHistoryService
     let messageViewModel: MessagePendingVM
@@ -76,7 +75,6 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         toolExecutionService: ToolExecutionService,
         promptService: PromptService,
         runtimeStore: ConversationRuntimeStore,
-        streamingRender: AgentStreamingRender,
         sessionConfig: AgentSessionConfig,
         chatHistoryService: ChatHistoryService,
         toolService: ToolService,
@@ -98,7 +96,6 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         self.promptService = promptService
         self.toolService = toolService
         self.runtimeStore = runtimeStore
-        self.streamingRender = streamingRender
         self.sessionConfig = sessionConfig
         self.chatHistoryService = chatHistoryService
         self.messageViewModel = messageViewModel
@@ -630,7 +627,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                 guard let self else { return }
                 processing.markStreamStarted()
                 if self.ConversationVM.selectedConversationId == conversationId {
-                    self.streamingRender.bump()
+                    self.runtimeStore.bumpStreamingPresentation()
                 }
             },
             onStreamFirstTokenUI: { _, ttftMs in
@@ -650,7 +647,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                 processing.finish()
                 self.runtimeStore.streamingTextByConversation[conversationId] = nil
                 if self.ConversationVM.selectedConversationId == conversationId {
-                    self.streamingRender.bump()
+                    self.runtimeStore.bumpStreamingPresentation()
                 }
             },
             onThinkingStartedUI: { conversationId in
@@ -738,7 +735,7 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         }
         runtimeStore.streamingTextByConversation[conversationId, default: ""] += pending
         if ConversationVM.selectedConversationId == conversationId {
-            streamingRender.bump()
+            runtimeStore.bumpStreamingPresentation()
         }
         runtimeStore.pendingStreamTextByConversation[conversationId] = ""
         runtimeStore.lastStreamFlushAtByConversation[conversationId] = now

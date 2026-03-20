@@ -22,7 +22,7 @@ enum CancelAgentTaskHandler: SuperLog {
         store.thinkingConversationIds.remove(conversationId)
         store.pendingPermissionByConversation[conversationId] = nil
 
-        turnVM.streamingRender.bump()
+        store.bumpStreamingPresentation()
         turnVM.updateRuntimeState(for: conversationId)
 
         AppLogger.core.info("\(Self.t)🛑 任务已取消 [\(String(conversationId.uuidString.prefix(8)))]")
