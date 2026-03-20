@@ -94,10 +94,10 @@ final class MessageSenderVM: ObservableObject, SuperLog {
 
     func sendMessage(
         content: String,
-        images: [ImageAttachment] = [],
-        onComplete: (() -> Void)? = nil
+        images: [ImageAttachment] = []
     ) {
         guard !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            AppLogger.core.error("\(Self.t)❌ 消息内容不能为空")
             return
         }
 
@@ -124,15 +124,16 @@ final class MessageSenderVM: ObservableObject, SuperLog {
         }
 
         startOrContinueProcessing(for: conversationId)
-        onComplete?()
     }
 
     private func startOrContinueProcessing(for conversationId: UUID) {
         if isSendingByConversation[conversationId] == true {
+            AppLogger.core.error("\(Self.t)❌ 会话 [\(conversationId.uuidString.prefix(8))] 正在发送中")
             return
         }
 
         guard let queue = pendingMessagesByConversation[conversationId], !queue.isEmpty else {
+            AppLogger.core.error("\(Self.t)❌ 会话 [\(conversationId.uuidString.prefix(8))] 没有消息")
             return
         }
 

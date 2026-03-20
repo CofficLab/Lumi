@@ -67,7 +67,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     let ConversationVM: ConversationVM
 
     /// 消息发送 ViewModel
-    var MessageSenderVM: MessageSenderVM
+    var messageSenderVM: MessageSenderVM
 
     /// 项目 ViewModel
     let ProjectVM: ProjectVM
@@ -96,7 +96,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     private var cancellables = Set<AnyCancellable>()
 
     private lazy var messageSendCoordinator = MessageSendCoordinator(
-        MessageSenderVM: MessageSenderVM,
+        MessageSenderVM: messageSenderVM,
         runtimeStore: runtimeStore,
         services: .init(
             getConversationTitle: { [weak self] conversationId in
@@ -296,7 +296,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         self.chatHistoryService = chatHistoryService
         self.messageViewModel = messageViewModel
         self.ConversationVM = ConversationVM
-        self.MessageSenderVM = MessageSenderVM
+        self.messageSenderVM = MessageSenderVM
         self.ProjectVM = ProjectVM
         self.conversationTurnViewModel = conversationTurnViewModel
         self.slashCommandService = slashCommandService
@@ -821,7 +821,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         }
 
         // 切换消息发送队列到新会话
-        let queueCount = MessageSenderVM.switchToConversation(conversationId)
+        let queueCount = messageSenderVM.switchToConversation(conversationId)
         if Self.verbose {
             AppLogger.core.info("\(Self.t)🔄 [\(conversationId)] 待发送消息：\(queueCount) 条")
         }
@@ -850,11 +850,11 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         }
 
         // 1. 清理该会话的待发送队列
-        MessageSenderVM.removeConversationQueue(conversation.id)
+        messageSenderVM.removeConversationQueue(conversation.id)
 
         // 如果删除的是选中的对话，清理当前队列
         if ConversationVM.selectedConversationId == conversation.id {
-            MessageSenderVM.clearCurrentConversationQueue()
+            messageSenderVM.clearCurrentConversationQueue()
         }
 
         // 2. 清理该会话的运行时状态（流式缓存、思考文本、任务管线等）
@@ -878,15 +878,15 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
             AppLogger.core.info("\(Self.t)📤 [\(conversationId)] 正在发送消息：\(message.content.max(50))")
         }
 
-        // 1. 添加消息到消息列表
+        // 添加消息到消息列表
         if ConversationVM.selectedConversationId == conversationId {
             messageViewModel.appendMessage(message)
         }
 
-        // 2. 保存到数据库
+        // 保存到数据库
         await ConversationVM.saveMessage(message, to: conversationId)
 
-        // 4. 串行入队处理轮次，避免阻塞事件消费循环。
+        // 串行入队处理轮次，避免阻塞事件消费循环。
         enqueueTurnProcessing(conversationId: conversationId, depth: 0)
 
         if Self.verbose {
@@ -900,7 +900,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
     public func cancelCurrentTask() {
         guard let conversationId = ConversationVM.selectedConversationId else { return }
 
-        MessageSenderVM.cancelProcessing(for: conversationId, clearQueue: true)
+        messageSenderVM.cancelProcessing(for: conversationId, clearQueue: true)
         turnTaskPipelineByConversation[conversationId]?.cancel()
         turnTaskPipelineByConversation[conversationId] = nil
         runtimeStore.processingConversationIds.remove(conversationId)
@@ -945,11 +945,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
 
     /// 发送消息
     /// - Parameters:
-    ///   - input: 要发送的文字内容（由 InputViewModel 传入，不再从内部状态读取）
-    ///   - images: 附件图片列表
-    /// 发送消息
-    /// - Parameters:
-    ///   - input: 要发送的文字内容（由 InputViewModel 传入，不再从内部状态读取）
+    ///   - input: 要发送的文字内容
     ///   - images: 附件图片列表
     public func sendMessage(input: String, images: [ImageAttachment] = []) {
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -994,7 +990,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
                     setIsProcessing(false)
                 case .notHandled:
                     // 对于未处理的命令，继续通过消息队列发送
-                    MessageSenderVM.sendMessage(content: trimmed, images: allImages)
+                    messageSenderVM.sendMessage(content: trimmed, images: allImages)
                 case let .systemMessage(content):
                     // 添加系统消息
                     appendSystemMessage(content)
@@ -1017,12 +1013,12 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
                     setIsProcessing(false)
                 @unknown default:
                     // 兜底处理：将未知结果视为未处理命令
-                    MessageSenderVM.sendMessage(content: trimmed, images: allImages)
+                    messageSenderVM.sendMessage(content: trimmed, images: allImages)
                     setIsProcessing(false)
                 }
             } else {
                 // 通过 MessageSenderVM 发送消息
-                MessageSenderVM.sendMessage(content: trimmed, images: allImages)
+                messageSenderVM.sendMessage(content: trimmed, images: allImages)
             }
         }
     }
@@ -1084,7 +1080,7 @@ final class AgentVM: ObservableObject, SuperLog, LLMConfigProvider {
         )
 
         // 2. 切换消息发送队列到新会话
-        MessageSenderVM.switchToConversation(conversation.id)
+        messageSenderVM.switchToConversation(conversation.id)
 
         // 3. 生成系统上下文和欢迎消息
         Task { [promptService, ProjectVM, ConversationVM] in

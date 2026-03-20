@@ -86,15 +86,6 @@ final class GlobalVM: ObservableObject {
     /// 例如："正在分析代码..."、"正在搜索..."
     @Published var activityStatus: String? = nil
 
-    // MARK: - 初始化
-
-    /// 初始化全局提供者
-    ///
-    /// 模式恢复由插件负责。
-    init() {
-        // no-op
-    }
-
     // MARK: - 错误处理
 
     /// 显示错误信息
