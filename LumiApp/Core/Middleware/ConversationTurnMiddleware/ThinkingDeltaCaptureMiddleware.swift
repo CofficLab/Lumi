@@ -34,10 +34,19 @@ final class ThinkingDeltaCaptureMiddleware: ConversationTurnMiddleware, SuperLog
 
         if ctx.env.selectedConversationId() == conversationId, !appendPart.isEmpty {
             ctx.runtimeStore.pendingThinkingTextByConversation[conversationId, default: ""] += appendPart
-            ctx.actions.flushPendingThinkingText(
-                conversationId,
-                ctx.runtimeStore.pendingThinkingTextByConversation[conversationId, default: ""].count >= ctx.env.immediateThinkingFlushChars
-            )
+
+            let pending = ctx.runtimeStore.pendingThinkingTextByConversation[conversationId, default: ""]
+            let force = pending.count >= ctx.env.immediateThinkingFlushChars
+            guard !pending.isEmpty else { return }
+
+            let now = Date()
+            let lastFlush = ctx.runtimeStore.lastThinkingFlushAtByConversation[conversationId] ?? .distantPast
+            guard force || now.timeIntervalSince(lastFlush) >= ctx.env.thinkingUIFlushInterval else { return }
+
+            ctx.ui.appendThinkingText(pending, conversationId)
+            ctx.runtimeStore.pendingThinkingTextByConversation[conversationId] = ""
+            ctx.runtimeStore.lastThinkingFlushAtByConversation[conversationId] = now
+
             if Self.verbose {
                 AppLogger.core.info("\(Self.t) 累积思考文本 +\(appendPart.count) 字符")
             }

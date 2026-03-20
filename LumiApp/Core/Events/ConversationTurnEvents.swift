@@ -9,6 +9,7 @@ enum ConversationTurnEvent: Sendable {
     case streamFinished(message: ChatMessage, conversationId: UUID)
     case toolResultReceived(ChatMessage, conversationId: UUID)
     case permissionRequested(PermissionRequest, conversationId: UUID)
+    case permissionDecision(allowed: Bool, request: PermissionRequest, conversationId: UUID)
     case maxDepthReached(currentDepth: Int, maxDepth: Int, conversationId: UUID)
     case completed(conversationId: UUID)
     case error(Error, conversationId: UUID)

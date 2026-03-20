@@ -11,6 +11,8 @@ struct ConversationTurnMiddlewareEnvironment {
     let maxToolResultLength: Int
     let immediateStreamFlushChars: Int
     let immediateThinkingFlushChars: Int
+    let streamUIFlushInterval: TimeInterval
+    let thinkingUIFlushInterval: TimeInterval
     let captureThinkingContent: Bool
 }
 
@@ -21,8 +23,7 @@ struct ConversationTurnMiddlewareMessageActions {
     let updateMessage: (ChatMessage, Int) -> Void
     let saveMessage: (ChatMessage, UUID) async -> Void
     let enqueueTurnProcessing: (UUID, Int) -> Void
-    let flushPendingStreamText: (UUID, Bool) -> Void
-    let flushPendingThinkingText: (UUID, Bool) -> Void
+    let executeToolAndContinue: (ToolCall, UUID, LanguagePreference) async -> Void
     let updateRuntimeState: (UUID) -> Void
 }
 
@@ -40,6 +41,7 @@ struct ConversationTurnMiddlewareUIActions {
     let setLastHeartbeatTime: (Date?) -> Void
     let setIsThinking: (Bool, UUID) -> Void
     let setThinkingText: (String, UUID) -> Void
+    let appendThinkingText: (String, UUID) -> Void
 }
 
 // MARK: - 轮次中间件共享上下文

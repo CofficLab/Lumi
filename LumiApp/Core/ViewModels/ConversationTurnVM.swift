@@ -482,6 +482,20 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         }
     }
 
+    func emitPermissionDecision(
+        allowed: Bool,
+        request: PermissionRequest,
+        conversationId: UUID
+    ) {
+        eventContinuation.yield(
+            .permissionDecision(
+                allowed: allowed,
+                request: request,
+                conversationId: conversationId
+            )
+        )
+    }
+
     private func processPendingTools(conversationId: UUID, languagePreference: LanguagePreference) async {
         var context = turnContexts[conversationId] ?? ConversationTurnContext()
 
@@ -526,6 +540,8 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                 maxToolResultLength: maxToolResultLength,
                 immediateStreamFlushChars: immediateStreamFlushChars,
                 immediateThinkingFlushChars: immediateThinkingFlushChars,
+                streamUIFlushInterval: streamUIFlushInterval,
+                thinkingUIFlushInterval: thinkingUIFlushInterval,
                 captureThinkingContent: captureThinkingContent
             ),
             messages: .init(
@@ -539,11 +555,9 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
                 enqueueTurnProcessing: { [weak self] cid, depth in
                     self?.enqueueTurnProcessing(conversationId: cid, depth: depth)
                 },
-                flushPendingStreamText: { [weak self] cid, force in
-                    self?.flushPendingStreamTextIfNeeded(for: cid, force: force)
-                },
-                flushPendingThinkingText: { [weak self] cid, force in
-                    self?.flushPendingThinkingTextIfNeeded(for: cid, force: force)
+                executeToolAndContinue: { [weak self] toolCall, cid, languagePreference in
+                    guard let self else { return }
+                    await self.executeToolAndContinue(toolCall, conversationId: cid, languagePreference: languagePreference)
                 },
                 updateRuntimeState: { [weak self] cid in
                     self?.updateRuntimeState(for: cid)
@@ -613,6 +627,9 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
             },
             setThinkingText: { text, cid in
                 thinking.setThinkingText(text, for: cid)
+            },
+            appendThinkingText: { text, cid in
+                thinking.appendThinkingText(text, for: cid)
             }
         )
     }
@@ -672,38 +689,6 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
 
     func updateRuntimeState(for conversationId: UUID) {
         runtimeStore.updateRuntimeState(for: conversationId)
-    }
-
-    func flushPendingStreamTextIfNeeded(for conversationId: UUID, force: Bool = false) {
-        guard let pending = runtimeStore.pendingStreamTextByConversation[conversationId], !pending.isEmpty else {
-            return
-        }
-        let now = Date()
-        let lastFlush = runtimeStore.lastStreamFlushAtByConversation[conversationId] ?? .distantPast
-        guard force || now.timeIntervalSince(lastFlush) >= streamUIFlushInterval else {
-            return
-        }
-        runtimeStore.streamingTextByConversation[conversationId, default: ""] += pending
-        if ConversationVM.selectedConversationId == conversationId {
-            runtimeStore.bumpStreamingPresentation()
-        }
-        runtimeStore.pendingStreamTextByConversation[conversationId] = ""
-        runtimeStore.lastStreamFlushAtByConversation[conversationId] = now
-    }
-
-    func flushPendingThinkingTextIfNeeded(for conversationId: UUID, force: Bool = false) {
-        guard let pending = runtimeStore.pendingThinkingTextByConversation[conversationId], !pending.isEmpty else {
-            return
-        }
-        let now = Date()
-        let lastFlush = runtimeStore.lastThinkingFlushAtByConversation[conversationId] ?? .distantPast
-        guard force || now.timeIntervalSince(lastFlush) >= thinkingUIFlushInterval else {
-            return
-        }
-        guard ConversationVM.selectedConversationId == conversationId else { return }
-        thinkingStateViewModel.appendThinkingText(pending, for: conversationId)
-        runtimeStore.pendingThinkingTextByConversation[conversationId] = ""
-        runtimeStore.lastThinkingFlushAtByConversation[conversationId] = now
     }
 
     func appendPipelineMessage(_ message: ChatMessage) {

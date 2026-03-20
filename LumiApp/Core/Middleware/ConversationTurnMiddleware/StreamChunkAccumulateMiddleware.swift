@@ -47,10 +47,20 @@ final class StreamChunkAccumulateMiddleware: ConversationTurnMiddleware, SuperLo
         }
 
         ctx.runtimeStore.pendingStreamTextByConversation[conversationId, default: ""] += content
-        ctx.actions.flushPendingStreamText(
-            conversationId,
-            ctx.runtimeStore.pendingStreamTextByConversation[conversationId, default: ""].count >= ctx.env.immediateStreamFlushChars
-        )
+
+        let pending = ctx.runtimeStore.pendingStreamTextByConversation[conversationId, default: ""]
+        let force = pending.count >= ctx.env.immediateStreamFlushChars
+        guard !pending.isEmpty else { return }
+
+        let now = Date()
+        let lastFlush = ctx.runtimeStore.lastStreamFlushAtByConversation[conversationId] ?? .distantPast
+        guard force || now.timeIntervalSince(lastFlush) >= ctx.env.streamUIFlushInterval else { return }
+
+        ctx.runtimeStore.streamingTextByConversation[conversationId, default: ""] += pending
+        ctx.runtimeStore.pendingStreamTextByConversation[conversationId] = ""
+        ctx.runtimeStore.lastStreamFlushAtByConversation[conversationId] = now
+
+        ctx.runtimeStore.bumpStreamingPresentation()
 
         // 短路：streamChunk 已处理完毕，不进入核心 handler。
     }

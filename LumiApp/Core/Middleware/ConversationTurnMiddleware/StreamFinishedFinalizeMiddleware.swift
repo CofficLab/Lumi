@@ -24,8 +24,26 @@ final class StreamFinishedFinalizeMiddleware: ConversationTurnMiddleware, SuperL
             AppLogger.core.info("\(Self.t) 流式结束，内容长度=\(message.content.count) 字符")
         }
 
-        ctx.actions.flushPendingStreamText(conversationId, true)
-        ctx.actions.flushPendingThinkingText(conversationId, true)
+        // 强制刷新当前 UI 缓冲的 streaming/thinking 增量文本。
+        let now = Date()
+        let pendingStream = ctx.runtimeStore.pendingStreamTextByConversation[conversationId] ?? ""
+        if !pendingStream.isEmpty {
+            ctx.runtimeStore.streamingTextByConversation[conversationId, default: ""] += pendingStream
+            ctx.runtimeStore.pendingStreamTextByConversation[conversationId] = ""
+            ctx.runtimeStore.lastStreamFlushAtByConversation[conversationId] = now
+            if ctx.env.selectedConversationId() == conversationId {
+                ctx.runtimeStore.bumpStreamingPresentation()
+            }
+        }
+
+        let pendingThinking = ctx.runtimeStore.pendingThinkingTextByConversation[conversationId] ?? ""
+        if !pendingThinking.isEmpty {
+            if ctx.env.selectedConversationId() == conversationId {
+                ctx.ui.appendThinkingText(pendingThinking, conversationId)
+            }
+            ctx.runtimeStore.pendingThinkingTextByConversation[conversationId] = ""
+            ctx.runtimeStore.lastThinkingFlushAtByConversation[conversationId] = now
+        }
 
         var finalMessage = message
         let thinkingText = ctx.runtimeStore.thinkingTextByConversation[conversationId] ?? ""

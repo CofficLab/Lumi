@@ -29,10 +29,20 @@ final class StreamTextDeltaApplyMiddleware: ConversationTurnMiddleware, SuperLog
         // 与 streamChunk 路径保持一致：
         // 避免每个 delta 都触发一次主线程列表更新，降低 SwiftUI 事务风暴风险。
         ctx.runtimeStore.pendingStreamTextByConversation[conversationId, default: ""] += content
-        ctx.actions.flushPendingStreamText(
-            conversationId,
-            ctx.runtimeStore.pendingStreamTextByConversation[conversationId, default: ""].count >= ctx.env.immediateStreamFlushChars
-        )
+
+        let pending = ctx.runtimeStore.pendingStreamTextByConversation[conversationId, default: ""]
+        let force = pending.count >= ctx.env.immediateStreamFlushChars
+        guard !pending.isEmpty else { return }
+
+        let now = Date()
+        let lastFlush = ctx.runtimeStore.lastStreamFlushAtByConversation[conversationId] ?? .distantPast
+        guard force || now.timeIntervalSince(lastFlush) >= ctx.env.streamUIFlushInterval else { return }
+
+        ctx.runtimeStore.streamingTextByConversation[conversationId, default: ""] += pending
+        ctx.runtimeStore.pendingStreamTextByConversation[conversationId] = ""
+        ctx.runtimeStore.lastStreamFlushAtByConversation[conversationId] = now
+
+        ctx.runtimeStore.bumpStreamingPresentation()
 
         if Self.verbose {
             AppLogger.core.info("\(Self.t) 累积文本增量 +\(content.count) 字符")

@@ -36,6 +36,7 @@ struct TraceLoggingMiddleware: ConversationTurnMiddleware, SuperLog {
         case .streamFinished: return "streamFinished"
         case .toolResultReceived: return "toolResultReceived"
         case .permissionRequested: return "permissionRequested"
+        case .permissionDecision: return "permissionDecision"
         case .maxDepthReached: return "maxDepthReached"
         case .completed: return "completed"
         case .error: return "error"

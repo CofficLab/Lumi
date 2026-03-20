@@ -201,8 +201,6 @@ final class RootViewContainer: ObservableObject {
             runtimeStore: conversationRuntimeStore,
             conversationVM: ConversationVM,
             conversationTurnViewModel: conversationTurnViewModel,
-            messageViewModel: messageViewModel,
-            projectVM: ProjectVM,
             permissionRequestViewModel: permissionRequestViewModel
         )
 
