@@ -16,7 +16,7 @@ struct InputAreaView: View, SuperLog {
     nonisolated static let verbose = true
 
     /// 待发送附件
-    @EnvironmentObject private var agentAttachmentsVM: AgentAttachmentsVM
+    @EnvironmentObject private var agentAttachmentsVM: AttachmentsVM
 
     /// 入队器：只负责把输入入队
     @EnvironmentObject private var inputQueueVM: InputQueueVM

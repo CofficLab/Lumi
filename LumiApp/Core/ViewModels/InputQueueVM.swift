@@ -1,7 +1,7 @@
 import Foundation
 import MagicKit
 
-/// 仅负责把用户输入（文本 + 附件）入队到 `MessageSenderVM`。
+/// 负责把用户输入（文本 + 附件）入队到 `MessageSenderVM`。
 @MainActor
 final class InputQueueVM: ObservableObject, SuperLog {
     nonisolated static var emoji: String { "🔄" }
@@ -9,12 +9,12 @@ final class InputQueueVM: ObservableObject, SuperLog {
 
     private let conversationVM: ConversationVM
     private let messageSenderVM: MessageQueueVM
-    private let attachmentsVM: AgentAttachmentsVM
+    private let attachmentsVM: AttachmentsVM
 
     init(
         conversationVM: ConversationVM,
         messageSenderVM: MessageQueueVM,
-        attachmentsVM: AgentAttachmentsVM
+        attachmentsVM: AttachmentsVM
     ) {
         self.conversationVM = conversationVM
         self.messageSenderVM = messageSenderVM

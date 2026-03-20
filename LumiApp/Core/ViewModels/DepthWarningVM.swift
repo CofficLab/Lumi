@@ -5,7 +5,7 @@ import Foundation
 @MainActor
 final class DepthWarningVM: ObservableObject {
     /// 当前深度警告
-    @Published public fileprivate(set) var depthWarning: DepthWarning?
+    @Published public private(set) var depthWarning: DepthWarning?
 
     /// 设置深度警告
     func setDepthWarning(_ warning: DepthWarning?) {

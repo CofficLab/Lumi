@@ -2,18 +2,6 @@ import Foundation
 import SwiftUI
 
 /// 会话运行态存储（按会话隔离的临时状态）
-///
-/// ## 设计原则
-///
-/// - 仅存放**不落库**的运行时状态（流式占位、thinking、processing、权限请求、错误、心跳等）。
-/// - 所有状态均以 `conversationId` 为 key 做会话隔离，支持多会话并发与快速切换。
-/// - 由 `AgentRuntime` / `ConversationTurnVM` 等持有 store，并由 `RootView` / `Handler` 与各 UI VM 投影展示。
-///
-/// ## 职责边界
-///
-/// - `ConversationRuntimeStore`: 维护/计算会话运行态（例如 `ConversationRuntimeState`），提供清理方法避免泄漏。
-/// - `ChatHistoryService`: 负责持久化消息与会话。
-/// - 具体 UI：通过 ViewModel 读取并展示状态，不直接修改 store 内部结构。
 @MainActor
 final class ConversationRuntimeStore: ObservableObject {
     struct StreamSessionState {

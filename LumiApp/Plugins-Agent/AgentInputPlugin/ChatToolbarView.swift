@@ -12,10 +12,10 @@ struct ChatToolbarView: View, SuperLog {
     @EnvironmentObject var agentSessionConfig: AgentSessionConfig
     @EnvironmentObject var ProjectVM: ProjectVM
     @EnvironmentObject var ConversationVM: ConversationVM
-    @EnvironmentObject var agentTaskCancellationVM: AgentTaskCancellationVM
+    @EnvironmentObject var agentTaskCancellationVM: TaskCancellationVM
 
     /// 待发送附件
-    @EnvironmentObject private var agentAttachmentsVM: AgentAttachmentsVM
+    @EnvironmentObject private var agentAttachmentsVM: AttachmentsVM
 
     /// 入队器：只负责把输入入队到发送队列
     @EnvironmentObject private var inputQueueVM: InputQueueVM

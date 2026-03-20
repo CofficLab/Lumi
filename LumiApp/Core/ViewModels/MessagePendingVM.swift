@@ -2,7 +2,7 @@ import Foundation
 import MagicKit
 import SwiftUI
 
-/// 当前选中会话在 UI 中的消息列表（追加 / 插入 / 更新；持久化由 `ConversationVM` 等调用方负责）。
+/// 当前选中会话在 UI 中的消息列表
 @MainActor
 final class MessagePendingVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "💬"
@@ -18,7 +18,7 @@ final class MessagePendingVM: ObservableObject, SuperLog {
         messages.append(message)
 
         if Self.verbose {
-            AppLogger.core.info("\(Self.t)📝 appendMessageInternal: 追加 1 条消息，当前共 \(self.messages.count) 条")
+            AppLogger.core.info("\(Self.t)📝 追加 1 条消息，当前共 \(self.messages.count) 条")
         }
     }
 

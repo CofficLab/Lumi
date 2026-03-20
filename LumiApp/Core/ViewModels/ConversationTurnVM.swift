@@ -128,11 +128,20 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
         languagePreference: LanguagePreference,
         autoApproveRisk: Bool
     ) async {
-        guard depth <= maxDepth else {
-            eventContinuation.yield(.maxDepthReached(currentDepth: depth, maxDepth: maxDepth, conversationId: conversationId))
+        let depthGuardResult = MaxDepthReachedGuard().evaluate(depth: depth, maxDepth: maxDepth)
+
+        switch depthGuardResult {
+        case let .reached(currentDepth, maxDepth):
+            eventContinuation.yield(.maxDepthReached(currentDepth: currentDepth, maxDepth: maxDepth, conversationId: conversationId))
             return
+        case let .proceed(isFinalStep):
+            break
         }
-        let isFinalStep = depth == maxDepth
+
+        let isFinalStep: Bool = {
+            if case let .proceed(final) = depthGuardResult { return final }
+            return false
+        }()
 
         var context = runtimeStore.turnContextsByConversation[conversationId] ?? ConversationTurnContext()
         if depth == 0 {
@@ -191,25 +200,21 @@ final class ConversationTurnVM: ObservableObject, SuperLog {
             let hasToolCalls = !(responseMsg.toolCalls?.isEmpty ?? true)
 
             context = runtimeStore.turnContextsByConversation[conversationId] ?? ConversationTurnContext()
-            if hasToolCalls && !hasContent {
-                context.consecutiveEmptyToolTurns += 1
-            } else {
-                context.consecutiveEmptyToolTurns = 0
-            }
+            let consecutiveEmptyLoopResult = ConsecutiveEmptyToolTurnsLoopGuard().evaluate(
+                hasToolCalls: hasToolCalls,
+                hasContent: hasContent,
+                context: &context,
+                threshold: 3
+            )
             runtimeStore.turnContextsByConversation[conversationId] = context
 
             // 防止模型陷入“空文本 + 工具调用”循环，导致长时间卡住。
-            if context.consecutiveEmptyToolTurns >= 3 {
+            if case let .abort(error) = consecutiveEmptyLoopResult {
                 if let toolCalls = responseMsg.toolCalls, !toolCalls.isEmpty {
                     emitAbortedToolResults(for: toolCalls, conversationId: conversationId)
                 }
                 context.pendingToolCalls.removeAll()
-                    runtimeStore.turnContextsByConversation[conversationId] = context
-                let error = NSError(
-                    domain: "ConversationTurn",
-                    code: 409,
-                    userInfo: [NSLocalizedDescriptionKey: "检测到连续空响应工具循环，已自动中止本轮。"]
-                )
+                runtimeStore.turnContextsByConversation[conversationId] = context
                 eventContinuation.yield(.error(error, conversationId: conversationId))
                 AppLogger.core.error("\(self.t)[\(conversationId)] 连续空响应工具循环，已中止")
                 return

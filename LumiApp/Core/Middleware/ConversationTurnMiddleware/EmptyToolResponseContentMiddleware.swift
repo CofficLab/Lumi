@@ -3,8 +3,6 @@ import MagicKit
 
 /// 当 assistant 最终消息 `content` 为空但包含 `toolCalls` 时，
 /// 追加用于展示的“正在执行/Executing 工具摘要”内容。
-///
-/// 这是把 `ConversationTurnVM` 中“空响应展示增强”逻辑迁移为中间件后的对应实现。
 @MainActor
 struct EmptyToolResponseContentMiddleware: ConversationTurnMiddleware, SuperLog {
     nonisolated static let emoji = "🧩"

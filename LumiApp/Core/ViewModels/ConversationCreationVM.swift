@@ -1,6 +1,6 @@
 import Foundation
 
-/// 仅负责“创建新会话”的业务流程（落库会话 + 切换发送队列 + 初始化系统/欢迎消息）。
+/// 负责“创建新会话”的业务流程（落库会话 + 切换发送队列 + 初始化系统/欢迎消息）。
 @MainActor
 final class ConversationCreationVM: ObservableObject {
     private let handler: ConversationCreationHandler

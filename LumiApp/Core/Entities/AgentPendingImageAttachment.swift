@@ -1,6 +1,6 @@
 import Foundation
 
-/// 输入区待发送图片附件（展示与队列用）。
+/// 待发送图片附件
 enum AgentPendingImageAttachment: Identifiable, Equatable {
     case image(id: UUID, data: Data, mimeType: String, url: URL)
 

@@ -4,27 +4,6 @@ import SwiftData
 import SwiftUI
 
 /// 会话管理 ViewModel
-///
-/// 负责处理所有会话相关的业务逻辑：
-/// - 创建、加载、删除会话
-/// - 会话选择和状态管理
-///
-/// ## 设计说明
-///
-/// 此类只维护 `selectedConversationId`，不持有 `Conversation` 对象引用。
-/// 需要会话数据的视图应使用 `@Query` 根据 ID 自行查询。
-///
-/// ## 架构模式
-///
-/// ```
-/// ConversationVM
-/// ├── ChatHistoryService
-/// │   └── 持久化操作
-/// ├── LLMService
-/// │   └── 标题生成
-/// └── PromptService
-///     └── 欢迎消息
-/// ```
 @MainActor
 final class ConversationVM: ObservableObject, SuperLog {
     /// 日志标识符

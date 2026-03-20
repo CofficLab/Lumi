@@ -41,7 +41,7 @@ final class RootViewContainer: ObservableObject {
     let processingStateViewModel: ProcessingStateVM
     let permissionRequestViewModel: PermissionRequestVM
     let thinkingStateViewModel: ThinkingStateVM
-    let agentTaskCancellationVM: AgentTaskCancellationVM
+    let agentTaskCancellationVM: TaskCancellationVM
 
     // MARK: - 消息相关 VM
 
@@ -51,7 +51,7 @@ final class RootViewContainer: ObservableObject {
 
     // MARK: - 输入与附件
 
-    let agentAttachmentsVM: AgentAttachmentsVM
+    let agentAttachmentsVM: AttachmentsVM
     let inputQueueVM: InputQueueVM
 
     // MARK: - 对话轮次相关
@@ -128,7 +128,7 @@ final class RootViewContainer: ObservableObject {
         self.processingStateViewModel = ProcessingStateVM()
         self.permissionRequestViewModel = PermissionRequestVM()
         self.thinkingStateViewModel = ThinkingStateVM()
-        self.agentTaskCancellationVM = AgentTaskCancellationVM()
+        self.agentTaskCancellationVM = TaskCancellationVM()
 
         // ========================================
         // 消息相关 VM
@@ -148,7 +148,7 @@ final class RootViewContainer: ObservableObject {
         // 输入与附件
         // ========================================
 
-        self.agentAttachmentsVM = AgentAttachmentsVM()
+        self.agentAttachmentsVM = AttachmentsVM()
         self.inputQueueVM = InputQueueVM(
             conversationVM: ConversationVM,
             messageSenderVM: MessageSenderVM,
