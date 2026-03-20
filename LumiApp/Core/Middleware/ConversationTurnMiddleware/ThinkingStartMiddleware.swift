@@ -3,7 +3,7 @@ import MagicKit
 
 /// 处理 contentBlockStart：识别 thinking block 开始并更新运行态/UI，然后短路事件下游。
 @MainActor
-final class ContentBlockThinkingStartMiddleware: ConversationTurnMiddleware, SuperLog {
+final class ThinkingStartMiddleware: ConversationTurnMiddleware, SuperLog {
     nonisolated static let emoji = "🧠"
     nonisolated static let verbose = true
 

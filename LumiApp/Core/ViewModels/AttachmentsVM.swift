@@ -1,8 +1,12 @@
 import Foundation
+import MagicKit
 
-/// 仅负责待发送的图片附件管理（上传、预览所需数据、移除）。
+/// 负责待发送的图片附件管理
 @MainActor
-final class AgentAttachmentsVM: ObservableObject {
+final class AttachmentsVM: ObservableObject, SuperLog {
+    nonisolated static let emoji = "📎"
+    nonisolated static let verbose = true
+
     @Published private(set) var pendingAttachments: [AgentPendingImageAttachment] = []
 
     func removeAttachment(id: UUID) {
@@ -22,7 +26,7 @@ final class AgentAttachmentsVM: ObservableObject {
                 )
                 await self?.add(attachment)
             } catch {
-                AppLogger.core.error("\(AgentAttachmentsVM.selfTag)❌ 无法读取图片：\(error.localizedDescription)")
+                AppLogger.core.error("\(Self.t)❌ 无法读取图片：\(error.localizedDescription)")
             }
         }
     }
@@ -57,4 +61,3 @@ final class AgentAttachmentsVM: ObservableObject {
 
     private nonisolated static var selfTag: String { "📎" }
 }
-

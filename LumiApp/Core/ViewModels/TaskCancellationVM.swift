@@ -1,8 +1,8 @@
 import Foundation
 
-/// 由 UI 写入「待取消」的会话 ID，`RootView` 监听后交给 `CancelAgentTaskHandler` 执行，再清空。
+///「待取消」的会话 ID
 @MainActor
-final class AgentTaskCancellationVM: ObservableObject {
+final class TaskCancellationVM: ObservableObject {
     @Published private(set) var conversationIdToCancel: UUID?
 
     func requestCancel(conversationId: UUID) {
