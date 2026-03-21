@@ -7,13 +7,13 @@ extension RootView {
         if Self.verbose {
             AppLogger.core.info("\(Self.t) 发送消息")
         }
-        
+
         guard let conversationId = self.conversationVM.selectedConversationId else {
             AppLogger.core.error("\(Self.t) 当前没有选中的会话")
             return
         }
-        
-        let pendingMessages = self.messageQueueVM.pendingMessages(for: conversationId)        
+
+        let pendingMessages = self.messageQueueVM.pendingMessages(for: conversationId)
         guard let message = pendingMessages.first else {
             if Self.verbose {
                 AppLogger.core.info("\(Self.t) 当前会话没有待发送消息")
@@ -22,7 +22,7 @@ extension RootView {
         }
 
         self.messageQueueVM.setCurrentProcessingIndex(0, for: conversationId)
-        
+
         Task {
             await self.sendMessagePipeline(
                 message: message,
@@ -44,7 +44,7 @@ extension RootView {
             }
         }
     }
-    
+
     /// 消息发送
     @MainActor
     private func sendMessagePipeline(
@@ -61,13 +61,13 @@ extension RootView {
         if self.conversationVM.selectedConversationId == conversationId {
             self.messageViewModel.appendMessage(message)
         }
-        
+
         // 2) 落库保存
         await self.conversationVM.saveMessage(message, to: conversationId)
 //
 //        // 3) 触发轮次处理（深度从 0 开始）
 //        ctx.services.enqueueTurnProcessing(conversationId, 0)
-        
+
         let ctx = SendMessageContext(conversationId: conversationId, message: message)
 
 //        let pluginRows = PluginVM.shared.getMessageSendMiddlewares()
@@ -77,14 +77,17 @@ extension RootView {
 //        let all = [slashMiddleware] + pluginRows + [coreSendMiddleware]
 //        let all = [slashMiddleware] + pluginRows + [coreSendMiddleware]
         let all: [SendMiddleware] = [
-            CoreSendMiddleware2()
         ]
 
         let pipeline = SendPipeline(middlewares: all)
 
         await pipeline.run(ctx: ctx) { _ in
-            // no-op: core send 由 `CoreSendMiddleware` 短路执行
+            // no-op
         }
-    }
 
+        // 发送消息
+        try? await self.llmService.sendStreamingMessage(messages: [message], config: self.sessionConfig.getCurrentConfig(), onChunk: { chunk in
+            AppLogger.core.info("\(Self.t) 收到流式响应：\(chunk.content ?? "")")
+        })
+    }
 }
