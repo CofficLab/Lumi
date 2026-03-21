@@ -22,7 +22,6 @@ extension RootView {
             title: "新会话 " + formatter.string(from: Date())
         )
 
-        container.messageSenderVM.switchToConversation(conversation.id)
         container.conversationVM.setSelectedConversation(conversation.id)
         NotificationCenter.postAgentConversationCreated(conversationId: conversation.id)
         container.conversationCreationVM.completeRequest(id: request.id)

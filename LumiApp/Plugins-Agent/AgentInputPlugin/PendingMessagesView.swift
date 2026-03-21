@@ -24,15 +24,16 @@ struct PendingMessagesView: View, SuperLog {
     @State private var cachedConversationTitle: String?
 
     var body: some View {
-        let pendingMessages = MessageSenderVM.pendingMessages
-        let currentProcessingIndex = MessageSenderVM.currentProcessingIndex
+        guard let selectedConversationId = ConversationVM.selectedConversationId else { return AnyView(EmptyView()) }
+        let pendingMessages = MessageSenderVM.pendingMessages(for: selectedConversationId)
+        let currentProcessingIndex = MessageSenderVM.currentProcessingIndex(for: selectedConversationId)
 
         // 只显示队列中等待发送的消息（排除当前正在处理的消息）
         let waitingMessages = pendingMessages.enumerated()
             .filter { index, _ in index != currentProcessingIndex }
 
         if !waitingMessages.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
+            return AnyView(VStack(alignment: .leading, spacing: 6) {
                 // 顶部：会话标题
                 HStack(spacing: 6) {
                     Image(systemName: "message")
@@ -75,7 +76,7 @@ struct PendingMessagesView: View, SuperLog {
                                 message: message,
                                 index: index,
                                 onRemove: {
-                                    MessageSenderVM.removeMessage(at: index)
+                                    MessageSenderVM.removeMessage(at: index, in: selectedConversationId)
                                 }
                             )
                         }
@@ -96,7 +97,9 @@ struct PendingMessagesView: View, SuperLog {
             .onChange(of: ConversationVM.selectedConversationId) { _, _ in
                 updateConversationTitle()
             }
+            )
         }
+        return AnyView(EmptyView())
     }
 
     // MARK: - Event Handler

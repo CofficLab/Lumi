@@ -12,8 +12,6 @@ extension RootView {
     }
 
     private func handleConversationChanged(conversationId: UUID, applyProjectContext: Bool) async {
-        container.messageSenderVM.switchToConversation(conversationId)
-
         let snapshot = container.conversationRuntimeStore.agentRuntimeSnapshot(for: conversationId)
         container.processingStateViewModel.setIsProcessing(snapshot.isProcessing)
         container.processingStateViewModel.setLastHeartbeatTime(snapshot.lastHeartbeatTime)

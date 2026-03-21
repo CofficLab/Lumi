@@ -9,14 +9,15 @@ extension RootView {
     @MainActor
     func onSenderPendingMessagesChanged() {
         let vm = container.messageSenderVM
-        guard !vm.pendingMessages.isEmpty else { return }
         guard let conversationId = container.conversationVM.selectedConversationId else {
             AppLogger.core.error("\(Self.t) 当前没有选中的会话")
             return
         }
-        guard let message = vm.pendingMessages.first else { return }
+        let pendingMessages = vm.pendingMessages(for: conversationId)
+        guard !pendingMessages.isEmpty else { return }
+        guard let message = pendingMessages.first else { return }
 
-        vm.currentProcessingIndex = 0
+        vm.setCurrentProcessingIndex(0, for: conversationId)
 
         if Self.verbose {
             AppLogger.core.info("\(Self.t)📤 [\(String(conversationId.uuidString.prefix(8)))] 开始发送消息：\(message.content.prefix(50))")
@@ -42,8 +43,8 @@ extension RootView {
             )
 
             await MainActor.run {
-                vm.pendingMessages.removeFirst()
-                vm.currentProcessingIndex = nil
+                vm.removeFirstMessage(for: conversationId)
+                vm.setCurrentProcessingIndex(nil, for: conversationId)
                 if Self.verbose {
                     AppLogger.core.info("\(Self.t)✅ [\(String(conversationId.uuidString.prefix(8)))] 消息发送完成，已从队列移除")
                 }

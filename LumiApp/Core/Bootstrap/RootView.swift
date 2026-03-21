@@ -60,7 +60,7 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(container.mystiqueThemeManager)
             .modelContainer(container.modelContainer)
             .onAppear(perform: onAppear)
-            .onChange(of: container.messageSenderVM.pendingMessages.count, onSenderPendingMessagesChanged)
+            .onChange(of: selectedConversationQueueCount, onSenderPendingMessagesChanged)
             .onChange(of: container.inputQueueVM.pendingRequest?.id, onInputQueueRequested)
             .onChange(of: container.conversationCreationVM.pendingRequest?.id, onConversationCreationRequested)
             .onChange(of: container.taskCancellationVM.conversationIdToCancel, onTaskCancellationRequested)
@@ -83,6 +83,11 @@ extension View {
 // MARK: - Event Handlers
 
 extension RootView {
+    private var selectedConversationQueueCount: Int {
+        guard let conversationId = container.conversationVM.selectedConversationId else { return 0 }
+        return container.messageSenderVM.queueCount(for: conversationId)
+    }
+
     func onAppear() {
         loadPreferences()
         loadConversation()
