@@ -9,21 +9,6 @@ extension RootView {
         eventContinuation.yield(event)
     }
 
-    private var llmService: LLMService { container.llmService }
-    private var toolExecutionService: ToolExecutionService { container.toolExecutionService }
-    private var runtimeStore: ConversationRuntimeStore { container.conversationRuntimeStore }
-    private var sessionConfig: AgentSessionConfig { container.agentSessionConfig }
-    private var chatHistoryService: ChatHistoryService { container.chatHistoryService }
-    private var toolService: ToolService { container.toolService }
-    private var messageViewModel: MessagePendingVM { container.messageViewModel }
-    private var ConversationVM: ConversationVM { container.conversationVM }
-    private var projectVM: ProjectVM { container.ProjectVM }
-    private var processingStateViewModel: ProcessingStateVM { container.processingStateViewModel }
-    private var permissionRequestViewModel: PermissionRequestVM { container.permissionRequestViewModel }
-    private var thinkingStateViewModel: ThinkingStateVM { container.thinkingStateViewModel }
-    private var depthWarningViewModel: DepthWarningVM { container.depthWarningViewModel }
-    private var captureThinkingContent: Bool { container.captureThinkingContent }
-
     // MARK: - 轮次事件消费（pipeline runner）
 
     private func makeEnvironment() -> ConversationTurnMiddlewareEnvironment {

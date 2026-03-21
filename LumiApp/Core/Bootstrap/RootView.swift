@@ -28,6 +28,21 @@ struct RootView<Content>: View, SuperLog where Content: View {
     /// 全局服务容器（单例）。
     @StateObject var container = RootViewContainer.shared
 
+    var llmService: LLMService { container.llmService }
+    var toolExecutionService: ToolExecutionService { container.toolExecutionService }
+    var runtimeStore: ConversationRuntimeStore { container.conversationRuntimeStore }
+    var sessionConfig: AgentSessionConfig { container.agentSessionConfig }
+    var chatHistoryService: ChatHistoryService { container.chatHistoryService }
+    var toolService: ToolService { container.toolService }
+    var messageViewModel: MessagePendingVM { container.messageViewModel }
+    var ConversationVM: ConversationVM { container.conversationVM }
+    var projectVM: ProjectVM { container.ProjectVM }
+    var processingStateViewModel: ProcessingStateVM { container.processingStateViewModel }
+    var permissionRequestViewModel: PermissionRequestVM { container.permissionRequestViewModel }
+    var thinkingStateViewModel: ThinkingStateVM { container.thinkingStateViewModel }
+    var depthWarningViewModel: DepthWarningVM { container.depthWarningViewModel }
+    var captureThinkingContent: Bool { container.captureThinkingContent }
+
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
     }
