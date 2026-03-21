@@ -556,7 +556,7 @@ extension RootView {
         }
     }
 
-    // MARK: - UI 动作闭包构建（migrated from ConversationTurnVM）
+    // MARK: - UI 动作闭包构建
 
     private func conversationTurnPipelineProjectionActions() -> ConversationTurnMiddlewareProjectionActions {
         let processing = processingStateViewModel

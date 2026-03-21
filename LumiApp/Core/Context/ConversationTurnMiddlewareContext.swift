@@ -1,7 +1,7 @@
 import Foundation
 import MagicKit
 
-// MARK: - 轮次中间件管线依赖（原 `ConversationTurnPipelineHandler` 内嵌类型，供 Context 与 Handler 共用）
+// MARK: - 轮次中间件管线依赖
 
 @MainActor
 struct ConversationTurnMiddlewareEnvironment {
