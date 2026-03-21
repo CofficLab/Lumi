@@ -10,9 +10,6 @@ final class ProcessingStateVM: ObservableObject {
     /// 最后收到心跳的时间（用于动画效果）
     @Published public fileprivate(set) var lastHeartbeatTime: Date?
 
-    /// 当前处理阶段（用于 UI 展示）
-    @Published public fileprivate(set) var phase: ProcessingStatePhase = .idle
-
     /// 从开始到首 token 的耗时（毫秒），收到首 token 后设置
     /// 状态提示文本（用于 UI 展示）
     @Published public fileprivate(set) var statusText: String = ""
@@ -36,13 +33,11 @@ final class ProcessingStateVM: ObservableObject {
     }
 
     func markStreamStarted() {
-        phase = .waitingFirstToken
         statusText = "等待响应…"
         setIsProcessing(true)
     }
 
     func markFirstToken(ttftMs: Double) {
-        phase = .generating
         if ttftMs >= 1000 {
             statusText = String(format: "首 token %.1fs，生成中…", ttftMs / 1000.0)
         } else {
@@ -52,15 +47,13 @@ final class ProcessingStateVM: ObservableObject {
     }
 
     func markGenerating() {
-        if phase != .generating {
-            phase = .generating
+        if statusText != "生成中…" {
             statusText = "生成中…"
         }
         setIsProcessing(true)
     }
 
     func finish() {
-        phase = .idle
         statusText = ""
         setIsProcessing(false)
         setLastHeartbeatTime(nil)
