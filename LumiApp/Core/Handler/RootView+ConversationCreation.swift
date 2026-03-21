@@ -2,13 +2,13 @@ import Foundation
 
 extension RootView {
     func onConversationCreationRequested() {
-        guard let requestId = container.conversationCreationVM.pendingRequest?.id else { return }
+        guard let requestId = container.conversationCreationVM.pendingRequest else { return }
         guard let request = container.conversationCreationVM.consumePendingRequest(id: requestId) else { return }
 
         Task { await createConversation(using: request) }
     }
 
-    private func createConversation(using request: ConversationCreationVM.ConversationCreationRequest) async {
+    private func createConversation(using requestId: UUID) async {
         let projectId = container.ProjectVM.isProjectSelected ? container.ProjectVM.currentProjectPath : nil
         let projectName = container.ProjectVM.isProjectSelected ? container.ProjectVM.currentProjectName : nil
         let projectPath = container.ProjectVM.isProjectSelected ? container.ProjectVM.currentProjectPath : nil
@@ -24,7 +24,7 @@ extension RootView {
 
         container.conversationVM.setSelectedConversation(conversation.id)
         NotificationCenter.postAgentConversationCreated(conversationId: conversation.id)
-        container.conversationCreationVM.completeRequest(id: request.id)
+        container.conversationCreationVM.completeRequest(id: requestId)
 
         Task {
             let systemMessage = await container.promptService.getSystemContextMessage(

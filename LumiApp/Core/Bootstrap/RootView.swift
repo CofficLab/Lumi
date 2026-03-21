@@ -62,7 +62,7 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .onAppear(perform: onAppear)
             .onChange(of: selectedConversationQueueCount, onSenderPendingMessagesChanged)
             .onChange(of: container.inputQueueVM.pendingRequest?.id, onInputQueueRequested)
-            .onChange(of: container.conversationCreationVM.pendingRequest?.id, onConversationCreationRequested)
+            .onChange(of: container.conversationCreationVM.pendingRequest, onConversationCreationRequested)
             .onChange(of: container.taskCancellationVM.conversationIdToCancel, onTaskCancellationRequested)
             .onChange(of: container.projectContextRequestVM.request, onProjectContextRequestChanged)
             .onChange(of: container.conversationVM.selectedConversationId, onConversationChanged)
