@@ -122,7 +122,7 @@ final class ProjectVM: ObservableObject, SuperLog {
     }
 
     /// 设置当前项目信息
-    func setCurrentProjectInfo(name: String, path: String, selected: Bool) {
+    private func setCurrentProjectInfo(name: String, path: String, selected: Bool) {
         Task { @MainActor in
             self.currentProjectName = name
             self.currentProjectPath = path
@@ -131,7 +131,7 @@ final class ProjectVM: ObservableObject, SuperLog {
     }
 
     /// 应用项目配置
-    func applyProjectConfig(_ config: ProjectConfig) {
+    private func applyProjectConfig(_ config: ProjectConfig) {
         Task { @MainActor in
             // 更新当前项目配置
             self.currentProviderId = config.providerId
@@ -144,11 +144,6 @@ final class ProjectVM: ObservableObject, SuperLog {
                 AppLogger.core.info("\(Self.t)⚙️ 已应用项目配置：\(config.providerId) / \(self.currentModel)")
             }
         }
-    }
-
-    /// 获取项目配置
-    func getProjectConfig(for path: String) -> ProjectConfig {
-        ProjectConfigStore.shared.getOrCreateConfig(for: path)
     }
 
     /// 保存项目配置
@@ -436,13 +431,6 @@ final class ProjectVM: ObservableObject, SuperLog {
             self.chatMode = mode
             PluginStateStore.shared.set(self.chatMode.rawValue, forKey: "Agent_ChatMode")
         }
-    }
-
-    // MARK: - 自动批准风险
-
-    /// 加载自动批准风险设置（持久化由插件负责）
-    private func loadAutoApproveRisk() {
-        // no-op
     }
 
     func setAutoApproveRisk(_ enabled: Bool) {

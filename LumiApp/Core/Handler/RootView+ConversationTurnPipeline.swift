@@ -564,11 +564,7 @@ extension RootView {
     private func emitAbortedToolResults(for toolCalls: [ToolCall], conversationId: UUID) {
         guard !toolCalls.isEmpty else { return }
         for toolCall in toolCalls {
-            let abortMessage = ChatMessage(
-                role: .tool,
-                content: "[Tool execution aborted by safety guard]",
-                toolCallID: toolCall.id
-            )
+            let abortMessage = ChatMessage.makeAbortMessage(toolCallID: toolCall.id)
             emit(.toolResultReceived(abortMessage, conversationId: conversationId))
         }
     }
