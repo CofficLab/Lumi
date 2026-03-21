@@ -281,10 +281,14 @@ extension RootView {
         )
 
         if Self.verbose {
-            AppLogger.core.info("\(self.t)[\(conversationId.uuidString.prefix(8))] 开始处理轮次 (深度：\(depth), 模式：\(chatMode.displayName), 流式：true)")
+            AppLogger.core.info("\(self.t)[\(conversationId.uuidString.prefix(8))] 开始处理轮次 (深度：\(depth), 模式：\(chatMode.displayName))")
         }
 
-        let availableTools: [AgentTool] = (chatMode.allowsTools && !isFinalStep) ? tools : []
+        let availableTools = ToolAvailabilityGuard().evaluate(
+            tools: tools,
+            allowsTools: chatMode.allowsTools,
+            isFinalStep: isFinalStep
+        )
 
         var effectiveMessages = messages
         if isFinalStep {
@@ -497,20 +501,18 @@ extension RootView {
             toolName: toolCall.name,
             arguments: toolCall.arguments
         )
+        let riskLevel = toolExecutionService.evaluateRisk(
+            toolName: toolCall.name,
+            arguments: toolCall.arguments
+        )
+        let permissionGuardResult = ToolPermissionGuard().evaluate(
+            toolCall: toolCall,
+            autoApproveRisk: autoApproveRisk,
+            requiresPermission: requiresPermission,
+            riskLevel: riskLevel
+        )
 
-        if requiresPermission && !autoApproveRisk {
-            let riskLevel = toolExecutionService.evaluateRisk(
-                toolName: toolCall.name,
-                arguments: toolCall.arguments
-            )
-
-            let permissionRequest = PermissionRequest(
-                toolName: toolCall.name,
-                argumentsString: toolCall.arguments,
-                toolCallID: toolCall.id,
-                riskLevel: riskLevel
-            )
-
+        if case let .permissionRequired(permissionRequest) = permissionGuardResult {
             emit(.permissionRequested(permissionRequest, conversationId: conversationId))
             return
         }
