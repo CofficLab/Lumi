@@ -151,7 +151,6 @@ final class RootViewContainer: ObservableObject {
 
         self.conversationVM = Lumi.ConversationVM(
             chatHistoryService: chatHistoryService,
-            llmService: llmService,
             promptService: promptService
         )
 

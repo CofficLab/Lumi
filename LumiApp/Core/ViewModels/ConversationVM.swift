@@ -19,11 +19,6 @@ final class ConversationVM: ObservableObject, SuperLog {
     /// 负责会话和消息的持久化操作。
     private let chatHistoryService: ChatHistoryService
 
-    /// LLM 服务（用于生成会话标题）
-    ///
-    /// 当用户发送第一条消息时，使用 AI 生成会话标题。
-    private let llmService: LLMService
-
     /// 提示词服务（用于获取欢迎消息）
     ///
     /// 获取新会话的欢迎消息内容。
@@ -48,15 +43,12 @@ final class ConversationVM: ObservableObject, SuperLog {
     ///
     /// - Parameters:
     ///   - chatHistoryService: 聊天历史服务
-    ///   - llmService: LLM 服务
     ///   - promptService: 提示词服务
     init(
         chatHistoryService: ChatHistoryService,
-        llmService: LLMService,
         promptService: PromptService
     ) {
         self.chatHistoryService = chatHistoryService
-        self.llmService = llmService
         self.promptService = promptService
 
         // 启动时如果没有任何插件恢复会话选择，这里会自动选择一个有效会话
