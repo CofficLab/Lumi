@@ -19,6 +19,6 @@ extension RootView {
         guard !request.text.isEmpty || !allImages.isEmpty else { return }
 
         let message = ChatMessage(role: .user, content: request.text, images: allImages)
-        container.messageSenderVM.enqueueMessage(message, in: conversationId)
+        container.messageQueueVM.enqueueMessage(message, in: conversationId)
     }
 }

@@ -44,7 +44,7 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(container.agentSessionConfig)
             .environmentObject(container.conversationVM)
             .environmentObject(container.messageViewModel)
-            .environmentObject(container.messageSenderVM)
+            .environmentObject(container.messageQueueVM)
             .environmentObject(container.agentAttachmentsVM)
             .environmentObject(container.inputQueueVM)
             .environmentObject(container.permissionHandlingVM)
@@ -85,7 +85,7 @@ extension View {
 extension RootView {
     private var selectedConversationQueueCount: Int {
         guard let conversationId = container.conversationVM.selectedConversationId else { return 0 }
-        return container.messageSenderVM.queueCount(for: conversationId)
+        return container.messageQueueVM.queueCount(for: conversationId)
     }
 
     func onAppear() {

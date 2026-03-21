@@ -8,7 +8,7 @@ extension RootView {
     /// 发送队列调度：取出待发送消息 → 跑 `MessageSendPipeline`（Slash / 插件 / Core）→ 完成后出队。
     @MainActor
     func onSenderPendingMessagesChanged() {
-        let vm = container.messageSenderVM
+        let vm = container.messageQueueVM
         guard let conversationId = container.conversationVM.selectedConversationId else {
             AppLogger.core.error("\(Self.t) 当前没有选中的会话")
             return

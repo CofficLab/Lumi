@@ -4,7 +4,7 @@ extension RootView {
     func onTaskCancellationRequested() {
         guard let conversationId = self.container.taskCancellationVM.conversationIdToCancel else { return }
 
-        let messageSenderVM = container.messageSenderVM
+        let messageSenderVM = container.messageQueueVM
         let runtimeStore = container.conversationRuntimeStore
 
         cancelTurnPipeline(for: conversationId)

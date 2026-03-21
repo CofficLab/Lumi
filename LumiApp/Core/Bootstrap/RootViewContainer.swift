@@ -20,46 +20,36 @@ final class RootViewContainer: ObservableObject {
     let slashCommandService: SlashCommandService
     let toolService: ToolService
     let providerRegistry: ProviderRegistry
+    let chatHistoryService: ChatHistoryService
+    let conversationTurnServices: ConversationTurnServices
+    let toolExecutionService: ToolExecutionService
 
     // MARK: - ViewModel
 
     let appProvider: GlobalVM
-    /// 与 `PluginVM.shared` 同一实例，便于经容器统一注入环境。
     let pluginVM: PluginVM
-    /// 与 `appProvider.themeManager` 同一实例，避免 RootView 每次 `body` 新建主题管理器。
     let mystiqueThemeManager: MystiqueThemeManager
     let ProjectVM: Lumi.ProjectVM
     let commandSuggestionViewModel: CommandSuggestionVM
-
-    // MARK: - 聊天历史服务
-
-    let chatHistoryService: ChatHistoryService
-
-    // MARK: - UI 状态 VM
-
     let depthWarningViewModel: DepthWarningVM
     let processingStateViewModel: ProcessingStateVM
     let permissionRequestViewModel: PermissionRequestVM
     let thinkingStateViewModel: ThinkingStateVM
     let taskCancellationVM: TaskCancellationVM
-
-    // MARK: - 消息相关 VM
-
     let messageViewModel: MessagePendingVM
-    let conversationVM: Lumi.ConversationVM
-    let messageSenderVM: Lumi.MessageQueueVM
-
-    // MARK: - 输入与附件
-
+    let conversationVM: ConversationVM
+    let messageQueueVM: MessageQueueVM
     let agentAttachmentsVM: AttachmentsVM
     let inputQueueVM: InputQueueVM
+    let permissionHandlingVM: PermissionHandlingVM
+    let conversationCreationVM: ConversationCreationVM
+    let chatTimelineViewModel: ChatTimelineViewModel
+    let projectContextRequestVM: ProjectContextRequestVM
 
     // MARK: - 对话轮次相关
 
-    let conversationTurnServices: ConversationTurnServices
     let conversationRuntimeStore: ConversationRuntimeStore
     let agentSessionConfig: AgentSessionConfig
-    let toolExecutionService: ToolExecutionService
     let captureThinkingContent: Bool
     let conversationTurnEvents: AsyncStream<ConversationTurnEvent>
     let conversationTurnEventContinuation: AsyncStream<ConversationTurnEvent>.Continuation
@@ -67,16 +57,6 @@ final class RootViewContainer: ObservableObject {
     var conversationTurnPluginsDidLoadObserver: NSObjectProtocol?
     var conversationTurnTaskPipelineByConversation: [UUID: Task<Void, Never>] = [:]
     var conversationTurnTaskGenerationByConversation: [UUID: Int] = [:]
-
-    // MARK: - 权限与对话创建
-
-    let permissionHandlingVM: PermissionHandlingVM
-    let conversationCreationVM: ConversationCreationVM
-    let projectContextRequestVM: ProjectContextRequestVM
-
-    // MARK: - 时间线
-
-    let chatTimelineViewModel: ChatTimelineViewModel
 
     // MARK: - 初始化
 
@@ -154,7 +134,7 @@ final class RootViewContainer: ObservableObject {
             promptService: promptService
         )
 
-        self.messageSenderVM = Lumi.MessageQueueVM()
+        self.messageQueueVM = Lumi.MessageQueueVM()
 
         // ========================================
         // 输入与附件
@@ -221,7 +201,7 @@ final class RootViewContainer: ObservableObject {
         )
 
 
-        messageSenderVM.objectWillChange
+        messageQueueVM.objectWillChange
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
             }
