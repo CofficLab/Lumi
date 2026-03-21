@@ -11,7 +11,6 @@ final class MessageQueueVM: ObservableObject, SuperLog {
 
     @Published private(set) var pendingMessagesByConversation: [UUID: [ChatMessage]] = [:]
     @Published private(set) var currentProcessingIndexByConversation: [UUID: Int?] = [:]
-    private var cancelledConversations = Set<UUID>()
 
     init() {}
 
@@ -63,24 +62,12 @@ final class MessageQueueVM: ObservableObject, SuperLog {
 
     /// 删除指定会话的队列
     func removeConversationQueue(_ conversationId: UUID) {
-        cancelledConversations.insert(conversationId)
         pendingMessagesByConversation.removeValue(forKey: conversationId)
         currentProcessingIndexByConversation.removeValue(forKey: conversationId)
 
         if Self.verbose {
             AppLogger.core.info("\(Self.t)🗑️ 已删除会话 [\(String(conversationId.uuidString.prefix(8)))] 的发送队列")
         }
-    }
-
-    /// 取消指定会话的处理
-    func cancelProcessing(for conversationId: UUID, clearQueue: Bool) {
-        cancelledConversations.insert(conversationId)
-
-        if clearQueue {
-            pendingMessagesByConversation[conversationId] = []
-        }
-
-        currentProcessingIndexByConversation[conversationId] = nil
     }
 
     func setCurrentProcessingIndex(_ index: Int?, for conversationId: UUID) {

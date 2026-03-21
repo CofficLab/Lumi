@@ -7,7 +7,6 @@ extension RootView {
         let messageSenderVM = container.messageSenderVM
         let runtimeStore = container.conversationRuntimeStore
 
-        messageSenderVM.cancelProcessing(for: conversationId, clearQueue: true)
         cancelTurnPipeline(for: conversationId)
 
         runtimeStore.clearRuntimeForTurnTermination(for: conversationId)
