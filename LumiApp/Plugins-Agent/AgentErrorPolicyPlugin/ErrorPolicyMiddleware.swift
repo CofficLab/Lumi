@@ -42,7 +42,7 @@ struct ErrorPolicyMiddleware: ConversationTurnMiddleware {
 
         if ctx.env.selectedConversationId() == conversationId {
             if let errorMessage, treatAsFailure {
-                ctx.ui.onTurnFailedUI(conversationId, errorMessage)
+                ctx.projection.onTurnFailedUI(conversationId, errorMessage)
             }
         }
 

@@ -29,10 +29,9 @@ extension RootView {
             AppLogger.core.info("\(RootViewSenderPendingLog.t)📤 [\(String(conversationId.uuidString.prefix(8)))] 开始发送消息：\(message.content.prefix(50))")
         }
 
-        let enqueueTurnProcessing: (UUID, Int) -> Void = { [weak handler = container.conversationTurnPipelineHandler] conversationId, depth in
-            guard let handler else { return }
+        let enqueueTurnProcessing: (UUID, Int) -> Void = { conversationId, depth in
             Task { @MainActor in
-                handler.enqueueTurnProcessing(conversationId: conversationId, depth: depth)
+                self.enqueueTurnProcessing(conversationId: conversationId, depth: depth)
             }
         }
 

@@ -39,7 +39,7 @@ final class StreamFinishedFinalizeMiddleware: ConversationTurnMiddleware, SuperL
         let pendingThinking = ctx.runtimeStore.pendingThinkingTextByConversation[conversationId] ?? ""
         if !pendingThinking.isEmpty {
             if ctx.env.selectedConversationId() == conversationId {
-                ctx.ui.appendThinkingText(pendingThinking, conversationId)
+                ctx.projection.appendThinkingText(pendingThinking, conversationId)
             }
             ctx.runtimeStore.pendingThinkingTextByConversation[conversationId] = ""
             ctx.runtimeStore.lastThinkingFlushAtByConversation[conversationId] = now
@@ -60,7 +60,7 @@ final class StreamFinishedFinalizeMiddleware: ConversationTurnMiddleware, SuperL
         ctx.runtimeStore.thinkingConversationIds.remove(conversationId)
 
         if ctx.env.selectedConversationId() == conversationId {
-            ctx.ui.onStreamFinishedUI(conversationId)
+            ctx.projection.onStreamFinishedUI(conversationId)
         }
 
         ctx.runtimeStore.pendingStreamTextByConversation[conversationId] = nil

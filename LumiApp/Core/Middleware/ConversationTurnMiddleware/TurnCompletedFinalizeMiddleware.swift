@@ -27,7 +27,7 @@ final class TurnCompletedFinalizeMiddleware: ConversationTurnMiddleware, SuperLo
         ctx.runtimeStore.processingConversationIds.remove(conversationId)
 
         if ctx.env.selectedConversationId() == conversationId {
-            ctx.ui.onTurnFinishedUI(conversationId)
+            ctx.projection.onTurnFinishedUI(conversationId)
         }
 
         ctx.runtimeStore.streamStateByConversation[conversationId] = .init(messageId: nil)

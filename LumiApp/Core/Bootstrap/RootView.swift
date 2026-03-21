@@ -18,7 +18,10 @@ import SwiftUI
 /// ContentLayout()
 ///     .inRootView()
 /// ```
-struct RootView<Content>: View where Content: View {
+struct RootView<Content>: View, SuperLog where Content: View {
+    nonisolated static var emoji: String { "📤" }
+    nonisolated static var verbose: Bool { true }
+
     /// 视图内容
     var content: Content
 
@@ -69,7 +72,7 @@ struct RootView<Content>: View where Content: View {
             .onChange(of: container.projectContextRequestVM.request, onProjectContextRequestChanged)
             .onChange(of: container.ConversationVM.selectedConversationId, onConversationSelectionChanged)
             .task(id: ObjectIdentifier(container)) {
-                await container.conversationTurnPipelineHandler.run()
+                await runConversationTurnPipeline()
             }
     }
 }

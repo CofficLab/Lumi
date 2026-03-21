@@ -29,12 +29,12 @@ final class StreamChunkAccumulateMiddleware: ConversationTurnMiddleware, SuperLo
             ctx.runtimeStore.didReceiveFirstTokenByConversation.insert(conversationId)
             if let startedAt = ctx.runtimeStore.streamStartedAtByConversation[conversationId] {
                 let ttftMs = Date().timeIntervalSince(startedAt) * 1000.0
-                ctx.ui.onStreamFirstTokenUI(conversationId, ttftMs)
+                ctx.projection.onStreamFirstTokenUI(conversationId, ttftMs)
                 if Self.verbose {
                     AppLogger.core.info("\(Self.t) 首 Token 时间=\(String(format: "%.0f", ttftMs))ms")
                 }
             } else {
-                ctx.ui.onStreamFirstTokenUI(conversationId, nil)
+                ctx.projection.onStreamFirstTokenUI(conversationId, nil)
             }
             // 收到首个 token 时再更新「正在加载模型」为「模型已就绪」，避免未下载时误显示就绪
             let list = ctx.actions.messages()

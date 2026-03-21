@@ -34,31 +34,19 @@ extension RootView {
 
         if let path, !path.isEmpty {
             container.ProjectVM.switchProject(to: path)
-            let fullSystemPrompt = await container.promptService.buildSystemPrompt(
-                languagePreference: languagePreference,
-                includeContext: true
-            )
-            upsertConversationLifecycleSystemMessage(fullSystemPrompt)
-            await container.slashCommandService.setCurrentProjectPath(path)
+            await applyConversationProjectContext(path: path, languagePreference: languagePreference)
         } else {
             container.ProjectVM.clearProject()
-            let fullSystemPrompt = await container.promptService.buildSystemPrompt(
-                languagePreference: languagePreference,
-                includeContext: true
-            )
-            upsertConversationLifecycleSystemMessage(fullSystemPrompt)
-            await container.slashCommandService.setCurrentProjectPath(nil)
+            await applyConversationProjectContext(path: nil, languagePreference: languagePreference)
         }
     }
 
-    private func upsertConversationLifecycleSystemMessage(_ content: String) {
-        let currentMessages = container.messageViewModel.messages
-        let systemMessage = ChatMessage(role: .system, content: content)
-
-        if !currentMessages.isEmpty, currentMessages[0].role == .system {
-            container.messageViewModel.updateMessage(systemMessage, at: 0)
-        } else {
-            container.messageViewModel.insertMessage(systemMessage, at: 0)
-        }
+    private func applyConversationProjectContext(path: String?, languagePreference: LanguagePreference) async {
+        let fullSystemPrompt = await container.promptService.buildSystemPrompt(
+            languagePreference: languagePreference,
+            includeContext: true
+        )
+        upsertRootSystemMessage(fullSystemPrompt)
+        await container.slashCommandService.setCurrentProjectPath(path)
     }
 }

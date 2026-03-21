@@ -29,7 +29,7 @@ struct ConversationTurnMiddlewareMessageActions {
 }
 
 @MainActor
-struct ConversationTurnMiddlewareUIActions {
+struct ConversationTurnMiddlewareProjectionActions {
     let setPendingPermissionRequest: (PermissionRequest?, UUID) -> Void
     let setDepthWarning: (DepthWarning?, UUID) -> Void
     let onTurnFinishedUI: (UUID) -> Void
@@ -52,7 +52,7 @@ final class ConversationTurnMiddlewareContext {
     let runtimeStore: ConversationRuntimeStore
     let env: ConversationTurnMiddlewareEnvironment
     let actions: ConversationTurnMiddlewareMessageActions
-    let ui: ConversationTurnMiddlewareUIActions
+    let projection: ConversationTurnMiddlewareProjectionActions
 
     let traceId: UUID
     let startedAt: Date
@@ -61,14 +61,14 @@ final class ConversationTurnMiddlewareContext {
         runtimeStore: ConversationRuntimeStore,
         env: ConversationTurnMiddlewareEnvironment,
         actions: ConversationTurnMiddlewareMessageActions,
-        ui: ConversationTurnMiddlewareUIActions,
+        projection: ConversationTurnMiddlewareProjectionActions,
         traceId: UUID = UUID(),
         startedAt: Date = Date()
     ) {
         self.runtimeStore = runtimeStore
         self.env = env
         self.actions = actions
-        self.ui = ui
+        self.projection = projection
         self.traceId = traceId
         self.startedAt = startedAt
     }

@@ -5,19 +5,19 @@ import Foundation
 final class PermissionHandlingVM: ObservableObject {
     private let runtimeStore: ConversationRuntimeStore
     private let conversationVM: ConversationVM
-    private let conversationTurnPipelineHandler: ConversationTurnPipelineHandler
     private let permissionRequestViewModel: PermissionRequestVM
+    private let emitPermissionDecision: @MainActor (Bool, PermissionRequest, UUID) -> Void
 
     init(
         runtimeStore: ConversationRuntimeStore,
         conversationVM: ConversationVM,
-        conversationTurnPipelineHandler: ConversationTurnPipelineHandler,
-        permissionRequestViewModel: PermissionRequestVM
+        permissionRequestViewModel: PermissionRequestVM,
+        emitPermissionDecision: @escaping @MainActor (Bool, PermissionRequest, UUID) -> Void
     ) {
         self.runtimeStore = runtimeStore
         self.conversationVM = conversationVM
-        self.conversationTurnPipelineHandler = conversationTurnPipelineHandler
         self.permissionRequestViewModel = permissionRequestViewModel
+        self.emitPermissionDecision = emitPermissionDecision
     }
 
     func respondToPermissionRequest(allowed: Bool) async {
@@ -29,11 +29,7 @@ final class PermissionHandlingVM: ObservableObject {
         permissionRequestViewModel.setPendingPermissionRequest(nil)
         runtimeStore.updateRuntimeState(for: conversationId)
 
-        conversationTurnPipelineHandler.emitPermissionDecision(
-            allowed: allowed,
-            request: request,
-            conversationId: conversationId
-        )
+        emitPermissionDecision(allowed, request, conversationId)
     }
 }
 

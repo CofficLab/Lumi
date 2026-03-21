@@ -9,28 +9,21 @@ extension RootView {
         case let .switchProject(path):
             Task {
                 await handleProjectSwitch(path: path)
-                await MainActor.run { container.projectContextRequestVM.request = nil }
+                container.projectContextRequestVM.request = nil
             }
 
         case .clearProject:
             Task {
                 await handleProjectClear()
-                await MainActor.run { container.projectContextRequestVM.request = nil }
+                container.projectContextRequestVM.request = nil
             }
         }
     }
 
     private func handleProjectSwitch(path: String) async {
         container.ProjectVM.switchProject(to: path)
-
         let languagePreference = container.ProjectVM.languagePreference
-        let fullSystemPrompt = await container.promptService.buildSystemPrompt(
-            languagePreference: languagePreference,
-            includeContext: true
-        )
-
-        upsertProjectContextSystemMessage(fullSystemPrompt)
-        await container.slashCommandService.setCurrentProjectPath(path)
+        await applyProjectContext(path: path, languagePreference: languagePreference)
 
         let projectName = container.ProjectVM.currentProjectName
         let config = ProjectConfigStore.shared.getOrCreateConfig(for: path)
@@ -65,13 +58,7 @@ extension RootView {
         container.ProjectVM.clearProject()
 
         let languagePreference = container.ProjectVM.languagePreference
-        let fullSystemPrompt = await container.promptService.buildSystemPrompt(
-            languagePreference: languagePreference,
-            includeContext: true
-        )
-
-        upsertProjectContextSystemMessage(fullSystemPrompt)
-        await container.slashCommandService.setCurrentProjectPath(nil)
+        await applyProjectContext(path: nil, languagePreference: languagePreference)
 
         let clearMessage: String
         switch languagePreference {
@@ -84,14 +71,12 @@ extension RootView {
         container.messageViewModel.appendMessage(ChatMessage(role: .assistant, content: clearMessage))
     }
 
-    private func upsertProjectContextSystemMessage(_ content: String) {
-        let currentMessages = container.messageViewModel.messages
-        let systemMessage = ChatMessage(role: .system, content: content)
-
-        if !currentMessages.isEmpty, currentMessages[0].role == .system {
-            container.messageViewModel.updateMessage(systemMessage, at: 0)
-        } else {
-            container.messageViewModel.insertMessage(systemMessage, at: 0)
-        }
+    private func applyProjectContext(path: String?, languagePreference: LanguagePreference) async {
+        let fullSystemPrompt = await container.promptService.buildSystemPrompt(
+            languagePreference: languagePreference,
+            includeContext: true
+        )
+        upsertRootSystemMessage(fullSystemPrompt)
+        await container.slashCommandService.setCurrentProjectPath(path)
     }
 }

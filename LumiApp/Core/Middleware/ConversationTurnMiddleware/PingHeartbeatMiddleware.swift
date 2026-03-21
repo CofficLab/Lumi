@@ -25,7 +25,7 @@ final class PingHeartbeatMiddleware: ConversationTurnMiddleware, SuperLog {
         let now = Date()
         ctx.runtimeStore.lastHeartbeatByConversation[conversationId] = now
         if ctx.env.selectedConversationId() == conversationId {
-            ctx.ui.setLastHeartbeatTime(now)
+            ctx.projection.setLastHeartbeatTime(now)
         }
         if Self.verbose {
             AppLogger.core.info("\(Self.t) 更新心跳时间")

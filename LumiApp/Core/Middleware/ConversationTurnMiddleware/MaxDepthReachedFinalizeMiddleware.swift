@@ -29,8 +29,8 @@ final class MaxDepthReachedFinalizeMiddleware: ConversationTurnMiddleware, Super
         ctx.runtimeStore.processingConversationIds.remove(conversationId)
 
         if ctx.env.selectedConversationId() == conversationId {
-            ctx.ui.setDepthWarning(warning, conversationId)
-            ctx.ui.onTurnFinishedUI(conversationId)
+            ctx.projection.setDepthWarning(warning, conversationId)
+            ctx.projection.onTurnFinishedUI(conversationId)
         }
 
         ctx.runtimeStore.streamStateByConversation[conversationId] = .init(messageId: nil)

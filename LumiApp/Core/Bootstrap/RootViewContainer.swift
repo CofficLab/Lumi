@@ -56,10 +56,17 @@ final class RootViewContainer: ObservableObject {
 
     // MARK: - 对话轮次相关
 
-    let conversationTurnPipelineHandler: ConversationTurnPipelineHandler
     let conversationTurnServices: ConversationTurnServices
     let conversationRuntimeStore: ConversationRuntimeStore
     let agentSessionConfig: AgentSessionConfig
+    let toolExecutionService: ToolExecutionService
+    let captureThinkingContent: Bool
+    let conversationTurnEvents: AsyncStream<ConversationTurnEvent>
+    let conversationTurnEventContinuation: AsyncStream<ConversationTurnEvent>.Continuation
+    var conversationTurnPipeline: ConversationTurnPipeline?
+    var conversationTurnPluginsDidLoadObserver: NSObjectProtocol?
+    var conversationTurnTaskPipelineByConversation: [UUID: Task<Void, Never>] = [:]
+    var conversationTurnTaskGenerationByConversation: [UUID: Int] = [:]
 
     // MARK: - 权限与对话创建
 
@@ -179,23 +186,11 @@ final class RootViewContainer: ObservableObject {
             chatHistoryService: chatHistoryService
         )
 
-        let toolExecutionService = ToolExecutionService(toolService: toolService)
-
-        self.conversationTurnPipelineHandler = ConversationTurnPipelineHandler(
-            llmService: llmService,
-            toolExecutionService: toolExecutionService,
-            runtimeStore: conversationRuntimeStore,
-            sessionConfig: agentSessionConfig,
-            chatHistoryService: chatHistoryService,
-            toolService: toolService,
-            messageViewModel: messageViewModel,
-            ConversationVM: ConversationVM,
-            projectVM: ProjectVM,
-            processingStateViewModel: processingStateViewModel,
-            permissionRequestViewModel: permissionRequestViewModel,
-            thinkingStateViewModel: thinkingStateViewModel,
-            depthWarningViewModel: depthWarningViewModel
-        )
+        self.toolExecutionService = ToolExecutionService(toolService: toolService)
+        self.captureThinkingContent = true
+        var continuation: AsyncStream<ConversationTurnEvent>.Continuation!
+        self.conversationTurnEvents = AsyncStream { continuation = $0 }
+        self.conversationTurnEventContinuation = continuation
 
         // ========================================
         // 权限与对话创建
@@ -204,8 +199,16 @@ final class RootViewContainer: ObservableObject {
         self.permissionHandlingVM = PermissionHandlingVM(
             runtimeStore: conversationRuntimeStore,
             conversationVM: ConversationVM,
-            conversationTurnPipelineHandler: conversationTurnPipelineHandler,
-            permissionRequestViewModel: permissionRequestViewModel
+            permissionRequestViewModel: permissionRequestViewModel,
+            emitPermissionDecision: { [conversationTurnEventContinuation] allowed, request, conversationId in
+                conversationTurnEventContinuation.yield(
+                    .permissionDecision(
+                        allowed: allowed,
+                        request: request,
+                        conversationId: conversationId
+                    )
+                )
+            }
         )
 
         self.conversationCreationVM = ConversationCreationVM(

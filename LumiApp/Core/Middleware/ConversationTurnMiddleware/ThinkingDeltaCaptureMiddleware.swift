@@ -43,7 +43,7 @@ final class ThinkingDeltaCaptureMiddleware: ConversationTurnMiddleware, SuperLog
             let lastFlush = ctx.runtimeStore.lastThinkingFlushAtByConversation[conversationId] ?? .distantPast
             guard force || now.timeIntervalSince(lastFlush) >= ctx.env.thinkingUIFlushInterval else { return }
 
-            ctx.ui.appendThinkingText(pending, conversationId)
+            ctx.projection.appendThinkingText(pending, conversationId)
             ctx.runtimeStore.pendingThinkingTextByConversation[conversationId] = ""
             ctx.runtimeStore.lastThinkingFlushAtByConversation[conversationId] = now
 

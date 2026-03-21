@@ -29,7 +29,7 @@ struct PermissionPolicyMiddleware: ConversationTurnMiddleware {
         ctx.runtimeStore.pendingPermissionByConversation[conversationId] = request
 
         if ctx.env.selectedConversationId() == conversationId {
-            ctx.ui.setPendingPermissionRequest(request, conversationId)
+            ctx.projection.setPendingPermissionRequest(request, conversationId)
         }
 
         ctx.actions.updateRuntimeState(conversationId)

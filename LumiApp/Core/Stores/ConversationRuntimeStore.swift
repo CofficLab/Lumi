@@ -79,7 +79,7 @@ final class ConversationRuntimeStore: ObservableObject {
         }
     }
 
-    /// 供 `ConversationChangedHandler` 投影到各 UI VM 的快照。
+    /// 供 `RootView+ConversationLifecycle` 投影到各 UI VM 的快照。
     func agentRuntimeSnapshot(for conversationId: UUID) -> AgentRuntimeSnapshot {
         AgentRuntimeSnapshot(
             isProcessing: processingConversationIds.contains(conversationId),
@@ -89,5 +89,23 @@ final class ConversationRuntimeStore: ObservableObject {
             pendingPermissionRequest: pendingPermissionByConversation[conversationId],
             depthWarning: depthWarningByConversation[conversationId]
         )
+    }
+
+    /// 清理会话运行态（用于取消与失败收敛），避免多处字段清理不一致。
+    func clearRuntimeForTurnTermination(for conversationId: UUID) {
+        processingConversationIds.remove(conversationId)
+        thinkingConversationIds.remove(conversationId)
+        pendingPermissionByConversation[conversationId] = nil
+
+        streamStateByConversation[conversationId] = .init(messageId: nil)
+        pendingStreamTextByConversation[conversationId] = nil
+        streamingTextByConversation[conversationId] = nil
+        pendingThinkingTextByConversation[conversationId] = nil
+        lastStreamFlushAtByConversation[conversationId] = nil
+        lastThinkingFlushAtByConversation[conversationId] = nil
+        streamStartedAtByConversation[conversationId] = nil
+        didReceiveFirstTokenByConversation.remove(conversationId)
+
+        turnContextsByConversation.removeValue(forKey: conversationId)
     }
 }

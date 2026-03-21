@@ -37,9 +37,9 @@ final class StreamStartedInitializeMiddleware: ConversationTurnMiddleware, Super
         ctx.runtimeStore.thinkingConversationIds.remove(conversationId)
 
         if ctx.env.selectedConversationId() == conversationId {
-            ctx.ui.setThinkingText("", conversationId)
-            ctx.ui.setIsThinking(false, conversationId)
-            ctx.ui.onStreamStartedUI(messageId, conversationId)
+            ctx.projection.setThinkingText("", conversationId)
+            ctx.projection.setIsThinking(false, conversationId)
+            ctx.projection.onStreamStartedUI(messageId, conversationId)
         }
 
         ctx.actions.updateRuntimeState(conversationId)

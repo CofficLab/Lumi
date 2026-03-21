@@ -25,7 +25,7 @@ final class ThinkingStartMiddleware: ConversationTurnMiddleware, SuperLog {
         if rawEvent.contains("\"type\":\"thinking\"") || rawEvent.contains("thinking") {
             ctx.runtimeStore.thinkingConversationIds.insert(conversationId)
             if ctx.env.selectedConversationId() == conversationId {
-                ctx.ui.onThinkingStartedUI(conversationId)
+                ctx.projection.onThinkingStartedUI(conversationId)
             }
             if Self.verbose {
                 AppLogger.core.info("\(Self.t) 思考开始")

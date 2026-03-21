@@ -1,61 +1,32 @@
 import Foundation
 import MagicKit
 
-/// 负责轮次执行的 handler：内部拥有事件源（AsyncStream），并消费 ConversationTurnPipeline 的中间件链。
-///
-/// RootView 只需要启动 `run()`；轮次推进由 middlewares 触发的 `enqueueTurnProcessing` 驱动。
+/// 轮次执行逻辑：由 RootView 驱动，状态存放在 RootViewContainer。
 @MainActor
-final class ConversationTurnPipelineHandler: SuperLog {
-    nonisolated static let emoji = "🔁"
-    nonisolated static let verbose = false
+extension RootView {
+    private var eventContinuation: AsyncStream<ConversationTurnEvent>.Continuation { container.conversationTurnEventContinuation }
 
-    // MARK: - 事件源（单消费者；勿多处 for-await）
+    private var llmService: LLMService { container.llmService }
+    private var toolExecutionService: ToolExecutionService { container.toolExecutionService }
+    private var runtimeStore: ConversationRuntimeStore { container.conversationRuntimeStore }
+    private var sessionConfig: AgentSessionConfig { container.agentSessionConfig }
+    private var chatHistoryService: ChatHistoryService { container.chatHistoryService }
+    private var toolService: ToolService { container.toolService }
+    private var messageViewModel: MessagePendingVM { container.messageViewModel }
+    private var ConversationVM: ConversationVM { container.ConversationVM }
+    private var projectVM: ProjectVM { container.ProjectVM }
+    private var processingStateViewModel: ProcessingStateVM { container.processingStateViewModel }
+    private var permissionRequestViewModel: PermissionRequestVM { container.permissionRequestViewModel }
+    private var thinkingStateViewModel: ThinkingStateVM { container.thinkingStateViewModel }
+    private var depthWarningViewModel: DepthWarningVM { container.depthWarningViewModel }
+    private var captureThinkingContent: Bool { container.captureThinkingContent }
 
-    let events: AsyncStream<ConversationTurnEvent>
-    private let eventContinuation: AsyncStream<ConversationTurnEvent>.Continuation
+    // MARK: - 轮次事件消费（pipeline runner）
 
-    // MARK: - 服务依赖
-
-    private let llmService: LLMService
-    private let toolExecutionService: ToolExecutionService
-    private let runtimeStore: ConversationRuntimeStore
-    private let sessionConfig: AgentSessionConfig
-    private let chatHistoryService: ChatHistoryService
-    private let toolService: ToolService
-
-    // MARK: - UI/投影依赖（通过 middlewares 动作闭包完成刷新与落库）
-
-    private let messageViewModel: MessagePendingVM
-    private let ConversationVM: ConversationVM
-    private let projectVM: ProjectVM
-
-    private let processingStateViewModel: ProcessingStateVM
-    private let permissionRequestViewModel: PermissionRequestVM
-    private let thinkingStateViewModel: ThinkingStateVM
-    private let depthWarningViewModel: DepthWarningVM
-
-    private let captureThinkingContent: Bool
-
-    // MARK: - Middleware 上下文
-
-    private lazy var env: ConversationTurnMiddlewareEnvironment = { [weak self] in
-        guard let self else {
-            return .init(
-                selectedConversationId: { nil },
-                languagePreference: { .chinese },
-                maxDepth: AgentConfig.maxDepth,
-                maxThinkingTextLength: AgentConfig.maxThinkingTextLength,
-                maxToolResultLength: AgentConfig.maxToolResultLength,
-                immediateStreamFlushChars: AgentConfig.immediateStreamFlushChars,
-                immediateThinkingFlushChars: AgentConfig.immediateThinkingFlushChars,
-                streamUIFlushInterval: AgentConfig.streamUIFlushInterval,
-                thinkingUIFlushInterval: AgentConfig.thinkingUIFlushInterval,
-                captureThinkingContent: self?.captureThinkingContent ?? true
-            )
-        }
-        return .init(
-            selectedConversationId: { [weak self] in self?.ConversationVM.selectedConversationId },
-            languagePreference: { [weak self] in self?.projectVM.languagePreference ?? .chinese },
+    private func makeEnvironment() -> ConversationTurnMiddlewareEnvironment {
+        .init(
+            selectedConversationId: { [conversationVM = ConversationVM] in conversationVM.selectedConversationId },
+            languagePreference: { [projectVM] in projectVM.languagePreference },
             maxDepth: AgentConfig.maxDepth,
             maxThinkingTextLength: AgentConfig.maxThinkingTextLength,
             maxToolResultLength: AgentConfig.maxToolResultLength,
@@ -63,113 +34,54 @@ final class ConversationTurnPipelineHandler: SuperLog {
             immediateThinkingFlushChars: AgentConfig.immediateThinkingFlushChars,
             streamUIFlushInterval: AgentConfig.streamUIFlushInterval,
             thinkingUIFlushInterval: AgentConfig.thinkingUIFlushInterval,
-            captureThinkingContent: self.captureThinkingContent
+            captureThinkingContent: captureThinkingContent
         )
-    }()
+    }
 
-    private lazy var messages: ConversationTurnMiddlewareMessageActions = { [weak self] in
-        guard let self else {
-            return .init(
-                messages: { [] },
-                appendMessage: { _ in },
-                updateMessage: { _, _ in },
-                saveMessage: { _, _ in },
-                enqueueTurnProcessing: { _, _ in },
-                executeToolAndContinue: { _, _, _ in },
-                updateRuntimeState: { _ in }
-            )
-        }
-        return .init(
-            messages: { [weak self] in self?.messageViewModel.messages ?? [] },
-            appendMessage: { [weak self] m in self?.messageViewModel.appendMessage(m) },
-            updateMessage: { [weak self] m, idx in self?.messageViewModel.updateMessage(m, at: idx) },
-            saveMessage: { [weak self] m, cid in
-                guard let self else { return }
-                await self.ConversationVM.saveMessage(m, to: cid)
+    private func makeMessageActions() -> ConversationTurnMiddlewareMessageActions {
+        .init(
+            messages: { [messageViewModel] in messageViewModel.messages },
+            appendMessage: { [messageViewModel] m in messageViewModel.appendMessage(m) },
+            updateMessage: { [messageViewModel] m, idx in messageViewModel.updateMessage(m, at: idx) },
+            saveMessage: { [conversationVM = ConversationVM] m, cid in
+                await conversationVM.saveMessage(m, to: cid)
             },
-            enqueueTurnProcessing: { [weak self] cid, depth in
-                self?.enqueueTurnProcessing(conversationId: cid, depth: depth)
+            enqueueTurnProcessing: { cid, depth in
+                self.enqueueTurnProcessing(conversationId: cid, depth: depth)
             },
-            executeToolAndContinue: { [weak self] toolCall, cid, languagePreference in
-                guard let self else { return }
+            executeToolAndContinue: { toolCall, cid, languagePreference in
                 await self.executeToolAndContinue(
                     toolCall,
                     conversationId: cid,
                     languagePreference: languagePreference
                 )
             },
-            updateRuntimeState: { [weak self] cid in self?.updateRuntimeState(for: cid) }
+            updateRuntimeState: { cid in self.updateRuntimeState(for: cid) }
         )
-    }()
-
-    private lazy var ui: ConversationTurnMiddlewareUIActions = conversationTurnPipelineUIActions()
-
-    private var pipeline: ConversationTurnPipeline?
-    private var pluginsDidLoadObserver: NSObjectProtocol?
-
-    init(
-        llmService: LLMService,
-        toolExecutionService: ToolExecutionService,
-        runtimeStore: ConversationRuntimeStore,
-        sessionConfig: AgentSessionConfig,
-        chatHistoryService: ChatHistoryService,
-        toolService: ToolService,
-        messageViewModel: MessagePendingVM,
-        ConversationVM: ConversationVM,
-        projectVM: ProjectVM,
-        processingStateViewModel: ProcessingStateVM,
-        permissionRequestViewModel: PermissionRequestVM,
-        thinkingStateViewModel: ThinkingStateVM,
-        depthWarningViewModel: DepthWarningVM,
-        captureThinkingContent: Bool = true
-    ) {
-        var continuation: AsyncStream<ConversationTurnEvent>.Continuation!
-        self.events = AsyncStream { continuation = $0 }
-        self.eventContinuation = continuation
-
-        self.llmService = llmService
-        self.toolExecutionService = toolExecutionService
-        self.runtimeStore = runtimeStore
-        self.sessionConfig = sessionConfig
-        self.chatHistoryService = chatHistoryService
-        self.toolService = toolService
-
-        self.messageViewModel = messageViewModel
-        self.ConversationVM = ConversationVM
-        self.projectVM = projectVM
-
-        self.processingStateViewModel = processingStateViewModel
-        self.permissionRequestViewModel = permissionRequestViewModel
-        self.thinkingStateViewModel = thinkingStateViewModel
-        self.depthWarningViewModel = depthWarningViewModel
-
-        self.captureThinkingContent = captureThinkingContent
     }
 
-    // MARK: - 轮次事件消费（pipeline runner）
-
-    func run() async {
-        if pluginsDidLoadObserver == nil {
-            pluginsDidLoadObserver = NotificationCenter.default.addObserver(
+    func runConversationTurnPipeline() async {
+        if container.conversationTurnPluginsDidLoadObserver == nil {
+            container.conversationTurnPluginsDidLoadObserver = NotificationCenter.default.addObserver(
                 forName: .pluginsDidLoad,
                 object: nil,
                 queue: nil
-            ) { [weak self] _ in
+            ) { _ in
                 Task { @MainActor in
-                    self?.rebuildPipeline()
+                    self.rebuildPipeline()
                 }
             }
         }
 
         rebuildPipeline()
         defer {
-            if let pluginsDidLoadObserver {
+            if let pluginsDidLoadObserver = container.conversationTurnPluginsDidLoadObserver {
                 NotificationCenter.default.removeObserver(pluginsDidLoadObserver)
-                self.pluginsDidLoadObserver = nil
+                container.conversationTurnPluginsDidLoadObserver = nil
             }
         }
 
-        for await event in events {
+        for await event in container.conversationTurnEvents {
             if Task.isCancelled { break }
 
             let start = CFAbsoluteTimeGetCurrent()
@@ -179,20 +91,23 @@ final class ConversationTurnPipelineHandler: SuperLog {
                 guard !Task.isCancelled else { return }
                 AppLogger.core.error("\(loggerTag)⏳ 事件处理疑似卡住(>2s): \(eventName)")
             }
+            let env = self.makeEnvironment()
+            let messages = self.makeMessageActions()
+            let projection = self.conversationTurnPipelineProjectionActions()
 
             let ctx = ConversationTurnMiddlewareContext(
                 runtimeStore: runtimeStore,
                 env: env,
                 actions: messages,
-                ui: ui
+                projection: projection
             )
 
-            if let pipeline {
+            if let pipeline = container.conversationTurnPipeline {
                 await pipeline.run(event, ctx: ctx) { event, _ in
-                    await self.handle(event)
+                    await self.handle(event, ctx: ctx)
                 }
             } else {
-                await handle(event)
+                await self.handle(event, ctx: ctx)
             }
 
             hangWatchdog.cancel()
@@ -235,7 +150,7 @@ final class ConversationTurnPipelineHandler: SuperLog {
             return a.id < b.id
         }
 
-        pipeline = ConversationTurnPipeline(
+        container.conversationTurnPipeline = ConversationTurnPipeline(
             middlewares: all.map { m in
                 { event, ctx, next in
                     await m.handle(event: event, ctx: ctx, next: next)
@@ -244,27 +159,18 @@ final class ConversationTurnPipelineHandler: SuperLog {
         )
     }
 
-    private func handle(_ event: ConversationTurnEvent) async {
+    private func handle(_ event: ConversationTurnEvent, ctx: ConversationTurnMiddlewareContext) async {
         switch event {
         case let .error(error, conversationId):
             let msg = error.localizedDescription
             runtimeStore.errorMessageByConversation[conversationId] = msg
-            runtimeStore.processingConversationIds.remove(conversationId)
-            runtimeStore.turnContextsByConversation.removeValue(forKey: conversationId)
+            runtimeStore.clearRuntimeForTurnTermination(for: conversationId)
 
-            if env.selectedConversationId() == conversationId {
-                ui.onTurnFailedUI(conversationId, msg)
+            if ctx.env.selectedConversationId() == conversationId {
+                ctx.projection.onTurnFailedUI(conversationId, msg)
             }
 
-            runtimeStore.streamStateByConversation[conversationId] = .init(messageId: nil)
-            runtimeStore.pendingStreamTextByConversation[conversationId] = nil
-            runtimeStore.streamingTextByConversation[conversationId] = nil
-            runtimeStore.pendingThinkingTextByConversation[conversationId] = nil
-            runtimeStore.lastStreamFlushAtByConversation[conversationId] = nil
-            runtimeStore.lastThinkingFlushAtByConversation[conversationId] = nil
-            runtimeStore.streamStartedAtByConversation[conversationId] = nil
-            runtimeStore.didReceiveFirstTokenByConversation.remove(conversationId)
-            messages.updateRuntimeState(conversationId)
+            ctx.actions.updateRuntimeState(conversationId)
 
         default:
             // 当前实现未使用 fallback：保留该分支用于后续扩展。
@@ -291,13 +197,10 @@ final class ConversationTurnPipelineHandler: SuperLog {
 
     // MARK: - 轮次任务队列控制
 
-    private var turnTaskPipelineByConversation: [UUID: Task<Void, Never>] = [:]
-    private var turnTaskGenerationByConversation: [UUID: Int] = [:]
-
     /// 撤销中断后不重建 UI VM：交由中间件/取消 handler 处理。
     func cancelTurnPipeline(for conversationId: UUID) {
-        turnTaskPipelineByConversation[conversationId]?.cancel()
-        turnTaskPipelineByConversation[conversationId] = nil
+        container.conversationTurnTaskPipelineByConversation[conversationId]?.cancel()
+        container.conversationTurnTaskPipelineByConversation[conversationId] = nil
     }
 
     func resetUIAfterAgentCancel(for conversationId: UUID) {
@@ -311,43 +214,40 @@ final class ConversationTurnPipelineHandler: SuperLog {
     func enqueueTurnProcessing(conversationId: UUID, depth: Int) {
         let previousTask: Task<Void, Never>?
         if depth == 0 {
-            if Self.verbose, turnTaskPipelineByConversation[conversationId] != nil {
+            if Self.verbose, container.conversationTurnTaskPipelineByConversation[conversationId] != nil {
                 AppLogger.core.info("\(Self.t)🧵 [\(conversationId.uuidString.prefix(8))] 新消息到达，取消旧轮次链路")
             }
-            turnTaskPipelineByConversation[conversationId]?.cancel()
-            turnTaskPipelineByConversation[conversationId] = nil
+            container.conversationTurnTaskPipelineByConversation[conversationId]?.cancel()
+            container.conversationTurnTaskPipelineByConversation[conversationId] = nil
             previousTask = nil
         } else {
-            previousTask = turnTaskPipelineByConversation[conversationId]
+            previousTask = container.conversationTurnTaskPipelineByConversation[conversationId]
         }
 
-        let generation = (turnTaskGenerationByConversation[conversationId] ?? 0) + 1
-        turnTaskGenerationByConversation[conversationId] = generation
+        let generation = (container.conversationTurnTaskGenerationByConversation[conversationId] ?? 0) + 1
+        container.conversationTurnTaskGenerationByConversation[conversationId] = generation
         if Self.verbose {
             AppLogger.core.info("\(Self.t)🧵 [\(conversationId.uuidString.prefix(8))] 轮次入队 depth=\(depth), gen=\(generation)")
         }
 
-        let task = Task { [weak self] in
+        let task = Task {
             if let previousTask {
                 await previousTask.value
             }
-            guard let self else { return }
-
             if Self.verbose {
-                AppLogger.core.info("\(self.t)🧵 [\(conversationId.uuidString.prefix(8))] 开始执行轮次 depth=\(depth), gen=\(generation)")
+                AppLogger.core.info("\(Self.t)🧵 [\(conversationId.uuidString.prefix(8))] 开始执行轮次 depth=\(depth), gen=\(generation)")
             }
 
             await self.runTurnJob(conversationId: conversationId, depth: depth)
 
-            await MainActor.run { [weak self] in
-                guard let self else { return }
-                if self.turnTaskGenerationByConversation[conversationId] == generation {
-                    self.turnTaskPipelineByConversation[conversationId] = nil
+            await MainActor.run {
+                if container.conversationTurnTaskGenerationByConversation[conversationId] == generation {
+                    container.conversationTurnTaskPipelineByConversation[conversationId] = nil
                 }
             }
         }
 
-        turnTaskPipelineByConversation[conversationId] = task
+        container.conversationTurnTaskPipelineByConversation[conversationId] = task
     }
 
     func updateRuntimeState(for conversationId: UUID) {
@@ -742,7 +642,7 @@ final class ConversationTurnPipelineHandler: SuperLog {
 
     // MARK: - UI 动作闭包构建（migrated from ConversationTurnVM）
 
-    private func conversationTurnPipelineUIActions() -> ConversationTurnMiddlewareUIActions {
+    private func conversationTurnPipelineProjectionActions() -> ConversationTurnMiddlewareProjectionActions {
         let processing = processingStateViewModel
         let permission = permissionRequestViewModel
         let thinking = thinkingStateViewModel
@@ -760,11 +660,10 @@ final class ConversationTurnPipelineHandler: SuperLog {
             onTurnFailedUI: { _, _ in
                 processing.finish()
             },
-            onStreamStartedUI: { [weak self] _, conversationId in
-                guard let self else { return }
+            onStreamStartedUI: { _, conversationId in
                 processing.markStreamStarted()
-                if self.ConversationVM.selectedConversationId == conversationId {
-                    self.runtimeStore.bumpStreamingPresentation()
+                if ConversationVM.selectedConversationId == conversationId {
+                    runtimeStore.bumpStreamingPresentation()
                 }
             },
             onStreamFirstTokenUI: { _, ttftMs in
@@ -774,17 +673,16 @@ final class ConversationTurnPipelineHandler: SuperLog {
                     processing.markGenerating()
                 }
             },
-            onStreamFinishedUI: { [weak self] conversationId in
-                guard let self else { return }
+            onStreamFinishedUI: { conversationId in
                 thinking.setThinkingText(
-                    self.runtimeStore.thinkingTextByConversation[conversationId] ?? "",
+                    runtimeStore.thinkingTextByConversation[conversationId] ?? "",
                     for: conversationId
                 )
                 thinking.setIsThinking(false, for: conversationId)
                 processing.finish()
-                self.runtimeStore.streamingTextByConversation[conversationId] = nil
-                if self.ConversationVM.selectedConversationId == conversationId {
-                    self.runtimeStore.bumpStreamingPresentation()
+                runtimeStore.streamingTextByConversation[conversationId] = nil
+                if ConversationVM.selectedConversationId == conversationId {
+                    runtimeStore.bumpStreamingPresentation()
                 }
             },
             onThinkingStartedUI: { conversationId in
