@@ -13,6 +13,7 @@ extension ConversationTurnEvent {
         case .permissionRequested: return "permissionRequested"
         case .permissionDecision: return "permissionDecision"
         case .maxDepthReached: return "maxDepthReached"
+        case .finalStepToolCalls: return "finalStepToolCalls"
         case .completed: return "completed"
         case .error: return "error"
         case .shouldContinue: return "shouldContinue"

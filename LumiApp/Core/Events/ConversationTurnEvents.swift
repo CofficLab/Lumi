@@ -11,6 +11,7 @@ enum ConversationTurnEvent: Sendable {
     case permissionRequested(PermissionRequest, conversationId: UUID)
     case permissionDecision(allowed: Bool, request: PermissionRequest, conversationId: UUID)
     case maxDepthReached(currentDepth: Int, maxDepth: Int, conversationId: UUID)
+    case finalStepToolCalls(toolCalls: [ToolCall], depth: Int, maxDepth: Int, languagePreference: LanguagePreference, conversationId: UUID)
     case completed(conversationId: UUID)
     case error(Error, conversationId: UUID)
     case shouldContinue(depth: Int, conversationId: UUID)

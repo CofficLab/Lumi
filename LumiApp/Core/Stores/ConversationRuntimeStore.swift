@@ -139,4 +139,32 @@ final class ConversationRuntimeStore: ObservableObject {
         context.recentToolSignatures.removeAll(keepingCapacity: false)
         turnContextsByConversation[conversationId] = context
     }
+
+    func turnContext(for conversationId: UUID) -> ConversationTurnContext {
+        turnContextsByConversation[conversationId] ?? ConversationTurnContext()
+    }
+
+    func setTurnContext(_ context: ConversationTurnContext, for conversationId: UUID) {
+        turnContextsByConversation[conversationId] = context
+    }
+
+    func setPendingToolCalls(_ toolCalls: [ToolCall], for conversationId: UUID) {
+        var context = turnContext(for: conversationId)
+        context.pendingToolCalls = toolCalls
+        setTurnContext(context, for: conversationId)
+    }
+
+    func clearPendingToolCalls(for conversationId: UUID) {
+        var context = turnContext(for: conversationId)
+        context.pendingToolCalls.removeAll()
+        setTurnContext(context, for: conversationId)
+    }
+
+    func popFirstPendingToolCall(for conversationId: UUID) -> ToolCall? {
+        var context = turnContext(for: conversationId)
+        guard !context.pendingToolCalls.isEmpty else { return nil }
+        let next = context.pendingToolCalls.removeFirst()
+        setTurnContext(context, for: conversationId)
+        return next
+    }
 }

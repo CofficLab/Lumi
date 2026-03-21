@@ -5,6 +5,9 @@ import MagicKit
 @MainActor
 extension RootView {
     private var eventContinuation: AsyncStream<ConversationTurnEvent>.Continuation { container.conversationTurnEventContinuation }
+    private func emit(_ event: ConversationTurnEvent) {
+        eventContinuation.yield(event)
+    }
 
     private var llmService: LLMService { container.llmService }
     private var toolExecutionService: ToolExecutionService { container.toolExecutionService }
@@ -98,11 +101,9 @@ extension RootView {
             )
 
             if let pipeline = container.conversationTurnPipeline {
-                await pipeline.run(event, ctx: ctx) { event, _ in
-                    await self.handle(event, ctx: ctx)
+                await pipeline.run(event, ctx: ctx) { _, _ in
+                    // no-op: 所有事件都应由 middleware 链处理
                 }
-            } else {
-                await self.handle(event, ctx: ctx)
             }
 
             let elapsed = CFAbsoluteTimeGetCurrent() - start
@@ -127,12 +128,14 @@ extension RootView {
             AnyConversationTurnMiddleware(ThinkingDeltaCaptureMiddleware()),
             AnyConversationTurnMiddleware(ThinkingStartMiddleware()),
             AnyConversationTurnMiddleware(PermissionDecisionMiddleware()),
+            AnyConversationTurnMiddleware(ErrorPolicyMiddleware()),
             AnyConversationTurnMiddleware(StreamEventIgnoreMiddleware()),
             AnyConversationTurnMiddleware(StreamTextDeltaApplyMiddleware()),
             AnyConversationTurnMiddleware(EmptyToolResponseContentMiddleware()),
             AnyConversationTurnMiddleware(ToolResultTruncateMiddleware()),
             AnyConversationTurnMiddleware(StreamFinishedFinalizeMiddleware()),
             AnyConversationTurnMiddleware(MaxDepthReachedFinalizeMiddleware()),
+            AnyConversationTurnMiddleware(FinalStepToolCallsFinalizeMiddleware()),
             AnyConversationTurnMiddleware(TurnCompletedFinalizeMiddleware()),
             AnyConversationTurnMiddleware(PersistAndAppendMiddleware()),
             AnyConversationTurnMiddleware(ShouldContinueEnqueueMiddleware()),
@@ -153,25 +156,6 @@ extension RootView {
         )
     }
 
-    private func handle(_ event: ConversationTurnEvent, ctx: ConversationTurnMiddlewareContext) async {
-        switch event {
-        case let .error(error, conversationId):
-            let msg = error.localizedDescription
-            runtimeStore.errorMessageByConversation[conversationId] = msg
-            runtimeStore.clearRuntimeForTurnTermination(for: conversationId)
-
-            if ctx.env.selectedConversationId() == conversationId {
-                ctx.projection.onTurnFailedUI(conversationId, msg)
-            }
-
-            ctx.actions.updateRuntimeState(conversationId)
-
-        default:
-            // 当前实现未使用 fallback：保留该分支用于后续扩展。
-            break
-        }
-    }
-
     // MARK: - 轮次任务队列控制
 
     /// 撤销中断后不重建 UI VM：交由中间件/取消 handler 处理。
@@ -186,7 +170,7 @@ extension RootView {
         permissionRequestViewModel.setPendingPermissionRequest(nil)
     }
 
-    // MARK: - 轮次事件产生逻辑（migrated from ConversationTurnVM）
+    // MARK: - 轮次事件产生逻辑
 
     func enqueueTurnProcessing(conversationId: UUID, depth: Int) {
         let previousTask: Task<Void, Never>?
@@ -279,7 +263,7 @@ extension RootView {
 
         switch depthGuardResult {
         case let .reached(currentDepth, maxDepth):
-            eventContinuation.yield(.maxDepthReached(currentDepth: currentDepth, maxDepth: maxDepth, conversationId: conversationId))
+            emit(.maxDepthReached(currentDepth: currentDepth, maxDepth: maxDepth, conversationId: conversationId))
             return
         case .proceed:
             break
@@ -313,7 +297,7 @@ extension RootView {
                 providerId: config.providerId,
                 modelName: config.model
             )
-            eventContinuation.yield(.responseReceived(loadingMessage, conversationId: conversationId))
+            emit(.responseReceived(loadingMessage, conversationId: conversationId))
         }
 
         do {
@@ -328,43 +312,38 @@ extension RootView {
             let hasContent = !responseMsg.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             let hasToolCalls = !(responseMsg.toolCalls?.isEmpty ?? true)
 
-            context = runtimeStore.turnContextsByConversation[conversationId] ?? ConversationTurnContext()
+            context = runtimeStore.turnContext(for: conversationId)
             let consecutiveEmptyLoopResult = ConsecutiveEmptyToolTurnsLoopGuard().evaluate(
                 hasToolCalls: hasToolCalls,
                 hasContent: hasContent,
                 context: &context,
                 threshold: 3
             )
-            runtimeStore.turnContextsByConversation[conversationId] = context
+            runtimeStore.setTurnContext(context, for: conversationId)
 
             // 防止模型陷入“空文本 + 工具调用”循环，导致长时间卡住。
             if case let .abort(error) = consecutiveEmptyLoopResult {
                 if let toolCalls = responseMsg.toolCalls, !toolCalls.isEmpty {
                     emitAbortedToolResults(for: toolCalls, conversationId: conversationId)
                 }
-                context.pendingToolCalls.removeAll()
-                runtimeStore.turnContextsByConversation[conversationId] = context
-                eventContinuation.yield(.error(error, conversationId: conversationId))
+                runtimeStore.clearPendingToolCalls(for: conversationId)
+                emit(.error(error, conversationId: conversationId))
                 AppLogger.core.error("\(self.t)[\(conversationId)] 连续空响应工具循环，已中止")
                 return
             }
 
             if let toolCalls = responseMsg.toolCalls, !toolCalls.isEmpty {
                 if isFinalStep {
-                    emitAbortedToolResults(for: toolCalls, conversationId: conversationId)
-                    var broken = runtimeStore.turnContextsByConversation[conversationId] ?? ConversationTurnContext()
-                    broken.pendingToolCalls.removeAll()
-                    runtimeStore.turnContextsByConversation[conversationId] = broken
-                    let explainMessage = ChatMessage.maxDepthToolLimitMessage(
-                        languagePreference: languagePreference,
-                        currentDepth: depth,
-                        maxDepth: AgentConfig.maxDepth
+                    runtimeStore.clearPendingToolCalls(for: conversationId)
+                    emit(
+                        .finalStepToolCalls(
+                            toolCalls: toolCalls,
+                            depth: depth,
+                            maxDepth: AgentConfig.maxDepth,
+                            languagePreference: languagePreference,
+                            conversationId: conversationId
+                        )
                     )
-                    eventContinuation.yield(.responseReceived(explainMessage, conversationId: conversationId))
-                    eventContinuation.yield(.completed(conversationId: conversationId))
-                    if Self.verbose {
-                        AppLogger.core.warning("\(self.t)[\(conversationId)] 最后一步仍请求工具，已忽略并结束本轮")
-                    }
                     return
                 }
 
@@ -372,9 +351,8 @@ extension RootView {
                     AppLogger.core.info("\(self.t)[\(conversationId)] 收到 \(toolCalls.count) 个工具调用")
                 }
 
-                context = runtimeStore.turnContextsByConversation[conversationId] ?? ConversationTurnContext()
-                context.pendingToolCalls = toolCalls
-                runtimeStore.turnContextsByConversation[conversationId] = context
+                runtimeStore.setPendingToolCalls(toolCalls, for: conversationId)
+                context = runtimeStore.turnContext(for: conversationId)
 
                 let firstTool = context.pendingToolCalls.removeFirst()
 
@@ -392,12 +370,12 @@ extension RootView {
                     )
                 )
 
-                runtimeStore.turnContextsByConversation[conversationId] = context
+                runtimeStore.setTurnContext(context, for: conversationId)
 
                 if case let .abort(message, error) = guardResult {
                     emitAbortedToolResults(for: toolCalls, conversationId: conversationId)
-                    eventContinuation.yield(.responseReceived(message, conversationId: conversationId))
-                    eventContinuation.yield(.error(error, conversationId: conversationId))
+                    emit(.responseReceived(message, conversationId: conversationId))
+                    emit(.error(error, conversationId: conversationId))
                     AppLogger.core.error("\(self.t)[\(conversationId)] 重复工具调用循环，已中止: \(firstTool.name)")
                     return
                 }
@@ -410,26 +388,26 @@ extension RootView {
                 )
             } else {
                 runtimeStore.resetToolLoopTracking(for: conversationId)
-                eventContinuation.yield(.completed(conversationId: conversationId))
+                emit(.completed(conversationId: conversationId))
                 if Self.verbose {
                     AppLogger.core.info("\(self.t)[\(conversationId)] 轮次完成（无工具）")
                 }
             }
         } catch {
-            var failedContext = runtimeStore.turnContextsByConversation[conversationId] ?? ConversationTurnContext()
+            var failedContext = runtimeStore.turnContext(for: conversationId)
             failedContext.pendingToolCalls.removeAll()
-            runtimeStore.turnContextsByConversation[conversationId] = failedContext
+            runtimeStore.setTurnContext(failedContext, for: conversationId)
 
             if let configError = error as? LLMConfigValidationError,
                case .apiKeyEmpty = configError {
                 let explainMessage = ChatMessage.apiKeyMissingSystemMessage(languagePreference: languagePreference)
-                eventContinuation.yield(.responseReceived(explainMessage, conversationId: conversationId))
-                eventContinuation.yield(.error(error, conversationId: conversationId))
+                emit(.responseReceived(explainMessage, conversationId: conversationId))
+                emit(.error(error, conversationId: conversationId))
                 AppLogger.core.error("\(self.t)[\(conversationId)] 配置校验失败：API Key 为空")
             } else {
                 let explainMessage = ChatMessage.requestFailedMessage(languagePreference: languagePreference, error: error)
-                eventContinuation.yield(.responseReceived(explainMessage, conversationId: conversationId))
-                eventContinuation.yield(.error(error, conversationId: conversationId))
+                emit(.responseReceived(explainMessage, conversationId: conversationId))
+                emit(.error(error, conversationId: conversationId))
                 AppLogger.core.error("\(self.t)[\(conversationId.uuidString.prefix(8))] 对话处理失败：\(error.localizedDescription)")
             }
         }
@@ -445,7 +423,7 @@ extension RootView {
         languagePreference: LanguagePreference
     ) async throws -> ChatMessage {
         let messageId = UUID()
-        eventContinuation.yield(.streamStarted(messageId: messageId, conversationId: conversationId))
+        emit(.streamStarted(messageId: messageId, conversationId: conversationId))
         let streamContinuation = eventContinuation
 
         let responseMsg = try await llmService.sendStreamingMessage(
@@ -503,7 +481,7 @@ extension RootView {
             maxTokens: responseMsg.maxTokens
         )
 
-        eventContinuation.yield(.streamFinished(message: finalMessage, conversationId: conversationId))
+        emit(.streamFinished(message: finalMessage, conversationId: conversationId))
         return finalMessage
     }
 
@@ -533,7 +511,7 @@ extension RootView {
                 riskLevel: riskLevel
             )
 
-            eventContinuation.yield(.permissionRequested(permissionRequest, conversationId: conversationId))
+            emit(.permissionRequested(permissionRequest, conversationId: conversationId))
             return
         }
 
@@ -549,34 +527,31 @@ extension RootView {
         conversationId: UUID,
         languagePreference: LanguagePreference
     ) async {
+        let resultMsg: ChatMessage
         do {
             let result = try await toolExecutionService.executeTool(toolCall)
 
-            let resultMsg = ChatMessage(
+            resultMsg = ChatMessage(
                 role: .tool,
                 content: result,
                 toolCallID: toolCall.id
             )
-
-            eventContinuation.yield(.toolResultReceived(resultMsg, conversationId: conversationId))
-            await processPendingTools(conversationId: conversationId, languagePreference: languagePreference)
         } catch {
-            let errorMsg = toolExecutionService.createErrorMessage(for: toolCall, error: error)
-            eventContinuation.yield(.toolResultReceived(errorMsg, conversationId: conversationId))
-            await processPendingTools(conversationId: conversationId, languagePreference: languagePreference)
+            resultMsg = toolExecutionService.createErrorMessage(for: toolCall, error: error)
         }
+        emit(.toolResultReceived(resultMsg, conversationId: conversationId))
+        await processPendingTools(conversationId: conversationId, languagePreference: languagePreference)
     }
 
     private func processPendingTools(conversationId: UUID, languagePreference: LanguagePreference) async {
-        var context = runtimeStore.turnContextsByConversation[conversationId] ?? ConversationTurnContext()
+        let context = runtimeStore.turnContext(for: conversationId)
 
         guard !context.pendingToolCalls.isEmpty else {
-            eventContinuation.yield(.shouldContinue(depth: context.currentDepth + 1, conversationId: conversationId))
+            emit(.shouldContinue(depth: context.currentDepth + 1, conversationId: conversationId))
             return
         }
 
-        let nextTool = context.pendingToolCalls.removeFirst()
-        runtimeStore.turnContextsByConversation[conversationId] = context
+        guard let nextTool = runtimeStore.popFirstPendingToolCall(for: conversationId) else { return }
 
         await handleToolCall(
             nextTool,
@@ -594,7 +569,7 @@ extension RootView {
                 content: "[Tool execution aborted by safety guard]",
                 toolCallID: toolCall.id
             )
-            eventContinuation.yield(.toolResultReceived(abortMessage, conversationId: conversationId))
+            emit(.toolResultReceived(abortMessage, conversationId: conversationId))
         }
     }
 
