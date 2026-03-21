@@ -1,64 +1,34 @@
 import Foundation
 
-/// 负责“创建新会话”的业务流程（落库会话 + 切换发送队列 + 初始化系统/欢迎消息）。
+/// 负责收集“创建新会话”所需的数据并发布创建请求。
 @MainActor
 final class ConversationCreationVM: ObservableObject {
-    private let promptService: PromptService
-    private let chatHistoryService: ChatHistoryService
-    private let messageSenderVM: MessageQueueVM
-    private let conversationVM: ConversationVM
-    private let projectVM: ProjectVM
+    @Published private(set) var pendingRequest: ConversationCreationRequest?
+    private var requestContinuations: [UUID: CheckedContinuation<Void, Never>] = [:]
 
-    init(
-        promptService: PromptService,
-        chatHistoryService: ChatHistoryService,
-        messageSenderVM: MessageQueueVM,
-        conversationVM: ConversationVM,
-        projectVM: ProjectVM
-    ) {
-        self.promptService = promptService
-        self.chatHistoryService = chatHistoryService
-        self.messageSenderVM = messageSenderVM
-        self.conversationVM = conversationVM
-        self.projectVM = projectVM
+    struct ConversationCreationRequest: Identifiable, Equatable {
+        let id: UUID
     }
 
     func createNewConversation() async {
-        let projectId = projectVM.isProjectSelected ? projectVM.currentProjectPath : nil
-        let projectName = projectVM.isProjectSelected ? projectVM.currentProjectName : nil
-        let projectPath = projectVM.isProjectSelected ? projectVM.currentProjectPath : nil
-
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MM-dd HH:mm"
-
-        let conversation = chatHistoryService.createConversation(
-            projectId: projectId,
-            title: "新会话 " + formatter.string(from: Date())
+        let request = ConversationCreationRequest(
+            id: UUID()
         )
+        pendingRequest = request
 
-        messageSenderVM.switchToConversation(conversation.id)
-
-        Task { [promptService, projectVM, conversationVM] in
-            let systemMessage = await promptService.getSystemContextMessage(
-                projectName: projectName,
-                projectPath: projectPath,
-                language: projectVM.languagePreference
-            )
-            if !systemMessage.isEmpty {
-                await conversationVM.saveMessage(ChatMessage(role: .system, content: systemMessage), to: conversation.id)
-            }
-
-            let welcomeMessage = await promptService.getEmptySessionWelcomeMessage(
-                projectName: projectName,
-                projectPath: projectPath,
-                language: projectVM.languagePreference
-            )
-            if !welcomeMessage.isEmpty {
-                await conversationVM.saveMessage(ChatMessage(role: .assistant, content: welcomeMessage), to: conversation.id)
-            }
+        await withCheckedContinuation { continuation in
+            requestContinuations[request.id] = continuation
         }
+    }
 
-        conversationVM.setSelectedConversation(conversation.id)
-        NotificationCenter.postAgentConversationCreated(conversationId: conversation.id)
+    func consumePendingRequest(id: UUID) -> ConversationCreationRequest? {
+        guard let request = pendingRequest, request.id == id else { return nil }
+        pendingRequest = nil
+        return request
+    }
+
+    func completeRequest(id: UUID) {
+        guard let continuation = requestContinuations.removeValue(forKey: id) else { return }
+        continuation.resume()
     }
 }

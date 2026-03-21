@@ -211,13 +211,7 @@ final class RootViewContainer: ObservableObject {
             }
         )
 
-        self.conversationCreationVM = ConversationCreationVM(
-            promptService: promptService,
-            chatHistoryService: chatHistoryService,
-            messageSenderVM: messageSenderVM,
-            conversationVM: conversationVM,
-            projectVM: ProjectVM
-        )
+        self.conversationCreationVM = ConversationCreationVM()
 
         self.projectContextRequestVM = ProjectContextRequestVM()
 
@@ -239,6 +233,12 @@ final class RootViewContainer: ObservableObject {
             .store(in: &cancellables)
 
         taskCancellationVM.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
+        conversationCreationVM.objectWillChange
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
             }
