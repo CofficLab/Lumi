@@ -19,11 +19,6 @@ final class ConversationVM: ObservableObject, SuperLog {
     /// 负责会话和消息的持久化操作。
     private let chatHistoryService: ChatHistoryService
 
-    /// 提示词服务（用于获取欢迎消息）
-    ///
-    /// 获取新会话的欢迎消息内容。
-    private let promptService: PromptService
-
     // MARK: - 会话状态
 
     /// 选中的会话 ID
@@ -43,13 +38,10 @@ final class ConversationVM: ObservableObject, SuperLog {
     ///
     /// - Parameters:
     ///   - chatHistoryService: 聊天历史服务
-    ///   - promptService: 提示词服务
     init(
-        chatHistoryService: ChatHistoryService,
-        promptService: PromptService
+        chatHistoryService: ChatHistoryService
     ) {
         self.chatHistoryService = chatHistoryService
-        self.promptService = promptService
 
         // 启动时如果没有任何插件恢复会话选择，这里会自动选择一个有效会话
         selfHealSelectedConversationIfNeeded()

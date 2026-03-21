@@ -130,8 +130,7 @@ final class RootViewContainer: ObservableObject {
         self.messageViewModel = MessagePendingVM()
 
         self.conversationVM = Lumi.ConversationVM(
-            chatHistoryService: chatHistoryService,
-            promptService: promptService
+            chatHistoryService: chatHistoryService
         )
 
         self.messageQueueVM = Lumi.MessageQueueVM()
