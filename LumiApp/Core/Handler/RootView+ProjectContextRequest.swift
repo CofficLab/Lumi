@@ -54,7 +54,7 @@ extension RootView {
     private func handleProjectClear() async {
         guard container.ProjectVM.isProjectSelected else { return }
 
-        container.ConversationVM.setSelectedConversation(nil)
+        container.conversationVM.setSelectedConversation(nil)
         container.ProjectVM.clearProject()
 
         let languagePreference = container.ProjectVM.languagePreference

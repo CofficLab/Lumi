@@ -1,10 +1,10 @@
 import SwiftUI
 
 extension RootView {
-    func onAgentTaskCancellationRequested(_ conversationId: UUID?) {
-        guard let conversationId else { return }
+    func onTaskCancellationRequested() {
+        guard let conversationId = self.container.taskCancellationVM.conversationIdToCancel else { return }
 
-        let messageSenderVM = container.MessageSenderVM
+        let messageSenderVM = container.messageSenderVM
         let runtimeStore = container.conversationRuntimeStore
 
         messageSenderVM.cancelProcessing(for: conversationId, clearQueue: true)

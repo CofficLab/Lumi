@@ -41,13 +41,13 @@ final class RootViewContainer: ObservableObject {
     let processingStateViewModel: ProcessingStateVM
     let permissionRequestViewModel: PermissionRequestVM
     let thinkingStateViewModel: ThinkingStateVM
-    let agentTaskCancellationVM: TaskCancellationVM
+    let taskCancellationVM: TaskCancellationVM
 
     // MARK: - 消息相关 VM
 
     let messageViewModel: MessagePendingVM
-    let ConversationVM: Lumi.ConversationVM
-    let MessageSenderVM: Lumi.MessageQueueVM
+    let conversationVM: Lumi.ConversationVM
+    let messageSenderVM: Lumi.MessageQueueVM
 
     // MARK: - 输入与附件
 
@@ -141,7 +141,7 @@ final class RootViewContainer: ObservableObject {
         self.processingStateViewModel = ProcessingStateVM()
         self.permissionRequestViewModel = PermissionRequestVM()
         self.thinkingStateViewModel = ThinkingStateVM()
-        self.agentTaskCancellationVM = TaskCancellationVM()
+        self.taskCancellationVM = TaskCancellationVM()
 
         // ========================================
         // 消息相关 VM
@@ -149,13 +149,13 @@ final class RootViewContainer: ObservableObject {
 
         self.messageViewModel = MessagePendingVM()
 
-        self.ConversationVM = Lumi.ConversationVM(
+        self.conversationVM = Lumi.ConversationVM(
             chatHistoryService: chatHistoryService,
             llmService: llmService,
             promptService: promptService
         )
 
-        self.MessageSenderVM = Lumi.MessageQueueVM()
+        self.messageSenderVM = Lumi.MessageQueueVM()
 
         // ========================================
         // 输入与附件
@@ -163,8 +163,8 @@ final class RootViewContainer: ObservableObject {
 
         self.agentAttachmentsVM = AttachmentsVM()
         self.inputQueueVM = InputQueueVM(
-            conversationVM: ConversationVM,
-            messageSenderVM: MessageSenderVM,
+            conversationVM: conversationVM,
+            messageSenderVM: messageSenderVM,
             attachmentsVM: agentAttachmentsVM
         )
 
@@ -198,7 +198,7 @@ final class RootViewContainer: ObservableObject {
 
         self.permissionHandlingVM = PermissionHandlingVM(
             runtimeStore: conversationRuntimeStore,
-            conversationVM: ConversationVM,
+            conversationVM: conversationVM,
             permissionRequestViewModel: permissionRequestViewModel,
             emitPermissionDecision: { [conversationTurnEventContinuation] allowed, request, conversationId in
                 conversationTurnEventContinuation.yield(
@@ -214,8 +214,8 @@ final class RootViewContainer: ObservableObject {
         self.conversationCreationVM = ConversationCreationVM(
             promptService: promptService,
             chatHistoryService: chatHistoryService,
-            messageSenderVM: MessageSenderVM,
-            conversationVM: ConversationVM,
+            messageSenderVM: messageSenderVM,
+            conversationVM: conversationVM,
             projectVM: ProjectVM
         )
 
@@ -228,17 +228,17 @@ final class RootViewContainer: ObservableObject {
         self.chatTimelineViewModel = ChatTimelineViewModel(
             runtimeStore: conversationRuntimeStore,
             chatHistoryService: chatHistoryService,
-            conversationVM: ConversationVM
+            conversationVM: conversationVM
         )
 
 
-        MessageSenderVM.objectWillChange
+        messageSenderVM.objectWillChange
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
 
-        agentTaskCancellationVM.objectWillChange
+        taskCancellationVM.objectWillChange
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
             }

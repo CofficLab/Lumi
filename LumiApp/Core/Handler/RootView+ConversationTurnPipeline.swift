@@ -16,7 +16,7 @@ extension RootView {
     private var chatHistoryService: ChatHistoryService { container.chatHistoryService }
     private var toolService: ToolService { container.toolService }
     private var messageViewModel: MessagePendingVM { container.messageViewModel }
-    private var ConversationVM: ConversationVM { container.ConversationVM }
+    private var ConversationVM: ConversationVM { container.conversationVM }
     private var projectVM: ProjectVM { container.ProjectVM }
     private var processingStateViewModel: ProcessingStateVM { container.processingStateViewModel }
     private var permissionRequestViewModel: PermissionRequestVM { container.permissionRequestViewModel }

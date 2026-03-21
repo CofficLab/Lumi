@@ -1,19 +1,19 @@
 import SwiftUI
 
 extension RootView {
-    func onInitialConversationLoaded() {
-        guard let conversationId = container.ConversationVM.selectedConversationId else { return }
+    func loadedConversationLoaded() {
+        guard let conversationId = container.conversationVM.selectedConversationId else { return }
         Task { await handleConversationChanged(conversationId: conversationId, applyProjectContext: false) }
     }
 
     func onConversationSelectionChanged() {
-        guard let conversationId = container.ConversationVM.selectedConversationId else { return }
+        guard let conversationId = container.conversationVM.selectedConversationId else { return }
         Task { await handleConversationChanged(conversationId: conversationId, applyProjectContext: true) }
     }
 
     @MainActor
     private func handleConversationChanged(conversationId: UUID, applyProjectContext: Bool) async {
-        _ = container.MessageSenderVM.switchToConversation(conversationId)
+        _ = container.messageSenderVM.switchToConversation(conversationId)
 
         let snapshot = container.conversationRuntimeStore.agentRuntimeSnapshot(for: conversationId)
         container.processingStateViewModel.setIsProcessing(snapshot.isProcessing)
@@ -27,7 +27,7 @@ extension RootView {
         container.depthWarningViewModel.setDepthWarning(snapshot.depthWarning)
 
         guard applyProjectContext else { return }
-        guard let conversation = container.ConversationVM.fetchConversation(id: conversationId) else { return }
+        guard let conversation = container.conversationVM.fetchConversation(id: conversationId) else { return }
 
         let path = conversation.projectId?.trimmingCharacters(in: .whitespacesAndNewlines)
         let languagePreference = container.ProjectVM.languagePreference

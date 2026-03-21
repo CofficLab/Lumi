@@ -2,31 +2,24 @@ import Foundation
 import MagicKit
 import SwiftUI
 
-// MARK: - Pending send logging
-
-private enum RootViewSenderPendingLog: SuperLog {
-    nonisolated static let emoji = "📤"
-    nonisolated static let verbose = true
-}
-
 // MARK: - RootView 发送队列
 
 extension RootView {
     /// 发送队列调度：取出待发送消息 → 跑 `MessageSendPipeline`（Slash / 插件 / Core）→ 完成后出队。
     @MainActor
     func onSenderPendingMessagesChanged() {
-        let vm = container.MessageSenderVM
+        let vm = container.messageSenderVM
         guard !vm.pendingMessages.isEmpty else { return }
-        guard let conversationId = container.ConversationVM.selectedConversationId else {
-            AppLogger.core.error("\(RootViewSenderPendingLog.t) 当前没有选中的会话")
+        guard let conversationId = container.conversationVM.selectedConversationId else {
+            AppLogger.core.error("\(Self.t) 当前没有选中的会话")
             return
         }
         guard let message = vm.pendingMessages.first else { return }
 
         vm.currentProcessingIndex = 0
 
-        if RootViewSenderPendingLog.verbose {
-            AppLogger.core.info("\(RootViewSenderPendingLog.t)📤 [\(String(conversationId.uuidString.prefix(8)))] 开始发送消息：\(message.content.prefix(50))")
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t)📤 [\(String(conversationId.uuidString.prefix(8)))] 开始发送消息：\(message.content.prefix(50))")
         }
 
         let enqueueTurnProcessing: (UUID, Int) -> Void = { conversationId, depth in
@@ -40,7 +33,7 @@ extension RootView {
                 message: message,
                 conversationId: conversationId,
                 messageViewModel: container.messageViewModel,
-                conversationVM: container.ConversationVM,
+                conversationVM: container.conversationVM,
                 runtimeStore: container.conversationRuntimeStore,
                 sessionConfig: container.agentSessionConfig,
                 projectVM: container.ProjectVM,
@@ -51,8 +44,8 @@ extension RootView {
             await MainActor.run {
                 vm.pendingMessages.removeFirst()
                 vm.currentProcessingIndex = nil
-                if RootViewSenderPendingLog.verbose {
-                    AppLogger.core.info("\(RootViewSenderPendingLog.t)✅ [\(String(conversationId.uuidString.prefix(8)))] 消息发送完成，已从队列移除")
+                if Self.verbose {
+                    AppLogger.core.info("\(Self.t)✅ [\(String(conversationId.uuidString.prefix(8)))] 消息发送完成，已从队列移除")
                 }
             }
         }

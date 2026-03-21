@@ -42,9 +42,9 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(container.conversationTurnServices)
             .environmentObject(container.conversationRuntimeStore)
             .environmentObject(container.agentSessionConfig)
-            .environmentObject(container.ConversationVM)
+            .environmentObject(container.conversationVM)
             .environmentObject(container.messageViewModel)
-            .environmentObject(container.MessageSenderVM)
+            .environmentObject(container.messageSenderVM)
             .environmentObject(container.agentAttachmentsVM)
             .environmentObject(container.inputQueueVM)
             .environmentObject(container.permissionHandlingVM)
@@ -54,23 +54,16 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(container.processingStateViewModel)
             .environmentObject(container.permissionRequestViewModel)
             .environmentObject(container.thinkingStateViewModel)
-            .environmentObject(container.agentTaskCancellationVM)
+            .environmentObject(container.taskCancellationVM)
             .environmentObject(container.chatTimelineViewModel)
             .environmentObject(container.projectContextRequestVM)
             .environmentObject(container.mystiqueThemeManager)
             .modelContainer(container.modelContainer)
-            .onAppear {
-                onPreferencesLoaded()
-                onInitialConversationLoaded()
-            }
-            .onChange(of: container.MessageSenderVM.pendingMessages.count) { _, _ in
-                onSenderPendingMessagesChanged()
-            }
-            .onChange(of: container.agentTaskCancellationVM.conversationIdToCancel) { _, conversationId in
-                onAgentTaskCancellationRequested(conversationId)
-            }
+            .onAppear(perform: onAppear)
+            .onChange(of: container.messageSenderVM.pendingMessages.count, onSenderPendingMessagesChanged)
+            .onChange(of: container.taskCancellationVM.conversationIdToCancel, onTaskCancellationRequested)
             .onChange(of: container.projectContextRequestVM.request, onProjectContextRequestChanged)
-            .onChange(of: container.ConversationVM.selectedConversationId, onConversationSelectionChanged)
+            .onChange(of: container.conversationVM.selectedConversationId, onConversationSelectionChanged)
             .task(id: ObjectIdentifier(container)) {
                 await runConversationTurnPipeline()
             }
@@ -82,6 +75,15 @@ extension View {
     /// - Returns: 包装在 RootView 中的视图
     func inRootView() -> some View {
         RootView(content: { self })
+    }
+}
+
+// MARK: - Event Handlers
+
+extension RootView {
+    func onAppear() {
+        loadPreferences()
+        loadedConversationLoaded()
     }
 }
 

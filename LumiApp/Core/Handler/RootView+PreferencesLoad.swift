@@ -2,7 +2,7 @@ import Foundation
 
 extension RootView {
     @MainActor
-    func onPreferencesLoaded() {
+    func loadPreferences() {
         if let data = PluginStateStore.shared.data(forKey: "Agent_LanguagePreference"),
            let preference = try? JSONDecoder().decode(LanguagePreference.self, from: data) {
             container.ProjectVM.setLanguagePreference(preference)
