@@ -1,13 +1,13 @@
 import Foundation
 import MagicKit
 
-/// 把 Slash 命令分发从 `SendMessageHandler` 迁移到中间件层。
+/// Slash 命令分发中间件。
 ///
 /// 目标：当命令被“处理完”时短路；当 `.notHandled` 时继续让后续插件链 + core send 执行。
 @MainActor
 struct SlashCommandMiddleware: MessageSendMiddleware, SuperLog {
     nonisolated static let emoji = "⌨️"
-    nonisolated static let verbose = SendMessageHandler.verbose
+    nonisolated static let verbose = true
 
     let id: String = "core.send-message.slash-command"
     let order: Int = 10

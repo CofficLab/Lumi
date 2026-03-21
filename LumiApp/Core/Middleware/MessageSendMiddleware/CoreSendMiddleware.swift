@@ -1,7 +1,7 @@
 import Foundation
 import MagicKit
 
-/// 把 `SendMessageHandler.performCoreSend` 迁移到中间件层。
+/// 核心发送：投影、落库、入队轮次。
 ///
 /// 行为：
 /// 1) 若会话仍处于选中状态：投影到 UI 消息列表
@@ -10,7 +10,7 @@ import MagicKit
 @MainActor
 struct CoreSendMiddleware: MessageSendMiddleware, SuperLog {
     nonisolated static let emoji = "📨"
-    nonisolated static let verbose = SendMessageHandler.verbose
+    nonisolated static let verbose = true
 
     let id: String = "core.send-message.core-send"
     let order: Int = 120

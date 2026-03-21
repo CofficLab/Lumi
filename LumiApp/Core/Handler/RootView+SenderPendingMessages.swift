@@ -1,65 +1,59 @@
 import Foundation
 import MagicKit
-import OSLog
+import SwiftUI
 
-/// 发送消息。
-///
-/// ## 职责
-/// 负责消息发送的队列调度，并启动 `MessageSendPipeline`：
-/// 1. 从队列取出待发送消息
-/// 2. 跑发送管线（包含 SlashCommandMiddleware + 插件 middleware + CoreSendMiddleware）
-/// 3. 从队列移除已完成的消息
-enum SendMessageHandler: SuperLog {
+// MARK: - Pending send logging
+
+private enum RootViewSenderPendingLog: SuperLog {
     nonisolated static let emoji = "📤"
     nonisolated static let verbose = true
+}
 
+// MARK: - RootView 发送队列
+
+extension RootView {
+    /// 发送队列调度：取出待发送消息 → 跑 `MessageSendPipeline`（Slash / 插件 / Core）→ 完成后出队。
     @MainActor
-    static func handle(
-        vm: MessageQueueVM,
-        messageViewModel: MessagePendingVM,
-        conversationVM: ConversationVM,
-        runtimeStore: ConversationRuntimeStore,
-        sessionConfig: AgentSessionConfig,
-        projectVM: ProjectVM,
-        slashCommandService: SlashCommandService,
-        enqueueTurnProcessing: @escaping (UUID, Int) -> Void
-    ) {
+    func onSenderPendingMessagesChanged() {
+        let vm = container.MessageSenderVM
         guard !vm.pendingMessages.isEmpty else { return }
-        guard let conversationId = conversationVM.selectedConversationId else {
-            AppLogger.core.error("\(Self.t) 当前没有选中的会话")
+        guard let conversationId = container.ConversationVM.selectedConversationId else {
+            AppLogger.core.error("\(RootViewSenderPendingLog.t) 当前没有选中的会话")
             return
         }
-
-        // 从队列头部取出消息并发送
         guard let message = vm.pendingMessages.first else { return }
 
-        // 设置处理中索引
         vm.currentProcessingIndex = 0
 
-        if verbose {
-            AppLogger.core.info("\(Self.t)📤 [\(String(conversationId.uuidString.prefix(8)))] 开始发送消息：\(message.content.prefix(50))")
+        if RootViewSenderPendingLog.verbose {
+            AppLogger.core.info("\(RootViewSenderPendingLog.t)📤 [\(String(conversationId.uuidString.prefix(8)))] 开始发送消息：\(message.content.prefix(50))")
         }
 
-        // 异步发送消息
+        let enqueueTurnProcessing: (UUID, Int) -> Void = { [weak handler = container.conversationTurnPipelineHandler] conversationId, depth in
+            guard let handler else { return }
+            Task { @MainActor in
+                handler.enqueueTurnProcessing(conversationId: conversationId, depth: depth)
+            }
+        }
+
         Task {
-            await sendCoreMessage(
+            await Self.sendCoreMessageThroughSendPipeline(
                 message: message,
                 conversationId: conversationId,
-                messageViewModel: messageViewModel,
-                conversationVM: conversationVM,
-                runtimeStore: runtimeStore,
-                sessionConfig: sessionConfig,
-                projectVM: projectVM,
-                slashCommandService: slashCommandService,
+                messageViewModel: container.messageViewModel,
+                conversationVM: container.ConversationVM,
+                runtimeStore: container.conversationRuntimeStore,
+                sessionConfig: container.agentSessionConfig,
+                projectVM: container.ProjectVM,
+                slashCommandService: container.slashCommandService,
                 enqueueTurnProcessing: enqueueTurnProcessing
             )
 
-            // 发送完成后从队列中移除
             await MainActor.run {
                 vm.pendingMessages.removeFirst()
                 vm.currentProcessingIndex = nil
-                if verbose {
-                    AppLogger.core.info("\(Self.t)✅ [\(String(conversationId.uuidString.prefix(8)))] 消息发送完成，已从队列移除")
+                if RootViewSenderPendingLog.verbose {
+                    AppLogger.core.info("\(RootViewSenderPendingLog.t)✅ [\(String(conversationId.uuidString.prefix(8)))] 消息发送完成，已从队列移除")
                 }
             }
         }
@@ -67,7 +61,7 @@ enum SendMessageHandler: SuperLog {
 
     /// 核心消息发送：先跑插件 `MessageSendMiddleware` 链，再由链尾执行投影 / 落库 / 入队轮次。
     @MainActor
-    private static func sendCoreMessage(
+    private static func sendCoreMessageThroughSendPipeline(
         message: ChatMessage,
         conversationId: UUID,
         messageViewModel: MessagePendingVM,
@@ -78,7 +72,7 @@ enum SendMessageHandler: SuperLog {
         slashCommandService: SlashCommandService,
         enqueueTurnProcessing: @escaping (UUID, Int) -> Void
     ) async {
-        let services = makeMiddlewareServices(
+        let services = Self.makeMessageSendMiddlewareServices(
             conversationVM: conversationVM,
             messageViewModel: messageViewModel,
             slashCommandService: slashCommandService,
@@ -108,7 +102,7 @@ enum SendMessageHandler: SuperLog {
     }
 
     @MainActor
-    private static func makeMiddlewareServices(
+    private static func makeMessageSendMiddlewareServices(
         conversationVM: ConversationVM,
         messageViewModel: MessagePendingVM,
         slashCommandService: SlashCommandService,

@@ -22,8 +22,8 @@ struct RootView<Content>: View where Content: View {
     /// 视图内容
     var content: Content
 
-    /// 全局服务容器（单例）
-    @StateObject private var container = RootViewContainer.shared
+    /// 全局服务容器（单例）。
+    @StateObject var container = RootViewContainer.shared
 
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
@@ -57,7 +57,7 @@ struct RootView<Content>: View where Content: View {
             .environmentObject(container.mystiqueThemeManager)
             .modelContainer(container.modelContainer)
             .onAppear {
-                PreferencesLoadHandler.handle(projectVM: container.ProjectVM, slashCommandService: container.slashCommandService)
+                onPreferencesLoaded()
                 onInitialConversationLoaded()
             }
             .onChange(of: container.MessageSenderVM.pendingMessages.count) { _, _ in
@@ -71,87 +71,6 @@ struct RootView<Content>: View where Content: View {
             .task(id: ObjectIdentifier(container)) {
                 await container.conversationTurnPipelineHandler.run()
             }
-    }
-}
-
-// MARK: - Event Handling
-
-extension RootView {
-    func onAgentTaskCancellationRequested(_ conversationId: UUID?) {
-        guard let conversationId else { return }
-        CancelAgentTaskHandler.handle(
-            conversationId: conversationId,
-            turnPipelineHandler: container.conversationTurnPipelineHandler,
-            messageSenderVM: container.MessageSenderVM,
-            runtimeStore: container.conversationRuntimeStore,
-            projectVM: container.ProjectVM
-        )
-        container.agentTaskCancellationVM.consumeRequest()
-    }
-
-    func onSenderPendingMessagesChanged() {
-        SendMessageHandler.handle(
-            vm: container.MessageSenderVM,
-            messageViewModel: container.messageViewModel,
-            conversationVM: container.ConversationVM,
-            runtimeStore: container.conversationRuntimeStore,
-            sessionConfig: container.agentSessionConfig,
-            projectVM: container.ProjectVM,
-            slashCommandService: container.slashCommandService,
-            enqueueTurnProcessing: { [weak handler = container.conversationTurnPipelineHandler] conversationId, depth in
-                guard let handler else { return }
-                Task { @MainActor in
-                    handler.enqueueTurnProcessing(conversationId: conversationId, depth: depth)
-                }
-            }
-        )
-    }
-
-    func onProjectContextRequestChanged() {
-        ProjectContextRequestHandler.handle(
-            request: container.projectContextRequestVM.request,
-            container: container
-        )
-    }
-
-    func onInitialConversationLoaded() {
-        guard let conversationId = container.ConversationVM.selectedConversationId else { return }
-
-        let handler = ConversationChangedHandler(
-            runtimeStore: container.conversationRuntimeStore,
-            conversationVM: container.ConversationVM,
-            messageSenderVM: container.MessageSenderVM,
-            projectVM: container.ProjectVM,
-            promptService: container.promptService,
-            slashCommandService: container.slashCommandService,
-            messageViewModel: container.messageViewModel,
-            processingStateViewModel: container.processingStateViewModel,
-            thinkingStateViewModel: container.thinkingStateViewModel,
-            permissionRequestViewModel: container.permissionRequestViewModel,
-            depthWarningViewModel: container.depthWarningViewModel
-        )
-
-        Task { await handler.handle(conversationId: conversationId, applyProjectContext: false) }
-    }
-
-    func onConversationSelectionChanged() {
-        guard let conversationId = container.ConversationVM.selectedConversationId else { return }
-
-        let handler = ConversationChangedHandler(
-            runtimeStore: container.conversationRuntimeStore,
-            conversationVM: container.ConversationVM,
-            messageSenderVM: container.MessageSenderVM,
-            projectVM: container.ProjectVM,
-            promptService: container.promptService,
-            slashCommandService: container.slashCommandService,
-            messageViewModel: container.messageViewModel,
-            processingStateViewModel: container.processingStateViewModel,
-            thinkingStateViewModel: container.thinkingStateViewModel,
-            permissionRequestViewModel: container.permissionRequestViewModel,
-            depthWarningViewModel: container.depthWarningViewModel
-        )
-
-        Task { await handler.handle(conversationId: conversationId, applyProjectContext: true) }
     }
 }
 
