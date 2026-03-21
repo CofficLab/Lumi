@@ -162,11 +162,7 @@ final class RootViewContainer: ObservableObject {
         // ========================================
 
         self.agentAttachmentsVM = AttachmentsVM()
-        self.inputQueueVM = InputQueueVM(
-            conversationVM: conversationVM,
-            messageSenderVM: messageSenderVM,
-            attachmentsVM: agentAttachmentsVM
-        )
+        self.inputQueueVM = InputQueueVM()
 
         // ========================================
         // 命令建议
@@ -227,6 +223,12 @@ final class RootViewContainer: ObservableObject {
 
 
         messageSenderVM.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
+        inputQueueVM.objectWillChange
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
             }
