@@ -85,7 +85,7 @@ extension RootView {
             if Task.isCancelled { break }
 
             let start = CFAbsoluteTimeGetCurrent()
-            let eventName = describe(event)
+            let eventName = event.debugName
             let env = self.makeEnvironment()
             let messages = self.makeMessageActions()
             let projection = self.conversationTurnPipelineProjectionActions()
@@ -169,23 +169,6 @@ extension RootView {
         default:
             // 当前实现未使用 fallback：保留该分支用于后续扩展。
             break
-        }
-    }
-
-    private func describe(_ event: ConversationTurnEvent) -> String {
-        switch event {
-        case .responseReceived: return "responseReceived"
-        case .streamChunk: return "streamChunk"
-        case .streamEvent: return "streamEvent"
-        case .streamStarted: return "streamStarted"
-        case .streamFinished: return "streamFinished"
-        case .toolResultReceived: return "toolResultReceived"
-        case .permissionRequested: return "permissionRequested"
-        case .permissionDecision: return "permissionDecision"
-        case .maxDepthReached: return "maxDepthReached"
-        case .completed: return "completed"
-        case .error: return "error"
-        case .shouldContinue: return "shouldContinue"
         }
     }
 
@@ -307,17 +290,11 @@ extension RootView {
             return false
         }()
 
-        var context = runtimeStore.turnContextsByConversation[conversationId] ?? ConversationTurnContext()
-        if depth == 0 {
-            context = ConversationTurnContext()
-            context.chainStartedAt = Date()
-        }
-        if context.chainStartedAt == nil {
-            context.chainStartedAt = Date()
-        }
-        context.currentDepth = depth
-        context.currentProviderId = config.providerId
-        runtimeStore.turnContextsByConversation[conversationId] = context
+        var context = runtimeStore.beginOrAdvanceTurnContext(
+            conversationId: conversationId,
+            depth: depth,
+            providerId: config.providerId
+        )
 
         if Self.verbose {
             AppLogger.core.info("\(self.t)[\(conversationId.uuidString.prefix(8))] 开始处理轮次 (深度：\(depth), 模式：\(chatMode.displayName), 流式：true)")
@@ -432,11 +409,7 @@ extension RootView {
                     autoApproveRisk: autoApproveRisk
                 )
             } else {
-                context = runtimeStore.turnContextsByConversation[conversationId] ?? ConversationTurnContext()
-                context.lastToolSignature = nil
-                context.repeatedToolSignatureCount = 0
-                context.recentToolSignatures.removeAll(keepingCapacity: false)
-                runtimeStore.turnContextsByConversation[conversationId] = context
+                runtimeStore.resetToolLoopTracking(for: conversationId)
                 eventContinuation.yield(.completed(conversationId: conversationId))
                 if Self.verbose {
                     AppLogger.core.info("\(self.t)[\(conversationId)] 轮次完成（无工具）")
@@ -464,15 +437,6 @@ extension RootView {
 
     // MARK: - 流式响应处理
 
-    nonisolated private static func shouldForwardStreamEvent(_ eventType: StreamEventType) -> Bool {
-        switch eventType {
-        case .ping, .contentBlockStart, .contentBlockStop, .messageDelta, .signatureDelta, .thinkingDelta:
-            return true
-        case .messageStart, .messageStop, .unknown, .contentBlockDelta, .inputJsonDelta, .textDelta:
-            return false
-        }
-    }
-
     private func processStreamingTurn(
         conversationId: UUID,
         config: LLMConfig,
@@ -490,7 +454,7 @@ extension RootView {
             tools: availableTools.isEmpty ? nil : availableTools
         ) { chunk in
             if let eventType = chunk.eventType {
-                if Self.shouldForwardStreamEvent(eventType) {
+                if eventType.shouldForwardToTurnPipelineEvent {
                     let content: String = (eventType == .inputJsonDelta)
                         ? (chunk.partialJson ?? "")
                         : (chunk.content ?? "")

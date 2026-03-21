@@ -108,4 +108,35 @@ final class ConversationRuntimeStore: ObservableObject {
 
         turnContextsByConversation.removeValue(forKey: conversationId)
     }
+
+    /// 创建或推进当前会话轮次上下文。
+    /// - Returns: 更新后的上下文（并已写回 store）。
+    @discardableResult
+    func beginOrAdvanceTurnContext(
+        conversationId: UUID,
+        depth: Int,
+        providerId: String
+    ) -> ConversationTurnContext {
+        var context = turnContextsByConversation[conversationId] ?? ConversationTurnContext()
+        if depth == 0 {
+            context = ConversationTurnContext()
+            context.chainStartedAt = Date()
+        }
+        if context.chainStartedAt == nil {
+            context.chainStartedAt = Date()
+        }
+        context.currentDepth = depth
+        context.currentProviderId = providerId
+        turnContextsByConversation[conversationId] = context
+        return context
+    }
+
+    /// 重置一轮结束后的工具循环判定状态。
+    func resetToolLoopTracking(for conversationId: UUID) {
+        var context = turnContextsByConversation[conversationId] ?? ConversationTurnContext()
+        context.lastToolSignature = nil
+        context.repeatedToolSignatureCount = 0
+        context.recentToolSignatures.removeAll(keepingCapacity: false)
+        turnContextsByConversation[conversationId] = context
+    }
 }
