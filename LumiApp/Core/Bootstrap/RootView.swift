@@ -63,7 +63,7 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .onChange(of: container.messageSenderVM.pendingMessages.count, onSenderPendingMessagesChanged)
             .onChange(of: container.taskCancellationVM.conversationIdToCancel, onTaskCancellationRequested)
             .onChange(of: container.projectContextRequestVM.request, onProjectContextRequestChanged)
-            .onChange(of: container.conversationVM.selectedConversationId, onConversationSelectionChanged)
+            .onChange(of: container.conversationVM.selectedConversationId, onConversationChanged)
             .task(id: ObjectIdentifier(container)) {
                 await runConversationTurnPipeline()
             }
@@ -83,7 +83,7 @@ extension View {
 extension RootView {
     func onAppear() {
         loadPreferences()
-        loadedConversationLoaded()
+        loadConversation()
     }
 }
 

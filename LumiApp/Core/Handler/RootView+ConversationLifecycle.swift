@@ -1,19 +1,18 @@
 import SwiftUI
 
 extension RootView {
-    func loadedConversationLoaded() {
+    func loadConversation() {
         guard let conversationId = container.conversationVM.selectedConversationId else { return }
         Task { await handleConversationChanged(conversationId: conversationId, applyProjectContext: false) }
     }
 
-    func onConversationSelectionChanged() {
+    func onConversationChanged() {
         guard let conversationId = container.conversationVM.selectedConversationId else { return }
         Task { await handleConversationChanged(conversationId: conversationId, applyProjectContext: true) }
     }
 
-    @MainActor
     private func handleConversationChanged(conversationId: UUID, applyProjectContext: Bool) async {
-        _ = container.messageSenderVM.switchToConversation(conversationId)
+        container.messageSenderVM.switchToConversation(conversationId)
 
         let snapshot = container.conversationRuntimeStore.agentRuntimeSnapshot(for: conversationId)
         container.processingStateViewModel.setIsProcessing(snapshot.isProcessing)
