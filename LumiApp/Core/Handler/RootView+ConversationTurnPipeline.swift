@@ -13,7 +13,7 @@ extension RootView {
 
     private func makeEnvironment() -> ConversationTurnMiddlewareEnvironment {
         .init(
-            selectedConversationId: { [conversationVM = ConversationVM] in conversationVM.selectedConversationId },
+            selectedConversationId: { [conversationVM = conversationVM] in conversationVM.selectedConversationId },
             languagePreference: { [projectVM] in projectVM.languagePreference },
             maxDepth: AgentConfig.maxDepth,
             maxThinkingTextLength: AgentConfig.maxThinkingTextLength,
@@ -31,7 +31,7 @@ extension RootView {
             messages: { [messageViewModel] in messageViewModel.messages },
             appendMessage: { [messageViewModel] m in messageViewModel.appendMessage(m) },
             updateMessage: { [messageViewModel] m, idx in messageViewModel.updateMessage(m, at: idx) },
-            saveMessage: { [conversationVM = ConversationVM] m, cid in
+            saveMessage: { [conversationVM = conversationVM] m, cid in
                 await conversationVM.saveMessage(m, to: cid)
             },
             enqueueTurnProcessing: { cid, depth in
@@ -578,7 +578,7 @@ extension RootView {
             },
             onStreamStartedUI: { _, conversationId in
                 processing.markStreamStarted()
-                if ConversationVM.selectedConversationId == conversationId {
+                if conversationVM.selectedConversationId == conversationId {
                     runtimeStore.bumpStreamingPresentation()
                 }
             },
@@ -597,7 +597,7 @@ extension RootView {
                 thinking.setIsThinking(false, for: conversationId)
                 processing.finish()
                 runtimeStore.streamingTextByConversation[conversationId] = nil
-                if ConversationVM.selectedConversationId == conversationId {
+                if conversationVM.selectedConversationId == conversationId {
                     runtimeStore.bumpStreamingPresentation()
                 }
             },

@@ -35,7 +35,8 @@ struct RootView<Content>: View, SuperLog where Content: View {
     var chatHistoryService: ChatHistoryService { container.chatHistoryService }
     var toolService: ToolService { container.toolService }
     var messageViewModel: MessagePendingVM { container.messageViewModel }
-    var ConversationVM: ConversationVM { container.conversationVM }
+    var messageQueueVM: MessageQueueVM { container.messageQueueVM }
+    var conversationVM: ConversationVM { container.conversationVM }
     var projectVM: ProjectVM { container.ProjectVM }
     var processingStateViewModel: ProcessingStateVM { container.processingStateViewModel }
     var permissionRequestViewModel: PermissionRequestVM { container.permissionRequestViewModel }
@@ -75,7 +76,8 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(container.mystiqueThemeManager)
             .modelContainer(container.modelContainer)
             .onAppear(perform: onAppear)
-            .onChange(of: selectedConversationQueueCount, onSenderPendingMessagesChanged)
+            // .onChange(of: selectedConversationQueueCount, onSenderPendingMessagesChanged)
+            .onChange(of: selectedConversationQueueCount, onSend)
             .onChange(of: container.inputQueueVM.pendingRequest?.id, onInputQueueRequested)
             .onChange(of: container.conversationCreationVM.pendingRequest, onConversationCreationRequested)
             .onChange(of: container.taskCancellationVM.conversationIdToCancel, onTaskCancellationRequested)

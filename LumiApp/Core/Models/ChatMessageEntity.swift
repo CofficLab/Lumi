@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-/// 聊天消息实体（SwiftData 版本）
+/// 聊天消息实体
 @Model
 final class ChatMessageEntity {
     @Attribute(.unique) var id: UUID
