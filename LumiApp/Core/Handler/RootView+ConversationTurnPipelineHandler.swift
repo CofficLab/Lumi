@@ -86,11 +86,6 @@ extension RootView {
 
             let start = CFAbsoluteTimeGetCurrent()
             let eventName = describe(event)
-            let hangWatchdog = Task { [loggerTag = Self.t] in
-                try? await Task.sleep(nanoseconds: 2_000_000_000)
-                guard !Task.isCancelled else { return }
-                AppLogger.core.error("\(loggerTag)⏳ 事件处理疑似卡住(>2s): \(eventName)")
-            }
             let env = self.makeEnvironment()
             let messages = self.makeMessageActions()
             let projection = self.conversationTurnPipelineProjectionActions()
@@ -110,7 +105,6 @@ extension RootView {
                 await self.handle(event, ctx: ctx)
             }
 
-            hangWatchdog.cancel()
             let elapsed = CFAbsoluteTimeGetCurrent() - start
             if elapsed > 1 {
                 AppLogger.core.error("\(Self.t)⏱️ 事件处理耗时异常: \(eventName) took \(String(format: "%.3f", elapsed))s")
