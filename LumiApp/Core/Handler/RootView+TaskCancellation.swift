@@ -22,6 +22,6 @@ extension RootView {
             : "⚠️ Generation cancelled"
         appendPipelineMessage(ChatMessage(role: .assistant, content: cancelMessage))
 
-        container.agentTaskCancellationVM.consumeRequest()
+        container.taskCancellationVM.consumeRequest()
     }
 }
