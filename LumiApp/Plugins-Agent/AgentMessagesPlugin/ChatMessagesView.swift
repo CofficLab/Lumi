@@ -11,11 +11,8 @@ struct ChatMessagesView: View {
             if ConversationVM.selectedConversationId != nil {
                 MessageListView()
                     .overlay(alignment: .top) {
-                        VStack(spacing: 8) {
-                            DepthWarningBanner()
-                            PermissionRequestView()
-                        }
-                        .padding()
+                        PermissionRequestView()
+                            .padding()
                     }
             } else {
                 EmptyStateView()

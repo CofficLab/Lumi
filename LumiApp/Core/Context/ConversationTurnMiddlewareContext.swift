@@ -31,7 +31,6 @@ struct ConversationTurnMiddlewareMessageActions {
 @MainActor
 struct ConversationTurnMiddlewareProjectionActions {
     let setPendingPermissionRequest: (PermissionRequest?, UUID) -> Void
-    let setDepthWarning: (DepthWarning?, UUID) -> Void
     let onTurnFinishedUI: (UUID) -> Void
     let onTurnFailedUI: (UUID, String) -> Void
 

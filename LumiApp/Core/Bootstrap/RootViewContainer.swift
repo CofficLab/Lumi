@@ -31,7 +31,6 @@ final class RootViewContainer: ObservableObject {
     let mystiqueThemeManager: MystiqueThemeManager
     let ProjectVM: Lumi.ProjectVM
     let commandSuggestionViewModel: CommandSuggestionVM
-    let depthWarningViewModel: DepthWarningVM
     let permissionRequestViewModel: PermissionRequestVM
     let taskCancellationVM: TaskCancellationVM
     let messageViewModel: MessagePendingVM
@@ -117,7 +116,6 @@ final class RootViewContainer: ObservableObject {
         // UI 状态 VM
         // ========================================
 
-        self.depthWarningViewModel = DepthWarningVM()
         self.permissionRequestViewModel = PermissionRequestVM()
         self.taskCancellationVM = TaskCancellationVM()
 

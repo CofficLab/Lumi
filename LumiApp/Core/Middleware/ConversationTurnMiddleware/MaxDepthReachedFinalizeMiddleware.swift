@@ -1,7 +1,7 @@
 import Foundation
 import MagicKit
 
-/// 处理 maxDepthReached：设置深度告警、清理流式运行态并结束 UI，然后短路事件下游。
+/// 处理 maxDepthReached：清理流式运行态并结束 UI，然后短路事件下游。
 @MainActor
 final class MaxDepthReachedFinalizeMiddleware: ConversationTurnMiddleware, SuperLog {
     nonisolated static let emoji = "⚠️"
@@ -24,12 +24,9 @@ final class MaxDepthReachedFinalizeMiddleware: ConversationTurnMiddleware, Super
             AppLogger.core.info("\(Self.t) 达到最大深度 current=\(currentDepth)/\(maxDepth)")
         }
 
-        let warning = DepthWarning(currentDepth: currentDepth, maxDepth: maxDepth, warningType: .reached)
-        ctx.runtimeStore.depthWarningByConversation[conversationId] = warning
         ctx.runtimeStore.processingConversationIds.remove(conversationId)
 
         if ctx.env.selectedConversationId() == conversationId {
-            ctx.projection.setDepthWarning(warning, conversationId)
             ctx.projection.onTurnFinishedUI(conversationId)
         }
 
@@ -44,7 +41,7 @@ final class MaxDepthReachedFinalizeMiddleware: ConversationTurnMiddleware, Super
         ctx.runtimeStore.turnContextsByConversation.removeValue(forKey: conversationId)
 
         ctx.actions.updateRuntimeState(conversationId)
-        // 短路：深度告警及收尾逻辑已处理完毕。
+        // 短路：收尾逻辑已处理完毕。
     }
 }
 

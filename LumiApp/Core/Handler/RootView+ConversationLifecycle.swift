@@ -15,7 +15,6 @@ extension RootView {
         let snapshot = container.conversationRuntimeStore.agentRuntimeSnapshot(for: conversationId)
 
         container.permissionRequestViewModel.setPendingPermissionRequest(snapshot.pendingPermissionRequest)
-        container.depthWarningViewModel.setDepthWarning(snapshot.depthWarning)
 
         guard applyProjectContext else { return }
         guard let conversation = container.conversationVM.fetchConversation(id: conversationId) else { return }
