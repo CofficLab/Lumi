@@ -38,7 +38,6 @@ struct ErrorPolicyMiddleware: ConversationTurnMiddleware {
         treatAsFailure: Bool
     ) {
         ctx.runtimeStore.errorMessageByConversation[conversationId] = errorMessage
-        ctx.runtimeStore.processingConversationIds.remove(conversationId)
 
         if ctx.env.selectedConversationId() == conversationId {
             if let errorMessage, treatAsFailure {

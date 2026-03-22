@@ -17,7 +17,6 @@ final class ConversationRuntimeStore: ObservableObject {
     var lastThinkingFlushAtByConversation: [UUID: Date] = [:]
 
     var thinkingConversationIds = Set<UUID>()
-    var processingConversationIds = Set<UUID>()
 
     var pendingPermissionByConversation: [UUID: PermissionRequest] = [:]
     var errorMessageByConversation: [UUID: String?] = [:]
@@ -38,9 +37,6 @@ final class ConversationRuntimeStore: ObservableObject {
     /// 记录已做过“后处理”的消息 ID（避免同一条 assistant 消息被重复处理）。
     var postProcessedMessageIdsByConversation: [UUID: Set<UUID>] = [:]
 
-    /// `ConversationTurnVM`/后续 middleware 共享的轮次控制上下文（跨多深度 step 保存）。
-    var turnContextsByConversation: [UUID: ConversationTurnContext] = [:]
-
     @Published private(set) var conversationRuntimeStates: [UUID: ConversationRuntimeState] = [:]
 
     /// 时间线等订阅：流式文本经 throttle 写入 store 后显式递增，避免仅靠全量 `objectWillChange` 难以精准刷新占位气泡。
@@ -57,8 +53,7 @@ final class ConversationRuntimeStore: ObservableObject {
     func updateRuntimeState(for conversationId: UUID) {
         let hasError = (errorMessageByConversation[conversationId] ?? nil) != nil
         let hasPermissionRequest = pendingPermissionByConversation[conversationId] != nil
-        let isGenerating = processingConversationIds.contains(conversationId) ||
-            (streamStateByConversation[conversationId]?.messageId != nil)
+        let isGenerating = streamStateByConversation[conversationId]?.messageId != nil
 
         let state: ConversationRuntimeState
         if hasError {
@@ -83,82 +78,5 @@ final class ConversationRuntimeStore: ObservableObject {
         AgentRuntimeSnapshot(
             pendingPermissionRequest: pendingPermissionByConversation[conversationId]
         )
-    }
-
-    /// 清理会话运行态（用于取消与失败收敛），避免多处字段清理不一致。
-    func clearRuntimeForTurnTermination(for conversationId: UUID) {
-        processingConversationIds.remove(conversationId)
-        thinkingConversationIds.remove(conversationId)
-        pendingPermissionByConversation[conversationId] = nil
-
-        streamStateByConversation[conversationId] = .init(messageId: nil)
-        pendingStreamTextByConversation[conversationId] = nil
-        streamingTextByConversation[conversationId] = nil
-        pendingThinkingTextByConversation[conversationId] = nil
-        lastStreamFlushAtByConversation[conversationId] = nil
-        lastThinkingFlushAtByConversation[conversationId] = nil
-        streamStartedAtByConversation[conversationId] = nil
-        didReceiveFirstTokenByConversation.remove(conversationId)
-
-        turnContextsByConversation.removeValue(forKey: conversationId)
-    }
-
-    /// 创建或推进当前会话轮次上下文。
-    /// - Returns: 更新后的上下文（并已写回 store）。
-    @discardableResult
-    func beginOrAdvanceTurnContext(
-        conversationId: UUID,
-        depth: Int,
-        providerId: String
-    ) -> ConversationTurnContext {
-        var context = turnContextsByConversation[conversationId] ?? ConversationTurnContext()
-        if depth == 0 {
-            context = ConversationTurnContext()
-            context.chainStartedAt = Date()
-        }
-        if context.chainStartedAt == nil {
-            context.chainStartedAt = Date()
-        }
-        context.currentDepth = depth
-        context.currentProviderId = providerId
-        turnContextsByConversation[conversationId] = context
-        return context
-    }
-
-    /// 重置一轮结束后的工具循环判定状态。
-    func resetToolLoopTracking(for conversationId: UUID) {
-        var context = turnContextsByConversation[conversationId] ?? ConversationTurnContext()
-        context.lastToolSignature = nil
-        context.repeatedToolSignatureCount = 0
-        context.recentToolSignatures.removeAll(keepingCapacity: false)
-        turnContextsByConversation[conversationId] = context
-    }
-
-    func turnContext(for conversationId: UUID) -> ConversationTurnContext {
-        turnContextsByConversation[conversationId] ?? ConversationTurnContext()
-    }
-
-    func setTurnContext(_ context: ConversationTurnContext, for conversationId: UUID) {
-        turnContextsByConversation[conversationId] = context
-    }
-
-    func setPendingToolCalls(_ toolCalls: [ToolCall], for conversationId: UUID) {
-        var context = turnContext(for: conversationId)
-        context.pendingToolCalls = toolCalls
-        setTurnContext(context, for: conversationId)
-    }
-
-    func clearPendingToolCalls(for conversationId: UUID) {
-        var context = turnContext(for: conversationId)
-        context.pendingToolCalls.removeAll()
-        setTurnContext(context, for: conversationId)
-    }
-
-    func popFirstPendingToolCall(for conversationId: UUID) -> ToolCall? {
-        var context = turnContext(for: conversationId)
-        guard !context.pendingToolCalls.isEmpty else { return nil }
-        let next = context.pendingToolCalls.removeFirst()
-        setTurnContext(context, for: conversationId)
-        return next
     }
 }

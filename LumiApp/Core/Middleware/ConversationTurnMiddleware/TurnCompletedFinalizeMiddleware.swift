@@ -24,8 +24,6 @@ final class TurnCompletedFinalizeMiddleware: ConversationTurnMiddleware, SuperLo
             AppLogger.core.info("\(Self.t) 轮次完成")
         }
 
-        ctx.runtimeStore.processingConversationIds.remove(conversationId)
-
         if ctx.env.selectedConversationId() == conversationId {
             ctx.projection.onTurnFinishedUI(conversationId)
         }
@@ -38,8 +36,6 @@ final class TurnCompletedFinalizeMiddleware: ConversationTurnMiddleware, SuperLo
         ctx.runtimeStore.lastThinkingFlushAtByConversation[conversationId] = nil
         ctx.runtimeStore.streamStartedAtByConversation[conversationId] = nil
         ctx.runtimeStore.didReceiveFirstTokenByConversation.remove(conversationId)
-
-        ctx.runtimeStore.turnContextsByConversation.removeValue(forKey: conversationId)
 
         ctx.actions.updateRuntimeState(conversationId)
 

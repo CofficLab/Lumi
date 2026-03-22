@@ -24,8 +24,6 @@ final class MaxDepthReachedFinalizeMiddleware: ConversationTurnMiddleware, Super
             AppLogger.core.info("\(Self.t) 达到最大深度 current=\(currentDepth)/\(maxDepth)")
         }
 
-        ctx.runtimeStore.processingConversationIds.remove(conversationId)
-
         if ctx.env.selectedConversationId() == conversationId {
             ctx.projection.onTurnFinishedUI(conversationId)
         }
@@ -37,8 +35,6 @@ final class MaxDepthReachedFinalizeMiddleware: ConversationTurnMiddleware, Super
         ctx.runtimeStore.lastThinkingFlushAtByConversation[conversationId] = nil
         ctx.runtimeStore.streamStartedAtByConversation[conversationId] = nil
         ctx.runtimeStore.didReceiveFirstTokenByConversation.remove(conversationId)
-
-        ctx.runtimeStore.turnContextsByConversation.removeValue(forKey: conversationId)
 
         ctx.actions.updateRuntimeState(conversationId)
         // 短路：收尾逻辑已处理完毕。
