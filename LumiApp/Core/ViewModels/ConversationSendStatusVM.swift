@@ -39,17 +39,23 @@ final class ConversationSendStatusVM: ObservableObject {
         streamingTextBufferByConversationId[conversationId] = nil
     }
 
-    /// 状态行：标题 + 尾部预览（换行压成空格、最多 30 字）；无尾部时为 `title...`。
+    private static let statusTailBufferMax = 50
+
+    /// 换行压成空格后只保留尾部最多 `statusTailBufferMax` 字，供状态行缓冲（写入侧截断）。
+    private static func normalizedStatusTailBuffer(from raw: String) -> String {
+        let normalized = raw.split(whereSeparator: \.isNewline).joined(separator: " ")
+        if normalized.count <= statusTailBufferMax {
+            return normalized
+        }
+        return String(normalized.suffix(statusTailBufferMax))
+    }
+
+    /// 状态行：标题 + 缓冲全文作尾部预览；无尾部时为 `title...`。
     private static func statusLineWithTailPreview(accumulated: String, title: String) -> String {
-        let normalized = accumulated.split(whereSeparator: \.isNewline).joined(separator: " ")
-        let previewMax = 30
-        let tail = normalized.isEmpty
-            ? ""
-            : (normalized.count <= previewMax ? normalized : String(normalized.suffix(previewMax)))
-        if tail.isEmpty {
+        if accumulated.isEmpty {
             return "\(title)..."
         }
-        return "\(title)：\(tail)"
+        return "\(title)：\(accumulated)"
     }
 
     /// 根据流式分片更新状态文案
@@ -65,7 +71,9 @@ final class ConversationSendStatusVM: ObservableObject {
         // 思考
         if chunk.isThinking() {
             thinkingTextBufferByConversationId[conversationId, default: ""] += chunk.getContent()
-        
+            thinkingTextBufferByConversationId[conversationId] = Self.normalizedStatusTailBuffer(
+                from: thinkingTextBufferByConversationId[conversationId] ?? ""
+            )
             let accumulated = thinkingTextBufferByConversationId[conversationId] ?? ""
             let line = Self.statusLineWithTailPreview(accumulated: accumulated, title: chunk.getTitle())
             setStatus(conversationId: conversationId, content: line)
@@ -75,6 +83,9 @@ final class ConversationSendStatusVM: ObservableObject {
         // 正文
         if chunk.isReceivingContent() {
             streamingTextBufferByConversationId[conversationId, default: ""] += chunk.getContent()
+            streamingTextBufferByConversationId[conversationId] = Self.normalizedStatusTailBuffer(
+                from: streamingTextBufferByConversationId[conversationId] ?? ""
+            )
             let accumulated = streamingTextBufferByConversationId[conversationId] ?? ""
             let line = Self.statusLineWithTailPreview(accumulated: accumulated, title: chunk.getTitle())
             setStatus(conversationId: conversationId, content: line)
