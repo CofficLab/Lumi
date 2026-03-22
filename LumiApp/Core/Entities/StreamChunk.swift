@@ -67,4 +67,20 @@ struct StreamChunk: Sendable {
             stopReason: stopReason
         )
     }
+
+    func isThinking() -> Bool {
+        eventType?.isThinking() ?? false
+    }
+
+    func isReceivingContent() -> Bool {
+        eventType?.isReceivingContent() ?? false
+    }
+
+    func getTitle() -> String {
+        eventType?.displayName ?? "未知事件"
+    }
+
+    func getContent() -> String {
+        content ?? ""
+    }
 }
