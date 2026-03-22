@@ -608,26 +608,6 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         }
     }
 
-    /// 获取项目相关的对话
-    func fetchConversations(forProject projectId: String) -> [Conversation] {
-        let context = getContext()
-        let descriptor = FetchDescriptor<Conversation>(
-            predicate: #Predicate { $0.projectId == projectId },
-            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
-        )
-
-        do {
-            let conversations = try context.fetch(descriptor)
-            if Self.verbose {
-                AppLogger.core.info("\(Self.t)📄 获取到项目 \(projectId) 的 \(conversations.count) 个对话")
-            }
-            return conversations
-        } catch {
-            AppLogger.core.error("\(Self.t)❌ 获取项目对话失败：\(error.localizedDescription)")
-            return []
-        }
-    }
-
     /// 加载对话的消息
     func loadMessages(for conversation: Conversation) -> [ChatMessage] {
         let context = getContext()

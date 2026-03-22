@@ -52,7 +52,6 @@ final class PluginVM: ObservableObject, SuperLog {
     /// 已加载的插件列表
     ///
     /// 包含所有成功注册的插件实例。
-    /// 只读属性，通过 `reloadPlugins()` 触发重新加载。
     @Published private(set) var plugins: [any SuperPlugin] = []
     
     /// 插件是否已加载完成
@@ -603,20 +602,6 @@ final class PluginVM: ObservableObject, SuperLog {
     /// - Returns: 导航入口数组
     func getNavigationEntries(for mode: AppMode) -> [NavigationEntry] {
         getNavigationEntries().filter { $0.mode == mode }
-    }
-
-    /// 重新加载插件
-    ///
-    /// 清空当前插件列表并重新执行自动发现和注册流程。
-    /// 用于：
-    /// - 添加新插件后刷新
-    /// - 插件发生崩溃后恢复
-    /// - 调试时强制重新加载
-    func reloadPlugins() {
-        isLoaded = false
-        sidebarViewsCache = nil
-        sidebarViewsCacheKey = nil
-        autoDiscoverAndRegisterPlugins()
     }
 }
 

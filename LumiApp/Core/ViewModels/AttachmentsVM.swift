@@ -58,6 +58,4 @@ final class AttachmentsVM: ObservableObject, SuperLog {
         default: return "image/jpeg"
         }
     }
-
-    private nonisolated static var selfTag: String { "📎" }
 }
