@@ -347,6 +347,7 @@ class LLMService: SuperLog, @unchecked Sendable {
     ///   - onChunk: 收到内容片段时的回调
     /// - Returns: 完整的助手消息（包含累积的内容和工具调用）
     /// - Throws: `LLMConfigValidationError`、`LLMServiceError`，或与构建请求体相关的底层错误
+    @discardableResult
     func sendStreamingMessage(
         messages: [ChatMessage],
         config: LLMConfig,
@@ -426,7 +427,7 @@ class LLMService: SuperLog, @unchecked Sendable {
 
         // 输出调试信息
         if Self.verbose >= 1 {
-            AppLogger.core.info("\(self.t)发送流式请求到 \(config.providerId): \(config.model)")
+            AppLogger.core.info("\(self.t)🚀 发送流式请求到 \(config.providerId): \(config.model)")
         }
 
         // 构建额外的请求头
@@ -439,6 +440,9 @@ class LLMService: SuperLog, @unchecked Sendable {
         actor StreamingState {
             var accumulatedContentChunks: [String] = []
             var accumulatedContentLength: Int = 0
+            /// reasoning / thinking 流分片（与 UI 管线中的 `thinkingTextByConversation` 对齐，便于直接落库）
+            var accumulatedThinkingChunks: [String] = []
+            var accumulatedThinkingLength: Int = 0
             var accumulatedToolCalls: [ToolCall] = []
             var streamError: String?
             var currentToolCallId: String?
@@ -467,6 +471,16 @@ class LLMService: SuperLog, @unchecked Sendable {
             func appendContent(_ content: String) {
                 accumulatedContentChunks.append(content)
                 accumulatedContentLength += content.count
+            }
+
+            func appendThinking(_ content: String) {
+                guard !content.isEmpty else { return }
+                guard accumulatedThinkingLength < AgentConfig.maxThinkingTextLength else { return }
+                let remaining = AgentConfig.maxThinkingTextLength - accumulatedThinkingLength
+                let part = String(content.prefix(remaining))
+                guard !part.isEmpty else { return }
+                accumulatedThinkingChunks.append(part)
+                accumulatedThinkingLength += part.count
             }
             
             func startNewToolCall(_ toolCall: ToolCall, hasPartialJson: Bool = false) {
@@ -558,9 +572,12 @@ class LLMService: SuperLog, @unchecked Sendable {
                                 AppLogger.core.info("\(self.t)首 token 延迟: \(ttftStr)")
                             }
 
-                            // 累积内容 - 只累积 textDelta 的内容，跳过 thinkingDelta
+                            // 累积正文：仅 textDelta；思考过程：thinkingDelta（写入 ChatMessage.thinkingContent）
                             if let content = chunk.content, chunk.eventType == .textDelta {
                                 await state.appendContent(content)
+                            }
+                            if let content = chunk.content, chunk.eventType == .thinkingDelta {
+                                await state.appendThinking(content)
                             }
 
                             // 处理工具调用
@@ -662,6 +679,7 @@ class LLMService: SuperLog, @unchecked Sendable {
 
         // 获取最终状态
         let finalContent = await state.accumulatedContentChunks.joined()
+        let finalThinking = await state.accumulatedThinkingChunks.joined()
         let finalToolCalls = await state.accumulatedToolCalls
         let finalInputTokens = await state.inputTokens
         let finalOutputTokens = await state.outputTokens
@@ -693,7 +711,8 @@ class LLMService: SuperLog, @unchecked Sendable {
             timeToFirstToken: finalTimeToFirstToken,
             finishReason: finalStopReason,
             temperature: config.temperature,
-            maxTokens: config.maxTokens
+            maxTokens: config.maxTokens,
+            thinkingContent: finalThinking.isEmpty ? nil : finalThinking
         )
     }
 }

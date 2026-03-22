@@ -57,19 +57,24 @@ extension RootView {
         projectVM: ProjectVM,
         slashCommandService: SlashCommandService
     ) async {
-        // 1) 投影到当前消息列表（仅当该会话仍处于选中状态）
+        // 投影到当前消息列表（仅当该会话仍处于选中状态）
         if self.conversationVM.selectedConversationId == conversationId {
             self.messageViewModel.appendMessage(message)
         }
 
-        // 2) 落库保存
+        // 落库保存
         await self.conversationVM.saveMessage(message, to: conversationId)
-//
-//        // 3) 触发轮次处理（深度从 0 开始）
-//        ctx.services.enqueueTurnProcessing(conversationId, 0)
 
+        // 补充历史消息
+        var messagesForLLM = await self.chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
+        if !messagesForLLM.contains(where: { $0.id == message.id }) {
+            messagesForLLM.append(message)
+        }
+
+        // 生成上下文
         let ctx = SendMessageContext(conversationId: conversationId, message: message)
 
+        // 加载中间件
 //        let pluginRows = PluginVM.shared.getMessageSendMiddlewares()
 
 //        let slashMiddleware = AnySendMiddleware(SlashCommandMiddleware())
@@ -86,8 +91,20 @@ extension RootView {
         }
 
         // 发送消息
-        try? await self.llmService.sendStreamingMessage(messages: [message], config: self.sessionConfig.getCurrentConfig(), onChunk: { chunk in
-            AppLogger.core.info("\(Self.t) 收到流式响应：\(chunk.content ?? "")")
-        })
+        do {
+            let responseMessage = try await self.llmService.sendStreamingMessage(
+                messages: messagesForLLM,
+                config: self.sessionConfig.getCurrentConfig(),
+                tools: self.toolService.tools,
+                onChunk: { chunk in
+                AppLogger.core.info("\(Self.t) 收到流式响应，事件类型：\(chunk.eventType?.rawValue ?? "unknown")，内容：\(chunk.content ?? "")")
+
+            })
+
+            // 落库保存
+            await self.conversationVM.saveMessage(responseMessage, to: conversationId)
+        } catch {
+            AppLogger.core.error("\(Self.t) 发送消息失败：\(error)")
+        }
     }
 }
