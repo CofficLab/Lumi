@@ -76,7 +76,6 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(container.mystiqueThemeManager)
             .modelContainer(container.modelContainer)
             .onAppear(perform: onAppear)
-            // .onChange(of: selectedConversationQueueCount, onSenderPendingMessagesChanged)
             .onChange(of: selectedConversationQueueCount, onSend)
             .onChange(of: container.inputQueueVM.pendingRequest?.id, onInputQueueRequested)
             .onChange(of: container.conversationCreationVM.pendingRequest, onConversationCreationRequested)
