@@ -36,9 +36,6 @@ final class ChatMessageEntity {
     var thinkingContent: String? // 思考过程文本（用于 reasoning 模型）
     var hasThinking: Bool = false // 是否有思考过程（便于查询，必须有默认值用于迁移）
 
-    /// 用户是否同意执行本条消息中的工具调用（默认未同意）
-    var userApprovedToolCalls: Bool = false
-
     // 反向关系
     var conversation: Conversation?
     
@@ -51,8 +48,7 @@ final class ChatMessageEntity {
          streamingDuration: Double? = nil, thinkingDuration: Double? = nil,
          finishReason: String? = nil, requestId: String? = nil,
          temperature: Double? = nil, maxTokens: Int? = nil,
-         thinkingContent: String? = nil, hasThinking: Bool = false,
-         userApprovedToolCalls: Bool = false) {
+         thinkingContent: String? = nil, hasThinking: Bool = false) {
         self.id = id
         self.role = role
         self.content = content
@@ -76,7 +72,6 @@ final class ChatMessageEntity {
         self.maxTokens = maxTokens
         self.thinkingContent = thinkingContent
         self.hasThinking = hasThinking
-        self.userApprovedToolCalls = userApprovedToolCalls
     }
     
     /// 转换为 ChatMessage
@@ -94,7 +89,7 @@ final class ChatMessageEntity {
         if let imagesData = imagesData {
             images = try! JSONDecoder().decode([ImageAttachment].self, from: imagesData)
         }
-        
+
         return ChatMessage(
             id: id,
             role: messageRole,
@@ -117,11 +112,44 @@ final class ChatMessageEntity {
             requestId: requestId,
             temperature: temperature,
             maxTokens: maxTokens,
-            thinkingContent: thinkingContent,
-            userApprovedToolCalls: userApprovedToolCalls
+            thinkingContent: thinkingContent
         )
     }
     
+    /// 用 `ChatMessage` 覆盖当前实体字段（用于同 ID 更新，不新建记录）
+    func apply(from message: ChatMessage) {
+        role = message.role.rawValue
+        content = message.content
+        timestamp = message.timestamp
+        isError = message.isError
+        if let toolCalls = message.toolCalls {
+            toolCallsData = try? JSONEncoder().encode(toolCalls)
+        } else {
+            toolCallsData = nil
+        }
+        toolCallID = message.toolCallID
+        if !message.images.isEmpty {
+            imagesData = try? JSONEncoder().encode(message.images)
+        } else {
+            imagesData = nil
+        }
+        providerId = message.providerId
+        modelName = message.modelName
+        latency = message.latency
+        inputTokens = message.inputTokens
+        outputTokens = message.outputTokens
+        totalTokens = message.totalTokens
+        timeToFirstToken = message.timeToFirstToken
+        streamingDuration = message.streamingDuration
+        thinkingDuration = message.thinkingDuration
+        finishReason = message.finishReason
+        requestId = message.requestId
+        temperature = message.temperature
+        maxTokens = message.maxTokens
+        thinkingContent = message.thinkingContent
+        hasThinking = message.thinkingContent != nil && !message.thinkingContent!.isEmpty
+    }
+
     /// 从 ChatMessage 创建
     static func fromChatMessage(_ message: ChatMessage) -> ChatMessageEntity {
         var toolCallsData: Data?
@@ -133,7 +161,7 @@ final class ChatMessageEntity {
         if !message.images.isEmpty {
             imagesData = try? JSONEncoder().encode(message.images)
         }
-        
+
         return ChatMessageEntity(
             id: message.id,
             role: message.role.rawValue,
@@ -157,8 +185,7 @@ final class ChatMessageEntity {
             temperature: message.temperature,
             maxTokens: message.maxTokens,
             thinkingContent: message.thinkingContent,
-            hasThinking: message.thinkingContent != nil && !message.thinkingContent!.isEmpty,
-            userApprovedToolCalls: message.userApprovedToolCalls
+            hasThinking: message.thinkingContent != nil && !message.thinkingContent!.isEmpty
         )
     }
 }

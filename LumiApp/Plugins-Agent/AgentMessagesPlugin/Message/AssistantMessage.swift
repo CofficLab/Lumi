@@ -123,13 +123,6 @@ struct AssistantMessage: View {
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
 
-                if message.hasToolCalls {
-                    Text("·")
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                    Text(message.userApprovedToolCalls ? "工具已同意" : "工具未同意")
-                        .font(DesignTokens.Typography.caption2)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                }
             }
         } trailing: {
             HStack(alignment: .center, spacing: 12) {

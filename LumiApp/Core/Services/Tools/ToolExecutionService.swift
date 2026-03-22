@@ -48,7 +48,8 @@ final class ToolExecutionService: SuperLog, @unchecked Sendable {
     ///   - arguments: 工具参数（JSON 字符串）
     /// - Returns: 是否需要权限
     func requiresPermission(toolName: String, arguments: String) -> Bool {
-        toolService.requiresPermission(toolName: toolName, argumentsJSON: arguments)
+        true
+//        toolService.requiresPermission(toolName: toolName, argumentsJSON: arguments)
     }
 
     /// 评估命令风险等级

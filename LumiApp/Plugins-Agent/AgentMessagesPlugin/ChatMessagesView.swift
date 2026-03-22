@@ -10,10 +10,6 @@ struct ChatMessagesView: View {
         Group {
             if ConversationVM.selectedConversationId != nil {
                 MessageListView()
-                    .overlay(alignment: .top) {
-                        PermissionRequestView()
-                            .padding()
-                    }
             } else {
                 EmptyStateView()
             }

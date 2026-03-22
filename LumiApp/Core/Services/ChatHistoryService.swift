@@ -307,6 +307,49 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         }
     }
 
+    /// 按消息 ID 更新已存在的消息（同 `id` 覆盖字段，不插入新行）
+    func updateMessageAsync(_ message: ChatMessage, conversationId: UUID) async -> ChatMessage? {
+        await withCheckedContinuation { continuation in
+            storageQueue.async { [weak self] in
+                guard let self = self else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                let messageId = message.id
+                let context = ModelContext(self.modelContainer)
+                let descriptor = FetchDescriptor<ChatMessageEntity>(
+                    predicate: #Predicate<ChatMessageEntity> { $0.id == messageId }
+                )
+
+                guard let entity = try? context.fetch(descriptor).first else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                guard entity.conversation?.id == conversationId else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                entity.apply(from: message)
+
+                do {
+                    try context.save()
+                    if let updated = entity.toChatMessage() {
+                        NotificationCenter.postMessageSaved(message: updated, conversationId: conversationId)
+                        continuation.resume(returning: updated)
+                    } else {
+                        continuation.resume(returning: nil)
+                    }
+                } catch {
+                    AppLogger.core.error("\(Self.t)❌ 更新消息失败：\(error.localizedDescription)")
+                    continuation.resume(returning: nil)
+                }
+            }
+        }
+    }
+
     /// 后台加载对话消息，避免阻塞主线程
     /// - Parameter conversationId: 对话 ID
     /// - Returns: 消息列表；若会话不存在返回 nil

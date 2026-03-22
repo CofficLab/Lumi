@@ -76,6 +76,7 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .onChange(of: container.taskCancellationVM.conversationIdToCancel, onTaskCancellationRequested)
             .onChange(of: container.projectContextRequestVM.request, onProjectContextRequestChanged)
             .onChange(of: container.conversationVM.selectedConversationId, onConversationChanged)
+            .onResumeSendAfterToolPermission(perform: onResumeSendAfterToolPermission)
     }
 }
 
@@ -90,6 +91,12 @@ extension View {
 // MARK: - Event Handlers
 
 extension RootView {
+    private func onResumeSendAfterToolPermission(_ conversationId: UUID) {
+        Task {
+            await send(conversationId: conversationId)
+        }
+    }
+
     private var selectedConversationQueueCount: Int {
         guard let conversationId = container.conversationVM.selectedConversationId else { return 0 }
         return container.messageQueueVM.queueCount(for: conversationId)

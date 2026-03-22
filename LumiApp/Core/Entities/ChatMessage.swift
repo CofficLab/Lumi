@@ -76,9 +76,6 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     /// 用于关联工具调用的请求和响应。
     var toolCallID: String?
 
-    /// 用户是否同意执行本条助手消息中的工具调用（默认未同意）
-    var userApprovedToolCalls: Bool = false
-
     // MARK: - Image Support
     
     /// 图片附件列表
@@ -398,7 +395,7 @@ Recommended actions:
          thinkingDuration: Double? = nil, finishReason: String? = nil,
          requestId: String? = nil, temperature: Double? = nil,
          maxTokens: Int? = nil, thinkingContent: String? = nil,
-         isTransientStatus: Bool = false, userApprovedToolCalls: Bool = false) {
+         isTransientStatus: Bool = false) {
         self.id = UUID()
         self.role = role
         self.content = content
@@ -422,7 +419,6 @@ Recommended actions:
         self.maxTokens = maxTokens
         self.thinkingContent = thinkingContent
         self.isTransientStatus = isTransientStatus
-        self.userApprovedToolCalls = userApprovedToolCalls
     }
     
     /// 从数据库加载时使用的初始化方法
@@ -462,7 +458,7 @@ Recommended actions:
          thinkingDuration: Double? = nil, finishReason: String? = nil,
          requestId: String? = nil, temperature: Double? = nil,
          maxTokens: Int? = nil, thinkingContent: String? = nil,
-         isTransientStatus: Bool = false, userApprovedToolCalls: Bool = false) {
+         isTransientStatus: Bool = false) {
         self.id = id
         self.role = role
         self.content = content
@@ -486,7 +482,6 @@ Recommended actions:
         self.maxTokens = maxTokens
         self.thinkingContent = thinkingContent
         self.isTransientStatus = isTransientStatus
-        self.userApprovedToolCalls = userApprovedToolCalls
     }
 
     // MARK: - Equatable

@@ -10,6 +10,10 @@ extension Notification.Name {
     /// Agent 模式：新对话被创建的通知
     /// object: UUID (对话 ID)
     static let agentConversationCreated = Notification.Name("agentConversationCreated")
+
+    /// 工具授权流程结束（全部非 pending），应继续 `send(conversationId:)` 管线
+    /// object: UUID (对话 ID)
+    static let resumeSendAfterToolPermission = Notification.Name("resumeSendAfterToolPermission")
 }
 
 // MARK: - NotificationCenter Extension
@@ -32,6 +36,16 @@ extension NotificationCenter {
             object: conversationId
         )
     }
+
+    /// 工具授权已处理完毕，继续发送管线
+    static func postResumeSendAfterToolPermission(conversationId: UUID) {
+        Task { @MainActor in
+            NotificationCenter.default.post(
+                name: .resumeSendAfterToolPermission,
+                object: conversationId
+            )
+        }
+    }
 }
 
 // MARK: - View Extensions for Agent Events
@@ -53,6 +67,15 @@ extension View {
     /// - Returns: 修改后的视图
     func onAgentConversationCreated(perform action: @escaping (UUID) -> Void) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .agentConversationCreated)) { notification in
+            if let conversationId = notification.object as? UUID {
+                action(conversationId)
+            }
+        }
+    }
+
+    /// 工具授权完成后继续发送管线
+    func onResumeSendAfterToolPermission(perform action: @escaping (UUID) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .resumeSendAfterToolPermission)) { notification in
             if let conversationId = notification.object as? UUID {
                 action(conversationId)
             }

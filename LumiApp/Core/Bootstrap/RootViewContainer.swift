@@ -153,7 +153,9 @@ final class RootViewContainer: ObservableObject {
         // ========================================
 
         self.permissionHandlingVM = PermissionHandlingVM(
-            permissionRequestViewModel: permissionRequestViewModel
+            permissionRequestViewModel: permissionRequestViewModel,
+            chatHistoryService: chatHistoryService,
+            toolExecutionService: toolExecutionService
         )
 
         self.conversationCreationVM = ConversationCreationVM()

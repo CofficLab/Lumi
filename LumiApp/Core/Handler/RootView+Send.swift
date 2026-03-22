@@ -26,7 +26,7 @@ extension RootView {
     ///
     /// 分支概要：
     /// - 最后一条为 **用户** 或 **工具结果**：拉取完整历史，流式请求模型并落库助手消息；若助手含工具调用则递归进入本方法以执行工具。
-    /// - 最后一条为 **助手** 且含工具调用：执行本轮工具（含权限与风控），落库工具结果后递归进入本方法。
+    /// - 最后一条为 **助手** 且含工具调用：若有 `pendingAuthorization` 则设置权限 VM 并**返回**等待用户；全部非 pending 后再执行工具并落库，随后递归进入本方法。
     /// - 最后一条为 **助手** 且无工具调用：若仍在处理中则视为回合结束，调用 `finishSendTurn`。
     /// - **系统 / 状态** 类消息：不处理。
     ///
@@ -42,6 +42,9 @@ extension RootView {
         case .assistant:
             if last.hasToolCalls {
                 guard messageQueueVM.currentProcessingIndex(for: conversationId) != nil else { return }
+                if await presentToolPermissionIfNeeded(assistantMessage: last, conversationId: conversationId) {
+                    return
+                }
                 await executeAssistantToolCalls(assistantMessage: last, conversationId: conversationId)
                 await send(conversationId: conversationId)
             } else if messageQueueVM.currentProcessingIndex(for: conversationId) != nil {
@@ -53,6 +56,40 @@ extension RootView {
     }
 
     // MARK: - Private
+
+    /// 若存在仍待授权的工具调用，则填充 `PermissionRequestVM` 并返回 `true`（发送管线应暂停）。
+    private func presentToolPermissionIfNeeded(assistantMessage: ChatMessage, conversationId: UUID) async -> Bool {
+        guard let calls = assistantMessage.toolCalls,
+              let firstPending = calls.first(where: { $0.authorizationState.needsAuthorizationPrompt }) else {
+            return false
+        }
+
+        let risk = toolExecutionService.evaluateRisk(
+            toolName: firstPending.name,
+            arguments: firstPending.arguments
+        )
+        let request = PermissionRequest(
+            toolName: firstPending.name,
+            argumentsString: firstPending.arguments,
+            toolCallID: firstPending.id,
+            riskLevel: risk
+        )
+
+        await MainActor.run {
+            permissionRequestViewModel.setPendingPermissionRequest(request)
+            permissionRequestViewModel.setPendingToolPermissionSession(
+                PendingToolPermissionSession(
+                    conversationId: conversationId,
+                    assistantMessageId: assistantMessage.id
+                )
+            )
+            conversationSendStatusVM.setStatus(
+                conversationId: conversationId,
+                content: "等待工具授权：\(firstPending.name)…"
+            )
+        }
+        return true
+    }
 
     /// 使用当前会话配置与可用工具，对给定消息列表发起**一次**流式模型请求。
     ///
@@ -89,8 +126,11 @@ extension RootView {
                 tools: toolsArg,
                 onChunk: onStreamChunk
             )
-            if projectVM.autoApproveRisk, assistantMessage.hasToolCalls {
-                assistantMessage.userApprovedToolCalls = true
+            if projectVM.autoApproveRisk, var calls = assistantMessage.toolCalls {
+                for i in calls.indices {
+                    calls[i].authorizationState = .autoApproved
+                }
+                assistantMessage.toolCalls = calls
             }
             await conversationVM.saveMessage(assistantMessage, to: conversationId)
             if assistantMessage.hasToolCalls {
@@ -110,8 +150,7 @@ extension RootView {
 
     /// 执行某条助手消息中声明的**全部**工具调用，并将每条结果以 `role: .tool` 消息落库。
     ///
-    /// 处理用户同意、权限守卫与执行错误；若需确认而未同意，则对相应调用写入中止结果消息。
-    /// 本方法**不**请求模型，调用方应在落库完成后通过 `send(conversationId:)` 继续。
+    /// 不经过权限或同意校验；执行失败时写入错误内容。本方法**不**请求模型，调用方应在落库完成后通过 `send(conversationId:)` 继续。
     ///
     /// - Parameters:
     ///   - assistantMessage: 含非空 `toolCalls` 的助手消息。
@@ -121,82 +160,24 @@ extension RootView {
 
         let statusVM = conversationSendStatusVM
 
-        statusVM.setStatus(
-            conversationId: conversationId,
-            content: "准备执行 \(toolCalls.count) 个工具…"
-        )
-
-        let someToolNeedsPermission = toolCalls.contains {
-            toolExecutionService.requiresPermission(
-                toolName: $0.name,
-                arguments: $0.arguments
-            )
-        }
-        let userConsentedToToolUse =
-            projectVM.autoApproveRisk || assistantMessage.userApprovedToolCalls
-
-        if someToolNeedsPermission && !userConsentedToToolUse {
-            for toolCall in toolCalls {
-                let resultMsg = ChatMessage.makeAbortMessage(toolCallID: toolCall.id)
-                AppLogger.core.warning(
-                    "\(Self.t) 工具 \(toolCall.name) 未获得用户同意执行需确认的工具调用，已跳过"
-                )
-                await conversationVM.saveMessage(resultMsg, to: conversationId)
-            }
+        for toolCall in toolCalls {
             statusVM.setStatus(
                 conversationId: conversationId,
-                content: "执行工具前需要你的同意：请确认本条助手消息的工具权限，或在标题栏开启自动批准"
+                content: "正在执行工具：\(toolCall.name)…"
             )
-        } else {
-            for toolCall in toolCalls {
-                let requiresPermission = toolExecutionService.requiresPermission(
-                    toolName: toolCall.name,
-                    arguments: toolCall.arguments
+            let resultMsg: ChatMessage
+            do {
+                let result = try await toolExecutionService.executeTool(toolCall)
+                resultMsg = ChatMessage(
+                    role: .tool,
+                    content: result,
+                    toolCallID: toolCall.id
                 )
-                let riskLevel = toolExecutionService.evaluateRisk(
-                    toolName: toolCall.name,
-                    arguments: toolCall.arguments
-                )
-                let permissionResult = ToolPermissionGuard().evaluate(
-                    toolCall: toolCall,
-                    autoApproveRisk: projectVM.autoApproveRisk
-                        || assistantMessage.userApprovedToolCalls,
-                    requiresPermission: requiresPermission,
-                    riskLevel: riskLevel
-                )
-
-                let resultMsg: ChatMessage
-                switch permissionResult {
-                case .permissionRequired:
-                    resultMsg = ChatMessage.makeAbortMessage(toolCallID: toolCall.id)
-                    AppLogger.core.warning("\(Self.t) 工具 \(toolCall.name) 需要权限确认，简化发送链路下已中止该调用")
-                    statusVM.setStatus(
-                        conversationId: conversationId,
-                        content: "工具「\(toolCall.name)」需要权限确认，已跳过"
-                    )
-                case .proceed:
-                    statusVM.setStatus(
-                        conversationId: conversationId,
-                        content: "正在执行工具：\(toolCall.name)…"
-                    )
-                    do {
-                        let result = try await toolExecutionService.executeTool(toolCall)
-                        resultMsg = ChatMessage(
-                            role: .tool,
-                            content: result,
-                            toolCallID: toolCall.id
-                        )
-                    } catch {
-                        resultMsg = toolExecutionService.createErrorMessage(for: toolCall, error: error)
-                    }
-                }
-
-                await conversationVM.saveMessage(resultMsg, to: conversationId)
-                statusVM.setStatus(
-                    conversationId: conversationId,
-                    content: "工具「\(toolCall.name)」已结束，写入结果"
-                )
+            } catch {
+                resultMsg = toolExecutionService.createErrorMessage(for: toolCall, error: error)
             }
+
+            await conversationVM.saveMessage(resultMsg, to: conversationId)
         }
     }
 }

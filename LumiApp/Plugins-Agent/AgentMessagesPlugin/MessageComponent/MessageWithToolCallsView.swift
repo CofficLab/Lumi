@@ -77,6 +77,14 @@ struct MessageWithToolCallsView: View {
                         .font(DesignTokens.Typography.caption1)
                         .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                         .lineLimit(1)
+
+                    Text("·")
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+
+                    Text(toolCall.authorizationState.displayName)
+                        .font(DesignTokens.Typography.caption2)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .lineLimit(1)
                 }
 
                 Spacer()
