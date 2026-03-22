@@ -19,9 +19,6 @@ extension RootView {
     func send(
         conversationId: UUID,
         ensuringIncludedMessage: ChatMessage? = nil,
-        config: LLMConfig,
-        tools: [AgentTool]?,
-        onChunk: @Sendable @escaping (StreamChunk) async -> Void,
         failureLogSummary: String
     ) async {
         var messages = await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
@@ -30,14 +27,31 @@ extension RootView {
             messages.append(extra)
         }
 
+        let config = sessionConfig.getCurrentConfig()
+        let availableTools = ToolAvailabilityGuard().evaluate(
+            tools: toolService.tools,
+            allowsTools: projectVM.chatMode.allowsTools,
+            isFinalStep: false
+        )
+        let toolsArg = availableTools.isEmpty ? nil : availableTools
+
         let statusVM = conversationSendStatusVM
+        let convId = conversationId
+        let logTag = Self.t
+        let onStreamChunk: @Sendable (StreamChunk) async -> Void = { chunk in
+            await MainActor.run {
+                statusVM.applyStreamChunk(conversationId: convId, chunk: chunk)
+                AppLogger.core.info("\(logTag) 收到响应，类型：\(chunk.eventType?.rawValue ?? "unknown")，内容：\(chunk.content ?? "")")
+            }
+        }
+
         do {
             statusVM.setStatus(conversationId: conversationId, content: "正在发送消息…")
             let assistantMessage = try await llmService.sendStreamingMessage(
                 messages: messages,
                 config: config,
-                tools: tools,
-                onChunk: onChunk
+                tools: toolsArg,
+                onChunk: onStreamChunk
             )
             await conversationVM.saveMessage(assistantMessage, to: conversationId)
             if assistantMessage.hasToolCalls == false {
@@ -62,23 +76,6 @@ extension RootView {
         guard let toolCalls = assistantMessage.toolCalls, !toolCalls.isEmpty else { return }
 
         let statusVM = conversationSendStatusVM
-        let convId = conversationId
-        let logTag = Self.t
-
-        let config = sessionConfig.getCurrentConfig()
-        let availableTools = ToolAvailabilityGuard().evaluate(
-            tools: toolService.tools,
-            allowsTools: projectVM.chatMode.allowsTools,
-            isFinalStep: false
-        )
-        let toolsArg = availableTools.isEmpty ? nil : availableTools
-
-        let onStreamChunk: @Sendable (StreamChunk) async -> Void = { chunk in
-            await MainActor.run {
-                AppLogger.core.info("\(logTag) 收到响应，类型：\(chunk.eventType?.rawValue ?? "unknown")，内容：\(chunk.content ?? "")")
-                statusVM.applyStreamChunk(conversationId: convId, chunk: chunk)
-            }
-        }
 
         statusVM.setStatus(
             conversationId: conversationId,
@@ -160,9 +157,6 @@ extension RootView {
 
         await send(
             conversationId: conversationId,
-            config: config,
-            tools: toolsArg,
-            onChunk: onStreamChunk,
             failureLogSummary: "工具后续请求模型失败"
         )
     }
