@@ -39,62 +39,60 @@ final class ConversationSendStatusVM: ObservableObject {
         streamingTextBufferByConversationId[conversationId] = nil
     }
 
-    /// 状态行单行展示：去掉换行，避免 tail 中含 `\n`。
-    private static func statusTailWithoutLineBreaks(_ text: String) -> String {
-        text.split(whereSeparator: \.isNewline).joined(separator: " ")
+    private static let statusTailBufferMax = 50
+
+    /// 换行压成空格后只保留尾部最多 `statusTailBufferMax` 字，供状态行缓冲（写入侧截断）。
+    private static func normalizedStatusTailBuffer(from raw: String) -> String {
+        let normalized = raw.split(whereSeparator: \.isNewline).joined(separator: " ")
+        if normalized.count <= statusTailBufferMax {
+            return normalized
+        }
+        return String(normalized.suffix(statusTailBufferMax))
+    }
+
+    /// 状态行：标题 + 缓冲全文作尾部预览；无尾部时为 `title...`。
+    private static func statusLineWithTailPreview(accumulated: String, title: String) -> String {
+        if accumulated.isEmpty {
+            return "\(title)..."
+        }
+        return "\(title)：\(accumulated)"
     }
 
     /// 根据流式分片更新状态文案
     func applyStreamChunk(conversationId: UUID, chunk: StreamChunk) {
+        // 结束
         if chunk.isDone {
             thinkingTextBufferByConversationId[conversationId] = nil
             streamingTextBufferByConversationId[conversationId] = nil
-            setStatus(conversationId: conversationId, content: "流式响应结束")
+            setStatus(conversationId: conversationId, content: "结束")
             return
         }
-        if chunk.eventType == .thinkingDelta {
-            if let partial = chunk.content, !partial.isEmpty {
-                thinkingTextBufferByConversationId[conversationId, default: ""] += partial
-            }
+
+        // 思考
+        if chunk.isThinking() {
+            thinkingTextBufferByConversationId[conversationId, default: ""] += chunk.getContent()
+            thinkingTextBufferByConversationId[conversationId] = Self.normalizedStatusTailBuffer(
+                from: thinkingTextBufferByConversationId[conversationId] ?? ""
+            )
             let accumulated = thinkingTextBufferByConversationId[conversationId] ?? ""
-            let normalized = Self.statusTailWithoutLineBreaks(accumulated)
-            let previewMax = 20
-            let tail = normalized.isEmpty
-                ? ""
-                : (normalized.count <= previewMax ? normalized : String(normalized.suffix(previewMax)))
-            let line: String
-            if tail.isEmpty {
-                line = "正在思考…"
-            } else {
-                line = "正在思考：\(tail)"
-            }
+            let line = Self.statusLineWithTailPreview(accumulated: accumulated, title: chunk.getTitle())
             setStatus(conversationId: conversationId, content: line)
             return
         }
-        if chunk.eventType == .textDelta || chunk.eventType == .inputJsonDelta {
-            if let partial = chunk.content, !partial.isEmpty {
-                streamingTextBufferByConversationId[conversationId, default: ""] += partial
-            }
+
+        // 正文
+        if chunk.isReceivingContent() {
+            streamingTextBufferByConversationId[conversationId, default: ""] += chunk.getContent()
+            streamingTextBufferByConversationId[conversationId] = Self.normalizedStatusTailBuffer(
+                from: streamingTextBufferByConversationId[conversationId] ?? ""
+            )
             let accumulated = streamingTextBufferByConversationId[conversationId] ?? ""
-            let normalized = Self.statusTailWithoutLineBreaks(accumulated)
-            let previewMax = 20
-            let tail = normalized.isEmpty
-                ? ""
-                : (normalized.count <= previewMax ? normalized : String(normalized.suffix(previewMax)))
-            let line: String
-            if tail.isEmpty {
-                line = "正在生成消息..."
-            } else {
-                line = "正在生成消息：\(tail)"
-            }
+            let line = Self.statusLineWithTailPreview(accumulated: accumulated, title: chunk.getTitle())
             setStatus(conversationId: conversationId, content: line)
             return
         }
-        let typeStr = chunk.eventType?.rawValue ?? "stream"
-        var line = "[\(typeStr)]"
-        if let partial = chunk.content, !partial.isEmpty {
-            line += " \(String(partial.prefix(64)))"
-        }
-        setStatus(conversationId: conversationId, content: line)
+
+        let typeStr = chunk.getTitle()
+        setStatus(conversationId: conversationId, content: "\(typeStr)...")
     }
 }

@@ -125,7 +125,7 @@ extension RootView {
         let onStreamChunk: @Sendable (StreamChunk) async -> Void = { chunk in
             await MainActor.run {
                 statusVM.applyStreamChunk(conversationId: convId, chunk: chunk)
-                AppLogger.core.info("\(logTag) 收到响应，类型：\(chunk.eventType?.rawValue ?? "unknown")，内容：\(chunk.content ?? "")，原始：\(chunk.rawStreamPayload ?? "")")
+                AppLogger.core.info("\(logTag) 事件：\(chunk.eventType?.rawValue ?? "unknown")，内容：\(chunk.content ?? "")，原始：\(chunk.rawStreamPayload ?? "")")
             }
         }
 
@@ -140,11 +140,11 @@ extension RootView {
             await self.onMessageReceived(message: assistantMessage, conversationId: conversationId)
         } catch {
             AppLogger.core.error("\(Self.t) 请求模型失败：\(error)")
+            finishSendTurn(conversationId: conversationId)
             statusVM.setStatus(
                 conversationId: conversationId,
-                content: "发送失败：\(error.localizedDescription)"
+                content: error.localizedDescription
             )
-            finishSendTurn(conversationId: conversationId)
         }
     }
 

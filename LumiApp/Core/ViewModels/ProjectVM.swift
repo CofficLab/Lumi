@@ -58,14 +58,14 @@ final class ProjectVM: ObservableObject, SuperLog {
     // MARK: - 初始化
 
     private let contextService: ContextService
-    private let providerRegistry: ProviderRegistry?
+    private let providerRegistry: LLMProviderRegistry?
 
     private static let globalConfigProviderIdKey = "Agent_GlobalProviderId"
     private static let globalConfigModelKey = "Agent_GlobalModel"
 
     init(
         contextService: ContextService = ContextService(),
-        providerRegistry: ProviderRegistry? = nil
+        providerRegistry: LLMProviderRegistry? = nil
     ) {
         self.contextService = contextService
         self.providerRegistry = providerRegistry
@@ -175,8 +175,8 @@ final class ProjectVM: ObservableObject, SuperLog {
         }
 
         // 兜底：本地扫描插件（用于 Preview / 测试等环境）
-        let registry = ProviderRegistry()
-        LLMPluginProviderRegistration.registerAllProviders(to: registry)
+        let registry = LLMProviderRegistry()
+        LLMProviderRegistration.registerAllProviders(to: registry)
         guard let providerType = registry.providerType(forId: providerId) else {
             return ""
         }
@@ -200,8 +200,8 @@ final class ProjectVM: ObservableObject, SuperLog {
         }
 
         // 兜底：本地扫描插件（用于 Preview / 测试等环境）
-        let registry = ProviderRegistry()
-        LLMPluginProviderRegistration.registerAllProviders(to: registry)
+        let registry = LLMProviderRegistry()
+        LLMProviderRegistration.registerAllProviders(to: registry)
         if let firstType = registry.providerTypes.first {
             currentProviderId = firstType.id
             currentModel = firstType.defaultModel

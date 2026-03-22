@@ -5,10 +5,10 @@ import MagicKit
 @MainActor
 final class AgentSessionConfig: ObservableObject, SuperLLMConfigProvider {
     let projectVM: ProjectVM
-    let registry: ProviderRegistry
+    let registry: LLMProviderRegistry
     let chatHistoryService: ChatHistoryService
 
-    init(projectVM: ProjectVM, registry: ProviderRegistry, chatHistoryService: ChatHistoryService) {
+    init(projectVM: ProjectVM, registry: LLMProviderRegistry, chatHistoryService: ChatHistoryService) {
         self.projectVM = projectVM
         self.registry = registry
         self.chatHistoryService = chatHistoryService
@@ -17,7 +17,7 @@ final class AgentSessionConfig: ObservableObject, SuperLLMConfigProvider {
     var selectedProviderId: String { projectVM.currentProviderId }
     var currentModel: String { projectVM.currentModel }
 
-    var availableProviders: [ProviderInfo] {
+    var availableProviders: [LLMProviderInfo] {
         registry.allProviders()
     }
 

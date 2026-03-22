@@ -5,10 +5,6 @@ import SwiftUI
 extension RootView {
     /// 发送队列：取出待发送消息 → 投影/落库 → **单次**流式 LLM
     func onQueueChanged() {
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t) 发送消息")
-        }
-
         guard let conversationId = self.conversationVM.selectedConversationId else {
             AppLogger.core.error("\(Self.t) 当前没有选中的会话")
             return
@@ -16,9 +12,6 @@ extension RootView {
 
         let pendingMessages = self.messageQueueVM.pendingMessages(for: conversationId)
         guard let message = pendingMessages.first else {
-            if Self.verbose {
-                AppLogger.core.info("\(Self.t) 当前会话没有待发送消息")
-            }
             return
         }
 

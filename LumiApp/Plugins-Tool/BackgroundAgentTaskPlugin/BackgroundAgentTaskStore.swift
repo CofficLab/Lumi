@@ -209,6 +209,12 @@ actor BackgroundAgentTaskStore: SuperLog {
                     tools: toolService.tools
                 )
 
+                // 配置 / 供应商等问题会返回系统占位消息，不应继续工具循环或把占位键写入摘要
+                if reply.role != .assistant {
+                    finalReply = reply
+                    break toolLoop
+                }
+
                 messages.append(reply)
 
                 if let toolCalls = reply.toolCalls, !toolCalls.isEmpty {
@@ -235,6 +241,17 @@ actor BackgroundAgentTaskStore: SuperLog {
                     finalReply = reply
                     break
                 }
+            }
+
+            if let final = finalReply, final.role == .system, final.isError {
+                let msg = String(localized: "由于 LLM 配置无效，后台任务未能完成。")
+                updateTask(id: id) { task in
+                    task.finishedAt = Date()
+                    task.statusRawValue = BackgroundAgentTaskStatus.failed.rawValue
+                    task.resultSummary = nil
+                    task.errorDescription = msg
+                }
+                return
             }
 
             let summary: String
@@ -264,8 +281,8 @@ actor BackgroundAgentTaskStore: SuperLog {
     /// 构建当前使用的 LLM 配置
     /// - Returns: LLMConfig 对象
     private func makeCurrentLLMConfig() -> LLMConfig {
-        let registry = ProviderRegistry()
-        LLMPluginProviderRegistration.registerAllProviders(to: registry)
+        let registry = LLMProviderRegistry()
+        LLMProviderRegistration.registerAllProviders(to: registry)
 
         // 全局配置（与 ProjectVM.GlobalConfigKeys 保持一致）
         let globalProviderKey = "Agent_GlobalProviderId"

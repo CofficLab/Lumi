@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 供应商选择按钮组件
 struct ProviderButton: View {
-    let provider: ProviderInfo
+    let provider: LLMProviderInfo
     let isSelected: Bool
     let action: () -> Void
 

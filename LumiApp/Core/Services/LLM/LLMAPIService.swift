@@ -32,7 +32,7 @@ private final class TLSValidationDelegate: NSObject, URLSessionDelegate {
 class LLMAPIService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🌐"
     nonisolated static let verbose = false
-    
+
     /// URLSession 配置
     private nonisolated let session: URLSession
     private nonisolated let decoder: JSONDecoder
@@ -51,8 +51,8 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
 
     init() {
         let configuration = URLSessionConfiguration.default
-        configuration.timeoutIntervalForRequest = 300  // 5 分钟超时（LLM 需要更多时间）
-        configuration.timeoutIntervalForResource = 600  // 10 分钟资源超时
+        configuration.timeoutIntervalForRequest = 300 // 5 分钟超时（LLM 需要更多时间）
+        configuration.timeoutIntervalForResource = 600 // 10 分钟资源超时
         self.tlsDelegate = TLSValidationDelegate()
         self.session = URLSession(
             configuration: configuration,
@@ -87,7 +87,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         // 默认使用 x-api-key 认证，如需 Bearer 认证可通过 additionalHeaders 传递
         var headers = [
             "Content-Type": "application/json",
-            "x-api-key": apiKey
+            "x-api-key": apiKey,
         ]
 
         // 合并额外的请求头（可覆盖默认值）
@@ -127,7 +127,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         var headers = [
             "Content-Type": "application/json",
             "x-api-key": apiKey,
-            "Accept": "text/event-stream"
+            "Accept": "text/event-stream",
         ]
 
         // 合并额外的请求头
@@ -156,7 +156,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         if Self.verbose {
             // 构建完整请求信息
             var logMessage = "\(self.t)🚀 发送流式请求到：\(url.absoluteString)\n"
-            
+
             // 添加请求体
             if let bodyData = request.httpBody,
                let bodyString = String(data: bodyData, encoding: .utf8) {
@@ -170,7 +170,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
                     logMessage += "📦 请求体 (\(formattedSize))：\n\(prefix)\n...\n\(suffix)\n"
                 }
             }
-            
+
             // 添加请求头
             logMessage += "📋 请求头：\n"
             for (key, value) in headers {
@@ -181,7 +181,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
                     logMessage += "  - \(key): \(value)\n"
                 }
             }
-            
+
             AppLogger.core.info("\(logMessage)")
         }
 
@@ -211,7 +211,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         var lastBytes: [UInt8] = []
         var chunkCount = 0
         let chunkCallbackWarnThreshold: TimeInterval = 0.5
-        let chunkCallbackHangWarnThresholdNs: UInt64 = 2_000_000_000
+        let chunkCallbackHangWarnThresholdNs: UInt64 = 2000000000
 
         for try await byte in bytes {
             try Task.checkCancellation()
@@ -312,7 +312,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
     ) async throws -> (Data, URLResponse) {
         var lastError: Error?
 
-        for attempt in 1...maxRetries {
+        for attempt in 1 ... maxRetries {
             do {
                 if Self.verbose && attempt > 1 {
                     AppLogger.core.info("\(self.t)🔄 重试 LLM 请求 (尝试 \(attempt)/\(self.maxRetries))")
@@ -337,7 +337,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
                 if attempt < maxRetries && isRetryableError(error) {
                     let delay = calculateRetryDelay(for: attempt)
                     AppLogger.core.info("\(self.t)⚠️ LLM 请求失败 (\(error.localizedDescription))，\(Int(delay)) 秒后重试...")
-                    try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                    try await Task.sleep(nanoseconds: UInt64(delay * 1000000000))
                 } else {
                     if Self.verbose {
                         AppLogger.core.info("\(self.t)❌ LLM 请求最终失败：\(error.localizedDescription)")
@@ -416,19 +416,19 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
     /// 判断错误是否可重试
     private func isRetryableError(_ error: Error) -> Bool {
         switch error {
-        case APIError.requestFailed(let underlying):
+        case let APIError.requestFailed(underlying):
             let nsError = underlying as NSError
             if nsError.code == NSURLErrorTimedOut {
                 return true
             }
             if nsError.code == NSURLErrorNotConnectedToInternet ||
-               nsError.code == NSURLErrorCannotConnectToHost ||
-               nsError.code == NSURLErrorNetworkConnectionLost {
+                nsError.code == NSURLErrorCannotConnectToHost ||
+                nsError.code == NSURLErrorNetworkConnectionLost {
                 return true
             }
             return false
-            
-        case APIError.httpError(let statusCode, _):
+
+        case let APIError.httpError(statusCode, _):
             if (500 ... 599).contains(statusCode) {
                 return true
             }
@@ -436,16 +436,16 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
                 return true
             }
             return false
-            
+
         default:
             return false
         }
     }
-    
+
     /// 计算重试延迟时间（指数退避）
     private func calculateRetryDelay(for attempt: Int) -> Double {
         let delay = baseRetryDelay * pow(retryBackoffMultiplier, Double(attempt - 1))
-        let jitter = Double.random(in: 0...0.5)
+        let jitter = Double.random(in: 0 ... 0.5)
         return delay + jitter
     }
 
@@ -477,7 +477,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
     /// 格式化字节大小为人类可读的字符串
     /// - Parameter bytes: 字节数
     /// - Returns: 格式化后的字符串，如 "1.5 MB" 或 "500 bytes"
-    nonisolated private static func formatBytes(_ bytes: Int) -> String {
+    private nonisolated static func formatBytes(_ bytes: Int) -> String {
         let kb = 1024
         let mb = kb * 1024
         let gb = mb * 1024
@@ -505,15 +505,15 @@ enum APIError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .jsonSerializationFailed(let error):
+        case let .jsonSerializationFailed(error):
             return "JSON 序列化失败：\(error.localizedDescription)"
-        case .requestFailed(let error):
+        case let .requestFailed(error):
             return "请求失败：\(error.localizedDescription)"
-        case .decodingFailed(let error):
+        case let .decodingFailed(error):
             return "响应解码失败：\(error.localizedDescription)"
         case .invalidResponse:
             return "无效的响应"
-        case .httpError(let code, let message):
+        case let .httpError(code, message):
             return "HTTP 错误 (\(code)): \(message.prefix(200))"
         }
     }

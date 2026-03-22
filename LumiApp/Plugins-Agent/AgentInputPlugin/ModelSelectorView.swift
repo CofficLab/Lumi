@@ -24,11 +24,11 @@ struct ModelSelectorView: View, SuperLog {
     /// 本地供应商的模型详情（按 providerId -> [LocalModelInfo]），用于按系列展示
     @State private var localModelInfosByProvider: [String: [LocalModelInfo]] = [:]
 
-    private var localProviders: [ProviderInfo] {
+    private var localProviders: [LLMProviderInfo] {
         agentSessionConfig.registry.allProviders().filter(\.isLocal)
     }
 
-    private var remoteProviders: [ProviderInfo] {
+    private var remoteProviders: [LLMProviderInfo] {
         agentSessionConfig.registry.allProviders().filter { !$0.isLocal }
     }
 
@@ -79,7 +79,7 @@ struct ModelSelectorView: View, SuperLog {
 
     /// 供应商与模型列表（共用结构）；本地供应商有缓存时按系列分组展示
     @ViewBuilder
-    private func providerList(providers: [ProviderInfo], emptyMessage: String) -> some View {
+    private func providerList(providers: [LLMProviderInfo], emptyMessage: String) -> some View {
         if providers.isEmpty {
             ContentUnavailableView {
                 Label(emptyMessage, systemImage: "tray")
@@ -115,7 +115,7 @@ struct ModelSelectorView: View, SuperLog {
     ///   - model: 模型 ID（用于选中/保存）
     ///   - displayName: 可选展示名；本地模型用 displayName，远程用 nil 则显示 model
     @ViewBuilder
-    private func modelRow(provider: ProviderInfo, model: String, displayName: String? = nil) -> some View {
+    private func modelRow(provider: LLMProviderInfo, model: String, displayName: String? = nil) -> some View {
         Button(action: {
             selectModel(providerId: provider.id, model: model)
         }) {
@@ -167,7 +167,7 @@ extension ModelSelectorView {
     /// - Parameter provider: 供应商信息
     /// - Returns: 包含供应商图标和名称的头部视图
     @ViewBuilder
-    private func sectionHeader(for provider: ProviderInfo) -> some View {
+    private func sectionHeader(for provider: LLMProviderInfo) -> some View {
         HStack {
             Image(systemName: provider.iconName)
                 .foregroundColor(.secondary)

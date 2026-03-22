@@ -8,7 +8,7 @@ struct SystemMessage: View {
     let message: ChatMessage
     @Binding var showRawMessage: Bool
 
-    @EnvironmentObject private var providerRegistry: ProviderRegistry
+    @EnvironmentObject private var providerRegistry: LLMProviderRegistry
 
     var body: some View {
         Group {
@@ -36,6 +36,13 @@ struct SystemMessage: View {
                     LoadingLocalModelSystemMessageView(message: message)
                         .messageBubbleStyle(role: message.role, isError: message.content == ChatMessage.loadingLocalModelFailedSystemContentKey)
                 }
+            } else if Self.isLLMInlineConfigError(message) {
+                VStack(alignment: .leading, spacing: 4) {
+                    header
+
+                    LLMInlineConfigErrorView(message: message)
+                        .messageBubbleStyle(role: message.role, isError: true)
+                }
             } else {
                 VStack(alignment: .leading, spacing: 4) {
                     header
@@ -51,6 +58,17 @@ struct SystemMessage: View {
                 }
             }
         }
+    }
+
+    /// LLM 配置 / 供应商 / Base URL 等占位系统消息（`ChatMessage` 的 `content` 为稳定键）。
+    private static func isLLMInlineConfigError(_ message: ChatMessage) -> Bool {
+        let c = message.content
+        if c == ChatMessage.llmModelEmptyContentKey { return true }
+        if c == ChatMessage.llmProviderIdEmptyContentKey { return true }
+        if c == ChatMessage.llmTemperatureInvalidContentKey { return true }
+        if c == ChatMessage.llmMaxTokensInvalidContentKey { return true }
+        if c == ChatMessage.llmProviderNotFoundContentKey { return true }
+        return c.hasPrefix(ChatMessage.llmInvalidBaseURLContentKey)
     }
 
     // MARK: - Header
@@ -81,6 +99,98 @@ struct SystemMessage: View {
     }
 }
 
+// MARK: - LLM Inline Config Error View
+
+/// `LLMServiceError` 转为系统消息后的专用说明（占位键由 `ChatMessage` 定义）。
+private struct LLMInlineConfigErrorView: View {
+    @EnvironmentObject private var projectVM: ProjectVM
+
+    let message: ChatMessage
+
+    private var zh: Bool {
+        projectVM.languagePreference == .chinese
+    }
+
+    private var titleText: String {
+        let c = message.content
+        if c == ChatMessage.llmModelEmptyContentKey {
+            return zh ? "模型未填写" : "Model is empty"
+        }
+        if c == ChatMessage.llmProviderIdEmptyContentKey {
+            return zh ? "供应商未选择" : "Provider is not set"
+        }
+        if c == ChatMessage.llmTemperatureInvalidContentKey {
+            return zh ? "温度参数无效" : "Invalid temperature"
+        }
+        if c == ChatMessage.llmMaxTokensInvalidContentKey {
+            return zh ? "最大 token 无效" : "Invalid max tokens"
+        }
+        if c == ChatMessage.llmProviderNotFoundContentKey {
+            return zh ? "找不到供应商" : "Provider not found"
+        }
+        if c.hasPrefix(ChatMessage.llmInvalidBaseURLContentKey) {
+            return zh ? "Base URL 无效" : "Invalid Base URL"
+        }
+        return zh ? "配置错误" : "Configuration error"
+    }
+
+    private var detailText: String {
+        let c = message.content
+        if c == ChatMessage.llmTemperatureInvalidContentKey, let t = message.temperature {
+            return zh
+                ? "温度应在 0～2 之间，当前为 \(t)。"
+                : "Temperature must be between 0 and 2; current value is \(t)."
+        }
+        if c == ChatMessage.llmMaxTokensInvalidContentKey, let m = message.maxTokens {
+            return zh
+                ? "最大 token 数应大于 0，当前为 \(m)。"
+                : "Max tokens must be greater than 0; current value is \(m)."
+        }
+        if c == ChatMessage.llmProviderNotFoundContentKey, let id = message.providerId, !id.isEmpty {
+            return zh
+                ? "注册表中没有 ID 为「\(id)」的供应商实现。"
+                : "No provider implementation registered for id \"\(id)\"."
+        }
+        if c.hasPrefix(ChatMessage.llmInvalidBaseURLContentKey) {
+            if let raw = ChatMessage.llmInvalidBaseURLPayload(fromContent: c), !raw.isEmpty {
+                return zh ? "无法解析为有效 URL：\(raw)" : "Cannot parse as a valid URL: \(raw)"
+            }
+            return zh ? "供应商返回的 Base URL 无法解析。" : "The provider's Base URL cannot be parsed."
+        }
+        if c == ChatMessage.llmModelEmptyContentKey {
+            return zh ? "请选择或填写模型名称后再发送。" : "Choose or enter a model name before sending."
+        }
+        if c == ChatMessage.llmProviderIdEmptyContentKey {
+            return zh ? "请选择 LLM 供应商。" : "Select an LLM provider."
+        }
+        return ""
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(DesignTokens.Color.semantic.error)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(titleText)
+                        .font(DesignTokens.Typography.callout)
+                        .fontWeight(.semibold)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    if !detailText.isEmpty {
+                        Text(detailText)
+                            .font(DesignTokens.Typography.caption1)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+        }
+        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
+    }
+}
+
 // MARK: - API Key Missing System Message View
 
 /// 当当前供应商未配置 API Key 时，在系统消息中渲染的专用视图。
@@ -88,7 +198,7 @@ struct SystemMessage: View {
 private struct ApiKeyMissingSystemMessageView: View {
     @EnvironmentObject private var projectVM: ProjectVM
     @EnvironmentObject private var agentSessionConfig: AgentSessionConfig
-    @EnvironmentObject private var providerRegistry: ProviderRegistry
+    @EnvironmentObject private var providerRegistry: LLMProviderRegistry
 
     @State private var currentProviderId: String = ""
     @State private var apiKey: String = ""
@@ -115,7 +225,7 @@ private struct ApiKeyMissingSystemMessageView: View {
         }
     }
 
-    private var currentProvider: ProviderInfo? {
+    private var currentProvider: LLMProviderInfo? {
         providerRegistry.allProviders().first(where: { $0.id == currentProviderId })
     }
 
@@ -186,7 +296,7 @@ private struct ApiKeyMissingSystemMessageView: View {
 /// 本地模型正在加载或已就绪时，在系统消息中渲染的专用视图，展示状态与 LocalModelInfo 字段。
 private struct LoadingLocalModelSystemMessageView: View {
     @EnvironmentObject private var projectVM: ProjectVM
-    @EnvironmentObject private var providerRegistry: ProviderRegistry
+    @EnvironmentObject private var providerRegistry: LLMProviderRegistry
 
     let message: ChatMessage
 
@@ -210,7 +320,7 @@ private struct LoadingLocalModelSystemMessageView: View {
         return projectVM.languagePreference == .chinese ? "模型已就绪" : "Model ready"
     }
 
-    private var provider: ProviderInfo? {
+    private var provider: LLMProviderInfo? {
         guard let id = message.providerId else { return nil }
         return providerRegistry.allProviders().first(where: { $0.id == id })
     }

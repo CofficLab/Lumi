@@ -3,11 +3,11 @@ import MagicKit
 import ObjectiveC.runtime
 
 /// 使用 Objective‑C Runtime 扫描 `SuperLLMProvider` 并注册到 `ProviderRegistry`。
-enum LLMPluginProviderRegistration: SuperLog {
+enum LLMProviderRegistration: SuperLog {
     nonisolated static let emoji = "🧩"
     nonisolated static let verbose = false
 
-    static func registerAllProviders(to registry: ProviderRegistry) {
+    static func registerAllProviders(to registry: LLMProviderRegistry) {
         var count: UInt32 = 0
         guard let classList = objc_copyClassList(&count) else {
             return
