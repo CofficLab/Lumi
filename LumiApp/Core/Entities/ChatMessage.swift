@@ -494,6 +494,7 @@ Recommended actions:
         lhs.role == rhs.role &&
         lhs.content == rhs.content &&
         lhs.isError == rhs.isError &&
+        lhs.toolCalls == rhs.toolCalls &&
         lhs.images == rhs.images &&
         lhs.providerId == rhs.providerId &&
         lhs.modelName == rhs.modelName &&
