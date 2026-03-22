@@ -21,7 +21,7 @@ struct ProjectOverviewTool: AgentTool, SuperLog {
         ]
     }
 
-    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel? {
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }
 

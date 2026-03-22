@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-/// 聊天消息实体（SwiftData 版本）
+/// 聊天消息实体
 @Model
 final class ChatMessageEntity {
     @Attribute(.unique) var id: UUID
@@ -89,7 +89,7 @@ final class ChatMessageEntity {
         if let imagesData = imagesData {
             images = try! JSONDecoder().decode([ImageAttachment].self, from: imagesData)
         }
-        
+
         return ChatMessage(
             id: id,
             role: messageRole,
@@ -116,6 +116,40 @@ final class ChatMessageEntity {
         )
     }
     
+    /// 用 `ChatMessage` 覆盖当前实体字段（用于同 ID 更新，不新建记录）
+    func apply(from message: ChatMessage) {
+        role = message.role.rawValue
+        content = message.content
+        timestamp = message.timestamp
+        isError = message.isError
+        if let toolCalls = message.toolCalls {
+            toolCallsData = try? JSONEncoder().encode(toolCalls)
+        } else {
+            toolCallsData = nil
+        }
+        toolCallID = message.toolCallID
+        if !message.images.isEmpty {
+            imagesData = try? JSONEncoder().encode(message.images)
+        } else {
+            imagesData = nil
+        }
+        providerId = message.providerId
+        modelName = message.modelName
+        latency = message.latency
+        inputTokens = message.inputTokens
+        outputTokens = message.outputTokens
+        totalTokens = message.totalTokens
+        timeToFirstToken = message.timeToFirstToken
+        streamingDuration = message.streamingDuration
+        thinkingDuration = message.thinkingDuration
+        finishReason = message.finishReason
+        requestId = message.requestId
+        temperature = message.temperature
+        maxTokens = message.maxTokens
+        thinkingContent = message.thinkingContent
+        hasThinking = message.thinkingContent != nil && !message.thinkingContent!.isEmpty
+    }
+
     /// 从 ChatMessage 创建
     static func fromChatMessage(_ message: ChatMessage) -> ChatMessageEntity {
         var toolCallsData: Data?
@@ -127,7 +161,7 @@ final class ChatMessageEntity {
         if !message.images.isEmpty {
             imagesData = try? JSONEncoder().encode(message.images)
         }
-        
+
         return ChatMessageEntity(
             id: message.id,
             role: message.role.rawValue,

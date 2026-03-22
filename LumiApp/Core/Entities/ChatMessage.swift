@@ -29,6 +29,9 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     static let loadingLocalModelDoneSystemContentKey = "__LUMI_LOADING_LOCAL_MODEL_DONE__"
     /// 本地模型加载失败（如未下载）时的系统消息占位符，由 UI 渲染「加载失败」状态。
     static let loadingLocalModelFailedSystemContentKey = "__LUMI_LOADING_LOCAL_MODEL_FAILED__"
+    /// 对话轮次结束时的系统消息占位符，由 UI 渲染「对话轮次已结束」专用视图。
+    static let turnCompletedSystemContentKey = "__LUMI_TURN_COMPLETED__"
+
     /// 消息唯一标识符
     ///
     /// 使用 UUID 生成，确保每条消息有唯一 ID。
@@ -181,6 +184,14 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
 
     // MARK: - Factory Helpers
 
+    static func makeAbortMessage(toolCallID: String?) -> ChatMessage {
+        ChatMessage(
+            role: .tool,
+            content: "[Tool execution aborted by safety guard]",
+            toolCallID: toolCallID
+        )
+    }
+
     /// 达到最大深度时的最后一步提醒（作为一条 user 消息追加，用于提示模型不再调用工具、直接给出最终回答）。
     static func maxDepthFinalStepReminderMessage() -> ChatMessage {
         ChatMessage(
@@ -328,6 +339,15 @@ Recommended actions:
             content: Self.loadingLocalModelSystemContentKey,
             providerId: providerId,
             modelName: modelName
+        )
+    }
+
+    /// 对话轮次结束时，用于在对话中展示的系统消息。
+    /// 内容为占位键，由 SystemMessage 组件渲染专用「对话轮次已结束」视图。
+    static func turnCompletedSystemMessage(languagePreference: LanguagePreference) -> ChatMessage {
+        ChatMessage(
+            role: .status,
+            content: Self.turnCompletedSystemContentKey
         )
     }
 

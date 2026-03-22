@@ -24,10 +24,6 @@ final class ProjectVM: ObservableObject, SuperLog {
     // MARK: - 项目配置
 
     /// 当前项目的供应商 ID
-    ///
-    /// 默认值不再硬编码，而是由插件注册的供应商决定：
-    /// - 如果存在至少一个供应商，使用第一个供应商的 ID
-    /// - 如果没有任何供应商，保持为空字符串，Agent 模式将无法正常运行
     @Published public fileprivate(set) var currentProviderId: String = ""
 
     /// 当前项目的模型名称
@@ -64,10 +60,8 @@ final class ProjectVM: ObservableObject, SuperLog {
     private let contextService: ContextService
     private let providerRegistry: ProviderRegistry?
 
-    private enum GlobalConfigKeys {
-        static let providerId = "Agent_GlobalProviderId"
-        static let model = "Agent_GlobalModel"
-    }
+    private static let globalConfigProviderIdKey = "Agent_GlobalProviderId"
+    private static let globalConfigModelKey = "Agent_GlobalModel"
 
     init(
         contextService: ContextService = ContextService(),
@@ -128,7 +122,7 @@ final class ProjectVM: ObservableObject, SuperLog {
     }
 
     /// 设置当前项目信息
-    func setCurrentProjectInfo(name: String, path: String, selected: Bool) {
+    private func setCurrentProjectInfo(name: String, path: String, selected: Bool) {
         Task { @MainActor in
             self.currentProjectName = name
             self.currentProjectPath = path
@@ -137,27 +131,19 @@ final class ProjectVM: ObservableObject, SuperLog {
     }
 
     /// 应用项目配置
-    func applyProjectConfig(_ config: ProjectConfig) {
+    private func applyProjectConfig(_ config: ProjectConfig) {
         Task { @MainActor in
             // 更新当前项目配置
             self.currentProviderId = config.providerId
             self.currentModel = config.model.isEmpty ? self.getDefaultModel(for: config.providerId) : config.model
 
             // 通知供应商设置更新配置
-            NotificationCenter.default.post(
-                name: NSNotification.Name("ProjectConfigApplied"),
-                object: config
-            )
+            NotificationCenter.postProjectConfigApplied(config)
 
             if Self.verbose {
                 AppLogger.core.info("\(Self.t)⚙️ 已应用项目配置：\(config.providerId) / \(self.currentModel)")
             }
         }
-    }
-
-    /// 获取项目配置
-    func getProjectConfig(for path: String) -> ProjectConfig {
-        ProjectConfigStore.shared.getOrCreateConfig(for: path)
     }
 
     /// 保存项目配置
@@ -190,7 +176,7 @@ final class ProjectVM: ObservableObject, SuperLog {
 
         // 兜底：本地扫描插件（用于 Preview / 测试等环境）
         let registry = ProviderRegistry()
-        LLMPluginsVM.registerAllProviders(to: registry)
+        LLMPluginProviderRegistration.registerAllProviders(to: registry)
         guard let providerType = registry.providerType(forId: providerId) else {
             return ""
         }
@@ -215,7 +201,7 @@ final class ProjectVM: ObservableObject, SuperLog {
 
         // 兜底：本地扫描插件（用于 Preview / 测试等环境）
         let registry = ProviderRegistry()
-        LLMPluginsVM.registerAllProviders(to: registry)
+        LLMPluginProviderRegistration.registerAllProviders(to: registry)
         if let firstType = registry.providerTypes.first {
             currentProviderId = firstType.id
             currentModel = firstType.defaultModel
@@ -228,8 +214,8 @@ final class ProjectVM: ObservableObject, SuperLog {
         guard currentProviderId.isEmpty, currentModel.isEmpty else { return }
 
         // 尝试读取全局配置
-        let globalProviderId = PluginStateStore.shared.string(forKey: GlobalConfigKeys.providerId)
-        let globalModel = PluginStateStore.shared.string(forKey: GlobalConfigKeys.model)
+        let globalProviderId = PluginStateStore.shared.string(forKey: Self.globalConfigProviderIdKey)
+        let globalModel = PluginStateStore.shared.string(forKey: Self.globalConfigModelKey)
 
         if let pid = globalProviderId, !pid.isEmpty,
            let model = globalModel, !model.isEmpty {
@@ -245,13 +231,13 @@ final class ProjectVM: ObservableObject, SuperLog {
     /// 在未选择项目时，保存全局供应商 ID
     func setGlobalProviderId(_ providerId: String) {
         currentProviderId = providerId
-        PluginStateStore.shared.set(providerId, forKey: GlobalConfigKeys.providerId)
+        PluginStateStore.shared.set(providerId, forKey: Self.globalConfigProviderIdKey)
     }
 
     /// 在未选择项目时，保存全局模型名称
     func setGlobalModel(_ model: String) {
         currentModel = model
-        PluginStateStore.shared.set(model, forKey: GlobalConfigKeys.model)
+        PluginStateStore.shared.set(model, forKey: Self.globalConfigModelKey)
     }
 
     /// 保存最近使用的项目
@@ -396,7 +382,7 @@ final class ProjectVM: ObservableObject, SuperLog {
         isFileSelected = selected
 
         // 发送文件选择变化通知
-        NotificationCenter.default.post(name: NSNotification.Name("AgentVMFileSelectionChanged"), object: nil)
+        NotificationCenter.postFileSelectionChanged()
     }
 
     /// 设置文件内容
@@ -445,13 +431,6 @@ final class ProjectVM: ObservableObject, SuperLog {
             self.chatMode = mode
             PluginStateStore.shared.set(self.chatMode.rawValue, forKey: "Agent_ChatMode")
         }
-    }
-
-    // MARK: - 自动批准风险
-
-    /// 加载自动批准风险设置（持久化由插件负责）
-    private func loadAutoApproveRisk() {
-        // no-op
     }
 
     func setAutoApproveRisk(_ enabled: Bool) {

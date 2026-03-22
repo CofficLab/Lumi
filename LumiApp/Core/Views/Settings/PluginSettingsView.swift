@@ -3,7 +3,7 @@ import SwiftUI
 /// 插件设置视图：控制各个插件的启用/禁用状态
 struct PluginSettingsView: View {
     /// 插件设置存储
-    private let settingsStore = PluginSettingsStore.shared
+    private let settingsStore = PluginSettingsVM.shared
 
     /// 插件 VM
     @EnvironmentObject var pluginProvider: PluginVM

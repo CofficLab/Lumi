@@ -18,7 +18,7 @@ import os
 public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.mlx")
     nonisolated public static let emoji = "💻"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
     public static var logEmoji: String { emoji }
 
     // MARK: - Provider Info
@@ -217,14 +217,14 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
             switch chunk {
             case .text(let s):
                 accumulatedContent.append(s)
-                await onChunk(StreamChunk(content: s, eventType: .textDelta))
+                await onChunk(StreamChunk(content: s, eventType: .textDelta, rawStreamPayload: s))
             case .toolCall(let tc):
                 let coreTc = ToolCall(id: tc.id, name: tc.name, arguments: tc.arguments)
                 accumulatedToolCalls.append(coreTc)
-                await onChunk(StreamChunk(toolCalls: [coreTc]))
+                await onChunk(StreamChunk(toolCalls: [coreTc], rawStreamPayload: tc.arguments))
             case .error(let err):
                 streamError = err
-                await onChunk(StreamChunk(error: err))
+                await onChunk(StreamChunk(error: err, rawStreamPayload: err))
             }
         }
         if let err = streamError {

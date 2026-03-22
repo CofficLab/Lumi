@@ -15,14 +15,14 @@ struct InputAreaView: View, SuperLog {
     /// 是否输出详细日志
     nonisolated static let verbose = true
 
-    /// 智能体提供者
-    @EnvironmentObject var agentProvider: AgentVM
+    /// 待发送附件
+    @EnvironmentObject private var agentAttachmentsVM: AttachmentsVM
+
+    /// 入队器：只负责把输入入队
+    @EnvironmentObject private var inputQueueVM: InputQueueVM
 
     /// 会话管理 ViewModel
     @EnvironmentObject var ConversationVM: ConversationVM
-
-    /// 处理状态 ViewModel
-    @EnvironmentObject var processingStateViewModel: ProcessingStateVM
 
     /// 命令建议 ViewModel
     @EnvironmentObject var commandSuggestionViewModel: CommandSuggestionVM
@@ -47,11 +47,11 @@ struct InputAreaView: View, SuperLog {
     var body: some View {
         VStack(spacing: 8) {
             // 附件预览区域
-            if !agentProvider.pendingAttachments.isEmpty {
+            if !agentAttachmentsVM.pendingAttachments.isEmpty {
                 AttachmentPreviewView(
-                    attachments: agentProvider.pendingAttachments,
+                    attachments: agentAttachmentsVM.pendingAttachments,
                     onRemove: { id in
-                        agentProvider.removeAttachment(id: id)
+                        agentAttachmentsVM.removeAttachment(id: id)
                     }
                 )
             }
@@ -64,7 +64,7 @@ struct InputAreaView: View, SuperLog {
                     guard canChat else { return }
                     let text = inputViewModel.text
                     inputViewModel.clear()
-                    agentProvider.sendMessage(input: text)
+                    inputQueueVM.enqueueText(text)
                     // 发送后重置高度
                     editorHeight = MacEditorView.minHeight
                 },
@@ -87,7 +87,7 @@ struct InputAreaView: View, SuperLog {
                     } else {
                         let text = inputViewModel.text
                         inputViewModel.clear()
-                        agentProvider.sendMessage(input: text)
+                        inputQueueVM.enqueueText(text)
                         // 发送后重置高度
                         editorHeight = MacEditorView.minHeight
                     }
@@ -121,10 +121,7 @@ struct InputAreaView: View, SuperLog {
         }
         .background(.background)
         .cornerRadius(12)
-        .overlay(
-            // 动态边框 - 处理中时显示动画边框
-            processingBorderOverlay
-        )
+        .overlay(inputAreaBorderOverlay)
         .overlay {
             if !canChat {
                 ZStack {
@@ -168,21 +165,9 @@ struct InputAreaView: View, SuperLog {
 // MARK: - View
 
 extension InputAreaView {
-    /// 处理中的动态边框叠加层
-    @ViewBuilder
-    private var processingBorderOverlay: some View {
-        if processingStateViewModel.isProcessing {
-            // 暂时禁用无限动画边框，避免持续触发渲染事务
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(
-                    Color.blue.opacity(0.35),
-                    lineWidth: 2
-                )
-        } else {
-            // 默认静态边框
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.black.opacity(0.1), lineWidth: 1)
-        }
+    private var inputAreaBorderOverlay: some View {
+        RoundedRectangle(cornerRadius: 12)
+            .stroke(Color.black.opacity(0.1), lineWidth: 1)
     }
 }
 
@@ -202,7 +187,7 @@ extension InputAreaView {
 
         if imageExtensions.contains(fileExtension) {
             // 图片文件：作为附件上传
-            agentProvider.handleImageUpload(url: fileURL)
+            agentAttachmentsVM.handleImageUpload(url: fileURL)
         } else {
             // 非图片文件：将文件路径插入到输入框
             // 使用 append 方法自动处理空格和光标位置

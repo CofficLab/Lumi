@@ -1,47 +1,28 @@
 import Combine
 import Foundation
-import SwiftUI
 import MagicKit
-
-struct CommandSuggestion: Identifiable, Equatable {
-    let id = UUID()
-    let command: String
-    let description: String
-    let category: String
-}
+import SwiftUI
 
 /// 命令建议视图模型 - 提供斜杠命令自动补全功能
 @MainActor
 class CommandSuggestionVM: ObservableObject, SuperLog {
     nonisolated static let verbose = true
     nonisolated static let emoji = "🔍"
-    
+
     @Published private(set) var suggestions: [CommandSuggestion] = []
     @Published private(set) var isVisible: Bool = false
     @Published private(set) var selectedIndex: Int = 0
 
     /// Slash 命令服务引用（弱引用避免循环）
     weak var slashCommandService: SlashCommandService?
-    
+
     /// 静态命令
-    private let staticCommands: [CommandSuggestion] = [
-        CommandSuggestion(command: "/clear", description: "Clear chat history", category: "System"),
-        CommandSuggestion(command: "/help", description: "Show all available commands", category: "System"),
-        CommandSuggestion(command: "/plan", description: "Generate implementation plan", category: "Productivity"),
-        CommandSuggestion(command: "/mcp list", description: "List connected MCP servers", category: "MCP"),
-        CommandSuggestion(command: "/mcp install vision", description: "Install Vision MCP Server", category: "MCP"),
-        CommandSuggestion(command: "/commands", description: "List all available commands", category: "System"),
-    ]
+    private let staticCommands: [CommandSuggestion] = CommandSuggestion.staticCommands
 
     init(slashCommandService: SlashCommandService? = nil) {
         self.slashCommandService = slashCommandService
         // 初始显示静态命令
         self.suggestions = staticCommands
-    }
-    
-    /// 设置 Slash 命令服务
-    func setSlashCommandService(_ service: SlashCommandService) {
-        self.slashCommandService = service
     }
 
     // MARK: - Set Methods

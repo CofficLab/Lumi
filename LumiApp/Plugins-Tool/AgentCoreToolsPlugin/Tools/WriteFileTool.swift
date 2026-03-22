@@ -29,9 +29,8 @@ struct WriteFileTool: AgentTool, SuperLog {
         ]
     }
 
-    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel? {
-        // 写文件始终视为高风险操作，需要用户批准。
-        return .high
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+        .high
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {

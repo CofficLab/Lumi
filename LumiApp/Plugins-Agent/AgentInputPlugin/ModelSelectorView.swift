@@ -13,8 +13,7 @@ struct ModelSelectorView: View, SuperLog {
     /// 环境对象：用于关闭当前视图
     @Environment(\.dismiss) private var dismiss
 
-    /// 智能体提供者
-    @EnvironmentObject var agentProvider: AgentVM
+    @EnvironmentObject var agentSessionConfig: AgentSessionConfig
 
     /// 模型性能统计
     @State private var detailedStats: [String: ModelPerformanceStats] = [:]
@@ -26,11 +25,11 @@ struct ModelSelectorView: View, SuperLog {
     @State private var localModelInfosByProvider: [String: [LocalModelInfo]] = [:]
 
     private var localProviders: [ProviderInfo] {
-        agentProvider.registry.allProviders().filter(\.isLocal)
+        agentSessionConfig.registry.allProviders().filter(\.isLocal)
     }
 
     private var remoteProviders: [ProviderInfo] {
-        agentProvider.registry.allProviders().filter { !$0.isLocal }
+        agentSessionConfig.registry.allProviders().filter { !$0.isLocal }
     }
 
     var body: some View {
@@ -190,8 +189,8 @@ extension ModelSelectorView {
     ///   - model: 模型名称
     private func selectModel(providerId: String, model: String) {
         // 设置供应商和模型（会自动保存到项目配置）
-        agentProvider.setSelectedProviderId(providerId)
-        agentProvider.setSelectedModel(model)
+        agentSessionConfig.setSelectedProviderId(providerId)
+        agentSessionConfig.setSelectedModel(model)
 
         dismiss()
     }
@@ -206,7 +205,7 @@ extension ModelSelectorView {
     ///   - model: 模型名称
     /// - Returns: 是否为当前选中的模型
     private func isSelected(providerId: String, model: String) -> Bool {
-        return agentProvider.selectedProviderId == providerId && agentProvider.currentModel == model
+        return agentSessionConfig.selectedProviderId == providerId && agentSessionConfig.currentModel == model
     }
 
     /// 检查模型是否为供应商的默认模型
@@ -215,7 +214,7 @@ extension ModelSelectorView {
     ///   - model: 模型名称
     /// - Returns: 是否为默认模型
     private func isDefaultModel(providerId: String, model: String) -> Bool {
-        guard let providerType = agentProvider.registry.providerType(forId: providerId) else {
+        guard let providerType = agentSessionConfig.registry.providerType(forId: providerId) else {
             return false
         }
         return model == providerType.defaultModel
@@ -223,7 +222,7 @@ extension ModelSelectorView {
 
     /// 加载性能统计数据
     private func loadLatencyStats() {
-        detailedStats = agentProvider.chatHistoryService.getModelDetailedStats()
+        detailedStats = agentSessionConfig.chatHistoryService.getModelDetailedStats()
         if Self.verbose {
             AgentInputPlugin.logger.info("\(Self.t)📊 加载到 \(detailedStats.count) 个模型的性能统计")
         }
@@ -231,7 +230,7 @@ extension ModelSelectorView {
 
     /// 加载本地供应商的模型详情（含系列），用于按系列展示
     private func loadLocalModelInfos() async {
-        let registry = agentProvider.registry
+        let registry = agentSessionConfig.registry
         let localIds = registry.allProviders().filter(\.isLocal).map(\.id)
         var result: [String: [LocalModelInfo]] = [:]
         for id in localIds {

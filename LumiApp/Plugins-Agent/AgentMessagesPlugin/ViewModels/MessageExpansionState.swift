@@ -29,9 +29,11 @@ final class MessageExpansionState: ObservableObject {
     }
 
     /// 切换消息的展开状态
-    /// - Parameter id: 消息 ID
-    func toggleExpansion(id: UUID) {
-        let current = isExpanded(id: id)
+    /// - Parameters:
+    ///   - id: 消息 ID
+    ///   - defaultExpanded: 必须与 `isExpanded(id:defaultExpanded:)` 一致；默认折叠的长消息应传 `false`，否则首次点击会把 `nil` 当成 `true` 而写成 `false`，表现为要点两次才展开。
+    func toggleExpansion(id: UUID, defaultExpanded: Bool = true) {
+        let current = isExpanded(id: id, defaultExpanded: defaultExpanded)
         expandedStates[id] = !current
     }
 }

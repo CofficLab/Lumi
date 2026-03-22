@@ -52,7 +52,6 @@ final class PluginVM: ObservableObject, SuperLog {
     /// 已加载的插件列表
     ///
     /// 包含所有成功注册的插件实例。
-    /// 只读属性，通过 `reloadPlugins()` 触发重新加载。
     @Published private(set) var plugins: [any SuperPlugin] = []
     
     /// 插件是否已加载完成
@@ -65,7 +64,7 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// 负责持久化用户的插件配置（启用/禁用状态）。
     /// 当设置变化时，会触发 UI 更新。
-    private let settingsStore: PluginSettingsStore
+    private let settingsStore: PluginSettingsVM
     
     /// Combine 订阅集合
     ///
@@ -75,12 +74,11 @@ final class PluginVM: ObservableObject, SuperLog {
     private var sidebarViewsCache: [AnyView]?
     private var sidebarViewsCacheKey: String?
 
-    // MARK: - Middleware / Tools Cache
+    // MARK: - Tools Cache
 
-    private var cachedConversationTurnMiddlewares: [AnyConversationTurnMiddleware]?
-    private var cachedMessageSendMiddlewares: [AnyMessageSendMiddleware]?
     private var cachedAgentTools: [AgentTool]?
     private var cachedAgentToolFactories: [AnyAgentToolFactory]?
+    private var cachedSendMiddlewares: [SendMiddleware]?
     /// 初始化插件 VM
     ///
     /// - Parameters:
@@ -89,7 +87,7 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// 如果 `autoDiscover` 为 true，会立即扫描并注册所有插件。
     /// 设为 false 可以延迟加载，常用于测试场景。
-    private init(settingsStore: PluginSettingsStore = PluginSettingsStore.shared, autoDiscover: Bool = true) {
+    private init(settingsStore: PluginSettingsVM = PluginSettingsVM.shared, autoDiscover: Bool = true) {
         self.settingsStore = settingsStore
 
         if autoDiscover {
@@ -101,10 +99,9 @@ final class PluginVM: ObservableObject, SuperLog {
             .sink { [weak self] _ in
                 self?.sidebarViewsCache = nil
                 self?.sidebarViewsCacheKey = nil
-                self?.cachedConversationTurnMiddlewares = nil
-                self?.cachedMessageSendMiddlewares = nil
                 self?.cachedAgentTools = nil
                 self?.cachedAgentToolFactories = nil
+                self?.cachedSendMiddlewares = nil
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
@@ -114,61 +111,9 @@ final class PluginVM: ObservableObject, SuperLog {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleFileSelectionChanged),
-            name: NSNotification.Name("AgentVMFileSelectionChanged"),
+            name: .fileSelectionChanged,
             object: nil
         )
-    }
-
-    // MARK: - Middleware Aggregation
-
-    func getConversationTurnMiddlewares() -> [AnyConversationTurnMiddleware] {
-        if let cachedConversationTurnMiddlewares {
-            return cachedConversationTurnMiddlewares
-        }
-
-        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
-        var middlewares: [(pluginOrder: Int, m: AnyConversationTurnMiddleware)] = []
-        for plugin in enabledPlugins {
-            let pluginOrder = type(of: plugin).order
-            let ms = plugin.conversationTurnMiddlewares()
-            for m in ms {
-                middlewares.append((pluginOrder: pluginOrder, m: m))
-            }
-        }
-
-        let sorted = middlewares.sorted { a, b in
-            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
-            if a.m.order != b.m.order { return a.m.order < b.m.order }
-            return a.m.id < b.m.id
-        }.map(\.m)
-
-        cachedConversationTurnMiddlewares = sorted
-        return sorted
-    }
-
-    func getMessageSendMiddlewares() -> [AnyMessageSendMiddleware] {
-        if let cachedMessageSendMiddlewares {
-            return cachedMessageSendMiddlewares
-        }
-
-        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
-        var middlewares: [(pluginOrder: Int, m: AnyMessageSendMiddleware)] = []
-        for plugin in enabledPlugins {
-            let pluginOrder = type(of: plugin).order
-            let ms = plugin.messageSendMiddlewares()
-            for m in ms {
-                middlewares.append((pluginOrder: pluginOrder, m: m))
-            }
-        }
-
-        let sorted = middlewares.sorted { a, b in
-            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
-            if a.m.order != b.m.order { return a.m.order < b.m.order }
-            return a.m.id < b.m.id
-        }.map(\.m)
-
-        cachedMessageSendMiddlewares = sorted
-        return sorted
     }
 
     // MARK: - Agent Tools Aggregation
@@ -224,13 +169,40 @@ final class PluginVM: ObservableObject, SuperLog {
         return sorted
     }
 
+    // MARK: - Send Middleware
+
+    func getSendMiddlewares() -> [SendMiddleware] {
+        if let cachedSendMiddlewares {
+            return cachedSendMiddlewares
+        }
+
+        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
+        var items: [(pluginOrder: Int, mwOrder: Int, middleware: SendMiddleware)] = []
+
+        for plugin in enabledPlugins {
+            let pluginOrder = type(of: plugin).order
+            for m in plugin.sendMiddlewares() {
+                items.append((pluginOrder: pluginOrder, mwOrder: m.order, middleware: m))
+            }
+        }
+
+        let sorted = items.sorted { a, b in
+            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
+            if a.mwOrder != b.mwOrder { return a.mwOrder < b.mwOrder }
+            return a.middleware.id < b.middleware.id
+        }.map(\.middleware)
+
+        cachedSendMiddlewares = sorted
+        return sorted
+    }
+
     /// 析构函数，清理资源
     ///
     /// 移除所有 NotificationCenter 观察者，防止内存泄漏。
     deinit {
         NotificationCenter.default.removeObserver(
             self,
-            name: NSNotification.Name("AgentVMFileSelectionChanged"),
+            name: .fileSelectionChanged,
             object: nil
         )
     }
@@ -263,10 +235,11 @@ final class PluginVM: ObservableObject, SuperLog {
     /// 扫描完成后会发送 `PluginsDidLoad` 通知。
     private func autoDiscoverAndRegisterPlugins() {
         // 插件列表将被重建，相关缓存一并清空
-        cachedConversationTurnMiddlewares = nil
-        cachedMessageSendMiddlewares = nil
         sidebarViewsCache = nil
         sidebarViewsCacheKey = nil
+        cachedAgentTools = nil
+        cachedAgentToolFactories = nil
+        cachedSendMiddlewares = nil
 
         var count: UInt32 = 0
         guard let classList = objc_copyClassList(&count) else { return }
@@ -306,9 +279,10 @@ final class PluginVM: ObservableObject, SuperLog {
         self.plugins = sortedPlugins
         self.isLoaded = true
 
-        // 插件已更新，清空聚合缓存，避免 middleware 在插件加载前被读取后永久缓存为空。
-        cachedConversationTurnMiddlewares = nil
-        cachedMessageSendMiddlewares = nil
+        // 插件已更新，清空聚合缓存，避免在插件加载前被读取后永久缓存为空。
+        cachedAgentTools = nil
+        cachedAgentToolFactories = nil
+        cachedSendMiddlewares = nil
 
         // 调用生命周期钩子
         for plugin in sortedPlugins {
@@ -320,10 +294,7 @@ final class PluginVM: ObservableObject, SuperLog {
         }
         
         // 发送通知，告知其他组件插件加载完成
-        NotificationCenter.default.post(
-            name: NSNotification.Name("PluginsDidLoad"),
-            object: self
-        )
+        NotificationCenter.postPluginsDidLoad()
         
         if Self.verbose {
             AppLogger.core.info("\(self.t)✅ Auto-discovery complete. Loaded \(sortedPlugins.count) plugins.")
@@ -606,20 +577,6 @@ final class PluginVM: ObservableObject, SuperLog {
     /// - Returns: 导航入口数组
     func getNavigationEntries(for mode: AppMode) -> [NavigationEntry] {
         getNavigationEntries().filter { $0.mode == mode }
-    }
-
-    /// 重新加载插件
-    ///
-    /// 清空当前插件列表并重新执行自动发现和注册流程。
-    /// 用于：
-    /// - 添加新插件后刷新
-    /// - 插件发生崩溃后恢复
-    /// - 调试时强制重新加载
-    func reloadPlugins() {
-        isLoaded = false
-        sidebarViewsCache = nil
-        sidebarViewsCacheKey = nil
-        autoDiscoverAndRegisterPlugins()
     }
 }
 

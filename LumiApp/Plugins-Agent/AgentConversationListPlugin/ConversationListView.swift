@@ -130,7 +130,6 @@ extension ConversationListView {
             if conversations.first(where: { $0.id == selectedId }) != nil {
                 if localSelectedConversationId != selectedId {
                     localSelectedConversationId = selectedId
-                    ConversationListPlugin.logger.info("\(self.t)✅ [\(selectedId)] 同步 VM 选中状态到 List")
                 }
             } else {
                 // 选中的会话不存在于列表中，清除选择
@@ -366,7 +365,9 @@ extension ConversationListView {
             }
 
             if self.conversations.first(where: { $0.id == conversationId }) != nil {
-                ConversationListPlugin.logger.info("\(self.t)👉 同步 VM 选择到 List: \(conversationId)")
+                if Self.verbose {
+                    ConversationListPlugin.logger.info("\(self.t)👉 同步 VM 选择到 List: \(conversationId)")
+                }
                 self.localSelectedConversationId = conversationId
                 lastReloadSelectionId = nil
             }

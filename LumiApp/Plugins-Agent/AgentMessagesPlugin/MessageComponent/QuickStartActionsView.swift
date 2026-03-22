@@ -7,7 +7,9 @@ struct QuickStartActionsView: View {
     }
 
     @EnvironmentObject private var app: GlobalVM
-    @EnvironmentObject private var agentProvider: AgentVM
+    @EnvironmentObject private var inputQueueVM: InputQueueVM
+    @EnvironmentObject private var conversationCreationVM: ConversationCreationVM
+    @EnvironmentObject private var projectVM: ProjectVM
 
     let sendStrategy: SendStrategy
 
@@ -39,9 +41,9 @@ struct QuickStartActionsView: View {
             ]
         }
 
-        switch agentProvider.chatMode {
+        switch projectVM.chatMode {
         case .chat:
-            if agentProvider.isProjectSelected {
+            if projectVM.isProjectSelected {
                 let projectName = normalizedProjectName
                 return [
                     "先帮我总结\(projectName)当前最值得关注的问题",
@@ -57,7 +59,7 @@ struct QuickStartActionsView: View {
             ]
 
         case .build:
-            if agentProvider.isProjectSelected {
+            if projectVM.isProjectSelected {
                 let projectName = normalizedProjectName
                 return [
                     "先为\(projectName)做一次代码结构扫描并给重构优先级",
@@ -75,7 +77,7 @@ struct QuickStartActionsView: View {
     }
 
     private var normalizedProjectName: String {
-        let name = agentProvider.currentProjectName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let name = projectVM.currentProjectName.trimmingCharacters(in: .whitespacesAndNewlines)
         return name.isEmpty ? "当前项目" : name
     }
 
@@ -83,13 +85,13 @@ struct QuickStartActionsView: View {
         switch sendStrategy {
         case .createConversationAndSend:
             Task {
-                await agentProvider.createNewConversation()
+                await conversationCreationVM.createNewConversation()
                 await MainActor.run {
-                    agentProvider.sendMessage(input: prompt)
+                    inputQueueVM.enqueueText(prompt)
                 }
             }
         case .sendInCurrentConversation:
-            agentProvider.sendMessage(input: prompt)
+            inputQueueVM.enqueueText(prompt)
         }
     }
 }

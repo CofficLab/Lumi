@@ -1,6 +1,11 @@
 import SwiftUI
 
-// MARK: - Settings Window Identifier
+// MARK: - Window Identifiers
+
+/// 主内容窗口标识（单窗口模式）
+enum MainWindowID {
+    static let main = "main"
+}
 
 /// 设置窗口的标识符常量
 enum SettingsWindowID {

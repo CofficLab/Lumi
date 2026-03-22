@@ -123,7 +123,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     @MainActor
     private func setupPluginObservers() {
         pluginsDidLoadObserver = NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("PluginsDidLoad"),
+            forName: .pluginsDidLoad,
             object: nil,
             queue: .main
         ) { [weak self] _ in
@@ -292,20 +292,13 @@ class ToolService: SuperLog, @unchecked Sendable {
     ///   - arguments: 参数字典
     /// - Returns: 是否需要权限
     func requiresPermission(toolName: String, arguments: [String: Any]?) -> Bool {
-        // 完全由具体工具自己决定风险等级与是否需要用户批准
-        if let tool = tool(named: toolName) {
-            let rawArgs = arguments ?? [:]
-            let toolArgs = rawArgs.mapValues { ToolArgument($0) }
-            if let risk = tool.permissionRiskLevel(arguments: toolArgs) {
-                return risk.requiresPermission
-            }
-        }
-
-        // 如果工具未声明风险，则视为不需要权限
-        return false
+        guard let tool = tool(named: toolName) else { return false }
+        let rawArgs = arguments ?? [:]
+        let toolArgs = rawArgs.mapValues { ToolArgument($0) }
+        return tool.permissionRiskLevel(arguments: toolArgs).requiresPermission
     }
 
-    /// 获取工具定义声明的风险等级（如果有）。
+    /// 获取工具定义声明的风险等级；工具未注册时返回 `nil`。
     func declaredRiskLevel(toolName: String, arguments: [String: Any]?) -> CommandRiskLevel? {
         guard let tool = tool(named: toolName) else { return nil }
         let rawArgs = arguments ?? [:]

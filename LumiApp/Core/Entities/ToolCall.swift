@@ -45,4 +45,43 @@ struct ToolCall: Codable, Sendable, Equatable {
     /// 工具执行所需的参数，以 JSON 格式编码。
     /// 需要解析为对应工具的参数类型。
     let arguments: String
+
+    /// 本调用的授权状态（与模型 API 无关，仅本地持久化与 UI）
+    var authorizationState: ToolCallAuthorizationState
+
+    init(
+        id: String,
+        name: String,
+        arguments: String,
+        authorizationState: ToolCallAuthorizationState = .pendingAuthorization
+    ) {
+        self.id = id
+        self.name = name
+        self.arguments = arguments
+        self.authorizationState = authorizationState
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, arguments, authorizationState
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        arguments = try c.decode(String.self, forKey: .arguments)
+        authorizationState =
+            try c.decodeIfPresent(ToolCallAuthorizationState.self, forKey: .authorizationState)
+            ?? .pendingAuthorization
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(name, forKey: .name)
+        try c.encode(arguments, forKey: .arguments)
+        if authorizationState != .pendingAuthorization {
+            try c.encode(authorizationState, forKey: .authorizationState)
+        }
+    }
 }

@@ -4,27 +4,6 @@ import SwiftData
 import SwiftUI
 
 /// 会话管理 ViewModel
-///
-/// 负责处理所有会话相关的业务逻辑：
-/// - 创建、加载、删除会话
-/// - 会话选择和状态管理
-///
-/// ## 设计说明
-///
-/// 此类只维护 `selectedConversationId`，不持有 `Conversation` 对象引用。
-/// 需要会话数据的视图应使用 `@Query` 根据 ID 自行查询。
-///
-/// ## 架构模式
-///
-/// ```
-/// ConversationVM
-/// ├── ChatHistoryService
-/// │   └── 持久化操作
-/// ├── LLMService
-/// │   └── 标题生成
-/// └── PromptService
-///     └── 欢迎消息
-/// ```
 @MainActor
 final class ConversationVM: ObservableObject, SuperLog {
     /// 日志标识符
@@ -39,16 +18,6 @@ final class ConversationVM: ObservableObject, SuperLog {
     ///
     /// 负责会话和消息的持久化操作。
     private let chatHistoryService: ChatHistoryService
-
-    /// LLM 服务（用于生成会话标题）
-    ///
-    /// 当用户发送第一条消息时，使用 AI 生成会话标题。
-    private let llmService: LLMService
-
-    /// 提示词服务（用于获取欢迎消息）
-    ///
-    /// 获取新会话的欢迎消息内容。
-    private let promptService: PromptService
 
     // MARK: - 会话状态
 
@@ -69,16 +38,10 @@ final class ConversationVM: ObservableObject, SuperLog {
     ///
     /// - Parameters:
     ///   - chatHistoryService: 聊天历史服务
-    ///   - llmService: LLM 服务
-    ///   - promptService: 提示词服务
     init(
-        chatHistoryService: ChatHistoryService,
-        llmService: LLMService,
-        promptService: PromptService
+        chatHistoryService: ChatHistoryService
     ) {
         self.chatHistoryService = chatHistoryService
-        self.llmService = llmService
-        self.promptService = promptService
 
         // 启动时如果没有任何插件恢复会话选择，这里会自动选择一个有效会话
         selfHealSelectedConversationIfNeeded()
@@ -112,7 +75,7 @@ final class ConversationVM: ObservableObject, SuperLog {
 
     /// 删除指定对话
     /// - Parameter conversation: 要删除的对话
-    /// - Note: 调用方（如 AgentVM）需要负责清理相关的消息发送队列
+    /// - Note: 调用方（如 AgentRuntime）需要负责清理相关的消息发送队列
     func deleteConversation(_ conversation: Conversation) {
         AppLogger.core.info("\(Self.t)🗑️ 开始删除对话：\(conversation.title)")
 
@@ -224,14 +187,6 @@ final class ConversationVM: ObservableObject, SuperLog {
     /// - Returns: 当前页数据
     func fetchConversationsPage(limit: Int, offset: Int) -> [Conversation] {
         chatHistoryService.fetchConversationsPage(limit: limit, offset: offset)
-    }
-
-    /// 获取项目相关的对话
-    ///
-    /// - Parameter projectId: 项目路径
-    /// - Returns: 项目相关的对话列表
-    func fetchConversations(forProject projectId: String) -> [Conversation] {
-        chatHistoryService.fetchConversations(forProject: projectId)
     }
 
     /// 根据 ID 获取会话

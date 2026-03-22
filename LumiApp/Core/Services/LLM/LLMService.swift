@@ -39,7 +39,7 @@ class LLMService: SuperLog, @unchecked Sendable {
     init() {
         let registry = ProviderRegistry()
         // 通过 LLM 插件系统自动发现并注册所有可用供应商
-        LLMPluginsVM.registerAllProviders(to: registry)
+        LLMPluginProviderRegistration.registerAllProviders(to: registry)
         self.registry = registry
         self.llmAPI = LLMAPIService()
         if Self.verbose >= 1 {
@@ -123,7 +123,7 @@ class LLMService: SuperLog, @unchecked Sendable {
                 try await Task.sleep(nanoseconds: UInt64(pollIntervalSeconds * 1_000_000_000))
             }
             if state != .ready {
-                throw NSError(domain: "LLMService", code: 500, userInfo: [NSLocalizedDescriptionKey: "加载超时，请稍后重试或到设置中查看"])
+                throw LLMServiceError.requestFailed("加载超时，请稍后重试或到设置中查看")
             }
             return
         }
@@ -131,14 +131,14 @@ class LLMService: SuperLog, @unchecked Sendable {
         do {
             try await local.loadModel(id: modelId)
         } catch {
-            throw NSError(domain: "LLMService", code: 500, userInfo: [NSLocalizedDescriptionKey: error.localizedDescription])
+            throw LLMServiceError.requestFailed(error.localizedDescription)
         }
 
         state = await local.getModelState()
         if state != .ready {
             let msg: String
             if case .error(let s) = state { msg = s } else { msg = "模型未就绪" }
-            throw NSError(domain: "LLMService", code: 500, userInfo: [NSLocalizedDescriptionKey: msg])
+            throw LLMServiceError.requestFailed(msg)
         }
     }
 
@@ -157,10 +157,8 @@ class LLMService: SuperLog, @unchecked Sendable {
     /// - Returns: AI 助手的回复消息
     ///
     /// - Throws:
-    ///   - NSError (code 401): API Key 为空
-    ///   - NSError (code 404): 供应商未找到
-    ///   - NSError (code 400): 无效的 Base URL
-    ///   - NSError (code 500): API 请求失败
+    ///   - `LLMConfigValidationError`：`config.validate()` 失败（含 API Key 为空等）
+    ///   - `LLMServiceError`：供应商未找到、Base URL 无效、API / 流式 / 本地模型相关失败
     func sendMessage(messages: [ChatMessage], config: LLMConfig, tools: [AgentTool]? = nil) async throws -> ChatMessage {
         // 记录开始时间，用于计算延迟
         let startTime = CFAbsoluteTimeGetCurrent()
@@ -168,7 +166,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         // 从注册表获取供应商实例（先取 provider，本地供应商不校验 API Key）
         guard let provider = registry.createProvider(id: config.providerId) else {
             AppLogger.core.error("\(self.t)未找到供应商：\(config.providerId)")
-            throw NSError(domain: "LLMService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Provider not found: \(config.providerId)"])
+            throw LLMServiceError.providerNotFound(providerId: config.providerId)
         }
 
         // 仅远程供应商需要校验 API Key；本地供应商无需 API Key
@@ -215,7 +213,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         AppLogger.core.info("\(self.t)构建 API URL：\(baseURLString)")
         guard let url = URL(string: baseURLString) else {
             AppLogger.core.error("\(self.t)无效的 URL: \(baseURLString)")
-            throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL: \(baseURLString)"])
+            throw LLMServiceError.invalidBaseURL(baseURLString)
         }
 
         // 构建请求体
@@ -332,12 +330,7 @@ class LLMService: SuperLog, @unchecked Sendable {
             )
 
         } catch let apiError as APIError {
-            // 转换 API 错误为 NSError，保留错误描述
-            throw NSError(
-                domain: "LLMService",
-                code: 500,
-                userInfo: [NSLocalizedDescriptionKey: apiError.localizedDescription]
-            )
+            throw LLMServiceError.requestFailed(apiError.localizedDescription)
         }
     }
 
@@ -353,7 +346,8 @@ class LLMService: SuperLog, @unchecked Sendable {
     ///   - tools: 可用工具列表
     ///   - onChunk: 收到内容片段时的回调
     /// - Returns: 完整的助手消息（包含累积的内容和工具调用）
-    /// - Throws: API 错误
+    /// - Throws: `LLMConfigValidationError`、`LLMServiceError`，或与构建请求体相关的底层错误
+    @discardableResult
     func sendStreamingMessage(
         messages: [ChatMessage],
         config: LLMConfig,
@@ -366,7 +360,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         // 从注册表获取供应商实例（先取 provider，本地供应商不校验 API Key）
         guard let provider = registry.createProvider(id: config.providerId) else {
             AppLogger.core.error("\(self.t)未找到供应商：\(config.providerId)")
-            throw NSError(domain: "LLMService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Provider not found: \(config.providerId)"])
+            throw LLMServiceError.providerNotFound(providerId: config.providerId)
         }
 
         // 仅远程供应商需要校验 API Key；本地供应商无需 API Key
@@ -414,7 +408,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         
         guard let url = URL(string: baseURLString) else {
             AppLogger.core.error("\(self.t)无效的 URL: \(baseURLString)")
-            throw NSError(domain: "LLMService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Base URL: \(baseURLString)"])
+            throw LLMServiceError.invalidBaseURL(baseURLString)
         }
 
         // 构建流式请求体
@@ -433,7 +427,7 @@ class LLMService: SuperLog, @unchecked Sendable {
 
         // 输出调试信息
         if Self.verbose >= 1 {
-            AppLogger.core.info("\(self.t)发送流式请求到 \(config.providerId): \(config.model)")
+            AppLogger.core.info("\(self.t)🚀 发送流式请求到 \(config.providerId): \(config.model)")
         }
 
         // 构建额外的请求头
@@ -446,6 +440,9 @@ class LLMService: SuperLog, @unchecked Sendable {
         actor StreamingState {
             var accumulatedContentChunks: [String] = []
             var accumulatedContentLength: Int = 0
+            /// reasoning / thinking 流分片（便于直接落库）
+            var accumulatedThinkingChunks: [String] = []
+            var accumulatedThinkingLength: Int = 0
             var accumulatedToolCalls: [ToolCall] = []
             var streamError: String?
             var currentToolCallId: String?
@@ -474,6 +471,16 @@ class LLMService: SuperLog, @unchecked Sendable {
             func appendContent(_ content: String) {
                 accumulatedContentChunks.append(content)
                 accumulatedContentLength += content.count
+            }
+
+            func appendThinking(_ content: String) {
+                guard !content.isEmpty else { return }
+                guard accumulatedThinkingLength < AgentConfig.maxThinkingTextLength else { return }
+                let remaining = AgentConfig.maxThinkingTextLength - accumulatedThinkingLength
+                let part = String(content.prefix(remaining))
+                guard !part.isEmpty else { return }
+                accumulatedThinkingChunks.append(part)
+                accumulatedThinkingLength += part.count
             }
             
             func startNewToolCall(_ toolCall: ToolCall, hasPartialJson: Bool = false) {
@@ -554,7 +561,9 @@ class LLMService: SuperLog, @unchecked Sendable {
 
                     for eventData in Self.splitSSEEvents(from: chunkData) {
                         let parseStart = CFAbsoluteTimeGetCurrent()
-                        if let chunk = try provider.parseStreamChunk(data: eventData) {
+                        if let parsed = try provider.parseStreamChunk(data: eventData) {
+                            let rawPayload = String(data: eventData, encoding: .utf8)
+                            let chunk = parsed.withRawStreamPayload(rawPayload)
                             let parseElapsed = CFAbsoluteTimeGetCurrent() - parseStart
                             if parseElapsed > parseWarnThreshold {
                                 AppLogger.core.error("\(self.t)parseStreamChunk 耗时异常: \(String(format: "%.3f", parseElapsed))s, bytes=\(eventData.count)")
@@ -565,9 +574,12 @@ class LLMService: SuperLog, @unchecked Sendable {
                                 AppLogger.core.info("\(self.t)首 token 延迟: \(ttftStr)")
                             }
 
-                            // 累积内容 - 只累积 textDelta 的内容，跳过 thinkingDelta
+                            // 累积正文：仅 textDelta；思考过程：thinkingDelta（写入 ChatMessage.thinkingContent）
                             if let content = chunk.content, chunk.eventType == .textDelta {
                                 await state.appendContent(content)
+                            }
+                            if let content = chunk.content, chunk.eventType == .thinkingDelta {
+                                await state.appendThinking(content)
                             }
 
                             // 处理工具调用
@@ -637,11 +649,7 @@ class LLMService: SuperLog, @unchecked Sendable {
                 }
             }
         } catch {
-            throw NSError(
-                domain: "LLMService",
-                code: 500,
-                userInfo: [NSLocalizedDescriptionKey: error.localizedDescription]
-            )
+            throw LLMServiceError.requestFailed(error.localizedDescription)
         }
 
         // 流式结束后，保存最后一个工具调用
@@ -649,11 +657,7 @@ class LLMService: SuperLog, @unchecked Sendable {
 
         // 检查流式过程中是否发生错误
         if let error = await state.streamError {
-            throw NSError(
-                domain: "LLMService",
-                code: 500,
-                userInfo: [NSLocalizedDescriptionKey: error]
-            )
+            throw LLMServiceError.requestFailed(error)
         }
 
         // 计算总耗时
@@ -677,6 +681,7 @@ class LLMService: SuperLog, @unchecked Sendable {
 
         // 获取最终状态
         let finalContent = await state.accumulatedContentChunks.joined()
+        let finalThinking = await state.accumulatedThinkingChunks.joined()
         let finalToolCalls = await state.accumulatedToolCalls
         let finalInputTokens = await state.inputTokens
         let finalOutputTokens = await state.outputTokens
@@ -684,7 +689,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         let finalTimeToFirstToken = await state.timeToFirstToken
 
         if Self.verbose >= 1 {
-            AppLogger.core.info("✅ 流式响应完成，总耗时：\(String(format: "%.2f", latency))ms, TTFT: \(String(format: "%.2f", finalTimeToFirstToken ?? 0))ms, 内容长度：\(finalContent.count)")
+            AppLogger.core.info("\(Self.t)✅ 流式响应完成，总耗时：\(String(format: "%.2f", latency))ms, TTFT: \(String(format: "%.2f", finalTimeToFirstToken ?? 0))ms, 内容长度：\(finalContent.count)")
         }
 
         // 计算总 token 数
@@ -708,7 +713,8 @@ class LLMService: SuperLog, @unchecked Sendable {
             timeToFirstToken: finalTimeToFirstToken,
             finishReason: finalStopReason,
             temperature: config.temperature,
-            maxTokens: config.maxTokens
+            maxTokens: config.maxTokens,
+            thinkingContent: finalThinking.isEmpty ? nil : finalThinking
         )
     }
 }

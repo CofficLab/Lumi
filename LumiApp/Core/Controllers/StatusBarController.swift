@@ -136,7 +136,7 @@ class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handlePluginsDidLoad),
-            name: NSNotification.Name("PluginsDidLoad"),
+            name: .pluginsDidLoad,
             object: nil
         )
 

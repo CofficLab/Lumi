@@ -15,15 +15,14 @@ struct GitStatusTool: AgentTool, SuperLog {
             "properties": [
                 "path": [
                     "type": "string",
-                    "description": "Git 仓库路径，默认为当前工作目录"
-                ]
-            ]
+                    "description": "Git 仓库路径，默认为当前工作目录",
+                ],
+            ],
         ]
     }
 
-    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel? {
-        // 只读操作，低风险
-        return .low
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+        .low
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
@@ -98,7 +97,7 @@ struct GitStatusTool: AgentTool, SuperLog {
         }
 
         if status.modified.isEmpty && status.added.isEmpty && status.deleted.isEmpty &&
-           status.renamed.isEmpty && status.staged.isEmpty {
+            status.renamed.isEmpty && status.staged.isEmpty {
             output += "✅ 工作区干净，无变更\n"
         }
 

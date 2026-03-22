@@ -3,7 +3,7 @@ import SwiftUI
 
 /// 新会话按钮视图组件
 struct NewChatButton: View {
-    @EnvironmentObject var agentProvider: AgentVM
+    @EnvironmentObject var conversationCreationVM: ConversationCreationVM
 
     private let iconSize: CGFloat = 14
     private let iconButtonSize: CGFloat = 28
@@ -18,7 +18,7 @@ struct NewChatButton: View {
     var body: some View {
         Button {
             Task {
-                await agentProvider.createNewConversation()
+                await conversationCreationVM.createNewConversation()
             }
         } label: {
             switch style {

@@ -3,7 +3,8 @@ import UniformTypeIdentifiers
 
 /// 项目选择器视图
 struct ProjectSelectorView: View {
-    @EnvironmentObject var agentProvider: AgentVM
+    @EnvironmentObject var ProjectVM: ProjectVM
+    @EnvironmentObject private var projectContextRequestVM: ProjectContextRequestVM
 
     @Binding var isPresented: Bool
 
@@ -104,12 +105,12 @@ struct ProjectSelectorView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(agentProvider.currentProjectName.isEmpty ? "未选择项目" : agentProvider.currentProjectName)
+                    Text(ProjectVM.currentProjectName.isEmpty ? "未选择项目" : ProjectVM.currentProjectName)
                         .font(.body)
                         .fontWeight(.medium)
                         .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
-                    Text(agentProvider.currentProjectPath.isEmpty ? "点击下方浏览选择项目" : agentProvider.currentProjectPath)
+                    Text(ProjectVM.currentProjectPath.isEmpty ? "点击下方浏览选择项目" : ProjectVM.currentProjectPath)
                         .font(.caption)
                         .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                         .lineLimit(2)
@@ -118,9 +119,9 @@ struct ProjectSelectorView: View {
                 Spacer()
 
                 // 已选择项目时显示「删除」按钮，清除后恢复到未选择状态
-                if !agentProvider.currentProjectName.isEmpty {
+                if !ProjectVM.currentProjectName.isEmpty {
                     Button(action: {
-                        agentProvider.clearCurrentProject()
+                        projectContextRequestVM.request = .clearProject
                         isPresented = false
                     }) {
                         Image(systemName: "xmark.circle.fill")
@@ -235,7 +236,7 @@ struct ProjectSelectorView: View {
 
     private func selectProject(_ project: RecentProject) {
         Task { @MainActor in
-            agentProvider.switchProjectWithPrompt(to: project.path)
+            projectContextRequestVM.request = .switchProject(path: project.path)
             isPresented = false
         }
     }
@@ -257,7 +258,7 @@ struct ProjectSelectorView: View {
 
                 let path = url.path
                 Task { @MainActor in
-                    agentProvider.switchProjectWithPrompt(to: path)
+                    projectContextRequestVM.request = .switchProject(path: path)
                     isPresented = false
                     loadRecentProjects()
                 }
@@ -272,10 +273,10 @@ struct ProjectSelectorView: View {
     }
 
     private func loadRecentProjects() {
-        recentProjects = Array(agentProvider.getRecentProjects()
+        recentProjects = Array(ProjectVM.getRecentProjects()
             .prefix(maxRecentProjects)
             .filter { project in
-                project.path != agentProvider.currentProjectPath
+                project.path != ProjectVM.currentProjectPath
             })
     }
 

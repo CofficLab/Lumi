@@ -18,6 +18,10 @@ struct GitHubCLICheckTool: AgentTool, SuperLog {
         ]
     }
 
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+        .low
+    }
+
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         if Self.verbose {
             GitHubCLIDetectPlugin.logger.info("\(Self.t)检测 GitHub CLI 安装状态")

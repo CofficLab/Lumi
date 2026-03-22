@@ -26,6 +26,10 @@ struct GitHubTrendingTool: AgentTool, SuperLog {
         ]
     }
 
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+        .low
+    }
+
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         let since = arguments["since"]?.value as? String ?? "daily"
         let limit = arguments["limit"]?.value as? Int ?? 10

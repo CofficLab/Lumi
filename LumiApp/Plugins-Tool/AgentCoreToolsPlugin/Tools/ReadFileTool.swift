@@ -25,6 +25,10 @@ struct ReadFileTool: AgentTool, SuperLog {
         ]
     }
 
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+        .low
+    }
+
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let path = arguments["path"]?.value as? String else {
             throw NSError(

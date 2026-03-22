@@ -8,12 +8,20 @@ struct ChatToolbarView: View, SuperLog {
     /// 是否输出详细日志
     nonisolated static let verbose = false
 
-    /// 智能体提供者
-    @EnvironmentObject var agentProvider: AgentVM
+    @EnvironmentObject var conversationTurnServices: ConversationTurnServices
+    @EnvironmentObject var agentSessionConfig: AgentSessionConfig
     @EnvironmentObject var ProjectVM: ProjectVM
+    @EnvironmentObject var ConversationVM: ConversationVM
+    @EnvironmentObject var agentTaskCancellationVM: TaskCancellationVM
 
-    /// 处理状态 ViewModel
-    @EnvironmentObject var processingStateViewModel: ProcessingStateVM
+    /// 待发送附件
+    @EnvironmentObject private var agentAttachmentsVM: AttachmentsVM
+
+    /// 入队器：只负责把输入入队到发送队列
+    @EnvironmentObject private var inputQueueVM: InputQueueVM
+
+    /// 发送链路瞬时状态（有状态文案时表示正在处理，显示「停止」）
+    @EnvironmentObject private var conversationSendStatusVM: ConversationSendStatusVM
 
     /// 输入框本地状态 ViewModel
     @ObservedObject var inputViewModel: InputViewModel
@@ -33,7 +41,7 @@ struct ChatToolbarView: View, SuperLog {
             imageUploadButton
 
             // Commit 按钮组（仅在选择项目时显示）
-            if agentProvider.isProjectSelected {
+            if ProjectVM.isProjectSelected {
                 commitButtons
             }
 
@@ -50,12 +58,18 @@ struct ChatToolbarView: View, SuperLog {
 // MARK: - View
 
 extension ChatToolbarView {
+    /// 当前会话是否处于 `RootView+Send` 等写入的发送状态中（用于发送/停止切换）。
+    private var isSendPipelineActive: Bool {
+        guard let id = ConversationVM.selectedConversationId else { return false }
+        return conversationSendStatusVM.statusMessage(for: id) != nil
+    }
+
     /// Commit 按钮组视图
     @ViewBuilder
     private var commitButtons: some View {
         HStack(spacing: 6) {
             // 从 PromptService 获取快捷短语
-            let phrases = agentProvider.promptService.getQuickPhrases(
+            let phrases = conversationTurnServices.promptService.getQuickPhrases(
                 projectName: ProjectVM.currentProjectName,
                 projectPath: ProjectVM.currentProjectPath
             )
@@ -83,10 +97,12 @@ extension ChatToolbarView {
     /// 发送/停止按钮视图
     @ViewBuilder
     private var actionButton: some View {
-        if processingStateViewModel.isProcessing {
+        if isSendPipelineActive {
             // 停止按钮 - 在处理中显示（仅图标）
             Button(action: {
-                agentProvider.cancelCurrentTask()
+                if let conversationId = ConversationVM.selectedConversationId {
+                    agentTaskCancellationVM.requestCancel(conversationId: conversationId)
+                }
             }) {
                 Image(systemName: "stop.fill")
                     .font(.system(size: 14))
@@ -105,17 +121,17 @@ extension ChatToolbarView {
             Button(action: {
                 let text = inputViewModel.text
                 inputViewModel.clear()
-                agentProvider.sendMessage(input: text)
+                inputQueueVM.enqueueText(text)
             }) {
                 Image(systemName: "paperplane.fill")
                     .font(.system(size: 14))
                     .foregroundColor(.white)
                     .frame(width: 28, height: 28)
-                    .background(inputViewModel.isEmpty || !agentProvider.isProjectSelected ? Color.gray.opacity(0.5) : Color.accentColor)
+                    .background((inputViewModel.isEmpty && agentAttachmentsVM.pendingAttachments.isEmpty) || !ProjectVM.isProjectSelected ? Color.gray.opacity(0.5) : Color.accentColor)
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
-            .disabled(inputViewModel.isEmpty || !agentProvider.isProjectSelected)
+            .disabled((inputViewModel.isEmpty && agentAttachmentsVM.pendingAttachments.isEmpty) || !ProjectVM.isProjectSelected)
             .help("发送消息")
             .keyboardShortcut(.return, modifiers: [.command])
             .accessibilityLabel("发送消息")
@@ -138,7 +154,7 @@ extension ChatToolbarView {
                         Text("- \(mode.description)")
                             .foregroundColor(.secondary)
                             .font(.caption)
-                        if agentProvider.chatMode == mode {
+                        if ProjectVM.chatMode == mode {
                             Image(systemName: "checkmark")
                         }
                     }
@@ -146,9 +162,9 @@ extension ChatToolbarView {
             }
         } label: {
             HStack(spacing: 4) {
-                Image(systemName: agentProvider.chatMode.iconName)
+                Image(systemName: ProjectVM.chatMode.iconName)
                     .font(.system(size: 14))
-                Text(agentProvider.chatMode.displayName)
+                Text(ProjectVM.chatMode.displayName)
                     .font(.system(size: 12))
                     .fontWeight(.medium)
                 Image(systemName: "chevron.up")
@@ -170,7 +186,7 @@ extension ChatToolbarView {
 
     /// 根据当前模式返回前景色
     private var modeForegroundColor: Color {
-        switch agentProvider.chatMode {
+        switch ProjectVM.chatMode {
         case .chat:
             return Color.orange
         case .build:
@@ -180,7 +196,7 @@ extension ChatToolbarView {
 
     /// 根据当前模式返回背景色
     private var modeBackgroundColor: Color {
-        switch agentProvider.chatMode {
+        switch ProjectVM.chatMode {
         case .chat:
             return Color.orange.opacity(0.1)
         case .build:
@@ -190,7 +206,7 @@ extension ChatToolbarView {
 
     /// 根据当前模式返回帮助文本
     private var modeHelpText: String {
-        switch agentProvider.chatMode {
+        switch ProjectVM.chatMode {
         case .chat:
             return "对话模式：只聊天，不执行任何操作"
         case .build:
@@ -227,15 +243,15 @@ extension ChatToolbarView {
 
     /// 当前显示的「供应商 + 模型」文案
     private var currentModelDisplayText: String {
-        let model = agentProvider.currentModel
+        let model = agentSessionConfig.currentModel
         guard !model.isEmpty else {
             return "未选择模型"
         }
-        guard let providerType = agentProvider.registry.providerType(forId: agentProvider.selectedProviderId) else {
+        guard let providerType = agentSessionConfig.registry.providerType(forId: agentSessionConfig.selectedProviderId) else {
             return model
         }
         let modelLabel: String
-        if let localProvider = agentProvider.registry.createProvider(id: agentProvider.selectedProviderId) as? any SuperLocalLLMProvider,
+        if let localProvider = agentSessionConfig.registry.createProvider(id: agentSessionConfig.selectedProviderId) as? any SuperLocalLLMProvider,
            let name = localProvider.displayName(forModelId: model) {
             modelLabel = name
         } else {
@@ -306,7 +322,7 @@ extension ChatToolbarView {
 
         panel.begin { response in
             if response == .OK, let url = panel.url {
-                agentProvider.handleImageUpload(url: url)
+                agentAttachmentsVM.handleImageUpload(url: url)
             }
         }
     }

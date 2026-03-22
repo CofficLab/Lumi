@@ -10,18 +10,11 @@ struct ChatMessagesView: View {
         Group {
             if ConversationVM.selectedConversationId != nil {
                 MessageListView()
-                    .overlay(alignment: .top) {
-                        VStack(spacing: 8) {
-                            DepthWarningBanner()
-                            PermissionRequestView()
-                        }
-                        .padding()
-                    }
             } else {
                 EmptyStateView()
             }
         }
-        .background(.background.opacity(0.8))
+        .background(.background.opacity(0.6))
         .accessibilityElement(children: .contain)
         .accessibilityLabel("聊天消息区域")
     }

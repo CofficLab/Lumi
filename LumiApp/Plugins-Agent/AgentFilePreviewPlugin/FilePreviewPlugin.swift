@@ -55,7 +55,7 @@ actor FilePreviewPlugin: SuperPlugin, SuperLog {
     init() {
         // 监听文件选择变化通知
         NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("AgentVMFileSelectionChanged"),
+            forName: .fileSelectionChanged,
             object: nil,
             queue: .main
         ) { [weak self] notification in
@@ -68,7 +68,7 @@ actor FilePreviewPlugin: SuperPlugin, SuperLog {
     /// 检查文件选择状态
     @MainActor
     private func checkFileSelection() {
-        // 由于无法直接访问 AgentVM，这里使用一个简单的启发式方法
+        // 由于无法直接访问 AgentRuntime，这里使用一个简单的启发式方法
         // 当通知发出时，我们认为文件选择状态可能已更改
         // 实际的文件选择状态将由 FilePreviewView 自行判断
         isFileSelected.toggle()

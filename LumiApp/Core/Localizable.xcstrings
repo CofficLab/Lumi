@@ -399,6 +399,7 @@
       }
     },
     "%lld/%lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5860,6 +5861,9 @@
         }
       }
     },
+    "在 Cursor 中打开当前项目" : {
+
+    },
     "在 Finder 中显示" : {
       "localizations" : {
         "zh-Hans" : {
@@ -7030,6 +7034,7 @@
       }
     },
     "显示上一个窗口" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7046,6 +7051,7 @@
       }
     },
     "显示下一个窗口" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7286,6 +7292,7 @@
       }
     },
     "本会话最近一次处理出错" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7654,6 +7661,7 @@
       }
     },
     "深度提醒" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7991,6 +7999,7 @@
       }
     },
     "等待权限确认" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

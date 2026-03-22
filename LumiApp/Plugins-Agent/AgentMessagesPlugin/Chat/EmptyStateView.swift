@@ -3,7 +3,7 @@ import SwiftUI
 /// 空状态视图 - 未选择会话时显示
 struct EmptyStateView: View {
     @EnvironmentObject private var ConversationVM: ConversationVM
-    @EnvironmentObject private var agentProvider: AgentVM
+    @EnvironmentObject private var conversationCreationVM: ConversationCreationVM
 
     private var hasAnyConversation: Bool {
         !ConversationVM.fetchAllConversations().isEmpty
@@ -48,7 +48,7 @@ struct EmptyStateView: View {
             } else {
                 Button {
                     Task {
-                        await agentProvider.createNewConversation()
+                        await conversationCreationVM.createNewConversation()
                     }
                 } label: {
                     Label("新建对话", systemImage: "plus.circle.fill")

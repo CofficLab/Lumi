@@ -7,12 +7,15 @@ final class ChatTimelineViewModel: ObservableObject {
 
     @Published private(set) var state = ConversationRenderState()
 
-    private let agentProvider: AgentVM
+    private let chatHistoryService: ChatHistoryService
     private let conversationVM: ConversationVM
     private var cancellables = Set<AnyCancellable>()
 
-    init(agentProvider: AgentVM, conversationVM: ConversationVM) {
-        self.agentProvider = agentProvider
+    init(
+        chatHistoryService: ChatHistoryService,
+        conversationVM: ConversationVM
+    ) {
+        self.chatHistoryService = chatHistoryService
         self.conversationVM = conversationVM
         self.state.selectedConversationId = conversationVM.selectedConversationId
         setupBindings()
@@ -100,7 +103,7 @@ final class ChatTimelineViewModel: ObservableObject {
         targetIDs.forEach { state.loadingToolCallIDs.insert($0) }
 
         Task { @MainActor in
-            let loadedMessages = await agentProvider.loadToolOutputMessages(
+            let loadedMessages = await chatHistoryService.loadToolOutputMessages(
                 forConversationId: conversationId,
                 toolCallIDs: targetIDs
             )
@@ -157,7 +160,7 @@ final class ChatTimelineViewModel: ObservableObject {
             state.isLoadingMore = true
             defer { state.isLoadingMore = false }
 
-            let result = await agentProvider.loadMessagesPage(
+            let result = await chatHistoryService.loadMessagesPage(
                 forConversationId: conversationId,
                 limit: Self.pageSize,
                 beforeTimestamp: state.oldestLoadedTimestamp
@@ -203,12 +206,6 @@ final class ChatTimelineViewModel: ObservableObject {
                 }
             }
             .store(in: &cancellables)
-
-        agentProvider.$streamingRenderVersion
-            .sink { [weak self] _ in
-                self?.refreshActiveStreamingMessage()
-            }
-            .store(in: &cancellables)
     }
 
     private func didSelectConversation(_ conversationId: UUID?) async {
@@ -237,10 +234,10 @@ final class ChatTimelineViewModel: ObservableObject {
         state.isLoadingMore = true
         defer { state.isLoadingMore = false }
 
-        let count = await agentProvider.getMessageCount(forConversationId: conversationId)
+        let count = await chatHistoryService.getMessageCount(forConversationId: conversationId)
         state.totalMessageCount = count
 
-        let result = await agentProvider.loadMessagesPage(
+        let result = await chatHistoryService.loadMessagesPage(
             forConversationId: conversationId,
             limit: Self.pageSize,
             beforeTimestamp: nil
@@ -274,18 +271,6 @@ final class ChatTimelineViewModel: ObservableObject {
     }
 
     private func refreshActiveStreamingMessage() {
-        guard let conversationId = state.selectedConversationId,
-              conversationId == conversationVM.selectedConversationId,
-              let liveMessage = agentProvider.activeStreamingMessageForSelectedConversation
-        else {
-            state.activeStreamingMessage = nil
-            return
-        }
-
-        if state.persistedMessages.contains(where: { $0.id == liveMessage.id }) {
-            state.activeStreamingMessage = nil
-            return
-        }
-        state.activeStreamingMessage = liveMessage
+        state.activeStreamingMessage = nil
     }
 }
