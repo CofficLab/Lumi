@@ -71,7 +71,7 @@ final class ConversationSendStatusVM: ObservableObject {
             setStatus(conversationId: conversationId, content: line)
             return
         }
-        if chunk.eventType == .textDelta {
+        if chunk.eventType == .textDelta || chunk.eventType == .inputJsonDelta {
             if let partial = chunk.content, !partial.isEmpty {
                 streamingTextBufferByConversationId[conversationId, default: ""] += partial
             }
