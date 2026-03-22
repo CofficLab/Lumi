@@ -39,6 +39,11 @@ final class ConversationSendStatusVM: ObservableObject {
         streamingTextBufferByConversationId[conversationId] = nil
     }
 
+    /// 状态行单行展示：去掉换行，避免 tail 中含 `\n`。
+    private static func statusTailWithoutLineBreaks(_ text: String) -> String {
+        text.split(whereSeparator: \.isNewline).joined(separator: " ")
+    }
+
     /// 根据流式分片更新状态文案
     func applyStreamChunk(conversationId: UUID, chunk: StreamChunk) {
         if chunk.isDone {
@@ -52,10 +57,11 @@ final class ConversationSendStatusVM: ObservableObject {
                 thinkingTextBufferByConversationId[conversationId, default: ""] += partial
             }
             let accumulated = thinkingTextBufferByConversationId[conversationId] ?? ""
+            let normalized = Self.statusTailWithoutLineBreaks(accumulated)
             let previewMax = 20
-            let tail = accumulated.isEmpty
+            let tail = normalized.isEmpty
                 ? ""
-                : (accumulated.count <= previewMax ? accumulated : String(accumulated.suffix(previewMax)))
+                : (normalized.count <= previewMax ? normalized : String(normalized.suffix(previewMax)))
             let line: String
             if tail.isEmpty {
                 line = "正在思考…"
@@ -70,15 +76,16 @@ final class ConversationSendStatusVM: ObservableObject {
                 streamingTextBufferByConversationId[conversationId, default: ""] += partial
             }
             let accumulated = streamingTextBufferByConversationId[conversationId] ?? ""
+            let normalized = Self.statusTailWithoutLineBreaks(accumulated)
             let previewMax = 20
-            let tail = accumulated.isEmpty
+            let tail = normalized.isEmpty
                 ? ""
-                : (accumulated.count <= previewMax ? accumulated : String(accumulated.suffix(previewMax)))
+                : (normalized.count <= previewMax ? normalized : String(normalized.suffix(previewMax)))
             let line: String
             if tail.isEmpty {
                 line = "正在生成消息..."
             } else {
-                line = "正在生成消息... \(tail)"
+                line = "正在生成消息：\(tail)"
             }
             setStatus(conversationId: conversationId, content: line)
             return
