@@ -15,7 +15,7 @@ struct RemoteProviderSettingsView: View {
 
     // MARK: - Environment
 
-    @EnvironmentObject private var registry: ProviderRegistry
+    @EnvironmentObject private var registry: LLMProviderRegistry
 
     // MARK: - Constants
 
@@ -24,7 +24,7 @@ struct RemoteProviderSettingsView: View {
     // MARK: - Computed
 
     /// 所有云端供应商（排除本地供应商）
-    private var remoteProviders: [ProviderInfo] {
+    private var remoteProviders: [LLMProviderInfo] {
         registry
             .allProviders()
             .filter { info in
@@ -33,7 +33,7 @@ struct RemoteProviderSettingsView: View {
     }
 
     /// 当前选中的供应商信息（仅在云端供应商列表中查找）
-    private var selectedProvider: ProviderInfo? {
+    private var selectedProvider: LLMProviderInfo? {
         remoteProviders.first(where: { $0.id == selectedProviderId })
     }
 

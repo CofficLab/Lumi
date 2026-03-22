@@ -8,26 +8,10 @@ import MagicKit
 /// - 注册所有支持的 LLM 供应商
 /// - 根据 ID 创建供应商实例
 /// - 提供供应商信息查询
-///
-/// ## 架构说明
-///
-/// ProviderRegistry 采用静态注册方式，
-/// 在初始化时注册所有已知的供应商类型。
-/// 使用简单工厂模式创建供应商实例。
-///
-/// ## 支持的供应商
-///
-/// | ID | 供应商 | 默认模型 |
-/// |-----|--------|----------|
-/// | "anthropic" | Anthropic (Claude) | claude-sonnet-4-20250514 |
-/// | "openai" | OpenAI (GPT) | gpt-4o |
-/// | "deepseek" | DeepSeek | deepseek-chat |
-/// | "zhipu" | 智谱 AI | glm-4 |
-/// | "aliyun" | 阿里云 | qwen-turbo |
-class ProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
+class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
     /// 日志标识符
     nonisolated static let emoji = "📋"
-    
+
     /// 是否启用详细日志
     nonisolated static let verbose = false
 
@@ -46,7 +30,7 @@ class ProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
     ///
     /// 按注册顺序存储所有供应商类型。
     private(set) var providerTypes: [any SuperLLMProvider.Type] = []
-    
+
     /// 供应商实例缓存
     ///
     /// 以供应商 ID 为键，缓存已创建的供应商实例。
@@ -92,11 +76,11 @@ class ProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
     /// 获取所有已注册供应商的信息
     ///
     /// - Returns: 供应商信息数组，包含 ID、名称、图标、描述、可用模型、是否本地等
-    func allProviders() -> [ProviderInfo] {
+    func allProviders() -> [LLMProviderInfo] {
         providerTypes.map { type in
             let instance = createProvider(id: type.id)
             let isLocal = (instance as? any SuperLocalLLMProvider) != nil
-            return ProviderInfo(
+            return LLMProviderInfo(
                 id: type.id,
                 displayName: type.displayName,
                 iconName: type.iconName,
@@ -133,36 +117,6 @@ class ProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
     }
 }
 
-// MARK: - Provider Info
-
-/// 供应商信息模型
-///
-/// 用于在 UI 中显示供应商列表和详情。
-struct ProviderInfo: Identifiable, Equatable, Sendable {
-    /// 供应商唯一 ID
-    let id: String
-    
-    /// 显示名称
-    let displayName: String
-    
-    /// 图标名称（SF Symbols）
-    ///
-    /// 用于 UI 显示，与显示名称对应。
-    let iconName: String
-    
-    /// 供应商描述
-    let description: String
-    
-    /// 可用模型列表
-    let availableModels: [String]
-    
-    /// 默认模型
-    let defaultModel: String
-    
-    /// 是否为本地供应商（如 MLX 等本地推理）
-    let isLocal: Bool
-}
-
 // MARK: - Provider Registration Extension
 
 /// 供应商注册协议
@@ -170,5 +124,5 @@ struct ProviderInfo: Identifiable, Equatable, Sendable {
 /// 允许供应商类型自行注册到注册表。
 protocol ProviderRegistrant {
     /// 注册到指定的注册表
-    static func register(to registry: ProviderRegistry)
+    static func register(to registry: LLMProviderRegistry)
 }

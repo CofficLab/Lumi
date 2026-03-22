@@ -20,7 +20,7 @@ class LLMService: SuperLog, @unchecked Sendable {
     ///
     /// 管理所有支持的 LLM 供应商。
     /// 负责创建供应商实例和提供供应商元数据。
-    private nonisolated let registry: ProviderRegistry
+    private nonisolated let registry: LLMProviderRegistry
     
     /// LLM API 服务
     ///
@@ -31,15 +31,15 @@ class LLMService: SuperLog, @unchecked Sendable {
     /// 供应商注册表（公开访问）
     ///
     /// 允许外部代码查询已注册的供应商信息。
-    nonisolated var providerRegistry: ProviderRegistry { registry }
+    nonisolated var providerRegistry: LLMProviderRegistry { registry }
 
     /// 初始化 LLM 服务
     ///
     /// 创建供应商注册表和 API 服务实例。
     init() {
-        let registry = ProviderRegistry()
+        let registry = LLMProviderRegistry()
         // 通过 LLM 插件系统自动发现并注册所有可用供应商
-        LLMPluginProviderRegistration.registerAllProviders(to: registry)
+        LLMProviderRegistration.registerAllProviders(to: registry)
         self.registry = registry
         self.llmAPI = LLMAPIService()
         if Self.verbose >= 1 {
@@ -116,11 +116,19 @@ class LLMService: SuperLog, @unchecked Sendable {
         if state == .loading || state == .generating {
             let deadline = CFAbsoluteTimeGetCurrent() + timeoutSeconds
             while CFAbsoluteTimeGetCurrent() < deadline {
-                try Task.checkCancellation()
+                do {
+                    try Task.checkCancellation()
+                } catch is CancellationError {
+                    throw LLMServiceError.cancelled
+                }
                 state = await local.getModelState()
                 if state == .ready { return }
                 if case .error = state { break }
-                try await Task.sleep(nanoseconds: UInt64(pollIntervalSeconds * 1_000_000_000))
+                do {
+                    try await Task.sleep(nanoseconds: UInt64(pollIntervalSeconds * 1_000_000_000))
+                } catch is CancellationError {
+                    throw LLMServiceError.cancelled
+                }
             }
             if state != .ready {
                 throw LLMServiceError.requestFailed("加载超时，请稍后重试或到设置中查看")
@@ -130,6 +138,8 @@ class LLMService: SuperLog, @unchecked Sendable {
 
         do {
             try await local.loadModel(id: modelId)
+        } catch is CancellationError {
+            throw LLMServiceError.cancelled
         } catch {
             throw LLMServiceError.requestFailed(error.localizedDescription)
         }
@@ -156,9 +166,7 @@ class LLMService: SuperLog, @unchecked Sendable {
     ///
     /// - Returns: AI 助手的回复消息
     ///
-    /// - Throws:
-    ///   - `LLMConfigValidationError`：`config.validate()` 失败（含 API Key 为空等）
-    ///   - `LLMServiceError`：供应商未找到、Base URL 无效、API / 流式 / 本地模型相关失败
+    /// - Throws: 仅 `LLMServiceError`。配置类问题（供应商缺失、校验失败、Base URL 无效）以 **返回** 带占位 `content` 的系统/助手消息表示，由 UI 渲染。
     func sendMessage(messages: [ChatMessage], config: LLMConfig, tools: [AgentTool]? = nil) async throws -> ChatMessage {
         // 记录开始时间，用于计算延迟
         let startTime = CFAbsoluteTimeGetCurrent()
@@ -166,7 +174,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         // 从注册表获取供应商实例（先取 provider，本地供应商不校验 API Key）
         guard let provider = registry.createProvider(id: config.providerId) else {
             AppLogger.core.error("\(self.t)未找到供应商：\(config.providerId)")
-            throw LLMServiceError.providerNotFound(providerId: config.providerId)
+            return LLMServiceError.providerNotFound(providerId: config.providerId).toChatMessage()
         }
 
         // 仅远程供应商需要校验 API Key；本地供应商无需 API Key
@@ -174,9 +182,8 @@ class LLMService: SuperLog, @unchecked Sendable {
         if !isLocal {
             do {
                 try config.validate()
-            } catch {
-                AppLogger.core.error("\(self.t)配置校验失败：\(error.localizedDescription)")
-                throw error
+            } catch let error as LLMServiceError {
+                return error.toChatMessage()
             }
         }
 
@@ -184,13 +191,22 @@ class LLMService: SuperLog, @unchecked Sendable {
         if let local = provider as? any SuperLocalLLMProvider {
             try await ensureLocalModelReady(local: local, modelId: config.model)
             let images = messages.last(where: { $0.role == .user }).map(\.images) ?? []
-            let msg = try await local.sendMessage(
-                messages: messages,
-                model: config.model,
-                tools: tools,
-                systemPrompt: nil,
-                images: images
-            )
+            let msg: ChatMessage
+            do {
+                msg = try await local.sendMessage(
+                    messages: messages,
+                    model: config.model,
+                    tools: tools,
+                    systemPrompt: nil,
+                    images: images
+                )
+            } catch let e as LLMServiceError {
+                throw e
+            } catch is CancellationError {
+                throw LLMServiceError.cancelled
+            } catch {
+                throw LLMServiceError.requestFailed(error.localizedDescription)
+            }
             let latency = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
             Task.detached(priority: .utility) {
                 LLMRequestLoggerCenter.shared.log(
@@ -213,7 +229,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         AppLogger.core.info("\(self.t)构建 API URL：\(baseURLString)")
         guard let url = URL(string: baseURLString) else {
             AppLogger.core.error("\(self.t)无效的 URL: \(baseURLString)")
-            throw LLMServiceError.invalidBaseURL(baseURLString)
+            return LLMServiceError.invalidBaseURL(baseURLString).toChatMessage()
         }
 
         // 构建请求体
@@ -227,7 +243,7 @@ class LLMService: SuperLog, @unchecked Sendable {
             )
         } catch {
             AppLogger.core.error("\(self.t)构建请求体失败：\(error.localizedDescription)")
-            throw error
+            throw LLMServiceError.requestFailed(error.localizedDescription)
         }
 
         // 输出调试信息
@@ -268,23 +284,23 @@ class LLMService: SuperLog, @unchecked Sendable {
                     body: body,
                     additionalHeaders: additionalHeaders
                 )
-            } catch {
-                // 记录失败请求日志（通过内核级 LoggerCenter，若未注册实现则为 no-op）
-                Task.detached(priority: .utility) {
-                    LLMRequestLoggerCenter.shared.log(
-                        providerId: config.providerId,
-                        model: config.model,
-                        url: url,
-                        method: "POST",
-                        statusCode: nil,
-                        durationMs: (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0,
-                        requestBody: try? JSONSerialization.data(withJSONObject: body),
-                        responseBody: nil,
-                        error: error
-                    )
+                } catch {
+                    // 记录失败请求日志（通过内核级 LoggerCenter，若未注册实现则为 no-op）
+                    Task.detached(priority: .utility) {
+                        LLMRequestLoggerCenter.shared.log(
+                            providerId: config.providerId,
+                            model: config.model,
+                            url: url,
+                            method: "POST",
+                            statusCode: nil,
+                            durationMs: (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0,
+                            requestBody: try? JSONSerialization.data(withJSONObject: body),
+                            responseBody: nil,
+                            error: error
+                        )
+                    }
+                    throw LLMServiceError.requestFailed(error.localizedDescription)
                 }
-                throw error
-            }
 
             // 解析响应
             let (content, toolCalls) = try provider.parseResponse(data: data)
@@ -329,8 +345,12 @@ class LLMService: SuperLog, @unchecked Sendable {
                 maxTokens: config.maxTokens
             )
 
+        } catch let e as LLMServiceError {
+            throw e
         } catch let apiError as APIError {
             throw LLMServiceError.requestFailed(apiError.localizedDescription)
+        } catch {
+            throw LLMServiceError.requestFailed(error.localizedDescription)
         }
     }
 
@@ -346,7 +366,7 @@ class LLMService: SuperLog, @unchecked Sendable {
     ///   - tools: 可用工具列表
     ///   - onChunk: 收到内容片段时的回调
     /// - Returns: 完整的助手消息（包含累积的内容和工具调用）
-    /// - Throws: `LLMConfigValidationError`、`LLMServiceError`，或与构建请求体相关的底层错误
+    /// - Throws: 仅 `LLMServiceError`。配置类问题以 **返回** 带占位 `content` 的消息表示。
     @discardableResult
     func sendStreamingMessage(
         messages: [ChatMessage],
@@ -360,7 +380,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         // 从注册表获取供应商实例（先取 provider，本地供应商不校验 API Key）
         guard let provider = registry.createProvider(id: config.providerId) else {
             AppLogger.core.error("\(self.t)未找到供应商：\(config.providerId)")
-            throw LLMServiceError.providerNotFound(providerId: config.providerId)
+            return LLMServiceError.providerNotFound(providerId: config.providerId).toChatMessage()
         }
 
         // 仅远程供应商需要校验 API Key；本地供应商无需 API Key
@@ -368,9 +388,8 @@ class LLMService: SuperLog, @unchecked Sendable {
         if !isLocalStream {
             do {
                 try config.validate()
-            } catch {
-                AppLogger.core.error("\(self.t)配置校验失败：\(error.localizedDescription)")
-                throw error
+            } catch let error as LLMServiceError {
+                return error.toChatMessage()
             }
         }
 
@@ -378,14 +397,23 @@ class LLMService: SuperLog, @unchecked Sendable {
         if let local = provider as? any SuperLocalLLMProvider {
             try await ensureLocalModelReady(local: local, modelId: config.model)
             let images = messages.last(where: { $0.role == .user }).map(\.images) ?? []
-            let msg = try await local.streamChat(
-                messages: messages,
-                model: config.model,
-                tools: tools,
-                systemPrompt: nil,
-                images: images,
-                onChunk: onChunk
-            )
+            let msg: ChatMessage
+            do {
+                msg = try await local.streamChat(
+                    messages: messages,
+                    model: config.model,
+                    tools: tools,
+                    systemPrompt: nil,
+                    images: images,
+                    onChunk: onChunk
+                )
+            } catch let e as LLMServiceError {
+                throw e
+            } catch is CancellationError {
+                throw LLMServiceError.cancelled
+            } catch {
+                throw LLMServiceError.requestFailed(error.localizedDescription)
+            }
             let latency = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
             Task.detached(priority: .utility) {
                 LLMRequestLoggerCenter.shared.log(
@@ -408,7 +436,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         
         guard let url = URL(string: baseURLString) else {
             AppLogger.core.error("\(self.t)无效的 URL: \(baseURLString)")
-            throw LLMServiceError.invalidBaseURL(baseURLString)
+            return LLMServiceError.invalidBaseURL(baseURLString).toChatMessage()
         }
 
         // 构建流式请求体
@@ -422,7 +450,7 @@ class LLMService: SuperLog, @unchecked Sendable {
             )
         } catch {
             AppLogger.core.error("\(self.t)构建流式请求体失败：\(error.localizedDescription)")
-            throw error
+            throw LLMServiceError.requestFailed(error.localizedDescription)
         }
 
         // 输出调试信息
@@ -648,6 +676,10 @@ class LLMService: SuperLog, @unchecked Sendable {
                     return true
                 }
             }
+        } catch is CancellationError {
+            throw LLMServiceError.cancelled
+        } catch let e as LLMServiceError {
+            throw e
         } catch {
             throw LLMServiceError.requestFailed(error.localizedDescription)
         }

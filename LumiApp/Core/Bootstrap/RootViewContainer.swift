@@ -19,7 +19,7 @@ final class RootViewContainer: ObservableObject {
     let promptService: PromptService
     let slashCommandService: SlashCommandService
     let toolService: ToolService
-    let providerRegistry: ProviderRegistry
+    let providerRegistry: LLMProviderRegistry
     let chatHistoryService: ChatHistoryService
     let conversationTurnServices: ConversationTurnServices
     let toolExecutionService: ToolExecutionService

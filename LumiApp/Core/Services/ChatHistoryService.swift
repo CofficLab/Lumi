@@ -196,6 +196,11 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                 tools: []
             )
 
+            // 配置类问题会返回 `role: .system` 的占位消息，不能用作标题
+            guard response.role == .assistant else {
+                return String(trimmedMessage.prefix(20))
+            }
+
             let generatedTitle = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
 
             // 确保标题长度合适

@@ -140,11 +140,11 @@ extension RootView {
             await self.onMessageReceived(message: assistantMessage, conversationId: conversationId)
         } catch {
             AppLogger.core.error("\(Self.t) 请求模型失败：\(error)")
+            finishSendTurn(conversationId: conversationId)
             statusVM.setStatus(
                 conversationId: conversationId,
-                content: "发送失败：\(error.localizedDescription)"
+                content: error.localizedDescription
             )
-            finishSendTurn(conversationId: conversationId)
         }
     }
 

@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 远程供应商模型区块：API Key 配置 + 可用模型列表
 struct RemoteModelSectionView: View {
-    let selectedProvider: ProviderInfo?
+    let selectedProvider: LLMProviderInfo?
     @Binding var selectedModel: String
     @Binding var apiKey: String
     let onSelectModel: () -> Void

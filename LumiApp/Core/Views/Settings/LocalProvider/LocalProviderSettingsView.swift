@@ -37,7 +37,7 @@ struct LocalProviderSettingsView: View {
 
     // MARK: - Environment
 
-    @EnvironmentObject private var registry: ProviderRegistry
+    @EnvironmentObject private var registry: LLMProviderRegistry
 
     // MARK: - Constants
 
@@ -46,7 +46,7 @@ struct LocalProviderSettingsView: View {
     // MARK: - Computed
 
     /// 所有本地供应商（过滤掉非本地的）
-    private var localProviders: [ProviderInfo] {
+    private var localProviders: [LLMProviderInfo] {
         registry
             .allProviders()
             .filter { info in

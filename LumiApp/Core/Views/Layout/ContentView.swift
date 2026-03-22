@@ -14,7 +14,7 @@ struct ContentView: View, SuperLog {
     @EnvironmentObject var app: GlobalVM
     @EnvironmentObject var pluginProvider: PluginVM
     @EnvironmentObject var themeManager: MystiqueThemeManager
-    @EnvironmentObject var providerRegistry: ProviderRegistry
+    @EnvironmentObject var providerRegistry: LLMProviderRegistry
 
     /// 打开窗口的环境变量
     @Environment(\.openWindow) private var openWindow
