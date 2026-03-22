@@ -36,6 +36,9 @@ final class ChatMessageEntity {
     var thinkingContent: String? // 思考过程文本（用于 reasoning 模型）
     var hasThinking: Bool = false // 是否有思考过程（便于查询，必须有默认值用于迁移）
 
+    /// 用户是否同意执行本条消息中的工具调用（默认未同意）
+    var userApprovedToolCalls: Bool = false
+
     // 反向关系
     var conversation: Conversation?
     
@@ -48,7 +51,8 @@ final class ChatMessageEntity {
          streamingDuration: Double? = nil, thinkingDuration: Double? = nil,
          finishReason: String? = nil, requestId: String? = nil,
          temperature: Double? = nil, maxTokens: Int? = nil,
-         thinkingContent: String? = nil, hasThinking: Bool = false) {
+         thinkingContent: String? = nil, hasThinking: Bool = false,
+         userApprovedToolCalls: Bool = false) {
         self.id = id
         self.role = role
         self.content = content
@@ -72,6 +76,7 @@ final class ChatMessageEntity {
         self.maxTokens = maxTokens
         self.thinkingContent = thinkingContent
         self.hasThinking = hasThinking
+        self.userApprovedToolCalls = userApprovedToolCalls
     }
     
     /// 转换为 ChatMessage
@@ -112,7 +117,8 @@ final class ChatMessageEntity {
             requestId: requestId,
             temperature: temperature,
             maxTokens: maxTokens,
-            thinkingContent: thinkingContent
+            thinkingContent: thinkingContent,
+            userApprovedToolCalls: userApprovedToolCalls
         )
     }
     
@@ -151,7 +157,8 @@ final class ChatMessageEntity {
             temperature: message.temperature,
             maxTokens: message.maxTokens,
             thinkingContent: message.thinkingContent,
-            hasThinking: message.thinkingContent != nil && !message.thinkingContent!.isEmpty
+            hasThinking: message.thinkingContent != nil && !message.thinkingContent!.isEmpty,
+            userApprovedToolCalls: message.userApprovedToolCalls
         )
     }
 }
