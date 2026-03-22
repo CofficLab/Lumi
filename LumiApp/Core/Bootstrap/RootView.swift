@@ -38,7 +38,6 @@ struct RootView<Content>: View, SuperLog where Content: View {
     var messageQueueVM: MessageQueueVM { container.messageQueueVM }
     var conversationVM: ConversationVM { container.conversationVM }
     var projectVM: ProjectVM { container.ProjectVM }
-    var processingStateViewModel: ProcessingStateVM { container.processingStateViewModel }
     var permissionRequestViewModel: PermissionRequestVM { container.permissionRequestViewModel }
     var thinkingStateViewModel: ThinkingStateVM { container.thinkingStateViewModel }
     var depthWarningViewModel: DepthWarningVM { container.depthWarningViewModel }
@@ -68,7 +67,6 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(container.conversationCreationVM)
             .environmentObject(container.commandSuggestionViewModel)
             .environmentObject(container.depthWarningViewModel)
-            .environmentObject(container.processingStateViewModel)
             .environmentObject(container.permissionRequestViewModel)
             .environmentObject(container.thinkingStateViewModel)
             .environmentObject(container.taskCancellationVM)

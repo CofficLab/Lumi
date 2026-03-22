@@ -69,7 +69,7 @@ extension RootView {
             }
 
             do {
-                statusVM.setStatus(conversationId: conversationId, content: "正在请求模型…")
+                statusVM.setStatus(conversationId: conversationId, content: "正在请求模型（流式）…")
                 var assistantMessage = try await self.llmService.sendStreamingMessage(
                     messages: messagesForLLM,
                     config: config,
@@ -78,7 +78,7 @@ extension RootView {
                 )
 
                 await self.conversationVM.saveMessage(assistantMessage, to: conversationId)
-                statusVM.setStatus(conversationId: conversationId, content: "已收到回复，正在处理…")
+                statusVM.setStatus(conversationId: conversationId, content: "已收到模型回复，正在处理…")
 
                 var followUpDepth = 0
                 while let toolCalls = assistantMessage.toolCalls, !toolCalls.isEmpty {
@@ -145,7 +145,7 @@ extension RootView {
                         )
                     }
 
-                    statusVM.setStatus(conversationId: conversationId, content: "正在请求模型…")
+                    statusVM.setStatus(conversationId: conversationId, content: "正在再次请求模型…")
                     let nextMessages = await self.chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
                     assistantMessage = try await self.llmService.sendStreamingMessage(
                         messages: nextMessages,

@@ -20,8 +20,8 @@ struct ChatToolbarView: View, SuperLog {
     /// 入队器：只负责把输入入队到发送队列
     @EnvironmentObject private var inputQueueVM: InputQueueVM
 
-    /// 处理状态 ViewModel
-    @EnvironmentObject var processingStateViewModel: ProcessingStateVM
+    /// 发送链路瞬时状态（有状态文案时表示正在处理，显示「停止」）
+    @EnvironmentObject private var conversationSendStatusVM: ConversationSendStatusVM
 
     /// 输入框本地状态 ViewModel
     @ObservedObject var inputViewModel: InputViewModel
@@ -58,6 +58,12 @@ struct ChatToolbarView: View, SuperLog {
 // MARK: - View
 
 extension ChatToolbarView {
+    /// 当前会话是否处于 `RootView+Send` 等写入的发送状态中（用于发送/停止切换）。
+    private var isSendPipelineActive: Bool {
+        guard let id = ConversationVM.selectedConversationId else { return false }
+        return conversationSendStatusVM.statusMessage(for: id) != nil
+    }
+
     /// Commit 按钮组视图
     @ViewBuilder
     private var commitButtons: some View {
@@ -91,7 +97,7 @@ extension ChatToolbarView {
     /// 发送/停止按钮视图
     @ViewBuilder
     private var actionButton: some View {
-        if processingStateViewModel.isProcessing {
+        if isSendPipelineActive {
             // 停止按钮 - 在处理中显示（仅图标）
             Button(action: {
                 if let conversationId = ConversationVM.selectedConversationId {

@@ -32,7 +32,6 @@ final class RootViewContainer: ObservableObject {
     let ProjectVM: Lumi.ProjectVM
     let commandSuggestionViewModel: CommandSuggestionVM
     let depthWarningViewModel: DepthWarningVM
-    let processingStateViewModel: ProcessingStateVM
     let permissionRequestViewModel: PermissionRequestVM
     let thinkingStateViewModel: ThinkingStateVM
     let taskCancellationVM: TaskCancellationVM
@@ -120,7 +119,6 @@ final class RootViewContainer: ObservableObject {
         // ========================================
 
         self.depthWarningViewModel = DepthWarningVM()
-        self.processingStateViewModel = ProcessingStateVM()
         self.permissionRequestViewModel = PermissionRequestVM()
         self.thinkingStateViewModel = ThinkingStateVM()
         self.taskCancellationVM = TaskCancellationVM()
