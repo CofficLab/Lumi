@@ -125,7 +125,7 @@ extension RootView {
         let onStreamChunk: @Sendable (StreamChunk) async -> Void = { chunk in
             await MainActor.run {
                 statusVM.applyStreamChunk(conversationId: convId, chunk: chunk)
-                AppLogger.core.info("\(logTag) 收到响应，类型：\(chunk.eventType?.rawValue ?? "unknown")，内容：\(chunk.content ?? "")")
+                AppLogger.core.info("\(logTag) 收到响应，类型：\(chunk.eventType?.rawValue ?? "unknown")，内容：\(chunk.content ?? "")，原始：\(chunk.rawStreamPayload ?? "")")
             }
         }
 

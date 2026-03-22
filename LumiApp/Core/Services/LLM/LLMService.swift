@@ -561,7 +561,9 @@ class LLMService: SuperLog, @unchecked Sendable {
 
                     for eventData in Self.splitSSEEvents(from: chunkData) {
                         let parseStart = CFAbsoluteTimeGetCurrent()
-                        if let chunk = try provider.parseStreamChunk(data: eventData) {
+                        if let parsed = try provider.parseStreamChunk(data: eventData) {
+                            let rawPayload = String(data: eventData, encoding: .utf8)
+                            let chunk = parsed.withRawStreamPayload(rawPayload)
                             let parseElapsed = CFAbsoluteTimeGetCurrent() - parseStart
                             if parseElapsed > parseWarnThreshold {
                                 AppLogger.core.error("\(self.t)parseStreamChunk 耗时异常: \(String(format: "%.3f", parseElapsed))s, bytes=\(eventData.count)")
