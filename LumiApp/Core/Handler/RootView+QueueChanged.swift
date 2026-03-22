@@ -39,11 +39,7 @@ extension RootView {
             let pipeline = SendPipeline(middlewares: all)
             await pipeline.run(ctx: ctx) { _ in }
 
-            await self.send(
-                conversationId: conversationId,
-                ensuringIncludedMessage: message,
-                failureLogSummary: "发送消息失败"
-            )
+            await self.send(conversationId: conversationId)
         }
     }
 }

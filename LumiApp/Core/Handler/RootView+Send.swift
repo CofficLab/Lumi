@@ -13,20 +13,31 @@ extension RootView {
         }
     }
 
-    /// 流式请求模型并落库助手消息；若无工具调用则结束当前发送回合。
-    /// - Parameters:
-    ///   - ensuringIncludedMessage: 若历史列表中尚无该条（例如刚落库与读库时序），则追加后再请求模型。
-    func send(
-        conversationId: UUID,
-        ensuringIncludedMessage: ChatMessage? = nil,
-        failureLogSummary: String
-    ) async {
-        var messages = await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
-        if let extra = ensuringIncludedMessage,
-           !messages.contains(where: { $0.id == extra.id }) {
-            messages.append(extra)
-        }
+    /// 根据会话**最后一条**落库消息决定下一步：用户或工具结果 → 请求模型；助手且含工具调用 → 执行工具后再进入本方法。
+    func send(conversationId: UUID) async {
+        let messages = await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
+        guard let last = messages.last else { return }
 
+        switch last.role {
+        case .user, .tool:
+            guard messageQueueVM.currentProcessingIndex(for: conversationId) != nil else { return }
+            await streamAssistantReply(conversationId: conversationId, messages: messages)
+        case .assistant:
+            if last.hasToolCalls {
+                guard messageQueueVM.currentProcessingIndex(for: conversationId) != nil else { return }
+                await executeAssistantToolCalls(assistantMessage: last, conversationId: conversationId)
+                await send(conversationId: conversationId)
+            } else if messageQueueVM.currentProcessingIndex(for: conversationId) != nil {
+                finishSendTurn(conversationId: conversationId)
+            }
+        case .system, .status:
+            break
+        }
+    }
+
+    // MARK: - Private
+
+    private func streamAssistantReply(conversationId: UUID, messages: [ChatMessage]) async {
         let config = sessionConfig.getCurrentConfig()
         let availableTools = ToolAvailabilityGuard().evaluate(
             tools: toolService.tools,
@@ -54,11 +65,13 @@ extension RootView {
                 onChunk: onStreamChunk
             )
             await conversationVM.saveMessage(assistantMessage, to: conversationId)
-            if assistantMessage.hasToolCalls == false {
+            if assistantMessage.hasToolCalls {
+                await send(conversationId: conversationId)
+            } else {
                 finishSendTurn(conversationId: conversationId)
             }
         } catch {
-            AppLogger.core.error("\(Self.t) \(failureLogSummary)：\(error)")
+            AppLogger.core.error("\(Self.t) 请求模型失败：\(error)")
             statusVM.setStatus(
                 conversationId: conversationId,
                 content: "发送失败：\(error.localizedDescription)"
@@ -67,12 +80,7 @@ extension RootView {
         }
     }
 
-    /// 已落库的助手消息包含工具调用时：执行一轮工具 → 再请求一次模型（后续若仍有工具调用，由下一次 `messageSaved` 驱动）。
-    func continueSendAfterToolCalls(
-        assistantMessage: ChatMessage,
-        conversationId: UUID
-    ) async {
-        guard messageQueueVM.currentProcessingIndex(for: conversationId) != nil else { return }
+    private func executeAssistantToolCalls(assistantMessage: ChatMessage, conversationId: UUID) async {
         guard let toolCalls = assistantMessage.toolCalls, !toolCalls.isEmpty else { return }
 
         let statusVM = conversationSendStatusVM
@@ -154,10 +162,5 @@ extension RootView {
                 )
             }
         }
-
-        await send(
-            conversationId: conversationId,
-            failureLogSummary: "工具后续请求模型失败"
-        )
     }
 }
