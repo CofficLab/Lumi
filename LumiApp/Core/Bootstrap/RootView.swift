@@ -82,9 +82,6 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .onChange(of: container.taskCancellationVM.conversationIdToCancel, onTaskCancellationRequested)
             .onChange(of: container.projectContextRequestVM.request, onProjectContextRequestChanged)
             .onChange(of: container.conversationVM.selectedConversationId, onConversationChanged)
-            .task(id: ObjectIdentifier(container)) {
-                await runConversationTurnPipeline()
-            }
     }
 }
 
