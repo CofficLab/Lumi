@@ -83,12 +83,15 @@ extension RootView {
 
         do {
             statusVM.setStatus(conversationId: conversationId, content: "正在发送消息…")
-            let assistantMessage = try await llmService.sendStreamingMessage(
+            var assistantMessage = try await llmService.sendStreamingMessage(
                 messages: messages,
                 config: config,
                 tools: toolsArg,
                 onChunk: onStreamChunk
             )
+            if projectVM.autoApproveRisk, assistantMessage.hasToolCalls {
+                assistantMessage.userApprovedToolCalls = true
+            }
             await conversationVM.saveMessage(assistantMessage, to: conversationId)
             if assistantMessage.hasToolCalls {
                 await send(conversationId: conversationId)
