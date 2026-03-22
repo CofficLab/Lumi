@@ -13,8 +13,48 @@ extension RootView {
         }
     }
 
+    /// 流式请求模型并落库助手消息；若无工具调用则结束当前发送回合。
+    /// - Parameters:
+    ///   - ensuringIncludedMessage: 若历史列表中尚无该条（例如刚落库与读库时序），则追加后再请求模型。
+    func send(
+        conversationId: UUID,
+        ensuringIncludedMessage: ChatMessage? = nil,
+        config: LLMConfig,
+        tools: [AgentTool]?,
+        onChunk: @Sendable @escaping (StreamChunk) async -> Void,
+        failureLogSummary: String
+    ) async {
+        var messages = await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
+        if let extra = ensuringIncludedMessage,
+           !messages.contains(where: { $0.id == extra.id }) {
+            messages.append(extra)
+        }
+
+        let statusVM = conversationSendStatusVM
+        do {
+            statusVM.setStatus(conversationId: conversationId, content: "正在发送消息…")
+            let assistantMessage = try await llmService.sendStreamingMessage(
+                messages: messages,
+                config: config,
+                tools: tools,
+                onChunk: onChunk
+            )
+            await conversationVM.saveMessage(assistantMessage, to: conversationId)
+            if assistantMessage.hasToolCalls == false {
+                finishSendTurn(conversationId: conversationId)
+            }
+        } catch {
+            AppLogger.core.error("\(Self.t) \(failureLogSummary)：\(error)")
+            statusVM.setStatus(
+                conversationId: conversationId,
+                content: "发送失败：\(error.localizedDescription)"
+            )
+            finishSendTurn(conversationId: conversationId)
+        }
+    }
+
     /// 已落库的助手消息包含工具调用时：执行一轮工具 → 再请求一次模型（后续若仍有工具调用，由下一次 `messageSaved` 驱动）。
-    func continueSendAfterAssistantWithToolCalls(
+    func continueSendAfterToolCalls(
         assistantMessage: ChatMessage,
         conversationId: UUID
     ) async {
@@ -37,9 +77,6 @@ extension RootView {
             await MainActor.run {
                 AppLogger.core.info("\(logTag) 收到响应，类型：\(chunk.eventType?.rawValue ?? "unknown")，内容：\(chunk.content ?? "")")
                 statusVM.applyStreamChunk(conversationId: convId, chunk: chunk)
-                if chunk.eventType == .messageStop {
-                    statusVM.clearStatus(conversationId: convId)
-                }
             }
         }
 
@@ -121,27 +158,12 @@ extension RootView {
             }
         }
 
-        do {
-            statusVM.setStatus(conversationId: conversationId, content: "正在发送消息…")
-            let nextMessages = await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
-            let nextAssistant = try await llmService.sendStreamingMessage(
-                messages: nextMessages,
-                config: config,
-                tools: toolsArg,
-                onChunk: onStreamChunk
-            )
-
-            await conversationVM.saveMessage(nextAssistant, to: conversationId)
-            if nextAssistant.hasToolCalls == false {
-                finishSendTurn(conversationId: conversationId)
-            }
-        } catch {
-            AppLogger.core.error("\(Self.t) 工具后续请求模型失败：\(error)")
-            statusVM.setStatus(
-                conversationId: conversationId,
-                content: "发送失败：\(error.localizedDescription)"
-            )
-            finishSendTurn(conversationId: conversationId)
-        }
+        await send(
+            conversationId: conversationId,
+            config: config,
+            tools: toolsArg,
+            onChunk: onStreamChunk,
+            failureLogSummary: "工具后续请求模型失败"
+        )
     }
 }

@@ -37,12 +37,6 @@ extension RootView {
             // 落库保存
             await self.conversationVM.saveMessage(message, to: conversationId)
 
-            // 补充历史消息
-            var messagesForLLM = await self.chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
-            if !messagesForLLM.contains(where: { $0.id == message.id }) {
-                messagesForLLM.append(message)
-            }
-
             let ctx = SendMessageContext(conversationId: conversationId, message: message)
 
             let all: [SendMiddleware] = []
@@ -64,28 +58,14 @@ extension RootView {
                 }
             }
 
-            do {
-                statusVM.setStatus(conversationId: conversationId, content: "正在发送消息…")
-                let assistantMessage = try await self.llmService.sendStreamingMessage(
-                    messages: messagesForLLM,
-                    config: config,
-                    tools: toolsArg,
-                    onChunk: onStreamChunk
-                )
-
-                await self.conversationVM.saveMessage(assistantMessage, to: conversationId)
-
-                if assistantMessage.hasToolCalls == false {
-                    self.finishSendTurn(conversationId: conversationId)
-                }
-            } catch {
-                AppLogger.core.error("\(Self.t) 发送消息失败：\(error)")
-                statusVM.setStatus(
-                    conversationId: conversationId,
-                    content: "发送失败：\(error.localizedDescription)"
-                )
-                self.finishSendTurn(conversationId: conversationId)
-            }
+            await self.send(
+                conversationId: conversationId,
+                ensuringIncludedMessage: message,
+                config: config,
+                tools: toolsArg,
+                onChunk: onStreamChunk,
+                failureLogSummary: "发送消息失败"
+            )
         }
     }
 }
