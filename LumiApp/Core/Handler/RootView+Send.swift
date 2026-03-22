@@ -145,7 +145,7 @@ extension RootView {
                         )
                     }
 
-                    statusVM.setStatus(conversationId: conversationId, content: "正在再次请求模型…")
+                    statusVM.setStatus(conversationId: conversationId, content: "正在请求模型…")
                     let nextMessages = await self.chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
                     assistantMessage = try await self.llmService.sendStreamingMessage(
                         messages: nextMessages,

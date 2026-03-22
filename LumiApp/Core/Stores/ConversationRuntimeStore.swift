@@ -82,8 +82,6 @@ final class ConversationRuntimeStore: ObservableObject {
     /// 供 `RootView+ConversationLifecycle` 投影到各 UI VM 的快照。
     func agentRuntimeSnapshot(for conversationId: UUID) -> AgentRuntimeSnapshot {
         AgentRuntimeSnapshot(
-            isThinking: thinkingConversationIds.contains(conversationId),
-            thinkingText: thinkingTextByConversation[conversationId] ?? "",
             pendingPermissionRequest: pendingPermissionByConversation[conversationId],
             depthWarning: depthWarningByConversation[conversationId]
         )

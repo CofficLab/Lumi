@@ -33,7 +33,6 @@ final class RootViewContainer: ObservableObject {
     let commandSuggestionViewModel: CommandSuggestionVM
     let depthWarningViewModel: DepthWarningVM
     let permissionRequestViewModel: PermissionRequestVM
-    let thinkingStateViewModel: ThinkingStateVM
     let taskCancellationVM: TaskCancellationVM
     let messageViewModel: MessagePendingVM
     let conversationVM: ConversationVM
@@ -120,7 +119,6 @@ final class RootViewContainer: ObservableObject {
 
         self.depthWarningViewModel = DepthWarningVM()
         self.permissionRequestViewModel = PermissionRequestVM()
-        self.thinkingStateViewModel = ThinkingStateVM()
         self.taskCancellationVM = TaskCancellationVM()
 
         // ========================================

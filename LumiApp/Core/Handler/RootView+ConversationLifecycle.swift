@@ -14,10 +14,6 @@ extension RootView {
     private func handleConversationChanged(conversationId: UUID, applyProjectContext: Bool) async {
         let snapshot = container.conversationRuntimeStore.agentRuntimeSnapshot(for: conversationId)
 
-        container.thinkingStateViewModel.setActiveConversation(conversationId)
-        container.thinkingStateViewModel.setIsThinking(snapshot.isThinking, for: conversationId)
-        container.thinkingStateViewModel.setThinkingText(snapshot.thinkingText, for: conversationId)
-
         container.permissionRequestViewModel.setPendingPermissionRequest(snapshot.pendingPermissionRequest)
         container.depthWarningViewModel.setDepthWarning(snapshot.depthWarning)
 
