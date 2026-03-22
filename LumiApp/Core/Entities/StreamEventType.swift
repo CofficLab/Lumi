@@ -28,7 +28,8 @@ enum StreamEventType: String, Sendable {
         case .contentBlockStop: return "内容块结束"
         case .thinkingDelta: return "正在思考"
         case .textDelta: return "正在生成消息"
-        case .inputJsonDelta: return "正在生成工具调用的参数"
+        // 正在生成工具调用的参数
+        case .inputJsonDelta: return "准备调用工具"
         case .signatureDelta: return "签名"
         case .ping: return "心跳"
         case .unknown: return "未知事件"
