@@ -63,7 +63,6 @@ extension LLMService {
         let startTime = CFAbsoluteTimeGetCurrent()
 
         guard let provider = registry.createProvider(id: config.providerId) else {
-            AppLogger.core.error("\(self.t)未找到供应商：\(config.providerId)")
             return LLMServiceError.providerNotFound(providerId: config.providerId).toChatMessage()
         }
 
@@ -102,7 +101,6 @@ extension LLMService {
         let baseURLString = provider.baseURL
 
         guard let url = URL(string: baseURLString) else {
-            AppLogger.core.error("\(self.t)无效的 URL: \(baseURLString)")
             return LLMServiceError.invalidBaseURL(baseURLString).toChatMessage()
         }
 
@@ -115,7 +113,6 @@ extension LLMService {
                 systemPrompt: ""
             )
         } catch {
-            AppLogger.core.error("\(self.t)构建流式请求体失败：\(error.localizedDescription)")
             throw LLMServiceError.requestFailed(error.localizedDescription)
         }
 
@@ -140,20 +137,16 @@ extension LLMService {
                 do {
                     try Task.checkCancellation()
                     var shouldContinue = true
-                    let callbackWarnThreshold: Double = 0.3
 
                     for eventData in Self.splitSSEEvents(from: chunkData) {
                         if let parsed = try provider.parseStreamChunk(data: eventData) {
                             let rawPayload = String(data: eventData, encoding: .utf8)
                             let chunk = parsed.withRawStreamPayload(rawPayload)
-                            if let ttft = await state.recordFirstToken(), Self.verbose >= 1 {
-                                let ttftStr = ttft >= 1000 ? String(format: "%.2fs", ttft / 1000) : String(format: "%.2fms", ttft)
-                                AppLogger.core.info("\(self.t)首 token 延迟: \(ttftStr)")
-                            }
 
                             if let content = chunk.content, chunk.eventType == .textDelta {
                                 await state.appendContent(content)
                             }
+                            
                             if let content = chunk.content, chunk.eventType == .thinkingDelta {
                                 await state.appendThinking(content)
                             }
@@ -184,12 +177,7 @@ extension LLMService {
                                 await state.saveCurrentToolCall()
                             }
 
-                            let callbackStart = CFAbsoluteTimeGetCurrent()
                             await onChunk(chunk)
-                            let callbackElapsed = CFAbsoluteTimeGetCurrent() - callbackStart
-                            if callbackElapsed > callbackWarnThreshold {
-                                AppLogger.core.error("⏱️ onChunk(业务回调)耗时异常: \(String(format: "%.3f", callbackElapsed))s, event=\(chunk.eventType?.rawValue ?? "unknown")")
-                            }
 
                             if chunk.isDone {
                                 shouldContinue = false
@@ -224,7 +212,6 @@ extension LLMService {
 
         let endTime = CFAbsoluteTimeGetCurrent()
         let latency = (endTime - startTime) * 1000.0
-
         let finalContent = await state.accumulatedContentChunks.joined()
         let finalThinking = await state.accumulatedThinkingChunks.joined()
         let finalToolCalls = await state.accumulatedToolCalls
@@ -234,7 +221,7 @@ extension LLMService {
         let finalTimeToFirstToken = await state.timeToFirstToken
 
         if Self.verbose >= 1 {
-            AppLogger.core.info("\(Self.t)✅ 流式响应完成，总耗时：\(String(format: "%.2f", latency))ms, TTFT: \(String(format: "%.2f", finalTimeToFirstToken ?? 0))ms, 内容长度：\(finalContent.count)")
+            AppLogger.core.info("\(Self.t)✅ 流式完成，总耗时：\(String(format: "%.2f", latency))ms, TTFT: \(String(format: "%.2f", finalTimeToFirstToken ?? 0))ms, 内容长度：\(finalContent.count)")
         }
 
         let totalTokens: Int? = if let input = finalInputTokens, let output = finalOutputTokens {
