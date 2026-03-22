@@ -5,8 +5,6 @@ import SwiftUI
 /// 会话项视图
 /// 显示单个会话的标题、时间戳和项目信息，支持右键菜单删除操作
 struct ConversationItemView: View {
-    @EnvironmentObject var conversationRuntimeStore: ConversationRuntimeStore
-
     /// 会话模型：包含标题、更新时间、项目 ID 等信息
     let conversation: Conversation
     /// 删除回调：用户确认删除后调用
@@ -17,8 +15,6 @@ struct ConversationItemView: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            statusIndicator
-
             // 标题和元信息
             VStack(alignment: .leading, spacing: 4) {
                 // 标题
@@ -54,32 +50,6 @@ struct ConversationItemView: View {
 // MARK: - View
 
 extension ConversationItemView {
-    @ViewBuilder
-    private var statusIndicator: some View {
-        switch conversationRuntimeStore.runtimeState(for: conversation.id) {
-        case .generating:
-            Image(systemName: "ellipsis.message")
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(.blue)
-                .help("生成中")
-                .frame(width: 12)
-        case .waitingPermission:
-            Image(systemName: "exclamationmark.shield")
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(.orange)
-                .help("等待权限确认")
-                .frame(width: 12)
-        case .error:
-            Image(systemName: "xmark.octagon")
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(.red)
-                .help("本会话最近一次处理出错")
-                .frame(width: 12)
-        case .idle:
-            Color.clear.frame(width: 12, height: 1)
-        }
-    }
-
     /// 元数据区域：显示项目名称和相对时间
     /// 当会话关联了项目时显示项目名，否则只显示时间
     @ViewBuilder

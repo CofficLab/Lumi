@@ -45,9 +45,6 @@ final class RootViewContainer: ObservableObject {
     let conversationSendStatusVM: ConversationSendStatusVM
     let projectContextRequestVM: ProjectContextRequestVM
 
-    // MARK: - 会话运行态
-
-    let conversationRuntimeStore: ConversationRuntimeStore
     let agentSessionConfig: AgentSessionConfig
     let captureThinkingContent: Bool
 
@@ -139,10 +136,8 @@ final class RootViewContainer: ObservableObject {
         self.commandSuggestionViewModel = CommandSuggestionVM(slashCommandService: slashCommandService)
 
         // ========================================
-        // 会话运行态与 Agent 配置
+        // Agent 配置
         // ========================================
-
-        self.conversationRuntimeStore = ConversationRuntimeStore()
 
         self.agentSessionConfig = AgentSessionConfig(
             projectVM: ProjectVM,
@@ -158,8 +153,6 @@ final class RootViewContainer: ObservableObject {
         // ========================================
 
         self.permissionHandlingVM = PermissionHandlingVM(
-            runtimeStore: conversationRuntimeStore,
-            conversationVM: conversationVM,
             permissionRequestViewModel: permissionRequestViewModel
         )
 

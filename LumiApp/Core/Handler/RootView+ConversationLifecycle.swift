@@ -1,21 +1,12 @@
 import SwiftUI
 
 extension RootView {
-    func loadConversation() {
-        guard let conversationId = container.conversationVM.selectedConversationId else { return }
-        Task { await handleConversationChanged(conversationId: conversationId, applyProjectContext: false) }
-    }
-
     func onConversationChanged() {
         guard let conversationId = container.conversationVM.selectedConversationId else { return }
         Task { await handleConversationChanged(conversationId: conversationId, applyProjectContext: true) }
     }
 
     private func handleConversationChanged(conversationId: UUID, applyProjectContext: Bool) async {
-        let snapshot = container.conversationRuntimeStore.agentRuntimeSnapshot(for: conversationId)
-
-        container.permissionRequestViewModel.setPendingPermissionRequest(snapshot.pendingPermissionRequest)
-
         guard applyProjectContext else { return }
         guard let conversation = container.conversationVM.fetchConversation(id: conversationId) else { return }
 

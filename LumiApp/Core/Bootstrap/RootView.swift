@@ -30,7 +30,6 @@ struct RootView<Content>: View, SuperLog where Content: View {
 
     var llmService: LLMService { container.llmService }
     var toolExecutionService: ToolExecutionService { container.toolExecutionService }
-    var runtimeStore: ConversationRuntimeStore { container.conversationRuntimeStore }
     var sessionConfig: AgentSessionConfig { container.agentSessionConfig }
     var chatHistoryService: ChatHistoryService { container.chatHistoryService }
     var toolService: ToolService { container.toolService }
@@ -54,7 +53,6 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(container.providerRegistry)
             .environmentObject(container.pluginVM)
             .environmentObject(container.conversationTurnServices)
-            .environmentObject(container.conversationRuntimeStore)
             .environmentObject(container.agentSessionConfig)
             .environmentObject(container.conversationVM)
             .environmentObject(container.messageViewModel)
@@ -99,7 +97,6 @@ extension RootView {
 
     func onAppear() {
         loadPreferences()
-        loadConversation()
     }
 }
 
