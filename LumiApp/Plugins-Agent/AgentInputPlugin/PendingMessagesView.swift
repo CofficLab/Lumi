@@ -5,7 +5,7 @@ import SwiftData
 /// 显示在输入框上方，展示等待发送的消息列表（不包括正在发送的消息）
 ///
 /// ## 性能优化说明
-/// 此视图使用独立的 ViewModel 来隔离 `MessageSenderVM` 的状态变化，
+/// 此视图使用独立的 ViewModel 来隔离发送队列（`MessageQueueVM`）的状态变化，
 /// 避免每次 `pendingMessages` 变化时触发整个输入区域的重新渲染。
 struct PendingMessagesView: View, SuperLog {
     /// 日志标识 emoji

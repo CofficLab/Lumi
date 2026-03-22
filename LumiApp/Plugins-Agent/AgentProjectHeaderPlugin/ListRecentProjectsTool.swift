@@ -22,6 +22,10 @@ struct ListRecentProjectsTool: AgentTool, SuperLog {
         ]
     }
 
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+        .low
+    }
+
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         let limit = min(arguments["limit"]?.value as? Int ?? 5, 20)
 

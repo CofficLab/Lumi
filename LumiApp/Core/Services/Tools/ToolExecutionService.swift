@@ -42,30 +42,42 @@ final class ToolExecutionService: SuperLog, @unchecked Sendable {
 
     // MARK: - 权限检查
 
-    /// 检查工具调用是否需要权限
-    /// - Parameters:
-    ///   - toolName: 工具名称
-    ///   - arguments: 工具参数（JSON 字符串）
-    /// - Returns: 是否需要权限
-    func requiresPermission(toolName: String, arguments: String) -> Bool {
-        toolService.requiresPermission(toolName: toolName, argumentsJSON: arguments)
-    }
-
     /// 评估命令风险等级
     /// - Parameters:
     ///   - toolName: 工具名称
     ///   - arguments: 工具参数（JSON 字符串）
     /// - Returns: 风险等级
-    func evaluateRisk(toolName: String, arguments: String) -> CommandRiskLevel {
-        // 1. 如果工具本身声明了风险等级，则以工具定义为准
-        if let data = arguments.data(using: .utf8),
-           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let declared = toolService.declaredRiskLevel(toolName: toolName, arguments: json) {
-            return declared
+    ///
+    /// - Note: `ToolService.allTools` 仅在主线程更新；从流式回调等非主线程调用时必须在 MainActor 上读注册表，否则可能误判为未注册。
+    func evaluateRisk(toolName: String, arguments: String) async -> CommandRiskLevel {
+        let parsed = Self.parseToolArgumentsDict(from: arguments)
+        return await MainActor.run {
+            if let declared = toolService.declaredRiskLevel(toolName: toolName, arguments: parsed ?? [:]) {
+                return declared
+            }
+            return .high
         }
+    }
 
-        // 2. 工具未声明时，一律视为高风险，交给用户批准
-        return .high
+    /// 将工具参数字符串尽量解析为对象；失败时返回 nil（由调用方用 `[:]` 回退）。
+    private static func parseToolArgumentsDict(from arguments: String) -> [String: Any]? {
+        let trimmed = arguments.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let data = trimmed.data(using: .utf8) else {
+            return nil
+        }
+        guard let json = try? JSONSerialization.jsonObject(with: data) else {
+            return nil
+        }
+        if let dict = json as? [String: Any] {
+            return dict
+        }
+        // 部分响应把参数包成 JSON 字符串，顶层不是 object 时尝试再解一层
+        if let str = json as? String,
+           let innerData = str.data(using: .utf8),
+           let inner = try? JSONSerialization.jsonObject(with: innerData) as? [String: Any] {
+            return inner
+        }
+        return nil
     }
 
     // MARK: - 工具执行

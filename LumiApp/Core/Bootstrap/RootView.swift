@@ -30,18 +30,16 @@ struct RootView<Content>: View, SuperLog where Content: View {
 
     var llmService: LLMService { container.llmService }
     var toolExecutionService: ToolExecutionService { container.toolExecutionService }
-    var runtimeStore: ConversationRuntimeStore { container.conversationRuntimeStore }
     var sessionConfig: AgentSessionConfig { container.agentSessionConfig }
     var chatHistoryService: ChatHistoryService { container.chatHistoryService }
     var toolService: ToolService { container.toolService }
     var messageViewModel: MessagePendingVM { container.messageViewModel }
-    var ConversationVM: ConversationVM { container.conversationVM }
+    var messageQueueVM: MessageQueueVM { container.messageQueueVM }
+    var conversationVM: ConversationVM { container.conversationVM }
     var projectVM: ProjectVM { container.ProjectVM }
-    var processingStateViewModel: ProcessingStateVM { container.processingStateViewModel }
     var permissionRequestViewModel: PermissionRequestVM { container.permissionRequestViewModel }
-    var thinkingStateViewModel: ThinkingStateVM { container.thinkingStateViewModel }
-    var depthWarningViewModel: DepthWarningVM { container.depthWarningViewModel }
     var captureThinkingContent: Bool { container.captureThinkingContent }
+    var conversationSendStatusVM: ConversationSendStatusVM { container.conversationSendStatusVM }
 
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
@@ -55,7 +53,6 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(container.providerRegistry)
             .environmentObject(container.pluginVM)
             .environmentObject(container.conversationTurnServices)
-            .environmentObject(container.conversationRuntimeStore)
             .environmentObject(container.agentSessionConfig)
             .environmentObject(container.conversationVM)
             .environmentObject(container.messageViewModel)
@@ -65,25 +62,21 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(container.permissionHandlingVM)
             .environmentObject(container.conversationCreationVM)
             .environmentObject(container.commandSuggestionViewModel)
-            .environmentObject(container.depthWarningViewModel)
-            .environmentObject(container.processingStateViewModel)
             .environmentObject(container.permissionRequestViewModel)
-            .environmentObject(container.thinkingStateViewModel)
             .environmentObject(container.taskCancellationVM)
             .environmentObject(container.chatTimelineViewModel)
+            .environmentObject(container.conversationSendStatusVM)
             .environmentObject(container.projectContextRequestVM)
             .environmentObject(container.mystiqueThemeManager)
             .modelContainer(container.modelContainer)
             .onAppear(perform: onAppear)
-            .onChange(of: selectedConversationQueueCount, onSenderPendingMessagesChanged)
+            .onChange(of: selectedConversationQueueCount, onQueueChanged)
             .onChange(of: container.inputQueueVM.pendingRequest?.id, onInputQueueRequested)
             .onChange(of: container.conversationCreationVM.pendingRequest, onConversationCreationRequested)
             .onChange(of: container.taskCancellationVM.conversationIdToCancel, onTaskCancellationRequested)
             .onChange(of: container.projectContextRequestVM.request, onProjectContextRequestChanged)
             .onChange(of: container.conversationVM.selectedConversationId, onConversationChanged)
-            .task(id: ObjectIdentifier(container)) {
-                await runConversationTurnPipeline()
-            }
+            .onResumeSendAfterToolPermission(perform: onResumeSendAfterToolPermission)
     }
 }
 
@@ -98,6 +91,12 @@ extension View {
 // MARK: - Event Handlers
 
 extension RootView {
+    private func onResumeSendAfterToolPermission(_ conversationId: UUID) {
+        Task {
+            await send(conversationId: conversationId)
+        }
+    }
+
     private var selectedConversationQueueCount: Int {
         guard let conversationId = container.conversationVM.selectedConversationId else { return 0 }
         return container.messageQueueVM.queueCount(for: conversationId)
@@ -105,7 +104,6 @@ extension RootView {
 
     func onAppear() {
         loadPreferences()
-        loadConversation()
     }
 }
 

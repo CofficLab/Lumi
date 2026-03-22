@@ -189,14 +189,6 @@ final class ConversationVM: ObservableObject, SuperLog {
         chatHistoryService.fetchConversationsPage(limit: limit, offset: offset)
     }
 
-    /// 获取项目相关的对话
-    ///
-    /// - Parameter projectId: 项目路径
-    /// - Returns: 项目相关的对话列表
-    func fetchConversations(forProject projectId: String) -> [Conversation] {
-        chatHistoryService.fetchConversations(forProject: projectId)
-    }
-
     /// 根据 ID 获取会话
     /// - Parameter id: 会话 ID
     /// - Returns: 会话，不存在时返回 nil

@@ -34,6 +34,10 @@ struct GitHubSearchTool: AgentTool, SuperLog {
         ]
     }
 
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+        .low
+    }
+
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let query = arguments["query"]?.value as? String else {
             throw NSError(

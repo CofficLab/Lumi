@@ -100,5 +100,9 @@ final class MCPToolAdapter: AgentTool, @unchecked Sendable, SuperLog {
             throw error
         }
     }
+
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+        .high
+    }
 }
 

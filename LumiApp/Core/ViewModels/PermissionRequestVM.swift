@@ -2,6 +2,12 @@ import SwiftUI
 import Foundation
 import MagicKit
 
+/// 与 `pendingPermissionRequest` 配套的会话上下文（用于落库与恢复发送）
+struct PendingToolPermissionSession: Equatable, Sendable {
+    let conversationId: UUID
+    let assistantMessageId: UUID
+}
+
 /// 权限请求 ViewModel
 @MainActor
 final class PermissionRequestVM: ObservableObject, SuperLog {
@@ -10,6 +16,9 @@ final class PermissionRequestVM: ObservableObject, SuperLog {
 
     /// 待处理权限请求
     @Published public fileprivate(set) var pendingPermissionRequest: PermissionRequest?
+
+    /// 当前权限浮层对应的助手消息与会话（用于写回 `ToolCall.authorizationState`）
+    @Published public fileprivate(set) var pendingToolPermissionSession: PendingToolPermissionSession?
 
     /// 设置待处理权限请求
     func setPendingPermissionRequest(_ request: PermissionRequest?) {
@@ -29,5 +38,9 @@ final class PermissionRequestVM: ObservableObject, SuperLog {
                 }
             }
         }
+    }
+
+    func setPendingToolPermissionSession(_ session: PendingToolPermissionSession?) {
+        pendingToolPermissionSession = session
     }
 }

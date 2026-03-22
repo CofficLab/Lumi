@@ -399,6 +399,7 @@
       }
     },
     "%lld/%lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7291,6 +7292,7 @@
       }
     },
     "本会话最近一次处理出错" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7659,6 +7661,7 @@
       }
     },
     "深度提醒" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7996,6 +7999,7 @@
       }
     },
     "等待权限确认" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

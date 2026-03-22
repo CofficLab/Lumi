@@ -33,9 +33,8 @@ struct GitLogTool: AgentTool, SuperLog {
         ]
     }
 
-    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel? {
-        // 只读操作，低风险
-        return .low
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+        .low
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {

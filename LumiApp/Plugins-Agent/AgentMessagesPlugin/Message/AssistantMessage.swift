@@ -122,6 +122,7 @@ struct AssistantMessage: View {
                         .font(DesignTokens.Typography.caption2)
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
+
             }
         } trailing: {
             HStack(alignment: .center, spacing: 12) {

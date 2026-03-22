@@ -30,6 +30,10 @@ struct GitHubIssueDetailTool: AgentTool, SuperLog {
         ]
     }
 
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+        .low
+    }
+
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let owner = arguments["owner"]?.value as? String,
               let repo = arguments["repo"]?.value as? String,

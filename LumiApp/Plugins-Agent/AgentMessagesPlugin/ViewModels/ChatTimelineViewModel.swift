@@ -7,17 +7,14 @@ final class ChatTimelineViewModel: ObservableObject {
 
     @Published private(set) var state = ConversationRenderState()
 
-    private let runtimeStore: ConversationRuntimeStore
     private let chatHistoryService: ChatHistoryService
     private let conversationVM: ConversationVM
     private var cancellables = Set<AnyCancellable>()
 
     init(
-        runtimeStore: ConversationRuntimeStore,
         chatHistoryService: ChatHistoryService,
         conversationVM: ConversationVM
     ) {
-        self.runtimeStore = runtimeStore
         self.chatHistoryService = chatHistoryService
         self.conversationVM = conversationVM
         self.state.selectedConversationId = conversationVM.selectedConversationId
@@ -209,12 +206,6 @@ final class ChatTimelineViewModel: ObservableObject {
                 }
             }
             .store(in: &cancellables)
-
-        runtimeStore.$streamingPresentationVersion
-            .sink { [weak self] _ in
-                self?.refreshActiveStreamingMessage()
-            }
-            .store(in: &cancellables)
     }
 
     private func didSelectConversation(_ conversationId: UUID?) async {
@@ -279,29 +270,7 @@ final class ChatTimelineViewModel: ObservableObject {
         }
     }
 
-    /// 当前选中会话的流式占位（不进持久化列表）。
-    private func activeStreamingMessageForSelection() -> ChatMessage? {
-        guard let conversationId = conversationVM.selectedConversationId,
-              let streamState = runtimeStore.streamStateByConversation[conversationId],
-              let messageId = streamState.messageId
-        else { return nil }
-        let text = runtimeStore.streamingTextByConversation[conversationId] ?? ""
-        return ChatMessage(id: messageId, role: .assistant, content: text, timestamp: Date())
-    }
-
     private func refreshActiveStreamingMessage() {
-        guard let conversationId = state.selectedConversationId,
-              conversationId == conversationVM.selectedConversationId,
-              let liveMessage = activeStreamingMessageForSelection()
-        else {
-            state.activeStreamingMessage = nil
-            return
-        }
-
-        if state.persistedMessages.contains(where: { $0.id == liveMessage.id }) {
-            state.activeStreamingMessage = nil
-            return
-        }
-        state.activeStreamingMessage = liveMessage
+        state.activeStreamingMessage = nil
     }
 }

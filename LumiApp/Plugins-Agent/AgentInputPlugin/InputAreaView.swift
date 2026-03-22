@@ -24,9 +24,6 @@ struct InputAreaView: View, SuperLog {
     /// 会话管理 ViewModel
     @EnvironmentObject var ConversationVM: ConversationVM
 
-    /// 处理状态 ViewModel
-    @EnvironmentObject var processingStateViewModel: ProcessingStateVM
-
     /// 命令建议 ViewModel
     @EnvironmentObject var commandSuggestionViewModel: CommandSuggestionVM
 
@@ -124,10 +121,7 @@ struct InputAreaView: View, SuperLog {
         }
         .background(.background)
         .cornerRadius(12)
-        .overlay(
-            // 动态边框 - 处理中时显示动画边框
-            processingBorderOverlay
-        )
+        .overlay(inputAreaBorderOverlay)
         .overlay {
             if !canChat {
                 ZStack {
@@ -171,21 +165,9 @@ struct InputAreaView: View, SuperLog {
 // MARK: - View
 
 extension InputAreaView {
-    /// 处理中的动态边框叠加层
-    @ViewBuilder
-    private var processingBorderOverlay: some View {
-        if processingStateViewModel.isProcessing {
-            // 暂时禁用无限动画边框，避免持续触发渲染事务
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(
-                    Color.blue.opacity(0.35),
-                    lineWidth: 2
-                )
-        } else {
-            // 默认静态边框
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.black.opacity(0.1), lineWidth: 1)
-        }
+    private var inputAreaBorderOverlay: some View {
+        RoundedRectangle(cornerRadius: 12)
+            .stroke(Color.black.opacity(0.1), lineWidth: 1)
     }
 }
 

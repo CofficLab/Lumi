@@ -17,6 +17,10 @@ struct CreateBackgroundAgentTaskTool: AgentTool {
         ]
     }
 
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+        .medium
+    }
+
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         let instruction = (arguments["instruction"]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 

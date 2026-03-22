@@ -31,7 +31,7 @@ final class AttachmentsVM: ObservableObject, SuperLog {
         }
     }
 
-    /// 取出并清空待发送附件，生成 `MessageSenderVM` 所需的 `ImageAttachment`。
+    /// 取出并清空待发送附件，生成发送流程所需的 `ImageAttachment`。
     func drainPendingImageAttachments() -> [ImageAttachment] {
         let drained = pendingAttachments
         pendingAttachments.removeAll()
@@ -58,6 +58,4 @@ final class AttachmentsVM: ObservableObject, SuperLog {
         default: return "image/jpeg"
         }
     }
-
-    private nonisolated static var selfTag: String { "📎" }
 }

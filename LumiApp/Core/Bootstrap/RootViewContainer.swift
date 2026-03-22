@@ -31,10 +31,7 @@ final class RootViewContainer: ObservableObject {
     let mystiqueThemeManager: MystiqueThemeManager
     let ProjectVM: Lumi.ProjectVM
     let commandSuggestionViewModel: CommandSuggestionVM
-    let depthWarningViewModel: DepthWarningVM
-    let processingStateViewModel: ProcessingStateVM
     let permissionRequestViewModel: PermissionRequestVM
-    let thinkingStateViewModel: ThinkingStateVM
     let taskCancellationVM: TaskCancellationVM
     let messageViewModel: MessagePendingVM
     let conversationVM: ConversationVM
@@ -44,19 +41,12 @@ final class RootViewContainer: ObservableObject {
     let permissionHandlingVM: PermissionHandlingVM
     let conversationCreationVM: ConversationCreationVM
     let chatTimelineViewModel: ChatTimelineViewModel
+    /// `RootView+Send` 等发送链路：按会话写入 `role == .status` 的瞬时状态消息（不落库）。
+    let conversationSendStatusVM: ConversationSendStatusVM
     let projectContextRequestVM: ProjectContextRequestVM
 
-    // MARK: - 对话轮次相关
-
-    let conversationRuntimeStore: ConversationRuntimeStore
     let agentSessionConfig: AgentSessionConfig
     let captureThinkingContent: Bool
-    let conversationTurnEvents: AsyncStream<ConversationTurnEvent>
-    let conversationTurnEventContinuation: AsyncStream<ConversationTurnEvent>.Continuation
-    var conversationTurnPipeline: ConversationTurnPipeline?
-    var conversationTurnPluginsDidLoadObserver: NSObjectProtocol?
-    var conversationTurnTaskPipelineByConversation: [UUID: Task<Void, Never>] = [:]
-    var conversationTurnTaskGenerationByConversation: [UUID: Int] = [:]
 
     // MARK: - 初始化
 
@@ -117,10 +107,7 @@ final class RootViewContainer: ObservableObject {
         // UI 状态 VM
         // ========================================
 
-        self.depthWarningViewModel = DepthWarningVM()
-        self.processingStateViewModel = ProcessingStateVM()
         self.permissionRequestViewModel = PermissionRequestVM()
-        self.thinkingStateViewModel = ThinkingStateVM()
         self.taskCancellationVM = TaskCancellationVM()
 
         // ========================================
@@ -149,10 +136,8 @@ final class RootViewContainer: ObservableObject {
         self.commandSuggestionViewModel = CommandSuggestionVM(slashCommandService: slashCommandService)
 
         // ========================================
-        // 对话轮次相关
+        // Agent 配置
         // ========================================
-
-        self.conversationRuntimeStore = ConversationRuntimeStore()
 
         self.agentSessionConfig = AgentSessionConfig(
             projectVM: ProjectVM,
@@ -162,27 +147,15 @@ final class RootViewContainer: ObservableObject {
 
         self.toolExecutionService = ToolExecutionService(toolService: toolService)
         self.captureThinkingContent = true
-        var continuation: AsyncStream<ConversationTurnEvent>.Continuation!
-        self.conversationTurnEvents = AsyncStream { continuation = $0 }
-        self.conversationTurnEventContinuation = continuation
 
         // ========================================
         // 权限与对话创建
         // ========================================
 
         self.permissionHandlingVM = PermissionHandlingVM(
-            runtimeStore: conversationRuntimeStore,
-            conversationVM: conversationVM,
             permissionRequestViewModel: permissionRequestViewModel,
-            emitPermissionDecision: { [conversationTurnEventContinuation] allowed, request, conversationId in
-                conversationTurnEventContinuation.yield(
-                    .permissionDecision(
-                        allowed: allowed,
-                        request: request,
-                        conversationId: conversationId
-                    )
-                )
-            }
+            chatHistoryService: chatHistoryService,
+            toolExecutionService: toolExecutionService
         )
 
         self.conversationCreationVM = ConversationCreationVM()
@@ -194,11 +167,11 @@ final class RootViewContainer: ObservableObject {
         // ========================================
 
         self.chatTimelineViewModel = ChatTimelineViewModel(
-            runtimeStore: conversationRuntimeStore,
             chatHistoryService: chatHistoryService,
             conversationVM: conversationVM
         )
 
+        self.conversationSendStatusVM = ConversationSendStatusVM()
 
         messageQueueVM.objectWillChange
             .sink { [weak self] _ in
@@ -219,6 +192,12 @@ final class RootViewContainer: ObservableObject {
             .store(in: &cancellables)
 
         conversationCreationVM.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
+        conversationSendStatusVM.objectWillChange
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
             }

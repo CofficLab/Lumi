@@ -29,6 +29,7 @@ public struct ToolArgument: @unchecked Sendable {
 /// - `name`: 唯一名称，用于 AI 选择工具
 /// - `description`: 功能描述，帮助 AI 理解何时使用
 /// - `inputSchema`: 输入参数的 JSON Schema
+/// - `permissionRiskLevel`: 当前调用的风险等级（必填）
 /// - `execute`: 实际执行工具逻辑
 ///
 /// ## 使用示例
@@ -52,6 +53,10 @@ public struct ToolArgument: @unchecked Sendable {
 ///         ]
 ///     }
 ///     
+///     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+///         .low
+///     }
+///
 ///     func execute(arguments: [String: ToolArgument]) async throws -> String {
 ///         let path = arguments["path"]?.value as? String ?? ""
 ///         return try String(contentsOfFile: path)
@@ -91,14 +96,7 @@ protocol AgentTool: Sendable {
     ///
     /// - Throws: 执行过程中可能抛出的错误
     func execute(arguments: [String: ToolArgument]) async throws -> String
-}
 
-extension AgentTool {
-    /// 工具自行评估当前调用的风险等级。
-    ///
-    /// - Parameter arguments: 工具调用参数
-    /// - Returns: 如果返回 nil，则表示“不声明风险”，由上层采用默认策略。
-    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel? {
-        nil
-    }
+    /// 工具自行评估当前调用的风险等级（必填，禁止省略）。
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel
 }

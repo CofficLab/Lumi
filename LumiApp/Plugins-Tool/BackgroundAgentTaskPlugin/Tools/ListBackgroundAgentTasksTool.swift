@@ -18,6 +18,10 @@ struct ListBackgroundAgentTasksTool: AgentTool {
         ]
     }
 
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+        .low
+    }
+
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         let limitValue = arguments["limit"]?.value as? Int
         let limit: Int
