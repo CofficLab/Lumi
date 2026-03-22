@@ -160,6 +160,11 @@ protocol SuperPlugin: Actor {
     /// 提供 Agent 工具工厂列表（带依赖注入）。
     @MainActor func agentToolFactories() -> [AnyAgentToolFactory]
 
+    // MARK: - Send Pipeline
+
+    /// 提供「用户消息入队 → 发送模型」管线中间件（按插件 `order` 与中间件 `order` 排序）。
+    @MainActor func sendMiddlewares() -> [AnySendMiddleware]
+
     // MARK: - Lifecycle Hooks
 
     /// 插件注册完成后的回调

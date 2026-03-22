@@ -6,4 +6,6 @@ extension SuperPlugin {
     @MainActor func agentTools() -> [AgentTool] { [] }
 
     @MainActor func agentToolFactories() -> [AnyAgentToolFactory] { [] }
+
+    @MainActor func sendMiddlewares() -> [AnySendMiddleware] { [] }
 }

@@ -131,7 +131,7 @@ extension RootView {
 
         do {
             statusVM.setStatus(conversationId: conversationId, content: "正在发送消息…")
-            var assistantMessage = try await llmService.sendStreamingMessage(
+            let assistantMessage = try await llmService.sendStreamingMessage(
                 messages: messages,
                 config: config,
                 tools: toolsArg,

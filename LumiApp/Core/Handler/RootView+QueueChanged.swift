@@ -35,8 +35,7 @@ extension RootView {
 
             // 中间件系统
             let ctx = SendMessageContext(conversationId: conversationId, message: message)
-            let all: [SendMiddleware] = []
-            let pipeline = SendPipeline(middlewares: all)
+            let pipeline = SendPipeline(middlewares: self.container.pluginVM.getSendMiddlewares())
             await pipeline.run(ctx: ctx) { _ in }
 
             await self.send(conversationId: conversationId)

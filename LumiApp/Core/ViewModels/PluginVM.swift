@@ -78,6 +78,7 @@ final class PluginVM: ObservableObject, SuperLog {
 
     private var cachedAgentTools: [AgentTool]?
     private var cachedAgentToolFactories: [AnyAgentToolFactory]?
+    private var cachedSendMiddlewares: [SendMiddleware]?
     /// 初始化插件 VM
     ///
     /// - Parameters:
@@ -100,6 +101,7 @@ final class PluginVM: ObservableObject, SuperLog {
                 self?.sidebarViewsCacheKey = nil
                 self?.cachedAgentTools = nil
                 self?.cachedAgentToolFactories = nil
+                self?.cachedSendMiddlewares = nil
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
@@ -167,6 +169,33 @@ final class PluginVM: ObservableObject, SuperLog {
         return sorted
     }
 
+    // MARK: - Send Middleware
+
+    func getSendMiddlewares() -> [SendMiddleware] {
+        if let cachedSendMiddlewares {
+            return cachedSendMiddlewares
+        }
+
+        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
+        var items: [(pluginOrder: Int, mwOrder: Int, middleware: SendMiddleware)] = []
+
+        for plugin in enabledPlugins {
+            let pluginOrder = type(of: plugin).order
+            for m in plugin.sendMiddlewares() {
+                items.append((pluginOrder: pluginOrder, mwOrder: m.order, middleware: m))
+            }
+        }
+
+        let sorted = items.sorted { a, b in
+            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
+            if a.mwOrder != b.mwOrder { return a.mwOrder < b.mwOrder }
+            return a.middleware.id < b.middleware.id
+        }.map(\.middleware)
+
+        cachedSendMiddlewares = sorted
+        return sorted
+    }
+
     /// 析构函数，清理资源
     ///
     /// 移除所有 NotificationCenter 观察者，防止内存泄漏。
@@ -210,6 +239,7 @@ final class PluginVM: ObservableObject, SuperLog {
         sidebarViewsCacheKey = nil
         cachedAgentTools = nil
         cachedAgentToolFactories = nil
+        cachedSendMiddlewares = nil
 
         var count: UInt32 = 0
         guard let classList = objc_copyClassList(&count) else { return }
@@ -252,6 +282,7 @@ final class PluginVM: ObservableObject, SuperLog {
         // 插件已更新，清空聚合缓存，避免在插件加载前被读取后永久缓存为空。
         cachedAgentTools = nil
         cachedAgentToolFactories = nil
+        cachedSendMiddlewares = nil
 
         // 调用生命周期钩子
         for plugin in sortedPlugins {
