@@ -44,6 +44,8 @@ final class RootViewContainer: ObservableObject {
     let permissionHandlingVM: PermissionHandlingVM
     let conversationCreationVM: ConversationCreationVM
     let chatTimelineViewModel: ChatTimelineViewModel
+    /// `RootView+Send` 等发送链路：按会话写入 `role == .status` 的瞬时状态消息（不落库）。
+    let conversationSendStatusVM: ConversationSendStatusVM
     let projectContextRequestVM: ProjectContextRequestVM
 
     // MARK: - 对话轮次相关
@@ -199,6 +201,7 @@ final class RootViewContainer: ObservableObject {
             conversationVM: conversationVM
         )
 
+        self.conversationSendStatusVM = ConversationSendStatusVM()
 
         messageQueueVM.objectWillChange
             .sink { [weak self] _ in
@@ -219,6 +222,12 @@ final class RootViewContainer: ObservableObject {
             .store(in: &cancellables)
 
         conversationCreationVM.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
+        conversationSendStatusVM.objectWillChange
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
             }

@@ -43,6 +43,7 @@ struct RootView<Content>: View, SuperLog where Content: View {
     var thinkingStateViewModel: ThinkingStateVM { container.thinkingStateViewModel }
     var depthWarningViewModel: DepthWarningVM { container.depthWarningViewModel }
     var captureThinkingContent: Bool { container.captureThinkingContent }
+    var conversationSendStatusVM: ConversationSendStatusVM { container.conversationSendStatusVM }
 
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
@@ -72,6 +73,7 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(container.thinkingStateViewModel)
             .environmentObject(container.taskCancellationVM)
             .environmentObject(container.chatTimelineViewModel)
+            .environmentObject(container.conversationSendStatusVM)
             .environmentObject(container.projectContextRequestVM)
             .environmentObject(container.mystiqueThemeManager)
             .modelContainer(container.modelContainer)

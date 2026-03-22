@@ -25,15 +25,22 @@ extension RootView {
         self.messageQueueVM.setCurrentProcessingIndex(0, for: conversationId)
 
         Task { @MainActor in
+            let statusVM = self.conversationSendStatusVM
+            let convId = conversationId
+            let logTag = Self.t
+            statusVM.setStatus(conversationId: conversationId, content: "开始处理待发送消息…")
+
             // 投影到当前消息列表（仅当该会话仍处于选中状态）
             if self.conversationVM.selectedConversationId == conversationId {
                 self.messageViewModel.appendMessage(message)
             }
 
+            statusVM.setStatus(conversationId: conversationId, content: "正在保存用户消息…")
             // 落库保存
             await self.conversationVM.saveMessage(message, to: conversationId)
 
             // 补充历史消息（与 `runTurnJob` 一致）
+            statusVM.setStatus(conversationId: conversationId, content: "正在加载对话历史…")
             var messagesForLLM = await self.chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
             if !messagesForLLM.contains(where: { $0.id == message.id }) {
                 messagesForLLM.append(message)
@@ -41,6 +48,7 @@ extension RootView {
 
             let ctx = SendMessageContext(conversationId: conversationId, message: message)
 
+            statusVM.setStatus(conversationId: conversationId, content: "运行发送中间件…")
             let all: [SendMiddleware] = []
             let pipeline = SendPipeline(middlewares: all)
             await pipeline.run(ctx: ctx) { _ in }
@@ -54,10 +62,14 @@ extension RootView {
             let toolsArg = availableTools.isEmpty ? nil : availableTools
 
             let onStreamChunk: @Sendable (StreamChunk) async -> Void = { chunk in
-                AppLogger.core.info("\(Self.t) 收到响应，类型：\(chunk.eventType?.rawValue ?? "unknown")，内容：\(chunk.content ?? "")")
+                await MainActor.run {
+                    RootViewContainer.shared.conversationSendStatusVM.applyStreamChunk(conversationId: convId, chunk: chunk)
+                    AppLogger.core.info("\(logTag) 收到响应，类型：\(chunk.eventType?.rawValue ?? "unknown")，内容：\(chunk.content ?? "")")
+                }
             }
 
             do {
+                statusVM.setStatus(conversationId: conversationId, content: "正在请求模型（流式）…")
                 var assistantMessage = try await self.llmService.sendStreamingMessage(
                     messages: messagesForLLM,
                     config: config,
@@ -66,14 +78,23 @@ extension RootView {
                 )
 
                 await self.conversationVM.saveMessage(assistantMessage, to: conversationId)
+                statusVM.setStatus(conversationId: conversationId, content: "已收到模型回复，正在处理…")
 
                 var followUpDepth = 0
                 while let toolCalls = assistantMessage.toolCalls, !toolCalls.isEmpty {
                     guard followUpDepth < AgentConfig.maxDepth else {
                         AppLogger.core.error("\(Self.t) 工具后续轮次超过 maxDepth，停止")
+                        statusVM.setStatus(
+                            conversationId: conversationId,
+                            content: "已达到最大工具轮次上限，已停止"
+                        )
                         break
                     }
                     followUpDepth += 1
+                    statusVM.setStatus(
+                        conversationId: conversationId,
+                        content: "第 \(followUpDepth) 轮：准备执行 \(toolCalls.count) 个工具…"
+                    )
 
                     for toolCall in toolCalls {
                         let requiresPermission = self.toolExecutionService.requiresPermission(
@@ -96,7 +117,15 @@ extension RootView {
                         case .permissionRequired:
                             resultMsg = ChatMessage.makeAbortMessage(toolCallID: toolCall.id)
                             AppLogger.core.warning("\(Self.t) 工具 \(toolCall.name) 需要权限确认，简化发送链路下已中止该调用")
+                            statusVM.setStatus(
+                                conversationId: conversationId,
+                                content: "工具「\(toolCall.name)」需要权限确认，已跳过"
+                            )
                         case .proceed:
+                            statusVM.setStatus(
+                                conversationId: conversationId,
+                                content: "正在执行工具：\(toolCall.name)…"
+                            )
                             do {
                                 let result = try await self.toolExecutionService.executeTool(toolCall)
                                 resultMsg = ChatMessage(
@@ -110,8 +139,13 @@ extension RootView {
                         }
 
                         await self.conversationVM.saveMessage(resultMsg, to: conversationId)
+                        statusVM.setStatus(
+                            conversationId: conversationId,
+                            content: "工具「\(toolCall.name)」已结束，写入结果"
+                        )
                     }
 
+                    statusVM.setStatus(conversationId: conversationId, content: "正在再次请求模型…")
                     let nextMessages = await self.chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
                     assistantMessage = try await self.llmService.sendStreamingMessage(
                         messages: nextMessages,
@@ -121,9 +155,16 @@ extension RootView {
                     )
 
                     await self.conversationVM.saveMessage(assistantMessage, to: conversationId)
+                    statusVM.setStatus(conversationId: conversationId, content: "已收到模型回复，正在处理…")
                 }
+
+                statusVM.clearStatus(conversationId: conversationId)
             } catch {
                 AppLogger.core.error("\(Self.t) 发送消息失败：\(error)")
+                statusVM.setStatus(
+                    conversationId: conversationId,
+                    content: "发送失败：\(error.localizedDescription)"
+                )
             }
 
             self.messageQueueVM.removeFirstMessage(for: conversationId)

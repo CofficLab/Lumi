@@ -6,12 +6,9 @@ struct MessageListView: View {
     nonisolated static let historyWindowStep = 40
 
     @EnvironmentObject var timelineViewModel: ChatTimelineViewModel
-    @EnvironmentObject var processingStateViewModel: ProcessingStateVM
-    @EnvironmentObject var thinkingStateViewModel: ThinkingStateVM
+    @EnvironmentObject var conversationSendStatusVM: ConversationSendStatusVM
 
     private let bottomAnchorId = "chat_message_list_bottom_anchor"
-    private let processingStatusRowId = UUID(uuidString: "9D735D22-588A-4B50-9B14-28C358CF5136")!
-    private let thinkingStatusRowId = UUID(uuidString: "7F9E66FA-86F2-4A2A-B311-4A4EA75E1EC4")!
     @State private var historyWindowLimit = Self.defaultHistoryWindowLimit
     @State private var shouldPinLatestUserMessageToTop = false
     @State private var keepLatestUserMessageAtTop = false
@@ -283,43 +280,24 @@ extension MessageListView {
     }
 
     private var statusDisplayRow: DisplayRow? {
-        if processingStateViewModel.hasActiveLoading {
-            let message = ChatMessage(
-                id: processingStatusRowId,
-                role: .status,
-                content: processingStateViewModel.statusText,
-                timestamp: Date(),
-                isTransientStatus: true
-            )
-            return DisplayRow(id: message.id, message: message, relatedToolOutputs: [])
-        }
-
-        if thinkingStateViewModel.isThinking {
-            let message = ChatMessage(
-                id: thinkingStatusRowId,
-                role: .status,
-                content: "思考中…",
-                timestamp: Date(),
-                isTransientStatus: true
-            )
-            return DisplayRow(id: message.id, message: message, relatedToolOutputs: [])
-        }
-
-        return nil
+        guard let sid = timelineViewModel.selectedConversationId,
+              let vmMessage = conversationSendStatusVM.statusMessage(for: sid)
+        else { return nil }
+        return DisplayRow(id: vmMessage.id, message: vmMessage, relatedToolOutputs: [])
     }
 }
 
 // MARK: - Preview
 
 #Preview("MessageListView - Small") {
-    MessageListView()
+    RootView { MessageListView() }
         .padding()
         .background(Color.black)
         .frame(width: 800, height: 600)
 }
 
 #Preview("MessageListView - Large") {
-    MessageListView()
+    RootView { MessageListView() }
         .padding()
         .background(Color.black)
         .frame(width: 1200, height: 1200)
