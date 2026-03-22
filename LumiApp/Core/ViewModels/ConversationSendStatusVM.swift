@@ -9,6 +9,8 @@ final class ConversationSendStatusVM: ObservableObject {
     private var stableStatusRowIdByConversationId: [UUID: UUID] = [:]
     /// 当前流式响应内累积的思考文本（按会话），用于状态行展示。
     private var thinkingTextBufferByConversationId: [UUID: String] = [:]
+    /// 当前流式响应内累积的正文（按会话），用于状态行展示尾部预览。
+    private var streamingTextBufferByConversationId: [UUID: String] = [:]
 
     /// 当前会话的状态消息（若有）。
     func statusMessage(for conversationId: UUID) -> ChatMessage? {
@@ -34,12 +36,14 @@ final class ConversationSendStatusVM: ObservableObject {
         statusMessageByConversationId[conversationId] = nil
         stableStatusRowIdByConversationId[conversationId] = nil
         thinkingTextBufferByConversationId[conversationId] = nil
+        streamingTextBufferByConversationId[conversationId] = nil
     }
 
     /// 根据流式分片更新状态文案
     func applyStreamChunk(conversationId: UUID, chunk: StreamChunk) {
         if chunk.isDone {
             thinkingTextBufferByConversationId[conversationId] = nil
+            streamingTextBufferByConversationId[conversationId] = nil
             setStatus(conversationId: conversationId, content: "流式响应结束")
             return
         }
@@ -48,7 +52,7 @@ final class ConversationSendStatusVM: ObservableObject {
                 thinkingTextBufferByConversationId[conversationId, default: ""] += partial
             }
             let accumulated = thinkingTextBufferByConversationId[conversationId] ?? ""
-            let previewMax = 200
+            let previewMax = 20
             let tail = accumulated.isEmpty
                 ? ""
                 : (accumulated.count <= previewMax ? accumulated : String(accumulated.suffix(previewMax)))
@@ -62,7 +66,21 @@ final class ConversationSendStatusVM: ObservableObject {
             return
         }
         if chunk.eventType == .textDelta {
-            setStatus(conversationId: conversationId, content: "正在生成消息...")
+            if let partial = chunk.content, !partial.isEmpty {
+                streamingTextBufferByConversationId[conversationId, default: ""] += partial
+            }
+            let accumulated = streamingTextBufferByConversationId[conversationId] ?? ""
+            let previewMax = 20
+            let tail = accumulated.isEmpty
+                ? ""
+                : (accumulated.count <= previewMax ? accumulated : String(accumulated.suffix(previewMax)))
+            let line: String
+            if tail.isEmpty {
+                line = "正在生成消息..."
+            } else {
+                line = "正在生成消息... \(tail)"
+            }
+            setStatus(conversationId: conversationId, content: line)
             return
         }
         let typeStr = chunk.eventType?.rawValue ?? "stream"
