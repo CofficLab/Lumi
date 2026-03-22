@@ -440,7 +440,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         actor StreamingState {
             var accumulatedContentChunks: [String] = []
             var accumulatedContentLength: Int = 0
-            /// reasoning / thinking 流分片（与 UI 管线中的 `thinkingTextByConversation` 对齐，便于直接落库）
+            /// reasoning / thinking 流分片（便于直接落库）
             var accumulatedThinkingChunks: [String] = []
             var accumulatedThinkingLength: Int = 0
             var accumulatedToolCalls: [ToolCall] = []

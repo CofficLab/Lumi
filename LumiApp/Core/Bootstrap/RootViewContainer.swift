@@ -45,17 +45,11 @@ final class RootViewContainer: ObservableObject {
     let conversationSendStatusVM: ConversationSendStatusVM
     let projectContextRequestVM: ProjectContextRequestVM
 
-    // MARK: - 对话轮次相关
+    // MARK: - 会话运行态
 
     let conversationRuntimeStore: ConversationRuntimeStore
     let agentSessionConfig: AgentSessionConfig
     let captureThinkingContent: Bool
-    let conversationTurnEvents: AsyncStream<ConversationTurnEvent>
-    let conversationTurnEventContinuation: AsyncStream<ConversationTurnEvent>.Continuation
-    var conversationTurnPipeline: ConversationTurnPipeline?
-    var conversationTurnPluginsDidLoadObserver: NSObjectProtocol?
-    var conversationTurnTaskPipelineByConversation: [UUID: Task<Void, Never>] = [:]
-    var conversationTurnTaskGenerationByConversation: [UUID: Int] = [:]
 
     // MARK: - 初始化
 
@@ -145,7 +139,7 @@ final class RootViewContainer: ObservableObject {
         self.commandSuggestionViewModel = CommandSuggestionVM(slashCommandService: slashCommandService)
 
         // ========================================
-        // 对话轮次相关
+        // 会话运行态与 Agent 配置
         // ========================================
 
         self.conversationRuntimeStore = ConversationRuntimeStore()
@@ -158,9 +152,6 @@ final class RootViewContainer: ObservableObject {
 
         self.toolExecutionService = ToolExecutionService(toolService: toolService)
         self.captureThinkingContent = true
-        var continuation: AsyncStream<ConversationTurnEvent>.Continuation!
-        self.conversationTurnEvents = AsyncStream { continuation = $0 }
-        self.conversationTurnEventContinuation = continuation
 
         // ========================================
         // 权限与对话创建
@@ -169,16 +160,7 @@ final class RootViewContainer: ObservableObject {
         self.permissionHandlingVM = PermissionHandlingVM(
             runtimeStore: conversationRuntimeStore,
             conversationVM: conversationVM,
-            permissionRequestViewModel: permissionRequestViewModel,
-            emitPermissionDecision: { [conversationTurnEventContinuation] allowed, request, conversationId in
-                conversationTurnEventContinuation.yield(
-                    .permissionDecision(
-                        allowed: allowed,
-                        request: request,
-                        conversationId: conversationId
-                    )
-                )
-            }
+            permissionRequestViewModel: permissionRequestViewModel
         )
 
         self.conversationCreationVM = ConversationCreationVM()
@@ -190,7 +172,6 @@ final class RootViewContainer: ObservableObject {
         // ========================================
 
         self.chatTimelineViewModel = ChatTimelineViewModel(
-            runtimeStore: conversationRuntimeStore,
             chatHistoryService: chatHistoryService,
             conversationVM: conversationVM
         )

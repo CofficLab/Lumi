@@ -74,9 +74,8 @@ final class PluginVM: ObservableObject, SuperLog {
     private var sidebarViewsCache: [AnyView]?
     private var sidebarViewsCacheKey: String?
 
-    // MARK: - Middleware / Tools Cache
+    // MARK: - Tools Cache
 
-    private var cachedConversationTurnMiddlewares: [AnyConversationTurnMiddleware]?
     private var cachedAgentTools: [AgentTool]?
     private var cachedAgentToolFactories: [AnyAgentToolFactory]?
     /// 初始化插件 VM
@@ -99,7 +98,6 @@ final class PluginVM: ObservableObject, SuperLog {
             .sink { [weak self] _ in
                 self?.sidebarViewsCache = nil
                 self?.sidebarViewsCacheKey = nil
-                self?.cachedConversationTurnMiddlewares = nil
                 self?.cachedAgentTools = nil
                 self?.cachedAgentToolFactories = nil
                 self?.objectWillChange.send()
@@ -114,33 +112,6 @@ final class PluginVM: ObservableObject, SuperLog {
             name: .fileSelectionChanged,
             object: nil
         )
-    }
-
-    // MARK: - Middleware Aggregation
-
-    func getConversationTurnMiddlewares() -> [AnyConversationTurnMiddleware] {
-        if let cachedConversationTurnMiddlewares {
-            return cachedConversationTurnMiddlewares
-        }
-
-        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
-        var middlewares: [(pluginOrder: Int, m: AnyConversationTurnMiddleware)] = []
-        for plugin in enabledPlugins {
-            let pluginOrder = type(of: plugin).order
-            let ms = plugin.conversationTurnMiddlewares()
-            for m in ms {
-                middlewares.append((pluginOrder: pluginOrder, m: m))
-            }
-        }
-
-        let sorted = middlewares.sorted { a, b in
-            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
-            if a.m.order != b.m.order { return a.m.order < b.m.order }
-            return a.m.id < b.m.id
-        }.map(\.m)
-
-        cachedConversationTurnMiddlewares = sorted
-        return sorted
     }
 
     // MARK: - Agent Tools Aggregation
@@ -235,9 +206,10 @@ final class PluginVM: ObservableObject, SuperLog {
     /// 扫描完成后会发送 `PluginsDidLoad` 通知。
     private func autoDiscoverAndRegisterPlugins() {
         // 插件列表将被重建，相关缓存一并清空
-        cachedConversationTurnMiddlewares = nil
         sidebarViewsCache = nil
         sidebarViewsCacheKey = nil
+        cachedAgentTools = nil
+        cachedAgentToolFactories = nil
 
         var count: UInt32 = 0
         guard let classList = objc_copyClassList(&count) else { return }
@@ -277,8 +249,9 @@ final class PluginVM: ObservableObject, SuperLog {
         self.plugins = sortedPlugins
         self.isLoaded = true
 
-        // 插件已更新，清空聚合缓存，避免 middleware 在插件加载前被读取后永久缓存为空。
-        cachedConversationTurnMiddlewares = nil
+        // 插件已更新，清空聚合缓存，避免在插件加载前被读取后永久缓存为空。
+        cachedAgentTools = nil
+        cachedAgentToolFactories = nil
 
         // 调用生命周期钩子
         for plugin in sortedPlugins {
