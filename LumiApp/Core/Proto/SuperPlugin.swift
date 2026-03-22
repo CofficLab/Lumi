@@ -157,9 +157,6 @@ protocol SuperPlugin: Actor {
     /// 提供对话轮次事件中间件。
     @MainActor func conversationTurnMiddlewares() -> [AnyConversationTurnMiddleware]
 
-    /// 提供消息发送事件中间件。
-    @MainActor func messageSendMiddlewares() -> [AnyMessageSendMiddleware]
-
     // MARK: - Agent Tools Hooks
 
     /// 提供 Agent 工具列表。

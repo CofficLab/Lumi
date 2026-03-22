@@ -77,7 +77,6 @@ final class PluginVM: ObservableObject, SuperLog {
     // MARK: - Middleware / Tools Cache
 
     private var cachedConversationTurnMiddlewares: [AnyConversationTurnMiddleware]?
-    private var cachedMessageSendMiddlewares: [AnyMessageSendMiddleware]?
     private var cachedAgentTools: [AgentTool]?
     private var cachedAgentToolFactories: [AnyAgentToolFactory]?
     /// 初始化插件 VM
@@ -101,7 +100,6 @@ final class PluginVM: ObservableObject, SuperLog {
                 self?.sidebarViewsCache = nil
                 self?.sidebarViewsCacheKey = nil
                 self?.cachedConversationTurnMiddlewares = nil
-                self?.cachedMessageSendMiddlewares = nil
                 self?.cachedAgentTools = nil
                 self?.cachedAgentToolFactories = nil
                 self?.objectWillChange.send()
@@ -142,31 +140,6 @@ final class PluginVM: ObservableObject, SuperLog {
         }.map(\.m)
 
         cachedConversationTurnMiddlewares = sorted
-        return sorted
-    }
-
-    func getMessageSendMiddlewares() -> [AnyMessageSendMiddleware] {
-        if let cachedMessageSendMiddlewares {
-            return cachedMessageSendMiddlewares
-        }
-
-        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
-        var middlewares: [(pluginOrder: Int, m: AnyMessageSendMiddleware)] = []
-        for plugin in enabledPlugins {
-            let pluginOrder = type(of: plugin).order
-            let ms = plugin.messageSendMiddlewares()
-            for m in ms {
-                middlewares.append((pluginOrder: pluginOrder, m: m))
-            }
-        }
-
-        let sorted = middlewares.sorted { a, b in
-            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
-            if a.m.order != b.m.order { return a.m.order < b.m.order }
-            return a.m.id < b.m.id
-        }.map(\.m)
-
-        cachedMessageSendMiddlewares = sorted
         return sorted
     }
 
@@ -263,7 +236,6 @@ final class PluginVM: ObservableObject, SuperLog {
     private func autoDiscoverAndRegisterPlugins() {
         // 插件列表将被重建，相关缓存一并清空
         cachedConversationTurnMiddlewares = nil
-        cachedMessageSendMiddlewares = nil
         sidebarViewsCache = nil
         sidebarViewsCacheKey = nil
 
@@ -307,7 +279,6 @@ final class PluginVM: ObservableObject, SuperLog {
 
         // 插件已更新，清空聚合缓存，避免 middleware 在插件加载前被读取后永久缓存为空。
         cachedConversationTurnMiddlewares = nil
-        cachedMessageSendMiddlewares = nil
 
         // 调用生命周期钩子
         for plugin in sortedPlugins {
