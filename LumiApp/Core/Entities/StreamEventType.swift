@@ -31,7 +31,7 @@ enum StreamEventType: String, Sendable {
         // 正在生成工具调用的参数
         case .inputJsonDelta: return "准备调用工具"
         case .signatureDelta: return "签名"
-        case .ping: return "心跳"
+        case .ping: return "正在处理"
         case .unknown: return "未知事件"
         }
     }
