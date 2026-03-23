@@ -11,6 +11,9 @@ final class MessageQueueVM: ObservableObject, SuperLog {
 
     @Published private(set) var pendingMessages: [ChatMessage] = []
     @Published private(set) var processingMessages: [ChatMessage] = []
+    
+    /// 队列版本号，每次队列变化时递增，用于外部监听
+    @Published private(set) var queueVersion: Int = 0
 
     /// 将消息入队
     /// - Parameter message: 要发送的消息
@@ -23,6 +26,7 @@ final class MessageQueueVM: ObservableObject, SuperLog {
         }
 
         pendingMessages.append(message)
+        queueVersion += 1
 
         if Self.verbose {
             AppLogger.core.info("\(Self.t)📝 消息入队，当前总量：\(self.pendingMessages.count)")
@@ -32,7 +36,11 @@ final class MessageQueueVM: ObservableObject, SuperLog {
     /// 按消息 ID 移除待发送消息（不能移除正在处理的消息）
     func removeMessage(id messageId: UUID) {
         guard !processingMessages.contains(where: { $0.id == messageId }) else { return }
+        let originalCount = pendingMessages.count
         pendingMessages.removeAll { $0.id == messageId }
+        if pendingMessages.count < originalCount {
+            queueVersion += 1
+        }
     }
 
     /// 标记某条消息进入处理中
@@ -65,6 +73,7 @@ final class MessageQueueVM: ObservableObject, SuperLog {
         // 先从 pending 移除，再放入 processing，避免短暂状态不一致
         let message = pendingMessages.remove(at: index)
         processingMessages.append(message)
+        queueVersion += 1
         return message
     }
 

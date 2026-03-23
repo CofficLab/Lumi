@@ -66,7 +66,7 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(container.mystiqueThemeManager)
             .modelContainer(container.modelContainer)
             .onAppear(perform: onAppear)
-            .onChange(of: container.messageQueueVM.pendingMessages, onQueueChanged)
+            .onChange(of: container.messageQueueVM.queueVersion, onQueueChanged)
             .onChange(of: container.inputQueueVM.pendingRequest?.id, onInputQueueRequested)
             .onChange(of: container.conversationCreationVM.pendingRequest, onConversationCreationRequested)
             .onChange(of: container.taskCancellationVM.conversationIdToCancel, onTaskCancellationRequested)
@@ -112,7 +112,7 @@ extension RootView {
         }
     }
 
-    /// 待发送的队列发生变化
+    /// 待发送的队列版本发生变化
     func onQueueChanged() {
         if Self.verbose {
             AppLogger.core.info("\(Self.t) 队列发生变化，尝试开始发送")
