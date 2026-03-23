@@ -11,11 +11,11 @@ struct FilePreviewUnsupportedView: View {
                 .font(.system(size: 32))
                 .foregroundColor(DesignTokens.Color.semantic.textTertiary)
 
-            Text("暂不支持预览")
+            Text(String(localized: "Preview Not Supported", table: "AgentFilePreview"))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-            Text("暂不支持预览该类型的文件\n\(fileName)")
+            Text(String(localized: "Preview Not Supported Type", table: "AgentFilePreview") + "\n" + fileName)
                 .font(.system(size: 11))
                 .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                 .multilineTextAlignment(.center)

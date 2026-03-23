@@ -1,19 +1,19 @@
 import SwiftUI
 import MagicKit
 
-/// 文件预览空状态视图
+/// 文件预览空白状态视图
 struct FilePreviewEmptyStateView: View {
     var body: some View {
         VStack(spacing: 12) {
-            Image(systemName: "doc.text")
+            Image(systemName: "doc.text.magnifyingglass")
                 .font(.system(size: 32))
                 .foregroundColor(DesignTokens.Color.semantic.textTertiary)
 
-            Text("文件预览")
+            Text(String(localized: "File Preview", table: "AgentFilePreview"))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-            Text("请在左侧文件树中选择一个文件\n查看其内容")
+            Text(String(localized: "Select File to Preview", table: "AgentFilePreview"))
                 .font(.system(size: 11))
                 .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                 .multilineTextAlignment(.center)

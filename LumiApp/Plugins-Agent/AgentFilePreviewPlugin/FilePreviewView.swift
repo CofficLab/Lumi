@@ -63,7 +63,7 @@ struct FilePreviewView: View {
                 .font(.system(size: 14))
                 .foregroundColor(.accentColor)
 
-            Text("文件预览")
+            Text(String(localized: "File Preview", table: "AgentFilePreview"))
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
