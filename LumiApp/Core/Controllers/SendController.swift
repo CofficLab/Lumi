@@ -16,23 +16,11 @@ final class SendController: ObservableObject, SuperLog {
         self.container = container
     }
 
-    /// 当前选中会话：若未在处理中且队列有待发送，则出队并开始发送。
-    /// - Parameter queueChangeLogging: 为 `true` 时，在无选中会话或仍在处理中打 error 日志（对应队列 `onChange` 场景）。
-    func attemptBeginNextQueuedSend(queueChangeLogging: Bool = false) async {
-        guard let conversationId = container.conversationVM.selectedConversationId else {
-            if queueChangeLogging {
-                AppLogger.core.error("\(Self.t) 消息队列变了，但当前没有选中的会话，忽略")
-            }
-            return
-        }
-        if container.conversationSendStatusVM.isMessageProcessing(for: conversationId) {
-            if queueChangeLogging {
-                AppLogger.core.error("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 消息队列变了，但当前会话有上一条消息尚未结束，忽略")
-            }
-            return
-        }
-        guard let message = container.messageQueueVM.dequeueFirstMessage(for: conversationId) else { return }
-        await beginSendFromQueue(conversationId: conversationId, message: message)
+    /// 尝试从队列中出队一条“可处理”的消息并开始发送。
+    /// 当某个对话在 `processingMessages` 中已有消息在处理时，该对话的待发送消息不会被出队。
+    func attemptBeginNextQueuedSend() async {
+        guard let message = container.messageQueueVM.dequeueNextEligibleMessage() else { return }
+        await beginSendFromQueue(conversationId: message.conversationId, message: message)
     }
 
     /// 结束当前「发送队列」对应的一轮处理。
@@ -47,8 +35,6 @@ final class SendController: ObservableObject, SuperLog {
         if Self.verbose {
             AppLogger.core.info("\(Self.t) 启动一次发送链路：\(message.content)")
         }
-
-        container.messageQueueVM.startProcessing(message)
 
         if container.conversationVM.selectedConversationId == conversationId {
             container.messagePendingVM.appendMessage(message)

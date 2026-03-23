@@ -54,10 +54,18 @@ final class MessageQueueVM: ObservableObject, SuperLog {
         processingMessages.contains { $0.conversationId == conversationId }
     }
 
-    /// 出队并返回指定会话的第一条消息
-    func dequeueFirstMessage(for conversationId: UUID) -> ChatMessage? {
-        guard let index = pendingMessages.firstIndex(where: { $0.conversationId == conversationId }) else { return nil }
-        return pendingMessages.remove(at: index)
+    /// 从 `pendingMessages` 出队并移动到 `processingMessages`，返回被选中的消息。
+    /// 规则：如果某个对话在 `processingMessages` 中已有消息在处理，则该对话的待发送消息不能出队。
+    func dequeueNextEligibleMessage() -> ChatMessage? {
+        let processingConversationIds = Set(processingMessages.map { $0.conversationId })
+        guard let index = pendingMessages.firstIndex(where: { !processingConversationIds.contains($0.conversationId) }) else {
+            return nil
+        }
+
+        // 先从 pending 移除，再放入 processing，避免短暂状态不一致
+        let message = pendingMessages.remove(at: index)
+        processingMessages.append(message)
+        return message
     }
 
     func queueCount(for conversationId: UUID) -> Int {

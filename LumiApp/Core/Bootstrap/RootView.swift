@@ -66,7 +66,7 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(container.mystiqueThemeManager)
             .modelContainer(container.modelContainer)
             .onAppear(perform: onAppear)
-            .onChange(of: selectedConversationQueueCount, onQueueChanged)
+            .onChange(of: container.messageQueueVM.pendingMessages, onQueueChanged)
             .onChange(of: container.inputQueueVM.pendingRequest?.id, onInputQueueRequested)
             .onChange(of: container.conversationCreationVM.pendingRequest, onConversationCreationRequested)
             .onChange(of: container.taskCancellationVM.conversationIdToCancel, onTaskCancellationRequested)
@@ -113,7 +113,7 @@ extension RootView {
 
     func onAgentConversationSendTurnFinished(_: UUID) {
         Task {
-            await sendController.attemptBeginNextQueuedSend(queueChangeLogging: false)
+            await sendController.attemptBeginNextQueuedSend()
         }
     }
 
@@ -123,15 +123,10 @@ extension RootView {
         }
     }
 
-    private var selectedConversationQueueCount: Int {
-        guard let conversationId = container.conversationVM.selectedConversationId else { return 0 }
-        return container.messageQueueVM.queueCount(for: conversationId)
-    }
-
     /// 待发送的队列发生变化
     func onQueueChanged() {
         Task {
-            await sendController.attemptBeginNextQueuedSend(queueChangeLogging: true)
+            await sendController.attemptBeginNextQueuedSend()
         }
     }
 
