@@ -30,7 +30,13 @@ struct AutoApproveToggle: View {
     }
 }
 
+// MARK: - View
+
 // MARK: - Action
+
+// MARK: - Setter
+
+// MARK: - Event Handler
 
 extension AutoApproveToggle {
     func handleToggleChange(_ enabled: Bool) {

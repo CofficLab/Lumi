@@ -11,20 +11,56 @@ struct AutoApprovePersistenceOverlay<Content: View>: View {
     var body: some View {
         content
             .onAppear {
-                restoreIfNeeded()
+                handleOnAppear()
             }
             .onChange(of: projectVM.autoApproveRisk) { _, newValue in
-                store.saveEnabled(newValue)
+                handleAutoApproveRiskChange(newValue)
             }
+    }
+}
+
+// MARK: - View
+
+// MARK: - Action
+
+// MARK: - Setter
+
+extension AutoApprovePersistenceOverlay {
+    @MainActor
+    private func setRestored(_ value: Bool) {
+        restored = value
+    }
+}
+
+// MARK: - Event Handler
+
+extension AutoApprovePersistenceOverlay {
+    private func handleOnAppear() {
+        restoreIfNeeded()
+    }
+
+    private func handleAutoApproveRiskChange(_ newValue: Bool) {
+        store.saveEnabled(newValue)
     }
 
     private func restoreIfNeeded() {
         guard !restored else { return }
-        restored = true
+        setRestored(true)
         guard let enabled = store.loadEnabled() else { return }
         projectVM.setAutoApproveRisk(enabled)
     }
 }
+
+// MARK: - Preview
+
+#Preview("Auto Approve Persistence Overlay") {
+    AutoApprovePersistenceOverlay {
+        Text("Content")
+    }
+    .inRootView()
+}
+
+// MARK: - Persistence Store
 
 private final class AgentAutoApprovePersistenceStore {
     private let fileManager = FileManager.default
