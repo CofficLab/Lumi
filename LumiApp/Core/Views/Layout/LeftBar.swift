@@ -234,6 +234,6 @@ private extension ModeSwitcherView {
         app.selectedMode = mode
 
         // 同步到持久化存储：下次启动自动恢复。
-        AppSettingStore.saveAppSetting(AppSetting(mode: mode))
+        AppSettingStore.saveAppSetting(AppCoreSetting(mode: mode))
     }
 }
