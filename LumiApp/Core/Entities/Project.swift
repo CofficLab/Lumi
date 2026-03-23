@@ -1,7 +1,7 @@
 import Foundation
 
-/// 最近使用的项目
-public struct RecentProject: Codable, Identifiable, Equatable {
+/// 项目
+public struct Project: Codable, Identifiable, Equatable {
     public let id = UUID()
     public let name: String
     public let path: String

@@ -18,7 +18,7 @@ final class RecentProjectsStore: @unchecked Sendable {
     // MARK: - Public API
 
     /// 加载最近项目列表
-    func loadProjects() -> [RecentProject] {
+    func loadProjects() -> [Project] {
         queue.sync {
             if let current = loadProjectsFromCurrentFile() {
                 return current
@@ -35,7 +35,7 @@ final class RecentProjectsStore: @unchecked Sendable {
     }
 
     /// 保存最近项目列表
-    func saveProjects(_ projects: [RecentProject]) {
+    func saveProjects(_ projects: [Project]) {
         queue.sync {
             persistProjectsToCurrentFile(projects: projects)
         }
@@ -47,7 +47,7 @@ final class RecentProjectsStore: @unchecked Sendable {
             var projects = loadProjectsInternal()
             projects.removeAll { $0.path == path }
 
-            let newProject = RecentProject(name: name, path: path, lastUsed: Date())
+            let newProject = Project(name: name, path: path, lastUsed: Date())
             projects.insert(newProject, at: 0)
             projects = Array(projects.prefix(5))
 
@@ -56,7 +56,7 @@ final class RecentProjectsStore: @unchecked Sendable {
     }
 
     /// 删除指定项目
-    func removeProject(_ project: RecentProject) {
+    func removeProject(_ project: Project) {
         queue.sync {
             var projects = loadProjectsInternal()
             projects.removeAll { $0.id == project.id }
@@ -66,7 +66,7 @@ final class RecentProjectsStore: @unchecked Sendable {
 
     // MARK: - Internal
 
-    private func loadProjectsInternal() -> [RecentProject] {
+    private func loadProjectsInternal() -> [Project] {
         // 避免在 queue.sync 内再次触发迁移逻辑导致重复写。
         // 读取顺序：current file -> legacy migration
         if let current = loadProjectsFromCurrentFile() {
@@ -75,15 +75,15 @@ final class RecentProjectsStore: @unchecked Sendable {
         return loadProjectsFromLegacyStatePlist() ?? []
     }
 
-    private func loadProjectsFromCurrentFile() -> [RecentProject]? {
+    private func loadProjectsFromCurrentFile() -> [Project]? {
         let fileURL = currentStateFileURL()
         guard FileManager.default.fileExists(atPath: fileURL.path) else { return nil }
         guard let data = try? Data(contentsOf: fileURL) else { return nil }
-        guard let projects = try? JSONDecoder().decode([RecentProject].self, from: data) else { return nil }
+        guard let projects = try? JSONDecoder().decode([Project].self, from: data) else { return nil }
         return projects
     }
 
-    private func persistProjectsToCurrentFile(projects: [RecentProject]) {
+    private func persistProjectsToCurrentFile(projects: [Project]) {
         let fileManager = FileManager.default
         let settingsDir = currentSettingsDirURL()
         try? fileManager.createDirectory(at: settingsDir, withIntermediateDirectories: true, attributes: nil)
@@ -108,7 +108,7 @@ final class RecentProjectsStore: @unchecked Sendable {
     /// 从旧的 PluginStateStore 持久化文件迁移一次数据。
     ///
     /// 旧路径：<dbRoot>/StatePersistencePlugin/settings/state.plist
-    private func loadProjectsFromLegacyStatePlist() -> [RecentProject]? {
+    private func loadProjectsFromLegacyStatePlist() -> [Project]? {
         let legacyStatePlistURL = AppConfig.getDBFolderURL()
             .appendingPathComponent("StatePersistencePlugin", isDirectory: true)
             .appendingPathComponent("settings", isDirectory: true)
@@ -120,7 +120,7 @@ final class RecentProjectsStore: @unchecked Sendable {
               let dict = plist as? [String: Any] else { return nil }
 
         guard let storedData = dict[Self.legacyKey] as? Data else { return nil }
-        return try? JSONDecoder().decode([RecentProject].self, from: storedData)
+        return try? JSONDecoder().decode([Project].self, from: storedData)
     }
 
     private func currentSettingsDirURL() -> URL {

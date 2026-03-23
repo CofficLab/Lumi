@@ -90,7 +90,7 @@ struct ProjectSelectorView: View {
 
     // MARK: - Computed Properties
 
-    private var recentProjects: [RecentProject] {
+    private var recentProjects: [Project] {
         Array(ProjectVM.recentProjects
             .prefix(maxRecentProjects)
             .filter { project in
@@ -145,7 +145,7 @@ struct ProjectSelectorView: View {
 
     // MARK: - Project Card
 
-    private func projectCard(_ project: RecentProject) -> some View {
+    private func projectCard(_ project: Project) -> some View {
         GlassRow {
             HStack(spacing: 12) {
                 // 选择项目按钮
@@ -248,14 +248,14 @@ struct ProjectSelectorView: View {
 // MARK: - Event Handler
 
 extension ProjectSelectorView {
-    private func selectProject(_ project: RecentProject) {
+    private func selectProject(_ project: Project) {
         Task { @MainActor in
             projectContextRequestVM.request = .switchProject(path: project.path)
             isPresented = false
         }
     }
 
-    private func deleteProject(_ project: RecentProject) {
+    private func deleteProject(_ project: Project) {
         withAnimation {
             store.removeProject(project)
             // 更新 projectVM 中的列表

@@ -58,7 +58,7 @@ final class ProjectVM: ObservableObject, SuperLog {
     // MARK: - 最近项目
 
     /// 最近使用的项目列表（由 AgentRecentProjectsPlugin 管理）
-    @Published public fileprivate(set) var recentProjects: [RecentProject] = []
+    @Published public fileprivate(set) var recentProjects: [Project] = []
 
     // MARK: - 初始化
 
@@ -227,12 +227,12 @@ final class ProjectVM: ObservableObject, SuperLog {
     // MARK: - 最近项目管理
 
     /// 设置最近项目列表（由 AgentRecentProjectsPlugin 调用）
-    func setRecentProjects(_ projects: [RecentProject]) {
+    func setRecentProjects(_ projects: [Project]) {
         recentProjects = projects
     }
 
     /// 获取最近项目列表
-    func getRecentProjects() -> [RecentProject] {
+    func getRecentProjects() -> [Project] {
         recentProjects
     }
 
