@@ -9,8 +9,8 @@ import MagicKit
 final class ProjectVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose = false
-
-    // MARK: - 项目信息
+    
+    @Published public fileprivate(set) var currentProjec: Project? = nil
 
     /// 当前项目名称
     @Published public fileprivate(set) var currentProjectName: String = ""
@@ -21,15 +21,11 @@ final class ProjectVM: ObservableObject, SuperLog {
     /// 是否已选择项目
     @Published public fileprivate(set) var isProjectSelected: Bool = false
 
-    // MARK: - 项目配置
-
     /// 当前项目的供应商 ID
     @Published public fileprivate(set) var currentProviderId: String = ""
 
     /// 当前项目的模型名称
     @Published public fileprivate(set) var currentModel: String = ""
-
-    // MARK: - 文件选择
 
     /// 当前选择的文件 URL
     @Published public fileprivate(set) var selectedFileURL: URL?
@@ -43,21 +39,16 @@ final class ProjectVM: ObservableObject, SuperLog {
     /// 是否已选择文件
     @Published public fileprivate(set) var isFileSelected: Bool = false
 
-    // MARK: - 语言偏好
-
+    // 语言偏好
     @Published var languagePreference: LanguagePreference = .chinese
 
-    // MARK: - 聊天模式
-
+    // 聊天模式
     @Published var chatMode: ChatMode = .build
 
-    // MARK: - 自动批准风险
-
+    // 自动批准风险
     @Published var autoApproveRisk: Bool = false
 
-    // MARK: - 最近项目
-
-    /// 最近使用的项目列表（由 AgentRecentProjectsPlugin 管理）
+    /// 最近使用的项目列表
     @Published public fileprivate(set) var recentProjects: [Project] = []
 
     // MARK: - 初始化
