@@ -118,7 +118,7 @@ extension InputAreaView {
                     .font(.system(size: 18))
                     .foregroundStyle(.secondary)
 
-                Text(String(localized: "Please create or select a conversation first", table: "DevAssistant"))
+                Text(String(localized: "Please create or select a conversation first", table: "AgentInput"))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

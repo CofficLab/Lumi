@@ -11,8 +11,8 @@ actor AgentInputPlugin: SuperPlugin {
     nonisolated static let verbose = false
 
     static let id = "AgentInput"
-    static let displayName = String(localized: "Agent Input", table: "DevAssistant")
-    static let description = String(localized: "Agent input area", table: "DevAssistant")
+    static let displayName = String(localized: "Agent Input", table: "AgentInput")
+    static let description = String(localized: "Agent input area", table: "AgentInput")
     static let iconName = "textformat.abc"
     static var order: Int { 83 }
     static let enable = true

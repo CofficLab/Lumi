@@ -13,6 +13,9 @@ struct AutoApprovePersistenceOverlay<Content: View>: View {
             .onAppear {
                 handleOnAppear()
             }
+            .onChange(of: projectVM.currentProjectPath) { _, newPath in
+                handleProjectPathChange(newPath)
+            }
             .onChange(of: projectVM.autoApproveRisk) { _, newValue in
                 handleAutoApproveRiskChange(newValue)
             }
@@ -39,14 +42,24 @@ extension AutoApprovePersistenceOverlay {
         restoreIfNeeded()
     }
 
+    private func handleProjectPathChange(_ newPath: String) {
+        // 切换项目时恢复该项目的设置
+        setRestored(false)
+        restoreIfNeeded()
+    }
+
     private func handleAutoApproveRiskChange(_ newValue: Bool) {
-        store.saveEnabled(newValue)
+        let projectPath = projectVM.currentProjectPath
+        guard !projectPath.isEmpty else { return }
+        store.saveEnabled(newValue, for: projectPath)
     }
 
     private func restoreIfNeeded() {
+        let projectPath = projectVM.currentProjectPath
+        guard !projectPath.isEmpty else { return }
         guard !restored else { return }
         setRestored(true)
-        guard let enabled = store.loadEnabled() else { return }
+        guard let enabled = store.loadEnabled(for: projectPath) else { return }
         projectVM.setAutoApproveRisk(enabled)
     }
 }
