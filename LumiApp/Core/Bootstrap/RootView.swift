@@ -138,15 +138,14 @@ extension RootView {
             return
         }
 
-        let pendingMessages = messageQueueVM.pendingMessages(for: conversationId)
-        guard let message = pendingMessages.first else {
-            AppLogger.core.error("\(Self.t) 消息队列变了，但当前会话没有待发送消息，忽略")
+        guard let message = messageQueueVM.pendingMessages(for: conversationId).first else {
+            AppLogger.core.error("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 消息队列变了，但当前会话没有待发送消息，忽略")
             return
         }
 
         // 如果当前会话正在处理消息，则不发送
         if conversationSendStatusVM.isMessageProcessing(for: conversationId) {
-            AppLogger.core.error("\(Self.t) 消息队列变了，但当前会话有上一条消息尚未结束，忽略")
+            AppLogger.core.error("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 消息队列变了，但当前会话有上一条消息尚未结束，忽略")
             return
         }
 

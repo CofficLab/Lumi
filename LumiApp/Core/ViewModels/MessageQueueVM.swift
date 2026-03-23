@@ -64,6 +64,14 @@ final class MessageQueueVM: ObservableObject, SuperLog {
         pendingMessagesByConversation[conversationId] = queue
     }
 
+    /// 出队并返回指定会话的第一条消息
+    func dequeueFirstMessage(for conversationId: UUID) -> ChatMessage? {
+        guard var queue = pendingMessagesByConversation[conversationId], !queue.isEmpty else { return nil }
+        let firstMessage = queue.removeFirst()
+        pendingMessagesByConversation[conversationId] = queue
+        return firstMessage
+    }
+
     func queueCount(for conversationId: UUID) -> Int {
         return pendingMessagesByConversation[conversationId]?.count ?? 0
     }
