@@ -30,7 +30,7 @@ struct NewChatButton: View {
                     .background(Color.black.opacity(0.05))
                     .clipShape(Circle())
             case .cta:
-                Label("新建对话", systemImage: "plus.circle.fill")
+                Label(String(localized: "New Chat", table: "AgentNewChat"), systemImage: "plus.circle.fill")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 14)
@@ -40,7 +40,7 @@ struct NewChatButton: View {
             }
         }
         .buttonStyle(.plain)
-        .help("开启新会话")
+        .help(String(localized: "Start New Conversation", table: "AgentNewChat"))
     }
 }
 
