@@ -90,7 +90,7 @@ extension LLMService {
             let latency = (endTime - startTime) * 1000.0
 
             return ChatMessage(
-                role: .assistant,
+                role: .assistant, conversationId: UUID(),
                 content: content,
                 toolCalls: toolCalls,
                 providerId: config.providerId,

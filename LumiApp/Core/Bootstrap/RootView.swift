@@ -28,18 +28,21 @@ struct RootView<Content>: View, SuperLog where Content: View {
     /// 全局服务容器（单例）。
     @StateObject var container = RootViewContainer.shared
 
-    var llmService: LLMService { container.llmService }
-    var toolExecutionService: ToolExecutionService { container.toolExecutionService }
-    var sessionConfig: AgentSessionConfig { container.agentSessionConfig }
-    var chatHistoryService: ChatHistoryService { container.chatHistoryService }
-    var toolService: ToolService { container.toolService }
-    var messageViewModel: MessagePendingVM { container.messageViewModel }
-    var messageQueueVM: MessageQueueVM { container.messageQueueVM }
-    var conversationVM: ConversationVM { container.conversationVM }
-    var projectVM: ProjectVM { container.ProjectVM }
-    var permissionRequestViewModel: PermissionRequestVM { container.permissionRequestViewModel }
+    /// 发送与回合管线（与 `container` 同源，见 `SendController.init(container:)`）。
+    @StateObject var sendController = SendController(container: RootViewContainer.shared)
+
     var captureThinkingContent: Bool { container.captureThinkingContent }
-    var conversationSendStatusVM: ConversationSendStatusVM { container.conversationSendStatusVM }
+    var chatHistoryService: ChatHistoryService { container.chatHistoryService }
+    var conversationSendStatusVM: ConversationStatusVM { container.conversationSendStatusVM }
+    var conversationVM: ConversationVM { container.conversationVM }
+    var llmService: LLMService { container.llmService }
+    var messageQueueVM: MessageQueueVM { container.messageQueueVM }
+    var messageVM: MessagePendingVM { container.messagePendingVM }
+    var permissionRequestViewModel: PermissionRequestVM { container.permissionRequestVM }
+    var projectVM: ProjectVM { container.ProjectVM }
+    var sessionConfig: AgentSessionConfig { container.agentSessionConfig }
+    var toolExecutionService: ToolExecutionService { container.toolExecutionService }
+    var toolService: ToolService { container.toolService }
 
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
@@ -55,14 +58,14 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(container.conversationTurnServices)
             .environmentObject(container.agentSessionConfig)
             .environmentObject(container.conversationVM)
-            .environmentObject(container.messageViewModel)
+            .environmentObject(container.messagePendingVM)
             .environmentObject(container.messageQueueVM)
             .environmentObject(container.agentAttachmentsVM)
             .environmentObject(container.inputQueueVM)
             .environmentObject(container.permissionHandlingVM)
             .environmentObject(container.conversationCreationVM)
-            .environmentObject(container.commandSuggestionViewModel)
-            .environmentObject(container.permissionRequestViewModel)
+            .environmentObject(container.commandSuggestionVM)
+            .environmentObject(container.permissionRequestVM)
             .environmentObject(container.taskCancellationVM)
             .environmentObject(container.chatTimelineViewModel)
             .environmentObject(container.conversationSendStatusVM)
@@ -77,6 +80,7 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .onChange(of: container.projectContextRequestVM.request, onProjectContextRequestChanged)
             .onChange(of: container.conversationVM.selectedConversationId, onConversationChanged)
             .onResumeSendAfterToolPermission(perform: onResumeSendAfterToolPermission)
+            .onAgentConversationSendTurnFinished(perform: onAgentConversationSendTurnFinished)
     }
 }
 
@@ -91,9 +95,54 @@ extension View {
 // MARK: - Event Handlers
 
 extension RootView {
+    func onAppear() {
+        loadPreferences()
+    }
+
+    private func onAgentConversationSendTurnFinished(_ conversationId: UUID) {
+        guard let conversationId = conversationVM.selectedConversationId else {
+            return
+        }
+        
+        // 如果当前会话正在处理消息，则不发送
+        if conversationSendStatusVM.isMessageProcessing(for: conversationId) {
+            return
+        }
+
+        guard let message = messageQueueVM.dequeueFirstMessage(for: conversationId) else {
+            return
+        }
+
+        Task {
+            await sendController.beginSendFromQueue(conversationId: conversationId, message: message)
+        }
+    }
+
+    @MainActor
+    func loadPreferences() {
+        if let data = PluginStateStore.shared.data(forKey: "Agent_LanguagePreference"),
+           let preference = try? JSONDecoder().decode(LanguagePreference.self, from: data) {
+            container.ProjectVM.setLanguagePreference(preference)
+        }
+
+        if let modeRaw = PluginStateStore.shared.string(forKey: "Agent_ChatMode"),
+           let mode = ChatMode(rawValue: modeRaw) {
+            container.ProjectVM.setChatMode(mode)
+        }
+
+        if let savedPath = PluginStateStore.shared.string(forKey: "Agent_SelectedProject") {
+            container.ProjectVM.switchProject(to: savedPath)
+            Task {
+                await container.slashCommandService.setCurrentProjectPath(savedPath)
+            }
+        }
+    }
+
+    // MARK: - Send queue & resume
+
     private func onResumeSendAfterToolPermission(_ conversationId: UUID) {
         Task {
-            await send(conversationId: conversationId)
+            await sendController.send(conversationId: conversationId)
         }
     }
 
@@ -102,8 +151,235 @@ extension RootView {
         return container.messageQueueVM.queueCount(for: conversationId)
     }
 
-    func onAppear() {
-        loadPreferences()
+    /// 待发送的队列发生变化
+    func onQueueChanged() {
+        guard let conversationId = conversationVM.selectedConversationId else {
+            AppLogger.core.error("\(Self.t) 消息队列变了，但当前没有选中的会话，忽略")
+            return
+        }
+        
+        // 如果当前会话正在处理消息，则不发送
+        if conversationSendStatusVM.isMessageProcessing(for: conversationId) {
+            AppLogger.core.error("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 消息队列变了，但当前会话有上一条消息尚未结束，忽略")
+            return
+        }
+
+        guard let message = messageQueueVM.dequeueFirstMessage(for: conversationId) else {
+            return
+        }
+
+        Task {
+            await sendController.beginSendFromQueue(conversationId: conversationId, message: message)
+        }
+    }
+
+    // MARK: - Input queue
+
+    @MainActor
+    func onInputQueueRequested() {
+        guard let requestId = container.inputQueueVM.pendingRequest?.id else { return }
+        guard let request = container.inputQueueVM.consumePendingRequest(id: requestId) else { return }
+
+        guard let conversationId = container.conversationVM.selectedConversationId else {
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t) No conversation selected")
+            }
+            return
+        }
+
+        let pendingImages = container.agentAttachmentsVM.drainPendingImageAttachments()
+        let allImages = request.images + pendingImages
+        guard !request.text.isEmpty || !allImages.isEmpty else { return }
+
+        let message = ChatMessage(role: .user, conversationId: conversationId, content: request.text, images: allImages)
+        container.messageQueueVM.enqueueMessage(message)
+    }
+
+    // MARK: - Conversation creation
+
+    func onConversationCreationRequested() {
+        guard let requestId = container.conversationCreationVM.pendingRequest else { return }
+        guard let request = container.conversationCreationVM.consumePendingRequest(id: requestId) else { return }
+
+        Task { await createConversation(using: request) }
+    }
+
+    private func createConversation(using requestId: UUID) async {
+        let projectId = container.ProjectVM.isProjectSelected ? container.ProjectVM.currentProjectPath : nil
+        let projectName = container.ProjectVM.isProjectSelected ? container.ProjectVM.currentProjectName : nil
+        let projectPath = container.ProjectVM.isProjectSelected ? container.ProjectVM.currentProjectPath : nil
+        let languagePreference = container.ProjectVM.languagePreference
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd HH:mm"
+
+        let conversation = container.chatHistoryService.createConversation(
+            projectId: projectId,
+            title: "新会话 " + formatter.string(from: Date())
+        )
+
+        container.conversationVM.setSelectedConversation(conversation.id)
+        NotificationCenter.postAgentConversationCreated(conversationId: conversation.id)
+        container.conversationCreationVM.completeRequest(id: requestId)
+
+        Task {
+            let systemMessage = await container.promptService.getSystemContextMessage(
+                projectName: projectName,
+                projectPath: projectPath,
+                language: languagePreference
+            )
+            if !systemMessage.isEmpty {
+                await container.conversationVM.saveMessage(ChatMessage(role: .system, conversationId: conversation.id, content: systemMessage), to: conversation.id)
+            }
+
+            let welcomeMessage = await container.promptService.getEmptySessionWelcomeMessage(
+                projectName: projectName,
+                projectPath: projectPath,
+                language: languagePreference
+            )
+            if !welcomeMessage.isEmpty {
+                await container.conversationVM.saveMessage(ChatMessage(role: .assistant, conversationId: conversation.id, content: welcomeMessage), to: conversation.id)
+            }
+        }
+    }
+
+    // MARK: - System message (root list)
+
+    func upsertRootSystemMessage(_ content: String) {
+        let currentMessages = container.messagePendingVM.messages
+        let conversationId = container.conversationVM.selectedConversationId ?? UUID()
+        let systemMessage = ChatMessage(role: .system, conversationId: conversationId, content: content)
+
+        if !currentMessages.isEmpty, currentMessages[0].role == .system {
+            container.messagePendingVM.updateMessage(systemMessage, at: 0)
+        } else {
+            container.messagePendingVM.insertMessage(systemMessage, at: 0)
+        }
+    }
+
+    // MARK: - Task cancellation
+
+    func onTaskCancellationRequested() {
+        guard let conversationId = container.taskCancellationVM.conversationIdToCancel else { return }
+
+        container.taskCancellationVM.consumeRequest()
+
+        AppLogger.core.info("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 任务已取消")
+    }
+
+    // MARK: - Conversation selection
+
+    func onConversationChanged() {
+        guard let conversationId = container.conversationVM.selectedConversationId else { return }
+        Task { await handleConversationChanged(conversationId: conversationId, applyProjectContext: true) }
+    }
+
+    private func handleConversationChanged(conversationId: UUID, applyProjectContext: Bool) async {
+        guard applyProjectContext else { return }
+        guard let conversation = container.conversationVM.fetchConversation(id: conversationId) else { return }
+
+        let path = conversation.projectId?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let languagePreference = container.ProjectVM.languagePreference
+
+        if let path, !path.isEmpty {
+            container.ProjectVM.switchProject(to: path)
+            await applyConversationProjectContext(path: path, languagePreference: languagePreference)
+        } else {
+            container.ProjectVM.clearProject()
+            await applyConversationProjectContext(path: nil, languagePreference: languagePreference)
+        }
+    }
+
+    private func applyConversationProjectContext(path: String?, languagePreference: LanguagePreference) async {
+        let fullSystemPrompt = await container.promptService.buildSystemPrompt(
+            languagePreference: languagePreference,
+            includeContext: true
+        )
+        upsertRootSystemMessage(fullSystemPrompt)
+        await container.slashCommandService.setCurrentProjectPath(path)
+    }
+
+    // MARK: - Project context request
+
+    @MainActor
+    func onProjectContextRequestChanged() {
+        guard let request = container.projectContextRequestVM.request else { return }
+
+        switch request {
+        case let .switchProject(path):
+            Task {
+                await handleProjectSwitch(path: path)
+                container.projectContextRequestVM.request = nil
+            }
+
+        case .clearProject:
+            Task {
+                await handleProjectClear()
+                container.projectContextRequestVM.request = nil
+            }
+        }
+    }
+
+    private func handleProjectSwitch(path: String) async {
+        container.ProjectVM.switchProject(to: path)
+        let languagePreference = container.ProjectVM.languagePreference
+        await applyProjectContext(path: path, languagePreference: languagePreference)
+
+        let projectName = container.ProjectVM.currentProjectName
+        let config = ProjectConfigStore.shared.getOrCreateConfig(for: path)
+
+        let switchMessage: String
+        switch languagePreference {
+        case .chinese:
+            switchMessage = """
+            ✅ 已切换到项目
+
+            **项目名称**: \(projectName)
+            **项目路径**: \(path)
+            **使用模型**: \(config.model.isEmpty ? "默认" : config.model) (\(config.providerId))
+            """
+        case .english:
+            switchMessage = """
+            ✅ Switched to project
+
+            **Project**: \(projectName)
+            **Path**: \(path)
+            **Model**: \(config.model.isEmpty ? "Default" : config.model) (\(config.providerId))
+            """
+        }
+
+        let conversationId = container.conversationVM.selectedConversationId ?? UUID()
+        container.messagePendingVM.appendMessage(ChatMessage(role: .assistant, conversationId: conversationId, content: switchMessage))
+    }
+
+    private func handleProjectClear() async {
+        guard container.ProjectVM.isProjectSelected else { return }
+
+        container.conversationVM.setSelectedConversation(nil)
+        container.ProjectVM.clearProject()
+
+        let languagePreference = container.ProjectVM.languagePreference
+        await applyProjectContext(path: nil, languagePreference: languagePreference)
+
+        let clearMessage: String
+        switch languagePreference {
+        case .chinese:
+            clearMessage = "✅ 已取消选择项目，当前未关联任何项目。"
+        case .english:
+            clearMessage = "✅ Project cleared. No project is currently selected."
+        }
+
+        let conversationId = container.conversationVM.selectedConversationId ?? UUID()
+        container.messagePendingVM.appendMessage(ChatMessage(role: .assistant, conversationId: conversationId, content: clearMessage))
+    }
+
+    private func applyProjectContext(path: String?, languagePreference: LanguagePreference) async {
+        let fullSystemPrompt = await container.promptService.buildSystemPrompt(
+            languagePreference: languagePreference,
+            includeContext: true
+        )
+        upsertRootSystemMessage(fullSystemPrompt)
+        await container.slashCommandService.setCurrentProjectPath(path)
     }
 }
 

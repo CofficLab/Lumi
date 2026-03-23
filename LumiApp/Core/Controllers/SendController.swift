@@ -1,47 +1,63 @@
 import Foundation
 import MagicKit
-import SwiftUI
 
-// MARK: - 发送与会话回合
+/// 聊天发送与回合驱动控制器
+///
+/// 根据落库消息驱动「请求模型 → 工具执行」闭环，并与发送队列、状态栏联动。
+/// 由 `RootView` 注入 `RootViewContainer` 使用。
+@MainActor
+final class SendController: ObservableObject, SuperLog {
+    nonisolated static let emoji = "📤"
+    nonisolated static let verbose = true
 
-/// 聊天发送相关逻辑：根据落库消息驱动「请求模型 → 工具执行」闭环，并与发送队列、状态栏联动。
-extension RootView {
-    /// 结束当前「发送队列」对应的一轮处理。
-    ///
-    /// 从队列移除队首消息、清除正在处理索引，并清空该会话的发送状态文案。
-    ///
-    /// - Parameter conversationId: 目标会话 ID。
-    func finishSendTurn(conversationId: UUID) {
-        messageQueueVM.removeFirstMessage(for: conversationId)
-        messageQueueVM.setCurrentProcessingIndex(nil, for: conversationId)
-        conversationSendStatusVM.clearStatus(conversationId: conversationId)
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t)✅ [\(String(conversationId.uuidString.prefix(8)))] 消息发送完成，已从队列移除")
-        }
+    private let container: RootViewContainer
+
+    init(container: RootViewContainer) {
+        self.container = container
     }
 
-    /// 根据会话中**已落库的最后一条消息**驱动后续步骤。
+    /// 结束当前「发送队列」对应的一轮处理。
     ///
-    /// 仅在 `messageQueueVM` 对该会话存在「正在处理」索引时，才会发起模型请求或执行工具（避免误触发）。
-    ///
-    /// 分支概要：
-    /// - 最后一条为 **用户** 或 **工具结果**：拉取完整历史，流式请求模型并落库助手消息；若助手含工具调用则递归进入本方法以执行工具。
-    /// - 最后一条为 **助手** 且含工具调用：若有 `pendingAuthorization` 则设置权限 VM 并**返回**等待用户；否则执行工具并落库。若存在 `userRejected`，落库后**结束本回合**（不再递归请求模型）；若全部为同意/自动/无风险，则递归进入本方法。
-    /// - 最后一条为 **助手** 且无工具调用：若仍在处理中则视为回合结束，调用 `finishSendTurn`。
-    /// - **系统 / 状态** 类消息：不处理。
-    ///
-    /// - Parameter conversationId: 目标会话 ID。
+    /// 清除该会话的处理中消息与发送状态文案，并发出 `agentConversationSendTurnFinished`。
+    func finishSendTurn(conversationId: UUID) {
+        container.messageQueueVM.finishProcessing(for: conversationId)
+        container.conversationSendStatusVM.clearStatus(conversationId: conversationId)
+        NotificationCenter.postAgentConversationSendTurnFinished(conversationId: conversationId)
+    }
+
+    /// 从队列入口启动一次发送链路：投影 UI、落库、运行发送中间件，然后继续 `send`。
+    func beginSendFromQueue(conversationId: UUID, message: ChatMessage) async {
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t) 启动一次发送链路：\(message.content)")
+        }
+
+        container.messageQueueVM.startProcessing(message)
+
+        if container.conversationVM.selectedConversationId == conversationId {
+            container.messagePendingVM.appendMessage(message)
+        }
+
+        await container.conversationVM.saveMessage(message, to: conversationId)
+
+        let ctx = SendMessageContext(conversationId: conversationId, message: message)
+        let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
+        await pipeline.run(ctx: ctx) { _ in }
+
+        await send(conversationId: conversationId)
+    }
+
+    /// 根据会话中**已落库的最后一条消息**驱动后续步骤
     func send(conversationId: UUID) async {
-        let messages = await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
+        let messages = await container.chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
         guard let last = messages.last else { return }
 
         switch last.role {
         case .user, .tool:
-            guard messageQueueVM.currentProcessingIndex(for: conversationId) != nil else { return }
+            guard container.messageQueueVM.isProcessing(for: conversationId) else { return }
             await streamAssistantReply(conversationId: conversationId, messages: messages)
         case .assistant:
             if last.hasToolCalls {
-                guard messageQueueVM.currentProcessingIndex(for: conversationId) != nil else { return }
+                guard container.messageQueueVM.isProcessing(for: conversationId) else { return }
                 if await presentToolPermissionIfNeeded(assistantMessage: last, conversationId: conversationId) {
                     return
                 }
@@ -50,7 +66,7 @@ extension RootView {
                 if hadUserRejection {
                     finishSendTurn(conversationId: conversationId)
                     await MainActor.run {
-                        conversationSendStatusVM.setStatus(
+                        container.conversationSendStatusVM.setStatus(
                             conversationId: conversationId,
                             content: "用户拒绝执行工具，已结束回合"
                         )
@@ -58,7 +74,7 @@ extension RootView {
                     return
                 }
                 await send(conversationId: conversationId)
-            } else if messageQueueVM.currentProcessingIndex(for: conversationId) != nil {
+            } else if container.messageQueueVM.isProcessing(for: conversationId) {
                 finishSendTurn(conversationId: conversationId)
             }
         case .system, .status:
@@ -66,7 +82,41 @@ extension RootView {
         }
     }
 
-    // MARK: - Private
+    func onMessageReceived(message: ChatMessage, conversationId: UUID) async {
+        var message = message
+
+        if var calls = message.toolCalls {
+            for i in calls.indices {
+                let risk = await container.toolExecutionService.evaluateRisk(
+                    toolName: calls[i].name,
+                    arguments: calls[i].arguments
+                )
+
+                if Self.verbose {
+                    AppLogger.core.info("\(Self.t) 工具名称：\(calls[i].name)")
+                    AppLogger.core.info("\(Self.t)  工具参数：\(calls[i].arguments)")
+                    AppLogger.core.info("\(Self.t)  工具风险情况：\(risk.displayName)")
+                }
+
+                if !risk.requiresPermission {
+                    calls[i].authorizationState = .noRisk
+                } else if container.ProjectVM.autoApproveRisk {
+                    calls[i].authorizationState = .autoApproved
+                } else {
+                    calls[i].authorizationState = .pendingAuthorization
+                }
+            }
+            message.toolCalls = calls
+        }
+
+        await container.conversationVM.saveMessage(message, to: conversationId)
+
+        if message.hasToolCalls {
+            await send(conversationId: conversationId)
+        } else {
+            finishSendTurn(conversationId: conversationId)
+        }
+    }
 
     /// 若存在仍待授权的工具调用，则填充 `PermissionRequestVM` 并返回 `true`（发送管线应暂停）。
     private func presentToolPermissionIfNeeded(assistantMessage: ChatMessage, conversationId: UUID) async -> Bool {
@@ -75,7 +125,7 @@ extension RootView {
             return false
         }
 
-        let risk = await toolExecutionService.evaluateRisk(
+        let risk = await container.toolExecutionService.evaluateRisk(
             toolName: firstPending.name,
             arguments: firstPending.arguments
         )
@@ -87,14 +137,14 @@ extension RootView {
         )
 
         await MainActor.run {
-            permissionRequestViewModel.setPendingPermissionRequest(request)
-            permissionRequestViewModel.setPendingToolPermissionSession(
+            container.permissionRequestVM.setPendingPermissionRequest(request)
+            container.permissionRequestVM.setPendingToolPermissionSession(
                 PendingToolPermissionSession(
                     conversationId: conversationId,
                     assistantMessageId: assistantMessage.id
                 )
             )
-            conversationSendStatusVM.setStatus(
+            container.conversationSendStatusVM.setStatus(
                 conversationId: conversationId,
                 content: "等待工具授权：\(firstPending.name)…"
             )
@@ -103,23 +153,16 @@ extension RootView {
     }
 
     /// 使用当前会话配置与可用工具，对给定消息列表发起**一次**流式模型请求。
-    ///
-    /// 成功后将助手消息落库：若包含工具调用则 `await send(conversationId:)` 继续链路，否则结束回合。
-    /// 失败时写入错误状态、记录日志并 `finishSendTurn`。
-    ///
-    /// - Parameters:
-    ///   - conversationId: 目标会话 ID。
-    ///   - messages: 已组装好的、将传给模型的完整上下文（须与落库顺序一致）。
     private func streamAssistantReply(conversationId: UUID, messages: [ChatMessage]) async {
-        let config = sessionConfig.getCurrentConfig()
+        let config = container.agentSessionConfig.getCurrentConfig()
         let availableTools = ToolAvailabilityGuard().evaluate(
-            tools: toolService.tools,
-            allowsTools: projectVM.chatMode.allowsTools,
+            tools: container.toolService.tools,
+            allowsTools: container.ProjectVM.chatMode.allowsTools,
             isFinalStep: false
         )
         let toolsArg = availableTools.isEmpty ? nil : availableTools
 
-        let statusVM = conversationSendStatusVM
+        let statusVM = container.conversationSendStatusVM
         let convId = conversationId
         let logTag = Self.t
         let onStreamChunk: @Sendable (StreamChunk) async -> Void = { chunk in
@@ -131,13 +174,13 @@ extension RootView {
 
         do {
             statusVM.setStatus(conversationId: conversationId, content: "正在发送消息…")
-            let assistantMessage = try await llmService.sendStreamingMessage(
+            let assistantMessage = try await container.llmService.sendStreamingMessage(
                 messages: messages,
                 config: config,
                 tools: toolsArg,
                 onChunk: onStreamChunk
             )
-            await self.onMessageReceived(message: assistantMessage, conversationId: conversationId)
+            await onMessageReceived(message: assistantMessage, conversationId: conversationId)
         } catch {
             AppLogger.core.error("\(Self.t) 请求模型失败：\(error)")
             finishSendTurn(conversationId: conversationId)
@@ -149,14 +192,10 @@ extension RootView {
     }
 
     /// 执行某条助手消息中声明的全部工具调用，并将每条结果以 `role: .tool` 消息落库。
-    ///
-    /// - Parameters:
-    ///   - assistantMessage: 含非空 `toolCalls` 的助手消息。
-    ///   - conversationId: 目标会话 ID。
     private func executeToolCalls(assistantMessage: ChatMessage, conversationId: UUID) async {
         guard let toolCalls = assistantMessage.toolCalls, !toolCalls.isEmpty else { return }
 
-        let statusVM = conversationSendStatusVM
+        let statusVM = container.conversationSendStatusVM
 
         for toolCall in toolCalls {
             statusVM.setStatus(
@@ -165,17 +204,18 @@ extension RootView {
             )
             let resultMsg: ChatMessage
             do {
-                let result = try await toolExecutionService.executeTool(toolCall)
+                let result = try await container.toolExecutionService.executeTool(toolCall)
                 resultMsg = ChatMessage(
                     role: .tool,
+                    conversationId: conversationId,
                     content: result,
                     toolCallID: toolCall.id
                 )
             } catch {
-                resultMsg = toolExecutionService.createErrorMessage(for: toolCall, error: error)
+                resultMsg = container.toolExecutionService.createErrorMessage(for: toolCall, error: error, conversationId: conversationId)
             }
 
-            await conversationVM.saveMessage(resultMsg, to: conversationId)
+            await container.conversationVM.saveMessage(resultMsg, to: conversationId)
         }
     }
 }

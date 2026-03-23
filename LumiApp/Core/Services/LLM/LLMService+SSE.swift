@@ -231,7 +231,7 @@ extension LLMService {
         }
 
         return ChatMessage(
-            role: .assistant,
+            role: .assistant, conversationId: UUID(),
             content: finalContent,
             toolCalls: finalToolCalls.isEmpty ? nil : finalToolCalls,
             providerId: config.providerId,

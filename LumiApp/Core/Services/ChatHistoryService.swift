@@ -187,7 +187,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
 
             // 使用简单的消息结构请求标题
             let titleMessages: [ChatMessage] = [
-                ChatMessage(role: .user, content: titlePrompt),
+                ChatMessage(role: .user, conversationId: UUID(), content: titlePrompt),
             ]
 
             let response = try await llmService.sendMessage(
@@ -293,6 +293,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                 }
 
                 let messageEntity = ChatMessageEntity.fromChatMessage(message)
+                messageEntity.timestamp = Date()
                 messageEntity.conversation = fetchedConversation
                 fetchedConversation.updatedAt = Date()
                 context.insert(messageEntity)

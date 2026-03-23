@@ -1,9 +1,9 @@
 import Foundation
 import SwiftUI
 
-/// 按会话维护一条「当前发送/流式/工具」状态，用 `ChatMessage`（`role == .status`）表示，不持久化、不发给 LLM。
+/// 按会话维护一条「当前发送/流式/工具」状态
 @MainActor
-final class ConversationSendStatusVM: ObservableObject {
+final class ConversationStatusVM: ObservableObject {
     @Published private(set) var statusMessageByConversationId: [UUID: ChatMessage] = [:]
 
     private var stableStatusRowIdByConversationId: [UUID: UUID] = [:]
@@ -26,6 +26,7 @@ final class ConversationSendStatusVM: ObservableObject {
         statusMessageByConversationId[conversationId] = ChatMessage(
             id: rowId,
             role: .status,
+            conversationId: conversationId,
             content: content,
             timestamp: Date(),
             isTransientStatus: true
@@ -94,5 +95,10 @@ final class ConversationSendStatusVM: ObservableObject {
 
         let typeStr = chunk.getTitle()
         setStatus(conversationId: conversationId, content: "\(typeStr)...")
+    }
+
+    /// 判断指定会话是否正在进行消息发送处理
+    func isMessageProcessing(for conversationId: UUID) -> Bool {
+        return self.statusMessage(for: conversationId) != nil
     }
 }

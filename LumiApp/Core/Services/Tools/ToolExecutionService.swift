@@ -117,7 +117,7 @@ final class ToolExecutionService: SuperLog, @unchecked Sendable {
     ///   - toolCall: 工具调用
     ///   - error: 错误信息
     /// - Returns: 错误消息对象
-    func createErrorMessage(for toolCall: ToolCall, error: Error) -> ChatMessage {
+    func createErrorMessage(for toolCall: ToolCall, error: Error, conversationId: UUID) -> ChatMessage {
         let errorContent: String
         if let toolError = error as? ToolExecutionError {
             errorContent = toolError.localizedDescription
@@ -127,6 +127,7 @@ final class ToolExecutionService: SuperLog, @unchecked Sendable {
 
         return ChatMessage(
             role: .tool,
+            conversationId: conversationId,
             content: errorContent,
             toolCallID: toolCall.id
         )
@@ -135,9 +136,10 @@ final class ToolExecutionService: SuperLog, @unchecked Sendable {
     /// 创建工具未找到的错误消息
     /// - Parameter toolCall: 工具调用
     /// - Returns: 错误消息对象
-    func createToolNotFoundMessage(for toolCall: ToolCall) -> ChatMessage {
+    func createToolNotFoundMessage(for toolCall: ToolCall, conversationId: UUID) -> ChatMessage {
         ChatMessage(
             role: .tool,
+            conversationId: conversationId,
             content: "Error: Tool '\(toolCall.name)' not found.",
             toolCallID: toolCall.id
         )

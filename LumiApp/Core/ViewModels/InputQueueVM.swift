@@ -5,7 +5,7 @@ import MagicKit
 @MainActor
 final class InputQueueVM: ObservableObject, SuperLog {
     nonisolated static var emoji: String { "🔄" }
-    nonisolated static var verbose: Bool { false }
+    nonisolated static var verbose: Bool { true }
 
     @Published private(set) var pendingRequest: InputEnqueueRequest?
 
@@ -14,8 +14,6 @@ final class InputQueueVM: ObservableObject, SuperLog {
         let text: String
         let images: [ImageAttachment]
     }
-
-    init() {}
 
     /// 发布输入入队请求
     func enqueueText(_ text: String, images: [ImageAttachment] = []) {

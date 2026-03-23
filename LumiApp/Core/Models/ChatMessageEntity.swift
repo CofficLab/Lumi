@@ -79,6 +79,9 @@ final class ChatMessageEntity {
         guard let messageRole = MessageRole(rawValue: role) else {
             return nil
         }
+        guard let conversationId = conversation?.id else {
+            return nil
+        }
         
         var toolCalls: [ToolCall]?
         if let toolCallsData = toolCallsData {
@@ -93,6 +96,7 @@ final class ChatMessageEntity {
         return ChatMessage(
             id: id,
             role: messageRole,
+            conversationId: conversationId,
             content: content,
             timestamp: timestamp,
             isError: isError,

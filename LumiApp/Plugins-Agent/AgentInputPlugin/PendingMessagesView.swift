@@ -1,36 +1,28 @@
 import MagicKit
 import SwiftUI
 import SwiftData
+
 /// 待发送消息队列视图
 /// 显示在输入框上方，展示等待发送的消息列表（不包括正在发送的消息）
-///
-/// ## 性能优化说明
-/// 此视图使用独立的 ViewModel 来隔离发送队列（`MessageQueueVM`）的状态变化，
-/// 避免每次 `pendingMessages` 变化时触发整个输入区域的重新渲染。
 struct PendingMessagesView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "📋"
     /// 是否输出详细日志
     nonisolated static let verbose = true
 
-    /// 消息发送队列 ViewModel（直接订阅，确保 pendingMessages 变化时视图能刻刷新）
-    @EnvironmentObject var MessageSenderVM: MessageQueueVM
+    @EnvironmentObject var messageQueueVM: MessageQueueVM
+    @EnvironmentObject var conversationVM: ConversationVM
 
     /// 数据上下文
     @Environment(\.modelContext) private var modelContext
-    @EnvironmentObject var ConversationVM: ConversationVM
 
     /// 缓存的会话标题
     @State private var cachedConversationTitle: String?
 
     var body: some View {
-        guard let selectedConversationId = ConversationVM.selectedConversationId else { return AnyView(EmptyView()) }
-        let pendingMessages = MessageSenderVM.pendingMessages(for: selectedConversationId)
-        let currentProcessingIndex = MessageSenderVM.currentProcessingIndex(for: selectedConversationId)
-
-        // 只显示队列中等待发送的消息（排除当前正在处理的消息）
-        let waitingMessages = pendingMessages.enumerated()
-            .filter { index, _ in index != currentProcessingIndex }
+        guard let selectedConversationId = conversationVM.selectedConversationId else { return AnyView(EmptyView()) }
+        let pendingMessages = messageQueueVM.pendingMessages(for: selectedConversationId)
+        let waitingMessages = pendingMessages
 
         if !waitingMessages.isEmpty {
             return AnyView(VStack(alignment: .leading, spacing: 6) {
@@ -71,12 +63,11 @@ struct PendingMessagesView: View, SuperLog {
                 // 消息列表
                 ScrollView {
                     LazyVStack(spacing: 4) {
-                        ForEach(Array(waitingMessages), id: \.element.id) { index, message in
+                        ForEach(waitingMessages, id: \.id) { message in
                             PendingMessageRow(
                                 message: message,
-                                index: index,
                                 onRemove: {
-                                    MessageSenderVM.removeMessage(at: index, in: selectedConversationId)
+                                    messageQueueVM.removeMessage(id: message.id)
                                 }
                             )
                         }
@@ -94,7 +85,7 @@ struct PendingMessagesView: View, SuperLog {
                     .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
             )
             .onAppear(perform: updateConversationTitle)
-            .onChange(of: ConversationVM.selectedConversationId) { _, _ in
+            .onChange(of: conversationVM.selectedConversationId) { _, _ in
                 updateConversationTitle()
             }
             )
@@ -105,7 +96,7 @@ struct PendingMessagesView: View, SuperLog {
     // MARK: - Event Handler
 
     private func updateConversationTitle() {
-        guard let conversationId = ConversationVM.selectedConversationId else {
+        guard let conversationId = conversationVM.selectedConversationId else {
             cachedConversationTitle = nil
             return
         }
@@ -127,7 +118,6 @@ struct PendingMessagesView: View, SuperLog {
 /// 单条待发送消息行
 struct PendingMessageRow: View {
     let message: ChatMessage
-    let index: Int
     let onRemove: (() -> Void)?
 
     var body: some View {
