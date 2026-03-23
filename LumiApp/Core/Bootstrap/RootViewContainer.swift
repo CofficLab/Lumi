@@ -30,10 +30,10 @@ final class RootViewContainer: ObservableObject {
     let pluginVM: PluginVM
     let mystiqueThemeManager: MystiqueThemeManager
     let ProjectVM: Lumi.ProjectVM
-    let commandSuggestionViewModel: CommandSuggestionVM
-    let permissionRequestViewModel: PermissionRequestVM
+    let commandSuggestionVM: CommandSuggestionVM
+    let permissionRequestVM: PermissionRequestVM
     let taskCancellationVM: TaskCancellationVM
-    let messageViewModel: MessagePendingVM
+    let messagePendingVM: MessagePendingVM
     let conversationVM: ConversationVM
     let messageQueueVM: MessageQueueVM
     let agentAttachmentsVM: AttachmentsVM
@@ -41,7 +41,6 @@ final class RootViewContainer: ObservableObject {
     let permissionHandlingVM: PermissionHandlingVM
     let conversationCreationVM: ConversationCreationVM
     let chatTimelineViewModel: ChatTimelineViewModel
-    /// `SendController` 等发送链路：按会话写入 `role == .status` 的瞬时状态消息（不落库）。
     let conversationSendStatusVM: ConversationStatusVM
     let projectContextRequestVM: ProjectContextRequestVM
 
@@ -107,14 +106,14 @@ final class RootViewContainer: ObservableObject {
         // UI 状态 VM
         // ========================================
 
-        self.permissionRequestViewModel = PermissionRequestVM()
+        self.permissionRequestVM = PermissionRequestVM()
         self.taskCancellationVM = TaskCancellationVM()
 
         // ========================================
         // 消息相关 VM
         // ========================================
 
-        self.messageViewModel = MessagePendingVM()
+        self.messagePendingVM = MessagePendingVM()
 
         self.conversationVM = Lumi.ConversationVM(
             chatHistoryService: chatHistoryService
@@ -133,7 +132,7 @@ final class RootViewContainer: ObservableObject {
         // 命令建议
         // ========================================
 
-        self.commandSuggestionViewModel = CommandSuggestionVM(slashCommandService: slashCommandService)
+        self.commandSuggestionVM = CommandSuggestionVM(slashCommandService: slashCommandService)
 
         // ========================================
         // Agent 配置
@@ -153,7 +152,7 @@ final class RootViewContainer: ObservableObject {
         // ========================================
 
         self.permissionHandlingVM = PermissionHandlingVM(
-            permissionRequestViewModel: permissionRequestViewModel,
+            permissionRequestViewModel: permissionRequestVM,
             chatHistoryService: chatHistoryService,
             toolExecutionService: toolExecutionService
         )

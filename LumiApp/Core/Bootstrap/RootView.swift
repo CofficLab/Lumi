@@ -37,8 +37,8 @@ struct RootView<Content>: View, SuperLog where Content: View {
     var conversationVM: ConversationVM { container.conversationVM }
     var llmService: LLMService { container.llmService }
     var messageQueueVM: MessageQueueVM { container.messageQueueVM }
-    var messageVM: MessagePendingVM { container.messageViewModel }
-    var permissionRequestViewModel: PermissionRequestVM { container.permissionRequestViewModel }
+    var messageVM: MessagePendingVM { container.messagePendingVM }
+    var permissionRequestViewModel: PermissionRequestVM { container.permissionRequestVM }
     var projectVM: ProjectVM { container.ProjectVM }
     var sessionConfig: AgentSessionConfig { container.agentSessionConfig }
     var toolExecutionService: ToolExecutionService { container.toolExecutionService }
@@ -58,14 +58,14 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(container.conversationTurnServices)
             .environmentObject(container.agentSessionConfig)
             .environmentObject(container.conversationVM)
-            .environmentObject(container.messageViewModel)
+            .environmentObject(container.messagePendingVM)
             .environmentObject(container.messageQueueVM)
             .environmentObject(container.agentAttachmentsVM)
             .environmentObject(container.inputQueueVM)
             .environmentObject(container.permissionHandlingVM)
             .environmentObject(container.conversationCreationVM)
-            .environmentObject(container.commandSuggestionViewModel)
-            .environmentObject(container.permissionRequestViewModel)
+            .environmentObject(container.commandSuggestionVM)
+            .environmentObject(container.permissionRequestVM)
             .environmentObject(container.taskCancellationVM)
             .environmentObject(container.chatTimelineViewModel)
             .environmentObject(container.conversationSendStatusVM)
@@ -228,14 +228,14 @@ extension RootView {
     // MARK: - System message (root list)
 
     func upsertRootSystemMessage(_ content: String) {
-        let currentMessages = container.messageViewModel.messages
+        let currentMessages = container.messagePendingVM.messages
         let conversationId = container.conversationVM.selectedConversationId ?? UUID()
         let systemMessage = ChatMessage(role: .system, conversationId: conversationId, content: content)
 
         if !currentMessages.isEmpty, currentMessages[0].role == .system {
-            container.messageViewModel.updateMessage(systemMessage, at: 0)
+            container.messagePendingVM.updateMessage(systemMessage, at: 0)
         } else {
-            container.messageViewModel.insertMessage(systemMessage, at: 0)
+            container.messagePendingVM.insertMessage(systemMessage, at: 0)
         }
     }
 
@@ -331,7 +331,7 @@ extension RootView {
         }
 
         let conversationId = container.conversationVM.selectedConversationId ?? UUID()
-        container.messageViewModel.appendMessage(ChatMessage(role: .assistant, conversationId: conversationId, content: switchMessage))
+        container.messagePendingVM.appendMessage(ChatMessage(role: .assistant, conversationId: conversationId, content: switchMessage))
     }
 
     private func handleProjectClear() async {
@@ -352,7 +352,7 @@ extension RootView {
         }
 
         let conversationId = container.conversationVM.selectedConversationId ?? UUID()
-        container.messageViewModel.appendMessage(ChatMessage(role: .assistant, conversationId: conversationId, content: clearMessage))
+        container.messagePendingVM.appendMessage(ChatMessage(role: .assistant, conversationId: conversationId, content: clearMessage))
     }
 
     private func applyProjectContext(path: String?, languagePreference: LanguagePreference) async {

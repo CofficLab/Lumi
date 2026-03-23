@@ -33,7 +33,7 @@ final class SendController: ObservableObject, SuperLog {
         container.messageQueueVM.setCurrentProcessingIndex(0, for: conversationId)
 
         if container.conversationVM.selectedConversationId == conversationId {
-            container.messageViewModel.appendMessage(message)
+            container.messagePendingVM.appendMessage(message)
         }
 
         await container.conversationVM.saveMessage(message, to: conversationId)
@@ -136,8 +136,8 @@ final class SendController: ObservableObject, SuperLog {
         )
 
         await MainActor.run {
-            container.permissionRequestViewModel.setPendingPermissionRequest(request)
-            container.permissionRequestViewModel.setPendingToolPermissionSession(
+            container.permissionRequestVM.setPendingPermissionRequest(request)
+            container.permissionRequestVM.setPendingToolPermissionSession(
                 PendingToolPermissionSession(
                     conversationId: conversationId,
                     assistantMessageId: assistantMessage.id

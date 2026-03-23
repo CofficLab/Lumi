@@ -30,16 +30,6 @@ final class MessageQueueVM: ObservableObject, SuperLog {
         }
     }
 
-    /// 清空指定会话的发送队列
-    func clearQueue(for conversationId: UUID) {
-        pendingMessagesByConversation[conversationId] = []
-        currentProcessingIndexByConversation[conversationId] = nil
-
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t)🗑️ [\(conversationId)] 已清空发送队列")
-        }
-    }
-
     /// 移除指定索引的消息（不能移除正在处理的消息）
     func removeMessage(at index: Int, in conversationId: UUID) {
         guard index != currentProcessingIndexByConversation[conversationId] ?? nil else { return }
