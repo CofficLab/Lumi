@@ -8,6 +8,9 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     /// 消息发送者角色
     let role: MessageRole
 
+    /// 所属会话 ID（必填）。
+    let conversationId: UUID
+
     /// 消息内容
     var content: String
 
@@ -100,7 +103,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     }
 
     /// 判断是否为请求超时错误（含被 APIError.requestFailed 包装的 URLError.timedOut）。
-    private static func isTimeoutError(_ error: Error) -> Bool {
+    static func isTimeoutError(_ error: Error) -> Bool {
         let nse = error as NSError
         if nse.domain == NSURLErrorDomain && nse.code == NSURLErrorTimedOut { return true }
         if let apiError = error as? APIError, case let .requestFailed(underlying) = apiError {
@@ -133,7 +136,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     ///   - temperature: temperature 参数
     ///   - maxTokens: max_tokens 参数
     ///   - thinkingContent: 思考过程文本
-    init(role: MessageRole, content: String, isError: Bool = false,
+    init(role: MessageRole, conversationId: UUID, content: String, isError: Bool = false,
          toolCalls: [ToolCall]? = nil, toolCallID: String? = nil,
          images: [ImageAttachment] = [],
          providerId: String? = nil, modelName: String? = nil,
@@ -146,6 +149,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
          isTransientStatus: Bool = false) {
         self.id = UUID()
         self.role = role
+        self.conversationId = conversationId
         self.content = content
         self.timestamp = Date()
         self.isError = isError
@@ -196,7 +200,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     ///   - temperature: temperature 参数
     ///   - maxTokens: max_tokens 参数
     ///   - thinkingContent: 思考过程文本
-    init(id: UUID, role: MessageRole, content: String, timestamp: Date,
+    init(id: UUID, role: MessageRole, conversationId: UUID, content: String, timestamp: Date,
          isError: Bool = false, toolCalls: [ToolCall]? = nil,
          toolCallID: String? = nil, images: [ImageAttachment] = [],
          providerId: String? = nil, modelName: String? = nil,
@@ -209,6 +213,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
          isTransientStatus: Bool = false) {
         self.id = id
         self.role = role
+        self.conversationId = conversationId
         self.content = content
         self.timestamp = timestamp
         self.isError = isError
@@ -240,6 +245,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     static func == (lhs: ChatMessage, rhs: ChatMessage) -> Bool {
         lhs.id == rhs.id &&
             lhs.role == rhs.role &&
+            lhs.conversationId == rhs.conversationId &&
             lhs.content == rhs.content &&
             lhs.isError == rhs.isError &&
             lhs.toolCalls == rhs.toolCalls &&

@@ -173,7 +173,7 @@ extension RootView {
         let allImages = request.images + pendingImages
         guard !request.text.isEmpty || !allImages.isEmpty else { return }
 
-        let message = ChatMessage(role: .user, content: request.text, images: allImages)
+        let message = ChatMessage(role: .user, conversationId: conversationId, content: request.text, images: allImages)
         container.messageQueueVM.enqueueMessage(message, in: conversationId)
     }
 
@@ -211,7 +211,7 @@ extension RootView {
                 language: languagePreference
             )
             if !systemMessage.isEmpty {
-                await container.conversationVM.saveMessage(ChatMessage(role: .system, content: systemMessage), to: conversation.id)
+                await container.conversationVM.saveMessage(ChatMessage(role: .system, conversationId: conversation.id, content: systemMessage), to: conversation.id)
             }
 
             let welcomeMessage = await container.promptService.getEmptySessionWelcomeMessage(
@@ -220,7 +220,7 @@ extension RootView {
                 language: languagePreference
             )
             if !welcomeMessage.isEmpty {
-                await container.conversationVM.saveMessage(ChatMessage(role: .assistant, content: welcomeMessage), to: conversation.id)
+                await container.conversationVM.saveMessage(ChatMessage(role: .assistant, conversationId: conversation.id, content: welcomeMessage), to: conversation.id)
             }
         }
     }
@@ -229,7 +229,8 @@ extension RootView {
 
     func upsertRootSystemMessage(_ content: String) {
         let currentMessages = container.messageViewModel.messages
-        let systemMessage = ChatMessage(role: .system, content: content)
+        let conversationId = container.conversationVM.selectedConversationId ?? UUID()
+        let systemMessage = ChatMessage(role: .system, conversationId: conversationId, content: content)
 
         if !currentMessages.isEmpty, currentMessages[0].role == .system {
             container.messageViewModel.updateMessage(systemMessage, at: 0)
@@ -329,7 +330,8 @@ extension RootView {
             """
         }
 
-        container.messageViewModel.appendMessage(ChatMessage(role: .assistant, content: switchMessage))
+        let conversationId = container.conversationVM.selectedConversationId ?? UUID()
+        container.messageViewModel.appendMessage(ChatMessage(role: .assistant, conversationId: conversationId, content: switchMessage))
     }
 
     private func handleProjectClear() async {
@@ -349,7 +351,8 @@ extension RootView {
             clearMessage = "✅ Project cleared. No project is currently selected."
         }
 
-        container.messageViewModel.appendMessage(ChatMessage(role: .assistant, content: clearMessage))
+        let conversationId = container.conversationVM.selectedConversationId ?? UUID()
+        container.messageViewModel.appendMessage(ChatMessage(role: .assistant, conversationId: conversationId, content: clearMessage))
     }
 
     private func applyProjectContext(path: String?, languagePreference: LanguagePreference) async {

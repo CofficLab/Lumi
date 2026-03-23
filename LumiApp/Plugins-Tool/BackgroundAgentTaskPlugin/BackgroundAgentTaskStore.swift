@@ -196,7 +196,7 @@ actor BackgroundAgentTaskStore: SuperLog {
             }
 
             var messages: [ChatMessage] = [
-                ChatMessage(role: .user, content: task.originalPrompt)
+                ChatMessage(role: .user, conversationId: task.id, content: task.originalPrompt)
             ]
 
             let maxDepth = 16
@@ -223,7 +223,7 @@ actor BackgroundAgentTaskStore: SuperLog {
                         do {
                             result = try await toolExecutionService.executeTool(call)
                         } catch {
-                            let errorMsg = toolExecutionService.createErrorMessage(for: call, error: error)
+                            let errorMsg = toolExecutionService.createErrorMessage(for: call, error: error, conversationId: task.id)
                             messages.append(errorMsg)
                             finalReply = errorMsg
                             break toolLoop
@@ -231,6 +231,7 @@ actor BackgroundAgentTaskStore: SuperLog {
 
                         let toolMessage = ChatMessage(
                             role: .tool,
+                            conversationId: task.id,
                             content: result,
                             toolCallID: call.id
                         )

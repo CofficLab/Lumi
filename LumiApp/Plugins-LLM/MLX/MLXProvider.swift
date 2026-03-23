@@ -232,7 +232,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
         }
         let content = accumulatedContent.joined()
         return ChatMessage(
-            role: .assistant,
+            role: .assistant, conversationId: UUID(),
             content: content,
             toolCalls: accumulatedToolCalls.isEmpty ? nil : accumulatedToolCalls,
             providerId: Self.id,

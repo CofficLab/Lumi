@@ -52,14 +52,15 @@ extension LLMServiceError {
     func toChatMessage() -> ChatMessage {
         switch self {
         case .apiKeyEmpty:
-            ChatMessage(role: .system, content: ChatMessage.apiKeyMissingSystemContentKey, isError: true)
+            ChatMessage(role: .system, conversationId: UUID(), content: ChatMessage.apiKeyMissingSystemContentKey, isError: true)
         case .modelEmpty:
-            ChatMessage(role: .system, content: ChatMessage.llmModelEmptyContentKey, isError: true)
+            ChatMessage(role: .system, conversationId: UUID(), content: ChatMessage.llmModelEmptyContentKey, isError: true)
         case .providerIdEmpty:
-            ChatMessage(role: .system, content: ChatMessage.llmProviderIdEmptyContentKey, isError: true)
+            ChatMessage(role: .system, conversationId: UUID(), content: ChatMessage.llmProviderIdEmptyContentKey, isError: true)
         case let .temperatureOutOfRange(v):
             ChatMessage(
                 role: .system,
+                conversationId: UUID(),
                 content: ChatMessage.llmTemperatureInvalidContentKey,
                 isError: true,
                 temperature: v
@@ -67,6 +68,7 @@ extension LLMServiceError {
         case let .maxTokensInvalid(v):
             ChatMessage(
                 role: .system,
+                conversationId: UUID(),
                 content: ChatMessage.llmMaxTokensInvalidContentKey,
                 isError: true,
                 maxTokens: v
@@ -74,6 +76,7 @@ extension LLMServiceError {
         case let .providerNotFound(providerId):
             ChatMessage(
                 role: .system,
+                conversationId: UUID(),
                 content: ChatMessage.llmProviderNotFoundContentKey,
                 isError: true,
                 providerId: providerId
@@ -81,17 +84,19 @@ extension LLMServiceError {
         case let .invalidBaseURL(urlString):
             ChatMessage(
                 role: .system,
+                conversationId: UUID(),
                 content: ChatMessage.llmInvalidBaseURLMessageContent(baseURL: urlString),
                 isError: true
             )
         case .cancelled:
             ChatMessage(
                 role: .assistant,
+                conversationId: UUID(),
                 content: String(localized: "操作已取消。"),
                 isError: true
             )
         case let .requestFailed(message):
-            ChatMessage(role: .assistant, content: message, isError: true)
+            ChatMessage(role: .assistant, conversationId: UUID(), content: message, isError: true)
         }
     }
 }

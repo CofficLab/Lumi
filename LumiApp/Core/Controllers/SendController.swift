@@ -206,11 +206,12 @@ final class SendController: ObservableObject, SuperLog {
                 let result = try await container.toolExecutionService.executeTool(toolCall)
                 resultMsg = ChatMessage(
                     role: .tool,
+                    conversationId: conversationId,
                     content: result,
                     toolCallID: toolCall.id
                 )
             } catch {
-                resultMsg = container.toolExecutionService.createErrorMessage(for: toolCall, error: error)
+                resultMsg = container.toolExecutionService.createErrorMessage(for: toolCall, error: error, conversationId: conversationId)
             }
 
             await container.conversationVM.saveMessage(resultMsg, to: conversationId)

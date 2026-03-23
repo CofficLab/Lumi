@@ -26,6 +26,7 @@ final class ConversationSendStatusVM: ObservableObject {
         statusMessageByConversationId[conversationId] = ChatMessage(
             id: rowId,
             role: .status,
+            conversationId: conversationId,
             content: content,
             timestamp: Date(),
             isTransientStatus: true

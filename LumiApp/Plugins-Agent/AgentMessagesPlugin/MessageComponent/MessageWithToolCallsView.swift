@@ -314,35 +314,3 @@ private struct GenericToolSectionView: View {
     }
 }
 
-#Preview("Assistant with Tool Calls") {
-    let toolCalls = [
-        ToolCall(id: "tool_1", name: "read_file", arguments: "{\"path\": \"/Users/angel/Code/Lumi/App.swift\"}"),
-        ToolCall(id: "tool_2", name: "run_command", arguments: "{\"command\": \"ls -la\"}")
-    ]
-    let message = ChatMessage(
-        role: .assistant,
-        content: "让我帮你查看项目结构和文件内容。",
-        toolCalls: toolCalls
-    )
-
-    return MessageWithToolCallsView(message: message, toolOutputMessages: [])
-        .padding()
-        .frame(width: 600)
-        .background(Color.black)
-}
-
-#Preview("Assistant with Tool Calls (No Text)") {
-    let toolCalls = [
-        ToolCall(id: "tool_1", name: "list_directory", arguments: "{\"path\": \"/Users/angel/Code/Lumi\"}")
-    ]
-    let message = ChatMessage(
-        role: .assistant,
-        content: "",
-        toolCalls: toolCalls
-    )
-
-    return MessageWithToolCallsView(message: message, toolOutputMessages: [])
-        .padding()
-        .frame(width: 600)
-        .background(Color.black)
-}

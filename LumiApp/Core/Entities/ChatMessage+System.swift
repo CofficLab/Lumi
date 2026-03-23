@@ -20,7 +20,7 @@ extension ChatMessage {
     // MARK: 工厂
 
     /// 系统因达到最大执行深度而终止本轮对话时，用于向用户解释原因的系统消息。
-    static func maxDepthToolLimitMessage(languagePreference: LanguagePreference, currentDepth: Int, maxDepth: Int) -> ChatMessage {
+    static func maxDepthToolLimitMessage(languagePreference: LanguagePreference, currentDepth: Int, maxDepth: Int, conversationId: UUID) -> ChatMessage {
         let content: String
         switch languagePreference {
         case .chinese:
@@ -30,23 +30,26 @@ extension ChatMessage {
         }
         return ChatMessage(
             role: .system,
+            conversationId: conversationId,
             content: content,
             isError: true
         )
     }
 
-    static func makeAbortMessage(toolCallID: String?) -> ChatMessage {
+    static func makeAbortMessage(toolCallID: String?, conversationId: UUID) -> ChatMessage {
         ChatMessage(
             role: .tool,
+            conversationId: conversationId,
             content: "[Tool execution aborted by safety guard]",
             toolCallID: toolCallID
         )
     }
 
     /// 达到最大深度时的最后一步提醒（作为一条 user 消息追加，用于提示模型不再调用工具、直接给出最终回答）。
-    static func maxDepthFinalStepReminderMessage() -> ChatMessage {
+    static func maxDepthFinalStepReminderMessage(conversationId: UUID) -> ChatMessage {
         ChatMessage(
             role: .user,
+            conversationId: conversationId,
             content: """
             <system-reminder>
             You have reached the final execution step. Do not call any tools anymore.
@@ -58,7 +61,7 @@ extension ChatMessage {
     }
 
     /// 请求失败（如超时、网络错误）时，用于在对话中展示的助手错误消息。
-    static func requestFailedMessage(languagePreference: LanguagePreference, error: Error) -> ChatMessage {
+    static func requestFailedMessage(languagePreference: LanguagePreference, error: Error, conversationId: UUID) -> ChatMessage {
         let isTimeout = Self.isTimeoutError(error)
         let content: String
         if isTimeout {
@@ -78,14 +81,16 @@ extension ChatMessage {
         }
         return ChatMessage(
             role: .assistant,
+            conversationId: conversationId,
             content: content,
             isError: true
         )
     }
 
-    static func apiKeyMissingSystemMessage(languagePreference: LanguagePreference) -> ChatMessage {
+    static func apiKeyMissingSystemMessage(languagePreference: LanguagePreference, conversationId: UUID) -> ChatMessage {
         ChatMessage(
             role: .system,
+            conversationId: conversationId,
             content: Self.apiKeyMissingSystemContentKey,
             isError: true
         )
@@ -104,20 +109,23 @@ extension ChatMessage {
 
     static func loadingLocalModelSystemMessage(
         languagePreference: LanguagePreference,
+        conversationId: UUID,
         providerId: String? = nil,
         modelName: String? = nil
     ) -> ChatMessage {
         ChatMessage(
             role: .system,
+            conversationId: conversationId,
             content: Self.loadingLocalModelSystemContentKey,
             providerId: providerId,
             modelName: modelName
         )
     }
 
-    static func turnCompletedSystemMessage(languagePreference: LanguagePreference) -> ChatMessage {
+    static func turnCompletedSystemMessage(languagePreference: LanguagePreference, conversationId: UUID) -> ChatMessage {
         ChatMessage(
             role: .status,
+            conversationId: conversationId,
             content: Self.turnCompletedSystemContentKey
         )
     }
@@ -127,7 +135,8 @@ extension ChatMessage {
         languagePreference: LanguagePreference,
         tool: ToolCall,
         repeatedCount: Int,
-        windowCount: Int
+        windowCount: Int,
+        conversationId: UUID
     ) -> ChatMessage {
         // 尝试对参数做 JSON pretty-print，便于用户排查
         func formatArgs(_ raw: String) -> String {
@@ -186,6 +195,7 @@ extension ChatMessage {
 
         return ChatMessage(
             role: .assistant,
+            conversationId: conversationId,
             content: content,
             isError: true
         )
