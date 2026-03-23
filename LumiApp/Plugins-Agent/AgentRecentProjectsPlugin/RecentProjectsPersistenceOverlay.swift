@@ -19,6 +19,9 @@ struct RecentProjectsPersistenceOverlay<Content: View>: View {
             .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
                 handleProjectPathChange(oldPath: oldPath, newPath: newPath)
             }
+            .onCurrentProjectDidChange { name, path in
+                handleCurrentProjectDidChange(name: name, path: path)
+            }
     }
 }
 
@@ -50,6 +53,19 @@ extension RecentProjectsPersistenceOverlay {
         
         // 同时更新持久化的当前项目
         store.setCurrentProject(name: name, path: newPath)
+    }
+    
+    /// 处理 SetCurrentProjectTool 发出的事件，同步到 ProjectVM
+    private func handleCurrentProjectDidChange(name: String, path: String) {
+        // 如果路径与当前项目相同，无需切换
+        guard projectVM.currentProjectPath != path else { return }
+        
+        // 同步到 ProjectVM
+        projectVM.switchProject(to: path)
+        
+        if AgentRecentProjectsPlugin.verbose {
+            AgentRecentProjectsPlugin.logger.info("📋 已从工具同步项目到 VM：\(name)")
+        }
     }
 
     private func restoreIfNeeded() {

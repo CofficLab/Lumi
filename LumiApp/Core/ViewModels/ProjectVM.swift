@@ -10,10 +10,12 @@ final class ProjectVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose = false
     
-    @Published public fileprivate(set) var currentProjec: Project? = nil
+    @Published public fileprivate(set) var currentProject: Project? = nil
 
     /// 当前项目名称
-    @Published public fileprivate(set) var currentProjectName: String = ""
+    var currentProjectName: String {
+        self.currentProject?.name ?? ""
+    }
 
     /// 当前项目路径
     @Published public fileprivate(set) var currentProjectPath: String = ""
@@ -113,7 +115,6 @@ final class ProjectVM: ObservableObject, SuperLog {
     /// 设置当前项目信息
     private func setCurrentProjectInfo(name: String, path: String, selected: Bool) {
         Task { @MainActor in
-            self.currentProjectName = name
             self.currentProjectPath = path
             self.isProjectSelected = selected
         }

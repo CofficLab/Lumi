@@ -52,6 +52,9 @@ struct SetCurrentProjectTool: AgentTool, SuperLog {
         // 使用 store 设置当前项目（会自动添加到最近列表）
         let store = RecentProjectsStore()
         store.setCurrentProject(name: projectName, path: path)
+        
+        // 发送通知，告知 RootView 同步到 ProjectVM
+        NotificationCenter.postCurrentProjectDidChange(name: projectName, path: path)
 
         return """
         ✅ 已成功设置当前项目
