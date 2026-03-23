@@ -13,13 +13,14 @@ struct PermissionRequestView: View {
             }
             .transition(.opacity)
             .accessibilityElement(children: .contain)
-            .accessibilityLabel("权限请求")
-            .accessibilityHint("请审阅操作风险并选择允许或拒绝")
+            .accessibilityLabel(String(localized: "Accessibility Label - Permission Request", table: "AgentToolPermission"))
+            .accessibilityHint(String(localized: "Accessibility Hint - Permission Request", table: "AgentToolPermission"))
         }
     }
 }
 
 // MARK: - View
+
 extension PermissionRequestView {
     private var backgroundOverlay: some View {
         Color.black.opacity(0.3)
@@ -43,7 +44,7 @@ extension PermissionRequestView {
             Image(systemName: request.riskLevel.iconName)
                 .font(.title2)
                 .foregroundColor(request.riskLevel.iconColor)
-            Text(String(localized: "Permission Request", table: "DevAssistant"))
+            Text(String(localized: "Permission Request", table: "AgentToolPermission"))
                 .font(.headline)
             Spacer()
         }
@@ -55,7 +56,7 @@ extension PermissionRequestView {
                 .font(.body)
                 .fontWeight(.medium)
 
-            Text(String(localized: "The assistant is trying to perform a \(request.riskLevel.displayName) action.", table: "DevAssistant"))
+            Text(String(localized: "The assistant is trying to perform a \(request.riskLevel.displayName) action.", table: "AgentToolPermission"))
                 .font(.caption)
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
@@ -68,7 +69,7 @@ extension PermissionRequestView {
     }
 
     private func detailsDisclosure(for request: PermissionRequest) -> some View {
-        DisclosureGroup(String(localized: "Details", table: "DevAssistant")) {
+        DisclosureGroup(String(localized: "Details", table: "AgentToolPermission")) {
             ScrollView {
                 Text(request.details)
                     .font(.system(.caption, design: .monospaced))
@@ -95,11 +96,11 @@ extension PermissionRequestView {
 
     private var actionButtons: some View {
         HStack(spacing: 12) {
-            GlassButton(title: LocalizedStringKey("Deny"), tableName: "DevAssistant", style: .ghost) {
+            GlassButton(title: LocalizedStringKey("Deny"), tableName: "AgentToolPermission", style: .ghost) {
                 handleDeny()
             }
 
-            GlassButton(title: LocalizedStringKey("Allow"), tableName: "DevAssistant", style: .primary) {
+            GlassButton(title: LocalizedStringKey("Allow"), tableName: "AgentToolPermission", style: .primary) {
                 handleAllow()
             }
         }
@@ -107,6 +108,7 @@ extension PermissionRequestView {
 }
 
 // MARK: - Action
+
 extension PermissionRequestView {
     func handleDeny() {
         Task {
@@ -122,8 +124,8 @@ extension PermissionRequestView {
 }
 
 // MARK: - Preview
+
 #Preview {
     PermissionRequestView()
-        .environmentObject(PermissionHandlingVM())
-        .environmentObject(PermissionRequestVM())
+        .inRootView()
 }
