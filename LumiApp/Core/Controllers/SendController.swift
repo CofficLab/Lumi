@@ -11,6 +11,7 @@ final class SendController: ObservableObject, SuperLog {
     nonisolated static let verbose = true
 
     private let container: RootViewContainer
+    private var activeSendTasksByConversation: [UUID: Task<Void, Never>] = [:]
 
     init(container: RootViewContainer) {
         self.container = container
@@ -20,14 +21,47 @@ final class SendController: ObservableObject, SuperLog {
     /// 当某个对话在 `processingMessages` 中已有消息在处理时，该对话的待发送消息不会被出队。
     func attemptBeginNextQueuedSend() async {
         guard let message = container.messageQueueVM.dequeueNextEligibleMessage() else { return }
-        await beginSendFromQueue(conversationId: message.conversationId, message: message)
+        let conversationId = message.conversationId
+        guard activeSendTasksByConversation[conversationId] == nil else { return }
+
+        activeSendTasksByConversation[conversationId] = Task { [weak self] in
+            guard let self = self else { return }
+            await self.beginSendFromQueue(conversationId: conversationId, message: message)
+            await MainActor.run {
+                self.activeSendTasksByConversation[conversationId] = nil
+            }
+        }
+    }
+
+    /// 取消某个会话当前发送任务，并清理处理中状态。
+    func cancelSend(conversationId: UUID) {
+        let shouldPersistCancelMessage = activeSendTasksByConversation[conversationId] != nil
+        activeSendTasksByConversation[conversationId]?.cancel()
+        activeSendTasksByConversation[conversationId] = nil
+
+        if container.permissionRequestVM.pendingToolPermissionSession?.conversationId == conversationId {
+            container.permissionRequestVM.setPendingPermissionRequest(nil)
+            container.permissionRequestVM.setPendingToolPermissionSession(nil)
+        }
+
+        finishSendTurn(conversationId: conversationId, emitCompletionEvent: false)
+        container.conversationSendStatusVM.setStatus(conversationId: conversationId, content: "已停止生成")
+
+        // 用户主动取消后，补一条系统消息落库（不参与 LLM 上下文）。
+        guard shouldPersistCancelMessage else { return }
+        let systemMessage = ChatMessage(role: .system, conversationId: conversationId, content: "用户主动取消了对话")
+        Task { @MainActor in
+            await container.conversationVM.saveMessage(systemMessage, to: conversationId)
+        }
     }
 
     /// 结束当前「发送队列」对应的一轮处理。
-    func finishSendTurn(conversationId: UUID) {
+    func finishSendTurn(conversationId: UUID, emitCompletionEvent: Bool = true) {
         container.messageQueueVM.finishProcessing(for: conversationId)
         container.conversationSendStatusVM.clearStatus(conversationId: conversationId)
-        NotificationCenter.postAgentConversationSendTurnFinished(conversationId: conversationId)
+        if emitCompletionEvent {
+            NotificationCenter.postAgentConversationSendTurnFinished(conversationId: conversationId)
+        }
     }
 
     /// 从队列入口启动一次发送链路：投影 UI、落库、运行发送中间件，然后继续 `send`。
@@ -184,6 +218,10 @@ final class SendController: ObservableObject, SuperLog {
                 onChunk: onStreamChunk
             )
             await onMessageReceived(message: assistantMessage, conversationId: conversationId)
+        } catch LLMServiceError.cancelled {
+            AppLogger.core.info("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 发送已取消")
+            finishSendTurn(conversationId: conversationId, emitCompletionEvent: false)
+            statusVM.setStatus(conversationId: conversationId, content: "已停止生成")
         } catch {
             AppLogger.core.error("\(Self.t) 请求模型失败：\(error)")
             finishSendTurn(conversationId: conversationId)

@@ -42,7 +42,8 @@ struct ConversationItemView: View {
                 onDelete()
             }
         } message: {
-            Text(String(localized: "Are you sure you want to delete \"%@\"? This will permanently remove all messages and cannot be undone.", table: "ConversationList"), conversation.title)
+            let format = String(localized: "Are you sure you want to delete \"%@\"? This will permanently remove all messages and cannot be undone.", table: "ConversationList")
+            Text(String(format: format, conversation.title))
         }
     }
 }
@@ -87,21 +88,25 @@ private extension ConversationItemView {
             if bucket <= 0 {
                 return String(localized: "Just now", table: "ConversationList")
             }
-            return String(localized: "%d seconds ago", table: "ConversationList", bucket)
+            let format = String(localized: "%d seconds ago", table: "ConversationList")
+            return String(format: format, bucket)
         }
 
         let minutes = seconds / 60
         if minutes < 60 {
-            return String(localized: "%d minutes ago", table: "ConversationList", minutes)
+            let format = String(localized: "%d minutes ago", table: "ConversationList")
+            return String(format: format, minutes)
         }
 
         let hours = minutes / 60
         if hours < 24 {
-            return String(localized: "%d hours ago", table: "ConversationList", hours)
+            let format = String(localized: "%d hours ago", table: "ConversationList")
+            return String(format: format, hours)
         }
 
         let days = hours / 24
-        return String(localized: "%d days ago", table: "ConversationList", days)
+        let format = String(localized: "%d days ago", table: "ConversationList")
+        return String(format: format, days)
     }
 }
 

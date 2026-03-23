@@ -161,6 +161,7 @@ extension RootView {
         guard let conversationId = container.taskCancellationVM.conversationIdToCancel else { return }
 
         container.taskCancellationVM.consumeRequest()
+        sendController.cancelSend(conversationId: conversationId)
 
         AppLogger.core.info("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 任务已取消")
     }

@@ -57,57 +57,14 @@ struct InputAreaView: View, SuperLog {
             }
 
             // 编辑器 - 使用动态高度
-            MacEditorView(
-                text: $inputViewModel.text,
-                height: $editorHeight,
-                onSubmit: {
-                    guard canChat else { return }
-                    let text = inputViewModel.text
-                    inputViewModel.clear()
-                    inputQueueVM.enqueueText(text)
-                    // 发送后重置高度
-                    editorHeight = MacEditorView.minHeight
-                },
-                onArrowUp: {
-                    if commandSuggestionViewModel.isVisible {
-                        commandSuggestionViewModel.selectPrevious()
-                    }
-                },
-                onArrowDown: {
-                    if commandSuggestionViewModel.isVisible {
-                        commandSuggestionViewModel.selectNext()
-                    }
-                },
-                onEnter: {
-                    guard canChat else { return }
-                    if commandSuggestionViewModel.isVisible,
-                       let suggestion = commandSuggestionViewModel.getCurrentSuggestion() {
-                        inputViewModel.set(suggestion.command + " ")
-                        commandSuggestionViewModel.setIsVisible(false)
-                    } else {
-                        let text = inputViewModel.text
-                        inputViewModel.clear()
-                        inputQueueVM.enqueueText(text)
-                        // 发送后重置高度
-                        editorHeight = MacEditorView.minHeight
-                    }
-                },
-                isFocused: $isInputFocused,
-                cursorPosition: $inputViewModel.cursorPosition
-            )
-            .frame(height: editorHeight)
-            .padding(.horizontal, 4)
-            .padding(.top, 8)
-            .allowsHitTesting(canChat)
-            .opacity(canChat ? 1 : 0.6)
-            .accessibilityLabel(String(localized: "Message Input", table: "AgentInput"))
-            .accessibilityHint(String(localized: "Message Input Hint", table: "AgentInput"))
-            // 添加高度变化动画
-            .animation(.easeInOut(duration: 0.15), value: editorHeight)
-            // 监听文本变化以触发命令建议
-            .onChange(of: inputViewModel.text) { newValue in
-                commandSuggestionViewModel.updateSuggestions(for: newValue)
-            }
+            macEditorView
+                .frame(height: editorHeight)
+                .padding(.horizontal, 4)
+                .padding(.top, 8)
+                .allowsHitTesting(canChat)
+                .opacity(canChat ? 1 : 0.6)
+                .accessibilityLabel(String(localized: "Message Input", table: "AgentInput"))
+                .accessibilityHint(String(localized: "Message Input Hint", table: "AgentInput"))
 
             // 工具栏
             ChatToolbarView(
@@ -124,34 +81,12 @@ struct InputAreaView: View, SuperLog {
         .overlay(inputAreaBorderOverlay)
         .overlay {
             if !canChat {
-                ZStack {
-                    // 半透明背景，盖住输入区域，防止误操作
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(.background.opacity(0.9))
-
-                    VStack(spacing: 8) {
-                        Image(systemName: "bubble.left.and.bubble.right")
-                            .font(.system(size: 18))
-                            .foregroundStyle(.secondary)
-
-                        Text(String(localized: "Please create or select a conversation first", tableName: "DevAssistant"))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 8)
-                    }
-                    .padding(.horizontal, 16)
-                }
+                noConversationOverlay
             }
         }
         .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
         .overlay(alignment: .bottomLeading) {
-            CommandSuggestionView { suggestion in
-                inputViewModel.set(suggestion.command + " ")
-                commandSuggestionViewModel.setIsVisible(false)
-                isInputFocused = true
-            }
-            .offset(x: 16, y: -60)
+            commandSuggestionOverlay
         }
         // 监听文件拖放通知（由 MacEditorView 发送）
         .onFileDroppedToChat { fileURL in
@@ -165,9 +100,113 @@ struct InputAreaView: View, SuperLog {
 // MARK: - View
 
 extension InputAreaView {
+    /// 输入区域边框
     private var inputAreaBorderOverlay: some View {
         RoundedRectangle(cornerRadius: 12)
             .stroke(Color.black.opacity(0.1), lineWidth: 1)
+    }
+
+    /// 无会话时的遮罩层
+    private var noConversationOverlay: some View {
+        ZStack {
+            // 半透明背景，盖住输入区域，防止误操作
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.background.opacity(0.9))
+
+            VStack(spacing: 8) {
+                Image(systemName: "bubble.left.and.bubble.right")
+                    .font(.system(size: 18))
+                    .foregroundStyle(.secondary)
+
+                Text(String(localized: "Please create or select a conversation first", table: "DevAssistant"))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 8)
+            }
+            .padding(.horizontal, 16)
+        }
+    }
+
+    /// 命令建议浮层
+    private var commandSuggestionOverlay: some View {
+        CommandSuggestionView { suggestion in
+            inputViewModel.set(suggestion.command + " ")
+            commandSuggestionViewModel.setIsVisible(false)
+            isInputFocused = true
+        }
+        .offset(x: 16, y: -60)
+    }
+}
+
+// MARK: - Editor View
+
+extension InputAreaView {
+    /// 编辑器视图（提取以避免类型检查超时）
+    private var macEditorView: some View {
+        MacEditorView(
+            text: $inputViewModel.text,
+            height: $editorHeight,
+            onSubmit: handleSubmit,
+            onArrowUp: handleArrowUp,
+            onArrowDown: handleArrowDown,
+            onEnter: handleEnter,
+            isFocused: $isInputFocused,
+            cursorPosition: $inputViewModel.cursorPosition
+        )
+        // 添加高度变化动画
+        .animation(.easeInOut(duration: 0.15), value: editorHeight)
+        // 监听文本变化以触发命令建议
+        .onChange(of: inputViewModel.text) { newValue in
+            commandSuggestionViewModel.updateSuggestions(for: newValue)
+        }
+    }
+}
+
+// MARK: - Editor Actions
+
+extension InputAreaView {
+    /// 提交输入
+    private func handleSubmit() {
+        guard canChat else { return }
+        let text = inputViewModel.text
+        inputViewModel.clear()
+        inputQueueVM.enqueueText(text)
+        // 发送后重置高度
+        editorHeight = MacEditorView.minHeight
+    }
+
+    /// 处理上箭头键
+    private func handleArrowUp() {
+        if commandSuggestionViewModel.isVisible {
+            commandSuggestionViewModel.selectPrevious()
+        }
+    }
+
+    /// 处理下箭头键
+    private func handleArrowDown() {
+        if commandSuggestionViewModel.isVisible {
+            commandSuggestionViewModel.selectNext()
+        }
+    }
+
+    /// 处理回车键
+    private func handleEnter() {
+        guard canChat else { return }
+        
+        if commandSuggestionViewModel.isVisible,
+           let suggestion = commandSuggestionViewModel.getCurrentSuggestion() {
+            // 选择命令建议
+            inputViewModel.set(suggestion.command + " ")
+            commandSuggestionViewModel.setIsVisible(false)
+        } else {
+            // 发送消息
+            let text = inputViewModel.text
+            inputViewModel.clear()
+            inputQueueVM.enqueueText(text)
+            // 发送后重置高度
+            editorHeight = MacEditorView.minHeight
+        }
     }
 }
 
