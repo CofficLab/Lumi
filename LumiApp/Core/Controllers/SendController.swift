@@ -96,9 +96,9 @@ final class SendController: ObservableObject, SuperLog {
                 )
 
                 if Self.verbose {
-                    AppLogger.core.info("\(Self.t) 工具名称：\(calls[i].name)")
-                    AppLogger.core.info("\(Self.t)  工具参数：\(calls[i].arguments)")
-                    AppLogger.core.info("\(Self.t)  工具风险情况：\(risk.displayName)")
+                    AppLogger.core.info("\(Self.t)🔨 工具名称：\(calls[i].name)")
+                    AppLogger.core.info("\(Self.t)    参数：\(calls[i].arguments)")
+                    AppLogger.core.info("\(Self.t)    风险：\(risk.displayName)")
                 }
 
                 if !risk.requiresPermission {

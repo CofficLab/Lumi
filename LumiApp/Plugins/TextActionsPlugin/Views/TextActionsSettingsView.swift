@@ -29,6 +29,7 @@ struct TextActionsSettingsView: View {
 }
 
 // MARK: - View
+
 extension TextActionsSettingsView {
     private var generalSettingsCard: some View {
         MystiqueGlassCard {
@@ -97,6 +98,7 @@ extension TextActionsSettingsView {
 }
 
 // MARK: - Action
+
 extension TextActionsSettingsView {
     func openAccessibilitySettings() {
         let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
@@ -105,6 +107,7 @@ extension TextActionsSettingsView {
 }
 
 // MARK: - Setter
+
 extension TextActionsSettingsView {
     @MainActor
     func setIsEnabled(_ value: Bool) {
@@ -113,6 +116,7 @@ extension TextActionsSettingsView {
 }
 
 // MARK: - Event Handler
+
 extension TextActionsSettingsView {
     func handleOnAppear() {
         isEnabled = TextActionsPlugin.isEnabled
@@ -130,6 +134,7 @@ extension TextActionsSettingsView {
 }
 
 // MARK: - Preview
+
 #Preview {
     TextActionsSettingsView()
         .frame(width: 400, height: 600)
