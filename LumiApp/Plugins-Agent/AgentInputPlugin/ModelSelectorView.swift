@@ -37,8 +37,8 @@ struct ModelSelectorView: View, SuperLog {
             // Header: Tab + Close
             HStack(spacing: 12) {
                 Picker("", selection: $selectedTab) {
-                    Text("本地供应商").tag(0)
-                    Text("远程供应商").tag(1)
+                    Text(String(localized: "Local Providers", table: "AgentInput")).tag(0)
+                    Text(String(localized: "Remote Providers", table: "AgentInput")).tag(1)
                 }
                 .pickerStyle(.segmented)
 
@@ -58,9 +58,9 @@ struct ModelSelectorView: View, SuperLog {
             // List of Providers and Models
             Group {
                 if selectedTab == 0 {
-                    providerList(providers: localProviders, emptyMessage: "暂无本地供应商")
+                    providerList(providers: localProviders, emptyMessage: String(localized: "No Local Providers", table: "AgentInput"))
                 } else {
-                    providerList(providers: remoteProviders, emptyMessage: "暂无远程供应商")
+                    providerList(providers: remoteProviders, emptyMessage: String(localized: "No Remote Providers", table: "AgentInput"))
                 }
             }
             .listStyle(.sidebar)

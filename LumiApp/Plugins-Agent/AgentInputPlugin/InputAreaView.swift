@@ -100,8 +100,8 @@ struct InputAreaView: View, SuperLog {
             .padding(.top, 8)
             .allowsHitTesting(canChat)
             .opacity(canChat ? 1 : 0.6)
-            .accessibilityLabel("消息输入框")
-            .accessibilityHint("输入问题或命令，按 Command + 回车发送，Shift + 回车换行")
+            .accessibilityLabel(String(localized: "Message Input", table: "AgentInput"))
+            .accessibilityHint(String(localized: "Message Input Hint", table: "AgentInput"))
             // 添加高度变化动画
             .animation(.easeInOut(duration: 0.15), value: editorHeight)
             // 监听文本变化以触发命令建议
@@ -116,8 +116,8 @@ struct InputAreaView: View, SuperLog {
             )
             .allowsHitTesting(canChat)
             .opacity(canChat ? 1 : 0.6)
-            .accessibilityLabel("聊天工具栏")
-            .accessibilityHint("包含模式、模型、附件和发送操作")
+            .accessibilityLabel(String(localized: "Chat Toolbar", table: "AgentInput"))
+            .accessibilityHint(String(localized: "Chat Toolbar Hint", table: "AgentInput"))
         }
         .background(.background)
         .cornerRadius(12)
@@ -134,7 +134,7 @@ struct InputAreaView: View, SuperLog {
                             .font(.system(size: 18))
                             .foregroundStyle(.secondary)
 
-                        Text("请先创建或选择一个对话", tableName: "DevAssistant")
+                        Text(String(localized: "Please create or select a conversation first", tableName: "DevAssistant"))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -158,7 +158,7 @@ struct InputAreaView: View, SuperLog {
             handleFileDrop(fileURL: fileURL)
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("输入区域")
+        .accessibilityLabel(String(localized: "Input Area", table: "AgentInput"))
     }
 }
 

@@ -32,7 +32,7 @@ struct PendingMessagesView: View, SuperLog {
                         .font(.system(size: 10))
                         .foregroundColor(.accentColor)
 
-                    Text(cachedConversationTitle ?? "当前会话")
+                    Text(cachedConversationTitle ?? String(localized: "Current Conversation", table: "AgentInput"))
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(.primary)
                         .lineLimit(1)
@@ -51,7 +51,7 @@ struct PendingMessagesView: View, SuperLog {
                         .font(.system(size: 10))
                         .foregroundColor(.secondary)
 
-                    Text("等待发送")
+                    Text(String(localized: "Waiting to Send", table: "AgentInput"))
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(.secondary)
 
@@ -155,7 +155,7 @@ struct PendingMessageRow: View {
                         .foregroundColor(.secondary.opacity(0.5))
                 }
                 .buttonStyle(.plain)
-                .help("移除此消息")
+                .help(String(localized: "Remove Message", table: "AgentInput"))
             }
         }
         .padding(.horizontal, 8)
@@ -168,4 +168,3 @@ struct PendingMessageRow: View {
 }
 
 // MARK: - Preview
-
