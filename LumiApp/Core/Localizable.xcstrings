@@ -3261,6 +3261,7 @@
       }
     },
     "No project selected" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3614,6 +3615,7 @@
       }
     },
     "Project Info" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3630,6 +3632,7 @@
       }
     },
     "Project Information" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4308,6 +4311,7 @@
       }
     },
     "Statistics" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4468,6 +4472,7 @@
       }
     },
     "Tab Information" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
