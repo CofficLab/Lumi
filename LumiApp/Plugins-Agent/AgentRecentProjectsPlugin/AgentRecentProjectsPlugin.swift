@@ -1,15 +1,19 @@
 import MagicKit
 import SwiftUI
+import os
 
 /// 最近项目持久化插件
-/// 负责保存和恢复最近使用的项目列表
+/// 负责保存和恢复最近使用的项目列表，提供当前项目管理工具
 actor AgentRecentProjectsPlugin: SuperPlugin {
+    /// 插件专用 Logger
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-recent-projects")
+    
     nonisolated static let emoji = "📋"
     nonisolated static let verbose = false
 
     static let id = "AgentRecentProjects"
     static let displayName = String(localized: "Recent Projects", table: "AgentRecentProjects")
-    static let description = String(localized: "Persist recent projects list", table: "AgentRecentProjects")
+    static let description = String(localized: "Persist recent projects list and manage current project", table: "AgentRecentProjects")
     static let iconName = "clock.arrow.circlepath"
     static var order: Int { 10 }
     static let enable: Bool = true
@@ -33,6 +37,10 @@ actor AgentRecentProjectsPlugin: SuperPlugin {
 
     @MainActor
     func agentTools() -> [AgentTool] {
-        [ListRecentProjectsTool()]
+        [
+            ListRecentProjectsTool(),
+            GetCurrentProjectTool(),
+            SetCurrentProjectTool(),
+        ]
     }
 }

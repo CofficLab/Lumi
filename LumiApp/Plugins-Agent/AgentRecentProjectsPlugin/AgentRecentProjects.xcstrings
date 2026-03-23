@@ -1,23 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Recent Projects" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recent Projects"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最近项目"
-          }
-        }
-      }
-    },
     "Persist recent projects list" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31,6 +14,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "持久化最近项目列表"
+          }
+        }
+      }
+    },
+    "Persist recent projects list and manage current project" : {
+
+    },
+    "Recent Projects" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recent Projects"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近项目"
           }
         }
       }

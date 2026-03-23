@@ -14,6 +14,10 @@ final class RecentProjectsStore: @unchecked Sendable {
     private static let settingsDirName = "settings"
     private static let stateFileName = "recent_projects.json"
     private static let tmpFileName = "recent_projects.tmp"
+    
+    // Current project file: <dbRoot>/AgentRecentProjects/settings/current_project.json
+    private static let currentProjectFileName = "current_project.json"
+    private static let currentProjectTmpFileName = "current_project.tmp"
 
     // MARK: - Public API
 
@@ -63,6 +67,37 @@ final class RecentProjectsStore: @unchecked Sendable {
             persistProjectsToCurrentFile(projects: projects)
         }
     }
+    
+    // MARK: - Current Project
+    
+    /// 获取当前选中的项目
+    func getCurrentProject() -> Project? {
+        queue.sync {
+            let fileURL = currentProjectFileURL()
+            guard FileManager.default.fileExists(atPath: fileURL.path) else { return nil }
+            guard let data = try? Data(contentsOf: fileURL) else { return nil }
+            return try? JSONDecoder().decode(Project.self, from: data)
+        }
+    }
+    
+    /// 设置当前选中的项目
+    func setCurrentProject(name: String, path: String) {
+        queue.sync {
+            let project = Project(name: name, path: path, lastUsed: Date())
+            persistCurrentProject(project)
+            
+            // 同时将项目添加到最近列表
+            addProjectInternal(name: name, path: path)
+        }
+    }
+    
+    /// 清除当前项目
+    func clearCurrentProject() {
+        queue.sync {
+            let fileURL = currentProjectFileURL()
+            try? FileManager.default.removeItem(at: fileURL)
+        }
+    }
 
     // MARK: - Internal
 
@@ -104,6 +139,40 @@ final class RecentProjectsStore: @unchecked Sendable {
             try? fileManager.removeItem(at: tmpURL)
         }
     }
+    
+    private func persistCurrentProject(_ project: Project) {
+        let fileManager = FileManager.default
+        let settingsDir = currentSettingsDirURL()
+        try? fileManager.createDirectory(at: settingsDir, withIntermediateDirectories: true, attributes: nil)
+
+        let fileURL = currentProjectFileURL()
+        let tmpURL = settingsDir.appendingPathComponent(Self.currentProjectTmpFileName, isDirectory: false)
+
+        guard let data = try? JSONEncoder().encode(project) else { return }
+
+        do {
+            try data.write(to: tmpURL, options: .atomic)
+            if fileManager.fileExists(atPath: fileURL.path) {
+                _ = try? fileManager.replaceItemAt(fileURL, withItemAt: tmpURL)
+            } else {
+                try fileManager.moveItem(at: tmpURL, to: fileURL)
+            }
+        } catch {
+            try? fileManager.removeItem(at: tmpURL)
+        }
+    }
+    
+    /// 内部添加项目到最近列表（不重复获取锁）
+    private func addProjectInternal(name: String, path: String) {
+        var projects = loadProjectsInternal()
+        projects.removeAll { $0.path == path }
+
+        let newProject = Project(name: name, path: path, lastUsed: Date())
+        projects.insert(newProject, at: 0)
+        projects = Array(projects.prefix(5))
+
+        persistProjectsToCurrentFile(projects: projects)
+    }
 
     /// 从旧的 PluginStateStore 持久化文件迁移一次数据。
     ///
@@ -133,5 +202,9 @@ final class RecentProjectsStore: @unchecked Sendable {
         currentSettingsDirURL()
             .appendingPathComponent(Self.stateFileName, isDirectory: false)
     }
+    
+    private func currentProjectFileURL() -> URL {
+        currentSettingsDirURL()
+            .appendingPathComponent(Self.currentProjectFileName, isDirectory: false)
+    }
 }
-
