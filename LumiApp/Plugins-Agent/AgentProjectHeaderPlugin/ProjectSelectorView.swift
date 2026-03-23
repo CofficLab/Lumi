@@ -8,11 +8,10 @@ struct ProjectSelectorView: View {
 
     @Binding var isPresented: Bool
 
-    @State private var recentProjects: [RecentProject] = []
     @State private var isFileImporterPresented = false
 
     private let maxRecentProjects = 5
-    private let settingsStore = AgentProjectHeaderPluginLocalStore()
+    private let store = RecentProjectsStore()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -87,9 +86,16 @@ struct ProjectSelectorView: View {
             }
         }
         .frame(width: 400, height: 500)
-        .onAppear {
-            loadRecentProjects()
-        }
+    }
+
+    // MARK: - Computed Properties
+
+    private var recentProjects: [RecentProject] {
+        Array(ProjectVM.recentProjects
+            .prefix(maxRecentProjects)
+            .filter { project in
+                project.path != ProjectVM.currentProjectPath
+            })
     }
 
     // MARK: - Current Project Card
@@ -231,9 +237,17 @@ struct ProjectSelectorView: View {
             handleFileImport(result)
         }
     }
+}
 
-    // MARK: - Actions
+// MARK: - View
 
+// MARK: - Action
+
+// MARK: - Setter
+
+// MARK: - Event Handler
+
+extension ProjectSelectorView {
     private func selectProject(_ project: RecentProject) {
         Task { @MainActor in
             projectContextRequestVM.request = .switchProject(path: project.path)
@@ -243,8 +257,9 @@ struct ProjectSelectorView: View {
 
     private func deleteProject(_ project: RecentProject) {
         withAnimation {
-            recentProjects.removeAll { $0.id == project.id }
-            saveRecentProjects()
+            store.removeProject(project)
+            // 更新 projectVM 中的列表
+            ProjectVM.setRecentProjects(store.loadProjects())
         }
     }
 
@@ -260,7 +275,6 @@ struct ProjectSelectorView: View {
                 Task { @MainActor in
                     projectContextRequestVM.request = .switchProject(path: path)
                     isPresented = false
-                    loadRecentProjects()
                 }
 
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -271,22 +285,9 @@ struct ProjectSelectorView: View {
             AgentProjectHeaderPlugin.logger.error("File import 错误：\(error.localizedDescription)")
         }
     }
-
-    private func loadRecentProjects() {
-        recentProjects = Array(ProjectVM.getRecentProjects()
-            .prefix(maxRecentProjects)
-            .filter { project in
-                project.path != ProjectVM.currentProjectPath
-            })
-    }
-
-    private func saveRecentProjects() {
-        if let encoded = try? JSONEncoder().encode(recentProjects) {
-            settingsStore.migrateLegacyValueIfMissing(forKey: "Agent_RecentProjects")
-            settingsStore.set(encoded, forKey: "Agent_RecentProjects")
-        }
-    }
 }
+
+// MARK: - Preview
 
 #Preview("Project Selector") {
     ProjectSelectorView(isPresented: .constant(true))

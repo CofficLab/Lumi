@@ -55,6 +55,11 @@ final class ProjectVM: ObservableObject, SuperLog {
 
     @Published var autoApproveRisk: Bool = false
 
+    // MARK: - 最近项目
+
+    /// 最近使用的项目列表（由 AgentRecentProjectsPlugin 管理）
+    @Published public fileprivate(set) var recentProjects: [RecentProject] = []
+
     // MARK: - 初始化
 
     private let contextService: ContextService
@@ -107,7 +112,6 @@ final class ProjectVM: ObservableObject, SuperLog {
         setCurrentProjectInfo(name: projectName, path: path, selected: true)
 
         PluginStateStore.shared.set(path, forKey: "Agent_SelectedProject")
-        saveRecentProject(name: projectName, path: path)
 
         // 获取并应用项目配置
         let config = ProjectConfigStore.shared.getOrCreateConfig(for: path)
@@ -241,31 +245,16 @@ final class ProjectVM: ObservableObject, SuperLog {
         PluginStateStore.shared.set(model, forKey: Self.globalConfigModelKey)
     }
 
-    /// 保存最近使用的项目
-    private func saveRecentProject(name: String, path: String) {
-        var projects = getRecentProjects()
-        projects.removeAll { $0.path == path }
+    // MARK: - 最近项目管理
 
-        let newProject = RecentProject(name: name, path: path, lastUsed: Date())
-        projects.insert(newProject, at: 0)
-        projects = Array(projects.prefix(5))
-
-        if let data = try? JSONEncoder().encode(projects) {
-            PluginStateStore.shared.set(data, forKey: "Agent_RecentProjects")
-        }
-
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t)📋 已保存最近项目：\(name)")
-        }
+    /// 设置最近项目列表（由 AgentRecentProjectsPlugin 调用）
+    func setRecentProjects(_ projects: [RecentProject]) {
+        recentProjects = projects
     }
 
-    /// 获取最近使用的项目列表
+    /// 获取最近项目列表
     func getRecentProjects() -> [RecentProject] {
-        guard let data = PluginStateStore.shared.data(forKey: "Agent_RecentProjects"),
-              let projects = try? JSONDecoder().decode([RecentProject].self, from: data) else {
-            return []
-        }
-        return projects
+        recentProjects
     }
 
     // MARK: - 文件选择
