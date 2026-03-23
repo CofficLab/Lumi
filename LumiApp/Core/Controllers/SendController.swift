@@ -201,11 +201,10 @@ final class SendController: ObservableObject, SuperLog {
 
         let statusVM = container.conversationSendStatusVM
         let convId = conversationId
-        let logTag = Self.t
         let onStreamChunk: @Sendable (StreamChunk) async -> Void = { chunk in
             await MainActor.run {
                 statusVM.applyStreamChunk(conversationId: convId, chunk: chunk)
-                AppLogger.core.info("\(logTag) 事件：\(chunk.eventType?.rawValue ?? "unknown")，内容：\(chunk.content ?? "")，原始：\(chunk.rawStreamPayload?.max(200) ?? "")")
+                AppLogger.core.info("\(Self.t) 事件：\(chunk.eventType?.rawValue ?? "unknown")，内容：\(chunk.content ?? "")，原始：\(chunk.rawStreamPayload?.max(200) ?? "")")
             }
         }
 
