@@ -1,5 +1,5 @@
-import SwiftUI
 import MagicAlert
+import SwiftUI
 
 /// 自动批准开关：控制是否自动批准高风险命令
 struct AutoApproveToggle: View {
@@ -18,9 +18,9 @@ struct AutoApproveToggle: View {
                     handleToggleChange(newValue)
                 }
             ))
-                .toggleStyle(.switch)
-                .controlSize(.mini)
-                .labelsHidden()
+            .toggleStyle(.switch)
+            .controlSize(.mini)
+            .labelsHidden()
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
