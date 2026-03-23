@@ -60,6 +60,7 @@ struct LeftSidebar: View {
                         ForEach(entries) { entry in
                             Button {
                                 app.selectedNavigationId = entry.id
+                                AppSettingStore.saveSelectedNavigationId(entry.id)
                             } label: {
                                 SidebarRow(title: entry.title, icon: entry.icon, isSelected: app.selectedNavigationId == entry.id)
                             }
@@ -215,10 +216,11 @@ private extension ModeSwitcherView {
         isRestoring = true
 
         // 使用 AppSettingStore 作为单一来源：负责恢复上次的 mode。
-        let saved = AppSettingStore.loadAppSetting()
-        mode = saved.mode
-        windowState?.selectedMode = saved.mode
-        app.selectedMode = saved.mode
+        let savedMode = AppSettingStore.loadMode() ?? .agent
+        mode = savedMode
+        windowState?.selectedMode = savedMode
+        app.selectedMode = savedMode
+        app.selectedNavigationId = AppSettingStore.loadSelectedNavigationId()
 
         isRestoring = false
     }
@@ -234,6 +236,6 @@ private extension ModeSwitcherView {
         app.selectedMode = mode
 
         // 同步到持久化存储：下次启动自动恢复。
-        AppSettingStore.saveAppSetting(AppCoreSetting(mode: mode))
+        AppSettingStore.saveMode(mode)
     }
 }

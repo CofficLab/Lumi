@@ -7,15 +7,13 @@ import Foundation
 /// - 不依赖 Keychain（仅用于非敏感配置）
 /// - 写入使用原子替换，避免半写状态
 enum AppSettingStore {
-    private static let pluginDirName = "AppSettings"
     private static let settingsFileName = "app_settings.plist"
     private static let tmpFileName = "app_settings.tmp"
 
     private static let settingsDirURL: URL = {
         AppConfig.getDBFolderURL()
             .appendingPathComponent("Core", isDirectory: true)
-            .appendingPathComponent(pluginDirName, isDirectory: true)
-            .appendingPathComponent("settings", isDirectory: true)
+            .appendingPathComponent("AppSettings", isDirectory: true)
     }()
 
     private static func settingsFileURL() -> URL {
@@ -74,19 +72,34 @@ enum AppSettingStore {
     // MARK: - AppCoreSetting
 
     private static let modeKey = "App_SelectedMode"
+    private static let selectedNavigationIdKey = "App_SelectedNavigationId"
 
     /// 加载应用核心设置
     static func loadAppSetting() -> AppCoreSetting {
         guard let raw = object(forKey: modeKey) as? String,
               let mode = AppMode(rawValue: raw) else {
-            return AppCoreSetting(mode: .agent)
+            return AppCoreSetting(mode: .agent, selectedNavigationId: nil)
         }
-        return AppCoreSetting(mode: mode)
+        let selectedNavigationId = object(forKey: selectedNavigationIdKey) as? String
+        return AppCoreSetting(mode: mode, selectedNavigationId: selectedNavigationId)
     }
 
     /// 保存应用核心设置
     static func saveAppSetting(_ setting: AppCoreSetting) {
         set(setting.mode.rawValue, forKey: modeKey)
+        set(setting.selectedNavigationId, forKey: selectedNavigationIdKey)
+    }
+
+    // MARK: - Convenience
+
+    /// 加载 App 模式下的上次选中导航入口 ID
+    static func loadSelectedNavigationId() -> String? {
+        object(forKey: selectedNavigationIdKey) as? String
+    }
+
+    /// 保存 App 模式下的上次选中导航入口 ID
+    static func saveSelectedNavigationId(_ id: String?) {
+        set(id, forKey: selectedNavigationIdKey)
     }
 
     /// 加载当前模式
