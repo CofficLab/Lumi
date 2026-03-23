@@ -28,6 +28,23 @@ final class SendController: ObservableObject, SuperLog {
         }
     }
 
+    /// 从队列入口启动一次发送链路：投影 UI、落库、运行发送中间件，然后继续 `send`。
+    func beginSendFromQueue(conversationId: UUID, message: ChatMessage) async {
+        container.messageQueueVM.setCurrentProcessingIndex(0, for: conversationId)
+
+        if container.conversationVM.selectedConversationId == conversationId {
+            container.messageViewModel.appendMessage(message)
+        }
+
+        await container.conversationVM.saveMessage(message, to: conversationId)
+
+        let ctx = SendMessageContext(conversationId: conversationId, message: message)
+        let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
+        await pipeline.run(ctx: ctx) { _ in }
+
+        await send(conversationId: conversationId)
+    }
+
     /// 根据会话中**已落库的最后一条消息**驱动后续步骤
     func send(conversationId: UUID) async {
         let messages = await container.chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []

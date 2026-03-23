@@ -150,20 +150,8 @@ extension RootView {
             return
         }
 
-        messageQueueVM.setCurrentProcessingIndex(0, for: conversationId)
-
         Task {
-            if conversationVM.selectedConversationId == conversationId {
-                messageVM.appendMessage(message)
-            }
-
-            await conversationVM.saveMessage(message, to: conversationId)
-
-            let ctx = SendMessageContext(conversationId: conversationId, message: message)
-            let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
-            await pipeline.run(ctx: ctx) { _ in }
-
-            await sendController.send(conversationId: conversationId)
+            await sendController.beginSendFromQueue(conversationId: conversationId, message: message)
         }
     }
 
