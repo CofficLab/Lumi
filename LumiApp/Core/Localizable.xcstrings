@@ -334,6 +334,7 @@
       }
     },
     "%lld 字符" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1128,6 +1129,7 @@
       }
     },
     "Auto" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3178,6 +3180,7 @@
       }
     },
     "No applications found" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3258,6 +3261,7 @@
       }
     },
     "No project selected" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3611,6 +3615,7 @@
       }
     },
     "Project Info" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3627,6 +3632,7 @@
       }
     },
     "Project Information" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4109,6 +4115,7 @@
       }
     },
     "Show in Finder" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4304,6 +4311,7 @@
       }
     },
     "Statistics" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4464,6 +4472,7 @@
       }
     },
     "Tab Information" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4723,6 +4732,7 @@
       }
     },
     "Try other search keywords" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5060,6 +5070,7 @@
       }
     },
     "上传图片" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5284,6 +5295,7 @@
       }
     },
     "停止当前正在进行的回复" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5316,6 +5328,7 @@
       }
     },
     "停止生成" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5348,6 +5361,7 @@
       }
     },
     "最近项目" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5412,6 +5426,7 @@
       }
     },
     "切换对话模式或构建模式" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5460,6 +5475,7 @@
       }
     },
     "删除对话" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5540,6 +5556,7 @@
       }
     },
     "加载中..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5588,6 +5605,7 @@
       }
     },
     "包含模式、模型、附件和发送操作" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5718,6 +5736,7 @@
       }
     },
     "发送当前输入内容，快捷键 Command + 回车" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5734,6 +5753,7 @@
       }
     },
     "发送消息" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5766,6 +5786,7 @@
       }
     },
     "取消选择当前项目" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5865,6 +5886,7 @@
 
     },
     "在 Finder 中显示" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5897,6 +5919,7 @@
       }
     },
     "在 VS Code 中打开" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5929,6 +5952,7 @@
       }
     },
     "在终端中打开" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5977,6 +6001,7 @@
       }
     },
     "填入快捷提示词" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6042,6 +6067,7 @@
       }
     },
     "对话历史" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6333,6 +6359,7 @@
       }
     },
     "开启新会话" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6413,6 +6440,7 @@
       }
     },
     "当前项目" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6573,6 +6601,7 @@
       }
     },
     "打开模型选择器" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6992,6 +7021,7 @@
       }
     },
     "文件预览" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7106,6 +7136,7 @@
       }
     },
     "暂不支持预览" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7122,6 +7153,7 @@
       }
     },
     "暂不支持预览该类型的文件\n%@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7331,6 +7363,7 @@
       }
     },
     "本地供应商" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7363,6 +7396,7 @@
       }
     },
     "权限请求" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7619,6 +7653,7 @@
       }
     },
     "浏览" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7651,6 +7686,7 @@
       }
     },
     "消息输入框" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7864,6 +7900,7 @@
       }
     },
     "确定要删除对话「%@」吗？此操作将彻底删除该对话的所有消息，且无法恢复。" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7928,6 +7965,7 @@
       }
     },
     "移到废纸篓" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7944,6 +7982,7 @@
       }
     },
     "移除此消息" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7992,6 +8031,7 @@
       }
     },
     "等待发送" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8057,6 +8097,7 @@
       }
     },
     "聊天工具栏" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8073,6 +8114,7 @@
       }
     },
     "聊天模式" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8105,6 +8147,7 @@
       }
     },
     "自动批准高风险命令" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8185,6 +8228,7 @@
       }
     },
     "请在左侧文件树中选择一个文件\n查看其内容" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8201,6 +8245,7 @@
       }
     },
     "请审阅操作风险并选择允许或拒绝" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8233,6 +8278,7 @@
       }
     },
     "请选择一个项目以开始" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8345,6 +8391,7 @@
       }
     },
     "输入区域" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8361,6 +8408,7 @@
       }
     },
     "输入问题或命令，按 Command + 回车发送，Shift + 回车换行" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8393,6 +8441,7 @@
       }
     },
     "远程供应商" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8457,6 +8506,7 @@
       }
     },
     "选择新项目..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8473,6 +8523,7 @@
       }
     },
     "选择本地图片作为附件" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8489,6 +8540,7 @@
       }
     },
     "选择模型" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8505,6 +8557,7 @@
       }
     },
     "选择项目" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8698,6 +8751,7 @@
       }
     },
     "项目文件" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

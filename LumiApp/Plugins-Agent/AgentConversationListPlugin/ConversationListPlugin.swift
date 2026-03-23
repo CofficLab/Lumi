@@ -23,10 +23,10 @@ actor ConversationListPlugin: SuperPlugin, SuperLog {
     static let id: String = "ConversationList"
 
     /// Plugin display name
-    static let displayName: String = "对话列表"
+    static let displayName: String = String(localized: "Conversation List", table: "ConversationList")
 
     /// Plugin functional description
-    static let description: String = "显示所有对话历史记录"
+    static let description: String = String(localized: "Show all conversation history", table: "ConversationList")
 
     /// Plugin icon name
     static let iconName: String = "message.fill"

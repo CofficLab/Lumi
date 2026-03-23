@@ -11,7 +11,7 @@ struct ConversationListView: View, SuperLog {
     nonisolated static let verbose = false
 
     /// 会话管理 ViewModel
-    @EnvironmentObject var ConversationVM: ConversationVM
+    @EnvironmentObject var conversationVM: ConversationVM
     private let selectionStore = ConversationListSelectionStore()
 
     /// 当前页已加载的会话
@@ -49,52 +49,19 @@ struct ConversationListView: View, SuperLog {
                     // 对话列表内容
                     if conversations.isEmpty {
                         if isLoadingPage {
-                            ProgressView("加载中...")
-                                .font(.system(size: 11))
-                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                                .padding(.vertical, 12)
+                            loadingView
                         } else {
                             ConversationListEmptyView()
                         }
                     } else {
-                        List(selection: $localSelectedConversationId) {
-                            Color.clear
-                                .frame(height: 0)
-                                .id(listTopAnchorId)
-                                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                                .listRowSeparator(.hidden)
-
-                            ForEach(conversations, id: \.id) { conversation in
-                                ConversationItemView(
-                                    conversation: conversation,
-                                    onDelete: { handleDelete(conversation) }
-                                )
-                                .id(conversation.id)
-                                .tag(conversation.id)
-                                .onAppear {
-                                    handleRowAppear(conversation)
-                                }
-                            }
-                        }
-                        .listStyle(.plain)
-                        .environment(\.defaultMinListRowHeight, 0)
-
-                        if isLoadingPage {
-                            HStack {
-                                Spacer()
-                                ProgressView()
-                                    .controlSize(.small)
-                                Spacer()
-                            }
-                            .padding(.vertical, 8)
-                        }
+                        conversationListContent(proxy: proxy)
                     }
                 }
             }
             .onAppear(perform: performInitialLoadIfNeeded)
             .onChange(of: localSelectedConversationId, handleLocalSelectionChange)
-            .onChange(of: ConversationVM.selectedConversationId, handleConversationSelected)
-            .onChange(of: ConversationVM.selectedConversationId) { _, newValue in
+            .onChange(of: conversationVM.selectedConversationId, handleConversationSelected)
+            .onChange(of: conversationVM.selectedConversationId) { _, newValue in
                 selectionStore.saveSelectedConversationId(newValue)
             }
             .onChange(of: conversations) { _, newConversations in
@@ -114,6 +81,52 @@ struct ConversationListView: View, SuperLog {
 // MARK: - View
 
 extension ConversationListView {
+    private var loadingView: some View {
+        ProgressView(String(localized: "Loading...", table: "ConversationList"))
+            .font(.system(size: 11))
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            .padding(.vertical, 12)
+    }
+
+    private func conversationListContent(proxy: ScrollViewProxy) -> some View {
+        VStack(spacing: 0) {
+            List(selection: $localSelectedConversationId) {
+                Color.clear
+                    .frame(height: 0)
+                    .id(listTopAnchorId)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                    .listRowSeparator(.hidden)
+
+                ForEach(conversations, id: \.id) { conversation in
+                    ConversationItemView(
+                        conversation: conversation,
+                        onDelete: { handleDelete(conversation) }
+                    )
+                    .id(conversation.id)
+                    .tag(conversation.id)
+                    .onAppear {
+                        handleRowAppear(conversation)
+                    }
+                }
+            }
+            .listStyle(.plain)
+            .environment(\.defaultMinListRowHeight, 0)
+
+            if isLoadingPage {
+                loadingIndicator
+            }
+        }
+    }
+
+    private var loadingIndicator: some View {
+        HStack {
+            Spacer()
+            ProgressView()
+                .controlSize(.small)
+            Spacer()
+        }
+        .padding(.vertical, 8)
+    }
 }
 
 // MARK: - Action
@@ -122,7 +135,7 @@ extension ConversationListView {
     /// 同步 VM 的选中状态到本地 List
     /// 在分页加载后调用，确保 List 的选中状态与 VM 一致
     private func syncSelectionFromViewModel() {
-        let vmId = ConversationVM.selectedConversationId
+        let vmId = conversationVM.selectedConversationId
 
         // 如果 VM 有选中的会话，同步到本地
         if let selectedId = vmId {
@@ -171,7 +184,7 @@ extension ConversationListView {
             hasMore = true
         }
 
-        ConversationVM.deleteConversation(conversation)
+        conversationVM.deleteConversation(conversation)
     }
 
     /// 视图首次出现时加载第一页
@@ -200,11 +213,11 @@ extension ConversationListView {
         didRestoreSelection = true
 
         guard let storedId = selectionStore.loadSelectedConversationId(),
-              ConversationVM.fetchConversation(id: storedId) != nil else {
+              conversationVM.fetchConversation(id: storedId) != nil else {
             return
         }
 
-        ConversationVM.setSelectedConversation(storedId)
+        conversationVM.setSelectedConversation(storedId)
         if Self.verbose {
             ConversationListPlugin.logger.info("\(self.t)✅ [\(storedId)] 从插件存储恢复会话选择")
         }
@@ -221,7 +234,7 @@ extension ConversationListView {
         guard hasMore, !isLoadingPage else { return }
 
         isLoadingPage = true
-        let page = ConversationVM.fetchConversationsPage(limit: pageSize, offset: nextOffset)
+        let page = conversationVM.fetchConversationsPage(limit: pageSize, offset: nextOffset)
 
         if nextOffset == 0 {
             conversations = page
@@ -260,7 +273,7 @@ extension ConversationListView {
     }
 
     private func handleConversationCreated(_ conversationId: UUID) {
-        guard let conversation = ConversationVM.fetchConversation(id: conversationId) else { return }
+        guard let conversation = conversationVM.fetchConversation(id: conversationId) else { return }
         guard !conversations.contains(where: { $0.id == conversationId }) else { return }
 
         conversations.insert(conversation, at: 0)
@@ -269,7 +282,7 @@ extension ConversationListView {
     }
 
     private func handleConversationUpdated(_ conversationId: UUID) {
-        guard let updatedConversation = ConversationVM.fetchConversation(id: conversationId) else { return }
+        guard let updatedConversation = conversationVM.fetchConversation(id: conversationId) else { return }
         guard let index = conversations.firstIndex(where: { $0.id == conversationId }) else { return }
 
         conversations[index] = updatedConversation
@@ -304,11 +317,6 @@ extension ConversationListView {
     }
 }
 
-// MARK: - Setter
-
-extension ConversationListView {
-}
-
 // MARK: - Event Handler
 
 extension ConversationListView {
@@ -326,7 +334,7 @@ extension ConversationListView {
     /// 处理选择变化：同步到 ConversationVM
     func handleLocalSelectionChange() {
         // 只在值确实不同时才更新，避免循环
-        guard localSelectedConversationId != ConversationVM.selectedConversationId else {
+        guard localSelectedConversationId != conversationVM.selectedConversationId else {
             return
         }
 
@@ -334,26 +342,26 @@ extension ConversationListView {
             if Self.verbose {
                 ConversationListPlugin.logger.info("\(self.t)👉 [\(newId)] 从 List 选择会话")
             }
-            self.ConversationVM.setSelectedConversation(newId)
+            self.conversationVM.setSelectedConversation(newId)
         } else {
             if Self.verbose {
                 ConversationListPlugin.logger.info("\(self.t)👉 清除会话选择")
             }
-            self.ConversationVM.setSelectedConversation(nil)
+            self.conversationVM.setSelectedConversation(nil)
         }
     }
 
     func handleConversationSelected() {
         let localId = localSelectedConversationId?.uuidString ?? "nil"
-        let vmId = ConversationVM.selectedConversationId?.uuidString ?? "nil"
+        let vmId = conversationVM.selectedConversationId?.uuidString ?? "nil"
         ConversationListPlugin.logger.info("\(self.t)🔄 handleConversationSelected called: local=\(localId), vm=\(vmId)")
 
         // 只在值确实不同时才更新，避免循环
-        guard localSelectedConversationId != ConversationVM.selectedConversationId else {
+        guard localSelectedConversationId != conversationVM.selectedConversationId else {
             return
         }
 
-        if let conversationId = self.ConversationVM.selectedConversationId {
+        if let conversationId = self.conversationVM.selectedConversationId {
             // 新会话通常会成为当前选中项，如果当前分页中没有，先刷新第一页
             if self.conversations.first(where: { $0.id == conversationId }) == nil {
                 if lastReloadSelectionId != conversationId {

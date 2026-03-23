@@ -1,34 +1,48 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "Displays detailed information of the current tab and project in a list view": {
+    "New Chat": {
+      "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Chat"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Displays detailed information of the current tab and project in a list view"
+            "value": "新建对话"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Displays detailed information of the current tab and project in a list view"
+            "value": "新建對話"
           }
         }
       }
     },
-    "Project Info": {
+    "Start New Conversation": {
+      "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start new conversation"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Project Info"
+            "value": "开启新会话"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Project Info"
+            "value": "開啟新會話"
           }
         }
       }

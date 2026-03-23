@@ -18,7 +18,7 @@ struct ConversationListHeader: View {
                 .font(.system(size: 14))
                 .foregroundColor(.accentColor)
 
-            Text("对话历史")
+            Text(String(localized: "Conversation History", table: "ConversationList"))
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 

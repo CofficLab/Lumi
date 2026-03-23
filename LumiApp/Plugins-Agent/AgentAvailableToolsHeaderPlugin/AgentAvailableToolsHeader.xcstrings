@@ -1,73 +1,38 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "%lld tools available": {
-      "comment": "Count of available tools",
+    "Tools": {
+      "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tools"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "可用工具：%lld 个"
+            "value": "工具"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "可用工具：%lld 個"
-          }
-        }
-      }
-    },
-    "Done": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "完成"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "完成"
-          }
-        }
-      }
-    },
-    "No tools found": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未找到工具"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未找到工具"
-          }
-        }
-      }
-    },
-    "Search tools": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "搜索工具"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "搜尋工具"
+            "value": "工具"
           }
         }
       }
     },
     "Show all available tools": {
+      "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show all available tools"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -83,7 +48,14 @@
       }
     },
     "Show tools": {
+      "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show tools"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -98,24 +70,108 @@
         }
       }
     },
-    "Tools": {
+    "%lld tools available": {
+      "extractionState": "manual",
+      "comment": "Count of available tools",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld tools available"
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "工具"
+            "value": "可用工具：%lld 个"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "工具"
+            "value": "可用工具：%lld 個"
+          }
+        }
+      }
+    },
+    "Search tools": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search tools"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索工具"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋工具"
+          }
+        }
+      }
+    },
+    "Done": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完成"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完成"
+          }
+        }
+      }
+    },
+    "No tools found": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No tools found"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到工具"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到工具"
           }
         }
       }
     },
     "Try a different search keyword.": {
+      "extractionState": "manual",
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try a different search keyword."
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -131,5 +187,5 @@
       }
     }
   },
-  "version": "1.0"
+  "version": "1.1"
 }

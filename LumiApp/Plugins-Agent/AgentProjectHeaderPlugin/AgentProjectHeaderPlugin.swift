@@ -3,7 +3,6 @@ import SwiftUI
 import os
 
 /// 项目选择头部插件：右侧栏 header 左侧（当前项目信息、未选项目提示）+ 项目按钮
-/// 同时提供 `list_recent_projects` 工具，供 AI 助手查询用户最近使用的项目列表。
 actor AgentProjectHeaderPlugin: SuperPlugin {
     /// 插件专用 Logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project-header")
@@ -35,7 +34,5 @@ actor AgentProjectHeaderPlugin: SuperPlugin {
     }
 
     @MainActor
-    func agentTools() -> [AgentTool] {
-        [ListRecentProjectsTool()]
-    }
+    func agentTools() -> [AgentTool] { [] }
 }

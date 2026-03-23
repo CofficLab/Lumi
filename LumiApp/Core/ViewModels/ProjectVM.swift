@@ -9,27 +9,29 @@ import MagicKit
 final class ProjectVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose = false
-
-    // MARK: - 项目信息
+    
+    @Published public fileprivate(set) var currentProject: Project? = nil
 
     /// 当前项目名称
-    @Published public fileprivate(set) var currentProjectName: String = ""
+    var currentProjectName: String {
+        self.currentProject?.name ?? ""
+    }
 
     /// 当前项目路径
-    @Published public fileprivate(set) var currentProjectPath: String = ""
+    var currentProjectPath: String {
+        self.currentProject?.path ?? ""
+    }
 
     /// 是否已选择项目
-    @Published public fileprivate(set) var isProjectSelected: Bool = false
-
-    // MARK: - 项目配置
+    var isProjectSelected: Bool {
+        self.currentProject != nil
+    }
 
     /// 当前项目的供应商 ID
     @Published public fileprivate(set) var currentProviderId: String = ""
 
     /// 当前项目的模型名称
     @Published public fileprivate(set) var currentModel: String = ""
-
-    // MARK: - 文件选择
 
     /// 当前选择的文件 URL
     @Published public fileprivate(set) var selectedFileURL: URL?
@@ -43,17 +45,17 @@ final class ProjectVM: ObservableObject, SuperLog {
     /// 是否已选择文件
     @Published public fileprivate(set) var isFileSelected: Bool = false
 
-    // MARK: - 语言偏好
-
+    // 语言偏好
     @Published var languagePreference: LanguagePreference = .chinese
 
-    // MARK: - 聊天模式
-
+    // 聊天模式
     @Published var chatMode: ChatMode = .build
 
-    // MARK: - 自动批准风险
-
+    // 自动批准风险
     @Published var autoApproveRisk: Bool = false
+
+    /// 最近使用的项目列表
+    @Published public fileprivate(set) var recentProjects: [Project] = []
 
     // MARK: - 初始化
 
@@ -72,14 +74,13 @@ final class ProjectVM: ObservableObject, SuperLog {
         loadLanguagePreference()
         loadChatMode()
         loadGlobalOrDefaultProviderIfNeeded()
+        restoreAutoApproveRiskIfNeeded()
     }
 
     // MARK: - 项目管理
 
     /// 清除当前项目，恢复到未选择任何项目的状态
     func clearProject() {
-        setCurrentProjectInfo(name: "", path: "", selected: false)
-        PluginStateStore.shared.removeObject(forKey: "Agent_SelectedProject")
         clearFileSelection()
 
         Task {
@@ -92,42 +93,8 @@ final class ProjectVM: ObservableObject, SuperLog {
     }
 
     /// 切换到指定项目
-    func switchProject(to path: String) {
-        let projectURL = URL(fileURLWithPath: path)
-
-        var isDirectory: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory),
-              isDirectory.boolValue else {
-            return
-        }
-
-        let projectName = projectURL.lastPathComponent
-
-        setCurrentProjectInfo(name: projectName, path: path, selected: true)
-
-        PluginStateStore.shared.set(path, forKey: "Agent_SelectedProject")
-        saveRecentProject(name: projectName, path: path)
-
-        // 获取并应用项目配置
-        let config = ProjectConfigStore.shared.getOrCreateConfig(for: path)
-        applyProjectConfig(config)
-
-        Task {
-            await contextService.setProjectRoot(projectURL)
-        }
-
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t)📁 已切换项目：\(projectName)")
-        }
-    }
-
-    /// 设置当前项目信息
-    private func setCurrentProjectInfo(name: String, path: String, selected: Bool) {
-        Task { @MainActor in
-            self.currentProjectName = name
-            self.currentProjectPath = path
-            self.isProjectSelected = selected
-        }
+    func switchProject(to project: Project) {
+        self.currentProject = project
     }
 
     /// 应用项目配置
@@ -153,7 +120,6 @@ final class ProjectVM: ObservableObject, SuperLog {
             providerId: providerId,
             model: model
         )
-        ProjectConfigStore.shared.saveConfig(config)
 
         // 如果是当前项目，更新本地状态
         if path == currentProjectPath {
@@ -213,17 +179,6 @@ final class ProjectVM: ObservableObject, SuperLog {
         // 已经由项目配置覆盖，直接跳过
         guard currentProviderId.isEmpty, currentModel.isEmpty else { return }
 
-        // 尝试读取全局配置
-        let globalProviderId = PluginStateStore.shared.string(forKey: Self.globalConfigProviderIdKey)
-        let globalModel = PluginStateStore.shared.string(forKey: Self.globalConfigModelKey)
-
-        if let pid = globalProviderId, !pid.isEmpty,
-           let model = globalModel, !model.isEmpty {
-            currentProviderId = pid
-            currentModel = model
-            return
-        }
-
         // 全局配置不存在时，按原有规则初始化默认供应商和模型
         initializeDefaultProviderIfNeeded()
     }
@@ -231,40 +186,23 @@ final class ProjectVM: ObservableObject, SuperLog {
     /// 在未选择项目时，保存全局供应商 ID
     func setGlobalProviderId(_ providerId: String) {
         currentProviderId = providerId
-        PluginStateStore.shared.set(providerId, forKey: Self.globalConfigProviderIdKey)
     }
 
     /// 在未选择项目时，保存全局模型名称
     func setGlobalModel(_ model: String) {
         currentModel = model
-        PluginStateStore.shared.set(model, forKey: Self.globalConfigModelKey)
     }
 
-    /// 保存最近使用的项目
-    private func saveRecentProject(name: String, path: String) {
-        var projects = getRecentProjects()
-        projects.removeAll { $0.path == path }
+    // MARK: - 最近项目管理
 
-        let newProject = RecentProject(name: name, path: path, lastUsed: Date())
-        projects.insert(newProject, at: 0)
-        projects = Array(projects.prefix(5))
-
-        if let data = try? JSONEncoder().encode(projects) {
-            PluginStateStore.shared.set(data, forKey: "Agent_RecentProjects")
-        }
-
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t)📋 已保存最近项目：\(name)")
-        }
+    /// 设置最近项目列表（由 AgentRecentProjectsPlugin 调用）
+    func setRecentProjects(_ projects: [Project]) {
+        recentProjects = projects
     }
 
-    /// 获取最近使用的项目列表
-    func getRecentProjects() -> [RecentProject] {
-        guard let data = PluginStateStore.shared.data(forKey: "Agent_RecentProjects"),
-              let projects = try? JSONDecoder().decode([RecentProject].self, from: data) else {
-            return []
-        }
-        return projects
+    /// 获取最近项目列表
+    func getRecentProjects() -> [Project] {
+        recentProjects
     }
 
     // MARK: - 文件选择
@@ -398,44 +336,104 @@ final class ProjectVM: ObservableObject, SuperLog {
     // MARK: - 语言偏好
 
     private func loadLanguagePreference() {
-        if let data = PluginStateStore.shared.data(forKey: "Agent_LanguagePreference"),
-           let preference = try? JSONDecoder().decode(LanguagePreference.self, from: data) {
-            Task { @MainActor in
-                self.languagePreference = preference
-            }
-        }
+
     }
 
     func setLanguagePreference(_ preference: LanguagePreference) {
-        Task { @MainActor in
-            self.languagePreference = preference
-            if let encoded = try? JSONEncoder().encode(self.languagePreference) {
-                PluginStateStore.shared.set(encoded, forKey: "Agent_LanguagePreference")
-            }
-        }
+
     }
 
     // MARK: - 聊天模式
 
     private func loadChatMode() {
-        if let rawValue = PluginStateStore.shared.string(forKey: "Agent_ChatMode"),
-           let mode = ChatMode(rawValue: rawValue) {
-            Task { @MainActor in
-                self.chatMode = mode
-            }
-        }
+
     }
 
     func setChatMode(_ mode: ChatMode) {
-        Task { @MainActor in
-            self.chatMode = mode
-            PluginStateStore.shared.set(self.chatMode.rawValue, forKey: "Agent_ChatMode")
-        }
+//
     }
 
     func setAutoApproveRisk(_ enabled: Bool) {
-        Task { @MainActor in
-            self.autoApproveRisk = enabled
+        autoApproveRisk = enabled
+        persistAutoApproveRisk(enabled)
+    }
+
+    // MARK: - Auto-approve persistence
+    ///
+    /// 目前 `autoApproveRisk` 的持久化逻辑在 UI 层由 `AutoApprovePersistenceOverlay` 承担；
+    /// 但如果该 overlay 在某些启动路径没有挂载/恢复，就会导致开关在重启后失效。
+    /// 为保证行为稳定，这里直接读写同一份状态文件。
+    private static let autoApproveStatePlistKey = "autoApproveRisk"
+    private static let autoApproveStateFileName = "auto_approve_state.plist"
+    private static let autoApproveStateTmpFileName = "auto_approve_state.tmp"
+
+    private func autoApproveStateSettingsDir() -> URL {
+        AppConfig.getDBFolderURL()
+            .appendingPathComponent("AgentAutoApproveHeader", isDirectory: true)
+            .appendingPathComponent("settings", isDirectory: true)
+    }
+
+    private func autoApproveStateFileURL() -> URL {
+        autoApproveStateSettingsDir()
+            .appendingPathComponent(Self.autoApproveStateFileName, isDirectory: false)
+    }
+
+    private func restoreAutoApproveRiskIfNeeded() {
+        guard let enabled = loadAutoApproveRiskFromDisk() else { return }
+        autoApproveRisk = enabled
+    }
+
+    private func loadAutoApproveRiskFromDisk() -> Bool? {
+        let fileURL = autoApproveStateFileURL()
+        let fileManager = FileManager.default
+
+        guard fileManager.fileExists(atPath: fileURL.path) else { return nil }
+        guard let data = try? Data(contentsOf: fileURL),
+              let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
+              let dict = plist as? [String: Any] else {
+            return nil
+        }
+
+        if let boolVal = dict[Self.autoApproveStatePlistKey] as? Bool {
+            return boolVal
+        }
+
+        // propertyListSerialization 有时会把 bool 以 NSNumber 形式还原
+        if let numVal = dict[Self.autoApproveStatePlistKey] as? NSNumber {
+            return numVal.boolValue
+        }
+
+        return nil
+    }
+
+    private func persistAutoApproveRisk(_ enabled: Bool) {
+        let fileManager = FileManager.default
+        let settingsDir = autoApproveStateSettingsDir()
+        try? fileManager.createDirectory(at: settingsDir, withIntermediateDirectories: true, attributes: nil)
+
+        let fileURL = autoApproveStateFileURL()
+        let tmpURL = settingsDir.appendingPathComponent(Self.autoApproveStateTmpFileName, isDirectory: false)
+
+        var dict: [String: Any] = [:]
+        if fileManager.fileExists(atPath: fileURL.path),
+           let data = try? Data(contentsOf: fileURL),
+           let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
+           let existing = plist as? [String: Any] {
+            dict = existing
+        }
+
+        dict[Self.autoApproveStatePlistKey] = enabled
+
+        guard let data = try? PropertyListSerialization.data(fromPropertyList: dict, format: .binary, options: 0) else { return }
+        do {
+            try data.write(to: tmpURL, options: .atomic)
+            if fileManager.fileExists(atPath: fileURL.path) {
+                _ = try? fileManager.replaceItemAt(fileURL, withItemAt: tmpURL)
+            } else {
+                try fileManager.moveItem(at: tmpURL, to: fileURL)
+            }
+        } catch {
+            // 写入失败时不影响内存状态；下一次启动仍会以默认值为准
         }
     }
 }

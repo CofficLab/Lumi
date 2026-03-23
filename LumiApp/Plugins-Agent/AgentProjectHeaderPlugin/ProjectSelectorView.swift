@@ -3,22 +3,21 @@ import UniformTypeIdentifiers
 
 /// 项目选择器视图
 struct ProjectSelectorView: View {
-    @EnvironmentObject var ProjectVM: ProjectVM
+    @EnvironmentObject var projectVM: ProjectVM
     @EnvironmentObject private var projectContextRequestVM: ProjectContextRequestVM
 
     @Binding var isPresented: Bool
 
-    @State private var recentProjects: [RecentProject] = []
     @State private var isFileImporterPresented = false
 
     private let maxRecentProjects = 5
-    private let settingsStore = AgentProjectHeaderPluginLocalStore()
+    private let store = RecentProjectsStore()
 
     var body: some View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text("选择项目")
+                Text(String(localized: "Select Project", table: "AgentProjectHeader"))
                     .font(.headline)
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
@@ -47,7 +46,7 @@ struct ProjectSelectorView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     // Current Project Section
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("当前项目")
+                        Text(String(localized: "Current Project", table: "AgentProjectHeader"))
                             .font(.subheadline)
                             .fontWeight(.medium)
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
@@ -60,7 +59,7 @@ struct ProjectSelectorView: View {
                     // Recent Projects Section
                     if !recentProjects.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("最近项目")
+                            Text(String(localized: "Recent Projects", table: "AgentProjectHeader"))
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
@@ -74,7 +73,7 @@ struct ProjectSelectorView: View {
 
                     // Browse Section
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("浏览")
+                        Text(String(localized: "Browse", table: "AgentProjectHeader"))
                             .font(.subheadline)
                             .fontWeight(.medium)
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
@@ -87,9 +86,16 @@ struct ProjectSelectorView: View {
             }
         }
         .frame(width: 400, height: 500)
-        .onAppear {
-            loadRecentProjects()
-        }
+    }
+
+    // MARK: - Computed Properties
+
+    private var recentProjects: [Project] {
+        Array(projectVM.recentProjects
+            .prefix(maxRecentProjects)
+            .filter { project in
+                project.path != projectVM.currentProjectPath
+            })
     }
 
     // MARK: - Current Project Card
@@ -105,12 +111,12 @@ struct ProjectSelectorView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(ProjectVM.currentProjectName.isEmpty ? "未选择项目" : ProjectVM.currentProjectName)
+                    Text(projectVM.currentProjectName.isEmpty ? String(localized: "No Project Selected", table: "AgentProjectHeader") : projectVM.currentProjectName)
                         .font(.body)
                         .fontWeight(.medium)
                         .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
-                    Text(ProjectVM.currentProjectPath.isEmpty ? "点击下方浏览选择项目" : ProjectVM.currentProjectPath)
+                    Text(projectVM.currentProjectPath.isEmpty ? String(localized: "Click Browse Below", table: "AgentProjectHeader") : projectVM.currentProjectPath)
                         .font(.caption)
                         .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                         .lineLimit(2)
@@ -119,7 +125,7 @@ struct ProjectSelectorView: View {
                 Spacer()
 
                 // 已选择项目时显示「删除」按钮，清除后恢复到未选择状态
-                if !ProjectVM.currentProjectName.isEmpty {
+                if !projectVM.currentProjectName.isEmpty {
                     Button(action: {
                         projectContextRequestVM.request = .clearProject
                         isPresented = false
@@ -130,7 +136,7 @@ struct ProjectSelectorView: View {
                             .symbolRenderingMode(.hierarchical)
                     }
                     .buttonStyle(.plain)
-                    .help("取消选择当前项目")
+                    .help(String(localized: "Clear Project Selection", table: "AgentProjectHeader"))
                 }
             }
         }
@@ -139,7 +145,7 @@ struct ProjectSelectorView: View {
 
     // MARK: - Project Card
 
-    private func projectCard(_ project: RecentProject) -> some View {
+    private func projectCard(_ project: Project) -> some View {
         GlassRow {
             HStack(spacing: 12) {
                 // 选择项目按钮
@@ -205,7 +211,7 @@ struct ProjectSelectorView: View {
                     .font(.system(size: 20))
                     .foregroundColor(.accentColor)
 
-                Text("选择新项目...")
+                Text(String(localized: "Select New Project", table: "AgentProjectHeader"))
                     .font(.body)
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
@@ -231,20 +237,29 @@ struct ProjectSelectorView: View {
             handleFileImport(result)
         }
     }
+}
 
-    // MARK: - Actions
+// MARK: - View
 
-    private func selectProject(_ project: RecentProject) {
+// MARK: - Action
+
+// MARK: - Setter
+
+// MARK: - Event Handler
+
+extension ProjectSelectorView {
+    private func selectProject(_ project: Project) {
         Task { @MainActor in
-            projectContextRequestVM.request = .switchProject(path: project.path)
+            self.projectVM.switchProject(to: project)
             isPresented = false
         }
     }
 
-    private func deleteProject(_ project: RecentProject) {
+    private func deleteProject(_ project: Project) {
         withAnimation {
-            recentProjects.removeAll { $0.id == project.id }
-            saveRecentProjects()
+            store.removeProject(project)
+            // 更新 projectVM 中的列表
+            projectVM.setRecentProjects(store.loadProjects())
         }
     }
 
@@ -258,9 +273,8 @@ struct ProjectSelectorView: View {
 
                 let path = url.path
                 Task { @MainActor in
-                    projectContextRequestVM.request = .switchProject(path: path)
+                    self.projectVM.switchProject(to: Project(name: url.lastPathComponent, path: path))
                     isPresented = false
-                    loadRecentProjects()
                 }
 
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -271,22 +285,9 @@ struct ProjectSelectorView: View {
             AgentProjectHeaderPlugin.logger.error("File import 错误：\(error.localizedDescription)")
         }
     }
-
-    private func loadRecentProjects() {
-        recentProjects = Array(ProjectVM.getRecentProjects()
-            .prefix(maxRecentProjects)
-            .filter { project in
-                project.path != ProjectVM.currentProjectPath
-            })
-    }
-
-    private func saveRecentProjects() {
-        if let encoded = try? JSONEncoder().encode(recentProjects) {
-            settingsStore.migrateLegacyValueIfMissing(forKey: "Agent_RecentProjects")
-            settingsStore.set(encoded, forKey: "Agent_RecentProjects")
-        }
-    }
 }
+
+// MARK: - Preview
 
 #Preview("Project Selector") {
     ProjectSelectorView(isPresented: .constant(true))

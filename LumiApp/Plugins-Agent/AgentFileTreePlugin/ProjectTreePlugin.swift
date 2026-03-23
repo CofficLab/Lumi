@@ -23,10 +23,10 @@ actor ProjectTreePlugin: SuperPlugin, SuperLog {
     static let id: String = "ProjectTree"
 
     /// Plugin display name
-    static let displayName: String = "项目文件树"
+    static let displayName: String = String(localized: "Project File Tree", table: "ProjectTree")
 
     /// Plugin functional description
-    static let description: String = "显示当前项目的树状文件目录结构"
+    static let description: String = String(localized: "Show project file directory structure", table: "ProjectTree")
 
     /// Plugin icon name
     static let iconName: String = "folder.fill"

@@ -6,10 +6,9 @@ actor AgentToolPermissionPlugin: SuperPlugin {
     nonisolated static let verbose = false
 
     static let id = "AgentToolPermission"
-    static let displayName = String(localized: "Tool Permission", table: "DevAssistant")
-    static let description = String(localized: "Tool permission overlay at root", table: "DevAssistant")
+    static let displayName = String(localized: "Tool Permission", table: "AgentToolPermission")
+    static let description = String(localized: "Tool permission overlay at root", table: "AgentToolPermission")
     static let iconName = "lock.shield"
-    /// 靠后包裹，使授权层叠在应用内容之上（与 `PluginVM.getRootViewWrapper` 包裹顺序一致）
     static var order: Int { 95 }
     static let enable: Bool = true
 

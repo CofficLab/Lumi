@@ -20,25 +20,57 @@ actor TextActionsPlugin: SuperPlugin, SuperLog {
     nonisolated private static let settingsStore = TextActionsPluginLocalStore()
     nonisolated private static let enabledKey = "TextActionsEnabled"
     
+    // MARK: - Settings
+    
+    /// 获取 Text Actions 功能是否启用
+    nonisolated static var isEnabled: Bool {
+        get {
+            (settingsStore.object(forKey: enabledKey) as? Bool) ?? false
+        }
+    }
+    
+    /// 设置 Text Actions 功能启用状态
+    nonisolated static func setEnabled(_ enabled: Bool) {
+        settingsStore.set(enabled, forKey: enabledKey)
+        
+        // 根据设置变化启动或停止监控
+        Task { @MainActor in
+            if enabled {
+                TextSelectionManager.shared.startMonitoring()
+                _ = TextActionMenuController.shared
+                if verbose {
+                    logger.info("\(t)Text Actions 功能已启用，开始监控")
+                }
+            } else {
+                TextSelectionManager.shared.stopMonitoring()
+                if verbose {
+                    logger.info("\(t)Text Actions 功能已禁用，停止监控")
+                }
+            }
+        }
+    }
+    
     // MARK: - Lifecycle
     
     nonisolated func onRegister() {
         // Initialize settings default if not set
         Self.settingsStore.migrateLegacyValueIfMissing(forKey: Self.enabledKey)
         if Self.settingsStore.object(forKey: Self.enabledKey) == nil {
-            Self.settingsStore.set(true, forKey: Self.enabledKey)
+            // 默认不启用，让用户主动开启
+            Self.settingsStore.set(false, forKey: Self.enabledKey)
         }
     }
     
     nonisolated func onEnable() {
         Task { @MainActor in
-            // Always start monitoring when plugin is enabled
-            // The user can toggle the feature on/off in settings view
-            TextSelectionManager.shared.startMonitoring()
-            _ = TextActionMenuController.shared
+            // 根据用户设置决定是否启动监控
+            if Self.isEnabled {
+                TextSelectionManager.shared.startMonitoring()
+                _ = TextActionMenuController.shared
+            }
             
             if Self.verbose {
-                TextActionsPlugin.logger.info("\(Self.t)Text Actions plugin enabled")
+                TextActionsPlugin.logger.info("\(Self.t)Text Actions plugin enabled, feature \(Self.isEnabled ? "active" : "inactive")")
             }
         }
     }

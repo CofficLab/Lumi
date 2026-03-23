@@ -57,11 +57,11 @@ struct AppRow: View {
             Spacer()
         }
         .contextMenu {
-            Button("Show in Finder") {
+            Button(String(localized: "Show in Finder", table: "AppManager")) {
                 viewModel.revealInFinder(app)
             }
 
-            Button("Open") {
+            Button(String(localized: "Open", table: "AppManager")) {
                 viewModel.openApp(app)
             }
         }

@@ -27,14 +27,7 @@ final class AgentSessionConfig: ObservableObject, SuperLLMConfigProvider {
             return LLMConfig.default
         }
 
-        let apiKey = APIKeyStore.shared.getWithMigration(
-            forKey: providerType.apiKeyStorageKey,
-            legacyLoad: { PluginStateStore.shared.string(forKey: providerType.apiKeyStorageKey) },
-            legacyCleanup: {
-                PluginStateStore.shared.removeObject(forKey: $0)
-                PluginStateStore.shared.removeLegacyValue(forKey: $0)
-            }
-        )
+        let apiKey = APIKeyStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
 
         return LLMConfig(
             apiKey: apiKey,
@@ -47,14 +40,7 @@ final class AgentSessionConfig: ObservableObject, SuperLLMConfigProvider {
         guard let providerType = registry.providerType(forId: providerId) else {
             return ""
         }
-        return APIKeyStore.shared.getWithMigration(
-            forKey: providerType.apiKeyStorageKey,
-            legacyLoad: { PluginStateStore.shared.string(forKey: providerType.apiKeyStorageKey) },
-            legacyCleanup: {
-                PluginStateStore.shared.removeObject(forKey: $0)
-                PluginStateStore.shared.removeLegacyValue(forKey: $0)
-            }
-        )
+        return APIKeyStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
     }
 
     func setApiKey(_ apiKey: String, for providerId: String) {
@@ -62,8 +48,6 @@ final class AgentSessionConfig: ObservableObject, SuperLLMConfigProvider {
             return
         }
         APIKeyStore.shared.set(apiKey, forKey: providerType.apiKeyStorageKey)
-        PluginStateStore.shared.removeObject(forKey: providerType.apiKeyStorageKey)
-        PluginStateStore.shared.removeLegacyValue(forKey: providerType.apiKeyStorageKey)
     }
 
     func setSelectedProviderId(_ providerId: String) {

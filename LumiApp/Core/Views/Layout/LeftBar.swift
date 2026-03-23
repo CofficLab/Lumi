@@ -32,11 +32,6 @@ struct LeftSidebar: View {
         }
         .background(DesignTokens.Material.glassUltraThick)
         .ignoresSafeArea()
-        .onAppear {
-            DispatchQueue.main.async {
-                initializeDefaultSelection()
-            }
-        }
     }
 
     // MARK: - 模式内容
@@ -65,8 +60,7 @@ struct LeftSidebar: View {
                         ForEach(entries) { entry in
                             Button {
                                 app.selectedNavigationId = entry.id
-                                // 持久化用户在 App 模式下选择的导航
-                                PluginStateStore.shared.set(entry.id, forKey: "App_SelectedNavigationId")
+                                AppSettingStore.saveSelectedNavigationId(entry.id)
                             } label: {
                                 SidebarRow(title: entry.title, icon: entry.icon, isSelected: app.selectedNavigationId == entry.id)
                             }
@@ -126,30 +120,6 @@ struct LeftSidebar: View {
     /// 空状态视图
     private func emptyState(message: String, subtitle: String) -> some View {
         SidebarEmptyStateView(message: message, subtitle: subtitle)
-    }
-
-    // MARK: - 私有方法
-
-    /// 初始化默认选中的导航项
-    private func initializeDefaultSelection() {
-        guard app.selectedMode == .app else { return }
-
-        let entries = pluginProvider.getNavigationEntries(for: .app)
-
-        // 优先从持久化存储中恢复上次选择的导航
-        if let savedId = PluginStateStore.shared.string(forKey: "App_SelectedNavigationId"),
-           entries.contains(where: { $0.id == savedId }) {
-            app.selectedNavigationId = savedId
-            return
-        }
-
-        if app.selectedNavigationId == nil {
-            if let defaultEntry = entries.first(where: { $0.isDefault }) {
-                app.selectedNavigationId = defaultEntry.id
-            } else if let firstEntry = entries.first {
-                app.selectedNavigationId = firstEntry.id
-            }
-        }
     }
 }
 
@@ -223,6 +193,7 @@ private struct ModeSwitcherView: View, SuperLog {
     @Environment(\.windowState) var windowState
 
     @State private var mode: AppMode = .agent
+    @State private var isRestoring = false
 
     var body: some View {
         Picker("模式", selection: $mode) {
@@ -242,11 +213,20 @@ private struct ModeSwitcherView: View, SuperLog {
 
 private extension ModeSwitcherView {
     func handleOnAppear() {
-        // 模式恢复由插件负责；这里仅同步当前窗口/全局状态到控件
-        mode = windowState?.selectedMode ?? app.selectedMode
+        isRestoring = true
+
+        // 使用 AppSettingStore 作为单一来源：负责恢复上次的 mode。
+        let savedMode = AppSettingStore.loadMode() ?? .agent
+        mode = savedMode
+        windowState?.selectedMode = savedMode
+        app.selectedMode = savedMode
+        app.selectedNavigationId = AppSettingStore.loadSelectedNavigationId()
+
+        isRestoring = false
     }
 
     func handleModeChanged() {
+        guard !isRestoring else { return }
         if Self.verbose {
             AppLogger.core.info("\(t)🤖 模式已切换：\(mode.rawValue)")
         }
@@ -254,5 +234,8 @@ private extension ModeSwitcherView {
         // 同时更新窗口级别和全局级别的模式状态
         windowState?.selectedMode = mode
         app.selectedMode = mode
+
+        // 同步到持久化存储：下次启动自动恢复。
+        AppSettingStore.saveMode(mode)
     }
 }

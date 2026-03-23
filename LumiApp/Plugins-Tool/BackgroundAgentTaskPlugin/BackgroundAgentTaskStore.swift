@@ -313,14 +313,7 @@ actor BackgroundAgentTaskStore: SuperLog {
         }
 
         settingsStore.migrateLegacyValueIfMissing(forKey: providerType.apiKeyStorageKey)
-        let apiKey = APIKeyStore.shared.getWithMigration(
-            forKey: providerType.apiKeyStorageKey,
-            legacyLoad: { self.settingsStore.string(forKey: providerType.apiKeyStorageKey) },
-            legacyCleanup: {
-                self.settingsStore.removeObject(forKey: $0)
-                self.settingsStore.removeLegacyValue(forKey: $0)
-            }
-        )
+        let apiKey = APIKeyStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
 
         return LLMConfig(
             apiKey: apiKey,

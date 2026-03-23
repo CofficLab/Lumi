@@ -112,10 +112,10 @@ extension ChatToolbarView {
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
-            .help("停止生成")
+            .help(String(localized: "Stop Generating", table: "AgentInput"))
             .keyboardShortcut(.escape, modifiers: [])
-            .accessibilityLabel("停止生成")
-            .accessibilityHint("停止当前正在进行的回复")
+            .accessibilityLabel(String(localized: "Stop Generating", table: "AgentInput"))
+            .accessibilityHint(String(localized: "Stop Generating", table: "AgentInput"))
         } else {
             // 发送按钞 - 正常状态
             Button(action: {
@@ -132,10 +132,10 @@ extension ChatToolbarView {
             }
             .buttonStyle(.plain)
             .disabled((inputViewModel.isEmpty && agentAttachmentsVM.pendingAttachments.isEmpty) || !ProjectVM.isProjectSelected)
-            .help("发送消息")
+            .help(String(localized: "Send Message", table: "AgentInput"))
             .keyboardShortcut(.return, modifiers: [.command])
-            .accessibilityLabel("发送消息")
-            .accessibilityHint("发送当前输入内容，快捷键 Command + 回车")
+            .accessibilityLabel(String(localized: "Send Message", table: "AgentInput"))
+            .accessibilityHint(String(localized: "Send Message Hint", table: "AgentInput"))
         }
     }
 
@@ -180,8 +180,8 @@ extension ChatToolbarView {
         .menuStyle(.borderlessButton)
         .frame(width: 80)
         .help(modeHelpText)
-        .accessibilityLabel("聊天模式")
-        .accessibilityHint("切换对话模式或构建模式")
+        .accessibilityLabel(String(localized: "Chat Mode", table: "AgentInput"))
+        .accessibilityHint(String(localized: "Chat Mode Hint", table: "AgentInput"))
     }
 
     /// 根据当前模式返回前景色
@@ -208,9 +208,9 @@ extension ChatToolbarView {
     private var modeHelpText: String {
         switch ProjectVM.chatMode {
         case .chat:
-            return "对话模式：只聊天，不执行任何操作"
+            return String(localized: "Chat Mode Description", table: "AgentInput")
         case .build:
-            return "构建模式：可执行工具和修改代码"
+            return String(localized: "Build Mode Description", table: "AgentInput")
         }
     }
 
@@ -237,15 +237,15 @@ extension ChatToolbarView {
             .cornerRadius(6)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("选择模型")
-        .accessibilityHint("打开模型选择器")
+        .accessibilityLabel(String(localized: "Select Model", table: "AgentInput"))
+        .accessibilityHint(String(localized: "Select Model Hint", table: "AgentInput"))
     }
 
     /// 当前显示的「供应商 + 模型」文案
     private var currentModelDisplayText: String {
         let model = agentSessionConfig.currentModel
         guard !model.isEmpty else {
-            return "未选择模型"
+            return String(localized: "No Model Selected", table: "AgentInput")
         }
         guard let providerType = agentSessionConfig.registry.providerType(forId: agentSessionConfig.selectedProviderId) else {
             return model
@@ -273,9 +273,9 @@ extension ChatToolbarView {
                 .clipShape(Circle())
         }
         .buttonStyle(.plain)
-        .help("上传图片")
-        .accessibilityLabel("上传图片")
-        .accessibilityHint("选择本地图片作为附件")
+        .help(String(localized: "Upload Image", table: "AgentInput"))
+        .accessibilityLabel(String(localized: "Upload Image", table: "AgentInput"))
+        .accessibilityHint(String(localized: "Upload Image Hint", table: "AgentInput"))
     }
 
     /// Commit 按钮
@@ -309,7 +309,7 @@ extension ChatToolbarView {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
-        .accessibilityHint("填入快捷提示词")
+        .accessibilityHint(String(localized: "Fill Prompt Hint", table: "AgentInput"))
     }
 
     /// 选择图片文件
