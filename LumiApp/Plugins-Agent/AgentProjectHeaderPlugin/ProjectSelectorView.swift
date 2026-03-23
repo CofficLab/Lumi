@@ -18,7 +18,7 @@ struct ProjectSelectorView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text("选择项目")
+                Text(String(localized: "Select Project", table: "AgentProjectHeader"))
                     .font(.headline)
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
@@ -47,7 +47,7 @@ struct ProjectSelectorView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     // Current Project Section
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("当前项目")
+                        Text(String(localized: "Current Project", table: "AgentProjectHeader"))
                             .font(.subheadline)
                             .fontWeight(.medium)
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
@@ -60,7 +60,7 @@ struct ProjectSelectorView: View {
                     // Recent Projects Section
                     if !recentProjects.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("最近项目")
+                            Text(String(localized: "Recent Projects", table: "AgentProjectHeader"))
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
@@ -74,7 +74,7 @@ struct ProjectSelectorView: View {
 
                     // Browse Section
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("浏览")
+                        Text(String(localized: "Browse", table: "AgentProjectHeader"))
                             .font(.subheadline)
                             .fontWeight(.medium)
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
@@ -105,12 +105,12 @@ struct ProjectSelectorView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(ProjectVM.currentProjectName.isEmpty ? "未选择项目" : ProjectVM.currentProjectName)
+                    Text(ProjectVM.currentProjectName.isEmpty ? String(localized: "No Project Selected", table: "AgentProjectHeader") : ProjectVM.currentProjectName)
                         .font(.body)
                         .fontWeight(.medium)
                         .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
-                    Text(ProjectVM.currentProjectPath.isEmpty ? "点击下方浏览选择项目" : ProjectVM.currentProjectPath)
+                    Text(ProjectVM.currentProjectPath.isEmpty ? String(localized: "Click Browse Below", table: "AgentProjectHeader") : ProjectVM.currentProjectPath)
                         .font(.caption)
                         .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                         .lineLimit(2)
@@ -130,7 +130,7 @@ struct ProjectSelectorView: View {
                             .symbolRenderingMode(.hierarchical)
                     }
                     .buttonStyle(.plain)
-                    .help("取消选择当前项目")
+                    .help(String(localized: "Clear Project Selection", table: "AgentProjectHeader"))
                 }
             }
         }
@@ -205,7 +205,7 @@ struct ProjectSelectorView: View {
                     .font(.system(size: 20))
                     .foregroundColor(.accentColor)
 
-                Text("选择新项目...")
+                Text(String(localized: "Select New Project", table: "AgentProjectHeader"))
                     .font(.body)
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 

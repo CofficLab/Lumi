@@ -46,7 +46,7 @@ struct ChatHeaderLeadingView: View {
                 .foregroundColor(.orange)
                 .font(.system(size: 12))
 
-            Text("请选择一个项目以开始")
+            Text(String(localized: "Select a project to start", table: "AgentProjectHeader"))
                 .font(DesignTokens.Typography.caption2)
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
@@ -55,7 +55,7 @@ struct ChatHeaderLeadingView: View {
             Button(action: {
                 isProjectSelectorPresented = true
             }) {
-                Text("选择项目")
+                Text(String(localized: "Select Project", table: "AgentProjectHeader"))
                     .font(DesignTokens.Typography.caption2)
                     .fontWeight(.medium)
                     .foregroundColor(.accentColor)
