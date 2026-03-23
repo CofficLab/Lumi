@@ -8,7 +8,12 @@ import MagicKit
 @MainActor
 final class SendController: ObservableObject, SuperLog {
     nonisolated static let emoji = "📤"
-    nonisolated static let verbose = true
+
+    /// 详细日志级别
+    /// 0: 关闭日志
+    /// 1: 基础日志
+    /// 2: 详细日志（输出请求/响应的详细信息）
+    nonisolated static let verbose = 1
 
     private let container: RootViewContainer
     private var activeSendTasksByConversation: [UUID: Task<Void, Never>] = [:]
@@ -17,7 +22,7 @@ final class SendController: ObservableObject, SuperLog {
         self.container = container
     }
 
-    /// 尝试从队列中出队一条“可处理”的消息并开始发送。
+    /// 尝试从队列中出队一条"可处理"的消息并开始发送。
     /// 当某个对话在 `processingMessages` 中已有消息在处理时，该对话的待发送消息不会被出队。
     func attemptBeginNextQueuedSend() async {
         guard let message = container.messageQueueVM.dequeueNextEligibleMessage() else { return }
@@ -66,7 +71,7 @@ final class SendController: ObservableObject, SuperLog {
 
     /// 从队列入口启动一次发送链路：投影 UI、落库、运行发送中间件，然后继续 `send`。
     func beginSendFromQueue(conversationId: UUID, message: ChatMessage) async {
-        if Self.verbose {
+        if Self.verbose >= 1 {
             AppLogger.core.info("\(Self.t) 启动一次发送链路：\(message.content)")
         }
 
@@ -129,7 +134,7 @@ final class SendController: ObservableObject, SuperLog {
                     arguments: calls[i].arguments
                 )
 
-                if Self.verbose {
+                if Self.verbose >= 2 {
                     AppLogger.core.info("\(Self.t)🔨 工具名称：\(calls[i].name)")
                     AppLogger.core.info("\(Self.t)    参数：\(calls[i].arguments.max(50))")
                     AppLogger.core.info("\(Self.t)    风险：\(risk.displayName)")
@@ -204,7 +209,9 @@ final class SendController: ObservableObject, SuperLog {
         let onStreamChunk: @Sendable (StreamChunk) async -> Void = { chunk in
             await MainActor.run {
                 statusVM.applyStreamChunk(conversationId: convId, chunk: chunk)
-                AppLogger.core.info("\(Self.t) 事件：\(chunk.eventType?.rawValue ?? "unknown")，内容：\(chunk.content ?? "")，原始：\(chunk.rawStreamPayload?.max(200) ?? "")")
+                if Self.verbose >= 2 {
+                    AppLogger.core.info("\(Self.t) 事件：\(chunk.eventType?.rawValue ?? "unknown")，内容：\(chunk.content ?? "")，原始：\(chunk.rawStreamPayload?.max(200) ?? "")")
+                }
             }
         }
 
