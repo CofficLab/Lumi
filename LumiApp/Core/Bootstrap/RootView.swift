@@ -71,7 +71,6 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .onChange(of: container.conversationCreationVM.pendingRequest, onConversationCreationRequested)
             .onChange(of: container.taskCancellationVM.conversationIdToCancel, onTaskCancellationRequested)
             .onChange(of: container.projectContextRequestVM.request, onProjectContextRequestChanged)
-            .onChange(of: container.conversationVM.selectedConversationId, onConversationChanged)
             .onResumeSendAfterToolPermission(perform: onResumeSendAfterToolPermission)
             .onAgentConversationSendTurnFinished(perform: onAgentConversationSendTurnFinished)
     }
@@ -154,11 +153,6 @@ extension RootView {
         sendController.cancelSend(conversationId: conversationId)
 
         AppLogger.core.info("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 任务已取消")
-    }
-
-    func onConversationChanged() {
-        guard let conversationId = container.conversationVM.selectedConversationId else { return }
-        Task { await projectController.handleConversationChanged(conversationId: conversationId, applyProjectContext: true) }
     }
 
     @MainActor

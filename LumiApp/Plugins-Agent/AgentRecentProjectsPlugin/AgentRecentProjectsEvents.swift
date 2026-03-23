@@ -29,7 +29,11 @@ extension View {
     /// - Parameter action: 事件处理闭包，接收项目名称和路径
     /// - Returns: 修改后的视图
     func onCurrentProjectDidChange(perform action: @escaping (String, String) -> Void) -> some View {
-        self.onReceive(NotificationCenter.default.publisher(for: .currentProjectDidChange)) { notification in
+        self.onReceive(
+            NotificationCenter.default
+                .publisher(for: .currentProjectDidChange)
+                .receive(on: RunLoop.main)
+        ) { notification in
             guard let userInfo = notification.userInfo,
                   let name = userInfo["projectName"] as? String,
                   let path = userInfo["projectPath"] as? String else {

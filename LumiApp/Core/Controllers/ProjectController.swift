@@ -31,23 +31,6 @@ final class ProjectController: ObservableObject, SuperLog {
         }
     }
 
-    /// 当前选中会话变化时，将会话关联的项目同步到 `ProjectVM` 并更新系统提示
-    func handleConversationChanged(conversationId: UUID, applyProjectContext: Bool) async {
-        guard applyProjectContext else { return }
-        guard let conversation = container.conversationVM.fetchConversation(id: conversationId) else { return }
-
-        let path = conversation.projectId?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let languagePreference = container.ProjectVM.languagePreference
-
-        if let path, !path.isEmpty {
-            container.ProjectVM.switchProject(to: path)
-            await applyConversationProjectContext(path: path, languagePreference: languagePreference)
-        } else {
-            container.ProjectVM.clearProject()
-            await applyConversationProjectContext(path: nil, languagePreference: languagePreference)
-        }
-    }
-
     // MARK: - Private
 
     private func applyConversationProjectContext(path: String?, languagePreference: LanguagePreference) async {

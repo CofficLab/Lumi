@@ -18,10 +18,14 @@ final class ProjectVM: ObservableObject, SuperLog {
     }
 
     /// 当前项目路径
-    @Published public fileprivate(set) var currentProjectPath: String = ""
+    var currentProjectPath: String {
+        self.currentProject?.path ?? ""
+    }
 
     /// 是否已选择项目
-    @Published public fileprivate(set) var isProjectSelected: Bool = false
+    var isProjectSelected: Bool {
+        self.currentProject != nil
+    }
 
     /// 当前项目的供应商 ID
     @Published public fileprivate(set) var currentProviderId: String = ""
@@ -77,7 +81,6 @@ final class ProjectVM: ObservableObject, SuperLog {
 
     /// 清除当前项目，恢复到未选择任何项目的状态
     func clearProject() {
-        setCurrentProjectInfo(name: "", path: "", selected: false)
         clearFileSelection()
 
         Task {
@@ -90,34 +93,8 @@ final class ProjectVM: ObservableObject, SuperLog {
     }
 
     /// 切换到指定项目
-    func switchProject(to path: String) {
-        let projectURL = URL(fileURLWithPath: path)
-
-        var isDirectory: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory),
-              isDirectory.boolValue else {
-            return
-        }
-
-        let projectName = projectURL.lastPathComponent
-
-        setCurrentProjectInfo(name: projectName, path: path, selected: true)
-
-        Task {
-            await contextService.setProjectRoot(projectURL)
-        }
-
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t)📁 已切换项目：\(projectName)")
-        }
-    }
-
-    /// 设置当前项目信息
-    private func setCurrentProjectInfo(name: String, path: String, selected: Bool) {
-        Task { @MainActor in
-            self.currentProjectPath = path
-            self.isProjectSelected = selected
-        }
+    func switchProject(to project: Project) {
+        self.currentProject = project
     }
 
     /// 应用项目配置
