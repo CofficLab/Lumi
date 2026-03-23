@@ -14,7 +14,8 @@ final class MessageQueueVM: ObservableObject, SuperLog {
 
     /// 将消息入队
     /// - Parameter message: 要发送的消息
-    func enqueueMessage(_ message: ChatMessage, in conversationId: UUID) {
+    func enqueueMessage(_ message: ChatMessage) {
+        let conversationId = message.conversationId
         let trimmedContent = message.content.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedContent.isEmpty || !message.images.isEmpty else {
             if Self.verbose {
@@ -30,8 +31,19 @@ final class MessageQueueVM: ObservableObject, SuperLog {
         }
     }
 
-    /// 移除指定索引的消息（不能移除正在处理的消息）
-    func removeMessage(at index: Int, in conversationId: UUID) {
+    /// 按消息 ID 移除消息（不能移除正在处理的消息）
+    func removeMessage(id messageId: UUID) {
+        var target: (conversationId: UUID, index: Int)?
+        for (conversationId, queue) in pendingMessagesByConversation {
+            if let index = queue.firstIndex(where: { $0.id == messageId }) {
+                target = (conversationId: conversationId, index: index)
+                break
+            }
+        }
+
+        guard let target else { return }
+        let conversationId = target.conversationId
+        let index = target.index
         guard index != currentProcessingIndexByConversation[conversationId] ?? nil else { return }
         guard var queue = pendingMessagesByConversation[conversationId], queue.indices.contains(index) else { return }
 
@@ -56,12 +68,6 @@ final class MessageQueueVM: ObservableObject, SuperLog {
 
     func currentProcessingIndex(for conversationId: UUID) -> Int? {
         currentProcessingIndexByConversation[conversationId] ?? nil
-    }
-
-    func removeFirstMessage(for conversationId: UUID) {
-        guard var queue = pendingMessagesByConversation[conversationId], !queue.isEmpty else { return }
-        queue.removeFirst()
-        pendingMessagesByConversation[conversationId] = queue
     }
 
     /// 出队并返回指定会话的第一条消息

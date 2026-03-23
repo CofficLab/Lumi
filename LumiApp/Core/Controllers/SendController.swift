@@ -21,9 +21,6 @@ final class SendController: ObservableObject, SuperLog {
     /// 从队列移除队首消息、清除正在处理索引，并清空该会话的发送状态文案。
     func finishSendTurn(conversationId: UUID) {
         container.conversationSendStatusVM.clearStatus(conversationId: conversationId)
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t)✅ [\(String(conversationId.uuidString.prefix(8)))] 消息发送完成，已从队列移除")
-        }
     }
 
     /// 从队列入口启动一次发送链路：投影 UI、落库、运行发送中间件，然后继续 `send`。

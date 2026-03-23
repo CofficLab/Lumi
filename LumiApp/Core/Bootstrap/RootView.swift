@@ -138,7 +138,7 @@ extension RootView {
             return
         }
 
-        guard let message = messageQueueVM.pendingMessages(for: conversationId).first else {
+        guard let message = messageQueueVM.dequeueFirstMessage(for: conversationId) else {
             AppLogger.core.error("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 消息队列变了，但当前会话没有待发送消息，忽略")
             return
         }
@@ -173,7 +173,7 @@ extension RootView {
         guard !request.text.isEmpty || !allImages.isEmpty else { return }
 
         let message = ChatMessage(role: .user, conversationId: conversationId, content: request.text, images: allImages)
-        container.messageQueueVM.enqueueMessage(message, in: conversationId)
+        container.messageQueueVM.enqueueMessage(message)
     }
 
     // MARK: - Conversation creation
