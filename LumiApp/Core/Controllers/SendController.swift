@@ -97,7 +97,7 @@ final class SendController: ObservableObject, SuperLog {
 
                 if Self.verbose {
                     AppLogger.core.info("\(Self.t)🔨 工具名称：\(calls[i].name)")
-                    AppLogger.core.info("\(Self.t)    参数：\(calls[i].arguments)")
+                    AppLogger.core.info("\(Self.t)    参数：\(calls[i].arguments.max(50))")
                     AppLogger.core.info("\(Self.t)    风险：\(risk.displayName)")
                 }
 

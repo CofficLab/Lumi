@@ -18,7 +18,7 @@ final class InputQueueVM: ObservableObject, SuperLog {
     /// 发布输入入队请求
     func enqueueText(_ text: String, images: [ImageAttachment] = []) {
         if Self.verbose {
-            AppLogger.core.info("\(self.t) Enqueuing text: \(text)")
+            AppLogger.core.info("\(self.t) 用户输入入队: \(text.max(50))")
         }
 
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
