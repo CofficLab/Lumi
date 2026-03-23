@@ -15,7 +15,7 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
     // MARK: - 基础信息
 
     static let id = "zhipu"
-    static let displayName = "Zhipu AI"
+    static let displayName = "Zhipu AI CodingPlan"
     static let iconName = "sparkles"
     static let description = "智谱 AI (GLM)"
 
@@ -27,6 +27,7 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
     static let defaultModel = "glm-4.7"
 
     static let availableModels = [
+        "glm-5",
         "glm-4.7",
         "glm-4.6",
         "glm-4.5-air",
