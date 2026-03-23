@@ -114,6 +114,10 @@ extension RootView {
 
     /// 待发送的队列发生变化
     func onQueueChanged() {
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t) 队列发生变化，尝试开始发送")
+        }
+        
         Task {
             await sendController.attemptBeginNextQueuedSend()
         }

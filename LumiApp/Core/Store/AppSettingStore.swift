@@ -69,38 +69,9 @@ enum AppSettingStore {
         }
     }
 
-    // MARK: - AppCoreSetting
+    // MARK: - Mode
 
     private static let modeKey = "App_SelectedMode"
-    private static let selectedNavigationIdKey = "App_SelectedNavigationId"
-
-    /// 加载应用核心设置
-    static func loadAppSetting() -> AppCoreSetting {
-        guard let raw = object(forKey: modeKey) as? String,
-              let mode = AppMode(rawValue: raw) else {
-            return AppCoreSetting(mode: .agent, selectedNavigationId: nil)
-        }
-        let selectedNavigationId = object(forKey: selectedNavigationIdKey) as? String
-        return AppCoreSetting(mode: mode, selectedNavigationId: selectedNavigationId)
-    }
-
-    /// 保存应用核心设置
-    static func saveAppSetting(_ setting: AppCoreSetting) {
-        set(setting.mode.rawValue, forKey: modeKey)
-        set(setting.selectedNavigationId, forKey: selectedNavigationIdKey)
-    }
-
-    // MARK: - Convenience
-
-    /// 加载 App 模式下的上次选中导航入口 ID
-    static func loadSelectedNavigationId() -> String? {
-        object(forKey: selectedNavigationIdKey) as? String
-    }
-
-    /// 保存 App 模式下的上次选中导航入口 ID
-    static func saveSelectedNavigationId(_ id: String?) {
-        set(id, forKey: selectedNavigationIdKey)
-    }
 
     /// 加载当前模式
     static func loadMode() -> AppMode? {
@@ -111,5 +82,19 @@ enum AppSettingStore {
     /// 保存模式
     static func saveMode(_ mode: AppMode) {
         set(mode.rawValue, forKey: modeKey)
+    }
+
+    // MARK: - Navigation
+
+    private static let selectedNavigationIdKey = "App_SelectedNavigationId"
+
+    /// 加载 App 模式下的上次选中导航入口 ID
+    static func loadSelectedNavigationId() -> String? {
+        object(forKey: selectedNavigationIdKey) as? String
+    }
+
+    /// 保存 App 模式下的上次选中导航入口 ID
+    static func saveSelectedNavigationId(_ id: String?) {
+        set(id, forKey: selectedNavigationIdKey)
     }
 }
