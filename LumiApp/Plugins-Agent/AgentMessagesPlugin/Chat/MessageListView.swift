@@ -6,7 +6,7 @@ struct MessageListView: View {
     nonisolated static let historyWindowStep = 40
 
     @EnvironmentObject var timelineViewModel: ChatTimelineViewModel
-    @EnvironmentObject var conversationSendStatusVM: ConversationSendStatusVM
+    @EnvironmentObject var conversationSendStatusVM: ConversationStatusVM
 
     private let bottomAnchorId = "chat_message_list_bottom_anchor"
     @State private var historyWindowLimit = Self.defaultHistoryWindowLimit

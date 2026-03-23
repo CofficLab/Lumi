@@ -33,7 +33,7 @@ struct RootView<Content>: View, SuperLog where Content: View {
 
     var captureThinkingContent: Bool { container.captureThinkingContent }
     var chatHistoryService: ChatHistoryService { container.chatHistoryService }
-    var conversationSendStatusVM: ConversationSendStatusVM { container.conversationSendStatusVM }
+    var conversationSendStatusVM: ConversationStatusVM { container.conversationSendStatusVM }
     var conversationVM: ConversationVM { container.conversationVM }
     var llmService: LLMService { container.llmService }
     var messageQueueVM: MessageQueueVM { container.messageQueueVM }

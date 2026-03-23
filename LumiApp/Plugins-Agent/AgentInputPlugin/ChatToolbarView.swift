@@ -21,7 +21,7 @@ struct ChatToolbarView: View, SuperLog {
     @EnvironmentObject private var inputQueueVM: InputQueueVM
 
     /// 发送链路瞬时状态（有状态文案时表示正在处理，显示「停止」）
-    @EnvironmentObject private var conversationSendStatusVM: ConversationSendStatusVM
+    @EnvironmentObject private var conversationSendStatusVM: ConversationStatusVM
 
     /// 输入框本地状态 ViewModel
     @ObservedObject var inputViewModel: InputViewModel
