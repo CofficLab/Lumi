@@ -273,7 +273,7 @@ extension ProjectSelectorView {
 
                 let path = url.path
                 Task { @MainActor in
-                    projectContextRequestVM.request = .switchProject(path: path)
+                    self.projectVM.switchProject(to: Project(name: url.lastPathComponent, path: path))
                     isPresented = false
                 }
 
