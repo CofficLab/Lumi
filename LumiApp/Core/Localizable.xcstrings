@@ -7363,6 +7363,7 @@
       }
     },
     "权限请求" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8201,6 +8202,7 @@
       }
     },
     "请审阅操作风险并选择允许或拒绝" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
