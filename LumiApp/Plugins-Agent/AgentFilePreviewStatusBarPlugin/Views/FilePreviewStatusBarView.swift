@@ -61,7 +61,7 @@ struct FilePreviewStatusBarView: View {
 
             // 右侧：字符数统计（仅当选择了可预览文件时显示）
             if ProjectVM.isFileSelected && isPreviewableFile {
-                Text("\(fileContent.count) 字符")
+                Text("\(fileContent.count) " + String(localized: "characters", table: "AgentFilePreviewStatusBar"))
                     .font(.system(size: 9))
                     .foregroundColor(DesignTokens.Color.semantic.textTertiary)
             }
