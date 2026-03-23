@@ -12,8 +12,6 @@ final class MessageQueueVM: ObservableObject, SuperLog {
     @Published private(set) var pendingMessagesByConversation: [UUID: [ChatMessage]] = [:]
     @Published private(set) var currentProcessingIndexByConversation: [UUID: Int?] = [:]
 
-    // MARK: - 队列管理
-
     /// 将消息入队
     /// - Parameter message: 要发送的消息
     func enqueueMessage(_ message: ChatMessage, in conversationId: UUID) {
@@ -75,8 +73,6 @@ final class MessageQueueVM: ObservableObject, SuperLog {
         queue.removeFirst()
         pendingMessagesByConversation[conversationId] = queue
     }
-
-    // MARK: - 检查队列状态
 
     func queueCount(for conversationId: UUID) -> Int {
         return pendingMessagesByConversation[conversationId]?.count ?? 0

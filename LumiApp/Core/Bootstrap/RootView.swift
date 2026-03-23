@@ -94,8 +94,6 @@ extension View {
 // MARK: - Event Handlers
 
 extension RootView {
-    // MARK: - Lifecycle
-
     func onAppear() {
         loadPreferences()
     }
@@ -133,7 +131,7 @@ extension RootView {
         return container.messageQueueVM.queueCount(for: conversationId)
     }
 
-    /// 发送队列：取出待发送消息 → 投影/落库 → **单次**流式 LLM
+    /// 待发送的队列发生变化
     func onQueueChanged() {
         guard let conversationId = conversationVM.selectedConversationId else {
             AppLogger.core.error("\(Self.t) 消息队列变了，但当前没有选中的会话，忽略")
@@ -147,7 +145,7 @@ extension RootView {
         }
 
         // 如果当前会话正在处理消息，则不发送
-        if conversationSendStatusVM.isMessageProcessing(for: conversationId, messageQueueVM: messageQueueVM) {
+        if conversationSendStatusVM.isMessageProcessing(for: conversationId) {
             AppLogger.core.error("\(Self.t) 消息队列变了，但当前会话有上一条消息尚未结束，忽略")
             return
         }

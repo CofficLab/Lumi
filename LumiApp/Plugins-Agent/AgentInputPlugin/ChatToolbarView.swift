@@ -58,7 +58,7 @@ struct ChatToolbarView: View, SuperLog {
 // MARK: - View
 
 extension ChatToolbarView {
-    /// 当前会话是否处于 `RootView+Send` 等写入的发送状态中（用于发送/停止切换）。
+    /// 当前会话是否处于 `SendController` 等写入的发送状态中（用于发送/停止切换）。
     private var isSendPipelineActive: Bool {
         guard let id = ConversationVM.selectedConversationId else { return false }
         return conversationSendStatusVM.statusMessage(for: id) != nil

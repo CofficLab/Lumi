@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-/// 按会话维护一条「当前发送/流式/工具」状态，用 `ChatMessage`（`role == .status`）表示，不持久化、不发给 LLM。
+/// 按会话维护一条「当前发送/流式/工具」状态
 @MainActor
 final class ConversationSendStatusVM: ObservableObject {
     @Published private(set) var statusMessageByConversationId: [UUID: ChatMessage] = [:]
@@ -97,13 +97,7 @@ final class ConversationSendStatusVM: ObservableObject {
     }
 
     /// 判断指定会话是否正在进行消息发送处理
-    /// - Parameter conversationId: 会话 ID
-    /// - Returns: 如果该会话正在处理消息则返回 true
-    func isMessageProcessing(for conversationId: UUID, messageQueueVM: MessageQueueVM) -> Bool {
-        guard let currentProcessingIndex = messageQueueVM.currentProcessingIndex(for: conversationId) else {
-            return false
-        }
-        // 如果当前有正在处理的索引（不是 nil），说明有消息正在处理中
-        return currentProcessingIndex != nil
+    func isMessageProcessing(for conversationId: UUID) -> Bool {
+        return self.statusMessage(for: conversationId) != nil
     }
 }

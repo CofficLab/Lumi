@@ -11,7 +11,7 @@ extension Notification.Name {
     /// object: UUID (对话 ID)
     static let agentConversationCreated = Notification.Name("agentConversationCreated")
 
-    /// 工具授权流程结束（全部非 pending），应继续 `send(conversationId:)` 管线
+    /// 工具授权流程结束（全部非 pending），应继续 `SendController.send(conversationId:)` 管线
     /// object: UUID (对话 ID)
     static let resumeSendAfterToolPermission = Notification.Name("resumeSendAfterToolPermission")
 }

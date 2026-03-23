@@ -41,7 +41,7 @@ final class RootViewContainer: ObservableObject {
     let permissionHandlingVM: PermissionHandlingVM
     let conversationCreationVM: ConversationCreationVM
     let chatTimelineViewModel: ChatTimelineViewModel
-    /// `RootView+Send` 等发送链路：按会话写入 `role == .status` 的瞬时状态消息（不落库）。
+    /// `SendController` 等发送链路：按会话写入 `role == .status` 的瞬时状态消息（不落库）。
     let conversationSendStatusVM: ConversationSendStatusVM
     let projectContextRequestVM: ProjectContextRequestVM
 
