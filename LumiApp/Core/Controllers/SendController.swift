@@ -27,7 +27,12 @@ final class SendController: ObservableObject, SuperLog {
     func attemptBeginNextQueuedSend() async {
         guard let message = container.messageQueueVM.dequeueNextEligibleMessage() else { return }
         let conversationId = message.conversationId
-        guard activeSendTasksByConversation[conversationId] == nil else { return }
+        
+        // 如果该会话已有活跃任务，将消息状态改回 pending，避免卡住
+        guard activeSendTasksByConversation[conversationId] == nil else {
+            container.messageQueueVM.requeueMessage(message)
+            return
+        }
 
         activeSendTasksByConversation[conversationId] = Task { [weak self] in
             guard let self = self else { return }

@@ -74,6 +74,12 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     /// 是否为临时状态消息（用于 UI 展示“连接中/等待响应/生成中”等）
     var isTransientStatus: Bool = false
 
+    /// 消息队列状态（仅用于消息发送队列管理）
+    /// - nil: 不在队列中（历史消息或已完成发送的消息）
+    /// - pending: 待发送
+    /// - processing: 处理中
+    var queueStatus: MessageQueueStatus?
+
     /// 是否应该在气泡下方展示消息工具栏（复制/操作按钮行等）
     /// 统一在模型层收敛 UI 规则，避免各处散落判断。
     var shouldShowToolbar: Bool {
@@ -151,7 +157,8 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
          thinkingDuration: Double? = nil, finishReason: String? = nil,
          requestId: String? = nil, temperature: Double? = nil,
          maxTokens: Int? = nil, thinkingContent: String? = nil,
-         isTransientStatus: Bool = false) {
+         isTransientStatus: Bool = false,
+         queueStatus: MessageQueueStatus? = nil) {
         self.id = UUID()
         self.role = role
         self.conversationId = conversationId
@@ -176,6 +183,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         self.maxTokens = maxTokens
         self.thinkingContent = thinkingContent
         self.isTransientStatus = isTransientStatus
+        self.queueStatus = queueStatus
     }
 
     /// 从数据库加载时使用的初始化方法
@@ -215,7 +223,8 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
          thinkingDuration: Double? = nil, finishReason: String? = nil,
          requestId: String? = nil, temperature: Double? = nil,
          maxTokens: Int? = nil, thinkingContent: String? = nil,
-         isTransientStatus: Bool = false) {
+         isTransientStatus: Bool = false,
+         queueStatus: MessageQueueStatus? = nil) {
         self.id = id
         self.role = role
         self.conversationId = conversationId
@@ -240,6 +249,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         self.maxTokens = maxTokens
         self.thinkingContent = thinkingContent
         self.isTransientStatus = isTransientStatus
+        self.queueStatus = queueStatus
     }
 
     // MARK: - Equatable
@@ -258,6 +268,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
             lhs.providerId == rhs.providerId &&
             lhs.modelName == rhs.modelName &&
             lhs.latency == rhs.latency &&
-            lhs.isTransientStatus == rhs.isTransientStatus
+            lhs.isTransientStatus == rhs.isTransientStatus &&
+            lhs.queueStatus == rhs.queueStatus
     }
 }
