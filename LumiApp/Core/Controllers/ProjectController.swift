@@ -1,0 +1,140 @@
+import Foundation
+import MagicKit
+
+/// 项目上下文与 Root 系统提示词联动
+///
+/// 处理会话切换时的项目同步、`ProjectContextRequest` 触发的切换/清除，以及启动时恢复已选项目。
+/// 由 `RootView` 注入 `RootViewContainer` 使用。
+@MainActor
+final class ProjectController: ObservableObject, SuperLog {
+    nonisolated static let emoji = "📁"
+    nonisolated static let verbose = true
+
+    private let container: RootViewContainer
+
+    init(container: RootViewContainer) {
+        self.container = container
+    }
+
+    /// 从偏好恢复上次选中的项目路径（与 `loadPreferences` 中项目部分一致）
+    func applySavedProjectFromPreferences() {
+        if let savedPath = PluginStateStore.shared.string(forKey: "Agent_SelectedProject") {
+            container.ProjectVM.switchProject(to: savedPath)
+            Task {
+                await container.slashCommandService.setCurrentProjectPath(savedPath)
+            }
+        }
+    }
+
+    /// 响应 `ProjectContextRequestVM` 的请求
+    func handleProjectContextRequest(_ request: ProjectContextRequest) async {
+        switch request {
+        case let .switchProject(path):
+            await handleProjectSwitch(path: path)
+        case .clearProject:
+            await handleProjectClear()
+        }
+    }
+
+    /// 当前选中会话变化时，将会话关联的项目同步到 `ProjectVM` 并更新系统提示
+    func handleConversationChanged(conversationId: UUID, applyProjectContext: Bool) async {
+        guard applyProjectContext else { return }
+        guard let conversation = container.conversationVM.fetchConversation(id: conversationId) else { return }
+
+        let path = conversation.projectId?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let languagePreference = container.ProjectVM.languagePreference
+
+        if let path, !path.isEmpty {
+            container.ProjectVM.switchProject(to: path)
+            await applyConversationProjectContext(path: path, languagePreference: languagePreference)
+        } else {
+            container.ProjectVM.clearProject()
+            await applyConversationProjectContext(path: nil, languagePreference: languagePreference)
+        }
+    }
+
+    // MARK: - Private
+
+    private func applyConversationProjectContext(path: String?, languagePreference: LanguagePreference) async {
+        let fullSystemPrompt = await container.promptService.buildSystemPrompt(
+            languagePreference: languagePreference,
+            includeContext: true
+        )
+        upsertRootSystemMessage(fullSystemPrompt)
+        await container.slashCommandService.setCurrentProjectPath(path)
+    }
+
+    private func handleProjectSwitch(path: String) async {
+        container.ProjectVM.switchProject(to: path)
+        let languagePreference = container.ProjectVM.languagePreference
+        await applyProjectContext(path: path, languagePreference: languagePreference)
+
+        let projectName = container.ProjectVM.currentProjectName
+        let config = ProjectConfigStore.shared.getOrCreateConfig(for: path)
+
+        let switchMessage: String
+        switch languagePreference {
+        case .chinese:
+            switchMessage = """
+            ✅ 已切换到项目
+
+            **项目名称**: \(projectName)
+            **项目路径**: \(path)
+            **使用模型**: \(config.model.isEmpty ? "默认" : config.model) (\(config.providerId))
+            """
+        case .english:
+            switchMessage = """
+            ✅ Switched to project
+
+            **Project**: \(projectName)
+            **Path**: \(path)
+            **Model**: \(config.model.isEmpty ? "Default" : config.model) (\(config.providerId))
+            """
+        }
+
+        let conversationId = container.conversationVM.selectedConversationId ?? UUID()
+        container.messagePendingVM.appendMessage(ChatMessage(role: .assistant, conversationId: conversationId, content: switchMessage))
+    }
+
+    private func handleProjectClear() async {
+        guard container.ProjectVM.isProjectSelected else { return }
+
+        container.conversationVM.setSelectedConversation(nil)
+        container.ProjectVM.clearProject()
+
+        let languagePreference = container.ProjectVM.languagePreference
+        await applyProjectContext(path: nil, languagePreference: languagePreference)
+
+        let clearMessage: String
+        switch languagePreference {
+        case .chinese:
+            clearMessage = "✅ 已取消选择项目，当前未关联任何项目。"
+        case .english:
+            clearMessage = "✅ Project cleared. No project is currently selected."
+        }
+
+        let conversationId = container.conversationVM.selectedConversationId ?? UUID()
+        container.messagePendingVM.appendMessage(ChatMessage(role: .assistant, conversationId: conversationId, content: clearMessage))
+    }
+
+    private func applyProjectContext(path: String?, languagePreference: LanguagePreference) async {
+        let fullSystemPrompt = await container.promptService.buildSystemPrompt(
+            languagePreference: languagePreference,
+            includeContext: true
+        )
+        upsertRootSystemMessage(fullSystemPrompt)
+        await container.slashCommandService.setCurrentProjectPath(path)
+    }
+
+    private func upsertRootSystemMessage(_ content: String) {
+        let currentMessages = container.messagePendingVM.messages
+        let conversationId = container.conversationVM.selectedConversationId ?? UUID()
+        let systemMessage = ChatMessage(role: .system, conversationId: conversationId, content: content)
+
+        if !currentMessages.isEmpty, currentMessages[0].role == .system {
+            container.messagePendingVM.updateMessage(systemMessage, at: 0)
+        } else {
+            container.messagePendingVM.insertMessage(systemMessage, at: 0)
+        }
+    }
+}

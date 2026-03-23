@@ -16,9 +16,26 @@ final class SendController: ObservableObject, SuperLog {
         self.container = container
     }
 
+    /// 当前选中会话：若未在处理中且队列有待发送，则出队并开始发送。
+    /// - Parameter queueChangeLogging: 为 `true` 时，在无选中会话或仍在处理中打 error 日志（对应队列 `onChange` 场景）。
+    func attemptBeginNextQueuedSend(queueChangeLogging: Bool = false) async {
+        guard let conversationId = container.conversationVM.selectedConversationId else {
+            if queueChangeLogging {
+                AppLogger.core.error("\(Self.t) 消息队列变了，但当前没有选中的会话，忽略")
+            }
+            return
+        }
+        if container.conversationSendStatusVM.isMessageProcessing(for: conversationId) {
+            if queueChangeLogging {
+                AppLogger.core.error("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 消息队列变了，但当前会话有上一条消息尚未结束，忽略")
+            }
+            return
+        }
+        guard let message = container.messageQueueVM.dequeueFirstMessage(for: conversationId) else { return }
+        await beginSendFromQueue(conversationId: conversationId, message: message)
+    }
+
     /// 结束当前「发送队列」对应的一轮处理。
-    ///
-    /// 清除该会话的处理中消息与发送状态文案，并发出 `agentConversationSendTurnFinished`。
     func finishSendTurn(conversationId: UUID) {
         container.messageQueueVM.finishProcessing(for: conversationId)
         container.conversationSendStatusVM.clearStatus(conversationId: conversationId)
