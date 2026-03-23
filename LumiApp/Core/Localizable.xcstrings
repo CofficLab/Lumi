@@ -3180,6 +3180,7 @@
       }
     },
     "No applications found" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4111,6 +4112,7 @@
       }
     },
     "Show in Finder" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4725,6 +4727,7 @@
       }
     },
     "Try other search keywords" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

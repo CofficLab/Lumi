@@ -21,32 +21,13 @@ struct SettingView: View {
 
     /// 从 PluginStateStore 读取上次选中的项
     private func loadSavedSelection() -> SettingsSelection? {
-        // 先尝试读取插件
-        if let pluginId = PluginStateStore.shared.string(forKey: Self.selectedPluginKey) {
-            return .plugin(pluginId)
-        }
-
-        // 再尝试读取核心设置项
-        if let tabRawValue = PluginStateStore.shared.string(forKey: Self.selectedTabKey),
-           let tab = SettingTab(rawValue: tabRawValue) {
-            return .core(tab)
-        }
-
+    
         return nil
     }
 
     /// 保存选中的项到 PluginStateStore
     private func saveSelection(_ selection: SettingsSelection?) {
-        guard let sel = selection else { return }
 
-        switch sel {
-        case let .core(tab):
-            PluginStateStore.shared.set(tab.rawValue, forKey: Self.selectedTabKey)
-            PluginStateStore.shared.removeObject(forKey: Self.selectedPluginKey)
-        case let .plugin(pluginId):
-            PluginStateStore.shared.set(pluginId, forKey: Self.selectedPluginKey)
-            PluginStateStore.shared.removeObject(forKey: Self.selectedTabKey)
-        }
     }
 
     /// 初始化方法

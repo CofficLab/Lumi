@@ -32,11 +32,6 @@ struct LeftSidebar: View {
         }
         .background(DesignTokens.Material.glassUltraThick)
         .ignoresSafeArea()
-        .onAppear {
-            DispatchQueue.main.async {
-                initializeDefaultSelection()
-            }
-        }
     }
 
     // MARK: - 模式内容
@@ -65,8 +60,6 @@ struct LeftSidebar: View {
                         ForEach(entries) { entry in
                             Button {
                                 app.selectedNavigationId = entry.id
-                                // 持久化用户在 App 模式下选择的导航
-                                PluginStateStore.shared.set(entry.id, forKey: "App_SelectedNavigationId")
                             } label: {
                                 SidebarRow(title: entry.title, icon: entry.icon, isSelected: app.selectedNavigationId == entry.id)
                             }
@@ -126,30 +119,6 @@ struct LeftSidebar: View {
     /// 空状态视图
     private func emptyState(message: String, subtitle: String) -> some View {
         SidebarEmptyStateView(message: message, subtitle: subtitle)
-    }
-
-    // MARK: - 私有方法
-
-    /// 初始化默认选中的导航项
-    private func initializeDefaultSelection() {
-        guard app.selectedMode == .app else { return }
-
-        let entries = pluginProvider.getNavigationEntries(for: .app)
-
-        // 优先从持久化存储中恢复上次选择的导航
-        if let savedId = PluginStateStore.shared.string(forKey: "App_SelectedNavigationId"),
-           entries.contains(where: { $0.id == savedId }) {
-            app.selectedNavigationId = savedId
-            return
-        }
-
-        if app.selectedNavigationId == nil {
-            if let defaultEntry = entries.first(where: { $0.isDefault }) {
-                app.selectedNavigationId = defaultEntry.id
-            } else if let firstEntry = entries.first {
-                app.selectedNavigationId = firstEntry.id
-            }
-        }
     }
 }
 

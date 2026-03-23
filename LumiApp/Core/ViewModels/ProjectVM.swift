@@ -85,7 +85,6 @@ final class ProjectVM: ObservableObject, SuperLog {
     /// 清除当前项目，恢复到未选择任何项目的状态
     func clearProject() {
         setCurrentProjectInfo(name: "", path: "", selected: false)
-        PluginStateStore.shared.removeObject(forKey: "Agent_SelectedProject")
         clearFileSelection()
 
         Task {
@@ -110,12 +109,6 @@ final class ProjectVM: ObservableObject, SuperLog {
         let projectName = projectURL.lastPathComponent
 
         setCurrentProjectInfo(name: projectName, path: path, selected: true)
-
-        PluginStateStore.shared.set(path, forKey: "Agent_SelectedProject")
-
-        // 获取并应用项目配置
-        let config = ProjectConfigStore.shared.getOrCreateConfig(for: path)
-        applyProjectConfig(config)
 
         Task {
             await contextService.setProjectRoot(projectURL)
@@ -158,7 +151,6 @@ final class ProjectVM: ObservableObject, SuperLog {
             providerId: providerId,
             model: model
         )
-        ProjectConfigStore.shared.saveConfig(config)
 
         // 如果是当前项目，更新本地状态
         if path == currentProjectPath {
@@ -218,17 +210,6 @@ final class ProjectVM: ObservableObject, SuperLog {
         // 已经由项目配置覆盖，直接跳过
         guard currentProviderId.isEmpty, currentModel.isEmpty else { return }
 
-        // 尝试读取全局配置
-        let globalProviderId = PluginStateStore.shared.string(forKey: Self.globalConfigProviderIdKey)
-        let globalModel = PluginStateStore.shared.string(forKey: Self.globalConfigModelKey)
-
-        if let pid = globalProviderId, !pid.isEmpty,
-           let model = globalModel, !model.isEmpty {
-            currentProviderId = pid
-            currentModel = model
-            return
-        }
-
         // 全局配置不存在时，按原有规则初始化默认供应商和模型
         initializeDefaultProviderIfNeeded()
     }
@@ -236,13 +217,11 @@ final class ProjectVM: ObservableObject, SuperLog {
     /// 在未选择项目时，保存全局供应商 ID
     func setGlobalProviderId(_ providerId: String) {
         currentProviderId = providerId
-        PluginStateStore.shared.set(providerId, forKey: Self.globalConfigProviderIdKey)
     }
 
     /// 在未选择项目时，保存全局模型名称
     func setGlobalModel(_ model: String) {
         currentModel = model
-        PluginStateStore.shared.set(model, forKey: Self.globalConfigModelKey)
     }
 
     // MARK: - 最近项目管理
@@ -388,39 +367,21 @@ final class ProjectVM: ObservableObject, SuperLog {
     // MARK: - 语言偏好
 
     private func loadLanguagePreference() {
-        if let data = PluginStateStore.shared.data(forKey: "Agent_LanguagePreference"),
-           let preference = try? JSONDecoder().decode(LanguagePreference.self, from: data) {
-            Task { @MainActor in
-                self.languagePreference = preference
-            }
-        }
+
     }
 
     func setLanguagePreference(_ preference: LanguagePreference) {
-        Task { @MainActor in
-            self.languagePreference = preference
-            if let encoded = try? JSONEncoder().encode(self.languagePreference) {
-                PluginStateStore.shared.set(encoded, forKey: "Agent_LanguagePreference")
-            }
-        }
+
     }
 
     // MARK: - 聊天模式
 
     private func loadChatMode() {
-        if let rawValue = PluginStateStore.shared.string(forKey: "Agent_ChatMode"),
-           let mode = ChatMode(rawValue: rawValue) {
-            Task { @MainActor in
-                self.chatMode = mode
-            }
-        }
+
     }
 
     func setChatMode(_ mode: ChatMode) {
-        Task { @MainActor in
-            self.chatMode = mode
-            PluginStateStore.shared.set(self.chatMode.rawValue, forKey: "Agent_ChatMode")
-        }
+//
     }
 
     func setAutoApproveRisk(_ enabled: Bool) {

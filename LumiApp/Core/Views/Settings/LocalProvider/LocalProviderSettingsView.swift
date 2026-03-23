@@ -122,8 +122,6 @@ struct LocalProviderSettingsView: View {
         }
         .onAppear(perform: onAppear)
         .onChange(of: selectedProviderId) { _, newValue in
-            // 保存选中的供应商 ID
-            PluginStateStore.shared.set(newValue, forKey: Self.selectedLocalProviderKey)
             loadSettings()
             updateLocalProvider()
         }
@@ -164,15 +162,12 @@ extension LocalProviderSettingsView {
 extension LocalProviderSettingsView {
     /// 加载当前供应商的设置信息（选中的模型）
     private func loadSettings() {
-        guard let providerType = selectedProviderType else { return }
-        selectedModel = PluginStateStore.shared.string(forKey: providerType.modelStorageKey)
-            ?? providerType.defaultModel
+
     }
 
     /// 保存选中的模型到 UserDefaults
     private func saveModel() {
-        guard let providerType = selectedProviderType else { return }
-        PluginStateStore.shared.set(selectedModel, forKey: providerType.modelStorageKey)
+
     }
 
     /// 根据当前选中的供应商 ID 更新本地供应商引用
@@ -260,15 +255,7 @@ extension LocalProviderSettingsView {
 extension LocalProviderSettingsView {
     /// 视图出现时的事件处理 - 加载仅本地供应商的设置
     func onAppear() {
-        // 读取上次选中的本地供应商
-        if let savedProviderId = PluginStateStore.shared.string(forKey: Self.selectedLocalProviderKey),
-           !savedProviderId.isEmpty,
-           localProviders.contains(where: { $0.id == savedProviderId }) {
-            selectedProviderId = savedProviderId
-        } else {
-            // 如果没有保存的值，使用第一个本地供应商作为默认
-            selectedProviderId = localProviders.first?.id ?? ""
-        }
+        selectedProviderId = localProviders.first?.id ?? ""
         loadSettings()
         updateLocalProvider()
     }

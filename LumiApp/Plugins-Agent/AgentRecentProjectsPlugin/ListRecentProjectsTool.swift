@@ -29,14 +29,7 @@ struct ListRecentProjectsTool: AgentTool, SuperLog {
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         let limit = min(arguments["limit"]?.value as? Int ?? 5, 20)
 
-        // 直接从 PluginStateStore 读取最近项目数据
-        let projects: [RecentProject] = {
-            guard let data = PluginStateStore.shared.data(forKey: "Agent_RecentProjects"),
-                  let decoded = try? JSONDecoder().decode([RecentProject].self, from: data) else {
-                return []
-            }
-            return decoded
-        }()
+        let projects = RecentProjectsStore().loadProjects()
 
         let limitedProjects = projects.prefix(limit)
 

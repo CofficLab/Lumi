@@ -90,16 +90,6 @@ extension View {
 extension RootView {
     @MainActor
     func loadPreferences() {
-        if let data = PluginStateStore.shared.data(forKey: "Agent_LanguagePreference"),
-           let preference = try? JSONDecoder().decode(LanguagePreference.self, from: data) {
-            container.ProjectVM.setLanguagePreference(preference)
-        }
-
-        if let modeRaw = PluginStateStore.shared.string(forKey: "Agent_ChatMode"),
-           let mode = ChatMode(rawValue: modeRaw) {
-            container.ProjectVM.setChatMode(mode)
-        }
-
         projectController.applySavedProjectFromPreferences()
     }
 }

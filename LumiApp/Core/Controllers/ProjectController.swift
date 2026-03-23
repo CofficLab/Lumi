@@ -16,14 +16,9 @@ final class ProjectController: ObservableObject, SuperLog {
         self.container = container
     }
 
-    /// 从偏好恢复上次选中的项目路径（与 `loadPreferences` 中项目部分一致）
+    /// 从偏好恢复上次选中的项目路径
     func applySavedProjectFromPreferences() {
-        if let savedPath = PluginStateStore.shared.string(forKey: "Agent_SelectedProject") {
-            container.ProjectVM.switchProject(to: savedPath)
-            Task {
-                await container.slashCommandService.setCurrentProjectPath(savedPath)
-            }
-        }
+       
     }
 
     /// 响应 `ProjectContextRequestVM` 的请求
@@ -65,35 +60,7 @@ final class ProjectController: ObservableObject, SuperLog {
     }
 
     private func handleProjectSwitch(path: String) async {
-        container.ProjectVM.switchProject(to: path)
-        let languagePreference = container.ProjectVM.languagePreference
-        await applyProjectContext(path: path, languagePreference: languagePreference)
-
-        let projectName = container.ProjectVM.currentProjectName
-        let config = ProjectConfigStore.shared.getOrCreateConfig(for: path)
-
-        let switchMessage: String
-        switch languagePreference {
-        case .chinese:
-            switchMessage = """
-            ✅ 已切换到项目
-
-            **项目名称**: \(projectName)
-            **项目路径**: \(path)
-            **使用模型**: \(config.model.isEmpty ? "默认" : config.model) (\(config.providerId))
-            """
-        case .english:
-            switchMessage = """
-            ✅ Switched to project
-
-            **Project**: \(projectName)
-            **Path**: \(path)
-            **Model**: \(config.model.isEmpty ? "Default" : config.model) (\(config.providerId))
-            """
-        }
-
-        let conversationId = container.conversationVM.selectedConversationId ?? UUID()
-        container.messagePendingVM.appendMessage(ChatMessage(role: .assistant, conversationId: conversationId, content: switchMessage))
+        
     }
 
     private func handleProjectClear() async {

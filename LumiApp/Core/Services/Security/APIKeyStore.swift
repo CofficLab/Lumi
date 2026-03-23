@@ -68,22 +68,4 @@ final class APIKeyStore: @unchecked Sendable {
         ]
         _ = SecItemDelete(query as CFDictionary)
     }
-
-    /// 从旧的明文存储迁移 API Key 到 Keychain
-    func getWithMigration(
-        forKey key: String,
-        legacyLoad: () -> String?,
-        legacyCleanup: (String) -> Void
-    ) -> String {
-        if let existing = string(forKey: key) {
-            return existing
-        }
-
-        let legacy = legacyLoad()?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        guard !legacy.isEmpty else { return "" }
-
-        set(legacy, forKey: key)
-        legacyCleanup(key)
-        return legacy
-    }
 }
