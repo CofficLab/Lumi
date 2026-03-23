@@ -72,6 +72,7 @@ final class ProjectVM: ObservableObject, SuperLog {
         loadLanguagePreference()
         loadChatMode()
         loadGlobalOrDefaultProviderIfNeeded()
+        restoreAutoApproveRiskIfNeeded()
     }
 
     // MARK: - 项目管理
@@ -434,8 +435,86 @@ final class ProjectVM: ObservableObject, SuperLog {
     }
 
     func setAutoApproveRisk(_ enabled: Bool) {
-        Task { @MainActor in
-            self.autoApproveRisk = enabled
+        autoApproveRisk = enabled
+        persistAutoApproveRisk(enabled)
+    }
+
+    // MARK: - Auto-approve persistence
+    ///
+    /// 目前 `autoApproveRisk` 的持久化逻辑在 UI 层由 `AutoApprovePersistenceOverlay` 承担；
+    /// 但如果该 overlay 在某些启动路径没有挂载/恢复，就会导致开关在重启后失效。
+    /// 为保证行为稳定，这里直接读写同一份状态文件。
+    private static let autoApproveStatePlistKey = "autoApproveRisk"
+    private static let autoApproveStateFileName = "auto_approve_state.plist"
+    private static let autoApproveStateTmpFileName = "auto_approve_state.tmp"
+
+    private func autoApproveStateSettingsDir() -> URL {
+        AppConfig.getDBFolderURL()
+            .appendingPathComponent("AgentAutoApproveHeader", isDirectory: true)
+            .appendingPathComponent("settings", isDirectory: true)
+    }
+
+    private func autoApproveStateFileURL() -> URL {
+        autoApproveStateSettingsDir()
+            .appendingPathComponent(Self.autoApproveStateFileName, isDirectory: false)
+    }
+
+    private func restoreAutoApproveRiskIfNeeded() {
+        guard let enabled = loadAutoApproveRiskFromDisk() else { return }
+        autoApproveRisk = enabled
+    }
+
+    private func loadAutoApproveRiskFromDisk() -> Bool? {
+        let fileURL = autoApproveStateFileURL()
+        let fileManager = FileManager.default
+
+        guard fileManager.fileExists(atPath: fileURL.path) else { return nil }
+        guard let data = try? Data(contentsOf: fileURL),
+              let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
+              let dict = plist as? [String: Any] else {
+            return nil
+        }
+
+        if let boolVal = dict[Self.autoApproveStatePlistKey] as? Bool {
+            return boolVal
+        }
+
+        // propertyListSerialization 有时会把 bool 以 NSNumber 形式还原
+        if let numVal = dict[Self.autoApproveStatePlistKey] as? NSNumber {
+            return numVal.boolValue
+        }
+
+        return nil
+    }
+
+    private func persistAutoApproveRisk(_ enabled: Bool) {
+        let fileManager = FileManager.default
+        let settingsDir = autoApproveStateSettingsDir()
+        try? fileManager.createDirectory(at: settingsDir, withIntermediateDirectories: true, attributes: nil)
+
+        let fileURL = autoApproveStateFileURL()
+        let tmpURL = settingsDir.appendingPathComponent(Self.autoApproveStateTmpFileName, isDirectory: false)
+
+        var dict: [String: Any] = [:]
+        if fileManager.fileExists(atPath: fileURL.path),
+           let data = try? Data(contentsOf: fileURL),
+           let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
+           let existing = plist as? [String: Any] {
+            dict = existing
+        }
+
+        dict[Self.autoApproveStatePlistKey] = enabled
+
+        guard let data = try? PropertyListSerialization.data(fromPropertyList: dict, format: .binary, options: 0) else { return }
+        do {
+            try data.write(to: tmpURL, options: .atomic)
+            if fileManager.fileExists(atPath: fileURL.path) {
+                _ = try? fileManager.replaceItemAt(fileURL, withItemAt: tmpURL)
+            } else {
+                try fileManager.moveItem(at: tmpURL, to: fileURL)
+            }
+        } catch {
+            // 写入失败时不影响内存状态；下一次启动仍会以默认值为准
         }
     }
 }
