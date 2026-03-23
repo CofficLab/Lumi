@@ -3,8 +3,7 @@ import SwiftUI
 
 struct TextActionsSettingsView: View {
     @StateObject private var manager = TextSelectionManager.shared
-    // Default to true to match onRegister() default
-    @AppStorage("TextActionsEnabled") private var isEnabled = true
+    @State private var isEnabled: Bool = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -26,14 +25,6 @@ struct TextActionsSettingsView: View {
                             Toggle(isOn: $isEnabled) {
                                 Text("Enable Text Selection Menu")
                             }
-                                .onChange(of: isEnabled) { _, newValue in
-                                    if newValue {
-                                        manager.startMonitoring()
-                                        _ = TextActionMenuController.shared
-                                    } else {
-                                        manager.stopMonitoring()
-                                    }
-                                }
 
                             if !manager.isPermissionGranted {
                                 HStack(spacing: DesignTokens.Spacing.sm) {
@@ -83,6 +74,18 @@ struct TextActionsSettingsView: View {
             }
         }
         .navigationTitle(String(localized: "Text Actions", table: "TextActions"))
+        .onAppear {
+            isEnabled = TextActionsPlugin.isEnabled
+        }
+        .onChange(of: isEnabled) { _, newValue in
+            TextActionsPlugin.setEnabled(newValue)
+            if newValue {
+                manager.startMonitoring()
+                _ = TextActionMenuController.shared
+            } else {
+                manager.stopMonitoring()
+            }
+        }
     }
 }
 

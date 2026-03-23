@@ -20,6 +20,20 @@ actor TextActionsPlugin: SuperPlugin, SuperLog {
     nonisolated private static let settingsStore = TextActionsPluginLocalStore()
     nonisolated private static let enabledKey = "TextActionsEnabled"
     
+    // MARK: - Settings
+    
+    /// 获取 Text Actions 功能是否启用
+    nonisolated static var isEnabled: Bool {
+        get {
+            (settingsStore.object(forKey: enabledKey) as? Bool) ?? false
+        }
+    }
+    
+    /// 设置 Text Actions 功能启用状态
+    nonisolated static func setEnabled(_ enabled: Bool) {
+        settingsStore.set(enabled, forKey: enabledKey)
+    }
+    
     // MARK: - Lifecycle
     
     nonisolated func onRegister() {
