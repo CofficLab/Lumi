@@ -66,9 +66,3 @@ extension AutoApprovePersistenceOverlay {
 
 // MARK: - Preview
 
-#Preview("Auto Approve Persistence Overlay") {
-    AutoApprovePersistenceOverlay {
-        Text("Content")
-    }
-    .inRootView()
-}
