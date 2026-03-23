@@ -9,7 +9,7 @@ struct ConversationListEmptyView: View {
                 .font(.system(size: 24))
                 .foregroundColor(DesignTokens.Color.semantic.textTertiary)
 
-            Text("暂无对话")
+            Text(String(localized: "No conversations", table: "ConversationList"))
                 .font(.system(size: 10))
                 .foregroundColor(DesignTokens.Color.semantic.textTertiary)
         }
@@ -17,6 +17,8 @@ struct ConversationListEmptyView: View {
         .frame(maxWidth: .infinity)
     }
 }
+
+// MARK: - Preview
 
 #Preview {
     ConversationListEmptyView()

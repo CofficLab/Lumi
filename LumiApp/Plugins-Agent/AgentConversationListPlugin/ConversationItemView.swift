@@ -33,16 +33,16 @@ struct ConversationItemView: View {
             Button(role: .destructive) {
                 showDeleteConfirmation = true
             } label: {
-                Label("删除对话", systemImage: "trash")
+                Label(String(localized: "Delete Conversation", table: "ConversationList"), systemImage: "trash")
             }
         }
-        .alert("删除对话", isPresented: $showDeleteConfirmation) {
-            Button("取消", role: .cancel) { }
-            Button("删除", role: .destructive) {
+        .alert(String(localized: "Delete Conversation", table: "ConversationList"), isPresented: $showDeleteConfirmation) {
+            Button(String(localized: "Cancel", table: "ConversationList"), role: .cancel) { }
+            Button(String(localized: "Delete", table: "ConversationList"), role: .destructive) {
                 onDelete()
             }
         } message: {
-            Text("确定要删除对话「\(conversation.title)」吗？此操作将彻底删除该对话的所有消息，且无法恢复。")
+            Text(String(localized: "Are you sure you want to delete \"%@\"? This will permanently remove all messages and cannot be undone.", table: "ConversationList"), conversation.title)
         }
     }
 }
@@ -71,35 +71,37 @@ extension ConversationItemView {
     }
 }
 
+// MARK: - Private
+
 private extension ConversationItemView {
     /// 量化的相对时间展示：减少 UI 因秒级波动导致的频繁跳变
-    /// - 1分钟内：按 10 秒分桶（0-9秒显示“刚刚”，10-19秒显示“10秒前”，以此类推）
-    /// - 1分钟以上：按分钟显示（比如“1分钟前”）
+    /// - 1分钟内：按 10 秒分桶（0-9秒显示"刚刚"，10-19秒显示"10秒前"，以此类推）
+    /// - 1分钟以上：按分钟显示（比如"1分钟前"）
     func coarseRelativeTime(from date: Date, now: Date = Date()) -> String {
         let delta = now.timeIntervalSince(date)
-        guard delta >= 0 else { return "刚刚" }
+        guard delta >= 0 else { return String(localized: "Just now", table: "ConversationList") }
 
         let seconds = Int(delta)
         if seconds < 60 {
             let bucket = (seconds / 10) * 10
             if bucket <= 0 {
-                return "刚刚"
+                return String(localized: "Just now", table: "ConversationList")
             }
-            return "\(bucket)秒前"
+            return String(localized: "%d seconds ago", table: "ConversationList", bucket)
         }
 
         let minutes = seconds / 60
         if minutes < 60 {
-            return "\(minutes)分钟前"
+            return String(localized: "%d minutes ago", table: "ConversationList", minutes)
         }
 
         let hours = minutes / 60
         if hours < 24 {
-            return "\(hours)小时前"
+            return String(localized: "%d hours ago", table: "ConversationList", hours)
         }
 
         let days = hours / 24
-        return "\(days)天前"
+        return String(localized: "%d days ago", table: "ConversationList", days)
     }
 }
 
