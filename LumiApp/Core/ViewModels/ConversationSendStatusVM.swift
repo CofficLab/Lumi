@@ -95,4 +95,15 @@ final class ConversationSendStatusVM: ObservableObject {
         let typeStr = chunk.getTitle()
         setStatus(conversationId: conversationId, content: "\(typeStr)...")
     }
+
+    /// 判断指定会话是否正在进行消息发送处理
+    /// - Parameter conversationId: 会话 ID
+    /// - Returns: 如果该会话正在处理消息则返回 true
+    func isMessageProcessing(for conversationId: UUID, messageQueueVM: MessageQueueVM) -> Bool {
+        guard let currentProcessingIndex = messageQueueVM.currentProcessingIndex(for: conversationId) else {
+            return false
+        }
+        // 如果当前有正在处理的索引（不是 nil），说明有消息正在处理中
+        return currentProcessingIndex != nil
+    }
 }
