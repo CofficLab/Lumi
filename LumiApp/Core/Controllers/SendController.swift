@@ -20,12 +20,13 @@ final class SendController: ObservableObject, SuperLog {
     ///
     /// 从队列移除队首消息、清除正在处理索引，并清空该会话的发送状态文案。
     func finishSendTurn(conversationId: UUID) {
+        container.messageQueueVM.finishProcessing(for: conversationId)
         container.conversationSendStatusVM.clearStatus(conversationId: conversationId)
     }
 
     /// 从队列入口启动一次发送链路：投影 UI、落库、运行发送中间件，然后继续 `send`。
     func beginSendFromQueue(conversationId: UUID, message: ChatMessage) async {
-        container.messageQueueVM.setCurrentProcessingIndex(0, for: conversationId)
+        container.messageQueueVM.startProcessing(message)
 
         if container.conversationVM.selectedConversationId == conversationId {
             container.messagePendingVM.appendMessage(message)
@@ -47,11 +48,11 @@ final class SendController: ObservableObject, SuperLog {
 
         switch last.role {
         case .user, .tool:
-            guard container.messageQueueVM.currentProcessingIndex(for: conversationId) != nil else { return }
+            guard container.messageQueueVM.isProcessing(for: conversationId) else { return }
             await streamAssistantReply(conversationId: conversationId, messages: messages)
         case .assistant:
             if last.hasToolCalls {
-                guard container.messageQueueVM.currentProcessingIndex(for: conversationId) != nil else { return }
+                guard container.messageQueueVM.isProcessing(for: conversationId) else { return }
                 if await presentToolPermissionIfNeeded(assistantMessage: last, conversationId: conversationId) {
                     return
                 }
@@ -68,7 +69,7 @@ final class SendController: ObservableObject, SuperLog {
                     return
                 }
                 await send(conversationId: conversationId)
-            } else if container.messageQueueVM.currentProcessingIndex(for: conversationId) != nil {
+            } else if container.messageQueueVM.isProcessing(for: conversationId) {
                 finishSendTurn(conversationId: conversationId)
             }
         case .system, .status:

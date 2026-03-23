@@ -22,11 +22,7 @@ struct PendingMessagesView: View, SuperLog {
     var body: some View {
         guard let selectedConversationId = conversationVM.selectedConversationId else { return AnyView(EmptyView()) }
         let pendingMessages = messageQueueVM.pendingMessages(for: selectedConversationId)
-        let currentProcessingIndex = messageQueueVM.currentProcessingIndex(for: selectedConversationId)
-
-        // 只显示队列中等待发送的消息（排除当前正在处理的消息）
-        let waitingMessages = pendingMessages.enumerated()
-            .filter { index, _ in index != currentProcessingIndex }
+        let waitingMessages = pendingMessages
 
         if !waitingMessages.isEmpty {
             return AnyView(VStack(alignment: .leading, spacing: 6) {
@@ -67,10 +63,9 @@ struct PendingMessagesView: View, SuperLog {
                 // 消息列表
                 ScrollView {
                     LazyVStack(spacing: 4) {
-                        ForEach(Array(waitingMessages), id: \.element.id) { index, message in
+                        ForEach(waitingMessages, id: \.id) { message in
                             PendingMessageRow(
                                 message: message,
-                                index: index,
                                 onRemove: {
                                     messageQueueVM.removeMessage(id: message.id)
                                 }
@@ -123,7 +118,6 @@ struct PendingMessagesView: View, SuperLog {
 /// 单条待发送消息行
 struct PendingMessageRow: View {
     let message: ChatMessage
-    let index: Int
     let onRemove: (() -> Void)?
 
     var body: some View {

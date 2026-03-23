@@ -95,6 +95,11 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         !(toolCalls?.isEmpty ?? true)
     }
 
+    /// 是否包含可发送内容（文本或图片）
+    var hasSendableContent: Bool {
+        !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !images.isEmpty
+    }
+
     /// 是否应展示在聊天消息列表中
     func shouldDisplayInChatList() -> Bool {
         guard role.shouldDisplayInChatList else { return false }
