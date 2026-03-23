@@ -18,14 +18,19 @@ final class SendController: ObservableObject, SuperLog {
 
     /// 结束当前「发送队列」对应的一轮处理。
     ///
-    /// 从队列移除队首消息、清除正在处理索引，并清空该会话的发送状态文案。
+    /// 清除该会话的处理中消息与发送状态文案，并发出 `agentConversationSendTurnFinished`。
     func finishSendTurn(conversationId: UUID) {
         container.messageQueueVM.finishProcessing(for: conversationId)
         container.conversationSendStatusVM.clearStatus(conversationId: conversationId)
+        NotificationCenter.postAgentConversationSendTurnFinished(conversationId: conversationId)
     }
 
     /// 从队列入口启动一次发送链路：投影 UI、落库、运行发送中间件，然后继续 `send`。
     func beginSendFromQueue(conversationId: UUID, message: ChatMessage) async {
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t) 启动一次发送链路：\(message.content)")
+        }
+
         container.messageQueueVM.startProcessing(message)
 
         if container.conversationVM.selectedConversationId == conversationId {

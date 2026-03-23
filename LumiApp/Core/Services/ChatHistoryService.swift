@@ -293,6 +293,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                 }
 
                 let messageEntity = ChatMessageEntity.fromChatMessage(message)
+                messageEntity.timestamp = Date()
                 messageEntity.conversation = fetchedConversation
                 fetchedConversation.updatedAt = Date()
                 context.insert(messageEntity)

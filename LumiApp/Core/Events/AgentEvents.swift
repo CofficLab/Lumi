@@ -14,6 +14,10 @@ extension Notification.Name {
     /// 工具授权流程结束（全部非 pending），应继续 `SendController.send(conversationId:)` 管线
     /// object: UUID (对话 ID)
     static let resumeSendAfterToolPermission = Notification.Name("resumeSendAfterToolPermission")
+
+    /// Agent 模式：某对话一轮发送/处理已完成（`SendController.finishSendTurn`）
+    /// object: UUID (对话 ID)
+    static let agentConversationSendTurnFinished = Notification.Name("agentConversationSendTurnFinished")
 }
 
 // MARK: - NotificationCenter Extension
@@ -46,6 +50,14 @@ extension NotificationCenter {
             )
         }
     }
+
+    /// 某对话一轮发送/处理已完成
+    static func postAgentConversationSendTurnFinished(conversationId: UUID) {
+        NotificationCenter.default.post(
+            name: .agentConversationSendTurnFinished,
+            object: conversationId
+        )
+    }
 }
 
 // MARK: - View Extensions for Agent Events
@@ -76,6 +88,15 @@ extension View {
     /// 工具授权完成后继续发送管线
     func onResumeSendAfterToolPermission(perform action: @escaping (UUID) -> Void) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .resumeSendAfterToolPermission)) { notification in
+            if let conversationId = notification.object as? UUID {
+                action(conversationId)
+            }
+        }
+    }
+
+    /// 监听某对话一轮发送/处理已完成
+    func onAgentConversationSendTurnFinished(perform action: @escaping (UUID) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .agentConversationSendTurnFinished)) { notification in
             if let conversationId = notification.object as? UUID {
                 action(conversationId)
             }

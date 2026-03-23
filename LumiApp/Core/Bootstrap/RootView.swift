@@ -80,6 +80,7 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .onChange(of: container.projectContextRequestVM.request, onProjectContextRequestChanged)
             .onChange(of: container.conversationVM.selectedConversationId, onConversationChanged)
             .onResumeSendAfterToolPermission(perform: onResumeSendAfterToolPermission)
+            .onAgentConversationSendTurnFinished(perform: onAgentConversationSendTurnFinished)
     }
 }
 
@@ -96,6 +97,25 @@ extension View {
 extension RootView {
     func onAppear() {
         loadPreferences()
+    }
+
+    private func onAgentConversationSendTurnFinished(_ conversationId: UUID) {
+        guard let conversationId = conversationVM.selectedConversationId else {
+            return
+        }
+        
+        // 如果当前会话正在处理消息，则不发送
+        if conversationSendStatusVM.isMessageProcessing(for: conversationId) {
+            return
+        }
+
+        guard let message = messageQueueVM.dequeueFirstMessage(for: conversationId) else {
+            return
+        }
+
+        Task {
+            await sendController.beginSendFromQueue(conversationId: conversationId, message: message)
+        }
     }
 
     @MainActor
@@ -137,15 +157,14 @@ extension RootView {
             AppLogger.core.error("\(Self.t) 消息队列变了，但当前没有选中的会话，忽略")
             return
         }
-
-        guard let message = messageQueueVM.dequeueFirstMessage(for: conversationId) else {
-            AppLogger.core.error("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 消息队列变了，但当前会话没有待发送消息，忽略")
-            return
-        }
-
+        
         // 如果当前会话正在处理消息，则不发送
         if conversationSendStatusVM.isMessageProcessing(for: conversationId) {
             AppLogger.core.error("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 消息队列变了，但当前会话有上一条消息尚未结束，忽略")
+            return
+        }
+
+        guard let message = messageQueueVM.dequeueFirstMessage(for: conversationId) else {
             return
         }
 
