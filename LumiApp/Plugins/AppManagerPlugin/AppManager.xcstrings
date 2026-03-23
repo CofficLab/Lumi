@@ -97,6 +97,22 @@
         }
       }
     },
+    "No applications found": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到应用"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到應用"
+          }
+        }
+      }
+    },
     "OK": {
       "localizations": {
         "zh-Hans": {
@@ -109,6 +125,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "確定"
+          }
+        }
+      }
+    },
+    "Open": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開"
+          }
+        }
+      }
+    },
+    "Scanning applications...": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在扫描应用..."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在掃描應用..."
           }
         }
       }
@@ -177,6 +225,22 @@
         }
       }
     },
+    "Show in Finder": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Finder 中显示"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Finder 中顯示"
+          }
+        }
+      }
+    },
     "Total Size: %@": {
       "localizations": {
         "zh-Hans": {
@@ -193,6 +257,22 @@
         }
       }
     },
+    "Try other search keywords": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尝试其他搜索关键词"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "嘗試其他搜尋關鍵字"
+          }
+        }
+      }
+    },
     "Uninstall": {
       "localizations": {
         "zh-Hans": {
@@ -205,6 +285,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "解除安裝"
+          }
+        }
+      }
+    },
+    "Uninstall Selected": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "卸载选中项"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "解除安裝選取項"
+          }
+        }
+      }
+    },
+    "Unknown Bundle ID": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知 Bundle ID"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知 Bundle ID"
           }
         }
       }

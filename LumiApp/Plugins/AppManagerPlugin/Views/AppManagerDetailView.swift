@@ -25,7 +25,7 @@ struct AppManagerDetailView: View {
                             Text(app.displayName)
                                 .font(.title)
                                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                            Text(app.bundleIdentifier ?? "Unknown Bundle ID")
+                            Text(app.bundleIdentifier ?? String(localized: "Unknown Bundle ID", table: "AppManager"))
                                 .font(.caption)
                                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                             Text(app.bundleURL.path)
@@ -84,7 +84,7 @@ struct AppManagerDetailView: View {
 
                         Spacer()
 
-                        GlassButton(title: LocalizedStringKey("Uninstall Selected"), style: .danger) {
+                        GlassButton(title: "Uninstall Selected", tableName: "AppManager", style: .danger) {
                             viewModel.showUninstallConfirmation = true
                         }
                         .controlSize(.mini)

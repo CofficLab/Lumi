@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 应用管理器加载状态视图
 struct AppManagerLoadingView: View {
-    var message: String = "Scanning applications..."
+    var message: String = String(localized: "Scanning applications...", table: "AppManager")
 
     var body: some View {
         VStack(spacing: 16) {
