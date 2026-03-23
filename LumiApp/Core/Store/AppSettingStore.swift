@@ -128,5 +128,40 @@ enum AppSettingStore {
             .joined()
         return safe.isEmpty ? "key" : safe
     }
+
+    // MARK: - AppSetting (Typed)
+
+    /// 与旧版 `AgentModePersistencePlugin` 一致，保证迁移可用。
+    private static let modeKey = "App_SelectedMode"
+
+    static func loadAppSetting() -> AppSetting {
+        let mode = loadMode() ?? .agent
+        return AppSetting(mode: mode)
+    }
+
+    static func saveAppSetting(_ setting: AppSetting) {
+        set(setting.mode.rawValue, forKey: modeKey)
+    }
+
+    static func loadMode() -> AppMode? {
+        // 先做一次 legacy 迁移（如果新存储没值）。
+        migrateLegacyValueIfMissing(forKey: modeKey)
+
+        guard let raw = object(forKey: modeKey) else { return nil }
+        if let s = raw as? String {
+            return AppMode(rawValue: s)
+        }
+        if let n = raw as? NSNumber {
+            return AppMode(rawValue: n.stringValue)
+        }
+        if let data = raw as? Data, let s = String(data: data, encoding: .utf8) {
+            return AppMode(rawValue: s)
+        }
+        return nil
+    }
+
+    static func saveMode(_ mode: AppMode) {
+        set(mode.rawValue, forKey: modeKey)
+    }
 }
 

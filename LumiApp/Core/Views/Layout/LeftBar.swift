@@ -192,6 +192,7 @@ private struct ModeSwitcherView: View, SuperLog {
     @Environment(\.windowState) var windowState
 
     @State private var mode: AppMode = .agent
+    @State private var isRestoring = false
 
     var body: some View {
         Picker("模式", selection: $mode) {
@@ -211,11 +212,19 @@ private struct ModeSwitcherView: View, SuperLog {
 
 private extension ModeSwitcherView {
     func handleOnAppear() {
-        // 模式恢复由插件负责；这里仅同步当前窗口/全局状态到控件
-        mode = windowState?.selectedMode ?? app.selectedMode
+        isRestoring = true
+
+        // 使用 AppSettingStore 作为单一来源：负责恢复上次的 mode。
+        let saved = AppSettingStore.loadAppSetting()
+        mode = saved.mode
+        windowState?.selectedMode = saved.mode
+        app.selectedMode = saved.mode
+
+        isRestoring = false
     }
 
     func handleModeChanged() {
+        guard !isRestoring else { return }
         if Self.verbose {
             AppLogger.core.info("\(t)🤖 模式已切换：\(mode.rawValue)")
         }
@@ -223,5 +232,8 @@ private extension ModeSwitcherView {
         // 同时更新窗口级别和全局级别的模式状态
         windowState?.selectedMode = mode
         app.selectedMode = mode
+
+        // 同步到持久化存储：下次启动自动恢复。
+        AppSettingStore.saveAppSetting(AppSetting(mode: mode))
     }
 }

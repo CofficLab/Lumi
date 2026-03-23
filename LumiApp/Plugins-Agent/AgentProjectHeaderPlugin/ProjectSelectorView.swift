@@ -3,7 +3,7 @@ import UniformTypeIdentifiers
 
 /// 项目选择器视图
 struct ProjectSelectorView: View {
-    @EnvironmentObject var ProjectVM: ProjectVM
+    @EnvironmentObject var projectVM: ProjectVM
     @EnvironmentObject private var projectContextRequestVM: ProjectContextRequestVM
 
     @Binding var isPresented: Bool
@@ -91,10 +91,10 @@ struct ProjectSelectorView: View {
     // MARK: - Computed Properties
 
     private var recentProjects: [Project] {
-        Array(ProjectVM.recentProjects
+        Array(projectVM.recentProjects
             .prefix(maxRecentProjects)
             .filter { project in
-                project.path != ProjectVM.currentProjectPath
+                project.path != projectVM.currentProjectPath
             })
     }
 
@@ -111,12 +111,12 @@ struct ProjectSelectorView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(ProjectVM.currentProjectName.isEmpty ? String(localized: "No Project Selected", table: "AgentProjectHeader") : ProjectVM.currentProjectName)
+                    Text(projectVM.currentProjectName.isEmpty ? String(localized: "No Project Selected", table: "AgentProjectHeader") : projectVM.currentProjectName)
                         .font(.body)
                         .fontWeight(.medium)
                         .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
-                    Text(ProjectVM.currentProjectPath.isEmpty ? String(localized: "Click Browse Below", table: "AgentProjectHeader") : ProjectVM.currentProjectPath)
+                    Text(projectVM.currentProjectPath.isEmpty ? String(localized: "Click Browse Below", table: "AgentProjectHeader") : projectVM.currentProjectPath)
                         .font(.caption)
                         .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                         .lineLimit(2)
@@ -125,7 +125,7 @@ struct ProjectSelectorView: View {
                 Spacer()
 
                 // 已选择项目时显示「删除」按钮，清除后恢复到未选择状态
-                if !ProjectVM.currentProjectName.isEmpty {
+                if !projectVM.currentProjectName.isEmpty {
                     Button(action: {
                         projectContextRequestVM.request = .clearProject
                         isPresented = false
@@ -250,7 +250,7 @@ struct ProjectSelectorView: View {
 extension ProjectSelectorView {
     private func selectProject(_ project: Project) {
         Task { @MainActor in
-            projectContextRequestVM.request = .switchProject(path: project.path)
+            self.projectVM.switchProject(to: project)
             isPresented = false
         }
     }
@@ -259,7 +259,7 @@ extension ProjectSelectorView {
         withAnimation {
             store.removeProject(project)
             // 更新 projectVM 中的列表
-            ProjectVM.setRecentProjects(store.loadProjects())
+            projectVM.setRecentProjects(store.loadProjects())
         }
     }
 
