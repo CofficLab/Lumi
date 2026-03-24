@@ -18,7 +18,7 @@ enum ConversationChangeUserInfoKey {
 }
 
 /// 模型性能统计数据
-struct ModelPerformanceStats {
+public struct ModelPerformanceStats {
     let providerId: String
     let modelName: String
     var sampleCount: Int = 0
