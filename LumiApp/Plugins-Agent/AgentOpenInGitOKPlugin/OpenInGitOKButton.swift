@@ -31,25 +31,38 @@ struct OpenInGitOKButton: View {
         let path = projectVM.currentProjectPath
         let url = URL(fileURLWithPath: path)
 
-        // GitOK 的 Bundle ID
-        let gitOKBundleID = "com.coffic.GitOK"
+        // GitOK 的真实 Bundle ID
+        let gitOKBundleID = "com.yueyi.GitOK"
 
-        // 尝试通过 URL Scheme 打开
-        let encodedPath = path.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? path
-        if let urlScheme = URL(string: "gitok://open?path=\(encodedPath)") {
-            if NSWorkspace.shared.open(urlScheme) {
-                return
-            }
-        }
-
-        // 回退方案：通过 Bundle ID 打开应用并传入项目路径
+        // 通过 Bundle ID 打开 GitOK 应用
         if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: gitOKBundleID) {
             let configuration = NSWorkspace.OpenConfiguration()
             configuration.activates = true
 
-            NSWorkspace.shared.open([url], withApplicationAt: appURL, configuration: configuration)
+            // 在 GitOK 中打开当前项目路径
+            NSWorkspace.shared.open([url], withApplicationAt: appURL, configuration: configuration) { success, error in
+                if let error = error {
+                    AppLogger.core.error("Failed to open project in GitOK: \(error.localizedDescription)")
+                } else if success {
+                    AppLogger.core.info("Successfully opened project in GitOK: \(path)")
+                }
+            }
         } else {
-            AppLogger.core.warning("GitOK not found on this system")
+            // GitOK 未安装
+            AppLogger.core.error("GitOK not found on this system. Bundle ID: \(gitOKBundleID)")
+            
+            // 尝试在常见路径查找 GitOK.app
+            let commonPaths = [
+                "/Applications/GitOK.app",
+                FileManager.default.homeDirectoryForCurrentUser.path + "/Applications/GitOK.app"
+            ]
+            
+            for appPath in commonPaths {
+                if FileManager.default.fileExists(atPath: appPath) {
+                    AppLogger.core.info("GitOK found at: \(appPath), but Bundle ID lookup failed")
+                    break
+                }
+            }
         }
     }
 }
