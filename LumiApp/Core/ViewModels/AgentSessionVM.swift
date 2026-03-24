@@ -1,26 +1,28 @@
 import Foundation
 import MagicKit
 
-/// 窗口内 LLM 供应商/模型/API Key 等与 `ProjectVM` + `ProviderRegistry` 相关的配置（供设置类 UI 使用）。
+/// Agent 会话配置管理：负责供应商/模型/API Key 等配置的状态管理。
+///
+/// 注意：本类只管理内存中的配置状态，不涉及持久化存储。
+/// 需要持久化时，由调用方自行决定保存到项目配置还是全局配置。
 @MainActor
 final class AgentSessionVM: ObservableObject, SuperLLMConfigProvider {
-    let projectVM: ProjectVM
+    @Published var selectedProviderId: String = ""
+    @Published var currentModel: String = ""
+    
     let registry: LLMProviderRegistry
 
-    init(projectVM: ProjectVM, registry: LLMProviderRegistry) {
-        self.projectVM = projectVM
+    init(registry: LLMProviderRegistry) {
         self.registry = registry
     }
-
-    var selectedProviderId: String { projectVM.currentProviderId }
-    var currentModel: String { projectVM.currentModel }
 
     var availableProviders: [LLMProviderInfo] {
         registry.allProviders()
     }
 
     func getCurrentConfig() -> LLMConfig {
-        guard let providerType = registry.providerType(forId: selectedProviderId),
+        guard selectedProviderId.isNotEmpty,
+              let providerType = registry.providerType(forId: selectedProviderId),
               registry.createProvider(id: selectedProviderId) != nil else {
             return LLMConfig.default
         }
@@ -46,29 +48,5 @@ final class AgentSessionVM: ObservableObject, SuperLLMConfigProvider {
             return
         }
         APIKeyStore.shared.set(apiKey, forKey: providerType.apiKeyStorageKey)
-    }
-
-    func setSelectedProviderId(_ providerId: String) {
-        if projectVM.isProjectSelected, !projectVM.currentProjectPath.isEmpty {
-            projectVM.saveProjectConfig(
-                path: projectVM.currentProjectPath,
-                providerId: providerId,
-                model: currentModel
-            )
-        } else {
-            projectVM.setGlobalProviderId(providerId)
-        }
-    }
-
-    func setSelectedModel(_ model: String) {
-        if projectVM.isProjectSelected, !projectVM.currentProjectPath.isEmpty {
-            projectVM.saveProjectConfig(
-                path: projectVM.currentProjectPath,
-                providerId: selectedProviderId,
-                model: model
-            )
-        } else {
-            projectVM.setGlobalModel(model)
-        }
     }
 }

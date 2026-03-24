@@ -190,8 +190,8 @@ extension ModelSelectorView {
     ///   - model: 模型名称
     private func selectModel(providerId: String, model: String) {
         // 设置供应商和模型（会自动保存到项目配置）
-        agentSessionConfig.setSelectedProviderId(providerId)
-        agentSessionConfig.setSelectedModel(model)
+        agentSessionConfig.selectedProviderId = providerId
+        agentSessionConfig.currentModel = model
 
         dismiss()
     }

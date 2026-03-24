@@ -142,10 +142,7 @@ final class RootViewContainer: ObservableObject {
         // Agent 配置
         // ========================================
 
-        self.agentSessionConfig = AgentSessionVM(
-            projectVM: projectVM,
-            registry: providerRegistry
-        )
+        self.agentSessionConfig = AgentSessionVM(registry: providerRegistry)
 
         self.toolExecutionService = ToolExecutionService(toolService: toolService)
         self.captureThinkingContent = true
