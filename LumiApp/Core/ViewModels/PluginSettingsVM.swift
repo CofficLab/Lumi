@@ -6,10 +6,13 @@ final class PluginSettingsVM: ObservableObject {
     /// 全局单例
     static let shared = PluginSettingsVM()
 
-    private let userDefaultsKey = "SwiftUI_Template_PluginSettings"
-
     /// 发布设置变化，让订阅者能够实时响应
     @Published private(set) var settings: [String: Bool] = [:]
+
+    /// 初始化时从持久化存储加载插件状态
+    private init() {
+        settings = AppSettingStore.loadPluginSettings()
+    }
 
     /// 获取插件的启用状态
     func isPluginEnabled(_ pluginId: String) -> Bool {
@@ -19,9 +22,11 @@ final class PluginSettingsVM: ObservableObject {
     /// 设置插件的启用状态
     func setPluginEnabled(_ pluginId: String, enabled: Bool) {
         settings[pluginId] = enabled
+        
+        // 持久化到存储
+        AppSettingStore.savePluginEnabled(pluginId, enabled: enabled)
 
         // 发送通知，通知 UI 更新
         NotificationCenter.default.post(name: .pluginSettingsChanged, object: nil)
     }
 }
-

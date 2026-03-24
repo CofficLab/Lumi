@@ -128,6 +128,40 @@ enum AppSettingStore {
         set(nil, forKey: settingsSelectionValueKey)
     }
 
+    // MARK: - Plugin Settings
+
+    private static let pluginSettingsKey = "App_PluginSettings"
+
+    /// 加载插件启用状态
+    /// - Returns: 插件 ID 到启用状态的字典
+    static func loadPluginSettings() -> [String: Bool] {
+        object(forKey: pluginSettingsKey) as? [String: Bool] ?? [:]
+    }
+
+    /// 保存插件启用状态
+    /// - Parameter settings: 插件 ID 到启用状态的字典
+    static func savePluginSettings(_ settings: [String: Bool]) {
+        set(settings, forKey: pluginSettingsKey)
+    }
+
+    /// 加载单个插件的启用状态
+    /// - Parameter pluginId: 插件 ID
+    /// - Returns: 启用状态，如果没有记录则返回 nil
+    static func loadPluginEnabled(_ pluginId: String) -> Bool? {
+        let settings = loadPluginSettings()
+        return settings[pluginId]
+    }
+
+    /// 保存单个插件的启用状态
+    /// - Parameters:
+    ///   - pluginId: 插件 ID
+    ///   - enabled: 启用状态
+    static func savePluginEnabled(_ pluginId: String, enabled: Bool) {
+        var settings = loadPluginSettings()
+        settings[pluginId] = enabled
+        savePluginSettings(settings)
+    }
+
     // MARK: - Remote Provider
 
     private static let selectedRemoteProviderIdKey = "App_SelectedRemoteProviderId"
