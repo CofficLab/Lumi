@@ -1,4 +1,5 @@
 import SwiftUI
+import MagicKit
 import os
 
 /// 模型偏好根视图包裹器
@@ -13,7 +14,9 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
     /// 是否输出详细日志
     nonisolated static var verbose: Bool { ModelPreferencePlugin.verbose }
     /// 专用 Logger
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "model-preference.root-view")
+    nonisolated static var logger: Logger {
+        Logger(subsystem: "com.coffic.lumi", category: "model-preference.root-view")
+    }
 
     let content: Content
 

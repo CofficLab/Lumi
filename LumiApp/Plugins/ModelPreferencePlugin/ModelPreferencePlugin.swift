@@ -22,7 +22,7 @@ actor ModelPreferencePlugin: SuperPlugin, SuperLog {
     static let shared = ModelPreferencePlugin()
 
     // 保存当前的项目路径
-    nonisolated private var currentProjectPath: String = ""
+    private var currentProjectPath: String = ""
 
     // MARK: - Lifecycle
 
