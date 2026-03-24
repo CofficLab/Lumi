@@ -60,17 +60,17 @@ final class ProjectVM: ObservableObject, SuperLog {
     // MARK: - 初始化
 
     private let contextService: ContextService
-    private let providerRegistry: LLMProviderRegistry?
+    private let llmService: LLMService
 
     private static let globalConfigProviderIdKey = "Agent_GlobalProviderId"
     private static let globalConfigModelKey = "Agent_GlobalModel"
 
     init(
         contextService: ContextService = ContextService(),
-        providerRegistry: LLMProviderRegistry? = nil
+        llmService: LLMService = LLMService()
     ) {
         self.contextService = contextService
-        self.providerRegistry = providerRegistry
+        self.llmService = llmService
         loadLanguagePreference()
         loadChatMode()
         loadGlobalOrDefaultProviderIfNeeded()
@@ -115,16 +115,8 @@ final class ProjectVM: ObservableObject, SuperLog {
 
     /// 获取指定供应商的默认模型
     private func getDefaultModel(for providerId: String) -> String {
-        // 优先使用注入的 ProviderRegistry（由插件系统填充）
-        if let registry = providerRegistry,
-           let providerType = registry.providerType(forId: providerId) {
-            return providerType.defaultModel
-        }
-
-        // 兜底：本地扫描插件（用于 Preview / 测试等环境）
-        let registry = LLMProviderRegistry()
-        LLMProviderRegistration.registerAllProviders(to: registry)
-        guard let providerType = registry.providerType(forId: providerId) else {
+        // 通过 LLMService 获取供应商类型
+        guard let providerType = llmService.providerType(forId: providerId) else {
             return ""
         }
         return providerType.defaultModel
@@ -139,19 +131,11 @@ final class ProjectVM: ObservableObject, SuperLog {
         // 已经有值（例如稍后会通过项目配置覆盖）则不处理
         guard currentProviderId.isEmpty, currentModel.isEmpty else { return }
 
-        // 优先使用注入的 ProviderRegistry
-        if let registry = providerRegistry, let firstType = registry.providerTypes.first {
-            currentProviderId = firstType.id
-            currentModel = firstType.defaultModel
-            return
-        }
-
-        // 兜底：本地扫描插件（用于 Preview / 测试等环境）
-        let registry = LLMProviderRegistry()
-        LLMProviderRegistration.registerAllProviders(to: registry)
-        if let firstType = registry.providerTypes.first {
-            currentProviderId = firstType.id
-            currentModel = firstType.defaultModel
+        // 通过 LLMService 获取所有供应商
+        let providers = llmService.allProviders()
+        if let firstProvider = providers.first {
+            currentProviderId = firstProvider.id
+            currentModel = firstProvider.models.first?.id ?? ""
         }
     }
 

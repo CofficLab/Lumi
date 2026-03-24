@@ -90,7 +90,7 @@ final class RootViewContainer: ObservableObject {
         self.mystiqueThemeManager = appProvider.themeManager
         self.projectVM = Lumi.ProjectVM(
             contextService: contextService,
-            providerRegistry: providerRegistry
+            llmService: llmService
         )
 
         // ========================================
