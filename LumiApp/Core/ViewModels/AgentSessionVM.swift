@@ -6,16 +6,18 @@ import MagicKit
 final class AgentSessionVM: ObservableObject, SuperLLMConfigProvider {
     let projectVM: ProjectVM
     let registry: LLMProviderRegistry
-    let chatHistoryVM: ChatHistoryVM
 
-    init(projectVM: ProjectVM, registry: LLMProviderRegistry, chatHistoryVM: ChatHistoryVM) {
+    init(projectVM: ProjectVM, registry: LLMProviderRegistry) {
         self.projectVM = projectVM
         self.registry = registry
-        self.chatHistoryVM = chatHistoryVM
     }
 
     var selectedProviderId: String { projectVM.currentProviderId }
     var currentModel: String { projectVM.currentModel }
+
+    var availableProviders: [LLMProviderInfo] {
+        registry.allProviders()
+    }
 
     func getCurrentConfig() -> LLMConfig {
         guard let providerType = registry.providerType(forId: selectedProviderId),

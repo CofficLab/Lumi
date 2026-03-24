@@ -144,8 +144,7 @@ final class RootViewContainer: ObservableObject {
 
         self.agentSessionConfig = AgentSessionVM(
             projectVM: projectVM,
-            registry: providerRegistry,
-            chatHistoryVM: chatHistoryVM
+            registry: providerRegistry
         )
 
         self.toolExecutionService = ToolExecutionService(toolService: toolService)
