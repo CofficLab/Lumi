@@ -29,7 +29,7 @@ struct AutoConversationTitleSendMiddleware: SendMiddleware {
         userText: String,
         role: MessageRole,
         chatHistoryService: ChatHistoryService,
-        agentSessionConfig: AgentSessionConfig
+        agentSessionConfig: AgentSessionVM
     ) async {
         guard role == .user else { return }
         let trimmed = userText.trimmingCharacters(in: .whitespacesAndNewlines)

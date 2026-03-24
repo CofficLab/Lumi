@@ -45,7 +45,7 @@ final class RootViewContainer: ObservableObject {
     let conversationSendStatusVM: ConversationStatusVM
     let projectContextRequestVM: ProjectContextRequestVM
 
-    let agentSessionConfig: AgentSessionConfig
+    let agentSessionConfig: AgentSessionVM
     let captureThinkingContent: Bool
 
     // MARK: - 初始化
@@ -142,7 +142,7 @@ final class RootViewContainer: ObservableObject {
         // Agent 配置
         // ========================================
 
-        self.agentSessionConfig = AgentSessionConfig(
+        self.agentSessionConfig = AgentSessionVM(
             projectVM: projectVM,
             registry: providerRegistry,
             chatHistoryVM: chatHistoryVM

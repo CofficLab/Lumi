@@ -13,7 +13,7 @@ struct ModelSelectorView: View, SuperLog {
     /// 环境对象：用于关闭当前视图
     @Environment(\.dismiss) private var dismiss
 
-    @EnvironmentObject var agentSessionConfig: AgentSessionConfig
+    @EnvironmentObject var agentSessionConfig: AgentSessionVM
 
     /// 模型性能统计
     @State private var detailedStats: [String: ModelPerformanceStats] = [:]

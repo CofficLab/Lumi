@@ -6,13 +6,13 @@ final class SendMessageContext {
     let conversationId: UUID
     let message: ChatMessage
     let chatHistoryService: ChatHistoryService
-    let agentSessionConfig: AgentSessionConfig
+    let agentSessionConfig: AgentSessionVM
 
     init(
         conversationId: UUID,
         message: ChatMessage,
         chatHistoryService: ChatHistoryService,
-        agentSessionConfig: AgentSessionConfig
+        agentSessionConfig: AgentSessionVM
     ) {
         self.conversationId = conversationId
         self.message = message

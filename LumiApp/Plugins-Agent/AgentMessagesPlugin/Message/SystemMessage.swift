@@ -197,7 +197,7 @@ private struct LLMInlineConfigErrorView: View {
 /// 提供一个简化的「生成式 UI」卡片，支持直接为当前会话所用的供应商填写 API Key。
 private struct ApiKeyMissingSystemMessageView: View {
     @EnvironmentObject private var projectVM: ProjectVM
-    @EnvironmentObject private var agentSessionConfig: AgentSessionConfig
+    @EnvironmentObject private var agentSessionConfig: AgentSessionVM
     @EnvironmentObject private var providerRegistry: LLMProviderRegistry
 
     @State private var currentProviderId: String = ""

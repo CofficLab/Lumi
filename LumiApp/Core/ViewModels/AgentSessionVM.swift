@@ -3,7 +3,7 @@ import MagicKit
 
 /// 窗口内 LLM 供应商/模型/API Key 等与 `ProjectVM` + `ProviderRegistry` 相关的配置（供设置类 UI 使用）。
 @MainActor
-final class AgentSessionConfig: ObservableObject, SuperLLMConfigProvider {
+final class AgentSessionVM: ObservableObject, SuperLLMConfigProvider {
     let projectVM: ProjectVM
     let registry: LLMProviderRegistry
     let chatHistoryVM: ChatHistoryVM

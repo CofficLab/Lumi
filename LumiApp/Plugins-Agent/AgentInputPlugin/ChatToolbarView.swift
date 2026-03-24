@@ -9,7 +9,7 @@ struct ChatToolbarView: View, SuperLog {
     nonisolated static let verbose = false
 
     @EnvironmentObject var conversationTurnServices: ConversationTurnServices
-    @EnvironmentObject var agentSessionConfig: AgentSessionConfig
+    @EnvironmentObject var agentSessionConfig: AgentSessionVM
     @EnvironmentObject var ProjectVM: ProjectVM
     @EnvironmentObject var ConversationVM: ConversationVM
     @EnvironmentObject var agentTaskCancellationVM: TaskCancellationVM
