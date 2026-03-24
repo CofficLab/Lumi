@@ -1,9 +1,12 @@
-import SwiftUI
 import MagicKit
+import SwiftUI
 
 /// 文件预览底部状态栏视图（类似 VS Code）
 struct FilePreviewStatusBarView: View {
     @EnvironmentObject var ProjectVM: ProjectVM
+
+    /// 当前文件内容（本地加载，用于统计）
+    @State private var fileContent: String = ""
 
     /// 判断当前选择的文件是否为可预览的类型
     private var isPreviewableFile: Bool {
@@ -37,11 +40,6 @@ struct FilePreviewStatusBarView: View {
         SupportedFileType2.fileTypeDescription(for: fileExtension, fullFileName: fileName)
     }
 
-    /// 获取当前文件内容
-    private var fileContent: String {
-        ProjectVM.selectedFileContent
-    }
-
     var body: some View {
         HStack(spacing: 12) {
             // 左侧：内容类型标签（仅当选择了可预览文件时显示）
@@ -68,8 +66,45 @@ struct FilePreviewStatusBarView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
+        .onChange(of: ProjectVM.selectedFileURL) { _, newURL in
+            loadFileContent(from: newURL)
+        }
+        .onAppear {
+            loadFileContent(from: ProjectVM.selectedFileURL)
+        }
+    }
+
+    // MARK: - Actions
+
+    private func loadFileContent(from url: URL?) {
+        guard let url = url else {
+            fileContent = ""
+            return
+        }
+
+        // 检查是否是目录
+        let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+        if isDirectory {
+            fileContent = ""
+            return
+        }
+
+        Task {
+            do {
+                let content = try String(contentsOf: url, encoding: .utf8)
+                await MainActor.run {
+                    self.fileContent = content
+                }
+            } catch {
+                await MainActor.run {
+                    self.fileContent = ""
+                }
+            }
+        }
     }
 }
+
+// MARK: - Preview
 
 #Preview {
     FilePreviewStatusBarView()

@@ -13,7 +13,8 @@ struct ModelSelectorView: View, SuperLog {
     /// 环境对象：用于关闭当前视图
     @Environment(\.dismiss) private var dismiss
 
-    @EnvironmentObject var agentSessionConfig: AgentSessionConfig
+    @EnvironmentObject var llmVM: LLMVM
+    @EnvironmentObject var chatHistoryVM: ChatHistoryVM
 
     /// 模型性能统计
     @State private var detailedStats: [String: ModelPerformanceStats] = [:]
@@ -25,11 +26,11 @@ struct ModelSelectorView: View, SuperLog {
     @State private var localModelInfosByProvider: [String: [LocalModelInfo]] = [:]
 
     private var localProviders: [LLMProviderInfo] {
-        agentSessionConfig.registry.allProviders().filter(\.isLocal)
+        llmVM.allProviders.filter(\.isLocal)
     }
 
     private var remoteProviders: [LLMProviderInfo] {
-        agentSessionConfig.registry.allProviders().filter { !$0.isLocal }
+        llmVM.allProviders.filter { !$0.isLocal }
     }
 
     var body: some View {
@@ -127,7 +128,8 @@ struct ModelSelectorView: View, SuperLog {
                         ModelLatencyProgressBar(
                             ttft: stat.avgTTFT,
                             totalLatency: stat.avgLatency,
-                            sampleCount: stat.sampleCount
+                            sampleCount: stat.sampleCount,
+                            tps: stat.avgTPS
                         )
                     }
                 }
@@ -188,9 +190,9 @@ extension ModelSelectorView {
     ///   - providerId: 供应商 ID
     ///   - model: 模型名称
     private func selectModel(providerId: String, model: String) {
-        // 设置供应商和模型（会自动保存到项目配置）
-        agentSessionConfig.setSelectedProviderId(providerId)
-        agentSessionConfig.setSelectedModel(model)
+        // 更新内存中的供应商和模型配置
+        llmVM.selectedProviderId = providerId
+        llmVM.currentModel = model
 
         dismiss()
     }
@@ -205,7 +207,7 @@ extension ModelSelectorView {
     ///   - model: 模型名称
     /// - Returns: 是否为当前选中的模型
     private func isSelected(providerId: String, model: String) -> Bool {
-        return agentSessionConfig.selectedProviderId == providerId && agentSessionConfig.currentModel == model
+        return llmVM.selectedProviderId == providerId && llmVM.currentModel == model
     }
 
     /// 检查模型是否为供应商的默认模型
@@ -214,7 +216,7 @@ extension ModelSelectorView {
     ///   - model: 模型名称
     /// - Returns: 是否为默认模型
     private func isDefaultModel(providerId: String, model: String) -> Bool {
-        guard let providerType = agentSessionConfig.registry.providerType(forId: providerId) else {
+        guard let providerType = llmVM.providerType(forId: providerId) else {
             return false
         }
         return model == providerType.defaultModel
@@ -222,7 +224,7 @@ extension ModelSelectorView {
 
     /// 加载性能统计数据
     private func loadLatencyStats() {
-        detailedStats = agentSessionConfig.chatHistoryService.getModelDetailedStats()
+        detailedStats = chatHistoryVM.getModelDetailedStats()
         if Self.verbose {
             AgentInputPlugin.logger.info("\(Self.t)📊 加载到 \(detailedStats.count) 个模型的性能统计")
         }
@@ -230,11 +232,10 @@ extension ModelSelectorView {
 
     /// 加载本地供应商的模型详情（含系列），用于按系列展示
     private func loadLocalModelInfos() async {
-        let registry = agentSessionConfig.registry
-        let localIds = registry.allProviders().filter(\.isLocal).map(\.id)
+        let localIds = llmVM.allProviders.filter(\.isLocal).map(\.id)
         var result: [String: [LocalModelInfo]] = [:]
         for id in localIds {
-            guard let provider = registry.createProvider(id: id) as? any SuperLocalLLMProvider else { continue }
+            guard let provider = llmVM.createProvider(id: id) as? any SuperLocalLLMProvider else { continue }
             let infos = await provider.getAvailableModels()
             result[id] = infos
         }
@@ -259,6 +260,7 @@ struct ModelLatencyProgressBar: View {
     let ttft: Double
     let totalLatency: Double
     let sampleCount: Int
+    let tps: Double
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -297,6 +299,17 @@ struct ModelLatencyProgressBar: View {
                 }
                 .foregroundColor(.blue)
 
+                // TPS 显示
+                if tps > 0 {
+                    HStack(spacing: 1) {
+                        Image(systemName: "speedometer")
+                            .font(.system(size: 6, weight: .medium))
+                        Text(formatTPS(tps))
+                            .font(.caption2)
+                    }
+                    .foregroundColor(.green)
+                }
+
                 if sampleCount > 1 {
                     Text("(\(sampleCount))")
                         .font(.caption2)
@@ -331,17 +344,42 @@ struct ModelLatencyProgressBar: View {
         }
     }
 
+    /// 格式化 TPS
+    private func formatTPS(_ tps: Double) -> String {
+        if tps >= 100 {
+            return String(format: "%.0f t/s", tps)
+        } else if tps >= 10 {
+            return String(format: "%.1f t/s", tps)
+        } else {
+            return String(format: "%.2f t/s", tps)
+        }
+    }
+
     /// 帮助文本
     private var helpText: String {
         let ttftPercent = String(format: "%.1f", ttftRatio * 100)
         let responsePercent = String(format: "%.1f", (1 - ttftRatio) * 100)
-        return """
+        var text = """
         ⚡ 首个 Token 延迟 (TTFT): \(formatTTFT(ttft)) (\(ttftPercent)%)
         🕐 响应时间: \(formatLatency(totalLatency)) (\(responsePercent)%)
+        """
+
+        if tps > 0 {
+            text += "\n🚀 生成速度: \(formatTPS(tps))"
+        }
+
+        text += """
+
 
         TTFT 表示从发送请求到收到第一个 token 的时间
         响应时间表示从第一个 token 到响应完成的时间
         """
+
+        if tps > 0 {
+            text += "TPS (Tokens Per Second) 表示每秒生成的 token 数量"
+        }
+
+        return text
     }
 }
 

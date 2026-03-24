@@ -15,8 +15,8 @@ actor AgentNativeFileTreePlugin: SuperPlugin, SuperLog {
     nonisolated static let verbose = false
 
     static let id: String = "AgentNativeFileTree"
-    static let displayName: String = "高性能文件树"
-    static let description: String = "使用原生 NSOutlineView 实现的高性能文件树"
+    static let displayName: String = String(localized: "Native File Tree", table: "AgentNativeFileTree")
+    static let description: String = String(localized: "High-performance file tree using NSOutlineView", table: "AgentNativeFileTree")
     static let iconName: String = "folder.fill"
     static let isConfigurable: Bool = false
     static var order: Int { 76 }
@@ -33,12 +33,30 @@ actor AgentNativeFileTreePlugin: SuperPlugin, SuperLog {
         }
     }
 
-    // MARK: - UI Contributions
+    // MARK: - Lifecycle
 
-    @MainActor func addSidebarView() -> AnyView? {
+    nonisolated func onRegister() {
         if Self.verbose {
-            Self.logger.info("\(Self.t)📋 addSidebarView 被调用")
+            Self.logger.info("\(Self.t)📝 AgentNativeFileTreePlugin 已注册")
         }
+    }
+
+    nonisolated func onEnable() {
+        if Self.verbose {
+            Self.logger.info("\(self.t)✅ AgentNativeFileTreePlugin 已启用")
+        }
+    }
+
+    nonisolated func onDisable() {
+        if Self.verbose {
+            Self.logger.info("\(self.t)⛔️ AgentNativeFileTreePlugin 已禁用")
+        }
+    }
+
+    // MARK: - Views
+
+    @MainActor
+    func addSidebarView() -> AnyView? {
         return AnyView(AgentNativeFileTreeContainer())
     }
 }

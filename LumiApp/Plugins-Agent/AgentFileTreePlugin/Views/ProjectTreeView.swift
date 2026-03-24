@@ -192,6 +192,6 @@ extension ProjectTreeView {
 
 #Preview {
     ProjectTreeView()
-        .environmentObject(ProjectVM())
+        .inRootView()
         .frame(width: 250, height: 400)
 }

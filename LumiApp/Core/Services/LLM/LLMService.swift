@@ -19,9 +19,6 @@ class LLMService: SuperLog, @unchecked Sendable {
     nonisolated let registry: LLMProviderRegistry
     nonisolated let llmAPI: LLMAPIService
 
-    /// 已注册的 LLM 供应商（与 `LLMProviderRegistration` 一致）
-    nonisolated var providerRegistry: LLMProviderRegistry { registry }
-
     /// 初始化 LLM 服务
     init() {
         let registry = LLMProviderRegistry()
@@ -32,6 +29,36 @@ class LLMService: SuperLog, @unchecked Sendable {
             AppLogger.core.info("\(self.t)LLM 服务已初始化")
         }
     }
+
+    // MARK: - Provider Queries
+
+    /// 获取所有已注册供应商的信息
+    ///
+    /// - Returns: 供应商信息数组，包含 ID、名称、图标、描述、可用模型、是否本地等
+    func allProviders() -> [LLMProviderInfo] {
+        registry.allProviders()
+    }
+
+    /// 根据 ID 查找供应商类型
+    ///
+    /// - Parameter id: 供应商 ID
+    /// - Returns: 供应商类型，如果未找到则返回 nil
+    func providerType(forId id: String) -> (any SuperLLMProvider.Type)? {
+        registry.providerType(forId: id)
+    }
+
+    /// 创建供应商实例
+    ///
+    /// 根据供应商 ID 创建对应的供应商实例。
+    /// 如果已有缓存实例，则返回缓存的实例。
+    ///
+    /// - Parameter id: 供应商 ID
+    /// - Returns: 供应商实例，如果未找到则返回 nil
+    func createProvider(id: String) -> (any SuperLLMProvider)? {
+        registry.createProvider(id: id)
+    }
+
+    // MARK: - Local Model Management
 
     /// 判断当前配置是否为本地供应商且模型未就绪（将触发加载或等待）。
     /// 用于在发送前展示「正在加载模型」等系统提示。

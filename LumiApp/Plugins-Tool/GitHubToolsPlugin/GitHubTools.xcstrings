@@ -1,0 +1,52 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "GitHub Tools": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Tools"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub 工具"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub 工具"
+          }
+        }
+      }
+    },
+    "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provides Agent tools for accessing GitHub API (repos/files/search/issue management)."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供訪問 GitHub API 的 Agent 工具（倉庫/文件/搜索/Issue 管理）。"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.1"
+}

@@ -13,7 +13,7 @@ final class SendController: ObservableObject, SuperLog {
     /// 0: 关闭日志
     /// 1: 基础日志
     /// 2: 详细日志（输出请求/响应的详细信息）
-    nonisolated static let verbose = 1
+    nonisolated static let verbose = 2
 
     private let container: RootViewContainer
     private var activeSendTasksByConversation: [UUID: Task<Void, Never>] = [:]
@@ -77,7 +77,7 @@ final class SendController: ObservableObject, SuperLog {
     /// 从队列入口启动一次发送链路：投影 UI、落库、运行发送中间件，然后继续 `send`。
     func beginSendFromQueue(conversationId: UUID, message: ChatMessage) async {
         if Self.verbose >= 1 {
-            AppLogger.core.info("\(Self.t) 启动一次发送链路：\(message.content)")
+            AppLogger.core.info("\(Self.t) 启动一次发送链路：\n\(message.content.max(200))")
         }
 
         if container.conversationVM.selectedConversationId == conversationId {
@@ -86,7 +86,12 @@ final class SendController: ObservableObject, SuperLog {
 
         await container.conversationVM.saveMessage(message, to: conversationId)
 
-        let ctx = SendMessageContext(conversationId: conversationId, message: message)
+        let ctx = SendMessageContext(
+            conversationId: conversationId,
+            message: message,
+            chatHistoryService: container.chatHistoryService,
+            agentSessionConfig: container.agentSessionConfig
+        )
         let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
         await pipeline.run(ctx: ctx) { _ in }
 
@@ -147,7 +152,7 @@ final class SendController: ObservableObject, SuperLog {
 
                 if !risk.requiresPermission {
                     calls[i].authorizationState = .noRisk
-                } else if container.ProjectVM.autoApproveRisk {
+                } else if container.projectVM.autoApproveRisk {
                     calls[i].authorizationState = .autoApproved
                 } else {
                     calls[i].authorizationState = .pendingAuthorization
@@ -204,7 +209,7 @@ final class SendController: ObservableObject, SuperLog {
         let config = container.agentSessionConfig.getCurrentConfig()
         let availableTools = ToolAvailabilityGuard().evaluate(
             tools: container.toolService.tools,
-            allowsTools: container.ProjectVM.chatMode.allowsTools,
+            allowsTools: container.agentSessionConfig.chatMode.allowsTools,
             isFinalStep: false
         )
         let toolsArg = availableTools.isEmpty ? nil : availableTools

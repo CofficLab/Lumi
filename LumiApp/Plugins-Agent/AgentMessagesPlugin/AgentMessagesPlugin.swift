@@ -7,8 +7,8 @@ actor AgentMessagesPlugin: SuperPlugin {
     nonisolated static let verbose = false
 
     static let id = "DevAssistantMessages"
-    static let displayName = String(localized: "Dev Assistant Messages", table: "DevAssistant")
-    static let description = String(localized: "DevAssistant chat messages", table: "DevAssistant")
+    static let displayName = String(localized: "Dev Assistant Messages", table: "AgentMessages")
+    static let description = String(localized: "DevAssistant chat messages", table: "AgentMessages")
     static let iconName = "text.bubble.fill"
     static var order: Int { 82 }
     static let enable: Bool = true

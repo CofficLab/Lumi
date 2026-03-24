@@ -9,7 +9,7 @@ struct ChatToolbarView: View, SuperLog {
     nonisolated static let verbose = false
 
     @EnvironmentObject var conversationTurnServices: ConversationTurnServices
-    @EnvironmentObject var agentSessionConfig: AgentSessionConfig
+    @EnvironmentObject var llmVM: LLMVM
     @EnvironmentObject var ProjectVM: ProjectVM
     @EnvironmentObject var ConversationVM: ConversationVM
     @EnvironmentObject var agentTaskCancellationVM: TaskCancellationVM
@@ -145,7 +145,7 @@ extension ChatToolbarView {
             ForEach(ChatMode.allCases) { mode in
                 Button(action: {
                     withAnimation {
-                        ProjectVM.setChatMode(mode)
+                        llmVM.setChatMode(mode)
                     }
                 }) {
                     HStack {
@@ -154,7 +154,7 @@ extension ChatToolbarView {
                         Text("- \(mode.description)")
                             .foregroundColor(.secondary)
                             .font(.caption)
-                        if ProjectVM.chatMode == mode {
+                        if llmVM.chatMode == mode {
                             Image(systemName: "checkmark")
                         }
                     }
@@ -162,9 +162,9 @@ extension ChatToolbarView {
             }
         } label: {
             HStack(spacing: 4) {
-                Image(systemName: ProjectVM.chatMode.iconName)
+                Image(systemName: llmVM.chatMode.iconName)
                     .font(.system(size: 14))
-                Text(ProjectVM.chatMode.displayName)
+                Text(llmVM.chatMode.displayName)
                     .font(.system(size: 12))
                     .fontWeight(.medium)
                 Image(systemName: "chevron.up")
@@ -186,7 +186,7 @@ extension ChatToolbarView {
 
     /// 根据当前模式返回前景色
     private var modeForegroundColor: Color {
-        switch ProjectVM.chatMode {
+        switch llmVM.chatMode {
         case .chat:
             return Color.orange
         case .build:
@@ -196,7 +196,7 @@ extension ChatToolbarView {
 
     /// 根据当前模式返回背景色
     private var modeBackgroundColor: Color {
-        switch ProjectVM.chatMode {
+        switch llmVM.chatMode {
         case .chat:
             return Color.orange.opacity(0.1)
         case .build:
@@ -206,7 +206,7 @@ extension ChatToolbarView {
 
     /// 根据当前模式返回帮助文本
     private var modeHelpText: String {
-        switch ProjectVM.chatMode {
+        switch llmVM.chatMode {
         case .chat:
             return String(localized: "Chat Mode Description", table: "AgentInput")
         case .build:
@@ -243,15 +243,15 @@ extension ChatToolbarView {
 
     /// 当前显示的「供应商 + 模型」文案
     private var currentModelDisplayText: String {
-        let model = agentSessionConfig.currentModel
+        let model = llmVM.currentModel
         guard !model.isEmpty else {
             return String(localized: "No Model Selected", table: "AgentInput")
         }
-        guard let providerType = agentSessionConfig.registry.providerType(forId: agentSessionConfig.selectedProviderId) else {
+        guard let providerType = llmVM.providerType(forId: llmVM.selectedProviderId) else {
             return model
         }
         let modelLabel: String
-        if let localProvider = agentSessionConfig.registry.createProvider(id: agentSessionConfig.selectedProviderId) as? any SuperLocalLLMProvider,
+        if let localProvider = llmVM.createProvider(id: llmVM.selectedProviderId) as? any SuperLocalLLMProvider,
            let name = localProvider.displayName(forModelId: model) {
             modelLabel = name
         } else {
@@ -329,3 +329,11 @@ extension ChatToolbarView {
 }
 
 // MARK: - Preview
+
+#Preview {
+    ChatToolbarView(
+        inputViewModel: InputViewModel(),
+        isModelSelectorPresented: .constant(false)
+    )
+    .inRootView()
+}

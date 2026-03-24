@@ -1,7 +1,7 @@
-import Foundation
-import SwiftUI
 import AppKit
+import Foundation
 import MagicKit
+import SwiftUI
 
 /// 项目管理 ViewModel
 /// 负责管理项目状态、文件选择和项目配置
@@ -9,8 +9,20 @@ import MagicKit
 final class ProjectVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose = false
-    
-    @Published public fileprivate(set) var currentProject: Project? = nil
+
+    @Published private(set) var currentProject: Project? = nil
+
+    /// 当前选择的文件 URL
+    @Published private(set) var selectedFileURL: URL?
+
+    // 语言偏好
+    @Published var languagePreference: LanguagePreference = .chinese
+
+    // 自动批准风险
+    @Published var autoApproveRisk: Bool = false
+
+    /// 最近使用的项目列表
+    @Published public fileprivate(set) var recentProjects: [Project] = []
 
     /// 当前项目名称
     var currentProjectName: String {
@@ -27,57 +39,22 @@ final class ProjectVM: ObservableObject, SuperLog {
         self.currentProject != nil
     }
 
-    /// 当前项目的供应商 ID
-    @Published public fileprivate(set) var currentProviderId: String = ""
-
-    /// 当前项目的模型名称
-    @Published public fileprivate(set) var currentModel: String = ""
-
-    /// 当前选择的文件 URL
-    @Published public fileprivate(set) var selectedFileURL: URL?
-
-    /// 当前选择的文件路径
-    @Published public fileprivate(set) var selectedFilePath: String = ""
-
-    /// 当前选择的文件内容
-    @Published public fileprivate(set) var selectedFileContent: String = ""
-
     /// 是否已选择文件
-    @Published public fileprivate(set) var isFileSelected: Bool = false
-
-    // 语言偏好
-    @Published var languagePreference: LanguagePreference = .chinese
-
-    // 聊天模式
-    @Published var chatMode: ChatMode = .build
-
-    // 自动批准风险
-    @Published var autoApproveRisk: Bool = false
-
-    /// 最近使用的项目列表
-    @Published public fileprivate(set) var recentProjects: [Project] = []
-
-    // MARK: - 初始化
-
-    private let contextService: ContextService
-    private let providerRegistry: LLMProviderRegistry?
-
-    private static let globalConfigProviderIdKey = "Agent_GlobalProviderId"
-    private static let globalConfigModelKey = "Agent_GlobalModel"
-
-    init(
-        contextService: ContextService = ContextService(),
-        providerRegistry: LLMProviderRegistry? = nil
-    ) {
-        self.contextService = contextService
-        self.providerRegistry = providerRegistry
-        loadLanguagePreference()
-        loadChatMode()
-        loadGlobalOrDefaultProviderIfNeeded()
-        restoreAutoApproveRiskIfNeeded()
+    var isFileSelected: Bool {
+        selectedFileURL != nil
     }
 
-    // MARK: - 项目管理
+    private let contextService: ContextService
+    private let llmService: LLMService
+
+    /// 初始化 ProjectVM
+    /// - Parameters:
+    ///   - contextService: 上下文服务（必须由外部传入）
+    ///   - llmService: LLM 服务（必须由外部传入，不允许自行创建）
+    init(contextService: ContextService, llmService: LLMService) {
+        self.contextService = contextService
+        self.llmService = llmService
+    }
 
     /// 清除当前项目，恢复到未选择任何项目的状态
     func clearProject() {
@@ -97,104 +74,6 @@ final class ProjectVM: ObservableObject, SuperLog {
         self.currentProject = project
     }
 
-    /// 应用项目配置
-    private func applyProjectConfig(_ config: ProjectConfig) {
-        Task { @MainActor in
-            // 更新当前项目配置
-            self.currentProviderId = config.providerId
-            self.currentModel = config.model.isEmpty ? self.getDefaultModel(for: config.providerId) : config.model
-
-            // 通知供应商设置更新配置
-            NotificationCenter.postProjectConfigApplied(config)
-
-            if Self.verbose {
-                AppLogger.core.info("\(Self.t)⚙️ 已应用项目配置：\(config.providerId) / \(self.currentModel)")
-            }
-        }
-    }
-
-    /// 保存项目配置
-    func saveProjectConfig(path: String, providerId: String, model: String) {
-        let config = ProjectConfig(
-            projectPath: path,
-            providerId: providerId,
-            model: model
-        )
-
-        // 如果是当前项目，更新本地状态
-        if path == currentProjectPath {
-            currentProviderId = providerId
-            currentModel = model
-        }
-
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t)💾 已保存项目配置：\(providerId) / \(model)")
-        }
-    }
-
-    /// 获取指定供应商的默认模型
-    private func getDefaultModel(for providerId: String) -> String {
-        // 优先使用注入的 ProviderRegistry（由插件系统填充）
-        if let registry = providerRegistry,
-           let providerType = registry.providerType(forId: providerId) {
-            return providerType.defaultModel
-        }
-
-        // 兜底：本地扫描插件（用于 Preview / 测试等环境）
-        let registry = LLMProviderRegistry()
-        LLMProviderRegistration.registerAllProviders(to: registry)
-        guard let providerType = registry.providerType(forId: providerId) else {
-            return ""
-        }
-        return providerType.defaultModel
-    }
-
-    /// 在未选择任何项目时，为 Agent 模式提供默认供应商和模型
-    ///
-    /// 规则：
-    /// - 如果插件系统已注册供应商，选择第一个供应商及其默认模型
-    /// - 如果没有任何供应商注册，则保持空值，Agent 模式将无法正常运行
-    private func initializeDefaultProviderIfNeeded() {
-        // 已经有值（例如稍后会通过项目配置覆盖）则不处理
-        guard currentProviderId.isEmpty, currentModel.isEmpty else { return }
-
-        // 优先使用注入的 ProviderRegistry
-        if let registry = providerRegistry, let firstType = registry.providerTypes.first {
-            currentProviderId = firstType.id
-            currentModel = firstType.defaultModel
-            return
-        }
-
-        // 兜底：本地扫描插件（用于 Preview / 测试等环境）
-        let registry = LLMProviderRegistry()
-        LLMProviderRegistration.registerAllProviders(to: registry)
-        if let firstType = registry.providerTypes.first {
-            currentProviderId = firstType.id
-            currentModel = firstType.defaultModel
-        }
-    }
-
-    /// 加载全局 LLM 配置（未选择项目时使用），若不存在则回退到默认供应商
-    private func loadGlobalOrDefaultProviderIfNeeded() {
-        // 已经由项目配置覆盖，直接跳过
-        guard currentProviderId.isEmpty, currentModel.isEmpty else { return }
-
-        // 全局配置不存在时，按原有规则初始化默认供应商和模型
-        initializeDefaultProviderIfNeeded()
-    }
-
-    /// 在未选择项目时，保存全局供应商 ID
-    func setGlobalProviderId(_ providerId: String) {
-        currentProviderId = providerId
-    }
-
-    /// 在未选择项目时，保存全局模型名称
-    func setGlobalModel(_ model: String) {
-        currentModel = model
-    }
-
-    // MARK: - 最近项目管理
-
     /// 设置最近项目列表（由 AgentRecentProjectsPlugin 调用）
     func setRecentProjects(_ projects: [Project]) {
         recentProjects = projects
@@ -205,33 +84,23 @@ final class ProjectVM: ObservableObject, SuperLog {
         recentProjects
     }
 
-    // MARK: - 文件选择
-
     /// 选择指定路径（支持文件与目录）
     func selectFile(at url: URL) {
-        let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-        
-        // 目录：仅更新选中路径，不加载内容
-        if isDirectory {
-            setSelectedFileInfo(url: url, path: url.path, content: "", selected: false)
-            
-            if Self.verbose {
+        selectedFileURL = url
+
+        // 发送文件选择变化通知
+        NotificationCenter.postFileSelectionChanged()
+
+        if Self.verbose {
+            let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+            if isDirectory {
                 AppLogger.core.info("\(Self.t)📁 已选择目录：\(url.lastPathComponent)")
-            }
-        } else {
-            setSelectedFileInfo(url: url, path: url.path, content: "", selected: true)
-            
-            Task {
-                await contextService.trackOpenFile(url)
-                await loadFileContent(from: url)
-            }
-            
-            if Self.verbose {
+            } else {
                 AppLogger.core.info("\(Self.t)📄 已选择文件：\(url.lastPathComponent)")
             }
         }
     }
-    
+
     /// 将指定文件或目录移到废纸篓
     /// - Parameter url: 目标文件或目录路径
     func deleteItem(at url: URL) {
@@ -244,196 +113,19 @@ final class ProjectVM: ObservableObject, SuperLog {
             AppLogger.core.error("\(Self.t)❌ 移到废纸篓失败：\(error.localizedDescription)")
         }
     }
-    
-    /// 在 Finder 中显示指定路径
-    /// - Parameter url: 目标文件或目录路径
-    func openInFinder(_ url: URL) {
-        NSWorkspace.shared.activateFileViewerSelecting([url])
-        
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t)🔍 在 Finder 中显示：\(url.path)")
-        }
-    }
-    
-    /// 在 VS Code 中打开指定路径
-    /// - Parameter url: 目标文件或目录路径
-    func openInVSCode(_ url: URL) {
-        let process = Process()
-        process.launchPath = "/usr/bin/env"
-        process.arguments = ["open", "-a", "Visual Studio Code", url.path]
-        
-        do {
-            try process.run()
-            if Self.verbose {
-                AppLogger.core.info("\(Self.t)📝 使用 VS Code 打开：\(url.path)")
-            }
-        } catch {
-            AppLogger.core.error("\(Self.t)❌ 启动 VS Code 失败：\(error.localizedDescription)")
-        }
-    }
-    
-    /// 在终端中打开指定路径
-    /// - Parameter url: 目标文件或目录路径（文件会自动转为其父目录）
-    func openInTerminal(_ url: URL) {
-        let targetURL: URL
-        let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-        if isDirectory {
-            targetURL = url
-        } else {
-            targetURL = url.deletingLastPathComponent()
-        }
-        
-        let process = Process()
-        process.launchPath = "/usr/bin/env"
-        process.arguments = ["open", "-a", "Terminal", targetURL.path]
-        
-        do {
-            try process.run()
-            if Self.verbose {
-                AppLogger.core.info("\(Self.t)💻 在终端中打开：\(targetURL.path)")
-            }
-        } catch {
-            AppLogger.core.error("\(Self.t)❌ 启动终端失败：\(error.localizedDescription)")
-        }
-    }
 
-    /// 加载文件内容
-    private func loadFileContent(from url: URL) async {
-        do {
-            let content = try String(contentsOf: url, encoding: .utf8)
-            await MainActor.run {
-                setSelectedFileContent(content)
-            }
-        } catch {
-            await MainActor.run {
-                setSelectedFileContent("无法加载文件内容：\(error.localizedDescription)")
-            }
-            AppLogger.core.error("\(Self.t)❌ 加载文件失败：\(error.localizedDescription)")
-        }
-    }
-
-    /// 设置文件信息
-    func setSelectedFileInfo(url: URL?, path: String, content: String, selected: Bool) {
-        selectedFileURL = url
-        selectedFilePath = path
-        selectedFileContent = content
-        isFileSelected = selected
+    /// 清除文件选择
+    func clearFileSelection() {
+        selectedFileURL = nil
 
         // 发送文件选择变化通知
         NotificationCenter.postFileSelectionChanged()
     }
 
-    /// 设置文件内容
-    func setSelectedFileContent(_ content: String) {
-        selectedFileContent = content
-    }
-
-    /// 清除文件选择
-    func clearFileSelection() {
-        setSelectedFileInfo(url: nil, path: "", content: "", selected: false)
-    }
-
-    // MARK: - 语言偏好
-
-    private func loadLanguagePreference() {
-
-    }
-
     func setLanguagePreference(_ preference: LanguagePreference) {
-
-    }
-
-    // MARK: - 聊天模式
-
-    private func loadChatMode() {
-
-    }
-
-    func setChatMode(_ mode: ChatMode) {
-//
     }
 
     func setAutoApproveRisk(_ enabled: Bool) {
         autoApproveRisk = enabled
-        persistAutoApproveRisk(enabled)
-    }
-
-    // MARK: - Auto-approve persistence
-    ///
-    /// 目前 `autoApproveRisk` 的持久化逻辑在 UI 层由 `AutoApprovePersistenceOverlay` 承担；
-    /// 但如果该 overlay 在某些启动路径没有挂载/恢复，就会导致开关在重启后失效。
-    /// 为保证行为稳定，这里直接读写同一份状态文件。
-    private static let autoApproveStatePlistKey = "autoApproveRisk"
-    private static let autoApproveStateFileName = "auto_approve_state.plist"
-    private static let autoApproveStateTmpFileName = "auto_approve_state.tmp"
-
-    private func autoApproveStateSettingsDir() -> URL {
-        AppConfig.getDBFolderURL()
-            .appendingPathComponent("AgentAutoApproveHeader", isDirectory: true)
-            .appendingPathComponent("settings", isDirectory: true)
-    }
-
-    private func autoApproveStateFileURL() -> URL {
-        autoApproveStateSettingsDir()
-            .appendingPathComponent(Self.autoApproveStateFileName, isDirectory: false)
-    }
-
-    private func restoreAutoApproveRiskIfNeeded() {
-        guard let enabled = loadAutoApproveRiskFromDisk() else { return }
-        autoApproveRisk = enabled
-    }
-
-    private func loadAutoApproveRiskFromDisk() -> Bool? {
-        let fileURL = autoApproveStateFileURL()
-        let fileManager = FileManager.default
-
-        guard fileManager.fileExists(atPath: fileURL.path) else { return nil }
-        guard let data = try? Data(contentsOf: fileURL),
-              let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
-              let dict = plist as? [String: Any] else {
-            return nil
-        }
-
-        if let boolVal = dict[Self.autoApproveStatePlistKey] as? Bool {
-            return boolVal
-        }
-
-        // propertyListSerialization 有时会把 bool 以 NSNumber 形式还原
-        if let numVal = dict[Self.autoApproveStatePlistKey] as? NSNumber {
-            return numVal.boolValue
-        }
-
-        return nil
-    }
-
-    private func persistAutoApproveRisk(_ enabled: Bool) {
-        let fileManager = FileManager.default
-        let settingsDir = autoApproveStateSettingsDir()
-        try? fileManager.createDirectory(at: settingsDir, withIntermediateDirectories: true, attributes: nil)
-
-        let fileURL = autoApproveStateFileURL()
-        let tmpURL = settingsDir.appendingPathComponent(Self.autoApproveStateTmpFileName, isDirectory: false)
-
-        var dict: [String: Any] = [:]
-        if fileManager.fileExists(atPath: fileURL.path),
-           let data = try? Data(contentsOf: fileURL),
-           let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
-           let existing = plist as? [String: Any] {
-            dict = existing
-        }
-
-        dict[Self.autoApproveStatePlistKey] = enabled
-
-        guard let data = try? PropertyListSerialization.data(fromPropertyList: dict, format: .binary, options: 0) else { return }
-        do {
-            try data.write(to: tmpURL, options: .atomic)
-            if fileManager.fileExists(atPath: fileURL.path) {
-                _ = try? fileManager.replaceItemAt(fileURL, withItemAt: tmpURL)
-            } else {
-                try fileManager.moveItem(at: tmpURL, to: fileURL)
-            }
-        } catch {
-            // 写入失败时不影响内存状态；下一次启动仍会以默认值为准
-        }
     }
 }

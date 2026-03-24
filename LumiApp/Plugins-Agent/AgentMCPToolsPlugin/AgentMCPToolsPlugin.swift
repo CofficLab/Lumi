@@ -11,8 +11,8 @@ actor AgentMCPToolsPlugin: SuperPlugin {
     nonisolated static let verbose = false
 
     static let id = "AgentMCPTools"
-    static let displayName = String(localized: "MCP Tools", table: "DevAssistant")
-    static let description = String(localized: "MCP-backed tools (hidden)", table: "DevAssistant")
+    static let displayName = String(localized: "MCP Tools", table: "AgentMCPTools")
+    static let description = String(localized: "MCP-backed tools (hidden)", table: "AgentMCPTools")
     static let iconName = "server.rack"
     static var order: Int { 60 }
     static let enable: Bool = true
@@ -41,4 +41,3 @@ actor AgentMCPToolsPlugin: SuperPlugin {
 extension Notification.Name {
     static let toolSourcesDidChange = Notification.Name("toolSourcesDidChange")
 }
-

@@ -97,4 +97,79 @@ enum AppSettingStore {
     static func saveSelectedNavigationId(_ id: String?) {
         set(id, forKey: selectedNavigationIdKey)
     }
+
+    // MARK: - Settings Selection
+
+    private static let settingsSelectionTypeKey = "App_SettingsSelectionType"
+    private static let settingsSelectionValueKey = "App_SettingsSelectionValue"
+
+    /// 加载设置界面的上次选中项
+    /// - Returns: 元组 (类型，值)，类型为 "core" 或 "plugin"
+    static func loadSettingsSelection() -> (type: String, value: String)? {
+        guard let type = object(forKey: settingsSelectionTypeKey) as? String,
+              let value = object(forKey: settingsSelectionValueKey) as? String else {
+            return nil
+        }
+        return (type, value)
+    }
+
+    /// 保存设置界面的选中项
+    /// - Parameters:
+    ///   - type: 类型，"core" 或 "plugin"
+    ///   - value: 值，核心设置的 tab rawValue 或插件 id
+    static func saveSettingsSelection(type: String, value: String) {
+        set(type, forKey: settingsSelectionTypeKey)
+        set(value, forKey: settingsSelectionValueKey)
+    }
+
+    /// 清除设置界面的选中项
+    static func clearSettingsSelection() {
+        set(nil, forKey: settingsSelectionTypeKey)
+        set(nil, forKey: settingsSelectionValueKey)
+    }
+
+    // MARK: - Remote Provider
+
+    private static let selectedRemoteProviderIdKey = "App_SelectedRemoteProviderId"
+    private static let remoteProviderModelsKey = "App_RemoteProviderModels"
+
+    /// 加载上次选中的云端供应商 ID
+    static func loadSelectedRemoteProviderId() -> String? {
+        object(forKey: selectedRemoteProviderIdKey) as? String
+    }
+
+    /// 保存选中的云端供应商 ID
+    /// - Parameter id: 供应商 ID，为 nil 时清除保存的值
+    static func saveSelectedRemoteProviderId(_ id: String?) {
+        set(id, forKey: selectedRemoteProviderIdKey)
+    }
+
+    /// 加载指定云端供应商的默认模型
+    /// - Parameter providerId: 供应商 ID
+    /// - Returns: 保存的模型 ID，如果没有则返回 nil
+    static func loadRemoteProviderModel(providerId: String) -> String? {
+        guard let modelsDict = object(forKey: remoteProviderModelsKey) as? [String: String] else {
+            return nil
+        }
+        return modelsDict[providerId]
+    }
+
+    /// 保存指定云端供应商的默认模型
+    /// - Parameters:
+    ///   - providerId: 供应商 ID
+    ///   - modelId: 模型 ID
+    static func saveRemoteProviderModel(providerId: String, modelId: String?) {
+        var modelsDict: [String: String] = [:]
+        if let existing = object(forKey: remoteProviderModelsKey) as? [String: String] {
+            modelsDict = existing
+        }
+
+        if let modelId {
+            modelsDict[providerId] = modelId
+        } else {
+            modelsDict.removeValue(forKey: providerId)
+        }
+
+        set(modelsDict, forKey: remoteProviderModelsKey)
+    }
 }

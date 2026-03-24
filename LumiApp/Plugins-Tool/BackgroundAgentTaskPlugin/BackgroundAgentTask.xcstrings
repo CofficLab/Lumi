@@ -1,0 +1,52 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "后台 Agent 任务": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background Agent Tasks"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "后台 Agent 任务"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "後台 Agent 任務"
+          }
+        }
+      }
+    },
+    "接收指令并在后台异步执行任务，任务结果存储在插件自有数据库中。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Receives instructions and executes tasks asynchronously in the background, task results are stored in the plugin's own database."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接收指令并在后台异步执行任务，任务结果存储在插件自有数据库中。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接收指令並在後台異步執行任務，任務結果存儲在插件自有數據庫中。"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.1"
+}

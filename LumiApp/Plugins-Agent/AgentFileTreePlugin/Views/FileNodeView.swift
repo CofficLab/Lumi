@@ -1,15 +1,9 @@
 import SwiftUI
-import MagicKit
 
-/// 文件树节点视图 - 自定义递归布局
-struct FileNodeView: View, SuperLog {
-    /// 项目状态 ViewModel，用于处理文件/目录操作
-    @EnvironmentObject private var projectVM: ProjectVM
+/// 文件树节点视图 - 完全独立实现，无外部依赖
+struct FileNodeView: View {
     /// 日志前缀的表情符号（文件树节点）
     nonisolated static let emoji = "📁"
-
-    /// 是否输出详细日志
-    nonisolated static let verbose = false
 
     let url: URL
     let depth: Int
@@ -29,8 +23,8 @@ struct FileNodeView: View, SuperLog {
     /// 是否处于 hover 状态（用于高亮当前行）
     @State private var isHovering: Bool = false
 
-    /// 唯一ID用于追踪
-    private let nodeId = UUID()
+    /// 删除确认对话框
+    @State private var showDeleteConfirmation: Bool = false
 
     /// 是否文件夹
     private var isDirectory: Bool {
@@ -83,19 +77,19 @@ struct FileNodeView: View, SuperLog {
             .contentShape(Rectangle())
             .contextMenu {
                 Button {
-                    projectVM.openInFinder(url)
+                    openInFinder()
                 } label: {
                     Label(String(localized: "Reveal in Finder", table: "ProjectTree"), systemImage: "finder")
                 }
 
                 Button {
-                    projectVM.openInVSCode(url)
+                    openInVSCode()
                 } label: {
                     Label(String(localized: "Open in VS Code", table: "ProjectTree"), systemImage: "chevron.left.forwardslash.chevron.right")
                 }
 
                 Button {
-                    projectVM.openInTerminal(url)
+                    openInTerminal()
                 } label: {
                     Label(String(localized: "Open in Terminal", table: "ProjectTree"), systemImage: "terminal")
                 }
@@ -103,7 +97,7 @@ struct FileNodeView: View, SuperLog {
                 Divider()
 
                 Button(role: .destructive) {
-                    projectVM.deleteItem(at: url)
+                    showDeleteConfirmation = true
                 } label: {
                     Label(String(localized: "Move to Trash", table: "ProjectTree"), systemImage: "trash")
                 }
@@ -113,6 +107,18 @@ struct FileNodeView: View, SuperLog {
             }
             .onHover { hovering in
                 isHovering = hovering
+            }
+            .confirmationDialog(
+                String(localized: "Are you sure you want to delete \"\(fileName)\"?", table: "ProjectTree"),
+                isPresented: $showDeleteConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button(String(localized: "Move to Trash", table: "ProjectTree"), role: .destructive) {
+                    deleteItem()
+                }
+                Button(String(localized: "Cancel", table: "ProjectTree"), role: .cancel) {}
+            } message: {
+                Text(String(localized: "This item will be moved to the Trash.", table: "ProjectTree"))
             }
 
             if isDirectory && isExpanded && !children.isEmpty {
@@ -131,7 +137,7 @@ struct FileNodeView: View, SuperLog {
     }
 }
 
-// MARK: - View
+// MARK: - View Helpers
 
 extension FileNodeView {
     /// 当前节点对应的系统图标名称
@@ -155,11 +161,7 @@ extension FileNodeView {
         default: return "doc"
         }
     }
-}
 
-// MARK: - Action
-
-extension FileNodeView {
     /// 根据选中与 hover 状态计算当前行背景色
     /// - Parameter isSelected: 当前节点是否被选中
     /// - Returns: 行背景颜色
@@ -174,7 +176,12 @@ extension FileNodeView {
             : Color.clear
         }
     }
+}
 
+// MARK: - Actions
+
+extension FileNodeView {
+    /// 处理点击事件
     private func handleTap() {
         if isDirectory {
             isExpanded.toggle()
@@ -187,10 +194,6 @@ extension FileNodeView {
 
     /// 加载当前目录下的子节点，并按"目录在前"的规则排序
     private func loadChildren() {
-        if Self.verbose {
-            ProjectTreePlugin.logger.info("\(self.t)loadChildren: \(fileName)")
-        }
-
         Task.detached(priority: .userInitiated) {
             do {
                 let contents = try FileManager.default.contentsOfDirectory(
@@ -213,8 +216,70 @@ extension FileNodeView {
                     self.children = sorted
                 }
             } catch {
-                ProjectTreePlugin.logger.error("\(self.t)loadChildren error: \(error.localizedDescription)")
+                print("📁 loadChildren error: \(error.localizedDescription)")
             }
+        }
+    }
+
+    /// 在 Finder 中显示文件/文件夹
+    private func openInFinder() {
+        NSWorkspace.shared.activateFileViewerSelecting([url])
+    }
+
+    /// 在 VS Code 中打开文件/文件夹
+    private func openInVSCode() {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = ["code", url.path]
+        
+        do {
+            try process.run()
+            process.terminationHandler = { _ in
+                print("📁 VS Code opened: \(url.path)")
+            }
+        } catch {
+            print("📁 Failed to open VS Code: \(error.localizedDescription)")
+            // 备选方案：使用 NSWorkspace 打开
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    /// 在终端中打开（打开目录或文件所在目录）
+    private func openInTerminal() {
+        let targetPath = isDirectory ? url.path : url.deletingLastPathComponent().path
+        
+        // 使用 AppleScript 打开 Terminal 并 cd 到目标目录
+        let script = """
+        tell application "Terminal"
+            activate
+            if (count of windows) > 0 then
+                do script "cd '\(targetPath)'" in front window
+            else
+                do script "cd '\(targetPath)'"
+            end if
+        end tell
+        """
+        
+        if let scriptObject = NSAppleScript(source: script) {
+            var errorDict: NSDictionary?
+            scriptObject.executeAndReturnError(&errorDict)
+            if let error = errorDict {
+                print("📁 AppleScript error: \(error)")
+                // 备选方案：直接打开 Terminal.app
+                NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Terminal.app"))
+            }
+        }
+    }
+
+    /// 删除文件/文件夹（移到废纸篓）
+    private func deleteItem() {
+        do {
+            // 移动到废纸篓
+            var resultURL: NSURL?
+            try FileManager.default.trashItem(at: url, resultingItemURL: &resultURL)
+            print("📁 Moved to trash: \(url.path)")
+        } catch {
+            print("📁 Failed to move to trash: \(error.localizedDescription)")
         }
     }
 }

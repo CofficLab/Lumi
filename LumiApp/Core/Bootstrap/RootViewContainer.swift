@@ -29,7 +29,8 @@ final class RootViewContainer: ObservableObject {
     let appProvider: GlobalVM
     let pluginVM: PluginVM
     let mystiqueThemeManager: MystiqueThemeManager
-    let ProjectVM: Lumi.ProjectVM
+    let projectVM: ProjectVM
+    let chatHistoryVM: ChatHistoryVM
     let commandSuggestionVM: CommandSuggestionVM
     let permissionRequestVM: PermissionRequestVM
     let taskCancellationVM: TaskCancellationVM
@@ -44,7 +45,7 @@ final class RootViewContainer: ObservableObject {
     let conversationSendStatusVM: ConversationStatusVM
     let projectContextRequestVM: ProjectContextRequestVM
 
-    let agentSessionConfig: AgentSessionConfig
+    let agentSessionConfig: LLMVM
     let captureThinkingContent: Bool
 
     // MARK: - 初始化
@@ -78,7 +79,7 @@ final class RootViewContainer: ObservableObject {
         )
 
         // 复用 LLMService 中的供应商注册表（已通过插件完成注册）
-        self.providerRegistry = llmService.providerRegistry
+        self.providerRegistry = llmService.registry
 
         // ========================================
         // 基础 ViewModel
@@ -87,9 +88,9 @@ final class RootViewContainer: ObservableObject {
         self.appProvider = GlobalVM()
         self.pluginVM = PluginVM.shared
         self.mystiqueThemeManager = appProvider.themeManager
-        self.ProjectVM = Lumi.ProjectVM(
+        self.projectVM = Lumi.ProjectVM(
             contextService: contextService,
-            providerRegistry: providerRegistry
+            llmService: llmService
         )
 
         // ========================================
@@ -101,6 +102,9 @@ final class RootViewContainer: ObservableObject {
             modelContainer: modelContainer,
             reason: "RootViewContainer"
         )
+
+        // 聊天历史 ViewModel
+        self.chatHistoryVM = ChatHistoryVM(chatHistoryService: chatHistoryService)
 
         // ========================================
         // UI 状态 VM
@@ -138,11 +142,7 @@ final class RootViewContainer: ObservableObject {
         // Agent 配置
         // ========================================
 
-        self.agentSessionConfig = AgentSessionConfig(
-            projectVM: ProjectVM,
-            registry: providerRegistry,
-            chatHistoryService: chatHistoryService
-        )
+        self.agentSessionConfig = LLMVM(llmService: llmService)
 
         self.toolExecutionService = ToolExecutionService(toolService: toolService)
         self.captureThinkingContent = true

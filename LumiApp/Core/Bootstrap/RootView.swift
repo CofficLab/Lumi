@@ -45,11 +45,12 @@ struct RootView<Content>: View, SuperLog where Content: View {
         content
             .withMagicToast()
             .environmentObject(container.appProvider)
-            .environmentObject(container.ProjectVM)
+            .environmentObject(container.projectVM)
             .environmentObject(container.providerRegistry)
             .environmentObject(container.pluginVM)
             .environmentObject(container.conversationTurnServices)
             .environmentObject(container.agentSessionConfig)
+            .environmentObject(container.chatHistoryVM)
             .environmentObject(container.conversationVM)
             .environmentObject(container.messagePendingVM)
             .environmentObject(container.messageQueueVM)
@@ -114,6 +115,10 @@ extension RootView {
 
     /// 待发送的队列版本发生变化
     func onQueueChanged() {
+        if self.container.messageQueueVM.messages.isEmpty {
+            return
+        }
+        
         if Self.verbose {
             AppLogger.core.info("\(Self.t) 队列发生变化，尝试开始发送")
         }

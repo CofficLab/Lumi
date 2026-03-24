@@ -1,6 +1,6 @@
 import Foundation
 
-/// 流式响应聚合状态：用 actor 隔离可变字段，保证 SSE 回调中的累积结果与主流程读取一致。
+/// 流式响应聚合状态
 actor StreamingState {
     var accumulatedContentChunks: [String] = []
     var accumulatedContentLength: Int = 0
@@ -13,8 +13,10 @@ actor StreamingState {
     var currentToolCallArgumentChunks: [String] = []
     var inputTokens: Int?
     var outputTokens: Int?
+    var totalTokens: Int?
     var stopReason: String?
     var timeToFirstToken: Double?
+    var firstTokenTime: CFAbsoluteTime?
     var isFirstToken = true
     let startTime: CFAbsoluteTime
 
@@ -22,11 +24,13 @@ actor StreamingState {
         self.startTime = startTime
     }
 
+    @discardableResult
     func recordFirstToken() -> Double? {
         guard isFirstToken else { return nil }
         isFirstToken = false
-        let firstTokenTime = CFAbsoluteTimeGetCurrent()
-        let ttft = (firstTokenTime - startTime) * 1000.0
+        let now = CFAbsoluteTimeGetCurrent()
+        firstTokenTime = now
+        let ttft = (now - startTime) * 1000.0
         timeToFirstToken = ttft
         return ttft
     }
@@ -92,9 +96,36 @@ actor StreamingState {
     func updateTokens(input: Int?, output: Int?) {
         if let input = input { inputTokens = input }
         if let output = output { outputTokens = output }
+        // 自动计算 totalTokens
+        if let input = inputTokens, let output = outputTokens {
+            totalTokens = input + output
+        } else {
+            totalTokens = nil
+        }
     }
 
     func setStopReason(_ reason: String) {
         stopReason = reason
+    }
+    
+    /// 计算流式传输耗时（从第一个 token 到完成的时间）
+    /// - Returns: 流式传输耗时（毫秒），如果没有第一个 token 则返回 nil
+    func getStreamingDuration() -> Double? {
+        guard let firstTokenTime = firstTokenTime else { return nil }
+        let now = CFAbsoluteTimeGetCurrent()
+        return (now - firstTokenTime) * 1000.0
+    }
+
+    /// 获取最终的思考内容
+    /// - Returns: 思考内容字符串，如果为空则返回 nil
+    func getFinalThinking() -> String? {
+        let thinking = accumulatedThinkingChunks.joined()
+        return thinking.isEmpty ? nil : thinking
+    }
+
+    /// 获取最终的工具调用列表
+    /// - Returns: 工具调用数组，如果为空则返回 nil
+    func getFinalToolCalls() -> [ToolCall]? {
+        return accumulatedToolCalls.isEmpty ? nil : accumulatedToolCalls
     }
 }

@@ -47,9 +47,6 @@ extension RecentProjectsPersistenceOverlay {
 
         // 恢复当前项目到 projectVM
         if let currentProject = store.getCurrentProject() {
-            if Self.verbose {
-                AgentRecentProjectsPlugin.logger.info("\(Self.t)📋 已从工具同步项目到 VM：\(currentProject.name)")
-            }
             projectVM.switchProject(to: currentProject)
         }
     }

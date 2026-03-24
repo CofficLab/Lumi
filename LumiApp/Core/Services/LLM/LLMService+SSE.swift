@@ -2,8 +2,6 @@ import Foundation
 import MagicKit
 
 extension LLMService {
-    // MARK: - SSE 流式
-
     /// 将原始 SSE 数据块拆分为单事件列表。
     /// 兼容「多个 event/data 粘在同一个网络块中、且缺少空行分隔」的非标准实现。
     private nonisolated static func splitSSEEvents(from rawData: Data) -> [Data] {
@@ -126,6 +124,7 @@ extension LLMService {
         }
 
         let state = StreamingState(startTime: startTime)
+        let chunkCounter = ChunkCounter()  // 用于调试计数
 
         do {
             try await llmAPI.sendStreamingRequest(
@@ -138,15 +137,73 @@ extension LLMService {
                     try Task.checkCancellation()
                     var shouldContinue = true
 
-                    for eventData in Self.splitSSEEvents(from: chunkData) {
+                    // ✅ Verbose >= 2: 输出原始 chunk 数据
+                    if Self.verbose >= 2 {
+                        let chunkIndex = await chunkCounter.increment()
+                        let rawText = String(data: chunkData, encoding: .utf8) ?? "<无法解码>"
+                        let preview = rawText.prefix(500)  // 限制长度避免日志过长
+                        AppLogger.core.debug("\(self.t)📦 [Chunk #\(chunkIndex)] 原始数据 (\(chunkData.count) bytes):\n\(preview)")
+                    }
+
+                    let events = Self.splitSSEEvents(from: chunkData)
+
+                    // ✅ Verbose >= 2: 输出拆分后的 events 数量
+                    if Self.verbose >= 2 {
+                        let chunkIndex = await chunkCounter.current()
+                        AppLogger.core.debug("\(self.t)📦 [Chunk #\(chunkIndex)] 拆分为 \(events.count) 个 SSE events")
+                    }
+
+                    for (eventIndex, eventData) in events.enumerated() {
+                        // ✅ Verbose >= 2: 输出每个 event 的原始数据
+                        if Self.verbose >= 2 {
+                            let chunkIndex = await chunkCounter.current()
+                            let eventText = String(data: eventData, encoding: .utf8) ?? "<无法解码>"
+                            let preview = eventText.prefix(300)
+                            AppLogger.core.debug("\(self.t)📄 [Chunk #\(chunkIndex), Event #\(eventIndex + 1)] 原始内容:\n\(preview)")
+                        }
+
                         if let parsed = try provider.parseStreamChunk(data: eventData) {
                             let rawPayload = String(data: eventData, encoding: .utf8)
                             let chunk = parsed.withRawStreamPayload(rawPayload)
 
+                            // ✅ Verbose >= 2: 输出解析后的 chunk 信息
+                            if Self.verbose >= 2 {
+                                let chunkIndex = await chunkCounter.current()
+                                var chunkInfo = "[Chunk #\(chunkIndex), Event #\(eventIndex + 1)] 解析结果:"
+                                if let content = chunk.content {
+                                    let contentPreview = content.prefix(50)
+                                    chunkInfo += "\n  📝 内容: \"\(contentPreview)\"\(content.count > 50 ? "..." : "")"
+                                }
+                                if let eventType = chunk.eventType {
+                                    chunkInfo += "\n  🏷️ 类型: \(eventType.displayName)"
+                                }
+                                if let inputTokens = chunk.inputTokens {
+                                    chunkInfo += "\n  📥 输入tokens: \(inputTokens)"
+                                }
+                                if let outputTokens = chunk.outputTokens {
+                                    chunkInfo += "\n  📤 输出tokens: \(outputTokens)"
+                                }
+                                if let stopReason = chunk.stopReason {
+                                    chunkInfo += "\n  🛑 停止原因: \(stopReason)"
+                                }
+                                if chunk.isDone {
+                                    chunkInfo += "\n  ✅ 已完成"
+                                }
+                                if let error = chunk.error {
+                                    chunkInfo += "\n  ❌ 错误: \(error)"
+                                }
+                                if let toolCalls = chunk.toolCalls, !toolCalls.isEmpty {
+                                    chunkInfo += "\n  🔧 工具调用: \(toolCalls.count) 个"
+                                }
+                                AppLogger.core.debug("\(self.t)\(chunkInfo)")
+                            }
+
                             if let content = chunk.content, chunk.eventType == .textDelta {
+                                // 记录首个 Token 时间（TTFT）
+                                await state.recordFirstToken()
                                 await state.appendContent(content)
                             }
-                            
+
                             if let content = chunk.content, chunk.eventType == .thinkingDelta {
                                 await state.appendThinking(content)
                             }
@@ -185,13 +242,13 @@ extension LLMService {
                             }
                         } else if Self.verbose >= 1 {
                             let preview = String(data: eventData, encoding: .utf8)?.prefix(100) ?? "无法解码"
-                            AppLogger.core.warning("\(self.t)警告：Provider 返回 nil，原始数据: \(preview)...")
+                            AppLogger.core.warning("\(self.t)警告：Provider 返回 nil，原始数据：\(preview)...")
                         }
                     }
                     return shouldContinue
                 } catch {
                     if Self.verbose >= 1 {
-                        AppLogger.core.warning("\(self.t)解析流式数据块失败: \(error.localizedDescription)")
+                        AppLogger.core.warning("\(self.t)解析流式数据块失败：\(error.localizedDescription)")
                     }
                     return true
                 }
@@ -210,41 +267,62 @@ extension LLMService {
             throw LLMServiceError.requestFailed(error)
         }
 
-        let endTime = CFAbsoluteTimeGetCurrent()
-        let latency = (endTime - startTime) * 1000.0
-        let finalContent = await state.accumulatedContentChunks.joined()
-        let finalThinking = await state.accumulatedThinkingChunks.joined()
-        let finalToolCalls = await state.accumulatedToolCalls
-        let finalInputTokens = await state.inputTokens
-        let finalOutputTokens = await state.outputTokens
-        let finalStopReason = await state.stopReason
-        let finalTimeToFirstToken = await state.timeToFirstToken
+        // 计算流式传输耗时
+        let streamingDuration = await state.getStreamingDuration()
 
-        if Self.verbose >= 1 {
-            AppLogger.core.info("\(Self.t)✅ 流式完成，总耗时：\(String(format: "%.2f", latency))ms, TTFT: \(String(format: "%.2f", finalTimeToFirstToken ?? 0))ms, 内容长度：\(finalContent.count)")
-        }
-
-        let totalTokens: Int? = if let input = finalInputTokens, let output = finalOutputTokens {
-            input + output
-        } else {
-            nil
+        // ✅ Verbose >= 2: 输出最终统计信息
+        if Self.verbose >= 2 {
+            let inputTokens = await state.inputTokens
+            let outputTokens = await state.outputTokens
+            let totalTokens = await state.totalTokens
+            let ttft = await state.timeToFirstToken
+            let contentLength = await state.accumulatedContentLength
+            
+            AppLogger.core.debug("\(self.t)📊 流式响应完成统计:")
+            AppLogger.core.debug("\(self.t)  📥 输入tokens: \(inputTokens ?? 0)")
+            AppLogger.core.debug("\(self.t)  📤 输出tokens: \(outputTokens ?? 0)")
+            AppLogger.core.debug("\(self.t)  📊 总tokens: \(totalTokens ?? 0)")
+            AppLogger.core.debug("\(self.t)  ⚡ TTFT: \(ttft.map { String(format: "%.0fms", $0) } ?? "N/A")")
+            AppLogger.core.debug("\(self.t)  ⏱️ 流式时间: \(streamingDuration.map { String(format: "%.0fms", $0) } ?? "N/A")")
+            AppLogger.core.debug("\(self.t)  📝 内容长度: \(contentLength) 字符")
+            if let duration = streamingDuration, let tokens = outputTokens, duration > 0 {
+                let tps = Double(tokens) / (duration / 1000.0)
+                AppLogger.core.debug("\(self.t)  🚀 TPS: \(String(format: "%.1f", tps)) tokens/s")
+            }
         }
 
         return ChatMessage(
-            role: .assistant, conversationId: UUID(),
-            content: finalContent,
-            toolCalls: finalToolCalls.isEmpty ? nil : finalToolCalls,
+            role: .assistant,
+            conversationId: UUID(),
+            content: await state.accumulatedContentChunks.joined(),
+            toolCalls: await state.getFinalToolCalls(),
             providerId: config.providerId,
             modelName: config.model,
-            latency: latency,
-            inputTokens: finalInputTokens,
-            outputTokens: finalOutputTokens,
-            totalTokens: totalTokens,
-            timeToFirstToken: finalTimeToFirstToken,
-            finishReason: finalStopReason,
+            latency: (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0,
+            inputTokens: await state.inputTokens,
+            outputTokens: await state.outputTokens,
+            totalTokens: await state.totalTokens,
+            timeToFirstToken: await state.timeToFirstToken,
+            streamingDuration: streamingDuration,
+            finishReason: await state.stopReason,
             temperature: config.temperature,
             maxTokens: config.maxTokens,
-            thinkingContent: finalThinking.isEmpty ? nil : finalThinking
+            thinkingContent: await state.getFinalThinking()
         )
+    }
+}
+
+// MARK: - Chunk Counter (用于并发安全的计数器)
+
+private actor ChunkCounter {
+    private var count = 0
+    
+    func increment() -> Int {
+        count += 1
+        return count
+    }
+    
+    func current() -> Int {
+        return count
     }
 }

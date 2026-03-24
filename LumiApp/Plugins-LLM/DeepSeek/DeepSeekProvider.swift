@@ -15,9 +15,9 @@ final class DeepSeekProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     // MARK: - 基础信息
 
     static let id = "deepseek"
-    static let displayName = "DeepSeek"
+    static let displayName = String(localized: "DeepSeek", table: "DeepSeek")
     static let iconName = "waveform.path"
-    static let description = "DeepSeek AI"
+    static let description = String(localized: "DeepSeek AI", table: "DeepSeek")
 
     // MARK: - 配置相关
 
@@ -136,6 +136,8 @@ final class DeepSeekProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
             systemPrompt: systemPrompt
         )
         body["stream"] = true
+        // ✅ 启用 usage 返回，用于计算 TPS（Tokens Per Second）
+        body["stream_options"] = ["include_usage": true]
         return body
     }
 
@@ -174,6 +176,17 @@ final class DeepSeekProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
             if let error = json?["error"] as? [String: Any],
                let errorMessage = error["message"] as? String {
                 return StreamChunk(error: errorMessage)
+            }
+
+            // ✅ 提取 usage 信息（DeepSeek 在最后一个 chunk 返回）
+            if let usage = json?["usage"] as? [String: Any] {
+                let inputTokens = usage["prompt_tokens"] as? Int
+                let outputTokens = usage["completion_tokens"] as? Int
+                return StreamChunk(
+                    isDone: false,
+                    inputTokens: inputTokens,
+                    outputTokens: outputTokens
+                )
             }
 
             guard let choices = json?["choices"] as? [[String: Any]],
