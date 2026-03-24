@@ -18,7 +18,9 @@ struct AutoConversationTitleSendMiddleware: SendMiddleware {
                 conversationId: snapshot.conversationId,
                 userText: snapshot.text,
                 role: snapshot.role,
-                chatHistoryService: ctx.chatHistoryService
+                chatHistoryService: ctx.chatHistoryService,
+                conversationVM: ctx.conversationVM,
+                agentSessionConfig: ctx.agentSessionConfig
             )
         }
     }
@@ -27,14 +29,14 @@ struct AutoConversationTitleSendMiddleware: SendMiddleware {
         conversationId: UUID,
         userText: String,
         role: MessageRole,
-        chatHistoryService: ChatHistoryService
+        chatHistoryService: ChatHistoryService,
+        conversationVM: ConversationVM,
+        agentSessionConfig: AgentSessionConfig
     ) async {
         guard role == .user else { return }
         let trimmed = userText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
-        let container = RootViewContainer.shared
-        let conversationVM = container.conversationVM
         guard let conversation = conversationVM.fetchConversation(id: conversationId) else { return }
         guard shouldAutoTitle(conversation.title) else { return }
 
@@ -42,7 +44,7 @@ struct AutoConversationTitleSendMiddleware: SendMiddleware {
         let userCount = history.filter { $0.role == .user }.count
         guard userCount == 1 else { return }
 
-        let config = container.agentSessionConfig.getCurrentConfig()
+        let config = agentSessionConfig.getCurrentConfig()
         let title = await conversationVM.generateConversationTitle(from: trimmed, config: config)
         conversationVM.updateConversationTitle(conversation, newTitle: title)
     }

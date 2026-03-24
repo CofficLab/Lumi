@@ -89,7 +89,9 @@ final class SendController: ObservableObject, SuperLog {
         let ctx = SendMessageContext(
             conversationId: conversationId,
             message: message,
-            chatHistoryService: container.chatHistoryService
+            chatHistoryService: container.chatHistoryService,
+            conversationVM: container.conversationVM,
+            agentSessionConfig: container.agentSessionConfig
         )
         let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
         await pipeline.run(ctx: ctx) { _ in }
