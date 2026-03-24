@@ -113,25 +113,6 @@ final class ProjectVM: ObservableObject, SuperLog {
         }
     }
 
-    /// 保存项目配置
-    func saveProjectConfig(path: String, providerId: String, model: String) {
-        let config = ProjectConfig(
-            projectPath: path,
-            providerId: providerId,
-            model: model
-        )
-
-        // 如果是当前项目，更新本地状态
-        if path == currentProjectPath {
-            currentProviderId = providerId
-            currentModel = model
-        }
-
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t)💾 已保存项目配置：\(providerId) / \(model)")
-        }
-    }
-
     /// 获取指定供应商的默认模型
     private func getDefaultModel(for providerId: String) -> String {
         // 优先使用注入的 ProviderRegistry（由插件系统填充）
@@ -242,58 +223,6 @@ final class ProjectVM: ObservableObject, SuperLog {
             }
         } catch {
             AppLogger.core.error("\(Self.t)❌ 移到废纸篓失败：\(error.localizedDescription)")
-        }
-    }
-    
-    /// 在 Finder 中显示指定路径
-    /// - Parameter url: 目标文件或目录路径
-    func openInFinder(_ url: URL) {
-        NSWorkspace.shared.activateFileViewerSelecting([url])
-        
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t)🔍 在 Finder 中显示：\(url.path)")
-        }
-    }
-    
-    /// 在 VS Code 中打开指定路径
-    /// - Parameter url: 目标文件或目录路径
-    func openInVSCode(_ url: URL) {
-        let process = Process()
-        process.launchPath = "/usr/bin/env"
-        process.arguments = ["open", "-a", "Visual Studio Code", url.path]
-        
-        do {
-            try process.run()
-            if Self.verbose {
-                AppLogger.core.info("\(Self.t)📝 使用 VS Code 打开：\(url.path)")
-            }
-        } catch {
-            AppLogger.core.error("\(Self.t)❌ 启动 VS Code 失败：\(error.localizedDescription)")
-        }
-    }
-    
-    /// 在终端中打开指定路径
-    /// - Parameter url: 目标文件或目录路径（文件会自动转为其父目录）
-    func openInTerminal(_ url: URL) {
-        let targetURL: URL
-        let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-        if isDirectory {
-            targetURL = url
-        } else {
-            targetURL = url.deletingLastPathComponent()
-        }
-        
-        let process = Process()
-        process.launchPath = "/usr/bin/env"
-        process.arguments = ["open", "-a", "Terminal", targetURL.path]
-        
-        do {
-            try process.run()
-            if Self.verbose {
-                AppLogger.core.info("\(Self.t)💻 在终端中打开：\(targetURL.path)")
-            }
-        } catch {
-            AppLogger.core.error("\(Self.t)❌ 启动终端失败：\(error.localizedDescription)")
         }
     }
 

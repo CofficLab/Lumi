@@ -45,7 +45,7 @@ final class RootViewContainer: ObservableObject {
     let conversationSendStatusVM: ConversationStatusVM
     let projectContextRequestVM: ProjectContextRequestVM
 
-    let agentSessionConfig: AgentSessionVM
+    let agentSessionConfig: LLMVM
     let captureThinkingContent: Bool
 
     // MARK: - 初始化
@@ -142,7 +142,7 @@ final class RootViewContainer: ObservableObject {
         // Agent 配置
         // ========================================
 
-        self.agentSessionConfig = AgentSessionVM(llmService: llmService)
+        self.agentSessionConfig = LLMVM(llmService: llmService)
 
         self.toolExecutionService = ToolExecutionService(toolService: toolService)
         self.captureThinkingContent = true
