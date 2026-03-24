@@ -15,19 +15,38 @@ struct SettingView: View {
     /// 侧边栏宽度
     private let sidebarWidth: CGFloat = 220
 
-    /// PluginStateStore key
-    private static let selectedTabKey = "SettingView.selectedTab"
-    private static let selectedPluginKey = "SettingView.selectedPlugin"
-
-    /// 从 PluginStateStore 读取上次选中的项
+    /// 从 AppSettingStore 读取上次选中的项
     private func loadSavedSelection() -> SettingsSelection? {
-    
+        guard let saved = AppSettingStore.loadSettingsSelection() else {
+            return nil
+        }
+        
+        switch saved.type {
+        case "core":
+            if let tab = SettingTab(rawValue: saved.value) {
+                return .core(tab)
+            }
+        case "plugin":
+            return .plugin(saved.value)
+        default:
+            break
+        }
         return nil
     }
 
-    /// 保存选中的项到 PluginStateStore
+    /// 保存选中的项到 AppSettingStore
     private func saveSelection(_ selection: SettingsSelection?) {
-
+        guard let selection = selection else {
+            AppSettingStore.clearSettingsSelection()
+            return
+        }
+        
+        switch selection {
+        case let .core(tab):
+            AppSettingStore.saveSettingsSelection(type: "core", value: tab.rawValue)
+        case let .plugin(id):
+            AppSettingStore.saveSettingsSelection(type: "plugin", value: id)
+        }
     }
 
     /// 初始化方法

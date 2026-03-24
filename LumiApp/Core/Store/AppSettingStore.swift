@@ -97,4 +97,34 @@ enum AppSettingStore {
     static func saveSelectedNavigationId(_ id: String?) {
         set(id, forKey: selectedNavigationIdKey)
     }
+
+    // MARK: - Settings Selection
+
+    private static let settingsSelectionTypeKey = "App_SettingsSelectionType"
+    private static let settingsSelectionValueKey = "App_SettingsSelectionValue"
+
+    /// 加载设置界面的上次选中项
+    /// - Returns: 元组 (类型, 值)，类型为 "core" 或 "plugin"
+    static func loadSettingsSelection() -> (type: String, value: String)? {
+        guard let type = object(forKey: settingsSelectionTypeKey) as? String,
+              let value = object(forKey: settingsSelectionValueKey) as? String else {
+            return nil
+        }
+        return (type, value)
+    }
+
+    /// 保存设置界面的选中项
+    /// - Parameters:
+    ///   - type: 类型，"core" 或 "plugin"
+    ///   - value: 值，核心设置的 tab rawValue 或插件 id
+    static func saveSettingsSelection(type: String, value: String) {
+        set(type, forKey: settingsSelectionTypeKey)
+        set(value, forKey: settingsSelectionValueKey)
+    }
+
+    /// 清除设置界面的选中项
+    static func clearSettingsSelection() {
+        set(nil, forKey: settingsSelectionTypeKey)
+        set(nil, forKey: settingsSelectionValueKey)
+    }
 }

@@ -77,7 +77,7 @@ final class SendController: ObservableObject, SuperLog {
     /// 从队列入口启动一次发送链路：投影 UI、落库、运行发送中间件，然后继续 `send`。
     func beginSendFromQueue(conversationId: UUID, message: ChatMessage) async {
         if Self.verbose >= 1 {
-            AppLogger.core.info("\(Self.t) 启动一次发送链路：\(message.content)")
+            AppLogger.core.info("\(Self.t) 启动一次发送链路：\n\(message.content.max(200))")
         }
 
         if container.conversationVM.selectedConversationId == conversationId {
