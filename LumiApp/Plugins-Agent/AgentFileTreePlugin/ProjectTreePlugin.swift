@@ -14,7 +14,7 @@ actor ProjectTreePlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🌳"
 
     /// Whether to enable this plugin
-    nonisolated static let enable = true
+    nonisolated static let enable = false
 
     /// Whether to enable verbose log output
     nonisolated static let verbose = true

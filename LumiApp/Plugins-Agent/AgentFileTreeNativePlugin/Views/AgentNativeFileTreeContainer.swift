@@ -19,7 +19,7 @@ struct AgentNativeFileTreeContainer: View {
                     .background(Color.white.opacity(0.1))
 
                 // 文件树
-                if !ProjectVM.currentProjectPath.isEmpty {
+                if self.ProjectVM.isProjectSelected {
                     FileTreeView(
                         rootURL: URL(fileURLWithPath: ProjectVM.currentProjectPath),
                         onSelect: { url in
