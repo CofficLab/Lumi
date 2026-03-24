@@ -13,7 +13,7 @@ struct ModelSelectorView: View, SuperLog {
     /// 环境对象：用于关闭当前视图
     @Environment(\.dismiss) private var dismiss
 
-    @EnvironmentObject var agentSessionConfig: LLMVM
+    @EnvironmentObject var llmVM: LLMVM
     @EnvironmentObject var chatHistoryVM: ChatHistoryVM
 
     /// 模型性能统计
@@ -26,11 +26,11 @@ struct ModelSelectorView: View, SuperLog {
     @State private var localModelInfosByProvider: [String: [LocalModelInfo]] = [:]
 
     private var localProviders: [LLMProviderInfo] {
-        agentSessionConfig.allProviders.filter(\.isLocal)
+        llmVM.allProviders.filter(\.isLocal)
     }
 
     private var remoteProviders: [LLMProviderInfo] {
-        agentSessionConfig.allProviders.filter { !$0.isLocal }
+        llmVM.allProviders.filter { !$0.isLocal }
     }
 
     var body: some View {
@@ -190,8 +190,8 @@ extension ModelSelectorView {
     ///   - model: 模型名称
     private func selectModel(providerId: String, model: String) {
         // 更新内存中的供应商和模型配置
-        agentSessionConfig.selectedProviderId = providerId
-        agentSessionConfig.currentModel = model
+        llmVM.selectedProviderId = providerId
+        llmVM.currentModel = model
 
         dismiss()
     }
@@ -206,7 +206,7 @@ extension ModelSelectorView {
     ///   - model: 模型名称
     /// - Returns: 是否为当前选中的模型
     private func isSelected(providerId: String, model: String) -> Bool {
-        return agentSessionConfig.selectedProviderId == providerId && agentSessionConfig.currentModel == model
+        return llmVM.selectedProviderId == providerId && llmVM.currentModel == model
     }
 
     /// 检查模型是否为供应商的默认模型
@@ -215,7 +215,7 @@ extension ModelSelectorView {
     ///   - model: 模型名称
     /// - Returns: 是否为默认模型
     private func isDefaultModel(providerId: String, model: String) -> Bool {
-        guard let providerType = agentSessionConfig.providerType(forId: providerId) else {
+        guard let providerType = llmVM.providerType(forId: providerId) else {
             return false
         }
         return model == providerType.defaultModel
@@ -231,10 +231,10 @@ extension ModelSelectorView {
 
     /// 加载本地供应商的模型详情（含系列），用于按系列展示
     private func loadLocalModelInfos() async {
-        let localIds = agentSessionConfig.allProviders.filter(\.isLocal).map(\.id)
+        let localIds = llmVM.allProviders.filter(\.isLocal).map(\.id)
         var result: [String: [LocalModelInfo]] = [:]
         for id in localIds {
-            guard let provider = agentSessionConfig.createProvider(id: id) as? any SuperLocalLLMProvider else { continue }
+            guard let provider = llmVM.createProvider(id: id) as? any SuperLocalLLMProvider else { continue }
             let infos = await provider.getAvailableModels()
             result[id] = infos
         }
