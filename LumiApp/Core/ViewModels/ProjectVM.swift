@@ -36,9 +36,6 @@ final class ProjectVM: ObservableObject, SuperLog {
     /// 当前选择的文件 URL
     @Published public fileprivate(set) var selectedFileURL: URL?
 
-    /// 当前选择的文件内容
-    @Published public fileprivate(set) var selectedFileContent: String = ""
-
     /// 是否已选择文件
     var isFileSelected: Bool {
         selectedFileURL != nil
@@ -116,24 +113,16 @@ final class ProjectVM: ObservableObject, SuperLog {
 
     /// 选择指定路径（支持文件与目录）
     func selectFile(at url: URL) {
-        let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+        selectedFileURL = url
 
-        // 目录：仅更新选中路径，不加载内容
-        if isDirectory {
-            setSelectedFileInfo(url: url, content: "")
+        // 发送文件选择变化通知
+        NotificationCenter.postFileSelectionChanged()
 
-            if Self.verbose {
+        if Self.verbose {
+            let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+            if isDirectory {
                 AppLogger.core.info("\(Self.t)📁 已选择目录：\(url.lastPathComponent)")
-            }
-        } else {
-            setSelectedFileInfo(url: url, content: "")
-
-            Task {
-                await contextService.trackOpenFile(url)
-                await loadFileContent(from: url)
-            }
-
-            if Self.verbose {
+            } else {
                 AppLogger.core.info("\(Self.t)📄 已选择文件：\(url.lastPathComponent)")
             }
         }
@@ -152,38 +141,12 @@ final class ProjectVM: ObservableObject, SuperLog {
         }
     }
 
-    /// 加载文件内容
-    private func loadFileContent(from url: URL) async {
-        do {
-            let content = try String(contentsOf: url, encoding: .utf8)
-            await MainActor.run {
-                setSelectedFileContent(content)
-            }
-        } catch {
-            await MainActor.run {
-                setSelectedFileContent("无法加载文件内容：\(error.localizedDescription)")
-            }
-            AppLogger.core.error("\(Self.t)❌ 加载文件失败：\(error.localizedDescription)")
-        }
-    }
-
-    /// 设置文件信息
-    func setSelectedFileInfo(url: URL?, content: String) {
-        selectedFileURL = url
-        selectedFileContent = content
+    /// 清除文件选择
+    func clearFileSelection() {
+        selectedFileURL = nil
 
         // 发送文件选择变化通知
         NotificationCenter.postFileSelectionChanged()
-    }
-
-    /// 设置文件内容
-    func setSelectedFileContent(_ content: String) {
-        selectedFileContent = content
-    }
-
-    /// 清除文件选择
-    func clearFileSelection() {
-        setSelectedFileInfo(url: nil, content: "")
     }
 
     // MARK: - 语言偏好

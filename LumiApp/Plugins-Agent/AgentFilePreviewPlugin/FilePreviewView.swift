@@ -5,6 +5,9 @@ import SwiftUI
 struct FilePreviewView: View {
     @EnvironmentObject var ProjectVM: ProjectVM
 
+    /// 当前文件内容（本地加载）
+    @State private var fileContent: String = ""
+
     /// 判断当前选择的文件是否为可预览的类型
     private var isPreviewableFile: Bool {
         guard let url = ProjectVM.selectedFileURL else { return false }
@@ -53,6 +56,12 @@ struct FilePreviewView: View {
         }
         .padding(.vertical, 8)
         .background(DesignTokens.Material.glassThick)
+        .onChange(of: ProjectVM.selectedFileURL) { _, newURL in
+            loadFileContent(from: newURL)
+        }
+        .onAppear {
+            loadFileContent(from: ProjectVM.selectedFileURL)
+        }
     }
 
     // MARK: - Header Section
@@ -120,17 +129,42 @@ struct FilePreviewView: View {
 
     private var fileContentSection: some View {
         FileContentSectionView(
-            content: ProjectVM.selectedFileContent,
+            content: fileContent,
             fileExtension: fileExtension,
             fileName: fileName
         )
     }
-}
 
-// MARK: - Actions
+    // MARK: - Actions
 
-extension FilePreviewView {
-    func clearSelection() {
+    private func loadFileContent(from url: URL?) {
+        guard let url = url else {
+            fileContent = ""
+            return
+        }
+
+        // 检查是否是目录
+        let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+        if isDirectory {
+            fileContent = ""
+            return
+        }
+
+        Task {
+            do {
+                let content = try String(contentsOf: url, encoding: .utf8)
+                await MainActor.run {
+                    self.fileContent = content
+                }
+            } catch {
+                await MainActor.run {
+                    self.fileContent = "无法加载文件内容：\(error.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    private func clearSelection() {
         self.ProjectVM.clearFileSelection()
     }
 }
