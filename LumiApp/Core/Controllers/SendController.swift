@@ -90,7 +90,6 @@ final class SendController: ObservableObject, SuperLog {
             conversationId: conversationId,
             message: message,
             chatHistoryService: container.chatHistoryService,
-            conversationVM: container.conversationVM,
             agentSessionConfig: container.agentSessionConfig
         )
         let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())

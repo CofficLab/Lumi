@@ -19,7 +19,6 @@ struct AutoConversationTitleSendMiddleware: SendMiddleware {
                 userText: snapshot.text,
                 role: snapshot.role,
                 chatHistoryService: ctx.chatHistoryService,
-                conversationVM: ctx.conversationVM,
                 agentSessionConfig: ctx.agentSessionConfig
             )
         }
@@ -30,14 +29,13 @@ struct AutoConversationTitleSendMiddleware: SendMiddleware {
         userText: String,
         role: MessageRole,
         chatHistoryService: ChatHistoryService,
-        conversationVM: ConversationVM,
         agentSessionConfig: AgentSessionConfig
     ) async {
         guard role == .user else { return }
         let trimmed = userText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
-        guard let conversation = conversationVM.fetchConversation(id: conversationId) else { return }
+        guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else { return }
         guard shouldAutoTitle(conversation.title) else { return }
 
         let history = await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
@@ -45,8 +43,8 @@ struct AutoConversationTitleSendMiddleware: SendMiddleware {
         guard userCount == 1 else { return }
 
         let config = agentSessionConfig.getCurrentConfig()
-        let title = await conversationVM.generateConversationTitle(from: trimmed, config: config)
-        conversationVM.updateConversationTitle(conversation, newTitle: title)
+        let title = await chatHistoryService.generateConversationTitle(from: trimmed, config: config)
+        chatHistoryService.updateConversationTitle(conversation, newTitle: title)
     }
 
     /// 与创建会话时的占位标题一致时才自动替换。
