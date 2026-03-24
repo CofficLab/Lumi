@@ -9,7 +9,7 @@ import MagicKit
 final class ProjectVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose = false
-    
+
     @Published public fileprivate(set) var currentProject: Project? = nil
 
     /// 当前项目名称
@@ -75,8 +75,6 @@ final class ProjectVM: ObservableObject, SuperLog {
     ) {
         self.contextService = contextService
         self.llmService = llmService
-        loadLanguagePreference()
-        loadChatMode()
         loadGlobalOrDefaultProviderIfNeeded()
         restoreAutoApproveRiskIfNeeded()
     }
@@ -99,22 +97,6 @@ final class ProjectVM: ObservableObject, SuperLog {
     /// 切换到指定项目
     func switchProject(to project: Project) {
         self.currentProject = project
-    }
-
-    /// 应用项目配置
-    private func applyProjectConfig(_ config: ProjectConfig) {
-        Task { @MainActor in
-            // 更新当前项目配置
-            self.currentProviderId = config.providerId
-            self.currentModel = config.model.isEmpty ? self.getDefaultModel(for: config.providerId) : config.model
-
-            // 通知供应商设置更新配置
-            NotificationCenter.postProjectConfigApplied(config)
-
-            if Self.verbose {
-                AppLogger.core.info("\(Self.t)⚙️ 已应用项目配置：\(config.providerId) / \(self.currentModel)")
-            }
-        }
     }
 
     /// 获取指定供应商的默认模型
@@ -179,28 +161,28 @@ final class ProjectVM: ObservableObject, SuperLog {
     /// 选择指定路径（支持文件与目录）
     func selectFile(at url: URL) {
         let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-        
+
         // 目录：仅更新选中路径，不加载内容
         if isDirectory {
             setSelectedFileInfo(url: url, path: url.path, content: "", selected: false)
-            
+
             if Self.verbose {
                 AppLogger.core.info("\(Self.t)📁 已选择目录：\(url.lastPathComponent)")
             }
         } else {
             setSelectedFileInfo(url: url, path: url.path, content: "", selected: true)
-            
+
             Task {
                 await contextService.trackOpenFile(url)
                 await loadFileContent(from: url)
             }
-            
+
             if Self.verbose {
                 AppLogger.core.info("\(Self.t)📄 已选择文件：\(url.lastPathComponent)")
             }
         }
     }
-    
+
     /// 将指定文件或目录移到废纸篓
     /// - Parameter url: 目标文件或目录路径
     func deleteItem(at url: URL) {
@@ -252,22 +234,14 @@ final class ProjectVM: ObservableObject, SuperLog {
 
     // MARK: - 语言偏好
 
-    private func loadLanguagePreference() {
-
-    }
-
     func setLanguagePreference(_ preference: LanguagePreference) {
 
     }
 
     // MARK: - 聊天模式
 
-    private func loadChatMode() {
-
-    }
-
     func setChatMode(_ mode: ChatMode) {
-//
+
     }
 
     func setAutoApproveRisk(_ enabled: Bool) {
