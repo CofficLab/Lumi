@@ -86,6 +86,7 @@ struct FilePreviewView: View {
             }
             .buttonStyle(.plain)
         }
+        .frame(height: AppConfig.headerHeight)
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
     }
