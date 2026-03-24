@@ -19,7 +19,7 @@ struct AgentNativeFileTreeContainer: View {
                     .background(Color.white.opacity(0.1))
 
                 // 文件树
-                if !ProjectVM.currentProjectPath.isEmpty {
+                if self.ProjectVM.isProjectSelected {
                     FileTreeView(
                         rootURL: URL(fileURLWithPath: ProjectVM.currentProjectPath),
                         onSelect: { url in
@@ -48,7 +48,7 @@ struct AgentNativeFileTreeContainer: View {
                     .font(.system(size: 14))
                     .foregroundColor(.accentColor)
 
-                Text("文件树")
+                Text(String(localized: "File Tree", table: "AgentNativeFileTree"))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
@@ -87,7 +87,7 @@ struct AgentNativeFileTreeContainer: View {
             Image(systemName: "folder")
                 .font(.system(size: 24))
                 .foregroundColor(.secondary.opacity(0.5))
-            Text("暂无项目")
+            Text(String(localized: "No Project", table: "AgentNativeFileTree"))
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
         }

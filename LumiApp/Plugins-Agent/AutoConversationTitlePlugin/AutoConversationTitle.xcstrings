@@ -1,0 +1,52 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "自动会话标题": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto Conversation Title"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动会话标题"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動會話標題"
+          }
+        }
+      }
+    },
+    "首条用户消息发送后，按默认标题规则调用模型生成简短标题。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After the first user message is sent, generate a short title by calling the model according to the default title rule."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "首条用户消息发送后，按默认标题规则调用模型生成简短标题。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "首條用戶消息發送後，按默認標題規則調用模型生成簡短標題。"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.1"
+}

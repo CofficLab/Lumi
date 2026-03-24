@@ -41,13 +41,13 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
     static let id = "anthropic"
     
     /// 显示名称
-    static let displayName = "Anthropic"
+    static let displayName = String(localized: "Anthropic", table: "Anthropic")
     
     /// 图标名称 (SF Symbol)
     static let iconName = "brain.head.profile"
     
     /// 供应商描述
-    static let description = "Claude AI by Anthropic"
+    static let description = String(localized: "Claude AI by Anthropic", table: "Anthropic")
 
     // MARK: - Configuration
 

@@ -1,19 +1,19 @@
 import MagicKit
 import SwiftUI
 
+/// 首次运行引导插件
 actor AgentOnboardingPlugin: SuperPlugin {
-    static let id = "AgentOnboarding"
-    static let displayName = "Onboarding"
-    static let description = "Show first-run onboarding and guidance entry points"
-    static let iconName = "graduationcap"
-    static var order: Int { 20 }
-    static let enable: Bool = true
-    static var isConfigurable: Bool { true }
+    nonisolated static let emoji = "🎉"
+    nonisolated static let verbose = false
 
-    @MainActor
-    func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
-        AnyView(OnboardingRootOverlay(content: content()))
-    }
+    static let id = "AgentOnboarding"
+    static let displayName = String(localized: "Onboarding", table: "AgentOnboarding")
+    static let description = String(localized: "Show first-run onboarding and guidance entry points", table: "AgentOnboarding")
+    static let iconName = "hand.wave"
+    static var order: Int { 10 }
+    static let enable: Bool = true
+
+    static let shared = AgentOnboardingPlugin()
 
     nonisolated func onRegister() {}
     nonisolated func onEnable() {}

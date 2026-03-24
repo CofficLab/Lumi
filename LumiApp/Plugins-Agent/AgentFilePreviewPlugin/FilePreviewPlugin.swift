@@ -24,10 +24,10 @@ actor FilePreviewPlugin: SuperPlugin, SuperLog {
     static let id: String = "FilePreview"
 
     /// Plugin display name
-    static let displayName: String = "文件预览"
+    static let displayName: String = String(localized: "文件预览", table: "AgentFilePreview")
 
     /// Plugin functional description
-    static let description: String = "显示当前选择文件的内容预览"
+    static let description: String = String(localized: "显示当前选择文件的内容预览", table: "AgentFilePreview")
 
     /// Plugin icon name
     static let iconName: String = "doc.fill"

@@ -1,0 +1,52 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "GitHub CLI Detect": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub CLI Detect"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub CLI 检测"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub CLI 檢測"
+          }
+        }
+      }
+    },
+    "检测系统是否安装了 GitHub CLI (gh) 命令行工具。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detects whether GitHub CLI (gh) command-line tool is installed on the system."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检测系统是否安装了 GitHub CLI (gh) 命令行工具。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢測系統是否安裝了 GitHub CLI (gh) 命令行工具。"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.1"
+}

@@ -7,11 +7,13 @@ public enum LanguagePreference: String, CaseIterable, Identifiable, Codable, Sen
 
     public var id: String { rawValue }
 
-    /// 显示名称
+    /// 显示名称（支持多语言）
     public var displayName: String {
         switch self {
-        case .chinese: return "中文"
-        case .english: return "English"
+        case .chinese:
+            return String(localized: "Chinese", table: "AgentLanguageHeader")
+        case .english:
+            return String(localized: "English", table: "AgentLanguageHeader")
         }
     }
 

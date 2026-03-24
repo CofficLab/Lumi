@@ -15,9 +15,9 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
     // MARK: - 基础信息
 
     static let id = "zhipu"
-    static let displayName = "Zhipu AI CodingPlan"
+    static let displayName = String(localized: "Zhipu AI CodingPlan", table: "Zhipu")
     static let iconName = "sparkles"
-    static let description = "智谱 AI (GLM)"
+    static let description = String(localized: "智谱 AI (GLM)", table: "Zhipu")
 
     // MARK: - 配置相关
 

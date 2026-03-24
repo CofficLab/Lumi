@@ -1,0 +1,30 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Model Monitor" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模型偏好"
+          }
+        }
+      }
+    },
+    "Model Preference" : {
+
+    },
+    "Remember current project's provider and model" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "记录当前项目使用的供应商和模型"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.1"
+}

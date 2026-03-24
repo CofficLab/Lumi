@@ -17,9 +17,9 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
     // MARK: - 基础信息
 
     static let id = "aliyun"
-    static let displayName = "阿里云 CodingPlan"
+    static let displayName = String(localized: "阿里云 CodingPlan", table: "Aliyun")
     static let iconName = "cloud.fill"
-    static let description = "阿里云 DashScope Coding Plan（兼容 Anthropic API）"
+    static let description = String(localized: "阿里云 DashScope Coding Plan（兼容 Anthropic API）", table: "Aliyun")
 
     // MARK: - 配置相关
 

@@ -128,7 +128,8 @@ struct ModelSelectorView: View, SuperLog {
                         ModelLatencyProgressBar(
                             ttft: stat.avgTTFT,
                             totalLatency: stat.avgLatency,
-                            sampleCount: stat.sampleCount
+                            sampleCount: stat.sampleCount,
+                            tps: stat.avgTPS
                         )
                     }
                 }
@@ -259,6 +260,7 @@ struct ModelLatencyProgressBar: View {
     let ttft: Double
     let totalLatency: Double
     let sampleCount: Int
+    let tps: Double
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -297,6 +299,17 @@ struct ModelLatencyProgressBar: View {
                 }
                 .foregroundColor(.blue)
 
+                // TPS 显示
+                if tps > 0 {
+                    HStack(spacing: 1) {
+                        Image(systemName: "speedometer")
+                            .font(.system(size: 6, weight: .medium))
+                        Text(formatTPS(tps))
+                            .font(.caption2)
+                    }
+                    .foregroundColor(.green)
+                }
+
                 if sampleCount > 1 {
                     Text("(\(sampleCount))")
                         .font(.caption2)
@@ -331,17 +344,42 @@ struct ModelLatencyProgressBar: View {
         }
     }
 
+    /// 格式化 TPS
+    private func formatTPS(_ tps: Double) -> String {
+        if tps >= 100 {
+            return String(format: "%.0f t/s", tps)
+        } else if tps >= 10 {
+            return String(format: "%.1f t/s", tps)
+        } else {
+            return String(format: "%.2f t/s", tps)
+        }
+    }
+
     /// 帮助文本
     private var helpText: String {
         let ttftPercent = String(format: "%.1f", ttftRatio * 100)
         let responsePercent = String(format: "%.1f", (1 - ttftRatio) * 100)
-        return """
+        var text = """
         ⚡ 首个 Token 延迟 (TTFT): \(formatTTFT(ttft)) (\(ttftPercent)%)
         🕐 响应时间: \(formatLatency(totalLatency)) (\(responsePercent)%)
+        """
+
+        if tps > 0 {
+            text += "\n🚀 生成速度: \(formatTPS(tps))"
+        }
+
+        text += """
+
 
         TTFT 表示从发送请求到收到第一个 token 的时间
         响应时间表示从第一个 token 到响应完成的时间
         """
+
+        if tps > 0 {
+            text += "TPS (Tokens Per Second) 表示每秒生成的 token 数量"
+        }
+
+        return text
     }
 }
 

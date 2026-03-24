@@ -15,9 +15,9 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     // MARK: - 基础信息
 
     static let id = "openai"
-    static let displayName = "OpenAI"
+    static let displayName = String(localized: "OpenAI", table: "OpenAI")
     static let iconName = "sparkle"
-    static let description = "GPT by OpenAI"
+    static let description = String(localized: "GPT by OpenAI", table: "OpenAI")
 
     // MARK: - 配置相关
 
@@ -127,7 +127,7 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
             systemPrompt: systemPrompt
         )
         body["stream"] = true
-        body["stream_options"] = ["include_usage": false]
+        body["stream_options"] = ["include_usage": true]  // ✅ 修复：启用 usage 返回
         return body
     }
 
@@ -135,6 +135,8 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     ///
     /// OpenAI SSE 格式示例：
     /// data: {"id":"chatcmpl-xxx","object":"chat.completion.chunk","choices":[{"delta":{"content":"Hello"},"index":0}]}
+    ///
+    /// data: {"id":"chatcmpl-xxx","object":"chat.completion.chunk","choices":[],"usage":{"prompt_tokens":50,"completion_tokens":120,"total_tokens":170}}
     ///
     /// data: [DONE]
     func parseStreamChunk(data: Data) throws -> StreamChunk? {
@@ -174,6 +176,17 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
             if let error = json?["error"] as? [String: Any],
                let errorMessage = error["message"] as? String {
                 return StreamChunk(error: errorMessage)
+            }
+
+            // ✅ 提取 usage 信息（OpenAI 在最后一个chunk返回）
+            if let usage = json?["usage"] as? [String: Any] {
+                let inputTokens = usage["prompt_tokens"] as? Int
+                let outputTokens = usage["completion_tokens"] as? Int
+                return StreamChunk(
+                    isDone: false,
+                    inputTokens: inputTokens,
+                    outputTokens: outputTokens
+                )
             }
 
             // 提取内容增量
@@ -298,4 +311,3 @@ extension OpenAIProvider {
         ]
     }
 }
-
