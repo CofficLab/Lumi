@@ -5,7 +5,10 @@ import MagicKit
 final class LLMVM: ObservableObject, SuperLLMConfigProvider {
     @Published var selectedProviderId: String = ""
     @Published var currentModel: String = ""
-    
+
+    /// 聊天模式
+    @Published var chatMode: ChatMode = .build
+
     let llmService: LLMService
 
     init(llmService: LLMService) {
@@ -66,5 +69,11 @@ final class LLMVM: ObservableObject, SuperLLMConfigProvider {
             return
         }
         APIKeyStore.shared.set(apiKey, forKey: providerType.apiKeyStorageKey)
+    }
+
+    // MARK: - Chat Mode
+
+    func setChatMode(_ mode: ChatMode) {
+        chatMode = mode
     }
 }

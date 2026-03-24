@@ -10,6 +10,7 @@ struct QuickStartActionsView: View {
     @EnvironmentObject private var inputQueueVM: InputQueueVM
     @EnvironmentObject private var conversationCreationVM: ConversationCreationVM
     @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var llmVM: LLMVM
 
     let sendStrategy: SendStrategy
 
@@ -41,7 +42,7 @@ struct QuickStartActionsView: View {
             ]
         }
 
-        switch projectVM.chatMode {
+        switch llmVM.chatMode {
         case .chat:
             if projectVM.isProjectSelected {
                 let projectName = normalizedProjectName

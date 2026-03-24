@@ -12,20 +12,11 @@ final class ProjectVM: ObservableObject, SuperLog {
 
     @Published private(set) var currentProject: Project? = nil
 
-    /// 当前项目的供应商 ID
-    @Published private(set) var currentProviderId: String = ""
-
-    /// 当前项目的模型名称
-    @Published private(set) var currentModel: String = ""
-
     /// 当前选择的文件 URL
     @Published private(set) var selectedFileURL: URL?
 
     // 语言偏好
     @Published var languagePreference: LanguagePreference = .chinese
-
-    // 聊天模式
-    @Published var chatMode: ChatMode = .build
 
     // 自动批准风险
     @Published var autoApproveRisk: Bool = false
@@ -83,16 +74,6 @@ final class ProjectVM: ObservableObject, SuperLog {
         self.currentProject = project
     }
 
-    /// 在未选择项目时，保存全局供应商 ID
-    func setGlobalProviderId(_ providerId: String) {
-        currentProviderId = providerId
-    }
-
-    /// 在未选择项目时，保存全局模型名称
-    func setGlobalModel(_ model: String) {
-        currentModel = model
-    }
-
     /// 设置最近项目列表（由 AgentRecentProjectsPlugin 调用）
     func setRecentProjects(_ projects: [Project]) {
         recentProjects = projects
@@ -142,9 +123,6 @@ final class ProjectVM: ObservableObject, SuperLog {
     }
 
     func setLanguagePreference(_ preference: LanguagePreference) {
-    }
-
-    func setChatMode(_ mode: ChatMode) {
     }
 
     func setAutoApproveRisk(_ enabled: Bool) {

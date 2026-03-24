@@ -209,7 +209,7 @@ final class SendController: ObservableObject, SuperLog {
         let config = container.agentSessionConfig.getCurrentConfig()
         let availableTools = ToolAvailabilityGuard().evaluate(
             tools: container.toolService.tools,
-            allowsTools: container.projectVM.chatMode.allowsTools,
+            allowsTools: container.agentSessionConfig.chatMode.allowsTools,
             isFinalStep: false
         )
         let toolsArg = availableTools.isEmpty ? nil : availableTools
