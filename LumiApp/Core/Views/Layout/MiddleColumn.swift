@@ -8,33 +8,35 @@ struct MiddleColumn: View {
     var body: some View {
         Group {
             if app.selectedMode == .agent {
-                let detailViews = pluginProvider.getDetailViews()
-                if detailViews.isEmpty {
-                    Color.clear
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    VStack(spacing: 0) {
-                        ForEach(detailViews.indices, id: \.self) { index in
-                            detailViews[index]
-                                .id("detail_\(index)")
-                        }
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .frame(minWidth: 200, idealWidth: 300)
-                }
+                agentDetailContent
             } else {
-                // App 模式：中间栏承载当前导航内容
-                Group {
-                    if app.hasCurrentNavigationContent(pluginVM: pluginProvider) {
-                        VStack(spacing: 0) {
-                            app.getCurrentNavigationView(pluginVM: pluginProvider)
-                        }
-                    } else {
-                        NavigationEmptyGuideView()
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                appModeContent
             }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea()
+    }
+
+    @ViewBuilder
+    private var agentDetailContent: some View {
+        let detailViews = pluginProvider.getDetailViews()
+        if detailViews.isEmpty {
+            Color.clear
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            // 直接返回第一个 detail view（目前只有一个 FilePreviewPlugin）
+            detailViews[0]
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(minWidth: 200, idealWidth: 300)
+        }
+    }
+
+    @ViewBuilder
+    private var appModeContent: some View {
+        if app.hasCurrentNavigationContent(pluginVM: pluginProvider) {
+            app.getCurrentNavigationView(pluginVM: pluginProvider)
+        } else {
+            NavigationEmptyGuideView()
         }
     }
 }
