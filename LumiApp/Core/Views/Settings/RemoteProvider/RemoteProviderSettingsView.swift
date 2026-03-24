@@ -107,6 +107,9 @@ extension RemoteProviderSettingsView {
     private func loadSettings() {
         guard let providerType = selectedProviderType else { return }
         apiKey = APIKeyStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
+        
+        // 加载该供应商的默认模型
+        loadSelectedModel()
     }
 
     /// 保存 API Key 到 Keychain
@@ -115,9 +118,10 @@ extension RemoteProviderSettingsView {
         APIKeyStore.shared.set(apiKey, forKey: providerType.apiKeyStorageKey)
     }
 
-    /// 保存选中的模型到 UserDefaults
+    /// 保存选中的模型到持久化存储
     private func saveModel() {
-        guard let providerType = selectedProviderType else { return }
+        guard selectedProviderId.isNotEmpty else { return }
+        AppSettingStore.saveRemoteProviderModel(providerId: selectedProviderId, modelId: selectedModel)
     }
 
     /// 保存选中的云端供应商 ID 到持久化存储
@@ -133,6 +137,22 @@ extension RemoteProviderSettingsView {
         } else if let firstProvider = remoteProviders.first {
             // 如果没有保存的 ID 或保存的 ID 无效，选择第一个供应商
             selectedProviderId = firstProvider.id
+        }
+    }
+
+    /// 加载当前供应商的默认模型
+    private func loadSelectedModel() {
+        guard selectedProviderId.isNotEmpty else { return }
+        
+        if let savedModel = AppSettingStore.loadRemoteProviderModel(providerId: selectedProviderId),
+           selectedProvider?.availableModels.contains(savedModel) == true {
+            selectedModel = savedModel
+        } else if let defaultModel = selectedProvider?.defaultModel {
+            // 如果没有保存的模型或保存的模型无效，使用供应商的默认模型
+            selectedModel = defaultModel
+        } else if let firstModel = selectedProvider?.availableModels.first {
+            // 如果没有默认模型，使用第一个可用模型
+            selectedModel = firstModel
         }
     }
 }
