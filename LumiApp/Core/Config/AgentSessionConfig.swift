@@ -6,12 +6,12 @@ import MagicKit
 final class AgentSessionConfig: ObservableObject, SuperLLMConfigProvider {
     let projectVM: ProjectVM
     let registry: LLMProviderRegistry
-    let chatHistoryService: ChatHistoryService
+    let chatHistoryVM: ChatHistoryVM
 
-    init(projectVM: ProjectVM, registry: LLMProviderRegistry, chatHistoryService: ChatHistoryService) {
+    init(projectVM: ProjectVM, registry: LLMProviderRegistry, chatHistoryVM: ChatHistoryVM) {
         self.projectVM = projectVM
         self.registry = registry
-        self.chatHistoryService = chatHistoryService
+        self.chatHistoryVM = chatHistoryVM
     }
 
     var selectedProviderId: String { projectVM.currentProviderId }

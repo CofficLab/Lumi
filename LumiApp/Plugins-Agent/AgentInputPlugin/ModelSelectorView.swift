@@ -222,7 +222,7 @@ extension ModelSelectorView {
 
     /// 加载性能统计数据
     private func loadLatencyStats() {
-        detailedStats = agentSessionConfig.chatHistoryService.getModelDetailedStats()
+        detailedStats = agentSessionConfig.chatHistoryVM.getModelDetailedStats()
         if Self.verbose {
             AgentInputPlugin.logger.info("\(Self.t)📊 加载到 \(detailedStats.count) 个模型的性能统计")
         }

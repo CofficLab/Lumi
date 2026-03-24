@@ -30,6 +30,7 @@ final class RootViewContainer: ObservableObject {
     let pluginVM: PluginVM
     let mystiqueThemeManager: MystiqueThemeManager
     let projectVM: ProjectVM
+    let chatHistoryVM: ChatHistoryVM
     let commandSuggestionVM: CommandSuggestionVM
     let permissionRequestVM: PermissionRequestVM
     let taskCancellationVM: TaskCancellationVM
@@ -102,6 +103,9 @@ final class RootViewContainer: ObservableObject {
             reason: "RootViewContainer"
         )
 
+        // 聊天历史 ViewModel
+        self.chatHistoryVM = ChatHistoryVM(chatHistoryService: chatHistoryService)
+
         // ========================================
         // UI 状态 VM
         // ========================================
@@ -141,7 +145,7 @@ final class RootViewContainer: ObservableObject {
         self.agentSessionConfig = AgentSessionConfig(
             projectVM: projectVM,
             registry: providerRegistry,
-            chatHistoryService: chatHistoryService
+            chatHistoryVM: chatHistoryVM
         )
 
         self.toolExecutionService = ToolExecutionService(toolService: toolService)
