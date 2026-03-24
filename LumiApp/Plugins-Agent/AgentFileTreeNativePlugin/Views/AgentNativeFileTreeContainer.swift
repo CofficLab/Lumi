@@ -97,6 +97,6 @@ struct AgentNativeFileTreeContainer: View {
 
 #Preview {
     AgentNativeFileTreeContainer()
-        .environmentObject(ProjectVM())
+        .environmentObject(ProjectVM(llmService: LLMService()))
         .frame(width: 250, height: 400)
 }

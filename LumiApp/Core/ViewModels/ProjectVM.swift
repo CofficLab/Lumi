@@ -65,9 +65,13 @@ final class ProjectVM: ObservableObject, SuperLog {
     private static let globalConfigProviderIdKey = "Agent_GlobalProviderId"
     private static let globalConfigModelKey = "Agent_GlobalModel"
 
+    /// 初始化 ProjectVM
+    /// - Parameters:
+    ///   - contextService: 上下文服务（可选，用于测试）
+    ///   - llmService: LLM 服务（必须由外部传入，不允许自行创建）
     init(
         contextService: ContextService = ContextService(),
-        llmService: LLMService = LLMService()
+        llmService: LLMService
     ) {
         self.contextService = contextService
         self.llmService = llmService

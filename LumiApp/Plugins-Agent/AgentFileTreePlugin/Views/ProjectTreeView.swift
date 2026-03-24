@@ -192,6 +192,6 @@ extension ProjectTreeView {
 
 #Preview {
     ProjectTreeView()
-        .environmentObject(ProjectVM())
+        .environmentObject(ProjectVM(llmService: LLMService()))
         .frame(width: 250, height: 400)
 }
