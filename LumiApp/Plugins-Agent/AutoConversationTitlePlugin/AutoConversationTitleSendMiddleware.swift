@@ -14,11 +14,21 @@ struct AutoConversationTitleSendMiddleware: SendMiddleware {
         await next(ctx)
         let snapshot = (conversationId: ctx.conversationId, text: ctx.message.content, role: ctx.message.role)
         Task { @MainActor in
-            await Self.applyIfNeeded(conversationId: snapshot.conversationId, userText: snapshot.text, role: snapshot.role)
+            await Self.applyIfNeeded(
+                conversationId: snapshot.conversationId,
+                userText: snapshot.text,
+                role: snapshot.role,
+                chatHistoryService: ctx.chatHistoryService
+            )
         }
     }
 
-    private static func applyIfNeeded(conversationId: UUID, userText: String, role: MessageRole) async {
+    private static func applyIfNeeded(
+        conversationId: UUID,
+        userText: String,
+        role: MessageRole,
+        chatHistoryService: ChatHistoryService
+    ) async {
         guard role == .user else { return }
         let trimmed = userText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
@@ -28,7 +38,7 @@ struct AutoConversationTitleSendMiddleware: SendMiddleware {
         guard let conversation = conversationVM.fetchConversation(id: conversationId) else { return }
         guard shouldAutoTitle(conversation.title) else { return }
 
-        let history = await container.chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
+        let history = await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
         let userCount = history.filter { $0.role == .user }.count
         guard userCount == 1 else { return }
 
