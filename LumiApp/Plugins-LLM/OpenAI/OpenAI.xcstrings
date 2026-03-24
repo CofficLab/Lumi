@@ -1,48 +1,48 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "文件预览": {
+    "OpenAI": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "File Preview"
+            "value": "OpenAI"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "文件预览"
+            "value": "OpenAI"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "文件預覽"
+            "value": "OpenAI"
           }
         }
       }
     },
-    "显示当前选择文件的内容预览": {
+    "GPT by OpenAI": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Display content preview of the currently selected file"
+            "value": "GPT by OpenAI"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "显示当前选择文件的内容预览"
+            "value": "OpenAI 的 GPT"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "顯示當前選擇文件的內容預覽"
+            "value": "OpenAI 的 GPT"
           }
         }
       }

@@ -23,10 +23,10 @@ actor FilePreviewStatusBarPlugin: SuperPlugin, SuperLog {
     static let id: String = "FilePreviewStatusBar"
 
     /// Plugin display name
-    static let displayName: String = "文件预览状态栏"
+    static let displayName: String = String(localized: "文件预览", table: "AgentFilePreviewStatusBar")
 
     /// Plugin functional description
-    static let description: String = "在 Agent 模式底部状态栏显示文件信息（文件类型、字符数等）"
+    static let description: String = String(localized: "显示当前选择文件的内容预览", table: "AgentFilePreviewStatusBar")
 
     /// Plugin icon name
     static let iconName: String = "info.circle.fill"

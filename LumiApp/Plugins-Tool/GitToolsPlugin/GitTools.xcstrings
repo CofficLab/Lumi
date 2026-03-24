@@ -1,48 +1,48 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "文件预览": {
+    "Git Tools": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "File Preview"
+            "value": "Git Tools"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "文件预览"
+            "value": "Git 工具"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "文件預覽"
+            "value": "Git 工具"
           }
         }
       }
     },
-    "显示当前选择文件的内容预览": {
+    "提供 Git 版本控制相关的 Agent 工具（状态/差异/日志）。": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Display content preview of the currently selected file"
+            "value": "Provides Git version control related Agent tools (status/diff/log)."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "显示当前选择文件的内容预览"
+            "value": "提供 Git 版本控制相关的 Agent 工具（状态/差异/日志）。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "顯示當前選擇文件的內容預覽"
+            "value": "提供 Git 版本控制相關的 Agent 工具（狀態/差異/日誌）。"
           }
         }
       }

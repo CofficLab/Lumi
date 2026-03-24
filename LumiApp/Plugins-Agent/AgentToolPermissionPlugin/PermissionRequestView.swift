@@ -96,11 +96,11 @@ extension PermissionRequestView {
 
     private var actionButtons: some View {
         HStack(spacing: 12) {
-            GlassButton(title: LocalizedStringKey("Deny"), tableName: "AgentToolPermission", style: .ghost) {
+            GlassButton(title: String(localized: "Deny", table: "AgentToolPermission"), style: .ghost) {
                 handleDeny()
             }
 
-            GlassButton(title: LocalizedStringKey("Allow"), tableName: "AgentToolPermission", style: .primary) {
+            GlassButton(title: String(localized: "Allow", table: "AgentToolPermission"), style: .primary) {
                 handleAllow()
             }
         }

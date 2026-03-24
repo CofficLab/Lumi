@@ -1,48 +1,48 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "文件预览": {
+    "Project Overview": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "File Preview"
+            "value": "Project Overview"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "文件预览"
+            "value": "项目总览"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "文件預覽"
+            "value": "項目總覽"
           }
         }
       }
     },
-    "显示当前选择文件的内容预览": {
+    "提供项目总览工具，返回项目类型、顶层结构、Git 信息与关键文件。": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Display content preview of the currently selected file"
+            "value": "Provides project overview tool, returns project type, top-level structure, Git info and key files."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "显示当前选择文件的内容预览"
+            "value": "提供项目总览工具，返回项目类型、顶层结构、Git 信息与关键文件。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "顯示當前選擇文件的內容預覽"
+            "value": "提供項目總覽工具，返回項目類型、頂層結構、Git 信息與關鍵文件。"
           }
         }
       }

@@ -14,13 +14,13 @@ struct EmptyMessagesView: View {
                 .foregroundStyle(.tertiary)
 
             // 标题
-            Text("暂无消息", tableName: "DevAssistant")
+            Text(String(localized: "暂无消息", table: "AgentMessages"))
                 .font(.title2)
                 .fontWeight(.semibold)
                 .foregroundStyle(.primary)
 
             // 描述
-            Text("在下方输入框中输入您的问题，开始与 AI 助手对话", tableName: "DevAssistant")
+            Text(String(localized: "在下方输入框中输入您的问题，开始与 AI 助手对话", table: "AgentMessages"))
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -28,15 +28,15 @@ struct EmptyMessagesView: View {
 
             // 示例引导
             VStack(alignment: .leading, spacing: 6) {
-                Text("例如：", tableName: "DevAssistant")
+                Text(String(localized: "例如：", table: "AgentMessages"))
                     .font(.caption)
                     .foregroundStyle(.tertiary)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("· 帮我解释这段错误日志", tableName: "DevAssistant")
+                    Text(String(localized: "· 帮我解释这段错误日志", table: "AgentMessages"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Text("· 帮我为这个项目设计一个测试计划", tableName: "DevAssistant")
+                    Text(String(localized: "· 帮我为这个项目设计一个测试计划", table: "AgentMessages"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

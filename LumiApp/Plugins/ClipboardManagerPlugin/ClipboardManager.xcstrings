@@ -1,5 +1,52 @@
 {
   "sourceLanguage": "en",
-  "strings": {},
+  "strings": {
+    "Clipboard": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipboard"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪贴板"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪貼簿"
+          }
+        }
+      }
+    },
+    "Manage clipboard history and snippets": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage clipboard history and snippets"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理剪贴板历史和片段"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理剪貼簿歷史和片段"
+          }
+        }
+      }
+    }
+  },
   "version": "1.1"
 }

@@ -7,8 +7,8 @@ actor AgentNewChatHeaderPlugin: SuperPlugin {
     nonisolated static let verbose = false
 
     static let id = "AgentChatToolbar"
-    static let displayName = String(localized: "New Chat Button", table: "AgentChatToolbar")
-    static let description = String(localized: "Create new chat from header", table: "AgentChatToolbar")
+    static let displayName = String(localized: "New Chat Button", table: "AgentNewChat")
+    static let description = String(localized: "Create new chat from header", table: "AgentNewChat")
     static let iconName = "bubble.left.and.bubble.right"
     static var order: Int { 60 }
     static let enable: Bool = true
@@ -27,4 +27,3 @@ actor AgentNewChatHeaderPlugin: SuperPlugin {
         [AnyView(NewChatButton())]
     }
 }
-

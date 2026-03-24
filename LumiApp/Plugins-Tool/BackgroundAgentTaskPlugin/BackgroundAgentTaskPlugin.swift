@@ -9,8 +9,8 @@ actor BackgroundAgentTaskPlugin: SuperPlugin, SuperLog {
     nonisolated static let verbose = false
 
     static let id: String = "BackgroundAgentTaskPlugin"
-    static let displayName: String = "后台 Agent 任务"
-    static let description: String = "接收指令并在后台异步执行任务，任务结果存储在插件自有数据库中。"
+    static let displayName: String = String(localized: "后台 Agent 任务", table: "BackgroundAgentTask")
+    static let description: String = String(localized: "接收指令并在后台异步执行任务，任务结果存储在插件自有数据库中。", table: "BackgroundAgentTask")
     static let iconName: String = "clock.arrow.circlepath"
     static let isConfigurable: Bool = false
     static let enable: Bool = true

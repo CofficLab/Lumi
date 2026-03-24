@@ -1,48 +1,48 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "文件预览": {
+    "App Version": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "File Preview"
+            "value": "App Version"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "文件预览"
+            "value": "应用版本"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "文件預覽"
+            "value": "應用版本"
           }
         }
       }
     },
-    "显示当前选择文件的内容预览": {
+    "Display current app version in status bar": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Display content preview of the currently selected file"
+            "value": "Display current app version in status bar"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "显示当前选择文件的内容预览"
+            "value": "在状态栏显示当前应用版本"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "顯示當前選擇文件的內容預覽"
+            "value": "在狀態欄顯示當前應用版本"
           }
         }
       }

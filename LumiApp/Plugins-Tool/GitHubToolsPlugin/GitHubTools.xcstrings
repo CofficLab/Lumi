@@ -1,48 +1,48 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "文件预览": {
+    "GitHub Tools": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "File Preview"
+            "value": "GitHub Tools"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "文件预览"
+            "value": "GitHub 工具"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "文件預覽"
+            "value": "GitHub 工具"
           }
         }
       }
     },
-    "显示当前选择文件的内容预览": {
+    "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）。": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Display content preview of the currently selected file"
+            "value": "Provides Agent tools for accessing GitHub API (repos/files/search/issue management)."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "显示当前选择文件的内容预览"
+            "value": "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "顯示當前選擇文件的內容預覽"
+            "value": "提供訪問 GitHub API 的 Agent 工具（倉庫/文件/搜索/Issue 管理）。"
           }
         }
       }

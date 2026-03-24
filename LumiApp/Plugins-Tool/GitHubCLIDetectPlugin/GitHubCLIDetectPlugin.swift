@@ -16,8 +16,8 @@ actor GitHubCLIDetectPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     static let id: String = "GitHubCLIDetect"
-    static let displayName: String = "GitHub CLI Detect"
-    static let description: String = "检测系统是否安装了 GitHub CLI (gh) 命令行工具。"
+    static let displayName: String = String(localized: "GitHub CLI Detect", table: "GitHubCLIDetect")
+    static let description: String = String(localized: "检测系统是否安装了 GitHub CLI (gh) 命令行工具。", table: "GitHubCLIDetect")
     static let iconName: String = "terminal"
     static let isConfigurable: Bool = false
     static let enable: Bool = true

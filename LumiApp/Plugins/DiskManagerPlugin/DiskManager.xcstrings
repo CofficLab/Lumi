@@ -3,6 +3,12 @@
   "strings": {
     "Are you sure you want to clean %@ of Xcode cache? This action cannot be undone.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Are you sure you want to clean %@ of Xcode cache? This action cannot be undone."
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -19,6 +25,12 @@
     },
     "Are you sure you want to delete the selected build artifacts (node_modules, target, etc)? This will free up space but require rebuilding projects.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Are you sure you want to delete the selected build artifacts (node_modules, target, etc)? This will free up space but require rebuilding projects."
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
@@ -33,8 +45,60 @@
         }
       }
     },
+    "Disk Manager": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk Manager"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "磁盘管理器"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "磁碟管理器"
+          }
+        }
+      }
+    },
+    "Disk space analysis and large file cleaning": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk space analysis and large file cleaning"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "磁盘空间分析与大文件清理"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "磁碟空間分析與大文件清理"
+          }
+        }
+      }
+    },
     "Xcode cleanup requires Full Disk Access. Please grant permission in System Settings.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode cleanup requires Full Disk Access. Please grant permission in System Settings."
+          }
+        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",

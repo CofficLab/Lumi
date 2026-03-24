@@ -19,14 +19,14 @@ struct EmptyStateView: View {
                 .foregroundStyle(.secondary)
 
             // 标题
-            Text(hasAnyConversation ? "选择一个会话开始聊天" : "暂无对话", tableName: "DevAssistant")
+            Text(String(localized: hasAnyConversation ? "选择一个会话开始聊天" : "暂无对话", table: "AgentMessages"))
                 .font(.title2)
                 .fontWeight(.semibold)
                 .foregroundStyle(.primary)
 
             if hasAnyConversation {
                 // 描述
-                Text("从左侧列表选择一个现有会话，或创建新会话", tableName: "DevAssistant")
+                Text(String(localized: "从左侧列表选择一个现有会话，或创建新会话", table: "AgentMessages"))
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

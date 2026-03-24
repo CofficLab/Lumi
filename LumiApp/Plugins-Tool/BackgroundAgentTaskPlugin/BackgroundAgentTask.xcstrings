@@ -1,48 +1,48 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "文件预览": {
+    "后台 Agent 任务": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "File Preview"
+            "value": "Background Agent Tasks"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "文件预览"
+            "value": "后台 Agent 任务"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "文件預覽"
+            "value": "後台 Agent 任務"
           }
         }
       }
     },
-    "显示当前选择文件的内容预览": {
+    "接收指令并在后台异步执行任务，任务结果存储在插件自有数据库中。": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Display content preview of the currently selected file"
+            "value": "Receives instructions and executes tasks asynchronously in the background, task results are stored in the plugin's own database."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "显示当前选择文件的内容预览"
+            "value": "接收指令并在后台异步执行任务，任务结果存储在插件自有数据库中。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "顯示當前選擇文件的內容預覽"
+            "value": "接收指令並在後台異步執行任務，任務結果存儲在插件自有數據庫中。"
           }
         }
       }

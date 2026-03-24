@@ -1,71 +1,94 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "Are you sure you want to close this preview?": {
+    "Language Selector": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Are you sure you want to close this preview?"
+            "value": "Language Selector"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "确定要关闭此预览吗？"
+            "value": "语言选择器"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "確定要關閉此預覽嗎？"
+            "value": "語言選擇器"
           }
         }
       }
     },
-    "File Preview": {
+    "AI response language in header": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "File Preview"
+            "value": "AI response language in header"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "文件预览"
+            "value": "聊天顶部的语言选择器"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "文件預覽"
+            "value": "聊天頂部的語言選擇器"
           }
         }
       }
     },
-    "显示当前选择文件的内容预览": {
+    "Chinese": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Display content preview of the currently selected file"
+            "value": "Chinese"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "显示当前选择文件的内容预览"
+            "value": "中文"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "顯示當前選擇文件的內容預覽"
+            "value": "中文"
+          }
+        }
+      }
+    },
+    "English": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English"
           }
         }
       }
