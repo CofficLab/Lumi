@@ -67,10 +67,10 @@ final class ProjectVM: ObservableObject, SuperLog {
 
     /// 初始化 ProjectVM
     /// - Parameters:
-    ///   - contextService: 上下文服务（可选，用于测试）
+    ///   - contextService: 上下文服务（必须由外部传入）
     ///   - llmService: LLM 服务（必须由外部传入，不允许自行创建）
     init(
-        contextService: ContextService = ContextService(),
+        contextService: ContextService,
         llmService: LLMService
     ) {
         self.contextService = contextService
