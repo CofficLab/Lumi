@@ -264,7 +264,7 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
 
         // 在 Finder 中显示
         let revealItem = NSMenuItem(
-            title: String(localized: "Show in Finder", tableName: "AgentNativeFileTree"),
+            title: String(localized: "Show in Finder", table: "AgentNativeFileTree"),
             action: #selector(handleRevealInFinder(_:)),
             keyEquivalent: ""
         )
@@ -275,7 +275,7 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
 
         // 在 VS Code 中打开
         let vscodeItem = NSMenuItem(
-            title: String(localized: "Open in VS Code", tableName: "AgentNativeFileTree"),
+            title: String(localized: "Open in VS Code", table: "AgentNativeFileTree"),
             action: #selector(handleOpenInVSCode(_:)),
             keyEquivalent: ""
         )
@@ -286,7 +286,7 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
 
         // 在终端中打开
         let terminalItem = NSMenuItem(
-            title: String(localized: "Open in Terminal", tableName: "AgentNativeFileTree"),
+            title: String(localized: "Open in Terminal", table: "AgentNativeFileTree"),
             action: #selector(handleOpenInTerminal(_:)),
             keyEquivalent: ""
         )
@@ -299,7 +299,7 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
 
         // 复制路径
         let copyPathItem = NSMenuItem(
-            title: String(localized: "Copy Path", tableName: "AgentNativeFileTree"),
+            title: String(localized: "Copy Path", table: "AgentNativeFileTree"),
             action: #selector(handleCopyPath(_:)),
             keyEquivalent: ""
         )
@@ -310,7 +310,7 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
 
         // 复制相对路径
         let copyRelativePathItem = NSMenuItem(
-            title: String(localized: "Copy Relative Path", tableName: "AgentNativeFileTree"),
+            title: String(localized: "Copy Relative Path", table: "AgentNativeFileTree"),
             action: #selector(handleCopyRelativePath(_:)),
             keyEquivalent: ""
         )
@@ -323,7 +323,7 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
 
         // 重命名菜单项
         let renameItem = NSMenuItem(
-            title: String(localized: "Rename", tableName: "AgentNativeFileTree"),
+            title: String(localized: "Rename", table: "AgentNativeFileTree"),
             action: #selector(handleRename(_:)),
             keyEquivalent: ""
         )
@@ -336,7 +336,7 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
 
         // 删除菜单项
         let deleteItem = NSMenuItem(
-            title: String(localized: "Delete", tableName: "AgentNativeFileTree"),
+            title: String(localized: "Delete", table: "AgentNativeFileTree"),
             action: #selector(handleDelete(_:)),
             keyEquivalent: ""
         )
@@ -350,11 +350,11 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         guard let node = sender.representedObject as? FileNode else { return }
         
         let alert = NSAlert()
-        alert.messageText = String(localized: node.isDirectory ? "Confirm Delete Folder?" : "Confirm Delete File?", tableName: "AgentNativeFileTree")
-        alert.informativeText = String(localized: "Will be deleted", tableName: "AgentNativeFileTree") + ": \(node.name)\n" + String(localized: "This action cannot be undone", tableName: "AgentNativeFileTree")
+        alert.messageText = String(localized: node.isDirectory ? "Confirm Delete Folder?" : "Confirm Delete File?", table: "AgentNativeFileTree")
+        alert.informativeText = String(localized: "Will be deleted", table: "AgentNativeFileTree") + ": \(node.name)\n" + String(localized: "This action cannot be undone", table: "AgentNativeFileTree")
         alert.alertStyle = .warning
-        alert.addButton(withTitle: String(localized: "Delete", tableName: "AgentNativeFileTree"))
-        alert.addButton(withTitle: String(localized: "Cancel", tableName: "AgentNativeFileTree"))
+        alert.addButton(withTitle: String(localized: "Delete", table: "AgentNativeFileTree"))
+        alert.addButton(withTitle: String(localized: "Cancel", table: "AgentNativeFileTree"))
         
         let response = alert.runModal()
         if response == .alertFirstButtonReturn {
@@ -376,7 +376,7 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
                 } catch {
                     await MainActor.run {
                         let errorAlert = NSAlert()
-                        errorAlert.messageText = String(localized: "Delete Failed", tableName: "AgentNativeFileTree")
+                        errorAlert.messageText = String(localized: "Delete Failed", table: "AgentNativeFileTree")
                         errorAlert.informativeText = error.localizedDescription
                         errorAlert.alertStyle = .critical
                         errorAlert.runModal()
@@ -460,7 +460,7 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
                 await MainActor.run {
                     self.reloadRow(for: currentURL)
                     let errorAlert = NSAlert()
-                    errorAlert.messageText = String(localized: "Rename Failed", tableName: "AgentNativeFileTree")
+                    errorAlert.messageText = String(localized: "Rename Failed", table: "AgentNativeFileTree")
                     errorAlert.informativeText = error.localizedDescription
                     errorAlert.alertStyle = .critical
                     errorAlert.runModal()
@@ -598,8 +598,8 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
                 try codeTask.run()
             } catch {
                 let alert = NSAlert()
-                alert.messageText = String(localized: "Cannot Open VS Code", tableName: "AgentNativeFileTree")
-                alert.informativeText = String(localized: "Please ensure VS Code is installed", tableName: "AgentNativeFileTree")
+                alert.messageText = String(localized: "Cannot Open VS Code", table: "AgentNativeFileTree")
+                alert.informativeText = String(localized: "Please ensure VS Code is installed", table: "AgentNativeFileTree")
                 alert.alertStyle = .warning
                 alert.runModal()
             }

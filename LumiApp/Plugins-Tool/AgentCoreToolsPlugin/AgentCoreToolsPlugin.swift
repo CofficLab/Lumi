@@ -10,7 +10,7 @@ actor AgentCoreToolsPlugin: SuperPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-core-tools")
     static let id: String = "AgentCoreTools"
     static let displayName: String = String(localized: "Agent Core Tools", table: "AgentCoreTools")
-    static let description: String = String(localized: "", table: "AgentCoreTools")
+    static let description: String = String(localized: "提供 Lumi 的基础 Agent 工具（文件/命令）。", table: "AgentCoreTools")
     static let iconName: String = "wrench.and.screwdriver"
     static let isConfigurable: Bool = false
     static let enable: Bool = true

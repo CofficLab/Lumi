@@ -2002,6 +2002,7 @@
       }
     },
     "Disk space analysis and large file cleaning" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2872,6 +2873,7 @@
       }
     },
     "Manage clipboard history and snippets" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7005,6 +7007,7 @@
       }
     },
     "文件树" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7218,6 +7221,7 @@
       }
     },
     "暂无对话" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7282,6 +7286,7 @@
       }
     },
     "暂无项目" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8458,6 +8463,7 @@
       }
     },
     "选择一个会话开始聊天" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

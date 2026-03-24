@@ -20,7 +20,7 @@ actor GitToolsPlugin: SuperPlugin, SuperLog {
 
     static let id: String = "GitTools"
     static let displayName: String = String(localized: "Git Tools", table: "GitTools")
-    static let description: String = String(localized: "", table: "GitTools")
+    static let description: String = String(localized: "提供 Git 版本控制相关的 Agent 工具（状态/差异/日志）。", table: "GitTools")
     static let iconName: String = "git"
     static let isConfigurable: Bool = false
     static let enable: Bool = true
