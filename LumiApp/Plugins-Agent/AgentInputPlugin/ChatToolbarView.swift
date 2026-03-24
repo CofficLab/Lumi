@@ -247,11 +247,11 @@ extension ChatToolbarView {
         guard !model.isEmpty else {
             return String(localized: "No Model Selected", table: "AgentInput")
         }
-        guard let providerType = agentSessionConfig.registry.providerType(forId: agentSessionConfig.selectedProviderId) else {
+        guard let providerType = agentSessionConfig.providerType(forId: agentSessionConfig.selectedProviderId) else {
             return model
         }
         let modelLabel: String
-        if let localProvider = agentSessionConfig.registry.createProvider(id: agentSessionConfig.selectedProviderId) as? any SuperLocalLLMProvider,
+        if let localProvider = agentSessionConfig.createProvider(id: agentSessionConfig.selectedProviderId) as? any SuperLocalLLMProvider,
            let name = localProvider.displayName(forModelId: model) {
             modelLabel = name
         } else {

@@ -26,11 +26,11 @@ struct ModelSelectorView: View, SuperLog {
     @State private var localModelInfosByProvider: [String: [LocalModelInfo]] = [:]
 
     private var localProviders: [LLMProviderInfo] {
-        agentSessionConfig.llmService.allProviders().filter(\.isLocal)
+        agentSessionConfig.allProviders.filter(\.isLocal)
     }
 
     private var remoteProviders: [LLMProviderInfo] {
-        agentSessionConfig.llmService.allProviders().filter { !$0.isLocal }
+        agentSessionConfig.allProviders.filter { !$0.isLocal }
     }
 
     var body: some View {
@@ -215,7 +215,7 @@ extension ModelSelectorView {
     ///   - model: 模型名称
     /// - Returns: 是否为默认模型
     private func isDefaultModel(providerId: String, model: String) -> Bool {
-        guard let providerType = agentSessionConfig.llmService.providerType(forId: providerId) else {
+        guard let providerType = agentSessionConfig.providerType(forId: providerId) else {
             return false
         }
         return model == providerType.defaultModel
@@ -231,11 +231,10 @@ extension ModelSelectorView {
 
     /// 加载本地供应商的模型详情（含系列），用于按系列展示
     private func loadLocalModelInfos() async {
-        let registry = agentSessionConfig.llmService
-        let localIds = registry.allProviders().filter(\.isLocal).map(\.id)
+        let localIds = agentSessionConfig.allProviders.filter(\.isLocal).map(\.id)
         var result: [String: [LocalModelInfo]] = [:]
         for id in localIds {
-            guard let provider = registry.createProvider(id: id) as? any SuperLocalLLMProvider else { continue }
+            guard let provider = agentSessionConfig.createProvider(id: id) as? any SuperLocalLLMProvider else { continue }
             let infos = await provider.getAvailableModels()
             result[id] = infos
         }
