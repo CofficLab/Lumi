@@ -183,40 +183,6 @@ extension View {
     }
 }
 
-// MARK: - 主题切换器（用于预览和设置）
-@MainActor
-class MystiqueThemeManager: ObservableObject {
-    @Published var currentVariant: Themes.Variant {
-        didSet {
-            // 更新全局主题
-            Themes.currentVariant = currentVariant
-            // 保存用户选择
-            currentVariant.save()
-            // 触发更新
-            updateColors()
-        }
-    }
-
-    @Published var isHighContrast: Bool = false {
-        didSet {
-            Themes.isHighContrast = isHighContrast
-        }
-    }
-
-    /// 初始化主题管理器，加载保存的主题
-    init() {
-        // 从 UserDefaults 加载保存的主题
-        self.currentVariant = Themes.Variant.loadSaved()
-        // 应用加载的主题
-        Themes.currentVariant = currentVariant
-    }
-
-    private func updateColors() {
-        // 更新主题时会自动刷新
-        objectWillChange.send()
-    }
-}
-
 // MARK: - 预览
 #Preview("神秘主题背景") {
     VStack {

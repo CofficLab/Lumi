@@ -13,7 +13,7 @@ struct ContentView: View, SuperLog {
 
     @EnvironmentObject var app: GlobalVM
     @EnvironmentObject var pluginProvider: PluginVM
-    @EnvironmentObject var themeManager: MystiqueThemeManager
+    @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var providerRegistry: LLMProviderRegistry
 
     /// 打开窗口的环境变量
@@ -250,7 +250,7 @@ struct ContentViewBody<Content: View>: View {
     @Binding var columnVisibility: NavigationSplitViewVisibility
     @ObservedObject var app: GlobalVM
     @ObservedObject var pluginProvider: PluginVM
-    @ObservedObject var themeManager: MystiqueThemeManager
+    @ObservedObject var themeManager: ThemeManager
     let content: Content
     let openSettings: () -> Void
     let openPluginSettings: () -> Void
@@ -262,7 +262,7 @@ struct ContentViewBody<Content: View>: View {
         columnVisibility: Binding<NavigationSplitViewVisibility>,
         app: GlobalVM,
         pluginProvider: PluginVM,
-        themeManager: MystiqueThemeManager,
+        themeManager: ThemeManager,
         @ViewBuilder content: () -> Content,
         openSettings: @escaping () -> Void,
         openPluginSettings: @escaping () -> Void,

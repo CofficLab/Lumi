@@ -6,7 +6,7 @@ import SwiftUI
 ///
 struct ThemeSelectorView: View {
     // MARK: - 环境
-    @EnvironmentObject private var themeManager: MystiqueThemeManager
+    @EnvironmentObject private var themeManager: ThemeManager
 
     // MARK: - 配置
     var displayMode: DisplayMode = .full
@@ -324,17 +324,17 @@ extension Themes.Variant {
 #Preview("主题选择器 - 完整模式") {
     ThemeSelectorView()
         .mystiqueBackground()
-        .environmentObject(MystiqueThemeManager())
+        .environmentObject(ThemeManager())
 }
 
 #Preview("主题选择器 - 紧凑模式") {
     ThemeSelectorView(displayMode: .compact, showPreview: false)
         .background(DesignTokens.Color.basePalette.deepBackground)
-        .environmentObject(MystiqueThemeManager())
+        .environmentObject(ThemeManager())
 }
 
 #Preview("主题选择器 - 极简模式") {
     ThemeSelectorView(displayMode: .minimal, showPreview: false)
         .background(DesignTokens.Color.basePalette.deepBackground)
-        .environmentObject(MystiqueThemeManager())
+        .environmentObject(ThemeManager())
 }

@@ -4,7 +4,7 @@ import SwiftUI
 struct SettingView: View {
     /// 插件 VM
     @EnvironmentObject var pluginProvider: PluginVM
-    @EnvironmentObject var themeManager: MystiqueThemeManager
+    @EnvironmentObject var themeManager: ThemeManager
 
     /// 默认显示的标签
     var defaultTab: SettingTab = .about

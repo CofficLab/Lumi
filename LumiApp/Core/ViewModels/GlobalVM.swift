@@ -9,7 +9,7 @@ final class GlobalVM: ObservableObject {
     ///
     /// 负责管理应用的主题切换和样式。
     /// 支持多种主题：Aurora, Nebula, Midnight, etc.
-    let themeManager = MystiqueThemeManager()
+    let themeManager = ThemeManager()
 
     // MARK: - 导航状态
 
