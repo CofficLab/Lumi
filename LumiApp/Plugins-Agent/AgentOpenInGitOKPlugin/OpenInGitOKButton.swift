@@ -40,10 +40,10 @@ struct OpenInGitOKButton: View {
             configuration.activates = true
 
             // 在 GitOK 中打开当前项目路径
-            NSWorkspace.shared.open([url], withApplicationAt: appURL, configuration: configuration) { success, error in
+            NSWorkspace.shared.open([url], withApplicationAt: appURL, configuration: configuration) { runningApp, error in
                 if let error = error {
                     AppLogger.core.error("Failed to open project in GitOK: \(error.localizedDescription)")
-                } else if success {
+                } else if runningApp != nil {
                     AppLogger.core.info("Successfully opened project in GitOK: \(path)")
                 }
             }
