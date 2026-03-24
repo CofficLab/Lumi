@@ -104,7 +104,7 @@ enum AppSettingStore {
     private static let settingsSelectionValueKey = "App_SettingsSelectionValue"
 
     /// 加载设置界面的上次选中项
-    /// - Returns: 元组 (类型, 值)，类型为 "core" 或 "plugin"
+    /// - Returns: 元组 (类型，值)，类型为 "core" 或 "plugin"
     static func loadSettingsSelection() -> (type: String, value: String)? {
         guard let type = object(forKey: settingsSelectionTypeKey) as? String,
               let value = object(forKey: settingsSelectionValueKey) as? String else {
@@ -126,5 +126,20 @@ enum AppSettingStore {
     static func clearSettingsSelection() {
         set(nil, forKey: settingsSelectionTypeKey)
         set(nil, forKey: settingsSelectionValueKey)
+    }
+
+    // MARK: - Remote Provider
+
+    private static let selectedRemoteProviderIdKey = "App_SelectedRemoteProviderId"
+
+    /// 加载上次选中的云端供应商 ID
+    static func loadSelectedRemoteProviderId() -> String? {
+        object(forKey: selectedRemoteProviderIdKey) as? String
+    }
+
+    /// 保存选中的云端供应商 ID
+    /// - Parameter id: 供应商 ID，为 nil 时清除保存的值
+    static func saveSelectedRemoteProviderId(_ id: String?) {
+        set(id, forKey: selectedRemoteProviderIdKey)
     }
 }

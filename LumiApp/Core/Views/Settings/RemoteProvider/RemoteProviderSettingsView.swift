@@ -65,6 +65,7 @@ struct RemoteProviderSettingsView: View {
         .onAppear(perform: onAppear)
         .onChange(of: selectedProviderId) { _, newValue in
             loadSettings()
+            saveSelectedProviderId(newValue)
         }
         .onChange(of: apiKey) { _, _ in
             saveApiKey()
@@ -118,6 +119,22 @@ extension RemoteProviderSettingsView {
     private func saveModel() {
         guard let providerType = selectedProviderType else { return }
     }
+
+    /// 保存选中的云端供应商 ID 到持久化存储
+    private func saveSelectedProviderId(_ id: String) {
+        AppSettingStore.saveSelectedRemoteProviderId(id)
+    }
+
+    /// 加载上次选中的云端供应商 ID
+    private func loadSelectedProviderId() {
+        if let savedId = AppSettingStore.loadSelectedRemoteProviderId(),
+           remoteProviders.contains(where: { $0.id == savedId }) {
+            selectedProviderId = savedId
+        } else if let firstProvider = remoteProviders.first {
+            // 如果没有保存的 ID 或保存的 ID 无效，选择第一个供应商
+            selectedProviderId = firstProvider.id
+        }
+    }
 }
 
 // MARK: - Lifecycle
@@ -125,7 +142,8 @@ extension RemoteProviderSettingsView {
 extension RemoteProviderSettingsView {
     /// 视图出现时的事件处理 - 加载仅云端供应商的设置
     func onAppear() {
-        
+        loadSelectedProviderId()
+        loadSettings()
     }
 }
 
