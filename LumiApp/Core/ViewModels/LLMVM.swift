@@ -6,7 +6,7 @@ import MagicKit
 /// 注意：本类只管理内存中的配置状态，不涉及持久化存储。
 /// 需要持久化时，由调用方自行决定保存到项目配置还是全局配置。
 @MainActor
-final class AgentSessionVM: ObservableObject, SuperLLMConfigProvider {
+final class LLMVM: ObservableObject, SuperLLMConfigProvider {
     @Published var selectedProviderId: String = ""
     @Published var currentModel: String = ""
     
