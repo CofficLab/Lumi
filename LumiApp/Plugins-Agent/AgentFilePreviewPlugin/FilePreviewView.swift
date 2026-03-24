@@ -110,7 +110,7 @@ struct FilePreviewView: View {
                 .lineLimit(2)
 
             // 文件路径
-            Text(ProjectVM.selectedFilePath)
+            Text(ProjectVM.selectedFileURL?.path ?? "")
                 .font(.system(size: 9))
                 .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                 .lineLimit(1)

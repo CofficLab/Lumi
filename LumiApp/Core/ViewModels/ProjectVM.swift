@@ -36,9 +36,6 @@ final class ProjectVM: ObservableObject, SuperLog {
     /// 当前选择的文件 URL
     @Published public fileprivate(set) var selectedFileURL: URL?
 
-    /// 当前选择的文件路径
-    @Published public fileprivate(set) var selectedFilePath: String = ""
-
     /// 当前选择的文件内容
     @Published public fileprivate(set) var selectedFileContent: String = ""
 
@@ -164,13 +161,13 @@ final class ProjectVM: ObservableObject, SuperLog {
 
         // 目录：仅更新选中路径，不加载内容
         if isDirectory {
-            setSelectedFileInfo(url: url, path: url.path, content: "", selected: false)
+            setSelectedFileInfo(url: url, content: "", selected: false)
 
             if Self.verbose {
                 AppLogger.core.info("\(Self.t)📁 已选择目录：\(url.lastPathComponent)")
             }
         } else {
-            setSelectedFileInfo(url: url, path: url.path, content: "", selected: true)
+            setSelectedFileInfo(url: url, content: "", selected: true)
 
             Task {
                 await contextService.trackOpenFile(url)
@@ -212,9 +209,8 @@ final class ProjectVM: ObservableObject, SuperLog {
     }
 
     /// 设置文件信息
-    func setSelectedFileInfo(url: URL?, path: String, content: String, selected: Bool) {
+    func setSelectedFileInfo(url: URL?, content: String, selected: Bool) {
         selectedFileURL = url
-        selectedFilePath = path
         selectedFileContent = content
         isFileSelected = selected
 
@@ -229,7 +225,7 @@ final class ProjectVM: ObservableObject, SuperLog {
 
     /// 清除文件选择
     func clearFileSelection() {
-        setSelectedFileInfo(url: nil, path: "", content: "", selected: false)
+        setSelectedFileInfo(url: nil, content: "", selected: false)
     }
 
     // MARK: - 语言偏好
