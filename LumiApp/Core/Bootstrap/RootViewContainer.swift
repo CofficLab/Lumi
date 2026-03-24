@@ -29,7 +29,7 @@ final class RootViewContainer: ObservableObject {
     let appProvider: GlobalVM
     let pluginVM: PluginVM
     let mystiqueThemeManager: MystiqueThemeManager
-    let ProjectVM: Lumi.ProjectVM
+    let projectVM: ProjectVM
     let commandSuggestionVM: CommandSuggestionVM
     let permissionRequestVM: PermissionRequestVM
     let taskCancellationVM: TaskCancellationVM
@@ -87,7 +87,7 @@ final class RootViewContainer: ObservableObject {
         self.appProvider = GlobalVM()
         self.pluginVM = PluginVM.shared
         self.mystiqueThemeManager = appProvider.themeManager
-        self.ProjectVM = Lumi.ProjectVM(
+        self.projectVM = Lumi.ProjectVM(
             contextService: contextService,
             providerRegistry: providerRegistry
         )
@@ -139,7 +139,7 @@ final class RootViewContainer: ObservableObject {
         // ========================================
 
         self.agentSessionConfig = AgentSessionConfig(
-            projectVM: ProjectVM,
+            projectVM: projectVM,
             registry: providerRegistry,
             chatHistoryService: chatHistoryService
         )

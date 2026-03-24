@@ -17,10 +17,10 @@ final class ConversationCreationController: ObservableObject, SuperLog {
 
     /// 执行创建流程（调用方需已 `consumePendingRequest`）
     func handlePendingRequest(requestId: UUID) async {
-        let projectId = container.ProjectVM.isProjectSelected ? container.ProjectVM.currentProjectPath : nil
-        let projectName = container.ProjectVM.isProjectSelected ? container.ProjectVM.currentProjectName : nil
-        let projectPath = container.ProjectVM.isProjectSelected ? container.ProjectVM.currentProjectPath : nil
-        let languagePreference = container.ProjectVM.languagePreference
+        let projectId = container.projectVM.isProjectSelected ? container.projectVM.currentProjectPath : nil
+        let projectName = container.projectVM.isProjectSelected ? container.projectVM.currentProjectName : nil
+        let projectPath = container.projectVM.isProjectSelected ? container.projectVM.currentProjectPath : nil
+        let languagePreference = container.projectVM.languagePreference
 
         let formatter = DateFormatter()
         formatter.dateFormat = "MM-dd HH:mm"

@@ -45,7 +45,7 @@ struct RootView<Content>: View, SuperLog where Content: View {
         content
             .withMagicToast()
             .environmentObject(container.appProvider)
-            .environmentObject(container.ProjectVM)
+            .environmentObject(container.projectVM)
             .environmentObject(container.providerRegistry)
             .environmentObject(container.pluginVM)
             .environmentObject(container.conversationTurnServices)

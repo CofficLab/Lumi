@@ -47,12 +47,12 @@ final class ProjectController: ObservableObject, SuperLog {
     }
 
     private func handleProjectClear() async {
-        guard container.ProjectVM.isProjectSelected else { return }
+        guard container.projectVM.isProjectSelected else { return }
 
         container.conversationVM.setSelectedConversation(nil)
-        container.ProjectVM.clearProject()
+        container.projectVM.clearProject()
 
-        let languagePreference = container.ProjectVM.languagePreference
+        let languagePreference = container.projectVM.languagePreference
         await applyProjectContext(path: nil, languagePreference: languagePreference)
 
         let clearMessage: String

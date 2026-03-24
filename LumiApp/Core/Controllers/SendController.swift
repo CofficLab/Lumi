@@ -147,7 +147,7 @@ final class SendController: ObservableObject, SuperLog {
 
                 if !risk.requiresPermission {
                     calls[i].authorizationState = .noRisk
-                } else if container.ProjectVM.autoApproveRisk {
+                } else if container.projectVM.autoApproveRisk {
                     calls[i].authorizationState = .autoApproved
                 } else {
                     calls[i].authorizationState = .pendingAuthorization
@@ -204,7 +204,7 @@ final class SendController: ObservableObject, SuperLog {
         let config = container.agentSessionConfig.getCurrentConfig()
         let availableTools = ToolAvailabilityGuard().evaluate(
             tools: container.toolService.tools,
-            allowsTools: container.ProjectVM.chatMode.allowsTools,
+            allowsTools: container.projectVM.chatMode.allowsTools,
             isFinalStep: false
         )
         let toolsArg = availableTools.isEmpty ? nil : availableTools
