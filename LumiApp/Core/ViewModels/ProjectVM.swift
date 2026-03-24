@@ -135,7 +135,7 @@ final class ProjectVM: ObservableObject, SuperLog {
         let providers = llmService.allProviders()
         if let firstProvider = providers.first {
             currentProviderId = firstProvider.id
-            currentModel = firstProvider.models.first?.id ?? ""
+            currentModel = firstProvider.availableModels.first ?? ""
         }
     }
 
