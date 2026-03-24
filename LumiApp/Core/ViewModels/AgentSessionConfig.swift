@@ -17,10 +17,6 @@ final class AgentSessionConfig: ObservableObject, SuperLLMConfigProvider {
     var selectedProviderId: String { projectVM.currentProviderId }
     var currentModel: String { projectVM.currentModel }
 
-    var availableProviders: [LLMProviderInfo] {
-        registry.allProviders()
-    }
-
     func getCurrentConfig() -> LLMConfig {
         guard let providerType = registry.providerType(forId: selectedProviderId),
               registry.createProvider(id: selectedProviderId) != nil else {
