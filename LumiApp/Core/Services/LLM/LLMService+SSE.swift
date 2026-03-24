@@ -146,7 +146,7 @@ extension LLMService {
                                 await state.recordFirstToken()
                                 await state.appendContent(content)
                             }
-                            
+
                             if let content = chunk.content, chunk.eventType == .thinkingDelta {
                                 await state.appendThinking(content)
                             }
@@ -185,13 +185,13 @@ extension LLMService {
                             }
                         } else if Self.verbose >= 1 {
                             let preview = String(data: eventData, encoding: .utf8)?.prefix(100) ?? "无法解码"
-                            AppLogger.core.warning("\(self.t)警告：Provider 返回 nil，原始数据: \(preview)...")
+                            AppLogger.core.warning("\(self.t)警告：Provider 返回 nil，原始数据：\(preview)...")
                         }
                     }
                     return shouldContinue
                 } catch {
                     if Self.verbose >= 1 {
-                        AppLogger.core.warning("\(self.t)解析流式数据块失败: \(error.localizedDescription)")
+                        AppLogger.core.warning("\(self.t)解析流式数据块失败：\(error.localizedDescription)")
                     }
                     return true
                 }
@@ -210,42 +210,22 @@ extension LLMService {
             throw LLMServiceError.requestFailed(error)
         }
 
-        let endTime = CFAbsoluteTimeGetCurrent()
-        let latency = (endTime - startTime) * 1000.0
-        let finalContent = await state.accumulatedContentChunks.joined()
-        let finalThinking = await state.accumulatedThinkingChunks.joined()
-        let finalToolCalls = await state.accumulatedToolCalls
-        let finalInputTokens = await state.inputTokens
-        let finalOutputTokens = await state.outputTokens
-        let finalStopReason = await state.stopReason
-        let finalTimeToFirstToken = await state.timeToFirstToken
-
-        if Self.verbose >= 1 {
-            AppLogger.core.info("\(Self.t)✅ 流式完成，总耗时：\(String(format: "%.2f", latency))ms, TTFT: \(String(format: "%.2f", finalTimeToFirstToken ?? 0))ms, 内容长度：\(finalContent.count)")
-        }
-
-        let totalTokens: Int? = if let input = finalInputTokens, let output = finalOutputTokens {
-            input + output
-        } else {
-            nil
-        }
-
         return ChatMessage(
             role: .assistant,
             conversationId: UUID(),
-            content: finalContent,
-            toolCalls: finalToolCalls.isEmpty ? nil : finalToolCalls,
+            content: await state.accumulatedContentChunks.joined(),
+            toolCalls: await state.getFinalToolCalls(),
             providerId: config.providerId,
             modelName: config.model,
-            latency: latency,
-            inputTokens: finalInputTokens,
-            outputTokens: finalOutputTokens,
-            totalTokens: totalTokens,
-            timeToFirstToken: finalTimeToFirstToken,
-            finishReason: finalStopReason,
+            latency: (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0,
+            inputTokens: await state.inputTokens,
+            outputTokens: await state.outputTokens,
+            totalTokens: await state.totalTokens,
+            timeToFirstToken: await state.timeToFirstToken,
+            finishReason: await state.stopReason,
             temperature: config.temperature,
             maxTokens: config.maxTokens,
-            thinkingContent: finalThinking.isEmpty ? nil : finalThinking
+            thinkingContent: await state.getFinalThinking()
         )
     }
 }

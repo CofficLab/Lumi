@@ -13,6 +13,7 @@ actor StreamingState {
     var currentToolCallArgumentChunks: [String] = []
     var inputTokens: Int?
     var outputTokens: Int?
+    var totalTokens: Int?
     var stopReason: String?
     var timeToFirstToken: Double?
     var isFirstToken = true
@@ -93,9 +94,28 @@ actor StreamingState {
     func updateTokens(input: Int?, output: Int?) {
         if let input = input { inputTokens = input }
         if let output = output { outputTokens = output }
+        // 自动计算 totalTokens
+        if let input = inputTokens, let output = outputTokens {
+            totalTokens = input + output
+        } else {
+            totalTokens = nil
+        }
     }
 
     func setStopReason(_ reason: String) {
         stopReason = reason
+    }
+
+    /// 获取最终的思考内容
+    /// - Returns: 思考内容字符串，如果为空则返回 nil
+    func getFinalThinking() -> String? {
+        let thinking = accumulatedThinkingChunks.joined()
+        return thinking.isEmpty ? nil : thinking
+    }
+
+    /// 获取最终的工具调用列表
+    /// - Returns: 工具调用数组，如果为空则返回 nil
+    func getFinalToolCalls() -> [ToolCall]? {
+        return accumulatedToolCalls.isEmpty ? nil : accumulatedToolCalls
     }
 }
