@@ -10,7 +10,28 @@ final class ProjectVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose = false
 
-    @Published public fileprivate(set) var currentProject: Project? = nil
+    @Published private(set) var currentProject: Project? = nil
+
+    /// 当前项目的供应商 ID
+    @Published private(set) var currentProviderId: String = ""
+
+    /// 当前项目的模型名称
+    @Published private(set) var currentModel: String = ""
+
+    /// 当前选择的文件 URL
+    @Published private(set) var selectedFileURL: URL?
+
+    // 语言偏好
+    @Published var languagePreference: LanguagePreference = .chinese
+
+    // 聊天模式
+    @Published var chatMode: ChatMode = .build
+
+    // 自动批准风险
+    @Published var autoApproveRisk: Bool = false
+
+    /// 最近使用的项目列表
+    @Published public fileprivate(set) var recentProjects: [Project] = []
 
     /// 当前项目名称
     var currentProjectName: String {
@@ -27,33 +48,10 @@ final class ProjectVM: ObservableObject, SuperLog {
         self.currentProject != nil
     }
 
-    /// 当前项目的供应商 ID
-    @Published public fileprivate(set) var currentProviderId: String = ""
-
-    /// 当前项目的模型名称
-    @Published public fileprivate(set) var currentModel: String = ""
-
-    /// 当前选择的文件 URL
-    @Published public fileprivate(set) var selectedFileURL: URL?
-
     /// 是否已选择文件
     var isFileSelected: Bool {
         selectedFileURL != nil
     }
-
-    // 语言偏好
-    @Published var languagePreference: LanguagePreference = .chinese
-
-    // 聊天模式
-    @Published var chatMode: ChatMode = .build
-
-    // 自动批准风险
-    @Published var autoApproveRisk: Bool = false
-
-    /// 最近使用的项目列表
-    @Published public fileprivate(set) var recentProjects: [Project] = []
-
-    // MARK: - 初始化
 
     private let contextService: ContextService
     private let llmService: LLMService
@@ -66,8 +64,6 @@ final class ProjectVM: ObservableObject, SuperLog {
         self.contextService = contextService
         self.llmService = llmService
     }
-
-    // MARK: - 项目管理
 
     /// 清除当前项目，恢复到未选择任何项目的状态
     func clearProject() {
@@ -97,8 +93,6 @@ final class ProjectVM: ObservableObject, SuperLog {
         currentModel = model
     }
 
-    // MARK: - 最近项目管理
-
     /// 设置最近项目列表（由 AgentRecentProjectsPlugin 调用）
     func setRecentProjects(_ projects: [Project]) {
         recentProjects = projects
@@ -108,8 +102,6 @@ final class ProjectVM: ObservableObject, SuperLog {
     func getRecentProjects() -> [Project] {
         recentProjects
     }
-
-    // MARK: - 文件选择
 
     /// 选择指定路径（支持文件与目录）
     func selectFile(at url: URL) {
@@ -149,12 +141,8 @@ final class ProjectVM: ObservableObject, SuperLog {
         NotificationCenter.postFileSelectionChanged()
     }
 
-    // MARK: - 语言偏好
-
     func setLanguagePreference(_ preference: LanguagePreference) {
     }
-
-    // MARK: - 聊天模式
 
     func setChatMode(_ mode: ChatMode) {
     }
