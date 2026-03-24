@@ -30,15 +30,21 @@ struct LeftSidebar: View {
 
             modeContent
                 .frame(maxHeight: .infinity)
-                .onAppear {
-                    // 在 App 模式下，恢复上次选中的导航
-                    if app.selectedMode == .app {
-                        restoreAppModeNavigation()
-                    }
-                }
         }
         .background(DesignTokens.Material.glassUltraThick)
         .ignoresSafeArea()
+        .onAppear {
+            // 在 App 模式下，恢复上次选中的导航
+            if app.selectedMode == .app {
+                restoreAppModeNavigation()
+            }
+        }
+        .onChange(of: app.selectedMode) { _, newMode in
+            // 切换到 App 模式时，恢复上次选中的导航
+            if newMode == .app {
+                restoreAppModeNavigation()
+            }
+        }
     }
 
     // MARK: - 模式内容
@@ -116,12 +122,8 @@ struct LeftSidebar: View {
 
     /// 恢复 App 模式下上次选中的导航
     private func restoreAppModeNavigation() {
-        // 如果已经有选中的导航，跳过恢复
-        if app.selectedNavigationId != nil {
-            return
-        }
-
         let entries = pluginProvider.getNavigationEntries(for: .app)
+        
         guard let savedNavId = AppSettingStore.loadSelectedNavigationId() else {
             // 没有保存的导航，使用默认或第一个可用的导航
             let defaultEntry = entries.first { $0.isDefault } ?? entries.first
@@ -130,8 +132,8 @@ struct LeftSidebar: View {
         }
 
         // 验证保存的导航 ID 是否仍然有效
-        if let validEntry = entries.first(where: { $0.id == savedNavId }) {
-            app.selectedNavigationId = validEntry.id
+        if entries.contains(where: { $0.id == savedNavId }) {
+            app.selectedNavigationId = savedNavId
         } else {
             // 保存的导航 ID 无效，使用默认或第一个可用的导航
             let defaultEntry = entries.first { $0.isDefault } ?? entries.first
