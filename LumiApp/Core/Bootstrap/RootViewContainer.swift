@@ -79,7 +79,7 @@ final class RootViewContainer: ObservableObject {
         )
 
         // 复用 LLMService 中的供应商注册表（已通过插件完成注册）
-        self.providerRegistry = llmService.providerRegistry
+        self.providerRegistry = llmService.registry
 
         // ========================================
         // 基础 ViewModel
@@ -142,7 +142,7 @@ final class RootViewContainer: ObservableObject {
         // Agent 配置
         // ========================================
 
-        self.agentSessionConfig = AgentSessionVM(registry: providerRegistry)
+        self.agentSessionConfig = AgentSessionVM(llmService: llmService)
 
         self.toolExecutionService = ToolExecutionService(toolService: toolService)
         self.captureThinkingContent = true

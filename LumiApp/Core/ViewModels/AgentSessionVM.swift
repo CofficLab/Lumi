@@ -10,20 +10,20 @@ final class AgentSessionVM: ObservableObject, SuperLLMConfigProvider {
     @Published var selectedProviderId: String = ""
     @Published var currentModel: String = ""
     
-    let registry: LLMProviderRegistry
+    let llmService: LLMService
 
-    init(registry: LLMProviderRegistry) {
-        self.registry = registry
+    init(llmService: LLMService) {
+        self.llmService = llmService
     }
 
     var availableProviders: [LLMProviderInfo] {
-        registry.allProviders()
+        llmService.allProviders()
     }
 
     func getCurrentConfig() -> LLMConfig {
         guard selectedProviderId.isNotEmpty,
-              let providerType = registry.providerType(forId: selectedProviderId),
-              registry.createProvider(id: selectedProviderId) != nil else {
+              let providerType = llmService.providerType(forId: selectedProviderId),
+              llmService.createProvider(id: selectedProviderId) != nil else {
             return LLMConfig.default
         }
 
@@ -37,14 +37,14 @@ final class AgentSessionVM: ObservableObject, SuperLLMConfigProvider {
     }
 
     func getApiKey(for providerId: String) -> String {
-        guard let providerType = registry.providerType(forId: providerId) else {
+        guard let providerType = llmService.providerType(forId: providerId) else {
             return ""
         }
         return APIKeyStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
     }
 
     func setApiKey(_ apiKey: String, for providerId: String) {
-        guard let providerType = registry.providerType(forId: providerId) else {
+        guard let providerType = llmService.providerType(forId: providerId) else {
             return
         }
         APIKeyStore.shared.set(apiKey, forKey: providerType.apiKeyStorageKey)

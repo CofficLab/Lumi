@@ -26,11 +26,11 @@ struct ModelSelectorView: View, SuperLog {
     @State private var localModelInfosByProvider: [String: [LocalModelInfo]] = [:]
 
     private var localProviders: [LLMProviderInfo] {
-        agentSessionConfig.registry.allProviders().filter(\.isLocal)
+        agentSessionConfig.llmService.allProviders().filter(\.isLocal)
     }
 
     private var remoteProviders: [LLMProviderInfo] {
-        agentSessionConfig.registry.allProviders().filter { !$0.isLocal }
+        agentSessionConfig.llmService.allProviders().filter { !$0.isLocal }
     }
 
     var body: some View {
@@ -189,7 +189,7 @@ extension ModelSelectorView {
     ///   - providerId: 供应商 ID
     ///   - model: 模型名称
     private func selectModel(providerId: String, model: String) {
-        // 设置供应商和模型（会自动保存到项目配置）
+        // 更新内存中的供应商和模型配置
         agentSessionConfig.selectedProviderId = providerId
         agentSessionConfig.currentModel = model
 
@@ -215,7 +215,7 @@ extension ModelSelectorView {
     ///   - model: 模型名称
     /// - Returns: 是否为默认模型
     private func isDefaultModel(providerId: String, model: String) -> Bool {
-        guard let providerType = agentSessionConfig.registry.providerType(forId: providerId) else {
+        guard let providerType = agentSessionConfig.llmService.providerType(forId: providerId) else {
             return false
         }
         return model == providerType.defaultModel
@@ -231,7 +231,7 @@ extension ModelSelectorView {
 
     /// 加载本地供应商的模型详情（含系列），用于按系列展示
     private func loadLocalModelInfos() async {
-        let registry = agentSessionConfig.registry
+        let registry = agentSessionConfig.llmService
         let localIds = registry.allProviders().filter(\.isLocal).map(\.id)
         var result: [String: [LocalModelInfo]] = [:]
         for id in localIds {
