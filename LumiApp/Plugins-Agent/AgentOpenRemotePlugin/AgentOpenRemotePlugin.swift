@@ -15,9 +15,10 @@ actor AgentOpenRemotePlugin: SuperPlugin, SuperLog {
 
     static let id: String = "AgentOpenRemote"
     static let displayName: String = String(localized: "Open Remote Repository", table: "AgentOpenRemote")
-    static let description: String = String(localized: "Open current project's remote repository in browser", table: "AgentOpenRemote")
+    static let description: String = String(localized: "Displays a button in the header to open the current project's remote repository in browser", table: "AgentOpenRemote")
     static let iconName: String = "safari"
-    static let isConfigurable: Bool = false
+    static let isConfigurable: Bool = true
+    static let enable: Bool = true
     static var order: Int { 90 }
 
     // MARK: - Instance
