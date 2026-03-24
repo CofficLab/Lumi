@@ -11,6 +11,10 @@ actor AgentNewChatHeaderPlugin: SuperPlugin {
     static let description = String(localized: "Create new chat from header", table: "AgentNewChat")
     static let iconName = "bubble.left.and.bubble.right"
     static var order: Int { 60 }
+    
+    /// 核心功能按钮，禁止用户配置
+    static var isConfigurable: Bool { false }
+    
     static let enable: Bool = true
 
     static let shared = AgentNewChatHeaderPlugin()

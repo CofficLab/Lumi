@@ -11,6 +11,10 @@ actor AgentLanguageHeaderPlugin: SuperPlugin {
     static let description = String(localized: "AI response language in header", table: "AgentLanguageHeader")
     static let iconName = "globe"
     static var order: Int { 83 }
+    
+    /// 核心功能，禁止用户配置
+    static var isConfigurable: Bool { false }
+    
     static let enable: Bool = true
 
     static let shared = AgentLanguageHeaderPlugin()

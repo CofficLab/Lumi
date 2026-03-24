@@ -11,6 +11,10 @@ actor AgentAutoApproveHeaderPlugin: SuperPlugin {
     static let description = String(localized: "Auto-approve toggle in chat header", table: "AgentAutoApproveHeader")
     static let iconName = "checkmark.circle"
     static var order: Int { 82 }
+    
+    /// 核心安全功能，禁止用户配置
+    static var isConfigurable: Bool { false }
+    
     static let enable: Bool = true
 
     static let shared = AgentAutoApproveHeaderPlugin()
