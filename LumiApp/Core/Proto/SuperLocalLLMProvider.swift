@@ -88,7 +88,7 @@ protocol SuperLocalLLMProvider: SuperLLMProvider {
         onChunk: @Sendable (StreamChunk) async -> Void
     ) async throws -> ChatMessage
 
-    /// 可用模型列表（动态，用于设置页“本地模型”区块）
+    /// 可用模型列表（动态，用于设置页"本地模型"区块）
     func getAvailableModels() async -> [LocalModelInfo]
 
     /// 已缓存模型 ID 集合
@@ -106,13 +106,13 @@ protocol SuperLocalLLMProvider: SuperLLMProvider {
     /// 当前下载状态（用于设置页进度展示）
     func getDownloadStatus() -> LocalDownloadStatus
 
-    /// 当前推理状态（可选，用于“已加载”等展示）
+    /// 当前推理状态（可选，用于"已加载"等展示）
     func getModelState() async -> LocalLLMState
 
     /// 当前已加载到内存的模型 ID（nil 表示未加载），用于设置页加载/卸载按钮状态
     func getLoadedModelId() async -> String?
 
-    /// 本地模型下载/缓存目录（用于设置页“打开下载目录”）
+    /// 本地模型下载/缓存目录（用于设置页"打开下载目录"）
     func getCacheDirectoryURL() -> URL
 
     /// 根据模型 ID 返回展示名（用于输入栏等）；默认返回 nil，使用 ID 展示

@@ -16,6 +16,7 @@ actor StreamingState {
     var totalTokens: Int?
     var stopReason: String?
     var timeToFirstToken: Double?
+    var firstTokenTime: CFAbsoluteTime?
     var isFirstToken = true
     let startTime: CFAbsoluteTime
 
@@ -27,8 +28,9 @@ actor StreamingState {
     func recordFirstToken() -> Double? {
         guard isFirstToken else { return nil }
         isFirstToken = false
-        let firstTokenTime = CFAbsoluteTimeGetCurrent()
-        let ttft = (firstTokenTime - startTime) * 1000.0
+        let now = CFAbsoluteTimeGetCurrent()
+        firstTokenTime = now
+        let ttft = (now - startTime) * 1000.0
         timeToFirstToken = ttft
         return ttft
     }
@@ -104,6 +106,14 @@ actor StreamingState {
 
     func setStopReason(_ reason: String) {
         stopReason = reason
+    }
+    
+    /// 计算流式传输耗时（从第一个 token 到完成的时间）
+    /// - Returns: 流式传输耗时（毫秒），如果没有第一个 token 则返回 nil
+    func getStreamingDuration() -> Double? {
+        guard let firstTokenTime = firstTokenTime else { return nil }
+        let now = CFAbsoluteTimeGetCurrent()
+        return (now - firstTokenTime) * 1000.0
     }
 
     /// 获取最终的思考内容

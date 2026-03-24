@@ -29,6 +29,8 @@ struct ModelPerformanceStats {
     var inputTokenCount: Int = 0
     var totalOutputTokens: Int = 0
     var outputTokenCount: Int = 0
+    var totalStreamingDuration: Double = 0
+    var streamingDurationCount: Int = 0
     
     var avgLatency: Double {
         sampleCount > 0 ? totalLatency / Double(sampleCount) : 0
@@ -44,6 +46,18 @@ struct ModelPerformanceStats {
     
     var avgOutputTokens: Int {
         outputTokenCount > 0 ? totalOutputTokens / outputTokenCount : 0
+    }
+    
+    var avgStreamingDuration: Double {
+        streamingDurationCount > 0 ? totalStreamingDuration / Double(streamingDurationCount) : 0
+    }
+    
+    /// 平均 TPS (Tokens Per Second)
+    /// 计算方式：输出 token 数量 / 流式传输时间（秒）
+    /// 注意：只统计同时有 outputTokens 和 streamingDuration 的消息
+    var avgTPS: Double {
+        guard streamingDurationCount > 0, totalStreamingDuration > 0 else { return 0 }
+        return Double(totalOutputTokens) / (totalStreamingDuration / 1000.0) // 转换为秒
     }
 }
 
@@ -409,7 +423,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                     return
                 }
 
-                // 下沉“是否展示”的过滤逻辑：此 API 只返回应该展示的消息，
+                // 下沉"是否展示"的过滤逻辑：此 API 只返回应该展示的消息，
                 // 并在分页时自动跳过被过滤的消息，避免 UI 端再做判断和跳页。
                 var cursor = beforeTimestamp
                 var collected: [ChatMessage] = []
@@ -419,7 +433,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                 let batchSize = max(limit * 3, limit + 10)
                 // 安全阈值：避免极端情况下长时间循环（例如大量连续 tool output 被过滤）
                 let maxBatches = 20
-                // 记录当前页中“最旧”的一条可见消息时间戳，用于作为下一页游标
+                // 记录当前页中"最旧"的一条可见消息时间戳，用于作为下一页游标
                 var oldestVisibleTimestamp: Date?
 
                 batchLoop: for _ in 0..<maxBatches {
@@ -461,7 +475,7 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                     }
 
                     // 这一批没收集满，继续下一批。
-                    // 如果这一批有可展示消息，则游标设为当前已收集的“最旧”可展示消息；
+                    // 如果这一批有可展示消息，则游标设为当前已收集的"最旧"可展示消息；
                     // 否则使用本批次中最旧原始消息的时间戳推进游标，避免死循环。
                     if let oldest = oldestVisibleTimestamp {
                         cursor = oldest
@@ -807,9 +821,13 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
                 stats.inputTokenCount += 1
             }
             
-            if let outputTokens = entity.outputTokens {
+            // 只统计同时有 outputTokens 和 streamingDuration 的消息
+            if let outputTokens = entity.outputTokens,
+               let streamingDuration = entity.streamingDuration {
                 stats.totalOutputTokens += outputTokens
                 stats.outputTokenCount += 1
+                stats.totalStreamingDuration += streamingDuration
+                stats.streamingDurationCount += 1
             }
             
             statsDict[key] = stats
