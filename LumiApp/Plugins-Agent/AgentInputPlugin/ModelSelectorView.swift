@@ -14,6 +14,7 @@ struct ModelSelectorView: View, SuperLog {
     @Environment(\.dismiss) private var dismiss
 
     @EnvironmentObject var agentSessionConfig: AgentSessionVM
+    @EnvironmentObject var chatHistoryVM: ChatHistoryVM
 
     /// 模型性能统计
     @State private var detailedStats: [String: ModelPerformanceStats] = [:]
@@ -222,7 +223,7 @@ extension ModelSelectorView {
 
     /// 加载性能统计数据
     private func loadLatencyStats() {
-        detailedStats = agentSessionConfig.chatHistoryVM.getModelDetailedStats()
+        detailedStats = chatHistoryVM.getModelDetailedStats()
         if Self.verbose {
             AgentInputPlugin.logger.info("\(Self.t)📊 加载到 \(detailedStats.count) 个模型的性能统计")
         }
