@@ -2,8 +2,8 @@ import Foundation
 
 /// 支持预览的文件类型
 enum SupportedFileType {
-    /// Markdown 文件
-    private static let markdownExtensions = ["md", "markdown"]
+    /// Markdown 文件（包括 .mdc 格式，用于 Docusaurus 等工具）
+    private static let markdownExtensions = ["md", "markdown", "mdc"]
 
     /// 纯文本文件
     private static let textExtensions = [
