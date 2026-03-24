@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 import os
 
 /// 模型偏好根视图包裹器
@@ -13,8 +12,8 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
     nonisolated static var emoji: String { "🎯" }
     /// 是否输出详细日志
     nonisolated static var verbose: Bool { ModelPreferencePlugin.verbose }
-    /// 专用 Logger - 使用 ModelPreferencePlugin 的 logger
-    nonisolated static var logger: Logger { ModelPreferencePlugin.logger }
+    /// 专用 Logger
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "model-preference.root-view")
 
     let content: Content
 
@@ -65,7 +64,10 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
             return
         }
 
-        // 保存偏好（使用 projectVM 中的路径）
+        // 更新 Plugin 中的项目路径
+        await ModelPreferencePlugin.shared.setCurrentProjectPath(currentProjectPath)
+
+        // 保存偏好
         await ModelPreferencePlugin.shared.savePreference(
             provider: currentProvider,
             model: currentModel
@@ -84,6 +86,9 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
     /// 处理项目切换
     private func handleProjectChange() async {
         let currentProjectPath = projectVM.currentProjectPath
+
+        // 更新 Plugin 中的项目路径
+        await ModelPreferencePlugin.shared.setCurrentProjectPath(currentProjectPath)
 
         // 清除上次保存的项目路径记录
         lastSavedProjectPath = ""
@@ -110,7 +115,7 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
                 lastSavedProjectPath = currentProjectPath
 
                 if Self.verbose {
-                    let dateStr = lastUpdated.map { " (更新于: \($0.formatted()))" } ?? ""
+                    let dateStr = lastUpdated.map { " (更新于：\($0.formatted()))" } ?? ""
                     Self.logger.info("\(self.t)📂 已加载项目 '\(projectVM.currentProjectName)' 的模型偏好：\(provider) - \(model)\(dateStr)")
                 }
             } else {

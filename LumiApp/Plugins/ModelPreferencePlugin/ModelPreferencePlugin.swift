@@ -21,6 +21,9 @@ actor ModelPreferencePlugin: SuperPlugin, SuperLog {
     nonisolated var instanceLabel: String { Self.id }
     static let shared = ModelPreferencePlugin()
 
+    // 保存当前的项目路径
+    nonisolated private var currentProjectPath: String = ""
+
     // MARK: - Lifecycle
 
     init() {}
@@ -37,12 +40,24 @@ actor ModelPreferencePlugin: SuperPlugin, SuperLog {
 
     // MARK: - Public API
 
+    /// 设置当前项目路径（由 ModelPreferenceRootView 调用）
+    func setCurrentProjectPath(_ path: String) {
+        currentProjectPath = path
+    }
+
+    /// 获取当前项目路径
+    func getCurrentProjectPath() -> String {
+        currentProjectPath
+    }
+
     /// 保存当前项目的模型偏好
     /// - Parameters:
     ///   - provider: 供应商名称 (如 "OpenAI", "Anthropic")
     ///   - model: 模型名称 (如 "gpt-4", "claude-3-opus")
-    func savePreference(provider: String, model: String) async {
-        guard let projectPath = await getCurrentProjectPath() else {
+    func savePreference(provider: String, model: String) {
+        let projectPath = getCurrentProjectPath()
+        
+        guard !projectPath.isEmpty else {
             if Self.verbose {
                 Self.logger.info("\(self.t)⚠️ 没有选中项目，跳过保存")
             }
@@ -53,14 +68,16 @@ actor ModelPreferencePlugin: SuperPlugin, SuperLog {
         store.savePreference(forProject: projectPath, provider: provider, model: model)
 
         if Self.verbose {
-            Self.logger.info("\(self.t)💾 保存模型偏好 [\(projectPath)]：\(provider) - \(model)")
+            Self.logger.info("\(self.t)💾 保存模型偏好 [\(URL(fileURLWithPath: projectPath).lastPathComponent)]：\(provider) - \(model)")
         }
     }
 
     /// 获取当前项目的模型偏好
     /// - Returns: 包含供应商和模型的元组，如果不存在则返回 nil
-    func getPreference() async -> (provider: String, model: String, lastUpdated: Date?)? {
-        guard let projectPath = await getCurrentProjectPath() else {
+    func getPreference() -> (provider: String, model: String, lastUpdated: Date?)? {
+        let projectPath = getCurrentProjectPath()
+        
+        guard !projectPath.isEmpty else {
             if Self.verbose {
                 Self.logger.info("\(self.t)⚠️ 没有选中项目，跳过读取")
             }
@@ -72,9 +89,9 @@ actor ModelPreferencePlugin: SuperPlugin, SuperLog {
         
         if Self.verbose {
             if let result {
-                Self.logger.info("\(self.t)📂 读取模型偏好 [\(projectPath)]：\(result.provider) - \(result.model)")
+                Self.logger.info("\(self.t)📂 读取模型偏好 [\(URL(fileURLWithPath: projectPath).lastPathComponent)]：\(result.provider) - \(result.model)")
             } else {
-                Self.logger.info("\(self.t)📂 未找到模型偏好 [\(projectPath)]")
+                Self.logger.info("\(self.t)📂 未找到模型偏好 [\(URL(fileURLWithPath: projectPath).lastPathComponent)]")
             }
         }
         
@@ -82,8 +99,10 @@ actor ModelPreferencePlugin: SuperPlugin, SuperLog {
     }
 
     /// 清除当前项目的模型偏好
-    func clearPreference() async {
-        guard let projectPath = await getCurrentProjectPath() else {
+    func clearPreference() {
+        let projectPath = getCurrentProjectPath()
+        
+        guard !projectPath.isEmpty else {
             if Self.verbose {
                 Self.logger.info("\(self.t)⚠️ 没有选中项目，跳过清除")
             }
@@ -94,21 +113,7 @@ actor ModelPreferencePlugin: SuperPlugin, SuperLog {
         store.clearPreference(forProject: projectPath)
 
         if Self.verbose {
-            Self.logger.info("\(self.t)🗑️ 已清除模型偏好 [\(projectPath)]")
-        }
-    }
-
-    // MARK: - Private Helpers
-
-    /// 获取当前项目路径
-    private func getCurrentProjectPath() async -> String? {
-        // 通过通知中心或全局状态获取当前项目路径
-        // 这里使用一个简单的方案：从 ProjectVM 获取
-        // 由于这是 actor 方法，需要通过 MainActor 获取
-        await MainActor.run {
-            // 尝试从环境中获取，或者通过其他方式
-            // 这里暂时返回 nil，实际使用时由调用方传入
-            nil
+            Self.logger.info("\(self.t)🗑️ 已清除模型偏好 [\(URL(fileURLWithPath: projectPath).lastPathComponent)]")
         }
     }
 }
