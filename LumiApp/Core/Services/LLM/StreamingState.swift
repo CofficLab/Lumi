@@ -1,6 +1,6 @@
 import Foundation
 
-/// 流式响应聚合状态：用 actor 隔离可变字段，保证 SSE 回调中的累积结果与主流程读取一致。
+/// 流式响应聚合状态
 actor StreamingState {
     var accumulatedContentChunks: [String] = []
     var accumulatedContentLength: Int = 0
@@ -22,6 +22,7 @@ actor StreamingState {
         self.startTime = startTime
     }
 
+    @discardableResult
     func recordFirstToken() -> Double? {
         guard isFirstToken else { return nil }
         isFirstToken = false

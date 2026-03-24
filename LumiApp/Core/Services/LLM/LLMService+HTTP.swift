@@ -2,8 +2,6 @@ import Foundation
 import MagicKit
 
 extension LLMService {
-    // MARK: - 非流式（HTTP）
-
     /// 发送消息到指定的 LLM 供应商（单次 HTTP 请求）。
     ///
     /// - Throws: 仅 `LLMServiceError`
@@ -47,7 +45,6 @@ extension LLMService {
         }
 
         let baseURLString = provider.baseURL
-        AppLogger.core.info("\(self.t)构建 API URL：\(baseURLString)")
         guard let url = URL(string: baseURLString) else {
             AppLogger.core.error("\(self.t)无效的 URL: \(baseURLString)")
             return LLMServiceError.invalidBaseURL(baseURLString).toChatMessage()

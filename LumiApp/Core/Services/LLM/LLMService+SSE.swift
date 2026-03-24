@@ -2,8 +2,6 @@ import Foundation
 import MagicKit
 
 extension LLMService {
-    // MARK: - SSE 流式
-
     /// 将原始 SSE 数据块拆分为单事件列表。
     /// 兼容「多个 event/data 粘在同一个网络块中、且缺少空行分隔」的非标准实现。
     private nonisolated static func splitSSEEvents(from rawData: Data) -> [Data] {
@@ -144,6 +142,8 @@ extension LLMService {
                             let chunk = parsed.withRawStreamPayload(rawPayload)
 
                             if let content = chunk.content, chunk.eventType == .textDelta {
+                                // 记录首个 Token 时间（TTFT）
+                                await state.recordFirstToken()
                                 await state.appendContent(content)
                             }
                             
@@ -231,7 +231,8 @@ extension LLMService {
         }
 
         return ChatMessage(
-            role: .assistant, conversationId: UUID(),
+            role: .assistant,
+            conversationId: UUID(),
             content: finalContent,
             toolCalls: finalToolCalls.isEmpty ? nil : finalToolCalls,
             providerId: config.providerId,
