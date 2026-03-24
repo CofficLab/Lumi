@@ -28,6 +28,8 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
     @State private var lastSavedModel: String = ""
     @State private var lastSavedProjectPath: String = ""
     @State private var hasAppeared = false
+    // 标记是否正在加载项目配置，避免加载时触发保存
+    @State private var isLoadingProjectConfig = false
 
     var body: some View {
         content
@@ -37,13 +39,13 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
             .onChange(of: llmVM.currentModel) { _, _ in
                 Task { await handleModelChange() }
             }
-            .onChange(of: projectVM.currentProjectPath) { _, _ in
-                Task { await handleProjectChange() }
+            .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
+                Task { await handleProjectChange(oldPath: oldPath, newPath: newPath) }
             }
             .onAppear {
                 guard !hasAppeared else { return }
                 hasAppeared = true
-                Task { await handleProjectChange() }
+                Task { await handleProjectChange(oldPath: "", newPath: projectVM.currentProjectPath) }
             }
     }
 
@@ -57,6 +59,11 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
         guard !currentProjectPath.isEmpty,
               !currentProvider.isEmpty,
               !currentModel.isEmpty else {
+            return
+        }
+
+        // 如果正在加载项目配置，不要触发保存
+        guard !isLoadingProjectConfig else {
             return
         }
 
@@ -87,44 +94,42 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
     }
 
     /// 处理项目切换
-    private func handleProjectChange() async {
-        let currentProjectPath = projectVM.currentProjectPath
-
+    private func handleProjectChange(oldPath: String, newPath: String) async {
         // 更新 Plugin 中的项目路径
-        await ModelPreferencePlugin.shared.setCurrentProjectPath(currentProjectPath)
+        await ModelPreferencePlugin.shared.setCurrentProjectPath(newPath)
 
         // 清除上次保存的项目路径记录
         lastSavedProjectPath = ""
 
         // 如果有项目，尝试加载该项目的模型偏好
-        guard !currentProjectPath.isEmpty else {
+        guard !newPath.isEmpty else {
             if Self.verbose {
                 Self.logger.info("\(self.t)📁 已清除项目，不加载模型偏好")
             }
             return
         }
 
+        // 标记正在加载配置，避免触发保存
+        isLoadingProjectConfig = true
+        defer {
+            isLoadingProjectConfig = false
+        }
+
         // 使用新的 API 获取带 lastUpdated 的信息
         let store = ModelPreferenceStore.shared
-        if let (provider, model, lastUpdated) = store.getPreference(forProject: currentProjectPath) {
-            // 只有当当前没有设置模型，或者设置不同的模型时才更新
-            if llmVM.selectedProviderId.isEmpty || llmVM.currentModel.isEmpty {
-                llmVM.selectedProviderId = provider
-                llmVM.currentModel = model
+        if let (provider, model, lastUpdated) = store.getPreference(forProject: newPath) {
+            // 直接恢复到 llmvm，无论当前是否有值
+            llmVM.selectedProviderId = provider
+            llmVM.currentModel = model
 
-                // 更新最后保存的状态，避免触发保存
-                lastSavedProvider = provider
-                lastSavedModel = model
-                lastSavedProjectPath = currentProjectPath
+            // 更新最后保存的状态，避免触发保存
+            lastSavedProvider = provider
+            lastSavedModel = model
+            lastSavedProjectPath = newPath
 
-                if Self.verbose {
-                    let dateStr = lastUpdated.map { " (更新于：\($0.formatted()))" } ?? ""
-                    Self.logger.info("\(self.t)📂 已加载项目 '\(projectVM.currentProjectName)' 的模型偏好：\(provider) - \(model)\(dateStr)")
-                }
-            } else {
-                if Self.verbose {
-                    Self.logger.info("\(self.t)📂 项目 '\(projectVM.currentProjectName)' 有保存的模型偏好 (\(provider) - \(model))，但用户已手动选择其他模型，不覆盖")
-                }
+            if Self.verbose {
+                let dateStr = lastUpdated.map { " (更新于：\($0.formatted()))" } ?? ""
+                Self.logger.info("\(self.t)📂 已加载项目 '\(projectVM.currentProjectName)' 的模型偏好：\(provider) - \(model)\(dateStr)")
             }
         } else {
             if Self.verbose {
