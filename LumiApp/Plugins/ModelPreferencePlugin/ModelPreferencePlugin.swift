@@ -36,7 +36,7 @@ actor ModelPreferencePlugin: SuperPlugin, SuperLog {
         store.set(model, forKey: "model")
 
         if Self.verbose {
-            logger.info("\(self.t)保存模型偏好: \(provider) - \(model)")
+            Self.logger.info("\(self.t)保存模型偏好: \(provider) - \(model)")
         }
     }
 
@@ -48,7 +48,7 @@ actor ModelPreferencePlugin: SuperPlugin, SuperLog {
         guard let provider = store.object(forKey: "provider") as? String,
               let model = store.object(forKey: "model") as? String else {
             if Self.verbose {
-                logger.info("\(self.t)未找到模型偏好设置")
+                Self.logger.info("\(self.t)未找到模型偏好设置")
             }
             return nil
         }
@@ -63,7 +63,7 @@ actor ModelPreferencePlugin: SuperPlugin, SuperLog {
         store.set(nil, forKey: "model")
 
         if Self.verbose {
-            logger.info("\(self.t)已清除模型偏好")
+            Self.logger.info("\(self.t)已清除模型偏好")
         }
     }
 }

@@ -43,20 +43,20 @@ actor AgentNativeFileTreePlugin: SuperPlugin, SuperLog {
 
     nonisolated func onEnable() {
         if Self.verbose {
-            Self.logger.info("\(Self.t)✅ AgentNativeFileTreePlugin 已启用")
+            Self.logger.info("\(self.t)✅ AgentNativeFileTreePlugin 已启用")
         }
     }
 
     nonisolated func onDisable() {
         if Self.verbose {
-            Self.logger.info("\(Self.t)⛔️ AgentNativeFileTreePlugin 已禁用")
+            Self.logger.info("\(self.t)⛔️ AgentNativeFileTreePlugin 已禁用")
         }
     }
 
     // MARK: - Views
 
     @MainActor
-    func makeSidebarView() -> AnyView? {
+    func addSidebarView() -> AnyView? {
         return AnyView(AgentNativeFileTreeContainer())
     }
 }
