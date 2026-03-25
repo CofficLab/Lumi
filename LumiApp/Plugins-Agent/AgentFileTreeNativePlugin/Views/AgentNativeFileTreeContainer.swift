@@ -22,6 +22,7 @@ struct AgentNativeFileTreeContainer: View {
                 if self.ProjectVM.isProjectSelected {
                     FileTreeView(
                         rootURL: URL(fileURLWithPath: ProjectVM.currentProjectPath),
+                        selectedFileURL: ProjectVM.selectedFileURL,
                         onSelect: { url in
                             ProjectVM.selectFile(at: url)
                         }

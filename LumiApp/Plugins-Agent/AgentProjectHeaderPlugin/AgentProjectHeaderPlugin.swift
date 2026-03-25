@@ -15,6 +15,10 @@ actor AgentProjectHeaderPlugin: SuperPlugin {
     static let description = String(localized: "Select and manage project in chat header", table: "AgentProjectHeader")
     static let iconName = "folder"
     static var order: Int { 81 }
+    
+    /// 用户可在设置中启用/禁用此插件
+    static var isConfigurable: Bool { true }
+    
     static let enable: Bool = true
 
     static let shared = AgentProjectHeaderPlugin()

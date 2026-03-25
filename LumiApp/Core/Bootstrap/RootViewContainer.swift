@@ -28,7 +28,7 @@ final class RootViewContainer: ObservableObject {
 
     let appProvider: GlobalVM
     let pluginVM: PluginVM
-    let mystiqueThemeManager: MystiqueThemeManager
+    let mystiqueThemeManager: ThemeManager
     let projectVM: ProjectVM
     let chatHistoryVM: ChatHistoryVM
     let commandSuggestionVM: CommandSuggestionVM

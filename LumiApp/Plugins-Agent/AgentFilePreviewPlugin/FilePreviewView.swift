@@ -54,7 +54,6 @@ struct FilePreviewView: View {
                 FilePreviewEmptyStateView()
             }
         }
-        .padding(.vertical, 8)
         .background(DesignTokens.Material.glassThick)
         .onChange(of: ProjectVM.selectedFileURL) { _, newURL in
             loadFileContent(from: newURL)
@@ -67,7 +66,7 @@ struct FilePreviewView: View {
     // MARK: - Header Section
 
     private var headerSection: some View {
-        HStack {
+        HStack(alignment: .center, spacing: 8) {
             Image(systemName: "doc.fill")
                 .font(.system(size: 14))
                 .foregroundColor(.accentColor)
@@ -86,8 +85,9 @@ struct FilePreviewView: View {
             }
             .buttonStyle(.plain)
         }
+        .frame(height: AppConfig.headerHeight)
+        .frame(maxWidth: .infinity)
         .padding(.horizontal, 10)
-        .padding(.vertical, 6)
     }
 
     // MARK: - File Preview Content

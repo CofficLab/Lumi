@@ -10,6 +10,10 @@ extension Notification.Name {
     /// 文件选择变化的通知
     /// object: nil
     static let fileSelectionChanged = Notification.Name("FileSelectionChanged")
+
+    /// 同步选中文件到 ProjectVM 的通知
+    /// userInfo: ["path": String]
+    static let syncSelectedFile = Notification.Name("SyncSelectedFile")
 }
 
 // MARK: - NotificationCenter Extension
@@ -29,6 +33,16 @@ extension NotificationCenter {
         NotificationCenter.default.post(
             name: .fileSelectionChanged,
             object: nil
+        )
+    }
+
+    /// 发送同步选中文件到 ProjectVM 的通知
+    /// - Parameter path: 文件路径
+    static func postSyncSelectedFile(path: String) {
+        NotificationCenter.default.post(
+            name: .syncSelectedFile,
+            object: nil,
+            userInfo: ["path": path]
         )
     }
 }
@@ -53,6 +67,17 @@ extension View {
     func onFileSelectionChanged(perform action: @escaping () -> Void) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .fileSelectionChanged)) { _ in
             action()
+        }
+    }
+
+    /// 监听同步选中文件事件
+    /// - Parameter action: 事件处理闭包，参数为文件路径
+    /// - Returns: 修改后的视图
+    func onSyncSelectedFile(perform action: @escaping (String) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .syncSelectedFile)) { notification in
+            if let path = notification.userInfo?["path"] as? String {
+                action(path)
+            }
         }
     }
 }

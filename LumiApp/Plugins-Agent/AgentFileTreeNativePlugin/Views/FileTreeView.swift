@@ -103,6 +103,7 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
     var onDelete: ((URL, Bool) -> Void)?
     var onRename: ((URL, String) -> Void)?
     var currentRootURL: URL?
+    var externalSelectedFileURL: URL?
     private var renamingNodeURL: URL?
     
     func setRootURL(_ url: URL) {
@@ -112,8 +113,63 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
             await MainActor.run {
                 self.rootNodes = urls.map { FileNode(url: $0) }
                 self.outlineView?.reloadData()
+                self.selectExternalFileIfNeeded()
             }
         }
+    }
+    
+    func selectExternalFileIfNeeded() {
+        guard let targetURL = externalSelectedFileURL else { return }
+        
+        if let node = findNode(for: targetURL) {
+            expandParents(for: node)
+            let row = outlineView?.row(forItem: node) ?? -1
+            if row >= 0 {
+                outlineView?.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+                outlineView?.scrollRowToVisible(row)
+            }
+        }
+    }
+    
+    private func findNode(for url: URL) -> FileNode? {
+        for rootNode in rootNodes {
+            if rootNode.url == url { return rootNode }
+            if let found = findNodeRecursive(parent: rootNode, targetURL: url) { return found }
+        }
+        return nil
+    }
+    
+    private func findNodeRecursive(parent: FileNode, targetURL: URL) -> FileNode? {
+        for child in parent.children {
+            if child.url == targetURL { return child }
+            if child.isDirectory, let found = findNodeRecursive(parent: child, targetURL: targetURL) { return found }
+        }
+        return nil
+    }
+    
+    private func expandParents(for node: FileNode) {
+        var current: FileNode? = node
+        var parents: [FileNode] = []
+        while let curr = current {
+            if let parent = findParent(of: curr) {
+                parents.insert(parent, at: 0)
+                current = parent
+            } else { break }
+        }
+        for parent in parents { outlineView?.expandItem(parent) }
+    }
+    
+    private func findParent(of target: FileNode) -> FileNode? {
+        for root in rootNodes { if let p = findParentRecursive(parent: root, target: target) { return p } }
+        return nil
+    }
+    
+    private func findParentRecursive(parent: FileNode, target: FileNode) -> FileNode? {
+        for child in parent.children {
+            if child === target { return parent }
+            if let found = findParentRecursive(parent: child, target: target) { return found }
+        }
+        return nil
     }
     
     // MARK: - NSOutlineViewDataSource
@@ -494,17 +550,6 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         return nil
     }
 
-    private func findNodeRecursive(parent: FileNode, targetURL: URL) -> FileNode? {
-        for child in parent.children {
-            if child.url == targetURL {
-                return child
-            }
-            if let found = findNodeRecursive(parent: child, targetURL: targetURL) {
-                return found
-            }
-        }
-        return nil
-    }
     
     private func refreshNode(_ oldNode: FileNode, withNewURL newURL: URL) {
         let newNode = FileNode(url: newURL)
@@ -719,6 +764,7 @@ class FileTreeRowView: NSTableRowView {
 /// NSOutlineView 的 SwiftUI 包装
 struct FileTreeView: NSViewRepresentable {
     let rootURL: URL?
+    let selectedFileURL: URL?
     let onSelect: (URL) -> Void
     
     func makeNSView(context: Context) -> NSScrollView {
@@ -783,6 +829,13 @@ struct FileTreeView: NSViewRepresentable {
         }
         if let url = rootURL, context.coordinator.currentRootURL?.standardizedFileURL != url.standardizedFileURL {
             context.coordinator.setRootURL(url)
+        }
+        if let selectedURL = selectedFileURL {
+            let currentSelected = context.coordinator.externalSelectedFileURL
+            if currentSelected?.standardizedFileURL != selectedURL.standardizedFileURL {
+                context.coordinator.externalSelectedFileURL = selectedURL
+                context.coordinator.selectExternalFileIfNeeded()
+            }
         }
     }
     

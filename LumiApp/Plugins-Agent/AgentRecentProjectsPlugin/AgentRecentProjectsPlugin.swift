@@ -41,6 +41,7 @@ actor AgentRecentProjectsPlugin: SuperPlugin {
             ListRecentProjectsTool(),
             GetCurrentProjectTool(),
             SetCurrentProjectTool(),
+            AddProjectTool(),
         ]
     }
 }

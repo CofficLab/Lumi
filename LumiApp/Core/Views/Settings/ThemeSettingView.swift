@@ -3,7 +3,7 @@ import SwiftUI
 /// 主题设置视图
 struct ThemeSettingView: View {
     /// 主题管理器
-    @EnvironmentObject private var themeManager: MystiqueThemeManager
+    @EnvironmentObject private var themeManager: ThemeManager
 
     /// 当前配色方案（用于预览展示）
     @Environment(\.colorScheme) private var colorScheme

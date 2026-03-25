@@ -59,4 +59,16 @@ actor AgentNativeFileTreePlugin: SuperPlugin, SuperLog {
     func addSidebarView() -> AnyView? {
         return AnyView(AgentNativeFileTreeContainer())
     }
+
+    @MainActor
+    func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
+        AnyView(FileTreeSyncOverlay(content: content()))
+    }
+
+    @MainActor
+    func agentTools() -> [AgentTool] {
+        [
+            SelectFileTool(),
+        ]
+    }
 }
