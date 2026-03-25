@@ -15,6 +15,12 @@
             "state": "translated",
             "value": "在狀態欄中顯示當前時間"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Displays the current time in the status bar"
+          }
         }
       }
     },
@@ -31,6 +37,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "時間狀態"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time Status"
           }
         }
       }

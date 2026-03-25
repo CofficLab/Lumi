@@ -14,6 +14,12 @@
             "state": "translated",
             "value": "輸入管理器"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Input Manager"
+          }
         }
       }
     },
@@ -26,6 +32,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage input-related behaviors"
+          }
+        },
+        "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Manage input-related behaviors"

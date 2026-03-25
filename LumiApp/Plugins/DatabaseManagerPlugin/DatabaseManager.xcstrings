@@ -14,6 +14,12 @@
             "state": "translated",
             "value": "資料庫"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Database"
+          }
         }
       }
     },
@@ -26,6 +32,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage SQLite, MySQL, PostgreSQL, and Redis"
+          }
+        },
+        "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Manage SQLite, MySQL, PostgreSQL, and Redis"

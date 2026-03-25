@@ -14,6 +14,12 @@
             "state": "translated",
             "value": "CPU 監控"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU Monitor"
+          }
         }
       }
     },
@@ -29,6 +35,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "即時 CPU 使用率和負載監控"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-time CPU usage and load monitoring"
           }
         }
       }

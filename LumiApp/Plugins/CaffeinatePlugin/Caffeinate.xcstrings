@@ -14,6 +14,12 @@
             "state": "translated",
             "value": "1 小時"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 Hour"
+          }
         }
       }
     },
@@ -29,6 +35,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "2 小時"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2 Hours"
           }
         }
       }
@@ -46,6 +58,12 @@
             "state": "translated",
             "value": "5 小時"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 Hours"
+          }
         }
       }
     },
@@ -62,6 +80,12 @@
             "state": "translated",
             "value": "10 分鐘"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "10 Min"
+          }
         }
       }
     },
@@ -74,6 +98,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anti-Sleep"
+          }
+        },
+        "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Anti-Sleep"
@@ -94,6 +124,12 @@
             "state": "translated",
             "value": "無限期"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Indefinite"
+          }
         }
       }
     },
@@ -109,6 +145,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "防止休眠並允許關閉螢幕"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prevent sleep & Allow screen off"
           }
         }
       }
@@ -126,6 +168,12 @@
             "state": "translated",
             "value": "防止休眠並保持螢幕開啟"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prevent sleep & Keep screen on"
+          }
         }
       }
     },
@@ -142,6 +190,12 @@
             "state": "translated",
             "value": "防止休眠並關閉螢幕"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prevent sleep & Turn off screen"
+          }
         }
       }
     },
@@ -154,6 +208,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prevent system sleep with timer and manual control"
+          }
+        },
+        "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Prevent system sleep with timer and manual control"

@@ -14,6 +14,12 @@
             "state": "translated",
             "value": "記憶體監控"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Memory Monitor"
+          }
         }
       }
     },
@@ -29,6 +35,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "即時監控系統記憶體使用情況"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-time monitoring of system memory usage"
           }
         }
       }

@@ -14,6 +14,12 @@
             "state": "translated",
             "value": "所有套件都是最新的"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All packages are up to date"
+          }
         }
       }
     },
@@ -29,6 +35,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "批量更新失敗：%@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Batch update failed: %@"
           }
         }
       }
@@ -46,6 +58,12 @@
             "state": "translated",
             "value": "輸入關鍵字開始搜尋"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter keywords to start searching"
+          }
         }
       }
     },
@@ -61,6 +79,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "錯誤"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error"
           }
         }
       }
@@ -78,6 +102,12 @@
             "state": "translated",
             "value": "未檢測到 Homebrew，請先安裝 Homebrew。"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew not detected, please install Homebrew first."
+          }
         }
       }
     },
@@ -93,6 +123,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "安裝"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Install"
           }
         }
       }
@@ -110,6 +146,12 @@
             "state": "translated",
             "value": "安裝失敗：%@"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installation failed: %@"
+          }
         }
       }
     },
@@ -125,6 +167,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "已安裝"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installed"
           }
         }
       }
@@ -142,6 +190,12 @@
             "state": "translated",
             "value": "已安裝：%@"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installed: %@"
+          }
         }
       }
     },
@@ -157,6 +211,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "管理 Homebrew 套件和 cask"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage Homebrew packages and casks"
           }
         }
       }
@@ -174,6 +234,12 @@
             "state": "translated",
             "value": "未安裝任何套件"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No packages installed"
+          }
         }
       }
     },
@@ -189,6 +255,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "未找到相關套件"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No related packages found"
           }
         }
       }
@@ -206,6 +278,12 @@
             "state": "translated",
             "value": "確定"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
         }
       }
     },
@@ -221,6 +299,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "套件管理"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Package Management"
           }
         }
       }
@@ -238,6 +322,12 @@
             "state": "translated",
             "value": "處理中..."
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Processing..."
+          }
         }
       }
     },
@@ -253,6 +343,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "重新整理失敗：%@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh failed: %@"
           }
         }
       }
@@ -270,6 +366,12 @@
             "state": "translated",
             "value": "搜尋"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search"
+          }
         }
       }
     },
@@ -285,6 +387,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "搜尋失敗：%@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search failed: %@"
           }
         }
       }
@@ -302,6 +410,12 @@
             "state": "translated",
             "value": "解除安裝"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uninstall"
+          }
         }
       }
     },
@@ -317,6 +431,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "解除安裝失敗：%@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uninstallation failed: %@"
           }
         }
       }
@@ -334,6 +454,12 @@
             "state": "translated",
             "value": "更新"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update"
+          }
         }
       }
     },
@@ -349,6 +475,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "更新失敗：%@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update failed: %@"
           }
         }
       }
@@ -366,6 +498,12 @@
             "state": "translated",
             "value": "更新"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updates"
+          }
         }
       }
     },
@@ -381,6 +519,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "版本：%@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version: %@"
           }
         }
       }

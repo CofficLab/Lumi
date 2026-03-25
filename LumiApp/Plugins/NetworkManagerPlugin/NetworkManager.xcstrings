@@ -14,6 +14,12 @@
             "state": "translated",
             "value": "網路監控"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Network Monitor"
+          }
         }
       }
     },
@@ -26,6 +32,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PID: %lld"
+          }
+        },
+        "en": {
           "stringUnit": {
             "state": "translated",
             "value": "PID: %lld"
@@ -45,6 +57,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "即時監控網路速度、流量和連線狀態"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-time monitoring of network speed, traffic, and connection status"
           }
         }
       }

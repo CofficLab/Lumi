@@ -1,30 +1,52 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Model Monitor" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "模型偏好"
+  "sourceLanguage": "en",
+  "strings": {
+    "Model Monitor": {
+      "extractionState": "stale",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型偏好"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "needsReview",
+            "value": "模型偏好"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model Monitor"
           }
         }
       }
     },
-    "Model Preference" : {
-
-    },
-    "Remember current project's provider and model" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "记录当前项目使用的供应商和模型"
+    "Model Preference": {},
+    "Remember current project's provider and model": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "记录当前项目使用的供应商和模型"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "needsReview",
+            "value": "记录当前项目使用的供应商和模型"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remember current project's provider and model"
           }
         }
       }
     }
   },
-  "version" : "1.1"
+  "version": "1.1"
 }

@@ -14,6 +14,12 @@
             "state": "translated",
             "value": "設備資訊"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Device Info"
+          }
         }
       }
     },
@@ -30,6 +36,12 @@
             "state": "translated",
             "value": "概覽"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overview"
+          }
         }
       }
     },
@@ -45,6 +57,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "顯示 CPU、記憶體、磁碟、電池等系統狀態"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show system status like CPU, Memory, Disk, Battery, etc."
           }
         }
       }

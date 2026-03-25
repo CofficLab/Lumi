@@ -14,6 +14,12 @@
             "state": "translated",
             "value": "管理 Lumi 映像倉庫"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage Lumi registries"
+          }
         }
       }
     },
@@ -29,6 +35,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "映像倉庫管理"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registry Manager"
           }
         }
       }
@@ -46,6 +58,12 @@
             "state": "translated",
             "value": "在一個地方管理所有包倉庫"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage all your package registries in one place"
+          }
         }
       }
     },
@@ -61,6 +79,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Docker 倉庫已更新。請重啟 Docker Desktop。"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Docker registry updated. Please restart Docker Desktop."
           }
         }
       }
@@ -78,6 +102,12 @@
             "state": "translated",
             "value": "已切換 {type} 倉庫到 {name}"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switched {type} registry to {name}"
+          }
         }
       }
     },
@@ -94,6 +124,12 @@
             "state": "translated",
             "value": "設置 {type} 失敗：{error}"
           }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to set {type}: {error}"
+          }
         }
       }
     },
@@ -109,6 +145,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "失敗：{error}"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed: {error}"
           }
         }
       }
