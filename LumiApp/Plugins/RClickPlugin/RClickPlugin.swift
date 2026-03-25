@@ -1,5 +1,6 @@
 import MagicKit
 import SwiftUI
+import os
 
 actor RClickPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
@@ -7,6 +8,9 @@ actor RClickPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🖱️"
     nonisolated static let enable: Bool = false
     nonisolated static let verbose: Bool = false
+    
+    /// 插件专用 Logger
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rclick")
 
     static let id = "RClick"
     static let navigationId: String? = "rclick"
