@@ -18,4 +18,9 @@ actor AgentOnboardingPlugin: SuperPlugin {
     nonisolated func onRegister() {}
     nonisolated func onEnable() {}
     nonisolated func onDisable() {}
+
+    @MainActor
+    func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
+        AnyView(OnboardingRootOverlay(content: content()))
+    }
 }
