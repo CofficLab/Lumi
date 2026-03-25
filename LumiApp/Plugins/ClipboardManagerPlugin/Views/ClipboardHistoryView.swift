@@ -85,7 +85,7 @@ struct ClipboardHistoryView: View {
 }
 
 struct ClipboardItemRow: View {
-    let item: ClipboardItem
+    let item: ClipboardHistoryItem
     
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -95,13 +95,13 @@ struct ClipboardItemRow: View {
                     .fill(DesignTokens.Material.glass)
                     .frame(width: 32, height: 32)
                 
-                Image(systemName: iconName(for: item.type))
+                Image(systemName: iconName(for: ClipboardItemType(rawValue: item.type) ?? .text))
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
             
             // Content
             VStack(alignment: .leading, spacing: 4) {
-                Text(item.title)
+                Text(item.content)
                     .lineLimit(2)
                     .font(.system(size: 13))
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)

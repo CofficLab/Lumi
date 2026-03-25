@@ -817,6 +817,7 @@
       }
     },
     "All data is stored locally and will not be uploaded to any server." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -831,6 +832,9 @@
           }
         }
       }
+    },
+    "All data is stored locally in SwiftData database and will not be uploaded to any server." : {
+
     },
     "Allow" : {
       "localizations" : {

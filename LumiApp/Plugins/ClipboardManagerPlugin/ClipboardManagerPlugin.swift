@@ -19,7 +19,7 @@ actor ClipboardManagerPlugin: SuperPlugin {
     nonisolated static let isConfigurable: Bool = true
 
     static let shared = ClipboardManagerPlugin()
-    nonisolated private static let settingsStore = ClipboardManagerPluginLocalStore()
+    nonisolated private static let settingsStore = ClipboardManagerPluginLocalStore.shared
     nonisolated private static let monitoringKey = "ClipboardMonitoringEnabled"
 
     // MARK: - Lifecycle

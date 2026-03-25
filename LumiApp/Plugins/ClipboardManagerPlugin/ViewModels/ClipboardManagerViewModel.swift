@@ -4,10 +4,10 @@ import AppKit
 
 @MainActor
 class ClipboardManagerViewModel: ObservableObject {
-    @Published var items: [ClipboardItem] = []
+    @Published var items: [ClipboardHistoryItem] = []
     @Published var searchText: String = ""
     
-    private var allItems: [ClipboardItem] = []
+    private var allItems: [ClipboardHistoryItem] = []
     private let storage = ClipboardStorage.shared
     
     private var cancellables = Set<AnyCancellable>()
@@ -26,7 +26,9 @@ class ClipboardManagerViewModel: ObservableObject {
     }
     
     func loadItems() async {
-        self.allItems = await storage.getItems()
+        // Get items from actor-isolated storage and transfer to main actor
+        let fetchedItems = await storage.getItems()
+        self.allItems = fetchedItems
         filterItems()
     }
     
@@ -66,21 +68,19 @@ class ClipboardManagerViewModel: ObservableObject {
         }
     }
     
-    func copyToClipboard(_ item: ClipboardItem) {
+    func copyToClipboard(_ item: ClipboardHistoryItem) {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         
-        switch item.type {
+        switch ClipboardItemType(rawValue: item.type) {
         case .text, .html, .color:
             pasteboard.setString(item.content, forType: .string)
         case .file:
-            // Assuming content is path
             pasteboard.writeObjects([URL(fileURLWithPath: item.content) as NSPasteboardWriting])
         case .image:
-            // Implement image copy
             break
+        case .none:
+            pasteboard.setString(item.content, forType: .string)
         }
-        
-        // Notify or feedback?
     }
 }

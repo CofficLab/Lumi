@@ -2,14 +2,19 @@ import SwiftUI
 
 struct ClipboardSettingsView: View {
     @StateObject private var monitor = ClipboardMonitor.shared
-    @AppStorage("ClipboardHistorySize") private var historySize: Int = 500
-    @AppStorage("ClipboardMonitoringEnabled") private var isMonitoringEnabled: Bool = true
+    @State private var historySize: Int = 500
+    @State private var isMonitoringEnabled: Bool = true
+    
+    private let store = ClipboardManagerPluginLocalStore.shared
+    private let monitoringKey = "ClipboardMonitoringEnabled"
+    private let historySizeKey = "ClipboardHistorySize"
     
     var body: some View {
         Form {
             Section("General") {
                 Toggle("Enable Clipboard Monitoring", isOn: $isMonitoringEnabled)
                     .onChange(of: isMonitoringEnabled) { _, newValue in
+                        store.set(newValue, forKey: monitoringKey)
                         if newValue {
                             monitor.startMonitoring()
                         } else {
@@ -23,6 +28,9 @@ struct ClipboardSettingsView: View {
                     Text("1000").tag(1000)
                     Text("Unlimited").tag(Int.max)
                 }
+                .onChange(of: historySize) { _, newValue in
+                    store.set(newValue, forKey: historySizeKey)
+                }
             }
             
             Section("Data") {
@@ -33,12 +41,20 @@ struct ClipboardSettingsView: View {
                 }
                 .foregroundColor(DesignTokens.Color.semantic.error)
                 
-                Text("All data is stored locally and will not be uploaded to any server.")
+                Text("All data is stored locally in SwiftData database and will not be uploaded to any server.")
                     .font(.caption)
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
         }
         .padding()
+        .task {
+            // Load settings from store
+            isMonitoringEnabled = store.bool(forKey: monitoringKey)
+            historySize = store.integer(forKey: historySizeKey)
+            if historySize == 0 {
+                historySize = 500
+            }
+        }
     }
 }
 
