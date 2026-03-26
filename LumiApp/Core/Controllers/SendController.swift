@@ -27,7 +27,7 @@ final class SendController: ObservableObject, SuperLog {
     func attemptBeginNextQueuedSend() async {
         guard let message = container.messageQueueVM.dequeueNextEligibleMessage() else { return }
         let conversationId = message.conversationId
-        
+
         // 如果该会话已有活跃任务，将消息状态改回 pending，避免卡住
         guard activeSendTasksByConversation[conversationId] == nil else {
             container.messageQueueVM.requeueMessage(message)
@@ -86,12 +86,22 @@ final class SendController: ObservableObject, SuperLog {
 
         await container.conversationVM.saveMessage(message, to: conversationId)
 
+        // 创建发送上下文，传入终止回调
         let ctx = SendMessageContext(
             conversationId: conversationId,
             message: message,
             chatHistoryService: container.chatHistoryService,
-            agentSessionConfig: container.agentSessionConfig
+            agentSessionConfig: container.agentSessionConfig,
+            projectVM: container.projectVM
         )
+        ctx.abortTurn = { [weak self] in
+            self?.finishSendTurn(conversationId: conversationId, emitCompletionEvent: true)
+            self?.container.conversationSendStatusVM.setStatus(
+                conversationId: conversationId,
+                content: "检测到异常，已终止"
+            )
+        }
+
         let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
         await pipeline.run(ctx: ctx) { _ in }
 
@@ -259,6 +269,8 @@ final class SendController: ObservableObject, SuperLog {
                 conversationId: conversationId,
                 content: "正在执行工具：\(toolCall.name)…"
             )
+
+            // 执行工具
             let resultMsg: ChatMessage
             do {
                 let result = try await container.toolExecutionService.executeTool(toolCall)

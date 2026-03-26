@@ -21,7 +21,7 @@ LumiApp/Plugins/<PluginName>/          # 或 LumiApp/Plugins-Agent/<PluginName>/
 ├── <PluginName>Plugin.swift          # 插件主入口（必须）
 ├── <PluginName>.xcstrings             # 本地化字符串（必须）
 ├── <PluginName>LocalStore.swift       # 配置存储（可选）
-├── README.md                          # 插件说明文档（推荐）
+├── <PluginName>README.md              # 插件说明文档（推荐）
 │
 ├── Middleware/                        # 各类中间件（按需）
 │   └── *.swift
@@ -55,7 +55,7 @@ LumiApp/Plugins/<PluginName>/          # 或 LumiApp/Plugins-Agent/<PluginName>/
 | 文件名 | 用途 | 说明 |
 |--------|------|------|
 | `<PluginName>LocalStore.swift` | 配置存储 | 遵循存储规范，管理插件配置 |
-| `README.md` | 插件文档 | 说明插件功能、使用方式、数据流 |
+| `<PluginName>README.md` | 插件文档 | 说明插件功能、使用方式、数据流 |
 
 ---
 
@@ -195,6 +195,7 @@ struct DockerImageListView: View {
 | 插件主文件 | `<PluginName>Plugin.swift` | `AppManagerPlugin.swift` |
 | 本地化文件 | `<PluginName>.xcstrings` | `AppManager.xcstrings` |
 | 配置存储 | `<PluginName>LocalStore.swift` | `InputPluginLocalStore.swift` |
+| 说明文档 | `<PluginName>README.md` | `AppManagerREADME.md` |
 | 模型 | `<ModelName>.swift` | `DockerImage.swift` |
 | 服务 | `<Feature>Service.swift` | `DockerService.swift` |
 | 视图模型 | `<Feature>ViewModel.swift` | `DockerViewModel.swift` |
@@ -299,7 +300,7 @@ struct <PluginName>Plugin: SuperPlugin, SuperLog {
 ├── <PluginName>Plugin.swift
 ├── <PluginName>.xcstrings
 ├── <PluginName>LocalStore.swift
-├── README.md
+├── <PluginName>README.md
 │
 ├── Middleware/
 │   └── ExampleSendMiddleware.swift
@@ -365,4 +366,11 @@ struct <PluginName>Plugin: SuperPlugin, SuperLog {
 - [ ] 包含 `<PluginName>.xcstrings` 本地化文件
 - [ ] 按功能将代码放入对应子目录（含各类中间件 → `Middleware/`）
 - [ ] 遵循命名规范
-- [ ] 添加 README.md 说明文档（推荐）
+- [ ] 添加 `<PluginName>README.md` 说明文档（推荐）
+
+---
+
+## 相关规范
+
+- [中间件开发规范](./middleware-rules.md) - 中间件必须通过上下文获取依赖，禁止访问全局单例
+- [内核与插件边界规范](./core-plugin-boundary-rules.md) - 内核不得依赖插件，插件之间不得相互依赖
