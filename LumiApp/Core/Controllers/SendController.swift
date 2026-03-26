@@ -23,7 +23,7 @@ final class SendController: ObservableObject, SuperLog {
     }
 
     /// 尝试从队列中出队一条"可处理"的消息并开始发送。
-    /// 当某个对话在 `processingMessages` 中已有消息在处理时，该对话的待发送消息不会被出队。
+    /// 当某个对话在 `processingMessages` 中已有消息进行处理时，该对话的待发送消息不会被出队。
     func attemptBeginNextQueuedSend() async {
         guard let message = container.messageQueueVM.dequeueNextEligibleMessage() else { return }
         let conversationId = message.conversationId
@@ -243,7 +243,7 @@ final class SendController: ObservableObject, SuperLog {
                 tools: toolsArg,
                 onChunk: onStreamChunk,
                 onRequestStart: { metadata in
-                    await statusVM.setStatus(conversationId: conversationId, content: "正在发送消息，大小：\(metadata.bodySizeBytes) bytes")
+                    await statusVM.setStatus(conversationId: conversationId, content: "正在发送消息，大小：\(metadata.formattedBodySize)")
                 }
             )
             await onMessageReceived(message: assistantMessage, conversationId: conversationId)

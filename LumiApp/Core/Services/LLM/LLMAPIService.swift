@@ -33,6 +33,23 @@ struct RequestMetadata: Sendable {
     let url: String
     /// 发送时间戳
     let timestamp: Date
+    
+    /// 人类友好的请求体大小字符串（如 "1.5 MB"、"500 KB"）
+    var formattedBodySize: String {
+        let kb = 1024
+        let mb = kb * 1024
+        let gb = mb * 1024
+        
+        if bodySizeBytes >= gb {
+            return String(format: "%.2f GB", Double(bodySizeBytes) / Double(gb))
+        } else if bodySizeBytes >= mb {
+            return String(format: "%.2f MB", Double(bodySizeBytes) / Double(mb))
+        } else if bodySizeBytes >= kb {
+            return String(format: "%.2f KB", Double(bodySizeBytes) / Double(kb))
+        } else {
+            return "\(bodySizeBytes) bytes"
+        }
+    }
 }
 
 /// LLM API 服务
@@ -184,7 +201,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
             // 添加请求体
             if let bodyString = String(data: jsonData, encoding: .utf8) {
                 let bodySize = jsonData.count
-                let formattedSize = Self.formatBytes(bodySize)
+                let formattedSize = metadata.formattedBodySize
                 if bodyString.count <= 400 {
                     logMessage += "📦 请求体 (\(formattedSize))：\n\(bodyString)\n"
                 } else {
@@ -492,27 +509,6 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
                 statusCode: httpResponse.statusCode,
                 message: errorMessage
             )
-        }
-    }
-
-    // MARK: - 辅助方法
-
-    /// 格式化字节大小为人类可读的字符串
-    /// - Parameter bytes: 字节数
-    /// - Returns: 格式化后的字符串，如 "1.5 MB" 或 "500 bytes"
-    private nonisolated static func formatBytes(_ bytes: Int) -> String {
-        let kb = 1024
-        let mb = kb * 1024
-        let gb = mb * 1024
-
-        if bytes >= gb {
-            return String(format: "%.2f GB", Double(bytes) / Double(gb))
-        } else if bytes >= mb {
-            return String(format: "%.2f MB", Double(bytes) / Double(mb))
-        } else if bytes >= kb {
-            return String(format: "%.2f KB", Double(bytes) / Double(kb))
-        } else {
-            return "\(bytes) bytes"
         }
     }
 }
