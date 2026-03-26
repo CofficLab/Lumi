@@ -25,6 +25,16 @@ private final class TLSValidationDelegate: NSObject, URLSessionDelegate {
     }
 }
 
+/// 发送请求元数据
+struct RequestMetadata: Sendable {
+    /// 请求体大小（字节）
+    let bodySizeBytes: Int
+    /// 请求 URL
+    let url: String
+    /// 发送时间戳
+    let timestamp: Date
+}
+
 /// LLM API 服务
 ///
 /// 专门负责大语言模型 API 请求，包括消息发送、流式响应等。
@@ -114,6 +124,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
     ///   - apiKey: API 密钥
     ///   - body: 请求体字典
     ///   - additionalHeaders: 额外的请求头
+    ///   - onRequestStart: 请求开始时的回调（包含请求元数据）
     ///   - onChunk: 收到数据块时的回调
     /// - Throws: 网络错误或 API 错误
     func sendStreamingRequest(
@@ -121,6 +132,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         apiKey: String,
         body: [String: Any],
         additionalHeaders: [String: String] = [:],
+        onRequestStart: @Sendable @escaping (RequestMetadata) async -> Void = { _ in },
         onChunk: @Sendable @escaping (Data) async -> Bool
     ) async throws {
         // 构建请求头
@@ -145,22 +157,33 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         }
 
         // 序列化请求体
+        let jsonData: Data
         do {
-            let jsonData = try JSONSerialization.data(withJSONObject: body)
+            jsonData = try JSONSerialization.data(withJSONObject: body)
             request.httpBody = jsonData
         } catch {
             AppLogger.core.error("\(self.t)JSON 序列化失败：\(error.localizedDescription)")
             throw APIError.jsonSerializationFailed(underlying: error)
         }
 
+        // 📊 获取请求大小并通知调用方
+        let requestSizeBytes = jsonData.count
+        let metadata = RequestMetadata(
+            bodySizeBytes: requestSizeBytes,
+            url: url.absoluteString,
+            timestamp: Date()
+        )
+        
+        // 在发送前通知调用方
+        await onRequestStart(metadata)
+
         if Self.verbose {
             // 构建完整请求信息
             var logMessage = "\(self.t)🚀 发送流式请求到：\(url.absoluteString)\n"
 
             // 添加请求体
-            if let bodyData = request.httpBody,
-               let bodyString = String(data: bodyData, encoding: .utf8) {
-                let bodySize = bodyData.count
+            if let bodyString = String(data: jsonData, encoding: .utf8) {
+                let bodySize = jsonData.count
                 let formattedSize = Self.formatBytes(bodySize)
                 if bodyString.count <= 400 {
                     logMessage += "📦 请求体 (\(formattedSize))：\n\(bodyString)\n"
@@ -252,13 +275,13 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
                 let hangWatchdog = Task.detached(priority: .utility) {
                     try? await Task.sleep(nanoseconds: chunkCallbackHangWarnThresholdNs)
                     guard !Task.isCancelled else { return }
-                    AppLogger.core.error("\(loggerTag)⏳ onChunk 回调疑似卡住(>2s): chunk#\(callbackChunkIndex), bytes=\(callbackBytes)")
+                    AppLogger.core.error("\(loggerTag)⏳ onChunk 回调疑似卡住 (>2s): chunk#\(callbackChunkIndex), bytes=\(callbackBytes)")
                 }
                 let shouldContinue = await onChunk(Data(eventData))
                 hangWatchdog.cancel()
                 let callbackElapsed = CFAbsoluteTimeGetCurrent() - callbackStart
                 if callbackElapsed > chunkCallbackWarnThreshold {
-                    AppLogger.core.error("\(self.t)⏱️ onChunk 回调耗时异常: \(String(format: "%.3f", callbackElapsed))s, chunk#\(chunkCount), bytes=\(eventData.count)")
+                    AppLogger.core.error("\(self.t)⏱️ onChunk 回调耗时异常：\(String(format: "%.3f", callbackElapsed))s, chunk#\(chunkCount), bytes=\(eventData.count)")
                 }
                 if !shouldContinue {
                     if Self.verbose {
@@ -281,13 +304,13 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
             let hangWatchdog = Task.detached(priority: .utility) {
                 try? await Task.sleep(nanoseconds: chunkCallbackHangWarnThresholdNs)
                 guard !Task.isCancelled else { return }
-                AppLogger.core.error("\(loggerTag)⏳ onChunk 回调疑似卡住(>2s): remaining bytes=\(remainingBytes)")
+                AppLogger.core.error("\(loggerTag)⏳ onChunk 回调疑似卡住 (>2s): remaining bytes=\(remainingBytes)")
             }
             let shouldContinue = await onChunk(eventBuffer)
             hangWatchdog.cancel()
             let callbackElapsed = CFAbsoluteTimeGetCurrent() - callbackStart
             if callbackElapsed > chunkCallbackWarnThreshold {
-                AppLogger.core.error("\(self.t)⏱️ onChunk 回调耗时异常(剩余块): \(String(format: "%.3f", callbackElapsed))s, bytes=\(eventBuffer.count)")
+                AppLogger.core.error("\(self.t)⏱️ onChunk 回调耗时异常 (剩余块): \(String(format: "%.3f", callbackElapsed))s, bytes=\(eventBuffer.count)")
             }
             if !shouldContinue {
                 if Self.verbose {

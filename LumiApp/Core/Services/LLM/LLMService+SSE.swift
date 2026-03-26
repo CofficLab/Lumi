@@ -56,7 +56,8 @@ extension LLMService {
         messages: [ChatMessage],
         config: LLMConfig,
         tools: [AgentTool]? = nil,
-        onChunk: @Sendable @escaping (StreamChunk) async -> Void
+        onChunk: @Sendable @escaping (StreamChunk) async -> Void,
+        onRequestStart: @Sendable @escaping (RequestMetadata) async -> Void = { _ in }
     ) async throws -> ChatMessage {
         let startTime = CFAbsoluteTimeGetCurrent()
 
@@ -131,7 +132,8 @@ extension LLMService {
                 url: url,
                 apiKey: config.apiKey,
                 body: body,
-                additionalHeaders: additionalHeaders
+                additionalHeaders: additionalHeaders,
+                onRequestStart: onRequestStart
             ) { chunkData in
                 do {
                     try Task.checkCancellation()

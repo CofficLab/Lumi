@@ -241,7 +241,10 @@ final class SendController: ObservableObject, SuperLog {
                 messages: messages,
                 config: config,
                 tools: toolsArg,
-                onChunk: onStreamChunk
+                onChunk: onStreamChunk,
+                onRequestStart: { metadata in
+                    await statusVM.setStatus(conversationId: conversationId, content: "正在发送消息，大小：\(metadata.bodySizeBytes) bytes")
+                }
             )
             await onMessageReceived(message: assistantMessage, conversationId: conversationId)
         } catch LLMServiceError.cancelled {
