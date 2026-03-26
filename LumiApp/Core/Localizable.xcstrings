@@ -3740,12 +3740,6 @@
         }
       }
     },
-    "RAG" : {
-
-    },
-    "RAG (Retrieval-Augmented Generation) 是一种让 AI 能够查阅项目代码的技术。\n\n工作流程:\n1. 索引项目文件\n2. 用户提问时搜索相关代码\n3. AI 基于找到的代码回答问题\n\n这样 AI 就能准确回答关于你项目的问题了。" : {
-
-    },
     "Real-time Monitor" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5362,9 +5356,6 @@
         }
       }
     },
-    "关于 RAG" : {
-
-    },
     "内存 %lld GB" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5871,12 +5862,6 @@
         }
       }
     },
-    "向量数据库" : {
-
-    },
-    "向量模型" : {
-
-    },
     "启动选项" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5892,12 +5877,6 @@
           }
         }
       }
-    },
-    "启用 RAG" : {
-
-    },
-    "启用后，AI 可以基于项目代码回答问题" : {
-
     },
     "启用或禁用应用的插件功能" : {
       "localizations" : {
@@ -6278,9 +6257,6 @@
           }
         }
       }
-    },
-    "已就绪" : {
-
     },
     "已扫描：Code、Projects、Developer 等目录" : {
       "localizations" : {
@@ -7515,9 +7491,6 @@
         }
       }
     },
-    "检索增强生成" : {
-
-    },
     "模型列表" : {
       "localizations" : {
         "zh-Hans" : {
@@ -7890,9 +7863,6 @@
         }
       }
     },
-    "状态" : {
-
-    },
     "生成中" : {
       "localizations" : {
         "zh-Hans" : {
@@ -8124,9 +8094,6 @@
           }
         }
       }
-    },
-    "系统信息" : {
-
     },
     "结果" : {
       "localizations" : {
