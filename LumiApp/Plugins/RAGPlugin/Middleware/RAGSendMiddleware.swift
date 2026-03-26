@@ -26,6 +26,7 @@ final class RAGSendMiddleware: SendMiddleware, SuperLog {
         next: @escaping @MainActor (SendMessageContext) async -> Void
     ) async {
         let userMessage = ctx.message.content
+        let projectPath = ctx.projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
 
         RAGPlugin.logger.info("🔀 RAG 中间件：检查消息")
         RAGPlugin.logger.info("\(Self.t)   用户消息：\"\(userMessage)\"")
@@ -35,13 +36,23 @@ final class RAGSendMiddleware: SendMiddleware, SuperLog {
             await next(ctx)
             return
         }
+        guard !projectPath.isEmpty else {
+            RAGPlugin.logger.info("\(Self.t)   ⏭️ 跳过 RAG (未选择项目)")
+            await next(ctx)
+            return
+        }
 
         RAGPlugin.logger.info("\(Self.t)   ✅ 触发 RAG 检索")
 
         do {
             try await ctx.ragService.initialize()
+            try await ctx.ragService.ensureIndexed(projectPath: projectPath)
 
-            let response = try await ctx.ragService.retrieve(query: userMessage, topK: 3)
+            let response = try await ctx.ragService.retrieve(
+                query: userMessage,
+                projectPath: projectPath,
+                topK: 5
+            )
 
             guard response.hasResults else {
                 RAGPlugin.logger.info("\(Self.t)   ⚠️ 未找到相关文档")
@@ -55,9 +66,15 @@ final class RAGSendMiddleware: SendMiddleware, SuperLog {
                 RAGPlugin.logger.info("\(Self.t)          \(result.content.prefix(50))...")
             }
 
-            let augmentedPrompt = buildAugmentedPrompt(query: userMessage, results: response.results)
+            let augmentedPrompt = RAGContextBuilder.buildPrompt(
+                query: userMessage,
+                results: response.results,
+                projectPath: projectPath
+            )
+            ctx.transientSystemPrompts.append(augmentedPrompt)
 
             RAGPlugin.logger.info("\(Self.t)   📝 已构建增强提示词 (\(augmentedPrompt.count) 字符)")
+            RAGPlugin.logger.info("\(Self.t)   🧩 已注入本轮临时 system 上下文")
             RAGPlugin.logger.info("\(Self.t)   ➡️ 继续传递给 LLM...")
 
         } catch {
@@ -72,17 +89,5 @@ final class RAGSendMiddleware: SendMiddleware, SuperLog {
     private func shouldUseRAG(for message: String) -> Bool {
         let lowercased = message.lowercased()
         return ragTriggers.contains { lowercased.contains($0) }
-    }
-
-    private func buildAugmentedPrompt(query: String, results: [RAGSearchResult]) -> String {
-        var prompt = "基于以下相关文档回答用户问题:\n\n---\n相关文档:\n"
-
-        for (index, result) in results.enumerated() {
-            prompt += "\n[文档 \(index + 1)] 来源：\(result.source)\n\(result.content)\n"
-        }
-
-        prompt += "\n---\n用户问题：\(query)\n\n请基于以上文档内容回答。"
-
-        return prompt
     }
 }

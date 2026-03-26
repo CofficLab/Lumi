@@ -28,4 +28,9 @@ actor RAGPlugin: SuperPlugin, SuperLog {
         }
         return [AnySendMiddleware(RAGSendMiddleware())]
     }
+
+    @MainActor
+    func addSettingsView() -> AnyView? {
+        AnyView(RAGSettingsView())
+    }
 }

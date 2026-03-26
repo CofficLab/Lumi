@@ -19,6 +19,7 @@ final class RootViewContainer: ObservableObject {
     let promptService: PromptService
     let slashCommandService: SlashCommandService
     let toolService: ToolService
+    let ragService: RAGService
     let providerRegistry: LLMProviderRegistry
     let chatHistoryService: ChatHistoryService
     let conversationTurnServices: ConversationTurnServices
@@ -72,6 +73,7 @@ final class RootViewContainer: ObservableObject {
 
         // 初始化工具服务
         self.toolService = ToolService(llmService: llmService)
+        self.ragService = RAGService()
 
         self.conversationTurnServices = ConversationTurnServices(
             promptService: promptService,

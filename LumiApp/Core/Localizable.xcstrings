@@ -209,6 +209,16 @@
         }
       }
     },
+    "%@ (%lld)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$lld)"
+          }
+        }
+      }
+    },
     "%@ (%lld%%)" : {
       "localizations" : {
         "en" : {
@@ -2087,6 +2097,9 @@
         }
       }
     },
+    "Embedding" : {
+
+    },
     "Empty files in the trash" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3737,6 +3750,9 @@
     "RAG" : {
 
     },
+    "RAG 索引状态" : {
+
+    },
     "Real-time Monitor" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4286,6 +4302,9 @@
           }
         }
       }
+    },
+    "sqlite-vec" : {
+
     },
     "Start" : {
       "localizations" : {
@@ -5369,6 +5388,12 @@
         }
       }
     },
+    "最新" : {
+
+    },
+    "最近索引" : {
+
+    },
     "最近项目" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5531,6 +5556,9 @@
           }
         }
       }
+    },
+    "刷新状态" : {
+
     },
     "功能特性：" : {
       "localizations" : {
@@ -5858,6 +5886,9 @@
           }
         }
       }
+    },
+    "向量后端" : {
+
     },
     "启动选项" : {
       "localizations" : {
@@ -6335,6 +6366,9 @@
         }
       }
     },
+    "已过期" : {
+
+    },
     "已选择：%@" : {
       "localizations" : {
         "zh-Hans" : {
@@ -6464,6 +6498,9 @@
           }
         }
       }
+    },
+    "当前项目尚未建立索引。" : {
+
     },
     "当插件标记为可配置时，会在此处显示" : {
       "localizations" : {
@@ -7012,6 +7049,9 @@
           }
         }
       }
+    },
+    "文件数" : {
+
     },
     "文件树" : {
       "extractionState" : "stale",
@@ -7844,6 +7884,9 @@
         }
       }
     },
+    "片段数" : {
+
+    },
     "版本 %@" : {
       "localizations" : {
         "zh-Hans" : {
@@ -7859,6 +7902,9 @@
           }
         }
       }
+    },
+    "状态" : {
+
     },
     "生成中" : {
       "localizations" : {
@@ -8042,6 +8088,9 @@
         }
       }
     },
+    "立即重建索引" : {
+
+    },
     "等待发送" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8207,6 +8256,9 @@
         }
       }
     },
+    "说明" : {
+
+    },
     "请从侧边栏选择一个导航入口" : {
       "localizations" : {
         "zh-Hans" : {
@@ -8238,6 +8290,9 @@
           }
         }
       }
+    },
+    "请先选择项目，RAG 才能建立与展示索引。" : {
+
     },
     "请在左侧文件树中选择一个文件\n查看其内容" : {
       "extractionState" : "stale",
@@ -8321,6 +8376,9 @@
           }
         }
       }
+    },
+    "读取索引状态…" : {
+
     },
     "调试" : {
       "localizations" : {

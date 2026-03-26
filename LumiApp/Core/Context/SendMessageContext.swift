@@ -25,6 +25,9 @@ final class SendMessageContext {
     /// }
     /// ```
     let ragService: RAGService
+    
+    /// 仅在当前发送轮次有效的 system 提示词（不落库）
+    var transientSystemPrompts: [String] = []
 
     /// 终止本轮发送的回调
     ///
@@ -37,14 +40,15 @@ final class SendMessageContext {
         message: ChatMessage,
         chatHistoryService: ChatHistoryService,
         agentSessionConfig: LLMVM,
-        projectVM: ProjectVM
+        projectVM: ProjectVM,
+        ragService: RAGService
     ) {
         self.conversationId = conversationId
         self.message = message
         self.chatHistoryService = chatHistoryService
         self.agentSessionConfig = agentSessionConfig
         self.projectVM = projectVM
-        self.ragService = RAGService()
+        self.ragService = ragService
     }
 
     /// 便捷方法：终止并发送系统消息

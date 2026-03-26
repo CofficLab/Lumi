@@ -17,6 +17,7 @@ final class SendController: ObservableObject, SuperLog {
 
     private let container: RootViewContainer
     private var activeSendTasksByConversation: [UUID: Task<Void, Never>] = [:]
+    private var pendingTransientSystemPromptsByConversation: [UUID: [String]] = [:]
 
     init(container: RootViewContainer) {
         self.container = container
@@ -92,7 +93,8 @@ final class SendController: ObservableObject, SuperLog {
             message: message,
             chatHistoryService: container.chatHistoryService,
             agentSessionConfig: container.agentSessionConfig,
-            projectVM: container.projectVM
+            projectVM: container.projectVM,
+            ragService: container.ragService
         )
         ctx.abortTurn = { [weak self] in
             self?.finishSendTurn(conversationId: conversationId, emitCompletionEvent: true)
@@ -104,6 +106,7 @@ final class SendController: ObservableObject, SuperLog {
 
         let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
         await pipeline.run(ctx: ctx) { _ in }
+        pendingTransientSystemPromptsByConversation[conversationId] = ctx.transientSystemPrompts
 
         await send(conversationId: conversationId)
     }
@@ -116,7 +119,17 @@ final class SendController: ObservableObject, SuperLog {
         switch last.role {
         case .user, .tool:
             guard container.messageQueueVM.isProcessing(for: conversationId) else { return }
-            await streamAssistantReply(conversationId: conversationId, messages: messages)
+            let additionalSystemPrompts: [String]
+            if last.role == .user {
+                additionalSystemPrompts = consumeTransientSystemPrompts(for: conversationId)
+            } else {
+                additionalSystemPrompts = []
+            }
+            await streamAssistantReply(
+                conversationId: conversationId,
+                messages: messages,
+                additionalSystemPrompts: additionalSystemPrompts
+            )
         case .assistant:
             if last.hasToolCalls {
                 guard container.messageQueueVM.isProcessing(for: conversationId) else { return }
@@ -215,7 +228,16 @@ final class SendController: ObservableObject, SuperLog {
     }
 
     /// 使用当前会话配置与可用工具，对给定消息列表发起**一次**流式模型请求。
-    private func streamAssistantReply(conversationId: UUID, messages: [ChatMessage]) async {
+    private func streamAssistantReply(
+        conversationId: UUID,
+        messages: [ChatMessage],
+        additionalSystemPrompts: [String] = []
+    ) async {
+        let messagesForLLM = composeMessagesForLLM(
+            conversationId: conversationId,
+            baseMessages: messages,
+            additionalSystemPrompts: additionalSystemPrompts
+        )
         let config = container.agentSessionConfig.getCurrentConfig()
         let availableTools = ToolAvailabilityGuard().evaluate(
             tools: container.toolService.tools,
@@ -238,7 +260,7 @@ final class SendController: ObservableObject, SuperLog {
         do {
             statusVM.setStatus(conversationId: conversationId, content: "正在发送消息…")
             let assistantMessage = try await container.llmService.sendStreamingMessage(
-                messages: messages,
+                messages: messagesForLLM,
                 config: config,
                 tools: toolsArg,
                 onChunk: onStreamChunk,
@@ -259,6 +281,29 @@ final class SendController: ObservableObject, SuperLog {
                 content: error.localizedDescription
             )
         }
+    }
+
+    private func consumeTransientSystemPrompts(for conversationId: UUID) -> [String] {
+        let prompts = pendingTransientSystemPromptsByConversation[conversationId] ?? []
+        pendingTransientSystemPromptsByConversation[conversationId] = nil
+        return prompts
+    }
+
+    private func composeMessagesForLLM(
+        conversationId: UUID,
+        baseMessages: [ChatMessage],
+        additionalSystemPrompts: [String]
+    ) -> [ChatMessage] {
+        guard !additionalSystemPrompts.isEmpty else { return baseMessages }
+        guard !baseMessages.isEmpty else { return baseMessages }
+
+        var merged = baseMessages
+        let insertionIndex = max(merged.count - 1, 0)
+        let transientMessages = additionalSystemPrompts.map {
+            ChatMessage(role: .system, conversationId: conversationId, content: $0)
+        }
+        merged.insert(contentsOf: transientMessages, at: insertionIndex)
+        return merged
     }
 
     /// 执行某条助手消息中声明的全部工具调用，并将每条结果以 `role: .tool` 消息落库。

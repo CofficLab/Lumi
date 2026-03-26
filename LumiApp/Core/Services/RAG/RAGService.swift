@@ -1,5 +1,4 @@
 import Foundation
-import os
 import MagicKit
 
 /// RAG 检索结果
@@ -13,176 +12,193 @@ struct RAGSearchResult {
 struct RAGResponse {
     let query: String
     let results: [RAGSearchResult]
-    
+
     var hasResults: Bool { !results.isEmpty }
 }
 
 /// RAG 核心服务
 ///
-/// 职责：检索增强生成的核心逻辑
-///
-/// ## 工作流程
-/// 1. 索引：把文档变成向量存起来
-/// 2. 检索：用户提问时，搜索相关文档
-///
+/// - 负责初始化本地数据库
+/// - 负责项目索引（全量/增量）
+/// - 负责查询检索并返回相关片段
 actor RAGService: SuperLog {
     nonisolated static let emoji = "🦞"
     nonisolated static let verbose = false
-    
-    // MARK: - 属性
-    
-    /// 是否已初始化
+
+    private static let pluginName = "RAGPlugin"
+    private static let embeddingModelId = "local-hash-v1"
+    private static let embeddingDimension = 256
+    private static let ensureThrottleSeconds: TimeInterval = 20
+    private static let staleAfterSeconds: TimeInterval = 300
+
     private(set) var isInitialized: Bool = false
-    
-    /// 模拟：存储的文档向量
-    private var documentVectors: [(content: String, source: String, vector: [Float])] = []
-    
-    // MARK: - 初始化
-    
+    private var store: RAGSQLiteStore?
+    private var indexer: RAGIndexer?
+    private var retriever: RAGRetriever?
+    private var lastEnsureAttemptByProject: [String: Date] = [:]
+
     init() {
         AppLogger.core.info("\(Self.t)🦞 RAG 服务已创建")
     }
-    
-    // MARK: - 初始化
-    
-    /// 初始化服务
+
+    // MARK: - Lifecycle
+
     func initialize() async throws {
         guard !isInitialized else { return }
-        
-        AppLogger.core.info("\(Self.t)📦 RAG 服务初始化中...")
-        
-        // 模拟：加载 Embedding 模型
-        try await Task.sleep(nanoseconds: 100_000_000)
-        
-        // 模拟：初始化向量数据库
-        try await Task.sleep(nanoseconds: 50_000_000)
-        
-        isInitialized = true
-        AppLogger.core.info("\(Self.t)✅ RAG 服务初始化完成")
+
+        let dbURL = AppConfig.getPluginDBFolderURL(pluginName: Self.pluginName)
+            .appendingPathComponent("rag.sqlite")
+
+        let store = try RAGSQLiteStore(dbURL: dbURL)
+        try store.migrate()
+
+        self.store = store
+        self.indexer = RAGIndexer(
+            store: store,
+            embeddingModelId: Self.embeddingModelId,
+            embeddingDimension: Self.embeddingDimension
+        )
+        self.retriever = RAGRetriever(store: store)
+        self.isInitialized = true
+
+        AppLogger.core.info("\(Self.t)✅ RAG 服务初始化完成，DB: \(dbURL.path)")
     }
-    
-    // MARK: - 索引
-    
-    /// 索引项目
+
+    // MARK: - Indexing
+
+    /// 确保指定项目已建立可用索引（不存在则全量，存在则增量）
+    func ensureIndexed(projectPath: String, force: Bool = false) async throws {
+        guard isInitialized else { throw RAGError.notInitialized }
+        guard let indexer else { throw RAGError.internalStateCorrupted }
+        guard let store else { throw RAGError.internalStateCorrupted }
+
+        let normalized = normalizeProjectPath(projectPath)
+        guard !normalized.isEmpty else { throw RAGError.invalidProjectPath }
+
+        let indexState = try store.fetchProjectIndexState(projectPath: normalized)
+        let modelMismatch = indexState.map {
+            $0.embeddingModel != Self.embeddingModelId || $0.embeddingDimension != Self.embeddingDimension
+        } ?? false
+
+        if force || modelMismatch {
+            _ = try indexer.rebuildProjectIndex(at: normalized)
+            return
+        }
+
+        if !force {
+            let now = Date()
+            if let lastAttempt = lastEnsureAttemptByProject[normalized],
+               now.timeIntervalSince(lastAttempt) < Self.ensureThrottleSeconds {
+                return
+            }
+            if let state = indexState,
+               !isIndexStateStale(state, now: now) {
+                lastEnsureAttemptByProject[normalized] = now
+                return
+            }
+            lastEnsureAttemptByProject[normalized] = now
+        }
+
+        let stats = try indexer.indexProjectIncrementally(at: normalized)
+        if Self.verbose {
+            AppLogger.core.info(
+                "\(Self.t)📚 索引完成 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount)"
+            )
+        }
+    }
+
+    /// 兼容旧接口：执行一次全量重建
     func indexProject(at path: String) async throws {
         guard isInitialized else { throw RAGError.notInitialized }
-        
-        AppLogger.core.info("\(Self.t)📚 索引项目: \(path)")
-        
-        // 清除旧数据
-        self.documentVectors.removeAll()
-        
-        // 模拟：生成一些测试文档
-        let mockDocs = self.createMockDocuments()
-        
-        // 模拟：生成向量并存储
-        for doc in mockDocs {
-            let vector = self.simulateEmbedding(doc.content)
-            self.documentVectors.append((doc.content, doc.source, vector))
-        }
-        
-        AppLogger.core.info("\(Self.t)✅ 已索引 \(self.documentVectors.count) 个文档片段")
+        guard let indexer else { throw RAGError.internalStateCorrupted }
+
+        let normalized = normalizeProjectPath(path)
+        guard !normalized.isEmpty else { throw RAGError.invalidProjectPath }
+
+        _ = try indexer.rebuildProjectIndex(at: normalized)
     }
-    
-    // MARK: - 检索
-    
-    /// 检索相关文档
+
+    // MARK: - Retrieval
+
+    /// 兼容旧接口：在全部项目范围检索
     func retrieve(query: String, topK: Int = 3) async throws -> RAGResponse {
+        try await retrieve(query: query, projectPath: nil, topK: topK)
+    }
+
+    /// 检索相关文档（可限定项目）
+    func retrieve(query: String, projectPath: String?, topK: Int = 3) async throws -> RAGResponse {
         guard isInitialized else { throw RAGError.notInitialized }
-        
-        AppLogger.core.info("\(Self.t)🔍 检索: \"\(query)\"")
-        
-        // 1. 问题转向量
-        let queryVector = self.simulateEmbedding(query)
-        
-        // 2. 计算相似度
-        var results: [(content: String, source: String, score: Float)] = []
-        
-        for doc in self.documentVectors {
-            let score = self.cosineSimilarity(queryVector, doc.vector)
-            results.append((doc.content, doc.source, score))
-        }
-        
-        // 3. 排序并取 topK
-        results.sort { $0.score > $1.score }
-        let topResults = results.prefix(topK).map {
-            RAGSearchResult(content: $0.content, source: $0.source, score: $0.score)
-        }
-        
-        AppLogger.core.info("\(Self.t)✅ 找到 \(topResults.count) 个相关文档")
-        
-        return RAGResponse(query: query, results: topResults)
+        guard let retriever else { throw RAGError.internalStateCorrupted }
+
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return RAGResponse(query: query, results: []) }
+
+        let normalizedProjectPath = projectPath.map(normalizeProjectPath)
+        let queryEmbedding = RAGEmbedding.embed(trimmed, dimension: Self.embeddingDimension)
+        let results = try retriever.retrieve(
+            queryEmbedding: queryEmbedding,
+            query: trimmed,
+            projectPath: normalizedProjectPath,
+            topK: max(topK, 1)
+        )
+
+        return RAGResponse(query: query, results: results)
     }
-    
-    // MARK: - 模拟实现
-    
-    /// 模拟：创建测试文档
-    private func createMockDocuments() -> [(content: String, source: String)] {
-        return [
-            (
-                "class LoginViewController: UIViewController {\n    // 登录界面控制器\n    func handleLogin() { }\n}",
-                "LoginViewController.swift"
-            ),
-            (
-                "class AuthManager {\n    // 认证管理器\n    func login() async throws { }\n    func logout() { }\n}",
-                "AuthManager.swift"
-            ),
-            (
-                "class APIClient {\n    // 网络请求客户端\n    func request<T>() async throws -> T { }\n}",
-                "APIClient.swift"
-            ),
-            (
-                "# 项目配置\n\n## API 配置\n- 基础 URL: https://api.example.com\n- 超时: 30秒",
-                "README.md"
-            ),
-            (
-                "# 用户管理\n\n## 功能\n- 用户注册\n- 用户登录\n- 密码重置",
-                "Docs/UserManagement.md"
-            )
-        ]
+
+    func getIndexStatus(projectPath: String) async throws -> RAGIndexStatus? {
+        guard isInitialized else { throw RAGError.notInitialized }
+        guard let store else { throw RAGError.internalStateCorrupted }
+
+        let normalized = normalizeProjectPath(projectPath)
+        guard !normalized.isEmpty else { throw RAGError.invalidProjectPath }
+        guard let state = try store.fetchProjectIndexState(projectPath: normalized) else { return nil }
+
+        let lastIndexed = Date(timeIntervalSince1970: state.lastIndexedAt)
+        return RAGIndexStatus(
+            projectPath: state.projectPath,
+            lastIndexedAt: lastIndexed,
+            fileCount: state.fileCount,
+            chunkCount: state.chunkCount,
+            embeddingModel: state.embeddingModel,
+            embeddingDimension: state.embeddingDimension,
+            isStale: isIndexStateStale(state, now: Date())
+        )
     }
-    
-    /// 模拟：生成向量
-    private func simulateEmbedding(_ text: String) -> [Float] {
-        // 使用文本哈希生成伪向量
-        var vector = [Float](repeating: 0, count: 384)
-        let hash = Float(abs(text.hashValue % 1000)) / 1000.0
-        
-        for i in 0..<384 {
-            vector[i] = (hash + Float(i) / 384.0) * 0.5
-        }
-        
-        // 归一化
-        let magnitude = sqrt(vector.map { $0 * $0 }.reduce(0, +))
-        if magnitude > 0 {
-            vector = vector.map { $0 / magnitude }
-        }
-        
-        return vector
+
+    func getRuntimeInfo() async throws -> RAGRuntimeInfo {
+        guard isInitialized else { throw RAGError.notInitialized }
+        guard let store else { throw RAGError.internalStateCorrupted }
+        return store.runtimeInfo
     }
-    
-    /// 计算余弦相似度
-    private func cosineSimilarity(_ a: [Float], _ b: [Float]) -> Float {
-        guard a.count == b.count, !a.isEmpty else { return 0 }
-        
-        let dot = zip(a, b).map { $0 * $1 }.reduce(0, +)
-        let magA = sqrt(a.map { $0 * $0 }.reduce(0, +))
-        let magB = sqrt(b.map { $0 * $0 }.reduce(0, +))
-        
-        guard magA > 0, magB > 0 else { return 0 }
-        return dot / (magA * magB)
+
+    private func normalizeProjectPath(_ path: String) -> String {
+        URL(fileURLWithPath: path).standardizedFileURL.path
+    }
+
+    private func isIndexStateStale(_ state: RAGProjectIndexState, now: Date) -> Bool {
+        let indexedAt = Date(timeIntervalSince1970: state.lastIndexedAt)
+        return now.timeIntervalSince(indexedAt) > Self.staleAfterSeconds
     }
 }
 
-// MARK: - 错误
+// MARK: - Errors
 
 enum RAGError: LocalizedError {
     case notInitialized
-    
+    case invalidProjectPath
+    case internalStateCorrupted
+    case dbError(String)
+
     var errorDescription: String? {
         switch self {
         case .notInitialized:
             return "RAG 服务未初始化"
+        case .invalidProjectPath:
+            return "无效的项目路径"
+        case .internalStateCorrupted:
+            return "RAG 内部状态异常"
+        case let .dbError(message):
+            return "RAG 数据库错误：\(message)"
         }
     }
 }
