@@ -261,6 +261,20 @@ final class SendController: ObservableObject, SuperLog {
             }
         }
 
+        // 记录开始时间
+        let startTime = CFAbsoluteTimeGetCurrent()
+        
+        // 使用 AsyncStream 安全地传递请求元数据，避免并发修改捕获变量的问题
+        let (metadataStream, metadataContinuation) = AsyncStream<RequestMetadata>.makeStream()
+        var requestMetadata: RequestMetadata?
+        
+        // 启动一个任务来接收元数据
+        let metadataTask = Task {
+            for await metadata in metadataStream {
+                requestMetadata = metadata
+            }
+        }
+
         do {
             statusVM.setStatus(conversationId: conversationId, content: "正在发送消息…")
             let assistantMessage = try await container.llmService.sendStreamingMessage(
@@ -269,14 +283,66 @@ final class SendController: ObservableObject, SuperLog {
                 tools: toolsArg,
                 onChunk: onStreamChunk,
                 onRequestStart: { metadata in
-                    await statusVM.setStatus(conversationId: conversationId, content: "正在发送消息，大小：\(metadata.formattedBodySize)")
+                    // 通过 AsyncStream 安全地传递元数据
+                    let requestMeta = RequestMetadata(
+                        bodySizeBytes: metadata.bodySizeBytes,
+                        url: metadata.url,
+                        timestamp: metadata.timestamp,
+                        messages: messagesForLLM,
+                        config: config,
+                        tools: toolsArg,
+                        transientPrompts: additionalSystemPrompts
+                    )
+                    metadataContinuation.yield(requestMeta)
+                    metadataContinuation.finish()
+                    
+                    Task { @MainActor in
+                        await statusVM.setStatus(conversationId: conversationId, content: "正在发送消息，大小：\(metadata.formattedBodySize)")
+                    }
                 }
             )
+
+            // 等待元数据任务完成
+            await metadataTask.value
+            
+            // 计算耗时
+            let endTime = CFAbsoluteTimeGetCurrent()
+            let duration = endTime - startTime
+
+            // 更新请求元数据，添加响应信息
+            if var metadata = requestMetadata {
+                metadata.responseMessage = assistantMessage
+                metadata.duration = duration
+                if let inputTokens = assistantMessage.inputTokens,
+                   let outputTokens = assistantMessage.outputTokens {
+                    metadata.tokenUsage = TokenUsage(
+                        promptTokens: inputTokens,
+                        completionTokens: outputTokens,
+                        totalTokens: assistantMessage.totalTokens ?? (inputTokens + outputTokens)
+                    )
+                }
+
+                // ✅ 调用发送后管线
+                let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
+                await pipeline.runPost(metadata: metadata, response: assistantMessage)
+            }
+
             await onMessageReceived(message: assistantMessage, conversationId: conversationId)
         } catch LLMServiceError.cancelled {
             AppLogger.core.info("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 发送已取消")
             finishSendTurn(conversationId: conversationId, emitCompletionEvent: false)
             statusVM.setStatus(conversationId: conversationId, content: "已停止生成")
+
+            // 等待元数据任务完成
+            await metadataTask.value
+            
+            // 取消时也调用 handlePost
+            if var metadata = requestMetadata {
+                metadata.error = LLMServiceError.cancelled
+                metadata.duration = CFAbsoluteTimeGetCurrent() - startTime
+                let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
+                await pipeline.runPost(metadata: metadata, response: nil)
+            }
         } catch {
             AppLogger.core.error("\(Self.t) 请求模型失败：\(error)")
             finishSendTurn(conversationId: conversationId)
@@ -284,6 +350,17 @@ final class SendController: ObservableObject, SuperLog {
                 conversationId: conversationId,
                 content: error.localizedDescription
             )
+
+            // 等待元数据任务完成
+            await metadataTask.value
+            
+            // 失败时也调用 handlePost
+            if var metadata = requestMetadata {
+                metadata.error = error
+                metadata.duration = CFAbsoluteTimeGetCurrent() - startTime
+                let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
+                await pipeline.runPost(metadata: metadata, response: nil)
+            }
         }
     }
 
