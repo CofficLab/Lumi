@@ -8,6 +8,23 @@ final class SendMessageContext {
     let chatHistoryService: ChatHistoryService
     let agentSessionConfig: LLMVM
     let projectVM: ProjectVM
+    
+    /// RAG 服务 - 检索增强生成
+    ///
+    /// 提供文档索引和检索能力，让 AI 能够基于项目代码回答问题。
+    ///
+    /// ## 使用场景
+    /// - 中间件可以调用此服务检索相关文档
+    /// - 检索结果可以增强发送给 LLM 的提示词
+    ///
+    /// ## 示例
+    /// ```swift
+    /// let response = try await ctx.ragService.retrieve(query: "登录功能在哪？")
+    /// for result in response.results {
+    ///     print("找到: \(result.source), 相似度: \(result.score)")
+    /// }
+    /// ```
+    let ragService: RAGService
 
     /// 终止本轮发送的回调
     ///
@@ -27,6 +44,7 @@ final class SendMessageContext {
         self.chatHistoryService = chatHistoryService
         self.agentSessionConfig = agentSessionConfig
         self.projectVM = projectVM
+        self.ragService = RAGService()
     }
 
     /// 便捷方法：终止并发送系统消息
