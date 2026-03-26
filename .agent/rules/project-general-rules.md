@@ -25,10 +25,15 @@
 
 如果任何函数会抛出错误，必须设计合理的视图来展示错误。
 
+### 4. 内核与插件边界
+
+内核不得依赖插件实现；插件之间不得相互依赖。细则见 [内核与插件边界规范](./core-plugin-boundary-rules.md)。
+
 ---
 
 ## 相关规范
 
+- [内核与插件边界](./core-plugin-boundary-rules.md)
 - [数据存储规范](./plugin-storage-rules.md)
 - [目录结构规范](./plugin-directory-rules.md)
 - [国际化规范](./plugin-i18n-rules.md)
