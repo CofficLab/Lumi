@@ -25,33 +25,6 @@ private final class TLSValidationDelegate: NSObject, URLSessionDelegate {
     }
 }
 
-/// 发送请求元数据
-struct RequestMetadata: Sendable {
-    /// 请求体大小（字节）
-    let bodySizeBytes: Int
-    /// 请求 URL
-    let url: String
-    /// 发送时间戳
-    let timestamp: Date
-    
-    /// 人类友好的请求体大小字符串（如 "1.5 MB"、"500 KB"）
-    var formattedBodySize: String {
-        let kb = 1024
-        let mb = kb * 1024
-        let gb = mb * 1024
-        
-        if bodySizeBytes >= gb {
-            return String(format: "%.2f GB", Double(bodySizeBytes) / Double(gb))
-        } else if bodySizeBytes >= mb {
-            return String(format: "%.2f MB", Double(bodySizeBytes) / Double(mb))
-        } else if bodySizeBytes >= kb {
-            return String(format: "%.2f KB", Double(bodySizeBytes) / Double(kb))
-        } else {
-            return "\(bodySizeBytes) bytes"
-        }
-    }
-}
-
 /// LLM API 服务
 ///
 /// 专门负责大语言模型 API 请求，包括消息发送、流式响应等。
@@ -188,7 +161,11 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         let metadata = RequestMetadata(
             bodySizeBytes: requestSizeBytes,
             url: url.absoluteString,
-            timestamp: Date()
+            timestamp: Date(),
+            messages: nil,
+            config: nil,
+            tools: nil,
+            transientPrompts: nil
         )
         
         // 在发送前通知调用方
