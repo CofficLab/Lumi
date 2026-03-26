@@ -8,18 +8,23 @@
 
 **插件目录自包含，代码组织清晰，遵循统一的结构约定。**
 
-每个插件位于 `LumiApp/Plugins/<PluginName>/` 目录下，自行管理其内部的所有代码文件、资源和文档。
+每个插件位于 `LumiApp/Plugins/<PluginName>/` 或 `LumiApp/Plugins-Agent/<PluginName>/` 目录下（Agent 相关插件在 `Plugins-Agent`），自行管理其内部的所有代码文件、资源和文档。
+
+凡插件内的**中间件**实现（任意协议、任意管线：发送、网络、请求编排等，只要类型职责是「中间件」）**必须**放在 `Middleware/` 子目录中，不得在插件根目录散落；历史遗留可择机迁入。
 
 ---
 
 ## 标准目录结构
 
 ```
-LumiApp/Plugins/<PluginName>/
+LumiApp/Plugins/<PluginName>/          # 或 LumiApp/Plugins-Agent/<PluginName>/
 ├── <PluginName>Plugin.swift          # 插件主入口（必须）
 ├── <PluginName>.xcstrings             # 本地化字符串（必须）
 ├── <PluginName>LocalStore.swift       # 配置存储（可选）
 ├── README.md                          # 插件说明文档（推荐）
+│
+├── Middleware/                        # 各类中间件（按需）
+│   └── *.swift
 │
 ├── Models/                            # 数据模型
 │   └── *.swift
@@ -55,6 +60,35 @@ LumiApp/Plugins/<PluginName>/
 ---
 
 ## 目录说明
+
+### Middleware/
+
+存放插件提供的**所有中间件类型**（不区分具体协议或挂载点）。例如：
+
+- **发送管线**：实现 `SendMiddleware`，由 `SuperPlugin.sendMiddlewares()` 注册，在 `SendController` 落库用户消息之后、`send()` 请求模型之前执行。
+- **未来**若新增其它中间件协议（如请求/网络层切面），同样放在本目录，按协议命名与注册。
+
+```swift
+// Middleware/ExampleSendMiddleware.swift — 当前已存在的 SendMiddleware 示例
+@MainActor
+struct ExampleSendMiddleware: SendMiddleware {
+    let id: String = "plugin.example"
+    let order: Int = 0
+
+    func handle(
+        ctx: SendMessageContext,
+        next: @escaping @MainActor (SendMessageContext) async -> Void
+    ) async {
+        await next(ctx)
+    }
+}
+```
+
+**最佳实践**：
+
+- 每个中间件一个文件，文件名与类型名一致（如 `FooSendMiddleware.swift` → `struct FooSendMiddleware`）。
+- 类型名建议以 `Middleware` 结尾，或带管线前缀（如 `…SendMiddleware`），便于与 `Services/` 等区分。
+- 对 `SendMiddleware`：通过 `ctx.chatHistoryService` 等做持久化时，注意与 `SendMessageContext` 生命周期一致；`order` 与同插件内其它中间件及全局排序（插件 `order` × 中间件 `order`）配合使用。
 
 ### Models/
 
@@ -166,6 +200,7 @@ struct DockerImageListView: View {
 | 视图模型 | `<Feature>ViewModel.swift` | `DockerViewModel.swift` |
 | 视图 | `<Feature>View.swift` | `DockerImageListView.swift` |
 | 行组件 | `<Feature>Row.swift` | `DockerImageRow.swift` |
+| 中间件 | `<Feature>Middleware.swift`、`<Pipeline>Middleware.swift`（如 `…SendMiddleware`） | `AutoConversationTitleSendMiddleware.swift` |
 
 ### 类/结构体命名
 
@@ -177,6 +212,7 @@ struct DockerImageListView: View {
 | 服务 | `<Feature>Service` | `DockerService` |
 | 视图模型 | `<Feature>ViewModel` | `DockerViewModel` |
 | 视图 | `<Feature>View` | `DockerImageListView` |
+| 中间件 | `<Feature>Middleware`、`<Feature>SendMiddleware` 等 | `AutoConversationTitleSendMiddleware` |
 
 ---
 
@@ -265,6 +301,9 @@ struct <PluginName>Plugin: SuperPlugin, SuperLog {
 ├── <PluginName>LocalStore.swift
 ├── README.md
 │
+├── Middleware/
+│   └── ExampleSendMiddleware.swift
+│
 ├── Models/
 │   ├── ModelA.swift
 │   └── ModelB.swift
@@ -293,6 +332,7 @@ struct <PluginName>Plugin: SuperPlugin, SuperLog {
 
 | 插件 | 路径 | 结构类型 | 特点 |
 |-----|------|---------|------|
+| AgentRecentProjectsPlugin | `Plugins-Agent/AgentRecentProjectsPlugin/` | 含 Middleware/、Tools/ | 中间件在 `Middleware/` |
 | AppManagerPlugin | `Plugins/AppManagerPlugin/` | 标准结构 | 完整实现 |
 | ClipboardManagerPlugin | `Plugins/ClipboardManagerPlugin/` | 标准结构 | 含存储实现 |
 | InputPlugin | `Plugins/InputPlugin/` | 标准结构 | 含测试目录 |
@@ -313,6 +353,7 @@ struct <PluginName>Plugin: SuperPlugin, SuperLog {
 | Services | ✅ | ❌ | 可能有 |
 | ViewModels | ✅ | ❌ | 可能有 |
 | Views | ✅ | ✅ | 可能有 |
+| Middleware | 按需（有任意中间件类型时放在此目录） | 若有中间件则应放入 | 可能有 |
 | 其他目录 | ❌ | ❌ | Core/, Drivers/ 等 |
 
 ### B. 检查清单
@@ -322,6 +363,6 @@ struct <PluginName>Plugin: SuperPlugin, SuperLog {
 - [ ] 目录名使用 `PascalCase`
 - [ ] 包含 `<PluginName>Plugin.swift` 主入口
 - [ ] 包含 `<PluginName>.xcstrings` 本地化文件
-- [ ] 按功能将代码放入对应子目录
+- [ ] 按功能将代码放入对应子目录（含各类中间件 → `Middleware/`）
 - [ ] 遵循命名规范
 - [ ] 添加 README.md 说明文档（推荐）
