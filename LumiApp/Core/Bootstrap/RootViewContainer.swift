@@ -4,6 +4,11 @@ import MagicKit
 import SwiftData
 
 /// RootView 容器：管理所有服务和 ViewModel 的单例实例。
+///
+/// ## 架构原则
+/// - 内核只管理通用服务
+/// - 插件内部服务由插件自己管理
+/// - 内核不知道具体插件的内部实现
 @MainActor
 final class RootViewContainer: ObservableObject {
     /// 共享实例
@@ -19,7 +24,6 @@ final class RootViewContainer: ObservableObject {
     let promptService: PromptService
     let slashCommandService: SlashCommandService
     let toolService: ToolService
-    let ragService: RAGService
     let providerRegistry: LLMProviderRegistry
     let chatHistoryService: ChatHistoryService
     let conversationTurnServices: ConversationTurnServices
@@ -73,7 +77,6 @@ final class RootViewContainer: ObservableObject {
 
         // 初始化工具服务
         self.toolService = ToolService(llmService: llmService)
-        self.ragService = RAGService()
 
         self.conversationTurnServices = ConversationTurnServices(
             promptService: promptService,

@@ -1,5 +1,10 @@
 import SwiftUI
 
+/// RAG 设置页面
+///
+/// ## 架构说明
+/// - 通过 RAGPlugin 内部服务访问，不依赖 RootViewContainer
+/// - RAG 服务完全由插件内部管理
 @MainActor
 struct RAGSettingsView: View {
     @EnvironmentObject private var projectVM: ProjectVM
@@ -120,7 +125,8 @@ struct RAGSettingsView: View {
         defer { isLoading = false }
 
         do {
-            let service = RootViewContainer.shared.ragService
+            // 从插件内部获取 RAG 服务
+            let service = RAGPlugin.getService()
             try await service.initialize()
             status = try await service.getIndexStatus(projectPath: selectedProjectPath)
             runtimeInfo = try await service.getRuntimeInfo()
@@ -140,7 +146,8 @@ struct RAGSettingsView: View {
         defer { isLoading = false }
 
         do {
-            let service = RootViewContainer.shared.ragService
+            // 从插件内部获取 RAG 服务
+            let service = RAGPlugin.getService()
             try await service.initialize()
             try await service.ensureIndexed(projectPath: selectedProjectPath, force: true)
             status = try await service.getIndexStatus(projectPath: selectedProjectPath)

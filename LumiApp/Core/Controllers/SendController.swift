@@ -5,6 +5,11 @@ import MagicKit
 ///
 /// 根据落库消息驱动「请求模型 → 工具执行」闭环，并与发送队列、状态栏联动。
 /// 由 `RootView` 注入 `RootViewContainer` 使用。
+///
+/// ## 架构说明
+/// - 内核不知道 RAG 等插件的内部服务
+/// - 插件通过中间件机制参与消息发送流程
+/// - 插件内部服务由插件自己管理
 @MainActor
 final class SendController: ObservableObject, SuperLog {
     nonisolated static let emoji = "📤"
@@ -87,14 +92,13 @@ final class SendController: ObservableObject, SuperLog {
 
         await container.conversationVM.saveMessage(message, to: conversationId)
 
-        // 创建发送上下文，传入终止回调
+        // 创建发送上下文
         let ctx = SendMessageContext(
             conversationId: conversationId,
             message: message,
             chatHistoryService: container.chatHistoryService,
             agentSessionConfig: container.agentSessionConfig,
-            projectVM: container.projectVM,
-            ragService: container.ragService
+            projectVM: container.projectVM
         )
         ctx.abortTurn = { [weak self] in
             self?.finishSendTurn(conversationId: conversationId, emitCompletionEvent: true)

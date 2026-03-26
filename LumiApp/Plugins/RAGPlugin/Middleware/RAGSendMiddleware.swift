@@ -8,8 +8,13 @@ import os
 /// ## 工作流程
 /// 1. 拦截用户消息
 /// 2. 判断是否需要 RAG 检索
-/// 3. 调用 Context 中的 ragService 检索相关文档
+/// 3. 调用插件内部的 RAG 服务检索相关文档
 /// 4. 将检索结果附加到消息上下文
+///
+/// ## 架构说明
+/// - RAG 服务由 RAGPlugin 内部管理
+/// - 不通过 SendMessageContext 传递
+/// - 内核不知道 RAG 的存在
 @MainActor
 final class RAGSendMiddleware: SendMiddleware, SuperLog {
     nonisolated static let emoji = "🦞"
@@ -28,7 +33,7 @@ final class RAGSendMiddleware: SendMiddleware, SuperLog {
         let userMessage = ctx.message.content
         let projectPath = ctx.projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        RAGPlugin.logger.info("🔀 RAG 中间件：检查消息")
+        RAGPlugin.logger.info("\(Self.t)🔀 RAG 中间件：检查消息")
         RAGPlugin.logger.info("\(Self.t)   用户消息：\"\(userMessage)\"")
 
         guard shouldUseRAG(for: userMessage) else {
@@ -45,10 +50,13 @@ final class RAGSendMiddleware: SendMiddleware, SuperLog {
         RAGPlugin.logger.info("\(Self.t)   ✅ 触发 RAG 检索")
 
         do {
-            try await ctx.ragService.initialize()
-            try await ctx.ragService.ensureIndexed(projectPath: projectPath)
+            // 从插件内部获取 RAG 服务
+            let ragService = RAGPlugin.getService()
+            
+            try await ragService.initialize()
+            try await ragService.ensureIndexed(projectPath: projectPath)
 
-            let response = try await ctx.ragService.retrieve(
+            let response = try await ragService.retrieve(
                 query: userMessage,
                 projectPath: projectPath,
                 topK: 5
