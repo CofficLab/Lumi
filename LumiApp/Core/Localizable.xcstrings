@@ -836,9 +836,6 @@
     "All data is stored locally in SwiftData database and will not be uploaded to any server." : {
 
     },
-    "all-MiniLM-L6-v2 (模拟)" : {
-
-    },
     "Allow" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2735,9 +2732,6 @@
         }
       }
     },
-    "LanceDB (模拟)" : {
-
-    },
     "Last 60 seconds" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3739,6 +3733,9 @@
           }
         }
       }
+    },
+    "RAG" : {
+
     },
     "Real-time Monitor" : {
       "extractionState" : "manual",

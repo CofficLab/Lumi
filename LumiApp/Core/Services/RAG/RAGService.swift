@@ -1,5 +1,6 @@
 import Foundation
 import os
+import MagicKit
 
 /// RAG 检索结果
 struct RAGSearchResult {
@@ -24,7 +25,9 @@ struct RAGResponse {
 /// 1. 索引：把文档变成向量存起来
 /// 2. 检索：用户提问时，搜索相关文档
 ///
-actor RAGService {
+actor RAGService: SuperLog {
+    nonisolated static let emoji = "🦞"
+    nonisolated static let verbose = false
     
     // MARK: - 属性
     
@@ -37,7 +40,7 @@ actor RAGService {
     // MARK: - 初始化
     
     init() {
-        AppLogger.rag.info("🦞 RAG 服务已创建")
+        AppLogger.core.info("\(Self.t)🦞 RAG 服务已创建")
     }
     
     // MARK: - 初始化
@@ -46,7 +49,7 @@ actor RAGService {
     func initialize() async throws {
         guard !isInitialized else { return }
         
-        AppLogger.rag.info("📦 RAG 服务初始化中...")
+        AppLogger.core.info("\(Self.t)📦 RAG 服务初始化中...")
         
         // 模拟：加载 Embedding 模型
         try await Task.sleep(nanoseconds: 100_000_000)
@@ -55,7 +58,7 @@ actor RAGService {
         try await Task.sleep(nanoseconds: 50_000_000)
         
         isInitialized = true
-        AppLogger.rag.info("✅ RAG 服务初始化完成")
+        AppLogger.core.info("\(Self.t)✅ RAG 服务初始化完成")
     }
     
     // MARK: - 索引
@@ -64,7 +67,7 @@ actor RAGService {
     func indexProject(at path: String) async throws {
         guard isInitialized else { throw RAGError.notInitialized }
         
-        AppLogger.rag.info("📚 索引项目: \(path)")
+        AppLogger.core.info("\(Self.t)📚 索引项目: \(path)")
         
         // 清除旧数据
         self.documentVectors.removeAll()
@@ -78,7 +81,7 @@ actor RAGService {
             self.documentVectors.append((doc.content, doc.source, vector))
         }
         
-        AppLogger.rag.info("✅ 已索引 \(self.documentVectors.count) 个文档片段")
+        AppLogger.core.info("\(Self.t)✅ 已索引 \(self.documentVectors.count) 个文档片段")
     }
     
     // MARK: - 检索
@@ -87,7 +90,7 @@ actor RAGService {
     func retrieve(query: String, topK: Int = 3) async throws -> RAGResponse {
         guard isInitialized else { throw RAGError.notInitialized }
         
-        AppLogger.rag.info("🔍 检索: \"\(query)\"")
+        AppLogger.core.info("\(Self.t)🔍 检索: \"\(query)\"")
         
         // 1. 问题转向量
         let queryVector = self.simulateEmbedding(query)
@@ -106,7 +109,7 @@ actor RAGService {
             RAGSearchResult(content: $0.content, source: $0.source, score: $0.score)
         }
         
-        AppLogger.rag.info("✅ 找到 \(topResults.count) 个相关文档")
+        AppLogger.core.info("\(Self.t)✅ 找到 \(topResults.count) 个相关文档")
         
         return RAGResponse(query: query, results: topResults)
     }
@@ -182,10 +185,4 @@ enum RAGError: LocalizedError {
             return "RAG 服务未初始化"
         }
     }
-}
-
-// MARK: - 日志
-
-extension AppLogger {
-    static let rag = Logger(subsystem: "com.coffic.lumi", category: "RAG")
 }
