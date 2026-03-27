@@ -41,6 +41,11 @@ actor RAGPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor
+    func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
+        AnyView(RAGAutoIndexOverlay(content: content()))
+    }
+
+    @MainActor
     func addSettingsView() -> AnyView? {
         AnyView(RAGSettingsView())
     }
