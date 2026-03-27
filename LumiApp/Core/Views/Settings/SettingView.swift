@@ -20,7 +20,7 @@ struct SettingView: View {
         guard let saved = AppSettingStore.loadSettingsSelection() else {
             return nil
         }
-        
+
         switch saved.type {
         case "core":
             if let tab = SettingTab(rawValue: saved.value) {
@@ -40,7 +40,7 @@ struct SettingView: View {
             AppSettingStore.clearSettingsSelection()
             return
         }
-        
+
         switch selection {
         case let .core(tab):
             AppSettingStore.saveSettingsSelection(type: "core", value: tab.rawValue)
@@ -112,25 +112,31 @@ struct SettingView: View {
 
     /// 详情区域视图
     private var detailView: some View {
-        Group {
-            if let sel = selection {
-                switch sel {
-                case let .core(tab):
-                    tab.destinationView
-                case let .plugin(id):
-                    if let item = pluginSettings.first(where: { $0.id == id }) {
-                        item.view
-                    } else {
-                        Text("插件未找到或已禁用")
-                            .foregroundColor(.secondary)
+        ZStack {
+            Color.clear
+                .mystiqueBackground()
+                .ignoresSafeArea()
+
+            Group {
+                if let sel = selection {
+                    switch sel {
+                    case let .core(tab):
+                        tab.destinationView
+                    case let .plugin(id):
+                        if let item = pluginSettings.first(where: { $0.id == id }) {
+                            item.view
+                        } else {
+                            Text("插件未找到或已禁用")
+                                .foregroundColor(.secondary)
+                        }
                     }
+                } else {
+                    Text("请选择设置项")
+                        .foregroundColor(.secondary)
                 }
-            } else {
-                Text("请选择设置项")
-                    .foregroundColor(.secondary)
             }
+            .background(.background.opacity(0.8))
         }
-        .background(.background.opacity(0.8))
     }
 
     var body: some View {
