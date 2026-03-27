@@ -45,10 +45,14 @@ struct RemoteProviderSettingsView: View {
     // MARK: - Body
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: DesignTokens.Spacing.lg, pinnedViews: [.sectionHeaders]) {
-                // 云端供应商卡片（固定）
-                Section {
+        VStack(spacing: 0) {
+            // 云端供应商卡片（固定）
+            cloudProviderCard
+                .padding(DesignTokens.Spacing.lg)
+                .background(Color.clear)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
                     Spacer().frame(height: DesignTokens.Spacing.lg)
 
                     // 配置卡片（API Key + 模型列表）
@@ -57,11 +61,8 @@ struct RemoteProviderSettingsView: View {
                     }
 
                     Spacer()
-                } header: {
-                    cloudProviderCard
-                        .padding(.horizontal, DesignTokens.Spacing.lg)
-                        .background(Color.clear)
                 }
+                .padding(.horizontal, DesignTokens.Spacing.lg)
             }
         }
         .onAppear(perform: onAppear)
@@ -129,7 +130,6 @@ extension RemoteProviderSettingsView {
                 modelSection
             }
         }
-        .padding(.horizontal, DesignTokens.Spacing.lg)
     }
 
     /// API Key 配置区块

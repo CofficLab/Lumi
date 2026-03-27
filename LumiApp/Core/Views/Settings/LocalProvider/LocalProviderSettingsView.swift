@@ -63,10 +63,14 @@ struct LocalProviderSettingsView: View {
     // MARK: - Body
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: DesignTokens.Spacing.lg, pinnedViews: [.sectionHeaders]) {
-                // 本地供应商卡片（固定）
-                Section {
+        VStack(spacing: 0) {
+            // 本地供应商卡片（固定）
+            providerSelectorCard
+                .padding(DesignTokens.Spacing.lg)
+                .background(Color.clear)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
                     Spacer().frame(height: DesignTokens.Spacing.lg)
 
                     // 本地模型管理卡片
@@ -75,11 +79,8 @@ struct LocalProviderSettingsView: View {
                     }
 
                     Spacer()
-                } header: {
-                    providerSelectorCard
-                        .padding(.horizontal, DesignTokens.Spacing.lg)
-                        .background(Color.clear)
                 }
+                .padding(.horizontal, DesignTokens.Spacing.lg)
             }
         }
         .onAppear(perform: onAppear)
@@ -197,7 +198,6 @@ extension LocalProviderSettingsView {
                 }
             }
         }
-        .padding(.horizontal, DesignTokens.Spacing.lg)
     }
 }
 
