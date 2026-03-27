@@ -21,6 +21,9 @@ actor RAGService: SuperLog {
     private var embeddingProvider: RAGEmbeddingProvider?
     private var lastEnsureAttemptByProject: [String: Date] = [:]
 
+    /// 正在后台索引的项目路径集合
+    private var indexingProjects: Set<String> = []
+
     init() {
         AppLogger.core.info("\(Self.t)🦞 RAG 服务已创建")
     }
@@ -111,6 +114,80 @@ actor RAGService: SuperLog {
         AppLogger.core.info(
             "\(Self.t)✅ 增量索引完成 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount)"
         )
+    }
+
+    /// 检查项目是否需要索引（快速检查，不执行实际索引）
+    /// - Returns: true 表示需要索引，false 表示索引已经是最新
+    func checkNeedsIndex(projectPath: String) async throws -> Bool {
+        guard isInitialized else { throw RAGError.notInitialized }
+        guard let store else { throw RAGError.internalStateCorrupted }
+        guard let embeddingProvider else { throw RAGError.internalStateCorrupted }
+
+        let normalized = normalizeProjectPath(projectPath)
+        guard !normalized.isEmpty else { throw RAGError.invalidProjectPath }
+
+        let indexState = try store.fetchProjectIndexState(projectPath: normalized)
+
+        // 无索引状态，需要索引
+        guard let state = indexState else {
+            AppLogger.core.info("\(Self.t)📊 checkNeedsIndex: 无索引状态，需要索引")
+            return true
+        }
+
+        // 检查模型是否匹配
+        let modelMismatch = state.embeddingModel != embeddingProvider.modelIdentifierWithVersion
+            || state.embeddingDimension != embeddingProvider.dimension
+        if modelMismatch {
+            AppLogger.core.info("\(Self.t)📊 checkNeedsIndex: 模型不匹配，需要索引")
+            return true
+        }
+
+        // 检查索引是否过期
+        let now = Date()
+        let isStale = isIndexStateStale(state, now: now)
+        if isStale {
+            AppLogger.core.info("\(Self.t)📊 checkNeedsIndex: 索引已过期，需要索引")
+            return true
+        }
+
+        AppLogger.core.info("\(Self.t)📊 checkNeedsIndex: 索引是最新的，无需索引")
+        return false
+    }
+
+    /// 在后台启动索引任务，不阻塞调用方
+    /// - Parameters:
+    ///   - projectPath: 项目路径
+    ///   - force: 是否强制重建
+    func ensureIndexedBackground(projectPath: String, force: Bool = false) async {
+        let normalized = normalizeProjectPath(projectPath)
+
+        // 防止重复启动后台索引
+        guard !indexingProjects.contains(normalized) else {
+            AppLogger.core.info("\(Self.t)🔄 后台索引已在进行中，跳过: \(normalized)")
+            return
+        }
+
+        indexingProjects.insert(normalized)
+        AppLogger.core.info("\(Self.t)🚀 启动后台索引任务: \(normalized)")
+
+        // 在后台 Task 中执行索引
+        Task.detached { [weak self] in
+            guard let self = self else { return }
+
+            do {
+                try await self.ensureIndexed(projectPath: projectPath, force: force)
+                AppLogger.core.info("\(Self.t)✅ 后台索引任务完成: \(normalized)")
+            } catch {
+                AppLogger.core.error("\(Self.t)❌ 后台索引任务失败: \(normalized) - \(error)")
+            }
+
+            // 移除索引标记
+            await self.removeIndexingProject(normalized)
+        }
+    }
+
+    private func removeIndexingProject(_ projectPath: String) {
+        indexingProjects.remove(projectPath)
     }
 
     /// 兼容旧接口：执行一次全量重建

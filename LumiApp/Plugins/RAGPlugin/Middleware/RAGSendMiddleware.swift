@@ -8,13 +8,10 @@ import os
 /// ## 工作流程
 /// 1. 拦截用户消息
 /// 2. 判断是否需要 RAG 检索
-/// 3. 调用插件内部的 RAG 服务检索相关文档
-/// 4. 将检索结果附加到消息上下文
-///
-/// ## 架构说明
-/// - RAG 服务由 RAGPlugin 内部管理
-/// - 不通过 SendMessageContext 传递
-/// - 内核不知道 RAG 的存在
+/// 3. 检查索引状态
+/// 4. 如果索引未完成，启动后台索引，不阻塞发送流程
+/// 5. 如果索引已完成，调用 RAG 服务检索相关文档
+/// 6. 将检索结果附加到消息上下文
 @MainActor
 final class RAGSendMiddleware: SendMiddleware, SuperLog {
     nonisolated static let emoji = "🦞"
@@ -52,10 +49,24 @@ final class RAGSendMiddleware: SendMiddleware, SuperLog {
         do {
             // 从插件内部获取 RAG 服务
             let ragService = RAGPlugin.getService()
-            
-            try await ragService.initialize()
-            try await ragService.ensureIndexed(projectPath: projectPath)
 
+            try await ragService.initialize()
+
+            // 检查是否需要索引
+            let needsIndex = try await ragService.checkNeedsIndex(projectPath: projectPath)
+
+            if needsIndex {
+                // 需要索引，启动后台索引任务，不阻塞发送流程
+                RAGPlugin.logger.info("\(Self.t)   🔄 索引未完成，启动后台索引任务")
+                await ragService.ensureIndexedBackground(projectPath: projectPath)
+
+                // 直接继续发送流程（不使用 RAG）
+                RAGPlugin.logger.info("\(Self.t)   ⏭️ 后台索引中，跳过本次 RAG 检索")
+                await next(ctx)
+                return
+            }
+
+            // 索引已完成，执行检索
             let response = try await ragService.retrieve(
                 query: userMessage,
                 projectPath: projectPath,
