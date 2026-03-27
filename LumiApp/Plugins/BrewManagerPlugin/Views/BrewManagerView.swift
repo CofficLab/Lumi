@@ -32,7 +32,7 @@ struct BrewManagerView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Tab Picker
-            MystiqueGlassCard(cornerRadius: 16, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
+            GlassCard(cornerRadius: 16, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
                 Picker("View", selection: $selectedTab) {
                     ForEach(BrewTab.allCases) { tab in
                         Label(tab.localizedName, systemImage: tab.icon).tag(tab)
@@ -80,7 +80,7 @@ struct BrewManagerView: View {
 
                 case .search:
                     VStack {
-                        MystiqueGlassCard(padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
+                        GlassCard(padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
                             HStack {
                                 GlassTextField(
                                     title: LocalizedStringKey("搜索"),
@@ -184,7 +184,7 @@ struct BrewPackageRow: View {
     let action: () -> Void
 
     var body: some View {
-        MystiqueGlassCard(cornerRadius: 12, padding: EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)) {
+        GlassCard(cornerRadius: 12, padding: EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {

@@ -13,121 +13,81 @@ struct AboutView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                // App icon and title
-                headerSection
+        VStack(spacing: 0) {
+            // 顶部说明卡片（固定）
+            headerCard
+                .padding(DesignTokens.Spacing.lg)
+                .background(Color.clear)
 
-                // App info card
-                appInfoCard
+            ScrollView {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+                    // 应用信息卡片
+                    appInfoCard
 
-                // Version info card
-                versionInfoCard
+                    // 版本信息卡片
+                    versionInfoCard
 
-                // Build history card
-                buildHistoryCard
+                    // 构建历史卡片
+                    buildHistoryCard
 
-                // System info card
-                systemInfoCard
+                    // 系统信息卡片
+                    systemInfoCard
 
-                // Update info card
-                updateInfoCard
-
-                Spacer()
+                    Spacer()
+                }
+                .padding(.horizontal, DesignTokens.Spacing.lg)
             }
-            .padding(32)
         }
-        .navigationTitle("About")
+        .navigationTitle("关于")
     }
 
-    // MARK: - Header Section
+    // MARK: - Header Card
 
-    private var headerSection: some View {
-        HStack(spacing: 20) {
-            // App icon
-            LogoView(variant: .about)
-                .frame(width: 80, height: 80)
-                .cornerRadius(18)
-                .shadow(radius: 5)
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text(appInfo.name)
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-
-                Text(appInfo.bundleIdentifier)
-                    .font(.caption)
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-
-                if let version = appInfo.version {
-                    HStack(spacing: 4) {
-                        Image(systemName: "tag.fill")
-                            .font(.caption2)
-                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                        Text(version)
-                            .font(.caption)
-                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                    }
-                }
-            }
-
-            Spacer()
+    private var headerCard: some View {
+        GlassCard {
+            GlassSectionHeader(
+                icon: "info.circle.fill",
+                title: "关于 Lumi",
+                subtitle: "了解应用的版本和系统信息"
+            )
         }
-        .padding(.bottom, 8)
     }
 
     // MARK: - Info Cards
 
     private var appInfoCard: some View {
-        InfoCard(title: "App Information", icon: "info.circle.fill") {
-            AboutInfoRow(label: "App Name", value: appInfo.name)
-            AboutInfoRow(label: "Bundle ID", value: appInfo.bundleIdentifier)
+        GlassInfoCard(title: "应用信息", icon: "app.badge.fill") {
+            GlassKeyValueRow(label: "应用名称", value: appInfo.name)
+            GlassKeyValueRow(label: "Bundle ID", value: appInfo.bundleIdentifier)
             if let description = appInfo.description {
-                AboutInfoRow(label: "Description", value: description)
+                GlassKeyValueRow(label: "描述", value: description)
             }
         }
     }
 
     private var versionInfoCard: some View {
-        InfoCard(title: "Version Information", icon: "number.circle.fill") {
-            AboutInfoRow(label: "Version", value: appInfo.version ?? "Unknown")
-            AboutInfoRow(label: "Build", value: appInfo.build ?? "Unknown")
-            AboutInfoRow(label: "Build Configuration", value: versionInfo.buildConfiguration)
-            AboutInfoRow(label: "Build Date", value: versionInfo.buildDate)
+        GlassInfoCard(title: "版本信息", icon: "number.circle.fill") {
+            GlassKeyValueRow(label: "版本", value: appInfo.version ?? "未知")
+            GlassKeyValueRow(label: "构建号", value: appInfo.build ?? "未知")
+            GlassKeyValueRow(label: "构建配置", value: versionInfo.buildConfiguration)
+            GlassKeyValueRow(label: "构建日期", value: versionInfo.buildDate)
         }
     }
 
     private var buildHistoryCard: some View {
-        InfoCard(title: "Build History", icon: "clock.arrow.circlepath") {
-            AboutInfoRow(label: "Minimum Support", value: "macOS \(versionInfo.minimumOSVersion)")
-            AboutInfoRow(label: "SDK Version", value: versionInfo.sdkVersion)
-            AboutInfoRow(label: "Swift Version", value: versionInfo.swiftVersion)
-            AboutInfoRow(label: "Xcode Version", value: versionInfo.xcodeVersion)
+        GlassInfoCard(title: "构建历史", icon: "clock.arrow.circlepath") {
+            GlassKeyValueRow(label: "最低支持", value: "macOS \(versionInfo.minimumOSVersion)")
+            GlassKeyValueRow(label: "SDK 版本", value: versionInfo.sdkVersion)
+            GlassKeyValueRow(label: "Swift 版本", value: versionInfo.swiftVersion)
+            GlassKeyValueRow(label: "Xcode 版本", value: versionInfo.xcodeVersion)
         }
     }
 
     private var systemInfoCard: some View {
-        InfoCard(title: "System Information", icon: "desktopcomputer") {
-            AboutInfoRow(label: "OS", value: versionInfo.systemVersion)
-            AboutInfoRow(label: "Architecture", value: versionInfo.architecture)
-            AboutInfoRow(label: "App Path", value: versionInfo.appPath)
-        }
-    }
-
-    private var updateInfoCard: some View {
-        InfoCard(title: "Update Information", icon: "arrow.down.circle.fill") {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Current version is the latest stable version")
-                    .font(.subheadline)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-
-                GlassDivider()
-
-                Text("Lumi uses the Sparkle framework for automatic updates. When a new version is available, the app will automatically prompt you to update.")
-                    .font(.caption)
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-            }
+        GlassInfoCard(title: "系统信息", icon: "desktopcomputer") {
+            GlassKeyValueRow(label: "操作系统", value: versionInfo.systemVersion)
+            GlassKeyValueRow(label: "架构", value: versionInfo.architecture)
+            GlassKeyValueRow(label: "应用路径", value: versionInfo.appPath)
         }
     }
 }
@@ -177,9 +137,9 @@ struct VersionInfo {
 
         // Build configuration
         #if DEBUG
-        self.buildConfiguration = "Debug"
+            self.buildConfiguration = "Debug"
         #else
-        self.buildConfiguration = "Release"
+            self.buildConfiguration = "Release"
         #endif
 
         // Build date
@@ -220,60 +180,6 @@ struct VersionInfo {
 
         // App path
         self.appPath = bundle.bundlePath
-    }
-}
-
-// MARK: - InfoCard Component
-
-struct InfoCard<Content: View>: View {
-    let title: String
-    let icon: String
-    @ViewBuilder let content: Content
-
-    var body: some View {
-        MystiqueGlassCard(cornerRadius: DesignTokens.Radius.md, padding: DesignTokens.Spacing.cardPadding) {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                HStack(spacing: DesignTokens.Spacing.xs) {
-                    Image(systemName: icon)
-                        .foregroundColor(DesignTokens.Color.semantic.primary)
-                    Text(title)
-                        .font(DesignTokens.Typography.bodyEmphasized)
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                    Spacer()
-                }
-
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-                    content
-                }
-            }
-        }
-    }
-}
-
-// MARK: - AboutInfoRow Component
-
-struct AboutInfoRow: View {
-    let label: String
-    let value: String
-
-    var body: some View {
-        HStack(alignment: .top) {
-            Text(label)
-                .font(.subheadline)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                .frame(width: 100, alignment: .leading)
-
-            Text(":")
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-
-            Text(value)
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                .textSelection(.enabled)
-
-            Spacer()
-        }
     }
 }
 

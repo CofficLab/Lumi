@@ -48,7 +48,7 @@ struct DiskUsageInfoView: View {
     @StateObject private var viewModel = DiskManagerViewModel()
 
     var body: some View {
-        MystiqueGlassCard(padding: EdgeInsets(top: 20, leading: 20, bottom: 20, trailing: 20)) {
+        GlassCard(padding: EdgeInsets(top: 20, leading: 20, bottom: 20, trailing: 20)) {
             HStack(spacing: 40) {
                 DiskUsageRingView()
                     .frame(width: 100, height: 100)
@@ -90,7 +90,7 @@ struct ViewModeSelector: View {
     @Binding var selectedMode: Int
 
     var body: some View {
-        MystiqueGlassCard(padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
+        GlassCard(padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
             HStack(spacing: 12) {
                 Spacer()
                 ViewModeButton(title: "大文件", icon: "doc.text", isSelected: selectedMode == 0) {

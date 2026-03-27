@@ -64,7 +64,7 @@ struct SpeedCard: View {
     let viewModel: NetworkManagerViewModel
 
     var body: some View {
-        MystiqueGlassCard(cornerRadius: DesignTokens.Radius.md, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
+        GlassCard(cornerRadius: DesignTokens.Radius.md, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
                 HStack {
                     Image(systemName: icon)
@@ -95,7 +95,7 @@ struct NetworkInfoCard: View {
     let icon: String
 
     var body: some View {
-        MystiqueGlassCard(cornerRadius: DesignTokens.Radius.sm) {
+        GlassCard(cornerRadius: DesignTokens.Radius.sm) {
             HStack(spacing: DesignTokens.Spacing.sm) {
                 Image(systemName: icon)
                     .frame(width: 24, height: 24)

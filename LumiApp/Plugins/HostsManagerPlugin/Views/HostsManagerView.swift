@@ -201,7 +201,7 @@ struct HostAddView: View {
                 .font(DesignTokens.Typography.title2)
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
             
-            MystiqueGlassCard {
+            GlassCard {
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
                     GlassTextField(title: "IP Address", text: $ip, placeholder: "127.0.0.1")
                     if showIPError {

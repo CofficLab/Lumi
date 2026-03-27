@@ -11,7 +11,7 @@ struct InputSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             // 启用开关
-            MystiqueGlassCard {
+            GlassCard {
                 Toggle("Enable Auto Input Source Switching", isOn: Binding(
                     get: { viewModel.isEnabled },
                     set: { _ in viewModel.toggleEnabled() }
@@ -22,7 +22,7 @@ struct InputSettingsView: View {
             GlassDivider()
 
             // 添加新规则表单
-            MystiqueGlassCard {
+            GlassCard {
                 AddRuleFormView(
                     selectedApp: $viewModel.selectedApp,
                     selectedSourceID: $viewModel.selectedSourceID,

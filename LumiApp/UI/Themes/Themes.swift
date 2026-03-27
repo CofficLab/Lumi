@@ -241,7 +241,7 @@ extension View {
     ScrollView(.vertical) {
         VStack(spacing: DesignTokens.Spacing.lg) {
             ForEach(Themes.Variant.allCases, id: \.self) { variant in
-                MystiqueGlassCard {
+                GlassCard {
                     HStack {
                         // 使用每个主题的特定颜色
                         ZStack {

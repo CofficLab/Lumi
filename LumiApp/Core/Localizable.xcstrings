@@ -625,6 +625,7 @@
       }
     },
     "About" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1676,6 +1677,7 @@
       }
     },
     "Current version is the latest stable version" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2841,6 +2843,7 @@
       }
     },
     "Lumi uses the Sparkle framework for automatic updates. When a new version is available, the app will automatically prompt you to update." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5153,6 +5156,7 @@
       }
     },
     "主题" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5185,6 +5189,7 @@
       }
     },
     "云端 LLM 供应商" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5345,6 +5350,9 @@
           }
         }
       }
+    },
+    "关于" : {
+
     },
     "内存 %lld GB" : {
       "localizations" : {
@@ -5705,6 +5713,7 @@
       }
     },
     "反馈与支持" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5853,6 +5862,7 @@
       }
     },
     "启动选项" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5869,6 +5879,7 @@
       }
     },
     "启用或禁用应用的插件功能" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7352,6 +7363,7 @@
       }
     },
     "本地 LLM 供应商" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8070,6 +8082,7 @@
       }
     },
     "管理应用启动行为" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8430,6 +8443,7 @@
       }
     },
     "这是主题效果的示例" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8496,6 +8510,7 @@
       }
     },
     "选择你喜欢的神秘主题风格" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8596,6 +8611,7 @@
       }
     },
     "遇到问题时可直接提交 Issue，帮助我们快速定位" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8644,6 +8660,7 @@
       }
     },
     "重启应用才能完全生效" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8741,6 +8758,7 @@
       }
     },
     "随时重新查看产品使用指引" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8774,6 +8792,7 @@
       }
     },
     "预览效果" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8790,6 +8809,7 @@
       }
     },
     "预览文本" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

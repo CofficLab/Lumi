@@ -8,20 +8,27 @@ struct GeneralSettingView: View {
     @State private var launchAtLogin = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xl) {
-                Spacer().frame(height: 40)
+        VStack(spacing: 0) {
+            // 顶部说明卡片（固定）
+            headerCard
+                .padding(DesignTokens.Spacing.lg)
+                .background(Color.clear)
 
-                // 启动选项
-                startupOptions
+            ScrollView {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+                    // 启动选项
+                    startupSection
 
-                onboardingOptions
-                
-                supportOptions
+                    // 新手引导
+                    onboardingSection
 
-                Spacer()
+                    // 反馈与支持
+                    supportSection
+
+                    Spacer()
+                }
+                .padding(.horizontal, DesignTokens.Spacing.lg)
             }
-            .padding(.horizontal, DesignTokens.Spacing.lg)
         }
         .navigationTitle("通用设置")
         .onAppear {
@@ -29,34 +36,47 @@ struct GeneralSettingView: View {
         }
     }
 
+    // MARK: - Header Card
+
+    private var headerCard: some View {
+        GlassCard {
+            GlassSectionHeader(
+                icon: "gearshape.2",
+                title: "通用设置",
+                subtitle: "管理应用的基本行为和偏好设置"
+            )
+        }
+    }
+
     // MARK: - 启动选项
 
-    private var startupOptions: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-            HStack(spacing: DesignTokens.Spacing.sm) {
-                Image(systemName: "power")
-                    .font(.system(size: 20))
-                    .foregroundColor(DesignTokens.Color.semantic.primary)
-                    .frame(width: 32)
+    private var startupSection: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                GlassSectionHeader(
+                    icon: "power",
+                    title: "启动选项",
+                    subtitle: "管理应用启动行为"
+                )
 
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-                    Text("启动选项")
-                        .font(DesignTokens.Typography.bodyEmphasized)
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                GlassDivider()
 
-                    Text("管理应用启动行为")
-                        .font(DesignTokens.Typography.caption1)
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                GlassRow {
+                    HStack {
+                        Text("登录时启动")
+                            .font(DesignTokens.Typography.body)
+                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+
+                        Spacer()
+
+                        Toggle("", isOn: $launchAtLogin)
+                            .labelsHidden()
+                            .onChange(of: launchAtLogin) { _, newValue in
+                                updateLaunchAtLogin(newValue)
+                            }
+                    }
                 }
-
-                Spacer()
             }
-            .padding(.bottom, DesignTokens.Spacing.sm)
-
-            Toggle("登录时启动", isOn: $launchAtLogin)
-                .onChange(of: launchAtLogin) { _, newValue in
-                    updateLaunchAtLogin(newValue)
-                }
         }
     }
 
@@ -96,75 +116,54 @@ struct GeneralSettingView: View {
 
     // MARK: - Onboarding
 
-    private var onboardingOptions: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-            HStack(spacing: DesignTokens.Spacing.sm) {
-                Image(systemName: "graduationcap")
-                    .font(.system(size: 20))
-                    .foregroundColor(DesignTokens.Color.semantic.primary)
-                    .frame(width: 32)
-
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-                    Text("新手引导")
-                        .font(DesignTokens.Typography.bodyEmphasized)
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-
-                    Text("随时重新查看产品使用指引")
-                        .font(DesignTokens.Typography.caption1)
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                }
-
-                Spacer()
-            }
-            .padding(.bottom, DesignTokens.Spacing.sm)
-
-            Button("重新查看新手引导") {
-                NotificationCenter.default.post(
-                    name: Notification.Name("AgentOnboarding.Show"),
-                    object: nil,
-                    userInfo: ["reset": true]
+    private var onboardingSection: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                GlassSectionHeader(
+                    icon: "graduationcap",
+                    title: "新手引导",
+                    subtitle: "随时重新查看产品使用指引"
                 )
+
+                GlassDivider()
+
+                GlassButton(title: "重新查看新手引导", style: .secondary) {
+                    NotificationCenter.default.post(
+                        name: Notification.Name("AgentOnboarding.Show"),
+                        object: nil,
+                        userInfo: ["reset": true]
+                    )
+                }
             }
-            .buttonStyle(.borderedProminent)
         }
     }
 
-    private var supportOptions: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-            HStack(spacing: DesignTokens.Spacing.sm) {
-                Image(systemName: "lifepreserver")
-                    .font(.system(size: 20))
-                    .foregroundColor(DesignTokens.Color.semantic.primary)
-                    .frame(width: 32)
+    // MARK: - Support
 
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-                    Text("反馈与支持")
-                        .font(DesignTokens.Typography.bodyEmphasized)
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+    private var supportSection: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                GlassSectionHeader(
+                    icon: "lifepreserver",
+                    title: "反馈与支持",
+                    subtitle: "遇到问题时可直接提交 Issue，帮助我们快速定位"
+                )
 
-                    Text("遇到问题时可直接提交 Issue，帮助我们快速定位")
-                        .font(DesignTokens.Typography.caption1)
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                GlassDivider()
+
+                HStack(spacing: DesignTokens.Spacing.sm) {
+                    GlassButton(title: "报告问题", style: .primary) {
+                        openURL("https://github.com/CofficLab/Lumi/issues/new/choose")
+                    }
+                    .accessibilityLabel("报告问题")
+                    .accessibilityHint("在 GitHub 打开问题反馈页面")
+
+                    GlassButton(title: "查看 Issue 列表", style: .secondary) {
+                        openURL("https://github.com/CofficLab/Lumi/issues")
+                    }
+                    .accessibilityLabel("查看 Issue 列表")
+                    .accessibilityHint("在浏览器打开公开问题列表")
                 }
-
-                Spacer()
-            }
-            .padding(.bottom, DesignTokens.Spacing.sm)
-
-            HStack(spacing: DesignTokens.Spacing.sm) {
-                Button("报告问题") {
-                    openURL("https://github.com/CofficLab/Lumi/issues/new/choose")
-                }
-                .buttonStyle(.borderedProminent)
-                .accessibilityLabel("报告问题")
-                .accessibilityHint("在 GitHub 打开问题反馈页面")
-
-                Button("查看 Issue 列表") {
-                    openURL("https://github.com/CofficLab/Lumi/issues")
-                }
-                .buttonStyle(.bordered)
-                .accessibilityLabel("查看 Issue 列表")
-                .accessibilityHint("在浏览器打开公开问题列表")
             }
         }
     }
