@@ -89,7 +89,6 @@ struct RecentProjectsSidebarView: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
         }
-        .frame(maxHeight: 200)
     }
     
     // MARK: - Project Row
@@ -150,7 +149,7 @@ struct RecentProjectsSidebarView: View {
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, 20)
     }
     
