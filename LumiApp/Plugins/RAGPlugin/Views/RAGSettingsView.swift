@@ -13,51 +13,54 @@ struct RAGSettingsView: View, SuperLog {
     @State private var runtimeInfo: RAGRuntimeInfo?
     @State private var progressByPath: [String: RAGIndexProgressEvent] = [:]
     @State private var isLoading = false
+    @State private var activeProjectActionPath: String?
     @State private var message: String?
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
+        VStack(spacing: 0) {
+            HStack {
                 Text("RAG 索引状态")
                     .font(.headline)
-
-                if trackedProjects.isEmpty {
-                    Text("请先选择或添加项目，RAG 才能建立与展示索引。")
-                        .foregroundStyle(.secondary)
-                } else {
-                    if let runtimeInfo {
-                        runtimeSummary(runtimeInfo)
-                    }
-
-                    ForEach(trackedProjects) { project in
-                        projectCard(project)
-                    }
-
-                    HStack(spacing: 10) {
-                        Button("刷新全部状态") {
-                            Task { await loadStatus() }
-                        }
-                        .disabled(isLoading)
-
-                        Button("重建全部索引") {
-                            Task { await rebuildIndex() }
-                        }
-                        .disabled(isLoading)
-                    }
-
-                    if isLoading {
-                        ProgressView("处理中…")
-                    }
+                Spacer()
+                Button("刷新全部状态") {
+                    Task { await loadStatus() }
                 }
+                .disabled(isLoading)
 
-                if let message {
-                    Text(message)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                Button("重建全部索引") {
+                    Task { await rebuildIndex() }
                 }
+                .disabled(isLoading)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(16)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+
+            Divider()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    if trackedProjects.isEmpty {
+                        Text("请先选择或添加项目，RAG 才能建立与展示索引。")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        if let runtimeInfo {
+                            runtimeSummary(runtimeInfo)
+                        }
+
+                        ForEach(trackedProjects) { project in
+                            projectCard(project)
+                        }
+                    }
+
+                    if let message {
+                        Text(message)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(16)
+            }
         }
         .task(id: trackedProjects.map(\.path).joined(separator: "|")) {
             await loadStatus()
@@ -67,8 +70,6 @@ struct RAGSettingsView: View, SuperLog {
             if event.isFinished {
                 message = "索引更新完成：\(event.projectPath)"
                 Task { await loadStatus() }
-            } else {
-                message = "正在重建索引：\(event.scannedFiles)/\(event.totalFiles)"
             }
         }
     }
@@ -138,6 +139,23 @@ extension RAGSettingsView {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
+
+            HStack(spacing: 8) {
+                Button("刷新") {
+                    Task { await refreshProjectStatus(projectPath: project.path) }
+                }
+                .disabled(isLoading)
+
+                Button("重建") {
+                    Task { await rebuildProjectIndex(projectPath: project.path) }
+                }
+                .disabled(isLoading)
+
+                if activeProjectActionPath == project.path {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
@@ -192,6 +210,38 @@ extension RAGSettingsView {
             message = "全部项目索引更新完成。"
         } catch {
             message = "重建索引失败：\(error.localizedDescription)"
+        }
+    }
+
+    private func refreshProjectStatus(projectPath: String) async {
+        activeProjectActionPath = projectPath
+        defer { activeProjectActionPath = nil }
+        do {
+            let service = RAGPlugin.getService()
+            try await service.initialize()
+            let status = try await service.getIndexStatus(projectPath: projectPath)
+            statusesByPath[projectPath] = status
+            if status == nil {
+                statusesByPath.removeValue(forKey: projectPath)
+            }
+            message = "已刷新：\(projectPath)"
+        } catch {
+            message = "刷新失败：\(error.localizedDescription)"
+        }
+    }
+
+    private func rebuildProjectIndex(projectPath: String) async {
+        activeProjectActionPath = projectPath
+        defer { activeProjectActionPath = nil }
+        do {
+            let service = RAGPlugin.getService()
+            try await service.initialize()
+            try await service.ensureIndexed(projectPath: projectPath, force: true)
+            let status = try await service.getIndexStatus(projectPath: projectPath)
+            statusesByPath[projectPath] = status
+            message = "已重建：\(projectPath)"
+        } catch {
+            message = "重建失败：\(error.localizedDescription)"
         }
     }
 }

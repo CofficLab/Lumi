@@ -13,6 +13,7 @@ struct RAGSettingsPopoverView: View, SuperLog {
     @State private var statusesByPath: [String: RAGIndexStatus] = [:]
     @State private var progressByPath: [String: RAGIndexProgressEvent] = [:]
     @State private var isLoading = false
+    @State private var activeProjectActionPath: String?
     @State private var message: String?
 
     var body: some View {
@@ -21,6 +22,18 @@ struct RAGSettingsPopoverView: View, SuperLog {
                 Label("RAG 索引状态", systemImage: "doc.text.magnifyingglass")
                     .font(.headline)
                 Spacer()
+                Button("刷新全部") {
+                    Task { await loadStatus() }
+                }
+                .disabled(isLoading)
+                .controlSize(.small)
+
+                Button("重建全部") {
+                    Task { await rebuildAll() }
+                }
+                .disabled(isLoading)
+                .controlSize(.small)
+
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundColor(.secondary)
@@ -42,22 +55,6 @@ struct RAGSettingsPopoverView: View, SuperLog {
                         ForEach(trackedProjects) { project in
                             projectRow(project)
                         }
-                    }
-
-                    HStack(spacing: 10) {
-                        Button("刷新全部") {
-                            Task { await loadStatus() }
-                        }
-                        .disabled(isLoading)
-
-                        Button("重建全部") {
-                            Task { await rebuildAll() }
-                        }
-                        .disabled(isLoading)
-                    }
-
-                    if isLoading {
-                        ProgressView("处理中…")
                     }
 
                     if let message {
@@ -111,6 +108,23 @@ extension RAGSettingsPopoverView {
 
             if let progress = progressByPath[project.path], progress.totalFiles > 0, !progress.isFinished {
                 ProgressView(value: Double(progress.scannedFiles), total: Double(progress.totalFiles))
+            }
+
+            HStack(spacing: 8) {
+                Button("刷新") {
+                    Task { await refreshProjectStatus(projectPath: project.path) }
+                }
+                .disabled(isLoading)
+
+                Button("重建") {
+                    Task { await rebuildProject(projectPath: project.path) }
+                }
+                .disabled(isLoading)
+
+                if activeProjectActionPath == project.path {
+                    ProgressView()
+                        .controlSize(.small)
+                }
             }
         }
         .padding(10)
@@ -191,6 +205,38 @@ extension RAGSettingsPopoverView {
             message = "全部项目索引更新完成。"
         } catch {
             message = "重建索引失败：\(error.localizedDescription)"
+        }
+    }
+
+    private func refreshProjectStatus(projectPath: String) async {
+        activeProjectActionPath = projectPath
+        defer { activeProjectActionPath = nil }
+        do {
+            let service = RAGPlugin.getService()
+            try await service.initialize()
+            let status = try await service.getIndexStatus(projectPath: projectPath)
+            statusesByPath[projectPath] = status
+            if status == nil {
+                statusesByPath.removeValue(forKey: projectPath)
+            }
+            message = "已刷新：\(projectPath)"
+        } catch {
+            message = "刷新失败：\(error.localizedDescription)"
+        }
+    }
+
+    private func rebuildProject(projectPath: String) async {
+        activeProjectActionPath = projectPath
+        defer { activeProjectActionPath = nil }
+        do {
+            let service = RAGPlugin.getService()
+            try await service.initialize()
+            try await service.ensureIndexed(projectPath: projectPath, force: true)
+            let status = try await service.getIndexStatus(projectPath: projectPath)
+            statusesByPath[projectPath] = status
+            message = "已重建：\(projectPath)"
+        } catch {
+            message = "重建失败：\(error.localizedDescription)"
         }
     }
 }
