@@ -1,21 +1,6 @@
 import Foundation
 import MagicKit
 
-/// RAG 检索结果
-struct RAGSearchResult {
-    let content: String
-    let source: String
-    let score: Float
-}
-
-/// RAG 响应
-struct RAGResponse {
-    let query: String
-    let results: [RAGSearchResult]
-
-    var hasResults: Bool { !results.isEmpty }
-}
-
 /// RAG 核心服务
 ///
 /// - 负责初始化本地数据库
