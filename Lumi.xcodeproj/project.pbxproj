@@ -80,6 +80,25 @@
 			name = "Embed System Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F5A9DB4A2F7635F600A47D9C /* Embed Libraries */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+			);
+			name = "Embed Libraries";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5A9DB4E2F763C8700A47D9C /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -119,10 +138,24 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"Lumi-Info.plist",
+				"ThirdParty/sqlite-vec/vec0.dylib",
 			);
 			target = F54F8C7D2F1A3B6500AABB2A /* Lumi */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		F5A9DB502F763CA900A47D9C /* Exceptions for "LumiApp" folder in "Copy Files" phase from "Lumi" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			attributesByRelativePath = {
+				"ThirdParty/sqlite-vec/vec0.dylib" = (CodeSignOnCopy, );
+			};
+			buildPhase = F5A9DB4E2F763C8700A47D9C /* CopyFiles */;
+			membershipExceptions = (
+				"ThirdParty/sqlite-vec/vec0.dylib",
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		0B2F7D622F3A301C00AD7E94 /* LumiFinder */ = {
@@ -145,6 +178,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				F5F4E1E82F3ACC6600C76EA0 /* Exceptions for "LumiApp" folder in "Lumi" target */,
+				F5A9DB502F763CA900A47D9C /* Exceptions for "LumiApp" folder in "Copy Files" phase from "Lumi" target */,
 				F52C2B202F3EDDE200905557 /* Exceptions for "LumiApp" folder in "NettoExtension" target */,
 			);
 			path = LumiApp;
@@ -283,6 +317,8 @@
 				F54F8C7C2F1A3B6500AABB2A /* Resources */,
 				0B11F83D2F3A156D00B9B857 /* Embed Foundation Extensions */,
 				F5A640762F3ED1910039A761 /* Embed System Extensions */,
+				F5A9DB4A2F7635F600A47D9C /* Embed Libraries */,
+				F5A9DB4E2F763C8700A47D9C /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -776,6 +812,10 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/LumiApp/ThirdParty/sqlite-vec",
+				);
 				MARKETING_VERSION = 1.40.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -822,6 +862,10 @@
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/LumiApp/ThirdParty/sqlite-vec",
 				);
 				MARKETING_VERSION = 1.40.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi;

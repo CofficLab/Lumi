@@ -3,6 +3,17 @@ import Darwin
 import Foundation
 import SQLite3
 
+@_silgen_name("sqlite3_enable_load_extension")
+private func rag_sqlite3_enable_load_extension(_ db: OpaquePointer?, _ onOff: Int32) -> Int32
+
+@_silgen_name("sqlite3_load_extension")
+private func rag_sqlite3_load_extension(
+    _ db: OpaquePointer?,
+    _ file: UnsafePointer<CChar>?,
+    _ procName: UnsafePointer<CChar>?,
+    _ errorMessage: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
+) -> Int32
+
 final class RAGSQLiteStore {
     private var db: OpaquePointer?
     private let dbURL: URL
@@ -649,7 +660,7 @@ final class RAGSQLiteStore {
 
     private func bundledSQLiteVecCandidates() -> [String] {
         var candidates: [String] = []
-        let libraryNames = ["sqlite-vec0.dylib", "sqlite-vec.dylib"]
+        let libraryNames = ["sqlite-vec0.dylib", "sqlite-vec.dylib", "vec0.dylib"]
         let main = Bundle.main
 
         if let frameworksPath = main.privateFrameworksPath {
@@ -775,36 +786,16 @@ final class RAGSQLiteStore {
 
     private func loadSQLiteExtension(at path: String) throws {
         guard let db else { throw RAGError.dbError("数据库未打开") }
-
-        typealias EnableLoadExtensionFn = @convention(c) (OpaquePointer?, Int32) -> Int32
-        typealias LoadExtensionFn = @convention(c) (
-            OpaquePointer?,
-            UnsafePointer<CChar>?,
-            UnsafePointer<CChar>?,
-            UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
-        ) -> Int32
-
-        guard
-            let sqliteHandle = dlopen(nil, RTLD_NOW),
-            let enableSym = dlsym(sqliteHandle, "sqlite3_enable_load_extension"),
-            let loadSym = dlsym(sqliteHandle, "sqlite3_load_extension")
-        else {
-            throw RAGError.dbError("当前 SQLite 未暴露扩展加载符号，无法启用 sqlite-vec")
-        }
-
-        let enableFn = unsafeBitCast(enableSym, to: EnableLoadExtensionFn.self)
-        let loadFn = unsafeBitCast(loadSym, to: LoadExtensionFn.self)
-
-        let enableCode = enableFn(db, 1)
+        let enableCode = rag_sqlite3_enable_load_extension(db, 1)
         guard enableCode == SQLITE_OK else {
             throw dbError("启用 SQLite 扩展加载失败")
         }
 
         var errorPointer: UnsafeMutablePointer<CChar>?
         let loadCode = path.withCString { cPath in
-            loadFn(db, cPath, nil, &errorPointer)
+            rag_sqlite3_load_extension(db, cPath, nil, &errorPointer)
         }
-        _ = enableFn(db, 0)
+        _ = rag_sqlite3_enable_load_extension(db, 0)
 
         guard loadCode == SQLITE_OK else {
             let message = errorPointer.map { String(cString: $0) } ?? "未知错误"
