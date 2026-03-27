@@ -34,20 +34,23 @@ extension Notification.Name {
 
 extension NotificationCenter {
     static func postRAGIndexProgress(_ event: RAGIndexProgressEvent) {
-        NotificationCenter.default.post(
-            name: .ragIndexProgressDidChange,
-            object: nil,
-            userInfo: [
-                "projectPath": event.projectPath,
-                "scannedFiles": event.scannedFiles,
-                "totalFiles": event.totalFiles,
-                "indexedFiles": event.indexedFiles,
-                "skippedFiles": event.skippedFiles,
-                "chunkCount": event.chunkCount,
-                "currentFilePath": event.currentFilePath,
-                "isFinished": event.isFinished
-            ]
-        )
+        // Ensure notification is posted on main thread to avoid SwiftUI warnings
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(
+                name: .ragIndexProgressDidChange,
+                object: nil,
+                userInfo: [
+                    "projectPath": event.projectPath,
+                    "scannedFiles": event.scannedFiles,
+                    "totalFiles": event.totalFiles,
+                    "indexedFiles": event.indexedFiles,
+                    "skippedFiles": event.skippedFiles,
+                    "chunkCount": event.chunkCount,
+                    "currentFilePath": event.currentFilePath,
+                    "isFinished": event.isFinished
+                ]
+            )
+        }
     }
 }
 
@@ -91,4 +94,3 @@ extension View {
         }
     }
 }
-
