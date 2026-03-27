@@ -13,26 +13,32 @@ struct AboutView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
-                // 顶部说明卡片
-                headerCard
+        VStack(spacing: 0) {
+            // 顶部说明卡片（固定）
+            headerCard
+                .padding(DesignTokens.Spacing.lg)
+                .background(Color.clear)
 
-                // 应用信息卡片
-                appInfoCard
+            ScrollView {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+                    Spacer().frame(height: DesignTokens.Spacing.lg)
 
-                // 版本信息卡片
-                versionInfoCard
+                    // 应用信息卡片
+                    appInfoCard
 
-                // 构建历史卡片
-                buildHistoryCard
+                    // 版本信息卡片
+                    versionInfoCard
 
-                // 系统信息卡片
-                systemInfoCard
+                    // 构建历史卡片
+                    buildHistoryCard
 
-                Spacer()
+                    // 系统信息卡片
+                    systemInfoCard
+
+                    Spacer()
+                }
+                .padding(.horizontal, DesignTokens.Spacing.lg)
             }
-            .padding(DesignTokens.Spacing.lg)
         }
         .navigationTitle("关于")
     }

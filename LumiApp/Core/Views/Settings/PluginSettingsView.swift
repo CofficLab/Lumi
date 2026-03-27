@@ -12,24 +12,30 @@ struct PluginSettingsView: View {
     @State private var pluginStates: [String: Bool] = [:]
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
-                // 顶部说明卡片
-                headerCard
+        VStack(spacing: 0) {
+            // 顶部说明卡片（固定）
+            headerCard
+                .padding(DesignTokens.Spacing.lg)
+                .background(Color.clear)
 
-                // 插件列表卡片
-                if !configurablePlugins.isEmpty {
-                    pluginListCard
+            ScrollView {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+                    Spacer().frame(height: DesignTokens.Spacing.lg)
+
+                    // 插件列表卡片
+                    if !configurablePlugins.isEmpty {
+                        pluginListCard
+                    }
+
+                    // 空状态卡片
+                    if configurablePlugins.isEmpty {
+                        emptyStateCard
+                    }
+
+                    Spacer()
                 }
-
-                // 空状态卡片
-                if configurablePlugins.isEmpty {
-                    emptyStateCard
-                }
-
-                Spacer()
+                .padding(.horizontal, DesignTokens.Spacing.lg)
             }
-            .padding(DesignTokens.Spacing.lg)
         }
         .navigationTitle("插件管理")
         .onAppear {
