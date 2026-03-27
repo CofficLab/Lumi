@@ -25,4 +25,10 @@ final class RAGIndexingRegistry: @unchecked Sendable {
         defer { lock.unlock() }
         return indexingProjects.contains(projectPath)
     }
+
+    func hasAnyIndexing() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return !indexingProjects.isEmpty
+    }
 }

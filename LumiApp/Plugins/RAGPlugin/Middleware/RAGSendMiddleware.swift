@@ -71,6 +71,12 @@ final class RAGSendMiddleware: SendMiddleware, SuperLog {
             await next(ctx)
             return
         }
+        // 只要任意项目正在索引，都直接跳过本轮 RAG，避免卡在 RAGService actor 队列
+        if RAGService.isAnyIndexing() {
+            RAGPlugin.logger.info("\(Self.t)   ⏭️ 跳过 RAG (存在后台索引任务，不阻塞发送)")
+            await next(ctx)
+            return
+        }
         // 索引进行中时，发送链路应直接放行，避免等待 RAGService actor 队列
         if RAGService.isIndexing(projectPath: projectPath) {
             RAGPlugin.logger.info("\(Self.t)   ⏭️ 跳过 RAG (索引进行中，不阻塞发送)")

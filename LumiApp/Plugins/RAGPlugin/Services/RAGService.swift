@@ -276,6 +276,11 @@ actor RAGService: SuperLog {
         return indexingRegistry.contains(projectPath: normalized)
     }
 
+    /// 非阻塞地查询是否存在任意项目正在索引（不进入 actor 队列）
+    nonisolated static func isAnyIndexing() -> Bool {
+        indexingRegistry.hasAnyIndexing()
+    }
+
     private func isIndexStateStale(_ state: RAGProjectIndexState, now: Date) -> Bool {
         let indexedAt = Date(timeIntervalSince1970: state.lastIndexedAt)
         return now.timeIntervalSince(indexedAt) > Self.staleAfterSeconds
