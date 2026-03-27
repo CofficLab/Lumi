@@ -20,8 +20,6 @@ struct PluginSettingsView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
-                    Spacer().frame(height: DesignTokens.Spacing.lg)
-
                     // 插件列表卡片
                     if !configurablePlugins.isEmpty {
                         pluginListCard
@@ -47,25 +45,11 @@ struct PluginSettingsView: View {
 
     private var headerCard: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-                GlassSectionHeader(
-                    icon: "puzzlepiece.extension.fill",
-                    title: "插件管理",
-                    subtitle: "启用或禁用应用的插件功能"
-                )
-
-                GlassDivider()
-
-                HStack(spacing: DesignTokens.Spacing.sm) {
-                    Image(systemName: "info.circle.fill")
-                        .foregroundColor(DesignTokens.Color.semantic.warning)
-                        .font(.system(size: 14))
-
-                    Text("更改插件状态后需要重启应用才能完全生效")
-                        .font(DesignTokens.Typography.caption1)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                }
-            }
+            GlassSectionHeader(
+                icon: "puzzlepiece.extension.fill",
+                title: "插件管理",
+                subtitle: "启用或禁用应用的插件功能"
+            )
         }
     }
 

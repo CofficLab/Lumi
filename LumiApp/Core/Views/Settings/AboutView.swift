@@ -21,8 +21,6 @@ struct AboutView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
-                    Spacer().frame(height: DesignTokens.Spacing.lg)
-
                     // 应用信息卡片
                     appInfoCard
 
@@ -47,36 +45,11 @@ struct AboutView: View {
 
     private var headerCard: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-                GlassSectionHeader(
-                    icon: "info.circle.fill",
-                    title: "关于 Lumi",
-                    subtitle: "了解应用的版本和系统信息"
-                )
-
-                GlassDivider()
-
-                HStack(spacing: DesignTokens.Spacing.md) {
-                    // 应用图标
-                    Image(nsImage: NSApp.applicationIconImage)
-                        .resizable()
-                        .frame(width: 48, height: 48)
-
-                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-                        Text(appInfo.name)
-                            .font(DesignTokens.Typography.bodyEmphasized)
-                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-
-                        if let version = appInfo.version {
-                            Text("版本 \(version)")
-                                .font(DesignTokens.Typography.caption1)
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        }
-                    }
-
-                    Spacer()
-                }
-            }
+            GlassSectionHeader(
+                icon: "info.circle.fill",
+                title: "关于 Lumi",
+                subtitle: "了解应用的版本和系统信息"
+            )
         }
     }
 
@@ -164,9 +137,9 @@ struct VersionInfo {
 
         // Build configuration
         #if DEBUG
-        self.buildConfiguration = "Debug"
+            self.buildConfiguration = "Debug"
         #else
-        self.buildConfiguration = "Release"
+            self.buildConfiguration = "Release"
         #endif
 
         // Build date

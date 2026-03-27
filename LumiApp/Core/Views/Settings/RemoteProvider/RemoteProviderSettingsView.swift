@@ -53,8 +53,6 @@ struct RemoteProviderSettingsView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
-                    Spacer().frame(height: DesignTokens.Spacing.lg)
-
                     // 配置卡片（API Key + 模型列表）
                     if selectedProvider != nil {
                         configurationCard

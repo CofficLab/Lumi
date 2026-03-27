@@ -1,6 +1,6 @@
-import SwiftUI
-import MagicKit
 import AppKit
+import MagicKit
+import SwiftUI
 
 /// 本地大模型设置视图（仅展示本地模型供应商）
 struct LocalProviderSettingsView: View {
@@ -71,8 +71,6 @@ struct LocalProviderSettingsView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
-                    Spacer().frame(height: DesignTokens.Spacing.lg)
-
                     // 本地模型管理卡片
                     if localProvider != nil {
                         localModelCard
@@ -84,7 +82,7 @@ struct LocalProviderSettingsView: View {
             }
         }
         .onAppear(perform: onAppear)
-        .onChange(of: selectedProviderId) { _, newValue in
+        .onChange(of: selectedProviderId) { _, _ in
             loadSettings()
             updateLocalProvider()
         }
@@ -104,18 +102,6 @@ extension LocalProviderSettingsView {
                     subtitle: "在本地设备上运行 AI 模型"
                 )
 
-                GlassDivider()
-
-                HStack(spacing: DesignTokens.Spacing.sm) {
-                    Image(systemName: "info.circle.fill")
-                        .foregroundColor(DesignTokens.Color.semantic.primary)
-                        .font(.system(size: 14))
-
-                    Text("本地模型需要下载并在本地运行，保护数据隐私")
-                        .font(DesignTokens.Typography.caption1)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                }
-
                 if localProviders.count > 1 {
                     GlassDivider()
 
@@ -130,16 +116,6 @@ extension LocalProviderSettingsView {
                                 }
                             }
                         }
-                    }
-                } else if let provider = localProviders.first {
-                    GlassDivider()
-
-                    HStack(spacing: DesignTokens.Spacing.sm) {
-                        Image(systemName: provider.iconName)
-                            .foregroundColor(DesignTokens.Color.semantic.primary)
-                        Text(provider.displayName)
-                            .font(DesignTokens.Typography.body)
-                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                     }
                 }
             }
@@ -174,7 +150,7 @@ extension LocalProviderSettingsView {
                 )
                 .onChange(of: localAvailableModels.count) { _, count in
                     if count > 0,
-                       (selectedSeriesName.isEmpty || !localAvailableModels.contains(where: { ($0.series ?? "其他") == selectedSeriesName })) {
+                       selectedSeriesName.isEmpty || !localAvailableModels.contains(where: { ($0.series ?? "其他") == selectedSeriesName }) {
                         let fallback = "其他"
                         let grouped = Dictionary(grouping: localAvailableModels) { $0.series ?? fallback }
                         selectedSeriesName = grouped.keys.sorted().first ?? ""
@@ -206,12 +182,10 @@ extension LocalProviderSettingsView {
 extension LocalProviderSettingsView {
     /// 加载当前供应商的设置信息（选中的模型）
     private func loadSettings() {
-
     }
 
     /// 保存选中的模型到 UserDefaults
     private func saveModel() {
-
     }
 
     /// 根据当前选中的供应商 ID 更新本地供应商引用

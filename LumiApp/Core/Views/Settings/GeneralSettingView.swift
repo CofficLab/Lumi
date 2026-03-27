@@ -16,8 +16,6 @@ struct GeneralSettingView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
-                    Spacer().frame(height: DesignTokens.Spacing.lg)
-
                     // 启动选项
                     startupSection
 
@@ -42,25 +40,11 @@ struct GeneralSettingView: View {
 
     private var headerCard: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-                GlassSectionHeader(
-                    icon: "gearshape.2",
-                    title: "通用设置",
-                    subtitle: "管理应用的基本行为和偏好设置"
-                )
-
-                GlassDivider()
-
-                HStack(spacing: DesignTokens.Spacing.sm) {
-                    Image(systemName: "info.circle.fill")
-                        .foregroundColor(DesignTokens.Color.semantic.primary)
-                        .font(.system(size: 14))
-
-                    Text("配置应用的启动行为、查看新手引导或提交问题反馈")
-                        .font(DesignTokens.Typography.caption1)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                }
-            }
+            GlassSectionHeader(
+                icon: "gearshape.2",
+                title: "通用设置",
+                subtitle: "管理应用的基本行为和偏好设置"
+            )
         }
     }
 

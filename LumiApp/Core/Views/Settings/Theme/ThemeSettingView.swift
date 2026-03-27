@@ -14,8 +14,6 @@ struct ThemeSettingView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
-                    Spacer().frame(height: DesignTokens.Spacing.lg)
-
                     // 主题选择器卡片
                     themeSelectorCard
 
@@ -34,25 +32,11 @@ struct ThemeSettingView: View {
 
     private var headerCard: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-                GlassSectionHeader(
-                    icon: "paintbrush.fill",
-                    title: "主题风格",
-                    subtitle: "选择你喜欢的视觉体验"
-                )
-
-                GlassDivider()
-
-                HStack(spacing: DesignTokens.Spacing.sm) {
-                    Image(systemName: "info.circle.fill")
-                        .foregroundColor(DesignTokens.Color.semantic.primary)
-                        .font(.system(size: 14))
-
-                    Text("选择不同的主题风格，自定义应用的外观和氛围")
-                        .font(DesignTokens.Typography.caption1)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                }
-            }
+            GlassSectionHeader(
+                icon: "paintbrush.fill",
+                title: "主题风格",
+                subtitle: "选择你喜欢的视觉体验"
+            )
         }
     }
 
