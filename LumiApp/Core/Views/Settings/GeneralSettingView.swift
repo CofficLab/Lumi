@@ -9,22 +9,27 @@ struct GeneralSettingView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
-                // 顶部说明卡片
-                headerCard
+            LazyVStack(alignment: .leading, spacing: DesignTokens.Spacing.lg, pinnedViews: [.sectionHeaders]) {
+                // 顶部说明卡片（固定）
+                Section {
+                    Spacer().frame(height: DesignTokens.Spacing.lg)
 
-                // 启动选项
-                startupSection
+                    // 启动选项
+                    startupSection
 
-                // 新手引导
-                onboardingSection
+                    // 新手引导
+                    onboardingSection
 
-                // 反馈与支持
-                supportSection
+                    // 反馈与支持
+                    supportSection
 
-                Spacer()
+                    Spacer()
+                } header: {
+                    headerCard
+                        .padding(.horizontal, DesignTokens.Spacing.lg)
+                        .background(Color.clear)
+                }
             }
-            .padding(DesignTokens.Spacing.lg)
         }
         .navigationTitle("通用设置")
         .onAppear {
@@ -32,7 +37,7 @@ struct GeneralSettingView: View {
         }
     }
 
-    // MARK: - Header Card
+    // MARK: - Header Card (Sticky)
 
     private var headerCard: some View {
         GlassCard {
@@ -88,6 +93,7 @@ struct GeneralSettingView: View {
                 }
             }
         }
+        .padding(.horizontal, DesignTokens.Spacing.lg)
     }
 
     // MARK: - Launch at Login
@@ -146,6 +152,7 @@ struct GeneralSettingView: View {
                 }
             }
         }
+        .padding(.horizontal, DesignTokens.Spacing.lg)
     }
 
     // MARK: - Support
@@ -176,6 +183,7 @@ struct GeneralSettingView: View {
                 }
             }
         }
+        .padding(.horizontal, DesignTokens.Spacing.lg)
     }
 
     private func openURL(_ urlString: String) {

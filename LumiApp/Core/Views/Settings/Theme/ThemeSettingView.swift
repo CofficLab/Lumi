@@ -7,24 +7,28 @@ struct ThemeSettingView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
-                // 顶部说明卡片
-                headerCard
+            LazyVStack(alignment: .leading, spacing: DesignTokens.Spacing.lg, pinnedViews: [.sectionHeaders]) {
+                Section {
+                    Spacer().frame(height: DesignTokens.Spacing.lg)
 
-                // 主题选择器卡片
-                themeSelectorCard
+                    // 主题选择器卡片
+                    themeSelectorCard
 
-                // 主题说明卡片
-                themeDescriptionCard
+                    // 主题说明卡片
+                    themeDescriptionCard
 
-                Spacer()
+                    Spacer()
+                } header: {
+                    headerCard
+                        .padding(.horizontal, DesignTokens.Spacing.lg)
+                        .background(Color.clear)
+                }
             }
-            .padding(DesignTokens.Spacing.lg)
         }
         .navigationTitle("主题风格")
     }
 
-    // MARK: - Header Card
+    // MARK: - Header Card (Sticky)
 
     private var headerCard: some View {
         GlassCard {
@@ -67,6 +71,7 @@ struct ThemeSettingView: View {
                     .environmentObject(themeManager)
             }
         }
+        .padding(.horizontal, DesignTokens.Spacing.lg)
     }
 
     // MARK: - Theme Description Card
@@ -103,6 +108,7 @@ struct ThemeSettingView: View {
                 }
             }
         }
+        .padding(.horizontal, DesignTokens.Spacing.lg)
     }
 
     // MARK: - Helper Methods

@@ -64,18 +64,23 @@ struct LocalProviderSettingsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
-                // 本地供应商选择器卡片
-                providerSelectorCard
+            LazyVStack(alignment: .leading, spacing: DesignTokens.Spacing.lg, pinnedViews: [.sectionHeaders]) {
+                // 本地供应商卡片（固定）
+                Section {
+                    Spacer().frame(height: DesignTokens.Spacing.lg)
 
-                // 本地模型管理卡片
-                if localProvider != nil {
-                    localModelCard
+                    // 本地模型管理卡片
+                    if localProvider != nil {
+                        localModelCard
+                    }
+
+                    Spacer()
+                } header: {
+                    providerSelectorCard
+                        .padding(.horizontal, DesignTokens.Spacing.lg)
+                        .background(Color.clear)
                 }
-
-                Spacer()
             }
-            .padding(DesignTokens.Spacing.lg)
         }
         .onAppear(perform: onAppear)
         .onChange(of: selectedProviderId) { _, newValue in
@@ -88,7 +93,7 @@ struct LocalProviderSettingsView: View {
 // MARK: - View
 
 extension LocalProviderSettingsView {
-    /// 本地供应商选择器卡片
+    /// 本地供应商选择器卡片（固定）
     private var providerSelectorCard: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
@@ -192,6 +197,7 @@ extension LocalProviderSettingsView {
                 }
             }
         }
+        .padding(.horizontal, DesignTokens.Spacing.lg)
     }
 }
 
