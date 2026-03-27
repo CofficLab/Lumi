@@ -1,10 +1,14 @@
 import SwiftUI
 import os
+import MagicKit
 
 /// RAG 状态栏视图
 ///
 /// 在 Agent 模式底部状态栏显示当前项目的 RAG 索引状态
-struct RAGStatusBarView: View {
+struct RAGStatusBarView: View, SuperLog {
+    nonisolated static let emoji = "🦞"
+    nonisolated static let verbose = false
+
     // MARK: - 属性
 
     @EnvironmentObject private var projectVM: ProjectVM
@@ -104,7 +108,7 @@ struct RAGStatusBarView: View {
             }
 
             HStack(spacing: 4) {
-                Text(String(localized: "%lld Files", table: "RAG", arguments: status.fileCount))
+                Text(String(localized: "^[\(status.fileCount) File](inflect: true)", table: "RAG"))
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
 
@@ -112,7 +116,7 @@ struct RAGStatusBarView: View {
                     .font(.system(size: 9))
                     .foregroundStyle(.tertiary)
 
-                Text(String(localized: "%lld Chunks", table: "RAG", arguments: status.chunkCount))
+                Text(String(localized: "^[\(status.chunkCount) Chunk](inflect: true)", table: "RAG"))
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
             }
@@ -138,7 +142,7 @@ struct RAGStatusBarView: View {
                 }
 
                 HStack(spacing: 4) {
-                    Text(String(localized: "%lld Indexed", table: "RAG", arguments: event.indexedFiles))
+                    Text(String(localized: "^[\(event.indexedFiles) Indexed](inflect: true)", table: "RAG"))
                         .font(.system(size: 10))
                         .foregroundColor(.secondary)
 
@@ -146,7 +150,7 @@ struct RAGStatusBarView: View {
                         .font(.system(size: 9))
                         .foregroundStyle(.tertiary)
 
-                    Text(String(localized: "%lld Chunks", table: "RAG", arguments: event.chunkCount))
+                    Text(String(localized: "^[\(event.chunkCount) Chunk](inflect: true)", table: "RAG"))
                         .font(.system(size: 10))
                         .foregroundColor(.secondary)
                 }
@@ -212,13 +216,13 @@ struct RAGStatusBarView: View {
             return String(localized: "Just now", table: "RAG")
         } else if interval < 3600 {
             let minutes = Int(interval / 60)
-            return String(localized: "%lld minutes ago", table: "RAG", arguments: minutes)
+            return String(localized: "^[\(minutes) minute](inflect: true) ago", table: "RAG")
         } else if interval < 86400 {
             let hours = Int(interval / 3600)
-            return String(localized: "%lld hours ago", table: "RAG", arguments: hours)
+            return String(localized: "^[\(hours) hour](inflect: true) ago", table: "RAG")
         } else {
             let days = Int(interval / 86400)
-            return String(localized: "%lld days ago", table: "RAG", arguments: days)
+            return String(localized: "^[\(days) day](inflect: true) ago", table: "RAG")
         }
     }
 
