@@ -27,6 +27,7 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
     static let defaultModel = "glm-4.7"
 
     static let availableModels = [
+        "glm-5.1",
         "glm-5",
         "glm-4.7",
         "glm-4.6",
