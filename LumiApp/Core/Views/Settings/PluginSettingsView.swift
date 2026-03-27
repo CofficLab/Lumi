@@ -13,70 +13,105 @@ struct PluginSettingsView: View {
 
     var body: some View {
         ScrollView {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+                // 顶部说明卡片
+                headerCard
+
+                // 插件列表卡片
+                if !configurablePlugins.isEmpty {
+                    pluginListCard
+                }
+
+                // 空状态卡片
+                if configurablePlugins.isEmpty {
+                    emptyStateCard
+                }
+
+                Spacer()
+            }
+            .padding(DesignTokens.Spacing.lg)
+        }
+        .navigationTitle("插件管理")
+        .onAppear {
+            loadPluginStates()
+        }
+    }
+
+    // MARK: - Header Card
+
+    private var headerCard: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                GlassSectionHeader(
+                    icon: "puzzlepiece.extension.fill",
+                    title: "插件管理",
+                    subtitle: "启用或禁用应用的插件功能"
+                )
+
+                GlassDivider()
+
+                HStack(spacing: DesignTokens.Spacing.sm) {
+                    Image(systemName: "info.circle.fill")
+                        .foregroundColor(DesignTokens.Color.semantic.warning)
+                        .font(.system(size: 14))
+
+                    Text("更改插件状态后需要重启应用才能完全生效")
+                        .font(DesignTokens.Typography.caption1)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                }
+            }
+        }
+    }
+
+    // MARK: - Plugin List Card
+
+    private var pluginListCard: some View {
+        GlassCard {
             VStack(alignment: .leading, spacing: 0) {
-                // 标题
-                Text("插件管理")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .padding(.bottom, 16)
-
-                Text("启用或禁用应用的插件功能")
-                    .font(.subheadline)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                    .padding(.bottom, 8)
-
-                Text("重启应用才能完全生效")
-                    .font(.caption)
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                    .padding(.bottom, 24)
-
-                // 插件列表
                 ForEach(configurablePlugins) { plugin in
-                    GlassRow {
-                        PluginToggleRow(
-                            plugin: plugin,
-                            isEnabled: Binding(
-                                get: { pluginStates[plugin.id, default: true] },
-                                set: { newValue in
-                                    pluginStates[plugin.id] = newValue
-                                    settingsStore.setPluginEnabled(plugin.id, enabled: newValue)
-                                    AppLogger.core.info("Plugin '\(plugin.id)' is now \(newValue ? "enabled" : "disabled")")
-                                }
-                            )
+                    PluginToggleRow(
+                        plugin: plugin,
+                        isEnabled: Binding(
+                            get: { pluginStates[plugin.id, default: true] },
+                            set: { newValue in
+                                pluginStates[plugin.id] = newValue
+                                settingsStore.setPluginEnabled(plugin.id, enabled: newValue)
+                                AppLogger.core.info("Plugin '\(plugin.id)' is now \(newValue ? "enabled" : "disabled")")
+                            }
                         )
-                    }
+                    )
 
                     if plugin.id != configurablePlugins.last?.id {
                         GlassDivider()
                     }
                 }
+            }
+        }
+    }
 
-                // 如果没有可配置的插件
-                if configurablePlugins.isEmpty {
-                    GlassCard {
-                        VStack(spacing: 12) {
-                            Image(systemName: "puzzlepiece.extension")
-                                .font(.system(size: 48))
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                            Text("暂无可配置的插件")
-                                .font(.body)
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                            Text("当插件标记为可配置时，会在此处显示")
-                                .font(.caption)
-                                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 24)
-                    }
+    // MARK: - Empty State Card
+
+    private var emptyStateCard: some View {
+        GlassCard {
+            VStack(spacing: DesignTokens.Spacing.lg) {
+                Image(systemName: "puzzlepiece.extension")
+                    .font(.system(size: 48))
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+
+                VStack(spacing: DesignTokens.Spacing.xs) {
+                    Text("暂无可配置的插件")
+                        .font(DesignTokens.Typography.bodyEmphasized)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+
+                    Text("当插件标记为可配置时，会在此处显示")
+                        .font(DesignTokens.Typography.caption1)
+                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                 }
 
                 Spacer()
             }
-            .padding(24)
-        }
-        .navigationTitle("插件管理")
-        .onAppear {
-            loadPluginStates()
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, DesignTokens.Spacing.xl)
         }
     }
 
@@ -112,34 +147,36 @@ struct PluginToggleRow: View {
     @Binding var isEnabled: Bool
 
     var body: some View {
-        HStack(spacing: 16) {
-            // 图标
-            Image(systemName: plugin.icon)
-                .font(.system(size: 20))
-                .foregroundColor(DesignTokens.Color.semantic.primary)
-                .frame(width: 32, height: 32)
-                .background(DesignTokens.Color.semantic.primary.opacity(0.1))
-                .cornerRadius(8)
+        GlassRow {
+            HStack(spacing: DesignTokens.Spacing.md) {
+                // 图标
+                Image(systemName: plugin.icon)
+                    .font(.system(size: 20))
+                    .foregroundColor(DesignTokens.Color.semantic.primary)
+                    .frame(width: 32, height: 32)
+                    .background(
+                        Circle()
+                            .fill(DesignTokens.Color.semantic.primary.opacity(0.1))
+                    )
 
-            // 信息
-            VStack(alignment: .leading, spacing: 4) {
-                Text(plugin.name)
-                    .font(.body)
-                    .fontWeight(.medium)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                // 信息
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
+                    Text(plugin.name)
+                        .font(DesignTokens.Typography.bodyEmphasized)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
-                Text(plugin.description)
-                    .font(.caption)
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                    Text(plugin.description)
+                        .font(DesignTokens.Typography.caption1)
+                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                }
+
+                Spacer()
+
+                // 开关
+                Toggle("", isOn: $isEnabled)
+                    .labelsHidden()
             }
-
-            Spacer()
-
-            // 开关
-            Toggle("", isOn: $isEnabled)
-                .labelsHidden()
         }
-        .padding(.vertical, 8)
     }
 }
 

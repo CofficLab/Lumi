@@ -17,6 +17,15 @@
         }
       }
     },
+    "  以浅色为主，保持清晰明亮的视觉体验" : {
+
+    },
+    "  以深色为主，配合神秘的紫色光晕和玻璃态效果" : {
+
+    },
+    "  自动根据 macOS 系统外观切换主题" : {
+
+    },
     " to see." : {
       "localizations" : {
         "zh-Hans" : {
@@ -448,6 +457,15 @@
         }
       }
     },
+    "• 清新明亮" : {
+
+    },
+    "• 精致神秘" : {
+
+    },
+    "• 跟随系统" : {
+
+    },
     "••••••••" : {
       "localizations" : {
         "zh-Hans" : {
@@ -625,6 +643,7 @@
       }
     },
     "About" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1676,6 +1695,7 @@
       }
     },
     "Current version is the latest stable version" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2841,6 +2861,7 @@
       }
     },
     "Lumi uses the Sparkle framework for automatic updates. When a new version is available, the app will automatically prompt you to update." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2855,6 +2876,9 @@
           }
         }
       }
+    },
+    "Lumi 使用 Sparkle 框架进行自动更新。当新版本可用时，应用将自动提示您更新。" : {
+
     },
     "Macintosh HD" : {
       "localizations" : {
@@ -5186,6 +5210,7 @@
       }
     },
     "云端 LLM 供应商" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5346,6 +5371,9 @@
           }
         }
       }
+    },
+    "关于" : {
+
     },
     "内存 %lld GB" : {
       "localizations" : {
@@ -5706,6 +5734,7 @@
       }
     },
     "反馈与支持" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5854,6 +5883,7 @@
       }
     },
     "启动选项" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5870,6 +5900,7 @@
       }
     },
     "启用或禁用应用的插件功能" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6441,6 +6472,9 @@
           }
         }
       }
+    },
+    "当前版本是最新稳定版本" : {
+
     },
     "当前项目" : {
       "extractionState" : "stale",
@@ -7303,6 +7337,9 @@
         }
       }
     },
+    "更改插件状态后需要重启应用才能完全生效" : {
+
+    },
     "未发现可清理的项目" : {
       "localizations" : {
         "zh-Hans" : {
@@ -7353,6 +7390,7 @@
       }
     },
     "本地 LLM 供应商" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8071,6 +8109,7 @@
       }
     },
     "管理应用启动行为" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8599,6 +8638,7 @@
       }
     },
     "遇到问题时可直接提交 Issue，帮助我们快速定位" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8647,6 +8687,7 @@
       }
     },
     "重启应用才能完全生效" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8744,6 +8785,7 @@
       }
     },
     "随时重新查看产品使用指引" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

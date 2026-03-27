@@ -18,6 +18,7 @@ struct ThemeSelectorView: View {
                 ) {
                     withAnimation(DesignAnimations.Preset.bounce) {
                         themeManager.currentVariant = variant
+                        variant.save() // 保存到 UserDefaults
                     }
                 }
             }
@@ -36,7 +37,8 @@ struct ThemeOptionCard: View {
             isSelected: isSelected,
             checkmarkColor: variant.theme.iconColor,
             selectedBackgroundColor: variant.theme.iconColor.opacity(0.15),
-            selectedBorderColor: variant.theme.iconColor
+            selectedBorderColor: variant.theme.iconColor,
+            action: action
         ) {
             HStack(spacing: DesignTokens.Spacing.md) {
                 // 图标
@@ -57,9 +59,6 @@ struct ThemeOptionCard: View {
                         .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                 }
             }
-        }
-        .onTapGesture {
-            action()
         }
     }
 }

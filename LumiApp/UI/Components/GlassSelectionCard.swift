@@ -12,6 +12,7 @@ struct GlassSelectionCard<Content: View>: View {
     var checkmarkColor: Color? = nil
     var selectedBackgroundColor: Color? = nil
     var selectedBorderColor: Color? = nil
+    var action: (() -> Void)? = nil
 
     @ViewBuilder var content: Content
 
@@ -20,7 +21,9 @@ struct GlassSelectionCard<Content: View>: View {
 
     // MARK: - 主体
     var body: some View {
-        Button(action: {}) {
+        Button(action: {
+            action?()
+        }) {
             HStack(spacing: DesignTokens.Spacing.md) {
                 // 内容
                 content
@@ -89,7 +92,46 @@ extension GlassSelectionCard {
 }
 
 // MARK: - 预览
-#Preview("选择卡片") {
+#Preview("选择卡片 - 带点击") {
+    VStack(spacing: DesignTokens.Spacing.sm) {
+        GlassSelectionCard(isSelected: true, action: {
+            print("选中了午夜主题")
+        }) {
+            HStack(spacing: DesignTokens.Spacing.md) {
+                Image(systemName: "moon.fill")
+                    .foregroundColor(.purple)
+                VStack(alignment: .leading) {
+                    Text("午夜主题")
+                        .font(DesignTokens.Typography.body)
+                    Text("深邃神秘的午夜氛围")
+                        .font(DesignTokens.Typography.caption1)
+                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                }
+            }
+        }
+
+        GlassSelectionCard(isSelected: false, action: {
+            print("选中了阳光主题")
+        }) {
+            HStack(spacing: DesignTokens.Spacing.md) {
+                Image(systemName: "sun.max.fill")
+                    .foregroundColor(.orange)
+                VStack(alignment: .leading) {
+                    Text("阳光主题")
+                        .font(DesignTokens.Typography.body)
+                    Text("温暖明亮的阳光")
+                        .font(DesignTokens.Typography.caption1)
+                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                }
+            }
+        }
+    }
+    .padding(DesignTokens.Spacing.lg)
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(DesignTokens.Color.basePalette.deepBackground)
+}
+
+#Preview("选择卡片 - 无点击") {
     VStack(spacing: DesignTokens.Spacing.sm) {
         GlassSelectionCard(isSelected: true) {
             HStack(spacing: DesignTokens.Spacing.md) {

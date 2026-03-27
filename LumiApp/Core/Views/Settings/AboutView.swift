@@ -14,77 +14,81 @@ struct AboutView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                // App info card
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+                // 应用信息卡片
                 appInfoCard
 
-                // Version info card
+                // 版本信息卡片
                 versionInfoCard
 
-                // Build history card
+                // 构建历史卡片
                 buildHistoryCard
 
-                // System info card
+                // 系统信息卡片
                 systemInfoCard
 
-                // Update info card
+                // 更新信息卡片
                 updateInfoCard
 
                 Spacer()
             }
-            .padding(32)
+            .padding(DesignTokens.Spacing.lg)
         }
-        .navigationTitle("About")
+        .navigationTitle("关于")
     }
 
     // MARK: - Info Cards
 
     private var appInfoCard: some View {
-        GlassInfoCard(title: "App Information", icon: "info.circle.fill") {
-            GlassKeyValueRow(label: "App Name", value: appInfo.name)
+        GlassInfoCard(title: "应用信息", icon: "info.circle.fill") {
+            GlassKeyValueRow(label: "应用名称", value: appInfo.name)
             GlassKeyValueRow(label: "Bundle ID", value: appInfo.bundleIdentifier)
             if let description = appInfo.description {
-                GlassKeyValueRow(label: "Description", value: description)
+                GlassKeyValueRow(label: "描述", value: description)
             }
         }
     }
 
     private var versionInfoCard: some View {
-        GlassInfoCard(title: "Version Information", icon: "number.circle.fill") {
-            GlassKeyValueRow(label: "Version", value: appInfo.version ?? "Unknown")
-            GlassKeyValueRow(label: "Build", value: appInfo.build ?? "Unknown")
-            GlassKeyValueRow(label: "Build Configuration", value: versionInfo.buildConfiguration)
-            GlassKeyValueRow(label: "Build Date", value: versionInfo.buildDate)
+        GlassInfoCard(title: "版本信息", icon: "number.circle.fill") {
+            GlassKeyValueRow(label: "版本", value: appInfo.version ?? "未知")
+            GlassKeyValueRow(label: "构建号", value: appInfo.build ?? "未知")
+            GlassKeyValueRow(label: "构建配置", value: versionInfo.buildConfiguration)
+            GlassKeyValueRow(label: "构建日期", value: versionInfo.buildDate)
         }
     }
 
     private var buildHistoryCard: some View {
-        GlassInfoCard(title: "Build History", icon: "clock.arrow.circlepath") {
-            GlassKeyValueRow(label: "Minimum Support", value: "macOS \(versionInfo.minimumOSVersion)")
-            GlassKeyValueRow(label: "SDK Version", value: versionInfo.sdkVersion)
-            GlassKeyValueRow(label: "Swift Version", value: versionInfo.swiftVersion)
-            GlassKeyValueRow(label: "Xcode Version", value: versionInfo.xcodeVersion)
+        GlassInfoCard(title: "构建历史", icon: "clock.arrow.circlepath") {
+            GlassKeyValueRow(label: "最低支持", value: "macOS \(versionInfo.minimumOSVersion)")
+            GlassKeyValueRow(label: "SDK 版本", value: versionInfo.sdkVersion)
+            GlassKeyValueRow(label: "Swift 版本", value: versionInfo.swiftVersion)
+            GlassKeyValueRow(label: "Xcode 版本", value: versionInfo.xcodeVersion)
         }
     }
 
     private var systemInfoCard: some View {
-        GlassInfoCard(title: "System Information", icon: "desktopcomputer") {
-            GlassKeyValueRow(label: "OS", value: versionInfo.systemVersion)
-            GlassKeyValueRow(label: "Architecture", value: versionInfo.architecture)
-            GlassKeyValueRow(label: "App Path", value: versionInfo.appPath)
+        GlassInfoCard(title: "系统信息", icon: "desktopcomputer") {
+            GlassKeyValueRow(label: "操作系统", value: versionInfo.systemVersion)
+            GlassKeyValueRow(label: "架构", value: versionInfo.architecture)
+            GlassKeyValueRow(label: "应用路径", value: versionInfo.appPath)
         }
     }
 
     private var updateInfoCard: some View {
-        GlassInfoCard(title: "Update Information", icon: "arrow.down.circle.fill", subtitle: "Automatic updates") {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Current version is the latest stable version")
+        GlassInfoCard(
+            title: "更新信息",
+            icon: "arrow.down.circle.fill",
+            subtitle: "自动更新"
+        ) {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                Text("当前版本是最新稳定版本")
                     .font(DesignTokens.Typography.subheadline)
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
                 GlassDivider()
 
-                Text("Lumi uses the Sparkle framework for automatic updates. When a new version is available, the app will automatically prompt you to update.")
+                Text("Lumi 使用 Sparkle 框架进行自动更新。当新版本可用时，应用将自动提示您更新。")
                     .font(DesignTokens.Typography.caption1)
                     .foregroundColor(DesignTokens.Color.semantic.textTertiary)
             }

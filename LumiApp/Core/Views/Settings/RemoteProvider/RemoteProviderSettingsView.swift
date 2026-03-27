@@ -46,17 +46,12 @@ struct RemoteProviderSettingsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xl) {
-                // 云端供应商选择器
-                providerSelector
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+                // 供应商选择器卡片
+                providerSelectorCard
 
-                // API Key + 可用模型列表
-                RemoteModelSectionView(
-                    selectedProvider: selectedProvider,
-                    selectedModel: $selectedModel,
-                    apiKey: $apiKey,
-                    onSelectModel: saveModel
-                )
+                // 配置卡片（API Key + 模型列表）
+                configurationCard
 
                 Spacer()
             }
@@ -76,21 +71,27 @@ struct RemoteProviderSettingsView: View {
 // MARK: - View
 
 extension RemoteProviderSettingsView {
-    /// 云端供应商选择器
-    private var providerSelector: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-            Text("云端 LLM 供应商")
-                .font(DesignTokens.Typography.callout)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+    /// 供应商选择器卡片
+    private var providerSelectorCard: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                GlassSectionHeader(
+                    icon: "cloud.fill",
+                    title: "云端 LLM 供应商",
+                    subtitle: "选择你想使用的 AI 服务提供商"
+                )
 
-            HStack(spacing: DesignTokens.Spacing.sm) {
-                ForEach(remoteProviders) { provider in
-                    ProviderButton(
-                        provider: provider,
-                        isSelected: selectedProviderId == provider.id
-                    ) {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            selectedProviderId = provider.id
+                GlassDivider()
+
+                HStack(spacing: DesignTokens.Spacing.sm) {
+                    ForEach(remoteProviders) { provider in
+                        ProviderButton(
+                            provider: provider,
+                            isSelected: selectedProviderId == provider.id
+                        ) {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                selectedProviderId = provider.id
+                            }
                         }
                     }
                 }
@@ -98,6 +99,131 @@ extension RemoteProviderSettingsView {
         }
     }
 
+    /// 配置卡片
+    private var configurationCard: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xl) {
+                // API Key 区块
+                apiKeySection
+
+                // 模型列表区块
+                modelSection
+            }
+        }
+    }
+
+    /// API Key 配置区块
+    private var apiKeySection: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+            GlassSectionHeader(
+                icon: "key.fill",
+                title: "API 密钥",
+                subtitle: "配置你的访问凭证"
+            )
+
+            GlassDivider()
+
+            GlassRow {
+                HStack(spacing: DesignTokens.Spacing.md) {
+                    Image(systemName: "lock.fill")
+                        .foregroundColor(DesignTokens.Color.semantic.warning)
+
+                    TextField("输入 API Key", text: $apiKey)
+                        .textFieldStyle(.plain)
+                        .textContentType(.password)
+                        .font(DesignTokens.Typography.body)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+
+                    Spacer()
+
+                    if !apiKey.isEmpty {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(DesignTokens.Color.semantic.success)
+                    }
+                }
+            }
+        }
+    }
+
+    /// 模型列表区块
+    private var modelSection: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+            GlassSectionHeader(
+                icon: "cpu.fill",
+                title: "可用模型",
+                subtitle: "选择一个模型进行对话"
+            )
+
+            GlassDivider()
+
+            VStack(spacing: 0) {
+                let models = selectedProvider?.availableModels ?? []
+                ForEach(models, id: \.self) { model in
+                    RemoteModelRow(
+                        model: model,
+                        isSelected: selectedModel == model,
+                        provider: selectedProvider
+                    ) {
+                        selectedModel = model
+                        saveModel()
+                    }
+
+                    if model != models.last {
+                        GlassDivider()
+                    }
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+            .animation(.easeInOut(duration: 0.22), value: selectedProvider?.id ?? "")
+        }
+    }
+}
+
+// MARK: - Remote Model Row (简化的独立组件)
+
+struct RemoteModelRow: View {
+    let model: String
+    let isSelected: Bool
+    let provider: LLMProviderInfo?
+    let onTap: () -> Void
+
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var isHovering = false
+
+    var body: some View {
+        GlassRow {
+            HStack(spacing: DesignTokens.Spacing.md) {
+                // 图标
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .foregroundColor(isSelected ? DesignTokens.Color.semantic.primary : DesignTokens.Color.semantic.textTertiary)
+                    .font(.system(size: 20))
+
+                // 模型名称
+                Text(model)
+                    .font(DesignTokens.Typography.body)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+
+                // 默认标记
+                if let provider = provider, model == provider.defaultModel {
+                    Text("默认")
+                        .font(DesignTokens.Typography.caption2)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(
+                            Capsule()
+                                .fill(DesignTokens.Color.semantic.primary.opacity(0.2))
+                        )
+                        .foregroundColor(DesignTokens.Color.semantic.primary)
+                }
+
+                Spacer()
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                onTap()
+            }
+        }
+    }
 }
 
 // MARK: - Actions
@@ -107,7 +233,7 @@ extension RemoteProviderSettingsView {
     private func loadSettings() {
         guard let providerType = selectedProviderType else { return }
         apiKey = APIKeyStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
-        
+
         // 加载该供应商的默认模型
         loadSelectedModel()
     }
@@ -143,7 +269,7 @@ extension RemoteProviderSettingsView {
     /// 加载当前供应商的默认模型
     private func loadSelectedModel() {
         guard selectedProviderId.isNotEmpty else { return }
-        
+
         if let savedModel = AppSettingStore.loadRemoteProviderModel(providerId: selectedProviderId),
            selectedProvider?.availableModels.contains(savedModel) == true {
             selectedModel = savedModel
@@ -167,7 +293,15 @@ extension RemoteProviderSettingsView {
     }
 }
 
-#Preview {
+// MARK: - Preview
+
+#Preview("Remote Provider Settings") {
     RemoteProviderSettingsView()
+        .inRootView()
+}
+
+#Preview("Remote Provider Settings - Full App") {
+    ContentLayout()
+        .hideSidebar()
         .inRootView()
 }

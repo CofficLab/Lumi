@@ -32,17 +32,32 @@ struct GeneralSettingView: View {
     // MARK: - 启动选项
 
     private var startupSection: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-            GlassSectionHeader(
-                icon: "power",
-                title: "启动选项",
-                subtitle: "管理应用启动行为"
-            )
+        GlassCard {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                GlassSectionHeader(
+                    icon: "power",
+                    title: "启动选项",
+                    subtitle: "管理应用启动行为"
+                )
 
-            Toggle("登录时启动", isOn: $launchAtLogin)
-                .onChange(of: launchAtLogin) { _, newValue in
-                    updateLaunchAtLogin(newValue)
+                GlassDivider()
+
+                GlassRow {
+                    HStack {
+                        Text("登录时启动")
+                            .font(DesignTokens.Typography.body)
+                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+
+                        Spacer()
+
+                        Toggle("", isOn: $launchAtLogin)
+                            .labelsHidden()
+                            .onChange(of: launchAtLogin) { _, newValue in
+                                updateLaunchAtLogin(newValue)
+                            }
+                    }
                 }
+            }
         }
     }
 
@@ -83,48 +98,53 @@ struct GeneralSettingView: View {
     // MARK: - Onboarding
 
     private var onboardingSection: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-            GlassSectionHeader(
-                icon: "graduationcap",
-                title: "新手引导",
-                subtitle: "随时重新查看产品使用指引"
-            )
-
-            Button("重新查看新手引导") {
-                NotificationCenter.default.post(
-                    name: Notification.Name("AgentOnboarding.Show"),
-                    object: nil,
-                    userInfo: ["reset": true]
+        GlassCard {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                GlassSectionHeader(
+                    icon: "graduationcap",
+                    title: "新手引导",
+                    subtitle: "随时重新查看产品使用指引"
                 )
+
+                GlassDivider()
+
+                GlassButton(title: "重新查看新手引导", style: .secondary) {
+                    NotificationCenter.default.post(
+                        name: Notification.Name("AgentOnboarding.Show"),
+                        object: nil,
+                        userInfo: ["reset": true]
+                    )
+                }
             }
-            .buttonStyle(.borderedProminent)
         }
     }
 
     // MARK: - Support
 
     private var supportSection: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-            GlassSectionHeader(
-                icon: "lifepreserver",
-                title: "反馈与支持",
-                subtitle: "遇到问题时可直接提交 Issue，帮助我们快速定位"
-            )
+        GlassCard {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                GlassSectionHeader(
+                    icon: "lifepreserver",
+                    title: "反馈与支持",
+                    subtitle: "遇到问题时可直接提交 Issue，帮助我们快速定位"
+                )
 
-            HStack(spacing: DesignTokens.Spacing.sm) {
-                Button("报告问题") {
-                    openURL("https://github.com/CofficLab/Lumi/issues/new/choose")
-                }
-                .buttonStyle(.borderedProminent)
-                .accessibilityLabel("报告问题")
-                .accessibilityHint("在 GitHub 打开问题反馈页面")
+                GlassDivider()
 
-                Button("查看 Issue 列表") {
-                    openURL("https://github.com/CofficLab/Lumi/issues")
+                HStack(spacing: DesignTokens.Spacing.sm) {
+                    GlassButton(title: "报告问题", style: .primary) {
+                        openURL("https://github.com/CofficLab/Lumi/issues/new/choose")
+                    }
+                    .accessibilityLabel("报告问题")
+                    .accessibilityHint("在 GitHub 打开问题反馈页面")
+
+                    GlassButton(title: "查看 Issue 列表", style: .secondary) {
+                        openURL("https://github.com/CofficLab/Lumi/issues")
+                    }
+                    .accessibilityLabel("查看 Issue 列表")
+                    .accessibilityHint("在浏览器打开公开问题列表")
                 }
-                .buttonStyle(.bordered)
-                .accessibilityLabel("查看 Issue 列表")
-                .accessibilityHint("在浏览器打开公开问题列表")
             }
         }
     }
