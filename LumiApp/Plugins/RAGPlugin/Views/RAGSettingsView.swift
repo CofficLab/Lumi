@@ -179,7 +179,7 @@ struct RAGSettingsView: View, SuperLog {
         guard let selectedProjectPath else { return }
         AppLogger.core.info("\(Self.t) 用户点击“立即重建索引”，project=\(selectedProjectPath)")
         isLoading = true
-        message = "正在重建索引，请查看控制台日志..."
+        message = "正在重建索引...，稍后可看到进度"
         defer { isLoading = false }
 
         do {
