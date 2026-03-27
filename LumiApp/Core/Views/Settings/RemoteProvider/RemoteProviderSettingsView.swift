@@ -92,18 +92,6 @@ extension RemoteProviderSettingsView {
                 GlassDivider()
 
                 HStack(spacing: DesignTokens.Spacing.sm) {
-                    Image(systemName: "info.circle.fill")
-                        .foregroundColor(DesignTokens.Color.semantic.primary)
-                        .font(.system(size: 14))
-
-                    Text("配置 API Key 后，选择一个模型进行对话")
-                        .font(DesignTokens.Typography.caption1)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                }
-
-                GlassDivider()
-
-                HStack(spacing: DesignTokens.Spacing.sm) {
                     ForEach(remoteProviders) { provider in
                         ProviderButton(
                             provider: provider,
