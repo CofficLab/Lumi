@@ -1,10 +1,12 @@
 import SwiftUI
-import OSLog
+import os
 
 /// RAG 状态栏视图
 ///
 /// 在 Agent 模式底部状态栏显示当前项目的 RAG 索引状态
 struct RAGStatusBarView: View {
+    // MARK: - 属性
+
     @EnvironmentObject private var projectVM: ProjectVM
     @State private var indexStatus: RAGIndexStatus?
     @State private var isIndexing = false
@@ -12,7 +14,13 @@ struct RAGStatusBarView: View {
     @State private var errorMessage: String?
     @State private var lastUpdateAttempt: Date = .distantPast
 
-    private let logger = Logger(subsystem: "com.coffic.lumi", category: "RAG.StatusBar")
+    // MARK: - 计算属性
+
+    private var hasError: Bool {
+        errorMessage != nil && indexStatus == nil && !isIndexing
+    }
+
+    // MARK: - 正文
 
     var body: some View {
         HStack(spacing: 8) {
@@ -46,13 +54,7 @@ struct RAGStatusBarView: View {
         }
     }
 
-    // MARK: - Computed Properties
-
-    private var hasError: Bool {
-        errorMessage != nil && indexStatus == nil && !isIndexing
-    }
-
-    // MARK: - Status Icon
+    // MARK: - 状态图标
 
     @ViewBuilder
     private var statusIcon: some View {
@@ -82,13 +84,13 @@ struct RAGStatusBarView: View {
         }
     }
 
-    // MARK: - Status Text
+    // MARK: - 状态文本
 
     @ViewBuilder
     private func statusText(for status: RAGIndexStatus) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 4) {
-                Text("RAG")
+                Text(String(localized: "RAG", table: "RAG"))
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.secondary)
 
@@ -102,7 +104,7 @@ struct RAGStatusBarView: View {
             }
 
             HStack(spacing: 4) {
-                Text("\(status.fileCount) 文件")
+                Text(String(localized: "%lld Files", table: "RAG", arguments: status.fileCount))
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
 
@@ -110,7 +112,7 @@ struct RAGStatusBarView: View {
                     .font(.system(size: 9))
                     .foregroundStyle(.tertiary)
 
-                Text("\(status.chunkCount) 片段")
+                Text(String(localized: "%lld Chunks", table: "RAG", arguments: status.chunkCount))
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
             }
@@ -122,7 +124,7 @@ struct RAGStatusBarView: View {
         if let event = progressEvent {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 4) {
-                    Text("RAG 索引中")
+                    Text(String(localized: "Indexing...", table: "RAG"))
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(.blue)
 
@@ -136,7 +138,7 @@ struct RAGStatusBarView: View {
                 }
 
                 HStack(spacing: 4) {
-                    Text("\(event.indexedFiles) 已索引")
+                    Text(String(localized: "%lld Indexed", table: "RAG", arguments: event.indexedFiles))
                         .font(.system(size: 10))
                         .foregroundColor(.secondary)
 
@@ -144,7 +146,7 @@ struct RAGStatusBarView: View {
                         .font(.system(size: 9))
                         .foregroundStyle(.tertiary)
 
-                    Text("\(event.chunkCount) 片段")
+                    Text(String(localized: "%lld Chunks", table: "RAG", arguments: event.chunkCount))
                         .font(.system(size: 10))
                         .foregroundColor(.secondary)
                 }
@@ -167,7 +169,7 @@ struct RAGStatusBarView: View {
                 .frame(height: 3)
             }
         } else {
-            Text("RAG 索引中...")
+            Text(String(localized: "Indexing...", table: "RAG"))
                 .font(.system(size: 11))
                 .foregroundColor(.blue)
         }
@@ -184,39 +186,41 @@ struct RAGStatusBarView: View {
 
     @ViewBuilder
     private var noProjectText: some View {
-        Text("未选择项目")
+        Text(String(localized: "No project selected", table: "RAG"))
             .font(.system(size: 10))
             .foregroundColor(.secondary)
     }
 
     @ViewBuilder
     private var loadingText: some View {
-        Text("检查索引状态...")
+        Text(String(localized: "Checking index status...", table: "RAG"))
             .font(.system(size: 10))
             .foregroundColor(.secondary)
     }
 
-    // MARK: - Helper Methods
+    // MARK: - 公开方法
+
+    // 无公开方法
+
+    // MARK: - 私有方法
 
     private func formatIndexTime(_ date: Date) -> String {
         let now = Date()
         let interval = now.timeIntervalSince(date)
 
         if interval < 60 {
-            return "刚刚"
+            return String(localized: "Just now", table: "RAG")
         } else if interval < 3600 {
             let minutes = Int(interval / 60)
-            return "\(minutes)分钟前"
+            return String(localized: "%lld minutes ago", table: "RAG", arguments: minutes)
         } else if interval < 86400 {
             let hours = Int(interval / 3600)
-            return "\(hours)小时前"
+            return String(localized: "%lld hours ago", table: "RAG", arguments: hours)
         } else {
             let days = Int(interval / 86400)
-            return "\(days)天前"
+            return String(localized: "%lld days ago", table: "RAG", arguments: days)
         }
     }
-
-    // MARK: - State Management
 
     private func resetAndReload() async {
         // 重置所有状态
@@ -244,7 +248,7 @@ struct RAGStatusBarView: View {
         let now = Date()
         guard now.timeIntervalSince(lastUpdateAttempt) > 1.0 else {
             if RAGPlugin.verbose {
-                logger.info("RAG 状态更新被节流")
+                RAGPlugin.logger.info("\(Self.t)RAG status update throttled")
             }
             return
         }
@@ -253,7 +257,7 @@ struct RAGStatusBarView: View {
         // 如果正在索引，不更新状态（避免冲突）
         if isIndexing {
             if RAGPlugin.verbose {
-                logger.info("RAG 正在索引中，跳过状态更新")
+                RAGPlugin.logger.info("\(Self.t)RAG is indexing, skip status update")
             }
             return
         }
@@ -268,16 +272,16 @@ struct RAGStatusBarView: View {
                 errorMessage = nil
 
                 if RAGPlugin.verbose, let status = indexStatus {
-                    logger.info(
-                        "RAG 索引状态已更新: \(status.projectPath), 文件数: \(status.fileCount), 片段数: \(status.chunkCount), 是否过期: \(status.isStale)"
+                    RAGPlugin.logger.info(
+                        "\(Self.t)RAG index status updated: \(status.projectPath), files: \(status.fileCount), chunks: \(status.chunkCount), stale: \(status.isStale)"
                     )
                 }
             }
         } catch {
             // 只在没有状态且不在索引中时才显示错误
             if indexStatus == nil && !isIndexing {
-                errorMessage = "获取状态失败"
-                logger.error("获取 RAG 索引状态失败: \(error)")
+                errorMessage = String(localized: "Failed to get status", table: "RAG")
+                RAGPlugin.logger.error("\(Self.t)Failed to get RAG index status: \(error.localizedDescription)")
             } else {
                 // 如果已经有状态或正在索引，清除错误（保留现有状态）
                 errorMessage = nil
@@ -318,8 +322,8 @@ struct RAGStatusBarView: View {
         )
 
         if RAGPlugin.verbose {
-            logger.info(
-                "RAG 索引进度: \(scannedFiles)/\(totalFiles), 已索引: \(indexedFiles), 片段: \(chunkCount), 完成: \(isFinished)"
+            RAGPlugin.logger.info(
+                "\(Self.t)RAG indexing progress: \(scannedFiles)/\(totalFiles), indexed: \(indexedFiles), chunks: \(chunkCount), finished: \(isFinished)"
             )
         }
 
@@ -343,9 +347,9 @@ struct RAGStatusBarView: View {
     }
 }
 
-// MARK: - Preview
+// MARK: - 预览
 
-#Preview("未选择项目") {
+#Preview("No project selected") {
     let projectVM = ProjectVM(
         contextService: ContextService(),
         llmService: LLMService()

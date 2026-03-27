@@ -48,10 +48,7 @@ actor RAGPlugin: SuperPlugin, SuperLog {
     /// 提供状态栏视图
     @MainActor
     func addStatusBarView() -> AnyView? {
-        if Self.verbose {
-            Self.logger.info("\(Self.t)🦞 RAG 状态栏视图已启用")
-        }
-        return AnyView(RAGStatusBarView())
+        AnyView(RAGStatusBarView())
     }
 
     /// 获取 RAG 服务实例
