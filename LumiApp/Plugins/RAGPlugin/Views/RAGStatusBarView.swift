@@ -5,6 +5,7 @@ import MagicKit
 /// RAG 状态栏视图
 ///
 /// 在 Agent 模式底部状态栏显示当前项目的 RAG 索引状态
+/// 支持点击弹出设置面板
 struct RAGStatusBarView: View, SuperLog {
     nonisolated static let emoji = "🦞"
     nonisolated static let verbose = false
@@ -18,6 +19,7 @@ struct RAGStatusBarView: View, SuperLog {
     @State private var errorMessage: String?
     @State private var isNotInitialized = false
     @State private var lastUpdateAttempt: Date = .distantPast
+    @State private var showPopover = false
 
     // MARK: - 计算属性
 
@@ -46,6 +48,17 @@ struct RAGStatusBarView: View, SuperLog {
             } else {
                 loadingText
             }
+        }
+        .contentShape(Rectangle()) // 使整个区域可点击
+        .onTapGesture {
+            // 点击切换 Popover 显示状态
+            showPopover.toggle()
+        }
+        .popover(isPresented: $showPopover, arrowEdge: .bottom) {
+            // Popover 内容：RAG 设置面板
+            RAGSettingsPopoverView()
+                .frame(width: 420, height: 500)
+                .environmentObject(projectVM)
         }
         .task {
             await updateStatus()
