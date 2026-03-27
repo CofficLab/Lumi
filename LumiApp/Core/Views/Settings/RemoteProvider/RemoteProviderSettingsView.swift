@@ -42,6 +42,12 @@ struct RemoteProviderSettingsView: View {
         registry.providerType(forId: selectedProviderId)
     }
 
+    /// 当前选中的模型是否为供应商默认模型
+    private var isSelectedModelProviderDefault: Bool {
+        guard let provider = selectedProvider else { return false }
+        return selectedModel == provider.defaultModel
+    }
+
     // MARK: - Body
 
     var body: some View {
@@ -162,7 +168,7 @@ extension RemoteProviderSettingsView {
                     RemoteModelRow(
                         model: model,
                         isSelected: selectedModel == model,
-                        provider: selectedProvider,
+                        isDefault: model == selectedProvider?.defaultModel,
                         onTap: {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 selectedModel = model
@@ -187,7 +193,7 @@ extension RemoteProviderSettingsView {
 struct RemoteModelRow: View {
     let model: String
     let isSelected: Bool
-    let provider: LLMProviderInfo?
+    let isDefault: Bool
     let onTap: () -> Void
 
     var body: some View {
@@ -205,17 +211,17 @@ struct RemoteModelRow: View {
 
                 Spacer()
 
-                // 默认标记
-                if let provider = provider, model == provider.defaultModel {
-                    Text("默认")
+                // 供应商默认标记
+                if isDefault {
+                    Text("供应商默认")
                         .font(DesignTokens.Typography.caption2)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
                         .background(
                             Capsule()
-                                .fill(DesignTokens.Color.semantic.primary.opacity(0.2))
+                                .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.3))
                         )
-                        .foregroundColor(DesignTokens.Color.semantic.primary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
             }
             .contentShape(Rectangle())
@@ -264,15 +270,21 @@ extension RemoteProviderSettingsView {
     }
 
     /// 加载当前供应商的默认模型
+    /// 优先级：用户配置 > 供应商默认 > 第一个可用模型
     private func loadSelectedModel() {
         guard selectedProviderId.isNotEmpty else { return }
 
+        // 1. 优先使用用户配置的模型
         if let savedModel = AppSettingStore.loadRemoteProviderModel(providerId: selectedProviderId),
            selectedProvider?.availableModels.contains(savedModel) == true {
             selectedModel = savedModel
-        } else if let defaultModel = selectedProvider?.defaultModel {
+        }
+        // 2. 如果用户未配置，使用供应商默认模型
+        else if let defaultModel = selectedProvider?.defaultModel {
             selectedModel = defaultModel
-        } else if let firstModel = selectedProvider?.availableModels.first {
+        }
+        // 3. 如果没有默认模型，使用第一个可用模型
+        else if let firstModel = selectedProvider?.availableModels.first {
             selectedModel = firstModel
         }
     }
