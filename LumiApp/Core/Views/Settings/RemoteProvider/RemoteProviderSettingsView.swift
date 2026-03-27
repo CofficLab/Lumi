@@ -182,15 +182,13 @@ extension RemoteProviderSettingsView {
     }
 }
 
-// MARK: - Remote Model Row (简化的独立组件)
+// MARK: - Remote Model Row
 
 struct RemoteModelRow: View {
     let model: String
     let isSelected: Bool
     let provider: LLMProviderInfo?
     let onTap: () -> Void
-
-    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         GlassRow {
@@ -235,8 +233,6 @@ extension RemoteProviderSettingsView {
     private func loadSettings() {
         guard let providerType = selectedProviderType else { return }
         apiKey = APIKeyStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
-
-        // 加载该供应商的默认模型
         loadSelectedModel()
     }
 
@@ -250,7 +246,6 @@ extension RemoteProviderSettingsView {
     private func saveModel() {
         guard selectedProviderId.isNotEmpty else { return }
         AppSettingStore.saveRemoteProviderModel(providerId: selectedProviderId, modelId: selectedModel)
-        print("✅ Saved model: \(selectedModel) for provider: \(selectedProviderId)")
     }
 
     /// 保存选中的云端供应商 ID 到持久化存储
@@ -264,7 +259,6 @@ extension RemoteProviderSettingsView {
            remoteProviders.contains(where: { $0.id == savedId }) {
             selectedProviderId = savedId
         } else if let firstProvider = remoteProviders.first {
-            // 如果没有保存的 ID 或保存的 ID 无效，选择第一个供应商
             selectedProviderId = firstProvider.id
         }
     }
@@ -277,10 +271,8 @@ extension RemoteProviderSettingsView {
            selectedProvider?.availableModels.contains(savedModel) == true {
             selectedModel = savedModel
         } else if let defaultModel = selectedProvider?.defaultModel {
-            // 如果没有保存的模型或保存的模型无效，使用供应商的默认模型
             selectedModel = defaultModel
         } else if let firstModel = selectedProvider?.availableModels.first {
-            // 如果没有默认模型，使用第一个可用模型
             selectedModel = firstModel
         }
     }

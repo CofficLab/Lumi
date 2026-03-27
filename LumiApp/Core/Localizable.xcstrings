@@ -2877,9 +2877,6 @@
         }
       }
     },
-    "Lumi 使用 Sparkle 框架进行自动更新。当新版本可用时，应用将自动提示您更新。" : {
-
-    },
     "Macintosh HD" : {
       "localizations" : {
         "zh-Hans" : {
@@ -6472,9 +6469,6 @@
           }
         }
       }
-    },
-    "当前版本是最新稳定版本" : {
-
     },
     "当前项目" : {
       "extractionState" : "stale",

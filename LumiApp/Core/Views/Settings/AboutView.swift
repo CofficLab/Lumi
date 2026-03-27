@@ -27,9 +27,6 @@ struct AboutView: View {
                 // 系统信息卡片
                 systemInfoCard
 
-                // 更新信息卡片
-                updateInfoCard
-
                 Spacer()
             }
             .padding(DesignTokens.Spacing.lg)
@@ -72,26 +69,6 @@ struct AboutView: View {
             GlassKeyValueRow(label: "操作系统", value: versionInfo.systemVersion)
             GlassKeyValueRow(label: "架构", value: versionInfo.architecture)
             GlassKeyValueRow(label: "应用路径", value: versionInfo.appPath)
-        }
-    }
-
-    private var updateInfoCard: some View {
-        GlassInfoCard(
-            title: "更新信息",
-            icon: "arrow.down.circle.fill",
-            subtitle: "自动更新"
-        ) {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-                Text("当前版本是最新稳定版本")
-                    .font(DesignTokens.Typography.subheadline)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-
-                GlassDivider()
-
-                Text("Lumi 使用 Sparkle 框架进行自动更新。当新版本可用时，应用将自动提示您更新。")
-                    .font(DesignTokens.Typography.caption1)
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-            }
         }
     }
 }
