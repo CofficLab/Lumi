@@ -618,20 +618,14 @@ final class RAGSQLiteStore {
             return RAGRuntimeInfo(vectorBackend: .swiftCosine, sqliteVecPath: nil, note: "数据库未就绪")
         }
 
-        var candidates: [String] = []
-        let dir = dbURL.deletingLastPathComponent().path
-        candidates.append(contentsOf: [
-            "\(dir)/sqlite-vec0.dylib",
-            "\(dir)/sqlite-vec.dylib",
-            "/opt/homebrew/lib/sqlite-vec0.dylib",
-            "/opt/homebrew/lib/sqlite-vec.dylib",
-            "/usr/local/lib/sqlite-vec0.dylib",
-            "/usr/local/lib/sqlite-vec.dylib"
-        ])
-
         let fm = FileManager.default
+        let candidates = bundledSQLiteVecCandidates()
         guard let path = candidates.first(where: { fm.fileExists(atPath: $0) }) else {
-            return RAGRuntimeInfo(vectorBackend: .swiftCosine, sqliteVecPath: nil, note: "未检测到 sqlite-vec 动态库")
+            return RAGRuntimeInfo(
+                vectorBackend: .swiftCosine,
+                sqliteVecPath: nil,
+                note: "未在 App Bundle 中找到 sqlite-vec（需随应用打包）"
+            )
         }
 
         do {
@@ -651,6 +645,42 @@ final class RAGSQLiteStore {
                 note: "sqlite-vec 加载失败，回退 Swift 余弦: \(error.localizedDescription)"
             )
         }
+    }
+
+    private func bundledSQLiteVecCandidates() -> [String] {
+        var candidates: [String] = []
+        let libraryNames = ["sqlite-vec0.dylib", "sqlite-vec.dylib"]
+        let main = Bundle.main
+
+        if let frameworksPath = main.privateFrameworksPath {
+            for name in libraryNames {
+                candidates.append((frameworksPath as NSString).appendingPathComponent(name))
+            }
+        }
+
+        if let builtInPlugInsPath = main.builtInPlugInsPath {
+            for name in libraryNames {
+                candidates.append((builtInPlugInsPath as NSString).appendingPathComponent(name))
+            }
+        }
+
+        let resourcePath = main.resourcePath ?? main.bundlePath
+        for name in libraryNames {
+            candidates.append((resourcePath as NSString).appendingPathComponent(name))
+        }
+
+        // 开发阶段兜底：数据库目录同级（便于本地调试），正式分发不依赖该路径
+        let dbDir = dbURL.deletingLastPathComponent().path
+        for name in libraryNames {
+            candidates.append((dbDir as NSString).appendingPathComponent(name))
+        }
+
+        var unique: [String] = []
+        var seen = Set<String>()
+        for path in candidates where seen.insert(path).inserted {
+            unique.append(path)
+        }
+        return unique
     }
 
     private func fetchChunkIDs(projectPath: String, filePath: String) throws -> [Int64] {
