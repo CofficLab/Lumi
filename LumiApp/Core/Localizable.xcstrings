@@ -360,6 +360,15 @@
         }
       }
     },
+    "%lld 已索引" : {
+
+    },
+    "%lld 文件" : {
+
+    },
+    "%lld 片段" : {
+
+    },
     "%lld 行" : {
       "localizations" : {
         "zh-Hans" : {
@@ -410,7 +419,6 @@
       }
     },
     "%lld/%lld" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3748,6 +3756,12 @@
       }
     },
     "RAG" : {
+
+    },
+    "RAG 索引中" : {
+
+    },
+    "RAG 索引中..." : {
 
     },
     "RAG 索引状态" : {
@@ -7384,6 +7398,9 @@
         }
       }
     },
+    "未选择项目" : {
+
+    },
     "本会话最近一次处理出错" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7530,6 +7547,9 @@
           }
         }
       }
+    },
+    "检查索引状态..." : {
+
     },
     "模型列表" : {
       "localizations" : {

@@ -25,7 +25,7 @@ actor RAGPlugin: SuperPlugin, SuperLog {
 
     nonisolated var instanceLabel: String { Self.id }
     static let shared = RAGPlugin()
-    
+
     /// RAG 服务 - 由插件内部管理，内核不可见
     ///
     /// 使用 lazy 确保首次使用时才初始化
@@ -44,7 +44,16 @@ actor RAGPlugin: SuperPlugin, SuperLog {
     func addSettingsView() -> AnyView? {
         AnyView(RAGSettingsView())
     }
-    
+
+    /// 提供状态栏视图
+    @MainActor
+    func addStatusBarView() -> AnyView? {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)🦞 RAG 状态栏视图已启用")
+        }
+        return AnyView(RAGStatusBarView())
+    }
+
     /// 获取 RAG 服务实例
     /// - Returns: RAGService 单例
     @MainActor
