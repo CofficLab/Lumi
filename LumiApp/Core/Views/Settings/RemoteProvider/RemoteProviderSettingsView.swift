@@ -42,12 +42,6 @@ struct RemoteProviderSettingsView: View {
         registry.providerType(forId: selectedProviderId)
     }
 
-    /// 当前选中的模型是否为供应商默认模型
-    private var isSelectedModelProviderDefault: Bool {
-        guard let provider = selectedProvider else { return false }
-        return selectedModel == provider.defaultModel
-    }
-
     // MARK: - Body
 
     var body: some View {
@@ -167,8 +161,7 @@ extension RemoteProviderSettingsView {
                 ForEach(models, id: \.self) { model in
                     RemoteModelRow(
                         model: model,
-                        isSelected: selectedModel == model,
-                        isDefault: model == selectedProvider?.defaultModel,
+                        isDefault: selectedModel == model,
                         onTap: {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 selectedModel = model
@@ -192,18 +185,12 @@ extension RemoteProviderSettingsView {
 
 struct RemoteModelRow: View {
     let model: String
-    let isSelected: Bool
     let isDefault: Bool
     let onTap: () -> Void
 
     var body: some View {
         GlassRow {
             HStack(spacing: DesignTokens.Spacing.md) {
-                // 图标
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(isSelected ? DesignTokens.Color.semantic.primary : DesignTokens.Color.semantic.textTertiary)
-                    .font(.system(size: 20))
-
                 // 模型名称
                 Text(model)
                     .font(DesignTokens.Typography.body)
@@ -211,17 +198,17 @@ struct RemoteModelRow: View {
 
                 Spacer()
 
-                // 供应商默认标记
+                // 默认标记
                 if isDefault {
-                    Text("供应商默认")
+                    Text("默认")
                         .font(DesignTokens.Typography.caption2)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
                         .background(
                             Capsule()
-                                .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.3))
+                                .fill(DesignTokens.Color.semantic.primary.opacity(0.2))
                         )
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(DesignTokens.Color.semantic.primary)
                 }
             }
             .contentShape(Rectangle())
@@ -269,7 +256,7 @@ extension RemoteProviderSettingsView {
         }
     }
 
-    /// 加载当前供应商的默认模型
+    /// 加载当前选中的模型
     /// 优先级：用户配置 > 供应商默认 > 第一个可用模型
     private func loadSelectedModel() {
         guard selectedProviderId.isNotEmpty else { return }
