@@ -26,54 +26,5 @@ struct RequestLogSendMiddleware: SendMiddleware {
         _ = response
         // 记录请求数据到数据库
         await RequestLogHistoryManager.shared.add(metadata: metadata)
-        
-        // 同时输出到日志（便于调试）
-        logToConsole(metadata: metadata)
-    }
-
-    // MARK: - 日志记录
-
-    /// 输出到控制台
-    private func logToConsole(
-        metadata: RequestMetadata
-    ) {
-        let timestamp = ISO8601DateFormatter().string(from: metadata.sentAt)
-        
-        var logLines: [String] = []
-        logLines.append(String(repeating: "=", count: 60))
-        logLines.append("📤 请求日志 [\(timestamp)]")
-        logLines.append(String(repeating: "=", count: 60))
-        
-        // 请求基础信息
-        logLines.append("")
-        logLines.append("【请求信息】")
-        logLines.append("  Method: \(metadata.method)")
-        logLines.append("  URL: \(metadata.url)")
-        logLines.append("  请求体大小: \(metadata.formattedBodySize)")
-        if !metadata.requestHeaders.isEmpty {
-            logLines.append("  Headers: \(metadata.requestHeaders)")
-        }
-        
-        // 响应信息
-        logLines.append("")
-        logLines.append("【响应信息】")
-        if let error = metadata.error {
-            logLines.append("  ❌ 错误: \(error.localizedDescription)")
-        } else {
-            logLines.append("  ✅ 成功")
-            if let statusCode = metadata.responseStatusCode {
-                logLines.append("  HTTP Status: \(statusCode)")
-            }
-        }
-        
-        // 耗时
-        if let duration = metadata.duration {
-            logLines.append("")
-            logLines.append("【耗时】\(String(format: "%.2f", duration))s")
-        }
-        
-        logLines.append(String(repeating: "=", count: 60))
-        
-        print(logLines.joined(separator: "\n"))
     }
 }
