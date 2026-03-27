@@ -74,3 +74,11 @@ struct RAGRuntimeInfo {
     let sqliteVecPath: String?
     let note: String?
 }
+
+/// RAG 触发判断结果
+struct RAGIntentDecision {
+    let shouldUseRAG: Bool
+    let score: Double
+    let threshold: Double
+    let reasons: [String]
+}

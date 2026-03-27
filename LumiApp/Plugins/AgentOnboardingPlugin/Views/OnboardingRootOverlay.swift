@@ -153,32 +153,32 @@ private struct OnboardingSheetView: View {
     private let pages: [Page] = [
         Page(
             icon: "sparkles",
-            title: "欢迎使用 Lumi",
-            subtitle: "一个为开发者设计的 AI 工作台",
+            title: String(localized: "Welcome to Lumi", table: "AgentOnboardingPlugin"),
+            subtitle: String(localized: "An AI workspace designed for developers", table: "AgentOnboardingPlugin"),
             bullets: [
-                "在一个窗口完成提问、执行与复盘",
-                "按任务维度沉淀上下文，减少重复沟通",
-                "支持多会话并行，互不干扰"
+                String(localized: "Ask, execute, and review in one window", table: "AgentOnboardingPlugin"),
+                String(localized: "Context is preserved by task, reducing repetitive communication", table: "AgentOnboardingPlugin"),
+                String(localized: "Support for parallel conversations without interference", table: "AgentOnboardingPlugin")
             ]
         ),
         Page(
             icon: "rectangle.3.group.bubble.left",
-            title: "Agent / App 两种模式",
-            subtitle: "根据任务目标选择最合适的工作方式",
+            title: String(localized: "Agent / App Two Modes", table: "AgentOnboardingPlugin"),
+            subtitle: String(localized: "Choose the best approach for your task", table: "AgentOnboardingPlugin"),
             bullets: [
-                "Agent 模式：面向复杂任务，支持工具调用与多步骤推理",
-                "App 模式：面向插件能力，快速执行单点操作",
-                "模式切换后，建议先看顶部提示了解可用能力"
+                String(localized: "Agent Mode: For complex tasks with tool calls and multi-step reasoning", table: "AgentOnboardingPlugin"),
+                String(localized: "App Mode: For plugin capabilities with quick single-point operations", table: "AgentOnboardingPlugin"),
+                String(localized: "After switching modes, check the top tip to see available capabilities", table: "AgentOnboardingPlugin")
             ]
         ),
         Page(
             icon: "keyboard",
-            title: "快速上手",
-            subtitle: "先做 3 件事就能进入工作流",
+            title: String(localized: "Quick Start", table: "AgentOnboardingPlugin"),
+            subtitle: String(localized: "Do these 3 things to get into the workflow", table: "AgentOnboardingPlugin"),
             bullets: [
-                "新建会话，输入一个真实问题开始",
-                "在空状态点击“查看新手引导”可随时回看",
-                "常用快捷键：Cmd+N 新建会话，Cmd+, 打开设置"
+                String(localized: "Create a new conversation and start with a real question", table: "AgentOnboardingPlugin"),
+                String(localized: "Click \"View Guide\" in empty state to review anytime", table: "AgentOnboardingPlugin"),
+                String(localized: "Common shortcuts: Cmd+N new conversation, Cmd+, open settings", table: "AgentOnboardingPlugin")
             ]
         )
     ]
@@ -188,11 +188,11 @@ private struct OnboardingSheetView: View {
 
         VStack(alignment: .leading, spacing: 24) {
             HStack {
-                Label("新手引导", systemImage: "graduationcap")
+                Label(String(localized: "Guide", table: "AgentOnboardingPlugin"), systemImage: "graduationcap")
                     .font(.headline)
                     .foregroundStyle(.secondary)
                 Spacer()
-                Button("跳过") { viewModel.skip() }
+                Button(String(localized: "Skip", table: "AgentOnboardingPlugin")) { viewModel.skip() }
                     .buttonStyle(.plain)
             }
 
@@ -238,10 +238,10 @@ private struct OnboardingSheetView: View {
                 Spacer()
 
                 if viewModel.currentStep > 0 {
-                    Button("上一步") { viewModel.previousStep() }
+                    Button(String(localized: "Previous", table: "AgentOnboardingPlugin")) { viewModel.previousStep() }
                 }
 
-                Button(viewModel.currentStep == pages.count - 1 ? "开始使用" : "下一步") {
+                Button(viewModel.currentStep == pages.count - 1 ? String(localized: "Get Started", table: "AgentOnboardingPlugin") : String(localized: "Next", table: "AgentOnboardingPlugin")) {
                     viewModel.nextStep()
                 }
                 .buttonStyle(.borderedProminent)

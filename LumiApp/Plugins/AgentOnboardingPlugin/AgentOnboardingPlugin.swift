@@ -7,8 +7,8 @@ actor AgentOnboardingPlugin: SuperPlugin {
     nonisolated static let verbose = false
 
     static let id = "AgentOnboarding"
-    static let displayName = String(localized: "Onboarding", table: "AgentOnboarding")
-    static let description = String(localized: "Show first-run onboarding and guidance entry points", table: "AgentOnboarding")
+    static let displayName = String(localized: "Onboarding", table: "AgentOnboardingPlugin")
+    static let description = String(localized: "Show first-run onboarding and guidance entry points", table: "AgentOnboardingPlugin")
     static let iconName = "hand.wave"
     static var order: Int { 10 }
     static let enable: Bool = true
