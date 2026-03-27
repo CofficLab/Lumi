@@ -270,36 +270,20 @@ struct PreviewCard: View {
     }
 }
 
-// MARK: - MystiqueTheme.Variant 扩展
+// MARK: - Themes.Variant 扩展 - 持久化
 extension Themes.Variant {
-    /// 所有主题变体
-    static var allCases: [Themes.Variant] {
-        [
-            .midnight,
-            .aurora,
-            .nebula,
-            .void,
-            .spring,
-            .summer,
-            .autumn,
-            .winter,
-            .orchard,
-            .mountain,
-            .river
-        ]
-    }
-
     // MARK: - 持久化
 
-    /// UserDefaults 存储键
+    /// 主题选择存储键
     private static let themeKey = "MystiqueTheme.SelectedVariant"
 
-    /// 保存主题选择到 UserDefaults
+    /// 保存主题选择到 Plist 文件
+    /// 存储位置：AppConfig.getDBFolderURL()/Core/Themes/settings/theme_state.plist
     func save() {
         ThemeVariantStateStore.saveString(identifier, forKey: Self.themeKey)
     }
 
-    /// 从 UserDefaults 加载保存的主题
+    /// 从 Plist 文件加载保存的主题
     /// - Returns: 保存的主题，如果没有保存则返回默认的 .midnight
     static func loadSaved() -> Themes.Variant {
         let savedValue = ThemeVariantStateStore.loadString(forKey: themeKey)

@@ -9,6 +9,7 @@ struct RAGAutoIndexOverlay<Content: View>: View, SuperLog {
     nonisolated static var verbose: Bool { false }
 
     @EnvironmentObject private var projectVM: ProjectVM
+    private let recentProjectsStore = RecentProjectsStore()
 
     let content: Content
 
@@ -17,37 +18,54 @@ struct RAGAutoIndexOverlay<Content: View>: View, SuperLog {
             content
         }
         .onAppear {
-            triggerAutoEnsureIndex(for: projectVM.currentProjectPath, source: "onAppear")
+            triggerAutoEnsureIndexForRecentProjects(source: "onAppear")
         }
-        .onChange(of: projectVM.currentProjectPath) { _, newPath in
-            triggerAutoEnsureIndex(for: newPath, source: "projectChanged")
+        .onChange(of: projectVM.currentProjectPath) { _, _ in
+            triggerAutoEnsureIndexForRecentProjects(source: "projectChanged")
         }
     }
 }
 
 extension RAGAutoIndexOverlay {
-    private func triggerAutoEnsureIndex(for projectPath: String, source: String) {
-        let trimmedPath = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedPath.isEmpty else { return }
+    private func triggerAutoEnsureIndexForRecentProjects(source: String) {
+        let recentPaths = recentProjectsStore.loadProjects().map(\.path)
+        let currentPath = projectVM.currentProjectPath
+        let candidatePaths = uniqueNonEmptyPaths([currentPath] + recentPaths)
+        guard !candidatePaths.isEmpty else { return }
 
         Task {
             let service = RAGPlugin.getService()
             do {
                 try await service.initialize()
-                let needsIndex = try await service.checkNeedsIndex(projectPath: trimmedPath)
-                guard needsIndex else {
-                    if RAGPlugin.verbose {
-                        RAGPlugin.logger.info("\(Self.t)自动索引跳过（无需索引）source=\(source)")
-                    }
-                    return
+                for path in candidatePaths {
+                    guard isExistingDirectory(path: path) else { continue }
+                    await service.ensureIndexedBackground(projectPath: path)
                 }
-
-                RAGPlugin.logger.info("\(Self.t)自动触发后台索引 source=\(source) path=\(trimmedPath)")
-                await service.ensureIndexedBackground(projectPath: trimmedPath)
+                if RAGPlugin.verbose {
+                    RAGPlugin.logger.info("\(Self.t)批量自动索引已触发 source=\(source) count=\(candidatePaths.count)")
+                }
             } catch {
-                RAGPlugin.logger.error("\(Self.t)自动索引失败 source=\(source): \(error.localizedDescription)")
+                RAGPlugin.logger.error("\(Self.t)批量自动索引失败 source=\(source): \(error.localizedDescription)")
             }
         }
+    }
+    private func uniqueNonEmptyPaths(_ paths: [String]) -> [String] {
+        var seen = Set<String>()
+        var result: [String] = []
+        for rawPath in paths {
+            let trimmed = rawPath.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+            let normalized = URL(fileURLWithPath: trimmed).standardizedFileURL.path
+            guard !seen.contains(normalized) else { continue }
+            seen.insert(normalized)
+            result.append(normalized)
+        }
+        return result
+    }
+
+    private func isExistingDirectory(path: String) -> Bool {
+        var isDirectory: ObjCBool = false
+        return FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) && isDirectory.boolValue
     }
 }
 

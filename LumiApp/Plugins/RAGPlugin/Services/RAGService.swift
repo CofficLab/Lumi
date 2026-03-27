@@ -13,6 +13,7 @@ actor RAGService: SuperLog {
     private static let pluginName = "RAGPlugin"
     private static let ensureThrottleSeconds: TimeInterval = 20
     private static let staleAfterSeconds: TimeInterval = 300
+    nonisolated private static let indexingRegistry = RAGIndexingRegistry()
 
     private(set) var isInitialized: Bool = false
     private var store: RAGSQLiteStore?
@@ -66,6 +67,9 @@ actor RAGService: SuperLog {
 
         let normalized = normalizeProjectPath(projectPath)
         guard !normalized.isEmpty else { throw RAGError.invalidProjectPath }
+        Self.indexingRegistry.start(projectPath: normalized)
+        defer { Self.indexingRegistry.finish(projectPath: normalized) }
+
         AppLogger.core.info("\(Self.t)🧱 ensureIndexed 开始 force=\(force) project=\(normalized)")
 
         let indexState = try store.fetchProjectIndexState(projectPath: normalized)
@@ -160,10 +164,15 @@ actor RAGService: SuperLog {
     ///   - force: 是否强制重建
     func ensureIndexedBackground(projectPath: String, force: Bool = false) async {
         let normalized = normalizeProjectPath(projectPath)
+        guard !normalized.isEmpty else { return }
 
         // 防止重复启动后台索引
         guard !indexingProjects.contains(normalized) else {
             AppLogger.core.info("\(Self.t)🔄 后台索引已在进行中，跳过: \(normalized)")
+            return
+        }
+        guard !Self.indexingRegistry.contains(projectPath: normalized) else {
+            AppLogger.core.info("\(Self.t)🔄 索引已在进行中（全局标记），跳过: \(normalized)")
             return
         }
 
@@ -257,6 +266,14 @@ actor RAGService: SuperLog {
 
     private func normalizeProjectPath(_ path: String) -> String {
         URL(fileURLWithPath: path).standardizedFileURL.path
+    }
+
+    /// 非阻塞地查询项目是否正在索引（不进入 actor 队列）
+    nonisolated static func isIndexing(projectPath: String) -> Bool {
+        let trimmed = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        let normalized = URL(fileURLWithPath: trimmed).standardizedFileURL.path
+        return indexingRegistry.contains(projectPath: normalized)
     }
 
     private func isIndexStateStale(_ state: RAGProjectIndexState, now: Date) -> Bool {
