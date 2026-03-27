@@ -15,9 +15,6 @@ struct AboutView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                // App icon and title
-                headerSection
-
                 // App info card
                 appInfoCard
 
@@ -38,43 +35,6 @@ struct AboutView: View {
             .padding(32)
         }
         .navigationTitle("About")
-    }
-
-    // MARK: - Header Section
-
-    private var headerSection: some View {
-        HStack(spacing: 20) {
-            // App icon
-            LogoView(variant: .about)
-                .frame(width: 80, height: 80)
-                .cornerRadius(18)
-                .shadow(radius: 5)
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text(appInfo.name)
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-
-                Text(appInfo.bundleIdentifier)
-                    .font(.caption)
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-
-                if let version = appInfo.version {
-                    HStack(spacing: 4) {
-                        Image(systemName: "tag.fill")
-                            .font(.caption2)
-                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                        Text(version)
-                            .font(.caption)
-                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                    }
-                }
-            }
-
-            Spacer()
-        }
-        .padding(.bottom, 8)
     }
 
     // MARK: - Info Cards
