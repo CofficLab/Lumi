@@ -32,7 +32,7 @@ struct TextActionsSettingsView: View {
 
 extension TextActionsSettingsView {
     private var generalSettingsCard: some View {
-        MystiqueGlassCard {
+        GlassCard {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
                 Text("General Settings")
                     .font(DesignTokens.Typography.title3)
@@ -65,7 +65,7 @@ extension TextActionsSettingsView {
     }
 
     private var supportedActionsCard: some View {
-        MystiqueGlassCard {
+        GlassCard {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
                 Text("Supported Actions")
                     .font(DesignTokens.Typography.title3)

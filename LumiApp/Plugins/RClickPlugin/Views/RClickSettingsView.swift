@@ -25,7 +25,7 @@ struct RClickSettingsView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-                    MystiqueGlassCard {
+                    GlassCard {
                         VStack(spacing: DesignTokens.Spacing.sm) {
                             HStack(spacing: DesignTokens.Spacing.sm) {
                                 Image(systemName: "puzzlepiece.extension")
@@ -59,7 +59,7 @@ struct RClickSettingsView: View {
                         }
                     }
 
-                    MystiqueGlassCard {
+                    GlassCard {
                         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
                             Text("General Actions")
                                 .font(DesignTokens.Typography.title3)
@@ -89,7 +89,7 @@ struct RClickSettingsView: View {
                         }
                     }
 
-                    MystiqueGlassCard {
+                    GlassCard {
                         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
                             Text("New File Menu")
                                 .font(DesignTokens.Typography.title3)
@@ -146,7 +146,7 @@ struct RClickSettingsView: View {
                         }
                     }
 
-                    MystiqueGlassCard {
+                    GlassCard {
                         HStack {
                             Text("Reset to Defaults")
                                 .font(DesignTokens.Typography.bodyEmphasized)

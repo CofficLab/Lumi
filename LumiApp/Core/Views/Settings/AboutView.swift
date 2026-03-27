@@ -191,7 +191,7 @@ struct InfoCard<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
-        MystiqueGlassCard(cornerRadius: DesignTokens.Radius.md, padding: DesignTokens.Spacing.cardPadding) {
+        GlassCard(cornerRadius: DesignTokens.Radius.md, padding: DesignTokens.Spacing.cardPadding) {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
                 HStack(spacing: DesignTokens.Spacing.xs) {
                     Image(systemName: icon)

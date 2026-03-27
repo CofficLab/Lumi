@@ -46,7 +46,7 @@ struct DatabaseMainView: View {
                 if viewModel.isConnected {
                     VStack(spacing: 0) {
                         if viewModel.selectedConfig?.type == .redis {
-                            MystiqueGlassCard {
+                            GlassCard {
                                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
                                     HStack {
                                         Text("Keys")
@@ -73,7 +73,7 @@ struct DatabaseMainView: View {
                             GlassDivider()
                         }
                         if viewModel.selectedConfig?.type == .sqlite {
-                            MystiqueGlassCard {
+                            GlassCard {
                                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
                                     HStack {
                                         Text("Tables")
@@ -241,7 +241,7 @@ struct AddConnectionView: View {
                 .font(DesignTokens.Typography.title2)
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
             
-            MystiqueGlassCard {
+            GlassCard {
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
                     GlassTextField(title: "Connection Name", text: $name, placeholder: "My Database")
                     

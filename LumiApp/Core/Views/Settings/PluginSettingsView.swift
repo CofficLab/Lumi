@@ -53,7 +53,7 @@ struct PluginSettingsView: View {
 
                 // 如果没有可配置的插件
                 if configurablePlugins.isEmpty {
-                    MystiqueGlassCard {
+                    GlassCard {
                         VStack(spacing: 12) {
                             Image(systemName: "puzzlepiece.extension")
                                 .font(.system(size: 48))
