@@ -18,7 +18,7 @@ struct RAGSettingsView: View, SuperLog {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                Text("RAG 索引状态（全部项目）")
+                Text("RAG 索引状态")
                     .font(.headline)
 
                 if trackedProjects.isEmpty {
@@ -139,6 +139,7 @@ extension RAGSettingsView {
                     .foregroundStyle(.secondary)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
         .background(Color(nsColor: .controlBackgroundColor))
         .cornerRadius(8)

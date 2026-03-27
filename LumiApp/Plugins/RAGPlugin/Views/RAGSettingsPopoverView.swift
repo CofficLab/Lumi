@@ -18,7 +18,7 @@ struct RAGSettingsPopoverView: View, SuperLog {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Label("RAG 索引状态（全部项目）", systemImage: "doc.text.magnifyingglass")
+                Label("RAG 索引状态", systemImage: "doc.text.magnifyingglass")
                     .font(.headline)
                 Spacer()
                 Button(action: { dismiss() }) {

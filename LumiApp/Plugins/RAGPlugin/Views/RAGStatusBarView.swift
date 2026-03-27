@@ -1,6 +1,6 @@
-import SwiftUI
-import os
 import MagicKit
+import os
+import SwiftUI
 
 /// RAG 状态栏视图
 ///
@@ -66,7 +66,7 @@ struct RAGStatusBarView: View, SuperLog {
         .onReceive(NotificationCenter.default.publisher(for: .ragIndexProgressDidChange)) { notification in
             handleProgressNotification(notification)
         }
-        .onChange(of: projectVM.currentProjectPath) { oldValue, newValue in
+        .onChange(of: projectVM.currentProjectPath) { _, _ in
             // 项目切换时重新加载状态
             Task {
                 await resetAndReload()
@@ -272,7 +272,7 @@ struct RAGStatusBarView: View, SuperLog {
             // 索引完成后刷新状态
             Task {
                 // 延迟一下，确保数据库写入完成
-                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5秒
+                try? await Task.sleep(nanoseconds: 500000000) // 0.5秒
 
                 // 重置索引状态
                 isIndexing = false
@@ -281,7 +281,7 @@ struct RAGStatusBarView: View, SuperLog {
                 await updateStatus()
 
                 // 再延迟后重置进度事件
-                try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5秒
+                try? await Task.sleep(nanoseconds: 1500000000) // 1.5秒
                 progressEvent = nil
             }
         }
