@@ -15,7 +15,7 @@ struct ListRecentProjectsTool: AgentTool, SuperLog {
             "properties": [
                 "limit": [
                     "type": "integer",
-                    "description": "Maximum number of projects to return (default: 5, max: 20)",
+                    "description": "Maximum number of projects to return (default: 5, max: 500)",
                 ],
             ],
         ]
@@ -26,7 +26,7 @@ struct ListRecentProjectsTool: AgentTool, SuperLog {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
-        let limit = min((arguments["limit"]?.value as? Int) ?? 5, 20)
+        let limit = min((arguments["limit"]?.value as? Int) ?? 5, 500)
 
         if Self.verbose {
             AgentRecentProjectsPlugin.logger.info("\(Self.t)列出最近项目，限制：\(limit)")

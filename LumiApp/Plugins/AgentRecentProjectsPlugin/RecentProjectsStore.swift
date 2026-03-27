@@ -18,6 +18,9 @@ final class RecentProjectsStore: @unchecked Sendable {
     // Current project file: <dbRoot>/AgentRecentProjects/settings/current_project.json
     private static let currentProjectFileName = "current_project.json"
     private static let currentProjectTmpFileName = "current_project.tmp"
+    
+    /// 最大保存项目数量
+    private static let maxProjectsCount = 500
 
     // MARK: - Public API
 
@@ -45,7 +48,7 @@ final class RecentProjectsStore: @unchecked Sendable {
         }
     }
 
-    /// 添加或更新项目到列表开头（最多保留 5 条）
+    /// 添加或更新项目到列表开头（最多保留 500 条）
     func addProject(name: String, path: String) {
         queue.sync {
             var projects = loadProjectsInternal()
@@ -53,7 +56,7 @@ final class RecentProjectsStore: @unchecked Sendable {
 
             let newProject = Project(name: name, path: path, lastUsed: Date())
             projects.insert(newProject, at: 0)
-            projects = Array(projects.prefix(5))
+            projects = Array(projects.prefix(Self.maxProjectsCount))
 
             persistProjectsToCurrentFile(projects: projects)
         }
@@ -169,7 +172,7 @@ final class RecentProjectsStore: @unchecked Sendable {
 
         let newProject = Project(name: name, path: path, lastUsed: Date())
         projects.insert(newProject, at: 0)
-        projects = Array(projects.prefix(5))
+        projects = Array(projects.prefix(Self.maxProjectsCount))
 
         persistProjectsToCurrentFile(projects: projects)
     }
