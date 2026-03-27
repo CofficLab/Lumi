@@ -5081,6 +5081,7 @@
       }
     },
     "上一步" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5114,6 +5115,7 @@
       }
     },
     "下一步" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6421,6 +6423,7 @@
       }
     },
     "开始使用" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8415,6 +8418,7 @@
       }
     },
     "跳过" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

@@ -139,12 +139,138 @@
         }
       }
     },
-    "^[%lld Chunk](inflect: true)": {},
-    "^[%lld day](inflect: true) ago": {},
-    "^[%lld File](inflect: true)": {},
-    "^[%lld hour](inflect: true) ago": {},
-    "^[%lld Indexed](inflect: true)": {},
-    "^[%lld minute](inflect: true) ago": {},
+    "^[%lld Chunk](inflect: true)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Chunk"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 片段"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 片段"
+          }
+        }
+      }
+    },
+    "^[%lld day](inflect: true) ago": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld day ago"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld天前"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld天前"
+          }
+        }
+      }
+    },
+    "^[%lld File](inflect: true)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld File"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 文件"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 文件"
+          }
+        }
+      }
+    },
+    "^[%lld hour](inflect: true) ago": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld hour ago"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld小时前"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld小時前"
+          }
+        }
+      }
+    },
+    "^[%lld Indexed](inflect: true)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Indexed"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 已索引"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 已索引"
+          }
+        }
+      }
+    },
+    "^[%lld minute](inflect: true) ago": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld minute ago"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld分钟前"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld分鐘前"
+          }
+        }
+      }
+    },
     "About RAG": {
       "extractionState": "stale",
       "localizations": {
