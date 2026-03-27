@@ -26,11 +26,18 @@ struct GlassKeyValueRow: View {
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
             // 值
-            Text(value)
-                .font(DesignTokens.Typography.subheadline)
-                .fontWeight(.medium)
-                .foregroundColor(valueColor ?? DesignTokens.Color.semantic.textPrimary)
-                .textSelection(isValueSelectable ? .enabled : .disabled)
+            if isValueSelectable {
+                Text(value)
+                    .font(DesignTokens.Typography.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(valueColor ?? DesignTokens.Color.semantic.textPrimary)
+                    .textSelection(.enabled)
+            } else {
+                Text(value)
+                    .font(DesignTokens.Typography.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(valueColor ?? DesignTokens.Color.semantic.textPrimary)
+            }
 
             Spacer()
         }
