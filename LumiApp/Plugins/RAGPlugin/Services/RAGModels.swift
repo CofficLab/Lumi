@@ -6,9 +6,15 @@ struct RAGChunk {
 }
 
 struct RAGStoredChunk {
+    let id: Int64
     let content: String
     let filePath: String
     let embedding: [Float]
+}
+
+struct RAGVectorMatch {
+    let chunkId: Int64
+    let distance: Float
 }
 
 struct RAGIndexedFileState {

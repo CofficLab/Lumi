@@ -6466,6 +6466,9 @@
         }
       }
     },
+    "当前文件：%@" : {
+
+    },
     "当前没有任何 LLM 供应商插件已注册。\n请安装并启用至少一个提供 LLM 供应商的插件后重试。" : {
       "localizations" : {
         "zh-Hans" : {
@@ -8137,6 +8140,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "管理應用啟動行為"
+          }
+        }
+      }
+    },
+    "索引进度：%lld/%lld（indexed=%lld, skipped=%lld, chunks=%lld）" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "索引进度：%1$lld/%2$lld（indexed=%3$lld, skipped=%4$lld, chunks=%5$lld）"
           }
         }
       }

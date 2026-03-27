@@ -1,10 +1,13 @@
 import CryptoKit
+import Darwin
 import Foundation
 import SQLite3
 
 final class RAGSQLiteStore {
     private var db: OpaquePointer?
     private let dbURL: URL
+    private var sqliteVecPathLoaded: String?
+    private static let vecTableName = "rag_vec_chunks"
     private(set) var runtimeInfo: RAGRuntimeInfo = RAGRuntimeInfo(
         vectorBackend: .swiftCosine,
         sqliteVecPath: nil,
@@ -14,7 +17,6 @@ final class RAGSQLiteStore {
     init(dbURL: URL) throws {
         self.dbURL = dbURL
         try open()
-        self.runtimeInfo = try detectRuntimeInfo()
     }
 
     deinit {
@@ -65,6 +67,11 @@ final class RAGSQLiteStore {
         """)
     }
 
+    func configureVectorBackend(embeddingDimension: Int) throws {
+        guard db != nil else { return }
+        runtimeInfo = try detectRuntimeInfo(embeddingDimension: embeddingDimension)
+    }
+
     func fetchIndexedFileStates(projectPath: String) throws -> [String: RAGIndexedFileState] {
         let sql = """
         SELECT file_path, mtime, content_hash
@@ -102,8 +109,12 @@ final class RAGSQLiteStore {
         modifiedTime: Double,
         contentHash: String,
         chunks: [RAGChunk],
+        embeddings: [[Float]],
         embeddingDimension: Int
     ) throws {
+        guard chunks.count == embeddings.count else {
+            throw RAGError.dbError("replaceFileChunks 参数异常：chunks/embeddings 数量不一致")
+        }
         try execute("BEGIN TRANSACTION;")
         do {
             try deleteChunks(projectPath: projectPath, filePath: filePath)
@@ -120,7 +131,10 @@ final class RAGSQLiteStore {
             defer { sqlite3_finalize(insertStmt) }
 
             let createdAt = Date().timeIntervalSince1970
-            for chunk in chunks {
+            for (chunk, embedding) in zip(chunks, embeddings) {
+                guard embedding.count == embeddingDimension else {
+                    throw RAGError.dbError("embedding 维度不匹配，期望 \(embeddingDimension)，实际 \(embedding.count)")
+                }
                 sqlite3_reset(insertStmt)
                 sqlite3_clear_bindings(insertStmt)
 
@@ -131,7 +145,6 @@ final class RAGSQLiteStore {
                 sqlite3_bind_text(insertStmt, 5, (contentHash as NSString).utf8String, -1, nil)
                 sqlite3_bind_double(insertStmt, 6, modifiedTime)
 
-                let embedding = RAGEmbedding.embed(chunk.content, dimension: embeddingDimension)
                 let embeddingData = embedding.toData()
                 embeddingData.withUnsafeBytes { buffer in
                     sqlite3_bind_blob(insertStmt, 7, buffer.baseAddress, Int32(embeddingData.count), nil)
@@ -141,6 +154,11 @@ final class RAGSQLiteStore {
 
                 guard sqlite3_step(insertStmt) == SQLITE_DONE else {
                     throw dbError("insert rag_chunks failed")
+                }
+
+                if runtimeInfo.vectorBackend == .sqliteVec {
+                    let chunkID = sqlite3_last_insert_rowid(db)
+                    try upsertVectorIndex(rowID: chunkID, embedding: embedding)
                 }
             }
 
@@ -188,6 +206,7 @@ final class RAGSQLiteStore {
     }
 
     func deleteChunks(projectPath: String, filePath: String) throws {
+        let chunkIDs = try fetchChunkIDs(projectPath: projectPath, filePath: filePath)
         let sql = "DELETE FROM rag_chunks WHERE project_path = ? AND file_path = ?;"
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
@@ -199,6 +218,10 @@ final class RAGSQLiteStore {
         sqlite3_bind_text(statement, 2, (filePath as NSString).utf8String, -1, nil)
         guard sqlite3_step(statement) == SQLITE_DONE else {
             throw dbError("deleteChunks failed")
+        }
+
+        if runtimeInfo.vectorBackend == .sqliteVec {
+            try deleteVectorRows(rowIDs: chunkIDs)
         }
     }
 
@@ -239,7 +262,7 @@ final class RAGSQLiteStore {
     }
 
     func loadChunks(projectPath: String?, limit: Int? = nil) throws -> [RAGStoredChunk] {
-        var sql = "SELECT content, file_path, embedding FROM rag_chunks"
+        var sql = "SELECT id, content, file_path, embedding FROM rag_chunks"
         if projectPath != nil {
             sql += " WHERE project_path = ?"
         }
@@ -262,18 +285,19 @@ final class RAGSQLiteStore {
         var chunks: [RAGStoredChunk] = []
         while sqlite3_step(statement) == SQLITE_ROW {
             guard
-                let contentPtr = sqlite3_column_text(statement, 0),
-                let filePathPtr = sqlite3_column_text(statement, 1),
-                let embeddingPtr = sqlite3_column_blob(statement, 2)
+                let contentPtr = sqlite3_column_text(statement, 1),
+                let filePathPtr = sqlite3_column_text(statement, 2),
+                let embeddingPtr = sqlite3_column_blob(statement, 3)
             else { continue }
 
+            let id = sqlite3_column_int64(statement, 0)
             let content = String(cString: contentPtr)
             let filePath = String(cString: filePathPtr)
-            let bytes = Int(sqlite3_column_bytes(statement, 2))
+            let bytes = Int(sqlite3_column_bytes(statement, 3))
             let data = Data(bytes: embeddingPtr, count: bytes)
             let embedding = [Float](data: data)
 
-            chunks.append(RAGStoredChunk(content: content, filePath: filePath, embedding: embedding))
+            chunks.append(RAGStoredChunk(id: id, content: content, filePath: filePath, embedding: embedding))
         }
 
         return chunks
@@ -310,7 +334,7 @@ final class RAGSQLiteStore {
         }
 
         let sql = """
-        SELECT content, file_path, embedding
+        SELECT id, content, file_path, embedding
         FROM rag_chunks
         WHERE \(whereParts.joined(separator: " AND "))
         ORDER BY id DESC
@@ -379,6 +403,104 @@ final class RAGSQLiteStore {
             sql: "SELECT COUNT(*) FROM rag_chunks WHERE project_path = ?;",
             param: projectPath
         )
+    }
+
+    func searchNearestVectors(queryEmbedding: [Float], limit: Int) throws -> [RAGVectorMatch]? {
+        guard runtimeInfo.vectorBackend == .sqliteVec else { return nil }
+        guard !queryEmbedding.isEmpty else { return [] }
+
+        let sql = """
+        SELECT rowid, distance
+        FROM \(Self.vecTableName)
+        WHERE embedding MATCH ? AND k = ?;
+        """
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+            runtimeInfo = RAGRuntimeInfo(
+                vectorBackend: .swiftCosine,
+                sqliteVecPath: sqliteVecPathLoaded,
+                note: "sqlite-vec ANN 查询初始化失败，已回退 Swift 余弦"
+            )
+            return nil
+        }
+        defer { sqlite3_finalize(statement) }
+
+        let queryData = queryEmbedding.toData()
+        queryData.withUnsafeBytes { buffer in
+            sqlite3_bind_blob(statement, 1, buffer.baseAddress, Int32(queryData.count), nil)
+        }
+        sqlite3_bind_int64(statement, 2, Int64(max(limit, 1)))
+
+        var rows: [RAGVectorMatch] = []
+        while true {
+            let step = sqlite3_step(statement)
+            if step == SQLITE_ROW {
+                rows.append(
+                    RAGVectorMatch(
+                        chunkId: sqlite3_column_int64(statement, 0),
+                        distance: Float(sqlite3_column_double(statement, 1))
+                    )
+                )
+                continue
+            }
+            if step == SQLITE_DONE { break }
+
+            runtimeInfo = RAGRuntimeInfo(
+                vectorBackend: .swiftCosine,
+                sqliteVecPath: sqliteVecPathLoaded,
+                note: "sqlite-vec ANN 查询失败，已回退 Swift 余弦"
+            )
+            return nil
+        }
+        return rows
+    }
+
+    func loadChunksByIDs(_ chunkIDs: [Int64], projectPath: String?) throws -> [RAGStoredChunk] {
+        guard !chunkIDs.isEmpty else { return [] }
+        let placeholders = Array(repeating: "?", count: chunkIDs.count).joined(separator: ", ")
+        var sql = """
+        SELECT id, content, file_path, embedding
+        FROM rag_chunks
+        WHERE id IN (\(placeholders))
+        """
+        if projectPath != nil {
+            sql += " AND project_path = ?"
+        }
+        sql += ";"
+
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+            throw dbError("prepare loadChunksByIDs failed")
+        }
+        defer { sqlite3_finalize(statement) }
+
+        var bindIndex: Int32 = 1
+        for id in chunkIDs {
+            sqlite3_bind_int64(statement, bindIndex, id)
+            bindIndex += 1
+        }
+        if let projectPath {
+            sqlite3_bind_text(statement, bindIndex, (projectPath as NSString).utf8String, -1, nil)
+        }
+
+        var byID: [Int64: RAGStoredChunk] = [:]
+        while sqlite3_step(statement) == SQLITE_ROW {
+            guard
+                let contentPtr = sqlite3_column_text(statement, 1),
+                let filePathPtr = sqlite3_column_text(statement, 2),
+                let embeddingPtr = sqlite3_column_blob(statement, 3)
+            else { continue }
+
+            let id = sqlite3_column_int64(statement, 0)
+            let content = String(cString: contentPtr)
+            let filePath = String(cString: filePathPtr)
+            let bytes = Int(sqlite3_column_bytes(statement, 3))
+            let data = Data(bytes: embeddingPtr, count: bytes)
+            let embedding = [Float](data: data)
+            byID[id] = RAGStoredChunk(id: id, content: content, filePath: filePath, embedding: embedding)
+        }
+
+        return chunkIDs.compactMap { byID[$0] }
     }
 
     static func contentHash(_ content: String) -> String {
@@ -475,31 +597,28 @@ final class RAGSQLiteStore {
         var rows: [RAGStoredChunk] = []
         while sqlite3_step(statement) == SQLITE_ROW {
             guard
-                let contentPtr = sqlite3_column_text(statement, 0),
-                let filePathPtr = sqlite3_column_text(statement, 1),
-                let embeddingPtr = sqlite3_column_blob(statement, 2)
+                let contentPtr = sqlite3_column_text(statement, 1),
+                let filePathPtr = sqlite3_column_text(statement, 2),
+                let embeddingPtr = sqlite3_column_blob(statement, 3)
             else { continue }
 
+            let id = sqlite3_column_int64(statement, 0)
             let content = String(cString: contentPtr)
             let filePath = String(cString: filePathPtr)
-            let bytes = Int(sqlite3_column_bytes(statement, 2))
+            let bytes = Int(sqlite3_column_bytes(statement, 3))
             let data = Data(bytes: embeddingPtr, count: bytes)
             let embedding = [Float](data: data)
-            rows.append(RAGStoredChunk(content: content, filePath: filePath, embedding: embedding))
+            rows.append(RAGStoredChunk(id: id, content: content, filePath: filePath, embedding: embedding))
         }
         return rows
     }
 
-    private func detectRuntimeInfo() throws -> RAGRuntimeInfo {
+    private func detectRuntimeInfo(embeddingDimension: Int) throws -> RAGRuntimeInfo {
         guard db != nil else {
             return RAGRuntimeInfo(vectorBackend: .swiftCosine, sqliteVecPath: nil, note: "数据库未就绪")
         }
 
-        let envPath = ProcessInfo.processInfo.environment["RAG_SQLITE_VEC_PATH"]
         var candidates: [String] = []
-        if let envPath, !envPath.isEmpty {
-            candidates.append(envPath)
-        }
         let dir = dbURL.deletingLastPathComponent().path
         candidates.append(contentsOf: [
             "\(dir)/sqlite-vec0.dylib",
@@ -510,20 +629,160 @@ final class RAGSQLiteStore {
             "/usr/local/lib/sqlite-vec.dylib"
         ])
 
-        // NOTE:
-        // Apple 平台上通过 Swift 的 SQLite3 模块不一定暴露扩展加载 API
-        // （如 sqlite3_enable_load_extension / sqlite3_load_extension）。
-        // 为避免编译不兼容，这里仅做“文件存在性探测”，运行时继续使用 Swift 侧余弦检索。
         let fm = FileManager.default
-        if let path = candidates.first(where: { fm.fileExists(atPath: $0) }) {
+        guard let path = candidates.first(where: { fm.fileExists(atPath: $0) }) else {
+            return RAGRuntimeInfo(vectorBackend: .swiftCosine, sqliteVecPath: nil, note: "未检测到 sqlite-vec 动态库")
+        }
+
+        do {
+            try loadSQLiteExtension(at: path)
+            try ensureVectorTable(dimension: embeddingDimension)
+            try rebuildVectorTableFromChunks()
+            sqliteVecPathLoaded = path
+            return RAGRuntimeInfo(
+                vectorBackend: .sqliteVec,
+                sqliteVecPath: path,
+                note: "sqlite-vec 已加载，ANN 检索已启用"
+            )
+        } catch {
             return RAGRuntimeInfo(
                 vectorBackend: .swiftCosine,
                 sqliteVecPath: path,
-                note: "检测到 sqlite-vec 动态库，但当前构建未启用 SQLite 扩展加载接口"
+                note: "sqlite-vec 加载失败，回退 Swift 余弦: \(error.localizedDescription)"
             )
         }
+    }
 
-        return RAGRuntimeInfo(vectorBackend: .swiftCosine, sqliteVecPath: nil, note: "未检测到 sqlite-vec 动态库")
+    private func fetchChunkIDs(projectPath: String, filePath: String) throws -> [Int64] {
+        let sql = "SELECT id FROM rag_chunks WHERE project_path = ? AND file_path = ?;"
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+            throw dbError("prepare fetchChunkIDs failed")
+        }
+        defer { sqlite3_finalize(statement) }
+
+        sqlite3_bind_text(statement, 1, (projectPath as NSString).utf8String, -1, nil)
+        sqlite3_bind_text(statement, 2, (filePath as NSString).utf8String, -1, nil)
+
+        var ids: [Int64] = []
+        while sqlite3_step(statement) == SQLITE_ROW {
+            ids.append(sqlite3_column_int64(statement, 0))
+        }
+        return ids
+    }
+
+    private func deleteVectorRows(rowIDs: [Int64]) throws {
+        guard !rowIDs.isEmpty, runtimeInfo.vectorBackend == .sqliteVec else { return }
+        let placeholders = Array(repeating: "?", count: rowIDs.count).joined(separator: ", ")
+        let sql = "DELETE FROM \(Self.vecTableName) WHERE rowid IN (\(placeholders));"
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+            throw dbError("prepare deleteVectorRows failed")
+        }
+        defer { sqlite3_finalize(statement) }
+
+        for (index, id) in rowIDs.enumerated() {
+            sqlite3_bind_int64(statement, Int32(index + 1), id)
+        }
+        guard sqlite3_step(statement) == SQLITE_DONE else {
+            throw dbError("deleteVectorRows failed")
+        }
+    }
+
+    private func upsertVectorIndex(rowID: Int64, embedding: [Float]) throws {
+        guard runtimeInfo.vectorBackend == .sqliteVec else { return }
+        let sql = "INSERT OR REPLACE INTO \(Self.vecTableName)(rowid, embedding) VALUES (?, ?);"
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+            throw dbError("prepare upsertVectorIndex failed")
+        }
+        defer { sqlite3_finalize(statement) }
+
+        sqlite3_bind_int64(statement, 1, rowID)
+        let data = embedding.toData()
+        data.withUnsafeBytes { buffer in
+            sqlite3_bind_blob(statement, 2, buffer.baseAddress, Int32(data.count), nil)
+        }
+        guard sqlite3_step(statement) == SQLITE_DONE else {
+            throw dbError("upsertVectorIndex failed")
+        }
+    }
+
+    private func ensureVectorTable(dimension: Int) throws {
+        try execute("DROP TABLE IF EXISTS \(Self.vecTableName);")
+        try execute("CREATE VIRTUAL TABLE \(Self.vecTableName) USING vec0(embedding float[\(dimension)]);")
+    }
+
+    private func rebuildVectorTableFromChunks() throws {
+        let sql = "SELECT id, embedding FROM rag_chunks;"
+        var queryStmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &queryStmt, nil) == SQLITE_OK else {
+            throw dbError("prepare rebuildVectorTableFromChunks failed")
+        }
+        defer { sqlite3_finalize(queryStmt) }
+
+        let insertSQL = "INSERT OR REPLACE INTO \(Self.vecTableName)(rowid, embedding) VALUES (?, ?);"
+        var insertStmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, insertSQL, -1, &insertStmt, nil) == SQLITE_OK else {
+            throw dbError("prepare rebuildVectorTableFromChunks insert failed")
+        }
+        defer { sqlite3_finalize(insertStmt) }
+
+        while sqlite3_step(queryStmt) == SQLITE_ROW {
+            let rowID = sqlite3_column_int64(queryStmt, 0)
+            guard let blob = sqlite3_column_blob(queryStmt, 1) else { continue }
+            let bytes = Int(sqlite3_column_bytes(queryStmt, 1))
+
+            sqlite3_reset(insertStmt)
+            sqlite3_clear_bindings(insertStmt)
+            sqlite3_bind_int64(insertStmt, 1, rowID)
+            sqlite3_bind_blob(insertStmt, 2, blob, Int32(bytes), nil)
+            guard sqlite3_step(insertStmt) == SQLITE_DONE else {
+                throw dbError("rebuildVectorTableFromChunks upsert failed")
+            }
+        }
+    }
+
+    private func loadSQLiteExtension(at path: String) throws {
+        guard let db else { throw RAGError.dbError("数据库未打开") }
+
+        typealias EnableLoadExtensionFn = @convention(c) (OpaquePointer?, Int32) -> Int32
+        typealias LoadExtensionFn = @convention(c) (
+            OpaquePointer?,
+            UnsafePointer<CChar>?,
+            UnsafePointer<CChar>?,
+            UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
+        ) -> Int32
+
+        guard
+            let sqliteHandle = dlopen(nil, RTLD_NOW),
+            let enableSym = dlsym(sqliteHandle, "sqlite3_enable_load_extension"),
+            let loadSym = dlsym(sqliteHandle, "sqlite3_load_extension")
+        else {
+            throw RAGError.dbError("当前 SQLite 未暴露扩展加载符号，无法启用 sqlite-vec")
+        }
+
+        let enableFn = unsafeBitCast(enableSym, to: EnableLoadExtensionFn.self)
+        let loadFn = unsafeBitCast(loadSym, to: LoadExtensionFn.self)
+
+        let enableCode = enableFn(db, 1)
+        guard enableCode == SQLITE_OK else {
+            throw dbError("启用 SQLite 扩展加载失败")
+        }
+
+        var errorPointer: UnsafeMutablePointer<CChar>?
+        let loadCode = path.withCString { cPath in
+            loadFn(db, cPath, nil, &errorPointer)
+        }
+        _ = enableFn(db, 0)
+
+        guard loadCode == SQLITE_OK else {
+            let message = errorPointer.map { String(cString: $0) } ?? "未知错误"
+            if let errorPointer {
+                sqlite3_free(errorPointer)
+            }
+            throw RAGError.dbError("加载 sqlite-vec 失败: \(message)")
+        }
     }
 }
 

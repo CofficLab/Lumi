@@ -1,4 +1,5 @@
 import SwiftUI
+import MagicKit
 
 /// RAG 设置页面
 ///
@@ -6,13 +7,17 @@ import SwiftUI
 /// - 通过 RAGPlugin 内部服务访问，不依赖 RootViewContainer
 /// - RAG 服务完全由插件内部管理
 @MainActor
-struct RAGSettingsView: View {
+struct RAGSettingsView: View, SuperLog {
+    nonisolated static var emoji: String { "🦞" }
+    nonisolated static var verbose: Bool { true }
+
     @EnvironmentObject private var projectVM: ProjectVM
 
     @State private var status: RAGIndexStatus?
     @State private var runtimeInfo: RAGRuntimeInfo?
     @State private var isLoading = false
     @State private var message: String?
+    @State private var indexProgress: RAGIndexProgressEvent?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -102,6 +107,18 @@ struct RAGSettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                if let progress = indexProgress, progress.totalFiles > 0, !progress.isFinished {
+                    ProgressView(value: Double(progress.scannedFiles), total: Double(progress.totalFiles))
+                    Text("索引进度：\(progress.scannedFiles)/\(progress.totalFiles)（indexed=\(progress.indexedFiles), skipped=\(progress.skippedFiles), chunks=\(progress.chunkCount)）")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("当前文件：\(progress.currentFilePath)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .textSelection(.enabled)
+                }
             } else {
                 Text("请先选择项目，RAG 才能建立与展示索引。")
                     .foregroundStyle(.secondary)
@@ -112,6 +129,15 @@ struct RAGSettingsView: View {
         .task(id: selectedProjectPath) {
             await loadStatus()
         }
+        .onRAGIndexProgressDidChange { event in
+            guard event.projectPath == selectedProjectPath else { return }
+            indexProgress = event
+            if event.isFinished {
+                message = "索引更新完成。"
+            } else {
+                message = "正在重建索引：\(event.scannedFiles)/\(event.totalFiles)"
+            }
+        }
     }
 
     private var selectedProjectPath: String? {
@@ -121,6 +147,7 @@ struct RAGSettingsView: View {
 
     private func loadStatus() async {
         guard let selectedProjectPath else { return }
+        AppLogger.core.info("\(Self.t) 开始读取状态，project=\(selectedProjectPath)")
         isLoading = true
         defer { isLoading = false }
 
@@ -130,19 +157,29 @@ struct RAGSettingsView: View {
             try await service.initialize()
             status = try await service.getIndexStatus(projectPath: selectedProjectPath)
             runtimeInfo = try await service.getRuntimeInfo()
+            if let status {
+                AppLogger.core.info(
+                    "\(Self.t) 状态读取完成 fileCount=\(status.fileCount) chunkCount=\(status.chunkCount) embedding=\(status.embeddingModel)"
+                )
+            } else {
+                AppLogger.core.info("\(Self.t) 状态读取完成：当前项目尚未索引")
+            }
             if status == nil {
                 message = "尚未索引，首次提问触发 RAG 时会自动建立索引。"
             } else {
                 message = nil
             }
         } catch {
+            AppLogger.core.error("\(Self.t) 读取状态失败：\(error.localizedDescription)")
             message = "读取索引状态失败：\(error.localizedDescription)"
         }
     }
 
     private func rebuildIndex() async {
         guard let selectedProjectPath else { return }
+        AppLogger.core.info("\(Self.t) 用户点击“立即重建索引”，project=\(selectedProjectPath)")
         isLoading = true
+        message = "正在重建索引，请查看控制台日志..."
         defer { isLoading = false }
 
         do {
@@ -153,8 +190,18 @@ struct RAGSettingsView: View {
             status = try await service.getIndexStatus(projectPath: selectedProjectPath)
             runtimeInfo = try await service.getRuntimeInfo()
             message = "索引更新完成。"
+            indexProgress = nil
+            if let status {
+                AppLogger.core.info(
+                    "\(Self.t) 重建完成 fileCount=\(status.fileCount) chunkCount=\(status.chunkCount) embedding=\(status.embeddingModel)"
+                )
+            } else {
+                AppLogger.core.info("\(Self.t) 重建完成，但状态为空")
+            }
         } catch {
+            AppLogger.core.error("\(Self.t) 重建失败：\(error.localizedDescription)")
             message = "重建索引失败：\(error.localizedDescription)"
+            indexProgress = nil
         }
     }
 

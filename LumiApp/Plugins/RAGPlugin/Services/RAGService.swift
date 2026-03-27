@@ -26,8 +26,6 @@ actor RAGService: SuperLog {
     nonisolated static let verbose = false
 
     private static let pluginName = "RAGPlugin"
-    private static let embeddingModelId = "local-hash-v1"
-    private static let embeddingDimension = 256
     private static let ensureThrottleSeconds: TimeInterval = 20
     private static let staleAfterSeconds: TimeInterval = 300
 
@@ -35,6 +33,7 @@ actor RAGService: SuperLog {
     private var store: RAGSQLiteStore?
     private var indexer: RAGIndexer?
     private var retriever: RAGRetriever?
+    private var embeddingProvider: RAGEmbeddingProvider?
     private var lastEnsureAttemptByProject: [String: Date] = [:]
 
     init() {
@@ -51,17 +50,21 @@ actor RAGService: SuperLog {
 
         let store = try RAGSQLiteStore(dbURL: dbURL)
         try store.migrate()
+        let embeddingProvider = RAGEmbeddingFactory.makeProvider()
+        try store.configureVectorBackend(embeddingDimension: embeddingProvider.dimension)
 
         self.store = store
         self.indexer = RAGIndexer(
             store: store,
-            embeddingModelId: Self.embeddingModelId,
-            embeddingDimension: Self.embeddingDimension
+            embeddingProvider: embeddingProvider
         )
         self.retriever = RAGRetriever(store: store)
+        self.embeddingProvider = embeddingProvider
         self.isInitialized = true
 
-        AppLogger.core.info("\(Self.t)✅ RAG 服务初始化完成，DB: \(dbURL.path)")
+        AppLogger.core.info(
+            "\(Self.t)✅ RAG 服务初始化完成，DB: \(dbURL.path), embedding=\(embeddingProvider.modelIdentifierWithVersion), dim=\(embeddingProvider.dimension), backend=\(store.runtimeInfo.vectorBackend.rawValue)"
+        )
     }
 
     // MARK: - Indexing
@@ -71,17 +74,34 @@ actor RAGService: SuperLog {
         guard isInitialized else { throw RAGError.notInitialized }
         guard let indexer else { throw RAGError.internalStateCorrupted }
         guard let store else { throw RAGError.internalStateCorrupted }
+        guard let embeddingProvider else { throw RAGError.internalStateCorrupted }
 
         let normalized = normalizeProjectPath(projectPath)
         guard !normalized.isEmpty else { throw RAGError.invalidProjectPath }
+        AppLogger.core.info("\(Self.t)🧱 ensureIndexed 开始 force=\(force) project=\(normalized)")
 
         let indexState = try store.fetchProjectIndexState(projectPath: normalized)
         let modelMismatch = indexState.map {
-            $0.embeddingModel != Self.embeddingModelId || $0.embeddingDimension != Self.embeddingDimension
+            $0.embeddingModel != embeddingProvider.modelIdentifierWithVersion
+                || $0.embeddingDimension != embeddingProvider.dimension
         } ?? false
+        if let indexState {
+            AppLogger.core.info(
+                "\(Self.t)📌 当前索引状态 embedding=\(indexState.embeddingModel) dim=\(indexState.embeddingDimension) chunks=\(indexState.chunkCount)"
+            )
+        } else {
+            AppLogger.core.info("\(Self.t)📌 当前项目无索引状态")
+        }
+        AppLogger.core.info(
+            "\(Self.t)🧠 目标 embedding=\(embeddingProvider.modelIdentifierWithVersion) dim=\(embeddingProvider.dimension) modelMismatch=\(modelMismatch)"
+        )
 
         if force || modelMismatch {
-            _ = try indexer.rebuildProjectIndex(at: normalized)
+            AppLogger.core.info("\(Self.t)♻️ 执行全量重建索引")
+            let stats = try indexer.rebuildProjectIndex(at: normalized)
+            AppLogger.core.info(
+                "\(Self.t)✅ 全量重建完成 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount)"
+            )
             return
         }
 
@@ -89,22 +109,23 @@ actor RAGService: SuperLog {
             let now = Date()
             if let lastAttempt = lastEnsureAttemptByProject[normalized],
                now.timeIntervalSince(lastAttempt) < Self.ensureThrottleSeconds {
+                AppLogger.core.info("\(Self.t)⏱️ 跳过：节流窗口内")
                 return
             }
             if let state = indexState,
                !isIndexStateStale(state, now: now) {
                 lastEnsureAttemptByProject[normalized] = now
+                AppLogger.core.info("\(Self.t)🟢 跳过：索引未过期")
                 return
             }
             lastEnsureAttemptByProject[normalized] = now
         }
 
+        AppLogger.core.info("\(Self.t)🔁 执行增量索引")
         let stats = try indexer.indexProjectIncrementally(at: normalized)
-        if Self.verbose {
-            AppLogger.core.info(
-                "\(Self.t)📚 索引完成 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount)"
-            )
-        }
+        AppLogger.core.info(
+            "\(Self.t)✅ 增量索引完成 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount)"
+        )
     }
 
     /// 兼容旧接口：执行一次全量重建
@@ -129,12 +150,13 @@ actor RAGService: SuperLog {
     func retrieve(query: String, projectPath: String?, topK: Int = 3) async throws -> RAGResponse {
         guard isInitialized else { throw RAGError.notInitialized }
         guard let retriever else { throw RAGError.internalStateCorrupted }
+        guard let embeddingProvider else { throw RAGError.internalStateCorrupted }
 
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return RAGResponse(query: query, results: []) }
 
         let normalizedProjectPath = projectPath.map(normalizeProjectPath)
-        let queryEmbedding = RAGEmbedding.embed(trimmed, dimension: Self.embeddingDimension)
+        let queryEmbedding = try embeddingProvider.embed(trimmed)
         let results = try retriever.retrieve(
             queryEmbedding: queryEmbedding,
             query: trimmed,

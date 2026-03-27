@@ -1,6 +1,11 @@
 import Foundation
+import MagicKit
 
-struct RAGIndexer {
+struct RAGIndexer: SuperLog {
+    nonisolated static var emoji: String { "🦞" }
+    nonisolated static var verbose: Bool { true }
+
+    private static let progressLogInterval = 50
     private static let skipDirectories: Set<String> = [
         ".git", ".build", ".swiftpm", "DerivedData", "Pods", "Carthage", "node_modules", "dist", "build"
     ]
@@ -14,19 +19,18 @@ struct RAGIndexer {
 
     private let store: RAGSQLiteStore
     private let chunker: RAGChunker
-    private let embeddingModelId: String
-    private let embeddingDimension: Int
+    private let embeddingProvider: RAGEmbeddingProvider
 
-    init(store: RAGSQLiteStore, embeddingModelId: String, embeddingDimension: Int) {
+    init(store: RAGSQLiteStore, embeddingProvider: RAGEmbeddingProvider) {
         self.store = store
         self.chunker = RAGChunker()
-        self.embeddingModelId = embeddingModelId
-        self.embeddingDimension = embeddingDimension
+        self.embeddingProvider = embeddingProvider
     }
 
     func rebuildProjectIndex(at projectPath: String) throws -> RAGIndexStats {
         let files = discoverFiles(in: projectPath)
         let indexedStates = try store.fetchIndexedFileStates(projectPath: projectPath)
+        AppLogger.core.info("\(Self.t) 全量重建开始 files=\(files.count) oldIndexedFiles=\(indexedStates.count)")
 
         for state in indexedStates.values {
             try store.deleteChunks(projectPath: projectPath, filePath: state.filePath)
@@ -40,15 +44,19 @@ struct RAGIndexer {
             projectPath: projectPath,
             fileCount: fileCount,
             chunkCount: chunkCount,
-            embeddingModel: embeddingModelId,
-            embeddingDimension: embeddingDimension
+            embeddingModel: embeddingProvider.modelIdentifierWithVersion,
+            embeddingDimension: embeddingProvider.dimension
         )
         stats.chunkCount = chunkCount
+        AppLogger.core.info(
+            "\(Self.t) 全量重建结束 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) fileCount=\(fileCount) chunkCount=\(chunkCount)"
+        )
         return stats
     }
 
     func indexProjectIncrementally(at projectPath: String) throws -> RAGIndexStats {
         let files = discoverFiles(in: projectPath)
+        AppLogger.core.info("\(Self.t) 增量索引开始 files=\(files.count)")
         var stats = try indexFiles(files, projectPath: projectPath)
 
         // 删除已被移除的文件索引
@@ -65,10 +73,13 @@ struct RAGIndexer {
             projectPath: projectPath,
             fileCount: fileCount,
             chunkCount: chunkCount,
-            embeddingModel: embeddingModelId,
-            embeddingDimension: embeddingDimension
+            embeddingModel: embeddingProvider.modelIdentifierWithVersion,
+            embeddingDimension: embeddingProvider.dimension
         )
         stats.chunkCount = chunkCount
+        AppLogger.core.info(
+            "\(Self.t) 增量索引结束 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) fileCount=\(fileCount) chunkCount=\(chunkCount)"
+        )
         return stats
     }
 
@@ -81,18 +92,21 @@ struct RAGIndexer {
             guard let fileAttr = try? FileManager.default.attributesOfItem(atPath: filePath),
                   let modifiedDate = fileAttr[.modificationDate] as? Date else {
                 stats.skippedFiles += 1
+                logProgressIfNeeded(stats: stats, total: files.count, currentFilePath: filePath, projectPath: projectPath)
                 continue
             }
 
             let modifiedTime = modifiedDate.timeIntervalSince1970
             if let indexed = existingStates[filePath], abs(indexed.modifiedTime - modifiedTime) < 0.001 {
                 stats.skippedFiles += 1
+                logProgressIfNeeded(stats: stats, total: files.count, currentFilePath: filePath, projectPath: projectPath)
                 continue
             }
 
             guard let content = try? String(contentsOfFile: filePath, encoding: .utf8),
                   !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 stats.skippedFiles += 1
+                logProgressIfNeeded(stats: stats, total: files.count, currentFilePath: filePath, projectPath: projectPath)
                 continue
             }
 
@@ -105,24 +119,47 @@ struct RAGIndexer {
                     contentHash: contentHash
                 )
                 stats.skippedFiles += 1
+                logProgressIfNeeded(stats: stats, total: files.count, currentFilePath: filePath, projectPath: projectPath)
                 continue
             }
 
             let chunks = chunker.chunk(content)
+            let embeddings = try embeddingProvider.embedBatch(chunks.map(\.content))
             try store.replaceFileChunks(
                 projectPath: projectPath,
                 filePath: filePath,
                 modifiedTime: modifiedTime,
                 contentHash: contentHash,
                 chunks: chunks,
-                embeddingDimension: embeddingDimension
+                embeddings: embeddings,
+                embeddingDimension: embeddingProvider.dimension
             )
 
             stats.indexedFiles += 1
             stats.chunkCount += chunks.count
+            logProgressIfNeeded(stats: stats, total: files.count, currentFilePath: filePath, projectPath: projectPath)
         }
 
         return stats
+    }
+
+    private func logProgressIfNeeded(stats: RAGIndexStats, total: Int, currentFilePath: String, projectPath: String) {
+        guard stats.scannedFiles % Self.progressLogInterval == 0 || stats.scannedFiles == total else { return }
+        AppLogger.core.info(
+            "\(Self.t) 进度 \(stats.scannedFiles)/\(total) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount) file=\(currentFilePath)"
+        )
+        NotificationCenter.postRAGIndexProgress(
+            RAGIndexProgressEvent(
+                projectPath: projectPath,
+                scannedFiles: stats.scannedFiles,
+                totalFiles: total,
+                indexedFiles: stats.indexedFiles,
+                skippedFiles: stats.skippedFiles,
+                chunkCount: stats.chunkCount,
+                currentFilePath: currentFilePath,
+                isFinished: stats.scannedFiles == total
+            )
+        )
     }
 
     private func discoverFiles(in projectPath: String) -> [String] {

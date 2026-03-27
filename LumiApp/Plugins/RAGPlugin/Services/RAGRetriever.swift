@@ -13,15 +13,19 @@ struct RAGRetriever {
         projectPath: String?,
         topK: Int
     ) throws -> [RAGSearchResult] {
-        // 默认走 SQLite 词法候选 + Swift 侧余弦重排。
-        // 若 sqlite-vec 可用，可在后续版本切换为数据库内 ANN 召回。
         let queryTerms = tokenize(query.lowercased())
-        let candidates = try store.loadCandidateChunks(
-            projectPath: projectPath,
-            queryTerms: queryTerms,
-            lexicalLimit: 2500,
-            fallbackLimit: 7000
-        )
+        let annCandidates = try loadANNCandidates(queryEmbedding: queryEmbedding, projectPath: projectPath, topK: topK)
+        let candidates: [RAGStoredChunk]
+        if annCandidates.isEmpty {
+            candidates = try store.loadCandidateChunks(
+                projectPath: projectPath,
+                queryTerms: queryTerms,
+                lexicalLimit: 2500,
+                fallbackLimit: 7000
+            )
+        } else {
+            candidates = annCandidates
+        }
         if candidates.isEmpty { return [] }
 
         var scored: [(RAGStoredChunk, Float)] = []
@@ -47,6 +51,21 @@ struct RAGRetriever {
                 score: $0.1
             )
         }
+    }
+
+    private func loadANNCandidates(
+        queryEmbedding: [Float],
+        projectPath: String?,
+        topK: Int
+    ) throws -> [RAGStoredChunk] {
+        let annLimit = max(topK * 12, 60)
+        guard let vectorMatches = try store.searchNearestVectors(queryEmbedding: queryEmbedding, limit: annLimit),
+              !vectorMatches.isEmpty else {
+            return []
+        }
+
+        let ids = vectorMatches.map(\.chunkId)
+        return try store.loadChunksByIDs(ids, projectPath: projectPath)
     }
 
     private func cosineSimilarity(_ a: [Float], _ b: [Float]) -> Float {
