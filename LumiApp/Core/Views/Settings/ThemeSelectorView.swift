@@ -8,71 +8,8 @@ struct ThemeSelectorView: View {
     // MARK: - 环境
     @EnvironmentObject private var themeManager: ThemeManager
 
-    // MARK: - 配置
-    var displayMode: DisplayMode = .full
-    var showHeader: Bool = false
-    var showPreview: Bool = false
-
-    // MARK: - 显示模式
-    enum DisplayMode {
-        case full      // 完整模式（单列布局）
-        case compact   // 紧凑模式（横向排列）
-        case minimal   // 极简模式（分段控件）
-    }
-
     // MARK: - 主体
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-            // 标题
-            if showHeader && displayMode == .full {
-                header
-            }
-
-            // 主题选择器
-            themePicker
-
-            // 预览
-            if showPreview && displayMode != .minimal {
-                themePreview
-            }
-        }
-    }
-
-    // MARK: - 标题
-    private var header: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-            HStack {
-                Image(systemName: "paintbrush.fill")
-                    .foregroundColor(DesignTokens.Color.semantic.primary)
-
-                Text("主题风格")
-                    .font(DesignTokens.Typography.title3)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-
-                Spacer()
-            }
-
-            Text("选择你喜欢的神秘主题风格")
-                .font(DesignTokens.Typography.caption1)
-                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-        }
-    }
-
-    // MARK: - 主题选择器
-    @ViewBuilder
-    private var themePicker: some View {
-        switch displayMode {
-        case .full:
-            fullThemePicker
-        case .compact:
-            compactThemePicker
-        case .minimal:
-            minimalThemePicker
-        }
-    }
-
-    // MARK: - 完整主题选择器（单列布局）
-    private var fullThemePicker: some View {
         VStack(spacing: DesignTokens.Spacing.sm) {
             ForEach(Themes.Variant.allCases, id: \.self) { variant in
                 ThemeOptionCard(
@@ -85,46 +22,6 @@ struct ThemeSelectorView: View {
                     }
                 )
             }
-        }
-    }
-
-    // MARK: - 紧凑主题选择器（横向排列）
-    private var compactThemePicker: some View {
-        HStack(spacing: DesignTokens.Spacing.sm) {
-            ForEach(Themes.Variant.allCases, id: \.self) { variant in
-                ThemeOptionButton(
-                    variant: variant,
-                    isSelected: themeManager.currentVariant == variant,
-                    action: {
-                        withAnimation(DesignAnimations.Preset.smoothMove) {
-                            themeManager.currentVariant = variant
-                        }
-                    }
-                )
-            }
-        }
-    }
-
-    // MARK: - 极简主题选择器（分段控件）
-    private var minimalThemePicker: some View {
-        Picker("主题", selection: $themeManager.currentVariant) {
-            ForEach(Themes.Variant.allCases, id: \.self) { variant in
-                Text(variant.theme.compactName)
-                    .tag(variant)
-            }
-        }
-        .pickerStyle(.segmented)
-    }
-
-    // MARK: - 主题预览
-    private var themePreview: some View {
-        VStack(spacing: DesignTokens.Spacing.sm) {
-            Text("预览效果")
-                .font(DesignTokens.Typography.caption1)
-                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-
-            PreviewCard(variant: themeManager.currentVariant)
-                .frame(height: 100)
         }
     }
 }
@@ -173,7 +70,7 @@ struct ThemeOptionCard: View {
             .cornerRadius(DesignTokens.Radius.md)
             .scaleEffect(isHovering ? 1.02 : 1.0)
             .animation(DesignAnimations.Preset.responsive, value: isHovering)
-            .contentShape(Rectangle()) // 关键：让整个区域都可点击
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .onHover { hovering in
@@ -203,75 +100,6 @@ struct ThemeOptionCard: View {
             RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
                 .stroke(SwiftUI.Color.white.opacity(0.08), lineWidth: 1)
         }
-    }
-}
-
-// MARK: - 主题选项按钮
-struct ThemeOptionButton: View {
-    let variant: Themes.Variant
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: DesignTokens.Spacing.xs) {
-                themeIcon
-                    .font(.system(size: 20))
-                    .foregroundColor(isSelected ? variant.theme.iconColor : DesignTokens.Color.semantic.textTertiary)
-
-                Text(variant.theme.compactName)
-                    .font(DesignTokens.Typography.caption2)
-                    .foregroundColor(isSelected ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textTertiary)
-            }
-            .frame(width: 60)
-            .padding(DesignTokens.Spacing.sm)
-            .background(isSelected ? variant.theme.iconColor.opacity(0.15) : SwiftUI.Color.clear)
-            .cornerRadius(DesignTokens.Radius.sm)
-            .overlay(
-                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                    .stroke(isSelected ? variant.theme.iconColor : SwiftUI.Color.white.opacity(0.08), lineWidth: isSelected ? 2 : 1)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var themeIcon: some View {
-        Image(systemName: variant.theme.iconName)
-    }
-}
-
-// MARK: - 预览卡片
-struct PreviewCard: View {
-    let variant: Themes.Variant
-
-    var body: some View {
-        HStack(spacing: DesignTokens.Spacing.md) {
-            // 左侧：图标
-            Circle()
-                .fill(variant.theme.iconColor)
-                .frame(width: 40, height: 40)
-                .overlay {
-                    Image(systemName: "sparkles")
-                        .foregroundColor(.white)
-                }
-
-            // 右侧：示例文本
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-                Text("预览文本")
-                    .font(DesignTokens.Typography.bodyEmphasized)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-
-                Text("这是主题效果的示例")
-                    .font(DesignTokens.Typography.caption1)
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-            }
-
-            Spacer()
-        }
-        .padding(DesignTokens.Spacing.md)
-        .background(DesignTokens.Material.glass)
-        .cornerRadius(DesignTokens.Radius.sm)
-        .mystiqueGlow(intensity: 0.2)
     }
 }
 
@@ -326,20 +154,8 @@ extension Themes.Variant {
 }
 
 // MARK: - 预览
-#Preview("主题选择器 - 完整模式") {
+#Preview("主题选择器") {
     ThemeSelectorView()
         .mystiqueBackground()
-        .environmentObject(ThemeManager())
-}
-
-#Preview("主题选择器 - 紧凑模式") {
-    ThemeSelectorView(displayMode: .compact)
-        .background(DesignTokens.Color.basePalette.deepBackground)
-        .environmentObject(ThemeManager())
-}
-
-#Preview("主题选择器 - 极简模式") {
-    ThemeSelectorView(displayMode: .minimal)
-        .background(DesignTokens.Color.basePalette.deepBackground)
         .environmentObject(ThemeManager())
 }

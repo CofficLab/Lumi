@@ -15,7 +15,8 @@ struct ThemeSettingView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.xl) {
                     // 主题选择器
-                    themeSelector
+                    ThemeSelectorView()
+                        .environmentObject(themeManager)
 
                     Spacer()
                 }
@@ -23,16 +24,6 @@ struct ThemeSettingView: View {
             }
         }
         .navigationTitle("主题风格")
-    }
-
-    // MARK: - 主题选择器
-
-    private var themeSelector: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-            // 主题选择器
-            ThemeSelectorView(displayMode: .full, showHeader: false, showPreview: false)
-                .environmentObject(themeManager)
-        }
     }
 }
 

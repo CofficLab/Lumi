@@ -5153,6 +5153,7 @@
       }
     },
     "主题" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8430,6 +8431,7 @@
       }
     },
     "这是主题效果的示例" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8496,6 +8498,7 @@
       }
     },
     "选择你喜欢的神秘主题风格" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8774,6 +8777,7 @@
       }
     },
     "预览效果" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8790,6 +8794,7 @@
       }
     },
     "预览文本" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
