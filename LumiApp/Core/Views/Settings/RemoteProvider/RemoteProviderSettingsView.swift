@@ -203,7 +203,9 @@ struct RemoteModelRow: View {
                     .font(DesignTokens.Typography.body)
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
-                // 默认标记
+                Spacer()
+
+                // 默认标记（放到最右侧）
                 if let provider = provider, model == provider.defaultModel {
                     Text("默认")
                         .font(DesignTokens.Typography.caption2)
@@ -215,8 +217,6 @@ struct RemoteModelRow: View {
                         )
                         .foregroundColor(DesignTokens.Color.semantic.primary)
                 }
-
-                Spacer()
             }
             .contentShape(Rectangle())
             .onTapGesture {
