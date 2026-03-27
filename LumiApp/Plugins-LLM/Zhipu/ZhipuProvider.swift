@@ -30,6 +30,7 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
         "glm-5",
         "glm-4.7",
         "glm-4.6",
+        "glm-4.5",
         "glm-4.5-air",
     ]
 
