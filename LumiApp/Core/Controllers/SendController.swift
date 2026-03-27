@@ -118,7 +118,10 @@ final class SendController: ObservableObject, SuperLog {
     /// 根据会话中**已落库的最后一条消息**驱动后续步骤
     func send(conversationId: UUID) async {
         let messages = await container.chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
-        guard let last = messages.last else { return }
+        guard !messages.isEmpty else { return }
+        // 允许系统/状态消息插入到尾部，但不应中断发送闭环。
+        // 这里选择“最后一条可驱动消息”（user/tool/assistant）作为状态机输入。
+        guard let last = messages.last(where: { $0.role != .system && $0.role != .status }) else { return }
 
         switch last.role {
         case .user, .tool:
