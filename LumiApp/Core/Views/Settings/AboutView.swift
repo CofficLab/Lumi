@@ -15,6 +15,9 @@ struct AboutView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+                // 顶部说明卡片
+                headerCard
+
                 // 应用信息卡片
                 appInfoCard
 
@@ -34,10 +37,47 @@ struct AboutView: View {
         .navigationTitle("关于")
     }
 
+    // MARK: - Header Card
+
+    private var headerCard: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                GlassSectionHeader(
+                    icon: "info.circle.fill",
+                    title: "关于 Lumi",
+                    subtitle: "了解应用的版本和系统信息"
+                )
+
+                GlassDivider()
+
+                HStack(spacing: DesignTokens.Spacing.md) {
+                    // 应用图标
+                    Image(nsImage: NSApp.applicationIconImage)
+                        .resizable()
+                        .frame(width: 48, height: 48)
+
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
+                        Text(appInfo.name)
+                            .font(DesignTokens.Typography.bodyEmphasized)
+                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+
+                        if let version = appInfo.version {
+                            Text("版本 \(version)")
+                                .font(DesignTokens.Typography.caption1)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        }
+                    }
+
+                    Spacer()
+                }
+            }
+        }
+    }
+
     // MARK: - Info Cards
 
     private var appInfoCard: some View {
-        GlassInfoCard(title: "应用信息", icon: "info.circle.fill") {
+        GlassInfoCard(title: "应用信息", icon: "app.badge.fill") {
             GlassKeyValueRow(label: "应用名称", value: appInfo.name)
             GlassKeyValueRow(label: "Bundle ID", value: appInfo.bundleIdentifier)
             if let description = appInfo.description {

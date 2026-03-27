@@ -100,7 +100,19 @@ extension LocalProviderSettingsView {
 
                 GlassDivider()
 
+                HStack(spacing: DesignTokens.Spacing.sm) {
+                    Image(systemName: "info.circle.fill")
+                        .foregroundColor(DesignTokens.Color.semantic.primary)
+                        .font(.system(size: 14))
+
+                    Text("本地模型需要下载并在本地运行，保护数据隐私")
+                        .font(DesignTokens.Typography.caption1)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                }
+
                 if localProviders.count > 1 {
+                    GlassDivider()
+
                     HStack(spacing: DesignTokens.Spacing.sm) {
                         ForEach(localProviders) { provider in
                             ProviderButton(
@@ -114,6 +126,8 @@ extension LocalProviderSettingsView {
                         }
                     }
                 } else if let provider = localProviders.first {
+                    GlassDivider()
+
                     HStack(spacing: DesignTokens.Spacing.sm) {
                         Image(systemName: provider.iconName)
                             .foregroundColor(DesignTokens.Color.semantic.primary)

@@ -47,11 +47,13 @@ struct RemoteProviderSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
-                // 供应商选择器卡片
-                providerSelectorCard
+                // 云端供应商卡片
+                cloudProviderCard
 
                 // 配置卡片（API Key + 模型列表）
-                configurationCard
+                if selectedProvider != nil {
+                    configurationCard
+                }
 
                 Spacer()
             }
@@ -71,8 +73,8 @@ struct RemoteProviderSettingsView: View {
 // MARK: - View
 
 extension RemoteProviderSettingsView {
-    /// 供应商选择器卡片
-    private var providerSelectorCard: some View {
+    /// 云端供应商卡片
+    private var cloudProviderCard: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
                 GlassSectionHeader(
@@ -80,6 +82,18 @@ extension RemoteProviderSettingsView {
                     title: "云端 LLM 供应商",
                     subtitle: "选择你想使用的 AI 服务提供商"
                 )
+
+                GlassDivider()
+
+                HStack(spacing: DesignTokens.Spacing.sm) {
+                    Image(systemName: "info.circle.fill")
+                        .foregroundColor(DesignTokens.Color.semantic.primary)
+                        .font(.system(size: 14))
+
+                    Text("配置 API Key 后，选择一个模型进行对话")
+                        .font(DesignTokens.Typography.caption1)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                }
 
                 GlassDivider()
 

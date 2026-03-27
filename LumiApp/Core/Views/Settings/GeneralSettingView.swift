@@ -9,23 +9,52 @@ struct GeneralSettingView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xl) {
-                Spacer().frame(height: 40)
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+                // 顶部说明卡片
+                headerCard
 
                 // 启动选项
                 startupSection
 
+                // 新手引导
                 onboardingSection
 
+                // 反馈与支持
                 supportSection
 
                 Spacer()
             }
-            .padding(.horizontal, DesignTokens.Spacing.lg)
+            .padding(DesignTokens.Spacing.lg)
         }
         .navigationTitle("通用设置")
         .onAppear {
             checkLaunchAtLoginStatus()
+        }
+    }
+
+    // MARK: - Header Card
+
+    private var headerCard: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                GlassSectionHeader(
+                    icon: "gearshape.2",
+                    title: "通用设置",
+                    subtitle: "管理应用的基本行为和偏好设置"
+                )
+
+                GlassDivider()
+
+                HStack(spacing: DesignTokens.Spacing.sm) {
+                    Image(systemName: "info.circle.fill")
+                        .foregroundColor(DesignTokens.Color.semantic.primary)
+                        .font(.system(size: 14))
+
+                    Text("配置应用的启动行为、查看新手引导或提交问题反馈")
+                        .font(DesignTokens.Typography.caption1)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                }
+            }
         }
     }
 
