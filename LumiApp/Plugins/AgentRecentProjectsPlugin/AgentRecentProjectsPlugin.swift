@@ -47,6 +47,6 @@ actor AgentRecentProjectsPlugin: SuperPlugin {
 
     @MainActor
     func sendMiddlewares() -> [AnySendMiddleware] {
-        [AnySendMiddleware(RecentProjectsRootSystemMergeMiddleware())]
+        []
     }
 }
