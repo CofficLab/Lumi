@@ -1,500 +1,533 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "%lld Chunks" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld Chunks"
+  "sourceLanguage": "en",
+  "strings": {
+    "%lld Chunks": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Chunks"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 片段"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 片段"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 片段"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 片段"
           }
         }
       }
     },
-    "%lld Files" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld Files"
+    "%lld days ago": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld days ago"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 文件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld天前"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 文件"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld天前"
           }
         }
       }
     },
-    "%lld Indexed" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld Indexed"
+    "%lld Files": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Files"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 已索引"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 文件"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 已索引"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 文件"
           }
         }
       }
     },
-    "%lld days ago" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld days ago"
+    "%lld hours ago": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld hours ago"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld天前"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld小时前"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld天前"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld小時前"
           }
         }
       }
     },
-    "%lld hours ago" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld hours ago"
+    "%lld Indexed": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Indexed"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld小时前"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 已索引"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld小時前"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 已索引"
           }
         }
       }
     },
-    "%lld minutes ago" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld minutes ago"
+    "%lld minutes ago": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld minutes ago"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld分钟前"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld分钟前"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld分鐘前"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld分鐘前"
           }
         }
       }
     },
-    "About RAG" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "About RAG"
+    "^[%lld Chunk](inflect: true)": {},
+    "^[%lld day](inflect: true) ago": {},
+    "^[%lld File](inflect: true)": {},
+    "^[%lld hour](inflect: true) ago": {},
+    "^[%lld Indexed](inflect: true)": {},
+    "^[%lld minute](inflect: true) ago": {},
+    "About RAG": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About RAG"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "关于 RAG"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关于 RAG"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於 RAG"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於 RAG"
           }
         }
       }
     },
-    "Checking index status..." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Checking index status..."
+    "Checking index status...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking index status..."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "检查索引状态..."
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查索引状态..."
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢查索引狀態..."
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢查索引狀態..."
           }
         }
       }
     },
-    "Enable RAG" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enable RAG"
+    "Enable RAG": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable RAG"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用 RAG"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用 RAG"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用 RAG"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟用 RAG"
           }
         }
       }
     },
-    "Failed to get status" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Failed to get status"
+    "Failed to get status": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to get status"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "获取状态失败"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "获取状态失败"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "獲取狀態失敗"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "獲取狀態失敗"
           }
         }
       }
     },
-    "Indexing..." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Indexing..."
+    "Indexing...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Indexing..."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RAG 索引中..."
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RAG 索引中..."
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RAG 索引中..."
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RAG 索引中..."
           }
         }
       }
     },
-    "Just now" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Just now"
+    "Just now": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Just now"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刚刚"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刚刚"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "剛剛"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剛剛"
           }
         }
       }
     },
-    "No project selected" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No project selected"
+    "No project selected": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No project selected"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未选择项目"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未选择项目"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未選擇項目"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未選擇項目"
           }
         }
       }
     },
-    "RAG" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RAG"
+    "RAG": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RAG"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RAG"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RAG"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RAG"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RAG"
           }
         }
       }
     },
-    "RAG (Retrieval-Augmented Generation) is a technology that enables AI to access project code.\n\nWorkflow:\n1. Index project files\n2. Search for relevant code when user asks questions\n3. AI answers based on the found code\n\nThis allows AI to accurately answer questions about your project." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RAG (Retrieval-Augmented Generation) is a technology that enables AI to access project code.\n\nWorkflow:\n1. Index project files\n2. Search for relevant code when user asks questions\n3. AI answers based on the found code\n\nThis allows AI to accurately answer questions about your project."
+    "RAG (Retrieval-Augmented Generation) is a technology that enables AI to access project code.\n\nWorkflow:\n1. Index project files\n2. Search for relevant code when user asks questions\n3. AI answers based on the found code\n\nThis allows AI to accurately answer questions about your project.": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RAG (Retrieval-Augmented Generation) is a technology that enables AI to access project code.\n\nWorkflow:\n1. Index project files\n2. Search for relevant code when user asks questions\n3. AI answers based on the found code\n\nThis allows AI to accurately answer questions about your project."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RAG (Retrieval-Augmented Generation) 是一种让 AI 能够查阅项目代码的技术。\n\n工作流程:\n1. 索引项目文件\n2. 用户提问时搜索相关代码\n3. AI 基于找到的代码回答问题\n\n这样 AI 就能准确回答关于你项目的问题了。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RAG (Retrieval-Augmented Generation) 是一种让 AI 能够查阅项目代码的技术。\n\n工作流程:\n1. 索引项目文件\n2. 用户提问时搜索相关代码\n3. AI 基于找到的代码回答问题\n\n这样 AI 就能准确回答关于你项目的问题了。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RAG (Retrieval-Augmented Generation) 是一種讓 AI 能夠查閱項目代碼的技術。\n\n工作流程:\n1. 索引項目文件\n2. 用戶提問時搜索相關代碼\n3. AI 基於找到的代碼回答問題\n\n這樣 AI 就能準確回答關於你項目的問題了。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RAG (Retrieval-Augmented Generation) 是一種讓 AI 能夠查閱項目代碼的技術。\n\n工作流程:\n1. 索引項目文件\n2. 用戶提問時搜索相關代碼\n3. AI 基於找到的代碼回答問題\n\n這樣 AI 就能準確回答關於你項目的問題了。"
           }
         }
       }
     },
-    "Ready" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ready"
+    "Ready": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已就绪"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已就绪"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已就緒"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已就緒"
           }
         }
       }
     },
-    "Retrieval-Augmented Generation" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retrieval-Augmented Generation"
+    "Retrieval-Augmented Generation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retrieval-Augmented Generation"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "检索增强生成"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检索增强生成"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢索增強生成"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢索增強生成"
           }
         }
       }
     },
-    "Retrieval-Augmented Generation Description" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "When enabled, AI can answer questions based on project code"
+    "Retrieval-Augmented Generation Description": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When enabled, AI can answer questions based on project code"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用后，AI 可以基于项目代码回答问题"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用后，AI 可以基于项目代码回答问题"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用後，AI 可以基於項目代碼回答問題"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟用後，AI 可以基於項目代碼回答問題"
           }
         }
       }
     },
-    "Status" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Status"
+    "Status": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "状态"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "状态"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "狀態"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "狀態"
           }
         }
       }
     },
-    "System Information" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "System Information"
+    "System Information": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System Information"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系统信息"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统信息"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系統信息"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系統信息"
           }
         }
       }
     },
-    "Vector Database" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vector Database"
+    "Vector Database": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vector Database"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "向量数据库"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "向量数据库"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "向量數據庫"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "向量數據庫"
           }
         }
       }
     },
-    "Vector Model" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vector Model"
+    "Vector Model": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vector Model"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "向量模型"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "向量模型"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "向量模型"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "向量模型"
+          }
+        }
+      }
+    },
+    "Not initialized": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not initialized"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未初始化"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未初始化"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }
