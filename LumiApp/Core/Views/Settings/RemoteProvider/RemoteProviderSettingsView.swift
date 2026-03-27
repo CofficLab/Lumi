@@ -151,7 +151,7 @@ extension RemoteProviderSettingsView {
             GlassSectionHeader(
                 icon: "cpu.fill",
                 title: "可用模型",
-                subtitle: "选择一个模型进行对话"
+                subtitle: "点击某个模型可设为默认"
             )
 
             GlassDivider()
