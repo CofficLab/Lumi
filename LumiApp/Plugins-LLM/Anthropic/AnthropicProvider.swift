@@ -121,8 +121,17 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
         tools: [AgentTool]?,
         systemPrompt: String
     ) throws -> [String: Any] {
-        // 提取系统消息
-        let systemMessage = messages.first(where: { $0.role == .system })?.content ?? systemPrompt
+        // 合并所有系统消息（包含中间件注入的临时 system 上下文）
+        let systemParts = messages
+            .filter { $0.role == .system }
+            .map { $0.content.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        let systemMessage: String
+        if !systemParts.isEmpty {
+            systemMessage = systemParts.joined(separator: "\n\n")
+        } else {
+            systemMessage = systemPrompt
+        }
 
         // 转换对话消息（只发送 user/assistant 给 LLM）
         let conversationMessages = messages
@@ -716,4 +725,3 @@ struct AnySendable: Decodable {
         self.value = value
     }
 }
-

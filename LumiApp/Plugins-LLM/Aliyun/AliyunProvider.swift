@@ -62,7 +62,16 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
         systemPrompt: String
     ) throws -> [String: Any] {
         // 阿里云兼容 Anthropic 格式
-        let systemMessage = messages.first(where: { $0.role == .system })?.content ?? systemPrompt
+        let systemParts = messages
+            .filter { $0.role == .system }
+            .map { $0.content.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        let systemMessage: String
+        if !systemParts.isEmpty {
+            systemMessage = systemParts.joined(separator: "\n\n")
+        } else {
+            systemMessage = systemPrompt
+        }
 
         let conversationMessages = messages
             .filter { $0.role.shouldSendToLLM }

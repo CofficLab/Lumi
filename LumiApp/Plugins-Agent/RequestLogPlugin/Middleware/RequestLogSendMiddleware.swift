@@ -23,21 +23,21 @@ struct RequestLogSendMiddleware: SendMiddleware {
         metadata: RequestMetadata,
         response: ChatMessage?
     ) async {
+        _ = response
         // 记录请求数据到数据库
-        await RequestLogHistoryManager.shared.add(metadata: metadata, response: response)
+        await RequestLogHistoryManager.shared.add(metadata: metadata)
         
         // 同时输出到日志（便于调试）
-        logToConsole(metadata: metadata, response: response)
+        logToConsole(metadata: metadata)
     }
 
     // MARK: - 日志记录
 
     /// 输出到控制台
     private func logToConsole(
-        metadata: RequestMetadata,
-        response: ChatMessage?
+        metadata: RequestMetadata
     ) {
-        let timestamp = ISO8601DateFormatter().string(from: metadata.timestamp)
+        let timestamp = ISO8601DateFormatter().string(from: metadata.sentAt)
         
         var logLines: [String] = []
         logLines.append(String(repeating: "=", count: 60))
@@ -47,15 +47,11 @@ struct RequestLogSendMiddleware: SendMiddleware {
         // 请求基础信息
         logLines.append("")
         logLines.append("【请求信息】")
+        logLines.append("  Method: \(metadata.method)")
         logLines.append("  URL: \(metadata.url)")
         logLines.append("  请求体大小: \(metadata.formattedBodySize)")
-        
-        // LLM 配置
-        if let config = metadata.config {
-            logLines.append("")
-            logLines.append("【LLM 配置】")
-            logLines.append("  Provider: \(config.providerId)")
-            logLines.append("  Model: \(config.model)")
+        if !metadata.requestHeaders.isEmpty {
+            logLines.append("  Headers: \(metadata.requestHeaders)")
         }
         
         // 响应信息
@@ -63,14 +59,10 @@ struct RequestLogSendMiddleware: SendMiddleware {
         logLines.append("【响应信息】")
         if let error = metadata.error {
             logLines.append("  ❌ 错误: \(error.localizedDescription)")
-        } else if let response = response {
+        } else {
             logLines.append("  ✅ 成功")
-            if let latency = response.latency {
-                logLines.append("  延迟: \(String(format: "%.0f", latency))ms")
-            }
-            if let inputTokens = response.inputTokens,
-               let outputTokens = response.outputTokens {
-                logLines.append("  Tokens: \(inputTokens) → \(outputTokens)")
+            if let statusCode = metadata.responseStatusCode {
+                logLines.append("  HTTP Status: \(statusCode)")
             }
         }
         

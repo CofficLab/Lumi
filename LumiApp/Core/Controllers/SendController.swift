@@ -283,17 +283,7 @@ final class SendController: ObservableObject, SuperLog {
                 tools: toolsArg,
                 onChunk: onStreamChunk,
                 onRequestStart: { metadata in
-                    // 通过 AsyncStream 安全地传递元数据
-                    let requestMeta = RequestMetadata(
-                        bodySizeBytes: metadata.bodySizeBytes,
-                        url: metadata.url,
-                        timestamp: metadata.timestamp,
-                        messages: messagesForLLM,
-                        config: config,
-                        tools: toolsArg,
-                        transientPrompts: additionalSystemPrompts
-                    )
-                    metadataContinuation.yield(requestMeta)
+                    metadataContinuation.yield(metadata)
                     metadataContinuation.finish()
                     
                     Task { @MainActor in
@@ -311,16 +301,7 @@ final class SendController: ObservableObject, SuperLog {
 
             // 更新请求元数据，添加响应信息
             if var metadata = requestMetadata {
-                metadata.responseMessage = assistantMessage
                 metadata.duration = duration
-                if let inputTokens = assistantMessage.inputTokens,
-                   let outputTokens = assistantMessage.outputTokens {
-                    metadata.tokenUsage = TokenUsage(
-                        promptTokens: inputTokens,
-                        completionTokens: outputTokens,
-                        totalTokens: assistantMessage.totalTokens ?? (inputTokens + outputTokens)
-                    )
-                }
 
                 // ✅ 调用发送后管线
                 let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
@@ -358,6 +339,10 @@ final class SendController: ObservableObject, SuperLog {
             if var metadata = requestMetadata {
                 metadata.error = error
                 metadata.duration = CFAbsoluteTimeGetCurrent() - startTime
+                if let apiError = error as? APIError,
+                   case let .httpError(statusCode, _) = apiError {
+                    metadata.responseStatusCode = statusCode
+                }
                 let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
                 await pipeline.runPost(metadata: metadata, response: nil)
             }

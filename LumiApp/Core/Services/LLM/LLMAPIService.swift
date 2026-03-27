@@ -158,14 +158,21 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
 
         // 📊 获取请求大小并通知调用方
         let requestSizeBytes = jsonData.count
+        // 按请求记录完整 body（不截断）
+        let bodyPreview: String? = String(data: jsonData, encoding: .utf8)
+        let maskedHeaders = sanitizeHeaders(headers)
         let metadata = RequestMetadata(
-            bodySizeBytes: requestSizeBytes,
+            requestId: UUID(),
+            method: HTTPMethod.post.rawValue,
             url: url.absoluteString,
-            timestamp: Date(),
-            messages: nil,
-            config: nil,
-            tools: nil,
-            transientPrompts: nil
+            requestHeaders: maskedHeaders,
+            requestBodySizeBytes: requestSizeBytes,
+            requestBodyPreview: bodyPreview,
+            sentAt: Date(),
+            responseStatusCode: nil,
+            responseHeaders: nil,
+            duration: nil,
+            error: nil
         )
         
         // 在发送前通知调用方
@@ -317,6 +324,19 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         if Self.verbose {
             AppLogger.core.info("\(self.t)✅ 流式响应接收完成")
         }
+    }
+
+    private func sanitizeHeaders(_ headers: [String: String]) -> [String: String] {
+        var result: [String: String] = [:]
+        for (key, value) in headers {
+            let lower = key.lowercased()
+            if lower.contains("authorization") || lower.contains("api-key") || lower.hasSuffix("key") || lower.contains("token") {
+                result[key] = "***"
+            } else {
+                result[key] = value
+            }
+        }
+        return result
     }
 
     // MARK: - 带重试的原始请求

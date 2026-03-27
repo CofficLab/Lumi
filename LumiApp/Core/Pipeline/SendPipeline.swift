@@ -20,7 +20,7 @@ import Foundation
 ///
 ///     // 发送后：记录日志
 ///     func handlePost(metadata: RequestMetadata, response: ChatMessage?) async {
-///         print("LLM 请求完成：\(metadata.messages?.count ?? 0) 条消息")
+///         print("HTTP 请求完成：\(metadata.method) \(metadata.url)")
 ///     }
 /// }
 /// ```

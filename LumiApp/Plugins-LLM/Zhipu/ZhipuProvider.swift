@@ -59,7 +59,16 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
         systemPrompt: String
     ) throws -> [String: Any] {
         // Zhipu 兼容 Anthropic 格式
-        let systemMessage = messages.first(where: { $0.role == .system })?.content ?? systemPrompt
+        let systemParts = messages
+            .filter { $0.role == .system }
+            .map { $0.content.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        let systemMessage: String
+        if !systemParts.isEmpty {
+            systemMessage = systemParts.joined(separator: "\n\n")
+        } else {
+            systemMessage = systemPrompt
+        }
 
         let conversationMessages = messages
             .filter { $0.role.shouldSendToLLM }
@@ -139,9 +148,41 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
     /// 解析流式响应数据块
     /// Zhipu 兼容 Anthropic 流式格式
     func parseStreamChunk(data: Data) throws -> StreamChunk? {
-        // 复用 Anthropic 的解析逻辑
+        // 先按 Anthropic SSE 解析（Zhipu 官方兼容路径）
         let anthropicProvider = AnthropicProvider()
-        return try anthropicProvider.parseStreamChunk(data: data)
+        if let chunk = try anthropicProvider.parseStreamChunk(data: data) {
+            // Anthropic 解析器在 JSON 格式异常时会返回 error chunk。
+            // 对 GLM-5 做一次回退尝试，避免单个坏包导致整轮失败。
+            if chunk.error != nil {
+                let openAIProvider = OpenAIProvider()
+                if let fallback = try? openAIProvider.parseStreamChunk(data: data) {
+                    if Self.verbose {
+                        Self.logger.info("\(self.t) 流解析回退到 OpenAI 格式成功")
+                    }
+                    return fallback
+                }
+
+                // 无法回退解析时，忽略该坏包，等待下一个 chunk。
+                // 这样可以提升对非标准分包的容错，不会直接中断整轮请求。
+                if Self.verbose {
+                    let raw = String(data: data, encoding: .utf8) ?? "<binary>"
+                    Self.logger.warning("\(self.t) 忽略不可解析的流式分包: \(raw.prefix(200))")
+                }
+                return nil
+            }
+            return chunk
+        }
+
+        // Anthropic 返回 nil 时，尝试 OpenAI 兼容格式
+        let openAIProvider = OpenAIProvider()
+        if let fallback = try? openAIProvider.parseStreamChunk(data: data) {
+            if Self.verbose {
+                Self.logger.info("\(self.t) 流解析使用 OpenAI 兼容格式")
+            }
+            return fallback
+        }
+
+        return nil
     }
 
     static var logEmoji: String { "🔴" }
