@@ -13,11 +13,11 @@ struct GeneralSettingView: View {
                 Spacer().frame(height: 40)
 
                 // 启动选项
-                startupOptions
+                startupSection
 
-                onboardingOptions
-                
-                supportOptions
+                onboardingSection
+
+                supportSection
 
                 Spacer()
             }
@@ -31,27 +31,13 @@ struct GeneralSettingView: View {
 
     // MARK: - 启动选项
 
-    private var startupOptions: some View {
+    private var startupSection: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-            HStack(spacing: DesignTokens.Spacing.sm) {
-                Image(systemName: "power")
-                    .font(.system(size: 20))
-                    .foregroundColor(DesignTokens.Color.semantic.primary)
-                    .frame(width: 32)
-
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-                    Text("启动选项")
-                        .font(DesignTokens.Typography.bodyEmphasized)
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-
-                    Text("管理应用启动行为")
-                        .font(DesignTokens.Typography.caption1)
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                }
-
-                Spacer()
-            }
-            .padding(.bottom, DesignTokens.Spacing.sm)
+            GlassSectionHeader(
+                icon: "power",
+                title: "启动选项",
+                subtitle: "管理应用启动行为"
+            )
 
             Toggle("登录时启动", isOn: $launchAtLogin)
                 .onChange(of: launchAtLogin) { _, newValue in
@@ -96,27 +82,13 @@ struct GeneralSettingView: View {
 
     // MARK: - Onboarding
 
-    private var onboardingOptions: some View {
+    private var onboardingSection: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-            HStack(spacing: DesignTokens.Spacing.sm) {
-                Image(systemName: "graduationcap")
-                    .font(.system(size: 20))
-                    .foregroundColor(DesignTokens.Color.semantic.primary)
-                    .frame(width: 32)
-
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-                    Text("新手引导")
-                        .font(DesignTokens.Typography.bodyEmphasized)
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-
-                    Text("随时重新查看产品使用指引")
-                        .font(DesignTokens.Typography.caption1)
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                }
-
-                Spacer()
-            }
-            .padding(.bottom, DesignTokens.Spacing.sm)
+            GlassSectionHeader(
+                icon: "graduationcap",
+                title: "新手引导",
+                subtitle: "随时重新查看产品使用指引"
+            )
 
             Button("重新查看新手引导") {
                 NotificationCenter.default.post(
@@ -129,27 +101,15 @@ struct GeneralSettingView: View {
         }
     }
 
-    private var supportOptions: some View {
+    // MARK: - Support
+
+    private var supportSection: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-            HStack(spacing: DesignTokens.Spacing.sm) {
-                Image(systemName: "lifepreserver")
-                    .font(.system(size: 20))
-                    .foregroundColor(DesignTokens.Color.semantic.primary)
-                    .frame(width: 32)
-
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-                    Text("反馈与支持")
-                        .font(DesignTokens.Typography.bodyEmphasized)
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-
-                    Text("遇到问题时可直接提交 Issue，帮助我们快速定位")
-                        .font(DesignTokens.Typography.caption1)
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                }
-
-                Spacer()
-            }
-            .padding(.bottom, DesignTokens.Spacing.sm)
+            GlassSectionHeader(
+                icon: "lifepreserver",
+                title: "反馈与支持",
+                subtitle: "遇到问题时可直接提交 Issue，帮助我们快速定位"
+            )
 
             HStack(spacing: DesignTokens.Spacing.sm) {
                 Button("报告问题") {

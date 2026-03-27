@@ -40,52 +40,52 @@ struct AboutView: View {
     // MARK: - Info Cards
 
     private var appInfoCard: some View {
-        InfoCard(title: "App Information", icon: "info.circle.fill") {
-            AboutInfoRow(label: "App Name", value: appInfo.name)
-            AboutInfoRow(label: "Bundle ID", value: appInfo.bundleIdentifier)
+        GlassInfoCard(title: "App Information", icon: "info.circle.fill") {
+            GlassKeyValueRow(label: "App Name", value: appInfo.name)
+            GlassKeyValueRow(label: "Bundle ID", value: appInfo.bundleIdentifier)
             if let description = appInfo.description {
-                AboutInfoRow(label: "Description", value: description)
+                GlassKeyValueRow(label: "Description", value: description)
             }
         }
     }
 
     private var versionInfoCard: some View {
-        InfoCard(title: "Version Information", icon: "number.circle.fill") {
-            AboutInfoRow(label: "Version", value: appInfo.version ?? "Unknown")
-            AboutInfoRow(label: "Build", value: appInfo.build ?? "Unknown")
-            AboutInfoRow(label: "Build Configuration", value: versionInfo.buildConfiguration)
-            AboutInfoRow(label: "Build Date", value: versionInfo.buildDate)
+        GlassInfoCard(title: "Version Information", icon: "number.circle.fill") {
+            GlassKeyValueRow(label: "Version", value: appInfo.version ?? "Unknown")
+            GlassKeyValueRow(label: "Build", value: appInfo.build ?? "Unknown")
+            GlassKeyValueRow(label: "Build Configuration", value: versionInfo.buildConfiguration)
+            GlassKeyValueRow(label: "Build Date", value: versionInfo.buildDate)
         }
     }
 
     private var buildHistoryCard: some View {
-        InfoCard(title: "Build History", icon: "clock.arrow.circlepath") {
-            AboutInfoRow(label: "Minimum Support", value: "macOS \(versionInfo.minimumOSVersion)")
-            AboutInfoRow(label: "SDK Version", value: versionInfo.sdkVersion)
-            AboutInfoRow(label: "Swift Version", value: versionInfo.swiftVersion)
-            AboutInfoRow(label: "Xcode Version", value: versionInfo.xcodeVersion)
+        GlassInfoCard(title: "Build History", icon: "clock.arrow.circlepath") {
+            GlassKeyValueRow(label: "Minimum Support", value: "macOS \(versionInfo.minimumOSVersion)")
+            GlassKeyValueRow(label: "SDK Version", value: versionInfo.sdkVersion)
+            GlassKeyValueRow(label: "Swift Version", value: versionInfo.swiftVersion)
+            GlassKeyValueRow(label: "Xcode Version", value: versionInfo.xcodeVersion)
         }
     }
 
     private var systemInfoCard: some View {
-        InfoCard(title: "System Information", icon: "desktopcomputer") {
-            AboutInfoRow(label: "OS", value: versionInfo.systemVersion)
-            AboutInfoRow(label: "Architecture", value: versionInfo.architecture)
-            AboutInfoRow(label: "App Path", value: versionInfo.appPath)
+        GlassInfoCard(title: "System Information", icon: "desktopcomputer") {
+            GlassKeyValueRow(label: "OS", value: versionInfo.systemVersion)
+            GlassKeyValueRow(label: "Architecture", value: versionInfo.architecture)
+            GlassKeyValueRow(label: "App Path", value: versionInfo.appPath)
         }
     }
 
     private var updateInfoCard: some View {
-        InfoCard(title: "Update Information", icon: "arrow.down.circle.fill") {
+        GlassInfoCard(title: "Update Information", icon: "arrow.down.circle.fill", subtitle: "Automatic updates") {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Current version is the latest stable version")
-                    .font(.subheadline)
+                    .font(DesignTokens.Typography.subheadline)
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
                 GlassDivider()
 
                 Text("Lumi uses the Sparkle framework for automatic updates. When a new version is available, the app will automatically prompt you to update.")
-                    .font(.caption)
+                    .font(DesignTokens.Typography.caption1)
                     .foregroundColor(DesignTokens.Color.semantic.textTertiary)
             }
         }
@@ -180,60 +180,6 @@ struct VersionInfo {
 
         // App path
         self.appPath = bundle.bundlePath
-    }
-}
-
-// MARK: - InfoCard Component
-
-struct InfoCard<Content: View>: View {
-    let title: String
-    let icon: String
-    @ViewBuilder let content: Content
-
-    var body: some View {
-        GlassCard(cornerRadius: DesignTokens.Radius.md, padding: DesignTokens.Spacing.cardPadding) {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                HStack(spacing: DesignTokens.Spacing.xs) {
-                    Image(systemName: icon)
-                        .foregroundColor(DesignTokens.Color.semantic.primary)
-                    Text(title)
-                        .font(DesignTokens.Typography.bodyEmphasized)
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                    Spacer()
-                }
-
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-                    content
-                }
-            }
-        }
-    }
-}
-
-// MARK: - AboutInfoRow Component
-
-struct AboutInfoRow: View {
-    let label: String
-    let value: String
-
-    var body: some View {
-        HStack(alignment: .top) {
-            Text(label)
-                .font(.subheadline)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                .frame(width: 100, alignment: .leading)
-
-            Text(":")
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-
-            Text(value)
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                .textSelection(.enabled)
-
-            Spacer()
-        }
     }
 }
 

@@ -14,13 +14,12 @@ struct ThemeSelectorView: View {
             ForEach(Themes.Variant.allCases, id: \.self) { variant in
                 ThemeOptionCard(
                     variant: variant,
-                    isSelected: themeManager.currentVariant == variant,
-                    action: {
-                        withAnimation(DesignAnimations.Preset.bounce) {
-                            themeManager.currentVariant = variant
-                        }
+                    isSelected: themeManager.currentVariant == variant
+                ) {
+                    withAnimation(DesignAnimations.Preset.bounce) {
+                        themeManager.currentVariant = variant
                     }
-                )
+                }
             }
         }
     }
@@ -32,13 +31,16 @@ struct ThemeOptionCard: View {
     let isSelected: Bool
     let action: () -> Void
 
-    @State private var isHovering = false
-
     var body: some View {
-        Button(action: action) {
+        GlassSelectionCard(
+            isSelected: isSelected,
+            checkmarkColor: variant.theme.iconColor,
+            selectedBackgroundColor: variant.theme.iconColor.opacity(0.15),
+            selectedBorderColor: variant.theme.iconColor
+        ) {
             HStack(spacing: DesignTokens.Spacing.md) {
                 // 图标
-                themeIcon
+                Image(systemName: variant.theme.iconName)
                     .font(.system(size: 24))
                     .foregroundColor(isSelected ? variant.theme.iconColor : DesignTokens.Color.semantic.textTertiary)
                     .frame(width: 40)
@@ -54,51 +56,10 @@ struct ThemeOptionCard: View {
                         .font(DesignTokens.Typography.caption1)
                         .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                 }
-
-                Spacer()
-
-                // 选中指示器
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 20))
-                        .foregroundColor(variant.theme.iconColor)
-                }
             }
-            .padding(DesignTokens.Spacing.md)
-            .background(cardBackground)
-            .overlay(cardBorder)
-            .cornerRadius(DesignTokens.Radius.md)
-            .scaleEffect(isHovering ? 1.02 : 1.0)
-            .animation(DesignAnimations.Preset.responsive, value: isHovering)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            isHovering = hovering
-        }
-    }
-
-    private var themeIcon: some View {
-        Image(systemName: variant.theme.iconName)
-    }
-
-    @ViewBuilder private var cardBackground: some View {
-        if isSelected {
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
-                .fill(variant.theme.iconColor.opacity(0.15))
-        } else if isHovering {
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
-                .fill(DesignTokens.Material.glass.opacity(0.1))
-        }
-    }
-
-    @ViewBuilder private var cardBorder: some View {
-        if isSelected {
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
-                .stroke(variant.theme.iconColor, lineWidth: 2)
-        } else {
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
-                .stroke(SwiftUI.Color.white.opacity(0.08), lineWidth: 1)
+        .onTapGesture {
+            action()
         }
     }
 }

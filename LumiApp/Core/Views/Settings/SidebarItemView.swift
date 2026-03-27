@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 侧边栏菜单项视图
+/// 设置侧边栏菜单项视图
 struct SidebarItemView: View {
     let label: Label<Text, Image>
     let isSelected: Bool
