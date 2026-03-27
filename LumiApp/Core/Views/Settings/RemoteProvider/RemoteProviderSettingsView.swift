@@ -162,11 +162,14 @@ extension RemoteProviderSettingsView {
                     RemoteModelRow(
                         model: model,
                         isSelected: selectedModel == model,
-                        provider: selectedProvider
-                    ) {
-                        selectedModel = model
-                        saveModel()
-                    }
+                        provider: selectedProvider,
+                        onTap: {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                selectedModel = model
+                                saveModel()
+                            }
+                        }
+                    )
 
                     if model != models.last {
                         GlassDivider()
@@ -188,7 +191,6 @@ struct RemoteModelRow: View {
     let onTap: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
-    @State private var isHovering = false
 
     var body: some View {
         GlassRow {
@@ -205,7 +207,7 @@ struct RemoteModelRow: View {
 
                 Spacer()
 
-                // 默认标记（放到最右侧）
+                // 默认标记
                 if let provider = provider, model == provider.defaultModel {
                     Text("默认")
                         .font(DesignTokens.Typography.caption2)
@@ -248,6 +250,7 @@ extension RemoteProviderSettingsView {
     private func saveModel() {
         guard selectedProviderId.isNotEmpty else { return }
         AppSettingStore.saveRemoteProviderModel(providerId: selectedProviderId, modelId: selectedModel)
+        print("✅ Saved model: \(selectedModel) for provider: \(selectedProviderId)")
     }
 
     /// 保存选中的云端供应商 ID 到持久化存储
