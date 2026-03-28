@@ -115,6 +115,29 @@ actor BackgroundAgentTaskStore: SuperLog {
         return (try? context.fetch(descriptor)) ?? []
     }
 
+    /// 分页获取后台任务列表
+    /// - Parameters:
+    ///   - page: 页码，从 1 开始
+    ///   - pageSize: 每页数量
+    /// - Returns: 分页结果（数据 + 总数）
+    nonisolated func fetchPage(page: Int, pageSize: Int) -> (tasks: [BackgroundAgentTask], total: Int) {
+        let context = ModelContext(container)
+
+        // 先查总数
+        let totalDescriptor = FetchDescriptor<BackgroundAgentTask>()
+        let total = (try? context.fetchCount(totalDescriptor)) ?? 0
+
+        // 再查分页数据
+        var descriptor = FetchDescriptor<BackgroundAgentTask>(
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+        descriptor.fetchOffset = max(0, (page - 1) * pageSize)
+        descriptor.fetchLimit = pageSize
+        let tasks = (try? context.fetch(descriptor)) ?? []
+
+        return (tasks, total)
+    }
+
     /// 根据 ID 查询后台任务
     /// - Parameter id: 任务 ID
     /// - Returns: 任务对象，不存在则返回 nil
@@ -124,6 +147,35 @@ actor BackgroundAgentTaskStore: SuperLog {
             predicate: #Predicate { $0.id == id }
         )
         return (try? context.fetch(descriptor).first) ?? nil
+    }
+
+    /// 删除指定任务
+    /// - Parameter id: 任务 ID
+    nonisolated func delete(_ id: UUID) {
+        let context = ModelContext(container)
+        let descriptor = FetchDescriptor<BackgroundAgentTask>(
+            predicate: #Predicate { $0.id == id }
+        )
+        guard let task = try? context.fetch(descriptor).first else { return }
+        context.delete(task)
+        try? context.save()
+    }
+
+    /// 清空所有已完成的任务（succeeded / failed）
+    nonisolated func deleteCompleted() {
+        let context = ModelContext(container)
+        let succeeded = BackgroundAgentTaskStatus.succeeded.rawValue
+        let failed = BackgroundAgentTaskStatus.failed.rawValue
+        let descriptor = FetchDescriptor<BackgroundAgentTask>(
+            predicate: #Predicate {
+                $0.statusRawValue == succeeded || $0.statusRawValue == failed
+            }
+        )
+        guard let tasks = try? context.fetch(descriptor) else { return }
+        for task in tasks {
+            context.delete(task)
+        }
+        try? context.save()
     }
 
     /// 更新指定任务的状态
