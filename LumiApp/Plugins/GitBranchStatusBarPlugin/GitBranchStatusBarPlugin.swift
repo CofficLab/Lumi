@@ -29,7 +29,10 @@ actor GitBranchStatusBarPlugin: SuperPlugin {
 
 /// Git 分支状态栏视图
 ///
-/// 监听 `projectVM.currentProjectPath` 变化，自动刷新分支信息。
+/// 监听以下时机自动刷新分支信息：
+/// - 视图首次出现（`onAppear`）
+/// - 项目路径变化（`onChange(of: currentProjectPath)`）
+/// - 从其他应用切回（`applicationDidBecomeActive`）
 struct GitBranchStatusBarView: View {
     @EnvironmentObject private var projectVM: ProjectVM
     @State private var branch: String?
@@ -53,6 +56,9 @@ struct GitBranchStatusBarView: View {
             refreshBranch()
         }
         .onChange(of: projectVM.currentProjectPath) { _, _ in
+            refreshBranch()
+        }
+        .onApplicationDidBecomeActive {
             refreshBranch()
         }
     }
