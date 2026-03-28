@@ -1,49 +1,42 @@
 import SwiftUI
 
-// MARK: - Notification Names
+// MARK: - Notification Extension
 
 extension Notification.Name {
     /// 后台任务已创建的通知
     /// object: nil
-    /// userInfo: ["taskId": UUID as String]
+    /// userInfo: ["taskId": UUID]
     static let backgroundAgentTaskDidCreate = Notification.Name("backgroundAgentTaskDidCreate")
-
-    /// 后台任务状态已更新的通知
+    
+    /// 后台任务已更新的通知
     /// object: nil
-    /// userInfo: ["taskId": UUID as String, "status": String]
+    /// userInfo: ["taskId": UUID, "status": String]
     static let backgroundAgentTaskDidUpdate = Notification.Name("backgroundAgentTaskDidUpdate")
 }
 
-// MARK: - NotificationCenter Extensions
+// MARK: - NotificationCenter Extension
 
 extension NotificationCenter {
     /// 发送后台任务已创建的通知
-    /// - Parameter taskId: 任务 ID
     static func postBackgroundAgentTaskDidCreate(taskId: UUID) {
         NotificationCenter.default.post(
             name: .backgroundAgentTaskDidCreate,
             object: nil,
-            userInfo: ["taskId": taskId.uuidString]
+            userInfo: ["taskId": taskId]
         )
     }
-
-    /// 发送后台任务状态已更新的通知
-    /// - Parameters:
-    ///   - taskId: 任务 ID
-    ///   - status: 新状态
+    
+    /// 发送后台任务已更新的通知
     static func postBackgroundAgentTaskDidUpdate(taskId: UUID, status: String) {
         NotificationCenter.default.post(
             name: .backgroundAgentTaskDidUpdate,
             object: nil,
-            userInfo: [
-                "taskId": taskId.uuidString,
-                "status": status
-            ]
+            userInfo: ["taskId": taskId, "status": status]
         )
     }
 }
 
-// MARK: - View Extensions
+// MARK: - View Extensions for Background Task Events
 
 extension View {
     /// 监听后台任务创建的事件
@@ -63,8 +56,8 @@ extension View {
             action(taskId)
         }
     }
-
-    /// 监听后台任务状态更新的事件
+    
+    /// 监听后台任务更新的事件
     /// - Parameter action: 事件处理闭包，接收任务 ID 和状态
     /// - Returns: 修改后的视图
     func onBackgroundAgentTaskDidUpdate(perform action: @escaping (UUID, String) -> Void) -> some View {

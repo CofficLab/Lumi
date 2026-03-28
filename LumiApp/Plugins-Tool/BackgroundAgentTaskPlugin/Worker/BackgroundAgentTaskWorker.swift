@@ -2,54 +2,96 @@ import Foundation
 import SwiftData
 import MagicKit
 
-/// Worker - 只负责执行任务
-/// 不关心任务从哪里来，不关心任务存储，只执行
-actor BackgroundAgentTaskWorker: SuperLog {
-    nonisolated static let emoji = "🧵"
-    nonisolated static let verbose = false
+// MARK: - TaskStoreProtocol
 
-    private unowned let store: BackgroundAgentTaskStore
+/// 任务存储协议
+/// Store 只负责数据存储，不执行任务
+protocol TaskStoreProtocol: Actor {
+    /// 认领下一个待执行的任务（从 pending → running）
+    func claimNextPendingTask() -> UUID?
+    
+    /// 获取任务详情
+    func fetchTaskDetails(_ taskId: UUID) async -> (prompt: String, conversationId: UUID)?
+    
+    /// 更新任务状态
+    func updateTask(
+        id: UUID,
+        status: BackgroundAgentTaskStatus,
+        resultSummary: String?,
+        errorDescription: String?,
+        finishedAt: Date?
+    )
+}
+
+// MARK: - AsyncSemaphore
+
+/// 异步信号量，用于控制并发
+private actor AsyncSemaphore {
+    private var value: Int
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    init(value: Int) {
+        self.value = value
+    }
+
+    func wait() async {
+        if value > 0 {
+            value -= 1
+            return
+        }
+        await withCheckedContinuation { continuation in
+            waiters.append(continuation)
+        }
+    }
+
+    nonisolated func signal() {
+        Task {
+            await _signal()
+        }
+    }
+
+    private func _signal() {
+        if !waiters.isEmpty {
+            let waiter = waiters.removeFirst()
+            waiter.resume()
+        } else {
+            value += 1
+        }
+    }
+}
+
+// MARK: - BackgroundAgentTaskWorker
+
+/// Worker 负责执行任务
+/// 不关心任务从哪里来，只执行
+actor BackgroundAgentTaskWorker {
     private var isRunning = false
     private var workerTask: Task<Void, Never>?
-
-    // 并发控制
     private let maxConcurrentTasks = 2
     private var runningTaskCount = 0
     private let semaphore = AsyncSemaphore(value: 2)
-
-    // 执行配置
+    
+    private let store = BackgroundAgentTaskStore.shared
     private let maxToolLoopDepth = 16
 
-    init(store: BackgroundAgentTaskStore) {
-        self.store = store
+    init() {
+        // Worker 内部持有 Store 引用
     }
 
-    // MARK: - 生命周期
+    // MARK: - Lifecycle
 
-    /// 启动 Worker
     nonisolated func start() {
         Task { await _start() }
     }
 
-    /// 停止 Worker
     nonisolated func stop() {
         Task { await _stop() }
     }
 
     private func _start() {
-        guard !isRunning else {
-            if Self.verbose {
-                Self.logger.info("\(self.t) Worker 已在运行中")
-            }
-            return
-        }
-
+        guard !isRunning else { return }
         isRunning = true
-
-        if Self.verbose {
-            Self.logger.info("\(self.t) Worker 启动")
-        }
-
+        
         // 启动主循环
         workerTask = Task.detached { [weak self] in
             await self?.mainLoop()
@@ -59,95 +101,83 @@ actor BackgroundAgentTaskWorker: SuperLog {
     private func _stop() {
         isRunning = false
         workerTask?.cancel()
+        workerTask = nil
+    }
 
-        if Self.verbose {
-            Self.logger.info("\(self.t) Worker 停止")
+    // MARK: - External Triggers
+
+    /// 外部通知有新任务创建
+    nonisolated func taskDidCreate() {
+        Task { [weak self] in
+            await self?.fetchAndExecuteNextTask()
         }
     }
 
-    // MARK: - 主循环
+    // MARK: - Main Loop
 
-    /// Worker 主循环：不断从 Store 获取任务并执行
+    /// Worker 主循环：持续从 Store 获取任务并执行
     private func mainLoop() async {
-        var consecutiveEmpty = 0
-
         while isRunning {
-            // 尝试获取并执行下一个任务
             let executed = await fetchAndExecuteNextTask()
-
-            if executed {
-                consecutiveEmpty = 0
-            } else {
-                consecutiveEmpty += 1
-            }
-
-            // 根据空闲情况调整轮询间隔
-            let pollInterval = consecutiveEmpty > 3 ? 10.0 : 2.0
-
+            
             if !executed {
-                if Self.verbose {
-                    Self.logger.debug("\(self.t) 无任务，等待 \(pollInterval)s")
-                }
-                try? await Task.sleep(nanoseconds: UInt64(pollInterval * 1_000_000_000))
+                // 没有任务时等待
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
             }
-
+            
             // 等待可用槽位
             await waitForAvailableSlot()
         }
     }
 
-    /// 等待并发槽位
     private func waitForAvailableSlot() async {
         while runningTaskCount >= maxConcurrentTasks && isRunning {
             try? await Task.sleep(nanoseconds: 500_000_000)
         }
     }
 
-    // MARK: - 任务执行
+    // MARK: - Task Execution
 
-    /// 获取并执行下一个任务
-    /// - Returns: 是否成功获取并执行任务
     private func fetchAndExecuteNextTask() async -> Bool {
-        // 等待信号量
         await semaphore.wait()
-
-        // 从 Store 认领任务
+        
         guard let taskId = await store.claimNextPendingTask() else {
             semaphore.signal()
             return false
         }
-
+        
         runningTaskCount += 1
-
-        if Self.verbose {
-            Self.logger.info("\(self.t) 开始执行任务: \(taskId)")
-        }
-
+        
         // 异步执行任务
         Task.detached { [weak self, taskId] in
             await self?.executeTask(taskId: taskId)
         }
-
+        
         return true
     }
 
-    /// 执行单个任务
     private func executeTask(taskId: UUID) async {
         defer {
             runningTaskCount -= 1
             semaphore.signal()
-
-            if Self.verbose {
-                Task { [weak self] in
-                    await self?.logTaskCompletion(taskId: taskId)
-                }
-            }
         }
-
+        
         do {
-            // 执行任务逻辑
-            let result = try await performTaskLogic(taskId: taskId)
-
+            // 获取任务详情
+            guard let details = await store.fetchTaskDetails(taskId) else {
+                throw NSError(
+                    domain: "BackgroundAgentTaskWorker",
+                    code: 404,
+                    userInfo: [NSLocalizedDescriptionKey: "Task not found"]
+                )
+            }
+            
+            // 执行任务
+            let result = try await performTaskLogic(
+                taskId: details.conversationId,
+                prompt: details.prompt
+            )
+            
             // 更新为成功状态
             await store.updateTask(
                 id: taskId,
@@ -156,11 +186,7 @@ actor BackgroundAgentTaskWorker: SuperLog {
                 errorDescription: nil,
                 finishedAt: Date()
             )
-
-            if Self.verbose {
-                Self.logger.info("\(self.t) 任务成功: \(taskId)")
-            }
-
+            
         } catch {
             // 更新为失败状态
             await store.updateTask(
@@ -170,48 +196,37 @@ actor BackgroundAgentTaskWorker: SuperLog {
                 errorDescription: error.localizedDescription,
                 finishedAt: Date()
             )
-
-            if Self.verbose {
-                Self.logger.error("\(self.t) 任务失败: \(taskId), 错误: \(error.localizedDescription)")
-            }
         }
     }
 
-    /// 任务执行逻辑（纯函数式）
-    private func performTaskLogic(taskId: UUID) async throws -> String {
-        // 获取任务详情
-        guard let details = await store.fetchTaskDetails(taskId) else {
-            throw NSError(
-                domain: "BackgroundAgentTaskWorker",
-                code: 404,
-                userInfo: [NSLocalizedDescriptionKey: "Task not found"]
-            )
-        }
+    // MARK: - Task Execution Logic
 
+    private func performTaskLogic(taskId: UUID, prompt: String) async throws -> String {
         // 获取 LLM 配置
-        let config = await store.getLLMConfig()
-
+        let config = makeCurrentLLMConfig()
+        
         // 准备服务
         let llmService = LLMService()
         let toolService: ToolService = await MainActor.run {
             ToolService(llmService: llmService)
         }
         let toolExecutionService = ToolExecutionService(toolService: toolService)
-
+        
         // 初始化消息
         var messages: [ChatMessage] = [
-            ChatMessage(role: .user, conversationId: details.conversationId, content: details.prompt)
+            ChatMessage(role: .user, conversationId: taskId, content: prompt)
         ]
-
+        
         // 工具循环
         let finalReply = try await toolLoop(
             messages: &messages,
             llmService: llmService,
+            toolService: toolService,
             toolExecutionService: toolExecutionService,
             config: config,
-            taskId: details.conversationId
+            taskId: taskId
         )
-
+        
         // 检查系统错误
         if finalReply.role == .system, finalReply.isError {
             throw NSError(
@@ -220,15 +235,15 @@ actor BackgroundAgentTaskWorker: SuperLog {
                 userInfo: [NSLocalizedDescriptionKey: "LLM 配置无效"]
             )
         }
-
+        
         return finalReply.content
     }
 
-    /// 工具执行循环
     private func toolLoop(
         messages: inout [ChatMessage],
         llmService: LLMService,
-        toolExecutionService: ToolExecutionService,
+        toolService: ToolService,
+            toolExecutionService: ToolExecutionService,
         config: LLMConfig,
         taskId: UUID
     ) async throws -> ChatMessage {
@@ -237,7 +252,7 @@ actor BackgroundAgentTaskWorker: SuperLog {
             let reply = try await llmService.sendMessage(
                 messages: messages,
                 config: config,
-                tools: toolExecutionService.toolService.tools
+                tools: toolService.tools
             )
 
             // 配置错误等系统消息直接返回
@@ -286,46 +301,43 @@ actor BackgroundAgentTaskWorker: SuperLog {
         )
     }
 
-    // MARK: - 辅助方法
+    // MARK: - LLM Configuration
 
-    private func logTaskCompletion(taskId: UUID) async {
-        Self.logger.info("\(self.t) 任务完成: \(taskId), 当前并发数: \(runningTaskCount)")
-    }
-}
+    private func makeCurrentLLMConfig() -> LLMConfig {
+        let registry = LLMProviderRegistry()
+        LLMProviderRegistration.registerAllProviders(to: registry)
 
-// MARK: - AsyncSemaphore
+        let globalProviderKey = "Agent_GlobalProviderId"
+        let globalModelKey = "Agent_GlobalModel"
 
-/// 异步信号量，用于控制并发
-private actor AsyncSemaphore {
-    private var value: Int
-    private var waiters: [CheckedContinuation<Void, Never>] = []
+        let settingsStore = LocalStore()
+        let storedProviderId = settingsStore.string(forKey: globalProviderKey)
+        let storedModel = settingsStore.string(forKey: globalModelKey)
 
-    init(value: Int) {
-        self.value = value
-    }
+        let providerId: String
+        let model: String
 
-    func wait() async {
-        if value > 0 {
-            value -= 1
-            return
-        }
-        await withCheckedContinuation { continuation in
-            waiters.append(continuation)
-        }
-    }
-
-    nonisolated func signal() {
-        Task {
-            await _signal()
-        }
-    }
-
-    private func _signal() {
-        if !waiters.isEmpty {
-            let waiter = waiters.removeFirst()
-            waiter.resume()
+        if let pid = storedProviderId, !pid.isEmpty,
+           let m = storedModel, !m.isEmpty {
+            providerId = pid
+            model = m
+        } else if let first = registry.providerTypes.first {
+            providerId = first.id
+            model = first.defaultModel
         } else {
-            value += 1
+            return .default
         }
+
+        guard let providerType = registry.providerType(forId: providerId) else {
+            return .default
+        }
+
+        let apiKey = APIKeyStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
+
+        return LLMConfig(
+            apiKey: apiKey,
+            model: model,
+            providerId: providerId
+        )
     }
 }
