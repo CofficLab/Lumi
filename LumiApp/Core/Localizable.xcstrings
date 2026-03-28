@@ -5518,6 +5518,7 @@
       }
     },
     "刷新任务列表" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5846,6 +5847,7 @@
       }
     },
     "后台任务" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6663,6 +6665,7 @@
       }
     },
     "执行结果" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6855,6 +6858,7 @@
       }
     },
     "指令" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7200,6 +7204,7 @@
       }
     },
     "暂无后台任务" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8725,6 +8730,7 @@
       }
     },
     "错误信息" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

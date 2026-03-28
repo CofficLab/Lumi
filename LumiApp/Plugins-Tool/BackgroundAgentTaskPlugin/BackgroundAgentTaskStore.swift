@@ -341,8 +341,6 @@ actor BackgroundAgentTaskStore: SuperLog {
         let globalProviderKey = "Agent_GlobalProviderId"
         let globalModelKey = "Agent_GlobalModel"
 
-        settingsStore.migrateLegacyValueIfMissing(forKey: globalProviderKey)
-        settingsStore.migrateLegacyValueIfMissing(forKey: globalModelKey)
         let storedProviderId = settingsStore.string(forKey: globalProviderKey)
         let storedModel = settingsStore.string(forKey: globalModelKey)
 
@@ -364,7 +362,6 @@ actor BackgroundAgentTaskStore: SuperLog {
             return .default
         }
 
-        settingsStore.migrateLegacyValueIfMissing(forKey: providerType.apiKeyStorageKey)
         let apiKey = APIKeyStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
 
         return LLMConfig(

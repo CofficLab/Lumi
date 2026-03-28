@@ -79,6 +79,7 @@ private enum L10n {
     static var colPrompt: String { localized("指令") }
     static var colCreatedAt: String { localized("创建时间") }
     static var colDuration: String { localized("耗时") }
+    static var colActions: String { localized("操作") }
     static var emptyTitle: String { localized("暂无后台任务") }
 
     // Detail
@@ -207,7 +208,7 @@ private struct BackgroundAgentTaskTableView: View {
             tableColumn(L10n.colPrompt, width: nil)
             tableColumn(L10n.colCreatedAt, width: 100)
             tableColumn(L10n.colDuration, width: 50, alignment: .trailing)
-            tableColumn("", width: 24)
+            tableColumn(L10n.colActions, width: 60, alignment: .center)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
@@ -220,7 +221,7 @@ private struct BackgroundAgentTaskTableView: View {
                 Text(title)
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                    .frame(width: width, alignment: alignment == .trailing ? .trailing : .leading)
+                    .frame(width: width, alignment: alignment == .trailing ? .trailing : (alignment == .center ? .center : .leading))
             } else {
                 Text(title)
                     .font(.system(size: 11, weight: .medium))
@@ -252,6 +253,7 @@ private struct BackgroundAgentTaskTableView: View {
 
         return VStack(spacing: 0) {
             HStack(spacing: 0) {
+                // 状态列
                 HStack(spacing: 4) {
                     Image(systemName: iconName(for: status))
                         .font(.system(size: 10))
@@ -262,6 +264,7 @@ private struct BackgroundAgentTaskTableView: View {
                 }
                 .frame(width: 60, alignment: .leading)
 
+                // 指令列
                 Text(task.originalPrompt)
                     .font(.system(size: 12))
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
@@ -269,16 +272,19 @@ private struct BackgroundAgentTaskTableView: View {
                     .truncationMode(.tail)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
+                // 创建时间列
                 Text(shortTime(task.createdAt))
                     .font(.system(size: 11))
                     .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     .frame(width: 100, alignment: .leading)
 
+                // 耗时列
                 Text(durationText(task: task))
                     .font(.system(size: 11))
                     .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     .frame(width: 50, alignment: .trailing)
 
+                // 操作列 - 只保留删除按钮
                 Button {
                     deleteTask(task)
                 } label: {
@@ -290,7 +296,7 @@ private struct BackgroundAgentTaskTableView: View {
                 }
                 .buttonStyle(.plain)
                 .help(L10n.deleteHelp)
-                .frame(width: 24)
+                .frame(width: 60, alignment: .center)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
