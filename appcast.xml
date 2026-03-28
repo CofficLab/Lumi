@@ -3,12 +3,12 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>1.41.1</title>
-            <pubDate>Fri, 27 Mar 2026 15:13:57 +0000</pubDate>
-            <sparkle:version>68</sparkle:version>
-            <sparkle:shortVersionString>1.41.1</sparkle:shortVersionString>
+            <title>1.42.0</title>
+            <pubDate>Sat, 28 Mar 2026 15:57:39 +0000</pubDate>
+            <sparkle:version>69</sparkle:version>
+            <sparkle:shortVersionString>1.42.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>15.5</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v1.41.1/Lumi_1.41.1.dmg" length="58948282" type="application/octet-stream" sparkle:edSignature="jVNPjrkm7O16G/7ZHOA578JdYkB3CajAbl+OyTz8NES8IkyIXn8Xp9Iq57YztxAW44PF9EBeMykO9CYUI1eZDA=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v1.42.0/Lumi_1.42.0.dmg" length="59041761" type="application/octet-stream" sparkle:edSignature="/kXKXSG+A57iX0cGzfnBdR3sCRp1BJDMPHIIQTO4NkpyEcd8Q06seA3brn+EtE7WToPaRBXiLz1k1CU2YnwtBA=="/>
         </item>
     </channel>
 </rss>
