@@ -65,6 +65,7 @@ struct MessageWithToolCallsView: View {
         let effectiveResults = resultMessages.isEmpty
             ? toolOutputMessages.filter { $0.toolCallID == toolCall.id }
             : resultMessages
+        let shouldShowAuthState = toolCall.authorizationState != .noRisk
 
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
@@ -78,13 +79,15 @@ struct MessageWithToolCallsView: View {
                         .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                         .lineLimit(1)
 
-                    Text("·")
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    if shouldShowAuthState {
+                        Text("·")
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-                    Text(toolCall.authorizationState.displayName)
-                        .font(DesignTokens.Typography.caption2)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        .lineLimit(1)
+                        Text(toolCall.authorizationState.displayName)
+                            .font(DesignTokens.Typography.caption2)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .lineLimit(1)
+                    }
                 }
 
                 Spacer()
@@ -313,4 +316,3 @@ private struct GenericToolSectionView: View {
         )
     }
 }
-
