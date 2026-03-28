@@ -370,6 +370,55 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
         }
     }
 
+    /// 后台队列批量删除消息，避免阻塞主线程
+    /// - Parameters:
+    ///   - messageIds: 要删除的消息 ID 列表
+    ///   - conversationId: 对话 ID（用于校验归属）
+    /// - Returns: 实际删除的消息数量
+    func deleteMessagesAsync(messageIds: [UUID], conversationId: UUID) async -> Int {
+        guard !messageIds.isEmpty else { return 0 }
+
+        return await withCheckedContinuation { continuation in
+            storageQueue.async { [weak self] in
+                guard let self = self else {
+                    continuation.resume(returning: 0)
+                    return
+                }
+
+                let context = ModelContext(self.modelContainer)
+                let idSet = Set(messageIds)
+                let descriptor = FetchDescriptor<ChatMessageEntity>(
+                    predicate: #Predicate<ChatMessageEntity> { msg in
+                        msg.conversation?.id == conversationId
+                    },
+                    sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+                )
+
+                guard let entities = try? context.fetch(descriptor) else {
+                    continuation.resume(returning: 0)
+                    return
+                }
+
+                var deletedCount = 0
+                for entity in entities where idSet.contains(entity.id) {
+                    context.delete(entity)
+                    deletedCount += 1
+                }
+
+                do {
+                    try context.save()
+                    if Self.verbose {
+                        AppLogger.core.info("\(Self.t)🗑️ [\(conversationId)] 已删除 \(deletedCount) 条消息")
+                    }
+                    continuation.resume(returning: deletedCount)
+                } catch {
+                    AppLogger.core.error("\(Self.t)❌ 删除消息失败：\(error.localizedDescription)")
+                    continuation.resume(returning: 0)
+                }
+            }
+        }
+    }
+
     /// 后台加载对话消息，避免阻塞主线程
     /// - Parameter conversationId: 对话 ID
     /// - Returns: 消息列表；若会话不存在返回 nil
