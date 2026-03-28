@@ -1,8 +1,8 @@
 import Foundation
 
-final class BackgroundAgentTaskPluginLocalStore: @unchecked Sendable {
+final class LocalStore: @unchecked Sendable {
     private let fileManager = FileManager.default
-    private let queue = DispatchQueue(label: "BackgroundAgentTaskPluginLocalStore.queue", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "BackgroundAgentTaskPlugin.LocalStore", qos: .userInitiated)
     private let settingsDirectory: URL
     private let settingsFileURL: URL
 

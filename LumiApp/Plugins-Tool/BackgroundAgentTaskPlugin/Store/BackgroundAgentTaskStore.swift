@@ -45,7 +45,7 @@ actor BackgroundAgentTaskStore: SuperLog {
 
     private let container: ModelContainer
     private let queue = DispatchQueue(label: "BackgroundAgentTaskStore.queue", qos: .utility)
-    private let settingsStore = BackgroundAgentTaskPluginLocalStore()
+    private let settingsStore = LocalStore()
 
     // 并发控制：最大同时执行 2 个任务
     private let maxConcurrentTasks = 2
