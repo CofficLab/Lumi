@@ -76,27 +76,9 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     }
 
     func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
-        struct OpenAIResponse: Decodable {
-            struct Choice: Decodable {
-                struct Message: Decodable {
-                    let content: String?
-                    struct ToolCall: Decodable {
-                        let id: String
-                        let type: String
-                        struct Function: Decodable {
-                            let name: String
-                            let arguments: String
-                        }
-                        let function: Function
-                    }
-                    let tool_calls: [ToolCall]?
-                }
-                let message: Message
-            }
-            let choices: [Choice]
-        }
-
+        // 使用 OpenAIModels 中的响应模型解析
         let result = try JSONDecoder().decode(OpenAIResponse.self, from: data)
+        
         guard let choiceMessage = result.choices.first?.message else {
             throw NSError(domain: "OpenAIProvider", code: -1, userInfo: [NSLocalizedDescriptionKey: "No choices in response"])
         }
@@ -127,7 +109,7 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
             systemPrompt: systemPrompt
         )
         body["stream"] = true
-        body["stream_options"] = ["include_usage": true]  // ✅ 修复：启用 usage 返回
+        body["stream_options"] = ["include_usage": true]
         return body
     }
 
@@ -155,17 +137,17 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
             }
         }
 
-        guard let data = eventData else {
+        guard let dataStr = eventData else {
             return nil
         }
 
         // 处理结束标记
-        if data == "[DONE]" {
+        if dataStr == "[DONE]" {
             return StreamChunk(isDone: true)
         }
 
         // 解析 JSON 数据
-        guard let jsonData = data.data(using: .utf8) else {
+        guard let jsonData = dataStr.data(using: .utf8) else {
             return nil
         }
 
@@ -178,7 +160,7 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
                 return StreamChunk(error: errorMessage)
             }
 
-            // ✅ 提取 usage 信息（OpenAI 在最后一个chunk返回）
+            // 提取 usage 信息（OpenAI 在最后一个chunk返回）
             if let usage = json?["usage"] as? [String: Any] {
                 let inputTokens = usage["prompt_tokens"] as? Int
                 let outputTokens = usage["completion_tokens"] as? Int

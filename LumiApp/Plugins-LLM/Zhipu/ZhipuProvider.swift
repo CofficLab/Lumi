@@ -6,7 +6,8 @@ import os
 
 /// Zhipu AI (智谱 AI) API 供应商实现
 ///
-/// Zhipu AI 提供了兼容 Anthropic 的 API 接口。
+/// Zhipu AI 提供了兼容 Anthropic 的 API 接口，但在流式响应结束时会返回 OpenAI 格式的 `data: [DONE]` 标记。
+/// 因此需要同时兼容两种格式的解析。
 final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.zhipu")
     nonisolated static let emoji = "🔴"
@@ -81,24 +82,8 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
     }
 
     func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
-        // Zhipu 响应格式与 Anthropic 兼容
-        struct AnthropicResponse: Decodable {
-            struct Content: Decodable {
-                let type: String
-                let text: String?
-                let id: String?
-                let name: String?
-                let input: [String: AnySendable]?
-
-                enum CodingKeys: String, CodingKey {
-                    case type, text, id, name, input
-                }
-            }
-
-            let content: [Content]
-        }
-
-        let result = try JSONDecoder().decode(AnthropicResponse.self, from: data)
+        // 使用 ZhipuModels 中的响应模型解析
+        let result = try JSONDecoder().decode(ZhipuResponse.self, from: data)
 
         var textContent = ""
         var toolCalls: [ToolCall] = []
@@ -110,6 +95,7 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
                       let id = item.id,
                       let name = item.name,
                       let inputDict = item.input {
+                // 将输入字典转换为 JSON 字符串
                 let normalDict = inputDict.mapValues { $0.value }
                 let inputData = try JSONSerialization.data(withJSONObject: normalDict)
                 let inputString = String(data: inputData, encoding: .utf8) ?? "{}"
@@ -138,9 +124,28 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
     }
 
     /// 解析流式响应数据块
-    /// Zhipu 兼容 Anthropic 流式格式
+    ///
+    /// Zhipu AI 的流式响应格式是混合格式：
+    /// - 正常内容：兼容 Anthropic 格式（event: content_block_delta 等）
+    /// - 结束标记：使用 OpenAI 格式的 `data: [DONE]`
+    ///
+    /// 因此需要先检测 `[DONE]` 标记，再复用 Anthropic 的解析逻辑。
     func parseStreamChunk(data: Data) throws -> StreamChunk? {
-        // 复用 Anthropic 的解析逻辑
+        // 先检测原始数据是否包含 [DONE] 标记
+        guard let text = String(data: data, encoding: .utf8) else {
+            return nil
+        }
+
+        // 检测 OpenAI 格式的结束标记
+        // Zhipu 在流结束时返回 `data: [DONE]`
+        if text.contains("data: [DONE]") || text.trimmingCharacters(in: .whitespacesAndNewlines) == "[DONE]" {
+            if Self.verbose {
+                Self.logger.info("\(self.t) 检测到 [DONE] 标记，流式响应结束")
+            }
+            return StreamChunk(isDone: true, eventType: .messageStop)
+        }
+
+        // 复用 Anthropic 的解析逻辑处理其他事件
         let anthropicProvider = AnthropicProvider()
         return try anthropicProvider.parseStreamChunk(data: data)
     }

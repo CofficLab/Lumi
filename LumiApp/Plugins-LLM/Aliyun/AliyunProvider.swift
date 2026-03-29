@@ -6,9 +6,9 @@ import os
 
 /// 阿里云 DashScope 供应商实现
 ///
-/// 提供通义千问、GLM、MiniMax、Kimi 等大模型服务
+/// 提供通义千问、GLM、MiniMax、Kimi 等大模型服务。
 /// API 地址：https://coding.dashscope.aliyuncs.com/apps/anthropic
-/// 兼容 Anthropic API 格式
+/// 兼容 Anthropic API 格式。
 final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.aliyun")
     nonisolated static let emoji = "🔵"
@@ -83,37 +83,8 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
     }
 
     func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
-        // 阿里云响应格式与 Anthropic 兼容
-        struct AnthropicResponse: Decodable {
-            struct Content: Decodable {
-                let type: String
-                let text: String?
-                let id: String?
-                let name: String?
-                let input: [String: AnySendable]?
-
-                enum CodingKeys: String, CodingKey {
-                    case type, text, id, name, input
-                }
-
-                init(from decoder: Decoder) throws {
-                    let container = try decoder.container(keyedBy: CodingKeys.self)
-                    type = try container.decode(String.self, forKey: .type)
-                    text = try container.decodeIfPresent(String.self, forKey: .text)
-                    id = try container.decodeIfPresent(String.self, forKey: .id)
-                    name = try container.decodeIfPresent(String.self, forKey: .name)
-                    if let inputContainer = try? container.decodeIfPresent([String: AnySendable].self, forKey: .input) {
-                        input = inputContainer.mapValues { v in AnySendable(value: v.value) }
-                    } else {
-                        input = nil
-                    }
-                }
-            }
-
-            let content: [Content]
-        }
-
-        let result = try JSONDecoder().decode(AnthropicResponse.self, from: data)
+        // 使用 AliyunModels 中的响应模型解析
+        let result = try JSONDecoder().decode(AliyunResponse.self, from: data)
 
         var textContent = ""
         var toolCalls: [ToolCall] = []
@@ -125,6 +96,7 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
                       let id = item.id,
                       let name = item.name,
                       let inputDict = item.input {
+                // 将输入字典转换为 JSON 字符串
                 let normalDict = inputDict.mapValues { $0.value }
                 let inputData = try JSONSerialization.data(withJSONObject: normalDict)
                 let inputString = String(data: inputData, encoding: .utf8) ?? "{}"
@@ -153,9 +125,8 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
     }
 
     /// 解析流式响应数据块
-    /// Aliyun 兼容 Anthropic 流式格式
+    /// Aliyun 兼容 Anthropic 流式格式，直接复用 AnthropicProvider 的解析逻辑。
     func parseStreamChunk(data: Data) throws -> StreamChunk? {
-        // 复用 Anthropic 的解析逻辑
         let anthropicProvider = AnthropicProvider()
         return try anthropicProvider.parseStreamChunk(data: data)
     }
