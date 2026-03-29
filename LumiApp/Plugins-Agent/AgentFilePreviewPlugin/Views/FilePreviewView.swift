@@ -119,14 +119,8 @@ struct FilePreviewView: View {
 
     // MARK: - Menu Layout Constants
 
-    /// 菜单的实际高度（根据 TextSelectionMenu 的实际尺寸）
-    /// 垂直 padding 4×2 + 按钮内容高度约 20 = 约 28pt
     private static let menuHeight: CGFloat = 30
-
-    /// 菜单与选区之间的间距
     private static let menuVerticalGap: CGFloat = 6
-
-    /// 菜单的圆角半径
     private static let menuCornerRadius: CGFloat = 8
 
     /// 获取当前选中文本
@@ -150,13 +144,11 @@ struct FilePreviewView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 标题栏
             headerSection
 
             Divider()
                 .background(Color.white.opacity(0.1))
 
-            // 文件预览内容
             if ProjectVM.isFileSelected {
                 if canPreviewCurrentFile {
                     filePreviewContent
@@ -178,7 +170,6 @@ struct FilePreviewView: View {
         .onChange(of: selectedTheme) { _, newTheme in
             persistThemeSelection(newTheme)
         }
-        // 同步 undoState.content -> fileContent（撤销/重做触发的内容变更）
         .onChange(of: undoState.content) { _, newContent in
             if fileContent != newContent {
                 fileContent = newContent
@@ -233,7 +224,6 @@ struct FilePreviewView: View {
                 .disabled(!hasUnsavedChanges || isSaving || isReadOnlyPreview)
             }
 
-            // 清除选择按钮
             Button(action: clearSelection) {
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 10))
@@ -250,15 +240,12 @@ struct FilePreviewView: View {
 
     private var filePreviewContent: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // 文件信息
             fileInfoSection
 
-            // 文件内容
             ZStack(alignment: .topLeading) {
                 fileContentSection
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
-                // 选中文本操作菜单
                 if showSelectionMenu, selectedText != nil {
                     TextSelectionMenu(
                         selectedText: selectedText ?? "",
@@ -402,7 +389,8 @@ struct FilePreviewView: View {
         hideMenuTask = nil
 
         guard let sel = newSelection, !sel.isEmpty else {
-            // 延迟隐藏菜单，避免用户点击菜单时先触发选区清除
+            ProjectVM.updateCodeSelection(nil)
+
             hideMenuTask = Task {
                 try? await Task.sleep(for: .milliseconds(150))
                 guard !Task.isCancelled else { return }
@@ -415,7 +403,7 @@ struct FilePreviewView: View {
             return
         }
 
-        // 计算选中区域的视觉位置
+        syncCodeSelectionRange(sel)
         updateSelectionMenuPosition(for: sel)
 
         withAnimation(.easeOut(duration: 0.15)) {
@@ -423,30 +411,76 @@ struct FilePreviewView: View {
         }
     }
 
+    /// 将文本选区转换为行列号信息并同步到 ProjectVM
+    private func syncCodeSelectionRange(_ sel: Range<String.Index>) {
+        guard let fileURL = ProjectVM.selectedFileURL else { return }
+
+        // 计算相对于项目根目录的文件路径
+        let filePath = relativeFilePath(for: fileURL)
+
+        // 计算起始位置（行号和列号，均从 1 开始）
+        let startInfo = lineAndColumn(at: sel.lowerBound)
+        let endInfo = lineAndColumn(at: sel.upperBound)
+
+        let range = CodeSelectionRange(
+            filePath: filePath,
+            startLine: startInfo.line,
+            startColumn: startInfo.column,
+            endLine: endInfo.line,
+            endColumn: endInfo.column
+        )
+
+        ProjectVM.updateCodeSelection(range)
+    }
+
+    /// 计算文件路径相对于项目根目录的路径
+    private func relativeFilePath(for url: URL) -> String {
+        guard let projectPath = ProjectVM.currentProject?.path else {
+            return url.lastPathComponent
+        }
+        let absolutePath = url.path
+        guard absolutePath.hasPrefix(projectPath) else {
+            return url.lastPathComponent
+        }
+        let startIndex = absolutePath.index(absolutePath.startIndex, offsetBy: projectPath.count)
+        var relative = String(absolutePath[startIndex...])
+        if relative.hasPrefix("/") {
+            relative = String(relative.dropFirst())
+        }
+        return relative
+    }
+
+    /// 计算指定 String.Index 对应的行号和列号（均从 1 开始）
+    private func lineAndColumn(at index: String.Index) -> (line: Int, column: Int) {
+        let textBefore = fileContent[fileContent.startIndex..<index]
+        let line = textBefore.filter { $0 == "\n" }.count + 1
+
+        let column: Int
+        if let lastNL = textBefore.lastIndex(of: "\n") {
+            column = textBefore.distance(from: textBefore.index(after: lastNL), to: textBefore.endIndex) + 1
+        } else {
+            column = textBefore.count + 1
+        }
+
+        return (line, column)
+    }
+
     private func updateSelectionMenuPosition(for sel: Range<String.Index>) {
-        // 基于字符偏移量估算菜单位置
         let textBeforeSelection = String(fileContent[fileContent.startIndex..<sel.lowerBound])
         let lineCount = textBeforeSelection.filter { $0 == "\n" }.count
-        let lineHeight: CGFloat = 18 // 近似行高（12pt 字体 + 间距）
-        let topPadding: CGFloat = 12 // 代码编辑器顶部内边距
+        let lineHeight: CGFloat = 18
+        let topPadding: CGFloat = 12
 
-        // 水平位置基于选区所在行的缩进
         let lastNewline = textBeforeSelection.lastIndex(of: "\n")
         let linePrefix = lastNewline == nil
             ? textBeforeSelection
             : String(textBeforeSelection[textBeforeSelection.index(after: lastNewline!)...])
-        let charWidth: CGFloat = 7.2 // 12pt 等宽字体的大致字符宽度
-        let leftPadding: CGFloat = 12 // 代码编辑器左侧内边距
+        let charWidth: CGFloat = 7.2
+        let leftPadding: CGFloat = 12
 
-        // 计算选区开始位置的 Y 坐标
         let selectionTopY = topPadding + CGFloat(lineCount) * lineHeight
-
-        // 菜单位置：选区上方，间距为 menuVerticalGap
-        // 菜单的中心点应该在 (选区顶部 Y - menuVerticalGap - menuHeight/2)
         let menuCenterY = selectionTopY - Self.menuVerticalGap - (Self.menuHeight / 2)
 
-        // 水平位置：菜单中心对齐选区开始位置，但需要确保不超出边界
-        // 菜单宽度约为 2×(8+4) + 分割线 1 + 图标和文字 ≈ 120-140pt
         let menuWidth: CGFloat = 130
         let menuCenterX = leftPadding + CGFloat(linePrefix.count) * charWidth + (menuWidth / 2)
 
@@ -479,11 +513,9 @@ struct FilePreviewView: View {
         UIPasteboard.general.string = selectedText
         #endif
 
-        // 同步内容到 undoState，然后通过 undoState 执行删除（带撤销注册）
         undoState.content = fileContent
         undoState.deleteRange(sel)
 
-        // 将 undoState 的变更同步回 fileContent
         fileContent = undoState.content
         textSelection = nil
 
@@ -498,7 +530,7 @@ struct FilePreviewView: View {
         }
     }
 
-    // MARK: - Actions
+    // MARK: - File Loading
 
     private func loadFileContent(from url: URL?) {
         guard let url = url else {
@@ -514,7 +546,6 @@ struct FilePreviewView: View {
             return
         }
 
-        // 检查是否是目录
         let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
         if isDirectory {
             fileContent = ""

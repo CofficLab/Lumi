@@ -15,6 +15,9 @@ final class ProjectVM: ObservableObject, SuperLog {
     /// 当前选择的文件 URL
     @Published private(set) var selectedFileURL: URL?
 
+    /// 当前代码选区范围（包含文件路径和行列号，不含具体内容）
+    @Published private(set) var codeSelectionRange: CodeSelectionRange?
+
     // 语言偏好
     @Published var languagePreference: LanguagePreference = .chinese
 
@@ -87,6 +90,7 @@ final class ProjectVM: ObservableObject, SuperLog {
     /// 选择指定路径（支持文件与目录）
     func selectFile(at url: URL) {
         selectedFileURL = url
+        codeSelectionRange = nil
 
         // 发送文件选择变化通知
         NotificationCenter.postFileSelectionChanged()
@@ -117,9 +121,24 @@ final class ProjectVM: ObservableObject, SuperLog {
     /// 清除文件选择
     func clearFileSelection() {
         selectedFileURL = nil
+        codeSelectionRange = nil
 
         // 发送文件选择变化通知
         NotificationCenter.postFileSelectionChanged()
+    }
+
+    /// 更新代码选区范围
+    /// - Parameter range: 选区范围信息，传 nil 表示清除选区
+    func updateCodeSelection(_ range: CodeSelectionRange?) {
+        codeSelectionRange = range
+
+        if Self.verbose {
+            if let range = range {
+                AppLogger.core.info("\(Self.t)📍 代码选区已更新：\(range.description)")
+            } else {
+                AppLogger.core.info("\(Self.t)📍 代码选区已清除")
+            }
+        }
     }
 
     func setLanguagePreference(_ preference: LanguagePreference) {
