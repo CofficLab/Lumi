@@ -1,7 +1,7 @@
 import MagicKit
 import SwiftUI
 
-/// 文本选中小型操作菜单（复制、剪切）
+/// 文本选中小型操作菜单（复制、剪切、添加到聊天）
 struct TextSelectionMenu: View {
     /// 当前选中的文本
     let selectedText: String
@@ -15,6 +15,9 @@ struct TextSelectionMenu: View {
     /// 复制操作回调
     let onCopy: () -> Void
 
+    /// 添加到聊天回调
+    let onAddToChat: () -> Void
+
     var body: some View {
         HStack(spacing: 0) {
             // 复制按钮
@@ -25,18 +28,29 @@ struct TextSelectionMenu: View {
             )
 
             // 分割线
-            if isEditable {
-                Rectangle()
-                    .fill(Color.white.opacity(0.15))
-                    .frame(width: 1, height: 16)
+            Rectangle()
+                .fill(Color.white.opacity(0.15))
+                .frame(width: 1, height: 16)
 
-                // 剪切按钮
+            // 剪切按钮（仅可编辑时显示）
+            if isEditable {
                 menuButton(
                     icon: "scissors",
                     title: String(localized: "Cut", table: "AgentFilePreview"),
                     action: onCut
                 )
+
+                Rectangle()
+                    .fill(Color.white.opacity(0.15))
+                    .frame(width: 1, height: 16)
             }
+
+            // 添加到聊天按钮
+            menuButton(
+                icon: "bubble.left.and.text.bubble.right",
+                title: String(localized: "Add to Chat", table: "AgentFilePreview"),
+                action: onAddToChat
+            )
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 4)
@@ -72,10 +86,11 @@ struct TextSelectionMenu: View {
             selectedText: "Hello",
             isEditable: true,
             onCut: {},
-            onCopy: {}
+            onCopy: {},
+            onAddToChat: {}
         )
     }
-    .frame(width: 300, height: 200)
+    .frame(width: 400, height: 200)
 }
 
 #Preview("只读") {
@@ -85,8 +100,9 @@ struct TextSelectionMenu: View {
             selectedText: "Hello",
             isEditable: false,
             onCut: {},
-            onCopy: {}
+            onCopy: {},
+            onAddToChat: {}
         )
     }
-    .frame(width: 300, height: 200)
+    .frame(width: 400, height: 200)
 }

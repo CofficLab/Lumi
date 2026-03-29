@@ -251,7 +251,8 @@ struct FilePreviewView: View {
                         selectedText: selectedText ?? "",
                         isEditable: !isReadOnlyPreview,
                         onCut: performCut,
-                        onCopy: performCopy
+                        onCopy: performCopy,
+                        onAddToChat: performAddToChat
                     )
                     .position(x: selectionMenuPosition.x, y: selectionMenuPosition.y)
                     .transition(.opacity.combined(with: .scale(scale: 0.9, anchor: .bottom)))
@@ -415,10 +416,8 @@ struct FilePreviewView: View {
     private func syncCodeSelectionRange(_ sel: Range<String.Index>) {
         guard let fileURL = ProjectVM.selectedFileURL else { return }
 
-        // 计算相对于项目根目录的文件路径
         let filePath = relativeFilePath(for: fileURL)
 
-        // 计算起始位置（行号和列号，均从 1 开始）
         let startInfo = lineAndColumn(at: sel.lowerBound)
         let endInfo = lineAndColumn(at: sel.upperBound)
 
@@ -518,6 +517,18 @@ struct FilePreviewView: View {
 
         fileContent = undoState.content
         textSelection = nil
+
+        dismissSelectionMenu()
+    }
+
+    /// 将当前选区信息添加到聊天输入框
+    private func performAddToChat() {
+        guard let range = ProjectVM.codeSelectionRange else { return }
+
+        // 格式化选区位置信息，例如：`LumiApp/Core/Models/CodeSelectionRange.swift:10:1-15:20`
+        let locationText = "\(range.filePath):\(range.startLine):\(range.startColumn)-\(range.endLine):\(range.endColumn)"
+
+        NotificationCenter.postAddToChat(text: locationText)
 
         dismissSelectionMenu()
     }

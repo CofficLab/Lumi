@@ -42,6 +42,11 @@ struct InputView: View, SuperLog {
         .popover(isPresented: $isModelSelectorPresented, arrowEdge: .bottom) {
             ModelSelectorView()
         }
+        // 监听「添加到聊天」事件：将文件选区信息插入输入框
+        .onAddToChat { text in
+            inputViewModel.append(text)
+            isInputFocused = true
+        }
     }
 }
 
