@@ -206,15 +206,7 @@ struct RemoteModelRow: View {
 
                 // 默认标记
                 if isDefault {
-                    Text("默认")
-                        .font(AppUI.Typography.caption2)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(
-                            Capsule()
-                                .fill(AppUI.Color.semantic.primary.opacity(0.2))
-                        )
-                        .foregroundColor(AppUI.Color.semantic.primary)
+                    AppTag("默认", style: .accent)
                 }
             }
             .contentShape(Rectangle())

@@ -14,14 +14,13 @@ struct SidebarEmptyStateView: View {
                 .foregroundColor(AppUI.Color.adaptive.textSecondary(for: colorScheme))
 
             Text(message)
-                .font(.headline)
+                .font(AppUI.Typography.bodyEmphasized)
                 .foregroundColor(AppUI.Color.adaptive.textSecondary(for: colorScheme))
 
             Text(subtitle)
-                .font(.caption)
+                .font(AppUI.Typography.caption1)
                 .foregroundColor(AppUI.Color.adaptive.textTertiary(for: colorScheme))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
-

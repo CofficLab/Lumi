@@ -107,8 +107,7 @@ struct LocalModelRow: View {
                 ProgressView(value: downloadProgressFraction)
                     .frame(width: 60)
             } else if !isCached {
-                Button("下载", action: onDownload)
-                    .font(AppUI.Typography.caption1)
+                AppButton("下载", style: .secondary, size: .small, action: onDownload)
                     .disabled(isDownloadDisabled)
                     .accessibilityLabel("下载")
                     .accessibilityHint("下载此模型到本地")
@@ -127,14 +126,12 @@ struct LocalModelRow: View {
                     }
                     .transition(.opacity.combined(with: .scale(scale: 0.96)))
                 } else {
-                    Button("加载", action: onLoad)
-                        .font(AppUI.Typography.caption1)
+                    AppButton("加载", style: .primary, size: .small, action: onLoad)
                         .disabled(isLoadDisabled)
                         .accessibilityLabel("加载")
                         .accessibilityHint("将模型加载到内存以进行推理")
                 }
-                Button("卸载", action: onUnload)
-                    .font(AppUI.Typography.caption1)
+                AppButton("卸载", style: .ghost, size: .small, action: onUnload)
                     .disabled(!hasAnyModelLoaded)
                     .accessibilityLabel("卸载")
                     .accessibilityHint("从内存卸载当前已加载的模型")
@@ -192,14 +189,6 @@ struct LocalModelRow: View {
     }
 
     private func capabilityTag(_ title: String, systemImage: String) -> some View {
-        Label(title, systemImage: systemImage)
-            .font(AppUI.Typography.caption2)
-            .foregroundColor(AppUI.Color.semantic.textSecondary)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .appSurface(
-                style: .custom(AppUI.Color.semantic.textSecondary.opacity(0.15)),
-                cornerRadius: 4
-            )
+        AppTag(title, systemImage: systemImage, style: .subtle)
     }
 }

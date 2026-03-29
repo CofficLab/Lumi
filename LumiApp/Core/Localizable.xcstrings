@@ -7520,6 +7520,7 @@
       }
     },
     "模型列表" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8855,6 +8856,7 @@
       }
     },
     "默认" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

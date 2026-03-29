@@ -11,11 +11,11 @@ struct NavigationEmptyGuideView: View {
                 .foregroundColor(AppUI.Color.adaptive.textSecondary(for: colorScheme))
 
             Text("选择一项开始使用")
-                .font(.headline)
+                .font(AppUI.Typography.bodyEmphasized)
                 .foregroundColor(AppUI.Color.adaptive.textSecondary(for: colorScheme))
 
             Text("请从左侧栏选择一个功能")
-                .font(.caption)
+                .font(AppUI.Typography.caption1)
                 .foregroundColor(AppUI.Color.adaptive.textTertiary(for: colorScheme))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

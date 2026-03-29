@@ -23,8 +23,7 @@ struct LeftSidebar: View {
             .frame(maxWidth: .infinity, alignment: .center)
             .frame(height: AppConfig.headerHeight)
 
-            Divider()
-                .background(Color.white.opacity(0.1))
+            GlassDivider()
 
             // MARK: - 模式内容（根据模式显示不同视图）
 
@@ -71,13 +70,10 @@ struct LeftSidebar: View {
                 ScrollView {
                     LazyVStack(spacing: AppUI.Spacing.sm) {
                         ForEach(entries) { entry in
-                            Button {
+                            SidebarItemView(title: entry.title, icon: entry.icon, isSelected: app.selectedNavigationId == entry.id) {
                                 app.selectedNavigationId = entry.id
                                 AppSettingStore.saveSelectedNavigationId(entry.id)
-                            } label: {
-                                SidebarRow(title: entry.title, icon: entry.icon, isSelected: app.selectedNavigationId == entry.id)
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                     .padding(.horizontal, AppUI.Spacing.sm)
@@ -145,62 +141,14 @@ struct LeftSidebar: View {
 
     /// 底部设置按钮
     private var settingsButton: some View {
-        Button {
+        SidebarItemView(title: "设置", icon: "gearshape", isSelected: false) {
             NotificationCenter.postOpenSettings()
-        } label: {
-            SidebarRow(title: "设置", icon: "gearshape", isSelected: false)
         }
-        .buttonStyle(.plain)
     }
 
     /// 空状态视图
     private func emptyState(message: String, subtitle: String) -> some View {
         SidebarEmptyStateView(message: message, subtitle: subtitle)
-    }
-}
-
-// MARK: - Sidebar Row
-
-struct SidebarRow: View {
-    let title: String
-    let icon: String
-    let isSelected: Bool
-
-    /// 当前配色方案
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(isSelected ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textSecondary)
-                .frame(width: 20)
-
-            Text(title)
-                .font(isSelected ? .system(size: 13, weight: .medium) : .system(size: 13, weight: .regular))
-                .foregroundColor(isSelected ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textSecondary)
-
-            Spacer()
-        }
-        .padding(.vertical, AppUI.Spacing.sm)
-        .padding(.horizontal, AppUI.Spacing.md)
-        .background(rowBackground)
-        .contentShape(RoundedRectangle(cornerRadius: AppUI.Radius.md))
-    }
-
-    @ViewBuilder private var rowBackground: some View {
-        if isSelected {
-            Color.clear
-                .appSurface(
-                    style: .custom(AppUI.Color.semantic.primary.opacity(0.15)),
-                    cornerRadius: AppUI.Radius.md,
-                    borderColor: AppUI.Color.semantic.primary.opacity(0.3),
-                    lineWidth: 1
-                )
-                .shadow(color: SwiftUI.Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-        } else {
-            Color.clear
-        }
     }
 }
 

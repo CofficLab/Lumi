@@ -53,16 +53,7 @@ struct ModelRow: View {
     
     @ViewBuilder
     private var defaultBadge: some View {
-        Text("默认")
-            .font(AppUI.Typography.caption2)
-            .fontWeight(.medium)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .appSurface(
-                style: .custom(AppUI.Color.semantic.primary.opacity(0.15)),
-                cornerRadius: 4
-            )
-            .foregroundColor(AppUI.Color.semantic.primary)
+        AppTag("默认", style: .accent)
     }
     
     @ViewBuilder

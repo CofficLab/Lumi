@@ -94,35 +94,12 @@ struct LocalModelSectionView: View {
     private var headerRow: some View {
         HStack {
             HStack(spacing: AppUI.Spacing.sm) {
-                Button {
+                SeriesTabButton(title: "已下载", isSelected: selectedMainTab == .downloaded) {
                     selectedMainTab = .downloaded
-                } label: {
-                    Text("已下载")
-                        .font(AppUI.Typography.caption1)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .appSurface(
-                            style: .custom(selectedMainTab == .downloaded ? AppUI.Color.semantic.primary : Color.white.opacity(0.05)),
-                            cornerRadius: 6
-                        )
-                        .foregroundColor(selectedMainTab == .downloaded ? .white : AppUI.Color.semantic.textSecondary)
                 }
-                .buttonStyle(.plain)
-
-                Button {
+                SeriesTabButton(title: "模型列表", isSelected: selectedMainTab == .all) {
                     selectedMainTab = .all
-                } label: {
-                    Text("模型列表")
-                        .font(AppUI.Typography.caption1)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .appSurface(
-                            style: .custom(selectedMainTab == .all ? AppUI.Color.semantic.primary : Color.white.opacity(0.05)),
-                            cornerRadius: 6
-                        )
-                        .foregroundColor(selectedMainTab == .all ? .white : AppUI.Color.semantic.textSecondary)
                 }
-                .buttonStyle(.plain)
             }
             Spacer()
             Button(action: onOpenCacheDirectory) {
