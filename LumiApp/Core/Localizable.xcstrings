@@ -2182,6 +2182,7 @@
       }
     },
     "Enter API Key for %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4689,6 +4690,7 @@
       }
     },
     "Tools" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4995,6 +4997,7 @@
       }
     },
     "Vision" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6150,6 +6153,7 @@
       }
     },
     "工具" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7981,6 +7985,7 @@
       }
     },
     "视觉" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8376,6 +8381,7 @@
       }
     },
     "输入 %@ 的 API Key" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8659,6 +8665,7 @@
       }
     },
     "重发" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

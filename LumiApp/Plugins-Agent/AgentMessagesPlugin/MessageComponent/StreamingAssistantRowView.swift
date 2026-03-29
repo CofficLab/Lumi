@@ -14,24 +14,31 @@ struct StreamingAssistantRowView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .center, spacing: 6) {
-                Text("Lumi")
-                    .font(DesignTokens.Typography.caption1)
-                    .fontWeight(.medium)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-
-                Text("生成中")
-                    .font(DesignTokens.Typography.caption2)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            MessageHeaderView {
+                HStack(alignment: .center, spacing: 4) {
+                    Text("Lumi")
+                        .font(DesignTokens.Typography.caption1)
+                        .fontWeight(.medium)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    Text("·")
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    Text("生成中")
+                        .font(DesignTokens.Typography.caption2)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                }
+            } trailing: {
+                HStack(spacing: 6) {
+                    ProgressView()
+                        .controlSize(.small)
+                }
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
 
             Text(verbatim: visibleContent)
                 .font(.system(.body, design: .default))
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 8)
-                .padding(.bottom, 8)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .messageBubbleStyle(role: message.role, isError: message.isError)
         }
     }
 }

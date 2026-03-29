@@ -12,26 +12,32 @@ struct AttachmentPreviewView: View {
                     if case let .image(_, data, _, _) = attachment,
                        let nsImage = NSImage(data: data) {
                         ZStack(alignment: .topTrailing) {
-                            Image(nsImage: nsImage)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: 60, height: 60)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(Color.black.opacity(0.1), lineWidth: 1)
-                                )
-
-                            Button(action: {
-                                onRemove(attachment.id)
-                            }) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .font(.system(size: 16))
-                                    .foregroundColor(.gray)
-                                    .background(Color.white.clipShape(Circle()))
+                            AppCard(
+                                style: .subtle,
+                                padding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+                            ) {
+                                Image(nsImage: nsImage)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: 60, height: 60)
+                                    .clipShape(
+                                        RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
+                                    )
                             }
-                            .buttonStyle(.plain)
-                            .offset(x: 4, y: -4)
+
+                            AppIconButton(
+                                systemImage: "xmark",
+                                tint: DesignTokens.Color.semantic.textPrimary,
+                                size: .compact
+                            ) {
+                                onRemove(attachment.id)
+                            }
+                            .background(
+                                Circle()
+                                    .fill(DesignTokens.Material.glass)
+                            )
+                            .clipShape(Circle())
+                            .offset(x: 6, y: -6)
                         }
                         .padding(.top, 4)
                         .padding(.trailing, 4)

@@ -79,10 +79,7 @@ struct NativeMarkdownContent: View {
                         }
                     }
                 }
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.primary.opacity(0.06))
-                )
+                .modifier(SubtleMarkdownCardModifier())
             }
         case let .quote(text):
             HStack(alignment: .top, spacing: 10) {
@@ -109,11 +106,12 @@ struct NativeMarkdownContent: View {
                 interpretedSyntax: .inlineOnlyPreservingWhitespace
             )
         ) {
-            return Text(attributed)
+            Text(attributed)
+                .textSelection(.enabled)
+        } else {
+            Text(verbatim: text)
                 .textSelection(.enabled)
         }
-        return Text(verbatim: text)
-            .textSelection(.enabled)
     }
 
     private func headingFont(level: Int) -> Font {
@@ -156,14 +154,7 @@ struct NativeMarkdownContent: View {
                 rowView(row, isHeader: false)
             }
         }
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.primary.opacity(0.04))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.primary.opacity(0.12), lineWidth: 1)
-        )
+        .modifier(SubtleMarkdownCardModifier())
     }
 
     private func rowView(_ cells: [String], isHeader: Bool) -> some View {
@@ -180,6 +171,17 @@ struct NativeMarkdownContent: View {
             }
         }
         .background(isHeader ? Color.primary.opacity(0.06) : Color.clear)
+    }
+}
+
+private struct SubtleMarkdownCardModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        AppCard(
+            style: .subtle,
+            padding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+        ) {
+            content
+        }
     }
 }
 

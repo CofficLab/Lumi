@@ -45,24 +45,14 @@ struct UserMessage: View {
                     showFeedback: .constant(false)
                 )
 
-                Button {
+                AppIconButton(
+                    systemImage: "arrow.clockwise",
+                    label: "重发",
+                    tint: DesignTokens.Color.semantic.textSecondary.opacity(0.8),
+                    size: .regular
+                ) {
                     resend()
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 10, weight: .medium))
-                        Text("重发")
-                            .font(.system(size: 10, weight: .medium))
-                    }
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary.opacity(0.8))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.05))
-                    )
                 }
-                .buttonStyle(.plain)
                 .help("重新发送该消息")
 
                 Text(formatTimestamp(message.timestamp))

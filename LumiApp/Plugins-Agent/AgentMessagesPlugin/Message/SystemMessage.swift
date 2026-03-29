@@ -255,28 +255,20 @@ private struct ApiKeyMissingSystemMessageView: View {
                     }
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-                    SecureField(
-                        languagePreference == .chinese
-                        ? "输入 \(provider.displayName) 的 API Key"
-                        : "Enter API Key for \(provider.displayName)",
+                    AppInputField(
+                        LocalizedStringKey(
+                            languagePreference == .chinese
+                                ? "输入 \(provider.displayName) 的 API Key"
+                                : "Enter API Key for \(provider.displayName)"
+                        ),
                         text: Binding(
                             get: { apiKey },
                             set: { newValue in
                                 apiKey = newValue
                                 agentSessionConfig.setApiKey(newValue, for: currentProviderId)
                             }
-                        )
-                    )
-                    .textFieldStyle(.plain)
-                    .font(DesignTokens.Typography.body)
-                    .padding(8)
-                    .background(
-                        RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                            .fill(DesignTokens.Material.glass)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                            )
+                        ),
+                        fieldType: .secure
                     )
                 }
                 .padding(.vertical, 2)
@@ -389,15 +381,7 @@ private struct LoadingLocalModelSystemMessageView: View {
                     .fontWeight(.medium)
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 if let series = info.series, !series.isEmpty {
-                    Text(series)
-                        .font(DesignTokens.Typography.caption2)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(
-                            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                                .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.15))
-                        )
+                    AppTag(series)
                 }
             }
 
@@ -409,24 +393,21 @@ private struct LoadingLocalModelSystemMessageView: View {
             }
 
             HStack(spacing: 12) {
-                Label(info.size, systemImage: "internaldrive")
-                    .font(DesignTokens.Typography.caption2)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                Text("·")
-                    .font(DesignTokens.Typography.caption2)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                Text(ramText(minRAM: info.minRAM))
-                    .font(DesignTokens.Typography.caption2)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                AppTag(info.size, systemImage: "internaldrive")
+                AppTag(ramText(minRAM: info.minRAM), systemImage: "memorychip")
                 if info.supportsVision {
-                    Label(projectVM.languagePreference == .chinese ? "视觉" : "Vision", systemImage: "eye")
-                        .font(DesignTokens.Typography.caption2)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    AppTag(
+                        projectVM.languagePreference == .chinese ? "视觉" : "Vision",
+                        systemImage: "eye",
+                        style: .accent
+                    )
                 }
                 if info.supportsTools {
-                    Label(projectVM.languagePreference == .chinese ? "工具" : "Tools", systemImage: "wrench.and.screwdriver")
-                        .font(DesignTokens.Typography.caption2)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    AppTag(
+                        projectVM.languagePreference == .chinese ? "工具" : "Tools",
+                        systemImage: "wrench.and.screwdriver",
+                        style: .accent
+                    )
                 }
             }
         }
