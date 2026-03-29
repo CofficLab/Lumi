@@ -4,7 +4,6 @@ import SwiftUI
 struct ToolOutputView: View {
     let content: String
     private let timestamp: Date?
-    private let summaryTextCached: String
     private let lineCountCached: Int
     @State private var isExpanded: Bool = false
     @State private var displayedContent: String = ""
@@ -12,7 +11,6 @@ struct ToolOutputView: View {
     init(content: String, timestamp: Date? = nil) {
         self.content = content
         self.timestamp = timestamp
-        self.summaryTextCached = ToolOutputView.makeSummaryText(from: content)
         self.lineCountCached = ToolOutputView.makeLineCount(from: content)
     }
 
@@ -100,18 +98,22 @@ struct ToolOutputView: View {
     // MARK: - Tool Output Content
 
     private var toolOutputContent: some View {
-        ScrollView(.vertical, showsIndicators: true) {
-            VStack(alignment: .leading, spacing: 0) {
-                Text(displayedContent)
-                    .font(DesignTokens.Typography.code)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+        AppCard(
+            style: .subtle,
+            padding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+        ) {
+            ScrollView(.vertical, showsIndicators: true) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(displayedContent)
+                        .font(DesignTokens.Typography.code)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxHeight: 400)
-        .background(DesignTokens.Color.semantic.textTertiary.opacity(0.02))
     }
 
     private func stageRenderContent() {
@@ -131,13 +133,6 @@ struct ToolOutputView: View {
     }
 
     // MARK: - Helper Properties
-    private static func makeSummaryText(from content: String) -> String {
-        if let firstLine = content.components(separatedBy: .newlines).first {
-            return String(firstLine.prefix(70))
-        }
-        return String(content.prefix(70))
-    }
-
     private static func makeLineCount(from content: String) -> Int {
         // 避免 split 成大量数组；只做轻量统计
         var count = 0

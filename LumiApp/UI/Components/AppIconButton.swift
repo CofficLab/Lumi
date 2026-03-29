@@ -11,6 +11,7 @@ struct AppIconButton: View {
     let label: String?
     let tint: Color
     let size: Size
+    let isActive: Bool
     let action: () -> Void
 
     init(
@@ -18,12 +19,14 @@ struct AppIconButton: View {
         label: String? = nil,
         tint: Color = DesignTokens.Color.semantic.textSecondary.opacity(0.8),
         size: Size = .compact,
+        isActive: Bool = false,
         action: @escaping () -> Void
     ) {
         self.systemImage = systemImage
         self.label = label
         self.tint = tint
         self.size = size
+        self.isActive = isActive
         self.action = action
     }
 
@@ -41,11 +44,29 @@ struct AppIconButton: View {
             .padding(contentPadding)
             .background(
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                    .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.08))
+                    .fill(backgroundColor)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                    .stroke(borderColor, lineWidth: 1)
             )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    private var backgroundColor: Color {
+        if isActive {
+            return DesignTokens.Color.semantic.textSecondary.opacity(0.16)
+        }
+        return DesignTokens.Color.semantic.textSecondary.opacity(0.08)
+    }
+
+    private var borderColor: Color {
+        if isActive {
+            return DesignTokens.Color.semantic.textSecondary.opacity(0.22)
+        }
+        return .clear
     }
 
     private var iconFont: Font {

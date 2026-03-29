@@ -96,43 +96,45 @@ struct MessageWithToolCallsView: View {
 
                     Spacer()
 
-                    Button {
+                    AppIconButton(
+                        systemImage: "slider.horizontal.3",
+                        label: "参数",
+                        tint: isParametersExpanded
+                            ? DesignTokens.Color.semantic.textPrimary
+                            : DesignTokens.Color.semantic.textSecondary,
+                        size: .regular,
+                        isActive: isParametersExpanded
+                    ) {
                         toggleParameterSection(for: toolCall.id)
-                    } label: {
-                        compactActionChip(
-                            title: "参数",
-                            systemImage: "slider.horizontal.3",
-                            isActive: isParametersExpanded
-                        )
                     }
-                    .buttonStyle(.plain)
 
-                    Button {
-                        toggleResultSection(for: toolCall.id)
-                    } label: {
-                        if isLoadingResult {
-                            HStack(spacing: 4) {
-                                ProgressView()
-                                    .controlSize(.small)
-                                Text("结果")
-                                    .font(DesignTokens.Typography.caption1)
-                            }
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(
-                                Capsule()
-                                    .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.08))
-                            )
-                        } else {
-                            compactActionChip(
-                                title: "结果",
-                                systemImage: "doc.text.magnifyingglass",
-                                isActive: isResultsExpanded
-                            )
+                    if isLoadingResult {
+                        HStack(spacing: 4) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("结果")
+                                .font(DesignTokens.Typography.caption1)
+                        }
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(
+                            Capsule()
+                                .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.08))
+                        )
+                    } else {
+                        AppIconButton(
+                            systemImage: "doc.text.magnifyingglass",
+                            label: "结果",
+                            tint: isResultsExpanded
+                                ? DesignTokens.Color.semantic.textPrimary
+                                : DesignTokens.Color.semantic.textSecondary,
+                            size: .regular,
+                            isActive: isResultsExpanded
+                        ) {
+                            toggleResultSection(for: toolCall.id)
                         }
                     }
-                    .buttonStyle(.plain)
                 }
             }
 
@@ -187,22 +189,6 @@ struct MessageWithToolCallsView: View {
         expandedResultToolCallIDs.insert(toolCallID)
     }
 
-    @ViewBuilder
-    private func compactActionChip(title: String, systemImage: String, isActive: Bool) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: systemImage)
-                .font(.system(size: 11, weight: .semibold))
-            Text(title)
-                .font(DesignTokens.Typography.caption1)
-        }
-        .foregroundColor(isActive ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(
-            Capsule()
-                .fill(DesignTokens.Color.semantic.textTertiary.opacity(isActive ? 0.14 : 0.08))
-        )
-    }
 }
 
 private struct ToolCallContentSectionView: View {

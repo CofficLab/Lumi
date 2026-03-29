@@ -24,70 +24,67 @@ struct ThinkingProcessView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // 展开/折叠按钮
-            Button(action: {
+            MessageHeaderView {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    HStack(spacing: 6) {
+                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+
+                        Text(isThinking ? "思考过程…" : "思考过程")
+                            .font(DesignTokens.Typography.caption1)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+
+                        // 折叠时展示一小段预览，降低存在感但能提示有内容
+                        if !isExpanded, !previewText.isEmpty {
+                            Text(previewText)
+                                .font(DesignTokens.Typography.caption2)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary.opacity(0.8))
+                                .lineLimit(1)
+                        }
+                    }
+                }
+            } trailing: {
+                // 思考中的动画点
+                if isThinking {
+                    HStack(spacing: 2) {
+                        ForEach(0..<3) { i in
+                            Circle()
+                                .fill(DesignTokens.Color.semantic.textSecondary)
+                                .frame(width: 4, height: 4)
+                                .opacity(isThinking ? 1.0 : 0.5)
+                                .animation(
+                                    .easeInOut(duration: 0.6)
+                                    .repeatForever(autoreverses: true)
+                                    .delay(Double(i) * 0.2),
+                                    value: isThinking
+                                )
+                        }
+                    }
+                }
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     isExpanded.toggle()
                 }
-            }) {
-                HStack(spacing: 6) {
-                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-
-                    Text(isThinking ? "思考过程…" : "思考过程")
-                        .font(DesignTokens.Typography.caption1)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-
-                    // 折叠时展示一小段预览，降低存在感但能提示有内容
-                    if !isExpanded, !previewText.isEmpty {
-                        Text(previewText)
-                            .font(DesignTokens.Typography.caption2)
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary.opacity(0.8))
-                            .lineLimit(1)
-                    }
-
-                    if isThinking {
-                        // 思考中的动画点
-                        HStack(spacing: 2) {
-                            ForEach(0..<3) { i in
-                                Circle()
-                                    .fill(DesignTokens.Color.semantic.textSecondary)
-                                    .frame(width: 4, height: 4)
-                                    .opacity(isThinking ? 1.0 : 0.5)
-                                    .animation(
-                                        .easeInOut(duration: 0.6)
-                                        .repeatForever(autoreverses: true)
-                                        .delay(Double(i) * 0.2),
-                                        value: isThinking
-                                    )
-                            }
-                        }
-                    }
-
-                    Spacer()
-                }
             }
-            .buttonStyle(.plain)
 
             // 思考内容（展开时显示）：深色块 + 固定浅色字，保证任意主题下都清晰可读
             if isExpanded && !thinkingText.isEmpty {
-                ScrollView(showsIndicators: true) {
-                    Text(thinkingText)
-                        .font(.system(size: 12, design: .monospaced))
-                        .foregroundColor(Color(white: 0.92))
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                AppCard(
+                    style: .subtle,
+                    padding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+                ) {
+                    ScrollView(showsIndicators: true) {
+                        Text(thinkingText)
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .frame(maxHeight: 220)
                 }
-                .frame(maxHeight: 220)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(DesignTokens.Color.basePalette.elevatedSurface)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(DesignTokens.Color.basePalette.subtleBorder.opacity(0.25), lineWidth: 1)
-                )
             }
         }
         .padding(.vertical, 4)

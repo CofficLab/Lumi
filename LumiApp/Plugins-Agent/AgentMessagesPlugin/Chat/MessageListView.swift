@@ -136,16 +136,14 @@ extension MessageListView {
     private func showEarlierLoadedButton(hiddenCount: Int) -> some View {
         HStack {
             Spacer()
-            Button {
+            AppButton(
+                LocalizedStringKey("显示更早已加载消息（\(hiddenCount) 条）"),
+                systemImage: "clock.arrow.circlepath",
+                style: .tonal,
+                size: .small
+            ) {
                 historyWindowLimit += Self.historyWindowStep
-            } label: {
-                Text("显示更早已加载消息（\(hiddenCount) 条）")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 12)
             }
-            .buttonStyle(.plain)
             .accessibilityLabel("显示更早消息")
             .accessibilityHint("展开更早加载的历史消息")
             Spacer()
@@ -166,23 +164,33 @@ extension MessageListView {
     private var loadMoreButton: some View {
         HStack {
             Spacer()
-            Button(action: timelineViewModel.handleLoadMore) {
+            if timelineViewModel.isLoadingMore {
                 HStack(spacing: 8) {
-                    if timelineViewModel.isLoadingMore {
-                        ProgressView().controlSize(.small)
-                    } else {
-                        Image(systemName: "arrow.up.circle")
-                    }
-                    Text(loadMoreButtonText).font(.caption)
+                    ProgressView().controlSize(.small)
+                    Text(loadMoreButtonText)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .foregroundStyle(.secondary)
                 .padding(.vertical, 8)
                 .padding(.horizontal, 16)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                        .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.08))
+                )
+                .accessibilityLabel(LocalizedStringKey("加载更早消息"))
+                .accessibilityHint(LocalizedStringKey("从历史记录中继续加载更早的消息"))
+            } else {
+                AppButton(
+                    LocalizedStringKey(loadMoreButtonText),
+                    systemImage: "arrow.up.circle",
+                    style: .tonal,
+                    size: .small
+                ) {
+                    timelineViewModel.handleLoadMore()
+                }
+                .accessibilityLabel(LocalizedStringKey("加载更早消息"))
+                .accessibilityHint(LocalizedStringKey("从历史记录中继续加载更早的消息"))
             }
-            .buttonStyle(.plain)
-            .disabled(timelineViewModel.isLoadingMore)
-            .accessibilityLabel("加载更早消息")
-            .accessibilityHint("从历史记录中继续加载更早的消息")
             Spacer()
         }
         .padding(.vertical, 8)
