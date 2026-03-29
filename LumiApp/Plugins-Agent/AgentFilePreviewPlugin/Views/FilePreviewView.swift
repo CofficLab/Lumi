@@ -78,7 +78,7 @@ struct FilePreviewView: View {
                 .font(.system(size: 14))
                 .foregroundColor(.accentColor)
 
-            Text(String(localized: "File Preview", table: "AgentFilePreview"))
+            Text(headerTitle)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(AppUI.Color.semantic.textPrimary)
 
@@ -132,9 +132,6 @@ struct FilePreviewView: View {
             // 文件信息
             fileInfoSection
 
-            Divider()
-                .background(Color.white.opacity(0.1))
-
             // 文件内容
             fileContentSection
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -146,18 +143,6 @@ struct FilePreviewView: View {
 
     private var fileInfoSection: some View {
         VStack(alignment: .leading, spacing: 4) {
-            // 文件名
-            Text(ProjectVM.selectedFileURL?.lastPathComponent ?? "")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
-                .lineLimit(2)
-
-            // 文件路径
-            Text(ProjectVM.selectedFileURL?.path ?? "")
-                .font(.system(size: 9))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
-                .lineLimit(1)
-
             if isTruncatedPreview {
                 Text(String(localized: "Preview Truncated for Large File", table: "AgentFilePreview"))
                     .font(.system(size: 9))
@@ -182,6 +167,13 @@ struct FilePreviewView: View {
             isEditable: !isReadOnlyPreview && canPreviewCurrentFile,
             forcePlainText: isReadOnlyPreview
         )
+    }
+
+    private var headerTitle: String {
+        if ProjectVM.isFileSelected, let fileName = ProjectVM.selectedFileURL?.lastPathComponent, !fileName.isEmpty {
+            return fileName
+        }
+        return String(localized: "File Preview", table: "AgentFilePreview")
     }
 
     private var themeMenu: some View {

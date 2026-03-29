@@ -10,36 +10,19 @@ struct FilePreviewStatusBarView: View {
     @State private var canPreviewCurrentFile: Bool = false
     private static let textProbeBytes = 8192
 
-    /// 获取当前文件扩展名
-    private var fileExtension: String {
-        guard let url = ProjectVM.selectedFileURL else { return "" }
-        return url.pathExtension.lowercased()
-    }
-
-    /// 获取当前文件完整名称
-    private var fileName: String {
-        guard let url = ProjectVM.selectedFileURL else { return "" }
-        return url.lastPathComponent
-    }
-
-    /// 获取文件类型描述
-    private var fileTypeDescription: String {
-        SupportedFileType2.fileTypeDescription(for: fileExtension, fullFileName: fileName)
+    private var selectedFilePath: String {
+        ProjectVM.selectedFileURL?.path ?? ""
     }
 
     var body: some View {
         HStack(spacing: 12) {
-            // 左侧：内容类型标签（仅当选择了可预览文件时显示）
-            if ProjectVM.isFileSelected && canPreviewCurrentFile {
-                Text(fileTypeDescription)
+            // 左侧：当前文件路径
+            if ProjectVM.isFileSelected {
+                Text(selectedFilePath)
                     .font(.system(size: 9, weight: .medium))
                     .foregroundColor(AppUI.Color.semantic.textSecondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(
-                        Capsule()
-                            .fill(AppUI.Color.semantic.info.opacity(0.15))
-                    )
+                    .lineLimit(1)
+                    .truncationMode(.middle)
             }
 
             Spacer()
