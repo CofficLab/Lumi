@@ -68,78 +68,73 @@ struct MessageWithToolCallsView: View {
         let shouldShowAuthState = toolCall.authorizationState != .noRisk
 
         VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                HStack(spacing: 6) {
-                    Image(systemName: "wrench.and.screwdriver")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-
-                    Text(toolCall.name)
-                        .font(DesignTokens.Typography.caption1)
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                        .lineLimit(1)
-
-                    if shouldShowAuthState {
-                        Text("·")
+            AppCard(
+                style: .subtle,
+                padding: EdgeInsets(top: 10, leading: 14, bottom: 10, trailing: 14)
+            ) {
+                HStack(spacing: 8) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "wrench.and.screwdriver")
+                            .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-                        Text(toolCall.authorizationState.displayName)
-                            .font(DesignTokens.Typography.caption2)
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        Text(toolCall.name)
+                            .font(DesignTokens.Typography.caption1)
+                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                             .lineLimit(1)
-                    }
-                }
 
-                Spacer()
+                        if shouldShowAuthState {
+                            Text("·")
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-                Button {
-                    toggleParameterSection(for: toolCall.id)
-                } label: {
-                    compactActionChip(
-                        title: "参数",
-                        systemImage: "slider.horizontal.3",
-                        isActive: isParametersExpanded
-                    )
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    toggleResultSection(for: toolCall.id)
-                } label: {
-                    if isLoadingResult {
-                        HStack(spacing: 4) {
-                            ProgressView()
-                                .controlSize(.small)
-                            Text("结果")
-                                .font(DesignTokens.Typography.caption1)
+                            Text(toolCall.authorizationState.displayName)
+                                .font(DesignTokens.Typography.caption2)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                .lineLimit(1)
                         }
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule()
-                                .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.08))
-                        )
-                    } else {
+                    }
+
+                    Spacer()
+
+                    Button {
+                        toggleParameterSection(for: toolCall.id)
+                    } label: {
                         compactActionChip(
-                            title: "结果",
-                            systemImage: "doc.text.magnifyingglass",
-                            isActive: isResultsExpanded
+                            title: "参数",
+                            systemImage: "slider.horizontal.3",
+                            isActive: isParametersExpanded
                         )
                     }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        toggleResultSection(for: toolCall.id)
+                    } label: {
+                        if isLoadingResult {
+                            HStack(spacing: 4) {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text("结果")
+                                    .font(DesignTokens.Typography.caption1)
+                            }
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                Capsule()
+                                    .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.08))
+                            )
+                        } else {
+                            compactActionChip(
+                                title: "结果",
+                                systemImage: "doc.text.magnifyingglass",
+                                isActive: isResultsExpanded
+                            )
+                        }
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.08))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(DesignTokens.Color.semantic.textTertiary.opacity(0.22), lineWidth: 1)
-                    )
-            )
 
             if isParametersExpanded {
                 ToolCallContentSectionView(toolCall: toolCall, title: "参数")
@@ -260,13 +255,8 @@ private struct ToolResultSectionView: View {
                     .font(DesignTokens.Typography.caption1)
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.05))
-            )
+            .modifier(SubtleToolCardModifier())
         } else if !combinedContent.isEmpty {
             GenericToolSectionView(title: "结果", content: combinedContent)
         } else {
@@ -277,13 +267,8 @@ private struct ToolResultSectionView: View {
                     .font(DesignTokens.Typography.caption1)
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.05))
-            )
+            .modifier(SubtleToolCardModifier())
         }
     }
 }
@@ -293,26 +278,32 @@ private struct GenericToolSectionView: View {
     let content: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(DesignTokens.Typography.caption1)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+        AppCard(
+            style: .subtle,
+            padding: EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12)
+        ) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(title)
+                    .font(DesignTokens.Typography.caption1)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-            Text(content)
-                .font(DesignTokens.Typography.code)
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .textSelection(.enabled)
+                Text(content)
+                    .font(DesignTokens.Typography.code)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .textSelection(.enabled)
+            }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.05))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(DesignTokens.Color.semantic.textTertiary.opacity(0.14), lineWidth: 1)
-                )
-        )
+    }
+}
+
+private struct SubtleToolCardModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        AppCard(
+            style: .subtle,
+            padding: EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12)
+        ) {
+            content
+        }
     }
 }

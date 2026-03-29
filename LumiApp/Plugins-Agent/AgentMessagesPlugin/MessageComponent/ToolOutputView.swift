@@ -8,7 +8,6 @@ struct ToolOutputView: View {
     private let lineCountCached: Int
     @State private var isExpanded: Bool = false
     @State private var displayedContent: String = ""
-    @State private var isHeaderHovered: Bool = false
 
     init(content: String, timestamp: Date? = nil) {
         self.content = content
@@ -32,7 +31,7 @@ struct ToolOutputView: View {
     // MARK: - Tool Output Header（与 Assistant / User / System 消息一致的 header 样式）
 
     private var toolOutputHeader: some View {
-        HStack(alignment: .center, spacing: 8) {
+        MessageHeaderView {
             // 左侧：工具输出标识 · 行数（与 Assistant 的 Lumi · provider · model 结构一致）
             HStack(alignment: .center, spacing: 4) {
                 Text("工具输出")
@@ -48,9 +47,7 @@ struct ToolOutputView: View {
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
             }
-
-            Spacer()
-
+        } trailing: {
             HStack(alignment: .center, spacing: 12) {
                 // 复制按钮（与 User / Assistant 一致）
                 CopyMessageButton(
@@ -75,18 +72,7 @@ struct ToolOutputView: View {
                 }
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 6)
-                .fill(isHeaderHovered ? Color.primary.opacity(0.05) : Color.primary.opacity(0.02))
-        )
         .contentShape(Rectangle())
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHeaderHovered = hovering
-            }
-        }
         .onTapGesture {
             toggleExpanded()
         }
