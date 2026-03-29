@@ -219,7 +219,7 @@ extension InputAreaView {
         if Self.verbose {
             AgentInputPlugin.logger.info("\(Self.t)📎 handleFileDrop: \(fileURL.path)")
         }
-        
+
         // 检查是否是图片文件
         let imageExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp", "heic"]
         let fileExtension = fileURL.pathExtension.lowercased()
