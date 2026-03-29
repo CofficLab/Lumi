@@ -17,9 +17,11 @@ struct ActionMenuView: View {
             // App 信息头部
             HStack(spacing: 8) {
                 // App 图标
-                Image(nsImage: appIcon)
-                    .resizable()
-                    .frame(width: 24, height: 24)
+                AppImageThumbnail(
+                    image: Image(nsImage: appIcon),
+                    size: CGSize(width: 24, height: 24),
+                    shape: .none
+                )
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(appName)

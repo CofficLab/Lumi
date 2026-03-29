@@ -14,9 +14,11 @@ struct ProcessRow: View {
             // Icon and Name
             HStack(spacing: 8) {
                 if let icon = process.icon {
-                    Image(nsImage: icon)
-                        .resizable()
-                        .frame(width: 24, height: 24)
+                    AppImageThumbnail(
+                        image: Image(nsImage: icon),
+                        size: CGSize(width: 24, height: 24),
+                        shape: .none
+                    )
                 } else {
                     Image(systemName: "gearshape")
                         .frame(width: 24, height: 24)

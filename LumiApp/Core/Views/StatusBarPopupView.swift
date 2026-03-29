@@ -48,9 +48,11 @@ struct StatusBarPopupView: View {
             HStack(spacing: 12) {
                 // 应用图标
                 if let appIcon = NSApp.applicationIconImage {
-                    Image(nsImage: appIcon)
-                        .resizable()
-                        .frame(width: 40, height: 40)
+                    AppImageThumbnail(
+                        image: Image(nsImage: appIcon),
+                        size: CGSize(width: 40, height: 40),
+                        shape: .none
+                    )
                 }
 
                 // 应用信息

@@ -11,9 +11,11 @@ struct AppManagerDetailView: View {
                     // Header
                     HStack(spacing: 16) {
                         if let icon = app.icon {
-                            Image(nsImage: icon)
-                                .resizable()
-                                .frame(width: 64, height: 64)
+                            AppImageThumbnail(
+                                image: Image(nsImage: icon),
+                                size: CGSize(width: 64, height: 64),
+                                shape: .none
+                            )
                         } else {
                             Image(systemName: "app.fill")
                                 .resizable()

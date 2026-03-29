@@ -75,9 +75,11 @@ struct MenuBarItemRow: View {
     var body: some View {
         HStack {
             if let icon = item.icon {
-                Image(nsImage: icon)
-                    .resizable()
-                    .frame(width: 16, height: 16)
+                AppImageThumbnail(
+                    image: Image(nsImage: icon),
+                    size: CGSize(width: 16, height: 16),
+                    shape: .none
+                )
             } else {
                 Image(systemName: "app.dashed")
             }

@@ -20,6 +20,7 @@ struct AttachmentPreviewView: View {
                                 AppImageThumbnail(
                                     image: Image(nsImage: nsImage),
                                     size: CGSize(width: 60, height: 60),
+                                    sizing: .fill,
                                     shape: .roundedMedium
                                 )
                             }

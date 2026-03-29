@@ -11,9 +11,11 @@ struct AppRow: View {
         HStack(spacing: 12) {
             // 应用图标
             if let icon = app.icon {
-                Image(nsImage: icon)
-                    .resizable()
-                    .frame(width: 48, height: 48)
+                AppImageThumbnail(
+                    image: Image(nsImage: icon),
+                    size: CGSize(width: 48, height: 48),
+                    shape: .none
+                )
             } else {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.3))

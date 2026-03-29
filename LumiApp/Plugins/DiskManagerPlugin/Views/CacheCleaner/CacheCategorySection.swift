@@ -56,9 +56,11 @@ struct CachePathRow: View {
             Toggle("", isOn: Binding(get: { isSelected }, set: { _ in toggleAction() }))
                 .labelsHidden()
 
-            Image(nsImage: icon)
-                .resizable()
-                .frame(width: 24, height: 24)
+            AppImageThumbnail(
+                image: Image(nsImage: icon),
+                size: CGSize(width: 24, height: 24),
+                shape: .none
+            )
 
             VStack(alignment: .leading) {
                 Text(path.name)

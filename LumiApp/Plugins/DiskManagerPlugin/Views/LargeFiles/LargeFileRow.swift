@@ -8,9 +8,11 @@ struct LargeFileRow: View {
 
     var body: some View {
         HStack {
-            Image(nsImage: item.icon)
-                .resizable()
-                .frame(width: 32, height: 32)
+            AppImageThumbnail(
+                image: Image(nsImage: item.icon),
+                size: CGSize(width: 32, height: 32),
+                shape: .none
+            )
 
             VStack(alignment: .leading) {
                 Text(item.name)

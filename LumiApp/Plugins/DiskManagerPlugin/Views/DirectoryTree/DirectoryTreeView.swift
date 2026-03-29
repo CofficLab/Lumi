@@ -44,9 +44,11 @@ struct DirectoryTreeRow: View {
 
     var body: some View {
         HStack {
-            Image(nsImage: entry.icon)
-                .resizable()
-                .frame(width: 16, height: 16)
+            AppImageThumbnail(
+                image: Image(nsImage: entry.icon),
+                size: CGSize(width: 16, height: 16),
+                shape: .none
+            )
 
             Text(entry.name)
                 .lineLimit(1)

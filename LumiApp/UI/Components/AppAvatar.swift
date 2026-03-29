@@ -32,6 +32,7 @@ struct AppAvatar: View {
 /// 通用图片缩略图组件：调用方只需传形状，不需要关心 DesignTokens。
 struct AppImageThumbnail: View {
     enum ShapeStyle {
+        case none
         case roundedSmall
         case roundedMedium
         case rounded(CGFloat)
@@ -39,25 +40,33 @@ struct AppImageThumbnail: View {
         case capsule
     }
 
+    enum Sizing {
+        case stretch
+        case fit
+        case fill
+    }
+
     let image: Image
     let size: CGSize
-    let contentMode: ContentMode
+    let sizing: Sizing
     let shape: ShapeStyle
 
     init(
         image: Image,
         size: CGSize,
-        contentMode: ContentMode = .fill,
+        sizing: Sizing = .stretch,
         shape: ShapeStyle = .roundedMedium
     ) {
         self.image = image
         self.size = size
-        self.contentMode = contentMode
+        self.sizing = sizing
         self.shape = shape
     }
 
     var body: some View {
         switch shape {
+        case .none:
+            baseImage
         case .roundedSmall:
             baseImage
                 .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous))
@@ -77,10 +86,22 @@ struct AppImageThumbnail: View {
     }
 
     private var baseImage: some View {
-        image
-            .resizable()
-            .aspectRatio(contentMode: contentMode)
-            .frame(width: size.width, height: size.height)
+        Group {
+            switch sizing {
+            case .stretch:
+                image
+                    .resizable()
+            case .fit:
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            case .fill:
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            }
+        }
+        .frame(width: size.width, height: size.height)
     }
 }
 
