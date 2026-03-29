@@ -1,84 +1,86 @@
+import CodeEditor
 import SwiftUI
 import MagicKit
 
 /// 文件内容渲染视图
 struct FileContentSectionView: View {
-    let content: String
+    @Binding var content: String
     let fileExtension: String
     let fileName: String
-
-    /// 判断是否为 Markdown 文件
-    private var isMarkdownFile: Bool {
-        SupportedFileType.isMarkdownFile(fileExtension)
-    }
-
-    /// 获取文件类型描述
-    private var fileTypeDescription: String {
-        SupportedFileType.fileTypeDescription(for: fileExtension, fullFileName: fileName)
-    }
+    let theme: CodeEditor.ThemeName
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // 文件内容：根据文件类型使用不同的渲染方式
-            contentBody
-        }
+        CodeEditor(source: $content, language: editorLanguage, theme: theme)
+            .font(.system(size: 10, design: .monospaced))
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
-    /// 文件内容渲染
-    @ViewBuilder
-    private var contentBody: some View {
-        if isMarkdownFile {
-            // Markdown 文件使用 Markdown 渲染
-            markdownContentView
-        } else {
-            // 其他可预览文件（代码、文本）使用等宽字体显示
-            plainTextView
+    private var editorLanguage: CodeEditor.Language {
+        let ext = fileExtension.lowercased()
+        let name = fileName.lowercased()
+        let candidates = languageCandidates(forExtension: ext, fileName: name)
+
+        for candidate in candidates {
+            if let match = CodeEditor.availableLanguages.first(where: { $0.rawValue == candidate }) {
+                return match
+            }
         }
+
+        if let plaintext = CodeEditor.availableLanguages.first(where: { $0.rawValue == "plaintext" }) {
+            return plaintext
+        }
+
+        return CodeEditor.availableLanguages.first ?? .swift
     }
 
-    /// Markdown 内容视图
-    private var markdownContentView: some View {
-        ScrollView {
-            NativeMarkdownContent(
-                content: content
-            )
-                .font(.system(size: 10))
-                .frame(maxWidth: .infinity, alignment: .leading)
+    private func languageCandidates(forExtension ext: String, fileName: String) -> [String] {
+        if [".gitignore", ".gitattributes", ".gitmodules"].contains(fileName) {
+            return ["plaintext", "ini", "yaml", "markdown"]
         }
-        .scrollIndicators(.hidden)
-        .padding(.vertical, 8)
-        .padding(.horizontal, 4)
-    }
 
-    /// 纯文本内容视图（代码等）
-    private var plainTextView: some View {
-        ScrollView {
-            Text(content)
-                .font(.system(size: 9, design: .monospaced))
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
-                .lineSpacing(2)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        switch ext {
+        case "mdc":
+            return ["markdown", "md"]
+        case "h":
+            return ["objectivec", "c", "cpp"]
+        case "m":
+            return ["objectivec", "matlab"]
+        case "mm":
+            return ["objectivec", "cpp"]
+        case "kt", "kts":
+            return ["kotlin"]
+        case "pyw":
+            return ["python"]
+        case "tsx":
+            return ["tsx", "typescript", "javascript"]
+        case "jsx":
+            return ["jsx", "javascript"]
+        case "yml":
+            return ["yaml"]
+        case "dockerfile":
+            return ["dockerfile", "plaintext"]
+        case "":
+            return ["plaintext", "ini", "yaml"]
+        default:
+            return [ext]
         }
-        .scrollIndicators(.hidden)
-        .padding(.vertical, 8)
-        .padding(.horizontal, 4)
     }
 }
 
 #Preview("Markdown 内容") {
-    FileContentSectionView(content: "# Hello World\n\n这是一段 **Markdown** 内容。", fileExtension: "md", fileName: "README.md")
+    FileContentSectionView(content: .constant("# Hello World\n\n这是一段 **Markdown** 内容。"), fileExtension: "md", fileName: "README.md", theme: .default)
         .frame(width: 300, height: 200)
         .padding()
 }
 
 #Preview("代码内容") {
-    FileContentSectionView(content: "func hello() {\n    print(\"Hello World\")\n}", fileExtension: "swift", fileName: "main.swift")
+    FileContentSectionView(content: .constant("func hello() {\n    print(\"Hello World\")\n}"), fileExtension: "swift", fileName: "main.swift", theme: .ocean)
         .frame(width: 300, height: 200)
         .padding()
 }
 
 #Preview("Git 配置") {
-    FileContentSectionView(content: "*.pyc\n.DS_Store\n", fileExtension: "", fileName: ".gitignore")
+    FileContentSectionView(content: .constant("*.pyc\n.DS_Store\n"), fileExtension: "", fileName: ".gitignore", theme: .agate)
         .frame(width: 300, height: 200)
         .padding()
 }
