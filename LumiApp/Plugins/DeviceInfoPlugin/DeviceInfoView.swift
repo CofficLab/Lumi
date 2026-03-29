@@ -28,7 +28,7 @@ struct DeviceInfoView: View {
                                     .fontWeight(.bold)
                                     .foregroundColor(AppUI.Color.semantic.textPrimary)
                                 Text(data.osVersion)
-                                    .font(.subheadline)
+                                    .font(AppUI.Typography.subheadline)
                                     .foregroundColor(AppUI.Color.semantic.textSecondary)
                             }
                             Spacer()
@@ -40,7 +40,7 @@ struct DeviceInfoView: View {
                         DeviceInfoCard(title: "CPU", icon: "cpu", color: AppUI.Color.semantic.info) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(data.processorName)
-                                    .font(.caption)
+                                    .font(AppUI.Typography.caption1)
                                     .lineLimit(1)
                                     .foregroundColor(AppUI.Color.semantic.textSecondary)
 
@@ -67,7 +67,7 @@ struct DeviceInfoView: View {
                                 let total = ByteCountFormatter.string(fromByteCount: Int64(data.memoryTotal), countStyle: .memory)
 
                                 Text("\(used) / \(total)")
-                                    .font(.caption)
+                                    .font(AppUI.Typography.caption1)
                                     .foregroundColor(AppUI.Color.semantic.textSecondary)
 
                                 ProgressView(value: data.memoryUsage)
@@ -81,7 +81,7 @@ struct DeviceInfoView: View {
                                 let total = ByteCountFormatter.string(fromByteCount: data.diskTotal, countStyle: .file)
 
                                 Text("\(used) used")
-                                    .font(.caption)
+                                    .font(AppUI.Typography.caption1)
                                     .foregroundColor(AppUI.Color.semantic.textSecondary)
 
                                 Gauge(value: Double(data.diskUsed), in: 0 ... Double(data.diskTotal)) {
@@ -117,7 +117,7 @@ struct DeviceInfoView: View {
                         Image(systemName: "clock")
                         .foregroundColor(AppUI.Color.semantic.textSecondary)
                         Text("Uptime: \(formatUptime(data.uptime))")
-                            .font(.footnote)
+                            .font(AppUI.Typography.caption1)
                         .foregroundColor(AppUI.Color.semantic.textSecondary)
                         Spacer()
                     }
@@ -129,7 +129,7 @@ struct DeviceInfoView: View {
                 // Section 2: Real-time Monitor
                 VStack(alignment: .leading, spacing: 16) {
                     Label("Real-time Monitor", systemImage: "chart.xyaxis.line")
-                        .font(.headline)
+                        .font(AppUI.Typography.bodyEmphasized)
                         .padding(.horizontal)
                     
                     SystemMonitorView()

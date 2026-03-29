@@ -9,7 +9,7 @@ struct RClickSettingsView: View {
         HStack(spacing: 0) {
             VStack(spacing: 20) {
                 Text("Preview")
-                    .font(.headline)
+                    .font(AppUI.Typography.bodyEmphasized)
                     .foregroundColor(AppUI.Color.semantic.textSecondary)
 
                 RClickPreviewView(config: configManager.config)

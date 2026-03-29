@@ -64,7 +64,7 @@ struct MonitorCard<Content: View>: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Text(title)
-                        .font(.headline)
+                        .font(AppUI.Typography.bodyEmphasized)
                         .foregroundColor(AppUI.Color.semantic.textSecondary)
                     Spacer()
                     Text(value)

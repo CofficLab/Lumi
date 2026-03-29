@@ -14,7 +14,7 @@ struct MenuBarSettingsView: View {
                         .foregroundStyle(.blue)
                     VStack(alignment: .leading) {
                         Text("Menu Bar Manager")
-                            .font(.headline)
+                            .font(AppUI.Typography.bodyEmphasized)
                         Text("Manage your menu bar items")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)

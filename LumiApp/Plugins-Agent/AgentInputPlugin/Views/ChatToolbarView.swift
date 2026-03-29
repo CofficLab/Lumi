@@ -152,8 +152,8 @@ extension ChatToolbarView {
                         Image(systemName: mode.iconName)
                         Text(mode.displayName)
                         Text("- \(mode.description)")
-                            .foregroundColor(.secondary)
-                            .font(.caption)
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .font(AppUI.Typography.caption1)
                         if llmVM.chatMode == mode {
                             Image(systemName: "checkmark")
                         }
@@ -169,7 +169,7 @@ extension ChatToolbarView {
                     .fontWeight(.medium)
                 Image(systemName: "chevron.up")
                     .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
             .foregroundColor(modeForegroundColor)
             .padding(.horizontal, 8)
@@ -228,7 +228,7 @@ extension ChatToolbarView {
                     .truncationMode(.middle)
                 Image(systemName: "chevron.up")
                     .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
             .foregroundColor(AppUI.Color.semantic.textSecondary)
             .padding(.horizontal, 8)

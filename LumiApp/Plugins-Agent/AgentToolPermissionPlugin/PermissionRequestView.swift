@@ -45,7 +45,7 @@ extension PermissionRequestView {
                 .font(.title2)
                 .foregroundColor(request.riskLevel.iconColor)
             Text(String(localized: "Permission Request", table: "AgentToolPermission"))
-                .font(.headline)
+                .font(AppUI.Typography.bodyEmphasized)
             Spacer()
         }
     }

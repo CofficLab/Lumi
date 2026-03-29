@@ -7,7 +7,7 @@ struct TextActionPreviewView: View {
     var body: some View {
         VStack(spacing: 20) {
             Text("Preview")
-                .font(.headline)
+                .font(AppUI.Typography.bodyEmphasized)
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
 
             ZStack {

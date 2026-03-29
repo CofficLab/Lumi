@@ -29,7 +29,7 @@ struct AppRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 // 应用名称
                 Text(app.displayName)
-                    .font(.headline)
+                    .font(AppUI.Typography.bodyEmphasized)
                     .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                 // Bundle ID 和版本

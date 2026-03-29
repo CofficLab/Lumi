@@ -25,7 +25,7 @@ struct RegistryCard: View {
                         .clipShape(Circle())
 
                     Text(type.name)
-                        .font(.headline)
+                        .font(AppUI.Typography.bodyEmphasized)
 
                     Spacer()
 

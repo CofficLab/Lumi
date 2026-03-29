@@ -47,7 +47,7 @@ struct ModelSelectorView: View, SuperLog {
 
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
                 }
                 .buttonStyle(.plain)
             }
@@ -93,7 +93,7 @@ struct ModelSelectorView: View, SuperLog {
                             let fallbackSeries = "其他"
                             let grouped = Dictionary(grouping: infos) { $0.series ?? fallbackSeries }
                             ForEach(grouped.keys.sorted(), id: \.self) { seriesName in
-                                Section(header: Text(seriesName).font(.subheadline).foregroundColor(.secondary)) {
+                                Section(header: Text(seriesName).font(AppUI.Typography.subheadline).foregroundColor(AppUI.Color.semantic.textSecondary)) {
                                     ForEach(grouped[seriesName] ?? [], id: \.id) { info in
                                         modelRow(provider: provider, model: info.id, displayName: info.displayName)
                                     }
@@ -123,7 +123,7 @@ struct ModelSelectorView: View, SuperLog {
             HStack {
                 VStack(alignment: .leading) {
                     Text(displayName ?? model)
-                        .font(.body)
+                        .font(AppUI.Typography.body)
                     if let stat = findDetailedStat(providerId: provider.id, modelName: model), stat.avgTTFT > 0 {
                         ModelLatencyProgressBar(
                             ttft: stat.avgTTFT,
@@ -172,10 +172,10 @@ extension ModelSelectorView {
     private func sectionHeader(for provider: LLMProviderInfo) -> some View {
         HStack {
             Image(systemName: provider.iconName)
-                .foregroundColor(.secondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
             Text(provider.displayName)
-                .font(.headline)
-                .foregroundColor(.primary)
+                .font(AppUI.Typography.bodyEmphasized)
+                .foregroundColor(AppUI.Color.semantic.textPrimary)
             Spacer()
         }
         .padding(.vertical, 4)
@@ -313,7 +313,7 @@ struct ModelLatencyProgressBar: View {
                 if sampleCount > 1 {
                     Text("(\(sampleCount))")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
                 }
             }
         }

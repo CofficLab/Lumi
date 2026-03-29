@@ -31,7 +31,7 @@ struct EmptyProjectView: View {
 
                 Button(action: { Task { await viewModel.scanProjects() } }, label: {
                     Label(title: { Text("重新扫描") }, icon: { Image(systemName: "arrow.clockwise") })
-                        .font(.headline)
+                        .font(AppUI.Typography.bodyEmphasized)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
                 })

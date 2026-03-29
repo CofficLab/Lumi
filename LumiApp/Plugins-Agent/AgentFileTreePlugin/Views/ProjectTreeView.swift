@@ -23,8 +23,7 @@ struct ProjectTreeView: View {
             headerView
 
             if isExpanded {
-                Divider()
-                    .background(Color.white.opacity(0.1))
+                GlassDivider()
 
                 // 文件树内容
                 contentView
@@ -48,7 +47,7 @@ extension ProjectTreeView {
             // 折叠箭头
             Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(.secondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
                 .frame(width: 16, height: 16)
 
             // 文件树图标
@@ -66,7 +65,7 @@ extension ProjectTreeView {
             Button(action: { loadProject(at: projectVM.currentProjectPath) }) {
                 Image(systemName: "arrow.clockwise")
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
             .buttonStyle(.plain)
         }
@@ -126,7 +125,7 @@ extension ProjectTreeView {
                 .scaleEffect(0.8)
             Text(String(localized: "Loading...", table: "ProjectTree"))
                 .font(.system(size: 10))
-                .foregroundColor(.secondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -138,7 +137,7 @@ extension ProjectTreeView {
                 .foregroundColor(.secondary.opacity(0.5))
             Text(String(localized: "No project", table: "ProjectTree"))
                 .font(.system(size: 11))
-                .foregroundColor(.secondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

@@ -10,7 +10,7 @@ struct XcodeCleanerFooter: View {
         HStack {
             VStack(alignment: .leading) {
                 Text("已选择：\(viewModel.formatBytes(viewModel.selectedSize))")
-                    .font(.headline)
+                    .font(AppUI.Typography.bodyEmphasized)
                     .foregroundColor(AppUI.Color.semantic.textPrimary)
                 Text("总计：\(viewModel.formatBytes(viewModel.totalSize))")
                     .font(.caption)
@@ -41,7 +41,7 @@ struct XcodeCleanerFooter: View {
                 Label(title: { Text(viewModel.isCleaning ? "清理中..." : "立即清理") }, icon: {
                     Image(systemName: "trash.fill")
                 })
-                .font(.headline)
+                .font(AppUI.Typography.bodyEmphasized)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
             })

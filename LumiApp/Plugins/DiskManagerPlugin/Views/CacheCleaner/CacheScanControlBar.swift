@@ -17,7 +17,7 @@ struct CacheScanControlBar: View {
                     title: { Text(viewModel.isScanning ? "停止扫描" : "扫描缓存") },
                     icon: { Image(systemName: viewModel.isScanning ? "stop.circle" : "doc.badge.gearshape") }
                 )
-                .font(.headline)
+                .font(AppUI.Typography.bodyEmphasized)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
             })

@@ -9,7 +9,7 @@ struct DatabaseMainView: View {
             // Sidebar
             VStack(alignment: .leading) {
                 Text("Connections")
-                    .font(.headline)
+                    .font(AppUI.Typography.bodyEmphasized)
                     .foregroundColor(AppUI.Color.semantic.textPrimary)
                     .padding(.horizontal)
                     .padding(.top)
@@ -50,7 +50,7 @@ struct DatabaseMainView: View {
                                 VStack(alignment: .leading, spacing: AppUI.Spacing.sm) {
                                     HStack {
                                         Text("Keys")
-                                            .font(.headline)
+                                            .font(AppUI.Typography.bodyEmphasized)
                                             .foregroundColor(AppUI.Color.semantic.textPrimary)
                                         Spacer()
                                         GlassButton(title: "Load", style: .secondary) {
@@ -77,7 +77,7 @@ struct DatabaseMainView: View {
                                 VStack(alignment: .leading, spacing: AppUI.Spacing.sm) {
                                     HStack {
                                         Text("Tables")
-                                            .font(.headline)
+                                            .font(AppUI.Typography.bodyEmphasized)
                                             .foregroundColor(AppUI.Color.semantic.textPrimary)
                                         Spacer()
                                         GlassButton(title: "Load", style: .secondary) {
@@ -171,7 +171,7 @@ struct QueryResultView: View {
                 HStack(spacing: 0) {
                     ForEach(result.columns, id: \.self) { col in
                         Text(col)
-                            .font(.headline)
+                            .font(AppUI.Typography.bodyEmphasized)
                             .foregroundColor(AppUI.Color.semantic.textPrimary)
                             .padding(8)
                             .frame(width: 120, alignment: .leading)

@@ -34,7 +34,7 @@ struct ClipboardHistoryView: View {
                         .font(.system(size: 40))
                         .foregroundColor(AppUI.Color.semantic.textSecondary)
                     Text("No clipboard records")
-                        .font(.headline)
+                        .font(AppUI.Typography.bodyEmphasized)
                         .foregroundColor(AppUI.Color.semantic.textSecondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

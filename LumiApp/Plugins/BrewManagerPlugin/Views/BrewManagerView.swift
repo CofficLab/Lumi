@@ -189,16 +189,10 @@ struct BrewPackageRow: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Text(package.name)
-                            .font(.headline)
+                            .font(AppUI.Typography.bodyEmphasized)
 
                         if package.isCask {
-                            Text(String(localized: "Cask"))
-                                .font(.caption)
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 2)
-                                .background(AppUI.Color.gradients.energyGradient.opacity(0.2))
-                                .foregroundColor(AppUI.Color.semantic.warning)
-                                .cornerRadius(4)
+                            AppTag(String(localized: "Cask"), style: .accent)
                         }
 
                         if showInstalledStatus {
@@ -237,22 +231,8 @@ struct BrewPackageRow: View {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(AppUI.Color.semantic.success)
                 } else {
-                    Button(action: action) {
-                        Text(actionButtonTitle)
-                            .fontWeight(.medium)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(
-                                Capsule()
-                                    .fill(actionButtonColor.opacity(0.1))
-                                    .overlay(
-                                        Capsule()
-                                            .stroke(actionButtonColor, lineWidth: 1)
-                                    )
-                            )
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundColor(actionButtonColor)
+                    AppButton(LocalizedStringKey(actionButtonTitle), style: .secondary, size: .small, action: action)
+                        .foregroundColor(actionButtonColor)
                 }
             }
             .padding(.vertical, 4)

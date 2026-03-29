@@ -146,7 +146,7 @@ extension GitHubPluginSettingsView {
             HStack(spacing: AppUI.Spacing.sm) {
                 Image(systemName: "info.circle.fill")
                     .foregroundColor(AppUI.Color.semantic.info)
-                    .font(.headline)
+                    .font(AppUI.Typography.bodyEmphasized)
 
                 Text("API 限制")
                     .font(AppUI.Typography.bodyEmphasized)

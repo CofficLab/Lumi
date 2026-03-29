@@ -303,7 +303,7 @@ struct DockerImageDetailView: View {
                 if let scanResult = viewModel.scanResult {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Security Scan")
-                            .font(.headline)
+                            .font(AppUI.Typography.bodyEmphasized)
                             .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                         ScrollView([.horizontal, .vertical]) {
@@ -337,7 +337,7 @@ struct DockerImageDetailView: View {
                     if let config = detail.Config {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Configuration")
-                                .font(.headline)
+                                .font(AppUI.Typography.bodyEmphasized)
                                 .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                             if let cmds = config.Cmd {
@@ -371,7 +371,7 @@ struct DockerImageDetailView: View {
                 // History/Layers
                 VStack(alignment: .leading, spacing: 8) {
                     Text("History / Layers")
-                        .font(.headline)
+                        .font(AppUI.Typography.bodyEmphasized)
                         .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                     ForEach(history) { layer in

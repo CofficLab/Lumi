@@ -31,7 +31,7 @@ struct EmptyCacheView: View {
 
                 Button(action: { viewModel.scan() }, label: {
                     Label(title: { Text("开始扫描") }, icon: { Image(systemName: "doc.badge.gearshape") })
-                        .font(.headline)
+                        .font(AppUI.Typography.bodyEmphasized)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
                 })

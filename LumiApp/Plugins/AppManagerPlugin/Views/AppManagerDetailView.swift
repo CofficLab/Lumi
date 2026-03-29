@@ -81,7 +81,7 @@ struct AppManagerDetailView: View {
                     // Footer Action
                     HStack {
                         Text(String(localized: "Selected: \(formatBytes(viewModel.totalSelectedSize))", table: "AppManager"))
-                            .font(.headline)
+                            .font(AppUI.Typography.bodyEmphasized)
                             .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                         Spacer()

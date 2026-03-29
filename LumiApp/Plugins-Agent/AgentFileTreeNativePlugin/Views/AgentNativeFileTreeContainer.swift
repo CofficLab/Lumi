@@ -42,7 +42,7 @@ struct AgentNativeFileTreeContainer: View {
             HStack {
                 Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
                     .frame(width: 16, height: 16)
 
                 Image(systemName: "folder.fill")
@@ -59,7 +59,7 @@ struct AgentNativeFileTreeContainer: View {
             if !ProjectVM.currentProjectPath.isEmpty {
                 Text(ProjectVM.currentProjectPath)
                     .font(.system(size: 9))
-                    .foregroundColor(.secondary.opacity(0.7))
+                    .foregroundColor(AppUI.Color.semantic.textSecondary.opacity(0.7))
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
@@ -87,10 +87,10 @@ struct AgentNativeFileTreeContainer: View {
         VStack(spacing: 8) {
             Image(systemName: "folder")
                 .font(.system(size: 24))
-                .foregroundColor(.secondary.opacity(0.5))
+                .foregroundColor(AppUI.Color.semantic.textSecondary.opacity(0.5))
             Text(String(localized: "No Project", table: "AgentNativeFileTree"))
                 .font(.system(size: 11))
-                .foregroundColor(.secondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

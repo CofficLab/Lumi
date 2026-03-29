@@ -136,7 +136,7 @@ struct HostRowView: View {
             switch entry.type {
             case .groupHeader(let name):
                 Text(name)
-                    .font(.headline)
+                    .font(AppUI.Typography.bodyEmphasized)
                     .foregroundColor(AppUI.Color.semantic.textSecondary)
                     .padding(.top, 8)
             case .comment(let text):

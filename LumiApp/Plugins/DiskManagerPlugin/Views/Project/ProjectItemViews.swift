@@ -9,7 +9,7 @@ struct ProjectSectionHeader: View {
             Image(systemName: project.type.icon)
                 .foregroundColor(AppUI.Color.semantic.info)
             Text(project.name)
-                .font(.headline)
+                .font(AppUI.Typography.bodyEmphasized)
                 .foregroundColor(AppUI.Color.semantic.textPrimary)
             Spacer()
             Text(project.type.displayName)

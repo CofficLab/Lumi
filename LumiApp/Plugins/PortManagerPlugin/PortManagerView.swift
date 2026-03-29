@@ -59,7 +59,7 @@ struct PortManagerView: View {
                             .font(.largeTitle)
                             .foregroundColor(AppUI.Color.semantic.textSecondary)
                         Text("No Listening Ports")
-                            .font(.headline)
+                            .font(AppUI.Typography.bodyEmphasized)
                             .foregroundColor(AppUI.Color.semantic.textSecondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -125,7 +125,7 @@ struct PortRowView: View {
                         .frame(minWidth: 50, alignment: .leading)
 
                     Text(port.command)
-                        .font(.headline)
+                        .font(AppUI.Typography.bodyEmphasized)
                         .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                     Spacer()

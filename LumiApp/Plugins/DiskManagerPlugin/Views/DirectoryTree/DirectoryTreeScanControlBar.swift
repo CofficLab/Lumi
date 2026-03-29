@@ -17,7 +17,7 @@ struct DirectoryTreeScanControlBar: View {
                     title: { Text(viewModel.isScanning ? "停止分析" : "分析目录") },
                     icon: { Image(systemName: viewModel.isScanning ? "stop.circle" : "folder.badge.gear") }
                 )
-                .font(.headline)
+                .font(AppUI.Typography.bodyEmphasized)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
             })

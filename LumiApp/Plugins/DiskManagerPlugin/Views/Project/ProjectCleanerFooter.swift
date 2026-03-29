@@ -24,7 +24,7 @@ struct ProjectCleanerFooter: View {
                 Label(title: { Text(viewModel.isCleaning ? "清理中..." : "立即清理") }, icon: {
                     Image(systemName: "trash.fill")
                 })
-                .font(.headline)
+                .font(AppUI.Typography.bodyEmphasized)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
             })

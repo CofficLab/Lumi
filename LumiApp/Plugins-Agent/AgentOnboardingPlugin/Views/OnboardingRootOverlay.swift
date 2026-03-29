@@ -210,7 +210,7 @@ private struct OnboardingSheetView: View {
         VStack(alignment: .leading, spacing: 24) {
             HStack {
                 Label("新手引导", systemImage: "graduationcap")
-                    .font(.headline)
+                    .font(AppUI.Typography.bodyEmphasized)
                     .foregroundStyle(.secondary)
                 Spacer()
                 Button("跳过") { viewModel.skip() }

@@ -35,7 +35,7 @@ struct EmptyLargeFilesView: View {
 
                 Button(action: { viewModel.startScan() }, label: {
                     Label(title: { Text("开始扫描") }, icon: { Image(systemName: "magnifyingglass.circle") })
-                        .font(.headline)
+                        .font(AppUI.Typography.bodyEmphasized)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
                 })

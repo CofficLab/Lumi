@@ -31,7 +31,7 @@ struct EmptyDirectoryTreeView: View {
 
                 Button(action: { viewModel.startScan() }, label: {
                     Label(title: { Text("开始分析") }, icon: { Image(systemName: "folder.badge.gear") })
-                        .font(.headline)
+                        .font(AppUI.Typography.bodyEmphasized)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
                 })

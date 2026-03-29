@@ -8,7 +8,7 @@ struct ProcessNetworkListView: View {
             // Toolbar
             HStack {
                 Text(String(localized: "Process Monitor"))
-                    .font(.headline)
+                    .font(AppUI.Typography.bodyEmphasized)
                     .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                 Spacer()

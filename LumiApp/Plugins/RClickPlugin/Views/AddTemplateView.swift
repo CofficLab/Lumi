@@ -11,7 +11,7 @@ struct AddTemplateView: View {
     var body: some View {
         VStack(spacing: 20) {
             Text("Add New Template")
-                .font(.headline)
+                .font(AppUI.Typography.bodyEmphasized)
                 .foregroundColor(AppUI.Color.semantic.textPrimary)
 
             Form {

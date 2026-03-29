@@ -11,7 +11,7 @@ struct ConversationListHeader: View {
         HStack {
             Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(.secondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
                 .frame(width: 16, height: 16)
 
             Image(systemName: "message.fill")

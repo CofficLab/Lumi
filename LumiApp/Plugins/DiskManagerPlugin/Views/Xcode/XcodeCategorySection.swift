@@ -39,7 +39,7 @@ struct XcodeCategorySection: View {
 
             VStack(alignment: .leading) {
                 Text(category.displayName)
-                    .font(.headline)
+                    .font(AppUI.Typography.bodyEmphasized)
                     .foregroundColor(AppUI.Color.semantic.textPrimary)
                 Text(category.description)
                     .font(.caption2)

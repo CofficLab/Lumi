@@ -16,7 +16,7 @@ struct LargeFileRow: View {
 
             VStack(alignment: .leading) {
                 Text(item.name)
-                    .font(.headline)
+                    .font(AppUI.Typography.bodyEmphasized)
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .foregroundColor(AppUI.Color.semantic.textPrimary)
@@ -34,12 +34,7 @@ struct LargeFileRow: View {
                     .font(.monospacedDigit(.body)())
                     .foregroundColor(AppUI.Color.semantic.textSecondary)
 
-                Text(item.fileType.rawValue.capitalized)
-                    .font(.caption2)
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
-                    .padding(.horizontal, 4)
-                    .background(AppUI.Color.semantic.textTertiary.opacity(0.1))
-                    .cornerRadius(4)
+                AppTag(item.fileType.rawValue.capitalized, style: .subtle)
             }
 
             HStack(spacing: 12) {

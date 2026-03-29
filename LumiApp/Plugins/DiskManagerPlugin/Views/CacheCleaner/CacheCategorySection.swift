@@ -17,7 +17,7 @@ struct CacheCategorySection: View {
             HStack {
                 Image(systemName: category.icon)
                 Text(category.name)
-                    .font(.headline)
+                    .font(AppUI.Typography.bodyEmphasized)
                     .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                 Spacer()

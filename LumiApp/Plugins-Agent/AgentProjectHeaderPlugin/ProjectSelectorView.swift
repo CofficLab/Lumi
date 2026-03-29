@@ -18,7 +18,7 @@ struct ProjectSelectorView: View {
             // Header
             HStack {
                 Text(String(localized: "Select Project", table: "AgentProjectHeader"))
-                    .font(.headline)
+                    .font(AppUI.Typography.bodyEmphasized)
                     .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                 Spacer()

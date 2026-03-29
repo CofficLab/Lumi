@@ -29,14 +29,7 @@ struct XcodeEmptyStateView: View {
                     .font(.caption)
                     .foregroundColor(AppUI.Color.semantic.textSecondary)
 
-                Button(action: { Task { await viewModel.scanAll() } }, label: {
-                    Label(title: { Text("重新扫描") }, icon: { Image(systemName: "arrow.clockwise") })
-                        .font(.headline)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                })
-                .buttonStyle(.borderedProminent)
-                .tint(AppUI.Color.semantic.info)
+                AppButton("重新扫描", systemImage: "arrow.clockwise", style: .primary, action: { Task { await viewModel.scanAll() } })
             }
         }
         .padding(24)

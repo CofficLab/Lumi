@@ -17,7 +17,7 @@ struct LargeFilesScanControlBar: View {
                     title: { Text(viewModel.isScanning ? "停止扫描" : "扫描大文件") },
                     icon: { Image(systemName: viewModel.isScanning ? "stop.circle" : "magnifyingglass.circle") }
                 )
-                .font(.headline)
+                .font(AppUI.Typography.bodyEmphasized)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
             })
