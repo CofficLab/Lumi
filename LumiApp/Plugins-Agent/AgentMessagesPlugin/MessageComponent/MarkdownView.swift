@@ -86,22 +86,22 @@ struct ExpandButtonBar: View {
                     Image(systemName: "chevron.down")
                         .font(.system(size: 11, weight: .semibold))
                     Text("展开")
-                        .font(AppTypography.caption1)
+                        .font(DesignTokens.Typography.caption1)
                 }
-                .foregroundColor(AppColor.textPrimary)
+                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 10)
                 Spacer()
             }
             .background(
-                AppColor.info.opacity(0.8)
+                DesignTokens.Color.semantic.info.opacity(0.8)
                     .overlay(
                         Rectangle()
                             .foregroundStyle(
                                 LinearGradient(
                                     colors: [
                                         Color.clear,
-                                        AppColor.info.opacity(0.8)
+                                        DesignTokens.Color.semantic.info.opacity(0.8)
                                     ],
                                     startPoint: .top,
                                     endPoint: .bottom
@@ -111,7 +111,7 @@ struct ExpandButtonBar: View {
             )
             .overlay(alignment: .top) {
                 Rectangle()
-                    .fill(AppColor.info.opacity(0.8))
+                    .fill(DesignTokens.Color.semantic.info.opacity(0.8))
                     .frame(height: 1)
             }
         }

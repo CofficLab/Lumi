@@ -1,4 +1,5 @@
 import SwiftUI
+import MagicKit
 
 /// 流式阶段助手消息：仅渲染纯文本，避免高频 Markdown 解析。
 struct StreamingAssistantRowView: View {
@@ -24,7 +25,7 @@ struct StreamingAssistantRowView: View {
             }
 
             Text(verbatim: visibleContent)
-                .font(AppTypography.body)
+                .font(DesignTokens.Typography.body)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)

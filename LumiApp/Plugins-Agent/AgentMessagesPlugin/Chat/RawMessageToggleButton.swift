@@ -1,4 +1,5 @@
 import SwiftUI
+import MagicKit
 
 // MARK: - Raw Message Toggle Button
 
@@ -11,7 +12,7 @@ struct RawMessageToggleButton: View {
     var body: some View {
         AppIconButton(
             systemImage: showRawMessage ? "text.bubble.fill" : "curlybraces",
-            tint: AppColor.textSecondary.opacity(0.6),
+            tint: DesignTokens.Color.semantic.textSecondary.opacity(0.6),
             size: .compact
         ) {
             showRawMessage.toggle()

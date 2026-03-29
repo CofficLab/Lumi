@@ -29,23 +29,23 @@ struct TurnCompletedDivider: View {
         HStack(spacing: 12) {
             // 左侧横线
             Rectangle()
-                .fill(AppColor.textSecondary.opacity(0.3))
+                .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.3))
                 .frame(height: 1)
 
             // 中间文字：结束 + 时间
             HStack(spacing: 6) {
                 Text(endText)
-                    .font(AppTypography.caption1)
+                    .font(DesignTokens.Typography.caption1)
                     .fontWeight(.medium)
                 
                 Text(timeText)
-                    .font(AppTypography.caption2)
+                    .font(DesignTokens.Typography.caption2)
             }
-            .foregroundColor(AppColor.textSecondary)
+            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
             // 右侧横线
             Rectangle()
-                .fill(AppColor.textSecondary.opacity(0.3))
+                .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.3))
                 .frame(height: 1)
         }
         .padding(.vertical, 8)

@@ -1,49 +1,77 @@
 import SwiftUI
 import MagicKit
 
+/// 可配置的消息气泡样式参数，用于插件侧按需微调。
+struct AppMessageBubbleStyle {
+    var contentPadding: CGFloat = 10
+    var assistantTrailingPadding: CGFloat = 20
+    var cornerRadius: CGFloat = DesignTokens.Radius.md
+    var errorBackground: Color = DesignTokens.Color.semantic.error.opacity(0.1)
+    var userBackground: Color = DesignTokens.Color.semantic.info.opacity(0.1)
+    var assistantBackground: Color = DesignTokens.Color.semantic.textTertiary.opacity(0.12)
+    var defaultBackground: Color = DesignTokens.Color.semantic.textTertiary.opacity(0.1)
+    var errorForeground: Color = DesignTokens.Color.semantic.error
+    var defaultForeground: Color = DesignTokens.Color.semantic.textPrimary
+    var backgroundOverride: Color?
+    var foregroundOverride: Color?
+
+    static let `default` = AppMessageBubbleStyle()
+}
+
 /// 通用消息气泡容器样式。
 struct AppMessageBubbleModifier: ViewModifier {
     let role: MessageRole
     let isError: Bool
+    let style: AppMessageBubbleStyle
 
     func body(content: Content) -> some View {
         content
-            .padding(10)
-            .padding(.trailing, role == .assistant ? 20 : 0)
+            .padding(style.contentPadding)
+            .padding(.trailing, role == .assistant ? style.assistantTrailingPadding : 0)
             .background(backgroundColor)
             .foregroundColor(foregroundColor)
             .clipShape(
                 RoundedRectangle(
-                    cornerRadius: DesignTokens.Radius.md,
+                    cornerRadius: style.cornerRadius,
                     style: .continuous
                 )
             )
     }
 
     private var backgroundColor: Color {
+        if let override = style.backgroundOverride {
+            return override
+        }
         if isError {
-            return DesignTokens.Color.semantic.error.opacity(0.1)
+            return style.errorBackground
         }
         switch role {
         case .user:
-            return DesignTokens.Color.semantic.info.opacity(0.1)
+            return style.userBackground
         case .assistant:
-            return DesignTokens.Color.semantic.textTertiary.opacity(0.12)
+            return style.assistantBackground
         default:
-            return DesignTokens.Color.semantic.textTertiary.opacity(0.1)
+            return style.defaultBackground
         }
     }
 
     private var foregroundColor: Color {
-        if isError {
-            return DesignTokens.Color.semantic.error
+        if let override = style.foregroundOverride {
+            return override
         }
-        return DesignTokens.Color.semantic.textPrimary
+        if isError {
+            return style.errorForeground
+        }
+        return style.defaultForeground
     }
 }
 
 extension View {
-    func appMessageBubble(role: MessageRole, isError: Bool) -> some View {
-        modifier(AppMessageBubbleModifier(role: role, isError: isError))
+    func appMessageBubble(
+        role: MessageRole,
+        isError: Bool,
+        style: AppMessageBubbleStyle = .default
+    ) -> some View {
+        modifier(AppMessageBubbleModifier(role: role, isError: isError, style: style))
     }
 }

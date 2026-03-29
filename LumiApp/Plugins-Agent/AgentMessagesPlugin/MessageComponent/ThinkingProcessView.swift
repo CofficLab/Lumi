@@ -1,4 +1,5 @@
 import SwiftUI
+import MagicKit
 
 /// 思考过程展示视图（可展开/折叠）
 /// 用于显示 AI 助手的思考过程，支持展开查看详情
@@ -29,17 +30,17 @@ struct ThinkingProcessView: View {
                     HStack(spacing: 6) {
                         Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                             .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(AppColor.textSecondary)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
                         Text(isThinking ? "思考过程…" : "思考过程")
-                            .font(AppTypography.caption1)
-                            .foregroundColor(AppColor.textSecondary)
+                            .font(DesignTokens.Typography.caption1)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
                         // 折叠时展示一小段预览，降低存在感但能提示有内容
                         if !isExpanded, !previewText.isEmpty {
                             Text(previewText)
-                                .font(AppTypography.caption2)
-                                .foregroundColor(AppColor.textSecondary.opacity(0.8))
+                                .font(DesignTokens.Typography.caption2)
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary.opacity(0.8))
                                 .lineLimit(1)
                         }
                     }
@@ -50,7 +51,7 @@ struct ThinkingProcessView: View {
                     HStack(spacing: 2) {
                         ForEach(0..<3) { i in
                             Circle()
-                                .fill(AppColor.textSecondary)
+                                .fill(DesignTokens.Color.semantic.textSecondary)
                                 .frame(width: 4, height: 4)
                                 .opacity(isThinking ? 1.0 : 0.5)
                                 .animation(
@@ -78,8 +79,8 @@ struct ThinkingProcessView: View {
                 ) {
                     ScrollView(showsIndicators: true) {
                         Text(thinkingText)
-                            .font(AppTypography.code)
-                            .foregroundColor(AppColor.textPrimary)
+                            .font(DesignTokens.Typography.code)
+                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                             .padding(12)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }

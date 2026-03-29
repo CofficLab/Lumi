@@ -1,4 +1,5 @@
 import SwiftUI
+import MagicKit
 import Foundation
 
 /// 聊天气泡头像视图 - 根据消息角色显示不同的头像
@@ -37,8 +38,8 @@ public enum AvatarView {
     public static var assistant: some View {
         AppAvatar(
             systemImage: "cpu",
-            tint: AppColor.primary,
-            backgroundTint: AppColor.primary.opacity(0.1)
+            tint: DesignTokens.Color.semantic.primary,
+            backgroundTint: DesignTokens.Color.semantic.primary.opacity(0.1)
         )
     }
 
@@ -46,8 +47,8 @@ public enum AvatarView {
     public static var user: some View {
         AppAvatar(
             systemImage: "person.fill",
-            tint: AppColor.info,
-            backgroundTint: AppColor.info.opacity(0.1)
+            tint: DesignTokens.Color.semantic.info,
+            backgroundTint: DesignTokens.Color.semantic.info.opacity(0.1)
         )
     }
 
@@ -55,8 +56,8 @@ public enum AvatarView {
     public static var tool: some View {
         AppAvatar(
             systemImage: "gearshape.2.fill",
-            tint: AppColor.textTertiary,
-            backgroundTint: AppColor.textTertiary.opacity(0.1)
+            tint: DesignTokens.Color.semantic.textTertiary,
+            backgroundTint: DesignTokens.Color.semantic.textTertiary.opacity(0.1)
         )
     }
 
@@ -64,8 +65,8 @@ public enum AvatarView {
     public static var status: some View {
         AppAvatar(
             systemImage: "sparkles",
-            tint: AppColor.warning,
-            backgroundTint: AppColor.warning.opacity(0.12)
+            tint: DesignTokens.Color.semantic.warning,
+            backgroundTint: DesignTokens.Color.semantic.warning.opacity(0.12)
         )
     }
 
@@ -73,8 +74,8 @@ public enum AvatarView {
     public static var system: some View {
         AppAvatar(
             systemImage: "bolt.shield.fill",
-            tint: AppColor.textSecondary,
-            backgroundTint: AppColor.textSecondary.opacity(0.10)
+            tint: DesignTokens.Color.semantic.textSecondary,
+            backgroundTint: DesignTokens.Color.semantic.textSecondary.opacity(0.10)
         )
     }
 }

@@ -77,13 +77,13 @@ struct SystemMessage: View {
         MessageHeaderView {
             AppIdentityRow(
                 title: "System",
-                titleColor: AppColor.textSecondary
+                titleColor: DesignTokens.Color.semantic.textSecondary
             )
         } trailing: {
             HStack(alignment: .center, spacing: 12) {
                 Text(formatTimestamp(message.timestamp))
-                    .font(AppTypography.caption2)
-                    .foregroundColor(AppColor.textSecondary)
+                    .font(DesignTokens.Typography.caption2)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
                 RawMessageToggleButton(showRawMessage: $showRawMessage)
             }
@@ -169,16 +169,16 @@ private struct LLMInlineConfigErrorView: View {
             HStack(alignment: .top, spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 14))
-                    .foregroundColor(AppColor.error)
+                    .foregroundColor(DesignTokens.Color.semantic.error)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(titleText)
-                        .font(AppTypography.callout)
+                        .font(DesignTokens.Typography.callout)
                         .fontWeight(.semibold)
-                        .foregroundColor(AppColor.textPrimary)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                     if !detailText.isEmpty {
                         Text(detailText)
-                            .font(AppTypography.caption1)
-                            .foregroundColor(AppColor.textSecondary)
+                            .font(DesignTokens.Typography.caption1)
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -232,13 +232,13 @@ private struct ApiKeyMissingSystemMessageView: View {
             // 标题与说明
             VStack(alignment: .leading, spacing: 4) {
                 Text(titleText)
-                    .font(AppTypography.callout)
+                    .font(DesignTokens.Typography.callout)
                     .fontWeight(.semibold)
-                    .foregroundColor(AppColor.textPrimary)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
                 Text(descriptionText)
-                    .font(AppTypography.caption1)
-                    .foregroundColor(AppColor.textSecondary)
+                    .font(DesignTokens.Typography.caption1)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
 
             // 当前会话所用供应商的 API Key 输入
@@ -248,10 +248,10 @@ private struct ApiKeyMissingSystemMessageView: View {
                         Image(systemName: provider.iconName)
                             .font(.system(size: 12))
                         Text(provider.displayName)
-                            .font(AppTypography.caption1)
+                            .font(DesignTokens.Typography.caption1)
                         Spacer()
                     }
-                    .foregroundColor(AppColor.textSecondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
                     AppInputField(
                         LocalizedStringKey(
@@ -333,9 +333,9 @@ private struct LoadingLocalModelSystemMessageView: View {
             HStack(spacing: 10) {
                 statusIcon
                 Text(statusText)
-                    .font(AppTypography.callout)
+                    .font(DesignTokens.Typography.callout)
                     .fontWeight(.medium)
-                    .foregroundColor(AppColor.textPrimary)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 Spacer(minLength: 0)
             }
 
@@ -372,12 +372,12 @@ private struct LoadingLocalModelSystemMessageView: View {
                 if let p = provider {
                     Image(systemName: p.iconName)
                         .font(.system(size: 11))
-                        .foregroundColor(AppColor.textSecondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
                 Text(info.displayName)
-                    .font(AppTypography.callout)
+                    .font(DesignTokens.Typography.callout)
                     .fontWeight(.medium)
-                    .foregroundColor(AppColor.textPrimary)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 if let series = info.series, !series.isEmpty {
                     AppTag(series)
                 }
@@ -385,8 +385,8 @@ private struct LoadingLocalModelSystemMessageView: View {
 
             if !info.description.isEmpty {
                 Text(info.description)
-                    .font(AppTypography.caption1)
-                    .foregroundColor(AppColor.textSecondary)
+                    .font(DesignTokens.Typography.caption1)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -417,11 +417,11 @@ private struct LoadingLocalModelSystemMessageView: View {
             if let p = provider {
                 Image(systemName: p.iconName)
                     .font(.system(size: 11))
-                    .foregroundColor(AppColor.textSecondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
             Text(line)
-                .font(AppTypography.caption1)
-                .foregroundColor(AppColor.textSecondary)
+                .font(DesignTokens.Typography.caption1)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
@@ -437,11 +437,11 @@ private struct LoadingLocalModelSystemMessageView: View {
         } else if isFailed {
             Image(systemName: "xmark.circle.fill")
                 .font(.system(size: 14))
-                .foregroundColor(AppColor.error)
+                .foregroundColor(DesignTokens.Color.semantic.error)
         } else {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 14))
-                .foregroundColor(AppColor.success)
+                .foregroundColor(DesignTokens.Color.semantic.success)
         }
     }
 }

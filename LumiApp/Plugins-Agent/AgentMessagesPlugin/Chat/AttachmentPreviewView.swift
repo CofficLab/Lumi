@@ -1,4 +1,5 @@
 import SwiftUI
+import MagicKit
 
 /// 附件预览视图 - 显示待发送的图片缩略图
 struct AttachmentPreviewView: View {
@@ -16,25 +17,23 @@ struct AttachmentPreviewView: View {
                                 style: .subtle,
                                 padding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
                             ) {
-                                Image(nsImage: nsImage)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(width: 60, height: 60)
-                                    .clipShape(
-                                        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                                    )
+                                AppImageThumbnail(
+                                    image: Image(nsImage: nsImage),
+                                    size: CGSize(width: 60, height: 60),
+                                    shape: .roundedMedium
+                                )
                             }
 
                             AppIconButton(
                                 systemImage: "xmark",
-                                tint: AppColor.textPrimary,
+                                tint: DesignTokens.Color.semantic.textPrimary,
                                 size: .compact
                             ) {
                                 onRemove(attachment.id)
                             }
                             .background(
                                 Circle()
-                                    .fill(AppMaterial.glass)
+                                    .fill(DesignTokens.Material.glass)
                             )
                             .clipShape(Circle())
                             .offset(x: 6, y: -6)

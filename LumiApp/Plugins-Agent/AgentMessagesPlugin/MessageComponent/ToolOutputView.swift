@@ -1,4 +1,5 @@
 import SwiftUI
+import MagicKit
 
 /// 增强版工具输出视图 - 带有更多交互功能
 struct ToolOutputView: View {
@@ -52,8 +53,8 @@ struct ToolOutputView: View {
                 // 时间戳
                 if let timestamp = timestamp {
                     Text(formatTimestamp(timestamp))
-                        .font(AppTypography.caption2)
-                        .foregroundColor(AppColor.textSecondary)
+                        .font(DesignTokens.Typography.caption2)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
             }
         }
@@ -92,8 +93,8 @@ struct ToolOutputView: View {
             ScrollView(.vertical, showsIndicators: true) {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(displayedContent)
-                        .font(AppTypography.code)
-                        .foregroundColor(AppColor.textPrimary)
+                        .font(DesignTokens.Typography.code)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(12)

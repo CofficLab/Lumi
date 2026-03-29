@@ -1,4 +1,5 @@
 import SwiftUI
+import MagicKit
 
 /// 消息头部通用容器，统一悬浮态、边距和背景样式。
 struct MessageHeaderView<Leading: View, Trailing: View>: View {
@@ -25,10 +26,10 @@ struct MessageHeaderView<Leading: View, Trailing: View>: View {
         .padding(.vertical, 6)
         .background(headerBackground)
         .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
                 .stroke(Color.white.opacity(isHovered ? 0.18 : 0.10), lineWidth: 1)
         )
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous))
         .contentShape(Rectangle())
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
@@ -38,11 +39,11 @@ struct MessageHeaderView<Leading: View, Trailing: View>: View {
     }
 
     private var headerBackground: some View {
-        RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
+        RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
             .fill(
                 isHovered
-                    ? AppColor.textSecondary.opacity(0.14)
-                    : AppColor.textSecondary.opacity(0.08)
+                    ? DesignTokens.Color.semantic.textSecondary.opacity(0.14)
+                    : DesignTokens.Color.semantic.textSecondary.opacity(0.08)
             )
     }
 }
