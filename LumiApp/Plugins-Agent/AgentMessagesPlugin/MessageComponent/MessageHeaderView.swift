@@ -23,15 +23,26 @@ struct MessageHeaderView<Leading: View, Trailing: View>: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 6)
-                .fill(isHovered ? Color.primary.opacity(0.2) : Color.primary.opacity(0.1))
+        .background(headerBackground)
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                .stroke(Color.white.opacity(isHovered ? 0.18 : 0.10), lineWidth: 1)
         )
+        .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous))
         .contentShape(Rectangle())
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
                 isHovered = hovering
             }
         }
+    }
+
+    private var headerBackground: some View {
+        RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+            .fill(
+                isHovered
+                    ? DesignTokens.Color.semantic.textSecondary.opacity(0.14)
+                    : DesignTokens.Color.semantic.textSecondary.opacity(0.08)
+            )
     }
 }

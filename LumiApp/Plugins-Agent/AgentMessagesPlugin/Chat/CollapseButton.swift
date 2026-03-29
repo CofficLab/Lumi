@@ -9,21 +9,13 @@ struct CollapseButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                Image(systemName: "chevron.up")
-                    .font(.system(size: 10, weight: .semibold))
-                Text("折叠")
-                    .font(.system(size: 11, weight: .medium))
-            }
-            .foregroundColor(DesignTokens.Color.semantic.textSecondary.opacity(0.8))
-            .padding(6)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.08))
-            )
-        }
-        .buttonStyle(.plain)
+        AppIconButton(
+            systemImage: "chevron.up",
+            label: "折叠",
+            tint: DesignTokens.Color.semantic.textSecondary.opacity(0.8),
+            size: .compact,
+            action: action
+        )
         .help("折叠消息")
     }
 }
