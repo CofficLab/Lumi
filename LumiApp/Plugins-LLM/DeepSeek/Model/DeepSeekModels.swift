@@ -6,9 +6,6 @@ import Foundation
 ///
 /// DeepSeek 的响应格式兼容 OpenAI 格式。
 /// 用于解析非流式响应。
-///
-/// 注意：流式响应直接复用 OpenAIProvider 的解析逻辑，
-/// 因此不需要单独定义流式响应模型。
 struct DeepSeekResponse: Decodable {
     /// 响应选项列表
     let choices: [Choice]

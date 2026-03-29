@@ -6,7 +6,7 @@ import os
 
 /// OpenAI API 供应商实现
 ///
-/// 此实现也适用于兼容 OpenAI API 格式的其他服务（如 DeepSeek）。
+/// 集成 OpenAI GPT 系列模型，支持 Tool Calls 和流式响应。
 final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.openai")
     nonisolated static let emoji = "🟢"
@@ -23,15 +23,14 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_OpenAI"
     static let modelStorageKey = "DevAssistant_Model_OpenAI"
-
     static let defaultModel = "gpt-4o"
 
     static let availableModels = [
-        "gpt-4o",              // GPT-4 Omni（最新）
-        "gpt-4o-mini",         // GPT-4 Omni Mini
-        "gpt-4-turbo",         // GPT-4 Turbo
-        "gpt-4",               // GPT-4
-        "gpt-3.5-turbo",       // GPT-3.5 Turbo
+        "gpt-4o",
+        "gpt-4o-mini",
+        "gpt-4-turbo",
+        "gpt-4",
+        "gpt-3.5-turbo",
     ]
 
     // MARK: - SuperLLMProvider
@@ -58,7 +57,6 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
         tools: [AgentTool]?,
         systemPrompt: String
     ) throws -> [String: Any] {
-        // 转换消息格式
         let finalMessages = messages.map { transformMessage($0) }
 
         var body: [String: Any] = [
@@ -67,7 +65,6 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
             "stream": false,
         ]
 
-        // 添加工具定义（如果存在）
         if let tools = tools, !tools.isEmpty {
             body["tools"] = tools.map { formatTool($0) }
         }
@@ -76,7 +73,6 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     }
 
     func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
-        // 使用 OpenAIModels 中的响应模型解析
         let result = try JSONDecoder().decode(OpenAIResponse.self, from: data)
         
         guard let choiceMessage = result.choices.first?.message else {
@@ -95,7 +91,6 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
         return (content, toolCalls)
     }
 
-    /// 构建流式请求体
     func buildStreamingRequestBody(
         messages: [ChatMessage],
         model: String,
@@ -115,18 +110,15 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
     /// 解析流式响应数据块
     ///
-    /// OpenAI SSE 格式示例：
-    /// data: {"id":"chatcmpl-xxx","object":"chat.completion.chunk","choices":[{"delta":{"content":"Hello"},"index":0}]}
-    ///
-    /// data: {"id":"chatcmpl-xxx","object":"chat.completion.chunk","choices":[],"usage":{"prompt_tokens":50,"completion_tokens":120,"total_tokens":170}}
-    ///
+    /// OpenAI SSE 格式：
+    /// data: {"choices":[{"delta":{"content":"Hello"}}]}
+    /// data: {"usage":{"prompt_tokens":50,"completion_tokens":120}}
     /// data: [DONE]
     func parseStreamChunk(data: Data) throws -> StreamChunk? {
         guard let text = String(data: data, encoding: .utf8) else {
             return nil
         }
 
-        // 解析 SSE 格式
         var eventData: String?
 
         let lines = text.components(separatedBy: "\n")
@@ -146,7 +138,6 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
             return StreamChunk(isDone: true)
         }
 
-        // 解析 JSON 数据
         guard let jsonData = dataStr.data(using: .utf8) else {
             return nil
         }
@@ -160,15 +151,11 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
                 return StreamChunk(error: errorMessage)
             }
 
-            // 提取 usage 信息（OpenAI 在最后一个chunk返回）
+            // 提取 usage 信息
             if let usage = json?["usage"] as? [String: Any] {
                 let inputTokens = usage["prompt_tokens"] as? Int
                 let outputTokens = usage["completion_tokens"] as? Int
-                return StreamChunk(
-                    isDone: false,
-                    inputTokens: inputTokens,
-                    outputTokens: outputTokens
-                )
+                return StreamChunk(isDone: false, inputTokens: inputTokens, outputTokens: outputTokens)
             }
 
             // 提取内容增量
@@ -176,15 +163,13 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
                let firstChoice = choices.first,
                let delta = firstChoice["delta"] as? [String: Any] {
 
-                // 处理文本内容
                 if let content = delta["content"] as? String {
                     return StreamChunk(content: content, eventType: .textDelta)
                 }
 
-                // 处理工具调用
                 if let toolCalls = delta["tool_calls"] as? [[String: Any]] {
                     var resultToolCalls: [ToolCall] = []
-                    var partialJson: String? = nil
+                    var partialJson: String?
 
                     for tc in toolCalls {
                         guard let function = tc["function"] as? [String: Any] else {
@@ -195,32 +180,20 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
                         let name = function["name"] as? String
                         let arguments = function["arguments"] as? String
 
-                        // 如果有 id 和 name，说明是一个新的工具调用开始
                         if let toolId = id, let toolName = name {
-                            let toolCall = ToolCall(
-                                id: toolId,
-                                name: toolName,
-                                arguments: arguments ?? "{}"
-                            )
+                            let toolCall = ToolCall(id: toolId, name: toolName, arguments: arguments ?? "{}")
                             resultToolCalls.append(toolCall)
                         }
 
-                        // 如果有 arguments 分片，单独返回
                         if let args = arguments {
                             partialJson = args
                         }
                     }
 
-                    // 优先返回工具调用（如果有）
                     if !resultToolCalls.isEmpty {
-                        return StreamChunk(
-                            toolCalls: resultToolCalls,
-                            partialJson: partialJson,
-                            eventType: .contentBlockStart
-                        )
+                        return StreamChunk(toolCalls: resultToolCalls, partialJson: partialJson, eventType: .contentBlockStart)
                     }
 
-                    // 如果只有参数分片（没有 id/name），返回 partialJson
                     if let partial = partialJson {
                         return StreamChunk(partialJson: partial, eventType: .inputJsonDelta)
                     }
@@ -230,7 +203,7 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
             return nil
         } catch {
             if Self.verbose {
-                OpenAIProvider.logger.error("解析流式数据块失败: \(error.localizedDescription)")
+                Self.logger.error("解析流式数据块失败: \(error.localizedDescription)")
             }
             return nil
         }
@@ -242,10 +215,7 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 // MARK: - 消息转换
 
 extension OpenAIProvider {
-
-    /// 将 ChatMessage 转换为 OpenAI 格式
     func transformMessage(_ message: ChatMessage) -> [String: Any] {
-        // 工具结果消息
         if let toolCallID = message.toolCallID {
             return [
                 "role": "tool",
@@ -254,7 +224,6 @@ extension OpenAIProvider {
             ]
         }
 
-        // 带工具调用的助手消息
         var dict: [String: Any] = [
             "role": message.role.rawValue,
             "content": message.content,
@@ -265,10 +234,7 @@ extension OpenAIProvider {
                 [
                     "id": tc.id,
                     "type": "function",
-                    "function": [
-                        "name": tc.name,
-                        "arguments": tc.arguments,
-                    ],
+                    "function": ["name": tc.name, "arguments": tc.arguments],
                 ]
             }
         }
@@ -280,8 +246,6 @@ extension OpenAIProvider {
 // MARK: - 工具格式
 
 extension OpenAIProvider {
-
-    /// 将 AgentTool 转换为 OpenAI 格式
     func formatTool(_ tool: AgentTool) -> [String: Any] {
         [
             "type": "function",

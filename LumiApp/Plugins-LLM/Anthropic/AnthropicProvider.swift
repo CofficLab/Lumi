@@ -31,36 +31,21 @@ import os
 final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.anthropic")
     nonisolated static let emoji = "🤖"
-    
-    /// 是否启用详细日志
     nonisolated static let verbose = true
 
     // MARK: - Basic Info
 
-    /// 供应商唯一标识符
     static let id = "anthropic"
-    
-    /// 显示名称
     static let displayName = String(localized: "Anthropic", table: "Anthropic")
-    
-    /// 图标名称 (SF Symbol)
     static let iconName = "brain.head.profile"
-    
-    /// 供应商描述
     static let description = String(localized: "Claude AI by Anthropic", table: "Anthropic")
 
     // MARK: - Configuration
 
-    /// API Key 存储键名
     static let apiKeyStorageKey = "DevAssistant_ApiKey_Anthropic"
-    
-    /// 模型选择存储键名
     static let modelStorageKey = "DevAssistant_Model_Anthropic"
-
-    /// 默认模型
     static let defaultModel = "claude-sonnet-4-20250514"
 
-    /// 可用模型列表
     static let availableModels = [
         "claude-sonnet-4-20250514",
         "claude-opus-4-20250514",
@@ -77,12 +62,10 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
         super.init()
     }
 
-    /// API 基础 URL
     var baseURL: String {
         "https://api.anthropic.com/v1/messages"
     }
 
-    /// 构建 API 请求
     func buildRequest(url: URL, apiKey: String) -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -92,17 +75,13 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
         return request
     }
 
-    /// 构建请求体
     func buildRequestBody(
         messages: [ChatMessage],
         model: String,
         tools: [AgentTool]?,
         systemPrompt: String
     ) throws -> [String: Any] {
-        // 提取系统消息
         let systemMessage = messages.first(where: { $0.role == .system })?.content ?? systemPrompt
-
-        // 转换对话消息（只发送 user/assistant 给 LLM）
         let conversationMessages = messages
             .filter { $0.role.shouldSendToLLM }
             .map { transformMessage($0) }
@@ -114,23 +93,19 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
             "messages": conversationMessages,
         ]
 
-        // 添加工具定义
         if let tools = tools, !tools.isEmpty {
             body["tools"] = tools.map { formatTool($0) }
         }
 
         return body
     }
-    
-    /// 解析 API 响应
+
     func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
-        // 使用 AnthropicModels 中的响应模型解析
         let result = try JSONDecoder().decode(AnthropicResponse.self, from: data)
 
         var textContent = ""
         var toolCalls: [ToolCall] = []
 
-        // 遍历响应内容，提取文本和工具调用
         for item in result.content {
             if item.type == "text", let text = item.text {
                 textContent += text
@@ -138,7 +113,6 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
                       let id = item.id,
                       let name = item.name,
                       let inputDict = item.input {
-                // 将输入字典转换为 JSON 字符串
                 let normalDict = inputDict.mapValues { $0.value }
                 let inputData = try JSONSerialization.data(withJSONObject: normalDict)
                 let inputString = String(data: inputData, encoding: .utf8) ?? "{}"
@@ -149,7 +123,6 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
         return (textContent, toolCalls.isEmpty ? nil : toolCalls)
     }
 
-    /// 构建流式请求体
     func buildStreamingRequestBody(
         messages: [ChatMessage],
         model: String,
@@ -176,7 +149,6 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
             return nil
         }
 
-        // 解析 SSE 格式
         var eventType: String?
         var eventDataLines: [String] = []
 
@@ -196,7 +168,6 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
             return nil
         }
 
-        // 解析 JSON 数据
         guard let jsonData = dataStr.data(using: .utf8) else {
             return nil
         }
@@ -249,12 +220,10 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
                 if let contentBlock = json?["content_block"] as? [String: Any],
                    let blockType = contentBlock["type"] as? String {
 
-                    // 处理思考块
                     if blockType == "thinking" {
                         return StreamChunk(eventType: .contentBlockStart, rawEvent: text)
                     }
 
-                    // 处理工具调用
                     if blockType == "tool_use" {
                         if let id = contentBlock["id"] as? String,
                            let name = contentBlock["name"] as? String {
@@ -263,7 +232,6 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
                         }
                     }
 
-                    // 处理文本块
                     if blockType == "text" {
                         if let textContent = contentBlock["text"] as? String, !textContent.isEmpty {
                             return StreamChunk(content: textContent, eventType: .contentBlockStart, rawEvent: text)
@@ -279,7 +247,6 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
             // 处理内容块增量
             if effectiveEventType == "content_block_delta" {
                 if let delta = json?["delta"] as? [String: Any] {
-                    // 处理 thinking_delta
                     if let thinkingDelta = delta["thinking_delta"] as? String {
                         return StreamChunk(content: thinkingDelta, eventType: .thinkingDelta, rawEvent: text)
                     }
@@ -287,22 +254,18 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
                         return StreamChunk(content: thinkingDelta, eventType: .thinkingDelta, rawEvent: text)
                     }
 
-                    // 处理 text
                     if let textContent = delta["text"] as? String {
                         return StreamChunk(content: textContent, eventType: .textDelta, rawEvent: text)
                     }
 
-                    // 处理 text_delta
                     if let textDelta = delta["text_delta"] as? String {
                         return StreamChunk(content: textDelta, eventType: .textDelta, rawEvent: text)
                     }
                     
-                    // 处理 input_json_delta
                     if let partialJson = delta["partial_json"] as? String {
                         return StreamChunk(partialJson: partialJson, eventType: .inputJsonDelta, rawEvent: text)
                     }
                     
-                    // 处理 signature_delta
                     if delta["signature"] != nil {
                         return StreamChunk(eventType: .signatureDelta, rawEvent: text)
                     }
@@ -317,7 +280,6 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
                 return StreamChunk(eventType: .contentBlockStop, rawEvent: text)
             }
 
-            // 处理未知事件类型
             return StreamChunk(eventType: .unknown, rawEvent: text)
         } catch {
             if Self.verbose {
@@ -334,7 +296,6 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
 
 extension AnthropicProvider {
     func transformMessage(_ message: ChatMessage) -> [String: Any] {
-        // 处理工具结果
         if let toolCallID = message.toolCallID {
             return [
                 "role": "user",
@@ -344,7 +305,6 @@ extension AnthropicProvider {
             ]
         }
 
-        // 处理工具调用
         if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
             var content: [[String: Any]] = []
 
@@ -360,14 +320,12 @@ extension AnthropicProvider {
                 } else {
                     inputObject = [:]
                 }
-
                 content.append(["type": "tool_use", "id": tc.id, "name": tc.name, "input": inputObject])
             }
 
             return ["role": "assistant", "content": content]
         }
 
-        // 处理图片附件
         if !message.images.isEmpty {
             if Self.verbose {
                 Self.logger.info("\(self.t) 消息包含 \(message.images.count) 张图片，正在转换...")
@@ -397,7 +355,6 @@ extension AnthropicProvider {
             return ["role": message.role.rawValue, "content": content]
         }
 
-        // 处理传统 marker 格式
         if message.content.contains("[IMAGE_BASE64:") {
             var content: [[String: Any]] = []
             let components = message.content.components(separatedBy: "[IMAGE_BASE64:")
@@ -415,7 +372,6 @@ extension AnthropicProvider {
                     if imageComponents.count == 2 {
                         let mimeType = String(imageComponents[0])
                         let base64Data = String(imageComponents[1])
-
                         content.append([
                             "type": "image",
                             "source": ["type": "base64", "media_type": mimeType, "data": base64Data]
@@ -434,7 +390,6 @@ extension AnthropicProvider {
             return ["role": message.role.rawValue, "content": content]
         }
 
-        // 默认：纯文本消息
         return ["role": message.role.rawValue, "content": message.content]
     }
 }

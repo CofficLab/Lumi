@@ -7,7 +7,6 @@ import os
 /// DeepSeek 供应商实现
 ///
 /// DeepSeek API 兼容 OpenAI 格式，支持 Tool Calls 和流式响应。
-/// API 地址：https://api.deepseek.com/v1/chat/completions
 final class DeepSeekProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.deepseek")
     nonisolated static let emoji = "🟠"
@@ -27,8 +26,8 @@ final class DeepSeekProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked S
     static let defaultModel = "deepseek-chat"
 
     static let availableModels = [
-        "deepseek-chat",      // DeepSeek Chat
-        "deepseek-coder",     // DeepSeek Coder
+        "deepseek-chat",
+        "deepseek-coder",
     ]
 
     // MARK: - SuperLLMProvider
@@ -107,23 +106,111 @@ final class DeepSeekProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked S
 
     /// 解析流式响应数据块
     ///
-    /// DeepSeek 的流式响应格式兼容 OpenAI：
-    /// - 正常内容：使用 OpenAI 格式
-    /// - 结束标记：`data: [DONE]`
+    /// DeepSeek SSE 格式（兼容 OpenAI）：
+    /// data: {"choices":[{"delta":{"content":"Hello"}}]}
+    /// data: [DONE]
     func parseStreamChunk(data: Data) throws -> StreamChunk? {
-        // 复用 OpenAI 的解析逻辑
-        let openAIProvider = OpenAIProvider()
-        return try openAIProvider.parseStreamChunk(data: data)
+        guard let text = String(data: data, encoding: .utf8) else {
+            return nil
+        }
+
+        var eventData: String?
+
+        let lines = text.components(separatedBy: "\n")
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("data: ") {
+                eventData = String(trimmed.dropFirst(6))
+            }
+        }
+
+        guard let dataStr = eventData else {
+            return nil
+        }
+
+        // 处理结束标记
+        if dataStr == "[DONE]" {
+            return StreamChunk(isDone: true)
+        }
+
+        guard let jsonData = dataStr.data(using: .utf8) else {
+            return nil
+        }
+
+        do {
+            let json = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any]
+
+            // 处理错误
+            if let error = json?["error"] as? [String: Any],
+               let errorMessage = error["message"] as? String {
+                return StreamChunk(error: errorMessage)
+            }
+
+            // 提取 usage 信息
+            if let usage = json?["usage"] as? [String: Any] {
+                let inputTokens = usage["prompt_tokens"] as? Int
+                let outputTokens = usage["completion_tokens"] as? Int
+                return StreamChunk(isDone: false, inputTokens: inputTokens, outputTokens: outputTokens)
+            }
+
+            // 提取内容增量
+            if let choices = json?["choices"] as? [[String: Any]],
+               let firstChoice = choices.first,
+               let delta = firstChoice["delta"] as? [String: Any] {
+
+                if let content = delta["content"] as? String {
+                    return StreamChunk(content: content, eventType: .textDelta)
+                }
+
+                if let toolCalls = delta["tool_calls"] as? [[String: Any]] {
+                    var resultToolCalls: [ToolCall] = []
+                    var partialJson: String?
+
+                    for tc in toolCalls {
+                        guard let function = tc["function"] as? [String: Any] else {
+                            continue
+                        }
+
+                        let id = tc["id"] as? String
+                        let name = function["name"] as? String
+                        let arguments = function["arguments"] as? String
+
+                        if let toolId = id, let toolName = name {
+                            let toolCall = ToolCall(id: toolId, name: toolName, arguments: arguments ?? "{}")
+                            resultToolCalls.append(toolCall)
+                        }
+
+                        if let args = arguments {
+                            partialJson = args
+                        }
+                    }
+
+                    if !resultToolCalls.isEmpty {
+                        return StreamChunk(toolCalls: resultToolCalls, partialJson: partialJson, eventType: .contentBlockStart)
+                    }
+
+                    if let partial = partialJson {
+                        return StreamChunk(partialJson: partial, eventType: .inputJsonDelta)
+                    }
+                }
+            }
+
+            return nil
+        } catch {
+            if Self.verbose {
+                Self.logger.error("解析流式数据块失败: \(error.localizedDescription)")
+            }
+            return nil
+        }
     }
 
     static var logEmoji: String { "🟠" }
 }
 
-// MARK: - Message Transformation
+// MARK: - 消息转换
 
 extension DeepSeekProvider {
     func transformMessage(_ message: ChatMessage) -> [String: Any] {
-        // 工具结果消息
         if let toolCallID = message.toolCallID {
             return [
                 "role": "tool",
@@ -132,7 +219,6 @@ extension DeepSeekProvider {
             ]
         }
 
-        // 带工具调用的助手消息
         var dict: [String: Any] = [
             "role": message.role.rawValue,
             "content": message.content,
@@ -143,10 +229,7 @@ extension DeepSeekProvider {
                 [
                     "id": tc.id,
                     "type": "function",
-                    "function": [
-                        "name": tc.name,
-                        "arguments": tc.arguments,
-                    ],
+                    "function": ["name": tc.name, "arguments": tc.arguments],
                 ]
             }
         }
@@ -155,7 +238,7 @@ extension DeepSeekProvider {
     }
 }
 
-// MARK: - Tool Formatting
+// MARK: - 工具格式
 
 extension DeepSeekProvider {
     func formatTool(_ tool: AgentTool) -> [String: Any] {

@@ -5,9 +5,6 @@ import Foundation
 /// OpenAI API 响应结构
 ///
 /// 用于解析非流式响应。
-///
-/// 注意：流式响应解析逻辑在 OpenAIProvider 中直接处理，
-/// 因此不需要单独定义流式响应模型。
 struct OpenAIResponse: Decodable {
     /// 响应选项列表
     let choices: [Choice]
