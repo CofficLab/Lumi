@@ -10,12 +10,12 @@ struct PlainTextMessageContentView: View {
         Group {
             if preferOuterScroll {
                 Text(verbatim: content)
-                    .font(.system(.body, design: monospaced ? .monospaced : .default))
+                    .font(monospaced ? DesignTokens.Typography.code : DesignTokens.Typography.body)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 TextEditor(text: .constant(content))
-                    .font(.system(.body, design: monospaced ? .monospaced : .default))
+                    .font(monospaced ? DesignTokens.Typography.code : DesignTokens.Typography.body)
                     .textSelection(.enabled)
                     .scrollContentBackground(.hidden)
             }

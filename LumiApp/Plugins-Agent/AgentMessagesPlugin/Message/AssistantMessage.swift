@@ -101,29 +101,7 @@ struct AssistantMessage: View {
 
     private var headerSection: some View {
         MessageHeaderView {
-            HStack(alignment: .center, spacing: 4) {
-                Text("Lumi")
-                    .font(DesignTokens.Typography.caption1)
-                    .fontWeight(.medium)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-
-                if let providerId = message.providerId {
-                    Text("·")
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                    Text(providerId)
-                        .font(DesignTokens.Typography.caption2)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                }
-
-                if let modelName = message.modelName {
-                    Text("·")
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                    Text(formatModelName(modelName))
-                        .font(DesignTokens.Typography.caption2)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                }
-
-            }
+            AppIdentityRow(title: "Lumi", metadata: identityMetadata)
         } trailing: {
             HStack(alignment: .center, spacing: 12) {
                 // 性能指标组（暂时隐藏）
@@ -151,6 +129,17 @@ struct AssistantMessage: View {
                 RawMessageToggleButton(showRawMessage: $showRawMessage)
             }
         }
+    }
+
+    private var identityMetadata: [String] {
+        var items: [String] = []
+        if let providerId = message.providerId, !providerId.isEmpty {
+            items.append(providerId)
+        }
+        if let modelName = message.modelName, !modelName.isEmpty {
+            items.append(formatModelName(modelName))
+        }
+        return items
     }
 
     private var performanceMetricsGroup: some View {
@@ -185,9 +174,7 @@ struct AssistantMessage: View {
                     }
                 })
             } else {
-                Text("已折叠")
-                    .font(DesignTokens.Typography.caption2)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary.opacity(0.6))
+                AppTag("已折叠")
             }
         }
     }

@@ -12,51 +12,16 @@ struct TokenProgressBar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            // 进度条 - 使用固定尺寸的 ZStack 替代 GeometryReader
-            ZStack(alignment: .leading) {
-                // 背景
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(width: 120, height: 4)
-
-                // 输入 token 部分（绿色）
-                HStack(spacing: 0) {
-                    Rectangle()
-                        .fill(Color.green)
-                        .frame(width: 120 * inputRatio, height: 4)
-
-                    Spacer(minLength: 0)
-                }
-
-                // 输出 token 部分（紫色）
-                HStack(spacing: 0) {
-                    Spacer(minLength: 0)
-                    Rectangle()
-                        .fill(Color.purple)
-                        .frame(width: 120 * (1 - inputRatio), height: 4)
-                }
-            }
-            .frame(width: 120, height: 4)
+            AppDualSegmentBar(
+                leadingRatio: inputRatio,
+                leadingColor: .green,
+                trailingColor: .purple
+            )
 
             // Token 信息（一行显示）
             HStack(spacing: 8) {
-                HStack(spacing: 2) {
-                    Image(systemName: "arrow.right.circle.fill")
-                        .font(.system(size: 7, weight: .medium))
-                    Text("\(inputTokens)")
-                        .font(DesignTokens.Typography.caption2)
-                        .fixedSize()
-                }
-                .foregroundColor(.green)
-
-                HStack(spacing: 2) {
-                    Image(systemName: "arrow.left.circle.fill")
-                        .font(.system(size: 7, weight: .medium))
-                    Text("\(outputTokens)")
-                        .font(DesignTokens.Typography.caption2)
-                        .fixedSize()
-                }
-                .foregroundColor(.purple)
+                AppTag("\(inputTokens)", systemImage: "arrow.right.circle.fill")
+                AppTag("\(outputTokens)", systemImage: "arrow.left.circle.fill")
             }
         }
         .fixedSize()

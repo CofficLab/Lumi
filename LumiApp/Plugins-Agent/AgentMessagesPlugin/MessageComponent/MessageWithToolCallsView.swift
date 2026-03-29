@@ -112,16 +112,8 @@ struct MessageWithToolCallsView: View {
                         HStack(spacing: 4) {
                             ProgressView()
                                 .controlSize(.small)
-                            Text("结果")
-                                .font(DesignTokens.Typography.caption1)
+                            AppTag("结果")
                         }
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule()
-                                .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.08))
-                        )
                     } else {
                         AppIconButton(
                             systemImage: "doc.text.magnifyingglass",

@@ -32,12 +32,7 @@ struct UserMessage: View {
 
     private var header: some View {
         MessageHeaderView {
-            HStack(alignment: .center, spacing: 4) {
-                Text(currentUserName)
-                    .font(DesignTokens.Typography.caption1)
-                    .fontWeight(.medium)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-            }
+            AppIdentityRow(title: currentUserName)
         } trailing: {
             HStack(alignment: .center, spacing: 12) {
                 CopyMessageButton(

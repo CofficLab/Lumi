@@ -30,21 +30,10 @@ struct ToolOutputView: View {
 
     private var toolOutputHeader: some View {
         MessageHeaderView {
-            // 左侧：工具输出标识 · 行数（与 Assistant 的 Lumi · provider · model 结构一致）
-            HStack(alignment: .center, spacing: 4) {
-                Text("工具输出")
-                    .font(DesignTokens.Typography.caption1)
-                    .fontWeight(.medium)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-
-                if lineCountCached > 1 {
-                    Text("·")
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                    Text("\(lineCountCached) 行")
-                        .font(DesignTokens.Typography.caption2)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                }
-            }
+            AppIdentityRow(
+                title: "工具输出",
+                metadata: lineCountCached > 1 ? ["\(lineCountCached) 行"] : []
+            )
         } trailing: {
             HStack(alignment: .center, spacing: 12) {
                 // 复制按钮（与 User / Assistant 一致）
@@ -57,9 +46,7 @@ struct ToolOutputView: View {
                 if isExpanded {
                     CollapseButton(action: toggleExpanded)
                 } else {
-                    Text("已折叠")
-                        .font(DesignTokens.Typography.caption2)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary.opacity(0.6))
+                    AppTag("已折叠")
                 }
 
                 // 时间戳

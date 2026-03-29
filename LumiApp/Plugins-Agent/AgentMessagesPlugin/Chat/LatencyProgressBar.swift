@@ -12,51 +12,16 @@ struct LatencyProgressBar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            // 进度条 - 使用固定尺寸的 ZStack 替代 GeometryReader
-            ZStack(alignment: .leading) {
-                // 背景
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(width: 120, height: 4)
-
-                // TTFT 部分（橙色）
-                HStack(spacing: 0) {
-                    Rectangle()
-                        .fill(Color.orange)
-                        .frame(width: 120 * ttftRatio, height: 4)
-
-                    Spacer(minLength: 0)
-                }
-
-                // 响应时间部分（蓝色）
-                HStack(spacing: 0) {
-                    Spacer(minLength: 0)
-                    Rectangle()
-                        .fill(Color.blue)
-                        .frame(width: 120 * (1 - ttftRatio), height: 4)
-                }
-            }
-            .frame(width: 120, height: 4)
+            AppDualSegmentBar(
+                leadingRatio: ttftRatio,
+                leadingColor: .orange,
+                trailingColor: .blue
+            )
 
             // 时间信息（一行显示）
             HStack(spacing: 8) {
-                HStack(spacing: 2) {
-                    Image(systemName: "bolt.fill")
-                        .font(.system(size: 7, weight: .medium))
-                    Text(formatTTFT(ttft))
-                        .font(DesignTokens.Typography.caption2)
-                        .fixedSize()
-                }
-                .foregroundColor(.orange)
-
-                HStack(spacing: 2) {
-                    Image(systemName: "clock")
-                        .font(.system(size: 7, weight: .medium))
-                    Text(formatLatency(totalLatency))
-                        .font(DesignTokens.Typography.caption2)
-                        .fixedSize()
-                }
-                .foregroundColor(.blue)
+                AppTag(formatTTFT(ttft), systemImage: "bolt.fill")
+                AppTag(formatLatency(totalLatency), systemImage: "clock")
             }
         }
         .fixedSize()

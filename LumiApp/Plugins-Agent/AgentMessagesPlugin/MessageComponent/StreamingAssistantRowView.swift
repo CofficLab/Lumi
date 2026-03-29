@@ -15,17 +15,7 @@ struct StreamingAssistantRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             MessageHeaderView {
-                HStack(alignment: .center, spacing: 4) {
-                    Text("Lumi")
-                        .font(DesignTokens.Typography.caption1)
-                        .fontWeight(.medium)
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                    Text("·")
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                    Text("生成中")
-                        .font(DesignTokens.Typography.caption2)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                }
+                AppIdentityRow(title: "Lumi", metadata: ["生成中"])
             } trailing: {
                 HStack(spacing: 6) {
                     ProgressView()
@@ -34,7 +24,7 @@ struct StreamingAssistantRowView: View {
             }
 
             Text(verbatim: visibleContent)
-                .font(.system(.body, design: .default))
+                .font(DesignTokens.Typography.body)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)

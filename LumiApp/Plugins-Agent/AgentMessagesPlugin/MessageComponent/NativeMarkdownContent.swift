@@ -30,14 +30,14 @@ struct NativeMarkdownContent: View {
                 .padding(.top, level <= 2 ? 4 : 2)
         case let .paragraph(text):
             inlineText(text)
-                .font(.system(.body, design: .default))
+                .font(DesignTokens.Typography.body)
         case let .unorderedList(items):
             VStack(alignment: .leading, spacing: 4) {
                 ForEach(Array(items.enumerated()), id: \.offset) { _, item in
                     HStack(alignment: .top, spacing: 8) {
                         taskBulletView(state: item.taskState)
                         inlineText(item.text)
-                            .font(.system(.body, design: .default))
+                            .font(DesignTokens.Typography.body)
                     }
                 }
             }
@@ -46,10 +46,10 @@ struct NativeMarkdownContent: View {
                 ForEach(Array(items.enumerated()), id: \.offset) { _, entry in
                     HStack(alignment: .top, spacing: 8) {
                         Text("\(entry.index).")
-                            .font(.system(.body, design: .default))
+                            .font(DesignTokens.Typography.body)
                             .monospacedDigit()
                         inlineText(entry.text)
-                            .font(.system(.body, design: .default))
+                            .font(DesignTokens.Typography.body)
                     }
                 }
             }
@@ -64,7 +64,7 @@ struct NativeMarkdownContent: View {
                     if preferOuterScroll {
                         // 消息列表内避免嵌套 ScrollView：否则会截获滚轮，外层列表无法滚动（见 MarkdownView preferOuterScroll 说明）
                         Text(verbatim: code)
-                            .font(.system(.body, design: .monospaced))
+                            .font(DesignTokens.Typography.code)
                             .textSelection(.enabled)
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -72,7 +72,7 @@ struct NativeMarkdownContent: View {
                     } else {
                         ScrollView(.horizontal, showsIndicators: false) {
                             Text(verbatim: code)
-                                .font(.system(.body, design: .monospaced))
+                                .font(DesignTokens.Typography.code)
                                 .textSelection(.enabled)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(10)
@@ -84,10 +84,10 @@ struct NativeMarkdownContent: View {
         case let .quote(text):
             HStack(alignment: .top, spacing: 10) {
                 Rectangle()
-                    .fill(Color.secondary.opacity(0.35))
+                    .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.35))
                     .frame(width: 3)
                 inlineText(text)
-                    .font(.system(.body, design: .default))
+                    .font(DesignTokens.Typography.body)
                     .foregroundStyle(.secondary)
             }
         case let .table(headers, rows):
@@ -132,17 +132,17 @@ struct NativeMarkdownContent: View {
         switch state {
         case .todo:
             Image(systemName: "square")
-                .font(.system(size: 12))
+                .font(DesignTokens.Typography.caption1)
                 .foregroundStyle(.secondary)
                 .padding(.top, 4)
         case .done:
             Image(systemName: "checkmark.square.fill")
-                .font(.system(size: 12))
+                .font(DesignTokens.Typography.caption1)
                 .foregroundStyle(.green)
                 .padding(.top, 4)
         case .none:
             Text("•")
-                .font(.system(.body, design: .default))
+                .font(DesignTokens.Typography.body)
         }
     }
 
@@ -161,7 +161,7 @@ struct NativeMarkdownContent: View {
         HStack(alignment: .top, spacing: 0) {
             ForEach(Array(cells.enumerated()), id: \.offset) { idx, cell in
                 inlineText(cell)
-                    .font(isHeader ? .system(.body, design: .default).weight(.semibold) : .system(.body, design: .default))
+                    .font(isHeader ? DesignTokens.Typography.bodyEmphasized : DesignTokens.Typography.body)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 8)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -170,7 +170,7 @@ struct NativeMarkdownContent: View {
                 }
             }
         }
-        .background(isHeader ? Color.primary.opacity(0.06) : Color.clear)
+        .background(isHeader ? DesignTokens.Color.semantic.textSecondary.opacity(0.10) : Color.clear)
     }
 }
 

@@ -78,7 +78,7 @@ struct ThinkingProcessView: View {
                 ) {
                     ScrollView(showsIndicators: true) {
                         Text(thinkingText)
-                            .font(.system(size: 12, design: .monospaced))
+                            .font(DesignTokens.Typography.code)
                             .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                             .padding(12)
                             .frame(maxWidth: .infinity, alignment: .leading)

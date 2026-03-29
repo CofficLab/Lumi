@@ -84,9 +84,9 @@ struct ExpandButtonBar: View {
                 Spacer()
                 HStack(spacing: 6) {
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 11, weight: .semibold))
                     Text("展开")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(DesignTokens.Typography.caption1)
                 }
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 .padding(.horizontal, 20)

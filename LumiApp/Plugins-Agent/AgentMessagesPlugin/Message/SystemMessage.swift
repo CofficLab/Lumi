@@ -75,12 +75,10 @@ struct SystemMessage: View {
 
     private var header: some View {
         MessageHeaderView {
-            HStack(alignment: .center, spacing: 4) {
-                Text("System")
-                    .font(DesignTokens.Typography.caption1)
-                    .fontWeight(.medium)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-            }
+            AppIdentityRow(
+                title: "System",
+                titleColor: DesignTokens.Color.semantic.textSecondary
+            )
         } trailing: {
             HStack(alignment: .center, spacing: 12) {
                 Text(formatTimestamp(message.timestamp))
