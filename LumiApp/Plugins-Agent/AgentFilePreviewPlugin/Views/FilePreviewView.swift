@@ -1,6 +1,6 @@
+import CodeEditor
 import MagicKit
 import SwiftUI
-import CodeEditor
 
 /// 文件预览视图
 struct FilePreviewView: View {
@@ -12,22 +12,14 @@ struct FilePreviewView: View {
     @State private var isSaving: Bool = false
     @State private var saveErrorMessage: String?
     @State private var selectedTheme: CodeEditor.ThemeName = .default
+    @State private var canPreviewCurrentFile: Bool = false
+    @State private var isReadOnlyPreview: Bool = false
+    @State private var isTruncatedPreview: Bool = false
     private static let themeStorageKey = "AgentFilePreview.SelectedCodeEditorTheme"
-
-    /// 判断当前选择的文件是否为可预览的类型
-    private var isPreviewableFile: Bool {
-        guard let url = ProjectVM.selectedFileURL else { return false }
-        let fileName = url.lastPathComponent
-        let fileExtension = url.pathExtension.lowercased()
-
-        // 首先检查是否是 Git 配置文件（通过完整文件名判断）
-        if SupportedFileType.isPreviewable(fileName: fileName) {
-            return true
-        }
-
-        // 然后通过扩展名判断
-        return SupportedFileType.isPreviewable(fileExtension)
-    }
+    private static let textProbeBytes = 8192
+    private static let readOnlyThresholdBytes: Int64 = 512 * 1024
+    private static let truncationThresholdBytes: Int64 = 2 * 1024 * 1024
+    private static let truncationReadBytes = 256 * 1024
 
     /// 获取当前文件扩展名
     private var fileExtension: String {
@@ -51,7 +43,7 @@ struct FilePreviewView: View {
 
             // 文件预览内容
             if ProjectVM.isFileSelected {
-                if isPreviewableFile {
+                if canPreviewCurrentFile {
                     filePreviewContent
                 } else {
                     FilePreviewUnsupportedView(fileName: "\(ProjectVM.selectedFileURL?.lastPathComponent ?? "")")
@@ -92,7 +84,7 @@ struct FilePreviewView: View {
 
             Spacer()
 
-            if ProjectVM.isFileSelected && isPreviewableFile {
+            if ProjectVM.isFileSelected && canPreviewCurrentFile {
                 themeMenu
 
                 if hasUnsavedChanges {
@@ -117,7 +109,7 @@ struct FilePreviewView: View {
                     .foregroundColor(hasUnsavedChanges ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textTertiary)
                 }
                 .buttonStyle(.plain)
-                .disabled(!hasUnsavedChanges || isSaving)
+                .disabled(!hasUnsavedChanges || isSaving || isReadOnlyPreview)
             }
 
             // 清除选择按钮
@@ -165,6 +157,18 @@ struct FilePreviewView: View {
                 .font(.system(size: 9))
                 .foregroundColor(AppUI.Color.semantic.textTertiary)
                 .lineLimit(1)
+
+            if isTruncatedPreview {
+                Text(String(localized: "Preview Truncated for Large File", table: "AgentFilePreview"))
+                    .font(.system(size: 9))
+                    .foregroundColor(AppUI.Color.semantic.warning)
+                    .lineLimit(2)
+            } else if isReadOnlyPreview {
+                Text(String(localized: "Large File Read-Only Preview", table: "AgentFilePreview"))
+                    .font(.system(size: 9))
+                    .foregroundColor(AppUI.Color.semantic.warning)
+                    .lineLimit(2)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -174,7 +178,9 @@ struct FilePreviewView: View {
             content: $fileContent,
             fileExtension: fileExtension,
             fileName: fileName,
-            theme: selectedTheme
+            theme: selectedTheme,
+            isEditable: !isReadOnlyPreview && canPreviewCurrentFile,
+            forcePlainText: isReadOnlyPreview
         )
     }
 
@@ -251,6 +257,9 @@ struct FilePreviewView: View {
         guard let url = url else {
             fileContent = ""
             persistedContent = ""
+            canPreviewCurrentFile = false
+            isReadOnlyPreview = false
+            isTruncatedPreview = false
             return
         }
 
@@ -259,27 +268,61 @@ struct FilePreviewView: View {
         if isDirectory {
             fileContent = ""
             persistedContent = ""
+            canPreviewCurrentFile = false
+            isReadOnlyPreview = false
+            isTruncatedPreview = false
             return
         }
 
+        let selectedURL = url
         Task {
             do {
-                let content = try String(contentsOf: url, encoding: .utf8)
+                let fileSize = Int64((try url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
+                guard try isLikelyTextFile(url: url) else {
+                    await MainActor.run {
+                        guard ProjectVM.selectedFileURL == selectedURL else { return }
+                        self.fileContent = ""
+                        self.persistedContent = ""
+                        self.canPreviewCurrentFile = false
+                        self.isReadOnlyPreview = false
+                        self.isTruncatedPreview = false
+                    }
+                    return
+                }
+
+                let shouldTruncate = fileSize > Self.truncationThresholdBytes
+                let shouldReadOnly = fileSize > Self.readOnlyThresholdBytes
+                let content: String
+                if shouldTruncate {
+                    content = try readTruncatedContent(from: url, maxBytes: Self.truncationReadBytes)
+                } else {
+                    var detectedEncoding = String.Encoding.utf8
+                    content = try String(contentsOf: url, usedEncoding: &detectedEncoding)
+                }
+
                 await MainActor.run {
+                    guard ProjectVM.selectedFileURL == selectedURL else { return }
                     self.fileContent = content
                     self.persistedContent = content
+                    self.canPreviewCurrentFile = true
+                    self.isReadOnlyPreview = shouldReadOnly
+                    self.isTruncatedPreview = shouldTruncate
                 }
             } catch {
                 await MainActor.run {
+                    guard ProjectVM.selectedFileURL == selectedURL else { return }
                     self.fileContent = "无法加载文件内容：\(error.localizedDescription)"
-                    self.persistedContent = self.fileContent
+                    self.persistedContent = ""
+                    self.canPreviewCurrentFile = false
+                    self.isReadOnlyPreview = false
+                    self.isTruncatedPreview = false
                 }
             }
         }
     }
 
     private var hasUnsavedChanges: Bool {
-        fileContent != persistedContent
+        !isReadOnlyPreview && fileContent != persistedContent
     }
 
     private var saveErrorBinding: Binding<Bool> {
@@ -349,6 +392,41 @@ struct FilePreviewView: View {
 
     private func persistThemeSelection(_ theme: CodeEditor.ThemeName) {
         FilePreviewThemeStateStore.saveString(theme.rawValue, forKey: Self.themeStorageKey)
+    }
+
+    private func readTruncatedContent(from url: URL, maxBytes: Int) throws -> String {
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+
+        let data = try handle.read(upToCount: maxBytes) ?? Data()
+        let preview = String(decoding: data, as: UTF8.self)
+        let suffix = "\n\n… " + String(localized: "File too large. Preview is truncated.", table: "AgentFilePreview")
+        return preview + suffix
+    }
+
+    private func isLikelyTextFile(url: URL) throws -> Bool {
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+
+        let sample = try handle.read(upToCount: Self.textProbeBytes) ?? Data()
+        if sample.isEmpty { return true }
+
+        if sample.contains(0) {
+            return false
+        }
+
+        var controlByteCount = 0
+        for byte in sample {
+            if byte == 0x09 || byte == 0x0A || byte == 0x0D {
+                continue
+            }
+            if byte < 0x20 {
+                controlByteCount += 1
+            }
+        }
+
+        let ratio = Double(controlByteCount) / Double(sample.count)
+        return ratio < 0.05
     }
 }
 

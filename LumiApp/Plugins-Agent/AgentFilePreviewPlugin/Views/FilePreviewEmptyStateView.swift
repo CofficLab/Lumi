@@ -1,5 +1,5 @@
-import SwiftUI
 import MagicKit
+import SwiftUI
 
 /// 文件预览空白状态视图
 struct FilePreviewEmptyStateView: View {

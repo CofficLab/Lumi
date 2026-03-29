@@ -7,21 +7,8 @@ struct FilePreviewStatusBarView: View {
 
     /// 当前文件内容（本地加载，用于统计）
     @State private var fileContent: String = ""
-
-    /// 判断当前选择的文件是否为可预览的类型
-    private var isPreviewableFile: Bool {
-        guard let url = ProjectVM.selectedFileURL else { return false }
-        let fileName = url.lastPathComponent
-        let fileExtension = url.pathExtension.lowercased()
-
-        // 首先检查是否是 Git 配置文件（通过完整文件名判断）
-        if SupportedFileType.isPreviewable(fileName: fileName) {
-            return true
-        }
-
-        // 然后通过扩展名判断
-        return SupportedFileType.isPreviewable(fileExtension)
-    }
+    @State private var canPreviewCurrentFile: Bool = false
+    private static let textProbeBytes = 8192
 
     /// 获取当前文件扩展名
     private var fileExtension: String {
@@ -43,7 +30,7 @@ struct FilePreviewStatusBarView: View {
     var body: some View {
         HStack(spacing: 12) {
             // 左侧：内容类型标签（仅当选择了可预览文件时显示）
-            if ProjectVM.isFileSelected && isPreviewableFile {
+            if ProjectVM.isFileSelected && canPreviewCurrentFile {
                 Text(fileTypeDescription)
                     .font(.system(size: 9, weight: .medium))
                     .foregroundColor(AppUI.Color.semantic.textSecondary)
@@ -58,7 +45,7 @@ struct FilePreviewStatusBarView: View {
             Spacer()
 
             // 右侧：字符数统计（仅当选择了可预览文件时显示）
-            if ProjectVM.isFileSelected && isPreviewableFile {
+            if ProjectVM.isFileSelected && canPreviewCurrentFile {
                 Text("\(fileContent.count) " + String(localized: "characters", table: "AgentFilePreviewStatusBar"))
                     .font(.system(size: 9))
                     .foregroundColor(AppUI.Color.semantic.textTertiary)
@@ -79,6 +66,7 @@ struct FilePreviewStatusBarView: View {
     private func loadFileContent(from url: URL?) {
         guard let url = url else {
             fileContent = ""
+            canPreviewCurrentFile = false
             return
         }
 
@@ -86,21 +74,59 @@ struct FilePreviewStatusBarView: View {
         let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
         if isDirectory {
             fileContent = ""
+            canPreviewCurrentFile = false
             return
         }
 
+        let selectedURL = url
         Task {
             do {
-                let content = try String(contentsOf: url, encoding: .utf8)
+                guard try isLikelyTextFile(url: url) else {
+                    await MainActor.run {
+                        guard ProjectVM.selectedFileURL == selectedURL else { return }
+                        self.fileContent = ""
+                        self.canPreviewCurrentFile = false
+                    }
+                    return
+                }
+
+                var usedEncoding = String.Encoding.utf8
+                let content = try String(contentsOf: url, usedEncoding: &usedEncoding)
                 await MainActor.run {
+                    guard ProjectVM.selectedFileURL == selectedURL else { return }
                     self.fileContent = content
+                    self.canPreviewCurrentFile = true
                 }
             } catch {
                 await MainActor.run {
+                    guard ProjectVM.selectedFileURL == selectedURL else { return }
                     self.fileContent = ""
+                    self.canPreviewCurrentFile = false
                 }
             }
         }
+    }
+
+    private func isLikelyTextFile(url: URL) throws -> Bool {
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+
+        let sample = try handle.read(upToCount: Self.textProbeBytes) ?? Data()
+        if sample.isEmpty { return true }
+        if sample.contains(0) { return false }
+
+        var controlByteCount = 0
+        for byte in sample {
+            if byte == 0x09 || byte == 0x0A || byte == 0x0D {
+                continue
+            }
+            if byte < 0x20 {
+                controlByteCount += 1
+            }
+        }
+
+        let ratio = Double(controlByteCount) / Double(sample.count)
+        return ratio < 0.05
     }
 }
 

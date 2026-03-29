@@ -93,6 +93,29 @@
         }
       }
     },
+    "Large File Read-Only Preview" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Large file uses read-only preview mode for performance."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "大文件已切换为只读预览模式以保证性能。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "大型文件已切換為只讀預覽模式以確保效能。"
+          }
+        }
+      }
+    },
     "Other Themes" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -112,6 +135,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "其他主題"
+          }
+        }
+      }
+    },
+    "Preview Truncated for Large File" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File is very large, only a partial preview is shown."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件过大，仅显示部分预览内容。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件過大，僅顯示部分預覽內容。"
           }
         }
       }
@@ -158,6 +204,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "當前文件類型不支援預覽"
+          }
+        }
+      }
+    },
+    "File too large. Preview is truncated." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File too large. Preview is truncated."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件过大，预览内容已截断。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件過大，預覽內容已截斷。"
           }
         }
       }

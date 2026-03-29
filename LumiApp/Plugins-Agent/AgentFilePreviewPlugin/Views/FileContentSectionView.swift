@@ -1,6 +1,6 @@
 import CodeEditor
-import SwiftUI
 import MagicKit
+import SwiftUI
 
 /// 文件内容渲染视图
 struct FileContentSectionView: View {
@@ -8,11 +8,27 @@ struct FileContentSectionView: View {
     let fileExtension: String
     let fileName: String
     let theme: CodeEditor.ThemeName
+    let isEditable: Bool
+    let forcePlainText: Bool
 
     var body: some View {
-        CodeEditor(source: $content, language: editorLanguage, theme: theme)
-            .font(.system(size: 10, design: .monospaced))
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        CodeEditor(
+            source: $content,
+            language: resolvedLanguage,
+            theme: theme,
+            flags: isEditable ? .defaultEditorFlags : .defaultViewerFlags
+        )
+        .font(.system(size: 10, design: .monospaced))
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private var resolvedLanguage: CodeEditor.Language {
+        if forcePlainText {
+            if let plaintext = CodeEditor.availableLanguages.first(where: { $0.rawValue == "plaintext" }) {
+                return plaintext
+            }
+        }
+        return editorLanguage
     }
 
     private var editorLanguage: CodeEditor.Language {
@@ -68,19 +84,19 @@ struct FileContentSectionView: View {
 }
 
 #Preview("Markdown 内容") {
-    FileContentSectionView(content: .constant("# Hello World\n\n这是一段 **Markdown** 内容。"), fileExtension: "md", fileName: "README.md", theme: .default)
+    FileContentSectionView(content: .constant("# Hello World\n\n这是一段 **Markdown** 内容。"), fileExtension: "md", fileName: "README.md", theme: .default, isEditable: true, forcePlainText: false)
         .frame(width: 300, height: 200)
         .padding()
 }
 
 #Preview("代码内容") {
-    FileContentSectionView(content: .constant("func hello() {\n    print(\"Hello World\")\n}"), fileExtension: "swift", fileName: "main.swift", theme: .ocean)
+    FileContentSectionView(content: .constant("func hello() {\n    print(\"Hello World\")\n}"), fileExtension: "swift", fileName: "main.swift", theme: .ocean, isEditable: true, forcePlainText: false)
         .frame(width: 300, height: 200)
         .padding()
 }
 
 #Preview("Git 配置") {
-    FileContentSectionView(content: .constant("*.pyc\n.DS_Store\n"), fileExtension: "", fileName: ".gitignore", theme: .agate)
+    FileContentSectionView(content: .constant("*.pyc\n.DS_Store\n"), fileExtension: "", fileName: ".gitignore", theme: .agate, isEditable: false, forcePlainText: true)
         .frame(width: 300, height: 200)
         .padding()
 }
