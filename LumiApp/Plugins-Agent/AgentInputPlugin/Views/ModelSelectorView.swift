@@ -2,6 +2,28 @@ import AppKit
 import MagicKit
 import SwiftUI
 
+/// 模型选择器 Tab 类型
+enum ModelSelectorTab: String, CaseIterable {
+    /// 当前供应商
+    case current
+    /// 本地供应商
+    case local
+    /// 远程供应商
+    case remote
+
+    /// Tab 显示标题
+    var displayTitle: String {
+        switch self {
+        case .current:
+            return String(localized: "Current Provider", table: "AgentInput")
+        case .local:
+            return String(localized: "Local Providers", table: "AgentInput")
+        case .remote:
+            return String(localized: "Remote Providers", table: "AgentInput")
+        }
+    }
+}
+
 /// 模型选择器视图
 /// 允许用户从所有已注册的供应商和模型中选择
 struct ModelSelectorView: View, SuperLog {
@@ -19,11 +41,16 @@ struct ModelSelectorView: View, SuperLog {
     /// 模型性能统计
     @State private var detailedStats: [String: ModelPerformanceStats] = [:]
 
-    /// 当前选中的 Tab：0 本地，1 远程
-    @AppStorage("ModelSelectorView.selectedTab") private var selectedTab = 0
+    /// 当前选中的 Tab，默认显示当前供应商
+    @State private var selectedTab: ModelSelectorTab = .current
 
     /// 本地供应商的模型详情（按 providerId -> [LocalModelInfo]），用于按系列展示
     @State private var localModelInfosByProvider: [String: [LocalModelInfo]] = [:]
+
+    /// 当前供应商信息
+    private var currentProvider: LLMProviderInfo? {
+        llmVM.allProviders.first(where: { $0.id == llmVM.selectedProviderId })
+    }
 
     private var localProviders: [LLMProviderInfo] {
         llmVM.allProviders.filter(\.isLocal)
@@ -38,8 +65,9 @@ struct ModelSelectorView: View, SuperLog {
             // Header: Tab + Close
             HStack(spacing: 12) {
                 Picker("", selection: $selectedTab) {
-                    Text(String(localized: "Local Providers", table: "AgentInput")).tag(0)
-                    Text(String(localized: "Remote Providers", table: "AgentInput")).tag(1)
+                    ForEach(ModelSelectorTab.allCases, id: \.self) { tab in
+                        Text(tab.displayTitle).tag(tab)
+                    }
                 }
                 .pickerStyle(.segmented)
 
@@ -58,9 +86,12 @@ struct ModelSelectorView: View, SuperLog {
 
             // List of Providers and Models
             Group {
-                if selectedTab == 0 {
+                switch selectedTab {
+                case .current:
+                    currentProviderList
+                case .local:
                     providerList(providers: localProviders, emptyMessage: String(localized: "No Local Providers", table: "AgentInput"))
-                } else {
+                case .remote:
                     providerList(providers: remoteProviders, emptyMessage: String(localized: "No Remote Providers", table: "AgentInput"))
                 }
             }
@@ -72,8 +103,44 @@ struct ModelSelectorView: View, SuperLog {
             loadLatencyStats()
         }
         .task(id: selectedTab) {
-            if selectedTab == 0 {
-                await loadLocalModelInfos()
+            if selectedTab == .current {
+                if currentProvider?.isLocal == true {
+                    await loadLocalModelInfos(providerIds: [llmVM.selectedProviderId])
+                }
+            } else if selectedTab == .local {
+                await loadLocalModelInfos(providerIds: localProviders.map(\.id))
+            }
+        }
+    }
+
+    // MARK: - Current Provider List
+
+    /// 当前供应商的模型列表
+    @ViewBuilder
+    private var currentProviderList: some View {
+        if let provider = currentProvider {
+            List {
+                Section(header: sectionHeader(for: provider)) {
+                    if provider.isLocal, let infos = localModelInfosByProvider[provider.id], !infos.isEmpty {
+                        let fallbackSeries = "其他"
+                        let grouped = Dictionary(grouping: infos) { $0.series ?? fallbackSeries }
+                        ForEach(grouped.keys.sorted(), id: \.self) { seriesName in
+                            Section(header: Text(seriesName).font(AppUI.Typography.subheadline).foregroundColor(AppUI.Color.semantic.textSecondary)) {
+                                ForEach(grouped[seriesName] ?? [], id: \.id) { info in
+                                    modelRow(provider: provider, model: info.id, displayName: info.displayName)
+                                }
+                            }
+                        }
+                    } else {
+                        ForEach(provider.availableModels, id: \.self) { model in
+                            modelRow(provider: provider, model: model)
+                        }
+                    }
+                }
+            }
+        } else {
+            ContentUnavailableView {
+                Label(String(localized: "No Provider Selected", table: "AgentInput"), systemImage: "tray")
             }
         }
     }
@@ -230,11 +297,11 @@ extension ModelSelectorView {
         }
     }
 
-    /// 加载本地供应商的模型详情（含系列），用于按系列展示
-    private func loadLocalModelInfos() async {
-        let localIds = llmVM.allProviders.filter(\.isLocal).map(\.id)
+    /// 加载指定供应商的模型详情（含系列），用于按系列展示
+    /// - Parameter providerIds: 需要加载模型详情的供应商 ID 列表
+    private func loadLocalModelInfos(providerIds: [String]) async {
         var result: [String: [LocalModelInfo]] = [:]
-        for id in localIds {
+        for id in providerIds {
             guard let provider = llmVM.createProvider(id: id) as? any SuperLocalLLMProvider else { continue }
             let infos = await provider.getAvailableModels()
             result[id] = infos
