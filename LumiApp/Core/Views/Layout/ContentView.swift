@@ -25,9 +25,6 @@ struct ContentView: View, SuperLog {
     /// 窗口级状态（每个窗口独立）
     @StateObject private var windowState: WindowState
 
-    /// 左侧栏宽度（持久化到 UserDefaults）
-    @AppStorage("Sidebar_Left_Width") private var sidebarWidth: Double = 220
-
     /// 默认选中的导航 ID
     var defaultNavigationId: String?
 
@@ -69,40 +66,20 @@ struct ContentView: View, SuperLog {
             content: {
                 Group {
                     VStack(spacing: 0) {
-                        // 主内容区域：左侧栏 + 中间栏 + 右侧栏（侧边栏宽度由 @AppStorage 持久化）
-                        HStack(spacing: 0) {
+                        // 主内容区域：左侧栏 + 中间栏 + 右侧栏
+                        Group {
                             if windowState.sidebarVisibility {
-                                LeftSidebar(sidebarVisibility: $windowState.sidebarVisibility)
-                                    .frame(width: CGFloat(sidebarWidth).clamped(min: 210, max: 400))
-                                SidebarResizeDivider(sidebarWidth: $sidebarWidth, minWidth: 210, maxWidth: 400)
-                            }
+                                HSplitView {
+                                    LeftSidebar(sidebarVisibility: $windowState.sidebarVisibility)
+                                        .frame(minWidth: 210, idealWidth: 220, maxWidth: 400)
+                                        .background(SplitViewWidthPersistenceConfigurator(storageKey: "Split.MainMode.SidebarFraction"))
 
-                            // 中间 + 右侧区域（根据模式切换布局）
-                            Group {
-                                if app.selectedMode == .agent {
-                                    // Agent 模式：三栏布局（中间 + 右侧）
-                                    if providerRegistry.providerTypes.isEmpty {
-                                        AgentModeUnavailableGuideView()
-                                    } else if pluginProvider.hasDetailViews() {
-                                        HSplitView {
-                                            MiddleColumn()
-                                            RightColumn()
-                                        }
-                                        .id("unifiedRightSplitView")
-                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                        .ignoresSafeArea()
-                                        .background(SplitViewAutosaveConfigurator(autosaveName: "AgentMode_DetailRightSplit"))
-                                    } else {
-                                        RightColumn()
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                    }
-                                } else {
-                                    // App 模式：仅使用中间栏，不占用右侧栏宽度
-                                    MiddleColumn()
-                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    rightPrimaryContent
                                 }
+                                .background(SplitViewAutosaveConfigurator(autosaveName: "MainMode_SidebarSplit"))
+                            } else {
+                                rightPrimaryContent
                             }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
                         .id("unifiedLeftSplitView")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -125,45 +102,36 @@ struct ContentView: View, SuperLog {
         )
         .environment(\.windowState, windowState)
     }
-}
 
-// MARK: - Sidebar Resize Divider
-
-/// 可拖拽的分隔条，用于调整侧边栏宽度，宽度变化自动同步到 @AppStorage
-private struct SidebarResizeDivider: View {
-    @Binding var sidebarWidth: Double
-    let minWidth: CGFloat
-    let maxWidth: CGFloat
-
-    @State private var dragStartWidth: Double?
-
-    var body: some View {
-        Rectangle()
-            .fill(Color.primary.opacity(0.15))
-            .frame(width: 4)
-            .onHover { inside in
-                if inside {
-                    NSCursor.resizeLeftRight.push()
+    @ViewBuilder
+    private var rightPrimaryContent: some View {
+        // 中间 + 右侧区域（根据模式切换布局）
+        Group {
+            if app.selectedMode == .agent {
+                // Agent 模式：三栏布局（中间 + 右侧）
+                if providerRegistry.providerTypes.isEmpty {
+                    AgentModeUnavailableGuideView()
+                } else if pluginProvider.hasDetailViews() {
+                    HSplitView {
+                        MiddleColumn()
+                            .background(SplitViewWidthPersistenceConfigurator(storageKey: "Split.AgentMode.DetailFraction"))
+                        RightColumn()
+                    }
+                    .id("unifiedRightSplitView")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .ignoresSafeArea()
+                    .background(SplitViewAutosaveConfigurator(autosaveName: "AgentMode_DetailRightSplit"))
                 } else {
-                    NSCursor.pop()
+                    RightColumn()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
+            } else {
+                // App 模式：仅使用中间栏，不占用右侧栏宽度
+                MiddleColumn()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .gesture(
-                DragGesture(coordinateSpace: .global)
-                    .onChanged { value in
-                        if dragStartWidth == nil {
-                            dragStartWidth = sidebarWidth
-                        }
-                        if let start = dragStartWidth {
-                            let delta = value.translation.width
-                            let newWidth = (start + Double(delta)).clamped(min: Double(minWidth), max: Double(maxWidth))
-                            sidebarWidth = newWidth
-                        }
-                    }
-                    .onEnded { _ in
-                        dragStartWidth = nil
-                    }
-            )
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -179,6 +147,20 @@ private struct SplitViewAutosaveConfigurator: NSViewRepresentable {
 
     func updateNSView(_ nsView: AutosaveConfiguratorView, context: Context) {
         nsView.autosaveName = autosaveName
+    }
+}
+
+/// 为 SplitView 增加显式宽度记忆（比例），用于下次主动恢复。
+private struct SplitViewWidthPersistenceConfigurator: NSViewRepresentable {
+    let storageKey: String
+
+    func makeNSView(context: Context) -> SplitViewWidthPersistenceView {
+        SplitViewWidthPersistenceView(storageKey: storageKey)
+    }
+
+    func updateNSView(_ nsView: SplitViewWidthPersistenceView, context: Context) {
+        nsView.storageKey = storageKey
+        nsView.attachIfNeeded()
     }
 }
 
@@ -243,6 +225,121 @@ private final class AutosaveConfiguratorView: NSView {
         }
         return nil
     }
+}
+
+private final class SplitViewWidthPersistenceView: NSView {
+    var storageKey: String
+    private var observedSplitView: NSSplitView?
+    private var resizeObserver: NSObjectProtocol?
+    private var didApplySavedValue = false
+    private var pendingRetryWorkItem: DispatchWorkItem?
+
+    init(storageKey: String) {
+        self.storageKey = storageKey
+        super.init(frame: .zero)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        attachIfNeeded()
+    }
+
+    func attachIfNeeded() {
+        guard window != nil else { return }
+        guard let splitView = findSplitView() else {
+            scheduleRetryAttach()
+            return
+        }
+        guard splitView !== observedSplitView else { return }
+
+        pendingRetryWorkItem?.cancel()
+        pendingRetryWorkItem = nil
+        observedSplitView = splitView
+        didApplySavedValue = false
+
+        if let resizeObserver {
+            NotificationCenter.default.removeObserver(resizeObserver)
+            self.resizeObserver = nil
+        }
+
+        applySavedRatioIfNeeded()
+
+        resizeObserver = NotificationCenter.default.addObserver(
+            forName: NSSplitView.didResizeSubviewsNotification,
+            object: splitView,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.persistCurrentRatio()
+            }
+        }
+    }
+
+    private func applySavedRatioIfNeeded() {
+        guard !didApplySavedValue else { return }
+        guard let splitView = observedSplitView else { return }
+        guard splitView.arrangedSubviews.count >= 2 else { return }
+
+        let savedRatio = UserDefaults.standard.double(forKey: storageKey)
+        guard savedRatio > 0.0, savedRatio < 1.0 else {
+            didApplySavedValue = true
+            return
+        }
+
+        DispatchQueue.main.async { [weak self, weak splitView] in
+            guard let self, let splitView else { return }
+            guard splitView.arrangedSubviews.count >= 2 else { return }
+            let total = splitView.bounds.width
+            guard total > 0 else { return }
+
+            let dividerThickness = splitView.dividerThickness
+            let usableWidth = max(1, total - dividerThickness)
+            let target = max(0, min(usableWidth, usableWidth * savedRatio))
+            splitView.setPosition(target, ofDividerAt: 0)
+            self.didApplySavedValue = true
+        }
+    }
+
+    private func persistCurrentRatio() {
+        guard let splitView = observedSplitView else { return }
+        guard splitView.arrangedSubviews.count >= 2 else { return }
+
+        let total = splitView.bounds.width
+        guard total > 0 else { return }
+
+        let usableWidth = total - splitView.dividerThickness
+        guard usableWidth > 1 else { return }
+
+        let firstWidth = splitView.arrangedSubviews[0].frame.width
+        let ratio = firstWidth / usableWidth
+        guard ratio > 0.0, ratio < 1.0 else { return }
+
+        UserDefaults.standard.set(ratio, forKey: storageKey)
+    }
+
+    private func findSplitView() -> NSSplitView? {
+        var current: NSView? = self
+        while let node = current {
+            if let sv = node as? NSSplitView { return sv }
+            current = node.superview
+        }
+        return nil
+    }
+
+    private func scheduleRetryAttach() {
+        pendingRetryWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.attachIfNeeded()
+        }
+        pendingRetryWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15, execute: workItem)
+    }
+
 }
 
 struct ContentViewBody<Content: View>: View {
