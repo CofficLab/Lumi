@@ -21,20 +21,20 @@ struct AttachmentPreviewView: View {
                                     .aspectRatio(contentMode: .fill)
                                     .frame(width: 60, height: 60)
                                     .clipShape(
-                                        RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
+                                        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                                     )
                             }
 
                             AppIconButton(
                                 systemImage: "xmark",
-                                tint: DesignTokens.Color.semantic.textPrimary,
+                                tint: AppColor.textPrimary,
                                 size: .compact
                             ) {
                                 onRemove(attachment.id)
                             }
                             .background(
                                 Circle()
-                                    .fill(DesignTokens.Material.glass)
+                                    .fill(AppMaterial.glass)
                             )
                             .clipShape(Circle())
                             .offset(x: 6, y: -6)

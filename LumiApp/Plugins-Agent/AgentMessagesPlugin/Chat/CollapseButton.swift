@@ -12,7 +12,7 @@ struct CollapseButton: View {
         AppIconButton(
             systemImage: "chevron.up",
             label: "折叠",
-            tint: DesignTokens.Color.semantic.textSecondary.opacity(0.8),
+            tint: AppColor.textSecondary.opacity(0.8),
             size: .compact,
             action: action
         )

@@ -24,7 +24,7 @@ struct StreamingAssistantRowView: View {
             }
 
             Text(verbatim: visibleContent)
-                .font(DesignTokens.Typography.body)
+                .font(AppTypography.body)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)

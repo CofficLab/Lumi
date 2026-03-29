@@ -43,7 +43,7 @@ struct UserMessage: View {
                 AppIconButton(
                     systemImage: "arrow.clockwise",
                     label: "重发",
-                    tint: DesignTokens.Color.semantic.textSecondary.opacity(0.8),
+                    tint: AppColor.textSecondary.opacity(0.8),
                     size: .regular
                 ) {
                     resend()
@@ -51,8 +51,8 @@ struct UserMessage: View {
                 .help("重新发送该消息")
 
                 Text(formatTimestamp(message.timestamp))
-                    .font(DesignTokens.Typography.caption2)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .font(AppTypography.caption2)
+                    .foregroundColor(AppColor.textSecondary)
 
                 RawMessageToggleButton(showRawMessage: $showRawMessage)
             }

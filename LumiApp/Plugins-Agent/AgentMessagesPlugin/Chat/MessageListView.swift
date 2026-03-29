@@ -174,8 +174,8 @@ extension MessageListView {
                 .padding(.vertical, 8)
                 .padding(.horizontal, 16)
                 .background(
-                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                        .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.08))
+                    RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
+                        .fill(AppColor.textSecondary.opacity(0.08))
                 )
                 .accessibilityLabel(LocalizedStringKey("加载更早消息"))
                 .accessibilityHint(LocalizedStringKey("从历史记录中继续加载更早的消息"))

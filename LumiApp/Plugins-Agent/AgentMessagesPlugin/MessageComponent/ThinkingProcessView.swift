@@ -29,17 +29,17 @@ struct ThinkingProcessView: View {
                     HStack(spacing: 6) {
                         Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                             .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .foregroundColor(AppColor.textSecondary)
 
                         Text(isThinking ? "思考过程…" : "思考过程")
-                            .font(DesignTokens.Typography.caption1)
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .font(AppTypography.caption1)
+                            .foregroundColor(AppColor.textSecondary)
 
                         // 折叠时展示一小段预览，降低存在感但能提示有内容
                         if !isExpanded, !previewText.isEmpty {
                             Text(previewText)
-                                .font(DesignTokens.Typography.caption2)
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary.opacity(0.8))
+                                .font(AppTypography.caption2)
+                                .foregroundColor(AppColor.textSecondary.opacity(0.8))
                                 .lineLimit(1)
                         }
                     }
@@ -50,7 +50,7 @@ struct ThinkingProcessView: View {
                     HStack(spacing: 2) {
                         ForEach(0..<3) { i in
                             Circle()
-                                .fill(DesignTokens.Color.semantic.textSecondary)
+                                .fill(AppColor.textSecondary)
                                 .frame(width: 4, height: 4)
                                 .opacity(isThinking ? 1.0 : 0.5)
                                 .animation(
@@ -78,8 +78,8 @@ struct ThinkingProcessView: View {
                 ) {
                     ScrollView(showsIndicators: true) {
                         Text(thinkingText)
-                            .font(DesignTokens.Typography.code)
-                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                            .font(AppTypography.code)
+                            .foregroundColor(AppColor.textPrimary)
                             .padding(12)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
