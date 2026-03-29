@@ -21,14 +21,14 @@ struct QuickStartActionsView: View {
                 .foregroundStyle(.tertiary)
 
             ForEach(recommendedPrompts, id: \.self) { prompt in
-                Button(prompt) {
+                AppButton(
+                    LocalizedStringKey(prompt),
+                    style: .tonal,
+                    size: .small,
+                    fillsWidth: false
+                ) {
                     handleTap(prompt: prompt)
                 }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(Color.secondary.opacity(0.12))
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
         }
     }
