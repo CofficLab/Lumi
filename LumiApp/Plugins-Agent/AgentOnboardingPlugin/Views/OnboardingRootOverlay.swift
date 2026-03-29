@@ -48,8 +48,13 @@ final class OnboardingPluginViewModel: ObservableObject {
         currentStep = 0
     }
 
-    func nextStep() {
-        if currentStep >= 2 {
+    func nextStep(totalSteps: Int) {
+        guard totalSteps > 0 else {
+            complete()
+            return
+        }
+
+        if currentStep >= totalSteps - 1 {
             complete()
         } else {
             currentStep += 1
@@ -141,12 +146,14 @@ struct OnboardingRootOverlay<Content: View>: View {
 
 private struct OnboardingSheetView: View {
     @ObservedObject var viewModel: OnboardingPluginViewModel
+    @EnvironmentObject private var conversationCreationVM: ConversationCreationVM
 
     private struct Page: Identifiable {
         let id = UUID()
         let icon: String
         let title: String
         let subtitle: String
+        let highlights: [String]
         let bullets: [String]
     }
 
@@ -155,6 +162,7 @@ private struct OnboardingSheetView: View {
             icon: "sparkles",
             title: "欢迎使用 Lumi",
             subtitle: "一个为开发者设计的 AI 工作台",
+            highlights: ["Agent 优先", "多会话并行", "上下文记忆"],
             bullets: [
                 "在一个窗口完成提问、执行与复盘",
                 "按任务维度沉淀上下文，减少重复沟通",
@@ -165,6 +173,7 @@ private struct OnboardingSheetView: View {
             icon: "rectangle.3.group.bubble.left",
             title: "Agent / App 两种模式",
             subtitle: "根据任务目标选择最合适的工作方式",
+            highlights: ["复杂任务", "单点操作"],
             bullets: [
                 "Agent 模式：面向复杂任务，支持工具调用与多步骤推理",
                 "App 模式：面向插件能力，快速执行单点操作",
@@ -172,13 +181,25 @@ private struct OnboardingSheetView: View {
             ]
         ),
         Page(
+            icon: "folder.badge.plus",
+            title: "拖拽添加项目",
+            subtitle: "把文件夹拖入消息列表区域即可切换项目",
+            highlights: ["覆盖提示层", "自动切换项目", "最近项目同步"],
+            bullets: [
+                "拖拽时会出现毛玻璃提示层，松开即完成添加",
+                "仅消息列表区域支持“拖入即设为项目”",
+                "输入区域保持原有拖拽行为，不会被覆盖"
+            ]
+        ),
+        Page(
             icon: "keyboard",
             title: "快速上手",
             subtitle: "先做 3 件事就能进入工作流",
+            highlights: ["新建会话", "选择模型", "随时回看"],
             bullets: [
                 "新建会话，输入一个真实问题开始",
-                "在空状态点击“查看新手引导”可随时回看",
-                "常用快捷键：Cmd+N 新建会话，Cmd+, 打开设置"
+                "若出现“未选择模型”，在底部模型选择器点选一个模型",
+                "在空状态点击“查看新手引导”可随时回看"
             ]
         )
     ]
@@ -207,6 +228,16 @@ private struct OnboardingSheetView: View {
                 Text(page.subtitle)
                     .font(.title3)
                     .foregroundStyle(.secondary)
+
+                HStack(spacing: 8) {
+                    ForEach(page.highlights, id: \.self) { highlight in
+                        Text(highlight)
+                            .font(.system(size: 11, weight: .semibold))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(.thinMaterial, in: Capsule())
+                    }
+                }
             }
 
             VStack(alignment: .leading, spacing: 10) {
@@ -241,14 +272,30 @@ private struct OnboardingSheetView: View {
                     Button("上一步") { viewModel.previousStep() }
                 }
 
+                if viewModel.currentStep == pages.count - 1 {
+                    Button("打开设置") {
+                        NotificationCenter.postOpenSettings()
+                    }
+                }
+
+                if viewModel.currentStep == pages.count - 1 {
+                    Button("新建会话") {
+                        Task {
+                            await conversationCreationVM.createNewConversation()
+                            viewModel.complete()
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                }
+
                 Button(viewModel.currentStep == pages.count - 1 ? "开始使用" : "下一步") {
-                    viewModel.nextStep()
+                    viewModel.nextStep(totalSteps: pages.count)
                 }
                 .buttonStyle(.borderedProminent)
             }
         }
         .padding(28)
-        .frame(width: 640, height: 440)
+        .frame(width: 700, height: 500)
         .interactiveDismissDisabled()
         .background {
             RoundedRectangle(cornerRadius: 18, style: .continuous)

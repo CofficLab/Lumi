@@ -15,6 +15,11 @@ actor AgentOnboardingPlugin: SuperPlugin {
 
     static let shared = AgentOnboardingPlugin()
 
+    @MainActor
+    func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
+        AnyView(OnboardingRootOverlay(content: content()))
+    }
+
     nonisolated func onRegister() {}
     nonisolated func onEnable() {}
     nonisolated func onDisable() {}
