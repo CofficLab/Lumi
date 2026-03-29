@@ -2,6 +2,86 @@ import CodeEditor
 import MagicKit
 import SwiftUI
 
+/// 文件预览视图的撤销/重做状态管理
+/// UndoManager 的 registerUndo(withTarget:) 要求 target 是 class 类型，
+/// 所以需要一个独立的引用类型来持有可变内容。
+@MainActor
+final class FilePreviewUndoState: ObservableObject {
+    /// 当前文件内容
+    @Published var content: String = ""
+
+    /// 撤销管理器
+    let undoManager = UndoManager()
+
+    /// 删除指定范围的文本（用于剪切），并注册撤销操作
+    func deleteRange(_ range: Range<String.Index>) {
+        let deletedText = String(content[range])
+        let offset = content.distance(from: content.startIndex, to: range.lowerBound)
+
+        content.removeSubrange(range)
+
+        // 注册撤销：恢复被删除的文本
+        undoManager.registerUndo(withTarget: self) { target in
+            target.insertText(deletedText, at: offset, isUndo: true)
+        }
+        undoManager.setActionName(String(localized: "Cut", table: "AgentFilePreview"))
+    }
+
+    /// 在指定位置插入文本（用于撤销剪切），并注册重做操作
+    private func insertText(_ text: String, at offset: Int, isUndo: Bool) {
+        let index = content.index(content.startIndex, offsetBy: min(offset, content.count))
+
+        content.insert(contentsOf: text, at: index)
+
+        // 注册反向操作
+        let newOffset = offset
+        let length = text.count
+        undoManager.registerUndo(withTarget: self) { target in
+            target.removeRange(offset: newOffset, length: length)
+        }
+        undoManager.setActionName(
+            isUndo
+                ? String(localized: "Restore Cut", table: "AgentFilePreview")
+                : String(localized: "Cut", table: "AgentFilePreview")
+        )
+    }
+
+    /// 移除指定范围的文本（用于重做剪切）
+    private func removeRange(offset: Int, length: Int) {
+        let startIndex = content.index(content.startIndex, offsetBy: min(offset, content.count))
+        let endIndex = content.index(
+            startIndex,
+            offsetBy: min(length, content.distance(from: startIndex, to: content.endIndex))
+        )
+        let removedText = String(content[startIndex..<endIndex])
+
+        content.removeSubrange(startIndex..<endIndex)
+
+        let insertOffset = offset
+        undoManager.registerUndo(withTarget: self) { target in
+            target.insertText(removedText, at: insertOffset, isUndo: false)
+        }
+        undoManager.setActionName(String(localized: "Cut", table: "AgentFilePreview"))
+    }
+
+    /// 执行撤销
+    func undo() {
+        guard undoManager.canUndo else { return }
+        undoManager.undo()
+    }
+
+    /// 执行重做
+    func redo() {
+        guard undoManager.canRedo else { return }
+        undoManager.redo()
+    }
+
+    /// 清除所有撤销/重做记录（切换文件时调用）
+    func clearHistory() {
+        undoManager.removeAllActions()
+    }
+}
+
 /// 文件预览视图
 struct FilePreviewView: View {
     @EnvironmentObject var ProjectVM: ProjectVM
@@ -15,11 +95,46 @@ struct FilePreviewView: View {
     @State private var canPreviewCurrentFile: Bool = false
     @State private var isReadOnlyPreview: Bool = false
     @State private var isTruncatedPreview: Bool = false
+
+    /// 当前文本选区
+    @State private var textSelection: Range<String.Index>? = nil
+
+    /// 选区菜单可见性
+    @State private var showSelectionMenu: Bool = false
+
+    /// 选区菜单定位（相对于内容区域的偏移）
+    @State private var selectionMenuPosition: CGPoint = .zero
+
+    /// 用于隐藏菜单的延迟任务
+    @State private var hideMenuTask: Task<Void, Never>? = nil
+
+    /// 撤销/重做状态管理
+    @StateObject private var undoState = FilePreviewUndoState()
+
     private static let themeStorageKey = "AgentFilePreview.SelectedCodeEditorTheme"
     private static let textProbeBytes = 8192
     private static let readOnlyThresholdBytes: Int64 = 512 * 1024
     private static let truncationThresholdBytes: Int64 = 2 * 1024 * 1024
     private static let truncationReadBytes = 256 * 1024
+
+    // MARK: - Menu Layout Constants
+
+    /// 菜单的实际高度（根据 TextSelectionMenu 的实际尺寸）
+    /// 垂直 padding 4×2 + 按钮内容高度约 20 = 约 28pt
+    private static let menuHeight: CGFloat = 30
+
+    /// 菜单与选区之间的间距
+    private static let menuVerticalGap: CGFloat = 6
+
+    /// 菜单的圆角半径
+    private static let menuCornerRadius: CGFloat = 8
+
+    /// 获取当前选中文本
+    private var selectedText: String? {
+        guard let sel = textSelection else { return nil }
+        guard !sel.isEmpty else { return nil }
+        return String(fileContent[sel])
+    }
 
     /// 获取当前文件扩展名
     private var fileExtension: String {
@@ -62,6 +177,12 @@ struct FilePreviewView: View {
         }
         .onChange(of: selectedTheme) { _, newTheme in
             persistThemeSelection(newTheme)
+        }
+        // 同步 undoState.content -> fileContent（撤销/重做触发的内容变更）
+        .onChange(of: undoState.content) { _, newContent in
+            if fileContent != newContent {
+                fileContent = newContent
+            }
         }
         .alert(String(localized: "Save Failed", table: "AgentFilePreview"), isPresented: saveErrorBinding) {
             Button("OK", role: .cancel) {}
@@ -133,10 +254,39 @@ struct FilePreviewView: View {
             fileInfoSection
 
             // 文件内容
-            fileContentSection
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            ZStack(alignment: .topLeading) {
+                fileContentSection
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+
+                // 选中文本操作菜单
+                if showSelectionMenu, selectedText != nil {
+                    TextSelectionMenu(
+                        selectedText: selectedText ?? "",
+                        isEditable: !isReadOnlyPreview,
+                        onCut: performCut,
+                        onCopy: performCopy
+                    )
+                    .position(x: selectionMenuPosition.x, y: selectionMenuPosition.y)
+                    .transition(.opacity.combined(with: .scale(scale: 0.9, anchor: .bottom)))
+                    .animation(.easeOut(duration: 0.15), value: showSelectionMenu)
+                }
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .onKeyPress(keys: [.init("z")], phases: .down) { press in
+            if press.modifiers.contains(.command) && !press.modifiers.contains(.shift) {
+                undoState.undo()
+                return .handled
+            }
+            return .ignored
+        }
+        .onKeyPress(keys: [.init("z")], phases: .down) { press in
+            if press.modifiers.contains(.command) && press.modifiers.contains(.shift) {
+                undoState.redo()
+                return .handled
+            }
+            return .ignored
+        }
     }
 
     private var fileInfoSection: some View {
@@ -163,8 +313,12 @@ struct FilePreviewView: View {
             fileName: fileName,
             theme: selectedTheme,
             isEditable: !isReadOnlyPreview && canPreviewCurrentFile,
-            forcePlainText: isReadOnlyPreview
+            forcePlainText: isReadOnlyPreview,
+            selection: $textSelection
         )
+        .onChange(of: textSelection) { _, newSelection in
+            handleSelectionChange(newSelection)
+        }
     }
 
     private var headerTitle: String {
@@ -241,6 +395,109 @@ struct FilePreviewView: View {
         }
     }
 
+    // MARK: - Selection Handling
+
+    private func handleSelectionChange(_ newSelection: Range<String.Index>?) {
+        hideMenuTask?.cancel()
+        hideMenuTask = nil
+
+        guard let sel = newSelection, !sel.isEmpty else {
+            // 延迟隐藏菜单，避免用户点击菜单时先触发选区清除
+            hideMenuTask = Task {
+                try? await Task.sleep(for: .milliseconds(150))
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    withAnimation(.easeOut(duration: 0.12)) {
+                        showSelectionMenu = false
+                    }
+                }
+            }
+            return
+        }
+
+        // 计算选中区域的视觉位置
+        updateSelectionMenuPosition(for: sel)
+
+        withAnimation(.easeOut(duration: 0.15)) {
+            showSelectionMenu = true
+        }
+    }
+
+    private func updateSelectionMenuPosition(for sel: Range<String.Index>) {
+        // 基于字符偏移量估算菜单位置
+        let textBeforeSelection = String(fileContent[fileContent.startIndex..<sel.lowerBound])
+        let lineCount = textBeforeSelection.filter { $0 == "\n" }.count
+        let lineHeight: CGFloat = 18 // 近似行高（12pt 字体 + 间距）
+        let topPadding: CGFloat = 12 // 代码编辑器顶部内边距
+
+        // 水平位置基于选区所在行的缩进
+        let lastNewline = textBeforeSelection.lastIndex(of: "\n")
+        let linePrefix = lastNewline == nil
+            ? textBeforeSelection
+            : String(textBeforeSelection[textBeforeSelection.index(after: lastNewline!)...])
+        let charWidth: CGFloat = 7.2 // 12pt 等宽字体的大致字符宽度
+        let leftPadding: CGFloat = 12 // 代码编辑器左侧内边距
+
+        // 计算选区开始位置的 Y 坐标
+        let selectionTopY = topPadding + CGFloat(lineCount) * lineHeight
+
+        // 菜单位置：选区上方，间距为 menuVerticalGap
+        // 菜单的中心点应该在 (选区顶部 Y - menuVerticalGap - menuHeight/2)
+        let menuCenterY = selectionTopY - Self.menuVerticalGap - (Self.menuHeight / 2)
+
+        // 水平位置：菜单中心对齐选区开始位置，但需要确保不超出边界
+        // 菜单宽度约为 2×(8+4) + 分割线 1 + 图标和文字 ≈ 120-140pt
+        let menuWidth: CGFloat = 130
+        let menuCenterX = leftPadding + CGFloat(linePrefix.count) * charWidth + (menuWidth / 2)
+
+        selectionMenuPosition = CGPoint(x: menuCenterX, y: menuCenterY)
+    }
+
+    // MARK: - Edit Actions
+
+    private func performCopy() {
+        guard let text = selectedText else { return }
+
+        #if os(macOS)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+        #else
+        UIPasteboard.general.string = text
+        #endif
+
+        dismissSelectionMenu()
+    }
+
+    private func performCut() {
+        guard selectedText != nil, !isReadOnlyPreview else { return }
+        guard let sel = textSelection else { return }
+
+        #if os(macOS)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(selectedText ?? "", forType: .string)
+        #else
+        UIPasteboard.general.string = selectedText
+        #endif
+
+        // 同步内容到 undoState，然后通过 undoState 执行删除（带撤销注册）
+        undoState.content = fileContent
+        undoState.deleteRange(sel)
+
+        // 将 undoState 的变更同步回 fileContent
+        fileContent = undoState.content
+        textSelection = nil
+
+        dismissSelectionMenu()
+    }
+
+    private func dismissSelectionMenu() {
+        hideMenuTask?.cancel()
+        hideMenuTask = nil
+        withAnimation(.easeOut(duration: 0.12)) {
+            showSelectionMenu = false
+        }
+    }
+
     // MARK: - Actions
 
     private func loadFileContent(from url: URL?) {
@@ -250,6 +507,10 @@ struct FilePreviewView: View {
             canPreviewCurrentFile = false
             isReadOnlyPreview = false
             isTruncatedPreview = false
+            textSelection = nil
+            showSelectionMenu = false
+            undoState.content = ""
+            undoState.clearHistory()
             return
         }
 
@@ -261,6 +522,10 @@ struct FilePreviewView: View {
             canPreviewCurrentFile = false
             isReadOnlyPreview = false
             isTruncatedPreview = false
+            textSelection = nil
+            showSelectionMenu = false
+            undoState.content = ""
+            undoState.clearHistory()
             return
         }
 
@@ -276,6 +541,10 @@ struct FilePreviewView: View {
                         self.canPreviewCurrentFile = false
                         self.isReadOnlyPreview = false
                         self.isTruncatedPreview = false
+                        self.textSelection = nil
+                        self.showSelectionMenu = false
+                        self.undoState.content = ""
+                        self.undoState.clearHistory()
                     }
                     return
                 }
@@ -297,6 +566,10 @@ struct FilePreviewView: View {
                     self.canPreviewCurrentFile = true
                     self.isReadOnlyPreview = shouldReadOnly
                     self.isTruncatedPreview = shouldTruncate
+                    self.textSelection = nil
+                    self.showSelectionMenu = false
+                    self.undoState.content = content
+                    self.undoState.clearHistory()
                 }
             } catch {
                 await MainActor.run {
@@ -306,6 +579,8 @@ struct FilePreviewView: View {
                     self.canPreviewCurrentFile = false
                     self.isReadOnlyPreview = false
                     self.isTruncatedPreview = false
+                    self.textSelection = nil
+                    self.showSelectionMenu = false
                 }
             }
         }

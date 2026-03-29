@@ -24,25 +24,48 @@
         }
       }
     },
-    "File Preview" : {
+    "Copy" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "File Preview"
+            "value" : "Copy"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "文件预览"
+            "value" : "复制"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "文件預覽"
+            "value" : "複製"
+          }
+        }
+      }
+    },
+    "Cut" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cut"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "剪切"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "剪下"
           }
         }
       }
@@ -70,25 +93,48 @@
         }
       }
     },
-    "Light Themes" : {
+    "File Preview" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Light Themes"
+            "value" : "File Preview"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "浅色主题"
+            "value" : "文件预览"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "淺色主題"
+            "value" : "文件預覽"
+          }
+        }
+      }
+    },
+    "File too large. Preview is truncated." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File too large. Preview is truncated."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件过大，预览内容已截断。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件過大，預覽內容已截斷。"
           }
         }
       }
@@ -116,6 +162,29 @@
         }
       }
     },
+    "Light Themes" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Light Themes"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浅色主题"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "淺色主題"
+          }
+        }
+      }
+    },
     "Other Themes" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -135,29 +204,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "其他主題"
-          }
-        }
-      }
-    },
-    "Preview Truncated for Large File" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "File is very large, only a partial preview is shown."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件过大，仅显示部分预览内容。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件過大，僅顯示部分預覽內容。"
           }
         }
       }
@@ -208,28 +254,31 @@
         }
       }
     },
-    "File too large. Preview is truncated." : {
+    "Preview Truncated for Large File" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "File too large. Preview is truncated."
+            "value" : "File is very large, only a partial preview is shown."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "文件过大，预览内容已截断。"
+            "value" : "文件过大，仅显示部分预览内容。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "文件過大，預覽內容已截斷。"
+            "value" : "文件過大，僅顯示部分預覽內容。"
           }
         }
       }
+    },
+    "Restore Cut" : {
+
     },
     "Save" : {
       "extractionState" : "manual",
