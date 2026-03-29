@@ -25,7 +25,7 @@ struct NewChatButton: View {
             case .iconOnly:
                 Image(systemName: "plus.circle")
                     .font(.system(size: iconSize))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
                     .frame(width: iconButtonSize, height: iconButtonSize)
                     .background(Color.black.opacity(0.05))
                     .clipShape(Circle())

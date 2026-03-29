@@ -25,7 +25,7 @@ struct SettingsModelLatencyBar: View {
                 }
             }
             .frame(width: 80, height: 3)
-            .clipShape(RoundedRectangle(cornerRadius: 1.5))
+            .appClipRounded(1.5)
 
             // 时间信息（一行显示）
             HStack(spacing: 6) {

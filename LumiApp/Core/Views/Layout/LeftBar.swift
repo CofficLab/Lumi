@@ -31,7 +31,7 @@ struct LeftSidebar: View {
             modeContent
                 .frame(maxHeight: .infinity)
         }
-        .background(DesignTokens.Material.glassUltraThick)
+        .appSurface(style: .glassUltraThick, cornerRadius: 0)
         .ignoresSafeArea()
         .onAppear {
             // 在 App 模式下，恢复上次选中的导航
@@ -69,7 +69,7 @@ struct LeftSidebar: View {
 
             if entries.isNotEmpty {
                 ScrollView {
-                    LazyVStack(spacing: DesignTokens.Spacing.sm) {
+                    LazyVStack(spacing: AppUI.Spacing.sm) {
                         ForEach(entries) { entry in
                             Button {
                                 app.selectedNavigationId = entry.id
@@ -80,9 +80,9 @@ struct LeftSidebar: View {
                             .buttonStyle(.plain)
                         }
                     }
-                    .padding(.horizontal, DesignTokens.Spacing.sm)
-                    .padding(.top, DesignTokens.Spacing.lg)
-                    .padding(.bottom, DesignTokens.Spacing.lg)
+                    .padding(.horizontal, AppUI.Spacing.sm)
+                    .padding(.top, AppUI.Spacing.lg)
+                    .padding(.bottom, AppUI.Spacing.lg)
                 }
                 .scrollIndicators(.hidden)
             } else {
@@ -92,8 +92,8 @@ struct LeftSidebar: View {
             Spacer(minLength: 0)
 
             settingsButton
-                .padding(.horizontal, DesignTokens.Spacing.sm)
-                .padding(.bottom, DesignTokens.Spacing.md)
+                .padding(.horizontal, AppUI.Spacing.sm)
+                .padding(.bottom, AppUI.Spacing.md)
         }
     }
 
@@ -173,37 +173,33 @@ struct SidebarRow: View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundColor(isSelected ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(isSelected ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textSecondary)
                 .frame(width: 20)
 
             Text(title)
                 .font(isSelected ? .system(size: 13, weight: .medium) : .system(size: 13, weight: .regular))
-                .foregroundColor(isSelected ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(isSelected ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textSecondary)
 
             Spacer()
         }
-        .padding(.vertical, DesignTokens.Spacing.sm)
-        .padding(.horizontal, DesignTokens.Spacing.md)
-        .background(selectionBackground)
-        .overlay(selectionBorder)
-        .contentShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.md))
+        .padding(.vertical, AppUI.Spacing.sm)
+        .padding(.horizontal, AppUI.Spacing.md)
+        .background(rowBackground)
+        .contentShape(RoundedRectangle(cornerRadius: AppUI.Radius.md))
     }
 
-    @ViewBuilder private var selectionBackground: some View {
+    @ViewBuilder private var rowBackground: some View {
         if isSelected {
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
-                .fill(DesignTokens.Color.semantic.primary.opacity(0.15))
+            Color.clear
+                .appSurface(
+                    style: .custom(AppUI.Color.semantic.primary.opacity(0.15)),
+                    cornerRadius: AppUI.Radius.md,
+                    borderColor: AppUI.Color.semantic.primary.opacity(0.3),
+                    lineWidth: 1
+                )
                 .shadow(color: SwiftUI.Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
         } else {
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
-                .fill(SwiftUI.Color.clear)
-        }
-    }
-
-    @ViewBuilder private var selectionBorder: some View {
-        if isSelected {
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
-                .stroke(DesignTokens.Color.semantic.primary.opacity(0.3), lineWidth: 1)
+            Color.clear
         }
     }
 }

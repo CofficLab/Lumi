@@ -81,7 +81,7 @@ struct AppManagerView: View {
             // 第一行：搜索
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
                 TextField(
                     String(localized: "Search Apps", table: "AppManager"),
                     text: $viewModel.searchText
@@ -94,11 +94,11 @@ struct AppManagerView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(String(localized: "\(viewModel.installedApps.count) Apps", table: "AppManager"))
                         .font(.subheadline)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
 
                     Text(String(localized: "Total Size: \(viewModel.formattedTotalSize)", table: "AppManager"))
                         .font(.caption)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
                 }
 
                 Spacer()
@@ -110,7 +110,7 @@ struct AppManagerView: View {
             }
         }
         .padding()
-        .background(DesignTokens.Material.glass)
+        .background(AppUI.Material.glass)
     }
     
     private var loadingView: some View {

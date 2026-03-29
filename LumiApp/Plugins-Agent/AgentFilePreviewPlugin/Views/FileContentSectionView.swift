@@ -55,7 +55,7 @@ struct FileContentSectionView: View {
         ScrollView {
             Text(content)
                 .font(.system(size: 9, design: .monospaced))
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .foregroundColor(AppUI.Color.semantic.textPrimary)
                 .lineSpacing(2)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }

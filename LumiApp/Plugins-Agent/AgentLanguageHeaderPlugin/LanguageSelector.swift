@@ -27,10 +27,10 @@ struct LanguageSelector: View {
                 Image(systemName: "globe")
                     .font(.system(size: iconSize))
                 Text(ProjectVM.languagePreference.displayName)
-                    .font(DesignTokens.Typography.caption2)
+                    .font(AppUI.Typography.caption2)
                     .fontWeight(.medium)
             }
-            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            .foregroundColor(AppUI.Color.semantic.textSecondary)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(Color.black.opacity(0.05))

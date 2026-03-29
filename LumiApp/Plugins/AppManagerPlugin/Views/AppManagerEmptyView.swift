@@ -8,15 +8,15 @@ struct AppManagerEmptyView: View {
         VStack(spacing: 16) {
             Image(systemName: "app.dashed")
                 .font(.system(size: 64))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
 
             Text(String(localized: "No applications found", table: "AppManager"))
                 .font(.title3)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
 
             if !searchText.isEmpty {
                 Text(String(localized: "Try other search keywords", table: "AppManager"))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

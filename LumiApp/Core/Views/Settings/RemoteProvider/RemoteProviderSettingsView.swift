@@ -48,11 +48,11 @@ struct RemoteProviderSettingsView: View {
         VStack(spacing: 0) {
             // 云端供应商卡片（固定）
             cloudProviderCard
-                .padding(DesignTokens.Spacing.lg)
+                .padding(AppUI.Spacing.lg)
                 .background(Color.clear)
 
             ScrollView {
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+                VStack(alignment: .leading, spacing: AppUI.Spacing.lg) {
                     // 配置卡片（API Key + 模型列表）
                     if selectedProvider != nil {
                         configurationCard
@@ -60,7 +60,7 @@ struct RemoteProviderSettingsView: View {
 
                     Spacer()
                 }
-                .padding(.horizontal, DesignTokens.Spacing.lg)
+                .padding(.horizontal, AppUI.Spacing.lg)
             }
         }
         .onAppear(perform: onAppear)
@@ -80,7 +80,7 @@ extension RemoteProviderSettingsView {
     /// 云端供应商卡片（固定）
     private var cloudProviderCard: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+            VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
                 GlassSectionHeader(
                     icon: "cloud.fill",
                     title: "云端 LLM 供应商",
@@ -89,7 +89,7 @@ extension RemoteProviderSettingsView {
 
                 GlassDivider()
 
-                HStack(spacing: DesignTokens.Spacing.sm) {
+                HStack(spacing: AppUI.Spacing.sm) {
                     ForEach(remoteProviders) { provider in
                         ProviderButton(
                             provider: provider,
@@ -108,7 +108,7 @@ extension RemoteProviderSettingsView {
     /// 配置卡片
     private var configurationCard: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xl) {
+            VStack(alignment: .leading, spacing: AppUI.Spacing.xl) {
                 // API Key 区块
                 apiKeySection
 
@@ -120,7 +120,7 @@ extension RemoteProviderSettingsView {
 
     /// API Key 配置区块
     private var apiKeySection: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+        VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
             GlassSectionHeader(
                 icon: "key.fill",
                 title: "API 密钥",
@@ -130,21 +130,21 @@ extension RemoteProviderSettingsView {
             GlassDivider()
 
             GlassRow {
-                HStack(spacing: DesignTokens.Spacing.md) {
+                HStack(spacing: AppUI.Spacing.md) {
                     Image(systemName: "lock.fill")
-                        .foregroundColor(DesignTokens.Color.semantic.warning)
+                        .foregroundColor(AppUI.Color.semantic.warning)
 
                     TextField("输入 API Key", text: $apiKey)
                         .textFieldStyle(.plain)
                         .textContentType(.password)
-                        .font(DesignTokens.Typography.body)
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .font(AppUI.Typography.body)
+                        .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                     Spacer()
 
                     if !apiKey.isEmpty {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(DesignTokens.Color.semantic.success)
+                            .foregroundColor(AppUI.Color.semantic.success)
                     }
                 }
             }
@@ -153,7 +153,7 @@ extension RemoteProviderSettingsView {
 
     /// 模型列表区块
     private var modelSection: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+        VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
             GlassSectionHeader(
                 icon: "cpu.fill",
                 title: "可用模型",
@@ -196,25 +196,25 @@ struct RemoteModelRow: View {
 
     var body: some View {
         GlassRow {
-            HStack(spacing: DesignTokens.Spacing.md) {
+            HStack(spacing: AppUI.Spacing.md) {
                 // 模型名称
                 Text(model)
-                    .font(DesignTokens.Typography.body)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .font(AppUI.Typography.body)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                 Spacer()
 
                 // 默认标记
                 if isDefault {
                     Text("默认")
-                        .font(DesignTokens.Typography.caption2)
+                        .font(AppUI.Typography.caption2)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
                         .background(
                             Capsule()
-                                .fill(DesignTokens.Color.semantic.primary.opacity(0.2))
+                                .fill(AppUI.Color.semantic.primary.opacity(0.2))
                         )
-                        .foregroundColor(DesignTokens.Color.semantic.primary)
+                        .foregroundColor(AppUI.Color.semantic.primary)
                 }
             }
             .contentShape(Rectangle())

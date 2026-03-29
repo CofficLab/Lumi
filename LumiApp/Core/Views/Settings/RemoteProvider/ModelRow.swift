@@ -16,10 +16,13 @@ struct ModelRow: View {
                 modelHeader
                 performanceIndicator
             }
-            .padding(DesignTokens.Spacing.sm)
-            .background(rowBackgroundColor)
-            .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm))
-            .overlay(rowBorder)
+            .padding(AppUI.Spacing.sm)
+            .appSurface(
+                style: .custom(rowBackgroundColor),
+                cornerRadius: AppUI.Radius.sm,
+                borderColor: borderColor,
+                lineWidth: borderWidth
+            )
         }
         .buttonStyle(.plain)
         .accessibilityLabel(accessibilityLabel)
@@ -35,10 +38,10 @@ struct ModelRow: View {
     
     @ViewBuilder
     private var modelHeader: some View {
-        HStack(spacing: DesignTokens.Spacing.sm) {
+        HStack(spacing: AppUI.Spacing.sm) {
             Text(model)
-                .font(DesignTokens.Typography.body)
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .font(AppUI.Typography.body)
+                .foregroundColor(AppUI.Color.semantic.textPrimary)
             
             Spacer()
             
@@ -51,15 +54,15 @@ struct ModelRow: View {
     @ViewBuilder
     private var defaultBadge: some View {
         Text("默认")
-            .font(DesignTokens.Typography.caption2)
+            .font(AppUI.Typography.caption2)
             .fontWeight(.medium)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(DesignTokens.Color.semantic.primary.opacity(0.15))
+            .appSurface(
+                style: .custom(AppUI.Color.semantic.primary.opacity(0.15)),
+                cornerRadius: 4
             )
-            .foregroundColor(DesignTokens.Color.semantic.primary)
+            .foregroundColor(AppUI.Color.semantic.primary)
     }
     
     @ViewBuilder
@@ -78,9 +81,9 @@ struct ModelRow: View {
     
     private var rowBackgroundColor: Color {
         if isSelected {
-            return DesignTokens.Color.semantic.primary.opacity(0.08)
+            return AppUI.Color.semantic.primary.opacity(0.08)
         } else if isDefault {
-            return DesignTokens.Color.semantic.primary.opacity(0.04)
+            return AppUI.Color.semantic.primary.opacity(0.04)
         } else if isHovered {
             return Color.white.opacity(0.08)
         } else {
@@ -88,19 +91,13 @@ struct ModelRow: View {
         }
     }
     
-    @ViewBuilder
-    private var rowBorder: some View {
-        RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-            .stroke(borderColor, lineWidth: borderWidth)
-    }
-    
     private var borderColor: Color {
         if isSelected {
-            return DesignTokens.Color.semantic.primary
+            return AppUI.Color.semantic.primary
         } else if isHovered {
-            return DesignTokens.Color.semantic.primary.opacity(0.5)
+            return AppUI.Color.semantic.primary.opacity(0.5)
         } else if isDefault {
-            return DesignTokens.Color.semantic.primary.opacity(0.3)
+            return AppUI.Color.semantic.primary.opacity(0.3)
         } else {
             return Color.white.opacity(0.1)
         }

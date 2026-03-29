@@ -45,7 +45,7 @@ struct RecentProjectsSidebarView: View {
 
                 Text(String(localized: "Recent Projects", table: "AgentRecentProjectsSidebar"))
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                 Spacer()
                 
@@ -110,7 +110,7 @@ struct RecentProjectsSidebarView: View {
                     Text(project.name)
                         .font(.system(size: 12))
                         .fontWeight(isSelected ? .semibold : .regular)
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .foregroundColor(AppUI.Color.semantic.textPrimary)
                         .lineLimit(1)
                     
                     Text(project.path)

@@ -16,7 +16,7 @@ struct StatusMessage: View {
                 content: message.content,
                 monospaced: false
             )
-            .font(DesignTokens.Typography.caption1)
+            .font(AppUI.Typography.caption1)
             .messageBubbleStyle(role: message.role, isError: message.isError)
         }
     }

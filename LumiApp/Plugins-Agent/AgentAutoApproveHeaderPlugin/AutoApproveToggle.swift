@@ -8,8 +8,8 @@ struct AutoApproveToggle: View {
     var body: some View {
         HStack(spacing: 6) {
             Text(String(localized: "Auto", table: "AgentAutoApproveHeader"))
-                .font(DesignTokens.Typography.caption2)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .font(AppUI.Typography.caption2)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
 
             Toggle("", isOn: Binding(
                 get: { projectVM.autoApproveRisk },

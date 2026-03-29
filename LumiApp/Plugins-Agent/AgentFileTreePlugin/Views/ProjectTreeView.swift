@@ -59,7 +59,7 @@ extension ProjectTreeView {
             // 标题
             Text(String(localized: "Project Files", table: "ProjectTree"))
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .foregroundColor(AppUI.Color.semantic.textPrimary)
 
             Spacer()
 

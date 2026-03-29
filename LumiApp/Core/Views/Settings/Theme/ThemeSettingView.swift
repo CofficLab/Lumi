@@ -9,11 +9,11 @@ struct ThemeSettingView: View {
         VStack(spacing: 0) {
             // 顶部说明卡片（固定）
             headerCard
-                .padding(DesignTokens.Spacing.lg)
+                .padding(AppUI.Spacing.lg)
                 .background(Color.clear)
 
             ScrollView {
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+                VStack(alignment: .leading, spacing: AppUI.Spacing.lg) {
                     // 主题选择器卡片
                     themeSelectorCard
 
@@ -22,7 +22,7 @@ struct ThemeSettingView: View {
 
                     Spacer()
                 }
-                .padding(.horizontal, DesignTokens.Spacing.lg)
+                .padding(.horizontal, AppUI.Spacing.lg)
             }
         }
         .navigationTitle("主题风格")
@@ -44,7 +44,7 @@ struct ThemeSettingView: View {
 
     private var themeSelectorCard: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+            VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
                 GlassSectionHeader(
                     icon: "swatchpalette",
                     title: "选择主题",
@@ -63,7 +63,7 @@ struct ThemeSettingView: View {
 
     private var themeDescriptionCard: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+            VStack(alignment: .leading, spacing: AppUI.Spacing.sm) {
                 GlassSectionHeader(
                     icon: "info.circle.fill",
                     title: "主题说明",
@@ -72,7 +72,7 @@ struct ThemeSettingView: View {
 
                 GlassDivider()
 
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
+                VStack(alignment: .leading, spacing: AppUI.Spacing.xs) {
                     themeDescriptionItem(
                         icon: "moon.stars.fill",
                         title: "精致神秘",
@@ -98,20 +98,20 @@ struct ThemeSettingView: View {
     // MARK: - Helper Methods
 
     private func themeDescriptionItem(icon: String, title: String, description: String) -> some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-            HStack(spacing: DesignTokens.Spacing.xs) {
+        VStack(alignment: .leading, spacing: AppUI.Spacing.xs) {
+            HStack(spacing: AppUI.Spacing.xs) {
                 Image(systemName: icon)
                     .font(.system(size: 12))
-                    .foregroundColor(DesignTokens.Color.semantic.primary)
+                    .foregroundColor(AppUI.Color.semantic.primary)
 
                 Text(title)
-                    .font(DesignTokens.Typography.body)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .font(AppUI.Typography.body)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
             }
 
             Text(description)
-                .font(DesignTokens.Typography.caption1)
-                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                .font(AppUI.Typography.caption1)
+                .foregroundColor(AppUI.Color.semantic.textTertiary)
                 .padding(.leading, 18)
         }
     }

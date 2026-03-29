@@ -22,22 +22,21 @@ struct TerminalMainView: View {
                     }) {
                         Image(systemName: "plus")
                             .frame(width: 24, height: 24)
-                            .background(DesignTokens.Material.glass)
-                            .cornerRadius(DesignTokens.Radius.sm)
+                            .appSurface(style: .glass, cornerRadius: AppUI.Radius.sm)
                     }
                     .buttonStyle(.plain)
                     .padding(.leading, 4)
                 }
                 .padding(6)
             }
-            .background(DesignTokens.Material.glass)
+            .appSurface(style: .glass, cornerRadius: AppUI.Radius.sm)
             
             // Content
             if let session = viewModel.selectedSession {
                 TerminalView(session: session)
             } else {
                 Text("No open terminals")
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
@@ -54,7 +53,7 @@ struct TerminalTabItem: View {
         HStack(spacing: 6) {
             Text(title)
                 .font(.caption)
-                .foregroundColor(isSelected ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(isSelected ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textSecondary)
             
             if isSelected {
                 Button(action: onClose) {
@@ -75,11 +74,10 @@ struct TerminalTabItem: View {
     @ViewBuilder
     var backgroundShape: some View {
         if isSelected {
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                .fill(DesignTokens.Material.glass)
+            Color.clear
+                .appSurface(style: .glass, cornerRadius: AppUI.Radius.sm)
         } else {
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                .fill(Color.clear)
+            Color.clear
         }
     }
 }
@@ -91,7 +89,7 @@ struct TerminalView: View {
         ConsoleTextView(text: $session.output, onInput: { data in
             session.sendInput(data)
         })
-        .background(DesignTokens.Color.basePalette.deepBackground)
+        .background(AppUI.Color.basePalette.deepBackground)
     }
 }
 

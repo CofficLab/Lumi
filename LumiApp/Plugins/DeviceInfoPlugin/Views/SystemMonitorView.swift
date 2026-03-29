@@ -22,11 +22,11 @@ struct SystemMonitorView: View {
             // Network Card
             MonitorCard(title: "Network", 
                         value: "↓\(viewModel.metrics.network.downloadSpeedString) ↑\(viewModel.metrics.network.uploadSpeedString)",
-                        color: DesignTokens.Color.semantic.info) {
+                        color: AppUI.Color.semantic.info) {
                 ZStack {
-                    WaveformView(data: viewModel.metrics.network.downloadHistory, color: DesignTokens.Color.semantic.info, maxVal: 1024*1024*10)
+                    WaveformView(data: viewModel.metrics.network.downloadHistory, color: AppUI.Color.semantic.info, maxVal: 1024*1024*10)
                         .opacity(0.8)
-                    WaveformView(data: viewModel.metrics.network.uploadHistory, color: DesignTokens.Color.semantic.primary, maxVal: 1024*1024*5)
+                    WaveformView(data: viewModel.metrics.network.uploadHistory, color: AppUI.Color.semantic.primary, maxVal: 1024*1024*5)
                         .opacity(0.6)
                 }
             }
@@ -34,11 +34,11 @@ struct SystemMonitorView: View {
             // Disk Card
             MonitorCard(title: "Disk I/O", 
                         value: "R: \(viewModel.metrics.disk.readSpeedString) W: \(viewModel.metrics.disk.writeSpeedString)",
-                        color: DesignTokens.Color.semantic.warning) {
+                        color: AppUI.Color.semantic.warning) {
                 ZStack {
-                    WaveformView(data: viewModel.metrics.disk.readHistory, color: DesignTokens.Color.semantic.warning, maxVal: 1024*1024*50)
+                    WaveformView(data: viewModel.metrics.disk.readHistory, color: AppUI.Color.semantic.warning, maxVal: 1024*1024*50)
                         .opacity(0.8)
-                    WaveformView(data: viewModel.metrics.disk.writeHistory, color: DesignTokens.Color.semantic.error, maxVal: 1024*1024*20)
+                    WaveformView(data: viewModel.metrics.disk.writeHistory, color: AppUI.Color.semantic.error, maxVal: 1024*1024*20)
                         .opacity(0.6)
                 }
             }
@@ -65,7 +65,7 @@ struct MonitorCard<Content: View>: View {
                 HStack {
                     Text(title)
                         .font(.headline)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
                     Spacer()
                     Text(value)
                         .font(.system(.body, design: .monospaced))
@@ -75,7 +75,7 @@ struct MonitorCard<Content: View>: View {
                 
                 content()
                     .frame(height: 100)
-                    .background(DesignTokens.Material.glass.opacity(0.2))
+                    .background(AppUI.Material.glass.opacity(0.2))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
             }
         }

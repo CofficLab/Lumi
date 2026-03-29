@@ -12,7 +12,7 @@ struct RawMessageToggleButton: View {
     var body: some View {
         AppIconButton(
             systemImage: showRawMessage ? "text.bubble.fill" : "curlybraces",
-            tint: DesignTokens.Color.semantic.textSecondary.opacity(0.6),
+            tint: AppUI.Color.semantic.textSecondary.opacity(0.6),
             size: .compact
         ) {
             showRawMessage.toggle()

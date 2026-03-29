@@ -47,11 +47,11 @@ struct AppVersionStatusBarView: View {
         HStack(spacing: 8) {
             Image(systemName: "tag.fill")
                 .font(.system(size: 10))
-                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                .foregroundColor(AppUI.Color.semantic.textTertiary)
 
             Text(version)
                 .font(.system(size: 11))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
         .task {
             version = await AppVersionHelper.getVersion()

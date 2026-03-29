@@ -20,7 +20,7 @@ struct ConversationListHeader: View {
 
             Text(String(localized: "Conversation History", table: "ConversationList"))
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .foregroundColor(AppUI.Color.semantic.textPrimary)
 
             Spacer()
         }

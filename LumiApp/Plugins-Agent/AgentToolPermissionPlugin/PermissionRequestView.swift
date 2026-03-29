@@ -58,7 +58,7 @@ extension PermissionRequestView {
 
             Text(String(localized: "The assistant is trying to perform a \(request.riskLevel.displayName) action.", table: "AgentToolPermission"))
                 .font(.caption)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
 
             detailsDisclosure(for: request)
 
@@ -89,7 +89,7 @@ extension PermissionRequestView {
                 .foregroundColor(.blue)
             Text(reason)
                 .font(.caption)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
         .padding(.top, 4)
     }

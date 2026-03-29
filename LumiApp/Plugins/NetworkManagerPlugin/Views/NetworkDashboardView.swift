@@ -14,7 +14,7 @@ struct NetworkDashboardView: View {
                             speed: viewModel.networkState.downloadSpeed,
                             total: viewModel.networkState.totalDownload,
                             icon: "arrow.down.circle.fill",
-                            color: DesignTokens.Color.semantic.success,
+                            color: AppUI.Color.semantic.success,
                             viewModel: viewModel
                         )
 
@@ -23,7 +23,7 @@ struct NetworkDashboardView: View {
                             speed: viewModel.networkState.uploadSpeed,
                             total: viewModel.networkState.totalUpload,
                             icon: "arrow.up.circle.fill",
-                            color: DesignTokens.Color.semantic.info,
+                            color: AppUI.Color.semantic.info,
                             viewModel: viewModel
                         )
                     }
@@ -64,25 +64,25 @@ struct SpeedCard: View {
     let viewModel: NetworkManagerViewModel
 
     var body: some View {
-        GlassCard(cornerRadius: DesignTokens.Radius.md, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+        GlassCard(cornerRadius: AppUI.Radius.md, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
+            VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
                 HStack {
                     Image(systemName: icon)
                         .font(.title2)
                         .foregroundStyle(color)
                     Text(title)
-                        .font(DesignTokens.Typography.bodyEmphasized)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .font(AppUI.Typography.bodyEmphasized)
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
                     Spacer()
                 }
 
                 Text(speed.formattedNetworkSpeed())
                     .font(.system(size: 24, weight: .bold, design: .monospaced))
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                 Text(String(localized: "Total: \(Double(total).formattedBytes())"))
-                    .font(DesignTokens.Typography.caption1)
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                    .font(AppUI.Typography.caption1)
+                    .foregroundColor(AppUI.Color.semantic.textTertiary)
             }
         }
         .mystiqueGlow(intensity: 0.2)
@@ -95,23 +95,23 @@ struct NetworkInfoCard: View {
     let icon: String
 
     var body: some View {
-        GlassCard(cornerRadius: DesignTokens.Radius.sm) {
-            HStack(spacing: DesignTokens.Spacing.sm) {
+        GlassCard(cornerRadius: AppUI.Radius.sm) {
+            HStack(spacing: AppUI.Spacing.sm) {
                 Image(systemName: icon)
                     .frame(width: 24, height: 24)
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                    .foregroundColor(AppUI.Color.semantic.textTertiary)
 
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
+                VStack(alignment: .leading, spacing: AppUI.Spacing.xs) {
                     Text(title)
-                        .font(DesignTokens.Typography.caption1)
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                        .font(AppUI.Typography.caption1)
+                        .foregroundColor(AppUI.Color.semantic.textTertiary)
                     Text(value)
-                        .font(DesignTokens.Typography.body)
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .font(AppUI.Typography.body)
+                        .foregroundColor(AppUI.Color.semantic.textPrimary)
                 }
                 Spacer()
             }
-            .padding(DesignTokens.Spacing.sm)
+            .padding(AppUI.Spacing.sm)
         }
     }
 }

@@ -7,17 +7,17 @@ struct ProjectSectionHeader: View {
     var body: some View {
         HStack {
             Image(systemName: project.type.icon)
-                .foregroundColor(DesignTokens.Color.semantic.info)
+                .foregroundColor(AppUI.Color.semantic.info)
             Text(project.name)
                 .font(.headline)
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .foregroundColor(AppUI.Color.semantic.textPrimary)
             Spacer()
             Text(project.type.displayName)
                 .font(.caption)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
-                .background(DesignTokens.Color.semantic.textTertiary.opacity(0.2))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .background(AppUI.Color.semantic.textTertiary.opacity(0.2))
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
                 .clipShape(Capsule())
         }
     }
@@ -37,15 +37,15 @@ struct ProjectItemRow: View {
             .labelsHidden()
 
             Image(systemName: "folder.fill")
-                .foregroundColor(DesignTokens.Color.semantic.warning)
+                .foregroundColor(AppUI.Color.semantic.warning)
 
             VStack(alignment: .leading) {
                 Text(item.name)
                     .font(.body)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
                 Text(item.path)
                     .font(.caption2)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
@@ -54,7 +54,7 @@ struct ProjectItemRow: View {
 
             Text(viewModel.formatBytes(item.size))
                 .font(.monospacedDigit(.body)())
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
         .padding(.vertical, 4)
     }

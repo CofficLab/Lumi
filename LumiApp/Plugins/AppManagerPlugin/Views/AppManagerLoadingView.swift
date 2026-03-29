@@ -10,7 +10,7 @@ struct AppManagerLoadingView: View {
                 .scaleEffect(1.5)
 
             Text(message)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

@@ -77,20 +77,20 @@ struct MessageWithToolCallsView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "wrench.and.screwdriver")
                             .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
 
                         Text(toolCall.name)
-                            .font(DesignTokens.Typography.caption1)
-                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                            .font(AppUI.Typography.caption1)
+                            .foregroundColor(AppUI.Color.semantic.textPrimary)
                             .lineLimit(1)
 
                         if shouldShowAuthState {
                             Text("·")
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                .foregroundColor(AppUI.Color.semantic.textSecondary)
 
                             Text(toolCall.authorizationState.displayName)
-                                .font(DesignTokens.Typography.caption2)
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                .font(AppUI.Typography.caption2)
+                                .foregroundColor(AppUI.Color.semantic.textSecondary)
                                 .lineLimit(1)
                         }
                     }
@@ -101,8 +101,8 @@ struct MessageWithToolCallsView: View {
                         systemImage: "slider.horizontal.3",
                         label: "参数",
                         tint: isParametersExpanded
-                            ? DesignTokens.Color.semantic.textPrimary
-                            : DesignTokens.Color.semantic.textSecondary,
+                            ? AppUI.Color.semantic.textPrimary
+                            : AppUI.Color.semantic.textSecondary,
                         size: .regular,
                         isActive: isParametersExpanded
                     ) {
@@ -120,8 +120,8 @@ struct MessageWithToolCallsView: View {
                             systemImage: "doc.text.magnifyingglass",
                             label: "结果",
                             tint: isResultsExpanded
-                                ? DesignTokens.Color.semantic.textPrimary
-                                : DesignTokens.Color.semantic.textSecondary,
+                                ? AppUI.Color.semantic.textPrimary
+                                : AppUI.Color.semantic.textSecondary,
                             size: .regular,
                             isActive: isResultsExpanded
                         ) {
@@ -231,8 +231,8 @@ private struct ToolResultSectionView: View {
                 ProgressView()
                     .controlSize(.small)
                 Text("查询结果中…")
-                    .font(DesignTokens.Typography.caption1)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .font(AppUI.Typography.caption1)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .modifier(SubtleToolCardModifier())
@@ -241,10 +241,10 @@ private struct ToolResultSectionView: View {
         } else {
             HStack(spacing: 8) {
                 Image(systemName: "info.circle")
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
                 Text("点击结果后会在这里显示工具输出")
-                    .font(DesignTokens.Typography.caption1)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .font(AppUI.Typography.caption1)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .modifier(SubtleToolCardModifier())
@@ -263,12 +263,12 @@ private struct GenericToolSectionView: View {
         ) {
             VStack(alignment: .leading, spacing: 8) {
                 Text(title)
-                    .font(DesignTokens.Typography.caption1)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .font(AppUI.Typography.caption1)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
 
                 Text(content)
-                    .font(DesignTokens.Typography.code)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .font(AppUI.Typography.code)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .textSelection(.enabled)
             }

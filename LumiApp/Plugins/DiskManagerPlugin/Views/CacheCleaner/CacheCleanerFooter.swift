@@ -10,10 +10,10 @@ struct CacheCleanerFooter: View {
             VStack(alignment: .leading) {
                 Text("已选择：\(viewModel.formatBytes(viewModel.totalSelectedSize))")
                     .font(.headline)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
                 Text("\(viewModel.selection.count) 个项目")
                     .font(.caption)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
 
             Spacer()
@@ -31,7 +31,7 @@ struct CacheCleanerFooter: View {
                 .padding(.vertical, 8)
             }
             .buttonStyle(.borderedProminent)
-            .tint(DesignTokens.Color.semantic.warning)
+            .tint(AppUI.Color.semantic.warning)
             .disabled(viewModel.selection.isEmpty || viewModel.isCleaning)
         }
         .padding(.horizontal)

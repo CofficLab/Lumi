@@ -54,7 +54,7 @@ struct FilePreviewView: View {
                 FilePreviewEmptyStateView()
             }
         }
-        .background(DesignTokens.Material.glassThick)
+        .background(AppUI.Material.glassThick)
         .onChange(of: ProjectVM.selectedFileURL) { _, newURL in
             loadFileContent(from: newURL)
         }
@@ -73,7 +73,7 @@ struct FilePreviewView: View {
 
             Text(String(localized: "File Preview", table: "AgentFilePreview"))
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .foregroundColor(AppUI.Color.semantic.textPrimary)
 
             Spacer()
 
@@ -81,7 +81,7 @@ struct FilePreviewView: View {
             Button(action: clearSelection) {
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 10))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
             .buttonStyle(.plain)
         }
@@ -115,13 +115,13 @@ struct FilePreviewView: View {
             // 文件名
             Text(ProjectVM.selectedFileURL?.lastPathComponent ?? "")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .foregroundColor(AppUI.Color.semantic.textPrimary)
                 .lineLimit(2)
 
             // 文件路径
             Text(ProjectVM.selectedFileURL?.path ?? "")
                 .font(.system(size: 9))
-                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                .foregroundColor(AppUI.Color.semantic.textTertiary)
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

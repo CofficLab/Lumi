@@ -51,7 +51,7 @@ struct AgentNativeFileTreeContainer: View {
 
                 Text(String(localized: "File Tree", table: "AgentNativeFileTree"))
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                 Spacer()
             }

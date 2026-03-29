@@ -46,12 +46,12 @@ struct FilePreviewStatusBarView: View {
             if ProjectVM.isFileSelected && isPreviewableFile {
                 Text(fileTypeDescription)
                     .font(.system(size: 9, weight: .medium))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(
                         Capsule()
-                            .fill(DesignTokens.Color.semantic.info.opacity(0.15))
+                            .fill(AppUI.Color.semantic.info.opacity(0.15))
                     )
             }
 
@@ -61,7 +61,7 @@ struct FilePreviewStatusBarView: View {
             if ProjectVM.isFileSelected && isPreviewableFile {
                 Text("\(fileContent.count) " + String(localized: "characters", table: "AgentFilePreviewStatusBar"))
                     .font(.system(size: 9))
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                    .foregroundColor(AppUI.Color.semantic.textTertiary)
             }
         }
         .padding(.horizontal, 10)

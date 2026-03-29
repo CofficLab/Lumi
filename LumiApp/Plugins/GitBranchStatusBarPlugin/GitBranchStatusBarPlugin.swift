@@ -43,11 +43,11 @@ struct GitBranchStatusBarView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "arrow.triangle.branch")
                         .font(.system(size: 10))
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                        .foregroundColor(AppUI.Color.semantic.textTertiary)
 
                     Text(branch)
                         .font(.system(size: 11))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
                         .lineLimit(1)
                 }
             }

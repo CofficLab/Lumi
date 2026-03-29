@@ -26,10 +26,10 @@ struct MessageHeaderView<Leading: View, Trailing: View>: View {
         .padding(.vertical, 6)
         .background(headerBackground)
         .overlay(
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+            RoundedRectangle(cornerRadius: AppUI.Radius.sm, style: .continuous)
                 .stroke(Color.white.opacity(isHovered ? 0.18 : 0.10), lineWidth: 1)
         )
-        .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: AppUI.Radius.sm, style: .continuous))
         .contentShape(Rectangle())
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
@@ -39,11 +39,11 @@ struct MessageHeaderView<Leading: View, Trailing: View>: View {
     }
 
     private var headerBackground: some View {
-        RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+        RoundedRectangle(cornerRadius: AppUI.Radius.sm, style: .continuous)
             .fill(
                 isHovered
-                    ? DesignTokens.Color.semantic.textSecondary.opacity(0.14)
-                    : DesignTokens.Color.semantic.textSecondary.opacity(0.08)
+                    ? AppUI.Color.semantic.textSecondary.opacity(0.14)
+                    : AppUI.Color.semantic.textSecondary.opacity(0.08)
             )
     }
 }

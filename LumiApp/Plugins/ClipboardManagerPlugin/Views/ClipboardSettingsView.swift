@@ -31,11 +31,11 @@ struct ClipboardSettingsView: View {
                         await ClipboardStorage.shared.clear()
                     }
                 }
-                .foregroundColor(DesignTokens.Color.semantic.error)
+                .foregroundColor(AppUI.Color.semantic.error)
                 
                 Text("All data is stored locally and will not be uploaded to any server.")
                     .font(.caption)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
         }
         .padding()

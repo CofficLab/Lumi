@@ -8,34 +8,34 @@ struct TextActionPreviewView: View {
         VStack(spacing: 20) {
             Text("Preview")
                 .font(.headline)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
 
             ZStack {
                 // Document background
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(DesignTokens.Material.glass)
+                    .fill(AppUI.Material.glass)
                     .frame(width: 220, height: 160)
 
                 // Mock content
                 VStack(alignment: .leading, spacing: 4) {
                     RoundedRectangle(cornerRadius: 2)
-                        .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.2))
+                        .fill(AppUI.Color.semantic.textTertiary.opacity(0.2))
                         .frame(width: 180, height: 8)
 
                     RoundedRectangle(cornerRadius: 2)
-                        .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.2))
+                        .fill(AppUI.Color.semantic.textTertiary.opacity(0.2))
                         .frame(width: 160, height: 8)
 
                     HStack(spacing: 0) {
                         Text("Select ")
                             .font(.system(size: 12))
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
 
                         Text("this text")
                             .font(.system(size: 12))
                             .padding(.horizontal, 2)
-                            .background(isEnabled ? DesignTokens.Color.semantic.primary.opacity(0.3) : SwiftUI.Color.clear)
-                            .foregroundColor(isEnabled ? DesignTokens.Color.semantic.primary : DesignTokens.Color.semantic.textSecondary)
+                            .background(isEnabled ? AppUI.Color.semantic.primary.opacity(0.3) : SwiftUI.Color.clear)
+                            .foregroundColor(isEnabled ? AppUI.Color.semantic.primary : AppUI.Color.semantic.textSecondary)
                             .overlay(
                                 GeometryReader { _ in
                                     if isEnabled {
@@ -47,11 +47,11 @@ struct TextActionPreviewView: View {
 
                         Text(" to see.")
                             .font(.system(size: 12))
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
                     }
 
                     RoundedRectangle(cornerRadius: 2)
-                        .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.2))
+                        .fill(AppUI.Color.semantic.textTertiary.opacity(0.2))
                         .frame(width: 140, height: 8)
                 }
             }
@@ -71,16 +71,14 @@ struct MockActionMenu: View {
                         .font(.system(size: 14))
                     Text(action.title)
                         .font(.caption2)
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .foregroundColor(AppUI.Color.semantic.textPrimary)
                 }
                 .frame(width: 44, height: 44)
-                .background(DesignTokens.Material.glass)
-                .cornerRadius(DesignTokens.Radius.sm)
+                .appSurface(style: .glass, cornerRadius: AppUI.Radius.sm)
             }
         }
-        .padding(DesignTokens.Spacing.xs)
-        .background(DesignTokens.Material.glass)
-        .cornerRadius(DesignTokens.Radius.md)
+        .padding(AppUI.Spacing.xs)
+        .appSurface(style: .glass, cornerRadius: AppUI.Radius.md)
     }
 }
 

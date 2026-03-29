@@ -24,7 +24,7 @@ struct ClipboardHistoryView: View {
                 }
             }
             .padding(10)
-            .background(DesignTokens.Material.glass)
+            .background(AppUI.Material.glass)
             .overlay(GlassDivider(), alignment: .bottom)
             
             // List
@@ -32,10 +32,10 @@ struct ClipboardHistoryView: View {
                 VStack(spacing: 12) {
                     Image(systemName: "doc.on.clipboard")
                         .font(.system(size: 40))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
                     Text("No clipboard records")
                         .font(.headline)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -67,7 +67,7 @@ struct ClipboardHistoryView: View {
             HStack {
                 Text("\(viewModel.items.count) items")
                     .font(.caption)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
                 Spacer()
                 GlassButton(title: "Clear All", style: .danger) {
                     viewModel.clearAll()
@@ -75,7 +75,7 @@ struct ClipboardHistoryView: View {
                 .help("Clear History")
             }
             .padding(8)
-            .background(DesignTokens.Material.glass)
+            .background(AppUI.Material.glass)
             .overlay(GlassDivider(), alignment: .top)
         }
         .onAppear {
@@ -92,11 +92,11 @@ struct ClipboardItemRow: View {
             // Icon
             ZStack {
                 RoundedRectangle(cornerRadius: 6)
-                    .fill(DesignTokens.Material.glass)
+                    .fill(AppUI.Material.glass)
                     .frame(width: 32, height: 32)
                 
                 Image(systemName: iconName(for: item.type))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
             
             // Content
@@ -104,7 +104,7 @@ struct ClipboardItemRow: View {
                 Text(item.title)
                     .lineLimit(2)
                     .font(.system(size: 13))
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
                 
                 HStack {
                     if let appName = item.appName {
@@ -112,18 +112,18 @@ struct ClipboardItemRow: View {
                             .font(.caption2)
                             .padding(.horizontal, 4)
                             .padding(.vertical, 2)
-                            .background(DesignTokens.Color.semantic.textTertiary.opacity(0.15))
+                            .background(AppUI.Color.semantic.textTertiary.opacity(0.15))
                             .cornerRadius(4)
                     }
                     
                     Text(item.timestamp, style: .time)
                         .font(.caption2)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
                     
                     if item.isPinned {
                         Image(systemName: "pin.fill")
                             .font(.caption2)
-                            .foregroundColor(DesignTokens.Color.semantic.warning)
+                            .foregroundColor(AppUI.Color.semantic.warning)
                     }
                 }
             }

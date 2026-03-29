@@ -29,7 +29,7 @@ extension AvailableToolsButton {
     private var buttonIcon: some View {
         Image(systemName: "wrench.and.screwdriver")
             .font(.system(size: iconSize))
-            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            .foregroundColor(AppUI.Color.semantic.textSecondary)
             .frame(width: iconButtonSize, height: iconButtonSize)
             .background(Color.black.opacity(0.05))
             .clipShape(Circle())

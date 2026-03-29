@@ -30,27 +30,27 @@ struct XcodeCategorySection: View {
             Button(action: { withAnimation { isExpanded.toggle() } }, label: {
                 Image(systemName: "chevron.right")
                     .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             })
             .buttonStyle(.plain)
 
             Image(systemName: category.iconName)
-                .foregroundColor(DesignTokens.Color.semantic.info)
+                .foregroundColor(AppUI.Color.semantic.info)
 
             VStack(alignment: .leading) {
                 Text(category.displayName)
                     .font(.headline)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
                 Text(category.description)
                     .font(.caption2)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
 
             Spacer()
 
             Text(viewModel.formatBytes(categorySize))
                 .font(.monospacedDigit(.body)())
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
 
             // 全选/反选 Checkbox
             Toggle("", isOn: Binding(
@@ -77,17 +77,17 @@ struct XcodeItemRow: View {
     var body: some View {
         HStack {
             Image(systemName: "doc")
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
                 .padding(.leading, 24) // Indent
 
             VStack(alignment: .leading) {
                 Text(item.name)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
                 Text(item.path.path)
                     .font(.caption2)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
@@ -96,7 +96,7 @@ struct XcodeItemRow: View {
 
             Text(viewModel.formatBytes(item.size))
                 .font(.monospacedDigit(.caption)())
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
 
             Toggle("", isOn: Binding(
                 get: { item.isSelected },

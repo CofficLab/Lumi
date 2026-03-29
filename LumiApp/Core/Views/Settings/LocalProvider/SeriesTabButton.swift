@@ -11,14 +11,14 @@ struct SeriesTabButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(DesignTokens.Typography.caption1)
+                .font(AppUI.Typography.caption1)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(isSelected ? DesignTokens.Color.semantic.primary : (isHovered ? Color.white.opacity(0.12) : Color.white.opacity(0.05)))
+                .appSurface(
+                    style: .custom(isSelected ? AppUI.Color.semantic.primary : (isHovered ? Color.white.opacity(0.12) : Color.white.opacity(0.05))),
+                    cornerRadius: 6
                 )
-                .foregroundColor(isSelected ? .white : DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(isSelected ? .white : AppUI.Color.semantic.textSecondary)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)

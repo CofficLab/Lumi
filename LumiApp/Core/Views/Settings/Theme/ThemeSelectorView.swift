@@ -10,7 +10,7 @@ struct ThemeSelectorView: View {
 
     // MARK: - 主体
     var body: some View {
-        VStack(spacing: DesignTokens.Spacing.sm) {
+        VStack(spacing: AppUI.Spacing.sm) {
             ForEach(Themes.Variant.allCases, id: \.self) { variant in
                 ThemeOptionCard(
                     variant: variant,
@@ -40,23 +40,23 @@ struct ThemeOptionCard: View {
             selectedBorderColor: variant.theme.iconColor,
             action: action
         ) {
-            HStack(spacing: DesignTokens.Spacing.md) {
+            HStack(spacing: AppUI.Spacing.md) {
                 // 图标
                 Image(systemName: variant.theme.iconName)
                     .font(.system(size: 24))
-                    .foregroundColor(isSelected ? variant.theme.iconColor : DesignTokens.Color.semantic.textTertiary)
+                    .foregroundColor(isSelected ? variant.theme.iconColor : AppUI.Color.semantic.textTertiary)
                     .frame(width: 40)
 
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
+                VStack(alignment: .leading, spacing: AppUI.Spacing.xs) {
                     // 名称
                     Text(variant.theme.displayName)
-                        .font(DesignTokens.Typography.body)
-                        .foregroundColor(isSelected ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
+                        .font(AppUI.Typography.body)
+                        .foregroundColor(isSelected ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textSecondary)
 
                     // 描述
                     Text(variant.theme.description)
-                        .font(DesignTokens.Typography.caption1)
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                        .font(AppUI.Typography.caption1)
+                        .foregroundColor(AppUI.Color.semantic.textTertiary)
                 }
             }
         }

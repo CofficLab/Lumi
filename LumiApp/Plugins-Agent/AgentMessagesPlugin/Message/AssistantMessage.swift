@@ -122,8 +122,8 @@ struct AssistantMessage: View {
 
                 // 时间戳
                 Text(formatTimestamp(message.timestamp))
-                    .font(DesignTokens.Typography.caption2)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .font(AppUI.Typography.caption2)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
 
                 // 切换原始消息按钮
                 RawMessageToggleButton(showRawMessage: $showRawMessage)
@@ -155,9 +155,9 @@ struct AssistantMessage: View {
                     Image(systemName: "text.alignleft")
                         .font(.system(size: 8, weight: .medium))
                     Text("\(totalTokens)")
-                        .font(DesignTokens.Typography.caption2)
+                        .font(AppUI.Typography.caption2)
                 }
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
         }
     }

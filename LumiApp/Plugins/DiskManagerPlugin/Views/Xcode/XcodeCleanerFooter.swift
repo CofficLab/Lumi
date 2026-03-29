@@ -11,10 +11,10 @@ struct XcodeCleanerFooter: View {
             VStack(alignment: .leading) {
                 Text("已选择：\(viewModel.formatBytes(viewModel.selectedSize))")
                     .font(.headline)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
                 Text("总计：\(viewModel.formatBytes(viewModel.totalSize))")
                     .font(.caption)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
 
             Spacer()
@@ -22,7 +22,7 @@ struct XcodeCleanerFooter: View {
             if let error = viewModel.errorMessage {
                 VStack(alignment: .trailing, spacing: 6) {
                     Text(error)
-                        .foregroundColor(DesignTokens.Color.semantic.error)
+                        .foregroundColor(AppUI.Color.semantic.error)
                         .font(.caption)
                         .multilineTextAlignment(.trailing)
                     if viewModel.isPermissionError {
@@ -46,7 +46,7 @@ struct XcodeCleanerFooter: View {
                 .padding(.vertical, 8)
             })
             .buttonStyle(.borderedProminent)
-            .tint(DesignTokens.Color.semantic.warning)
+            .tint(AppUI.Color.semantic.warning)
             .disabled(viewModel.selectedSize == 0 || viewModel.isCleaning)
         }
         .padding(.horizontal)

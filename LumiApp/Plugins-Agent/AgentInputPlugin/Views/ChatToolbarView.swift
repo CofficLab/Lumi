@@ -190,7 +190,7 @@ extension ChatToolbarView {
         case .chat:
             return Color.orange
         case .build:
-            return DesignTokens.Color.semantic.textSecondary
+            return AppUI.Color.semantic.textSecondary
         }
     }
 
@@ -230,7 +230,7 @@ extension ChatToolbarView {
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
             }
-            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            .foregroundColor(AppUI.Color.semantic.textSecondary)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(Color.black.opacity(0.05))
@@ -267,7 +267,7 @@ extension ChatToolbarView {
         }) {
             Image(systemName: "photo")
                 .font(.system(size: 14))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
                 .frame(width: 28, height: 28)
                 .background(Color.black.opacity(0.05))
                 .clipShape(Circle())

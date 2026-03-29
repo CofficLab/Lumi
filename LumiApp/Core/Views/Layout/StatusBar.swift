@@ -19,9 +19,8 @@ struct StatusBar: View {
                 .padding(.vertical, 6)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .frame(height: 32)
-                .background(DesignTokens.Material.glassUltraThick)
+                .appSurface(style: .glassUltraThick, cornerRadius: 0)
             }
         }
     }
 }
-

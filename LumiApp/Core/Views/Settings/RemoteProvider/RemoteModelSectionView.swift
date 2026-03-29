@@ -14,7 +14,7 @@ struct RemoteModelSectionView: View {
     @EnvironmentObject private var chatHistoryVM: ChatHistoryVM
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+        VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
             apiKeySection
             modelSection
         }
@@ -24,34 +24,32 @@ struct RemoteModelSectionView: View {
     }
 
     private var apiKeySection: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+        VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
             Text("API 密钥")
-                .font(DesignTokens.Typography.callout)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .font(AppUI.Typography.callout)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
 
             TextField("输入 API Key", text: $apiKey)
                 .textFieldStyle(.plain)
                 .textContentType(.password)
-                .font(DesignTokens.Typography.body)
-                .padding(DesignTokens.Spacing.sm)
-                .background(
-                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                        .fill(DesignTokens.Material.glass)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                        )
+                .font(AppUI.Typography.body)
+                .padding(AppUI.Spacing.sm)
+                .appSurface(
+                    style: .glass,
+                    cornerRadius: AppUI.Radius.sm,
+                    borderColor: Color.white.opacity(0.1),
+                    lineWidth: 1
                 )
         }
     }
 
     private var modelSection: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+        VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
             Text("可用模型")
-                .font(DesignTokens.Typography.callout)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .font(AppUI.Typography.callout)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
 
-            VStack(spacing: DesignTokens.Spacing.xs) {
+            VStack(spacing: AppUI.Spacing.xs) {
                 let models = selectedProvider?.availableModels ?? []
                 ForEach(models, id: \.self) { model in
                     let stats = findStat(for: model)

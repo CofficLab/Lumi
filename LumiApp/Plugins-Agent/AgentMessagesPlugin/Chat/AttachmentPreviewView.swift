@@ -27,14 +27,14 @@ struct AttachmentPreviewView: View {
 
                             AppIconButton(
                                 systemImage: "xmark",
-                                tint: DesignTokens.Color.semantic.textPrimary,
+                                tint: AppUI.Color.semantic.textPrimary,
                                 size: .compact
                             ) {
                                 onRemove(attachment.id)
                             }
                             .background(
                                 Circle()
-                                    .fill(DesignTokens.Material.glass)
+                                    .fill(AppUI.Material.glass)
                             )
                             .clipShape(Circle())
                             .offset(x: 6, y: -6)

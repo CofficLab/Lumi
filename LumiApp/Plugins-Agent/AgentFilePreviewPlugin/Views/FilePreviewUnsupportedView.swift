@@ -9,15 +9,15 @@ struct FilePreviewUnsupportedView: View {
         VStack(spacing: 12) {
             Image(systemName: "doc.questionmark")
                 .font(.system(size: 32))
-                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                .foregroundColor(AppUI.Color.semantic.textTertiary)
 
             Text(String(localized: "Preview Not Supported", table: "AgentFilePreview"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
 
             Text(String(localized: "Preview Not Supported Type", table: "AgentFilePreview") + "\n" + fileName)
                 .font(.system(size: 11))
-                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                .foregroundColor(AppUI.Color.semantic.textTertiary)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -67,7 +67,7 @@ struct ModelSelectorView: View, SuperLog {
             .listStyle(.sidebar)
         }
         .frame(width: 350, height: 400)
-        .background(DesignTokens.Material.glass)
+        .background(AppUI.Material.glass)
         .task {
             loadLatencyStats()
         }

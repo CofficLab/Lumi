@@ -16,11 +16,11 @@ struct AboutView: View {
         VStack(spacing: 0) {
             // 顶部说明卡片（固定）
             headerCard
-                .padding(DesignTokens.Spacing.lg)
+                .padding(AppUI.Spacing.lg)
                 .background(Color.clear)
 
             ScrollView {
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+                VStack(alignment: .leading, spacing: AppUI.Spacing.lg) {
                     // 应用信息卡片
                     appInfoCard
 
@@ -35,7 +35,7 @@ struct AboutView: View {
 
                     Spacer()
                 }
-                .padding(.horizontal, DesignTokens.Spacing.lg)
+                .padding(.horizontal, AppUI.Spacing.lg)
             }
         }
         .navigationTitle("关于")

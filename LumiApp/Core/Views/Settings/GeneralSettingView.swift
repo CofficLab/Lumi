@@ -11,11 +11,11 @@ struct GeneralSettingView: View {
         VStack(spacing: 0) {
             // 顶部说明卡片（固定）
             headerCard
-                .padding(DesignTokens.Spacing.lg)
+                .padding(AppUI.Spacing.lg)
                 .background(Color.clear)
 
             ScrollView {
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+                VStack(alignment: .leading, spacing: AppUI.Spacing.lg) {
                     // 启动选项
                     startupSection
 
@@ -27,7 +27,7 @@ struct GeneralSettingView: View {
 
                     Spacer()
                 }
-                .padding(.horizontal, DesignTokens.Spacing.lg)
+                .padding(.horizontal, AppUI.Spacing.lg)
             }
         }
         .navigationTitle("通用设置")
@@ -52,7 +52,7 @@ struct GeneralSettingView: View {
 
     private var startupSection: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+            VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
                 GlassSectionHeader(
                     icon: "power",
                     title: "启动选项",
@@ -64,8 +64,8 @@ struct GeneralSettingView: View {
                 GlassRow {
                     HStack {
                         Text("登录时启动")
-                            .font(DesignTokens.Typography.body)
-                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                            .font(AppUI.Typography.body)
+                            .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                         Spacer()
 
@@ -118,7 +118,7 @@ struct GeneralSettingView: View {
 
     private var onboardingSection: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+            VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
                 GlassSectionHeader(
                     icon: "graduationcap",
                     title: "新手引导",
@@ -142,7 +142,7 @@ struct GeneralSettingView: View {
 
     private var supportSection: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+            VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
                 GlassSectionHeader(
                     icon: "lifepreserver",
                     title: "反馈与支持",
@@ -151,7 +151,7 @@ struct GeneralSettingView: View {
 
                 GlassDivider()
 
-                HStack(spacing: DesignTokens.Spacing.sm) {
+                HStack(spacing: AppUI.Spacing.sm) {
                     GlassButton(title: "报告问题", style: .primary) {
                         openURL("https://github.com/CofficLab/Lumi/issues/new/choose")
                     }

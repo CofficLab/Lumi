@@ -9,7 +9,7 @@ struct XcodeEmptyStateView: View {
         VStack(spacing: 16) {
             ZStack {
                 Circle()
-                    .stroke(DesignTokens.Color.semantic.info.opacity(0.2), lineWidth: 10)
+                    .stroke(AppUI.Color.semantic.info.opacity(0.2), lineWidth: 10)
                     .frame(width: 88, height: 88)
                     .scaleEffect(animate ? 1.06 : 0.96)
                     .opacity(animate ? 1.0 : 0.6)
@@ -17,17 +17,17 @@ struct XcodeEmptyStateView: View {
 
                 Image(systemName: "checkmark.circle")
                     .font(.system(size: 34, weight: .semibold))
-                    .foregroundColor(DesignTokens.Color.semantic.success)
+                    .foregroundColor(AppUI.Color.semantic.success)
             }
 
             VStack(spacing: 10) {
                 Text("Xcode 环境很干净！")
                     .font(.title3)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                 Text("没有发现可清理的缓存文件")
                     .font(.caption)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
 
                 Button(action: { Task { await viewModel.scanAll() } }, label: {
                     Label(title: { Text("重新扫描") }, icon: { Image(systemName: "arrow.clockwise") })
@@ -36,18 +36,18 @@ struct XcodeEmptyStateView: View {
                         .padding(.vertical, 8)
                 })
                 .buttonStyle(.borderedProminent)
-                .tint(DesignTokens.Color.semantic.info)
+                .tint(AppUI.Color.semantic.info)
             }
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(DesignTokens.Color.semantic.info.opacity(0.05))
+                .fill(AppUI.Color.semantic.info.opacity(0.05))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(DesignTokens.Color.semantic.info.opacity(0.2), lineWidth: 1)
+                .stroke(AppUI.Color.semantic.info.opacity(0.2), lineWidth: 1)
         )
         .padding(.horizontal, 12)
         .padding(.vertical, 12)

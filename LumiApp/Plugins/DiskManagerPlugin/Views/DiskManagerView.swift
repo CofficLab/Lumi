@@ -62,9 +62,9 @@ struct DiskUsageInfoView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("总计：\(formatBytes(usage.total))")
                             Text("已用：\(formatBytes(usage.used))")
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                .foregroundColor(AppUI.Color.semantic.textSecondary)
                             Text("可用：\(formatBytes(usage.available))")
-                                .foregroundColor(DesignTokens.Color.semantic.success)
+                                .foregroundColor(AppUI.Color.semantic.success)
                         }
                         .font(.subheadline)
                     }
@@ -131,18 +131,18 @@ struct ViewModeButton: View {
             VStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.title2)
-                    .foregroundColor(isSelected ? DesignTokens.Color.semantic.primary : DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(isSelected ? AppUI.Color.semantic.primary : AppUI.Color.semantic.textPrimary)
 
                 Text(title)
                     .font(.caption)
-                    .foregroundColor(isSelected ? DesignTokens.Color.semantic.primary : DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(isSelected ? AppUI.Color.semantic.primary : AppUI.Color.semantic.textSecondary)
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
             .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? DesignTokens.Color.semantic.primary.opacity(0.1) : Color.clear)
+                    .fill(isSelected ? AppUI.Color.semantic.primary.opacity(0.1) : Color.clear)
             )
             .contentShape(Rectangle())
         }

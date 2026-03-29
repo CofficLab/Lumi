@@ -18,9 +18,9 @@ struct SidebarItemView: View {
             .contentShape(Rectangle()) // 告诉 Button：这一整块都是点击区域
         }
         .buttonStyle(.plain)
-        .background(
-            RoundedRectangle(cornerRadius: 6)
-                .fill(isSelected ? Color.secondary.opacity(0.25) : Color.clear)
+        .appSurface(
+            style: .custom(isSelected ? Color.secondary.opacity(0.25) : Color.clear),
+            cornerRadius: 6
         )
     }
 }

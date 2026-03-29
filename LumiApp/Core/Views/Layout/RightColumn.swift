@@ -121,9 +121,9 @@ private struct HeaderView: View {
                 .background(Color.accentColor.opacity(0.1))
                 .clipShape(Circle())
             Text("Lumi")
-                .font(DesignTokens.Typography.body)
+                .font(AppUI.Typography.body)
                 .fontWeight(.medium)
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .foregroundColor(AppUI.Color.semantic.textPrimary)
         }
     }
 }
