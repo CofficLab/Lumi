@@ -108,9 +108,14 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
 
     /// 是否应展示在聊天消息列表中
     func shouldDisplayInChatList() -> Bool {
-        guard role.shouldDisplayInChatList else { return false }
-        if role == .tool || isToolOutput { return false }
-        return true
+        switch role {
+        case .user, .assistant, .tool:
+            return true
+        case .status:
+            return true
+        case .system:
+            return false
+        }
     }
 
     /// 判断是否为请求超时错误（含被 APIError.requestFailed 包装的 URLError.timedOut）。

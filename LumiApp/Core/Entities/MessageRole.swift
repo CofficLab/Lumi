@@ -20,12 +20,4 @@ public extension MessageRole {
             return false
         }
     }
-
-    /// 是否应该展示在消息列表中（聊天 UI）
-    var shouldDisplayInChatList: Bool {
-        switch self {
-        case .user, .assistant, .system, .tool, .status:
-            return true
-        }
-    }
 }
