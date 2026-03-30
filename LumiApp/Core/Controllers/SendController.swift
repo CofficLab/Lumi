@@ -18,7 +18,7 @@ final class SendController: ObservableObject, SuperLog {
     /// 0: 关闭日志
     /// 1: 基础日志
     /// 2: 详细日志（输出请求/响应的详细信息）
-    nonisolated static let verbose = 0
+    nonisolated static let verbose = 2
 
     private let container: RootViewContainer
     private var activeSendTasksByConversation: [UUID: Task<Void, Never>] = [:]
@@ -290,7 +290,7 @@ final class SendController: ObservableObject, SuperLog {
                     metadataContinuation.finish()
                     
                     Task { @MainActor in
-                        await statusVM.setStatus(conversationId: conversationId, content: "正在发送消息，大小：\(metadata.formattedBodySize)")
+                        statusVM.setStatus(conversationId: conversationId, content: "正在发送消息，大小：\(metadata.formattedBodySize)")
                     }
                 }
             )

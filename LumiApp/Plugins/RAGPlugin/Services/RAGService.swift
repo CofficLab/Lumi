@@ -8,12 +8,12 @@ import MagicKit
 /// - 负责查询检索并返回相关片段
 actor RAGService: SuperLog {
     nonisolated static let emoji = "🦞"
-    nonisolated static let verbose = false
+    nonisolated static let verbose: Int = 0
 
     private static let pluginName = "RAGPlugin"
     private static let ensureThrottleSeconds: TimeInterval = 20
     private static let staleAfterSeconds: TimeInterval = 300
-    nonisolated private static let indexingRegistry = RAGIndexingRegistry()
+    private nonisolated static let indexingRegistry = RAGIndexingRegistry()
 
     private(set) var isInitialized: Bool = false
     private var store: RAGSQLiteStore?
@@ -51,9 +51,11 @@ actor RAGService: SuperLog {
         self.embeddingProvider = embeddingProvider
         self.isInitialized = true
 
-        AppLogger.core.info(
-            "\(Self.t)✅ RAG 服务初始化完成，DB: \(dbURL.path), embedding=\(embeddingProvider.modelIdentifierWithVersion), dim=\(embeddingProvider.dimension), backend=\(store.runtimeInfo.vectorBackend.rawValue)"
-        )
+        if Self.verbose >= 1 {
+            AppLogger.core.info(
+                "\(Self.t)✅ RAG 服务初始化完成，DB: \(dbURL.path), embedding=\(embeddingProvider.modelIdentifierWithVersion), dim=\(embeddingProvider.dimension), backend=\(store.runtimeInfo.vectorBackend.rawValue)"
+            )
+        }
     }
 
     // MARK: - Indexing
@@ -70,7 +72,9 @@ actor RAGService: SuperLog {
         Self.indexingRegistry.start(projectPath: normalized)
         defer { Self.indexingRegistry.finish(projectPath: normalized) }
 
-        AppLogger.core.info("\(Self.t)🧱 ensureIndexed 开始 force=\(force) project=\(normalized)")
+        if Self.verbose > 1 {
+            AppLogger.core.info("\(Self.t)🧱 ensureIndexed 开始 force=\(force) project=\(normalized)")
+        }
 
         let indexState = try store.fetchProjectIndexState(projectPath: normalized)
         let modelMismatch = indexState.map {
@@ -78,22 +82,32 @@ actor RAGService: SuperLog {
                 || $0.embeddingDimension != embeddingProvider.dimension
         } ?? false
         if let indexState {
-            AppLogger.core.info(
-                "\(Self.t)📌 当前索引状态 embedding=\(indexState.embeddingModel) dim=\(indexState.embeddingDimension) chunks=\(indexState.chunkCount)"
-            )
+            if Self.verbose >= 1 {
+                AppLogger.core.info(
+                    "\(Self.t)📌 当前索引状态 embedding=\(indexState.embeddingModel) dim=\(indexState.embeddingDimension) chunks=\(indexState.chunkCount)"
+                )
+            }
         } else {
-            AppLogger.core.info("\(Self.t)📌 当前项目无索引状态")
+            if Self.verbose >= 1 {
+                AppLogger.core.info("\(Self.t)📌 当前项目无索引状态")
+            }
         }
-        AppLogger.core.info(
-            "\(Self.t)🧠 目标 embedding=\(embeddingProvider.modelIdentifierWithVersion) dim=\(embeddingProvider.dimension) modelMismatch=\(modelMismatch)"
-        )
+        if Self.verbose >= 1 {
+            AppLogger.core.info(
+                "\(Self.t)🧠 目标 embedding=\(embeddingProvider.modelIdentifierWithVersion) dim=\(embeddingProvider.dimension) modelMismatch=\(modelMismatch)"
+            )
+        }
 
         if force || modelMismatch {
-            AppLogger.core.info("\(Self.t)♻️ 执行全量重建索引")
+            if Self.verbose >= 1 {
+                AppLogger.core.info("\(Self.t)♻️ 执行全量重建索引")
+            }
             let stats = try indexer.rebuildProjectIndex(at: normalized)
-            AppLogger.core.info(
-                "\(Self.t)✅ 全量重建完成 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount)"
-            )
+            if Self.verbose >= 1 {
+                AppLogger.core.info(
+                    "\(Self.t)✅ 全量重建完成 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount)"
+                )
+            }
             return
         }
 
@@ -101,23 +115,31 @@ actor RAGService: SuperLog {
             let now = Date()
             if let lastAttempt = lastEnsureAttemptByProject[normalized],
                now.timeIntervalSince(lastAttempt) < Self.ensureThrottleSeconds {
-                AppLogger.core.info("\(Self.t)⏱️ 跳过：节流窗口内")
+                if Self.verbose >= 1 {
+                    AppLogger.core.info("\(Self.t)⏱️ 跳过：节流窗口内")
+                }
                 return
             }
             if let state = indexState,
                !isIndexStateStale(state, now: now) {
                 lastEnsureAttemptByProject[normalized] = now
-                AppLogger.core.info("\(Self.t)🟢 跳过：索引未过期")
+                if Self.verbose >= 1 {
+                    AppLogger.core.info("\(Self.t)🟢 跳过：索引未过期")
+                }
                 return
             }
             lastEnsureAttemptByProject[normalized] = now
         }
 
-        AppLogger.core.info("\(Self.t)🔁 执行增量索引")
+        if Self.verbose >= 1 {
+            AppLogger.core.info("\(Self.t)🔁 执行增量索引")
+        }
         let stats = try indexer.indexProjectIncrementally(at: normalized)
-        AppLogger.core.info(
-            "\(Self.t)✅ 增量索引完成 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount)"
-        )
+        if Self.verbose >= 1 {
+            AppLogger.core.info(
+                "\(Self.t)✅ 增量索引完成 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount)"
+            )
+        }
     }
 
     /// 检查项目是否需要索引（快速检查，不执行实际索引）
@@ -134,7 +156,9 @@ actor RAGService: SuperLog {
 
         // 无索引状态，需要索引
         guard let state = indexState else {
-            AppLogger.core.info("\(Self.t)📊 checkNeedsIndex: 无索引状态，需要索引")
+            if Self.verbose >= 1 {
+                AppLogger.core.info("\(Self.t)📊 checkNeedsIndex: 无索引状态，需要索引")
+            }
             return true
         }
 
@@ -142,7 +166,9 @@ actor RAGService: SuperLog {
         let modelMismatch = state.embeddingModel != embeddingProvider.modelIdentifierWithVersion
             || state.embeddingDimension != embeddingProvider.dimension
         if modelMismatch {
-            AppLogger.core.info("\(Self.t)📊 checkNeedsIndex: 模型不匹配，需要索引")
+            if Self.verbose >= 1 {
+                AppLogger.core.info("\(Self.t)📊 checkNeedsIndex: 模型不匹配，需要索引")
+            }
             return true
         }
 
@@ -150,11 +176,15 @@ actor RAGService: SuperLog {
         let now = Date()
         let isStale = isIndexStateStale(state, now: now)
         if isStale {
-            AppLogger.core.info("\(Self.t)📊 checkNeedsIndex: 索引已过期，需要索引")
+            if Self.verbose >= 1 {
+                AppLogger.core.info("\(Self.t)📊 checkNeedsIndex: 索引已过期，需要索引")
+            }
             return true
         }
 
-        AppLogger.core.info("\(Self.t)📊 checkNeedsIndex: 索引是最新的，无需索引")
+        if Self.verbose >= 1 {
+            AppLogger.core.info("\(Self.t)📊 checkNeedsIndex: 索引是最新的，无需索引")
+        }
         return false
     }
 
@@ -168,16 +198,22 @@ actor RAGService: SuperLog {
 
         // 防止重复启动后台索引
         guard !indexingProjects.contains(normalized) else {
-            AppLogger.core.info("\(Self.t)🔄 后台索引已在进行中，跳过: \(normalized)")
+            if Self.verbose >= 1 {
+                AppLogger.core.info("\(Self.t)🔄 后台索引已在进行中，跳过: \(normalized)")
+            }
             return
         }
         guard !Self.indexingRegistry.contains(projectPath: normalized) else {
-            AppLogger.core.info("\(Self.t)🔄 索引已在进行中（全局标记），跳过: \(normalized)")
+            if Self.verbose >= 1 {
+                AppLogger.core.info("\(Self.t)🔄 索引已在进行中（全局标记），跳过: \(normalized)")
+            }
             return
         }
 
         indexingProjects.insert(normalized)
-        AppLogger.core.info("\(Self.t)🚀 启动后台索引任务: \(normalized)")
+        if Self.verbose >= 1 {
+            AppLogger.core.info("\(Self.t)🚀 启动后台索引任务: \(normalized)")
+        }
 
         // 在后台 Task 中执行索引
         Task.detached { [weak self] in
@@ -185,9 +221,13 @@ actor RAGService: SuperLog {
 
             do {
                 try await self.ensureIndexed(projectPath: projectPath, force: force)
-                AppLogger.core.info("\(Self.t)✅ 后台索引任务完成: \(normalized)")
+                if Self.verbose >= 1 {
+                    AppLogger.core.info("\(Self.t)✅ 后台索引任务完成: \(normalized)")
+                }
             } catch {
-                AppLogger.core.error("\(Self.t)❌ 后台索引任务失败: \(normalized) - \(error)")
+                if Self.verbose >= 1 {
+                    AppLogger.core.error("\(Self.t)❌ 后台索引任务失败: \(normalized) - \(error)")
+                }
             }
 
             // 移除索引标记
@@ -207,7 +247,13 @@ actor RAGService: SuperLog {
         let normalized = normalizeProjectPath(path)
         guard !normalized.isEmpty else { throw RAGError.invalidProjectPath }
 
+        if Self.verbose >= 1 {
+            AppLogger.core.info("\(Self.t)🔁 执行全量重建索引")
+        }
         _ = try indexer.rebuildProjectIndex(at: normalized)
+        if Self.verbose >= 1 {
+            AppLogger.core.info("\(Self.t)✅ 全量重建完成")
+        }
     }
 
     // MARK: - Retrieval

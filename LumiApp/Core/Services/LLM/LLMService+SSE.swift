@@ -59,6 +59,10 @@ extension LLMService {
         onChunk: @Sendable @escaping (StreamChunk) async -> Void,
         onRequestStart: @Sendable @escaping (RequestMetadata) async -> Void = { _ in }
     ) async throws -> ChatMessage {
+        if Self.verbose > 1 {
+            AppLogger.core.info("\(self.t)🚀 发送流式请求到 \(config.providerId): \(config.model)")
+        }
+
         let startTime = CFAbsoluteTimeGetCurrent()
 
         guard let provider = registry.createProvider(id: config.providerId) else {
@@ -70,6 +74,7 @@ extension LLMService {
             do {
                 try config.validate()
             } catch let error as LLMServiceError {
+                AppLogger.core.error("\(self.t)❌ 验证配置失败: \(error.localizedDescription)")
                 return error.toChatMessage()
             }
         }
@@ -120,12 +125,17 @@ extension LLMService {
         }
 
         var additionalHeaders: [String: String] = [:]
+        // ✅ 为使用 Bearer 认证的供应商添加 Authorization 头
+        let providersNeedingBearer = ["openai", "anthropic", "deepseek", "perplexity"]
+        if providersNeedingBearer.contains(config.providerId) {
+            additionalHeaders["Authorization"] = "Bearer \(config.apiKey)"
+        }
         if config.providerId == "zhipu" {
             additionalHeaders["anthropic-version"] = "2023-06-01"
         }
 
         let state = StreamingState(startTime: startTime)
-        let chunkCounter = ChunkCounter()  // 用于调试计数
+        let chunkCounter = ChunkCounter() // 用于调试计数
 
         do {
             try await llmAPI.sendStreamingRequest(
@@ -143,7 +153,7 @@ extension LLMService {
                     if Self.verbose >= 2 {
                         let chunkIndex = await chunkCounter.increment()
                         let rawText = String(data: chunkData, encoding: .utf8) ?? "<无法解码>"
-                        let preview = rawText.prefix(500)  // 限制长度避免日志过长
+                        let preview = rawText.prefix(500) // 限制长度避免日志过长
                         AppLogger.core.debug("\(self.t)📦 [Chunk #\(chunkIndex)] 原始数据 (\(chunkData.count) bytes):\n\(preview)")
                     }
 
@@ -279,7 +289,7 @@ extension LLMService {
             let totalTokens = await state.totalTokens
             let ttft = await state.timeToFirstToken
             let contentLength = await state.accumulatedContentLength
-            
+
             AppLogger.core.debug("\(self.t)📊 流式响应完成统计:")
             AppLogger.core.debug("\(self.t)  📥 输入tokens: \(inputTokens ?? 0)")
             AppLogger.core.debug("\(self.t)  📤 输出tokens: \(outputTokens ?? 0)")
@@ -318,12 +328,12 @@ extension LLMService {
 
 private actor ChunkCounter {
     private var count = 0
-    
+
     func increment() -> Int {
         count += 1
         return count
     }
-    
+
     func current() -> Int {
         return count
     }

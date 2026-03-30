@@ -1,18 +1,22 @@
 import Foundation
+import MagicKit
 import SwiftUI
 
 /// 消息去重覆盖层
 ///
 /// 挂载在根视图上，通过 `@EnvironmentObject` 获取 `ChatHistoryVM`，
 /// 监听 `.messageSaved` 事件，对同一会话中内容完全一致的消息执行去重。
-struct MessageDedupOverlay<Content: View>: View {
+struct MessageDedupOverlay<Content: View>: View, SuperLog {
+    nonisolated static var emoji: String { "🧹" }
+    nonisolated static var verbose: Bool { false }
+
     let content: Content
 
     @EnvironmentObject private var chatHistoryVM: ChatHistoryVM
 
     var body: some View {
         content
-            .onMessageSaved { message, conversationId in
+            .onMessageSaved { _, conversationId in
                 handleDedup(conversationId: conversationId)
             }
     }
@@ -48,7 +52,7 @@ struct MessageDedupOverlay<Content: View>: View {
             )
 
             if deleted > 0 {
-                AppLogger.core.info("🧹 [\(conversationId)] 去重完成：删除了 \(deleted) 条重复消息")
+                AppLogger.core.info("\(Self.t)🧹 [\(conversationId)] 去重完成：删除了 \(deleted) 条重复消息")
             }
         }
     }
