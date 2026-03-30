@@ -238,7 +238,7 @@ extension ModelSelectorView {
     @ViewBuilder
     private func sectionHeader(for provider: LLMProviderInfo) -> some View {
         HStack {
-            Image(systemName: provider.iconName)
+            Text("")
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
             Text(provider.displayName)
                 .font(AppUI.Typography.bodyEmphasized)

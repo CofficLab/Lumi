@@ -8,7 +8,7 @@ import os
 ///
 /// ## 工作流程
 /// 1. 拦截用户消息
-/// 2. 判断是否需要 RAG 检索
+/// 2. 使用 RAGIntentAnalyzer 判断是否需要 RAG 检索
 /// 3. 检查索引状态
 /// 4. 如果索引未完成，启动后台索引，不阻塞发送流程
 /// 5. 如果索引已完成，调用 RAG 服务检索相关文档
@@ -20,36 +20,6 @@ final class RAGSendMiddleware: SendMiddleware, SuperLog {
 
     let id = "rag"
     let order: Int = 100
-
-    /// 中文高意图触发词
-    private let ragTriggersZH = [
-        "项目", "代码", "功能", "文件", "实现", "在哪", "怎么", "如何", "为什么", "报错", "错误",
-        "修复", "定位", "模块", "接口", "逻辑", "流程", "类", "方法", "函数", "目录", "路径",
-    ]
-
-    /// 英文高意图触发词
-    private let ragTriggersEN = [
-        "project", "code", "file", "files", "implementation", "implement", "where", "how", "why",
-        "function", "method", "class", "module", "folder", "directory", "path", "api",
-        "bug", "error", "issue", "fix", "refactor", "stack trace", "exception",
-    ]
-
-    /// 问句线索
-    private let questionMarkers = [
-        "?", "？", "怎么", "如何", "为什么", "why", "how", "where", "what", "which", "can you", "could you",
-    ]
-
-    /// 与代码检索相关的语义线索
-    private let codeIntentMarkers = [
-        "func ", "class ", "struct ", "enum ", "protocol ", "import ", "throws ", "return ",
-        "def ", "function ", "interface ", "extends ", "namespace ", "package ", "```",
-    ]
-
-    private let codeFileExtensions = [
-        ".swift", ".m", ".mm", ".h", ".hpp", ".c", ".cc", ".cpp", ".js", ".ts", ".tsx", ".jsx",
-        ".json", ".yaml", ".yml", ".toml", ".md", ".py", ".rb", ".go", ".rs", ".java", ".kt",
-        ".sql", ".html", ".css", ".scss", ".xml", ".sh", ".zsh",
-    ]
 
     func handle(
         ctx: SendMessageContext,
@@ -67,13 +37,15 @@ final class RAGSendMiddleware: SendMiddleware, SuperLog {
             RAGPlugin.logger.info("\(Self.t)   项目路径：\(projectPath.isEmpty ? "<未选择>" : projectPath)")
         }
 
-        guard shouldUseRAG(for: userMessage) else {
+        // 使用 RAGIntentAnalyzer 判断是否需要 RAG
+        guard RAGIntentAnalyzer.shouldUseRAG(for: userMessage) else {
             if Self.verbose {
                 RAGPlugin.logger.info("\(Self.t)   ⏭️ 跳过 RAG (不符合触发条件)")
             }
             await next(ctx)
             return
         }
+
         guard !projectPath.isEmpty else {
             if Self.verbose {
                 RAGPlugin.logger.info("\(Self.t)   ⏭️ 跳过 RAG (未选择项目)")
@@ -205,37 +177,5 @@ final class RAGSendMiddleware: SendMiddleware, SuperLog {
         }
 
         await next(ctx)
-    }
-
-    // MARK: - 私有方法
-
-    private func shouldUseRAG(for message: String) -> Bool {
-        let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return false }
-
-        let lowercased = trimmed.lowercased()
-
-        if ragTriggersZH.contains(where: { lowercased.contains($0) }) { return true }
-        if ragTriggersEN.contains(where: { lowercased.contains($0) }) { return true }
-        if hasFileOrPathReference(lowercased) { return true }
-        if codeIntentMarkers.contains(where: { lowercased.contains($0) }) { return true }
-
-        let hasQuestion = questionMarkers.contains(where: { lowercased.contains($0) })
-        if hasQuestion, containsCodeIntentWord(lowercased) { return true }
-
-        return false
-    }
-
-    private func hasFileOrPathReference(_ message: String) -> Bool {
-        if message.contains("/") || message.contains("\\") { return true }
-        return codeFileExtensions.contains(where: { message.contains($0) })
-    }
-
-    private func containsCodeIntentWord(_ message: String) -> Bool {
-        let intentWords = [
-            "代码", "文件", "实现", "函数", "方法", "类", "模块", "接口", "错误", "报错",
-            "code", "file", "implementation", "function", "method", "class", "module", "api", "error", "bug",
-        ]
-        return intentWords.contains(where: { message.contains($0) })
     }
 }

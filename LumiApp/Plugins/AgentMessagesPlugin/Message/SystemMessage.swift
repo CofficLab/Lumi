@@ -245,8 +245,6 @@ private struct ApiKeyMissingSystemMessageView: View {
             if let provider = currentProvider {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 6) {
-                        Image(systemName: provider.iconName)
-                            .font(.system(size: 12))
                         Text(provider.displayName)
                             .font(AppUI.Typography.caption1)
                         Spacer()
@@ -369,11 +367,6 @@ private struct LoadingLocalModelSystemMessageView: View {
     private func modelInfoContent(_ info: LocalModelInfo) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
-                if let p = provider {
-                    Image(systemName: p.iconName)
-                        .font(.system(size: 11))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
-                }
                 Text(info.displayName)
                     .font(AppUI.Typography.callout)
                     .fontWeight(.medium)
@@ -414,11 +407,6 @@ private struct LoadingLocalModelSystemMessageView: View {
     @ViewBuilder
     private func fallbackModelLine(_ line: String) -> some View {
         HStack(spacing: 6) {
-            if let p = provider {
-                Image(systemName: p.iconName)
-                    .font(.system(size: 11))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
-            }
             Text(line)
                 .font(AppUI.Typography.caption1)
                 .foregroundColor(AppUI.Color.semantic.textSecondary)

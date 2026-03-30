@@ -11,8 +11,6 @@ struct ProviderButton: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 6) {
-                Image(systemName: provider.iconName)
-                    .font(.system(size: 12, weight: .medium))
                 Text(provider.displayName)
                     .font(AppUI.Typography.caption1)
                 Spacer(minLength: 0)

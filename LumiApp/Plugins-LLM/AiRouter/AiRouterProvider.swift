@@ -14,7 +14,6 @@ final class AiRouterProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
     static let id = "airouter"
     static let displayName = String(localized: "AiRouter", table: "AiRouter")
-    static let iconName = "globe"
     static let description = String(localized: "LLM Router by airouter.org", table: "AiRouter")
 
     // MARK: - 配置相关

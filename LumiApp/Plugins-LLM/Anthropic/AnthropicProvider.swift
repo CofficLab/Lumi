@@ -37,7 +37,6 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
 
     static let id = "anthropic"
     static let displayName = String(localized: "Anthropic", table: "Anthropic")
-    static let iconName = "brain.head.profile"
     static let description = String(localized: "Claude AI by Anthropic", table: "Anthropic")
 
     // MARK: - Configuration

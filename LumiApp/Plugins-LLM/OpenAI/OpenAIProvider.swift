@@ -14,7 +14,6 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
     static let id = "openai"
     static let displayName = String(localized: "OpenAI", table: "OpenAI")
-    static let iconName = "sparkle"
     static let description = String(localized: "GPT by OpenAI", table: "OpenAI")
 
     // MARK: - 配置相关

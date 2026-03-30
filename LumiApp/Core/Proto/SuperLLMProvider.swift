@@ -25,11 +25,6 @@ protocol SuperLLMProvider: Sendable {
     /// 用于 UI 显示，如设置面板中的下拉选项。
     static var displayName: String { get }
 
-    /// 供应商图标名称（SF Symbol）
-    ///
-    /// 用于 UI 显示，与显示名称对应。
-    static var iconName: String { get }
-
     /// 供应商描述
     ///
     /// 简短描述供应商的特点和优势。

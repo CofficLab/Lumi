@@ -75,7 +75,7 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
 
     /// 获取所有已注册供应商的信息
     ///
-    /// - Returns: 供应商信息数组，包含 ID、名称、图标、描述、可用模型、是否本地等
+    /// - Returns: 供应商信息数组，包含 ID、名称、描述、可用模型、是否本地等
     func allProviders() -> [LLMProviderInfo] {
         providerTypes.map { type in
             let instance = createProvider(id: type.id)
@@ -83,7 +83,6 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
             return LLMProviderInfo(
                 id: type.id,
                 displayName: type.displayName,
-                iconName: type.iconName,
                 description: type.description,
                 availableModels: type.availableModels,
                 defaultModel: type.defaultModel,

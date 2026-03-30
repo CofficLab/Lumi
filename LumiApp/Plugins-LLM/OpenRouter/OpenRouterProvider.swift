@@ -17,7 +17,6 @@ final class OpenRouterProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked
 
     static let id = "openrouter"
     static let displayName = String(localized: "OpenRouter", table: "OpenRouter")
-    static let iconName = "network"
     static let description = String(localized: "Multi-Provider LLM Router", table: "OpenRouter")
 
     // MARK: - Configuration
@@ -181,7 +180,7 @@ final class OpenRouterProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked
                     return StreamChunk(content: content, eventType: .textDelta)
                 }
 
-                if let toolCalls = delta["tool_calls"] as? [[String: Any]] {
+                if let toolCalls = delta["tool_calls"] as? [[String: Any]], !toolCalls.isEmpty {
                     var resultToolCalls: [ToolCall] = []
                     var partialJson: String?
 
@@ -190,16 +189,14 @@ final class OpenRouterProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked
                             continue
                         }
 
-                        let id = tc["id"] as? String
-                        let name = function["name"] as? String
-                        let arguments = function["arguments"] as? String
-
-                        if let toolId = id, let toolName = name {
-                            let toolCall = ToolCall(id: toolId, name: toolName, arguments: arguments ?? "{}")
+                        if let toolId = function["id"] as? String ?? tc["id"] as? String,
+                           let toolName = function["name"] as? String,
+                           let arguments = function["arguments"] as? String {
+                            let toolCall = ToolCall(id: toolId, name: toolName, arguments: arguments)
                             resultToolCalls.append(toolCall)
                         }
 
-                        if let args = arguments {
+                        if let args = function["arguments"] as? String {
                             partialJson = args
                         }
                     }
@@ -214,7 +211,8 @@ final class OpenRouterProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked
                 }
             }
 
-            return nil
+            // 如果没有解析出任何内容，返回空 chunk 避免卡住
+            return StreamChunk(content: "", eventType: .textDelta)
         } catch {
             if Self.verbose {
                 Self.logger.error("解析流式数据块失败：\(error.localizedDescription)")

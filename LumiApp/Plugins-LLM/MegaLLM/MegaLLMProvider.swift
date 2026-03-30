@@ -16,7 +16,6 @@ final class MegaLLMProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Se
 
     static let id = "megallm"
     static let displayName = String(localized: "MegaLLM", table: "MegaLLM")
-    static let iconName = "brain.head.filled"
     static let description = String(localized: "MegaLLM AI", table: "MegaLLM")
 
     // MARK: - Configuration

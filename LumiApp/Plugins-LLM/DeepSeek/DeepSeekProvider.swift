@@ -16,7 +16,6 @@ final class DeepSeekProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked S
 
     static let id = "deepseek"
     static let displayName = String(localized: "DeepSeek", table: "DeepSeek")
-    static let iconName = "cpu"
     static let description = String(localized: "DeepSeek AI", table: "DeepSeek")
 
     // MARK: - Configuration

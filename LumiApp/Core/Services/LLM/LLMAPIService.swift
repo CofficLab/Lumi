@@ -196,8 +196,6 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         var eventBuffer = Data()
         var lastBytes: [UInt8] = []
         var chunkCount = 0
-        let chunkCallbackWarnThreshold: TimeInterval = 0.5
-        let chunkCallbackHangWarnThresholdNs: UInt64 = 2000000000
 
         for try await byte in bytes {
             try Task.checkCancellation()
@@ -225,27 +223,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
 
                 guard !eventData.isEmpty else { continue }
                 chunkCount += 1
-                // 避免 Xcode 控制台缓存海量日志导致卡顿/内存上涨：只打印前几个块用于诊断
-                if Self.verbose && chunkCount < 50 {
-                    let decoded = String(data: eventData, encoding: .utf8) ?? "无法解码"
-                    let preview = decoded.count > 300 ? String(decoded.prefix(300)) + "..." : decoded
-                    AppLogger.core.info("\(self.t)📦 收到 SSE 数据块 #\(chunkCount) (\(eventData.count) bytes): \n\(preview)")
-                }
-                let callbackStart = CFAbsoluteTimeGetCurrent()
-                let callbackChunkIndex = chunkCount
-                let callbackBytes = eventData.count
-                let loggerTag = self.t
-                let hangWatchdog = Task.detached(priority: .utility) {
-                    try? await Task.sleep(nanoseconds: chunkCallbackHangWarnThresholdNs)
-                    guard !Task.isCancelled else { return }
-                    AppLogger.core.error("\(loggerTag)⏳ onChunk 回调疑似卡住 (>2s): chunk#\(callbackChunkIndex), bytes=\(callbackBytes)")
-                }
                 let shouldContinue = await onChunk(Data(eventData))
-                hangWatchdog.cancel()
-                let callbackElapsed = CFAbsoluteTimeGetCurrent() - callbackStart
-                if callbackElapsed > chunkCallbackWarnThreshold {
-                    AppLogger.core.error("\(self.t)⏱️ onChunk 回调耗时异常：\(String(format: "%.3f", callbackElapsed))s, chunk#\(chunkCount), bytes=\(eventData.count)")
-                }
                 if !shouldContinue {
                     if Self.verbose {
                         AppLogger.core.info("\(self.t)🛑 收到停止信号，主动结束流式读取")
@@ -261,20 +239,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
                 let preview = String(data: eventBuffer, encoding: .utf8)?.prefix(200) ?? "无法解码"
                 AppLogger.core.info("\(self.t)📦 处理剩余数据 (\(eventBuffer.count) bytes): \(preview)...")
             }
-            let callbackStart = CFAbsoluteTimeGetCurrent()
-            let remainingBytes = eventBuffer.count
-            let loggerTag = self.t
-            let hangWatchdog = Task.detached(priority: .utility) {
-                try? await Task.sleep(nanoseconds: chunkCallbackHangWarnThresholdNs)
-                guard !Task.isCancelled else { return }
-                AppLogger.core.error("\(loggerTag)⏳ onChunk 回调疑似卡住 (>2s): remaining bytes=\(remainingBytes)")
-            }
             let shouldContinue = await onChunk(eventBuffer)
-            hangWatchdog.cancel()
-            let callbackElapsed = CFAbsoluteTimeGetCurrent() - callbackStart
-            if callbackElapsed > chunkCallbackWarnThreshold {
-                AppLogger.core.error("\(self.t)⏱️ onChunk 回调耗时异常 (剩余块): \(String(format: "%.3f", callbackElapsed))s, bytes=\(eventBuffer.count)")
-            }
             if !shouldContinue {
                 if Self.verbose {
                     AppLogger.core.info("\(self.t)🛑 收到停止信号，主动结束流式读取")
