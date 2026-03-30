@@ -235,6 +235,7 @@ final class SendController: ObservableObject, SuperLog {
     }
 
     /// 使用当前会话配置与可用工具，对给定消息列表发起**一次**流式模型请求。
+    /// 使用当前会话配置与可用工具，对给定消息列表发起**一次**流式模型请求。
     private func streamAssistantReply(
         conversationId: UUID,
         messages: [ChatMessage],
@@ -267,27 +268,22 @@ final class SendController: ObservableObject, SuperLog {
         // 记录开始时间
         let startTime = CFAbsoluteTimeGetCurrent()
         
-        // 使用 AsyncStream 安全地传递请求元数据，避免并发修改捕获变量的问题
-        let (metadataStream, metadataContinuation) = AsyncStream<RequestMetadata>.makeStream()
-        var requestMetadata: RequestMetadata?
-        
-        // 启动一个任务来接收元数据
-        let metadataTask = Task {
-            for await metadata in metadataStream {
-                requestMetadata = metadata
-            }
-        }
+        // ✅ 使用线程安全的 MetadataHolder
+        let metadataHolder = MetadataHolder()
 
         do {
             statusVM.setStatus(conversationId: conversationId, content: "正在发送消息…")
+            
             let assistantMessage = try await container.llmService.sendStreamingMessage(
                 messages: messagesForLLM,
                 config: config,
                 tools: toolsArg,
                 onChunk: onStreamChunk,
                 onRequestStart: { metadata in
-                    metadataContinuation.yield(metadata)
-                    metadataContinuation.finish()
+                    // ✅ 线程安全地设置元数据
+                    Task {
+                        await metadataHolder.set(metadata)
+                    }
                     
                     Task { @MainActor in
                         statusVM.setStatus(conversationId: conversationId, content: "正在发送消息，大小：\(metadata.formattedBodySize)")
@@ -295,62 +291,64 @@ final class SendController: ObservableObject, SuperLog {
                 }
             )
 
-            // 等待元数据任务完成
-            await metadataTask.value
-            
-            // 计算耗时
-            let endTime = CFAbsoluteTimeGetCurrent()
-            let duration = endTime - startTime
-
-            // 更新请求元数据，添加响应信息
-            if var metadata = requestMetadata {
-                metadata.duration = duration
-
-                // ✅ 调用发送后管线
+            // 计算耗时并调用后置管线（如果有元数据）
+            if let metadata = await metadataHolder.get() {
+                var mutableMetadata = metadata
+                mutableMetadata.duration = CFAbsoluteTimeGetCurrent() - startTime
                 let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
-                await pipeline.runPost(metadata: metadata, response: assistantMessage)
+                await pipeline.runPost(metadata: mutableMetadata, response: assistantMessage)
             }
 
             await onMessageReceived(message: assistantMessage, conversationId: conversationId)
+            
         } catch LLMServiceError.cancelled {
             AppLogger.core.info("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 发送已取消")
             finishSendTurn(conversationId: conversationId, emitCompletionEvent: false)
             statusVM.setStatus(conversationId: conversationId, content: "已停止生成")
-
-            // 等待元数据任务完成
-            await metadataTask.value
             
-            // 取消时也调用 handlePost
-            if var metadata = requestMetadata {
-                metadata.error = LLMServiceError.cancelled
-                metadata.duration = CFAbsoluteTimeGetCurrent() - startTime
+            // 取消时调用后置管线（如果有元数据）
+            if let metadata = await metadataHolder.get() {
+                var mutableMetadata = metadata
+                mutableMetadata.error = LLMServiceError.cancelled
+                mutableMetadata.duration = CFAbsoluteTimeGetCurrent() - startTime
                 let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
-                await pipeline.runPost(metadata: metadata, response: nil)
+                await pipeline.runPost(metadata: mutableMetadata, response: nil)
             }
+            
         } catch {
             AppLogger.core.error("\(Self.t) 请求模型失败：\(error)")
             finishSendTurn(conversationId: conversationId)
-            statusVM.setStatus(
-                conversationId: conversationId,
-                content: error.localizedDescription
-            )
-
-            // 等待元数据任务完成
-            await metadataTask.value
             
-            // 失败时也调用 handlePost
-            if var metadata = requestMetadata {
-                metadata.error = error
-                metadata.duration = CFAbsoluteTimeGetCurrent() - startTime
+            // 失败时调用后置管线（如果有元数据）
+            if let metadata = await metadataHolder.get() {
+                var mutableMetadata = metadata
+                mutableMetadata.error = error
+                mutableMetadata.duration = CFAbsoluteTimeGetCurrent() - startTime
                 if let apiError = error as? APIError,
                    case let .httpError(statusCode, _) = apiError {
-                    metadata.responseStatusCode = statusCode
+                    mutableMetadata.responseStatusCode = statusCode
                 }
                 let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
-                await pipeline.runPost(metadata: metadata, response: nil)
+                await pipeline.runPost(metadata: mutableMetadata, response: nil)
             }
+            
+            // 保存错误消息到数据库
+            let errorMessage: ChatMessage
+            if let llmError = error as? LLMServiceError {
+                errorMessage = llmError.toChatMessage()
+            } else {
+                // 其他错误类型，创建通用的错误消息
+                errorMessage = ChatMessage(
+                    role: .assistant,
+                    conversationId: conversationId,
+                    content: error.localizedDescription,
+                    isError: true
+                )
+            }
+            await container.conversationVM.saveMessage(errorMessage, to: conversationId)
         }
     }
+
 
     private func consumeTransientSystemPrompts(for conversationId: UUID) -> [String] {
         let prompts = pendingTransientSystemPromptsByConversation[conversationId] ?? []

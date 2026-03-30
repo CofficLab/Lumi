@@ -329,9 +329,11 @@ struct RAGStatusBarView: View, SuperLog {
                 isNotInitialized = false
 
                 if RAGPlugin.verbose, let status = indexStatus {
-                    RAGPlugin.logger.info(
-                        "\(Self.t)RAG index status updated: \(status.projectPath), files: \(status.fileCount), chunks: \(status.chunkCount), stale: \(status.isStale)"
-                    )
+                    if Self.verbose {
+                        RAGPlugin.logger.info(
+                            "\(Self.t)RAG index status updated: \(status.projectPath), files: \(status.fileCount), chunks: \(status.chunkCount), stale: \(status.isStale)"
+                        )
+                    }
                 }
             }
         } catch {

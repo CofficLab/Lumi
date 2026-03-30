@@ -59,10 +59,6 @@ extension LLMService {
         onChunk: @Sendable @escaping (StreamChunk) async -> Void,
         onRequestStart: @Sendable @escaping (RequestMetadata) async -> Void = { _ in }
     ) async throws -> ChatMessage {
-        if Self.verbose > 1 {
-            AppLogger.core.info("\(self.t)🚀 发送流式请求到 \(config.providerId): \(config.model)")
-        }
-
         let startTime = CFAbsoluteTimeGetCurrent()
 
         guard let provider = registry.createProvider(id: config.providerId) else {
@@ -126,7 +122,7 @@ extension LLMService {
 
         var additionalHeaders: [String: String] = [:]
         // ✅ 为使用 Bearer 认证的供应商添加 Authorization 头
-        let providersNeedingBearer = ["openai", "anthropic", "deepseek", "perplexity"]
+        let providersNeedingBearer = ["openai", "anthropic", "deepseek", "perplexity", "airouter"]
         if providersNeedingBearer.contains(config.providerId) {
             additionalHeaders["Authorization"] = "Bearer \(config.apiKey)"
         }

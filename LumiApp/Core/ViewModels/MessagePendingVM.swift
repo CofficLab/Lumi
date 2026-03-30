@@ -6,7 +6,7 @@ import SwiftUI
 @MainActor
 final class MessagePendingVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "💬"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     /// 当前会话的消息列表
     @Published public fileprivate(set) var messages: [ChatMessage] = []

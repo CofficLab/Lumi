@@ -3,7 +3,7 @@ import MagicKit
 
 struct RAGIndexer: SuperLog {
     nonisolated static var emoji: String { "🦞" }
-    nonisolated static var verbose: Bool { true }
+    nonisolated static var verbose: Bool { false }
 
     private static let progressLogInterval = 50
     private static let skipDirectories: Set<String> = [
@@ -56,7 +56,9 @@ struct RAGIndexer: SuperLog {
 
     func indexProjectIncrementally(at projectPath: String) throws -> RAGIndexStats {
         let files = discoverFiles(in: projectPath)
-        AppLogger.core.info("\(Self.t) 增量索引开始 files=\(files.count)")
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t) 增量索引开始 files=\(files.count)")
+        }
         var stats = try indexFiles(files, projectPath: projectPath)
 
         // 删除已被移除的文件索引
@@ -77,9 +79,11 @@ struct RAGIndexer: SuperLog {
             embeddingDimension: embeddingProvider.dimension
         )
         stats.chunkCount = chunkCount
-        AppLogger.core.info(
-            "\(Self.t) 增量索引结束 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) fileCount=\(fileCount) chunkCount=\(chunkCount)"
-        )
+        if Self.verbose {
+            AppLogger.core.info(
+                "\(Self.t) 增量索引结束 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) fileCount=\(fileCount) chunkCount=\(chunkCount)"
+            )
+        }
         return stats
     }
 

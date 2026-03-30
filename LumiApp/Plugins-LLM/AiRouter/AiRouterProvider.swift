@@ -46,7 +46,7 @@ final class AiRouterProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     }
 
     var baseURL: String {
-        "https://airouter.org/v1/chat/completions"
+        "https://api.airouter.org/v1/chat/completions"
     }
 
     func buildRequest(url: URL, apiKey: String) -> URLRequest {

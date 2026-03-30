@@ -31,7 +31,7 @@ private final class TLSValidationDelegate: NSObject, URLSessionDelegate {
 /// 此类可以在后台线程执行
 class LLMAPIService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     /// URLSession 配置
     private nonisolated let session: URLSession
@@ -198,12 +198,9 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
             // 添加请求头
             logMessage += "📋 请求头：\n"
             for (key, value) in headers {
-                // 隐藏敏感信息（以 "key" 结尾的字段）
-                if key.lowercased().hasSuffix("key") {
-                    logMessage += "  - \(key): ***\n"
-                } else {
-                    logMessage += "  - \(key): \(value)\n"
-                }
+                // ✅ 敏感信息显示首尾，中间用星号
+                let logValue = maskSensitiveValue(key: key, value: value)
+                logMessage += "  - \(key): \(logValue)\n"
             }
 
             AppLogger.core.info("\(logMessage)")
@@ -326,6 +323,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         }
     }
 
+    /// 屏蔽敏感信息（用于元数据记录）
     private func sanitizeHeaders(_ headers: [String: String]) -> [String: String] {
         var result: [String: String] = [:]
         for (key, value) in headers {
@@ -337,6 +335,37 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
             }
         }
         return result
+    }
+
+    /// ✅ 对敏感值进行脱敏处理（用于日志输出）
+    /// 显示首尾各 3-4 个字符，中间用星号代替
+    private func maskSensitiveValue(key: String, value: String) -> String {
+        let lowerKey = key.lowercased()
+        
+        // 判断是否为敏感字段
+        let isSensitive = lowerKey.contains("authorization") || 
+                         lowerKey.contains("api-key") || 
+                         lowerKey.hasSuffix("key") || 
+                         lowerKey.contains("token")
+        
+        if !isSensitive {
+            return value
+        }
+        
+        // 敏感信息脱敏
+        if value.count <= 8 {
+            // 短值：显示前 2 后 2，中间星号
+            let prefix = value.prefix(2)
+            let suffix = value.suffix(2)
+            return "\(prefix)***\(suffix)"
+        } else {
+            // 长值：显示前 4 后 4，中间星号
+            let prefix = value.prefix(4)
+            let suffix = value.suffix(4)
+            let starCount = max(3, value.count - 8)
+            let stars = String(repeating: "*", count: starCount)
+            return "\(prefix)\(stars)\(suffix)"
+        }
     }
 
     // MARK: - 带重试的原始请求
@@ -409,9 +438,8 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         if Self.verbose {
             AppLogger.core.info("\(self.t)LLM 请求头:")
             for (key, value) in headers {
-                let maskedValue = key.lowercased().contains("key") || key.lowercased().contains("auth")
-                    ? String(value.prefix(10)) + "..."
-                    : value
+                // ✅ 使用统一的脱敏函数
+                let maskedValue = maskSensitiveValue(key: key, value: value)
                 AppLogger.core.info("\(self.t)  \(key): \(maskedValue)")
             }
         }
