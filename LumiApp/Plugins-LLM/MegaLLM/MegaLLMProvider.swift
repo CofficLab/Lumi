@@ -25,12 +25,19 @@ final class MegaLLMProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Se
     static let defaultModel = "gpt-5-mini"
 
     static let availableModels = [
-        "gpt-5-mini",
-        "llama3.3-70b-instruct",
-        "deepseek-ai/deepseek-v3.1",
-        "minimaxai/minimax-m2.1",
         "alibaba-qwen3.5-397b",
-        "grok-4.1-fast-reasoning"
+        "claude-haiku-4-5-20251001",
+        "claude-opus-4-5-20251101",
+        "claude-opus-4-6",
+        "claude-sonnet-4-5-20250929",
+        "claude-sonnet-4-6",
+        "deepseek-ai/deepseek-v3.1",
+        "grok-4.1-fast-reasoning",
+        "gpt-5-mini",
+        "gpt-5.3-codex",
+        "llama3.3-70b-instruct",
+        "minimaxai/minimax-m2.1",
+        "newclaude-opus-4-6",
     ]
 
     // MARK: - SuperLLMProvider
@@ -160,7 +167,6 @@ final class MegaLLMProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Se
             if let choices = json?["choices"] as? [[String: Any]],
                let firstChoice = choices.first,
                let delta = firstChoice["delta"] as? [String: Any] {
-
                 if let content = delta["content"] as? String {
                     return StreamChunk(content: content, eventType: .textDelta)
                 }
@@ -206,7 +212,6 @@ final class MegaLLMProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Se
             return nil
         }
     }
-
 }
 
 // MARK: - 消息转换
