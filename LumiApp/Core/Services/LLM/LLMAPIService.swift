@@ -110,7 +110,6 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
     ///   - url: 请求 URL
     ///   - apiKey: API 密钥
     ///   - body: 请求体字典
-    ///   - additionalHeaders: 额外的请求头（合并到 provider.buildRequest 返回的请求中）
     ///   - onRequestStart: 请求开始时的回调（包含请求元数据）
     ///   - onChunk: 收到数据块时的回调
     /// - Throws: 网络错误或 API 错误
@@ -119,17 +118,11 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         url: URL,
         apiKey: String,
         body: [String: Any],
-        additionalHeaders: [String: String] = [:],
         onRequestStart: @Sendable @escaping (RequestMetadata) async -> Void = { _ in },
         onChunk: @Sendable @escaping (Data) async -> Bool
     ) async throws {
         // 使用 Provider 自己构建的请求，然后添加额外请求头和请求体
         var request = provider.buildRequest(url: url, apiKey: apiKey)
-
-        // 合并额外的请求头（可覆盖 Provider 设置的值）
-        for (key, value) in additionalHeaders {
-            request.setValue(value, forHTTPHeaderField: key)
-        }
 
         // 添加流式请求专用的 Accept 头
         request.setValue("text/event-stream", forHTTPHeaderField: "Accept")

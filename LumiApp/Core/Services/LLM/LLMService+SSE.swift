@@ -120,12 +120,6 @@ extension LLMService {
             AppLogger.core.info("\(self.t)🚀 发送流式请求到 \(config.providerId): \(config.model)")
         }
 
-        var additionalHeaders: [String: String] = [:]
-        // ✅ 移除 Bearer 认证的供应商列表，现在由每个 Provider 自己在 buildRequest 中处理
-        if config.providerId == "zhipu" {
-            additionalHeaders["anthropic-version"] = "2023-06-01"
-        }
-
         let state = StreamingState(startTime: startTime)
         let chunkCounter = ChunkCounter() // 用于调试计数
 
@@ -136,7 +130,6 @@ extension LLMService {
                 url: url,
                 apiKey: config.apiKey,
                 body: body,
-                additionalHeaders: additionalHeaders,
                 onRequestStart: onRequestStart
             ) { chunkData in
                 do {
