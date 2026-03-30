@@ -25,17 +25,30 @@ struct InputView: View, SuperLog {
     /// 模型选择器是否显示
     @State private var isModelSelectorPresented = false
 
+    /// 是否允许输入/发送（必须先选中会话）
+    @EnvironmentObject var ConversationVM: ConversationVM
+
+    private var canChat: Bool {
+        ConversationVM.selectedConversationId != nil
+    }
+
     var body: some View {
         VStack(spacing: 8) {
-            // 待发送消息队列（放在外层，避免影响输入框焦点）
+            // 待发送消息队列
             PendingMessagesView()
 
-            // 输入区域
+            // 输入区域（包含编辑器、工具栏）
             InputAreaView(
                 inputViewModel: inputViewModel,
                 isInputFocused: $isInputFocused,
                 isModelSelectorPresented: $isModelSelectorPresented
             )
+
+            // 快捷输入视图（仅在有项目选中时显示）
+            QuickInputView(inputViewModel: inputViewModel)
+                .padding(.horizontal, 8)
+                .allowsHitTesting(canChat)
+                .opacity(canChat ? 1 : 0.6)
         }
         .padding()
         .onAppear(perform: onAppear)
