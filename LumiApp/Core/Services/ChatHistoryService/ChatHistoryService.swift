@@ -10,7 +10,6 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
     let modelContainer: ModelContainer
     let modelContext: ModelContext
     let llmService: LLMService
-    let storageQueue = DispatchQueue(label: "com.coffic.lumi.chat-history.storage", qos: .utility)
 
     /// 使用 LLM 服务和模型容器初始化
     init(llmService: LLMService, modelContainer: ModelContainer, reason: String) {
@@ -25,6 +24,11 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
     /// 获取模型上下文
     internal func getContext() -> ModelContext {
         return modelContext
+    }
+
+    /// 创建新的模型上下文（用于需要独立 context 的场景）
+    internal func createNewContext() -> ModelContext {
+        return ModelContext(modelContainer)
     }
 
     // MARK: - 工具方法

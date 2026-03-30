@@ -67,7 +67,7 @@ final class ConversationVM: ObservableObject, SuperLog {
     ///   - message: 要保存的消息
     ///   - conversationId: 目标对话 ID
     func saveMessage(_ message: ChatMessage, to conversationId: UUID) async {
-        let saved = await chatHistoryService.saveMessageAsync(message, toConversationId: conversationId)
+        let saved = await chatHistoryService.saveMessage(message, toConversationId: conversationId)
         if Self.verbose, saved != nil {
             AppLogger.core.info("\(Self.t)💾 [\(conversationId)] 消息已保存：\(message.content.max(50))")
         }

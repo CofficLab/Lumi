@@ -63,8 +63,8 @@ final class ChatHistoryVM: ObservableObject {
     }
 
     /// 异步保存消息
-    func saveMessageAsync(_ message: ChatMessage, toConversationId conversationId: UUID) async -> ChatMessage? {
-        await chatHistoryService.saveMessageAsync(message, toConversationId: conversationId)
+    func saveMessage(_ message: ChatMessage, toConversationId conversationId: UUID) async -> ChatMessage? {
+        await chatHistoryService.saveMessage(message, toConversationId: conversationId)
     }
 
     /// 异步更新消息
