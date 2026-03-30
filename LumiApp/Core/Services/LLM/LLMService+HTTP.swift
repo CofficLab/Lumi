@@ -69,9 +69,11 @@ extension LLMService {
                 additionalHeaders["anthropic-version"] = "2023-06-01"
             }
 
+            // ✅ 传递 provider 给 sendChatRequest，让它使用 provider.buildRequest()
             let data: Data
             do {
                 data = try await llmAPI.sendChatRequest(
+                    provider: provider,
                     url: url,
                     apiKey: config.apiKey,
                     body: body,

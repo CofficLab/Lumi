@@ -1,14 +1,9 @@
 import Foundation
 import OSLog
 
-// MARK: - Super LLM Provider
-
-/// LLM 供应商协议（超级接口）
+/// LLM 供应商协议
 ///
 /// 定义 LLM 供应商必须实现的接口，用于统一不同供应商的接入方式。
-/// 添加新的 LLM 供应商时，只需：
-/// 1. 创建遵循此协议的新结构体/类
-/// 2. 在 `ProviderRegistry` 中注册该供应商（通常通过 LLM 插件完成）
 protocol SuperLLMProvider: Sendable {
 
     /// 供应商实例构造函数

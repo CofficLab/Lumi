@@ -71,34 +71,30 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
     /// 发送聊天完成请求到 LLM 供应商（带重试机制）
     ///
     /// - Parameters:
+    ///   - provider: LLM 供应商实例
     ///   - url: 请求 URL
     ///   - apiKey: API 密钥
     ///   - body: 请求体字典
-    ///   - additionalHeaders: 额外的请求头（可包含认证信息）
+    ///   - additionalHeaders: 额外的请求头（合并到 provider.buildRequest 返回的请求中）
     /// - Returns: 响应数据
     /// - Throws: 网络错误或 API 错误
     func sendChatRequest(
+        provider: any SuperLLMProvider,
         url: URL,
         apiKey: String,
         body: [String: Any],
         additionalHeaders: [String: String] = [:]
     ) async throws -> Data {
-        // 构建请求头
-        // 默认使用 x-api-key 认证，如需 Bearer 认证可通过 additionalHeaders 传递
-        var headers = [
-            "Content-Type": "application/json",
-            "x-api-key": apiKey,
-        ]
+        // 使用 Provider 自己构建的请求，然后添加额外请求头和请求体
+        var request = provider.buildRequest(url: url, apiKey: apiKey)
 
-        // 合并额外的请求头（可覆盖默认值）
+        // 合并额外的请求头（可覆盖 Provider 设置的值）
         for (key, value) in additionalHeaders {
-            headers[key] = value
+            request.setValue(value, forHTTPHeaderField: key)
         }
 
-        let (data, _) = try await sendRawRequestWithRetry(
-            url: url,
-            method: .post,
-            headers: headers,
+        let (data, _) = try await sendRequestWithRetry(
+            request: &request,
             body: body
         )
 
@@ -110,14 +106,16 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
     /// 使用 SSE (Server-Sent Events) 协议接收流式响应
     ///
     /// - Parameters:
+    ///   - provider: LLM 供应商实例
     ///   - url: 请求 URL
     ///   - apiKey: API 密钥
     ///   - body: 请求体字典
-    ///   - additionalHeaders: 额外的请求头
+    ///   - additionalHeaders: 额外的请求头（合并到 provider.buildRequest 返回的请求中）
     ///   - onRequestStart: 请求开始时的回调（包含请求元数据）
     ///   - onChunk: 收到数据块时的回调
     /// - Throws: 网络错误或 API 错误
     func sendStreamingRequest(
+        provider: any SuperLLMProvider,
         url: URL,
         apiKey: String,
         body: [String: Any],
@@ -125,26 +123,16 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         onRequestStart: @Sendable @escaping (RequestMetadata) async -> Void = { _ in },
         onChunk: @Sendable @escaping (Data) async -> Bool
     ) async throws {
-        // 构建请求头
-        var headers = [
-            "Content-Type": "application/json",
-            "x-api-key": apiKey,
-            "Accept": "text/event-stream",
-        ]
+        // 使用 Provider 自己构建的请求，然后添加额外请求头和请求体
+        var request = provider.buildRequest(url: url, apiKey: apiKey)
 
-        // 合并额外的请求头
+        // 合并额外的请求头（可覆盖 Provider 设置的值）
         for (key, value) in additionalHeaders {
-            headers[key] = value
-        }
-
-        // 构建请求
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.timeoutInterval = 300
-
-        for (key, value) in headers {
             request.setValue(value, forHTTPHeaderField: key)
         }
+
+        // 添加流式请求专用的 Accept 头
+        request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
 
         // 序列化请求体
         let jsonData: Data
@@ -156,14 +144,18 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
             throw APIError.jsonSerializationFailed(underlying: error)
         }
 
+        // 设置超时
+        request.timeoutInterval = 300
+
         // 📊 获取请求大小并通知调用方
         let requestSizeBytes = jsonData.count
         // 按请求记录完整 body（不截断）
         let bodyPreview: String? = String(data: jsonData, encoding: .utf8)
-        let maskedHeaders = sanitizeHeaders(headers)
+        let allHeaders = request.allHTTPHeaderFields ?? [:]
+        let maskedHeaders = sanitizeHeaders(allHeaders)
         let metadata = RequestMetadata(
             requestId: UUID(),
-            method: HTTPMethod.post.rawValue,
+            method: request.httpMethod ?? "POST",
             url: url.absoluteString,
             requestHeaders: maskedHeaders,
             requestBodySizeBytes: requestSizeBytes,
@@ -197,7 +189,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
 
             // 添加请求头
             logMessage += "📋 请求头：\n"
-            for (key, value) in headers {
+            for (key, value) in allHeaders {
                 // ✅ 敏感信息显示首尾，中间用星号
                 let logValue = maskSensitiveValue(key: key, value: value)
                 logMessage += "  - \(key): \(logValue)\n"
@@ -368,12 +360,10 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         }
     }
 
-    // MARK: - 带重试的原始请求
+    // MARK: - 带重试的请求
 
-    private func sendRawRequestWithRetry(
-        url: URL,
-        method: HTTPMethod,
-        headers: [String: String],
+    private func sendRequestWithRetry(
+        request: inout URLRequest,
         body: [String: Any]?
     ) async throws -> (Data, URLResponse) {
         var lastError: Error?
@@ -384,10 +374,8 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
                     AppLogger.core.info("\(self.t)🔄 重试 LLM 请求 (尝试 \(attempt)/\(self.maxRetries))")
                 }
 
-                let result = try await sendRawRequest(
-                    url: url,
-                    method: method,
-                    headers: headers,
+                let result = try await sendRequest(
+                    request: &request,
                     body: body
                 )
 
@@ -420,30 +408,12 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         ))
     }
 
-    /// 发送原始请求（不解析 JSON）
-    private func sendRawRequest(
-        url: URL,
-        method: HTTPMethod,
-        headers: [String: String],
+    /// 发送请求（不解析 JSON）
+    private func sendRequest(
+        request: inout URLRequest,
         body: [String: Any]?
     ) async throws -> (Data, URLResponse) {
-        var request = URLRequest(url: url)
-        request.httpMethod = method.rawValue
-        request.timeoutInterval = 300
-
-        for (key, value) in headers {
-            request.setValue(value, forHTTPHeaderField: key)
-        }
-
-        if Self.verbose {
-            AppLogger.core.info("\(self.t)LLM 请求头:")
-            for (key, value) in headers {
-                // ✅ 使用统一的脱敏函数
-                let maskedValue = maskSensitiveValue(key: key, value: value)
-                AppLogger.core.info("\(self.t)  \(key): \(maskedValue)")
-            }
-        }
-
+        // 序列化请求体
         if let body = body {
             do {
                 let jsonData = try JSONSerialization.data(withJSONObject: body)
@@ -455,7 +425,19 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         }
 
         if Self.verbose {
-            AppLogger.core.info("\(self.t)发送 LLM \(method.rawValue) 请求到：\(url.absoluteString)")
+            let allHeaders = request.allHTTPHeaderFields ?? [:]
+            AppLogger.core.info("\(self.t)LLM 请求头:")
+            for (key, value) in allHeaders {
+                // ✅ 使用统一的脱敏函数
+                let maskedValue = maskSensitiveValue(key: key, value: value)
+                AppLogger.core.info("\(self.t)  \(key): \(maskedValue)")
+            }
+        }
+
+        if Self.verbose {
+            let url = request.url?.absoluteString ?? "unknown"
+            let method = request.httpMethod ?? "unknown"
+            AppLogger.core.info("\(self.t)发送 LLM \(method) 请求到：\(url)")
         }
 
         do {

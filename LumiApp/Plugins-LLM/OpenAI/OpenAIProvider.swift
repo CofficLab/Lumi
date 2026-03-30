@@ -2,8 +2,6 @@ import Foundation
 import MagicKit
 import os
 
-// MARK: - OpenAI 供应商
-
 /// OpenAI API 供应商实现
 ///
 /// 集成 OpenAI GPT 系列模型，支持 Tool Calls 和流式响应。

@@ -121,11 +121,7 @@ extension LLMService {
         }
 
         var additionalHeaders: [String: String] = [:]
-        // ✅ 为使用 Bearer 认证的供应商添加 Authorization 头
-        let providersNeedingBearer = ["openai", "anthropic", "deepseek", "perplexity", "airouter"]
-        if providersNeedingBearer.contains(config.providerId) {
-            additionalHeaders["Authorization"] = "Bearer \(config.apiKey)"
-        }
+        // ✅ 移除 Bearer 认证的供应商列表，现在由每个 Provider 自己在 buildRequest 中处理
         if config.providerId == "zhipu" {
             additionalHeaders["anthropic-version"] = "2023-06-01"
         }
@@ -134,7 +130,9 @@ extension LLMService {
         let chunkCounter = ChunkCounter() // 用于调试计数
 
         do {
+            // ✅ 传递 provider 给 sendStreamingRequest，让它使用 provider.buildRequest()
             try await llmAPI.sendStreamingRequest(
+                provider: provider,
                 url: url,
                 apiKey: config.apiKey,
                 body: body,

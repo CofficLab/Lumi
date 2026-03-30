@@ -2,8 +2,6 @@ import Foundation
 import MagicKit
 import os
 
-// MARK: - AiRouter 供应商
-
 /// AiRouter API 供应商实现
 ///
 /// AiRouter (airouter.org) 完全兼容 OpenAI 格式
@@ -79,7 +77,7 @@ final class AiRouterProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     }
 
     func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
-        let result = try JSONDecoder().decode(OpenAIResponse.self, from: data)
+        let result = try JSONDecoder().decode(AiRouterResponse.self, from: data)
         
         guard let choiceMessage = result.choices.first?.message else {
             throw NSError(domain: "AiRouterProvider", code: -1, userInfo: [NSLocalizedDescriptionKey: "No choices in response"])
