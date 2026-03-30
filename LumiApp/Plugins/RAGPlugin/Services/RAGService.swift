@@ -15,7 +15,18 @@ actor RAGService: SuperLog {
     private static let staleAfterSeconds: TimeInterval = 300
     private nonisolated static let indexingRegistry = RAGIndexingRegistry()
 
-    private(set) var isInitialized: Bool = false
+    /// 线程安全的初始化状态容器
+    private final class InitializationState: @unchecked Sendable {
+        private let lock = NSLock()
+        private var _isInitialized: Bool = false
+
+        var isInitialized: Bool {
+            get { lock.withLock { _isInitialized } }
+            set { lock.withLock { _isInitialized = newValue } }
+        }
+    }
+
+    private let initializationState = InitializationState()
     private var store: RAGSQLiteStore?
     private var indexer: RAGIndexer?
     private var retriever: RAGRetriever?
@@ -24,6 +35,11 @@ actor RAGService: SuperLog {
 
     /// 正在后台索引的项目路径集合
     private var indexingProjects: Set<String> = []
+
+    /// 非阻塞地检查服务是否已初始化
+    nonisolated var isInitialized: Bool {
+        initializationState.isInitialized
+    }
 
     init() {
         AppLogger.core.info("\(Self.t)🦞 RAG 服务已创建")
@@ -61,7 +77,7 @@ actor RAGService: SuperLog {
         )
         self.retriever = RAGRetriever(store: store)
         self.embeddingProvider = embeddingProvider
-        self.isInitialized = true
+        initializationState.isInitialized = true
 
         let duration = (CFAbsoluteTimeGetCurrent() - start) * 1000
 

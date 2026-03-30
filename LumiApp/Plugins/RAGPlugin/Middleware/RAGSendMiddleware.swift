@@ -59,8 +59,8 @@ final class RAGSendMiddleware: SendMiddleware, SuperLog {
         // 获取 RAG 服务
         let ragService = RAGPlugin.getService()
 
-        // 检查服务是否已初始化
-        let isInitialized = await ragService.isInitialized
+        // 检查服务是否已初始化（nonisolated 属性，无需 await）
+        let isInitialized = ragService.isInitialized
         if !isInitialized {
             if Self.verbose {
                 RAGPlugin.logger.info("\(Self.t)   ⏭️ 跳过 RAG (服务未初始化)")
