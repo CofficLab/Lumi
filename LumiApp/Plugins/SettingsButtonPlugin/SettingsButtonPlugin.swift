@@ -32,9 +32,6 @@ actor SettingsButtonPlugin: SuperPlugin, SuperLog {
 
     /// Add status bar leading view (left side)
     @MainActor func addStatusBarLeadingView() -> AnyView? {
-        if Self.verbose {
-            Self.logger.info("\(Self.t)提供 SettingsButtonView")
-        }
         return AnyView(SettingsButtonView())
     }
 }

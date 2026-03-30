@@ -8,7 +8,7 @@ import MagicKit
 /// - 负责查询检索并返回相关片段
 actor RAGService: SuperLog {
     nonisolated static let emoji = "🦞"
-    nonisolated static let verbose: Int = 0
+    nonisolated static let verbose: Int = 2
 
     private static let pluginName = "RAGPlugin"
     private static let ensureThrottleSeconds: TimeInterval = 20
@@ -66,17 +66,7 @@ actor RAGService: SuperLog {
         let duration = (CFAbsoluteTimeGetCurrent() - start) * 1000
 
         if Self.verbose >= 1 {
-            AppLogger.core.info(
-                "\(Self.t)✅ RAG 服务初始化完成 (\(String(format: "%.2f", duration))ms)"
-            )
-            AppLogger.core.info(
-                "\(Self.t)   embedding=\(embeddingProvider.modelIdentifierWithVersion), dim=\(embeddingProvider.dimension), backend=\(store.runtimeInfo.vectorBackend.rawValue)"
-            )
-        }
-
-        // ⚠️ 性能预警
-        if duration > 100 {
-            AppLogger.core.warning("\(Self.t)⚠️ initialize 耗时过长：\(String(format: "%.2f", duration))ms (>100ms)")
+            AppLogger.core.info("\(Self.t)⏱️ initialize 耗时：\(RAGUtils.formatDuration(duration))")
         }
     }
 
@@ -180,7 +170,7 @@ actor RAGService: SuperLog {
 
         let duration = (CFAbsoluteTimeGetCurrent() - start) * 1000
         if Self.verbose >= 1 {
-            AppLogger.core.info("\(Self.t)⏱️ checkNeedsIndex DB 查询耗时：\(String(format: "%.2f", duration))ms")
+            AppLogger.core.info("\(Self.t)⏱️ checkNeedsIndex 耗时：\(RAGUtils.formatDuration(duration))")
         }
 
         // 无索引状态，需要索引
@@ -311,7 +301,7 @@ actor RAGService: SuperLog {
         let embedDuration = (CFAbsoluteTimeGetCurrent() - embedStart) * 1000
 
         if Self.verbose >= 1 {
-            AppLogger.core.info("\(Self.t)⏱️ embed 耗时：\(String(format: "%.2f", embedDuration))ms")
+            AppLogger.core.info("\(Self.t)⏱️ embed 耗时：\(RAGUtils.formatDuration(embedDuration))")
         }
 
         // ⏱️ 检索耗时
@@ -325,18 +315,18 @@ actor RAGService: SuperLog {
         let retrieveDuration = (CFAbsoluteTimeGetCurrent() - retrieveStart) * 1000
 
         if Self.verbose >= 1 {
-            AppLogger.core.info("\(Self.t)⏱️ retriever.retrieve 耗时：\(String(format: "%.2f", retrieveDuration))ms, 结果数：\(results.count)")
+            AppLogger.core.info("\(Self.t)⏱️ retriever.retrieve 耗时：\(RAGUtils.formatDuration(retrieveDuration))，结果数：\(results.count)")
         }
 
         let totalDuration = (CFAbsoluteTimeGetCurrent() - start) * 1000
 
         if Self.verbose >= 1 {
-            AppLogger.core.info("\(Self.t)⏱️ retrieve 总耗时：\(String(format: "%.2f", totalDuration))ms")
+            AppLogger.core.info("\(Self.t)⏱️ retrieve 总耗时：\(RAGUtils.formatDuration(totalDuration))")
         }
 
         // ⚠️ 性能预警
         if totalDuration > 300 {
-            AppLogger.core.warning("\(Self.t)⚠️ retrieve 总耗时过长：\(String(format: "%.2f", totalDuration))ms (>300ms) [embed=\(String(format: "%.0f", embedDuration))ms, retriever=\(String(format: "%.0f", retrieveDuration))ms]")
+            AppLogger.core.warning("\(Self.t)⚠️ retrieve 总耗时过长：\(RAGUtils.formatDuration(totalDuration)) (>300ms) [embed=\(RAGUtils.formatDuration(embedDuration)), retriever=\(RAGUtils.formatDuration(retrieveDuration))]")
         }
 
         return RAGResponse(query: query, results: results)
@@ -388,27 +378,5 @@ actor RAGService: SuperLog {
     private func isIndexStateStale(_ state: RAGProjectIndexState, now: Date) -> Bool {
         let indexedAt = Date(timeIntervalSince1970: state.lastIndexedAt)
         return now.timeIntervalSince(indexedAt) > Self.staleAfterSeconds
-    }
-}
-
-// MARK: - Errors
-
-enum RAGError: LocalizedError {
-    case notInitialized
-    case invalidProjectPath
-    case internalStateCorrupted
-    case dbError(String)
-
-    var errorDescription: String? {
-        switch self {
-        case .notInitialized:
-            return "RAG 服务未初始化"
-        case .invalidProjectPath:
-            return "无效的项目路径"
-        case .internalStateCorrupted:
-            return "RAG 内部状态异常"
-        case let .dbError(message):
-            return "RAG 数据库错误：\(message)"
-        }
     }
 }

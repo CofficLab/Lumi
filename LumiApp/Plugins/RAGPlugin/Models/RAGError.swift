@@ -1,4 +1,4 @@
-// MARK: - Errors
+import Foundation
 
 enum RAGError: LocalizedError {
     case notInitialized

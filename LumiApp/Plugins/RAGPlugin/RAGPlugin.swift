@@ -43,12 +43,7 @@ actor RAGPlugin: SuperPlugin, SuperLog {
         // 在后台异步初始化 RAG 服务
         Task { @MainActor in
             do {
-                let start = CFAbsoluteTimeGetCurrent()
                 try await Self.service.initialize()
-                let duration = (CFAbsoluteTimeGetCurrent() - start) * 1000
-                if Self.verbose {
-                    Self.logger.info("\(Self.t)✅ RAG 服务初始化完成 (\(String(format: "%.2f", duration))ms)")
-                }
             } catch {
                 if Self.verbose {
                     Self.logger.error("\(Self.t)❌ RAG 服务初始化失败：\(error.localizedDescription)")

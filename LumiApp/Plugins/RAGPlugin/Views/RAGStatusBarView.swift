@@ -231,12 +231,6 @@ struct RAGStatusBarView: View, SuperLog {
             isFinished: isFinished
         )
 
-        if RAGPlugin.verbose {
-            RAGPlugin.logger.info(
-                "\(Self.t)RAG indexing progress: \(scannedFiles)/\(totalFiles), indexed: \(indexedFiles), chunks: \(chunkCount), finished: \(isFinished)"
-            )
-        }
-
         if isFinished {
             // 索引完成后刷新状态
             Task {

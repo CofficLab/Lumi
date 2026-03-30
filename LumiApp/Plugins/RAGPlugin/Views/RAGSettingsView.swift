@@ -175,7 +175,6 @@ extension RAGSettingsView {
 
         do {
             let service = RAGPlugin.getService()
-            // 服务已在 onEnable 时初始化，无需再次初始化
             runtimeInfo = try await service.getRuntimeInfo()
 
             var next: [String: RAGIndexStatus] = [:]
@@ -201,8 +200,6 @@ extension RAGSettingsView {
 
         do {
             let service = RAGPlugin.getService()
-            // 服务已在 onEnable 时初始化，无需再次初始化
-
             for project in projects {
                 try await service.ensureIndexed(projectPath: project.path, force: true)
             }
@@ -218,7 +215,6 @@ extension RAGSettingsView {
         defer { activeProjectActionPath = nil }
         do {
             let service = RAGPlugin.getService()
-            // 服务已在 onEnable 时初始化，无需再次初始化
             let status = try await service.getIndexStatus(projectPath: projectPath)
             statusesByPath[projectPath] = status
             if status == nil {
@@ -235,7 +231,6 @@ extension RAGSettingsView {
         defer { activeProjectActionPath = nil }
         do {
             let service = RAGPlugin.getService()
-            // 服务已在 onEnable 时初始化，无需再次初始化
             try await service.ensureIndexed(projectPath: projectPath, force: true)
             let status = try await service.getIndexStatus(projectPath: projectPath)
             statusesByPath[projectPath] = status

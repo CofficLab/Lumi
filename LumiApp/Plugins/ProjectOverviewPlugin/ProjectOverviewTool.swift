@@ -4,7 +4,7 @@ import MagicKit
 /// Returns an overview of a project for the model: path, type, structure (2 levels), Git info, manifests, README preview, key files.
 struct ProjectOverviewTool: AgentTool, SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     let name = "project_overview"
     let description = "Get a project overview: path, type, two-level directory structure, Git (branch, remote, clean/dirty), manifest files, README preview, key files. Use when you need to understand the project before diving in."

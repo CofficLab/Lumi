@@ -26,7 +26,7 @@ class LLMService: SuperLog, @unchecked Sendable {
         self.registry = registry
         self.llmAPI = LLMAPIService()
         if Self.verbose >= 1 {
-            AppLogger.core.info("\(self.t)LLM 服务已初始化")
+            AppLogger.core.info("\(self.t)✅ LLM 服务已初始化")
         }
     }
 
