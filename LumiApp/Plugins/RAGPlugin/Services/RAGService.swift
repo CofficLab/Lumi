@@ -8,7 +8,7 @@ import MagicKit
 /// - 负责查询检索并返回相关片段
 actor RAGService: SuperLog {
     nonisolated static let emoji = "🦞"
-    nonisolated static let verbose: Int = 2
+    nonisolated static let verbose: Int = 0
 
     private static let pluginName = "RAGPlugin"
     private static let ensureThrottleSeconds: TimeInterval = 20

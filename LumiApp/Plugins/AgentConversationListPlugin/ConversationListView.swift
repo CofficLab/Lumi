@@ -1,6 +1,6 @@
+import Combine
 import MagicKit
 import SwiftUI
-import Combine
 
 /// 对话列表视图
 /// 使用分页方式渲染会话列表，避免一次性加载全部历史记录
@@ -354,7 +354,9 @@ extension ConversationListView {
     func handleConversationSelected() {
         let localId = localSelectedConversationId?.uuidString ?? "nil"
         let vmId = conversationVM.selectedConversationId?.uuidString ?? "nil"
-        ConversationListPlugin.logger.info("\(self.t)🔄 handleConversationSelected called: local=\(localId), vm=\(vmId)")
+        if Self.verbose {
+            ConversationListPlugin.logger.info("\(self.t)🔄 handleConversationSelected called: local=\(localId), vm=\(vmId)")
+        }
 
         // 只在值确实不同时才更新，避免循环
         guard localSelectedConversationId != conversationVM.selectedConversationId else {

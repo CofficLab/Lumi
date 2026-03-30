@@ -13,7 +13,7 @@ class LLMService: SuperLog, @unchecked Sendable {
     /// 0: 关闭日志
     /// 1: 基础日志
     /// 2: 详细日志（输出请求/响应的详细信息）
-    nonisolated static let verbose = 2
+    nonisolated static let verbose = 1
 
     /// 供同模块扩展使用（`LLMService+HTTP` / `LLMService+SSE`）
     nonisolated let registry: LLMProviderRegistry
