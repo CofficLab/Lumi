@@ -308,7 +308,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
                 list.append(MLXChatMessage(role: .user, content: m.content, images: images))
             case .assistant:
                 list.append(MLXChatMessage(role: .assistant, content: m.content))
-            case .tool, .status:
+            case .tool, .status, .error:
                 break
             }
         }

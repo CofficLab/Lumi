@@ -18,30 +18,14 @@ struct SystemMessage: View {
                     RoleLabel.tool
                     ToolOutputView(message: message)
                 }
-            } else if message.content == ChatMessage.apiKeyMissingSystemContentKey {
-                // 专门的「API Key 未配置」系统消息，内嵌供应商 API Key 配置卡片
-                VStack(alignment: .leading, spacing: 4) {
-                    header
-
-                    ApiKeyMissingSystemMessageView()
-                        .messageBubbleStyle(role: message.role, isError: true)
-                }
             } else if message.content == ChatMessage.loadingLocalModelSystemContentKey
-                || message.content == ChatMessage.loadingLocalModelDoneSystemContentKey
-                || message.content == ChatMessage.loadingLocalModelFailedSystemContentKey {
-                // 专门的「正在加载/已就绪/加载失败」本地模型系统消息，展示模型基本信息
+                || message.content == ChatMessage.loadingLocalModelDoneSystemContentKey {
+                // 专门的「正在加载/已就绪」本地模型系统消息，展示模型基本信息
                 VStack(alignment: .leading, spacing: 4) {
                     header
 
                     LoadingLocalModelSystemMessageView(message: message)
-                        .messageBubbleStyle(role: message.role, isError: message.content == ChatMessage.loadingLocalModelFailedSystemContentKey)
-                }
-            } else if Self.isLLMInlineConfigError(message) {
-                VStack(alignment: .leading, spacing: 4) {
-                    header
-
-                    LLMInlineConfigErrorView(message: message)
-                        .messageBubbleStyle(role: message.role, isError: true)
+                        .messageBubbleStyle(role: message.role, isError: false)
                 }
             } else {
                 VStack(alignment: .leading, spacing: 4) {
@@ -58,17 +42,6 @@ struct SystemMessage: View {
                 }
             }
         }
-    }
-
-    /// LLM 配置 / 供应商 / Base URL 等占位系统消息（`ChatMessage` 的 `content` 为稳定键）。
-    private static func isLLMInlineConfigError(_ message: ChatMessage) -> Bool {
-        let c = message.content
-        if c == ChatMessage.llmModelEmptyContentKey { return true }
-        if c == ChatMessage.llmProviderIdEmptyContentKey { return true }
-        if c == ChatMessage.llmTemperatureInvalidContentKey { return true }
-        if c == ChatMessage.llmMaxTokensInvalidContentKey { return true }
-        if c == ChatMessage.llmProviderNotFoundContentKey { return true }
-        return c.hasPrefix(ChatMessage.llmInvalidBaseURLContentKey)
     }
 
     // MARK: - Header
@@ -97,188 +70,6 @@ struct SystemMessage: View {
     }
 }
 
-// MARK: - LLM Inline Config Error View
-
-/// `LLMServiceError` 转为系统消息后的专用说明（占位键由 `ChatMessage` 定义）。
-private struct LLMInlineConfigErrorView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
-
-    let message: ChatMessage
-
-    private var zh: Bool {
-        projectVM.languagePreference == .chinese
-    }
-
-    private var titleText: String {
-        let c = message.content
-        if c == ChatMessage.llmModelEmptyContentKey {
-            return zh ? "模型未填写" : "Model is empty"
-        }
-        if c == ChatMessage.llmProviderIdEmptyContentKey {
-            return zh ? "供应商未选择" : "Provider is not set"
-        }
-        if c == ChatMessage.llmTemperatureInvalidContentKey {
-            return zh ? "温度参数无效" : "Invalid temperature"
-        }
-        if c == ChatMessage.llmMaxTokensInvalidContentKey {
-            return zh ? "最大 token 无效" : "Invalid max tokens"
-        }
-        if c == ChatMessage.llmProviderNotFoundContentKey {
-            return zh ? "找不到供应商" : "Provider not found"
-        }
-        if c.hasPrefix(ChatMessage.llmInvalidBaseURLContentKey) {
-            return zh ? "Base URL 无效" : "Invalid Base URL"
-        }
-        return zh ? "配置错误" : "Configuration error"
-    }
-
-    private var detailText: String {
-        let c = message.content
-        if c == ChatMessage.llmTemperatureInvalidContentKey, let t = message.temperature {
-            return zh
-                ? "温度应在 0～2 之间，当前为 \(t)。"
-                : "Temperature must be between 0 and 2; current value is \(t)."
-        }
-        if c == ChatMessage.llmMaxTokensInvalidContentKey, let m = message.maxTokens {
-            return zh
-                ? "最大 token 数应大于 0，当前为 \(m)。"
-                : "Max tokens must be greater than 0; current value is \(m)."
-        }
-        if c == ChatMessage.llmProviderNotFoundContentKey, let id = message.providerId, !id.isEmpty {
-            return zh
-                ? "注册表中没有 ID 为「\(id)」的供应商实现。"
-                : "No provider implementation registered for id \"\(id)\"."
-        }
-        if c.hasPrefix(ChatMessage.llmInvalidBaseURLContentKey) {
-            if let raw = ChatMessage.llmInvalidBaseURLPayload(fromContent: c), !raw.isEmpty {
-                return zh ? "无法解析为有效 URL：\(raw)" : "Cannot parse as a valid URL: \(raw)"
-            }
-            return zh ? "供应商返回的 Base URL 无法解析。" : "The provider's Base URL cannot be parsed."
-        }
-        if c == ChatMessage.llmModelEmptyContentKey {
-            return zh ? "请选择或填写模型名称后再发送。" : "Choose or enter a model name before sending."
-        }
-        if c == ChatMessage.llmProviderIdEmptyContentKey {
-            return zh ? "请选择 LLM 供应商。" : "Select an LLM provider."
-        }
-        return ""
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 14))
-                    .foregroundColor(AppUI.Color.semantic.error)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(titleText)
-                        .font(AppUI.Typography.callout)
-                        .fontWeight(.semibold)
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
-                    if !detailText.isEmpty {
-                        Text(detailText)
-                            .font(AppUI.Typography.caption1)
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 12)
-    }
-}
-
-// MARK: - API Key Missing System Message View
-
-/// 当当前供应商未配置 API Key 时，在系统消息中渲染的专用视图。
-/// 提供一个简化的「生成式 UI」卡片，支持直接为当前会话所用的供应商填写 API Key。
-private struct ApiKeyMissingSystemMessageView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
-    @EnvironmentObject private var agentSessionConfig: LLMVM
-    @EnvironmentObject private var providerRegistry: LLMProviderRegistry
-
-    @State private var currentProviderId: String = ""
-    @State private var apiKey: String = ""
-
-    private var languagePreference: LanguagePreference {
-        projectVM.languagePreference
-    }
-
-    private var titleText: String {
-        switch languagePreference {
-        case .chinese:
-            return "当前未配置 API Key"
-        case .english:
-            return "API Key is not configured"
-        }
-    }
-
-    private var descriptionText: String {
-        switch languagePreference {
-        case .chinese:
-            return "请为你要使用的 LLM 供应商填写 API Key。配置完成后，可以重新发送本轮请求。"
-        case .english:
-            return "Please provide API keys for the LLM providers you want to use. After configuration, you can resend your request."
-        }
-    }
-
-    private var currentProvider: LLMProviderInfo? {
-        providerRegistry.allProviders().first(where: { $0.id == currentProviderId })
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // 标题与说明
-            VStack(alignment: .leading, spacing: 4) {
-                Text(titleText)
-                    .font(AppUI.Typography.callout)
-                    .fontWeight(.semibold)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
-
-                Text(descriptionText)
-                    .font(AppUI.Typography.caption1)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
-            }
-
-            // 当前会话所用供应商的 API Key 输入
-            if let provider = currentProvider {
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 6) {
-                        Text(provider.displayName)
-                            .font(AppUI.Typography.caption1)
-                        Spacer()
-                    }
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
-
-                    AppInputField(
-                        LocalizedStringKey(
-                            languagePreference == .chinese
-                                ? "输入 \(provider.displayName) 的 API Key"
-                                : "Enter API Key for \(provider.displayName)"
-                        ),
-                        text: Binding(
-                            get: { apiKey },
-                            set: { newValue in
-                                apiKey = newValue
-                                agentSessionConfig.setApiKey(newValue, for: currentProviderId)
-                            }
-                        ),
-                        fieldType: .secure
-                    )
-                }
-                .padding(.vertical, 2)
-            }
-        }
-        .onAppear {
-            // 基于当前对话使用的配置初始化供应商 / API Key
-            let config = agentSessionConfig.getCurrentConfig()
-            currentProviderId = config.providerId
-            apiKey = config.apiKey
-        }
-    }
-}
-
 // MARK: - Loading Local Model System Message View
 
 /// 本地模型正在加载或已就绪时，在系统消息中渲染的专用视图，展示状态与 LocalModelInfo 字段。
@@ -292,20 +83,6 @@ private struct LoadingLocalModelSystemMessageView: View {
 
     private var isLoading: Bool {
         message.content == ChatMessage.loadingLocalModelSystemContentKey
-    }
-
-    private var isFailed: Bool {
-        message.content == ChatMessage.loadingLocalModelFailedSystemContentKey
-    }
-
-    private var statusText: String {
-        if isLoading {
-            return projectVM.languagePreference == .chinese ? "正在加载模型…" : "Loading model…"
-        }
-        if isFailed {
-            return projectVM.languagePreference == .chinese ? "加载失败" : "Load failed"
-        }
-        return projectVM.languagePreference == .chinese ? "模型已就绪" : "Model ready"
     }
 
     private var provider: LLMProviderInfo? {
@@ -348,6 +125,13 @@ private struct LoadingLocalModelSystemMessageView: View {
         .task(id: "\(message.providerId ?? "")-\(message.modelName ?? "")") {
             await loadLocalModelInfo()
         }
+    }
+
+    private var statusText: String {
+        if isLoading {
+            return projectVM.languagePreference == .chinese ? "正在加载模型…" : "Loading model…"
+        }
+        return projectVM.languagePreference == .chinese ? "模型已就绪" : "Model ready"
     }
 
     private func loadLocalModelInfo() async {
@@ -422,10 +206,6 @@ private struct LoadingLocalModelSystemMessageView: View {
             ProgressView()
                 .scaleEffect(0.75)
                 .controlSize(.small)
-        } else if isFailed {
-            Image(systemName: "xmark.circle.fill")
-                .font(.system(size: 14))
-                .foregroundColor(AppUI.Color.semantic.error)
         } else {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 14))

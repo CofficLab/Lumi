@@ -71,7 +71,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     /// 思考过程文本
     var thinkingContent: String?
 
-    /// 是否为临时状态消息（用于 UI 展示“连接中/等待响应/生成中”等）
+    /// 是否为临时状态消息（用于 UI 展示"连接中/等待响应/生成中"等）
     var isTransientStatus: Bool = false
 
     /// 消息队列状态（仅用于消息发送队列管理）
@@ -79,6 +79,16 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     /// - pending: 待发送
     /// - processing: 处理中
     var queueStatus: MessageQueueStatus?
+
+    /// 是否应该发送到 LLM 作为对话上下文的一部分
+    var shouldSendToLLM: Bool {
+        switch role {
+        case .user, .assistant, .tool:
+            return true
+        case .system, .status, .error:
+            return false
+        }
+    }
 
     /// 是否应该在气泡下方展示消息工具栏（复制/操作按钮行等）
     /// 统一在模型层收敛 UI 规则，避免各处散落判断。
@@ -88,6 +98,8 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
             return true
         case .system, .status, .tool:
             return false
+        case .error:
+            return true
         }
     }
 
@@ -113,7 +125,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
             return true
         case .tool:
             return false
-        case .status:
+        case .status, .error:
             return true
         case .system:
             return false

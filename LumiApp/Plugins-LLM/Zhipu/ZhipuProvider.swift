@@ -59,7 +59,7 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
     ) throws -> [String: Any] {
         let systemMessage = messages.first(where: { $0.role == .system })?.content ?? systemPrompt
         let conversationMessages = messages
-            .filter { $0.role.shouldSendToLLM }
+            .filter { $0.shouldSendToLLM }
             .map { transformMessage($0) }
 
         var body: [String: Any] = [
@@ -204,7 +204,6 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
             if effectiveEventType == "content_block_start" {
                 if let contentBlock = json?["content_block"] as? [String: Any],
                    let blockType = contentBlock["type"] as? String {
-
                     if blockType == "thinking" {
                         return StreamChunk(eventType: .contentBlockStart, rawEvent: text)
                     }
@@ -246,15 +245,15 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
                     if let textDelta = delta["text_delta"] as? String {
                         return StreamChunk(content: textDelta, eventType: .textDelta, rawEvent: text)
                     }
-                    
+
                     if let partialJson = delta["partial_json"] as? String {
                         return StreamChunk(partialJson: partialJson, eventType: .inputJsonDelta, rawEvent: text)
                     }
-                    
+
                     if delta["signature"] != nil {
                         return StreamChunk(eventType: .signatureDelta, rawEvent: text)
                     }
-                    
+
                     return StreamChunk(eventType: .contentBlockDelta, rawEvent: text)
                 }
                 return StreamChunk(eventType: .contentBlockDelta, rawEvent: text)
@@ -273,7 +272,6 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
             return StreamChunk(error: "解析失败: \(error.localizedDescription)", eventType: .unknown, rawEvent: text)
         }
     }
-
 }
 
 // MARK: - 消息转换
@@ -328,7 +326,7 @@ extension ZhipuProvider {
                 }
                 content.append([
                     "type": "image",
-                    "source": ["type": "base64", "media_type": image.mimeType, "data": base64Data]
+                    "source": ["type": "base64", "media_type": image.mimeType, "data": base64Data],
                 ])
             }
 
@@ -358,7 +356,7 @@ extension ZhipuProvider {
                         let base64Data = String(imageComponents[1])
                         content.append([
                             "type": "image",
-                            "source": ["type": "base64", "media_type": mimeType, "data": base64Data]
+                            "source": ["type": "base64", "media_type": mimeType, "data": base64Data],
                         ])
                     }
 

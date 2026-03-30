@@ -174,7 +174,7 @@ final class SendController: ObservableObject, SuperLog {
             } else if container.messageQueueVM.isProcessing(for: conversationId) {
                 finishSendTurn(conversationId: conversationId)
             }
-        case .system, .status:
+        case .system, .status, .error:
             break
         }
     }
@@ -183,7 +183,7 @@ final class SendController: ObservableObject, SuperLog {
         if Self.verbose >= 2 {
             AppLogger.core.info("\(Self.t) 收到消息：\(message.content.max(50))")
         }
-        
+
         var message = message
 
         if var calls = message.toolCalls {

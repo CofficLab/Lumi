@@ -20,6 +20,8 @@ public struct AvatarChatView: View {
                 AvatarView.user
             } else if role == .status {
                 AvatarView.status
+            } else if role == .error {
+                AvatarView.error
             } else if role == .system {
                 AvatarView.system
             } else {
@@ -70,6 +72,15 @@ public enum AvatarView {
         )
     }
 
+    /// 错误头像（错误消息）
+    public static var error: some View {
+        AppAvatar(
+            systemImage: "exclamationmark.triangle.fill",
+            tint: AppUI.Color.semantic.error,
+            backgroundTint: AppUI.Color.semantic.error.opacity(0.12)
+        )
+    }
+
     /// 系统头像（系统提示/系统消息）
     public static var system: some View {
         AppAvatar(
@@ -94,6 +105,12 @@ public enum AvatarView {
 
 #Preview("Tool Avatar") {
     AvatarChatView(role: .system, isToolOutput: true)
+        .padding()
+        .background(Color.black)
+}
+
+#Preview("Error Avatar") {
+    AvatarChatView(role: .error, isToolOutput: false)
         .padding()
         .background(Color.black)
 }

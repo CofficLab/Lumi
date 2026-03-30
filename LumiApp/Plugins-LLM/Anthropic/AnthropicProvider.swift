@@ -81,7 +81,7 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
     ) throws -> [String: Any] {
         let systemMessage = messages.first(where: { $0.role == .system })?.content ?? systemPrompt
         let conversationMessages = messages
-            .filter { $0.role.shouldSendToLLM }
+            .filter { $0.shouldSendToLLM }
             .map { transformMessage($0) }
 
         var body: [String: Any] = [

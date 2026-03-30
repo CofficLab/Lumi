@@ -56,7 +56,7 @@ struct ChatBubble: View {
                 } else if message.role == .tool || message.isToolOutput {
                     ToolOutputView(message: message)
                 } else {
-                    // 用户/系统/状态消息
+                    // 用户/系统/状态/错误消息
                     VStack(alignment: .leading, spacing: 4) {
                         switch message.role {
                         case .user:
@@ -72,6 +72,11 @@ struct ChatBubble: View {
                         case .status:
                             StatusMessage(
                                 message: message
+                            )
+                        case .error:
+                            ErrorMessage(
+                                message: message,
+                                showRawMessage: $showRawMessage
                             )
                         case .tool:
                             ToolOutputView(message: message)
