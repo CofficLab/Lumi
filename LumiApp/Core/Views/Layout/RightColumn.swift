@@ -23,13 +23,11 @@ struct RightColumn: View {
         VStack(spacing: 0) {
             agentRightHeaderContent()
 
-            Divider()
-                .background(Color.white.opacity(0.1))
+            GlassDivider()
 
             agentRightMiddleContent()
 
-            Divider()
-                .background(Color.white.opacity(0.1))
+            GlassDivider()
 
             agentRightBottomContent()
         }
@@ -127,4 +125,3 @@ private struct HeaderView: View {
         }
     }
 }
-

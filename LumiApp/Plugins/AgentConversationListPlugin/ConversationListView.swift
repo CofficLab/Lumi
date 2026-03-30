@@ -43,8 +43,7 @@ struct ConversationListView: View, SuperLog {
                 ConversationListHeader(isExpanded: $isExpanded)
 
                 if isExpanded {
-                    Divider()
-                        .background(Color.white.opacity(0.1))
+                    GlassDivider()
 
                     // 对话列表内容
                     if conversations.isEmpty {

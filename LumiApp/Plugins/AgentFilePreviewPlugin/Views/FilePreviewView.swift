@@ -149,8 +149,7 @@ struct FilePreviewView: View {
                 breadcrumbSection
             }
 
-            Divider()
-                .background(Color.white.opacity(0.1))
+            GlassDivider()
 
             if ProjectVM.isFileSelected {
                 if canPreviewCurrentFile {

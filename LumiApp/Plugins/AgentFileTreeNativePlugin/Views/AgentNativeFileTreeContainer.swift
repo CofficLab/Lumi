@@ -18,8 +18,7 @@ struct AgentNativeFileTreeContainer: View {
             headerView
 
             if isExpanded {
-                Divider()
-                    .background(Color.white.opacity(0.1))
+                GlassDivider()
 
                 // 文件树
                 if self.ProjectVM.isProjectSelected {

@@ -119,7 +119,7 @@ struct LeftSidebar: View {
     /// 恢复 App 模式下上次选中的导航
     private func restoreAppModeNavigation() {
         let entries = pluginProvider.getNavigationEntries(for: .app)
-        
+
         guard let savedNavId = AppSettingStore.loadSelectedNavigationId() else {
             // 没有保存的导航，使用默认或第一个可用的导航
             let defaultEntry = entries.first { $0.isDefault } ?? entries.first
