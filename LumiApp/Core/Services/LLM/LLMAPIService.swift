@@ -2,36 +2,13 @@ import Foundation
 import MagicKit
 import Security
 
-/// URLSession 委托：强制使用系统默认的 TLS 证书校验（系统信任库）。
-/// 拒绝自签名、过期或域名不匹配的证书，降低中间人攻击风险。
-private final class TLSValidationDelegate: NSObject, URLSessionDelegate {
-    func urlSession(
-        _ session: URLSession,
-        didReceive challenge: URLAuthenticationChallenge,
-        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
-    ) {
-        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
-              let serverTrust = challenge.protectionSpace.serverTrust else {
-            completionHandler(.performDefaultHandling, nil)
-            return
-        }
-        var error: CFError?
-        let isValid = SecTrustEvaluateWithError(serverTrust, &error)
-        if isValid {
-            completionHandler(.useCredential, URLCredential(trust: serverTrust))
-        } else {
-            completionHandler(.cancelAuthenticationChallenge, nil)
-        }
-    }
-}
-
 /// LLM API 服务
 ///
 /// 专门负责大语言模型 API 请求，包括消息发送、流式响应等。
 /// 此类可以在后台线程执行
 class LLMAPIService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     /// URLSession 配置
     private nonisolated let session: URLSession
@@ -274,9 +251,9 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
 
         // 判断是否为敏感字段
         let isSensitive = lowerKey.contains("authorization") ||
-                         lowerKey.contains("api-key") ||
-                         lowerKey.hasSuffix("key") ||
-                         lowerKey.contains("token")
+            lowerKey.contains("api-key") ||
+            lowerKey.hasSuffix("key") ||
+            lowerKey.contains("token")
 
         if !isSensitive {
             return value
@@ -492,4 +469,27 @@ enum HTTPMethod: String {
     case put = "PUT"
     case patch = "PATCH"
     case delete = "DELETE"
+}
+
+/// URLSession 委托：强制使用系统默认的 TLS 证书校验（系统信任库）。
+/// 拒绝自签名、过期或域名不匹配的证书，降低中间人攻击风险。
+private final class TLSValidationDelegate: NSObject, URLSessionDelegate {
+    func urlSession(
+        _ session: URLSession,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+              let serverTrust = challenge.protectionSpace.serverTrust else {
+            completionHandler(.performDefaultHandling, nil)
+            return
+        }
+        var error: CFError?
+        let isValid = SecTrustEvaluateWithError(serverTrust, &error)
+        if isValid {
+            completionHandler(.useCredential, URLCredential(trust: serverTrust))
+        } else {
+            completionHandler(.cancelAuthenticationChallenge, nil)
+        }
+    }
 }
