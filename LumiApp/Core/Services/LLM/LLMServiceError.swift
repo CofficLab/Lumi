@@ -48,55 +48,28 @@ enum LLMServiceError: Error, LocalizedError, Equatable {
 // MARK: - ChatMessage
 
 extension LLMServiceError {
-    /// 转为可落库消息：配置类多为 `role: .system` + 占位键；请求失败多为 `assistant` + 文案。
-    func toChatMessage() -> ChatMessage {
+    /// 转为可落库消息：使用 `ChatMessage+Error` 中的工厂方法创建错误消息
+    func toChatMessage(conversationId: UUID) -> ChatMessage {
         switch self {
         case .apiKeyEmpty:
-            ChatMessage.apiKeyMissingMessage(conversationId: UUID())
+            ChatMessage.apiKeyMissingMessage(conversationId: conversationId)
         case .modelEmpty:
-            ChatMessage(role: .error, conversationId: UUID(), content: ChatMessage.llmModelEmptyContentKey, isError: true)
+            ChatMessage.llmModelEmptyMessage(conversationId: conversationId)
         case .providerIdEmpty:
-            ChatMessage(role: .error, conversationId: UUID(), content: ChatMessage.llmProviderIdEmptyContentKey, isError: true)
+            ChatMessage.llmProviderIdEmptyMessage(conversationId: conversationId)
         case let .temperatureOutOfRange(v):
-            ChatMessage(
-                role: .error,
-                conversationId: UUID(),
-                content: ChatMessage.llmTemperatureInvalidContentKey,
-                isError: true,
-                temperature: v
-            )
+            ChatMessage.llmTemperatureInvalidMessage(temperature: v, conversationId: conversationId)
         case let .maxTokensInvalid(v):
-            ChatMessage(
-                role: .error,
-                conversationId: UUID(),
-                content: ChatMessage.llmMaxTokensInvalidContentKey,
-                isError: true,
-                maxTokens: v
-            )
+            ChatMessage.llmMaxTokensInvalidMessage(maxTokens: v, conversationId: conversationId)
         case let .providerNotFound(providerId):
-            ChatMessage(
-                role: .error,
-                conversationId: UUID(),
-                content: ChatMessage.llmProviderNotFoundContentKey,
-                isError: true,
-                providerId: providerId
-            )
+            ChatMessage.llmProviderNotFoundMessage(providerId: providerId, conversationId: conversationId)
         case let .invalidBaseURL(urlString):
-            ChatMessage(
-                role: .error,
-                conversationId: UUID(),
-                content: ChatMessage.llmInvalidBaseURLMessageContent(baseURL: urlString),
-                isError: true
-            )
+            ChatMessage.llmInvalidBaseURLMessage(baseURL: urlString, conversationId: conversationId)
         case .cancelled:
-            ChatMessage(
-                role: .error,
-                conversationId: UUID(),
-                content: String(localized: "操作已取消。"),
-                isError: true
-            )
+            ChatMessage.cancelledMessage(conversationId: conversationId)
         case let .requestFailed(message):
-            ChatMessage(role: .assistant, conversationId: UUID(), content: message, isError: true)
+            // 请求失败使用 assistant 角色，保留原有行为
+            ChatMessage(role: .assistant, conversationId: conversationId, content: message, isError: true)
         }
     }
 }

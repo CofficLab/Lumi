@@ -350,7 +350,7 @@ final class SendController: ObservableObject, SuperLog {
             // 保存错误消息到数据库
             let errorMessage: ChatMessage
             if let llmError = error as? LLMServiceError {
-                errorMessage = llmError.toChatMessage()
+                errorMessage = llmError.toChatMessage(conversationId: conversationId)
             } else {
                 // 其他错误类型，创建通用的错误消息
                 errorMessage = ChatMessage(

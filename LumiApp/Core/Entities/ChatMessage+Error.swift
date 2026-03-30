@@ -41,6 +41,79 @@ extension ChatMessage {
         )
     }
 
+    /// LLM 模型为空错误消息
+    static func llmModelEmptyMessage(conversationId: UUID) -> ChatMessage {
+        ChatMessage(
+            role: .error,
+            conversationId: conversationId,
+            content: Self.llmModelEmptyContentKey,
+            isError: true
+        )
+    }
+
+    /// LLM 供应商 ID 为空错误消息
+    static func llmProviderIdEmptyMessage(conversationId: UUID) -> ChatMessage {
+        ChatMessage(
+            role: .error,
+            conversationId: conversationId,
+            content: Self.llmProviderIdEmptyContentKey,
+            isError: true
+        )
+    }
+
+    /// LLM 温度参数无效错误消息
+    static func llmTemperatureInvalidMessage(temperature: Double, conversationId: UUID) -> ChatMessage {
+        ChatMessage(
+            role: .error,
+            conversationId: conversationId,
+            content: Self.llmTemperatureInvalidContentKey,
+            isError: true,
+            temperature: temperature
+        )
+    }
+
+    /// LLM 最大 token 无效错误消息
+    static func llmMaxTokensInvalidMessage(maxTokens: Int, conversationId: UUID) -> ChatMessage {
+        ChatMessage(
+            role: .error,
+            conversationId: conversationId,
+            content: Self.llmMaxTokensInvalidContentKey,
+            isError: true,
+            maxTokens: maxTokens
+        )
+    }
+
+    /// LLM 供应商未找到错误消息
+    static func llmProviderNotFoundMessage(providerId: String, conversationId: UUID) -> ChatMessage {
+        ChatMessage(
+            role: .error,
+            conversationId: conversationId,
+            content: Self.llmProviderNotFoundContentKey,
+            isError: true,
+            providerId: providerId
+        )
+    }
+
+    /// LLM Base URL 无效错误消息
+    static func llmInvalidBaseURLMessage(baseURL: String, conversationId: UUID) -> ChatMessage {
+        ChatMessage(
+            role: .error,
+            conversationId: conversationId,
+            content: Self.llmInvalidBaseURLMessageContent(baseURL: baseURL),
+            isError: true
+        )
+    }
+
+    /// 操作已取消错误消息
+    static func cancelledMessage(conversationId: UUID) -> ChatMessage {
+        ChatMessage(
+            role: .error,
+            conversationId: conversationId,
+            content: String(localized: "操作已取消。"),
+            isError: true
+        )
+    }
+
     /// LLM 配置错误相关辅助方法
     static func llmInvalidBaseURLMessageContent(baseURL: String) -> String {
         llmInvalidBaseURLContentKey + "\n" + baseURL
@@ -53,7 +126,7 @@ extension ChatMessage {
         return s.isEmpty ? nil : s
     }
 
-    /// 本地模型加载失败错误消息（从 System 移入，角色改为 .error）
+    /// 本地模型加载失败错误消息
     static func loadingLocalModelFailedMessage(
         languagePreference: LanguagePreference,
         conversationId: UUID,
@@ -69,7 +142,7 @@ extension ChatMessage {
         )
     }
 
-    /// 系统因达到最大执行深度而终止本轮对话时，用于向用户解释原因的错误消息（从 System 移入，角色改为 .error）
+    /// 系统因达到最大执行深度而终止本轮对话时，用于向用户解释原因的错误消息
     static func maxDepthToolLimitMessage(languagePreference: LanguagePreference, currentDepth: Int, maxDepth: Int, conversationId: UUID) -> ChatMessage {
         let content: String
         switch languagePreference {
@@ -86,7 +159,7 @@ extension ChatMessage {
         )
     }
 
-    /// 检测到重复工具调用循环时，用于向用户解释原因的错误消息（从 System 移入，角色改为 .error）
+    /// 检测到重复工具调用循环时，用于向用户解释原因的错误消息
     static func repeatedToolLoopMessage(
         languagePreference: LanguagePreference,
         tool: ToolCall,
@@ -157,7 +230,7 @@ extension ChatMessage {
         )
     }
 
-    /// 请求失败（如超时、网络错误）时，用于在对话中展示的错误消息（从 System 移入，角色改为 .error）
+    /// 请求失败（如超时、网络错误）时，用于在对话中展示的错误消息
     static func requestFailedMessage(languagePreference: LanguagePreference, error: Error, conversationId: UUID) -> ChatMessage {
         let isTimeout = Self.isTimeoutError(error)
         let content: String

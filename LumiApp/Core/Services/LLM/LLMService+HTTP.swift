@@ -8,9 +8,12 @@ extension LLMService {
     func sendMessage(messages: [ChatMessage], config: LLMConfig, tools: [AgentTool]? = nil) async throws -> ChatMessage {
         let startTime = CFAbsoluteTimeGetCurrent()
 
+        // 从消息中获取 conversationId
+        let conversationId = messages.first?.conversationId ?? UUID()
+
         guard let provider = registry.createProvider(id: config.providerId) else {
             AppLogger.core.error("\(self.t)未找到供应商：\(config.providerId)")
-            return LLMServiceError.providerNotFound(providerId: config.providerId).toChatMessage()
+            return LLMServiceError.providerNotFound(providerId: config.providerId).toChatMessage(conversationId: conversationId)
         }
 
         let isLocal = (provider as? any SuperLocalLLMProvider) != nil
@@ -18,7 +21,7 @@ extension LLMService {
             do {
                 try config.validate()
             } catch let error as LLMServiceError {
-                return error.toChatMessage()
+                return error.toChatMessage(conversationId: conversationId)
             }
         }
 
@@ -47,7 +50,7 @@ extension LLMService {
         let baseURLString = provider.baseURL
         guard let url = URL(string: baseURLString) else {
             AppLogger.core.error("\(self.t)无效的 URL: \(baseURLString)")
-            return LLMServiceError.invalidBaseURL(baseURLString).toChatMessage()
+            return LLMServiceError.invalidBaseURL(baseURLString).toChatMessage(conversationId: conversationId)
         }
 
         // 构建请求体
@@ -84,7 +87,7 @@ extension LLMService {
             let latency = (endTime - startTime) * 1000.0
 
             return ChatMessage(
-                role: .assistant, conversationId: UUID(),
+                role: .assistant, conversationId: conversationId,
                 content: content,
                 toolCalls: toolCalls,
                 providerId: config.providerId,

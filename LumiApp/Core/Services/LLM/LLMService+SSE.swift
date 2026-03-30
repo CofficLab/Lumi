@@ -15,8 +15,11 @@ extension LLMService {
     ) async throws -> ChatMessage {
         let startTime = CFAbsoluteTimeGetCurrent()
 
+        // 从消息中获取 conversationId
+        let conversationId = messages.first?.conversationId ?? UUID()
+
         guard let provider = registry.createProvider(id: config.providerId) else {
-            return LLMServiceError.providerNotFound(providerId: config.providerId).toChatMessage()
+            return LLMServiceError.providerNotFound(providerId: config.providerId).toChatMessage(conversationId: conversationId)
         }
 
         let isLocalStream = (provider as? any SuperLocalLLMProvider) != nil
@@ -25,7 +28,7 @@ extension LLMService {
                 try config.validate()
             } catch let error as LLMServiceError {
                 AppLogger.core.error("\(self.t)❌ 验证配置失败: \(error.localizedDescription)")
-                return error.toChatMessage()
+                return error.toChatMessage(conversationId: conversationId)
             }
         }
 
@@ -55,7 +58,7 @@ extension LLMService {
         let baseURLString = provider.baseURL
 
         guard let url = URL(string: baseURLString) else {
-            return LLMServiceError.invalidBaseURL(baseURLString).toChatMessage()
+            return LLMServiceError.invalidBaseURL(baseURLString).toChatMessage(conversationId: conversationId)
         }
 
         // 构建请求体
@@ -173,7 +176,7 @@ extension LLMService {
 
         return ChatMessage(
             role: .assistant,
-            conversationId: UUID(),
+            conversationId: conversationId,
             content: await state.accumulatedContentChunks.joined(),
             toolCalls: await state.getFinalToolCalls(),
             providerId: config.providerId,
