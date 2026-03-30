@@ -43,8 +43,8 @@ struct LocalMachineInfoView: View {
         let diskGB = Self.localDiskTotalGB()
         let osVer = ProcessInfo.processInfo.operatingSystemVersion
         let osString = "macOS \(osVer.majorVersion).\(osVer.minorVersion).\(osVer.patchVersion)"
-        let style = DesignTokens.Typography.caption2
-        let color = DesignTokens.Color.semantic.textSecondary
+        let style = AppUI.Typography.caption2
+        let color = AppUI.Color.semantic.textSecondary
         return VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
                 Label(chip, systemImage: "cpu")
@@ -64,16 +64,15 @@ struct LocalMachineInfoView: View {
                     .foregroundColor(color)
             }
             Text("请根据本机配置选择合适的模型进行下载和加载，以获得更稳定的体验。")
-                .font(DesignTokens.Typography.caption2)
-                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                .font(AppUI.Typography.caption2)
+                .foregroundColor(AppUI.Color.semantic.textTertiary)
         }
-        .padding(.horizontal, DesignTokens.Spacing.sm)
+        .padding(.horizontal, AppUI.Spacing.sm)
         .padding(.vertical, 4)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.08))
+        .appSurface(
+            style: .custom(AppUI.Color.semantic.textSecondary.opacity(0.08)),
+            cornerRadius: AppUI.Radius.sm
         )
     }
 }
-

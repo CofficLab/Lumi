@@ -1,6 +1,6 @@
 import Foundation
 
-struct GetBackgroundAgentTaskDetailTool: AgentTool {
+struct GetBackgroundTaskDetailTool: AgentTool {
     let name: String = "get_background_agent_task_detail"
     let description: String = "根据任务 ID 查询单个后台 Agent 任务的详细信息，包括指令、状态、结果摘要与错误信息。"
 

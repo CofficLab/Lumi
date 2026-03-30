@@ -1,19 +1,17 @@
 import SwiftUI
+import MagicKit
 
 /// 增强版工具输出视图 - 带有更多交互功能
 struct ToolOutputView: View {
     let content: String
     private let timestamp: Date?
-    private let summaryTextCached: String
     private let lineCountCached: Int
     @State private var isExpanded: Bool = false
     @State private var displayedContent: String = ""
-    @State private var isHeaderHovered: Bool = false
 
     init(content: String, timestamp: Date? = nil) {
         self.content = content
         self.timestamp = timestamp
-        self.summaryTextCached = ToolOutputView.makeSummaryText(from: content)
         self.lineCountCached = ToolOutputView.makeLineCount(from: content)
     }
 
@@ -32,25 +30,12 @@ struct ToolOutputView: View {
     // MARK: - Tool Output Header（与 Assistant / User / System 消息一致的 header 样式）
 
     private var toolOutputHeader: some View {
-        HStack(alignment: .center, spacing: 8) {
-            // 左侧：工具输出标识 · 行数（与 Assistant 的 Lumi · provider · model 结构一致）
-            HStack(alignment: .center, spacing: 4) {
-                Text("工具输出")
-                    .font(DesignTokens.Typography.caption1)
-                    .fontWeight(.medium)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-
-                if lineCountCached > 1 {
-                    Text("·")
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                    Text("\(lineCountCached) 行")
-                        .font(DesignTokens.Typography.caption2)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                }
-            }
-
-            Spacer()
-
+        MessageHeaderView {
+            AppIdentityRow(
+                title: "工具输出",
+                metadata: lineCountCached > 1 ? ["\(lineCountCached) 行"] : []
+            )
+        } trailing: {
             HStack(alignment: .center, spacing: 12) {
                 // 复制按钮（与 User / Assistant 一致）
                 CopyMessageButton(
@@ -62,31 +47,18 @@ struct ToolOutputView: View {
                 if isExpanded {
                     CollapseButton(action: toggleExpanded)
                 } else {
-                    Text("已折叠")
-                        .font(DesignTokens.Typography.caption2)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary.opacity(0.6))
+                    AppTag("已折叠")
                 }
 
                 // 时间戳
                 if let timestamp = timestamp {
                     Text(formatTimestamp(timestamp))
-                        .font(DesignTokens.Typography.caption2)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .font(AppUI.Typography.caption2)
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
                 }
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 6)
-                .fill(isHeaderHovered ? Color.primary.opacity(0.05) : Color.primary.opacity(0.02))
-        )
         .contentShape(Rectangle())
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHeaderHovered = hovering
-            }
-        }
         .onTapGesture {
             toggleExpanded()
         }
@@ -114,18 +86,22 @@ struct ToolOutputView: View {
     // MARK: - Tool Output Content
 
     private var toolOutputContent: some View {
-        ScrollView(.vertical, showsIndicators: true) {
-            VStack(alignment: .leading, spacing: 0) {
-                Text(displayedContent)
-                    .font(DesignTokens.Typography.code)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+        AppCard(
+            style: .subtle,
+            padding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+        ) {
+            ScrollView(.vertical, showsIndicators: true) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(displayedContent)
+                        .font(AppUI.Typography.code)
+                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxHeight: 400)
-        .background(DesignTokens.Color.semantic.textTertiary.opacity(0.02))
     }
 
     private func stageRenderContent() {
@@ -145,13 +121,6 @@ struct ToolOutputView: View {
     }
 
     // MARK: - Helper Properties
-    private static func makeSummaryText(from content: String) -> String {
-        if let firstLine = content.components(separatedBy: .newlines).first {
-            return String(firstLine.prefix(70))
-        }
-        return String(content.prefix(70))
-    }
-
     private static func makeLineCount(from content: String) -> Int {
         // 避免 split 成大量数组；只做轻量统计
         var count = 0

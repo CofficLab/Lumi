@@ -1,6 +1,6 @@
 import Foundation
 
-struct ListBackgroundAgentTasksTool: AgentTool {
+struct ListBackgroundTasksTool: AgentTool {
     let name: String = "list_background_agent_tasks"
     let description: String = "列出最近的后台 Agent 任务及其状态，供你了解有哪些任务正在运行或已经完成。"
 

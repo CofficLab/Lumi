@@ -10,26 +10,26 @@ struct DeviceInfoView: View {
                 // Section 1: Overview
                 VStack(spacing: 16) {
                     // Header
-                    MystiqueGlassCard(cornerRadius: 20, padding: EdgeInsets(top: 20, leading: 20, bottom: 20, trailing: 20)) {
+                    GlassCard(cornerRadius: 20, padding: EdgeInsets(top: 20, leading: 20, bottom: 20, trailing: 20)) {
                         HStack(spacing: 16) {
                             ZStack {
                                 Circle()
-                                    .fill(DesignTokens.Color.gradients.primaryGradient.opacity(0.1))
+                                    .fill(AppUI.Color.gradients.primaryGradient.opacity(0.1))
                                     .frame(width: 60, height: 60)
                                 
                                 Image(systemName: "macbook.and.iphone")
                                     .font(.system(size: 32))
-                                    .foregroundStyle(DesignTokens.Color.gradients.primaryGradient)
+                                    .foregroundStyle(AppUI.Color.gradients.primaryGradient)
                             }
 
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(data.deviceName)
                                     .font(.title2)
                                     .fontWeight(.bold)
-                                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                                    .foregroundColor(AppUI.Color.semantic.textPrimary)
                                 Text(data.osVersion)
-                                    .font(.subheadline)
-                                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                    .font(AppUI.Typography.subheadline)
+                                    .foregroundColor(AppUI.Color.semantic.textSecondary)
                             }
                             Spacer()
                         }
@@ -37,12 +37,12 @@ struct DeviceInfoView: View {
 
                     // Grid
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                        DeviceInfoCard(title: "CPU", icon: "cpu", color: DesignTokens.Color.semantic.info) {
+                        DeviceInfoCard(title: "CPU", icon: "cpu", color: AppUI.Color.semantic.info) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(data.processorName)
-                                    .font(.caption)
+                                    .font(AppUI.Typography.caption1)
                                     .lineLimit(1)
-                                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                    .foregroundColor(AppUI.Color.semantic.textSecondary)
 
                                 HStack(alignment: .bottom) {
                                     Text("\(Int(data.cpuUsage))%")
@@ -50,64 +50,64 @@ struct DeviceInfoView: View {
                                     Spacer()
                                     // Simple bar chart representation
                                     Capsule()
-                                        .fill(DesignTokens.Color.gradients.oceanGradient.opacity(0.2))
+                                        .fill(AppUI.Color.gradients.oceanGradient.opacity(0.2))
                                         .frame(width: 40, height: 6)
                                         .overlay(alignment: .leading) {
                                             Capsule()
-                                                .fill(DesignTokens.Color.gradients.oceanGradient)
+                                                .fill(AppUI.Color.gradients.oceanGradient)
                                                 .frame(width: 40 * (data.cpuUsage / 100.0), height: 6)
                                         }
                                 }
                             }
                         }
 
-                        DeviceInfoCard(title: "Memory", icon: "memorychip", color: DesignTokens.Color.semantic.success) {
+                        DeviceInfoCard(title: "Memory", icon: "memorychip", color: AppUI.Color.semantic.success) {
                             VStack(alignment: .leading, spacing: 8) {
                                 let used = ByteCountFormatter.string(fromByteCount: Int64(data.memoryUsed), countStyle: .memory)
                                 let total = ByteCountFormatter.string(fromByteCount: Int64(data.memoryTotal), countStyle: .memory)
 
                                 Text("\(used) / \(total)")
-                                    .font(.caption)
-                                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                    .font(AppUI.Typography.caption1)
+                                    .foregroundColor(AppUI.Color.semantic.textSecondary)
 
                                 ProgressView(value: data.memoryUsage)
-                                    .tint(DesignTokens.Color.gradients.energyGradient)
+                                    .tint(AppUI.Color.gradients.energyGradient)
                             }
                         }
 
-                        DeviceInfoCard(title: "Disk", icon: "internaldrive", color: DesignTokens.Color.semantic.warning) {
+                        DeviceInfoCard(title: "Disk", icon: "internaldrive", color: AppUI.Color.semantic.warning) {
                             VStack(alignment: .leading, spacing: 8) {
                                 let used = ByteCountFormatter.string(fromByteCount: data.diskUsed, countStyle: .file)
                                 let total = ByteCountFormatter.string(fromByteCount: data.diskTotal, countStyle: .file)
 
                                 Text("\(used) used")
-                                    .font(.caption)
-                                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                    .font(AppUI.Typography.caption1)
+                                    .foregroundColor(AppUI.Color.semantic.textSecondary)
 
                                 Gauge(value: Double(data.diskUsed), in: 0 ... Double(data.diskTotal)) {
                                     Text(total)
                                 }
                                 .gaugeStyle(.accessoryLinearCapacity)
-                                .tint(DesignTokens.Color.gradients.energyGradient)
+                                .tint(AppUI.Color.gradients.energyGradient)
                             }
                         }
 
-                        DeviceInfoCard(title: "Battery", icon: "battery.100", color: DesignTokens.Color.semantic.primary) {
+                        DeviceInfoCard(title: "Battery", icon: "battery.100", color: AppUI.Color.semantic.primary) {
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack {
                                     Text("\(Int(data.batteryLevel * 100))%")
                                         .font(.title3)
                                         .fontWeight(.bold)
-                                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                                        .foregroundColor(AppUI.Color.semantic.textPrimary)
                                     Spacer()
                                     if data.isCharging {
                                         Image(systemName: "bolt.fill")
-                                        .foregroundColor(DesignTokens.Color.semantic.warning)
+                                        .foregroundColor(AppUI.Color.semantic.warning)
                                     }
                                 }
 
                                 ProgressView(value: data.batteryLevel)
-                                    .tint(DesignTokens.Color.semantic.primary)
+                                    .tint(AppUI.Color.semantic.primary)
                             }
                         }
                     }
@@ -115,10 +115,10 @@ struct DeviceInfoView: View {
                     // Uptime
                     HStack {
                         Image(systemName: "clock")
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
                         Text("Uptime: \(formatUptime(data.uptime))")
-                            .font(.footnote)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .font(AppUI.Typography.caption1)
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
                         Spacer()
                     }
                     .padding(.horizontal)
@@ -129,7 +129,7 @@ struct DeviceInfoView: View {
                 // Section 2: Real-time Monitor
                 VStack(alignment: .leading, spacing: 16) {
                     Label("Real-time Monitor", systemImage: "chart.xyaxis.line")
-                        .font(.headline)
+                        .font(AppUI.Typography.bodyEmphasized)
                         .padding(.horizontal)
                     
                     SystemMonitorView()
@@ -161,13 +161,13 @@ struct DeviceInfoCard<Content: View>: View {
     }
 
     var body: some View {
-        MystiqueGlassCard(cornerRadius: 16, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
+        GlassCard(cornerRadius: 16, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Label {
                         Text(title)
                             .fontWeight(.medium)
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
                     } icon: {
                         Image(systemName: icon)
                             .foregroundStyle(
@@ -183,10 +183,10 @@ struct DeviceInfoCard<Content: View>: View {
     }
     
     func mapColor(_ color: Color) -> AppTheme.GradientType {
-        if color == DesignTokens.Color.semantic.info { return .blue }
-        if color == DesignTokens.Color.semantic.success { return .green }
-        if color == DesignTokens.Color.semantic.warning { return .orange }
-        if color == DesignTokens.Color.semantic.primary { return .purple }
+        if color == AppUI.Color.semantic.info { return .blue }
+        if color == AppUI.Color.semantic.success { return .green }
+        if color == AppUI.Color.semantic.warning { return .orange }
+        if color == AppUI.Color.semantic.primary { return .purple }
         return .primary
     }
 }

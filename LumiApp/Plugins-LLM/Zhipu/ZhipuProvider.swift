@@ -6,7 +6,8 @@ import os
 
 /// Zhipu AI (智谱 AI) API 供应商实现
 ///
-/// Zhipu AI 提供了兼容 Anthropic 的 API 接口。
+/// Zhipu AI 提供了兼容 Anthropic 的 API 接口，但在流式响应结束时会返回 OpenAI 格式的 `data: [DONE]` 标记。
+/// 因此需要同时兼容两种格式的解析。
 final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.zhipu")
     nonisolated static let emoji = "🔴"
@@ -23,14 +24,13 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_Zhipu"
     static let modelStorageKey = "DevAssistant_Model_Zhipu"
-
     static let defaultModel = "glm-4.7"
 
     static let availableModels = [
+        "glm-5.1",
         "glm-5",
         "glm-4.7",
         "glm-4.6",
-        "glm-4.5",
         "glm-4.5-air",
     ]
 
@@ -59,18 +59,7 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
         tools: [AgentTool]?,
         systemPrompt: String
     ) throws -> [String: Any] {
-        // Zhipu 兼容 Anthropic 格式
-        let systemParts = messages
-            .filter { $0.role == .system }
-            .map { $0.content.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-        let systemMessage: String
-        if !systemParts.isEmpty {
-            systemMessage = systemParts.joined(separator: "\n\n")
-        } else {
-            systemMessage = systemPrompt
-        }
-
+        let systemMessage = messages.first(where: { $0.role == .system })?.content ?? systemPrompt
         let conversationMessages = messages
             .filter { $0.role.shouldSendToLLM }
             .map { transformMessage($0) }
@@ -90,24 +79,7 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
     }
 
     func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
-        // Zhipu 响应格式与 Anthropic 兼容
-        struct AnthropicResponse: Decodable {
-            struct Content: Decodable {
-                let type: String
-                let text: String?
-                let id: String?
-                let name: String?
-                let input: [String: AnySendable]?
-
-                enum CodingKeys: String, CodingKey {
-                    case type, text, id, name, input
-                }
-            }
-
-            let content: [Content]
-        }
-
-        let result = try JSONDecoder().decode(AnthropicResponse.self, from: data)
+        let result = try JSONDecoder().decode(ZhipuResponse.self, from: data)
 
         var textContent = ""
         var toolCalls: [ToolCall] = []
@@ -129,7 +101,6 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
         return (textContent, toolCalls.isEmpty ? nil : toolCalls)
     }
 
-    /// 构建流式请求体
     func buildStreamingRequestBody(
         messages: [ChatMessage],
         model: String,
@@ -147,43 +118,162 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
     }
 
     /// 解析流式响应数据块
-    /// Zhipu 兼容 Anthropic 流式格式
+    ///
+    /// Zhipu AI 的流式响应格式是混合格式：
+    /// - 正常内容：兼容 Anthropic 格式（event: content_block_delta 等）
+    /// - 结束标记：使用 OpenAI 格式的 `data: [DONE]`
     func parseStreamChunk(data: Data) throws -> StreamChunk? {
-        // 先按 Anthropic SSE 解析（Zhipu 官方兼容路径）
-        let anthropicProvider = AnthropicProvider()
-        if let chunk = try anthropicProvider.parseStreamChunk(data: data) {
-            // Anthropic 解析器在 JSON 格式异常时会返回 error chunk。
-            // 对 GLM-5 做一次回退尝试，避免单个坏包导致整轮失败。
-            if chunk.error != nil {
-                let openAIProvider = OpenAIProvider()
-                if let fallback = try? openAIProvider.parseStreamChunk(data: data) {
-                    if Self.verbose {
-                        Self.logger.info("\(self.t) 流解析回退到 OpenAI 格式成功")
-                    }
-                    return fallback
-                }
-
-                // 无法回退解析时，忽略该坏包，等待下一个 chunk。
-                // 这样可以提升对非标准分包的容错，不会直接中断整轮请求。
-                if Self.verbose {
-                    let raw = String(data: data, encoding: .utf8) ?? "<binary>"
-                    Self.logger.warning("\(self.t) 忽略不可解析的流式分包: \(raw.prefix(200))")
-                }
-                return nil
-            }
-            return chunk
+        guard let text = String(data: data, encoding: .utf8) else {
+            return nil
         }
 
-        // Anthropic 返回 nil 时，尝试 OpenAI 兼容格式
-        let openAIProvider = OpenAIProvider()
-        if let fallback = try? openAIProvider.parseStreamChunk(data: data) {
+        // 先检测 [DONE] 标记（Zhipu 特有）
+        if text.contains("data: [DONE]") || text.trimmingCharacters(in: .whitespacesAndNewlines) == "[DONE]" {
             if Self.verbose {
-                Self.logger.info("\(self.t) 流解析使用 OpenAI 兼容格式")
+                Self.logger.info("\(self.t) 检测到 [DONE] 标记，流式响应结束")
             }
-            return fallback
+            return StreamChunk(isDone: true, eventType: .messageStop)
         }
 
-        return nil
+        // 解析 SSE 格式（Anthropic 兼容格式）
+        var eventType: String?
+        var eventDataLines: [String] = []
+
+        let lines = text.components(separatedBy: "\n")
+        for line in lines {
+            if line.hasPrefix("event:") {
+                let afterPrefix = String(line.dropFirst(6))
+                eventType = afterPrefix.trimmingCharacters(in: .whitespaces)
+            } else if line.hasPrefix("data:") {
+                let afterPrefix = String(line.dropFirst(5))
+                eventDataLines.append(afterPrefix.trimmingCharacters(in: .whitespaces))
+            }
+        }
+
+        let dataStr = eventDataLines.isEmpty ? nil : eventDataLines.joined(separator: "\n")
+        guard let dataStr = dataStr, !dataStr.isEmpty else {
+            return nil
+        }
+
+        guard let jsonData = dataStr.data(using: .utf8) else {
+            return nil
+        }
+
+        do {
+            let json = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any]
+            let jsonType = json?["type"] as? String
+            let effectiveEventType = eventType ?? jsonType ?? "unknown"
+
+            // 处理错误
+            if let error = json?["error"] as? [String: Any],
+               let errorMessage = error["message"] as? String {
+                return StreamChunk(error: errorMessage, eventType: .unknown, rawEvent: text)
+            }
+
+            // 处理 ping 事件
+            if effectiveEventType == "ping" {
+                return StreamChunk(eventType: .ping, rawEvent: text)
+            }
+
+            // 处理消息开始
+            if effectiveEventType == "message_start" {
+                var inputTokens: Int?
+                if let message = json?["message"] as? [String: Any],
+                   let usage = message["usage"] as? [String: Any] {
+                    inputTokens = usage["input_tokens"] as? Int
+                }
+                return StreamChunk(eventType: .messageStart, rawEvent: text, inputTokens: inputTokens)
+            }
+
+            // 处理消息增量
+            if effectiveEventType == "message_delta" {
+                let stopReason = (json?["delta"] as? [String: Any])?["stop_reason"] as? String ?? json?["stop_reason"] as? String
+                var inputTokens: Int?
+                var outputTokens: Int?
+                if let usage = json?["usage"] as? [String: Any] {
+                    inputTokens = usage["input_tokens"] as? Int
+                    outputTokens = usage["output_tokens"] as? Int
+                }
+                return StreamChunk(eventType: .messageDelta, rawEvent: text, inputTokens: inputTokens, outputTokens: outputTokens, stopReason: stopReason)
+            }
+
+            // 处理消息结束
+            if effectiveEventType == "message_stop" {
+                return StreamChunk(isDone: true, eventType: .messageStop, rawEvent: text)
+            }
+
+            // 处理内容块开始
+            if effectiveEventType == "content_block_start" {
+                if let contentBlock = json?["content_block"] as? [String: Any],
+                   let blockType = contentBlock["type"] as? String {
+
+                    if blockType == "thinking" {
+                        return StreamChunk(eventType: .contentBlockStart, rawEvent: text)
+                    }
+
+                    if blockType == "tool_use" {
+                        if let id = contentBlock["id"] as? String,
+                           let name = contentBlock["name"] as? String {
+                            let toolCall = ToolCall(id: id, name: name, arguments: "{}")
+                            return StreamChunk(toolCalls: [toolCall], eventType: .contentBlockStart, rawEvent: text)
+                        }
+                    }
+
+                    if blockType == "text" {
+                        if let textContent = contentBlock["text"] as? String, !textContent.isEmpty {
+                            return StreamChunk(content: textContent, eventType: .contentBlockStart, rawEvent: text)
+                        }
+                        return StreamChunk(eventType: .contentBlockStart, rawEvent: text)
+                    }
+
+                    return StreamChunk(eventType: .contentBlockStart, rawEvent: text)
+                }
+                return StreamChunk(eventType: .contentBlockStart, rawEvent: text)
+            }
+
+            // 处理内容块增量
+            if effectiveEventType == "content_block_delta" {
+                if let delta = json?["delta"] as? [String: Any] {
+                    if let thinkingDelta = delta["thinking_delta"] as? String {
+                        return StreamChunk(content: thinkingDelta, eventType: .thinkingDelta, rawEvent: text)
+                    }
+                    if let thinkingDelta = delta["thinking"] as? String {
+                        return StreamChunk(content: thinkingDelta, eventType: .thinkingDelta, rawEvent: text)
+                    }
+
+                    if let textContent = delta["text"] as? String {
+                        return StreamChunk(content: textContent, eventType: .textDelta, rawEvent: text)
+                    }
+
+                    if let textDelta = delta["text_delta"] as? String {
+                        return StreamChunk(content: textDelta, eventType: .textDelta, rawEvent: text)
+                    }
+                    
+                    if let partialJson = delta["partial_json"] as? String {
+                        return StreamChunk(partialJson: partialJson, eventType: .inputJsonDelta, rawEvent: text)
+                    }
+                    
+                    if delta["signature"] != nil {
+                        return StreamChunk(eventType: .signatureDelta, rawEvent: text)
+                    }
+                    
+                    return StreamChunk(eventType: .contentBlockDelta, rawEvent: text)
+                }
+                return StreamChunk(eventType: .contentBlockDelta, rawEvent: text)
+            }
+
+            // 处理内容块停止
+            if effectiveEventType == "content_block_stop" {
+                return StreamChunk(eventType: .contentBlockStop, rawEvent: text)
+            }
+
+            return StreamChunk(eventType: .unknown, rawEvent: text)
+        } catch {
+            if Self.verbose {
+                Self.logger.warning("解析流式数据块失败: \(error.localizedDescription)")
+            }
+            return StreamChunk(error: "解析失败: \(error.localizedDescription)", eventType: .unknown, rawEvent: text)
+        }
     }
 
     static var logEmoji: String { "🔴" }
@@ -193,33 +283,23 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
 
 extension ZhipuProvider {
     func transformMessage(_ message: ChatMessage) -> [String: Any] {
-        // 工具结果消息
         if let toolCallID = message.toolCallID {
             return [
                 "role": "user",
                 "content": [
-                    [
-                        "type": "tool_result",
-                        "tool_use_id": toolCallID,
-                        "content": message.content,
-                    ],
+                    ["type": "tool_result", "tool_use_id": toolCallID, "content": message.content],
                 ],
             ]
         }
 
-        // 带工具调用的助手消息
         if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
             var content: [[String: Any]] = []
 
             if !message.content.isEmpty {
-                content.append([
-                    "type": "text",
-                    "text": message.content,
-                ])
+                content.append(["type": "text", "text": message.content])
             }
 
             for tc in toolCalls {
-                // 确保 input 始终是一个有效的字典
                 let inputObject: [String: Any]
                 if let data = tc.arguments.data(using: .utf8),
                    let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
@@ -227,22 +307,12 @@ extension ZhipuProvider {
                 } else {
                     inputObject = [:]
                 }
-
-                content.append([
-                    "type": "tool_use",
-                    "id": tc.id,
-                    "name": tc.name,
-                    "input": inputObject,
-                ])
+                content.append(["type": "tool_use", "id": tc.id, "name": tc.name, "input": inputObject])
             }
 
-            return [
-                "role": "assistant",
-                "content": content,
-            ]
+            return ["role": "assistant", "content": content]
         }
 
-        // Handle images in message
         if !message.images.isEmpty {
             if Self.verbose {
                 Self.logger.info("\(self.t) 消息包含 \(message.images.count) 张图片，正在转换...")
@@ -250,15 +320,10 @@ extension ZhipuProvider {
 
             var content: [[String: Any]] = []
 
-            // Add text content first (if not empty)
             if !message.content.isEmpty {
-                content.append([
-                    "type": "text",
-                    "text": message.content
-                ])
+                content.append(["type": "text", "text": message.content])
             }
 
-            // Add all images
             for (index, image) in message.images.enumerated() {
                 let base64Data = image.data.base64EncodedString()
                 if Self.verbose {
@@ -266,11 +331,7 @@ extension ZhipuProvider {
                 }
                 content.append([
                     "type": "image",
-                    "source": [
-                        "type": "base64",
-                        "media_type": image.mimeType,
-                        "data": base64Data
-                    ]
+                    "source": ["type": "base64", "media_type": image.mimeType, "data": base64Data]
                 ])
             }
 
@@ -278,28 +339,18 @@ extension ZhipuProvider {
                 Self.logger.info("\(self.t) 已将 \(message.images.count) 张图片转换为 API 格式")
             }
 
-            return [
-                "role": message.role.rawValue,
-                "content": content
-            ]
+            return ["role": message.role.rawValue, "content": content]
         }
 
-        // Fallback for legacy marker format (backward compatibility)
-        // Marker format: [IMAGE_BASE64:<mime_type>:<data>]
         if message.content.contains("[IMAGE_BASE64:") {
             var content: [[String: Any]] = []
             let components = message.content.components(separatedBy: "[IMAGE_BASE64:")
 
-            // First component is text before any image
             if !components[0].isEmpty {
-                content.append([
-                    "type": "text",
-                    "text": components[0]
-                ])
+                content.append(["type": "text", "text": components[0]])
             }
 
             for component in components.dropFirst() {
-                // component format: <mime_type>:<data>]<rest_of_text>
                 if let closeBracketIndex = component.firstIndex(of: "]") {
                     let imagePart = component[..<closeBracketIndex]
                     let textPart = component[component.index(after: closeBracketIndex)...]
@@ -308,40 +359,25 @@ extension ZhipuProvider {
                     if imageComponents.count == 2 {
                         let mimeType = String(imageComponents[0])
                         let base64Data = String(imageComponents[1])
-
                         content.append([
                             "type": "image",
-                            "source": [
-                                "type": "base64",
-                                "media_type": mimeType,
-                                "data": base64Data
-                            ]
+                            "source": ["type": "base64", "media_type": mimeType, "data": base64Data]
                         ])
                     }
 
                     if !textPart.isEmpty {
-                        // Clean up newlines that might have been added
                         let cleanText = String(textPart).trimmingCharacters(in: .whitespacesAndNewlines)
                         if !cleanText.isEmpty {
-                            content.append([
-                                "type": "text",
-                                "text": cleanText
-                            ])
+                            content.append(["type": "text", "text": cleanText])
                         }
                     }
                 }
             }
 
-            return [
-                "role": message.role.rawValue,
-                "content": content
-            ]
+            return ["role": message.role.rawValue, "content": content]
         }
 
-        return [
-            "role": message.role.rawValue,
-            "content": message.content,
-        ]
+        return ["role": message.role.rawValue, "content": message.content]
     }
 }
 
@@ -349,10 +385,6 @@ extension ZhipuProvider {
 
 extension ZhipuProvider {
     func formatTool(_ tool: AgentTool) -> [String: Any] {
-        [
-            "name": tool.name,
-            "description": tool.description,
-            "input_schema": tool.inputSchema,
-        ]
+        ["name": tool.name, "description": tool.description, "input_schema": tool.inputSchema]
     }
 }

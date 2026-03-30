@@ -45,7 +45,7 @@ struct FileNodeView: View {
                 if isDirectory {
                     Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                         .font(.system(size: 8, weight: .semibold))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
                         .frame(width: 10)
                 } else {
                     // 与目录图标对齐

@@ -48,7 +48,7 @@ struct DiskUsageInfoView: View {
     @StateObject private var viewModel = DiskManagerViewModel()
 
     var body: some View {
-        MystiqueGlassCard(padding: EdgeInsets(top: 20, leading: 20, bottom: 20, trailing: 20)) {
+        GlassCard(padding: EdgeInsets(top: 20, leading: 20, bottom: 20, trailing: 20)) {
             HStack(spacing: 40) {
                 DiskUsageRingView()
                     .frame(width: 100, height: 100)
@@ -62,9 +62,9 @@ struct DiskUsageInfoView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("总计：\(formatBytes(usage.total))")
                             Text("已用：\(formatBytes(usage.used))")
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                .foregroundColor(AppUI.Color.semantic.textSecondary)
                             Text("可用：\(formatBytes(usage.available))")
-                                .foregroundColor(DesignTokens.Color.semantic.success)
+                                .foregroundColor(AppUI.Color.semantic.success)
                         }
                         .font(.subheadline)
                     }
@@ -90,7 +90,7 @@ struct ViewModeSelector: View {
     @Binding var selectedMode: Int
 
     var body: some View {
-        MystiqueGlassCard(padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
+        GlassCard(padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
             HStack(spacing: 12) {
                 Spacer()
                 ViewModeButton(title: "大文件", icon: "doc.text", isSelected: selectedMode == 0) {
@@ -131,18 +131,18 @@ struct ViewModeButton: View {
             VStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.title2)
-                    .foregroundColor(isSelected ? DesignTokens.Color.semantic.primary : DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(isSelected ? AppUI.Color.semantic.primary : AppUI.Color.semantic.textPrimary)
 
                 Text(title)
                     .font(.caption)
-                    .foregroundColor(isSelected ? DesignTokens.Color.semantic.primary : DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(isSelected ? AppUI.Color.semantic.primary : AppUI.Color.semantic.textSecondary)
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
             .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? DesignTokens.Color.semantic.primary.opacity(0.1) : Color.clear)
+                    .fill(isSelected ? AppUI.Color.semantic.primary.opacity(0.1) : Color.clear)
             )
             .contentShape(Rectangle())
         }

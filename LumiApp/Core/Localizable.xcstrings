@@ -209,6 +209,16 @@
         }
       }
     },
+    "%@ (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$@)"
+          }
+        }
+      }
+    },
     "%@ (%lld%%)" : {
       "localizations" : {
         "en" : {
@@ -351,6 +361,7 @@
       }
     },
     "%lld 行" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -624,6 +635,7 @@
       }
     },
     "About" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1679,6 +1691,7 @@
       }
     },
     "Current version is the latest stable version" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2183,6 +2196,7 @@
       }
     },
     "Enter API Key for %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2844,6 +2858,7 @@
       }
     },
     "Lumi uses the Sparkle framework for automatic updates. When a new version is available, the app will automatically prompt you to update." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4435,6 +4450,7 @@
       }
     },
     "System" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4695,6 +4711,7 @@
       }
     },
     "Tools" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5001,6 +5018,7 @@
       }
     },
     "Vision" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5065,7 +5083,6 @@
       }
     },
     "上一步" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5099,7 +5116,6 @@
       }
     },
     "下一步" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5164,6 +5180,7 @@
       }
     },
     "主题" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5196,6 +5213,7 @@
       }
     },
     "云端 LLM 供应商" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5356,6 +5374,9 @@
           }
         }
       }
+    },
+    "关于" : {
+
     },
     "关闭" : {
 
@@ -5533,6 +5554,7 @@
 
     },
     "刷新任务列表" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5734,6 +5756,7 @@
       }
     },
     "反馈与支持" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5866,6 +5889,7 @@
       }
     },
     "后台任务" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5885,6 +5909,7 @@
 
     },
     "启动选项" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5901,6 +5926,7 @@
       }
     },
     "启用或禁用应用的插件功能" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6117,6 +6143,9 @@
         }
       }
     },
+    "将文件夹拖到消息列表区域，自动切换为当前项目" : {
+
+    },
     "将模型加载到内存以进行推理" : {
       "localizations" : {
         "zh-Hans" : {
@@ -6169,6 +6198,7 @@
       }
     },
     "工具" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6185,6 +6215,7 @@
       }
     },
     "工具输出" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6300,6 +6331,7 @@
       }
     },
     "已折叠" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6416,7 +6448,6 @@
       }
     },
     "开始使用" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6674,6 +6705,9 @@
         }
       }
     },
+    "打开设置" : {
+
+    },
     "打开首次使用说明" : {
       "localizations" : {
         "zh-Hans" : {
@@ -6691,6 +6725,7 @@
       }
     },
     "执行结果" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6835,6 +6870,7 @@
       }
     },
     "折叠" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6883,6 +6919,7 @@
       }
     },
     "指令" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7082,6 +7119,9 @@
         }
       }
     },
+    "新建会话" : {
+
+    },
     "新建对话" : {
       "localizations" : {
         "zh-Hans" : {
@@ -7231,6 +7271,7 @@
       }
     },
     "暂无后台任务" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7393,6 +7434,7 @@
       }
     },
     "本地 LLM 供应商" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7457,6 +7499,9 @@
           }
         }
       }
+    },
+    "松开即可添加项目" : {
+
     },
     "查看 Issue 列表" : {
       "localizations" : {
@@ -7523,6 +7568,7 @@
       }
     },
     "模型列表" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7904,6 +7950,7 @@
 
     },
     "生成中" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7918,9 +7965,6 @@
           }
         }
       }
-    },
-    "由于 LLM 配置无效，后台任务未能完成。" : {
-
     },
     "电脑内存 ≥ %lld GB" : {
       "localizations" : {
@@ -8004,6 +8048,7 @@
       }
     },
     "视觉" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8120,6 +8165,7 @@
       }
     },
     "管理应用启动行为" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8136,6 +8182,7 @@
       }
     },
     "结果" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8388,7 +8435,6 @@
       }
     },
     "跳过" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8405,6 +8451,7 @@
       }
     },
     "输入 %@ 的 API Key" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8490,6 +8537,7 @@
 
     },
     "这是主题效果的示例" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8566,6 +8614,7 @@
       }
     },
     "选择你喜欢的神秘主题风格" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8666,6 +8715,7 @@
       }
     },
     "遇到问题时可直接提交 Issue，帮助我们快速定位" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8714,6 +8764,7 @@
       }
     },
     "重启应用才能完全生效" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8787,6 +8838,7 @@
       }
     },
     "错误信息" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8820,6 +8872,7 @@
       }
     },
     "随时重新查看产品使用指引" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8853,6 +8906,7 @@
       }
     },
     "预览效果" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8869,6 +8923,7 @@
       }
     },
     "预览文本" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8885,6 +8940,7 @@
       }
     },
     "默认" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

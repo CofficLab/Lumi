@@ -29,7 +29,7 @@ struct GitHubPluginSettingsView: View, SuperLog {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xl) {
+            VStack(alignment: .leading, spacing: AppUI.Spacing.xl) {
                 // GitHub 信息卡片
                 githubInfoCard
 
@@ -41,7 +41,7 @@ struct GitHubPluginSettingsView: View, SuperLog {
 
                 Spacer()
             }
-            .padding(DesignTokens.Spacing.lg)
+            .padding(AppUI.Spacing.lg)
         }
         .onAppear(perform: onAppear)
         .onChange(of: token) { _, _ in
@@ -55,12 +55,12 @@ struct GitHubPluginSettingsView: View, SuperLog {
 extension GitHubPluginSettingsView {
     /// GitHub 信息卡片 - 显示插件图标、名称和描述
     private var githubInfoCard: some View {
-        HStack(spacing: DesignTokens.Spacing.md) {
+        HStack(spacing: AppUI.Spacing.md) {
             Image(systemName: "star.circle.fill")
                 .font(.system(size: 28))
                 .foregroundStyle(
                     LinearGradient(
-                        colors: [DesignTokens.Color.semantic.primary, DesignTokens.Color.semantic.primarySecondary],
+                        colors: [AppUI.Color.semantic.primary, AppUI.Color.semantic.primarySecondary],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -68,27 +68,27 @@ extension GitHubPluginSettingsView {
                 .frame(width: 44, height: 44)
                 .background(
                     RoundedRectangle(cornerRadius: 10)
-                        .fill(DesignTokens.Color.semantic.primary.opacity(0.1))
+                        .fill(AppUI.Color.semantic.primary.opacity(0.1))
                 )
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("GitHub Tools")
-                    .font(DesignTokens.Typography.callout)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .font(AppUI.Typography.callout)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                 Text("提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）")
-                    .font(DesignTokens.Typography.caption1)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .font(AppUI.Typography.caption1)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
 
             Spacer()
         }
-        .padding(DesignTokens.Spacing.md)
+        .padding(AppUI.Spacing.md)
         .background(
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                .fill(DesignTokens.Material.glass)
+            RoundedRectangle(cornerRadius: AppUI.Radius.sm)
+                .fill(AppUI.Material.glass)
                 .overlay(
-                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                    RoundedRectangle(cornerRadius: AppUI.Radius.sm)
                         .stroke(Color.white.opacity(0.1), lineWidth: 1)
                 )
         )
@@ -96,36 +96,36 @@ extension GitHubPluginSettingsView {
 
     /// Token 配置区域 - 提供文本输入框供用户输入 GitHub Token
     private var tokenSection: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+        VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
             Text("Personal Access Token")
-                .font(DesignTokens.Typography.callout)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .font(AppUI.Typography.callout)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
 
             // Token 输入框（明文显示）
             TextField("输入 GitHub Token", text: $token)
                 .textFieldStyle(.plain)
                 .textContentType(.password)
-                .font(DesignTokens.Typography.body)
-                .padding(DesignTokens.Spacing.sm)
+                .font(AppUI.Typography.body)
+                .padding(AppUI.Spacing.sm)
                 .background(
-                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                        .fill(DesignTokens.Material.glass)
+                    RoundedRectangle(cornerRadius: AppUI.Radius.sm)
+                        .fill(AppUI.Material.glass)
                         .overlay(
-                            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                            RoundedRectangle(cornerRadius: AppUI.Radius.sm)
                                 .stroke(Color.white.opacity(0.1), lineWidth: 1)
                         )
                 )
 
             // 保存状态
-            HStack(spacing: DesignTokens.Spacing.sm) {
+            HStack(spacing: AppUI.Spacing.sm) {
                 if isSaved {
                     HStack(spacing: 4) {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(DesignTokens.Color.semantic.success)
+                            .foregroundColor(AppUI.Color.semantic.success)
                             .font(.caption)
                         Text("已保存")
                             .font(.caption)
-                            .foregroundColor(DesignTokens.Color.semantic.success)
+                            .foregroundColor(AppUI.Color.semantic.success)
                     }
                 }
             }
@@ -135,50 +135,50 @@ extension GitHubPluginSettingsView {
                 "如何创建 Personal Access Token？",
                 destination: URL(string: "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens")!
             )
-            .font(DesignTokens.Typography.caption1)
-            .foregroundColor(DesignTokens.Color.semantic.primary)
+            .font(AppUI.Typography.caption1)
+            .foregroundColor(AppUI.Color.semantic.primary)
         }
     }
 
     /// API 限制说明卡片
     private var apiLimitCard: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-            HStack(spacing: DesignTokens.Spacing.sm) {
+        VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
+            HStack(spacing: AppUI.Spacing.sm) {
                 Image(systemName: "info.circle.fill")
-                    .foregroundColor(DesignTokens.Color.semantic.info)
-                    .font(.headline)
+                    .foregroundColor(AppUI.Color.semantic.info)
+                    .font(AppUI.Typography.bodyEmphasized)
 
                 Text("API 限制")
-                    .font(DesignTokens.Typography.bodyEmphasized)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .font(AppUI.Typography.bodyEmphasized)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
             }
 
-            VStack(spacing: DesignTokens.Spacing.sm) {
+            VStack(spacing: AppUI.Spacing.sm) {
                 // 未认证限制
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("未认证用户")
-                            .font(DesignTokens.Typography.caption1)
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .font(AppUI.Typography.caption1)
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
                         Text("60 次/小时")
-                            .font(DesignTokens.Typography.body)
-                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                            .font(AppUI.Typography.body)
+                            .foregroundColor(AppUI.Color.semantic.textPrimary)
                             .fontWeight(.medium)
                     }
 
                     Spacer()
 
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(DesignTokens.Color.semantic.error)
+                        .foregroundColor(AppUI.Color.semantic.error)
                         .font(.title2)
                 }
-                .padding(DesignTokens.Spacing.sm)
+                .padding(AppUI.Spacing.sm)
                 .background(
-                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                    RoundedRectangle(cornerRadius: AppUI.Radius.sm)
                         .fill(Color.white.opacity(0.03))
                         .overlay(
-                            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                                .stroke(DesignTokens.Color.semantic.error.opacity(0.3), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: AppUI.Radius.sm)
+                                .stroke(AppUI.Color.semantic.error.opacity(0.3), lineWidth: 1)
                         )
                 )
 
@@ -186,42 +186,42 @@ extension GitHubPluginSettingsView {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("已认证用户")
-                            .font(DesignTokens.Typography.caption1)
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .font(AppUI.Typography.caption1)
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
                         Text("5,000 次/小时")
-                            .font(DesignTokens.Typography.body)
-                            .foregroundColor(DesignTokens.Color.semantic.success)
+                            .font(AppUI.Typography.body)
+                            .foregroundColor(AppUI.Color.semantic.success)
                             .fontWeight(.medium)
                     }
 
                     Spacer()
 
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(DesignTokens.Color.semantic.success)
+                        .foregroundColor(AppUI.Color.semantic.success)
                         .font(.title2)
                 }
-                .padding(DesignTokens.Spacing.sm)
+                .padding(AppUI.Spacing.sm)
                 .background(
-                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                        .fill(DesignTokens.Color.semantic.success.opacity(0.08))
+                    RoundedRectangle(cornerRadius: AppUI.Radius.sm)
+                        .fill(AppUI.Color.semantic.success.opacity(0.08))
                         .overlay(
-                            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                                .stroke(DesignTokens.Color.semantic.success.opacity(0.3), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: AppUI.Radius.sm)
+                                .stroke(AppUI.Color.semantic.success.opacity(0.3), lineWidth: 1)
                         )
                 )
             }
 
             Text("Personal Access Token 将存储在本地，用于访问私有仓库和提高 API 限额。")
-                .font(DesignTokens.Typography.caption1)
-                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                .font(AppUI.Typography.caption1)
+                .foregroundColor(AppUI.Color.semantic.textTertiary)
                 .lineLimit(2)
         }
-        .padding(DesignTokens.Spacing.md)
+        .padding(AppUI.Spacing.md)
         .background(
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                .fill(DesignTokens.Material.glass)
+            RoundedRectangle(cornerRadius: AppUI.Radius.sm)
+                .fill(AppUI.Material.glass)
                 .overlay(
-                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                    RoundedRectangle(cornerRadius: AppUI.Radius.sm)
                         .stroke(Color.white.opacity(0.1), lineWidth: 1)
                 )
         )

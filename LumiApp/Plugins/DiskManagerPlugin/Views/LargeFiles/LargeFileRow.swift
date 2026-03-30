@@ -8,19 +8,21 @@ struct LargeFileRow: View {
 
     var body: some View {
         HStack {
-            Image(nsImage: item.icon)
-                .resizable()
-                .frame(width: 32, height: 32)
+            AppImageThumbnail(
+                image: Image(nsImage: item.icon),
+                size: CGSize(width: 32, height: 32),
+                shape: .none
+            )
 
             VStack(alignment: .leading) {
                 Text(item.name)
-                    .font(.headline)
+                    .font(AppUI.Typography.bodyEmphasized)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
                 Text(item.path)
                     .font(.caption)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
@@ -30,14 +32,9 @@ struct LargeFileRow: View {
             VStack(alignment: .trailing) {
                 Text(viewModel.formatBytes(item.size))
                     .font(.monospacedDigit(.body)())
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
 
-                Text(item.fileType.rawValue.capitalized)
-                    .font(.caption2)
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                    .padding(.horizontal, 4)
-                    .background(DesignTokens.Color.semantic.textTertiary.opacity(0.1))
-                    .cornerRadius(4)
+                AppTag(item.fileType.rawValue.capitalized, style: .subtle)
             }
 
             HStack(spacing: 12) {
@@ -45,7 +42,7 @@ struct LargeFileRow: View {
                     viewModel.revealInFinder(item)
                 }) {
                     Image(systemName: "folder")
-                        .foregroundColor(DesignTokens.Color.semantic.info)
+                        .foregroundColor(AppUI.Color.semantic.info)
                 }
                 .buttonStyle(.plain)
                 .help("在访达中显示")
@@ -54,7 +51,7 @@ struct LargeFileRow: View {
                     showDeleteConfirm = true
                 }) {
                     Image(systemName: "trash")
-                        .foregroundColor(DesignTokens.Color.semantic.error)
+                        .foregroundColor(AppUI.Color.semantic.error)
                 }
                 .buttonStyle(.plain)
                 .help("删除文件")

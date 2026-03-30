@@ -1,84 +1,153 @@
-import SwiftUI
+import CodeEditor
 import MagicKit
+import SwiftUI
 
 /// 文件内容渲染视图
 struct FileContentSectionView: View {
-    let content: String
+    @Binding var content: String
     let fileExtension: String
     let fileName: String
+    let theme: CodeEditor.ThemeName
+    let isEditable: Bool
+    let forcePlainText: Bool
 
-    /// 判断是否为 Markdown 文件
-    private var isMarkdownFile: Bool {
-        SupportedFileType.isMarkdownFile(fileExtension)
-    }
-
-    /// 获取文件类型描述
-    private var fileTypeDescription: String {
-        SupportedFileType.fileTypeDescription(for: fileExtension, fullFileName: fileName)
-    }
+    /// 当前选区范围
+    @Binding var selection: Range<String.Index>?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // 文件内容：根据文件类型使用不同的渲染方式
-            contentBody
-        }
+        let binding = selectionBinding
+        CodeEditor(
+            source: $content,
+            selection: binding,
+            language: resolvedLanguage,
+            theme: theme,
+            flags: isEditable ? .defaultEditorFlags : .defaultViewerFlags
+        )
+        .font(.system(size: 10, design: .monospaced))
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
-    /// 文件内容渲染
-    @ViewBuilder
-    private var contentBody: some View {
-        if isMarkdownFile {
-            // Markdown 文件使用 Markdown 渲染
-            markdownContentView
-        } else {
-            // 其他可预览文件（代码、文本）使用等宽字体显示
-            plainTextView
-        }
+    /// 将可选的 selection 转为 CodeEditor 需要的非空 Binding
+    private var selectionBinding: Binding<Range<String.Index>> {
+        Binding<Range<String.Index>>(
+            get: {
+                if let selection = selection {
+                    return selection
+                }
+                let s = content
+                return s.endIndex..<s.endIndex
+            },
+            set: { newValue in
+                let s = content
+                // 空选区（光标位置）视为无选中
+                if newValue.isEmpty && newValue.lowerBound == s.endIndex {
+                    selection = nil
+                } else {
+                    selection = newValue
+                }
+            }
+        )
     }
 
-    /// Markdown 内容视图
-    private var markdownContentView: some View {
-        ScrollView {
-            NativeMarkdownContent(
-                content: content
-            )
-                .font(.system(size: 10))
-                .frame(maxWidth: .infinity, alignment: .leading)
+    private var resolvedLanguage: CodeEditor.Language {
+        if forcePlainText {
+            if let plaintext = CodeEditor.availableLanguages.first(where: { $0.rawValue == "plaintext" }) {
+                return plaintext
+            }
         }
-        .scrollIndicators(.hidden)
-        .padding(.vertical, 8)
-        .padding(.horizontal, 4)
+        return editorLanguage
     }
 
-    /// 纯文本内容视图（代码等）
-    private var plainTextView: some View {
-        ScrollView {
-            Text(content)
-                .font(.system(size: 9, design: .monospaced))
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                .lineSpacing(2)
-                .frame(maxWidth: .infinity, alignment: .leading)
+    private var editorLanguage: CodeEditor.Language {
+        let ext = fileExtension.lowercased()
+        let name = fileName.lowercased()
+        let candidates = languageCandidates(forExtension: ext, fileName: name)
+
+        for candidate in candidates {
+            if let match = CodeEditor.availableLanguages.first(where: { $0.rawValue == candidate }) {
+                return match
+            }
         }
-        .scrollIndicators(.hidden)
-        .padding(.vertical, 8)
-        .padding(.horizontal, 4)
+
+        if let plaintext = CodeEditor.availableLanguages.first(where: { $0.rawValue == "plaintext" }) {
+            return plaintext
+        }
+
+        return CodeEditor.availableLanguages.first ?? .swift
+    }
+
+    private func languageCandidates(forExtension ext: String, fileName: String) -> [String] {
+        if [".gitignore", ".gitattributes", ".gitmodules"].contains(fileName) {
+            return ["plaintext", "ini", "yaml", "markdown"]
+        }
+
+        switch ext {
+        case "mdc":
+            return ["markdown", "md"]
+        case "h":
+            return ["objectivec", "c", "cpp"]
+        case "m":
+            return ["objectivec", "matlab"]
+        case "mm":
+            return ["objectivec", "cpp"]
+        case "kt", "kts":
+            return ["kotlin"]
+        case "pyw":
+            return ["python"]
+        case "tsx":
+            return ["tsx", "typescript", "javascript"]
+        case "jsx":
+            return ["jsx", "javascript"]
+        case "yml":
+            return ["yaml"]
+        case "dockerfile":
+            return ["dockerfile", "plaintext"]
+        case "":
+            return ["plaintext", "ini", "yaml"]
+        default:
+            return [ext]
+        }
     }
 }
 
 #Preview("Markdown 内容") {
-    FileContentSectionView(content: "# Hello World\n\n这是一段 **Markdown** 内容。", fileExtension: "md", fileName: "README.md")
-        .frame(width: 300, height: 200)
-        .padding()
+    FileContentSectionView(
+        content: .constant("# Hello World\n\n这是一段 **Markdown** 内容。"),
+        fileExtension: "md",
+        fileName: "README.md",
+        theme: .default,
+        isEditable: true,
+        forcePlainText: false,
+        selection: .constant(nil)
+    )
+    .frame(width: 300, height: 200)
+    .padding()
 }
 
 #Preview("代码内容") {
-    FileContentSectionView(content: "func hello() {\n    print(\"Hello World\")\n}", fileExtension: "swift", fileName: "main.swift")
-        .frame(width: 300, height: 200)
-        .padding()
+    FileContentSectionView(
+        content: .constant("func hello() {\n    print(\"Hello World\")\n}"),
+        fileExtension: "swift",
+        fileName: "main.swift",
+        theme: .ocean,
+        isEditable: true,
+        forcePlainText: false,
+        selection: .constant(nil)
+    )
+    .frame(width: 300, height: 200)
+    .padding()
 }
 
 #Preview("Git 配置") {
-    FileContentSectionView(content: "*.pyc\n.DS_Store\n", fileExtension: "", fileName: ".gitignore")
-        .frame(width: 300, height: 200)
-        .padding()
+    FileContentSectionView(
+        content: .constant("*.pyc\n.DS_Store\n"),
+        fileExtension: "",
+        fileName: ".gitignore",
+        theme: .agate,
+        isEditable: false,
+        forcePlainText: true,
+        selection: .constant(nil)
+    )
+    .frame(width: 300, height: 200)
+    .padding()
 }

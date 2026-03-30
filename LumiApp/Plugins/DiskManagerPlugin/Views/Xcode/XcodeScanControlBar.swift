@@ -17,18 +17,18 @@ struct XcodeScanControlBar: View {
                     title: { Text(viewModel.isScanning ? "停止扫描" : "扫描 Xcode") },
                     icon: { Image(systemName: viewModel.isScanning ? "stop.circle" : "hammer") }
                 )
-                .font(.headline)
+                .font(AppUI.Typography.bodyEmphasized)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
             })
             .buttonStyle(.borderedProminent)
-            .tint(viewModel.isScanning ? DesignTokens.Color.semantic.error : DesignTokens.Color.semantic.info)
+            .tint(viewModel.isScanning ? AppUI.Color.semantic.error : AppUI.Color.semantic.info)
 
             Spacer()
 
             Text("扫描范围：Xcode 相关缓存目录")
                 .font(.caption)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
         .padding(.horizontal)
     }

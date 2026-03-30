@@ -9,11 +9,11 @@ struct ProjectCleanerFooter: View {
             VStack(alignment: .leading) {
                 Text("已选择清理")
                     .font(.caption)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
                 Text(viewModel.formatBytes(viewModel.totalSelectedSize))
                     .font(.title2)
                     .fontWeight(.bold)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
             }
 
             Spacer()
@@ -24,12 +24,12 @@ struct ProjectCleanerFooter: View {
                 Label(title: { Text(viewModel.isCleaning ? "清理中..." : "立即清理") }, icon: {
                     Image(systemName: "trash.fill")
                 })
-                .font(.headline)
+                .font(AppUI.Typography.bodyEmphasized)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
             })
             .buttonStyle(.borderedProminent)
-            .tint(DesignTokens.Color.semantic.warning)
+            .tint(AppUI.Color.semantic.warning)
             .disabled(viewModel.selectedItemIds.isEmpty || viewModel.isCleaning || viewModel.isScanning)
         }
         .padding(.horizontal)

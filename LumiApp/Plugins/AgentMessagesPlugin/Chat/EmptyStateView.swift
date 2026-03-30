@@ -13,70 +13,49 @@ struct EmptyStateView: View {
         VStack(spacing: 20) {
             Spacer()
 
-            // 图标
-            Image(systemName: "bubble.left.and.bubble.right.fill")
-                .font(.system(size: 64))
-                .foregroundStyle(.secondary)
+            AppCard(style: .elevated, padding: EdgeInsets(top: 24, leading: 28, bottom: 24, trailing: 28)) {
+                VStack(spacing: 14) {
+                    Image(systemName: "bubble.left.and.bubble.right.fill")
+                        .font(.system(size: 60))
+                        .foregroundStyle(.secondary)
 
-            // 标题
-            Text(String(localized: hasAnyConversation ? "选择一个会话开始聊天" : "暂无对话", table: "AgentMessages"))
-                .font(.title2)
-                .fontWeight(.semibold)
-                .foregroundStyle(.primary)
+                    Text(String(localized: hasAnyConversation ? "选择一个会话开始聊天" : "暂无对话", table: "AgentMessages"))
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.primary)
 
-            if hasAnyConversation {
-                // 描述
-                Text(String(localized: "从左侧列表选择一个现有会话，或创建新会话", table: "AgentMessages"))
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 40)
-
-                Button("查看新手引导") {
-                    NotificationCenter.default.post(
-                        name: Notification.Name("AgentOnboarding.Show"),
-                        object: nil
-                    )
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.accent)
-                .accessibilityLabel("查看新手引导")
-                .accessibilityHint("打开首次使用说明")
-
-                QuickStartActionsView(sendStrategy: .createConversationAndSend)
-                    .padding(.top, 4)
-            } else {
-                Button {
-                    Task {
-                        await conversationCreationVM.createNewConversation()
+                    if hasAnyConversation {
+                        Text(String(localized: "从左侧列表选择一个现有会话，或创建新会话", table: "AgentMessages"))
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
                     }
-                } label: {
-                    Label("新建对话", systemImage: "plus.circle.fill")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(Color.accentColor)
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("新建对话")
-                .accessibilityHint("创建一个新的会话")
 
-                Button("查看新手引导") {
-                    NotificationCenter.default.post(
-                        name: Notification.Name("AgentOnboarding.Show"),
-                        object: nil
-                    )
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.accent)
-                .accessibilityLabel("查看新手引导")
-                .accessibilityHint("打开首次使用说明")
+                    if !hasAnyConversation {
+                        AppButton("新建对话", systemImage: "plus.circle.fill", style: .primary) {
+                            Task {
+                                await conversationCreationVM.createNewConversation()
+                            }
+                        }
+                        .accessibilityLabel("新建对话")
+                        .accessibilityHint("创建一个新的会话")
+                    }
 
-                QuickStartActionsView(sendStrategy: .createConversationAndSend)
-                    .padding(.top, 4)
+                    AppButton("查看新手引导", style: .ghost, size: .small) {
+                        NotificationCenter.default.post(
+                            name: Notification.Name("AgentOnboarding.Show"),
+                            object: nil
+                        )
+                    }
+                    .accessibilityLabel("查看新手引导")
+                    .accessibilityHint("打开首次使用说明")
+
+                    QuickStartActionsView(sendStrategy: .createConversationAndSend)
+                        .padding(.top, 4)
+                }
             }
+            .frame(maxWidth: 560)
+            .padding(.horizontal, 28)
 
             Spacer()
         }

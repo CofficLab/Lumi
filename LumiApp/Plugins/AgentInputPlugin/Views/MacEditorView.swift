@@ -296,7 +296,7 @@ class EditorTextView: NSTextView, SuperLog {
                 
                 Text("Height: \(Int(height))")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
             .padding()
             .frame(width: 400)

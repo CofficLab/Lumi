@@ -15,8 +15,7 @@ struct RecentProjectsSidebarView: View {
             headerView
             
             if isExpanded {
-                Divider()
-                    .background(Color.white.opacity(0.1))
+                GlassDivider()
                 
                 // 最近项目列表
                 if !recentProjects.isEmpty {
@@ -36,7 +35,7 @@ struct RecentProjectsSidebarView: View {
             HStack {
                 Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
                     .frame(width: 16, height: 16)
 
                 Image(systemName: "clock.arrow.circlepath")
@@ -45,18 +44,12 @@ struct RecentProjectsSidebarView: View {
 
                 Text(String(localized: "Recent Projects", table: "AgentRecentProjectsSidebar"))
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                 Spacer()
                 
                 if !recentProjects.isEmpty {
-                    Text("\(recentProjects.count)")
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.primary.opacity(0.1))
-                        .clipShape(Capsule())
+                    GlassBadge(text: "\(recentProjects.count)", style: .neutral)
                 }
             }
         }
@@ -109,7 +102,7 @@ struct RecentProjectsSidebarView: View {
                     Text(project.name)
                         .font(.system(size: 12))
                         .fontWeight(isSelected ? .semibold : .regular)
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .foregroundColor(AppUI.Color.semantic.textPrimary)
                         .lineLimit(1)
                     
                     Text(project.path)
@@ -147,7 +140,7 @@ struct RecentProjectsSidebarView: View {
                 .foregroundColor(.secondary.opacity(0.5))
             Text(String(localized: "No Recent Projects", table: "AgentRecentProjectsSidebar"))
                 .font(.system(size: 11))
-                .foregroundColor(.secondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, 20)

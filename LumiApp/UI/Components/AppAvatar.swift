@@ -1,0 +1,115 @@
+import SwiftUI
+
+/// 通用头像组件：统一消息角色头像视觉。
+struct AppAvatar: View {
+    let systemImage: String
+    let tint: Color
+    let backgroundTint: Color
+    let size: CGFloat
+
+    init(
+        systemImage: String,
+        tint: Color,
+        backgroundTint: Color,
+        size: CGFloat = 24
+    ) {
+        self.systemImage = systemImage
+        self.tint = tint
+        self.backgroundTint = backgroundTint
+        self.size = size
+    }
+
+    var body: some View {
+        Image(systemName: systemImage)
+            .font(.system(size: max(10, size * 0.66)))
+            .foregroundColor(tint)
+            .frame(width: size, height: size)
+            .background(backgroundTint)
+            .clipShape(Circle())
+    }
+}
+
+/// 通用图片缩略图组件：调用方只需传形状，不需要关心 DesignTokens。
+struct AppImageThumbnail: View {
+    enum ShapeStyle {
+        case none
+        case roundedSmall
+        case roundedMedium
+        case rounded(CGFloat)
+        case circle
+        case capsule
+    }
+
+    enum Sizing {
+        case stretch
+        case fit
+        case fill
+    }
+
+    let image: Image
+    let size: CGSize
+    let sizing: Sizing
+    let shape: ShapeStyle
+
+    init(
+        image: Image,
+        size: CGSize,
+        sizing: Sizing = .stretch,
+        shape: ShapeStyle = .roundedMedium
+    ) {
+        self.image = image
+        self.size = size
+        self.sizing = sizing
+        self.shape = shape
+    }
+
+    var body: some View {
+        switch shape {
+        case .none:
+            baseImage
+        case .roundedSmall:
+            baseImage
+                .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous))
+        case .roundedMedium:
+            baseImage
+                .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous))
+        case let .rounded(radius):
+            baseImage
+                .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+        case .circle:
+            baseImage
+                .clipShape(Circle())
+        case .capsule:
+            baseImage
+                .clipShape(Capsule())
+        }
+    }
+
+    private var baseImage: some View {
+        Group {
+            switch sizing {
+            case .stretch:
+                image
+                    .resizable()
+            case .fit:
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            case .fill:
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            }
+        }
+        .frame(width: size.width, height: size.height)
+    }
+}
+
+#Preview {
+    HStack(spacing: 10) {
+        AppAvatar(systemImage: "cpu", tint: .blue, backgroundTint: .blue.opacity(0.12))
+        AppAvatar(systemImage: "person.fill", tint: .green, backgroundTint: .green.opacity(0.12))
+    }
+    .padding()
+    .inRootView()
+}

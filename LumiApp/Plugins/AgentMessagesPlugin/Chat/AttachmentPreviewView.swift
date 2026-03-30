@@ -1,4 +1,5 @@
 import SwiftUI
+import MagicKit
 
 /// 附件预览视图 - 显示待发送的图片缩略图
 struct AttachmentPreviewView: View {
@@ -12,26 +13,31 @@ struct AttachmentPreviewView: View {
                     if case let .image(_, data, _, _) = attachment,
                        let nsImage = NSImage(data: data) {
                         ZStack(alignment: .topTrailing) {
-                            Image(nsImage: nsImage)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: 60, height: 60)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(Color.black.opacity(0.1), lineWidth: 1)
+                            AppCard(
+                                style: .subtle,
+                                padding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+                            ) {
+                                AppImageThumbnail(
+                                    image: Image(nsImage: nsImage),
+                                    size: CGSize(width: 60, height: 60),
+                                    sizing: .fill,
+                                    shape: .roundedMedium
                                 )
-
-                            Button(action: {
-                                onRemove(attachment.id)
-                            }) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .font(.system(size: 16))
-                                    .foregroundColor(.gray)
-                                    .background(Color.white.clipShape(Circle()))
                             }
-                            .buttonStyle(.plain)
-                            .offset(x: 4, y: -4)
+
+                            AppIconButton(
+                                systemImage: "xmark",
+                                tint: AppUI.Color.semantic.textPrimary,
+                                size: .compact
+                            ) {
+                                onRemove(attachment.id)
+                            }
+                            .background(
+                                Circle()
+                                    .fill(AppUI.Material.glass)
+                            )
+                            .clipShape(Circle())
+                            .offset(x: 6, y: -6)
                         }
                         .padding(.top, 4)
                         .padding(.trailing, 4)

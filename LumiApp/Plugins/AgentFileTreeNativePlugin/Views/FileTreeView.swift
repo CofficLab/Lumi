@@ -104,18 +104,37 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
     var onRename: ((URL, String) -> Void)?
     var currentRootURL: URL?
     var externalSelectedFileURL: URL?
+    var onExpandedPathsChanged: ((Set<String>) -> Void)?
+    private var expandedRelativePaths: Set<String> = []
     private var renamingNodeURL: URL?
+    private var pendingSelectionTask: Task<Void, Never>?
+    private var pendingSelectRetryTask: Task<Void, Never>?
+
+    var currentOutlineSelectedFileURL: URL? {
+        guard let outlineView else { return nil }
+        let row = outlineView.selectedRow
+        guard row >= 0, let node = outlineView.item(atRow: row) as? FileNode else { return nil }
+        return node.url
+    }
     
     func setRootURL(_ url: URL) {
+        pendingSelectionTask?.cancel()
+        pendingSelectRetryTask?.cancel()
         currentRootURL = url
         Task.detached(priority: .userInitiated) {
             let urls = (try? FileNode.sortedContents(at: url)) ?? []
             await MainActor.run {
                 self.rootNodes = urls.map { FileNode(url: $0) }
                 self.outlineView?.reloadData()
+                self.restoreExpandedNodes()
                 self.selectExternalFileIfNeeded()
             }
         }
+    }
+
+    func setExpandedRelativePaths(_ paths: Set<String>) {
+        expandedRelativePaths = paths
+        restoreExpandedNodes()
     }
     
     func selectExternalFileIfNeeded() {
@@ -123,11 +142,15 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         
         if let node = findNode(for: targetURL) {
             expandParents(for: node)
-            let row = outlineView?.row(forItem: node) ?? -1
-            if row >= 0 {
-                outlineView?.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
-                outlineView?.scrollRowToVisible(row)
-            }
+            selectNodeInOutline(node)
+            return
+        }
+
+        pendingSelectionTask?.cancel()
+        pendingSelectionTask = Task { [weak self] in
+            guard let self else { return }
+            guard let node = await self.findOrLoadNode(for: targetURL) else { return }
+            self.selectNodeInOutline(node)
         }
     }
     
@@ -176,8 +199,10 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
     
     func outlineView(_ outlineView: NSOutlineView, numberOfChildrenOfItem item: Any?) -> Int {
         if let node = item as? FileNode {
-            node.loadChildren { [weak outlineView] in
+            node.loadChildren { [weak outlineView, weak self] in
                 outlineView?.reloadItem(node, reloadChildren: true)
+                self?.restoreExpandedNodes()
+                self?.selectExternalFileIfNeeded()
             }
             return node.children.count
         }
@@ -291,6 +316,26 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         
         // 触发选中回调
         onSelect?(node.url)
+    }
+
+    func outlineViewItemDidExpand(_ notification: Notification) {
+        guard let node = notification.userInfo?["NSObject"] as? FileNode else { return }
+        guard node.isDirectory else { return }
+        guard let relative = relativePath(for: node.url) else { return }
+
+        expandedRelativePaths.insert(relative)
+        onExpandedPathsChanged?(expandedRelativePaths)
+    }
+
+    func outlineViewItemDidCollapse(_ notification: Notification) {
+        guard let node = notification.userInfo?["NSObject"] as? FileNode else { return }
+        guard node.isDirectory else { return }
+        guard let relative = relativePath(for: node.url) else { return }
+
+        expandedRelativePaths.remove(relative)
+        let prefix = relative + "/"
+        expandedRelativePaths = Set(expandedRelativePaths.filter { !$0.hasPrefix(prefix) })
+        onExpandedPathsChanged?(expandedRelativePaths)
     }
     
     // MARK: - 右键菜单
@@ -685,6 +730,122 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         default: return "doc"
         }
     }
+
+    private func restoreExpandedNodes() {
+        guard let outlineView else { return }
+        guard !expandedRelativePaths.isEmpty else { return }
+        guard !rootNodes.isEmpty else { return }
+
+        for node in rootNodes {
+            restoreExpansionRecursively(node: node, outlineView: outlineView)
+        }
+    }
+
+    private func restoreExpansionRecursively(node: FileNode, outlineView: NSOutlineView) {
+        guard node.isDirectory else { return }
+        guard let relative = relativePath(for: node.url) else { return }
+        guard expandedRelativePaths.contains(relative) else { return }
+
+        if !outlineView.isItemExpanded(node) {
+            outlineView.expandItem(node)
+        }
+
+        node.loadChildren { [weak self, weak outlineView] in
+            guard let self, let outlineView else { return }
+            outlineView.reloadItem(node, reloadChildren: true)
+            for child in node.children {
+                self.restoreExpansionRecursively(node: child, outlineView: outlineView)
+            }
+            self.selectExternalFileIfNeeded()
+        }
+
+        if node.isLoaded {
+            for child in node.children {
+                restoreExpansionRecursively(node: child, outlineView: outlineView)
+            }
+        }
+    }
+
+    private func relativePath(for url: URL) -> String? {
+        guard let root = currentRootURL?.standardizedFileURL else { return nil }
+        let standardizedURL = url.standardizedFileURL
+
+        let rootPath = root.path
+        let targetPath = standardizedURL.path
+        guard targetPath.hasPrefix(rootPath) else { return nil }
+
+        let relative = String(targetPath.dropFirst(rootPath.count)).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        return relative.isEmpty ? "." : relative
+    }
+
+    private func selectNodeInOutline(_ node: FileNode) {
+        guard let outlineView else { return }
+        let row = outlineView.row(forItem: node)
+        if row >= 0 {
+            outlineView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+            outlineView.scrollRowToVisible(row)
+            return
+        }
+
+        pendingSelectRetryTask?.cancel()
+        pendingSelectRetryTask = Task { [weak self] in
+            guard let self else { return }
+            for _ in 0..<20 {
+                try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
+                guard let outlineView = self.outlineView else { return }
+                let retryRow = outlineView.row(forItem: node)
+                if retryRow >= 0 {
+                    outlineView.selectRowIndexes(IndexSet(integer: retryRow), byExtendingSelection: false)
+                    outlineView.scrollRowToVisible(retryRow)
+                    return
+                }
+                outlineView.reloadData()
+            }
+        }
+    }
+
+    private func findOrLoadNode(for targetURL: URL) async -> FileNode? {
+        guard let rootURL = currentRootURL?.standardizedFileURL else { return nil }
+        let standardizedTargetURL = targetURL.standardizedFileURL
+
+        let rootPath = rootURL.path
+        let targetPath = standardizedTargetURL.path
+        guard targetPath == rootPath || targetPath.hasPrefix(rootPath + "/") else { return nil }
+
+        let relative = String(targetPath.dropFirst(rootPath.count)).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        guard !relative.isEmpty else { return nil }
+
+        let components = relative.split(separator: "/").map(String.init)
+        var currentLevel = rootNodes
+        var currentNode: FileNode?
+
+        for (index, component) in components.enumerated() {
+            guard let nextNode = currentLevel.first(where: { $0.name == component }) else { return nil }
+            currentNode = nextNode
+
+            let isLeaf = index == components.count - 1
+            if isLeaf {
+                return nextNode
+            }
+
+            guard nextNode.isDirectory else { return nil }
+            await loadChildrenIfNeeded(nextNode)
+            outlineView?.reloadItem(nextNode, reloadChildren: true)
+            outlineView?.expandItem(nextNode)
+            currentLevel = nextNode.children
+        }
+
+        return currentNode
+    }
+
+    private func loadChildrenIfNeeded(_ node: FileNode) async {
+        if node.isLoaded { return }
+        await withCheckedContinuation { continuation in
+            node.loadChildren {
+                continuation.resume()
+            }
+        }
+    }
 }
 
 /// 自定义行视图
@@ -765,7 +926,9 @@ class FileTreeRowView: NSTableRowView {
 struct FileTreeView: NSViewRepresentable {
     let rootURL: URL?
     let selectedFileURL: URL?
+    let expandedRelativePaths: Set<String>
     let onSelect: (URL) -> Void
+    let onExpandedPathsChanged: (Set<String>) -> Void
     
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSScrollView()
@@ -834,14 +997,19 @@ struct FileTreeView: NSViewRepresentable {
             let currentSelected = context.coordinator.externalSelectedFileURL
             if currentSelected?.standardizedFileURL != selectedURL.standardizedFileURL {
                 context.coordinator.externalSelectedFileURL = selectedURL
+            }
+            let outlineSelected = context.coordinator.currentOutlineSelectedFileURL
+            if outlineSelected?.standardizedFileURL != selectedURL.standardizedFileURL {
                 context.coordinator.selectExternalFileIfNeeded()
             }
         }
+        context.coordinator.setExpandedRelativePaths(expandedRelativePaths)
     }
     
     func makeCoordinator() -> FileTreeDataSource {
         let coordinator = FileTreeDataSource()
         coordinator.onSelect = onSelect
+        coordinator.onExpandedPathsChanged = onExpandedPathsChanged
         return coordinator
     }
 }

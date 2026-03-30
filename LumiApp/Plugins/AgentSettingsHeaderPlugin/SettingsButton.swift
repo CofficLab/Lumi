@@ -11,7 +11,7 @@ struct SettingsButton: View {
         }) {
             Image(systemName: "gearshape")
                 .font(.system(size: iconSize))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
                 .frame(width: iconButtonSize, height: iconButtonSize)
                 .background(Color.black.opacity(0.05))
                 .clipShape(Circle())

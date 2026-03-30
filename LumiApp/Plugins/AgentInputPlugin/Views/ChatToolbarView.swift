@@ -152,8 +152,8 @@ extension ChatToolbarView {
                         Image(systemName: mode.iconName)
                         Text(mode.displayName)
                         Text("- \(mode.description)")
-                            .foregroundColor(.secondary)
-                            .font(.caption)
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .font(AppUI.Typography.caption1)
                         if llmVM.chatMode == mode {
                             Image(systemName: "checkmark")
                         }
@@ -169,7 +169,7 @@ extension ChatToolbarView {
                     .fontWeight(.medium)
                 Image(systemName: "chevron.up")
                     .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
             .foregroundColor(modeForegroundColor)
             .padding(.horizontal, 8)
@@ -190,7 +190,7 @@ extension ChatToolbarView {
         case .chat:
             return Color.orange
         case .build:
-            return DesignTokens.Color.semantic.textSecondary
+            return AppUI.Color.semantic.textSecondary
         }
     }
 
@@ -228,9 +228,9 @@ extension ChatToolbarView {
                     .truncationMode(.middle)
                 Image(systemName: "chevron.up")
                     .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
-            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            .foregroundColor(AppUI.Color.semantic.textSecondary)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(Color.black.opacity(0.05))
@@ -267,7 +267,7 @@ extension ChatToolbarView {
         }) {
             Image(systemName: "photo")
                 .font(.system(size: 14))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
                 .frame(width: 28, height: 28)
                 .background(Color.black.opacity(0.05))
                 .clipShape(Circle())

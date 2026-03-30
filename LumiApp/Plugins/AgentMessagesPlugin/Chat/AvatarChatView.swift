@@ -1,4 +1,5 @@
 import SwiftUI
+import MagicKit
 import Foundation
 
 /// 聊天气泡头像视图 - 根据消息角色显示不同的头像
@@ -31,55 +32,51 @@ public struct AvatarChatView: View {
 // MARK: - Avatar View
 
 /// 头像视图
+@MainActor
 public enum AvatarView {
     /// 助手头像
     public static var assistant: some View {
-        Image(systemName: "cpu")
-            .font(.system(size: 16))
-            .foregroundColor(DesignTokens.Color.semantic.primary)
-            .frame(width: 24, height: 24)
-            .background(DesignTokens.Color.semantic.primary.opacity(0.1))
-            .clipShape(Circle())
+        AppAvatar(
+            systemImage: "cpu",
+            tint: AppUI.Color.semantic.primary,
+            backgroundTint: AppUI.Color.semantic.primary.opacity(0.1)
+        )
     }
 
     /// 用户头像
     public static var user: some View {
-        Image(systemName: "person.fill")
-            .font(.system(size: 16))
-            .foregroundColor(DesignTokens.Color.semantic.info)
-            .frame(width: 24, height: 24)
-            .background(DesignTokens.Color.semantic.info.opacity(0.1))
-            .clipShape(Circle())
+        AppAvatar(
+            systemImage: "person.fill",
+            tint: AppUI.Color.semantic.info,
+            backgroundTint: AppUI.Color.semantic.info.opacity(0.1)
+        )
     }
 
     /// 工具头像
     public static var tool: some View {
-        Image(systemName: "gearshape.2.fill")
-            .font(.system(size: 16))
-            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-            .frame(width: 24, height: 24)
-            .background(DesignTokens.Color.semantic.textTertiary.opacity(0.1))
-            .clipShape(Circle())
+        AppAvatar(
+            systemImage: "gearshape.2.fill",
+            tint: AppUI.Color.semantic.textTertiary,
+            backgroundTint: AppUI.Color.semantic.textTertiary.opacity(0.1)
+        )
     }
 
     /// 状态头像（连接中/等待响应/生成中等 UI 状态）
     public static var status: some View {
-        Image(systemName: "sparkles")
-            .font(.system(size: 16))
-            .foregroundColor(DesignTokens.Color.semantic.warning)
-            .frame(width: 24, height: 24)
-            .background(DesignTokens.Color.semantic.warning.opacity(0.12))
-            .clipShape(Circle())
+        AppAvatar(
+            systemImage: "sparkles",
+            tint: AppUI.Color.semantic.warning,
+            backgroundTint: AppUI.Color.semantic.warning.opacity(0.12)
+        )
     }
 
     /// 系统头像（系统提示/系统消息）
     public static var system: some View {
-        Image(systemName: "bolt.shield.fill")
-            .font(.system(size: 16))
-            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-            .frame(width: 24, height: 24)
-            .background(DesignTokens.Color.semantic.textSecondary.opacity(0.10))
-            .clipShape(Circle())
+        AppAvatar(
+            systemImage: "bolt.shield.fill",
+            tint: AppUI.Color.semantic.textSecondary,
+            backgroundTint: AppUI.Color.semantic.textSecondary.opacity(0.10)
+        )
     }
 }
 

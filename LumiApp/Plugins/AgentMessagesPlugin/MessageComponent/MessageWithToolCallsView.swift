@@ -1,4 +1,5 @@
 import SwiftUI
+import MagicKit
 
 /// 助手消息与工具调用视图
 struct MessageWithToolCallsView: View {
@@ -65,78 +66,70 @@ struct MessageWithToolCallsView: View {
         let effectiveResults = resultMessages.isEmpty
             ? toolOutputMessages.filter { $0.toolCallID == toolCall.id }
             : resultMessages
+        let shouldShowAuthState = toolCall.authorizationState != .noRisk
 
         VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                HStack(spacing: 6) {
-                    Image(systemName: "wrench.and.screwdriver")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            AppCard(
+                style: .subtle,
+                padding: EdgeInsets(top: 10, leading: 14, bottom: 10, trailing: 14)
+            ) {
+                HStack(spacing: 8) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "wrench.and.screwdriver")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
 
-                    Text(toolCall.name)
-                        .font(DesignTokens.Typography.caption1)
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                        .lineLimit(1)
+                        Text(toolCall.name)
+                            .font(AppUI.Typography.caption1)
+                            .foregroundColor(AppUI.Color.semantic.textPrimary)
+                            .lineLimit(1)
 
-                    Text("·")
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        if shouldShowAuthState {
+                            Text("·")
+                                .foregroundColor(AppUI.Color.semantic.textSecondary)
 
-                    Text(toolCall.authorizationState.displayName)
-                        .font(DesignTokens.Typography.caption2)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        .lineLimit(1)
-                }
+                            Text(toolCall.authorizationState.displayName)
+                                .font(AppUI.Typography.caption2)
+                                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                .lineLimit(1)
+                        }
+                    }
 
-                Spacer()
+                    Spacer()
 
-                Button {
-                    toggleParameterSection(for: toolCall.id)
-                } label: {
-                    compactActionChip(
-                        title: "参数",
+                    AppIconButton(
                         systemImage: "slider.horizontal.3",
+                        label: "参数",
+                        tint: isParametersExpanded
+                            ? AppUI.Color.semantic.textPrimary
+                            : AppUI.Color.semantic.textSecondary,
+                        size: .regular,
                         isActive: isParametersExpanded
-                    )
-                }
-                .buttonStyle(.plain)
+                    ) {
+                        toggleParameterSection(for: toolCall.id)
+                    }
 
-                Button {
-                    toggleResultSection(for: toolCall.id)
-                } label: {
                     if isLoadingResult {
                         HStack(spacing: 4) {
                             ProgressView()
                                 .controlSize(.small)
-                            Text("结果")
-                                .font(DesignTokens.Typography.caption1)
+                            AppTag("结果")
                         }
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule()
-                                .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.08))
-                        )
                     } else {
-                        compactActionChip(
-                            title: "结果",
+                        AppIconButton(
                             systemImage: "doc.text.magnifyingglass",
+                            label: "结果",
+                            tint: isResultsExpanded
+                                ? AppUI.Color.semantic.textPrimary
+                                : AppUI.Color.semantic.textSecondary,
+                            size: .regular,
                             isActive: isResultsExpanded
-                        )
+                        ) {
+                            toggleResultSection(for: toolCall.id)
+                        }
                     }
                 }
-                .buttonStyle(.plain)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.08))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(DesignTokens.Color.semantic.textTertiary.opacity(0.22), lineWidth: 1)
-                    )
-            )
 
             if isParametersExpanded {
                 ToolCallContentSectionView(toolCall: toolCall, title: "参数")
@@ -189,22 +182,6 @@ struct MessageWithToolCallsView: View {
         expandedResultToolCallIDs.insert(toolCallID)
     }
 
-    @ViewBuilder
-    private func compactActionChip(title: String, systemImage: String, isActive: Bool) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: systemImage)
-                .font(.system(size: 11, weight: .semibold))
-            Text(title)
-                .font(DesignTokens.Typography.caption1)
-        }
-        .foregroundColor(isActive ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(
-            Capsule()
-                .fill(DesignTokens.Color.semantic.textTertiary.opacity(isActive ? 0.14 : 0.08))
-        )
-    }
 }
 
 private struct ToolCallContentSectionView: View {
@@ -254,33 +231,23 @@ private struct ToolResultSectionView: View {
                 ProgressView()
                     .controlSize(.small)
                 Text("查询结果中…")
-                    .font(DesignTokens.Typography.caption1)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .font(AppUI.Typography.caption1)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.05))
-            )
+            .modifier(SubtleToolCardModifier())
         } else if !combinedContent.isEmpty {
             GenericToolSectionView(title: "结果", content: combinedContent)
         } else {
             HStack(spacing: 8) {
                 Image(systemName: "info.circle")
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
                 Text("点击结果后会在这里显示工具输出")
-                    .font(DesignTokens.Typography.caption1)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .font(AppUI.Typography.caption1)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.05))
-            )
+            .modifier(SubtleToolCardModifier())
         }
     }
 }
@@ -290,27 +257,32 @@ private struct GenericToolSectionView: View {
     let content: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(DesignTokens.Typography.caption1)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+        AppCard(
+            style: .subtle,
+            padding: EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12)
+        ) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(title)
+                    .font(AppUI.Typography.caption1)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
 
-            Text(content)
-                .font(DesignTokens.Typography.code)
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .textSelection(.enabled)
+                Text(content)
+                    .font(AppUI.Typography.code)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .textSelection(.enabled)
+            }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.05))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(DesignTokens.Color.semantic.textTertiary.opacity(0.14), lineWidth: 1)
-                )
-        )
     }
 }
 
+private struct SubtleToolCardModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        AppCard(
+            style: .subtle,
+            padding: EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12)
+        ) {
+            content
+        }
+    }
+}

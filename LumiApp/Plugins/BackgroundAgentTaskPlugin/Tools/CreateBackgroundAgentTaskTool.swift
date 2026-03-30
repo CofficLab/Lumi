@@ -32,6 +32,7 @@ struct CreateBackgroundAgentTaskTool: AgentTool {
             )
         }
 
+        // 🎯 只负责创建任务，存储层会自动发布事件
         let taskId = BackgroundAgentTaskStore.shared.enqueue(prompt: instruction)
 
         let response: [String: Any] = [
@@ -44,4 +45,3 @@ struct CreateBackgroundAgentTaskTool: AgentTool {
         return String(data: data, encoding: .utf8) ?? "{\"task_id\":\"\(taskId.uuidString)\",\"status\":\"pending\"}"
     }
 }
-

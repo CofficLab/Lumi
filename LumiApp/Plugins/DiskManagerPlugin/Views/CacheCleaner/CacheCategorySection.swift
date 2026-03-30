@@ -17,8 +17,8 @@ struct CacheCategorySection: View {
             HStack {
                 Image(systemName: category.icon)
                 Text(category.name)
-                    .font(.headline)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .font(AppUI.Typography.bodyEmphasized)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                 Spacer()
 
@@ -27,13 +27,13 @@ struct CacheCategorySection: View {
                     .font(.caption2)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(DesignTokens.Color.semantic.warning.opacity(0.2))
-                    .foregroundColor(DesignTokens.Color.semantic.warning)
+                    .background(AppUI.Color.semantic.warning.opacity(0.2))
+                    .foregroundColor(AppUI.Color.semantic.warning)
                     .cornerRadius(4)
 
                 Text(viewModel.formatBytes(category.totalSize))
                     .font(.monospacedDigit(.caption)())
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
             .padding(.vertical, 4)
         }
@@ -56,18 +56,20 @@ struct CachePathRow: View {
             Toggle("", isOn: Binding(get: { isSelected }, set: { _ in toggleAction() }))
                 .labelsHidden()
 
-            Image(nsImage: icon)
-                .resizable()
-                .frame(width: 24, height: 24)
+            AppImageThumbnail(
+                image: Image(nsImage: icon),
+                size: CGSize(width: 24, height: 24),
+                shape: .none
+            )
 
             VStack(alignment: .leading) {
                 Text(path.name)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
                 Text(path.path)
                     .font(.caption2)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
@@ -76,7 +78,7 @@ struct CachePathRow: View {
 
             Text(formatBytes(path.size))
                 .font(.monospacedDigit(.caption)())
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
         .padding(.vertical, 2)
     }

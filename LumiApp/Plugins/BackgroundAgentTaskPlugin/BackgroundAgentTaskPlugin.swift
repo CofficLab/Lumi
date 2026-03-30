@@ -1,4 +1,3 @@
-import Foundation
 import SwiftUI
 import MagicKit
 import os
@@ -22,9 +21,117 @@ actor BackgroundAgentTaskPlugin: SuperPlugin, SuperLog {
 
     static let shared = BackgroundAgentTaskPlugin()
 
-    nonisolated func onRegister() {}
-    nonisolated func onEnable() {}
-    nonisolated func onDisable() {}
+    // MARK: - 协调器状态
+
+    private var worker: BackgroundAgentTaskWorker?
+    private nonisolated(unsafe) var taskCreationObserver: NSObjectProtocol?
+
+    // MARK: - 插件生命周期
+
+    nonisolated func onRegister() {
+        if Self.verbose {
+            Self.logger.info("BackgroundAgentTaskPlugin 注册")
+        }
+    }
+
+    nonisolated func onEnable() {
+        Task { [weak self] in
+            await self?.startWorker()
+            await self?.setupEventObservers()
+        }
+
+        if Self.verbose {
+            Self.logger.info("BackgroundAgentTaskPlugin 启用")
+        }
+    }
+
+    nonisolated func onDisable() {
+        Task { [weak self] in
+            await self?.stopWorker()
+            await self?.removeEventObservers()
+        }
+
+        if Self.verbose {
+            Self.logger.info("BackgroundAgentTaskPlugin 禁用")
+        }
+    }
+
+    // MARK: - Worker 管理
+
+    /// 启动 Worker
+    private func startWorker() async {
+        guard worker == nil else { return }
+
+        let newWorker = BackgroundAgentTaskWorker()
+        await newWorker.start()
+        worker = newWorker
+
+        if Self.verbose {
+            Self.logger.info("\(self.t) Worker 已启动")
+        }
+    }
+
+    /// 停止 Worker
+    private func stopWorker() async {
+        await worker?.stop()
+        worker = nil
+
+        if Self.verbose {
+            Self.logger.info("\(self.t) Worker 已停止")
+        }
+    }
+
+    // MARK: - 事件监听
+
+    /// 设置事件监听（插件作为协调器）
+    private func setupEventObservers() async {
+        await MainActor.run { [weak self] in
+            guard let self = self else { return }
+
+            // 监听任务创建事件
+            self.taskCreationObserver = NotificationCenter.default.addObserver(
+                forName: .backgroundAgentTaskDidCreate,
+                object: nil,
+                queue: .main
+            ) { [weak self] notification in
+                guard let self = self else { return }
+
+                if Self.verbose {
+                    if let userInfo = notification.userInfo,
+                       let taskIdString = userInfo["taskId"] as? String {
+                        Self.logger.info("\(self.t) 收到任务创建事件: \(taskIdString)")
+                    }
+                }
+
+                // 通知 Worker 有新任务
+                Task {
+                    await self.worker?.taskDidCreate()
+                }
+            }
+        }
+
+        if Self.verbose {
+            Self.logger.info("\(self.t) 事件监听已设置")
+        }
+    }
+
+    /// 移除事件监听
+    private func removeEventObservers() async {
+        await MainActor.run { [weak self] in
+            guard let self = self else { return }
+
+            if let observer = self.taskCreationObserver {
+                NotificationCenter.default.removeObserver(observer)
+                self.taskCreationObserver = nil
+            }
+        }
+
+        if Self.verbose {
+            Self.logger.info("\(self.t) 事件监听已移除")
+        }
+    }
+
+    // MARK: - Agent 工具
 
     @MainActor
     func agentToolFactories() -> [AnyAgentToolFactory] {
@@ -45,9 +152,8 @@ private struct BackgroundAgentTaskToolFactory: AgentToolFactory {
     func makeTools(env: AgentToolEnvironment) -> [AgentTool] {
         [
             CreateBackgroundAgentTaskTool(),
-            ListBackgroundAgentTasksTool(),
-            GetBackgroundAgentTaskDetailTool()
+            ListBackgroundTasksTool(),
+            GetBackgroundTaskDetailTool()
         ]
     }
 }
-

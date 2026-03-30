@@ -32,7 +32,7 @@ struct BrewManagerView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Tab Picker
-            MystiqueGlassCard(cornerRadius: 16, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
+            GlassCard(cornerRadius: 16, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
                 Picker("View", selection: $selectedTab) {
                     ForEach(BrewTab.allCases) { tab in
                         Label(tab.localizedName, systemImage: tab.icon).tag(tab)
@@ -51,7 +51,7 @@ struct BrewManagerView: View {
                         packages: viewModel.installedPackages,
                         emptyMessage: String(localized: "No packages installed", table: "BrewManager"),
                         actionButtonTitle: String(localized: "Uninstall", table: "BrewManager"),
-                        actionButtonColor: DesignTokens.Color.semantic.error
+                        actionButtonColor: AppUI.Color.semantic.error
                     ) { package in
                         Task { await viewModel.uninstall(package: package) }
                     }
@@ -72,7 +72,7 @@ struct BrewManagerView: View {
                             packages: viewModel.outdatedPackages,
                             emptyMessage: String(localized: "All packages are up to date", table: "BrewManager"),
                             actionButtonTitle: String(localized: "Update", table: "BrewManager"),
-                            actionButtonColor: DesignTokens.Color.semantic.info
+                            actionButtonColor: AppUI.Color.semantic.info
                         ) { package in
                             Task { await viewModel.upgrade(package: package) }
                         }
@@ -80,7 +80,7 @@ struct BrewManagerView: View {
 
                 case .search:
                     VStack {
-                        MystiqueGlassCard(padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
+                        GlassCard(padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
                             HStack {
                                 GlassTextField(
                                     title: LocalizedStringKey("搜索"),
@@ -103,7 +103,7 @@ struct BrewManagerView: View {
                             packages: viewModel.searchResults,
                             emptyMessage: viewModel.searchText.isEmpty ? String(localized: "Enter keywords to start searching", table: "BrewManager") : String(localized: "No related packages found", table: "BrewManager"),
                             actionButtonTitle: String(localized: "Install", table: "BrewManager"),
-                            actionButtonColor: DesignTokens.Color.semantic.success,
+                            actionButtonColor: AppUI.Color.semantic.success,
                             showInstalledStatus: true
                         ) { package in
                             // 如果已安装则不显示安装按钮，或者显示为卸载/更新
@@ -119,7 +119,7 @@ struct BrewManagerView: View {
             if viewModel.isLoading && selectedTab != .search {
                 ProgressView(String(localized: "Processing...", table: "BrewManager"))
                     .padding()
-                    .background(DesignTokens.Material.glass)
+                    .background(AppUI.Material.glass)
                     .cornerRadius(8)
             }
         }
@@ -154,7 +154,7 @@ struct BrewListView: View {
             VStack {
                 Spacer()
                 Text(emptyMessage)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
                 Spacer()
             }
         } else {
@@ -184,28 +184,22 @@ struct BrewPackageRow: View {
     let action: () -> Void
 
     var body: some View {
-        MystiqueGlassCard(cornerRadius: 12, padding: EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)) {
+        GlassCard(cornerRadius: 12, padding: EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Text(package.name)
-                            .font(.headline)
+                            .font(AppUI.Typography.bodyEmphasized)
 
                         if package.isCask {
-                            Text(String(localized: "Cask"))
-                                .font(.caption)
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 2)
-                                .background(DesignTokens.Color.gradients.energyGradient.opacity(0.2))
-                                .foregroundColor(DesignTokens.Color.semantic.warning)
-                                .cornerRadius(4)
+                            AppTag(String(localized: "Cask"), style: .accent)
                         }
 
                         if showInstalledStatus {
                             if package.installedVersion != nil {
                                 Text("Installed", tableName: "BrewManager")
                                     .font(.caption)
-                                    .foregroundStyle(DesignTokens.Color.gradients.energyGradient)
+                                    .foregroundStyle(AppUI.Color.gradients.energyGradient)
                             }
                         }
                     }
@@ -213,19 +207,19 @@ struct BrewPackageRow: View {
                     if let desc = package.desc {
                         Text(desc)
                             .font(.caption)
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
                             .lineLimit(2)
                     }
 
                     HStack(spacing: 8) {
                         Text(String(localized: "Version: \(package.version)", table: "BrewManager"))
                             .font(.caption2)
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
 
                         if let installedVer = package.installedVersion, installedVer != package.version {
                             Text(String(localized: "Installed: \(installedVer)", table: "BrewManager"))
                                 .font(.caption2)
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                .foregroundColor(AppUI.Color.semantic.textSecondary)
                         }
                     }
                 }
@@ -235,24 +229,10 @@ struct BrewPackageRow: View {
                 if showInstalledStatus && package.installedVersion != nil {
                     // 如果是搜索结果且已安装，显示已安装状态，不显示操作按钮
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(DesignTokens.Color.semantic.success)
+                        .foregroundColor(AppUI.Color.semantic.success)
                 } else {
-                    Button(action: action) {
-                        Text(actionButtonTitle)
-                            .fontWeight(.medium)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(
-                                Capsule()
-                                    .fill(actionButtonColor.opacity(0.1))
-                                    .overlay(
-                                        Capsule()
-                                            .stroke(actionButtonColor, lineWidth: 1)
-                                    )
-                            )
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundColor(actionButtonColor)
+                    AppButton(LocalizedStringKey(actionButtonTitle), style: .secondary, size: .small, action: action)
+                        .foregroundColor(actionButtonColor)
                 }
             }
             .padding(.vertical, 4)

@@ -11,26 +11,28 @@ struct AppManagerDetailView: View {
                     // Header
                     HStack(spacing: 16) {
                         if let icon = app.icon {
-                            Image(nsImage: icon)
-                                .resizable()
-                                .frame(width: 64, height: 64)
+                            AppImageThumbnail(
+                                image: Image(nsImage: icon),
+                                size: CGSize(width: 64, height: 64),
+                                shape: .none
+                            )
                         } else {
                             Image(systemName: "app.fill")
                                 .resizable()
                                 .frame(width: 64, height: 64)
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                .foregroundColor(AppUI.Color.semantic.textSecondary)
                         }
 
                         VStack(alignment: .leading) {
                             Text(app.displayName)
                                 .font(.title)
-                                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                                .foregroundColor(AppUI.Color.semantic.textPrimary)
                             Text(app.bundleIdentifier ?? String(localized: "Unknown Bundle ID", table: "AppManager"))
                                 .font(.caption)
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                .foregroundColor(AppUI.Color.semantic.textSecondary)
                             Text(app.bundleURL.path)
                                 .font(.caption2)
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                .foregroundColor(AppUI.Color.semantic.textSecondary)
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                         }
@@ -56,10 +58,10 @@ struct AppManagerDetailView: View {
                                     VStack(alignment: .leading) {
                                         Text(file.type.displayName)
                                             .font(.caption)
-                                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                            .foregroundColor(AppUI.Color.semantic.textSecondary)
                                         Text(file.path)
                                             .font(.caption2)
-                                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                                            .foregroundColor(AppUI.Color.semantic.textPrimary)
                                             .lineLimit(1)
                                             .truncationMode(.middle)
                                     }
@@ -68,7 +70,7 @@ struct AppManagerDetailView: View {
 
                                     Text(formatBytes(file.size))
                                         .font(.monospacedDigit(.caption)())
-                                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                        .foregroundColor(AppUI.Color.semantic.textSecondary)
                                 }
                             }
                         }
@@ -79,8 +81,8 @@ struct AppManagerDetailView: View {
                     // Footer Action
                     HStack {
                         Text(String(localized: "Selected: \(formatBytes(viewModel.totalSelectedSize))", table: "AppManager"))
-                            .font(.headline)
-                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                            .font(AppUI.Typography.bodyEmphasized)
+                            .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                         Spacer()
 

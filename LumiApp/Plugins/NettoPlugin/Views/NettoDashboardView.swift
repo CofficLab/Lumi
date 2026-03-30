@@ -35,7 +35,7 @@ struct NettoDashboardView: View {
                 // Left: Apps List
                 VStack(alignment: .leading) {
                     Text("Apps")
-                        .font(.headline)
+                        .font(AppUI.Typography.bodyEmphasized)
                         .padding(.horizontal)
                         .padding(.top)
                     
@@ -52,7 +52,7 @@ struct NettoDashboardView: View {
                 // Right: Events
                 VStack(alignment: .leading) {
                     Text("Recent Events")
-                        .font(.headline)
+                        .font(AppUI.Typography.bodyEmphasized)
                         .padding(.horizontal)
                         .padding(.top)
                     
@@ -85,7 +85,7 @@ struct StatusBadge: View {
                 .frame(width: 8, height: 8)
             Text(status.description)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
@@ -109,7 +109,7 @@ struct NettoAppRow: View {
                     .font(.body)
                 Text(app.id)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
             
             Spacer()
@@ -134,14 +134,14 @@ struct EventRow: View {
                     .font(.system(.body, design: .monospaced))
                 Text(event.sourceAppIdentifier)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
             
             Spacer()
             
             Text(event.timeFormatted)
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
     }
 }

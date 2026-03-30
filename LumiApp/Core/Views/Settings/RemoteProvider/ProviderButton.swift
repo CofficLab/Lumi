@@ -14,13 +14,13 @@ struct ProviderButton: View {
                 Image(systemName: provider.iconName)
                     .font(.system(size: 12, weight: .medium))
                 Text(provider.displayName)
-                    .font(DesignTokens.Typography.caption1)
+                    .font(AppUI.Typography.caption1)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(backgroundColor)
+            .appSurface(
+                style: .custom(backgroundColor),
+                cornerRadius: 6
             )
             .foregroundColor(foregroundColor)
         }
@@ -35,13 +35,13 @@ struct ProviderButton: View {
     }
 
     private var backgroundColor: Color {
-        if isSelected { return DesignTokens.Color.semantic.primary }
+        if isSelected { return AppUI.Color.semantic.primary }
         if isHovered { return Color.white.opacity(0.12) }
         return Color.white.opacity(0.05)
     }
 
     private var foregroundColor: Color {
         if isSelected { return .white }
-        return DesignTokens.Color.semantic.textSecondary
+        return AppUI.Color.semantic.textSecondary
     }
 }

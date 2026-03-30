@@ -33,12 +33,12 @@ extension AvailableToolsListSheetView {
     private var headerTitle: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(String(localized: "Tools", table: "AgentAvailableToolsHeader"))
-                .font(DesignTokens.Typography.title3)
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .font(AppUI.Typography.title3)
+                .foregroundColor(AppUI.Color.semantic.textPrimary)
 
             Text(toolsCountText)
-                .font(DesignTokens.Typography.caption1)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .font(AppUI.Typography.caption1)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
     }
 
@@ -76,11 +76,11 @@ extension AvailableToolsListSheetView {
     private var emptyStateView: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(String(localized: "No tools found", table: "AgentAvailableToolsHeader"))
-                .font(DesignTokens.Typography.body)
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .font(AppUI.Typography.body)
+                .foregroundColor(AppUI.Color.semantic.textPrimary)
             Text(String(localized: "Try a different search keyword.", table: "AgentAvailableToolsHeader"))
-                .font(DesignTokens.Typography.caption1)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .font(AppUI.Typography.caption1)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
         .padding(.vertical, 10)
     }
@@ -95,16 +95,16 @@ extension AvailableToolsListSheetView {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 Text(tool.name)
-                    .font(DesignTokens.Typography.body)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .font(AppUI.Typography.body)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
                     .textSelection(.enabled)
                 Spacer()
             }
 
             if !tool.description.isEmpty {
                 Text(tool.description)
-                    .font(DesignTokens.Typography.caption1)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .font(AppUI.Typography.caption1)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
                     .textSelection(.enabled)
                     .lineLimit(3)
             }

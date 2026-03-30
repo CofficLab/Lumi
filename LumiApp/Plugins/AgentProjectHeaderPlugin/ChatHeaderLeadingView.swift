@@ -21,9 +21,9 @@ struct ChatHeaderLeadingView: View {
                         .clipShape(Circle())
 
                     Text(projectVM.currentProjectName.isEmpty ? "Lumi" : projectVM.currentProjectName)
-                        .font(DesignTokens.Typography.body)
+                        .font(AppUI.Typography.body)
                         .fontWeight(.medium)
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .foregroundColor(AppUI.Color.semantic.textPrimary)
                 }
             }
         }

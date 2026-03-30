@@ -11,17 +11,16 @@ struct SidebarEmptyStateView: View {
         VStack(spacing: 12) {
             Image(systemName: "tray")
                 .font(.system(size: 48))
-                .foregroundColor(DesignTokens.Color.adaptive.textSecondary(for: colorScheme))
+                .foregroundColor(AppUI.Color.adaptive.textSecondary(for: colorScheme))
 
             Text(message)
-                .font(.headline)
-                .foregroundColor(DesignTokens.Color.adaptive.textSecondary(for: colorScheme))
+                .font(AppUI.Typography.bodyEmphasized)
+                .foregroundColor(AppUI.Color.adaptive.textSecondary(for: colorScheme))
 
             Text(subtitle)
-                .font(.caption)
-                .foregroundColor(DesignTokens.Color.adaptive.textTertiary(for: colorScheme))
+                .font(AppUI.Typography.caption1)
+                .foregroundColor(AppUI.Color.adaptive.textTertiary(for: colorScheme))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
-

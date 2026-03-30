@@ -23,6 +23,7 @@
 		0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE04A742F409A6E0028FDF4 /* MCP */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
+		F5485E322F7A077B00566188 /* CodeEditor in Frameworks */ = {isa = PBXBuildFile; productRef = F5485E312F7A077B00566188 /* CodeEditor */; };
 		F5826C862F35731C0079B285 /* MagicKit in Frameworks */ = {isa = PBXBuildFile; productRef = F5826C852F35731C0079B285 /* MagicKit */; };
 		F5A640672F3ED1910039A761 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5A640662F3ED1910039A761 /* NetworkExtension.framework */; };
 		F5A640712F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension in Embed System Extensions */ = {isa = PBXBuildFile; fileRef = F5A640652F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -210,6 +211,7 @@
 				0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */,
 				0B1A4F812F662D8500F15618 /* MLXFFT in Frameworks */,
 				F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */,
+				F5485E322F7A077B00566188 /* CodeEditor in Frameworks */,
 				0B1A4F852F662D8500F15618 /* MLXLinalg in Frameworks */,
 				F5A640842F3ED7060039A761 /* _ConnectionPoolTestUtils in Frameworks */,
 				F5A640822F3ED7060039A761 /* _ConnectionPoolModule in Frameworks */,
@@ -347,6 +349,7 @@
 				0B1A4F882F662D8500F15618 /* MLXOptimizers */,
 				0B1A4F8A2F662D8500F15618 /* MLXRandom */,
 				F5BE65D02F6BB1130091C1FD /* Markdown */,
+				F5485E312F7A077B00566188 /* CodeEditor */,
 			);
 			productName = "SwiftUI-Template";
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -419,6 +422,7 @@
 				0B1A4F7D2F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift" */,
 				0B1A4F922F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */,
 				F5BE65CF2F6BB1130091C1FD /* XCRemoteSwiftPackageReference "swift-markdown" */,
+				F5485E302F7A077B00566188 /* XCRemoteSwiftPackageReference "CodeEditor" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -1028,6 +1032,14 @@
 				minimumVersion = 2.8.1;
 			};
 		};
+		F5485E302F7A077B00566188 /* XCRemoteSwiftPackageReference "CodeEditor" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ZeeZide/CodeEditor.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.2.6;
+			};
+		};
 		F5826C842F35731C0079B285 /* XCRemoteSwiftPackageReference "MagicKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/CofficLab/MagicKit";
@@ -1131,6 +1143,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F53C41582F1A3E6500929321 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		F5485E312F7A077B00566188 /* CodeEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F5485E302F7A077B00566188 /* XCRemoteSwiftPackageReference "CodeEditor" */;
+			productName = CodeEditor;
 		};
 		F5826C852F35731C0079B285 /* MagicKit */ = {
 			isa = XCSwiftPackageProductDependency;

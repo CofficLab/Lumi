@@ -1,4 +1,5 @@
 import SwiftUI
+import MagicKit
 
 // MARK: - Raw Message Toggle Button
 
@@ -9,18 +10,13 @@ struct RawMessageToggleButton: View {
     @Binding var showRawMessage: Bool
 
     var body: some View {
-        Button(action: { showRawMessage.toggle() }) {
-            Image(systemName: showRawMessage ? "text.bubble.fill" : "curlybraces")
-                .font(.system(size: 10, weight: .medium))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary.opacity(0.6))
-                .padding(6)
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.08))
-                )
-                .contentShape(Rectangle())
+        AppIconButton(
+            systemImage: showRawMessage ? "text.bubble.fill" : "curlybraces",
+            tint: AppUI.Color.semantic.textSecondary.opacity(0.6),
+            size: .compact
+        ) {
+            showRawMessage.toggle()
         }
-        .buttonStyle(.plain)
         .help(showRawMessage ? String(localized: "Show Rendered", comment: "Toggle to show rendered markdown") : String(localized: "Show Source", comment: "Toggle to show markdown source"))
     }
 }

@@ -1,4 +1,5 @@
 import SwiftUI
+import MagicKit
 
 /// 纯文本消息内容视图（不解析 Markdown）
 struct PlainTextMessageContentView: View {
@@ -10,12 +11,12 @@ struct PlainTextMessageContentView: View {
         Group {
             if preferOuterScroll {
                 Text(verbatim: content)
-                    .font(.system(.body, design: monospaced ? .monospaced : .default))
+                    .font(monospaced ? AppUI.Typography.code : AppUI.Typography.body)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 TextEditor(text: .constant(content))
-                    .font(.system(.body, design: monospaced ? .monospaced : .default))
+                    .font(monospaced ? AppUI.Typography.code : AppUI.Typography.body)
                     .textSelection(.enabled)
                     .scrollContentBackground(.hidden)
             }

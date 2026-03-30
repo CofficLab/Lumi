@@ -1,4 +1,5 @@
 import SwiftUI
+import MagicKit
 import Markdown
 
 /// 原生 Markdown 渲染视图（自研块级解析 + 轻量行内样式）
@@ -30,14 +31,14 @@ struct NativeMarkdownContent: View {
                 .padding(.top, level <= 2 ? 4 : 2)
         case let .paragraph(text):
             inlineText(text)
-                .font(.system(.body, design: .default))
+                .font(AppUI.Typography.body)
         case let .unorderedList(items):
             VStack(alignment: .leading, spacing: 4) {
                 ForEach(Array(items.enumerated()), id: \.offset) { _, item in
                     HStack(alignment: .top, spacing: 8) {
                         taskBulletView(state: item.taskState)
                         inlineText(item.text)
-                            .font(.system(.body, design: .default))
+                            .font(AppUI.Typography.body)
                     }
                 }
             }
@@ -46,10 +47,10 @@ struct NativeMarkdownContent: View {
                 ForEach(Array(items.enumerated()), id: \.offset) { _, entry in
                     HStack(alignment: .top, spacing: 8) {
                         Text("\(entry.index).")
-                            .font(.system(.body, design: .default))
+                            .font(AppUI.Typography.body)
                             .monospacedDigit()
                         inlineText(entry.text)
-                            .font(.system(.body, design: .default))
+                            .font(AppUI.Typography.body)
                     }
                 }
             }
@@ -64,7 +65,7 @@ struct NativeMarkdownContent: View {
                     if preferOuterScroll {
                         // 消息列表内避免嵌套 ScrollView：否则会截获滚轮，外层列表无法滚动（见 MarkdownView preferOuterScroll 说明）
                         Text(verbatim: code)
-                            .font(.system(.body, design: .monospaced))
+                            .font(AppUI.Typography.code)
                             .textSelection(.enabled)
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -72,25 +73,22 @@ struct NativeMarkdownContent: View {
                     } else {
                         ScrollView(.horizontal, showsIndicators: false) {
                             Text(verbatim: code)
-                                .font(.system(.body, design: .monospaced))
+                                .font(AppUI.Typography.code)
                                 .textSelection(.enabled)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(10)
                         }
                     }
                 }
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.primary.opacity(0.06))
-                )
+                .modifier(SubtleMarkdownCardModifier())
             }
         case let .quote(text):
             HStack(alignment: .top, spacing: 10) {
                 Rectangle()
-                    .fill(Color.secondary.opacity(0.35))
+                    .fill(AppUI.Color.semantic.textSecondary.opacity(0.35))
                     .frame(width: 3)
                 inlineText(text)
-                    .font(.system(.body, design: .default))
+                    .font(AppUI.Typography.body)
                     .foregroundStyle(.secondary)
             }
         case let .table(headers, rows):
@@ -109,11 +107,12 @@ struct NativeMarkdownContent: View {
                 interpretedSyntax: .inlineOnlyPreservingWhitespace
             )
         ) {
-            return Text(attributed)
+            Text(attributed)
+                .textSelection(.enabled)
+        } else {
+            Text(verbatim: text)
                 .textSelection(.enabled)
         }
-        return Text(verbatim: text)
-            .textSelection(.enabled)
     }
 
     private func headingFont(level: Int) -> Font {
@@ -134,17 +133,17 @@ struct NativeMarkdownContent: View {
         switch state {
         case .todo:
             Image(systemName: "square")
-                .font(.system(size: 12))
+                .font(AppUI.Typography.caption1)
                 .foregroundStyle(.secondary)
                 .padding(.top, 4)
         case .done:
             Image(systemName: "checkmark.square.fill")
-                .font(.system(size: 12))
+                .font(AppUI.Typography.caption1)
                 .foregroundStyle(.green)
                 .padding(.top, 4)
         case .none:
             Text("•")
-                .font(.system(.body, design: .default))
+                .font(AppUI.Typography.body)
         }
     }
 
@@ -156,21 +155,14 @@ struct NativeMarkdownContent: View {
                 rowView(row, isHeader: false)
             }
         }
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.primary.opacity(0.04))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.primary.opacity(0.12), lineWidth: 1)
-        )
+        .modifier(SubtleMarkdownCardModifier())
     }
 
     private func rowView(_ cells: [String], isHeader: Bool) -> some View {
         HStack(alignment: .top, spacing: 0) {
             ForEach(Array(cells.enumerated()), id: \.offset) { idx, cell in
                 inlineText(cell)
-                    .font(isHeader ? .system(.body, design: .default).weight(.semibold) : .system(.body, design: .default))
+                    .font(isHeader ? AppUI.Typography.bodyEmphasized : AppUI.Typography.body)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 8)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -179,7 +171,18 @@ struct NativeMarkdownContent: View {
                 }
             }
         }
-        .background(isHeader ? Color.primary.opacity(0.06) : Color.clear)
+        .background(isHeader ? AppUI.Color.semantic.textSecondary.opacity(0.10) : Color.clear)
+    }
+}
+
+private struct SubtleMarkdownCardModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        AppCard(
+            style: .subtle,
+            padding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+        ) {
+            content
+        }
     }
 }
 

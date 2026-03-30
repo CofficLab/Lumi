@@ -24,7 +24,7 @@ struct PortManagerView: View {
             // Toolbar / Header
             HStack {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
                 GlassTextField(
                     title: LocalizedStringKey(String(localized: "Search port, PID, or process name", table: "PortManager")),
                     text: $searchText
@@ -38,7 +38,7 @@ struct PortManagerView: View {
                 .disabled(isLoading)
             }
             .padding()
-            .background(DesignTokens.Material.glass)
+            .background(AppUI.Material.glass)
 
             GlassDivider()
 
@@ -57,10 +57,10 @@ struct PortManagerView: View {
                     VStack {
                         Image(systemName: "network.slash")
                             .font(.largeTitle)
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
                         Text("No Listening Ports")
-                            .font(.headline)
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .font(AppUI.Typography.bodyEmphasized)
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
@@ -121,12 +121,12 @@ struct PortRowView: View {
                     Text(port.port)
                         .font(.title3)
                         .fontWeight(.bold)
-                        .foregroundColor(DesignTokens.Color.semantic.info)
+                        .foregroundColor(AppUI.Color.semantic.info)
                         .frame(minWidth: 50, alignment: .leading)
 
                     Text(port.command)
-                        .font(.headline)
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .font(AppUI.Typography.bodyEmphasized)
+                        .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                     Spacer()
                 }
@@ -139,23 +139,23 @@ struct PortRowView: View {
                         .monospaced()
 
                     Text("•")
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
 
                     Text("PID: \(port.pid)")
                         .font(.caption)
                         .monospacedDigit()
                         .padding(.horizontal, 4)
-                        .background(DesignTokens.Color.semantic.textTertiary.opacity(0.2))
+                        .background(AppUI.Color.semantic.textTertiary.opacity(0.2))
                         .cornerRadius(4)
 
                     Text("•")
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
 
                     Text(port.user)
                         .font(.caption)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
                 }
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
 
             Spacer()
@@ -164,7 +164,7 @@ struct PortRowView: View {
                 showConfirm = true
             }) {
                 Image(systemName: "xmark.circle.fill")
-                    .foregroundColor(DesignTokens.Color.semantic.error.opacity(0.8))
+                    .foregroundColor(AppUI.Color.semantic.error.opacity(0.8))
                     .font(.title2)
             }
             .buttonStyle(.borderless)

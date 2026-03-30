@@ -14,18 +14,17 @@ struct SettingsSidebarHeaderView: View {
 
             // App 名称
             Text(appInfo.name)
-                .font(.headline)
-                .fontWeight(.semibold)
+                .font(AppUI.Typography.bodyEmphasized)
 
             // 版本和 Build 信息
             VStack(alignment: .center, spacing: 2) {
                 Text("v\(appInfo.version ?? "Unknown")")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .font(AppUI.Typography.caption2)
+                    .foregroundColor(AppUI.Color.semantic.textTertiary)
 
                 Text("Build \(appInfo.build ?? "Unknown")")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .font(AppUI.Typography.caption2)
+                    .foregroundColor(AppUI.Color.semantic.textTertiary)
             }
 
             Spacer().frame(height: 16)
@@ -36,4 +35,3 @@ struct SettingsSidebarHeaderView: View {
 #Preview {
     SettingsSidebarHeaderView()
 }
-

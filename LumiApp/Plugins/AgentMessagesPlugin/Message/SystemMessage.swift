@@ -75,17 +75,15 @@ struct SystemMessage: View {
 
     private var header: some View {
         MessageHeaderView {
-            HStack(alignment: .center, spacing: 4) {
-                Text("System")
-                    .font(DesignTokens.Typography.caption1)
-                    .fontWeight(.medium)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-            }
+            AppIdentityRow(
+                title: "System",
+                titleColor: AppUI.Color.semantic.textSecondary
+            )
         } trailing: {
             HStack(alignment: .center, spacing: 12) {
                 Text(formatTimestamp(message.timestamp))
-                    .font(DesignTokens.Typography.caption2)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .font(AppUI.Typography.caption2)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
 
                 RawMessageToggleButton(showRawMessage: $showRawMessage)
             }
@@ -171,16 +169,16 @@ private struct LLMInlineConfigErrorView: View {
             HStack(alignment: .top, spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 14))
-                    .foregroundColor(DesignTokens.Color.semantic.error)
+                    .foregroundColor(AppUI.Color.semantic.error)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(titleText)
-                        .font(DesignTokens.Typography.callout)
+                        .font(AppUI.Typography.callout)
                         .fontWeight(.semibold)
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .foregroundColor(AppUI.Color.semantic.textPrimary)
                     if !detailText.isEmpty {
                         Text(detailText)
-                            .font(DesignTokens.Typography.caption1)
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .font(AppUI.Typography.caption1)
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -234,13 +232,13 @@ private struct ApiKeyMissingSystemMessageView: View {
             // 标题与说明
             VStack(alignment: .leading, spacing: 4) {
                 Text(titleText)
-                    .font(DesignTokens.Typography.callout)
+                    .font(AppUI.Typography.callout)
                     .fontWeight(.semibold)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                 Text(descriptionText)
-                    .font(DesignTokens.Typography.caption1)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .font(AppUI.Typography.caption1)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
 
             // 当前会话所用供应商的 API Key 输入
@@ -250,33 +248,25 @@ private struct ApiKeyMissingSystemMessageView: View {
                         Image(systemName: provider.iconName)
                             .font(.system(size: 12))
                         Text(provider.displayName)
-                            .font(DesignTokens.Typography.caption1)
+                            .font(AppUI.Typography.caption1)
                         Spacer()
                     }
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
 
-                    SecureField(
-                        languagePreference == .chinese
-                        ? "输入 \(provider.displayName) 的 API Key"
-                        : "Enter API Key for \(provider.displayName)",
+                    AppInputField(
+                        LocalizedStringKey(
+                            languagePreference == .chinese
+                                ? "输入 \(provider.displayName) 的 API Key"
+                                : "Enter API Key for \(provider.displayName)"
+                        ),
                         text: Binding(
                             get: { apiKey },
                             set: { newValue in
                                 apiKey = newValue
                                 agentSessionConfig.setApiKey(newValue, for: currentProviderId)
                             }
-                        )
-                    )
-                    .textFieldStyle(.plain)
-                    .font(DesignTokens.Typography.body)
-                    .padding(8)
-                    .background(
-                        RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                            .fill(DesignTokens.Material.glass)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                            )
+                        ),
+                        fieldType: .secure
                     )
                 }
                 .padding(.vertical, 2)
@@ -343,9 +333,9 @@ private struct LoadingLocalModelSystemMessageView: View {
             HStack(spacing: 10) {
                 statusIcon
                 Text(statusText)
-                    .font(DesignTokens.Typography.callout)
+                    .font(AppUI.Typography.callout)
                     .fontWeight(.medium)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
                 Spacer(minLength: 0)
             }
 
@@ -382,51 +372,40 @@ private struct LoadingLocalModelSystemMessageView: View {
                 if let p = provider {
                     Image(systemName: p.iconName)
                         .font(.system(size: 11))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
                 }
                 Text(info.displayName)
-                    .font(DesignTokens.Typography.callout)
+                    .font(AppUI.Typography.callout)
                     .fontWeight(.medium)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
                 if let series = info.series, !series.isEmpty {
-                    Text(series)
-                        .font(DesignTokens.Typography.caption2)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(
-                            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                                .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.15))
-                        )
+                    AppTag(series)
                 }
             }
 
             if !info.description.isEmpty {
                 Text(info.description)
-                    .font(DesignTokens.Typography.caption1)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .font(AppUI.Typography.caption1)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
             HStack(spacing: 12) {
-                Label(info.size, systemImage: "internaldrive")
-                    .font(DesignTokens.Typography.caption2)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                Text("·")
-                    .font(DesignTokens.Typography.caption2)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                Text(ramText(minRAM: info.minRAM))
-                    .font(DesignTokens.Typography.caption2)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                AppTag(info.size, systemImage: "internaldrive")
+                AppTag(ramText(minRAM: info.minRAM), systemImage: "memorychip")
                 if info.supportsVision {
-                    Label(projectVM.languagePreference == .chinese ? "视觉" : "Vision", systemImage: "eye")
-                        .font(DesignTokens.Typography.caption2)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    AppTag(
+                        projectVM.languagePreference == .chinese ? "视觉" : "Vision",
+                        systemImage: "eye",
+                        style: .accent
+                    )
                 }
                 if info.supportsTools {
-                    Label(projectVM.languagePreference == .chinese ? "工具" : "Tools", systemImage: "wrench.and.screwdriver")
-                        .font(DesignTokens.Typography.caption2)
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    AppTag(
+                        projectVM.languagePreference == .chinese ? "工具" : "Tools",
+                        systemImage: "wrench.and.screwdriver",
+                        style: .accent
+                    )
                 }
             }
         }
@@ -438,11 +417,11 @@ private struct LoadingLocalModelSystemMessageView: View {
             if let p = provider {
                 Image(systemName: p.iconName)
                     .font(.system(size: 11))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
             Text(line)
-                .font(DesignTokens.Typography.caption1)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .font(AppUI.Typography.caption1)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
@@ -458,11 +437,11 @@ private struct LoadingLocalModelSystemMessageView: View {
         } else if isFailed {
             Image(systemName: "xmark.circle.fill")
                 .font(.system(size: 14))
-                .foregroundColor(DesignTokens.Color.semantic.error)
+                .foregroundColor(AppUI.Color.semantic.error)
         } else {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 14))
-                .foregroundColor(DesignTokens.Color.semantic.success)
+                .foregroundColor(AppUI.Color.semantic.success)
         }
     }
 }

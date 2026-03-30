@@ -17,18 +17,18 @@ struct LargeFilesScanControlBar: View {
                     title: { Text(viewModel.isScanning ? "停止扫描" : "扫描大文件") },
                     icon: { Image(systemName: viewModel.isScanning ? "stop.circle" : "magnifyingglass.circle") }
                 )
-                .font(.headline)
+                .font(AppUI.Typography.bodyEmphasized)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
             })
             .buttonStyle(.borderedProminent)
-            .tint(viewModel.isScanning ? DesignTokens.Color.semantic.error : DesignTokens.Color.semantic.info)
+            .tint(viewModel.isScanning ? AppUI.Color.semantic.error : AppUI.Color.semantic.info)
 
             Spacer()
 
             Text("扫描目录：用户主目录")
                 .font(.caption)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
         .padding(.horizontal)
     }

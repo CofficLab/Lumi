@@ -196,32 +196,35 @@ extension FinderSync {
             return
         }
 
-        let escapedPath = currentDir.path.replacingOccurrences(of: "\"", with: "\\\"")
+        do {
+            let urls = try FileManager.default.contentsOfDirectory(
+                at: currentDir,
+                includingPropertiesForKeys: [.isHiddenKey, .isDirectoryKey],
+                options: [.skipsSubdirectoryDescendants]
+            )
 
-        // 使用 AppleScript 来显示隐藏文件
-        let script = """
-        tell application "Finder"
-            if (count of windows) > 0 then
-                set folderPath to "\(escapedPath)" as alias
-                set every file of folderPath whose name starts with "." to visible
-            end if
-        end tell
-        """
+            var revealedCount = 0
 
-        if Self.verbose {
-            FinderSync.logger.info("\(self.t)执行 AppleScript 显示隐藏文件")
-        }
-
-        var error: NSDictionary?
-        NSAppleScript(source: script)?.executeAndReturnError(&error)
-
-        if let error = error {
-            if Self.verbose {
-                FinderSync.logger.error("\(self.t)执行 AppleScript 失败: \(error)")
+            for url in urls where url.lastPathComponent.hasPrefix(".") {
+                do {
+                    var resourceValues = URLResourceValues()
+                    resourceValues.isHidden = false
+                    var mutableURL = url
+                    try mutableURL.setResourceValues(resourceValues)
+                    revealedCount += 1
+                } catch {
+                    if Self.verbose {
+                        FinderSync.logger.error("\(self.t)取消隐藏失败: \(url.path)，错误: \(error.localizedDescription)")
+                    }
+                }
             }
-        } else {
+
             if Self.verbose {
-                FinderSync.logger.info("\(self.t)成功显示隐藏文件")
+                FinderSync.logger.info("\(self.t)成功取消隐藏 \(revealedCount) 个以 . 开头的项目")
+            }
+        } catch {
+            if Self.verbose {
+                FinderSync.logger.error("\(self.t)读取目录失败: \(currentDir.path)，错误: \(error.localizedDescription)")
             }
         }
     }

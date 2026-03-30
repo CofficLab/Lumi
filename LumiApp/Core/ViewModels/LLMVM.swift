@@ -3,16 +3,30 @@ import MagicKit
 
 @MainActor
 final class LLMVM: ObservableObject, SuperLLMConfigProvider {
-    @Published var selectedProviderId: String = ""
-    @Published var currentModel: String = ""
+    @Published var selectedProviderId: String = "" {
+        didSet {
+            guard selectedProviderId != oldValue else { return }
+            ensureProviderAndModelSelection()
+        }
+    }
+    @Published var currentModel: String = "" {
+        didSet {
+            guard currentModel != oldValue else { return }
+            if currentModel.isEmpty {
+                ensureProviderAndModelSelection()
+            }
+        }
+    }
 
     /// 聊天模式
     @Published var chatMode: ChatMode = .build
 
     let llmService: LLMService
+    private var isAutoSelecting = false
 
     init(llmService: LLMService) {
         self.llmService = llmService
+        ensureProviderAndModelSelection()
     }
 
     var availableProviders: [LLMProviderInfo] {
@@ -75,5 +89,52 @@ final class LLMVM: ObservableObject, SuperLLMConfigProvider {
 
     func setChatMode(_ mode: ChatMode) {
         chatMode = mode
+    }
+
+    // MARK: - Selection Guard
+
+    /// 确保始终存在有效的「供应商 + 模型」组合：
+    /// 1) 当前供应商有效且模型为空/无效时，为该供应商自动挑一个模型
+    /// 2) 当前供应商无效或为空时，自动挑选第一个有模型的供应商及模型
+    func ensureProviderAndModelSelection() {
+        guard !isAutoSelecting else { return }
+        isAutoSelecting = true
+        defer { isAutoSelecting = false }
+
+        let providers = llmService.allProviders()
+        guard !providers.isEmpty else { return }
+
+        if let selectedProvider = providers.first(where: { $0.id == selectedProviderId }),
+           let resolvedModel = resolveModel(for: selectedProvider, preferredModel: currentModel) {
+            if currentModel != resolvedModel {
+                currentModel = resolvedModel
+            }
+            return
+        }
+
+        guard let fallbackProvider = providers.first(where: { resolveModel(for: $0, preferredModel: nil) != nil }),
+              let fallbackModel = resolveModel(for: fallbackProvider, preferredModel: nil) else {
+            return
+        }
+
+        if selectedProviderId != fallbackProvider.id {
+            selectedProviderId = fallbackProvider.id
+        }
+        if currentModel != fallbackModel {
+            currentModel = fallbackModel
+        }
+    }
+
+    private func resolveModel(for provider: LLMProviderInfo, preferredModel: String?) -> String? {
+        let models = provider.availableModels
+        guard !models.isEmpty else { return nil }
+
+        if let preferredModel, !preferredModel.isEmpty, models.contains(preferredModel) {
+            return preferredModel
+        }
+        if models.contains(provider.defaultModel) {
+            return provider.defaultModel
+        }
+        return models.first
     }
 }

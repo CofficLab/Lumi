@@ -68,9 +68,6 @@ actor FilePreviewPlugin: SuperPlugin, SuperLog {
     /// 检查文件选择状态
     @MainActor
     private func checkFileSelection() {
-        // 由于无法直接访问 AgentRuntime，这里使用一个简单的启发式方法
-        // 当通知发出时，我们认为文件选择状态可能已更改
-        // 实际的文件选择状态将由 FilePreviewView 自行判断
         isFileSelected.toggle()
     }
 
@@ -79,10 +76,6 @@ actor FilePreviewPlugin: SuperPlugin, SuperLog {
     /// Add detail view - 显示文件预览
     /// - Returns: FilePreviewView to be shown in the detail panel
     @MainActor func addDetailView() -> AnyView? {
-        // 始终返回文件预览视图，由 FilePreviewView 自行判断是否显示内容
-        if Self.verbose {
-            Self.logger.info("\(self.t) 提供 FilePreviewView (详情视图)")
-        }
-        return AnyView(FilePreviewView())
+        AnyView(FilePreviewView())
     }
 }

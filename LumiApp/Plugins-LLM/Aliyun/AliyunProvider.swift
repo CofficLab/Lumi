@@ -6,9 +6,9 @@ import os
 
 /// 阿里云 DashScope 供应商实现
 ///
-/// 提供通义千问、GLM、MiniMax、Kimi 等大模型服务
+/// 提供通义千问、GLM、MiniMax、Kimi 等大模型服务。
 /// API 地址：https://coding.dashscope.aliyuncs.com/apps/anthropic
-/// 兼容 Anthropic API 格式
+/// 兼容 Anthropic API 格式。
 final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.aliyun")
     nonisolated static let emoji = "🔵"
@@ -28,11 +28,11 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
     static let defaultModel = "qwen3.5-plus"
 
     static let availableModels = [
-        "qwen3.5-plus",       // 通义千问 3.5 Plus
-        "glm-4.7",            // GLM-4.7
-        "glm-5",              // GLM-5
-        "MiniMax-M2.5",       // MiniMax M2.5
-        "kimi-k2.5",          // Kimi K2.5
+        "qwen3.5-plus",
+        "glm-4.7",
+        "glm-5",
+        "MiniMax-M2.5",
+        "kimi-k2.5",
     ]
 
     // MARK: - SuperLLMProvider
@@ -41,7 +41,6 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
         super.init()
     }
 
-    /// Coding Plan 的唯一 Base URL
     var baseURL: String {
         "https://coding.dashscope.aliyuncs.com/apps/anthropic/v1/messages"
     }
@@ -49,7 +48,6 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
     func buildRequest(url: URL, apiKey: String) -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        // 阿里云 Coding Plan 使用 Authorization: Bearer <API Key> 格式
         request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         return request
@@ -61,18 +59,7 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
         tools: [AgentTool]?,
         systemPrompt: String
     ) throws -> [String: Any] {
-        // 阿里云兼容 Anthropic 格式
-        let systemParts = messages
-            .filter { $0.role == .system }
-            .map { $0.content.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-        let systemMessage: String
-        if !systemParts.isEmpty {
-            systemMessage = systemParts.joined(separator: "\n\n")
-        } else {
-            systemMessage = systemPrompt
-        }
-
+        let systemMessage = messages.first(where: { $0.role == .system })?.content ?? systemPrompt
         let conversationMessages = messages
             .filter { $0.role.shouldSendToLLM }
             .map { transformMessage($0) }
@@ -92,37 +79,7 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
     }
 
     func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
-        // 阿里云响应格式与 Anthropic 兼容
-        struct AnthropicResponse: Decodable {
-            struct Content: Decodable {
-                let type: String
-                let text: String?
-                let id: String?
-                let name: String?
-                let input: [String: AnySendable]?
-
-                enum CodingKeys: String, CodingKey {
-                    case type, text, id, name, input
-                }
-
-                init(from decoder: Decoder) throws {
-                    let container = try decoder.container(keyedBy: CodingKeys.self)
-                    type = try container.decode(String.self, forKey: .type)
-                    text = try container.decodeIfPresent(String.self, forKey: .text)
-                    id = try container.decodeIfPresent(String.self, forKey: .id)
-                    name = try container.decodeIfPresent(String.self, forKey: .name)
-                    if let inputContainer = try? container.decodeIfPresent([String: AnySendable].self, forKey: .input) {
-                        input = inputContainer.mapValues { v in AnySendable(value: v.value) }
-                    } else {
-                        input = nil
-                    }
-                }
-            }
-
-            let content: [Content]
-        }
-
-        let result = try JSONDecoder().decode(AnthropicResponse.self, from: data)
+        let result = try JSONDecoder().decode(AliyunResponse.self, from: data)
 
         var textContent = ""
         var toolCalls: [ToolCall] = []
@@ -144,7 +101,6 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
         return (textContent, toolCalls.isEmpty ? nil : toolCalls)
     }
 
-    /// 构建流式请求体
     func buildStreamingRequestBody(
         messages: [ChatMessage],
         model: String,
@@ -162,11 +118,153 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
     }
 
     /// 解析流式响应数据块
-    /// Aliyun 兼容 Anthropic 流式格式
+    ///
+    /// Aliyun 兼容 Anthropic 流式格式：
+    /// event: content_block_delta
+    /// data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Hello"}}
     func parseStreamChunk(data: Data) throws -> StreamChunk? {
-        // 复用 Anthropic 的解析逻辑
-        let anthropicProvider = AnthropicProvider()
-        return try anthropicProvider.parseStreamChunk(data: data)
+        guard let text = String(data: data, encoding: .utf8) else {
+            return nil
+        }
+
+        var eventType: String?
+        var eventDataLines: [String] = []
+
+        let lines = text.components(separatedBy: "\n")
+        for line in lines {
+            if line.hasPrefix("event:") {
+                let afterPrefix = String(line.dropFirst(6))
+                eventType = afterPrefix.trimmingCharacters(in: .whitespaces)
+            } else if line.hasPrefix("data:") {
+                let afterPrefix = String(line.dropFirst(5))
+                eventDataLines.append(afterPrefix.trimmingCharacters(in: .whitespaces))
+            }
+        }
+
+        let dataStr = eventDataLines.isEmpty ? nil : eventDataLines.joined(separator: "\n")
+        guard let dataStr = dataStr, !dataStr.isEmpty else {
+            return nil
+        }
+
+        guard let jsonData = dataStr.data(using: .utf8) else {
+            return nil
+        }
+
+        do {
+            let json = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any]
+            let jsonType = json?["type"] as? String
+            let effectiveEventType = eventType ?? jsonType ?? "unknown"
+
+            // 处理错误
+            if let error = json?["error"] as? [String: Any],
+               let errorMessage = error["message"] as? String {
+                return StreamChunk(error: errorMessage, eventType: .unknown, rawEvent: text)
+            }
+
+            // 处理 ping 事件
+            if effectiveEventType == "ping" {
+                return StreamChunk(eventType: .ping, rawEvent: text)
+            }
+
+            // 处理消息开始
+            if effectiveEventType == "message_start" {
+                var inputTokens: Int?
+                if let message = json?["message"] as? [String: Any],
+                   let usage = message["usage"] as? [String: Any] {
+                    inputTokens = usage["input_tokens"] as? Int
+                }
+                return StreamChunk(eventType: .messageStart, rawEvent: text, inputTokens: inputTokens)
+            }
+
+            // 处理消息增量
+            if effectiveEventType == "message_delta" {
+                let stopReason = (json?["delta"] as? [String: Any])?["stop_reason"] as? String ?? json?["stop_reason"] as? String
+                var inputTokens: Int?
+                var outputTokens: Int?
+                if let usage = json?["usage"] as? [String: Any] {
+                    inputTokens = usage["input_tokens"] as? Int
+                    outputTokens = usage["output_tokens"] as? Int
+                }
+                return StreamChunk(eventType: .messageDelta, rawEvent: text, inputTokens: inputTokens, outputTokens: outputTokens, stopReason: stopReason)
+            }
+
+            // 处理消息结束
+            if effectiveEventType == "message_stop" {
+                return StreamChunk(isDone: true, eventType: .messageStop, rawEvent: text)
+            }
+
+            // 处理内容块开始
+            if effectiveEventType == "content_block_start" {
+                if let contentBlock = json?["content_block"] as? [String: Any],
+                   let blockType = contentBlock["type"] as? String {
+
+                    if blockType == "thinking" {
+                        return StreamChunk(eventType: .contentBlockStart, rawEvent: text)
+                    }
+
+                    if blockType == "tool_use" {
+                        if let id = contentBlock["id"] as? String,
+                           let name = contentBlock["name"] as? String {
+                            let toolCall = ToolCall(id: id, name: name, arguments: "{}")
+                            return StreamChunk(toolCalls: [toolCall], eventType: .contentBlockStart, rawEvent: text)
+                        }
+                    }
+
+                    if blockType == "text" {
+                        if let textContent = contentBlock["text"] as? String, !textContent.isEmpty {
+                            return StreamChunk(content: textContent, eventType: .contentBlockStart, rawEvent: text)
+                        }
+                        return StreamChunk(eventType: .contentBlockStart, rawEvent: text)
+                    }
+
+                    return StreamChunk(eventType: .contentBlockStart, rawEvent: text)
+                }
+                return StreamChunk(eventType: .contentBlockStart, rawEvent: text)
+            }
+
+            // 处理内容块增量
+            if effectiveEventType == "content_block_delta" {
+                if let delta = json?["delta"] as? [String: Any] {
+                    if let thinkingDelta = delta["thinking_delta"] as? String {
+                        return StreamChunk(content: thinkingDelta, eventType: .thinkingDelta, rawEvent: text)
+                    }
+                    if let thinkingDelta = delta["thinking"] as? String {
+                        return StreamChunk(content: thinkingDelta, eventType: .thinkingDelta, rawEvent: text)
+                    }
+
+                    if let textContent = delta["text"] as? String {
+                        return StreamChunk(content: textContent, eventType: .textDelta, rawEvent: text)
+                    }
+
+                    if let textDelta = delta["text_delta"] as? String {
+                        return StreamChunk(content: textDelta, eventType: .textDelta, rawEvent: text)
+                    }
+                    
+                    if let partialJson = delta["partial_json"] as? String {
+                        return StreamChunk(partialJson: partialJson, eventType: .inputJsonDelta, rawEvent: text)
+                    }
+                    
+                    if delta["signature"] != nil {
+                        return StreamChunk(eventType: .signatureDelta, rawEvent: text)
+                    }
+                    
+                    return StreamChunk(eventType: .contentBlockDelta, rawEvent: text)
+                }
+                return StreamChunk(eventType: .contentBlockDelta, rawEvent: text)
+            }
+
+            // 处理内容块停止
+            if effectiveEventType == "content_block_stop" {
+                return StreamChunk(eventType: .contentBlockStop, rawEvent: text)
+            }
+
+            return StreamChunk(eventType: .unknown, rawEvent: text)
+        } catch {
+            if Self.verbose {
+                Self.logger.warning("解析流式数据块失败: \(error.localizedDescription)")
+            }
+            return StreamChunk(error: "解析失败: \(error.localizedDescription)", eventType: .unknown, rawEvent: text)
+        }
     }
 
     static var logEmoji: String { "🔵" }
@@ -176,33 +274,23 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
 
 extension AliyunProvider {
     func transformMessage(_ message: ChatMessage) -> [String: Any] {
-        // 工具结果消息
         if let toolCallID = message.toolCallID {
             return [
                 "role": "user",
                 "content": [
-                    [
-                        "type": "tool_result",
-                        "tool_use_id": toolCallID,
-                        "content": message.content,
-                    ],
+                    ["type": "tool_result", "tool_use_id": toolCallID, "content": message.content],
                 ],
             ]
         }
 
-        // 带工具调用的助手消息
         if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
             var content: [[String: Any]] = []
 
             if !message.content.isEmpty {
-                content.append([
-                    "type": "text",
-                    "text": message.content,
-                ])
+                content.append(["type": "text", "text": message.content])
             }
 
             for tc in toolCalls {
-                // 确保 input 始终是一个有效的字典
                 let inputObject: [String: Any]
                 if let data = tc.arguments.data(using: .utf8),
                    let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
@@ -210,22 +298,12 @@ extension AliyunProvider {
                 } else {
                     inputObject = [:]
                 }
-
-                content.append([
-                    "type": "tool_use",
-                    "id": tc.id,
-                    "name": tc.name,
-                    "input": inputObject,
-                ])
+                content.append(["type": "tool_use", "id": tc.id, "name": tc.name, "input": inputObject])
             }
 
-            return [
-                "role": "assistant",
-                "content": content,
-            ]
+            return ["role": "assistant", "content": content]
         }
 
-        // 处理消息中的图片
         if !message.images.isEmpty {
             if Self.verbose {
                 Self.logger.info("\(self.t) 消息包含 \(message.images.count) 张图片，正在转换...")
@@ -233,27 +311,18 @@ extension AliyunProvider {
 
             var content: [[String: Any]] = []
 
-            // 先添加文本内容（如果非空）
             if !message.content.isEmpty {
-                content.append([
-                    "type": "text",
-                    "text": message.content
-                ])
+                content.append(["type": "text", "text": message.content])
             }
 
-            // 添加所有图片
             for (index, image) in message.images.enumerated() {
                 let base64Data = image.data.base64EncodedString()
                 if Self.verbose {
-                    Self.logger.info("\(self.t) 图片 \(index + 1): \(image.mimeType), base64 长度：\(base64Data.count)")
+                    Self.logger.info("\(self.t) 图片 \(index + 1): \(image.mimeType), base64长度: \(base64Data.count)")
                 }
                 content.append([
                     "type": "image",
-                    "source": [
-                        "type": "base64",
-                        "media_type": image.mimeType,
-                        "data": base64Data
-                    ]
+                    "source": ["type": "base64", "media_type": image.mimeType, "data": base64Data]
                 ])
             }
 
@@ -261,28 +330,18 @@ extension AliyunProvider {
                 Self.logger.info("\(self.t) 已将 \(message.images.count) 张图片转换为 API 格式")
             }
 
-            return [
-                "role": message.role.rawValue,
-                "content": content
-            ]
+            return ["role": message.role.rawValue, "content": content]
         }
 
-        // 兼容旧版 marker 格式
-        // Marker 格式：[IMAGE_BASE64:<mime_type>:<data>]
         if message.content.contains("[IMAGE_BASE64:") {
             var content: [[String: Any]] = []
             let components = message.content.components(separatedBy: "[IMAGE_BASE64:")
 
-            // 第一个组件是图片之前的文本
             if !components[0].isEmpty {
-                content.append([
-                    "type": "text",
-                    "text": components[0]
-                ])
+                content.append(["type": "text", "text": components[0]])
             }
 
             for component in components.dropFirst() {
-                // component 格式：<mime_type>:<data>]<rest_of_text>
                 if let closeBracketIndex = component.firstIndex(of: "]") {
                     let imagePart = component[..<closeBracketIndex]
                     let textPart = component[component.index(after: closeBracketIndex)...]
@@ -291,40 +350,25 @@ extension AliyunProvider {
                     if imageComponents.count == 2 {
                         let mimeType = String(imageComponents[0])
                         let base64Data = String(imageComponents[1])
-
                         content.append([
                             "type": "image",
-                            "source": [
-                                "type": "base64",
-                                "media_type": mimeType,
-                                "data": base64Data
-                            ]
+                            "source": ["type": "base64", "media_type": mimeType, "data": base64Data]
                         ])
                     }
 
                     if !textPart.isEmpty {
-                        // 清理可能添加的换行符
                         let cleanText = String(textPart).trimmingCharacters(in: .whitespacesAndNewlines)
                         if !cleanText.isEmpty {
-                            content.append([
-                                "type": "text",
-                                "text": cleanText
-                            ])
+                            content.append(["type": "text", "text": cleanText])
                         }
                     }
                 }
             }
 
-            return [
-                "role": message.role.rawValue,
-                "content": content
-            ]
+            return ["role": message.role.rawValue, "content": content]
         }
 
-        return [
-            "role": message.role.rawValue,
-            "content": message.content,
-        ]
+        return ["role": message.role.rawValue, "content": message.content]
     }
 }
 
@@ -332,10 +376,6 @@ extension AliyunProvider {
 
 extension AliyunProvider {
     func formatTool(_ tool: AgentTool) -> [String: Any] {
-        [
-            "name": tool.name,
-            "description": tool.description,
-            "input_schema": tool.inputSchema,
-        ]
+        ["name": tool.name, "description": tool.description, "input_schema": tool.inputSchema]
     }
 }

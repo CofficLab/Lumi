@@ -37,7 +37,7 @@ struct StatusBarPopupView: View {
             menuItemsSection
         }
         .frame(width: 300)
-        .background(DesignTokens.Material.glass)
+        .appSurface(style: .glass, cornerRadius: 0)
     }
 
     // MARK: - App Info Section
@@ -48,20 +48,22 @@ struct StatusBarPopupView: View {
             HStack(spacing: 12) {
                 // 应用图标
                 if let appIcon = NSApp.applicationIconImage {
-                    Image(nsImage: appIcon)
-                        .resizable()
-                        .frame(width: 40, height: 40)
+                    AppImageThumbnail(
+                        image: Image(nsImage: appIcon),
+                        size: CGSize(width: 40, height: 40),
+                        shape: .none
+                    )
                 }
 
                 // 应用信息
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Lumi")
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                     Text("v\(appVersion)")
                         .font(.system(size: 10))
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                        .foregroundColor(AppUI.Color.semantic.textTertiary)
                 }
 
                 Spacer()
@@ -110,7 +112,7 @@ struct StatusBarPopupView: View {
             // 退出应用
             MenuItemRow(
                 title: "退出 Lumi",
-                color: DesignTokens.Color.semantic.error,
+                color: AppUI.Color.semantic.error,
                 action: onQuit
             )
         }
@@ -135,9 +137,9 @@ struct MenuItemRow: View {
             GlassRow {
                 HStack(spacing: 12) {
                     Text(title)
-                        .font(DesignTokens.Typography.body)
+                        .font(AppUI.Typography.body)
                         .foregroundColor(color)
-                        .padding(.horizontal, DesignTokens.Spacing.sm)
+                        .padding(.horizontal, AppUI.Spacing.sm)
 
                     Spacer()
                 }

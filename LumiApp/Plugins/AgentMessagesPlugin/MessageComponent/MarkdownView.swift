@@ -84,24 +84,24 @@ struct ExpandButtonBar: View {
                 Spacer()
                 HStack(spacing: 6) {
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 11, weight: .semibold))
                     Text("展开")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(AppUI.Typography.caption1)
                 }
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .foregroundColor(AppUI.Color.semantic.textPrimary)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 10)
                 Spacer()
             }
             .background(
-                DesignTokens.Color.semantic.info.opacity(0.8)
+                AppUI.Color.semantic.info.opacity(0.8)
                     .overlay(
                         Rectangle()
                             .foregroundStyle(
                                 LinearGradient(
                                     colors: [
                                         Color.clear,
-                                        DesignTokens.Color.semantic.info.opacity(0.8)
+                                        AppUI.Color.semantic.info.opacity(0.8)
                                     ],
                                     startPoint: .top,
                                     endPoint: .bottom
@@ -111,40 +111,9 @@ struct ExpandButtonBar: View {
             )
             .overlay(alignment: .top) {
                 Rectangle()
-                    .fill(DesignTokens.Color.semantic.info.opacity(0.8))
+                    .fill(AppUI.Color.semantic.info.opacity(0.8))
                     .frame(height: 1)
             }
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Expand Button
-
-/// 展开按钮（独立按钮，不使用条状背景）
-struct ExpandButton: View {
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 12, weight: .semibold))
-                Text("展开")
-                    .font(.system(size: 13, weight: .medium))
-            }
-            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(DesignTokens.Color.semantic.info.opacity(0.15))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(DesignTokens.Color.semantic.info.opacity(0.3), lineWidth: 1)
-                    )
-                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-            )
         }
         .buttonStyle(.plain)
     }

@@ -175,7 +175,7 @@ extension View {
     }
 
     /// 神秘边框
-    func mystiqueBorder(cornerRadius: CGFloat = DesignTokens.Radius.md) -> some View {
+    func mystiqueBorder(cornerRadius: CGFloat = AppUI.Radius.md) -> some View {
         self.overlay(
             RoundedRectangle(cornerRadius: cornerRadius)
                 .stroke(Themes.Gradients.mysticBorder, lineWidth: 1.5)
@@ -187,50 +187,50 @@ extension View {
 #Preview("神秘主题背景") {
     VStack {
         Text("神秘主题")
-            .font(DesignTokens.Typography.largeTitle)
-            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+            .font(AppUI.Typography.largeTitle)
+            .foregroundColor(AppUI.Color.semantic.textPrimary)
 
         Text("午夜幽蓝氛围")
-            .font(DesignTokens.Typography.body)
-            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            .font(AppUI.Typography.body)
+            .foregroundColor(AppUI.Color.semantic.textSecondary)
     }
     .mystiqueBackground(variant: .midnight)
 }
 
 #Preview("微光效果") {
-    VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+    VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
         Text("微光效果卡片")
-            .font(DesignTokens.Typography.title3)
-            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+            .font(AppUI.Typography.title3)
+            .foregroundColor(AppUI.Color.semantic.textPrimary)
 
         Text("神秘的微光会创造出梦幻的视觉效果")
-            .font(DesignTokens.Typography.body)
-            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            .font(AppUI.Typography.body)
+            .foregroundColor(AppUI.Color.semantic.textSecondary)
     }
     .frame(width: 300)
-    .padding(DesignTokens.Spacing.lg)
-    .background(DesignTokens.Material.glass)
-    .cornerRadius(DesignTokens.Radius.md)
+    .padding(AppUI.Spacing.lg)
+    .background(AppUI.Material.glass)
+    .cornerRadius(AppUI.Radius.md)
     .mystiqueGlow(intensity: 0.2)
 }
 
 #Preview("脉冲光晕") {
     ZStack {
-        DesignTokens.Color.basePalette.deepBackground.ignoresSafeArea()
+        AppUI.Color.basePalette.deepBackground.ignoresSafeArea()
 
-        VStack(spacing: DesignTokens.Spacing.xl) {
+        VStack(spacing: AppUI.Spacing.xl) {
             Circle()
                 .fill(Themes.Colors.glow.intense)
                 .frame(width: 100, height: 100)
                 .opacity(0.8)
 
             Circle()
-                .fill(DesignTokens.Color.semantic.success)
+                .fill(AppUI.Color.semantic.success)
                 .frame(width: 80, height: 80)
                 .opacity(0.8)
 
             Circle()
-                .fill(DesignTokens.Color.semantic.error)
+                .fill(AppUI.Color.semantic.error)
                 .frame(width: 60, height: 60)
                 .opacity(0.8)
         }
@@ -239,9 +239,9 @@ extension View {
 
 #Preview("主题变体") {
     ScrollView(.vertical) {
-        VStack(spacing: DesignTokens.Spacing.lg) {
+        VStack(spacing: AppUI.Spacing.lg) {
             ForEach(Themes.Variant.allCases, id: \.self) { variant in
-                MystiqueGlassCard {
+                GlassCard {
                     HStack {
                         // 使用每个主题的特定颜色
                         ZStack {
@@ -255,14 +255,14 @@ extension View {
                                 .foregroundColor(variant.theme.iconColor)
                         }
 
-                        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
+                        VStack(alignment: .leading, spacing: AppUI.Spacing.xs) {
                             Text(variant.theme.displayName)
-                                .font(DesignTokens.Typography.bodyEmphasized)
-                                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                                .font(AppUI.Typography.bodyEmphasized)
+                                .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                             Text(variant.theme.description)
-                                .font(DesignTokens.Typography.caption1)
-                                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                                .font(AppUI.Typography.caption1)
+                                .foregroundColor(AppUI.Color.semantic.textTertiary)
                         }
 
                         Spacer()
@@ -278,7 +278,7 @@ extension View {
                     }
                 }
                 .overlay(
-                    RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
+                    RoundedRectangle(cornerRadius: AppUI.Radius.md)
                         .stroke(variant.theme.iconColor, lineWidth: 1)
                         .opacity(0.5)
                 )
@@ -286,7 +286,7 @@ extension View {
                 .frame(width: 280)
             }
         }
-        .padding(DesignTokens.Spacing.lg)
+        .padding(AppUI.Spacing.lg)
     }
     .mystiqueBackground()
     .frame(height: 600)

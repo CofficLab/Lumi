@@ -1,6 +1,6 @@
-import SwiftUI
-import MagicKit
 import AppKit
+import MagicKit
+import SwiftUI
 
 /// 本地大模型设置视图（仅展示本地模型供应商）
 struct LocalProviderSettingsView: View {
@@ -63,12 +63,69 @@ struct LocalProviderSettingsView: View {
     // MARK: - Body
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xl) {
-                // 本地供应商选择器
-                providerSelector
+        VStack(spacing: 0) {
+            // 本地供应商卡片（固定）
+            providerSelectorCard
+                .padding(AppUI.Spacing.lg)
+                .background(Color.clear)
 
-                // 本地：已加载/列表/下载/加载
+            ScrollView {
+                VStack(alignment: .leading, spacing: AppUI.Spacing.lg) {
+                    // 本地模型管理卡片
+                    if localProvider != nil {
+                        localModelCard
+                    }
+
+                    Spacer()
+                }
+                .padding(.horizontal, AppUI.Spacing.lg)
+            }
+        }
+        .onAppear(perform: onAppear)
+        .onChange(of: selectedProviderId) { _, _ in
+            loadSettings()
+            updateLocalProvider()
+        }
+    }
+}
+
+// MARK: - View
+
+extension LocalProviderSettingsView {
+    /// 本地供应商选择器卡片（固定）
+    private var providerSelectorCard: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
+                GlassSectionHeader(
+                    icon: "cpu.fill",
+                    title: "本地 LLM 供应商",
+                    subtitle: "在本地设备上运行 AI 模型"
+                )
+
+                if localProviders.count > 1 {
+                    GlassDivider()
+
+                    HStack(spacing: AppUI.Spacing.sm) {
+                        ForEach(localProviders) { provider in
+                            ProviderButton(
+                                provider: provider,
+                                isSelected: selectedProviderId == provider.id
+                            ) {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    selectedProviderId = provider.id
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// 本地模型管理卡片
+    private var localModelCard: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 0) {
                 LocalModelSectionView(
                     localProvider: localProvider,
                     selectedModel: $selectedModel,
@@ -93,7 +150,7 @@ struct LocalProviderSettingsView: View {
                 )
                 .onChange(of: localAvailableModels.count) { _, count in
                     if count > 0,
-                       (selectedSeriesName.isEmpty || !localAvailableModels.contains(where: { ($0.series ?? "其他") == selectedSeriesName })) {
+                       selectedSeriesName.isEmpty || !localAvailableModels.contains(where: { ($0.series ?? "其他") == selectedSeriesName }) {
                         let fallback = "其他"
                         let grouped = Dictionary(grouping: localAvailableModels) { $0.series ?? fallback }
                         selectedSeriesName = grouped.keys.sorted().first ?? ""
@@ -115,46 +172,9 @@ struct LocalProviderSettingsView: View {
                         try? await Task.sleep(for: .milliseconds(350))
                     }
                 }
-
-                Spacer()
-            }
-            .padding(DesignTokens.Spacing.lg)
-        }
-        .onAppear(perform: onAppear)
-        .onChange(of: selectedProviderId) { _, newValue in
-            loadSettings()
-            updateLocalProvider()
-        }
-    }
-}
-
-// MARK: - View
-
-extension LocalProviderSettingsView {
-    /// 本地供应商选择器
-    private var providerSelector: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-            Text("本地 LLM 供应商")
-                .font(DesignTokens.Typography.callout)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-
-            if localProviders.count > 1 {
-                HStack(spacing: DesignTokens.Spacing.sm) {
-                    ForEach(localProviders) { provider in
-                        ProviderButton(
-                            provider: provider,
-                            isSelected: selectedProviderId == provider.id
-                        ) {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                selectedProviderId = provider.id
-                            }
-                        }
-                    }
-                }
             }
         }
     }
-
 }
 
 // MARK: - Actions
@@ -162,12 +182,10 @@ extension LocalProviderSettingsView {
 extension LocalProviderSettingsView {
     /// 加载当前供应商的设置信息（选中的模型）
     private func loadSettings() {
-
     }
 
     /// 保存选中的模型到 UserDefaults
     private func saveModel() {
-
     }
 
     /// 根据当前选中的供应商 ID 更新本地供应商引用
@@ -261,7 +279,15 @@ extension LocalProviderSettingsView {
     }
 }
 
-#Preview {
+// MARK: - Preview
+
+#Preview("Local Provider Settings") {
     LocalProviderSettingsView()
+        .inRootView()
+}
+
+#Preview("Local Provider Settings - Full App") {
+    ContentLayout()
+        .hideSidebar()
         .inRootView()
 }

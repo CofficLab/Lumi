@@ -71,4 +71,13 @@ final class ChatHistoryVM: ObservableObject {
     func updateMessageAsync(_ message: ChatMessage, conversationId: UUID) async -> ChatMessage? {
         await chatHistoryService.updateMessageAsync(message, conversationId: conversationId)
     }
+
+    /// 异步批量删除消息
+    /// - Parameters:
+    ///   - messageIds: 要删除的消息 ID 列表
+    ///   - conversationId: 对话 ID（用于校验归属）
+    /// - Returns: 实际删除的消息数量
+    func deleteMessagesAsync(messageIds: [UUID], conversationId: UUID) async -> Int {
+        await chatHistoryService.deleteMessagesAsync(messageIds: messageIds, conversationId: conversationId)
+    }
 }

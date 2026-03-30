@@ -9,7 +9,7 @@ import SwiftUI
 /// - 微妙渐变边框
 /// - 柔和阴影
 ///
-struct MystiqueGlassCard<Content: View>: View {
+struct GlassCard<Content: View>: View {
     @Environment(\.colorScheme) private var colorScheme
 
     // MARK: - 配置
@@ -90,7 +90,7 @@ struct MystiqueGlassCard<Content: View>: View {
 // MARK: - 预览
 #Preview("玻璃卡片") {
     VStack(spacing: DesignTokens.Spacing.lg) {
-        MystiqueGlassCard {
+        GlassCard {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
                 Text("玻璃卡片")
                     .font(DesignTokens.Typography.title3)
@@ -102,7 +102,7 @@ struct MystiqueGlassCard<Content: View>: View {
             }
         }
 
-        MystiqueGlassCard(glowColor: .purple) {
+        GlassCard(glowColor: .purple) {
             Text("带光晕的卡片")
                 .font(DesignTokens.Typography.body)
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)

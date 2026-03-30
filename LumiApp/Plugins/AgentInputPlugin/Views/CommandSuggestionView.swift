@@ -25,7 +25,7 @@ struct CommandSuggestionView: View, SuperLog {
                         HStack(spacing: 8) {
                             Image(systemName: "terminal")
                                 .font(.system(size: 12))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(AppUI.Color.semantic.textSecondary)
 
                             Text(suggestion.command)
                                 .font(.system(size: 13, weight: .medium))
@@ -35,7 +35,7 @@ struct CommandSuggestionView: View, SuperLog {
 
                             Text(suggestion.description)
                                 .font(.system(size: 12))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(AppUI.Color.semantic.textSecondary)
                                 .lineLimit(1)
                         }
                         .padding(.horizontal, 12)
