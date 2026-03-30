@@ -1,7 +1,7 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Displays a settings button on the right side of the status bar, click to open the settings interface" : {
+    "Displays a settings button on the left side of the status bar, click to open the settings interface" : {
 
     },
     "Open Settings" : {
