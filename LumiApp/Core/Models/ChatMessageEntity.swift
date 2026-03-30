@@ -86,12 +86,17 @@ final class ChatMessageEntity {
     /// 3. 跨线程访问未正确管理的对象
     ///
     /// 本方法使用防御性编程，确保即使对象失效也不会崩溃：
+    /// - 检查 `isDeleted` 标记
     /// - 使用 `try?` 而不是 `try!` 避免解码错误崩溃
     /// - 检查所有可选值，即使理论上不应为 nil
     /// - 在访问属性前捕获潜在的 SwiftData 内部错误
     ///
     /// - Returns: ChatMessage 对象，如果转换失败则返回 nil
     func toChatMessage() -> ChatMessage? {
+        // ✅ 检查是否已被标记为删除
+        // SwiftData 的 @Model 会自动生成 isDeleted 属性
+        guard !isDeleted else { return nil }
+        
         // 防御性编程：即使对象理论上有效，也要检查基本属性
         // SwiftData 可能在访问属性时抛出内部错误
         do {

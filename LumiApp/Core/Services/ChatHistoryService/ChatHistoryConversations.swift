@@ -57,6 +57,11 @@ extension ChatHistoryService {
             return String(trimmedMessage.prefix(20))
         }
 
+        // API Key 无效时直接降级，避免触发无意义的 500 错误
+        guard !config.apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return String(trimmedMessage.prefix(20))
+        }
+
         // 否则使用 LLM 生成简洁标题
         let titlePrompt = """
         请为以下用户消息生成一个简洁的对话标题（最多 10 个中文字符或 15 个英文字符）：
@@ -112,7 +117,7 @@ extension ChatHistoryService {
 
     /// 获取所有对话
     func fetchAllConversations() -> [Conversation] {
-        let context = getContext()
+        let context = self.getContext()
         let descriptor = FetchDescriptor<Conversation>(
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
@@ -136,7 +141,7 @@ extension ChatHistoryService {
     ///   - projectId: 可选项目 ID；为 nil 时拉取全部对话
     /// - Returns: 当前页对话数据
     func fetchConversationsPage(limit: Int, offset: Int, projectId: String? = nil) -> [Conversation] {
-        let context = getContext()
+        let context = self.getContext()
 
         guard limit > 0, offset >= 0 else { return [] }
 
@@ -165,7 +170,7 @@ extension ChatHistoryService {
 
     /// 根据 ID 获取对话
     func fetchConversation(id: UUID) -> Conversation? {
-        let context = getContext()
+        let context = self.getContext()
         let descriptor = FetchDescriptor<Conversation>(
             predicate: #Predicate { $0.id == id }
         )

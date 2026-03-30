@@ -17,6 +17,10 @@ extension ChatHistoryService {
     }
 
     /// 保存消息
+    ///
+    /// 内置去重检查：如果相同 `id` 的消息已存在，则执行更新而非插入，
+    /// 防止 SwiftData `Duplicate registration` 崩溃。
+    ///
     /// - Parameters:
     ///   - message: 要保存的消息
     ///   - conversationId: 对话 ID
@@ -33,6 +37,30 @@ extension ChatHistoryService {
             return nil
         }
 
+        // 去重检查：如果相同 ID 的消息已存在，执行更新而非插入
+        let existingDescriptor = FetchDescriptor<ChatMessageEntity>(
+            predicate: #Predicate<ChatMessageEntity> { $0.id == message.id }
+        )
+
+        if let existingEntity = try? context.fetch(existingDescriptor).first {
+            existingEntity.apply(from: message)
+            existingEntity.conversation = fetchedConversation
+            fetchedConversation.updatedAt = Date()
+
+            do {
+                try context.save()
+                let updated = existingEntity.toChatMessage()
+                if let updated {
+                    NotificationCenter.postMessageSaved(message: updated, conversationId: fetchedConversation.id)
+                }
+                return updated
+            } catch {
+                AppLogger.core.error("\(Self.t)❌ 更新消息失败：\(error.localizedDescription)")
+                return nil
+            }
+        }
+
+        // 消息不存在，创建新记录
         let messageEntity = ChatMessageEntity.fromChatMessage(message)
         messageEntity.timestamp = Date()
         messageEntity.conversation = fetchedConversation
@@ -54,7 +82,7 @@ extension ChatHistoryService {
 
     /// 按消息 ID 更新已存在的消息（同 `id` 覆盖字段，不插入新行）
     func updateMessageAsync(_ message: ChatMessage, conversationId: UUID) async -> ChatMessage? {
-        let context = createNewContext()
+        let context = self.getContext()
         let descriptor = FetchDescriptor<ChatMessageEntity>(
             predicate: #Predicate<ChatMessageEntity> { $0.id == message.id }
         )
@@ -90,7 +118,7 @@ extension ChatHistoryService {
     func deleteMessagesAsync(messageIds: [UUID], conversationId: UUID) async -> Int {
         guard !messageIds.isEmpty else { return 0 }
 
-        let context = createNewContext()
+        let context = self.getContext()
         let idSet = Set(messageIds)
         let descriptor = FetchDescriptor<ChatMessageEntity>(
             predicate: #Predicate<ChatMessageEntity> { msg in
@@ -127,7 +155,7 @@ extension ChatHistoryService {
     /// - Parameter conversationId: 对话 ID
     /// - Returns: 消息列表；若会话不存在返回 nil
     func loadMessagesAsync(forConversationId conversationId: UUID) async -> [ChatMessage]? {
-        let context = createNewContext()
+        let context = self.getContext()
         let descriptor = FetchDescriptor<Conversation>(
             predicate: #Predicate { $0.id == conversationId }
         )
@@ -152,7 +180,7 @@ extension ChatHistoryService {
         limit: Int,
         beforeTimestamp: Date? = nil
     ) async -> (messages: [ChatMessage], hasMore: Bool) {
-        let context = createNewContext()
+        let context = self.getContext()
 
         guard limit > 0 else {
             return ([], false)
@@ -268,7 +296,7 @@ extension ChatHistoryService {
         let normalizedIDs = Array(Set(toolCallIDs.filter { !$0.isEmpty }))
         guard !normalizedIDs.isEmpty else { return [] }
 
-        let context = createNewContext()
+        let context = self.getContext()
         let descriptor = FetchDescriptor<ChatMessageEntity>(
             predicate: #Predicate<ChatMessageEntity> { msg in
                 msg.conversation?.id == conversationId && msg.toolCallID != nil
@@ -294,7 +322,7 @@ extension ChatHistoryService {
     /// - Parameter conversationId: 对话 ID
     /// - Returns: 消息数量
     func getMessageCount(forConversationId conversationId: UUID) async -> Int {
-        let context = createNewContext()
+        let context = self.getContext()
         let descriptor = FetchDescriptor<Conversation>(
             predicate: #Predicate { $0.id == conversationId }
         )
