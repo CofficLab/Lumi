@@ -144,6 +144,19 @@
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		0BC122682F7AA6DE00AD2B5D /* Exceptions for "LumiApp" folder in "Embed Libraries" phase from "Lumi" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			attributesByRelativePath = {
+				ThirdParty/sqlite/vec0.dylib = (CodeSignOnCopy, );
+			};
+			buildPhase = F5A9DB4A2F7635F600A47D9C /* Embed Libraries */;
+			membershipExceptions = (
+				ThirdParty/sqlite/vec0.dylib,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		0B2F7D622F3A301C00AD7E94 /* LumiFinder */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -165,6 +178,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				F5F4E1E82F3ACC6600C76EA0 /* Exceptions for "LumiApp" folder in "Lumi" target */,
+				0BC122682F7AA6DE00AD2B5D /* Exceptions for "LumiApp" folder in "Embed Libraries" phase from "Lumi" target */,
 				F52C2B202F3EDDE200905557 /* Exceptions for "LumiApp" folder in "NettoExtension" target */,
 			);
 			path = LumiApp;
@@ -804,6 +818,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/LumiApp/ThirdParty/sqlite-vec",
+					"$(PROJECT_DIR)/LumiApp/ThirdParty/sqlite",
 				);
 				MARKETING_VERSION = 1.44.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi;
@@ -855,6 +870,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/LumiApp/ThirdParty/sqlite-vec",
+					"$(PROJECT_DIR)/LumiApp/ThirdParty/sqlite",
 				);
 				MARKETING_VERSION = 1.44.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi;

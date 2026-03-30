@@ -660,7 +660,7 @@ final class RAGSQLiteStore {
 
     private func bundledSQLiteVecCandidates() -> [String] {
         var candidates: [String] = []
-        let libraryNames = ["sqlite-vec0.dylib", "sqlite-vec.dylib", "vec0.dylib"]
+        let libraryNames = ["vec0.dylib"]
         let main = Bundle.main
 
         if let frameworksPath = main.privateFrameworksPath {
