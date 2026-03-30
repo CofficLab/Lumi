@@ -32,10 +32,22 @@ actor RAGService: SuperLog {
     // MARK: - Lifecycle
 
     func initialize() async throws {
-        guard !isInitialized else { return }
+        guard !isInitialized else {
+            if Self.verbose >= 1 {
+                AppLogger.core.info("\(Self.t)♻️ initialize: 已初始化，跳过")
+            }
+            return
+        }
+
+        let start = CFAbsoluteTimeGetCurrent()
 
         let dbURL = AppConfig.getPluginDBFolderURL(pluginName: Self.pluginName)
             .appendingPathComponent("rag.sqlite")
+
+        if Self.verbose >= 1 {
+            AppLogger.core.info("\(Self.t)📦 initialize: 开始初始化")
+            AppLogger.core.info("\(Self.t)   DB 路径：\(dbURL.path)")
+        }
 
         let store = try RAGSQLiteStore(dbURL: dbURL)
         try store.migrate()
@@ -51,10 +63,20 @@ actor RAGService: SuperLog {
         self.embeddingProvider = embeddingProvider
         self.isInitialized = true
 
+        let duration = (CFAbsoluteTimeGetCurrent() - start) * 1000
+
         if Self.verbose >= 1 {
             AppLogger.core.info(
-                "\(Self.t)✅ RAG 服务初始化完成，DB: \(dbURL.path), embedding=\(embeddingProvider.modelIdentifierWithVersion), dim=\(embeddingProvider.dimension), backend=\(store.runtimeInfo.vectorBackend.rawValue)"
+                "\(Self.t)✅ RAG 服务初始化完成 (\(String(format: "%.2f", duration))ms)"
             )
+            AppLogger.core.info(
+                "\(Self.t)   embedding=\(embeddingProvider.modelIdentifierWithVersion), dim=\(embeddingProvider.dimension), backend=\(store.runtimeInfo.vectorBackend.rawValue)"
+            )
+        }
+
+        // ⚠️ 性能预警
+        if duration > 100 {
+            AppLogger.core.warning("\(Self.t)⚠️ initialize 耗时过长：\(String(format: "%.2f", duration))ms (>100ms)")
         }
     }
 
@@ -149,10 +171,17 @@ actor RAGService: SuperLog {
         guard let store else { throw RAGError.internalStateCorrupted }
         guard let embeddingProvider else { throw RAGError.internalStateCorrupted }
 
+        let start = CFAbsoluteTimeGetCurrent()
+
         let normalized = normalizeProjectPath(projectPath)
         guard !normalized.isEmpty else { throw RAGError.invalidProjectPath }
 
         let indexState = try store.fetchProjectIndexState(projectPath: normalized)
+
+        let duration = (CFAbsoluteTimeGetCurrent() - start) * 1000
+        if Self.verbose >= 1 {
+            AppLogger.core.info("\(Self.t)⏱️ checkNeedsIndex DB 查询耗时：\(String(format: "%.2f", duration))ms")
+        }
 
         // 无索引状态，需要索引
         guard let state = indexState else {
@@ -265,6 +294,8 @@ actor RAGService: SuperLog {
 
     /// 检索相关文档（可限定项目）
     func retrieve(query: String, projectPath: String?, topK: Int = 3) async throws -> RAGResponse {
+        let start = CFAbsoluteTimeGetCurrent()
+
         guard isInitialized else { throw RAGError.notInitialized }
         guard let retriever else { throw RAGError.internalStateCorrupted }
         guard let embeddingProvider else { throw RAGError.internalStateCorrupted }
@@ -273,13 +304,40 @@ actor RAGService: SuperLog {
         guard !trimmed.isEmpty else { return RAGResponse(query: query, results: []) }
 
         let normalizedProjectPath = projectPath.map(normalizeProjectPath)
+
+        // ⏱️ 向量化耗时
+        let embedStart = CFAbsoluteTimeGetCurrent()
         let queryEmbedding = try embeddingProvider.embed(trimmed)
+        let embedDuration = (CFAbsoluteTimeGetCurrent() - embedStart) * 1000
+
+        if Self.verbose >= 1 {
+            AppLogger.core.info("\(Self.t)⏱️ embed 耗时：\(String(format: "%.2f", embedDuration))ms")
+        }
+
+        // ⏱️ 检索耗时
+        let retrieveStart = CFAbsoluteTimeGetCurrent()
         let results = try retriever.retrieve(
             queryEmbedding: queryEmbedding,
             query: trimmed,
             projectPath: normalizedProjectPath,
             topK: max(topK, 1)
         )
+        let retrieveDuration = (CFAbsoluteTimeGetCurrent() - retrieveStart) * 1000
+
+        if Self.verbose >= 1 {
+            AppLogger.core.info("\(Self.t)⏱️ retriever.retrieve 耗时：\(String(format: "%.2f", retrieveDuration))ms, 结果数：\(results.count)")
+        }
+
+        let totalDuration = (CFAbsoluteTimeGetCurrent() - start) * 1000
+
+        if Self.verbose >= 1 {
+            AppLogger.core.info("\(Self.t)⏱️ retrieve 总耗时：\(String(format: "%.2f", totalDuration))ms")
+        }
+
+        // ⚠️ 性能预警
+        if totalDuration > 300 {
+            AppLogger.core.warning("\(Self.t)⚠️ retrieve 总耗时过长：\(String(format: "%.2f", totalDuration))ms (>300ms) [embed=\(String(format: "%.0f", embedDuration))ms, retriever=\(String(format: "%.0f", retrieveDuration))ms]")
+        }
 
         return RAGResponse(query: query, results: results)
     }

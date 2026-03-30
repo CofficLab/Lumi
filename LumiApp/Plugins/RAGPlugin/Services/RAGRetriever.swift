@@ -2,6 +2,7 @@ import Foundation
 
 struct RAGRetriever {
     private let store: RAGSQLiteStore
+    private static let verbose = false
 
     init(store: RAGSQLiteStore) {
         self.store = store
@@ -13,21 +14,50 @@ struct RAGRetriever {
         projectPath: String?,
         topK: Int
     ) throws -> [RAGSearchResult] {
+        let start = CFAbsoluteTimeGetCurrent()
+
         let queryTerms = tokenize(query.lowercased())
+
+        // ⏱️ ANN 检索耗时
+        let annStart = CFAbsoluteTimeGetCurrent()
         let annCandidates = try loadANNCandidates(queryEmbedding: queryEmbedding, projectPath: projectPath, topK: topK)
+        let annDuration = (CFAbsoluteTimeGetCurrent() - annStart) * 1000
+
         let candidates: [RAGStoredChunk]
+        let usedFallback: Bool
         if annCandidates.isEmpty {
+            // ⏱️ 词法检索耗时
+            let lexicalStart = CFAbsoluteTimeGetCurrent()
             candidates = try store.loadCandidateChunks(
                 projectPath: projectPath,
                 queryTerms: queryTerms,
                 lexicalLimit: 2500,
                 fallbackLimit: 7000
             )
+            let lexicalDuration = (CFAbsoluteTimeGetCurrent() - lexicalStart) * 1000
+            usedFallback = true
+
+            if Self.verbose {
+                AppLogger.core.info("[RAGRetriever] 词法检索耗时：\(String(format: "%.2f", lexicalDuration))ms, 结果数：\(candidates.count)")
+            }
         } else {
             candidates = annCandidates
+            usedFallback = false
         }
-        if candidates.isEmpty { return [] }
 
+        if candidates.isEmpty {
+            if Self.verbose {
+                AppLogger.core.info("[RAGRetriever] 未找到候选文档")
+            }
+            return []
+        }
+
+        if Self.verbose {
+            AppLogger.core.info("[RAGRetriever] ANN 检索耗时：\(String(format: "%.2f", annDuration))ms, 结果数：\(annCandidates.count), 使用fallback: \(usedFallback)")
+        }
+
+        // ⏱️ 相似度计算耗时
+        let scoringStart = CFAbsoluteTimeGetCurrent()
         var scored: [(RAGStoredChunk, Float)] = []
         scored.reserveCapacity(candidates.count)
 
@@ -42,6 +72,19 @@ struct RAGRetriever {
 
         scored.sort { $0.1 > $1.1 }
         let top = pickTopWithDiversity(scored, topK: topK)
+        let scoringDuration = (CFAbsoluteTimeGetCurrent() - scoringStart) * 1000
+
+        let totalDuration = (CFAbsoluteTimeGetCurrent() - start) * 1000
+
+        if Self.verbose {
+            AppLogger.core.info("[RAGRetriever] 相似度计算耗时：\(String(format: "%.2f", scoringDuration))ms, 候选数：\(candidates.count), 返回：\(top.count)")
+            AppLogger.core.info("[RAGRetriever] retrieve 总耗时：\(String(format: "%.2f", totalDuration))ms")
+        }
+
+        // ⚠️ 性能预警
+        if totalDuration > 200 {
+            AppLogger.core.warning("[RAGRetriever] ⚠️ retrieve 耗时过长：\(String(format: "%.2f", totalDuration))ms (>200ms) [ANN=\(String(format: "%.0f", annDuration))ms, scoring=\(String(format: "%.0f", scoringDuration))ms, candidates=\(candidates.count)]")
+        }
 
         return top.map {
             let sourcePath = displayPath(filePath: $0.0.filePath, projectPath: projectPath)

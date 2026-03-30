@@ -55,12 +55,16 @@ final class RAGSendMiddleware: SendMiddleware, SuperLog {
         ctx: SendMessageContext,
         next: @escaping @MainActor (SendMessageContext) async -> Void
     ) async {
+        // ⏱️ 总耗时开始
+        let totalStart = CFAbsoluteTimeGetCurrent()
+
         let userMessage = ctx.message.content
         let projectPath = ctx.projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
 
         if Self.verbose {
             RAGPlugin.logger.info("\(Self.t)🔀 RAG 中间件：检查消息")
             RAGPlugin.logger.info("\(Self.t)   用户消息：\"\(userMessage)\"")
+            RAGPlugin.logger.info("\(Self.t)   项目路径：\(projectPath.isEmpty ? "<未选择>" : projectPath)")
         }
 
         guard shouldUseRAG(for: userMessage) else {
@@ -77,8 +81,19 @@ final class RAGSendMiddleware: SendMiddleware, SuperLog {
             await next(ctx)
             return
         }
+
+        // ⏱️ 记录索引检查时间
+        let indexingCheckStart = CFAbsoluteTimeGetCurrent()
+        let isAnyIndexing = RAGService.isAnyIndexing()
+        let isProjectIndexing = RAGService.isIndexing(projectPath: projectPath)
+        let indexingCheckDuration = (CFAbsoluteTimeGetCurrent() - indexingCheckStart) * 1000
+
+        if Self.verbose {
+            RAGPlugin.logger.info("\(Self.t)   🔍 索引状态检查：anyIndexing=\(isAnyIndexing), projectIndexing=\(isProjectIndexing) (\(String(format: "%.2f", indexingCheckDuration))ms)")
+        }
+
         // 只要任意项目正在索引，都直接跳过本轮 RAG，避免卡在 RAGService actor 队列
-        if RAGService.isAnyIndexing() {
+        if isAnyIndexing {
             if Self.verbose {
                 RAGPlugin.logger.info("\(Self.t)   ⏭️ 跳过 RAG (存在后台索引任务，不阻塞发送)")
             }
@@ -86,7 +101,7 @@ final class RAGSendMiddleware: SendMiddleware, SuperLog {
             return
         }
         // 索引进行中时，发送链路应直接放行，避免等待 RAGService actor 队列
-        if RAGService.isIndexing(projectPath: projectPath) {
+        if isProjectIndexing {
             if Self.verbose {
                 RAGPlugin.logger.info("\(Self.t)   ⏭️ 跳过 RAG (索引进行中，不阻塞发送)")
             }
@@ -99,13 +114,23 @@ final class RAGSendMiddleware: SendMiddleware, SuperLog {
         }
 
         do {
-            // 从插件内部获取 RAG 服务
             let ragService = RAGPlugin.getService()
 
+            // ⏱️ 初始化耗时
+            let initStart = CFAbsoluteTimeGetCurrent()
             try await ragService.initialize()
+            let initDuration = (CFAbsoluteTimeGetCurrent() - initStart) * 1000
+            if Self.verbose {
+                RAGPlugin.logger.info("\(Self.t)   ⏱️ initialize 耗时：\(String(format: "%.2f", initDuration))ms")
+            }
 
-            // 检查是否需要索引
+            // ⏱️ checkNeedsIndex 耗时
+            let checkStart = CFAbsoluteTimeGetCurrent()
             let needsIndex = try await ragService.checkNeedsIndex(projectPath: projectPath)
+            let checkDuration = (CFAbsoluteTimeGetCurrent() - checkStart) * 1000
+            if Self.verbose {
+                RAGPlugin.logger.info("\(Self.t)   ⏱️ checkNeedsIndex 耗时：\(String(format: "%.2f", checkDuration))ms, needsIndex=\(needsIndex)")
+            }
 
             if needsIndex {
                 // 需要索引，启动后台索引任务，不阻塞发送流程
@@ -122,12 +147,24 @@ final class RAGSendMiddleware: SendMiddleware, SuperLog {
                 return
             }
 
+            // ⏱️ retrieve 耗时（这是最关键的指标）
+            let retrieveStart = CFAbsoluteTimeGetCurrent()
             // 索引已完成，执行检索
             let response = try await ragService.retrieve(
                 query: userMessage,
                 projectPath: projectPath,
                 topK: 5
             )
+            let retrieveDuration = (CFAbsoluteTimeGetCurrent() - retrieveStart) * 1000
+
+            if Self.verbose {
+                RAGPlugin.logger.info("\(Self.t)   ⏱️ retrieve 耗时：\(String(format: "%.2f", retrieveDuration))ms")
+            }
+
+            // ⚠️ 性能预警：超过 300ms 显示警告
+            if retrieveDuration > 300 {
+                RAGPlugin.logger.warning("\(Self.t)   ⚠️ RAG 检索耗时过长：\(String(format: "%.2f", retrieveDuration))ms (>300ms)")
+            }
 
             guard response.hasResults else {
                 if Self.verbose {
@@ -151,13 +188,20 @@ final class RAGSendMiddleware: SendMiddleware, SuperLog {
                 projectPath: projectPath
             )
             ctx.transientSystemPrompts.append(augmentedPrompt)
+
+            // ⏱️ 总耗时
+            let totalDuration = (CFAbsoluteTimeGetCurrent() - totalStart) * 1000
+
             if Self.verbose {
                 RAGPlugin.logger.info("\(Self.t)   📝 已构建增强提示词 (\(augmentedPrompt.count) 字符)")
                 RAGPlugin.logger.info("\(Self.t)   🧩 已注入本轮临时 system 上下文")
+                RAGPlugin.logger.info("\(Self.t)   ⏱️ RAG 中间件总耗时：\(String(format: "%.2f", totalDuration))ms")
                 RAGPlugin.logger.info("\(Self.t)   ➡️ 继续传递给 LLM...")
             }
         } catch {
-            RAGPlugin.logger.error("\(Self.t)   ❌ RAG 检索失败：\(error)")
+            // ⏱️ 错误也要记录耗时
+            let totalDuration = (CFAbsoluteTimeGetCurrent() - totalStart) * 1000
+            RAGPlugin.logger.error("\(Self.t)   ❌ RAG 检索失败：\(error) (耗时：\(String(format: "%.2f", totalDuration))ms)")
         }
 
         await next(ctx)
