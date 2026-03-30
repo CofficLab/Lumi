@@ -108,8 +108,18 @@ final class SendController: ObservableObject, SuperLog {
             )
         }
 
+        if Self.verbose > 1 {
+            AppLogger.core.info("\(Self.t) 发送上下文")
+        }
         let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
-        await pipeline.run(ctx: ctx) { _ in }
+        if Self.verbose > 1 {
+            AppLogger.core.info("\(Self.t) 发送管道")
+        }
+        await pipeline.run(ctx: ctx) { _ in
+            if Self.verbose > 1 {
+                AppLogger.core.info("\(Self.t) 发送管道完成")
+            }
+        }
         pendingTransientSystemPromptsByConversation[conversationId] = ctx.transientSystemPrompts
 
         await send(conversationId: conversationId)
@@ -267,13 +277,13 @@ final class SendController: ObservableObject, SuperLog {
 
         // 记录开始时间
         let startTime = CFAbsoluteTimeGetCurrent()
-        
+
         // ✅ 使用线程安全的 MetadataHolder
         let metadataHolder = MetadataHolder()
 
         do {
             statusVM.setStatus(conversationId: conversationId, content: "正在发送消息…")
-            
+
             let assistantMessage = try await container.llmService.sendStreamingMessage(
                 messages: messagesForLLM,
                 config: config,
@@ -284,7 +294,7 @@ final class SendController: ObservableObject, SuperLog {
                     Task {
                         await metadataHolder.set(metadata)
                     }
-                    
+
                     Task { @MainActor in
                         statusVM.setStatus(conversationId: conversationId, content: "正在发送消息，大小：\(metadata.formattedBodySize)")
                     }
@@ -300,12 +310,12 @@ final class SendController: ObservableObject, SuperLog {
             }
 
             await onMessageReceived(message: assistantMessage, conversationId: conversationId)
-            
+
         } catch LLMServiceError.cancelled {
             AppLogger.core.info("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 发送已取消")
             finishSendTurn(conversationId: conversationId, emitCompletionEvent: false)
             statusVM.setStatus(conversationId: conversationId, content: "已停止生成")
-            
+
             // 取消时调用后置管线（如果有元数据）
             if let metadata = await metadataHolder.get() {
                 var mutableMetadata = metadata
@@ -314,11 +324,11 @@ final class SendController: ObservableObject, SuperLog {
                 let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
                 await pipeline.runPost(metadata: mutableMetadata, response: nil)
             }
-            
+
         } catch {
             AppLogger.core.error("\(Self.t) 请求模型失败：\(error)")
             finishSendTurn(conversationId: conversationId)
-            
+
             // 失败时调用后置管线（如果有元数据）
             if let metadata = await metadataHolder.get() {
                 var mutableMetadata = metadata
@@ -331,7 +341,7 @@ final class SendController: ObservableObject, SuperLog {
                 let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
                 await pipeline.runPost(metadata: mutableMetadata, response: nil)
             }
-            
+
             // 保存错误消息到数据库
             let errorMessage: ChatMessage
             if let llmError = error as? LLMServiceError {
@@ -348,7 +358,6 @@ final class SendController: ObservableObject, SuperLog {
             await container.conversationVM.saveMessage(errorMessage, to: conversationId)
         }
     }
-
 
     private func consumeTransientSystemPrompts(for conversationId: UUID) -> [String] {
         let prompts = pendingTransientSystemPromptsByConversation[conversationId] ?? []
