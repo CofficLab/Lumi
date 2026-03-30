@@ -142,6 +142,7 @@ final class ProjectVM: ObservableObject, SuperLog {
     }
 
     func setLanguagePreference(_ preference: LanguagePreference) {
+        self.languagePreference = preference
     }
 
     func setAutoApproveRisk(_ enabled: Bool) {
