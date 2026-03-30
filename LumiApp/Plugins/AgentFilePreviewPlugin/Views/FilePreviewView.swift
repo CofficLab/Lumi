@@ -86,11 +86,12 @@ final class FilePreviewUndoState: ObservableObject {
 struct FilePreviewView: View {
     @EnvironmentObject var ProjectVM: ProjectVM
 
+    /// 主题更新触发器
+    @State private var themeUpdateTrigger: UUID = UUID()
+
     /// 当前文件内容（本地加载）
     @State private var fileContent: String = ""
     @State private var persistedContent: String = ""
-    @State private var isSaving: Bool = false
-    @State private var saveErrorMessage: String?
     @State private var selectedTheme: CodeEditor.ThemeName = .default
     @State private var canPreviewCurrentFile: Bool = false
     @State private var isReadOnlyPreview: Bool = false
@@ -144,8 +145,10 @@ struct FilePreviewView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            headerSection
-            
+            if ProjectVM.isFileSelected {
+                breadcrumbSection
+            }
+
             Divider()
                 .background(Color.white.opacity(0.1))
 
@@ -167,73 +170,75 @@ struct FilePreviewView: View {
             restoreThemeSelection()
             loadFileContent(from: ProjectVM.selectedFileURL)
         }
-        .onChange(of: selectedTheme) { _, newTheme in
-            persistThemeSelection(newTheme)
+        .onFilePreviewThemeChanged { newTheme in
+            selectedTheme = newTheme
+            themeUpdateTrigger = UUID()
         }
         .onChange(of: undoState.content) { _, newContent in
             if fileContent != newContent {
                 fileContent = newContent
             }
         }
-        .alert(String(localized: "Save Failed", table: "AgentFilePreview"), isPresented: saveErrorBinding) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(saveErrorMessage ?? "")
-        }
     }
 
-    // MARK: - Header Section
+    // MARK: - Breadcrumb Section
 
-    private var headerSection: some View {
-        HStack(alignment: .center, spacing: 8) {
-            Image(systemName: "doc.fill")
-                .font(.system(size: 14))
-                .foregroundColor(.accentColor)
+    /// 面包屑路径段列表（相对于项目根，若无项目则全路径）
+    private var breadcrumbSegments: [String] {
+        guard let fileURL = ProjectVM.selectedFileURL else { return [] }
+        let fullPath = fileURL.path
+        if let projectPath = ProjectVM.currentProject?.path,
+           fullPath.hasPrefix(projectPath) {
+            var relative = String(fullPath.dropFirst(projectPath.count))
+            if relative.hasPrefix("/") { relative = String(relative.dropFirst()) }
+            return relative.split(separator: "/").map(String.init)
+        }
+        return fullPath.split(separator: "/").map(String.init)
+    }
 
-            Text(headerTitle)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
+    private var breadcrumbSection: some View {
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 2) {
+                    ForEach(Array(breadcrumbSegments.enumerated()), id: \.offset) { index, segment in
+                        let isLast = index == breadcrumbSegments.count - 1
 
-            Spacer()
-
-            if ProjectVM.isFileSelected && canPreviewCurrentFile {
-                themeMenu
-
-                if hasUnsavedChanges {
-                    Circle()
-                        .fill(AppUI.Color.semantic.warning)
-                        .frame(width: 6, height: 6)
-                }
-
-                Button(action: saveFileContent) {
-                    HStack(spacing: 4) {
-                        if isSaving {
-                            ProgressView()
-                                .controlSize(.mini)
-                        } else {
-                            Image(systemName: "square.and.arrow.down")
-                                .font(.system(size: 10))
+                        if index > 0 {
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 9, weight: .semibold))
+                                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                                .padding(.horizontal, 1)
                         }
 
-                        Text(String(localized: "Save", table: "AgentFilePreview"))
-                            .font(.system(size: 10, weight: .medium))
+                        Text(segment)
+                            .font(.system(size: 11, weight: isLast ? .semibold : .regular))
+                            .foregroundColor(
+                                isLast
+                                    ? AppUI.Color.semantic.textPrimary
+                                    : AppUI.Color.semantic.textSecondary
+                            )
+                            .lineLimit(1)
+                            .id(index)
                     }
-                    .foregroundColor(hasUnsavedChanges ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textTertiary)
                 }
-                .buttonStyle(.plain)
-                .disabled(!hasUnsavedChanges || isSaving || isReadOnlyPreview)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
             }
-
-            Button(action: clearSelection) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 10))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+            .onAppear {
+                if let last = breadcrumbSegments.indices.last {
+                    proxy.scrollTo(last, anchor: .trailing)
+                }
             }
-            .buttonStyle(.plain)
+            .onChange(of: ProjectVM.selectedFileURL) { _, _ in
+                if let last = breadcrumbSegments.indices.last {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        proxy.scrollTo(last, anchor: .trailing)
+                    }
+                }
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: AppConfig.headerHeight)
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 10)
     }
 
     // MARK: - File Preview Content
@@ -278,20 +283,26 @@ struct FilePreviewView: View {
     }
 
     private var fileInfoSection: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            if isTruncatedPreview {
-                Text(String(localized: "Preview Truncated for Large File", table: "AgentFilePreview"))
-                    .font(.system(size: 9))
-                    .foregroundColor(AppUI.Color.semantic.warning)
-                    .lineLimit(2)
-            } else if isReadOnlyPreview {
-                Text(String(localized: "Large File Read-Only Preview", table: "AgentFilePreview"))
-                    .font(.system(size: 9))
-                    .foregroundColor(AppUI.Color.semantic.warning)
-                    .lineLimit(2)
+        Group {
+            if isTruncatedPreview || isReadOnlyPreview {
+                VStack(alignment: .leading, spacing: 4) {
+                    if isTruncatedPreview {
+                        Text(String(localized: "Preview Truncated for Large File", table: "AgentFilePreview"))
+                            .font(.system(size: 9))
+                            .foregroundColor(AppUI.Color.semantic.warning)
+                            .lineLimit(2)
+                    } else if isReadOnlyPreview {
+                        Text(String(localized: "Large File Read-Only Preview", table: "AgentFilePreview"))
+                            .font(.system(size: 9))
+                            .foregroundColor(AppUI.Color.semantic.warning)
+                            .lineLimit(2)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var fileContentSection: some View {
@@ -306,80 +317,6 @@ struct FilePreviewView: View {
         )
         .onChange(of: textSelection) { _, newSelection in
             handleSelectionChange(newSelection)
-        }
-    }
-
-    private var headerTitle: String {
-        if ProjectVM.isFileSelected, let fileName = ProjectVM.selectedFileURL?.lastPathComponent, !fileName.isEmpty {
-            return fileName
-        }
-        return String(localized: "File Preview", table: "AgentFilePreview")
-    }
-
-    private var themeMenu: some View {
-        Menu {
-            if !lightThemes.isEmpty {
-                Section(String(localized: "Light Themes", table: "AgentFilePreview")) {
-                    ForEach(lightThemes, id: \.rawValue) { theme in
-                        themeSelectionButton(theme)
-                    }
-                }
-            }
-
-            if !darkThemes.isEmpty {
-                Section(String(localized: "Dark Themes", table: "AgentFilePreview")) {
-                    ForEach(darkThemes, id: \.rawValue) { theme in
-                        themeSelectionButton(theme)
-                    }
-                }
-            }
-
-            if !otherThemes.isEmpty {
-                Section(String(localized: "Other Themes", table: "AgentFilePreview")) {
-                    ForEach(otherThemes, id: \.rawValue) { theme in
-                        themeSelectionButton(theme)
-                    }
-                }
-            }
-        } label: {
-            HStack(spacing: 4) {
-                Image(systemName: "paintpalette")
-                    .font(.system(size: 10))
-                Text(formattedThemeName(selectedTheme))
-                    .font(.system(size: 10, weight: .medium))
-                    .lineLimit(1)
-            }
-            .foregroundColor(AppUI.Color.semantic.textSecondary)
-        }
-        .menuStyle(.borderlessButton)
-    }
-
-    private var lightThemes: [CodeEditor.ThemeName] {
-        CodeEditor.availableThemes.filter { themeCategory(for: $0) == .light }
-    }
-
-    private var darkThemes: [CodeEditor.ThemeName] {
-        CodeEditor.availableThemes.filter { themeCategory(for: $0) == .dark }
-    }
-
-    private var otherThemes: [CodeEditor.ThemeName] {
-        CodeEditor.availableThemes.filter { themeCategory(for: $0) == .other }
-    }
-
-    private enum ThemeCategory {
-        case light
-        case dark
-        case other
-    }
-
-    private func themeSelectionButton(_ theme: CodeEditor.ThemeName) -> some View {
-        Button(action: { selectedTheme = theme }) {
-            HStack {
-                Text(formattedThemeName(theme))
-                if theme.rawValue == selectedTheme.rawValue {
-                    Image(systemName: "checkmark")
-                }
-            }
         }
     }
 
@@ -628,67 +565,7 @@ struct FilePreviewView: View {
         }
     }
 
-    private var hasUnsavedChanges: Bool {
-        !isReadOnlyPreview && fileContent != persistedContent
-    }
-
-    private var saveErrorBinding: Binding<Bool> {
-        Binding(
-            get: { saveErrorMessage != nil },
-            set: { newValue in
-                if !newValue {
-                    saveErrorMessage = nil
-                }
-            }
-        )
-    }
-
-    private func saveFileContent() {
-        guard let url = ProjectVM.selectedFileURL, hasUnsavedChanges else { return }
-        let contentToSave = fileContent
-        isSaving = true
-
-        Task {
-            do {
-                try contentToSave.write(to: url, atomically: true, encoding: .utf8)
-                await MainActor.run {
-                    persistedContent = contentToSave
-                    isSaving = false
-                }
-            } catch {
-                await MainActor.run {
-                    saveErrorMessage = error.localizedDescription
-                    isSaving = false
-                }
-            }
-        }
-    }
-
-    private func clearSelection() {
-        self.ProjectVM.clearFileSelection()
-    }
-
-    private func formattedThemeName(_ theme: CodeEditor.ThemeName) -> String {
-        theme.rawValue
-            .replacingOccurrences(of: "-", with: " ")
-            .split(separator: " ")
-            .map { $0.capitalized }
-            .joined(separator: " ")
-    }
-
-    private func themeCategory(for theme: CodeEditor.ThemeName) -> ThemeCategory {
-        let name = theme.rawValue.lowercased()
-
-        if name.contains("light") || name.contains("day") || name.contains("github") || name.contains("xcode") || name.contains("solarized-light") || name.contains("tomorrow") || name.contains("googlecode") {
-            return .light
-        }
-
-        if name.contains("dark") || name.contains("night") || name.contains("black") || name.contains("monokai") || name.contains("dracula") || name.contains("ocean") || name.contains("obsidian") || name.contains("nord") || name.contains("atom-one-dark") || name.contains("github-dark") || name.contains("solarized-dark") || name.contains("tomorrow-night") {
-            return .dark
-        }
-
-        return .other
-    }
+    // MARK: - Theme Management
 
     private func restoreThemeSelection() {
         guard let storedRawValue = FilePreviewThemeStateStore.loadString(forKey: Self.themeStorageKey) else { return }
@@ -700,6 +577,8 @@ struct FilePreviewView: View {
     private func persistThemeSelection(_ theme: CodeEditor.ThemeName) {
         FilePreviewThemeStateStore.saveString(theme.rawValue, forKey: Self.themeStorageKey)
     }
+
+    // MARK: - File Reading Helpers
 
     private func readTruncatedContent(from url: URL, maxBytes: Int) throws -> String {
         let handle = try FileHandle(forReadingFrom: url)

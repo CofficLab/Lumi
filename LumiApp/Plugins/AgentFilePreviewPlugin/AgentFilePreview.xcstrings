@@ -119,6 +119,9 @@
         }
       }
     },
+    "File Preview Theme" : {
+
+    },
     "File too large. Preview is truncated." : {
       "extractionState" : "manual",
       "localizations" : {

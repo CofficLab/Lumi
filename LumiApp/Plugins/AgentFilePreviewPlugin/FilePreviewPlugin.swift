@@ -78,4 +78,10 @@ actor FilePreviewPlugin: SuperPlugin, SuperLog {
     @MainActor func addDetailView() -> AnyView? {
         AnyView(FilePreviewView())
     }
+
+    /// 添加 Agent 模式底部状态栏右侧视图 - 显示当前主题
+    /// - Returns: FilePreviewThemeStatusBarView to be shown in the status bar
+    @MainActor func addStatusBarTrailingView() -> AnyView? {
+        AnyView(FilePreviewThemeStatusBarView())
+    }
 }
