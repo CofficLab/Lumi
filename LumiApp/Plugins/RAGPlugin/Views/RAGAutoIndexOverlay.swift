@@ -35,20 +35,17 @@ extension RAGAutoIndexOverlay {
 
         Task {
             let service = RAGPlugin.getService()
-            do {
-                try await service.initialize()
-                for path in candidatePaths {
-                    guard isExistingDirectory(path: path) else { continue }
-                    await service.ensureIndexedBackground(projectPath: path)
-                }
-                if Self.verbose {
-                    RAGPlugin.logger.info("\(Self.t)批量自动索引已触发 source=\(source) count=\(candidatePaths.count)")
-                }
-            } catch {
-                RAGPlugin.logger.error("\(Self.t)批量自动索引失败 source=\(source): \(error.localizedDescription)")
+            // 服务已在 onEnable 时初始化，无需再次初始化
+            for path in candidatePaths {
+                guard isExistingDirectory(path: path) else { continue }
+                await service.ensureIndexedBackground(projectPath: path)
+            }
+            if Self.verbose {
+                RAGPlugin.logger.info("\(Self.t)批量自动索引已触发 source=\(source) count=\(candidatePaths.count)")
             }
         }
     }
+
     private func uniqueNonEmptyPaths(_ paths: [String]) -> [String] {
         var seen = Set<String>()
         var result: [String] = []

@@ -320,6 +320,7 @@ struct RAGStatusBarView: View, SuperLog {
 
         do {
             let ragService = RAGPlugin.getService()
+            // 服务已在 onEnable 时初始化
             let status = try await ragService.getIndexStatus(projectPath: projectPath)
 
             // 只在非索引状态下才更新状态
@@ -467,7 +468,7 @@ struct RAGStatusDetailView: View {
                 .font(.system(size: 13))
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-            Text("请在设置中初始化 RAG 服务")
+            Text("RAG 服务将在插件启用时自动初始化")
                 .font(.system(size: 11))
                 .foregroundColor(DesignTokens.Color.semantic.textTertiary)
         }

@@ -8,6 +8,7 @@ import os
 /// - RAG 服务完全由插件内部管理
 /// - 内核不知道 RAG 的存在
 /// - 通过中间件机制集成到消息发送流程
+/// - 服务在插件启用时自动初始化
 actor RAGPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🦞"
     nonisolated static let enable: Bool = true
@@ -28,14 +29,40 @@ actor RAGPlugin: SuperPlugin, SuperLog {
 
     /// RAG 服务 - 由插件内部管理，内核不可见
     ///
-    /// 使用 lazy 确保首次使用时才初始化
+    /// 在插件启用时自动初始化
     @MainActor
     private(set) static var service: RAGService = RAGService()
+
+    // MARK: - Lifecycle
+
+    nonisolated func onEnable() {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)🦞 RAG 插件已启用，开始初始化服务...")
+        }
+
+        // 在后台异步初始化 RAG 服务
+        Task { @MainActor in
+            do {
+                let start = CFAbsoluteTimeGetCurrent()
+                try await Self.service.initialize()
+                let duration = (CFAbsoluteTimeGetCurrent() - start) * 1000
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)✅ RAG 服务初始化完成 (\(String(format: "%.2f", duration))ms)")
+                }
+            } catch {
+                if Self.verbose {
+                    Self.logger.error("\(Self.t)❌ RAG 服务初始化失败：\(error.localizedDescription)")
+                }
+            }
+        }
+    }
+
+    // MARK: - Plugin Methods
 
     @MainActor
     func sendMiddlewares() -> [AnySendMiddleware] {
         if Self.verbose {
-            Self.logger.info("\(Self.t)🦞 RAG 中间件已启用")
+            Self.logger.info("\(Self.t)🦞 RAG 中间件已注册")
         }
         return [AnySendMiddleware(RAGSendMiddleware())]
     }
