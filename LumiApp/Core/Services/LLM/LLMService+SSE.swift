@@ -100,37 +100,6 @@ extension LLMService {
                         let rawPayload = String(data: eventData, encoding: .utf8)
                         let chunk = parsed.withRawStreamPayload(rawPayload)
 
-                        if Self.verbose >= 2 {
-                            let chunkIndex = await chunkCounter.current()
-                            var chunkInfo = "[Chunk #\(chunkIndex)] 解析结果:"
-                            if let content = chunk.content {
-                                let contentPreview = content.prefix(50)
-                                chunkInfo += "\n  📝 内容: \"\(contentPreview)\"\(content.count > 50 ? "..." : "")"
-                            }
-                            if let eventType = chunk.eventType {
-                                chunkInfo += "\n  🏷️ 类型: \(eventType.displayName)"
-                            }
-                            if let inputTokens = chunk.inputTokens {
-                                chunkInfo += "\n  📥 输入tokens: \(inputTokens)"
-                            }
-                            if let outputTokens = chunk.outputTokens {
-                                chunkInfo += "\n  📤 输出tokens: \(outputTokens)"
-                            }
-                            if let stopReason = chunk.stopReason {
-                                chunkInfo += "\n  🛑 停止原因: \(stopReason)"
-                            }
-                            if chunk.isDone {
-                                chunkInfo += "\n  ✅ 已完成"
-                            }
-                            if let error = chunk.error {
-                                chunkInfo += "\n  ❌ 错误: \(error)"
-                            }
-                            if let toolCalls = chunk.toolCalls, !toolCalls.isEmpty {
-                                chunkInfo += "\n  🔧 工具调用: \(toolCalls.count) 个"
-                            }
-                            AppLogger.core.debug("\(self.t)\(chunkInfo)")
-                        }
-
                         if let content = chunk.content, chunk.eventType == .textDelta {
                             // 记录首个 Token 时间（TTFT）
                             await state.recordFirstToken()

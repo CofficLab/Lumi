@@ -5,7 +5,7 @@ import SwiftUI
 /// 上下文同步覆盖层
 /// 监听 projectVM 中当前项目路径的变化，当项目变化时向当前对话添加系统消息
 struct ContextSyncOverlay<Content: View>: View, SuperLog {
-    nonisolated static var verbose: Bool { true }
+    nonisolated static var verbose: Bool { false }
     nonisolated static var emoji: String { "🔄" }
 
     /// 项目 ViewModel

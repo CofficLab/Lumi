@@ -7,7 +7,7 @@ actor ModelPreferencePlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🎯"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     /// 专用 Logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "model-preference.plugin")
 
