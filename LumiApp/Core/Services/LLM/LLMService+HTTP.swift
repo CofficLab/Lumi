@@ -50,6 +50,7 @@ extension LLMService {
             return LLMServiceError.invalidBaseURL(baseURLString).toChatMessage()
         }
 
+        // 构建请求体
         let body: [String: Any]
         do {
             body = try provider.buildRequestBody(
@@ -63,19 +64,19 @@ extension LLMService {
             throw LLMServiceError.requestFailed(error.localizedDescription)
         }
 
+        // 构建 URLRequest
+        let request = provider.buildRequest(url: url, apiKey: config.apiKey)
+
         do {
             var additionalHeaders: [String: String] = [:]
             if config.providerId == "zhipu" {
                 additionalHeaders["anthropic-version"] = "2023-06-01"
             }
 
-            // ✅ 传递 provider 给 sendChatRequest，让它使用 provider.buildRequest()
             let data: Data
             do {
                 data = try await llmAPI.sendChatRequest(
-                    provider: provider,
-                    url: url,
-                    apiKey: config.apiKey,
+                    request: request,
                     body: body,
                     additionalHeaders: additionalHeaders
                 )

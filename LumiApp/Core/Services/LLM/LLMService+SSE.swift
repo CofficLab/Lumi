@@ -104,6 +104,7 @@ extension LLMService {
             return LLMServiceError.invalidBaseURL(baseURLString).toChatMessage()
         }
 
+        // 构建请求体
         let body: [String: Any]
         do {
             body = try provider.buildStreamingRequestBody(
@@ -116,19 +117,15 @@ extension LLMService {
             throw LLMServiceError.requestFailed(error.localizedDescription)
         }
 
-        if Self.verbose >= 1 {
-            AppLogger.core.info("\(self.t)🚀 发送流式请求到 \(config.providerId): \(config.model)")
-        }
+        // 构建 URLRequest
+        let request = provider.buildRequest(url: url, apiKey: config.apiKey)
 
         let state = StreamingState(startTime: startTime)
         let chunkCounter = ChunkCounter() // 用于调试计数
 
         do {
-            // ✅ 传递 provider 给 sendStreamingRequest，让它使用 provider.buildRequest()
             try await llmAPI.sendStreamingRequest(
-                provider: provider,
-                url: url,
-                apiKey: config.apiKey,
+                request: request,
                 body: body,
                 onRequestStart: onRequestStart
             ) { chunkData in
@@ -136,7 +133,6 @@ extension LLMService {
                     try Task.checkCancellation()
                     var shouldContinue = true
 
-                    // ✅ Verbose >= 2: 输出原始 chunk 数据
                     if Self.verbose >= 2 {
                         let chunkIndex = await chunkCounter.increment()
                         let rawText = String(data: chunkData, encoding: .utf8) ?? "<无法解码>"
@@ -146,14 +142,12 @@ extension LLMService {
 
                     let events = Self.splitSSEEvents(from: chunkData)
 
-                    // ✅ Verbose >= 2: 输出拆分后的 events 数量
                     if Self.verbose >= 2 {
                         let chunkIndex = await chunkCounter.current()
                         AppLogger.core.debug("\(self.t)📦 [Chunk #\(chunkIndex)] 拆分为 \(events.count) 个 SSE events")
                     }
 
                     for (eventIndex, eventData) in events.enumerated() {
-                        // ✅ Verbose >= 2: 输出每个 event 的原始数据
                         if Self.verbose >= 2 {
                             let chunkIndex = await chunkCounter.current()
                             let eventText = String(data: eventData, encoding: .utf8) ?? "<无法解码>"
@@ -165,7 +159,6 @@ extension LLMService {
                             let rawPayload = String(data: eventData, encoding: .utf8)
                             let chunk = parsed.withRawStreamPayload(rawPayload)
 
-                            // ✅ Verbose >= 2: 输出解析后的 chunk 信息
                             if Self.verbose >= 2 {
                                 let chunkIndex = await chunkCounter.current()
                                 var chunkInfo = "[Chunk #\(chunkIndex), Event #\(eventIndex + 1)] 解析结果:"
@@ -269,7 +262,6 @@ extension LLMService {
         // 计算流式传输耗时
         let streamingDuration = await state.getStreamingDuration()
 
-        // ✅ Verbose >= 2: 输出最终统计信息
         if Self.verbose >= 2 {
             let inputTokens = await state.inputTokens
             let outputTokens = await state.outputTokens

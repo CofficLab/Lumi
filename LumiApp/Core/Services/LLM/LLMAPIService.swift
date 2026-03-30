@@ -68,33 +68,27 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
 
     // MARK: - LLM 请求
 
-    /// 发送聊天完成请求到 LLM 供应商（带重试机制）
+    /// 发送聊天完成请求（带重试机制）
     ///
     /// - Parameters:
-    ///   - provider: LLM 供应商实例
-    ///   - url: 请求 URL
-    ///   - apiKey: API 密钥
+    ///   - request: 已构建好的 URLRequest（包含 URL、Headers、Method 等）
     ///   - body: 请求体字典
-    ///   - additionalHeaders: 额外的请求头（合并到 provider.buildRequest 返回的请求中）
+    ///   - additionalHeaders: 额外的请求头（可覆盖 request 中的值）
     /// - Returns: 响应数据
     /// - Throws: 网络错误或 API 错误
     func sendChatRequest(
-        provider: any SuperLLMProvider,
-        url: URL,
-        apiKey: String,
+        request: URLRequest,
         body: [String: Any],
         additionalHeaders: [String: String] = [:]
     ) async throws -> Data {
-        // 使用 Provider 自己构建的请求，然后添加额外请求头和请求体
-        var request = provider.buildRequest(url: url, apiKey: apiKey)
-
-        // 合并额外的请求头（可覆盖 Provider 设置的值）
+        // 合并额外的请求头（可覆盖 request 设置的值）
+        var mutableRequest = request
         for (key, value) in additionalHeaders {
-            request.setValue(value, forHTTPHeaderField: key)
+            mutableRequest.setValue(value, forHTTPHeaderField: key)
         }
 
         let (data, _) = try await sendRequestWithRetry(
-            request: &request,
+            request: &mutableRequest,
             body: body
         )
 
@@ -106,50 +100,45 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
     /// 使用 SSE (Server-Sent Events) 协议接收流式响应
     ///
     /// - Parameters:
-    ///   - provider: LLM 供应商实例
-    ///   - url: 请求 URL
-    ///   - apiKey: API 密钥
+    ///   - request: 已构建好的 URLRequest（由 provider.buildRequest 构建）
     ///   - body: 请求体字典
     ///   - onRequestStart: 请求开始时的回调（包含请求元数据）
-    ///   - onChunk: 收到数据块时的回调
+    ///   - onChunk: 收到数据块时的回调（返回 false 则停止接收）
     /// - Throws: 网络错误或 API 错误
     func sendStreamingRequest(
-        provider: any SuperLLMProvider,
-        url: URL,
-        apiKey: String,
+        request: URLRequest,
         body: [String: Any],
         onRequestStart: @Sendable @escaping (RequestMetadata) async -> Void = { _ in },
         onChunk: @Sendable @escaping (Data) async -> Bool
     ) async throws {
-        // 使用 Provider 自己构建的请求，然后添加额外请求头和请求体
-        var request = provider.buildRequest(url: url, apiKey: apiKey)
+        var mutableRequest = request
 
         // 添加流式请求专用的 Accept 头
-        request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+        mutableRequest.setValue("text/event-stream", forHTTPHeaderField: "Accept")
 
         // 序列化请求体
         let jsonData: Data
         do {
             jsonData = try JSONSerialization.data(withJSONObject: body)
-            request.httpBody = jsonData
+            mutableRequest.httpBody = jsonData
         } catch {
             AppLogger.core.error("\(self.t)JSON 序列化失败：\(error.localizedDescription)")
             throw APIError.jsonSerializationFailed(underlying: error)
         }
 
         // 设置超时
-        request.timeoutInterval = 300
+        mutableRequest.timeoutInterval = 300
 
         // 📊 获取请求大小并通知调用方
         let requestSizeBytes = jsonData.count
-        // 按请求记录完整 body（不截断）
+        // 按请求记录完整 body
         let bodyPreview: String? = String(data: jsonData, encoding: .utf8)
-        let allHeaders = request.allHTTPHeaderFields ?? [:]
+        let allHeaders = mutableRequest.allHTTPHeaderFields ?? [:]
         let maskedHeaders = sanitizeHeaders(allHeaders)
         let metadata = RequestMetadata(
             requestId: UUID(),
-            method: request.httpMethod ?? "POST",
-            url: url.absoluteString,
+            method: mutableRequest.httpMethod ?? "POST",
+            url: mutableRequest.url?.absoluteString ?? "unknown",
             requestHeaders: maskedHeaders,
             requestBodySizeBytes: requestSizeBytes,
             requestBodyPreview: bodyPreview,
@@ -159,17 +148,16 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
             duration: nil,
             error: nil
         )
-        
+
         // 在发送前通知调用方
         await onRequestStart(metadata)
 
         if Self.verbose {
             // 构建完整请求信息
-            var logMessage = "\(self.t)🚀 发送流式请求到：\(url.absoluteString)\n"
+            var logMessage = "\(self.t)🚀 发送流式请求到：\(mutableRequest.url?.absoluteString ?? "unknown")\n"
 
             // 添加请求体
             if let bodyString = String(data: jsonData, encoding: .utf8) {
-                let bodySize = jsonData.count
                 let formattedSize = metadata.formattedBodySize
                 if bodyString.count <= 400 {
                     logMessage += "📦 请求体 (\(formattedSize))：\n\(bodyString)\n"
@@ -192,7 +180,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         }
 
         // 发送请求并处理流式响应
-        let (bytes, response) = try await session.bytes(for: request)
+        let (bytes, response) = try await session.bytes(for: mutableRequest)
 
         // 验证响应
         guard let httpResponse = response as? HTTPURLResponse else {
@@ -326,17 +314,17 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
     /// 显示首尾各 3-4 个字符，中间用星号代替
     private func maskSensitiveValue(key: String, value: String) -> String {
         let lowerKey = key.lowercased()
-        
+
         // 判断是否为敏感字段
-        let isSensitive = lowerKey.contains("authorization") || 
-                         lowerKey.contains("api-key") || 
-                         lowerKey.hasSuffix("key") || 
+        let isSensitive = lowerKey.contains("authorization") ||
+                         lowerKey.contains("api-key") ||
+                         lowerKey.hasSuffix("key") ||
                          lowerKey.contains("token")
-        
+
         if !isSensitive {
             return value
         }
-        
+
         // 敏感信息脱敏
         if value.count <= 8 {
             // 短值：显示前 2 后 2，中间星号
