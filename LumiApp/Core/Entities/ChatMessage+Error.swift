@@ -114,6 +114,16 @@ extension ChatMessage {
         )
     }
 
+    /// LLM 请求失败错误消息
+    static func llmRequestFailedMessage(message: String, conversationId: UUID) -> ChatMessage {
+        ChatMessage(
+            role: .error,
+            conversationId: conversationId,
+            content: message,
+            isError: true
+        )
+    }
+
     /// LLM 配置错误相关辅助方法
     static func llmInvalidBaseURLMessageContent(baseURL: String) -> String {
         llmInvalidBaseURLContentKey + "\n" + baseURL

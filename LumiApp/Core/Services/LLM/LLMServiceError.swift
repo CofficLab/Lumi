@@ -49,6 +49,7 @@ enum LLMServiceError: Error, LocalizedError, Equatable {
 
 extension LLMServiceError {
     /// 转为可落库消息：使用 `ChatMessage+Error` 中的工厂方法创建错误消息
+    /// - 重要：现在所有错误消息都使用 `.error` 角色，包括 `requestFailed`
     func toChatMessage(conversationId: UUID) -> ChatMessage {
         switch self {
         case .apiKeyEmpty:
@@ -68,8 +69,7 @@ extension LLMServiceError {
         case .cancelled:
             ChatMessage.cancelledMessage(conversationId: conversationId)
         case let .requestFailed(message):
-            // 请求失败使用 assistant 角色，保留原有行为
-            ChatMessage(role: .assistant, conversationId: conversationId, content: message, isError: true)
+            ChatMessage.llmRequestFailedMessage(message: message, conversationId: conversationId)
         }
     }
 }
