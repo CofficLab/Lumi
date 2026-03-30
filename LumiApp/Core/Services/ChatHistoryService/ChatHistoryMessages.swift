@@ -4,63 +4,25 @@ import SwiftData
 // MARK: - 消息操作扩展
 
 extension ChatHistoryService {
-
     // MARK: - 保存消息
 
-    /// 保存消息到指定对话（支持同步和异步调用）
+    /// 保存消息到指定对话
     /// - Parameters:
     ///   - message: 要保存的消息
     ///   - conversation: 对话对象
     /// - Returns: 保存后的消息（从数据库重新加载）
     @discardableResult
     func saveMessage(_ message: ChatMessage, to conversation: Conversation) -> ChatMessage? {
-        let context = getContext()
-
-        // 创建消息实体
-        let messageEntity = ChatMessageEntity.fromChatMessage(message)
-
-        // 重新获取 conversation 以确保在当前上下文中
-        let conversationId = conversation.id
-        let descriptor = FetchDescriptor<Conversation>(
-            predicate: #Predicate { $0.id == conversationId }
-        )
-
-        guard let fetchedConversation = try? context.fetch(descriptor).first else {
-            AppLogger.core.error("\(Self.t)❌ 无法在当前上下文中找到对话")
-            return nil
-        }
-
-        messageEntity.conversation = fetchedConversation
-        fetchedConversation.updatedAt = Date()
-
-        context.insert(messageEntity)
-
-        do {
-            try context.save()
-            if Self.verbose {
-                AppLogger.core.info("\(Self.t)💾 [\(conversation.id)] 消息已保存")
-            }
-            // 返回保存后的消息
-            guard let savedMessage = messageEntity.toChatMessage() else {
-                AppLogger.core.error("\(Self.t)❌ 消息转换失败")
-                return nil
-            }
-            NotificationCenter.postMessageSaved(message: savedMessage, conversationId: conversation.id)
-            return savedMessage
-        } catch {
-            AppLogger.core.error("\(Self.t)❌ 保存消息失败：\(error.localizedDescription)")
-            return nil
-        }
+        return saveMessage(message, toConversationId: conversation.id)
     }
 
-    /// 异步保存消息（使用独立 context）
+    /// 保存消息
     /// - Parameters:
     ///   - message: 要保存的消息
     ///   - conversationId: 对话 ID
     /// - Returns: 保存后的消息
-    func saveMessage(_ message: ChatMessage, toConversationId conversationId: UUID) async -> ChatMessage? {
-        // 使用独立的 context 避免冲突
-        let context = createNewContext()
+    func saveMessage(_ message: ChatMessage, toConversationId conversationId: UUID) -> ChatMessage? {
+        let context = self.getContext()
         let descriptor = FetchDescriptor<Conversation>(
             predicate: #Predicate { $0.id == conversationId }
         )
@@ -78,7 +40,6 @@ extension ChatHistoryService {
 
         do {
             try context.save()
-            // 发送消息已保存事件
             if let savedMessage = messageEntity.toChatMessage() {
                 NotificationCenter.postMessageSaved(message: savedMessage, conversationId: fetchedConversation.id)
                 return savedMessage
@@ -209,7 +170,7 @@ extension ChatHistoryService {
         // 记录当前页中"最旧"的一条可见消息时间戳，用于作为下一页游标
         var oldestVisibleTimestamp: Date?
 
-        batchLoop: for _ in 0..<maxBatches {
+        batchLoop: for _ in 0 ..< maxBatches {
             var descriptor: FetchDescriptor<ChatMessageEntity>
             if let before = cursor {
                 descriptor = FetchDescriptor<ChatMessageEntity>(
