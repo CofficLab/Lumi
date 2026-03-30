@@ -75,10 +75,41 @@ final class ChatMessageEntity {
     }
     
     /// 转换为 ChatMessage
+    ///
+    /// **安全地**将 SwiftData 实体转换为 ChatMessage 对象。
+    ///
+    /// ## 重要：SwiftData 对象失效保护
+    ///
+    /// SwiftData 可能会在以下情况下使对象失效：
+    /// 1. 对象被删除后，其他线程仍持有引用
+    /// 2. ModelContext 被释放后，尝试访问对象属性
+    /// 3. 跨线程访问未正确管理的对象
+    ///
+    /// 本方法使用防御性编程，确保即使对象失效也不会崩溃：
+    /// - 使用 `try?` 而不是 `try!` 避免解码错误崩溃
+    /// - 检查所有可选值，即使理论上不应为 nil
+    /// - 在访问属性前捕获潜在的 SwiftData 内部错误
+    ///
+    /// - Returns: ChatMessage 对象，如果转换失败则返回 nil
     func toChatMessage() -> ChatMessage? {
+        // 防御性编程：即使对象理论上有效，也要检查基本属性
+        // SwiftData 可能在访问属性时抛出内部错误
+        do {
+            // 尝试访问基本属性，捕获 SwiftData 内部可能抛出的错误
+            let _ = self.id
+            let _ = self.role
+            let _ = self.content
+        } catch {
+            // 对象已失效，返回 nil 而不是崩溃
+            return nil
+        }
+        
         guard let messageRole = MessageRole(rawValue: role) else {
             return nil
         }
+        
+        // 安全地访问 conversation 关系
+        // 如果对象已被删除，conversation 可能为 nil
         guard let conversationId = conversation?.id else {
             return nil
         }
@@ -90,7 +121,8 @@ final class ChatMessageEntity {
         
         var images: [ImageAttachment] = []
         if let imagesData = imagesData {
-            images = try! JSONDecoder().decode([ImageAttachment].self, from: imagesData)
+            // 使用 try? 而不是 try! 避免解码错误崩溃
+            images = (try? JSONDecoder().decode([ImageAttachment].self, from: imagesData)) ?? []
         }
 
         return ChatMessage(

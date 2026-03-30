@@ -180,6 +180,10 @@ final class SendController: ObservableObject, SuperLog {
     }
 
     func onMessageReceived(message: ChatMessage, conversationId: UUID) async {
+        if Self.verbose >= 2 {
+            AppLogger.core.info("\(Self.t) 收到消息：\(message.content.max(50))")
+        }
+        
         var message = message
 
         if var calls = message.toolCalls {
@@ -312,7 +316,6 @@ final class SendController: ObservableObject, SuperLog {
             }
 
             await onMessageReceived(message: assistantMessage, conversationId: conversationId)
-
         } catch LLMServiceError.cancelled {
             AppLogger.core.info("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 发送已取消")
             finishSendTurn(conversationId: conversationId, emitCompletionEvent: false)
