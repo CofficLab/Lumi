@@ -17,6 +17,8 @@ struct BackgroundAgentTaskStatusBarView: View {
             HStack(spacing: 4) {
                 Image(systemName: "clock.arrow.circlepath")
                     .font(.system(size: 11))
+                    // 运行中图标保留蓝色以区分状态
+                    .foregroundColor(runningCount > 0 ? .blue : .gray)
 
                 if runningCount > 0 {
                     Text("\(runningCount)")
