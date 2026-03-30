@@ -73,22 +73,14 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
     /// - Parameters:
     ///   - request: 已构建好的 URLRequest（包含 URL、Headers、Method 等）
     ///   - body: 请求体字典
-    ///   - additionalHeaders: 额外的请求头（可覆盖 request 中的值）
     /// - Returns: 响应数据
     /// - Throws: 网络错误或 API 错误
     func sendChatRequest(
         request: URLRequest,
-        body: [String: Any],
-        additionalHeaders: [String: String] = [:]
+        body: [String: Any]
     ) async throws -> Data {
-        // 合并额外的请求头（可覆盖 request 设置的值）
-        var mutableRequest = request
-        for (key, value) in additionalHeaders {
-            mutableRequest.setValue(value, forHTTPHeaderField: key)
-        }
-
         let (data, _) = try await sendRequestWithRetry(
-            request: &mutableRequest,
+            request: request,
             body: body
         )
 
@@ -344,7 +336,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
     // MARK: - 带重试的请求
 
     private func sendRequestWithRetry(
-        request: inout URLRequest,
+        request: URLRequest,
         body: [String: Any]?
     ) async throws -> (Data, URLResponse) {
         var lastError: Error?
@@ -355,8 +347,9 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
                     AppLogger.core.info("\(self.t)🔄 重试 LLM 请求 (尝试 \(attempt)/\(self.maxRetries))")
                 }
 
+                var mutableRequest = request
                 let result = try await sendRequest(
-                    request: &request,
+                    request: &mutableRequest,
                     body: body
                 )
 

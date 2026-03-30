@@ -68,17 +68,11 @@ extension LLMService {
         let request = provider.buildRequest(url: url, apiKey: config.apiKey)
 
         do {
-            var additionalHeaders: [String: String] = [:]
-            if config.providerId == "zhipu" {
-                additionalHeaders["anthropic-version"] = "2023-06-01"
-            }
-
             let data: Data
             do {
                 data = try await llmAPI.sendChatRequest(
                     request: request,
-                    body: body,
-                    additionalHeaders: additionalHeaders
+                    body: body
                 )
             } catch {
                 throw LLMServiceError.requestFailed(error.localizedDescription)

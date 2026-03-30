@@ -274,16 +274,13 @@ final class SendController: ObservableObject, SuperLog {
         let onStreamChunk: @Sendable (StreamChunk) async -> Void = { chunk in
             await MainActor.run {
                 statusVM.applyStreamChunk(conversationId: convId, chunk: chunk)
-                if Self.verbose >= 2 {
-                    AppLogger.core.info("\(Self.t) 事件：\(chunk.eventType?.rawValue ?? "unknown")，内容：\(chunk.content ?? "")，原始：\(chunk.rawStreamPayload?.max(200) ?? "")")
-                }
             }
         }
 
         // 记录开始时间
         let startTime = CFAbsoluteTimeGetCurrent()
 
-        // ✅ 使用线程安全的 MetadataHolder
+        // 使用线程安全的 MetadataHolder
         let metadataHolder = MetadataHolder()
 
         do {
@@ -295,7 +292,7 @@ final class SendController: ObservableObject, SuperLog {
                 tools: toolsArg,
                 onChunk: onStreamChunk,
                 onRequestStart: { metadata in
-                    // ✅ 线程安全地设置元数据
+                    // 线程安全地设置元数据
                     Task {
                         await metadataHolder.set(metadata)
                     }
