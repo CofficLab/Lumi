@@ -20,7 +20,6 @@ final class AiRouterProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     // MARK: - 配置相关
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_AiRouter"
-    static let modelStorageKey = "DevAssistant_Model_AiRouter"
     static let defaultModel = "gpt-5"
 
     static let availableModels = [
@@ -209,8 +208,6 @@ final class AiRouterProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
             return nil
         }
     }
-
-    static var logEmoji: String { "🌐" }
 }
 
 // MARK: - 消息转换

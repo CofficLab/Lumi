@@ -43,7 +43,6 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
     // MARK: - Configuration
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_Anthropic"
-    static let modelStorageKey = "DevAssistant_Model_Anthropic"
     static let defaultModel = "claude-sonnet-4-20250514"
 
     static let availableModels = [
@@ -289,7 +288,6 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
         }
     }
 
-    static var logEmoji: String { "🟣" }
 }
 
 // MARK: - 消息转换

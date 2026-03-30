@@ -24,7 +24,6 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
     // MARK: - 配置相关
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_Aliyun"
-    static let modelStorageKey = "DevAssistant_Model_Aliyun"
     static let defaultModel = "qwen3.5-plus"
 
     static let availableModels = [
@@ -239,15 +238,15 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
                     if let textDelta = delta["text_delta"] as? String {
                         return StreamChunk(content: textDelta, eventType: .textDelta, rawEvent: text)
                     }
-                    
+
                     if let partialJson = delta["partial_json"] as? String {
                         return StreamChunk(partialJson: partialJson, eventType: .inputJsonDelta, rawEvent: text)
                     }
-                    
+
                     if delta["signature"] != nil {
                         return StreamChunk(eventType: .signatureDelta, rawEvent: text)
                     }
-                    
+
                     return StreamChunk(eventType: .contentBlockDelta, rawEvent: text)
                 }
                 return StreamChunk(eventType: .contentBlockDelta, rawEvent: text)
@@ -266,8 +265,6 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
             return StreamChunk(error: "解析失败: \(error.localizedDescription)", eventType: .unknown, rawEvent: text)
         }
     }
-
-    static var logEmoji: String { "🔵" }
 }
 
 // MARK: - 消息转换

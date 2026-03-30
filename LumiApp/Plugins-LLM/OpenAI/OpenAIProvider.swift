@@ -20,7 +20,6 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     // MARK: - 配置相关
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_OpenAI"
-    static let modelStorageKey = "DevAssistant_Model_OpenAI"
     static let defaultModel = "gpt-4o"
 
     static let availableModels = [
@@ -207,7 +206,6 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
         }
     }
 
-    static var logEmoji: String { "🟢" }
 }
 
 // MARK: - 消息转换

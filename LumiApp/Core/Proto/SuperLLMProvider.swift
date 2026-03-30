@@ -43,12 +43,6 @@ protocol SuperLLMProvider: Sendable {
     /// 建议格式：`DevAssistant_ApiKey_{ProviderID}`
     static var apiKeyStorageKey: String { get }
 
-    /// 模型选择的 UserDefaults 键名
-    ///
-    /// 用于持久化存储用户选择的模型。
-    /// 建议格式：`DevAssistant_Model_{ProviderID}`
-    static var modelStorageKey: String { get }
-
     /// 默认模型名称
     ///
     /// 用户未选择模型时使用的默认模型。
@@ -137,10 +131,4 @@ protocol SuperLLMProvider: Sendable {
         tools: [AgentTool]?,
         systemPrompt: String
     ) throws -> [String: Any]
-
-    /// 获取用于日志的 emoji 标识
-    ///
-    /// 用于日志输出时区分不同供应商的日志。
-    static var logEmoji: String { get }
 }
-

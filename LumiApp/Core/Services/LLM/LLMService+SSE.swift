@@ -262,26 +262,6 @@ extension LLMService {
         // 计算流式传输耗时
         let streamingDuration = await state.getStreamingDuration()
 
-        if Self.verbose >= 2 {
-            let inputTokens = await state.inputTokens
-            let outputTokens = await state.outputTokens
-            let totalTokens = await state.totalTokens
-            let ttft = await state.timeToFirstToken
-            let contentLength = await state.accumulatedContentLength
-
-            AppLogger.core.debug("\(self.t)📊 流式响应完成统计:")
-            AppLogger.core.debug("\(self.t)  📥 输入tokens: \(inputTokens ?? 0)")
-            AppLogger.core.debug("\(self.t)  📤 输出tokens: \(outputTokens ?? 0)")
-            AppLogger.core.debug("\(self.t)  📊 总tokens: \(totalTokens ?? 0)")
-            AppLogger.core.debug("\(self.t)  ⚡ TTFT: \(ttft.map { String(format: "%.0fms", $0) } ?? "N/A")")
-            AppLogger.core.debug("\(self.t)  ⏱️ 流式时间: \(streamingDuration.map { String(format: "%.0fms", $0) } ?? "N/A")")
-            AppLogger.core.debug("\(self.t)  📝 内容长度: \(contentLength) 字符")
-            if let duration = streamingDuration, let tokens = outputTokens, duration > 0 {
-                let tps = Double(tokens) / (duration / 1000.0)
-                AppLogger.core.debug("\(self.t)  🚀 TPS: \(String(format: "%.1f", tps)) tokens/s")
-            }
-        }
-
         return ChatMessage(
             role: .assistant,
             conversationId: UUID(),

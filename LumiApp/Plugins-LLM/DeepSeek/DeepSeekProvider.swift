@@ -22,7 +22,6 @@ final class DeepSeekProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked S
     // MARK: - Configuration
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_DeepSeek"
-    static let modelStorageKey = "DevAssistant_Model_DeepSeek"
     static let defaultModel = "deepseek-chat"
 
     static let availableModels = [
@@ -204,7 +203,6 @@ final class DeepSeekProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked S
         }
     }
 
-    static var logEmoji: String { "🟠" }
 }
 
 // MARK: - 消息转换

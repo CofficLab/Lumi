@@ -23,7 +23,6 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
     // MARK: - 配置相关
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_Zhipu"
-    static let modelStorageKey = "DevAssistant_Model_Zhipu"
     static let defaultModel = "glm-4.7"
 
     static let availableModels = [
@@ -276,7 +275,6 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
         }
     }
 
-    static var logEmoji: String { "🔴" }
 }
 
 // MARK: - 消息转换

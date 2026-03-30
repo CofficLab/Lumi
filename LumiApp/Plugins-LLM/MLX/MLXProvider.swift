@@ -19,7 +19,6 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.mlx")
     nonisolated public static let emoji = "💻"
     nonisolated static let verbose = false
-    public static var logEmoji: String { emoji }
 
     // MARK: - Provider Info
 
@@ -39,7 +38,6 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
     public static var apiKeyStorageKey: String { "" }
 
     /// 模型选择存储键名
-    public static var modelStorageKey: String { "DevAssistant_Model_MLX" }
 
     /// 默认模型
     public static var defaultModel: String { "mlx-community/Qwen3.5-9B-4bit" }
