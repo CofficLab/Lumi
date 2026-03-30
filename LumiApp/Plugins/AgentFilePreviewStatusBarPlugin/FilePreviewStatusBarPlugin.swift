@@ -54,9 +54,9 @@ actor FilePreviewStatusBarPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    /// Add status bar view for Agent mode - 显示文件预览状态栏
-    /// - Returns: FilePreviewStatusBarView to be added to the bottom status bar
-    @MainActor func addStatusBarView() -> AnyView? {
+    /// Add status bar trailing view for Agent mode - 显示文件预览状态栏
+    /// - Returns: FilePreviewStatusBarView to be added to the bottom status bar (right side)
+    @MainActor func addStatusBarLeadingView() -> AnyView? {
         if Self.verbose {
             Self.logger.info("\(self.t) 提供 FilePreviewStatusBarView")
         }

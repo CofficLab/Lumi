@@ -149,8 +149,11 @@ protocol SuperPlugin: Actor {
     /// 添加右侧栏底部视图（用于 Agent 模式）
     @MainActor func addRightBottomView() -> AnyView?
 
-    /// 添加状态栏视图（用于 Agent 模式底部状态栏）
-    @MainActor func addStatusBarView() -> AnyView?
+    /// 添加状态栏左侧视图（用于 Agent 模式底部状态栏）
+    @MainActor func addStatusBarLeadingView() -> AnyView?
+
+    /// 添加状态栏右侧视图（用于 Agent 模式底部状态栏）
+    @MainActor func addStatusBarTrailingView() -> AnyView?
 
     // MARK: - Agent Tools Hooks
 

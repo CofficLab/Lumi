@@ -48,6 +48,9 @@ extension SuperPlugin {
     /// 默认实现：不提供右侧栏底部视图
     @MainActor func addRightBottomView() -> AnyView? { nil }
 
-    /// 默认实现：不提供状态栏视图
-    @MainActor func addStatusBarView() -> AnyView? { nil }
+    /// 默认实现：不提供状态栏左侧视图
+    @MainActor func addStatusBarLeadingView() -> AnyView? { nil }
+
+    /// 默认实现：不提供状态栏右侧视图
+    @MainActor func addStatusBarTrailingView() -> AnyView? { nil }
 }

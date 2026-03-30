@@ -27,8 +27,8 @@ actor AppVersionStatusBarPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    /// Add status bar view for Agent mode
-    @MainActor func addStatusBarView() -> AnyView? {
+    /// Add status bar trailing view for Agent mode
+    @MainActor func addStatusBarTrailingView() -> AnyView? {
         if Self.verbose {
             AppVersionStatusBarPlugin.logger.info("\(Self.t)提供 AppVersionStatusBarView")
         }

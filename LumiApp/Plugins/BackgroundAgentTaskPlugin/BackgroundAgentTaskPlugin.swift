@@ -99,7 +99,7 @@ actor BackgroundAgentTaskPlugin: SuperPlugin, SuperLog {
                 if Self.verbose {
                     if let userInfo = notification.userInfo,
                        let taskIdString = userInfo["taskId"] as? String {
-                        Self.logger.info("\(self.t) 收到任务创建事件: \(taskIdString)")
+                        Self.logger.info("\(self.t) 收到任务创建事件：\(taskIdString)")
                     }
                 }
 
@@ -139,7 +139,7 @@ actor BackgroundAgentTaskPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor
-    func addStatusBarView() -> AnyView? {
+    func addStatusBarTrailingView() -> AnyView? {
         AnyView(BackgroundAgentTaskStatusBarView())
     }
 }

@@ -6,14 +6,34 @@ struct StatusBar: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        let statusBarViews = pluginProvider.getStatusBarViews()
+        let statusBarLeadingViews = pluginProvider.getStatusBarLeadingViews()
+        let statusBarTrailingViews = pluginProvider.getStatusBarTrailingViews()
+        let hasLeadingViews = !statusBarLeadingViews.isEmpty
+        let hasTrailingViews = !statusBarTrailingViews.isEmpty
 
         return Group {
-            if !statusBarViews.isEmpty {
+            if hasLeadingViews || hasTrailingViews {
                 HStack(spacing: 12) {
-                    ForEach(statusBarViews.indices, id: \.self) { index in
-                        statusBarViews[index]
-                            .id("status_bar_\(index)")
+                    // 左侧视图
+                    if hasLeadingViews {
+                        HStack(spacing: 12) {
+                            ForEach(statusBarLeadingViews.indices, id: \.self) { index in
+                                statusBarLeadingViews[index]
+                                    .id("status_bar_leading_\(index)")
+                            }
+                        }
+                    }
+
+                    Spacer()
+
+                    // 右侧视图
+                    if hasTrailingViews {
+                        HStack(spacing: 12) {
+                            ForEach(statusBarTrailingViews.indices, id: \.self) { index in
+                                statusBarTrailingViews[index]
+                                    .id("status_bar_trailing_\(index)")
+                            }
+                        }
                     }
                 }
                 .padding(.horizontal, 12)

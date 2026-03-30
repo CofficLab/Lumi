@@ -50,9 +50,9 @@ actor RAGPlugin: SuperPlugin, SuperLog {
         AnyView(RAGSettingsView())
     }
 
-    /// 提供状态栏视图
+    /// 提供状态栏右侧视图
     @MainActor
-    func addStatusBarView() -> AnyView? {
+    func addStatusBarTrailingView() -> AnyView? {
         AnyView(RAGStatusBarView())
     }
 

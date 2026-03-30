@@ -189,7 +189,7 @@ extension StatusBarHoverContainer {
                 if let title = title {
                     Text(title)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .foregroundColor(.white)
                 }
                 Text(detailText)
                     .font(.system(size: 12))
