@@ -45,11 +45,10 @@ struct RemoteProviderSettingsView: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: 0) {
-            // 云端供应商卡片（固定）
+        HStack(alignment: .top, spacing: AppUI.Spacing.lg) {
+            // 云端供应商列表（固定宽度）
             cloudProviderCard
-                .padding(AppUI.Spacing.lg)
-                .background(Color.clear)
+                .frame(maxWidth: 320, alignment: .topLeading)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: AppUI.Spacing.lg) {
@@ -58,11 +57,12 @@ struct RemoteProviderSettingsView: View {
                         configurationCard
                     }
 
-                    Spacer()
+                    Spacer(minLength: 0)
                 }
                 .padding(.horizontal, AppUI.Spacing.lg)
             }
         }
+        .padding(AppUI.Spacing.lg)
         .onAppear(perform: onAppear)
         .onChange(of: selectedProviderId) { _, newValue in
             loadSettings()
@@ -89,19 +89,28 @@ extension RemoteProviderSettingsView {
 
                 GlassDivider()
 
-                HStack(spacing: AppUI.Spacing.sm) {
-                    ForEach(remoteProviders) { provider in
-                        ProviderButton(
-                            provider: provider,
-                            isSelected: selectedProviderId == provider.id
-                        ) {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                selectedProviderId = provider.id
-                            }
+                providerList
+            }
+        }
+    }
+
+    /// 供应商纵向列表（适配大量供应商）
+    private var providerList: some View {
+        ScrollView {
+            LazyVStack(spacing: AppUI.Spacing.xs) {
+                ForEach(remoteProviders) { provider in
+                    ProviderButton(
+                        provider: provider,
+                        isSelected: selectedProviderId == provider.id
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedProviderId = provider.id
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
+            .padding(.vertical, AppUI.Spacing.xs)
         }
     }
 

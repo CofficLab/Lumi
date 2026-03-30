@@ -15,7 +15,9 @@ struct ProviderButton: View {
                     .font(.system(size: 12, weight: .medium))
                 Text(provider.displayName)
                     .font(AppUI.Typography.caption1)
+                Spacer(minLength: 0)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .appSurface(
