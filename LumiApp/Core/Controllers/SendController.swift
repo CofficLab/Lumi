@@ -131,7 +131,12 @@ final class SendController: ObservableObject, SuperLog {
         guard !messages.isEmpty else { return }
         // 允许系统/状态消息插入到尾部，但不应中断发送闭环。
         // 这里选择“最后一条可驱动消息”（user/tool/assistant）作为状态机输入。
-        guard let last = messages.last(where: { $0.role != .system && $0.role != .status }) else { return }
+        guard let last = messages.last(where: { $0.role != .system && $0.role != .status }) else {
+            if Self.verbose > 1 {
+                AppLogger.core.info("\(Self.t) 没有可驱动消息")
+            }
+            return
+        }
 
         switch last.role {
         case .user, .tool:

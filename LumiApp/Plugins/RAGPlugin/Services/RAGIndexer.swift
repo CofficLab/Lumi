@@ -7,14 +7,14 @@ struct RAGIndexer: SuperLog {
 
     private static let progressLogInterval = 50
     private static let skipDirectories: Set<String> = [
-        ".git", ".build", ".swiftpm", "DerivedData", "Pods", "Carthage", "node_modules", "dist", "build"
+        ".git", ".build", ".swiftpm", "DerivedData", "Pods", "Carthage", "node_modules", "dist", "build",
     ]
 
     private static let allowedExtensions: Set<String> = [
         "swift", "m", "mm", "h", "hpp", "c", "cc", "cpp",
         "js", "ts", "tsx", "jsx", "json", "yml", "yaml", "toml",
         "md", "txt", "rst", "py", "rb", "go", "rs", "java", "kt",
-        "sql", "html", "css", "scss", "xml", "sh", "zsh"
+        "sql", "html", "css", "scss", "xml", "sh", "zsh",
     ]
 
     private let store: RAGSQLiteStore
@@ -149,9 +149,11 @@ struct RAGIndexer: SuperLog {
 
     private func logProgressIfNeeded(stats: RAGIndexStats, total: Int, currentFilePath: String, projectPath: String) {
         guard stats.scannedFiles % Self.progressLogInterval == 0 || stats.scannedFiles == total else { return }
-        AppLogger.core.info(
-            "\(Self.t) 进度 \(stats.scannedFiles)/\(total) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount) file=\(currentFilePath)"
-        )
+        if Self.verbose {
+            AppLogger.core.info(
+                "\(Self.t) 进度 \(stats.scannedFiles)/\(total) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount) file=\(currentFilePath)"
+            )
+        }
         NotificationCenter.postRAGIndexProgress(
             RAGIndexProgressEvent(
                 projectPath: projectPath,
@@ -177,7 +179,7 @@ struct RAGIndexer: SuperLog {
         }
 
         var files: [String] = []
-        let maxFileSizeBytes = 1_500_000
+        let maxFileSizeBytes = 1500000
 
         for case let url as URL in enumerator {
             let path = url.path

@@ -51,7 +51,7 @@ struct MessageDedupOverlay<Content: View>: View, SuperLog {
                 conversationId: conversationId
             )
 
-            if deleted > 0 {
+            if deleted > 0 && Self.verbose {
                 AppLogger.core.info("\(Self.t)🧹 [\(conversationId)] 去重完成：删除了 \(deleted) 条重复消息")
             }
         }
