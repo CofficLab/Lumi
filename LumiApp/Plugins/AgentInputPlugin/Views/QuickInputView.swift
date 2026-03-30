@@ -1,7 +1,7 @@
 import MagicKit
 import SwiftUI
 
-/// 快捷输入视图 - 提供英文 Commit 和中文 Commit 的快速输入
+/// 快捷输入视图 - 提供所有快捷短语的快速输入
 struct QuickInputView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "⚡"
@@ -19,29 +19,22 @@ struct QuickInputView: View, SuperLog {
 
     var body: some View {
         HStack(spacing: 6) {
-            // 从 PromptService 获取快捷短语
+            // 从 PromptService 获取所有快捷短语
             let phrases = conversationTurnServices.promptService.getQuickPhrases(
                 projectName: ProjectVM.currentProjectName,
                 projectPath: ProjectVM.currentProjectPath
             )
 
-            // 英文 Commit
-            if let englishPhrase = phrases.first(where: { $0.title == "英文 Commit" }) {
+            // 展示所有短语
+            ForEach(phrases, id: \.title) { phrase in
                 commitButton(
-                    title: englishPhrase.title,
-                    icon: englishPhrase.icon,
-                    prompt: englishPhrase.prompt
+                    title: phrase.title,
+                    icon: phrase.icon,
+                    prompt: phrase.prompt
                 )
             }
 
-            // 中文 Commit
-            if let chinesePhrase = phrases.first(where: { $0.title == "中文 Commit" }) {
-                commitButton(
-                    title: chinesePhrase.title,
-                    icon: chinesePhrase.icon,
-                    prompt: chinesePhrase.prompt
-                )
-            }
+            Spacer()
         }
     }
 
