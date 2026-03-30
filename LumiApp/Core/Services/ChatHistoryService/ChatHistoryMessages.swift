@@ -21,6 +21,7 @@ extension ChatHistoryService {
     ///   - message: 要保存的消息
     ///   - conversationId: 对话 ID
     /// - Returns: 保存后的消息
+    @discardableResult
     func saveMessage(_ message: ChatMessage, toConversationId conversationId: UUID) -> ChatMessage? {
         let context = self.getContext()
         let descriptor = FetchDescriptor<Conversation>(
