@@ -46,19 +46,10 @@ struct FilePreviewStatusBarView: View {
             // 左侧：当前文件路径
             if ProjectVM.isFileSelected {
                 Text(selectedFilePath)
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.middle)
-            }
-
-            Spacer()
-
-            // 右侧：字符数统计（仅当选择了可预览文件时显示）
-            if ProjectVM.isFileSelected && canPreviewCurrentFile {
-                Text("\(fileContent.count) " + String(localized: "characters", table: "AgentFilePreviewStatusBar"))
-                    .font(.system(size: 9))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
             }
         }
         .padding(.horizontal, 10)
@@ -112,7 +103,6 @@ struct FilePreviewStatusBarView: View {
                     self.fileInfo = FileInfo(
                         path: url.path,
                         size: fileSize,
-                        characterCount: content.count,
                         lineCount: content.components(separatedBy: .newlines).count,
                         modificationDate: modificationDate,
                         encoding: usedEncoding
@@ -185,7 +175,6 @@ struct FilePreviewDetailView: View {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
                 FilePreviewInfoRow(title: "文件路径", value: (fileInfo.path as NSString).lastPathComponent)
                 FilePreviewInfoRow(title: "文件大小", value: ByteCountFormatter.string(fromByteCount: fileInfo.size, countStyle: .file))
-                FilePreviewInfoRow(title: "字符数", value: "\(fileInfo.characterCount)")
                 FilePreviewInfoRow(title: "行数", value: "\(fileInfo.lineCount)")
                 FilePreviewInfoRow(title: "编码", value: encodingName(fileInfo.encoding))
             }
@@ -230,7 +219,6 @@ struct FilePreviewInfoRow: View {
 struct FileInfo {
     let path: String
     let size: Int64
-    let characterCount: Int
     let lineCount: Int
     let modificationDate: Date?
     let encoding: String.Encoding
@@ -252,7 +240,6 @@ struct FileInfo {
     FilePreviewDetailView(fileInfo: FileInfo(
         path: "/Users/test/Lumi/App.swift",
         size: 12345,
-        characterCount: 5432,
         lineCount: 150,
         modificationDate: Date(),
         encoding: .utf8

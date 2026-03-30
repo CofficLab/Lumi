@@ -3,8 +3,8 @@ import SwiftUI
 /// 状态栏悬停容器组件
 ///
 /// 为状态栏插件提供统一的悬停效果，包括：
-/// - 背景高亮（半透明选区颜色）
-/// - 可选的 popover 详情视图
+/// - 悬停时背景高亮（半透明选区颜色）
+/// - 点击时显示 popover 详情视图
 /// - 多个容器之间的互斥显示（通过 HoverCoordinator）
 /// - 符合设计系统的动画和样式
 ///
@@ -62,6 +62,7 @@ struct StatusBarHoverContainer<Content: View, Detail: View>: View {
 
     @ObservedObject private var coordinator = HoverCoordinator.shared
     @State private var isPresented = false
+    @State private var isHovering = false
 
     // MARK: - Initializers
 
@@ -106,29 +107,26 @@ struct StatusBarHoverContainer<Content: View, Detail: View>: View {
     var body: some View {
         return content
             .background(hoverBackground)
-            .animation(DesignAnimations.Preset.fadeIn, value: isPresented)
+            .animation(DesignAnimations.Preset.fadeIn, value: isHovering)
             .onHover { hovering in
-                // 仅当有详情视图时才通知协调器
-                if detailView != nil {
-                    coordinator.onHover(id: self.id, isHovering: hovering)
-                }
+                isHovering = hovering
             }
-            .onChange(of: coordinator.visibleID) { _, visibleID in
+            .onTapGesture {
+                // 仅当有详情视图时才响应点击
                 guard detailView != nil else { return }
-
-                let shouldShow = (visibleID == self.id)
-                if isPresented != shouldShow {
-                    withAnimation(DesignAnimations.Preset.fadeIn) {
-                        isPresented = shouldShow
+                
+                // 切换显示状态
+                withAnimation(DesignAnimations.Preset.fadeIn) {
+                    if isPresented {
+                        // 如果当前已显示，则关闭
+                        isPresented = false
+                        coordinator.close(id: self.id)
+                    } else {
+                        // 如果当前未显示，先关闭其他的，再显示当前的
+                        coordinator.closeAll()
+                        isPresented = true
+                        coordinator.open(id: self.id)
                     }
-                }
-            }
-            .onChange(of: isPresented) { oldValue, newValue in
-                guard oldValue != newValue, detailView != nil else { return }
-
-                // 如果是用户手动关闭，通知协调器
-                if !newValue && coordinator.visibleID == self.id {
-                    coordinator.close(id: self.id)
                 }
             }
             .if(detailView != nil) { view in
@@ -144,14 +142,13 @@ struct StatusBarHoverContainer<Content: View, Detail: View>: View {
     private var hoverBackground: some View {
         GeometryReader { geometry in
             ZStack {
-                if isPresented {
+                if isHovering {
                     // 使用系统选区颜色的半透明版本，更符合 macOS 原生体验
                     RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
                         .fill(Color(nsColor: .selectedContentBackgroundColor).opacity(0.15))
                         .transition(.opacity)
                 }
             }
-            .animation(DesignAnimations.Preset.fadeIn, value: isPresented)
         }
     }
 
@@ -161,7 +158,10 @@ struct StatusBarHoverContainer<Content: View, Detail: View>: View {
         if let detailView = detailView {
             detailView
                 .onHover { hovering in
-                    coordinator.onHover(id: self.id, isHovering: hovering)
+                    // 保持 popover 打开状态
+                    if hovering {
+                        coordinator.open(id: self.id)
+                    }
                 }
                 .padding(DesignTokens.Spacing.lg)
                 .frame(width: popoverWidth)
@@ -174,25 +174,6 @@ struct StatusBarHoverContainer<Content: View, Detail: View>: View {
 
 extension StatusBarHoverContainer {
     /// 快速创建带简单文本详情的容器
-    /// - Parameters:
-    ///   - detailText: 详情文本
-    ///   - title: 详情标题
-    ///   - content: 内容视图
-    static func withTextDetail<C: View, D: View>(
-        _ detailText: String,
-        title: String? = nil,
-        id: String = UUID().uuidString,
-        @ViewBuilder detail: @escaping () -> D,
-        @ViewBuilder content: @escaping () -> C
-    ) -> StatusBarHoverContainer<C, D> {
-        return StatusBarHoverContainer<C, D>(
-            detailView: detail(),
-            id: id,
-            content: content
-        )
-    }
-
-    /// 快速创建带简单文本详情的容器（简单版本）
     /// - Parameters:
     ///   - detailText: 详情文本
     ///   - title: 详情标题
@@ -223,117 +204,4 @@ extension StatusBarHoverContainer {
             content: content
         )
     }
-}
-
-// MARK: - Preview Helper
-
-/// Preview 用的网络详情视图（提取到顶层避免 ViewBuilder 闭包内声明类型）
-private struct PreviewNetworkDetailView: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-            Text("网络监控")
-                .font(.system(size: 14, weight: .semibold))
-
-            HStack(spacing: DesignTokens.Spacing.lg) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("下载")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Text("1.2 MB/s")
-                        .font(.title2)
-                }
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("上传")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Text("256 KB/s")
-                        .font(.title2)
-                }
-            }
-        }
-    }
-}
-
-// MARK: - Preview
-
-#Preview("基础悬停效果") {
-    HStack(spacing: DesignTokens.Spacing.md) {
-        StatusBarHoverContainer {
-            HStack(spacing: 6) {
-                Image(systemName: "tag.fill")
-                    .font(.system(size: 10))
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                Text("1.0.0")
-                    .font(.system(size: 11))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-        }
-
-        StatusBarHoverContainer {
-            HStack(spacing: 6) {
-                Image(systemName: "arrow.triangle.branch")
-                    .font(.system(size: 10))
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                Text("main")
-                    .font(.system(size: 11))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-        }
-    }
-    .padding()
-    .background(DesignTokens.Color.basePalette.deepBackground)
-}
-
-#Preview("带 Popover 详情") {
-    HStack(spacing: DesignTokens.Spacing.md) {
-        StatusBarHoverContainer(
-            detailView: VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-                Text("应用版本")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-
-                Divider()
-
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                    HStack {
-                        Text("版本号:")
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        Text("1.0.0")
-                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                    }
-                    HStack {
-                        Text("构建号:")
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        Text("123")
-                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                    }
-                    HStack {
-                        Text("发布日期:")
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        Text("2024-01-15")
-                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-                    }
-                }
-            },
-            id: "version-preview"
-        ) {
-            HStack(spacing: 6) {
-                Image(systemName: "tag.fill")
-                    .font(.system(size: 10))
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                Text("1.0.0")
-                    .font(.system(size: 11))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-        }
-    }
-    .padding()
-    .background(DesignTokens.Color.basePalette.deepBackground)
 }

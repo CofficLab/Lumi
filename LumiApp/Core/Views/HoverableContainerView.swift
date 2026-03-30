@@ -49,6 +49,20 @@ class HoverCoordinator: ObservableObject {
             visibleID = nil
         }
     }
+
+    /// 关闭所有悬停
+    func closeAll() {
+        hideWorkItem?.cancel()
+        hideWorkItem = nil
+        visibleID = nil
+    }
+
+    /// 打开指定 ID 的悬停
+    func open(id: String) {
+        hideWorkItem?.cancel()
+        hideWorkItem = nil
+        visibleID = id
+    }
 }
 
 /// 可悬停的容器视图，提供统一的 hover 背景高亮和 popover 效果

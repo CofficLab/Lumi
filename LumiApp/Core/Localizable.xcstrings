@@ -496,9 +496,6 @@
         }
       }
     },
-    "1.2 MB/s" : {
-
-    },
     "5,000 次/小时" : {
       "localizations" : {
         "zh-Hans" : {
@@ -562,9 +559,6 @@
           }
         }
       }
-    },
-    "256 KB/s" : {
-
     },
     "500" : {
       "localizations" : {
@@ -5116,9 +5110,6 @@
         }
       }
     },
-    "上传" : {
-
-    },
     "上传图片" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8245,9 +8236,6 @@
           }
         }
       }
-    },
-    "网络监控" : {
-
     },
     "聊天工具栏" : {
       "extractionState" : "stale",
