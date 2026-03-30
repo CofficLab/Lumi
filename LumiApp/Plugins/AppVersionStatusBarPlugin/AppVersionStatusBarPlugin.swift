@@ -52,11 +52,9 @@ struct AppVersionStatusBarView: View {
             HStack(spacing: 6) {
                 Image(systemName: "tag.fill")
                     .font(.system(size: 10))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
 
                 Text(version)
                     .font(.system(size: 11))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)

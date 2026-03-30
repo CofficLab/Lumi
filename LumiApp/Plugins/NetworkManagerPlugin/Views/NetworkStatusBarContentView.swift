@@ -15,7 +15,6 @@ struct NetworkStatusBarContentView: View {
             // Upload speed
             Text(SpeedFormatter.formatForStatusBar(viewModel.networkState.uploadSpeed))
                 .font(.system(size: 9, weight: .medium))
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
                 .monospacedDigit()
                 .lineLimit(1)
                 .fixedSize()
@@ -23,7 +22,6 @@ struct NetworkStatusBarContentView: View {
             // Download speed
             Text(SpeedFormatter.formatForStatusBar(viewModel.networkState.downloadSpeed))
                 .font(.system(size: 9, weight: .medium))
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
                 .monospacedDigit()
                 .lineLimit(1)
                 .fixedSize()

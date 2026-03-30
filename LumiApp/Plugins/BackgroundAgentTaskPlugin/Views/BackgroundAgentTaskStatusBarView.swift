@@ -17,12 +17,11 @@ struct BackgroundAgentTaskStatusBarView: View {
             HStack(spacing: 4) {
                 Image(systemName: "clock.arrow.circlepath")
                     .font(.system(size: 11))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
 
                 if runningCount > 0 {
                     Text("\(runningCount)")
                         .font(.system(size: 11))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .opacity(0.8)
                 }
             }
             .padding(.horizontal, 8)
@@ -85,13 +84,13 @@ struct BackgroundAgentTaskListView: View {
         HStack {
             Text(L10n.title)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
             Spacer()
 
             Text(L10n.totalCount(total))
                 .font(.system(size: 11))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
 
             Button {
                 showClearConfirm = true
@@ -102,7 +101,7 @@ struct BackgroundAgentTaskListView: View {
                     Text(L10n.clearCompleted)
                         .font(.system(size: 10))
                 }
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
             }
             .buttonStyle(.plain)
             .help(L10n.clearCompletedHelp)
@@ -114,7 +113,7 @@ struct BackgroundAgentTaskListView: View {
             } label: {
                 Image(systemName: "arrow.clockwise")
                     .font(.system(size: 11))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
             .buttonStyle(.plain)
             .help(L10n.refresh)
@@ -155,7 +154,7 @@ struct BackgroundAgentTaskListView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
-        .background(AppUI.Color.semantic.textTertiary.opacity(0.06))
+        .background(DesignTokens.Color.semantic.textTertiary.opacity(0.06))
     }
 
     private func tableColumn(_ title: String, width: CGFloat?, alignment: HorizontalAlignment = .leading) -> some View {
@@ -163,12 +162,12 @@ struct BackgroundAgentTaskListView: View {
             if let width {
                 Text(title)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     .frame(width: width, alignment: alignment == .trailing ? .trailing : (alignment == .center ? .center : .leading))
             } else {
                 Text(title)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
@@ -179,10 +178,10 @@ struct BackgroundAgentTaskListView: View {
             Spacer()
             Image(systemName: "tray")
                 .font(.system(size: 24))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
             Text(L10n.emptyTitle)
                 .font(.system(size: 12))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
             Spacer()
         }
         .frame(maxWidth: .infinity)
@@ -196,7 +195,7 @@ struct BackgroundAgentTaskListView: View {
 
         return VStack(spacing: 0) {
             HStack(spacing: 0) {
-                // 状态列
+                // 状态列 - 保留颜色以区分状态
                 HStack(spacing: 4) {
                     Image(systemName: iconName(for: status))
                         .font(.system(size: 10))
@@ -210,7 +209,7 @@ struct BackgroundAgentTaskListView: View {
                 // 指令列
                 Text(task.originalPrompt)
                     .font(.system(size: 12))
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -218,13 +217,13 @@ struct BackgroundAgentTaskListView: View {
                 // 创建时间列
                 Text(shortTime(task.createdAt))
                     .font(.system(size: 11))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     .frame(width: 100, alignment: .leading)
 
                 // 耗时列
                 Text(durationText(task: task))
                     .font(.system(size: 11))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     .frame(width: 50, alignment: .trailing)
 
                 // 操作列 - 只保留删除按钮
@@ -233,7 +232,7 @@ struct BackgroundAgentTaskListView: View {
                 } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: 9, weight: .bold))
-                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                         .frame(width: 18, height: 18)
                         .contentShape(Circle())
                 }
@@ -263,10 +262,10 @@ struct BackgroundAgentTaskListView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(L10n.promptFull)
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                 Text(task.originalPrompt)
                     .font(.system(size: 11))
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                     .textSelection(.enabled)
             }
 
@@ -274,20 +273,20 @@ struct BackgroundAgentTaskListView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(L10n.resultLabel)
                         .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     Text(summary)
                         .font(.system(size: 11))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         .textSelection(.enabled)
                 }
             } else if let error = task.errorDescription, !error.isEmpty {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(L10n.errorLabel)
                         .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     Text(error)
                         .font(.system(size: 11))
-                        .foregroundColor(AppUI.Color.semantic.error)
+                        .foregroundColor(DesignTokens.Color.semantic.error)
                         .textSelection(.enabled)
                 }
             }
@@ -295,7 +294,7 @@ struct BackgroundAgentTaskListView: View {
         .padding(8)
         .background(
             RoundedRectangle(cornerRadius: 6)
-                .fill(AppUI.Color.semantic.textTertiary.opacity(0.05))
+                .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.05))
         )
     }
 
@@ -308,7 +307,7 @@ struct BackgroundAgentTaskListView: View {
             } label: {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(currentPage > 1 ? AppUI.Color.semantic.textSecondary : AppUI.Color.semantic.textDisabled)
+                    .foregroundColor(currentPage > 1 ? DesignTokens.Color.semantic.textSecondary : DesignTokens.Color.semantic.textDisabled)
             }
             .buttonStyle(.plain)
             .disabled(currentPage <= 1)
@@ -317,7 +316,7 @@ struct BackgroundAgentTaskListView: View {
 
             Text(L10n.pageIndicator(currentPage, totalPages))
                 .font(.system(size: 11))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
 
             Spacer()
 
@@ -326,7 +325,7 @@ struct BackgroundAgentTaskListView: View {
             } label: {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(currentPage < totalPages ? AppUI.Color.semantic.textSecondary : AppUI.Color.semantic.textDisabled)
+                    .foregroundColor(currentPage < totalPages ? DesignTokens.Color.semantic.textSecondary : DesignTokens.Color.semantic.textDisabled)
             }
             .buttonStyle(.plain)
             .disabled(currentPage >= totalPages)

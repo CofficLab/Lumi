@@ -138,14 +138,15 @@ struct StatusBarHoverContainer<Content: View, Detail: View>: View {
 
     // MARK: - Private Views
 
-    /// 悬停背景（使用系统选区颜色）
+    /// 悬停背景（使用系统选区颜色，增强可见性）
     private var hoverBackground: some View {
         GeometryReader { geometry in
             ZStack {
                 if isHovering {
-                    // 使用系统选区颜色的半透明版本，更符合 macOS 原生体验
+                    // 使用系统选区颜色，提高透明度以增强可见性
+                    // 在深色模式下使用白色选区，浅色模式下使用蓝色选区
                     RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                        .fill(Color(nsColor: .selectedContentBackgroundColor).opacity(0.15))
+                        .fill(Color(nsColor: .selectedContentBackgroundColor).opacity(0.35))
                         .transition(.opacity)
                 }
             }
@@ -189,7 +190,7 @@ extension StatusBarHoverContainer {
                 if let title = title {
                     Text(title)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white)
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                 }
                 Text(detailText)
                     .font(.system(size: 12))

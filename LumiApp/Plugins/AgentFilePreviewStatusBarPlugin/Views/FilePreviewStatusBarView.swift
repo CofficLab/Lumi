@@ -43,11 +43,10 @@ struct FilePreviewStatusBarView: View {
 
     private var contentView: some View {
         HStack(spacing: 12) {
-            // 左侧：当前文件路径
+            // 当前文件路径
             if ProjectVM.isFileSelected {
                 Text(selectedFilePath)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.middle)
             }

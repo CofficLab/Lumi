@@ -40,6 +40,7 @@ struct StatusBar: View {
                 .padding(.vertical, 6)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .frame(height: 32)
+                .foregroundColor(.white)
                 .appSurface(style: .custom(statusBarBackground), cornerRadius: 0)
                 .overlay(alignment: .top) {
                     Rectangle()

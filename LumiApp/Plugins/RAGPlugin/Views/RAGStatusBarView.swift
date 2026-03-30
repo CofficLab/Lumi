@@ -87,6 +87,7 @@ struct RAGStatusBarView: View, SuperLog {
 
     @ViewBuilder
     private var statusIcon: some View {
+        // 状态图标保留颜色以区分状态
         if isIndexing {
             Image(systemName: "arrow.triangle.2.circlepath")
                 .font(.system(size: 10))
@@ -119,34 +120,32 @@ struct RAGStatusBarView: View, SuperLog {
 
     @ViewBuilder
     private func statusText(for status: RAGIndexStatus) -> some View {
+        // 状态栏文本不设置颜色，由 StatusBar 统一控制为白色
         HStack(spacing: 4) {
             Text(String(localized: "RAG", table: "RAG"))
                 .font(.system(size: 11, weight: .medium))
-                .foregroundColor(.secondary)
 
             Text("·")
                 .font(.system(size: 9))
-                .foregroundStyle(.tertiary)
+                .opacity(0.7)
 
             Text(formatIndexTime(status.lastIndexedAt))
                 .font(.system(size: 10))
-                .foregroundStyle(.tertiary)
+                .opacity(0.7)
 
             Text("·")
                 .font(.system(size: 9))
-                .foregroundStyle(.tertiary)
+                .opacity(0.7)
 
             Text("^[\(status.fileCount) File](inflect: true)")
                 .font(.system(size: 10))
-                .foregroundColor(.secondary)
 
             Text("·")
                 .font(.system(size: 9))
-                .foregroundStyle(.tertiary)
+                .opacity(0.7)
 
             Text("^[\(status.chunkCount) Chunk](inflect: true)")
                 .font(.system(size: 10))
-                .foregroundColor(.secondary)
         }
     }
 
@@ -156,20 +155,18 @@ struct RAGStatusBarView: View, SuperLog {
             HStack(spacing: 4) {
                 Text(String(localized: "Indexing...", table: "RAG"))
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.blue)
 
                 Text("·")
                     .font(.system(size: 9))
-                    .foregroundStyle(.tertiary)
+                    .opacity(0.7)
 
                 Text("\(event.scannedFiles)/\(event.totalFiles)")
                     .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
-        }
+                    .opacity(0.7)
+            }
         } else {
             Text(String(localized: "Indexing...", table: "RAG"))
                 .font(.system(size: 11))
-                .foregroundColor(.blue)
         }
     }
 
@@ -177,7 +174,6 @@ struct RAGStatusBarView: View, SuperLog {
     private var notInitializedText: some View {
         Text(String(localized: "Not initialized", table: "RAG"))
             .font(.system(size: 10))
-            .foregroundColor(.secondary)
     }
 
     @ViewBuilder
@@ -185,7 +181,6 @@ struct RAGStatusBarView: View, SuperLog {
         if let error = errorMessage {
             Text(error)
                 .font(.system(size: 10))
-                .foregroundColor(.red)
         }
     }
 
@@ -193,14 +188,12 @@ struct RAGStatusBarView: View, SuperLog {
     private var noProjectText: some View {
         Text(String(localized: "No project selected", table: "RAG"))
             .font(.system(size: 10))
-            .foregroundColor(.secondary)
     }
 
     @ViewBuilder
     private var loadingText: some View {
         Text(String(localized: "Checking index status...", table: "RAG"))
             .font(.system(size: 10))
-            .foregroundColor(.secondary)
     }
 
     // MARK: - 通知处理
@@ -248,7 +241,7 @@ struct RAGStatusBarView: View, SuperLog {
             // 索引完成后刷新状态
             Task {
                 // 延迟一下，确保数据库写入完成
-                try? await Task.sleep(nanoseconds: 500000000) // 0.5秒
+                try? await Task.sleep(nanoseconds: 500000000) // 0.5 秒
 
                 // 重置索引状态
                 isIndexing = false
@@ -257,7 +250,7 @@ struct RAGStatusBarView: View, SuperLog {
                 await updateStatus()
 
                 // 再延迟后重置进度事件
-                try? await Task.sleep(nanoseconds: 1500000000) // 1.5秒
+                try? await Task.sleep(nanoseconds: 1500000000) // 1.5 秒
                 progressEvent = nil
             }
         }

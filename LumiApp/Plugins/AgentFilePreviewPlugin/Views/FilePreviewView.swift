@@ -145,6 +145,9 @@ struct FilePreviewView: View {
     var body: some View {
         VStack(spacing: 0) {
             headerSection
+            
+            Divider()
+                .background(Color.white.opacity(0.1))
 
             if ProjectVM.isFileSelected {
                 if canPreviewCurrentFile {
@@ -236,7 +239,7 @@ struct FilePreviewView: View {
     // MARK: - File Preview Content
 
     private var filePreviewContent: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 0) {
             fileInfoSection
 
             ZStack(alignment: .topLeading) {
