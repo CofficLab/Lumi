@@ -5,7 +5,7 @@ import SwiftUI
 /// RAG 状态栏视图
 ///
 /// 在 Agent 模式底部状态栏显示当前项目的 RAG 索引状态
-/// 支持点击弹出设置面板
+/// 支持悬停弹出详细信息
 struct RAGStatusBarView: View, SuperLog {
     nonisolated static let emoji = "🦞"
     nonisolated static let verbose = false
@@ -19,7 +19,6 @@ struct RAGStatusBarView: View, SuperLog {
     @State private var errorMessage: String?
     @State private var isNotInitialized = false
     @State private var lastUpdateAttempt: Date = .distantPast
-    @State private var showPopover = false
 
     // MARK: - 计算属性
 
@@ -30,6 +29,37 @@ struct RAGStatusBarView: View, SuperLog {
     // MARK: - 正文
 
     var body: some View {
+        StatusBarHoverContainer(
+            detailView: RAGStatusDetailView(
+                indexStatus: indexStatus,
+                isIndexing: isIndexing,
+                progressEvent: progressEvent,
+                errorMessage: errorMessage,
+                isNotInitialized: isNotInitialized
+            ),
+            popoverWidth: 420,
+            id: "rag-status"
+        ) {
+            statusBarContent
+        }
+        .task {
+            await updateStatus()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .ragIndexProgressDidChange)) { notification in
+            handleProgressNotification(notification)
+        }
+        .onChange(of: projectVM.currentProjectPath) { _, _ in
+            // 项目切换时重新加载
+            Task {
+                await resetAndReload()
+            }
+        }
+    }
+
+    // MARK: - 状态栏内容
+
+    @ViewBuilder
+    private var statusBarContent: some View {
         HStack(spacing: 8) {
             // 状态图标
             statusIcon
@@ -49,29 +79,8 @@ struct RAGStatusBarView: View, SuperLog {
                 loadingText
             }
         }
-        .contentShape(Rectangle()) // 使整个区域可点击
-        .onTapGesture {
-            // 点击切换 Popover 显示状态
-            showPopover.toggle()
-        }
-        .popover(isPresented: $showPopover, arrowEdge: .bottom) {
-            // Popover 内容：RAG 设置面板
-            RAGSettingsPopoverView()
-                .frame(width: 420, height: 500)
-                .environmentObject(projectVM)
-        }
-        .task {
-            await updateStatus()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .ragIndexProgressDidChange)) { notification in
-            handleProgressNotification(notification)
-        }
-        .onChange(of: projectVM.currentProjectPath) { _, _ in
-            // 项目切换时重新加载状态
-            Task {
-                await resetAndReload()
-            }
-        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
     }
 
     // MARK: - 视图构建
@@ -110,86 +119,53 @@ struct RAGStatusBarView: View, SuperLog {
 
     @ViewBuilder
     private func statusText(for status: RAGIndexStatus) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(spacing: 4) {
-                Text(String(localized: "RAG", table: "RAG"))
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.secondary)
+        HStack(spacing: 4) {
+            Text(String(localized: "RAG", table: "RAG"))
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(.secondary)
 
-                Text("·")
-                    .font(.system(size: 9))
-                    .foregroundStyle(.tertiary)
+            Text("·")
+                .font(.system(size: 9))
+                .foregroundStyle(.tertiary)
 
-                Text(formatIndexTime(status.lastIndexedAt))
-                    .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
-            }
+            Text(formatIndexTime(status.lastIndexedAt))
+                .font(.system(size: 10))
+                .foregroundStyle(.tertiary)
 
-            HStack(spacing: 4) {
-                Text(String(localized: "^[\(status.fileCount) File](inflect: true)", table: "RAG"))
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+            Text("·")
+                .font(.system(size: 9))
+                .foregroundStyle(.tertiary)
 
-                Text("·")
-                    .font(.system(size: 9))
-                    .foregroundStyle(.tertiary)
+            Text("^[\(status.fileCount) File](inflect: true)")
+                .font(.system(size: 10))
+                .foregroundColor(.secondary)
 
-                Text(String(localized: "^[\(status.chunkCount) Chunk](inflect: true)", table: "RAG"))
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
-            }
+            Text("·")
+                .font(.system(size: 9))
+                .foregroundStyle(.tertiary)
+
+            Text("^[\(status.chunkCount) Chunk](inflect: true)")
+                .font(.system(size: 10))
+                .foregroundColor(.secondary)
         }
     }
 
     @ViewBuilder
     private var indexingText: some View {
         if let event = progressEvent {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
-                    Text(String(localized: "Indexing...", table: "RAG"))
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.blue)
+            HStack(spacing: 4) {
+                Text(String(localized: "Indexing...", table: "RAG"))
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.blue)
 
-                    Text("·")
-                        .font(.system(size: 9))
-                        .foregroundStyle(.tertiary)
+                Text("·")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.tertiary)
 
-                    Text("\(event.scannedFiles)/\(event.totalFiles)")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.tertiary)
-                }
-
-                HStack(spacing: 4) {
-                    Text(String(localized: "^[\(event.indexedFiles) Indexed](inflect: true)", table: "RAG"))
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
-
-                    Text("·")
-                        .font(.system(size: 9))
-                        .foregroundStyle(.tertiary)
-
-                    Text(String(localized: "^[\(event.chunkCount) Chunk](inflect: true)", table: "RAG"))
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
-                }
-
-                // 进度条
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(Color.gray.opacity(0.2))
-                            .frame(height: 3)
-
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(Color.blue.opacity(0.7))
-                            .frame(
-                                width: geometry.size.width * CGFloat(event.scannedFiles) / CGFloat(max(event.totalFiles, 1)),
-                                height: 3
-                            )
-                    }
-                }
-                .frame(height: 3)
-            }
+                Text("\(event.scannedFiles)/\(event.totalFiles)")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
+        }
         } else {
             Text(String(localized: "Indexing...", table: "RAG"))
                 .font(.system(size: 11))
@@ -386,16 +362,216 @@ struct RAGStatusBarView: View, SuperLog {
     }
 }
 
-// MARK: - 预览
+// MARK: - RAG Status Detail View
 
-#Preview("No project selected") {
-    let projectVM = ProjectVM(
-        contextService: ContextService(),
-        llmService: LLMService()
-    )
+/// RAG 状态详情视图（在 popover 中显示）
+struct RAGStatusDetailView: View {
+    let indexStatus: RAGIndexStatus?
+    let isIndexing: Bool
+    let progressEvent: RAGIndexProgressEvent?
+    let errorMessage: String?
+    let isNotInitialized: Bool
 
-    RAGStatusBarView()
-        .environmentObject(projectVM)
-        .frame(height: 50)
-        .padding()
+    var body: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+            // 标题
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                Image(systemName: "doc.text.magnifyingglass")
+                    .font(.system(size: 16))
+                    .foregroundColor(DesignTokens.Color.semantic.primary)
+
+                Text("RAG 索引状态")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+
+                Spacer()
+            }
+
+            Divider()
+
+            if isIndexing {
+                indexingView()
+            } else if let status = indexStatus {
+                indexStatusView(status)
+            } else if isNotInitialized {
+                notInitializedView
+            } else if errorMessage != nil {
+                errorView
+            } else {
+                loadingView
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func indexingView() -> some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                ProgressView()
+                    .scaleEffect(0.8)
+
+                Text("正在索引...")
+                    .font(.system(size: 13))
+                    .foregroundColor(DesignTokens.Color.semantic.primary)
+            }
+
+            if let event = progressEvent {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                    RAGProgressRow(label: "已扫描", value: "\(event.scannedFiles) / \(event.totalFiles) 文件")
+                    RAGProgressRow(label: "已索引", value: "\(event.indexedFiles) 文件")
+                    RAGProgressRow(label: "已跳过", value: "\(event.skippedFiles) 文件")
+                    RAGProgressRow(label: "文档块", value: "\(event.chunkCount) 个")
+
+                    if !event.currentFilePath.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("当前文件")
+                                .font(.system(size: 11))
+                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+
+                            Text((event.currentFilePath as NSString).lastPathComponent)
+                                .font(.system(size: 10))
+                                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                                .lineLimit(2)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func indexStatusView(_ status: RAGIndexStatus) -> some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+            RAGInfoRow(label: "文件数量", value: "\(status.fileCount)")
+            RAGInfoRow(label: "文档块数量", value: "\(status.chunkCount)")
+            RAGInfoRow(label: "最后索引", value: formatIndexTime(status.lastIndexedAt))
+            RAGInfoRow(label: "嵌入模型", value: status.embeddingModel)
+            RAGInfoRow(label: "向量维度", value: "\(status.embeddingDimension)")
+
+            if status.isStale {
+                HStack(spacing: DesignTokens.Spacing.sm) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(DesignTokens.Color.semantic.warning)
+
+                    Text("索引已过期，建议重新索引")
+                        .font(.system(size: 12))
+                        .foregroundColor(DesignTokens.Color.semantic.warning)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var notInitializedView: some View {
+        VStack(spacing: DesignTokens.Spacing.md) {
+            Image(systemName: "poweroff")
+                .font(.system(size: 32))
+                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+
+            Text("RAG 索引未初始化")
+                .font(.system(size: 13))
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+
+            Text("请在设置中初始化 RAG 服务")
+                .font(.system(size: 11))
+                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, DesignTokens.Spacing.lg)
+    }
+
+    @ViewBuilder
+    private var errorView: some View {
+        VStack(spacing: DesignTokens.Spacing.md) {
+            Image(systemName: "xmark.circle.fill")
+                .font(.system(size: 32))
+                .foregroundColor(DesignTokens.Color.semantic.error)
+
+            Text("获取索引状态失败")
+                .font(.system(size: 13))
+                .foregroundColor(DesignTokens.Color.semantic.error)
+
+            if let error = errorMessage {
+                Text(error)
+                    .font(.system(size: 11))
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, DesignTokens.Spacing.lg)
+    }
+
+    @ViewBuilder
+    private var loadingView: some View {
+        HStack(spacing: DesignTokens.Spacing.sm) {
+            ProgressView()
+                .scaleEffect(0.8)
+
+            Text("正在检查索引状态...")
+                .font(.system(size: 12))
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, DesignTokens.Spacing.lg)
+    }
+
+    private func formatIndexTime(_ date: Date) -> String {
+        let now = Date()
+        let interval = now.timeIntervalSince(date)
+
+        if interval < 60 {
+            return "刚刚"
+        } else if interval < 3600 {
+            let minutes = Int(interval / 60)
+            return "\(minutes) 分钟前"
+        } else if interval < 86400 {
+            let hours = Int(interval / 3600)
+            return "\(hours) 小时前"
+        } else {
+            let days = Int(interval / 86400)
+            return "\(days) 天前"
+        }
+    }
+}
+
+/// RAG 进度信息行
+struct RAGProgressRow: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        HStack(spacing: DesignTokens.Spacing.sm) {
+            Text(label)
+                .font(.system(size: 12))
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .frame(width: 70, alignment: .leading)
+
+            Text(value)
+                .font(.system(size: 12))
+                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+
+            Spacer()
+        }
+    }
+}
+
+/// RAG 信息行
+struct RAGInfoRow: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        HStack(spacing: DesignTokens.Spacing.sm) {
+            Text(label)
+                .font(.system(size: 12))
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .frame(width: 70, alignment: .leading)
+
+            Text(value)
+                .font(.system(size: 12))
+                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+
+            Spacer()
+        }
+    }
 }

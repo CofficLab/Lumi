@@ -7,7 +7,7 @@ import SwiftUI
 /// 允许 AI 助手创建新文件或覆盖现有文件。
 struct WriteFileTool: AgentTool, SuperLog {
     nonisolated static let emoji = "✏️"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     let name = "write_file"
     let description = "Create a new file or overwrite an existing file with the given content."

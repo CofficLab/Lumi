@@ -146,9 +146,6 @@ struct FilePreviewView: View {
         VStack(spacing: 0) {
             headerSection
 
-            Divider()
-                .background(Color.white.opacity(0.1))
-
             if ProjectVM.isFileSelected {
                 if canPreviewCurrentFile {
                     filePreviewContent

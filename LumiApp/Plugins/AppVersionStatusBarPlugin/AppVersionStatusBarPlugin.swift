@@ -42,19 +42,119 @@ actor AppVersionStatusBarPlugin: SuperPlugin, SuperLog {
 struct AppVersionStatusBarView: View {
     /// 当前 App 版本号
     @State private var version: String = "Unknown"
+    @State private var build: String = ""
 
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "tag.fill")
-                .font(.system(size: 10))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+        StatusBarHoverContainer(
+            detailView: AppVersionDetailView(version: version, build: build),
+            id: "app-version-status"
+        ) {
+            HStack(spacing: 6) {
+                Image(systemName: "tag.fill")
+                    .font(.system(size: 10))
+                    .foregroundColor(AppUI.Color.semantic.textTertiary)
 
-            Text(version)
-                .font(.system(size: 11))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                Text(version)
+                    .font(.system(size: 11))
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
         }
         .task {
-            version = await AppVersionHelper.getVersion()
+            await loadVersionInfo()
+        }
+    }
+
+    private func loadVersionInfo() async {
+        version = await AppVersionHelper.getVersion()
+        build = await AppVersionHelper.getBuild()
+    }
+}
+
+// MARK: - App Version Detail View
+
+/// 版本详情视图（在 popover 中显示）
+struct AppVersionDetailView: View {
+    let version: String
+    let build: String
+
+    @State private var appVersion: String = ""
+    @State private var buildNumber: String = ""
+    @State private var buildDate: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+            // 标题
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                Image(systemName: "tag.fill")
+                    .font(.system(size: 16))
+                    .foregroundColor(DesignTokens.Color.semantic.primary)
+
+                Text("应用版本")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+
+                Spacer()
+            }
+
+            Divider()
+
+            // 版本信息网格
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                VersionInfoRow(label: "版本号", value: appVersion)
+                VersionInfoRow(label: "构建号", value: buildNumber)
+
+                if let buildDate = buildDate {
+                    VersionInfoRow(label: "构建日期", value: buildDate)
+                }
+            }
+        }
+        .onAppear {
+            loadVersionDetails()
+        }
+    }
+
+    private func loadVersionDetails() {
+        appVersion = version
+        buildNumber = build
+
+        // 获取构建日期（从 Info.plist 或可执行文件）
+        buildDate = getBuildDate()
+    }
+
+    private func getBuildDate() -> String? {
+        // 尝试从可执行文件获取构建日期
+        let bundlePath = Bundle.main.bundlePath
+        let url = URL(fileURLWithPath: bundlePath)
+        if let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+           let modificationDate = attributes[.modificationDate] as? Date {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd HH:mm"
+            return formatter.string(from: modificationDate)
+        }
+        return nil
+    }
+}
+
+/// 版本信息行
+struct VersionInfoRow: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        HStack(spacing: DesignTokens.Spacing.sm) {
+            Text(label)
+                .font(.system(size: 12))
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .frame(width: 70, alignment: .leading)
+
+            Text(value)
+                .font(.system(size: 12))
+                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .textSelection(.enabled)
+
+            Spacer()
         }
     }
 }
@@ -67,13 +167,15 @@ enum AppVersionHelper {
     /// - Returns: 版本号字符串（例如："1.0.0"）
     static func getVersion() async -> String {
         await MainActor.run {
-            let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
-            let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
+            Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
+        }
+    }
 
-            if build.isEmpty || build == "1" {
-                return version
-            }
-            return "\(version) (\(build))"
+    /// 获取当前 App 构建号
+    /// - Returns: 构建号字符串
+    static func getBuild() async -> String {
+        await MainActor.run {
+            Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
         }
     }
 }
@@ -83,4 +185,9 @@ enum AppVersionHelper {
 #Preview {
     AppVersionStatusBarView()
         .frame(height: 30)
+}
+
+#Preview("Detail View") {
+    AppVersionDetailView(version: "1.0.0", build: "123")
+        .frame(width: 300)
 }

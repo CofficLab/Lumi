@@ -6,109 +6,50 @@ import SwiftUI
 struct BackgroundAgentTaskStatusBarView: View {
     @State private var tasks: [BackgroundAgentTask] = []
     @State private var isPopoverPresented = false
+    @State private var runningCount: Int = 0
 
     var body: some View {
-        HStack(spacing: 6) {
-            Button {
-                isPopoverPresented.toggle()
-                if isPopoverPresented {
-                    reload()
-                }
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "clock.arrow.circlepath")
-                        .font(.system(size: 11))
-                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+        StatusBarHoverContainer(
+            detailView: BackgroundAgentTaskListView(tasks: tasks, onRefresh: reload),
+            popoverWidth: 560,
+            id: "background-task-status"
+        ) {
+            HStack(spacing: 4) {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.system(size: 11))
+                    .foregroundColor(AppUI.Color.semantic.textTertiary)
 
-                    if let runningCount = runningTaskCount, runningCount > 0 {
-                        Text("\(runningCount)")
-                            .font(.system(size: 11))
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
-                    }
+                if runningCount > 0 {
+                    Text("\(runningCount)")
+                        .font(.system(size: 11))
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
                 }
             }
-            .buttonStyle(.plain)
-            .popover(isPresented: $isPopoverPresented, arrowEdge: .top) {
-                BackgroundAgentTaskTableView(onRefresh: reload)
-                    .frame(width: 560, height: 400)
-                    .padding(12)
-            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
         }
         .onAppear {
             reload()
         }
     }
 
-    private var runningTaskCount: Int? {
-        let count = tasks.filter { BackgroundAgentTaskStatus(rawOrDefault: $0.statusRawValue) == .running }.count
-        return count == 0 ? nil : count
-    }
-
     private func reload() {
         tasks = BackgroundAgentTaskStore.shared.fetchRecent(limit: 50)
+        runningCount = tasks.filter { BackgroundAgentTaskStatus(rawOrDefault: $0.statusRawValue) == .running }.count
     }
 }
 
-// MARK: - Localization
+// MARK: - Detail List View
 
-private enum L10n {
-    static let table = "BackgroundAgentTask"
-
-    static func localized(_ key: String) -> String {
-        String(localized: String.LocalizationValue(key), table: table)
-    }
-
-    static func localized(_ key: String, _ args: CVarArg...) -> String {
-        String(format: localized(key), arguments: args)
-    }
-
-    // Header
-    static var title: String { localized("后台任务") }
-    static func totalCount(_ count: Int) -> String { L10n.localized("共 %lld 条", count) }
-    static var clearCompleted: String { localized("清除已完成") }
-    static var clearCompletedHelp: String { localized("清除所有已完成和失败的任务") }
-    static var refresh: String { localized("刷新") }
-
-    // Alert
-    static var confirmClearTitle: String { localized("确认清除") }
-    static var cancel: String { localized("取消") }
-    static var confirmClearMessage: String { localized("确定要清除所有已完成和失败的任务吗？此操作不可撤销。") }
-
-    // Table
-    static var colStatus: String { localized("状态") }
-    static var colPrompt: String { localized("指令") }
-    static var colCreatedAt: String { localized("创建时间") }
-    static var colDuration: String { localized("耗时") }
-    static var colActions: String { localized("操作") }
-    static var emptyTitle: String { localized("暂无后台任务") }
-
-    // Detail
-    static var promptFull: String { localized("指令全文") }
-    static var resultLabel: String { localized("执行结果") }
-    static var errorLabel: String { localized("错误信息") }
-    static var deleteHelp: String { localized("删除此任务") }
-
-    // Pagination
-    static func pageIndicator(_ current: Int, _ total: Int) -> String {
-        L10n.localized("第 %lld / %lld 页", current, total)
-    }
-
-    // Status
-    static var statusPending: String { localized("等待") }
-    static var statusRunning: String { localized("执行") }
-    static var statusSucceeded: String { localized("完成") }
-    static var statusFailed: String { localized("失败") }
-}
-
-// MARK: - Table View (Admin-style)
-
-private struct BackgroundAgentTaskTableView: View {
+/// 后台任务列表视图（用于在 popover 中显示）
+struct BackgroundAgentTaskListView: View {
+    let tasks: [BackgroundAgentTask]
     let onRefresh: () -> Void
 
     @State private var currentPage: Int = 1
     @State private var pageSize: Int = 10
     @State private var total: Int = 0
-    @State private var tasks: [BackgroundAgentTask] = []
+    @State private var displayTasks: [BackgroundAgentTask] = []
     @State private var expandedTaskId: UUID? = nil
     @State private var showClearConfirm: Bool = false
 
@@ -133,6 +74,7 @@ private struct BackgroundAgentTaskTableView: View {
             Text(L10n.confirmClearMessage)
         }
         .onAppear {
+            total = tasks.count
             loadPage(1)
         }
     }
@@ -168,6 +110,7 @@ private struct BackgroundAgentTaskTableView: View {
 
             Button {
                 loadPage(currentPage)
+                onRefresh()
             } label: {
                 Image(systemName: "arrow.clockwise")
                     .font(.system(size: 11))
@@ -187,12 +130,12 @@ private struct BackgroundAgentTaskTableView: View {
 
             Divider()
 
-            if tasks.isEmpty {
+            if displayTasks.isEmpty {
                 emptyState
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(tasks, id: \.id) { task in
+                        ForEach(displayTasks, id: \.id) { task in
                             taskRow(task)
                             Divider().opacity(0.3)
                         }
@@ -401,9 +344,11 @@ private struct BackgroundAgentTaskTableView: View {
     }
 
     private func loadPage(_ page: Int) {
-        let result = BackgroundAgentTaskStore.shared.fetchPage(page: page, pageSize: pageSize)
-        tasks = result.tasks
-        total = result.total
+        let startIndex = (page - 1) * pageSize
+        let endIndex = min(startIndex + pageSize, tasks.count)
+
+        displayTasks = Array(tasks[startIndex..<endIndex])
+        total = tasks.count
         currentPage = page
         expandedTaskId = nil
     }
@@ -456,4 +401,55 @@ private struct BackgroundAgentTaskTableView: View {
             return String(format: "%.1fh", interval / 3600)
         }
     }
+}
+
+// MARK: - Localization
+
+private enum L10n {
+    static let table = "BackgroundAgentTask"
+
+    static func localized(_ key: String) -> String {
+        String(localized: String.LocalizationValue(key), table: table)
+    }
+
+    static func localized(_ key: String, _ args: CVarArg...) -> String {
+        String(format: localized(key), arguments: args)
+    }
+
+    // Header
+    static var title: String { localized("后台任务") }
+    static func totalCount(_ count: Int) -> String { L10n.localized("共 %lld 条", count) }
+    static var clearCompleted: String { localized("清除已完成") }
+    static var clearCompletedHelp: String { localized("清除所有已完成和失败的任务") }
+    static var refresh: String { localized("刷新") }
+
+    // Alert
+    static var confirmClearTitle: String { localized("确认清除") }
+    static var cancel: String { localized("取消") }
+    static var confirmClearMessage: String { localized("确定要清除所有已完成和失败的任务吗？此操作不可撤销。") }
+
+    // Table
+    static var colStatus: String { localized("状态") }
+    static var colPrompt: String { localized("指令") }
+    static var colCreatedAt: String { localized("创建时间") }
+    static var colDuration: String { localized("耗时") }
+    static var colActions: String { localized("操作") }
+    static var emptyTitle: String { localized("暂无后台任务") }
+
+    // Detail
+    static var promptFull: String { localized("指令全文") }
+    static var resultLabel: String { localized("执行结果") }
+    static var errorLabel: String { localized("错误信息") }
+    static var deleteHelp: String { localized("删除此任务") }
+
+    // Pagination
+    static func pageIndicator(_ current: Int, _ total: Int) -> String {
+        L10n.localized("第 %lld / %lld 页", current, total)
+    }
+
+    // Status
+    static var statusPending: String { localized("等待") }
+    static var statusRunning: String { localized("执行") }
+    static var statusSucceeded: String { localized("完成") }
+    static var statusFailed: String { localized("失败") }
 }
