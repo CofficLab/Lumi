@@ -2,52 +2,6 @@ import Foundation
 import MagicKit
 
 extension LLMService {
-    /// 将原始 SSE 数据块拆分为单事件列表。
-    /// 兼容「多个 event/data 粘在同一个网络块中、且缺少空行分隔」的非标准实现。
-    private nonisolated static func splitSSEEvents(from rawData: Data) -> [Data] {
-        guard let text = String(data: rawData, encoding: .utf8) else {
-            return [rawData]
-        }
-
-        let normalized = text
-            .replacingOccurrences(of: "\r\n", with: "\n")
-            .replacingOccurrences(of: "\r", with: "\n")
-
-        var events: [Data] = []
-        var currentLines: [String] = []
-        var hasDataLine = false
-
-        func flushCurrentEvent() {
-            guard !currentLines.isEmpty else { return }
-            let payload = currentLines
-                .joined(separator: "\n")
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            if !payload.isEmpty, let data = payload.data(using: .utf8) {
-                events.append(data)
-            }
-            currentLines.removeAll(keepingCapacity: true)
-            hasDataLine = false
-        }
-
-        for rawLine in normalized.split(separator: "\n", omittingEmptySubsequences: false) {
-            let line = String(rawLine)
-            if line.isEmpty {
-                flushCurrentEvent()
-                continue
-            }
-            if line.hasPrefix("event:"), hasDataLine {
-                flushCurrentEvent()
-            }
-            if line.hasPrefix("data:") {
-                hasDataLine = true
-            }
-            currentLines.append(line)
-        }
-
-        flushCurrentEvent()
-        return events.isEmpty ? [rawData] : events
-    }
-
     /// 流式发送消息（SSE），通过 `onChunk` 回调增量内容。
     ///
     /// - Throws: 仅 `LLMServiceError`
@@ -140,103 +94,89 @@ extension LLMService {
                         AppLogger.core.debug("\(self.t)📦 [Chunk #\(chunkIndex)] 原始数据 (\(chunkData.count) bytes):\n\(preview)")
                     }
 
-                    let events = Self.splitSSEEvents(from: chunkData)
+                    let eventData = chunkData
 
-                    if Self.verbose >= 2 {
-                        let chunkIndex = await chunkCounter.current()
-                        AppLogger.core.debug("\(self.t)📦 [Chunk #\(chunkIndex)] 拆分为 \(events.count) 个 SSE events")
-                    }
+                    if let parsed = try provider.parseStreamChunk(data: eventData) {
+                        let rawPayload = String(data: eventData, encoding: .utf8)
+                        let chunk = parsed.withRawStreamPayload(rawPayload)
 
-                    for (eventIndex, eventData) in events.enumerated() {
                         if Self.verbose >= 2 {
                             let chunkIndex = await chunkCounter.current()
-                            let eventText = String(data: eventData, encoding: .utf8) ?? "<无法解码>"
-                            let preview = eventText.prefix(300)
-                            AppLogger.core.debug("\(self.t)📄 [Chunk #\(chunkIndex), Event #\(eventIndex + 1)] 原始内容:\n\(preview)")
-                        }
-
-                        if let parsed = try provider.parseStreamChunk(data: eventData) {
-                            let rawPayload = String(data: eventData, encoding: .utf8)
-                            let chunk = parsed.withRawStreamPayload(rawPayload)
-
-                            if Self.verbose >= 2 {
-                                let chunkIndex = await chunkCounter.current()
-                                var chunkInfo = "[Chunk #\(chunkIndex), Event #\(eventIndex + 1)] 解析结果:"
-                                if let content = chunk.content {
-                                    let contentPreview = content.prefix(50)
-                                    chunkInfo += "\n  📝 内容: \"\(contentPreview)\"\(content.count > 50 ? "..." : "")"
-                                }
-                                if let eventType = chunk.eventType {
-                                    chunkInfo += "\n  🏷️ 类型: \(eventType.displayName)"
-                                }
-                                if let inputTokens = chunk.inputTokens {
-                                    chunkInfo += "\n  📥 输入tokens: \(inputTokens)"
-                                }
-                                if let outputTokens = chunk.outputTokens {
-                                    chunkInfo += "\n  📤 输出tokens: \(outputTokens)"
-                                }
-                                if let stopReason = chunk.stopReason {
-                                    chunkInfo += "\n  🛑 停止原因: \(stopReason)"
-                                }
-                                if chunk.isDone {
-                                    chunkInfo += "\n  ✅ 已完成"
-                                }
-                                if let error = chunk.error {
-                                    chunkInfo += "\n  ❌ 错误: \(error)"
-                                }
-                                if let toolCalls = chunk.toolCalls, !toolCalls.isEmpty {
-                                    chunkInfo += "\n  🔧 工具调用: \(toolCalls.count) 个"
-                                }
-                                AppLogger.core.debug("\(self.t)\(chunkInfo)")
+                            var chunkInfo = "[Chunk #\(chunkIndex)] 解析结果:"
+                            if let content = chunk.content {
+                                let contentPreview = content.prefix(50)
+                                chunkInfo += "\n  📝 内容: \"\(contentPreview)\"\(content.count > 50 ? "..." : "")"
                             }
-
-                            if let content = chunk.content, chunk.eventType == .textDelta {
-                                // 记录首个 Token 时间（TTFT）
-                                await state.recordFirstToken()
-                                await state.appendContent(content)
+                            if let eventType = chunk.eventType {
+                                chunkInfo += "\n  🏷️ 类型: \(eventType.displayName)"
                             }
-
-                            if let content = chunk.content, chunk.eventType == .thinkingDelta {
-                                await state.appendThinking(content)
+                            if let inputTokens = chunk.inputTokens {
+                                chunkInfo += "\n  📥 输入tokens: \(inputTokens)"
                             }
-
-                            if let toolCalls = chunk.toolCalls {
-                                await state.saveCurrentToolCall()
-
-                                if let firstToolCall = toolCalls.first {
-                                    let hasPartialJson = chunk.partialJson != nil
-                                    await state.startNewToolCall(firstToolCall, hasPartialJson: hasPartialJson)
-                                }
+                            if let outputTokens = chunk.outputTokens {
+                                chunkInfo += "\n  📤 输出tokens: \(outputTokens)"
                             }
-
-                            if let partialJson = chunk.partialJson {
-                                await state.appendToolCallArguments(partialJson)
+                            if let stopReason = chunk.stopReason {
+                                chunkInfo += "\n  🛑 停止原因: \(stopReason)"
                             }
-
+                            if chunk.isDone {
+                                chunkInfo += "\n  ✅ 已完成"
+                            }
                             if let error = chunk.error {
-                                await state.setError(error)
+                                chunkInfo += "\n  ❌ 错误: \(error)"
                             }
-
-                            await state.updateTokens(input: chunk.inputTokens, output: chunk.outputTokens)
-                            if let reason = chunk.stopReason {
-                                await state.setStopReason(reason)
+                            if let toolCalls = chunk.toolCalls, !toolCalls.isEmpty {
+                                chunkInfo += "\n  🔧 工具调用: \(toolCalls.count) 个"
                             }
-
-                            if chunk.isDone {
-                                await state.saveCurrentToolCall()
-                            }
-
-                            await onChunk(chunk)
-
-                            if chunk.isDone {
-                                shouldContinue = false
-                                break
-                            }
-                        } else if Self.verbose >= 1 {
-                            let preview = String(data: eventData, encoding: .utf8)?.prefix(100) ?? "无法解码"
-                            AppLogger.core.warning("\(self.t)警告：Provider 返回 nil，原始数据：\(preview)...")
+                            AppLogger.core.debug("\(self.t)\(chunkInfo)")
                         }
+
+                        if let content = chunk.content, chunk.eventType == .textDelta {
+                            // 记录首个 Token 时间（TTFT）
+                            await state.recordFirstToken()
+                            await state.appendContent(content)
+                        }
+
+                        if let content = chunk.content, chunk.eventType == .thinkingDelta {
+                            await state.appendThinking(content)
+                        }
+
+                        if let toolCalls = chunk.toolCalls {
+                            await state.saveCurrentToolCall()
+
+                            if let firstToolCall = toolCalls.first {
+                                let hasPartialJson = chunk.partialJson != nil
+                                await state.startNewToolCall(firstToolCall, hasPartialJson: hasPartialJson)
+                            }
+                        }
+
+                        if let partialJson = chunk.partialJson {
+                            await state.appendToolCallArguments(partialJson)
+                        }
+
+                        if let error = chunk.error {
+                            await state.setError(error)
+                        }
+
+                        await state.updateTokens(input: chunk.inputTokens, output: chunk.outputTokens)
+                        if let reason = chunk.stopReason {
+                            await state.setStopReason(reason)
+                        }
+
+                        if chunk.isDone {
+                            await state.saveCurrentToolCall()
+                        }
+
+                        await onChunk(chunk)
+
+                        if chunk.isDone {
+                            shouldContinue = false
+                        }
+                    } else if Self.verbose >= 1 {
+                        let preview = String(data: eventData, encoding: .utf8)?.prefix(100) ?? "无法解码"
+                        AppLogger.core.warning("\(self.t)警告：Provider 返回 nil，原始数据：\(preview)...")
                     }
+
                     return shouldContinue
                 } catch {
                     if Self.verbose >= 1 {
