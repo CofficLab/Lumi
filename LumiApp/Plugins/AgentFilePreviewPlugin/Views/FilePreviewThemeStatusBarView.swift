@@ -66,12 +66,51 @@ struct FilePreviewThemeStatusBarView: View {
     }
 }
 
+// MARK: - 精选流行主题列表
+
+/// 精选的流行代码编辑器主题，仅展示最常用的主题供用户选择。
+private enum FeaturedThemes {
+    /// 亮色主题
+    static let light: [CodeEditor.ThemeName] = [
+        .default,               // Pojoaque（CodeEditor 默认）
+        CodeEditor.ThemeName(rawValue: "github"),                              // GitHub Light
+        CodeEditor.ThemeName(rawValue: "solarized-light"),                     // Solarized Light
+        CodeEditor.ThemeName(rawValue: "tomorrow"),                            // Tomorrow
+        CodeEditor.ThemeName(rawValue: "atom-one-light"),                      // Atom One Light
+        CodeEditor.ThemeName(rawValue: "xcode"),                               // Xcode
+        CodeEditor.ThemeName(rawValue: "googlecode"),                          // Google Code
+    ]
+
+    /// 暗色主题
+    static let dark: [CodeEditor.ThemeName] = [
+        CodeEditor.ThemeName(rawValue: "dracula"),                             // Dracula
+        CodeEditor.ThemeName(rawValue: "monokai-sublime"),                     // Monokai Sublime
+        CodeEditor.ThemeName(rawValue: "one-dark"),                            // One Dark
+        CodeEditor.ThemeName(rawValue: "nord"),                                // Nord
+        CodeEditor.ThemeName(rawValue: "github-dark"),                         // GitHub Dark
+        CodeEditor.ThemeName(rawValue: "solarized-dark"),                      // Solarized Dark
+        CodeEditor.ThemeName(rawValue: "tomorrow-night"),                      // Tomorrow Night
+        CodeEditor.ThemeName(rawValue: "atom-one-dark"),                       // Atom One Dark
+        CodeEditor.ThemeName(rawValue: "ocean"),                               // Ocean
+        CodeEditor.ThemeName(rawValue: "agate"),                               // Agate
+    ]
+}
+
 // MARK: - File Preview Theme Detail View
 
 /// 文件预览主题详情视图（在 popover 中显示）
 struct FilePreviewThemeDetailView: View {
     @Binding var selectedTheme: CodeEditor.ThemeName
     let onThemeSelected: (CodeEditor.ThemeName) -> Void
+
+    /// 从精选列表和全部可用主题中合并去重，得到最终展示列表
+    private var displayLightThemes: [CodeEditor.ThemeName] {
+        resolveFeatured(candidates: FeaturedThemes.light, category: .light)
+    }
+
+    private var displayDarkThemes: [CodeEditor.ThemeName] {
+        resolveFeatured(candidates: FeaturedThemes.dark, category: .dark)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -108,34 +147,22 @@ struct FilePreviewThemeDetailView: View {
     private var themeListSection: some View {
         ScrollView {
             VStack(spacing: 0) {
-                if !lightThemes.isEmpty {
+                if !displayLightThemes.isEmpty {
                     themeSection(
                         title: String(localized: "Light Themes", table: "AgentFilePreview"),
-                        themes: lightThemes
+                        themes: displayLightThemes
                     )
 
-                    if !darkThemes.isEmpty || !otherThemes.isEmpty {
+                    if !displayDarkThemes.isEmpty {
                         GlassDivider()
                             .padding(.horizontal, 12)
                     }
                 }
 
-                if !darkThemes.isEmpty {
+                if !displayDarkThemes.isEmpty {
                     themeSection(
                         title: String(localized: "Dark Themes", table: "AgentFilePreview"),
-                        themes: darkThemes
-                    )
-
-                    if !otherThemes.isEmpty {
-                        GlassDivider()
-                            .padding(.horizontal, 12)
-                    }
-                }
-
-                if !otherThemes.isEmpty {
-                    themeSection(
-                        title: String(localized: "Other Themes", table: "AgentFilePreview"),
-                        themes: otherThemes
+                        themes: displayDarkThemes
                     )
                 }
             }
@@ -174,18 +201,31 @@ struct FilePreviewThemeDetailView: View {
         }
     }
 
-    // MARK: - Theme Collections
+    // MARK: - Helpers
 
-    private var lightThemes: [CodeEditor.ThemeName] {
-        CodeEditor.availableThemes.filter { themeCategory(for: $0) == .light }
-    }
+    /// 将精选主题与可用主题取交集，确保只显示实际存在的主题
+    private func resolveFeatured(candidates: [CodeEditor.ThemeName], category: ThemeCategory) -> [CodeEditor.ThemeName] {
+        let availableSet = Set(CodeEditor.availableThemes.map(\.rawValue))
+        let matched = candidates.filter { availableSet.contains($0.rawValue) }
 
-    private var darkThemes: [CodeEditor.ThemeName] {
-        CodeEditor.availableThemes.filter { themeCategory(for: $0) == .dark }
-    }
+        // 如果当前选中的主题属于该分类但不在精选列表中，追加到末尾
+        var result = matched
+        let selectedName = selectedTheme.rawValue.lowercased()
+        let isInCategory: Bool
+        switch category {
+        case .light:
+            isInCategory = selectedName.contains("light") || selectedName.contains("day")
+                || selectedName.contains("github") || selectedName.contains("xcode")
+                || selectedName.contains("solarized-light") || selectedName.contains("tomorrow")
+                || selectedName.contains("googlecode") || selectedName == "pojoaque"
+        case .dark:
+            isInCategory = !selectedName.contains("light") && !selectedName.contains("day")
+        }
 
-    private var otherThemes: [CodeEditor.ThemeName] {
-        CodeEditor.availableThemes.filter { themeCategory(for: $0) == .other }
+        if isInCategory && !result.contains(where: { $0.rawValue == selectedTheme.rawValue }) {
+            result.append(selectedTheme)
+        }
+        return result
     }
 
     // MARK: - Theme Categorization
@@ -193,21 +233,6 @@ struct FilePreviewThemeDetailView: View {
     private enum ThemeCategory {
         case light
         case dark
-        case other
-    }
-
-    private func themeCategory(for theme: CodeEditor.ThemeName) -> ThemeCategory {
-        let name = theme.rawValue.lowercased()
-
-        if name.contains("light") || name.contains("day") || name.contains("github") || name.contains("xcode") || name.contains("solarized-light") || name.contains("tomorrow") || name.contains("googlecode") {
-            return .light
-        }
-
-        if name.contains("dark") || name.contains("night") || name.contains("black") || name.contains("monokai") || name.contains("dracula") || name.contains("ocean") || name.contains("obsidian") || name.contains("nord") || name.contains("atom-one-dark") || name.contains("github-dark") || name.contains("solarized-dark") || name.contains("tomorrow-night") {
-            return .dark
-        }
-
-        return .other
     }
 }
 
@@ -264,11 +289,11 @@ private struct ThemeMenuItem: View {
     private var previewColor: Color {
         let name = theme.rawValue.lowercased()
 
-        if name.contains("light") || name.contains("day") {
+        if name.contains("light") || name.contains("day") || name == "pojoaque" {
             return Color.white
         }
         if name.contains("dark") || name.contains("night") || name.contains("black") {
-            return Color.black
+            return Color(red: 0.06, green: 0.06, blue: 0.06)
         }
         if name.contains("monokai") {
             return Color(red: 0.15, green: 0.15, blue: 0.15)
@@ -287,6 +312,12 @@ private struct ThemeMenuItem: View {
         }
         if name.contains("ocean") {
             return Color(red: 0.05, green: 0.09, blue: 0.16)
+        }
+        if name.contains("one-dark") || name == "atom-one-dark" {
+            return Color(red: 0.16, green: 0.17, blue: 0.2)
+        }
+        if name.contains("agate") {
+            return Color(red: 0.1, green: 0.1, blue: 0.1)
         }
 
         return Color.gray
