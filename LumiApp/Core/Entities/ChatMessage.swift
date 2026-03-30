@@ -109,8 +109,10 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     /// 是否应展示在聊天消息列表中
     func shouldDisplayInChatList() -> Bool {
         switch role {
-        case .user, .assistant, .tool:
+        case .user, .assistant:
             return true
+        case .tool:
+            return false
         case .status:
             return true
         case .system:
