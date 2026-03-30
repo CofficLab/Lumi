@@ -9,10 +9,12 @@ import os
 /// ## 工作流程
 /// 1. 拦截用户消息
 /// 2. 使用 RAGIntentAnalyzer 判断是否需要 RAG 检索
-/// 3. 检查索引状态
-/// 4. 如果索引未完成，启动后台索引，不阻塞发送流程
-/// 5. 如果索引已完成，调用 RAG 服务检索相关文档
-/// 6. 将检索结果附加到消息上下文
+/// 3. 检查 RAG 服务是否已初始化
+/// 4. 如果未初始化，跳过 RAG（中间件不负责初始化）
+/// 5. 检查索引状态
+/// 6. 如果索引未完成，启动后台索引，不阻塞发送流程
+/// 7. 如果索引已完成，调用 RAG 服务检索相关文档
+/// 8. 将检索结果附加到消息上下文
 @MainActor
 final class RAGSendMiddleware: SendMiddleware, SuperLog {
     nonisolated static let emoji = "🦞"
@@ -54,6 +56,20 @@ final class RAGSendMiddleware: SendMiddleware, SuperLog {
             return
         }
 
+        // 获取 RAG 服务
+        let ragService = RAGPlugin.getService()
+
+        // 检查服务是否已初始化
+        let isInitialized = await ragService.isInitialized
+        if !isInitialized {
+            if Self.verbose {
+                RAGPlugin.logger.info("\(Self.t)   ⏭️ 跳过 RAG (服务未初始化)")
+                RAGPlugin.logger.info("\(Self.t)   💡 提示：RAG 服务由插件在适当时机初始化，中间件不负责初始化")
+            }
+            await next(ctx)
+            return
+        }
+
         // ⏱️ 记录索引检查时间
         let indexingCheckStart = CFAbsoluteTimeGetCurrent()
         let isAnyIndexing = RAGService.isAnyIndexing()
@@ -86,16 +102,6 @@ final class RAGSendMiddleware: SendMiddleware, SuperLog {
         }
 
         do {
-            let ragService = RAGPlugin.getService()
-
-            // ⏱️ 初始化耗时
-            let initStart = CFAbsoluteTimeGetCurrent()
-            try await ragService.initialize()
-            let initDuration = (CFAbsoluteTimeGetCurrent() - initStart) * 1000
-            if Self.verbose {
-                RAGPlugin.logger.info("\(Self.t)   ⏱️ initialize 耗时：\(String(format: "%.2f", initDuration))ms")
-            }
-
             // ⏱️ checkNeedsIndex 耗时
             let checkStart = CFAbsoluteTimeGetCurrent()
             let needsIndex = try await ragService.checkNeedsIndex(projectPath: projectPath)
