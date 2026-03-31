@@ -22,7 +22,7 @@ struct GetCurrentProjectTool: AgentTool, SuperLog {
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         if Self.verbose {
-            AgentRecentProjectsPlugin.logger.info("\(Self.t)获取当前项目")
+            RecentProjectsPlugin.logger.info("\(Self.t)获取当前项目")
         }
 
         let store = RecentProjectsStore()

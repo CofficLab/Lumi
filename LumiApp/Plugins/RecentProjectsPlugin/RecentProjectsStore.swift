@@ -9,13 +9,13 @@ final class RecentProjectsStore: @unchecked Sendable {
 
     private static let legacyKey = "Agent_RecentProjects"
 
-    // Current store file: <dbRoot>/AgentRecentProjects/settings/recent_projects.json
-    private static let pluginDirName = "AgentRecentProjects"
+    // Current store file: <dbRoot>/RecentProjects/settings/recent_projects.json
+    private static let pluginDirName = "RecentProjects"
     private static let settingsDirName = "settings"
     private static let stateFileName = "recent_projects.json"
     private static let tmpFileName = "recent_projects.tmp"
     
-    // Current project file: <dbRoot>/AgentRecentProjects/settings/current_project.json
+    // Current project file: <dbRoot>/RecentProjects/settings/current_project.json
     private static let currentProjectFileName = "current_project.json"
     private static let currentProjectTmpFileName = "current_project.tmp"
     

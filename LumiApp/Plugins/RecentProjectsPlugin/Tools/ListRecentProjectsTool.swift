@@ -29,7 +29,7 @@ struct ListRecentProjectsTool: AgentTool, SuperLog {
         let limit = min((arguments["limit"]?.value as? Int) ?? 5, 500)
 
         if Self.verbose {
-            AgentRecentProjectsPlugin.logger.info("\(Self.t)列出最近项目，限制：\(limit)")
+            RecentProjectsPlugin.logger.info("\(Self.t)列出最近项目，限制：\(limit)")
         }
 
         let store = RecentProjectsStore()

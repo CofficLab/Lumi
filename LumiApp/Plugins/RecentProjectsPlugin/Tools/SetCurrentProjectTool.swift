@@ -1,13 +1,13 @@
 import Foundation
 import MagicKit
 
-/// 添加项目到最近列表工具
-struct AddProjectTool: AgentTool, SuperLog {
+/// 设置当前项目工具
+struct SetCurrentProjectTool: AgentTool, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose = true
 
-    let name = "add_recent_project"
-    let description = "将指定项目添加到最近项目列表。添加后会更新 projectVM 中的最近项目。"
+    let name = "set_current_project"
+    let description = "设置当前选中的项目。需要提供项目路径。"
 
     var inputSchema: [String: Any] {
         [
@@ -32,7 +32,7 @@ struct AddProjectTool: AgentTool, SuperLog {
         }
 
         if Self.verbose {
-            AgentRecentProjectsPlugin.logger.info("\(Self.t)添加项目到最近列表：\(path)")
+            RecentProjectsPlugin.logger.info("\(Self.t)设置当前项目：\(path)")
         }
 
         // 验证路径是否存在且为目录
@@ -48,29 +48,22 @@ struct AddProjectTool: AgentTool, SuperLog {
         }
 
         let projectName = URL(fileURLWithPath: path).lastPathComponent
-
-        // 1. 使用 store 添加项目到最近列表
+        
+        // 使用 store 设置当前项目（会自动添加到最近列表）
         let store = RecentProjectsStore()
-        store.addProject(name: projectName, path: path)
-
-        // 2. 发送通知，RecentProjectsPersistenceOverlay 会自动更新 projectVM
+        store.setCurrentProject(name: projectName, path: path)
+        
+        // 发送通知，告知 RootView 同步到 ProjectVM
         NotificationCenter.postCurrentProjectDidChange(name: projectName, path: path)
 
-        // 3. 加载更新后的最近项目列表
-        let recentProjects = store.loadProjects()
-
-        // 构建返回消息
-        var output = "✅ 已成功添加项目到最近列表\n\n"
-        output += "**项目名称**: \(projectName)\n\n"
-        output += "**项目路径**: \(path)\n\n"
-
-        // 显示更新后的最近项目列表
-        output += "## 最近项目列表（\(recentProjects.count) 个）\n\n"
-        for (index, project) in recentProjects.prefix(5).enumerated() {
-            output += "\(index + 1). **\(project.name)**\n"
-            output += "   Path: `\(project.path)`\n\n"
-        }
-
-        return output
+        return """
+        ✅ 已成功设置当前项目
+        
+        **项目名称**: \(projectName)
+        
+        **项目路径**: \(path)
+        
+        项目已保存，可以开始使用项目相关的功能。
+        """
     }
 }

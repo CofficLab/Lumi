@@ -42,7 +42,7 @@ struct RecentProjectsSidebarView: View {
                     .font(.system(size: 14))
                     .foregroundColor(.accentColor)
 
-                Text(String(localized: "Recent Projects", table: "AgentRecentProjectsSidebar"))
+                Text(String(localized: "Recent Projects", table: "RecentProjectsSidebar"))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(AppUI.Color.semantic.textPrimary)
 
@@ -138,7 +138,7 @@ struct RecentProjectsSidebarView: View {
             Image(systemName: "clock.arrow.circlepath")
                 .font(.system(size: 24))
                 .foregroundColor(.secondary.opacity(0.5))
-            Text(String(localized: "No Recent Projects", table: "AgentRecentProjectsSidebar"))
+            Text(String(localized: "No Recent Projects", table: "RecentProjectsSidebar"))
                 .font(.system(size: 11))
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
