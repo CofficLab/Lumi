@@ -64,6 +64,7 @@ struct BackgroundAgentTaskListView: View {
             tableContent
             paginationBar
         }
+        .frame(minHeight: 500)
         .alert(L10n.confirmClearTitle, isPresented: $showClearConfirm) {
             Button(L10n.cancel, role: .cancel) {}
             Button(L10n.clearCompleted, role: .destructive) {
