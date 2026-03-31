@@ -5,7 +5,7 @@ import MagicKit
 @MainActor
 final class InputQueueVM: ObservableObject, SuperLog {
     nonisolated static var emoji: String { "🔄" }
-    nonisolated static var verbose: Bool { true }
+    nonisolated static var verbose: Bool { false }
 
     @Published private(set) var pendingRequest: InputEnqueueRequest?
 

@@ -21,7 +21,8 @@ extension LLMService {
             do {
                 try config.validate()
             } catch let error as LLMServiceError {
-                return error.toChatMessage(conversationId: conversationId)
+                // 传递 providerId，以便在 API Key 缺失错误中显示正确的供应商
+                return error.toChatMessage(conversationId: conversationId, providerId: config.providerId)
             }
         }
 

@@ -28,7 +28,8 @@ extension LLMService {
                 try config.validate()
             } catch let error as LLMServiceError {
                 AppLogger.core.error("\(self.t)❌ 验证配置失败: \(error.localizedDescription)")
-                return error.toChatMessage(conversationId: conversationId)
+                // 传递 providerId，以便在 API Key 缺失错误中显示正确的供应商
+                return error.toChatMessage(conversationId: conversationId, providerId: config.providerId)
             }
         }
 

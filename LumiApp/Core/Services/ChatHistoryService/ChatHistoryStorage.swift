@@ -7,7 +7,7 @@ extension ChatHistoryService {
 
     /// 保存或更新对话
     func saveConversation(_ conversation: Conversation) {
-        let context = getContext()
+        let context = self.getContext()
         context.insert(conversation)
 
         do {
@@ -46,7 +46,7 @@ extension ChatHistoryService {
 
     /// 删除对话
     func deleteConversation(_ conversation: Conversation) {
-        let context = getContext()
+        let context = self.getContext()
         context.delete(conversation)
 
         do {

@@ -440,7 +440,7 @@ extension ContentView {
         let windowId = windowState.id
         windowState.$title
             .receive(on: DispatchQueue.main)
-            .sink { [self] newTitle in
+            .sink { newTitle in
                 // 更新 NSWindow 标题
                 if let window = NSApplication.shared.windows.first(where: { _ in
                     WindowManager.shared.getWindowState(windowId) != nil

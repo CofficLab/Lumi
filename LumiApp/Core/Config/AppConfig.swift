@@ -15,7 +15,8 @@ enum AppConfig {
     static func getContainer() -> ModelContainer {
         let schema = Schema([
             Conversation.self,
-            ChatMessageEntity.self
+            ChatMessageEntity.self,
+            ImageAttachmentEntity.self
         ])
 
         // 获取数据库文件路径（不是目录）

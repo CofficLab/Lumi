@@ -37,7 +37,7 @@ struct ToolCallLoopDetectionSendMiddleware: SendMiddleware {
         in ctx: SendMessageContext
     ) async -> ToolLoopPattern? {
         // 加载最近的消息（通过上下文提供的服务）
-        guard let messages = await ctx.chatHistoryService.loadMessagesAsync(
+        guard let messages = await ctx.chatHistoryService.loadMessages(
             forConversationId: ctx.conversationId
         ) else {
             return nil

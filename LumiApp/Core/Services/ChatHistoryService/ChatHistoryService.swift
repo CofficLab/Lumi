@@ -3,9 +3,15 @@ import MagicKit
 import SwiftData
 
 /// 聊天历史服务 - 使用 SwiftData 存储对话
-final class ChatHistoryService: SuperLog, @unchecked Sendable {
+///
+/// ## 线程安全
+///
+/// 整个服务标记为 `@MainActor`，所有数据库操作都在主线程执行，
+/// 消除 `Unbinding from the main queue` 警告和跨线程竞态。
+@MainActor
+final class ChatHistoryService: SuperLog, Sendable {
     nonisolated static let emoji = "💾"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     let modelContainer: ModelContainer
     let modelContext: ModelContext
@@ -24,11 +30,6 @@ final class ChatHistoryService: SuperLog, @unchecked Sendable {
     /// 获取模型上下文
     internal func getContext() -> ModelContext {
         return modelContext
-    }
-
-    /// 创建新的模型上下文（用于需要独立 context 的场景）
-    internal func createNewContext() -> ModelContext {
-        return ModelContext(modelContainer)
     }
 
     // MARK: - 工具方法

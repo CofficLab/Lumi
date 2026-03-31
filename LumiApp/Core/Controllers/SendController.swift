@@ -21,11 +21,13 @@ final class SendController: ObservableObject, SuperLog {
     nonisolated static let verbose = 2
 
     private let container: RootViewContainer
+    private let chatService: ChatHistoryService
     private var activeSendTasksByConversation: [UUID: Task<Void, Never>] = [:]
     private var pendingTransientSystemPromptsByConversation: [UUID: [String]] = [:]
 
     init(container: RootViewContainer) {
         self.container = container
+        self.chatService = container.chatHistoryService
     }
 
     /// 尝试从队列中出队一条"可处理"的消息并开始发送。
@@ -66,9 +68,7 @@ final class SendController: ObservableObject, SuperLog {
         // 用户主动取消后，补一条系统消息落库（不参与 LLM 上下文）。
         guard shouldPersistCancelMessage else { return }
         let systemMessage = ChatMessage(role: .system, conversationId: conversationId, content: "用户主动取消了对话")
-        Task { @MainActor in
-            await container.conversationVM.saveMessage(systemMessage, to: conversationId)
-        }
+        container.conversationVM.saveMessage(systemMessage, to: conversationId)
     }
 
     /// 结束当前「发送队列」对应的一轮处理。
@@ -83,14 +83,14 @@ final class SendController: ObservableObject, SuperLog {
     /// 从队列入口启动一次发送链路：投影 UI、落库、运行发送中间件，然后继续 `send`。
     func beginSendFromQueue(conversationId: UUID, message: ChatMessage) async {
         if Self.verbose >= 1 {
-            AppLogger.core.info("\(Self.t) 启动一次发送链路：\n\(message.content.max(200))")
+            AppLogger.core.info("\(Self.t) [\(conversationId)] 启动一次发送链路：\n\(message.content.max(200))")
         }
 
         if container.conversationVM.selectedConversationId == conversationId {
             container.messagePendingVM.appendMessage(message)
         }
 
-        await container.conversationVM.saveMessage(message, to: conversationId)
+        container.conversationVM.saveMessage(message, to: conversationId)
 
         // 创建发送上下文
         let ctx = SendMessageContext(
@@ -108,13 +108,7 @@ final class SendController: ObservableObject, SuperLog {
             )
         }
 
-        if Self.verbose > 1 {
-            AppLogger.core.info("\(Self.t) 发送上下文")
-        }
         let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
-        if Self.verbose > 1 {
-            AppLogger.core.info("\(Self.t) 发送管道")
-        }
         await pipeline.run(ctx: ctx) { _ in
             if Self.verbose > 1 {
                 AppLogger.core.info("\(Self.t) 发送管道完成")
@@ -127,10 +121,13 @@ final class SendController: ObservableObject, SuperLog {
 
     /// 根据会话中**已落库的最后一条消息**驱动后续步骤
     func send(conversationId: UUID) async {
-        let messages = await container.chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
-        guard !messages.isEmpty else { return }
+        let messages = self.chatService.loadMessages(forConversationId: conversationId) ?? []
+        guard !messages.isEmpty else {
+            AppLogger.core.error("\(Self.t) [\(conversationId)] 处理已落库的最后一条消息，但无消息")
+            return
+        }
         // 允许系统/状态消息插入到尾部，但不应中断发送闭环。
-        // 这里选择“最后一条可驱动消息”（user/tool/assistant）作为状态机输入。
+        // 这里选择"最后一条可驱动消息"（user/tool/assistant）作为状态机输入。
         guard let last = messages.last(where: { $0.role != .system && $0.role != .status }) else {
             if Self.verbose > 1 {
                 AppLogger.core.info("\(Self.t) 没有可驱动消息")
@@ -140,7 +137,12 @@ final class SendController: ObservableObject, SuperLog {
 
         switch last.role {
         case .user, .tool:
-            guard container.messageQueueVM.isProcessing(for: conversationId) else { return }
+            guard container.messageQueueVM.isProcessing(for: conversationId) else {
+                if Self.verbose > 1 {
+                    AppLogger.core.info("\(Self.t) 没有处理中消息")
+                }
+                return
+            }
             let additionalSystemPrompts: [String]
             if last.role == .user {
                 additionalSystemPrompts = consumeTransientSystemPrompts(for: conversationId)
@@ -210,7 +212,7 @@ final class SendController: ObservableObject, SuperLog {
             message.toolCalls = calls
         }
 
-        await container.conversationVM.saveMessage(message, to: conversationId)
+        container.conversationVM.saveMessage(message, to: conversationId)
 
         if message.hasToolCalls {
             await send(conversationId: conversationId)
@@ -350,7 +352,8 @@ final class SendController: ObservableObject, SuperLog {
             // 保存错误消息到数据库
             let errorMessage: ChatMessage
             if let llmError = error as? LLMServiceError {
-                errorMessage = llmError.toChatMessage(conversationId: conversationId)
+                // 传递 providerId，以便在 API Key 缺失错误中显示正确的供应商
+                errorMessage = llmError.toChatMessage(conversationId: conversationId, providerId: config.providerId)
             } else {
                 // 其他错误类型，创建通用的错误消息
                 errorMessage = ChatMessage(
@@ -360,7 +363,7 @@ final class SendController: ObservableObject, SuperLog {
                     isError: true
                 )
             }
-            await container.conversationVM.saveMessage(errorMessage, to: conversationId)
+            container.conversationVM.saveMessage(errorMessage, to: conversationId)
         }
     }
 
@@ -413,7 +416,7 @@ final class SendController: ObservableObject, SuperLog {
                 resultMsg = container.toolExecutionService.createErrorMessage(for: toolCall, error: error, conversationId: conversationId)
             }
 
-            await container.conversationVM.saveMessage(resultMsg, to: conversationId)
+            container.conversationVM.saveMessage(resultMsg, to: conversationId)
         }
     }
 }

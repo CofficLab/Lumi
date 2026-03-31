@@ -36,9 +36,7 @@ final class SendMessageContext {
 
     /// 便捷方法：终止并发送系统消息
     func abort(withMessage systemMessage: ChatMessage) {
-        Task {
-            await chatHistoryService.saveMessage(systemMessage, toConversationId: conversationId)
-        }
+        chatHistoryService.saveMessage(systemMessage, toConversationId: conversationId)
         abortTurn?()
     }
 }

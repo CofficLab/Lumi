@@ -12,7 +12,7 @@ import os
 actor RAGPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🦞"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id = "rag"
     static let navigationId: String = "rag_settings"

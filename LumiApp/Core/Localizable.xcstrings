@@ -209,6 +209,9 @@
         }
       }
     },
+    "%@" : {
+
+    },
     "%@ (%@)" : {
       "localizations" : {
         "en" : {
@@ -478,6 +481,9 @@
 
     },
     "^[%lld File](inflect: true)" : {
+
+    },
+    "+%lld" : {
 
     },
     "0" : {
@@ -1696,6 +1702,9 @@
         }
       }
     },
+    "Current Status" : {
+
+    },
     "Current version is the latest stable version" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2250,6 +2259,9 @@
         }
       }
     },
+    "Esc" : {
+
+    },
     "Export Backup..." : {
       "localizations" : {
         "zh-Hans" : {
@@ -2332,6 +2344,9 @@
         }
       }
     },
+    "Fast file search with Cmd+P" : {
+
+    },
     "Fetching..." : {
       "localizations" : {
         "zh-Hans" : {
@@ -2347,6 +2362,9 @@
           }
         }
       }
+    },
+    "File indexing is automatic when switching projects" : {
+
     },
     "General" : {
       "localizations" : {
@@ -2543,6 +2561,9 @@
           }
         }
       }
+    },
+    "How to Use" : {
+
     },
     "Image" : {
       "localizations" : {
@@ -3290,7 +3311,6 @@
       }
     },
     "No project selected" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3546,6 +3566,9 @@
         }
       }
     },
+    "Please select a project to enable file search" : {
+
+    },
     "Port" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3642,6 +3665,9 @@
           }
         }
       }
+    },
+    "Project indexed" : {
+
     },
     "Project Info" : {
       "extractionState" : "stale",
@@ -3756,6 +3782,9 @@
           }
         }
       }
+    },
+    "Quick File Search" : {
+
     },
     "RAG" : {
 
@@ -7055,6 +7084,9 @@
         }
       }
     },
+    "搜索文件..." : {
+
+    },
     "操作已取消。" : {
 
     },
@@ -7430,6 +7462,9 @@
         }
       }
     },
+    "未找到匹配文件" : {
+
+    },
     "未认证用户" : {
       "localizations" : {
         "zh-Hans" : {
@@ -7762,6 +7797,9 @@
 
     },
     "正在索引..." : {
+
+    },
+    "正在索引文件..." : {
 
     },
     "没有发现可清理的缓存文件" : {

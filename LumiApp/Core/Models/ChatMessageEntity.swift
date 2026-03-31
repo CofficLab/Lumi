@@ -11,7 +11,10 @@ final class ChatMessageEntity {
     var isError: Bool
     var toolCallsData: Data?  // 序列化的 ToolCall
     var toolCallID: String?
-    var imagesData: Data?  // 序列化的 ImageAttachment
+
+    /// 图片附件（多对多关系，独立存储在 ImageAttachmentEntity 表中）
+    @Relationship(deleteRule: .deny, inverse: \ImageAttachmentEntity.messages)
+    var images: [ImageAttachmentEntity] = []
     
     // LLM Metadata - 记录大模型供应商和模型名称
     var providerId: String?      // 例如："anthropic", "openai", "zhipu"
@@ -41,7 +44,7 @@ final class ChatMessageEntity {
     
     init(id: UUID = UUID(), role: String, content: String, timestamp: Date = Date(),
          isError: Bool = false, toolCallsData: Data? = nil,
-         toolCallID: String? = nil, imagesData: Data? = nil,
+         toolCallID: String? = nil,
          providerId: String? = nil, modelName: String? = nil,
          latency: Double? = nil, inputTokens: Int? = nil, outputTokens: Int? = nil,
          totalTokens: Int? = nil, timeToFirstToken: Double? = nil,
@@ -56,7 +59,6 @@ final class ChatMessageEntity {
         self.isError = isError
         self.toolCallsData = toolCallsData
         self.toolCallID = toolCallID
-        self.imagesData = imagesData
         self.providerId = providerId
         self.modelName = modelName
         self.latency = latency
@@ -86,23 +88,24 @@ final class ChatMessageEntity {
     /// 3. 跨线程访问未正确管理的对象
     ///
     /// 本方法使用防御性编程，确保即使对象失效也不会崩溃：
+    /// - 检查 `isDeleted` 标记
     /// - 使用 `try?` 而不是 `try!` 避免解码错误崩溃
     /// - 检查所有可选值，即使理论上不应为 nil
     /// - 在访问属性前捕获潜在的 SwiftData 内部错误
     ///
     /// - Returns: ChatMessage 对象，如果转换失败则返回 nil
     func toChatMessage() -> ChatMessage? {
+        // ✅ 检查是否已被标记为删除
+        // SwiftData 的 @Model 会自动生成 isDeleted 属性
+        guard !isDeleted else { return nil }
+        
         // 防御性编程：即使对象理论上有效，也要检查基本属性
         // SwiftData 可能在访问属性时抛出内部错误
-        do {
-            // 尝试访问基本属性，捕获 SwiftData 内部可能抛出的错误
-            let _ = self.id
-            let _ = self.role
-            let _ = self.content
-        } catch {
-            // 对象已失效，返回 nil 而不是崩溃
-            return nil
-        }
+        // 注意：简单的属性访问不会抛出错误，所以不需要 do-catch
+        // 这里我们只是访问属性来确保对象有效
+        let _ = self.id
+        let _ = self.role
+        let _ = self.content
         
         guard let messageRole = MessageRole(rawValue: role) else {
             return nil
@@ -119,11 +122,8 @@ final class ChatMessageEntity {
             toolCalls = try? JSONDecoder().decode([ToolCall].self, from: toolCallsData)
         }
         
-        var images: [ImageAttachment] = []
-        if let imagesData = imagesData {
-            // 使用 try? 而不是 try! 避免解码错误崩溃
-            images = (try? JSONDecoder().decode([ImageAttachment].self, from: imagesData)) ?? []
-        }
+        // 从关系中获取图片附件
+        let imageAttachments = images.map { $0.toImageAttachment() }
 
         return ChatMessage(
             id: id,
@@ -134,7 +134,7 @@ final class ChatMessageEntity {
             isError: isError,
             toolCalls: toolCalls,
             toolCallID: toolCallID,
-            images: images,
+            images: imageAttachments,
             providerId: providerId,
             modelName: modelName,
             latency: latency,
@@ -153,6 +153,9 @@ final class ChatMessageEntity {
     }
     
     /// 用 `ChatMessage` 覆盖当前实体字段（用于同 ID 更新，不新建记录）
+    ///
+    /// 注意：图片关系更新由 `ChatHistoryService.syncImageRelations` 处理，
+    /// 此方法仅更新消息自身字段。
     func apply(from message: ChatMessage) {
         role = message.role.rawValue
         content = message.content
@@ -164,11 +167,6 @@ final class ChatMessageEntity {
             toolCallsData = nil
         }
         toolCallID = message.toolCallID
-        if !message.images.isEmpty {
-            imagesData = try? JSONEncoder().encode(message.images)
-        } else {
-            imagesData = nil
-        }
         providerId = message.providerId
         modelName = message.modelName
         latency = message.latency
@@ -186,16 +184,11 @@ final class ChatMessageEntity {
         hasThinking = message.thinkingContent != nil && !message.thinkingContent!.isEmpty
     }
 
-    /// 从 ChatMessage 创建
+    /// 从 ChatMessage 创建（不含图片关系，图片由 ChatHistoryService 单独处理）
     static func fromChatMessage(_ message: ChatMessage) -> ChatMessageEntity {
         var toolCallsData: Data?
         if let toolCalls = message.toolCalls {
             toolCallsData = try? JSONEncoder().encode(toolCalls)
-        }
-        
-        var imagesData: Data?
-        if !message.images.isEmpty {
-            imagesData = try? JSONEncoder().encode(message.images)
         }
 
         return ChatMessageEntity(
@@ -206,7 +199,6 @@ final class ChatMessageEntity {
             isError: message.isError,
             toolCallsData: toolCallsData,
             toolCallID: message.toolCallID,
-            imagesData: imagesData,
             providerId: message.providerId,
             modelName: message.modelName,
             latency: message.latency,

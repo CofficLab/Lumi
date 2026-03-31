@@ -25,7 +25,7 @@ struct RecentProjectsRootSystemMergeMiddleware: SendMiddleware {
     }
 
     private func mergeIntoRootSystemIfNeeded(ctx: SendMessageContext) async {
-        guard let history = await ctx.chatHistoryService.loadMessagesAsync(forConversationId: ctx.conversationId),
+        guard let history = await ctx.chatHistoryService.loadMessages(forConversationId: ctx.conversationId),
               let rootIndex = history.firstIndex(where: { $0.role == .system }) else {
             return
         }
