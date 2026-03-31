@@ -38,7 +38,7 @@ struct AutoConversationTitleSendMiddleware: SendMiddleware {
         guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else { return }
         guard shouldAutoTitle(conversation.title) else { return }
 
-        let history = await chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
+        let history = await chatHistoryService.loadMessages(forConversationId: conversationId) ?? []
         let userCount = history.filter { $0.role == .user }.count
         guard userCount == 1 else { return }
 

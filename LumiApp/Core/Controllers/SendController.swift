@@ -21,11 +21,13 @@ final class SendController: ObservableObject, SuperLog {
     nonisolated static let verbose = 2
 
     private let container: RootViewContainer
+    private let chatService: ChatHistoryService
     private var activeSendTasksByConversation: [UUID: Task<Void, Never>] = [:]
     private var pendingTransientSystemPromptsByConversation: [UUID: [String]] = [:]
 
     init(container: RootViewContainer) {
         self.container = container
+        self.chatService = container.chatHistoryService
     }
 
     /// 尝试从队列中出队一条"可处理"的消息并开始发送。
@@ -81,7 +83,7 @@ final class SendController: ObservableObject, SuperLog {
     /// 从队列入口启动一次发送链路：投影 UI、落库、运行发送中间件，然后继续 `send`。
     func beginSendFromQueue(conversationId: UUID, message: ChatMessage) async {
         if Self.verbose >= 1 {
-            AppLogger.core.info("\(Self.t) 启动一次发送链路：\n\(message.content.max(200))")
+            AppLogger.core.info("\(Self.t) [\(conversationId)] 启动一次发送链路：\n\(message.content.max(200))")
         }
 
         if container.conversationVM.selectedConversationId == conversationId {
@@ -106,13 +108,7 @@ final class SendController: ObservableObject, SuperLog {
             )
         }
 
-        if Self.verbose > 1 {
-            AppLogger.core.info("\(Self.t) 发送上下文")
-        }
         let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
-        if Self.verbose > 1 {
-            AppLogger.core.info("\(Self.t) 发送管道")
-        }
         await pipeline.run(ctx: ctx) { _ in
             if Self.verbose > 1 {
                 AppLogger.core.info("\(Self.t) 发送管道完成")
@@ -125,8 +121,11 @@ final class SendController: ObservableObject, SuperLog {
 
     /// 根据会话中**已落库的最后一条消息**驱动后续步骤
     func send(conversationId: UUID) async {
-        let messages = await container.chatHistoryService.loadMessagesAsync(forConversationId: conversationId) ?? []
-        guard !messages.isEmpty else { return }
+        let messages = self.chatService.loadMessages(forConversationId: conversationId) ?? []
+        guard !messages.isEmpty else {
+            AppLogger.core.error("\(Self.t) [\(conversationId)] 处理已落库的最后一条消息，但无消息")
+            return
+        }
         // 允许系统/状态消息插入到尾部，但不应中断发送闭环。
         // 这里选择“最后一条可驱动消息”（user/tool/assistant）作为状态机输入。
         guard let last = messages.last(where: { $0.role != .system && $0.role != .status }) else {
@@ -138,7 +137,12 @@ final class SendController: ObservableObject, SuperLog {
 
         switch last.role {
         case .user, .tool:
-            guard container.messageQueueVM.isProcessing(for: conversationId) else { return }
+            guard container.messageQueueVM.isProcessing(for: conversationId) else {
+                if Self.verbose > 1 {
+                    AppLogger.core.info("\(Self.t) 没有处理中消息")
+                }
+                return
+            }
             let additionalSystemPrompts: [String]
             if last.role == .user {
                 additionalSystemPrompts = consumeTransientSystemPrompts(for: conversationId)

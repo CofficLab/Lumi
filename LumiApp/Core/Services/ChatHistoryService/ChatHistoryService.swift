@@ -11,7 +11,7 @@ import SwiftData
 @MainActor
 final class ChatHistoryService: SuperLog, Sendable {
     nonisolated static let emoji = "💾"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     let modelContainer: ModelContainer
     let modelContext: ModelContext

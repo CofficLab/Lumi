@@ -11,7 +11,10 @@ final class ChatMessageEntity {
     var isError: Bool
     var toolCallsData: Data?  // 序列化的 ToolCall
     var toolCallID: String?
-    var imagesData: Data?  // 序列化的 ImageAttachment
+
+    /// 图片附件（多对多关系，独立存储在 ImageAttachmentEntity 表中）
+    @Relationship(deleteRule: .deny, inverse: \ImageAttachmentEntity.messages)
+    var images: [ImageAttachmentEntity] = []
     
     // LLM Metadata - 记录大模型供应商和模型名称
     var providerId: String?      // 例如："anthropic", "openai", "zhipu"
@@ -41,7 +44,7 @@ final class ChatMessageEntity {
     
     init(id: UUID = UUID(), role: String, content: String, timestamp: Date = Date(),
          isError: Bool = false, toolCallsData: Data? = nil,
-         toolCallID: String? = nil, imagesData: Data? = nil,
+         toolCallID: String? = nil,
          providerId: String? = nil, modelName: String? = nil,
          latency: Double? = nil, inputTokens: Int? = nil, outputTokens: Int? = nil,
          totalTokens: Int? = nil, timeToFirstToken: Double? = nil,
@@ -56,7 +59,6 @@ final class ChatMessageEntity {
         self.isError = isError
         self.toolCallsData = toolCallsData
         self.toolCallID = toolCallID
-        self.imagesData = imagesData
         self.providerId = providerId
         self.modelName = modelName
         self.latency = latency
@@ -120,11 +122,8 @@ final class ChatMessageEntity {
             toolCalls = try? JSONDecoder().decode([ToolCall].self, from: toolCallsData)
         }
         
-        var images: [ImageAttachment] = []
-        if let imagesData = imagesData {
-            // 使用 try? 而不是 try! 避免解码错误崩溃
-            images = (try? JSONDecoder().decode([ImageAttachment].self, from: imagesData)) ?? []
-        }
+        // 从关系中获取图片附件
+        let imageAttachments = images.map { $0.toImageAttachment() }
 
         return ChatMessage(
             id: id,
@@ -135,7 +134,7 @@ final class ChatMessageEntity {
             isError: isError,
             toolCalls: toolCalls,
             toolCallID: toolCallID,
-            images: images,
+            images: imageAttachments,
             providerId: providerId,
             modelName: modelName,
             latency: latency,
@@ -154,6 +153,9 @@ final class ChatMessageEntity {
     }
     
     /// 用 `ChatMessage` 覆盖当前实体字段（用于同 ID 更新，不新建记录）
+    ///
+    /// 注意：图片关系更新由 `ChatHistoryService.syncImageRelations` 处理，
+    /// 此方法仅更新消息自身字段。
     func apply(from message: ChatMessage) {
         role = message.role.rawValue
         content = message.content
@@ -165,11 +167,6 @@ final class ChatMessageEntity {
             toolCallsData = nil
         }
         toolCallID = message.toolCallID
-        if !message.images.isEmpty {
-            imagesData = try? JSONEncoder().encode(message.images)
-        } else {
-            imagesData = nil
-        }
         providerId = message.providerId
         modelName = message.modelName
         latency = message.latency
@@ -187,16 +184,11 @@ final class ChatMessageEntity {
         hasThinking = message.thinkingContent != nil && !message.thinkingContent!.isEmpty
     }
 
-    /// 从 ChatMessage 创建
+    /// 从 ChatMessage 创建（不含图片关系，图片由 ChatHistoryService 单独处理）
     static func fromChatMessage(_ message: ChatMessage) -> ChatMessageEntity {
         var toolCallsData: Data?
         if let toolCalls = message.toolCalls {
             toolCallsData = try? JSONEncoder().encode(toolCalls)
-        }
-        
-        var imagesData: Data?
-        if !message.images.isEmpty {
-            imagesData = try? JSONEncoder().encode(message.images)
         }
 
         return ChatMessageEntity(
@@ -207,7 +199,6 @@ final class ChatMessageEntity {
             isError: message.isError,
             toolCallsData: toolCallsData,
             toolCallID: message.toolCallID,
-            imagesData: imagesData,
             providerId: message.providerId,
             modelName: message.modelName,
             latency: message.latency,

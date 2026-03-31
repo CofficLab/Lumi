@@ -21,7 +21,7 @@ final class PermissionHandlingVM: ObservableObject {
         guard let request = permissionRequestViewModel.pendingPermissionRequest,
               let session = permissionRequestViewModel.pendingToolPermissionSession else { return }
 
-        let messages = await chatHistoryService.loadMessagesAsync(forConversationId: session.conversationId) ?? []
+        let messages = await chatHistoryService.loadMessages(forConversationId: session.conversationId) ?? []
         guard var assistant = messages.first(where: { $0.id == session.assistantMessageId }),
               var calls = assistant.toolCalls else {
             clearPending()

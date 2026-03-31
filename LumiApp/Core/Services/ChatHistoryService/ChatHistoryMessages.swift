@@ -44,9 +44,10 @@ extension ChatHistoryService {
 
         if let existingEntity = try? context.fetch(existingDescriptor).first {
             AppLogger.core.warning("\(Self.t)⚠️ 检测到相同 ID 的消息已存在: \(message.id)")
-            
+
             existingEntity.apply(from: message)
             existingEntity.conversation = fetchedConversation
+            syncImageRelations(for: existingEntity, with: message, in: context)
             fetchedConversation.updatedAt = Date()
 
             do {
@@ -67,13 +68,16 @@ extension ChatHistoryService {
         let messageEntity = ChatMessageEntity.fromChatMessage(message)
         messageEntity.timestamp = Date()
         messageEntity.conversation = fetchedConversation
+        syncImageRelations(for: messageEntity, with: message, in: context)
         fetchedConversation.updatedAt = Date()
         context.insert(messageEntity)
 
         do {
             try context.save()
             if let savedMessage = messageEntity.toChatMessage() {
-                AppLogger.core.debug("\(Self.t)💾 新消息已保存: \(message.id)")
+                if Self.verbose {
+                    AppLogger.core.debug("\(Self.t)💾 [\(conversationId)] 新消息已保存: \(message.id)")
+                }
                 NotificationCenter.postMessageSaved(message: savedMessage, conversationId: fetchedConversation.id)
                 return savedMessage
             }
@@ -100,6 +104,7 @@ extension ChatHistoryService {
         }
 
         entity.apply(from: message)
+        syncImageRelations(for: entity, with: message, in: context)
 
         do {
             try context.save()
@@ -143,6 +148,9 @@ extension ChatHistoryService {
 
         do {
             try context.save()
+            // 清理不再被任何消息引用的孤立图片
+            cleanupOrphanedImages(in: context)
+            try context.save()
             if Self.verbose {
                 AppLogger.core.info("\(Self.t)🗑️ [\(conversationId)] 已删除 \(deletedCount) 条消息")
             }
@@ -156,20 +164,45 @@ extension ChatHistoryService {
     // MARK: - 加载消息
 
     /// 加载对话消息
+    ///
+    /// 直接查询 `ChatMessageEntity` 表，而不是通过 `Conversation.messages` 关系。
+    /// 这是因为 SwiftData 的 `@Relationship` 在通过 `FetchDescriptor` 重新 fetch
+    /// 父对象后，关系属性可能不会正确加载（返回空数组）。
+    /// 直接查询子表可以可靠地获取所有消息。
+    ///
     /// - Parameter conversationId: 对话 ID
     /// - Returns: 消息列表；若会话不存在返回 nil
-    func loadMessagesAsync(forConversationId conversationId: UUID) async -> [ChatMessage]? {
+    func loadMessages(forConversationId conversationId: UUID) -> [ChatMessage]? {
         let context = self.getContext()
-        let descriptor = FetchDescriptor<Conversation>(
+
+        // 先验证会话是否存在
+        let conversationDescriptor = FetchDescriptor<Conversation>(
             predicate: #Predicate { $0.id == conversationId }
         )
-
-        guard let fetchedConversation = try? context.fetch(descriptor).first else {
+        guard let _ = try? context.fetch(conversationDescriptor).first else {
+            AppLogger.core.error("\(Self.t) [\(conversationId)] 无法找到对话")
             return nil
         }
 
-        let messageEntities = fetchedConversation.messages.sorted { $0.timestamp < $1.timestamp }
+        // 直接查询 ChatMessageEntity 表，绕过 @Relationship
+        let messageDescriptor = FetchDescriptor<ChatMessageEntity>(
+            predicate: #Predicate<ChatMessageEntity> { msg in
+                msg.conversation?.id == conversationId
+            },
+            sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+        )
+
+        guard let messageEntities = try? context.fetch(messageDescriptor) else {
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t) [\(conversationId)] 加载到 0 条消息")
+            }
+            return []
+        }
+
         let messages = messageEntities.compactMap { $0.toChatMessage() }
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t) [\(conversationId)] 加载到 \(messages.count) 条消息")
+        }
         return messages
     }
 
@@ -327,17 +360,21 @@ extension ChatHistoryService {
     /// - Returns: 消息数量
     func getMessageCount(forConversationId conversationId: UUID) async -> Int {
         let context = self.getContext()
-        let descriptor = FetchDescriptor<Conversation>(
-            predicate: #Predicate { $0.id == conversationId }
+
+        // 直接查询 ChatMessageEntity 表计数，与 loadMessagesPage 使用相同的查询方式
+        let descriptor = FetchDescriptor<ChatMessageEntity>(
+            predicate: #Predicate<ChatMessageEntity> { msg in
+                msg.conversation?.id == conversationId
+            }
         )
 
-        guard let fetchedConversation = try? context.fetch(descriptor).first else {
+        guard let entities = try? context.fetch(descriptor) else {
             return 0
         }
 
         // 统一可见性规则：仅统计应在聊天列表中展示的消息数量，
         // 与分页加载 `loadMessagesPage` 使用相同的过滤条件（shouldDisplayInChatList）。
-        let visibleCount = fetchedConversation.messages
+        let visibleCount = entities
             .compactMap { $0.toChatMessage() }
             .filter { $0.shouldDisplayInChatList() }
             .count
@@ -349,23 +386,68 @@ extension ChatHistoryService {
     func loadMessages(for conversation: Conversation) -> [ChatMessage] {
         let context = getContext()
 
-        // 重新获取 conversation 以确保在当前上下文中
+        // 直接查询 ChatMessageEntity 表，绕过 @Relationship
         let conversationId = conversation.id
-        let descriptor = FetchDescriptor<Conversation>(
-            predicate: #Predicate { $0.id == conversationId }
+        let descriptor = FetchDescriptor<ChatMessageEntity>(
+            predicate: #Predicate<ChatMessageEntity> { msg in
+                msg.conversation?.id == conversationId
+            },
+            sortBy: [SortDescriptor(\.timestamp, order: .forward)]
         )
 
-        guard let fetchedConversation = try? context.fetch(descriptor).first else {
-            AppLogger.core.error("\(Self.t)❌ 无法在当前上下文中找到对话")
+        guard let entities = try? context.fetch(descriptor) else {
+            AppLogger.core.error("\(Self.t)❌ 加载消息失败")
             return []
         }
 
-        // 从关系中获取消息
-        let messageEntities = fetchedConversation.messages.sorted { $0.timestamp < $1.timestamp }
-        let messages = messageEntities.compactMap { $0.toChatMessage() }
+        let messages = entities.compactMap { $0.toChatMessage() }
         if Self.verbose {
-            AppLogger.core.info("\(Self.t)📄 [\(conversation.id)] 加载到 \(messages.count) 条消息")
+            AppLogger.core.info("\(Self.t)📄 [\(conversationId)] 加载到 \(messages.count) 条消息")
         }
         return messages
+    }
+
+    // MARK: - 图片关系管理
+
+    /// 同步消息实体与图片附件的关系
+    ///
+    /// 将 ChatMessage 中的 ImageAttachment 转换为 ImageAttachmentEntity，
+    /// 并建立与 ChatMessageEntity 的关系。支持按 id 去重。
+    private func syncImageRelations(
+        for entity: ChatMessageEntity,
+        with message: ChatMessage,
+        in context: ModelContext
+    ) {
+        guard !message.images.isEmpty else {
+            entity.images = []
+            return
+        }
+
+        let imageEntities = message.images.map { attachment in
+            // 检查是否已存在（按 id 去重）
+            let descriptor = FetchDescriptor<ImageAttachmentEntity>(
+                predicate: #Predicate<ImageAttachmentEntity> { $0.id == attachment.id }
+            )
+            if let existing = try? context.fetch(descriptor).first {
+                return existing
+            }
+            let newEntity = ImageAttachmentEntity.from(attachment)
+            context.insert(newEntity)
+            return newEntity
+        }
+
+        entity.images = imageEntities
+    }
+
+    /// 清理不再被任何消息引用的孤立图片
+    private func cleanupOrphanedImages(in context: ModelContext) {
+        let descriptor = FetchDescriptor<ImageAttachmentEntity>()
+        guard let allImages = try? context.fetch(descriptor) else { return }
+
+        for image in allImages {
+            if image.messages == nil || image.messages!.isEmpty {
+                context.delete(image)
+            }
+        }
     }
 }
