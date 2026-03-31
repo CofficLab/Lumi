@@ -5,7 +5,7 @@ import SwiftData
 @Model
 final class ChatMessageEntity {
     @Attribute(.unique) var id: UUID
-    var role: String  // "user", "assistant", "system"
+    private var _role: String  // 内部存储为 String
     var content: String
     var timestamp: Date
     var isError: Bool
@@ -27,12 +27,32 @@ final class ChatMessageEntity {
     // 反向关系
     var conversation: Conversation?
     
-    init(id: UUID = UUID(), role: String, content: String, timestamp: Date = Date(),
+    /// 消息角色（类型安全的计算属性）
+    ///
+    /// 从内部 `_role` 字符串转换为 `MessageRole` 枚举。
+    /// 如果遇到无法识别的角色值，返回 `.unknown` 而不是默认值，
+    /// 这样可以帮助发现数据问题或版本不兼容的情况。
+    var role: MessageRole {
+        get {
+            if let recognized = MessageRole(rawValue: _role) {
+                return recognized
+            }
+            
+            // 无法识别的角色，记录警告并返回 .unknown
+            AppLogger.core.warning("⚠️ 无法识别的消息角色: '\(self._role)'，消息ID: \(self.id)")
+            return .unknown
+        }
+        set {
+            _role = newValue.rawValue
+        }
+    }
+    
+    init(id: UUID = UUID(), role: MessageRole, content: String, timestamp: Date = Date(),
          isError: Bool = false, toolCallsData: Data? = nil,
          toolCallID: String? = nil,
          providerId: String? = nil, modelName: String? = nil) {
         self.id = id
-        self.role = role
+        self._role = role.rawValue
         self.content = content
         self.timestamp = timestamp
         self.isError = isError
@@ -70,11 +90,15 @@ final class ChatMessageEntity {
         // 注意：简单的属性访问不会抛出错误，所以不需要 do-catch
         // 这里我们只是访问属性来确保对象有效
         let _ = self.id
-        let _ = self.role
+        let _ = self._role
         let _ = self.content
         
-        guard let messageRole = MessageRole(rawValue: role) else {
-            return nil
+        // 使用计算属性获取类型安全的 MessageRole
+        let messageRole = role
+        
+        // 如果是未知角色，记录警告但仍返回消息（便于UI显示和清理）
+        if messageRole == .unknown {
+            AppLogger.core.warning("⚠️ 消息 \(self.id) 包含未知角色: '\(self._role)'")
         }
         
         // 安全地访问 conversation 关系
@@ -152,7 +176,8 @@ final class ChatMessageEntity {
     /// 注意：图片关系更新由 `ChatHistoryService.syncImageRelations` 处理，
     /// 此方法仅更新消息自身字段和性能指标。
     func apply(from message: ChatMessage, in context: ModelContext) {
-        role = message.role.rawValue
+        // 使用计算属性设置类型安全的角色
+        role = message.role
         content = message.content
         timestamp = message.timestamp
         isError = message.isError
@@ -206,7 +231,7 @@ final class ChatMessageEntity {
 
         let entity = ChatMessageEntity(
             id: message.id,
-            role: message.role.rawValue,
+            role: message.role,  // 类型安全的枚举
             content: message.content,
             timestamp: message.timestamp,
             isError: message.isError,

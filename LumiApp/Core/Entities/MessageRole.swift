@@ -12,4 +12,6 @@ public enum MessageRole: String, Codable, Sendable {
     case status
     /// 错误消息，展示在聊天中，不应发送给 LLM
     case error
+    /// 未知角色，用于标记无法识别的角色类型（可能是数据损坏或版本不兼容）
+    case unknown
 }

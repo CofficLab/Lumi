@@ -85,7 +85,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         switch role {
         case .user, .assistant, .tool:
             return true
-        case .system, .status, .error:
+        case .system, .status, .error, .unknown:
             return false
         }
     }
@@ -96,7 +96,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         switch role {
         case .user, .assistant:
             return true
-        case .system, .status, .tool:
+        case .system, .status, .tool, .unknown:
             return false
         case .error:
             return true
@@ -127,7 +127,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
             return false
         case .status, .error:
             return true
-        case .system:
+        case .system, .unknown:
             return false
         }
     }

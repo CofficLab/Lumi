@@ -176,7 +176,7 @@ final class SendController: ObservableObject, SuperLog {
             } else if container.messageQueueVM.isProcessing(for: conversationId) {
                 finishSendTurn(conversationId: conversationId)
             }
-        case .system, .status, .error:
+        case .system, .status, .error, .unknown:
             break
         }
     }
