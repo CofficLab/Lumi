@@ -31,11 +31,15 @@ private struct CoreToolsFactory: AgentToolFactory {
 
     func makeTools(env: AgentToolEnvironment) -> [AgentTool] {
         [
+            // 文件系统工具
             ListDirectoryTool(),
             ReadFileTool(),
             WriteFileTool(),
+            EditFileTool(),
+            GlobTool(),
+            GrepTool(),
+            // 命令执行
             ShellTool(),
         ]
     }
 }
-
