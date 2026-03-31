@@ -64,7 +64,7 @@ final class MCPToolAdapter: AgentTool, @unchecked Sendable, SuperLog {
 
             if result.isError ?? false {
                 let errorMessage = result.content.compactMap { content -> String? in
-                    if case .text(let text) = content { return text }
+                    if case .text(let text, _, _) = content { return text }
                     return nil
                 }.joined(separator: "\n")
                 AgentMCPToolsPlugin.logger.error("\(self.t)[MCP] 工具返回错误: \(errorMessage)")
@@ -78,13 +78,13 @@ final class MCPToolAdapter: AgentTool, @unchecked Sendable, SuperLog {
             var outputParts: [String] = []
             for content in result.content {
                 switch content {
-                case .text(let text):
+                case .text(let text, _, _):
                     outputParts.append(text)
-                case .image(_, let mimeType, _):
+                case .image(_, let mimeType, _, _):
                     outputParts.append("[Image: \(mimeType)]")
                 case .resource(let uri, _, _):
                     outputParts.append("[Resource: \(uri)]")
-                case .audio(_, let mimeType):
+                case .audio(_, let mimeType, _, _):
                     outputParts.append("[Audio: \(mimeType)]")
                 @unknown default:
                     break
