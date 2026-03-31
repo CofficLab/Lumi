@@ -87,8 +87,13 @@ struct ZhipuQuotaDetailView: View {
 
             Divider()
 
-            // 重置时间
-            QuotaInfoRow(label: "重置时间", value: data.resetTime)
+            // 重置时间（显示完整日期和相对时间）
+            VStack(alignment: .leading, spacing: 4) {
+                QuotaInfoRow(label: "重置时间", value: data.resetTime)
+                Text("（\(data.resetTimeRelative)）")
+                    .font(.system(size: 11))
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            }
 
             // 状态说明
             VStack(alignment: .leading, spacing: 4) {

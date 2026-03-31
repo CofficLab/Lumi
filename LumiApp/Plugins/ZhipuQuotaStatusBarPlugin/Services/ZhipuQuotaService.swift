@@ -14,12 +14,29 @@ struct ZhipuQuotaData {
         "GLM \(level.isEmpty ? "Lite" : level)"
     }
 
-    /// 重置时间文本
+    /// 重置时间文本（完整日期时间格式）
     var resetTime: String {
         let date = Date(timeIntervalSince1970: nextResetTime)
         let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
+        formatter.dateFormat = "MM-dd HH:mm"
         return formatter.string(from: date)
+    }
+
+    /// 重置时间文本（相对时间格式，如"2 小时后"）
+    var resetTimeRelative: String {
+        let date = Date(timeIntervalSince1970: nextResetTime)
+        let now = Date()
+        let interval = date.timeIntervalSince(now)
+
+        if interval < 0 {
+            return "即将重置"
+        } else if interval < 3600 {
+            return "约 \(Int(interval / 60)) 分钟后"
+        } else if interval < 86400 {
+            return "约 \(Int(interval / 3600)) 小时后"
+        } else {
+            return "\(Int(interval / 86400)) 天后"
+        }
     }
 
     /// 状态栏显示文本
