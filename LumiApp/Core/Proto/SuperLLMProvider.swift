@@ -30,6 +30,12 @@ protocol SuperLLMProvider: Sendable {
     /// 简短描述供应商的特点和优势。
     static var description: String { get }
 
+    /// 供应商是否启用
+    ///
+    /// 默认值为 true，表示供应商默认启用。
+    /// 可在供应商定义中配置为 false 来禁用该供应商。
+    static var isEnabled: Bool { get }
+
     // MARK: - Configuration
 
     /// API Key 的安全存储键名
@@ -126,4 +132,13 @@ protocol SuperLLMProvider: Sendable {
         tools: [AgentTool]?,
         systemPrompt: String
     ) throws -> [String: Any]
+}
+
+// MARK: - Default Implementation
+
+extension SuperLLMProvider {
+    /// 默认实现：供应商默认启用
+    static var isEnabled: Bool {
+        true
+    }
 }

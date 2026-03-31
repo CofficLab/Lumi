@@ -45,7 +45,8 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
     func register<T: SuperLLMProvider>(_ providerType: T.Type) {
         providerTypes.append(providerType)
         if Self.verbose {
-            AppLogger.core.info("\(self.t) 已注册供应商：\(providerType.displayName) (ID: \(providerType.id))")
+            let status = providerType.isEnabled ? "✅" : "⏸️"
+            AppLogger.core.info("\(self.t) \(status) 已注册供应商：\(providerType.displayName) (ID: \(providerType.id))")
         }
     }
 
@@ -73,10 +74,31 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
         return nil
     }
 
-    /// 获取所有已注册供应商的信息
+    /// 获取所有已注册供应商的信息（仅启用的）
     ///
     /// - Returns: 供应商信息数组，包含 ID、名称、描述、可用模型、是否本地等
     func allProviders() -> [LLMProviderInfo] {
+        providerTypes
+            .filter { $0.isEnabled }
+            .map { type in
+                let instance = createProvider(id: type.id)
+                let isLocal = (instance as? any SuperLocalLLMProvider) != nil
+                return LLMProviderInfo(
+                    id: type.id,
+                    displayName: type.displayName,
+                    description: type.description,
+                    availableModels: type.availableModels,
+                    defaultModel: type.defaultModel,
+                    isLocal: isLocal,
+                    isEnabled: type.isEnabled
+                )
+            }
+    }
+
+    /// 获取所有供应商信息（包括已禁用的）
+    ///
+    /// - Returns: 所有供应商信息数组，包括已禁用的供应商
+    func allProvidersIncludingDisabled() -> [LLMProviderInfo] {
         providerTypes.map { type in
             let instance = createProvider(id: type.id)
             let isLocal = (instance as? any SuperLocalLLMProvider) != nil
@@ -86,7 +108,8 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
                 description: type.description,
                 availableModels: type.availableModels,
                 defaultModel: type.defaultModel,
-                isLocal: isLocal
+                isLocal: isLocal,
+                isEnabled: type.isEnabled
             )
         }
     }
@@ -97,7 +120,7 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
     /// 如果已有缓存实例，则返回缓存的实例。
     ///
     /// - Parameter id: 供应商 ID
-    /// - Returns: 供应商实例，如果未找到则返回 nil
+    /// - Returns: 供应商实例，如果未找到或已禁用则返回 nil
     func createProvider(id: String) -> (any SuperLLMProvider)? {
         // 优先返回缓存的实例
         if let cached = providerInstances[id] {
@@ -107,6 +130,12 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
         // 在已注册类型中查找匹配的供应商
         guard let type = providerTypes.first(where: { $0.id == id }) else {
             AppLogger.core.error("\(self.t) 未知的供应商 ID: \(id)")
+            return nil
+        }
+
+        // 检查供应商是否启用
+        guard type.isEnabled else {
+            AppLogger.core.warning("\(self.t) 供应商 \(type.displayName) (ID: \(id)) 已被禁用")
             return nil
         }
 
