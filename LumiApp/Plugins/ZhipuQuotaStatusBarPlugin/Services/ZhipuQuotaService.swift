@@ -16,15 +16,15 @@ struct ZhipuQuotaData {
 
     /// 重置时间文本（完整日期时间格式）
     var resetTime: String {
-        let date = Date(timeIntervalSince1970: nextResetTime)
+        let date = Date(timeIntervalSince1970: nextResetTime / 1000.0)
         let formatter = DateFormatter()
-        formatter.dateFormat = "MM-dd HH:mm"
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
         return formatter.string(from: date)
     }
 
     /// 重置时间文本（相对时间格式，如"2 小时后"）
     var resetTimeRelative: String {
-        let date = Date(timeIntervalSince1970: nextResetTime)
+        let date = Date(timeIntervalSince1970: nextResetTime / 1000.0)
         let now = Date()
         let interval = date.timeIntervalSince(now)
 
