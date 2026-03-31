@@ -35,6 +35,11 @@ final class AiRouterProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
         "gpt-5.1-codex",
     ]
 
+    // MARK: - 启用状态配置
+
+    // 要禁用此供应商，请将此值设置为 false
+    static let isEnabled = false
+
     // MARK: - SuperLLMProvider
 
     override init() {
@@ -76,7 +81,7 @@ final class AiRouterProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
     func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
         let result = try JSONDecoder().decode(AiRouterResponse.self, from: data)
-        
+
         guard let choiceMessage = result.choices.first?.message else {
             throw NSError(domain: "AiRouterProvider", code: -1, userInfo: [NSLocalizedDescriptionKey: "No choices in response"])
         }
@@ -161,7 +166,6 @@ final class AiRouterProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
             if let choices = json?["choices"] as? [[String: Any]],
                let firstChoice = choices.first,
                let delta = firstChoice["delta"] as? [String: Any] {
-
                 if let content = delta["content"] as? String {
                     return StreamChunk(content: content, eventType: .textDelta)
                 }

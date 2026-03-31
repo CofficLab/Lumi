@@ -92,6 +92,21 @@ class FileNode: NSObject {
             onLoaded?()
         }
     }
+
+    /// 强制重新加载子节点（用于文件系统变化后刷新）
+    func reloadChildren(onLoaded: (() -> Void)? = nil) {
+        guard isDirectory else { return }
+
+        let directoryURL = url
+        Task {
+            let urls = await Task.detached(priority: .userInitiated) {
+                (try? FileNode.sortedContents(at: directoryURL)) ?? []
+            }.value
+            self.children = urls.map { FileNode(url: $0) }
+            self.isLoaded = true
+            onLoaded?()
+        }
+    }
 }
 
 /// NSOutlineView 数据源和代理
@@ -109,6 +124,8 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
     private var renamingNodeURL: URL?
     private var pendingSelectionTask: Task<Void, Never>?
     private var pendingSelectRetryTask: Task<Void, Never>?
+    /// 文件系统变化监听器
+    private var watcher: FileTreeWatcher?
 
     var currentOutlineSelectedFileURL: URL? {
         guard let outlineView else { return nil }
@@ -121,6 +138,17 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         pendingSelectionTask?.cancel()
         pendingSelectRetryTask?.cancel()
         currentRootURL = url
+
+        // 设置并启动文件系统监听
+        watcher = FileTreeWatcher { changedURL in
+            Task { @MainActor [weak self] in
+                self?.handleDirectoryChanged(changedURL)
+            }
+        }
+        if let watcher {
+            watcher.startWatching(url: url)
+        }
+
         Task.detached(priority: .userInitiated) {
             let urls = (try? FileNode.sortedContents(at: url)) ?? []
             await MainActor.run {
@@ -128,6 +156,7 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
                 self.outlineView?.reloadData()
                 self.restoreExpandedNodes()
                 self.selectExternalFileIfNeeded()
+                self.updateWatcherForExpandedNodes()
             }
         }
     }
@@ -325,6 +354,9 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
 
         expandedRelativePaths.insert(relative)
         onExpandedPathsChanged?(expandedRelativePaths)
+
+        // 展开新目录时添加文件系统监控
+        watcher?.startWatching(url: node.url)
     }
 
     func outlineViewItemDidCollapse(_ notification: Notification) {
@@ -336,6 +368,9 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         let prefix = relative + "/"
         expandedRelativePaths = Set(expandedRelativePaths.filter { !$0.hasPrefix(prefix) })
         onExpandedPathsChanged?(expandedRelativePaths)
+
+        // 折叠目录时移除文件系统监控
+        watcher?.stopWatching(url: node.url)
     }
     
     // MARK: - 右键菜单
@@ -715,6 +750,91 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
             }
         }
         return nil
+    }
+
+    // MARK: - File System Watcher
+
+    /// 根据当前展开的节点更新 watcher 监控列表
+    private func updateWatcherForExpandedNodes() {
+        guard let watcher, let rootURL = currentRootURL else { return }
+        let expanded = collectExpandedDirectoryNodes()
+        watcher.updateWatchedNodes(expandedNodes: expanded, rootURL: rootURL)
+    }
+
+    /// 收集当前 outlineView 中所有已展开的目录节点
+    private func collectExpandedDirectoryNodes() -> [FileNode] {
+        guard let outlineView else { return [] }
+        var expanded: [FileNode] = []
+        for rootNode in rootNodes {
+            collectExpandedNodesRecursive(node: rootNode, outlineView: outlineView, result: &expanded)
+        }
+        return expanded
+    }
+
+    private func collectExpandedNodesRecursive(node: FileNode, outlineView: NSOutlineView, result: inout [FileNode]) {
+        guard node.isDirectory else { return }
+        if outlineView.isItemExpanded(node) {
+            result.append(node)
+            for child in node.children {
+                collectExpandedNodesRecursive(node: child, outlineView: outlineView, result: &result)
+            }
+        }
+    }
+
+    /// 处理文件系统目录变化通知
+    private func handleDirectoryChanged(_ changedURL: URL) {
+        let standardizedChanged = changedURL.standardizedFileURL
+
+        // 判断是根目录还是子目录变化
+        if let rootURL = currentRootURL, standardizedChanged.path == rootURL.standardizedFileURL.path {
+            // 根目录变化 → 重新加载根节点
+            reloadRootDirectory()
+        } else {
+            // 子目录变化 → 找到对应节点并增量刷新
+            reloadDirectoryNode(at: changedURL)
+        }
+    }
+
+    /// 重新加载根目录
+    private func reloadRootDirectory() {
+        guard let url = currentRootURL else { return }
+        Task.detached(priority: .userInitiated) {
+            let urls = (try? FileNode.sortedContents(at: url)) ?? []
+            await MainActor.run {
+                // 记住当前选中项
+                let previousSelectedURL = self.currentOutlineSelectedFileURL
+
+                self.rootNodes = urls.map { FileNode(url: $0) }
+                self.outlineView?.reloadData()
+                self.restoreExpandedNodes()
+
+                // 恢复选中项
+                if let previousURL = previousSelectedURL,
+                   let node = self.findNode(for: previousURL) {
+                    self.selectNodeInOutline(node)
+                }
+            }
+        }
+    }
+
+    /// 增量刷新指定目录的节点
+    private func reloadDirectoryNode(at url: URL) {
+        guard let node = findNode(for: url) as FileNode? else { return }
+        guard node.isDirectory else { return }
+
+        // 记住当前选中项
+        let previousSelectedURL = currentOutlineSelectedFileURL
+
+        node.reloadChildren { [weak self] in
+            guard let self, let outlineView = self.outlineView else { return }
+            outlineView.reloadItem(node, reloadChildren: true)
+
+            // 恢复选中项
+            if let previousURL = previousSelectedURL,
+               let targetNode = self.findNode(for: previousURL) {
+                self.selectNodeInOutline(targetNode)
+            }
+        }
     }
     
     private func iconName(for node: FileNode) -> String {

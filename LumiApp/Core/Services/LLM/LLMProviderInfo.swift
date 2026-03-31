@@ -19,4 +19,7 @@ struct LLMProviderInfo: Identifiable, Equatable, Sendable {
 
     /// 是否为本地供应商（如 MLX 等本地推理）
     let isLocal: Bool
+
+    /// 是否启用（可通过供应商定义文件配置）
+    let isEnabled: Bool
 }

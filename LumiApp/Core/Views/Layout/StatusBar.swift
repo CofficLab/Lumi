@@ -52,6 +52,18 @@ struct StatusBar: View {
     }
 
     private var statusBarBackground: Color {
+        #if DEBUG
+        // Debug 模式使用黄色调
+        switch colorScheme {
+        case .light:
+            return Color(hex: "F5A623")  // 金黄色
+        case .dark:
+            return Color(hex: "D48806")  // 深金黄色
+        @unknown default:
+            return Color(hex: "D48806")
+        }
+        #else
+        // Release 模式使用蓝色调
         switch colorScheme {
         case .light:
             return Color(hex: "007ACC")
@@ -60,6 +72,7 @@ struct StatusBar: View {
         @unknown default:
             return Color(hex: "0E639C")
         }
+        #endif
     }
 
     private var statusBarTopDivider: Color {
