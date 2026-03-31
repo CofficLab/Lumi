@@ -817,7 +817,6 @@
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/LumiApp/ThirdParty/sqlite-vec",
 					"$(PROJECT_DIR)/LumiApp/ThirdParty/sqlite",
 				);
 				MARKETING_VERSION = 1.45.0;
@@ -869,7 +868,6 @@
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/LumiApp/ThirdParty/sqlite-vec",
 					"$(PROJECT_DIR)/LumiApp/ThirdParty/sqlite",
 				);
 				MARKETING_VERSION = 1.45.0;
