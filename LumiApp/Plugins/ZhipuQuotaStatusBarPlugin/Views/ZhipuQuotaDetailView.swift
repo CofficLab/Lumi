@@ -13,7 +13,7 @@ struct ZhipuQuotaDetailView: View {
                     .font(.system(size: 16))
                     .foregroundColor(DesignTokens.Color.semantic.primary)
 
-                Text("智谱 GLM 配额")
+                Text(String(localized: "Zhipu GLM Quota", table: "ZhipuQuotaStatusBar"))
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
@@ -41,7 +41,7 @@ struct ZhipuQuotaDetailView: View {
             ProgressView()
                 .scaleEffect(0.8)
 
-            Text("正在获取配额信息...")
+            Text(String(localized: "Loading...", table: "ZhipuQuotaStatusBar"))
                 .font(.system(size: 13))
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
         }
@@ -53,12 +53,15 @@ struct ZhipuQuotaDetailView: View {
     private func quotaContent(_ data: ZhipuQuotaData) -> some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
             // 等级
-            QuotaInfoRow(label: "等级", value: data.levelDisplay)
+            QuotaInfoRow(
+                label: String(localized: "Level", table: "ZhipuQuotaStatusBar"),
+                value: data.levelDisplay
+            )
 
             // 进度条
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text("使用进度")
+                    Text(String(localized: "Usage Progress", table: "ZhipuQuotaStatusBar"))
                         .font(.system(size: 12))
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
@@ -73,13 +76,13 @@ struct ZhipuQuotaDetailView: View {
                     .progressViewStyle(LinearProgressViewStyle(tint: progressColor(data.usedPercent)))
 
                 HStack {
-                    Text("剩余 \(data.leftPercent)%")
+                    Text(String(localized: "Remaining \(data.leftPercent)%", table: "ZhipuQuotaStatusBar"))
                         .font(.system(size: 11))
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
                     Spacer()
 
-                    Text("总时长 5 小时")
+                    Text(String(localized: "Total 5 hours", table: "ZhipuQuotaStatusBar"))
                         .font(.system(size: 11))
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
@@ -89,7 +92,10 @@ struct ZhipuQuotaDetailView: View {
 
             // 重置时间（显示完整日期和相对时间）
             VStack(alignment: .leading, spacing: 4) {
-                QuotaInfoRow(label: "重置时间", value: data.resetTime)
+                QuotaInfoRow(
+                    label: String(localized: "Reset Time", table: "ZhipuQuotaStatusBar"),
+                    value: data.resetTime
+                )
                 Text("（\(data.resetTimeRelative)）")
                     .font(.system(size: 11))
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
@@ -100,7 +106,7 @@ struct ZhipuQuotaDetailView: View {
             // MCP 每月额度
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text("MCP 每月额度")
+                    Text(String(localized: "MCP Monthly Quota", table: "ZhipuQuotaStatusBar"))
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
@@ -110,7 +116,7 @@ struct ZhipuQuotaDetailView: View {
                 HStack(spacing: DesignTokens.Spacing.md) {
                     // 剩余额度
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("剩余")
+                        Text(String(localized: "Remaining", table: "ZhipuQuotaStatusBar"))
                             .font(.system(size: 10))
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         Text("\(data.mcpRemaining)")
@@ -120,7 +126,7 @@ struct ZhipuQuotaDetailView: View {
 
                     // 已用额度
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("已用")
+                        Text(String(localized: "Used", table: "ZhipuQuotaStatusBar"))
                             .font(.system(size: 10))
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         Text("\(data.mcpUsage)")
@@ -132,7 +138,7 @@ struct ZhipuQuotaDetailView: View {
 
                     // 重置时间
                     VStack(alignment: .trailing, spacing: 4) {
-                        Text("重置")
+                        Text(String(localized: "Reset", table: "ZhipuQuotaStatusBar"))
                             .font(.system(size: 10))
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         Text(data.mcpResetTime)
@@ -150,11 +156,11 @@ struct ZhipuQuotaDetailView: View {
 
             // 状态说明
             VStack(alignment: .leading, spacing: 4) {
-                Text("说明")
+                Text(String(localized: "Description", table: "ZhipuQuotaStatusBar"))
                     .font(.system(size: 12))
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-                Text("智谱 GLM Coding Plan 采用 5 小时滚动窗口配额。配额会在使用后逐渐恢复。")
+                Text(String(localized: "Zhipu GLM Coding Plan uses a 5-hour rolling window quota. Quota gradually recovers after use.", table: "ZhipuQuotaStatusBar"))
                     .font(.system(size: 11))
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     .lineLimit(3)
@@ -169,11 +175,11 @@ struct ZhipuQuotaDetailView: View {
                 .font(.system(size: 32))
                 .foregroundColor(DesignTokens.Color.semantic.warning)
 
-            Text("认证已过期")
+            Text(String(localized: "Auth expired", table: "ZhipuQuotaStatusBar"))
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
-            Text("请检查智谱 AI API Key 是否正确配置")
+            Text(String(localized: "Please check if Zhipu AI API Key is correctly configured", table: "ZhipuQuotaStatusBar"))
                 .font(.system(size: 12))
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 .multilineTextAlignment(.center)
@@ -189,11 +195,11 @@ struct ZhipuQuotaDetailView: View {
                 .font(.system(size: 32))
                 .foregroundColor(DesignTokens.Color.semantic.warning)
 
-            Text("配额信息不可用")
+            Text(String(localized: "Quota unavailable", table: "ZhipuQuotaStatusBar"))
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
-            Text("请检查网络连接或稍后重试")
+            Text(String(localized: "Please check network connection or try again later", table: "ZhipuQuotaStatusBar"))
                 .font(.system(size: 12))
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
         }

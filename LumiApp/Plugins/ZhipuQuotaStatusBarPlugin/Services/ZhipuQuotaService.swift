@@ -160,14 +160,14 @@ enum ZhipuQuotaService {
                 return (.unavailable, nil)
             }
 
-            // 查找 5 小时滚动窗口限制（TOKENS_LIMIT）
+            // 查找 5 小时滚动窗口限制（TOKENS_LIMIT, number=5）
             let rollingLimit = limits.first { limit in
                 (limit["type"] as? String) == "TOKENS_LIMIT" && (limit["number"] as? Int) == 5
             }
 
-            // 查找 MCP 每月额度限制（TIME_LIMIT, unit=1）
+            // 查找 MCP 每月额度限制（TIME_LIMIT, unit=5）- 5 小时滚动窗口配额之外的 TIME_LIMIT
             let mcpLimit = limits.first { limit in
-                (limit["type"] as? String) == "TIME_LIMIT" && (limit["unit"] as? Int) == 1
+                (limit["type"] as? String) == "TIME_LIMIT" && (limit["unit"] as? Int) == 5
             }
 
             if let rollingLimit = rollingLimit,
@@ -193,7 +193,7 @@ enum ZhipuQuotaService {
                 )), nil)
             }
 
-            // 查找时间限制（备用方案）
+            // 备用方案：如果 TOKENS_LIMIT 不存在，使用 TIME_LIMIT 计算
             let timeLimit = limits.first { limit in
                 (limit["type"] as? String) == "TIME_LIMIT" && (limit["unit"] as? Int) == 5
             }
@@ -207,22 +207,14 @@ enum ZhipuQuotaService {
                 let leftPercent = 100 - usedPercent
                 let level = (dataDict["level"] as? String) ?? ""
 
-                // MCP 额度数据（备用方案中从同一个限制获取）
-                let mcpLimit = limits.first { limit in
-                    (limit["type"] as? String) == "TIME_LIMIT" && (limit["unit"] as? Int) == 1
-                }
-                let mcpRemaining = mcpLimit?["remaining"] as? Int ?? 0
-                let mcpUsage = mcpLimit?["usage"] as? Int ?? 0
-                let mcpNextResetTime = mcpLimit?["nextResetTime"] as? TimeInterval ?? nextResetTime
-
                 return (.success(ZhipuQuotaData(
                     level: level,
                     usedPercent: usedPercent,
                     leftPercent: leftPercent,
                     nextResetTime: nextResetTime,
-                    mcpRemaining: mcpRemaining,
-                    mcpUsage: mcpUsage,
-                    mcpNextResetTime: mcpNextResetTime
+                    mcpRemaining: remaining,
+                    mcpUsage: usage,
+                    mcpNextResetTime: nextResetTime
                 )), nil)
             }
 
