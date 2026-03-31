@@ -143,18 +143,6 @@ struct ZhipuQuotaDetailView: View {
                 .background(Color(white: 0.95).opacity(0.1))
                 .cornerRadius(8)
             }
-
-            // 状态说明
-            VStack(alignment: .leading, spacing: 4) {
-                Text(String(localized: "Description", table: "ZhipuQuotaStatusBar"))
-                    .font(.system(size: 12))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-
-                Text(String(localized: "Zhipu GLM Coding Plan uses a 5-hour rolling window quota. Quota gradually recovers after use.", table: "ZhipuQuotaStatusBar"))
-                    .font(.system(size: 11))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                    .lineLimit(3)
-            }
         }
     }
 
