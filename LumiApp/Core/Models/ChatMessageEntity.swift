@@ -20,24 +20,9 @@ final class ChatMessageEntity {
     var providerId: String?      // 例如："anthropic", "openai", "zhipu"
     var modelName: String?       // 例如："claude-sonnet-4-20250514", "gpt-4o"
     
-    // Performance Metrics - 性能指标
-    var latency: Double?         // 请求总耗时（毫秒）
-    var inputTokens: Int?        // 输入 token 数量
-    var outputTokens: Int?       // 输出 token 数量
-    var totalTokens: Int?        // 总 token 数量
-    var timeToFirstToken: Double? // 首 token 延迟（毫秒）
-    var streamingDuration: Double? // 流式传输耗时（毫秒）
-    var thinkingDuration: Double?  // 思考过程耗时（毫秒）
-
-    // Request Metadata - 请求元数据
-    var finishReason: String?    // 完成原因（stop/max_tokens/tool_calls 等）
-    var requestId: String?       // 供应商请求 ID（用于问题追踪）
-    var temperature: Double?     // 生成时使用的 temperature 参数
-    var maxTokens: Int?          // 生成时使用的 max_tokens 参数
-
-    // Thinking Process - 思考过程
-    var thinkingContent: String? // 思考过程文本（用于 reasoning 模型）
-    var hasThinking: Bool = false // 是否有思考过程（便于查询，必须有默认值用于迁移）
+    /// 性能指标和请求元数据（1:1 关系，可选）
+    @Relationship(deleteRule: .cascade)
+    var metrics: MessageMetricsEntity?
 
     // 反向关系
     var conversation: Conversation?
@@ -45,13 +30,7 @@ final class ChatMessageEntity {
     init(id: UUID = UUID(), role: String, content: String, timestamp: Date = Date(),
          isError: Bool = false, toolCallsData: Data? = nil,
          toolCallID: String? = nil,
-         providerId: String? = nil, modelName: String? = nil,
-         latency: Double? = nil, inputTokens: Int? = nil, outputTokens: Int? = nil,
-         totalTokens: Int? = nil, timeToFirstToken: Double? = nil,
-         streamingDuration: Double? = nil, thinkingDuration: Double? = nil,
-         finishReason: String? = nil, requestId: String? = nil,
-         temperature: Double? = nil, maxTokens: Int? = nil,
-         thinkingContent: String? = nil, hasThinking: Bool = false) {
+         providerId: String? = nil, modelName: String? = nil) {
         self.id = id
         self.role = role
         self.content = content
@@ -61,19 +40,6 @@ final class ChatMessageEntity {
         self.toolCallID = toolCallID
         self.providerId = providerId
         self.modelName = modelName
-        self.latency = latency
-        self.inputTokens = inputTokens
-        self.outputTokens = outputTokens
-        self.totalTokens = totalTokens
-        self.timeToFirstToken = timeToFirstToken
-        self.streamingDuration = streamingDuration
-        self.thinkingDuration = thinkingDuration
-        self.finishReason = finishReason
-        self.requestId = requestId
-        self.temperature = temperature
-        self.maxTokens = maxTokens
-        self.thinkingContent = thinkingContent
-        self.hasThinking = hasThinking
     }
     
     /// 转换为 ChatMessage
@@ -125,6 +91,35 @@ final class ChatMessageEntity {
         // 从关系中获取图片附件
         let imageAttachments = images.map { $0.toImageAttachment() }
 
+        // 从 metrics 关系中获取性能数据
+        var latency: Double?
+        var inputTokens: Int?
+        var outputTokens: Int?
+        var totalTokens: Int?
+        var timeToFirstToken: Double?
+        var streamingDuration: Double?
+        var thinkingDuration: Double?
+        var finishReason: String?
+        var requestId: String?
+        var temperature: Double?
+        var maxTokens: Int?
+        var thinkingContent: String?
+        
+        if let metrics = metrics {
+            latency = metrics.latency
+            inputTokens = metrics.inputTokens
+            outputTokens = metrics.outputTokens
+            totalTokens = metrics.totalTokens
+            timeToFirstToken = metrics.timeToFirstToken
+            streamingDuration = metrics.streamingDuration
+            thinkingDuration = metrics.thinkingDuration
+            finishReason = metrics.finishReason
+            requestId = metrics.requestId
+            temperature = metrics.temperature
+            maxTokens = metrics.maxTokens
+            thinkingContent = metrics.thinkingContent
+        }
+
         return ChatMessage(
             id: id,
             role: messageRole,
@@ -155,8 +150,8 @@ final class ChatMessageEntity {
     /// 用 `ChatMessage` 覆盖当前实体字段（用于同 ID 更新，不新建记录）
     ///
     /// 注意：图片关系更新由 `ChatHistoryService.syncImageRelations` 处理，
-    /// 此方法仅更新消息自身字段。
-    func apply(from message: ChatMessage) {
+    /// 此方法仅更新消息自身字段和性能指标。
+    func apply(from message: ChatMessage, in context: ModelContext) {
         role = message.role.rawValue
         content = message.content
         timestamp = message.timestamp
@@ -169,29 +164,47 @@ final class ChatMessageEntity {
         toolCallID = message.toolCallID
         providerId = message.providerId
         modelName = message.modelName
-        latency = message.latency
-        inputTokens = message.inputTokens
-        outputTokens = message.outputTokens
-        totalTokens = message.totalTokens
-        timeToFirstToken = message.timeToFirstToken
-        streamingDuration = message.streamingDuration
-        thinkingDuration = message.thinkingDuration
-        finishReason = message.finishReason
-        requestId = message.requestId
-        temperature = message.temperature
-        maxTokens = message.maxTokens
-        thinkingContent = message.thinkingContent
-        hasThinking = message.thinkingContent != nil && !message.thinkingContent!.isEmpty
+        
+        // 更新或创建性能指标
+        if message.hasPerformanceData {
+            if let existingMetrics = metrics {
+                // 更新现有指标
+                existingMetrics.latency = message.latency
+                existingMetrics.inputTokens = message.inputTokens
+                existingMetrics.outputTokens = message.outputTokens
+                existingMetrics.totalTokens = message.totalTokens
+                existingMetrics.timeToFirstToken = message.timeToFirstToken
+                existingMetrics.streamingDuration = message.streamingDuration
+                existingMetrics.thinkingDuration = message.thinkingDuration
+                existingMetrics.finishReason = message.finishReason
+                existingMetrics.requestId = message.requestId
+                existingMetrics.temperature = message.temperature
+                existingMetrics.maxTokens = message.maxTokens
+                existingMetrics.thinkingContent = message.thinkingContent
+                existingMetrics.hasThinking = message.thinkingContent != nil && !message.thinkingContent!.isEmpty
+            } else {
+                // 创建新指标
+                let newMetrics = MessageMetricsEntity.from(message)
+                context.insert(newMetrics)
+                metrics = newMetrics
+            }
+        } else {
+            // 删除现有指标（如果存在）
+            if let existingMetrics = metrics {
+                context.delete(existingMetrics)
+                metrics = nil
+            }
+        }
     }
 
     /// 从 ChatMessage 创建（不含图片关系，图片由 ChatHistoryService 单独处理）
-    static func fromChatMessage(_ message: ChatMessage) -> ChatMessageEntity {
+    static func fromChatMessage(_ message: ChatMessage, in context: ModelContext) -> ChatMessageEntity {
         var toolCallsData: Data?
         if let toolCalls = message.toolCalls {
             toolCallsData = try? JSONEncoder().encode(toolCalls)
         }
 
-        return ChatMessageEntity(
+        let entity = ChatMessageEntity(
             id: message.id,
             role: message.role.rawValue,
             content: message.content,
@@ -200,20 +213,36 @@ final class ChatMessageEntity {
             toolCallsData: toolCallsData,
             toolCallID: message.toolCallID,
             providerId: message.providerId,
-            modelName: message.modelName,
-            latency: message.latency,
-            inputTokens: message.inputTokens,
-            outputTokens: message.outputTokens,
-            totalTokens: message.totalTokens,
-            timeToFirstToken: message.timeToFirstToken,
-            streamingDuration: message.streamingDuration,
-            thinkingDuration: message.thinkingDuration,
-            finishReason: message.finishReason,
-            requestId: message.requestId,
-            temperature: message.temperature,
-            maxTokens: message.maxTokens,
-            thinkingContent: message.thinkingContent,
-            hasThinking: message.thinkingContent != nil && !message.thinkingContent!.isEmpty
+            modelName: message.modelName
         )
+        
+        // 创建性能指标（如果有数据）
+        if message.hasPerformanceData {
+            let metricsEntity = MessageMetricsEntity.from(message)
+            context.insert(metricsEntity)
+            entity.metrics = metricsEntity
+        }
+        
+        return entity
+    }
+}
+
+// MARK: - Helper Extension
+
+private extension ChatMessage {
+    /// 是否包含性能数据
+    var hasPerformanceData: Bool {
+        latency != nil ||
+        inputTokens != nil ||
+        outputTokens != nil ||
+        totalTokens != nil ||
+        timeToFirstToken != nil ||
+        streamingDuration != nil ||
+        thinkingDuration != nil ||
+        finishReason != nil ||
+        requestId != nil ||
+        temperature != nil ||
+        maxTokens != nil ||
+        (thinkingContent != nil && !thinkingContent!.isEmpty)
     }
 }

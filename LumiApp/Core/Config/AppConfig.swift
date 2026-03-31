@@ -2,44 +2,59 @@ import Foundation
 import SwiftData
 import SwiftUI
 
-/// 应用配置管理器，负责 SwiftData 容器配置和应用级设置
+/// 应用配置管理器，负责应用级设置和通用配置
 enum AppConfig {
+    
     // MARK: - Layout Constants
     
     /// 统一的头部高度（侧边栏顶部和详情栏头部）
     static let headerHeight: CGFloat = 44
     
-    // MARK: - SwiftData Configuration
+    // MARK: - Database Container (通过 DBConfig)
+    
     /// 获取配置好的 SwiftData 模型容器
+    ///
+    /// 此方法为 `DBConfig.getContainer()` 的便捷访问点。
+    ///
     /// - Returns: 配置完整的 ModelContainer 实例
     static func getContainer() -> ModelContainer {
-        let schema = Schema([
-            Conversation.self,
-            ChatMessageEntity.self,
-            ImageAttachmentEntity.self
-        ])
-
-        // 获取数据库文件路径（不是目录）
-        let dbFileURL = getDBFileURL()
-        
-        // 配置 SwiftData 容器，使用自定义存储路径
-        let modelConfiguration = ModelConfiguration(
-            schema: schema,
-            url: dbFileURL,
-            allowsSave: true,
-            cloudKitDatabase: .none
-        )
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
+        DBConfig.getContainer()
     }
 
     // MARK: - Directory Helpers
 
+    /// 获取数据库文件夹目录（应用主库与插件子目录的根目录）
+    ///
+    /// 此方法为 `DBConfig.getDBFolderURL()` 的便捷访问点。
+    ///
+    /// - Returns: 数据库目录的 URL
+    static func getDBFolderURL() -> URL {
+        DBConfig.getDBFolderURL()
+    }
+    
+    /// 获取指定插件的数据库/存储目录
+    ///
+    /// 此方法为 `DBConfig.getPluginDBFolderURL(pluginName:)` 的便捷访问点。
+    ///
+    /// - Parameter pluginName: 插件名称
+    /// - Returns: 该插件的存储目录 URL
+    static func getPluginDBFolderURL(pluginName: String) -> URL {
+        DBConfig.getPluginDBFolderURL(pluginName: pluginName)
+    }
+    
+    /// Core 数据目录
+    ///
+    /// 此方法为 `DBConfig.getCoreDBFolderURL()` 的便捷访问点。
+    ///
+    /// - Returns: Core 数据目录的 URL
+    static func getCoreDBFolderURL() -> URL {
+        DBConfig.getCoreDBFolderURL()
+    }
+
     /// 获取当前应用的 App Support 目录
+    ///
+    /// 路径格式：`~/Library/Application Support/com.cofficlab.Lumi`
+    ///
     /// - Returns: App Support 目录的 URL
     static func getCurrentAppSupportDir() -> URL {
         let fileManager = FileManager.default
@@ -59,76 +74,20 @@ enum AppConfig {
     }
 
     /// 获取本地容器目录
+    ///
+    /// 用于 App Groups 共享数据。
+    ///
     /// - Returns: 容器目录的 URL，如果不存在则返回 nil
     static var localContainer: URL? {
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Bundle.main.bundleIdentifier ?? "")
     }
 
     /// 获取文档目录
+    ///
     /// - Returns: 文档目录的 URL，如果不存在则返回 nil
     static var localDocumentsDir: URL? {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
     }
-
-    /// 获取数据库文件夹目录（应用主库与插件子目录的根目录）
-    /// - Returns: 数据库目录的 URL
-    static func getDBFolderURL() -> URL {
-        let appSupport = getCurrentAppSupportDir()
-        
-        #if DEBUG
-        let dbDirectoryName = "db_debug"
-        #else
-        let dbDirectoryName = "db_production"
-        #endif
-        
-        let dbDirectory = appSupport.appendingPathComponent(dbDirectoryName, isDirectory: true)
-        
-        // 确保数据库目录存在
-        let fileManager = FileManager.default
-        if !fileManager.fileExists(atPath: dbDirectory.path) {
-            try? fileManager.createDirectory(at: dbDirectory, withIntermediateDirectories: true, attributes: nil)
-        }
-        
-        return dbDirectory
-    }
-
-    /// 获取指定插件的数据库/存储目录（插件自行管理该目录下的文件或数据库）
-    /// 路径为：getDBFolderURL() / pluginName
-    /// - Parameter pluginName: 插件名称，建议与插件模块名一致（如 "GitHubToolsPlugin"）
-    /// - Returns: 该插件的存储目录 URL，不存在时会自动创建
-    static func getPluginDBFolderURL(pluginName: String) -> URL {
-        let base = getDBFolderURL()
-        let sanitized = pluginName.trimmingCharacters(in: .whitespacesAndNewlines)
-            .components(separatedBy: CharacterSet.alphanumerics.inverted)
-            .filter { !$0.isEmpty }
-            .joined(separator: "_")
-        let name = sanitized.isEmpty ? "Plugin" : sanitized
-        let pluginDir = base.appendingPathComponent(name, isDirectory: true)
-        let fileManager = FileManager.default
-        if !fileManager.fileExists(atPath: pluginDir.path) {
-            try? fileManager.createDirectory(at: pluginDir, withIntermediateDirectories: true, attributes: nil)
-        }
-        return pluginDir
-    }
-    
-    /// 获取数据库文件路径（包含具体文件名）
-    /// - Returns: 数据库文件的 URL
-    static func getDBFileURL() -> URL {
-        let coreDirectory = getCoreDBFolderURL()
-        return coreDirectory.appendingPathComponent("Lumi.db")
-    }
-
-    /// Core 数据目录
-    /// 路径：getDBFolderURL() / Core
-    static func getCoreDBFolderURL() -> URL {
-        let coreDirectory = getDBFolderURL().appendingPathComponent("Core", isDirectory: true)
-        let fileManager = FileManager.default
-        if !fileManager.fileExists(atPath: coreDirectory.path) {
-            try? fileManager.createDirectory(at: coreDirectory, withIntermediateDirectories: true)
-        }
-        return coreDirectory
-    }
-
 }
 
 // MARK: - Preview

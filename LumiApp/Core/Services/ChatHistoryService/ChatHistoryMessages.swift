@@ -45,7 +45,7 @@ extension ChatHistoryService {
         if let existingEntity = try? context.fetch(existingDescriptor).first {
             AppLogger.core.warning("\(Self.t)⚠️ 检测到相同 ID 的消息已存在: \(message.id)")
 
-            existingEntity.apply(from: message)
+            existingEntity.apply(from: message, in: context)
             existingEntity.conversation = fetchedConversation
             syncImageRelations(for: existingEntity, with: message, in: context)
             fetchedConversation.updatedAt = Date()
@@ -65,7 +65,7 @@ extension ChatHistoryService {
         }
 
         // 消息不存在，创建新记录
-        let messageEntity = ChatMessageEntity.fromChatMessage(message)
+        let messageEntity = ChatMessageEntity.fromChatMessage(message, in: context)
         messageEntity.timestamp = Date()
         messageEntity.conversation = fetchedConversation
         syncImageRelations(for: messageEntity, with: message, in: context)
@@ -103,7 +103,7 @@ extension ChatHistoryService {
             return nil
         }
 
-        entity.apply(from: message)
+        entity.apply(from: message, in: context)
         syncImageRelations(for: entity, with: message, in: context)
 
         do {

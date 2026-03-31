@@ -10,9 +10,11 @@ extension ChatHistoryService {
     func getModelLatencyStats() -> [(providerId: String, modelName: String, avgLatency: Double, sampleCount: Int)] {
         let context = getContext()
 
-        // 获取所有有 latency 数据的消息
+        // 获取所有有 metrics 关系的消息
         let descriptor = FetchDescriptor<ChatMessageEntity>(
-            predicate: #Predicate { $0.latency != nil && $0.providerId != nil && $0.modelName != nil }
+            predicate: #Predicate { msg in
+                msg.metrics != nil && msg.providerId != nil && msg.modelName != nil
+            }
         )
 
         guard let messageEntities = try? context.fetch(descriptor) else {
@@ -26,7 +28,8 @@ extension ChatHistoryService {
         for entity in messageEntities {
             guard let providerId = entity.providerId,
                   let modelName = entity.modelName,
-                  let latency = entity.latency else {
+                  let metrics = entity.metrics,
+                  let latency = metrics.latency else {
                 continue
             }
 
@@ -68,7 +71,9 @@ extension ChatHistoryService {
 
         // 获取所有有性能数据的消息
         let descriptor = FetchDescriptor<ChatMessageEntity>(
-            predicate: #Predicate { $0.latency != nil && $0.providerId != nil && $0.modelName != nil }
+            predicate: #Predicate { msg in
+                msg.metrics != nil && msg.providerId != nil && msg.modelName != nil
+            }
         )
 
         guard let messageEntities = try? context.fetch(descriptor) else {
@@ -82,7 +87,8 @@ extension ChatHistoryService {
         for entity in messageEntities {
             guard let providerId = entity.providerId,
                   let modelName = entity.modelName,
-                  let latency = entity.latency else {
+                  let metrics = entity.metrics,
+                  let latency = metrics.latency else {
                 continue
             }
 
@@ -100,19 +106,19 @@ extension ChatHistoryService {
             stats.sampleCount += 1
             stats.totalLatency += latency
 
-            if let ttft = entity.timeToFirstToken {
+            if let ttft = metrics.timeToFirstToken {
                 stats.totalTTFT += ttft
                 stats.ttftCount += 1
             }
 
-            if let inputTokens = entity.inputTokens {
+            if let inputTokens = metrics.inputTokens {
                 stats.totalInputTokens += inputTokens
                 stats.inputTokenCount += 1
             }
 
             // 只统计同时有 outputTokens 和 streamingDuration 的消息
-            if let outputTokens = entity.outputTokens,
-               let streamingDuration = entity.streamingDuration {
+            if let outputTokens = metrics.outputTokens,
+               let streamingDuration = metrics.streamingDuration {
                 stats.totalOutputTokens += outputTokens
                 stats.outputTokenCount += 1
                 stats.totalStreamingDuration += streamingDuration
