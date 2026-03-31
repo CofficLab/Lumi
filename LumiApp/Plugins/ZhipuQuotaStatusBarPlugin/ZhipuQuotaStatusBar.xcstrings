@@ -246,6 +246,7 @@
       }
     },
     "Used" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

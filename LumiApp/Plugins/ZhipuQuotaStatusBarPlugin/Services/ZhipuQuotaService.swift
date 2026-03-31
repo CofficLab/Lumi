@@ -176,9 +176,8 @@ enum ZhipuQuotaService {
                 let leftPercent = 100 - usedPercent
                 let level = (dataDict["level"] as? String) ?? ""
 
-                // MCP 额度数据 - 使用 currentValue 计算剩余百分比
-                // currentValue = 0 表示 0%，100 表示 100%
-                let mcpLeftPercent = mcpLimit?["currentValue"] as? Int ?? 0
+                // MCP 额度数据 - 使用 remaining 字段作为剩余百分比
+                let mcpLeftPercent = mcpLimit?["remaining"] as? Int ?? 0
                 let mcpNextResetTime = mcpLimit?["nextResetTime"] as? TimeInterval ?? nextResetTime
 
                 return (.success(ZhipuQuotaData(
@@ -205,8 +204,8 @@ enum ZhipuQuotaService {
                 let leftPercent = 100 - usedPercent
                 let level = (dataDict["level"] as? String) ?? ""
 
-                // MCP 额度数据 - 使用 currentValue 计算剩余百分比
-                let mcpLeftPercent = timeLimit["currentValue"] as? Int ?? remaining
+                // MCP 额度数据 - 使用 remaining 字段作为剩余百分比
+                let mcpLeftPercent = timeLimit["remaining"] as? Int ?? 0
                 let mcpNextResetTime = timeLimit["nextResetTime"] as? TimeInterval ?? nextResetTime
 
                 return (.success(ZhipuQuotaData(
