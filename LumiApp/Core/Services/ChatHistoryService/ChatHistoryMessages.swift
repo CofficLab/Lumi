@@ -201,7 +201,7 @@ extension ChatHistoryService {
 
         let messages = messageEntities.compactMap { $0.toChatMessage() }
         if Self.verbose {
-            AppLogger.core.info("\(Self.t) [\(conversationId)] 加载到 \(messages.count) 条消息")
+            AppLogger.core.info("\(Self.t)✅ [\(conversationId)] 加载到 \(messages.count) 条消息")
         }
         return messages
     }
