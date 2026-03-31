@@ -23,7 +23,7 @@ struct TextSelectionMenu: View {
             // 复制按钮
             menuButton(
                 icon: "doc.on.doc",
-                title: String(localized: "Copy", table: "AgentFilePreview"),
+                title: String(localized: "Copy", table: "FilePreview"),
                 action: onCopy
             )
 
@@ -36,7 +36,7 @@ struct TextSelectionMenu: View {
             if isEditable {
                 menuButton(
                     icon: "scissors",
-                    title: String(localized: "Cut", table: "AgentFilePreview"),
+                    title: String(localized: "Cut", table: "FilePreview"),
                     action: onCut
                 )
 
@@ -48,7 +48,7 @@ struct TextSelectionMenu: View {
             // 添加到聊天按钮
             menuButton(
                 icon: "bubble.left.and.text.bubble.right",
-                title: String(localized: "Add to Chat", table: "AgentFilePreview"),
+                title: String(localized: "Add to Chat", table: "FilePreview"),
                 action: onAddToChat
             )
         }

@@ -24,7 +24,7 @@ final class FilePreviewUndoState: ObservableObject {
         undoManager.registerUndo(withTarget: self) { target in
             target.insertText(deletedText, at: offset, isUndo: true)
         }
-        undoManager.setActionName(String(localized: "Cut", table: "AgentFilePreview"))
+        undoManager.setActionName(String(localized: "Cut", table: "FilePreview"))
     }
 
     /// 在指定位置插入文本（用于撤销剪切），并注册重做操作
@@ -41,8 +41,8 @@ final class FilePreviewUndoState: ObservableObject {
         }
         undoManager.setActionName(
             isUndo
-                ? String(localized: "Restore Cut", table: "AgentFilePreview")
-                : String(localized: "Cut", table: "AgentFilePreview")
+                ? String(localized: "Restore Cut", table: "FilePreview")
+                : String(localized: "Cut", table: "FilePreview")
         )
     }
 
@@ -61,7 +61,7 @@ final class FilePreviewUndoState: ObservableObject {
         undoManager.registerUndo(withTarget: self) { target in
             target.insertText(removedText, at: insertOffset, isUndo: false)
         }
-        undoManager.setActionName(String(localized: "Cut", table: "AgentFilePreview"))
+        undoManager.setActionName(String(localized: "Cut", table: "FilePreview"))
     }
 
     /// 执行撤销
@@ -112,7 +112,7 @@ struct FilePreviewView: View {
     /// 撤销/重做状态管理
     @StateObject private var undoState = FilePreviewUndoState()
 
-    private static let themeStorageKey = "AgentFilePreview.SelectedCodeEditorTheme"
+    private static let themeStorageKey = "FilePreview.SelectedCodeEditorTheme"
     private static let textProbeBytes = 8192
     private static let readOnlyThresholdBytes: Int64 = 512 * 1024
     private static let truncationThresholdBytes: Int64 = 2 * 1024 * 1024
@@ -286,12 +286,12 @@ struct FilePreviewView: View {
             if isTruncatedPreview || isReadOnlyPreview {
                 VStack(alignment: .leading, spacing: 4) {
                     if isTruncatedPreview {
-                        Text(String(localized: "Preview Truncated for Large File", table: "AgentFilePreview"))
+                        Text(String(localized: "Preview Truncated for Large File", table: "FilePreview"))
                             .font(.system(size: 9))
                             .foregroundColor(AppUI.Color.semantic.warning)
                             .lineLimit(2)
                     } else if isReadOnlyPreview {
-                        Text(String(localized: "Large File Read-Only Preview", table: "AgentFilePreview"))
+                        Text(String(localized: "Large File Read-Only Preview", table: "FilePreview"))
                             .font(.system(size: 9))
                             .foregroundColor(AppUI.Color.semantic.warning)
                             .lineLimit(2)
@@ -585,7 +585,7 @@ struct FilePreviewView: View {
 
         let data = try handle.read(upToCount: maxBytes) ?? Data()
         let preview = String(decoding: data, as: UTF8.self)
-        let suffix = "\n\n… " + String(localized: "File too large. Preview is truncated.", table: "AgentFilePreview")
+        let suffix = "\n\n… " + String(localized: "File too large. Preview is truncated.", table: "FilePreview")
         return preview + suffix
     }
 

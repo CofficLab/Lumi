@@ -6,7 +6,7 @@ import SwiftUI
 struct FilePreviewThemeStatusBarView: View {
     @State private var selectedTheme: CodeEditor.ThemeName = .default
 
-    private static let themeStorageKey = "AgentFilePreview.SelectedCodeEditorTheme"
+    private static let themeStorageKey = "FilePreview.SelectedCodeEditorTheme"
 
     var body: some View {
         StatusBarHoverContainer(
@@ -132,7 +132,7 @@ struct FilePreviewThemeDetailView: View {
                 .font(.system(size: 14))
                 .foregroundColor(DesignTokens.Color.semantic.primary)
 
-            Text(String(localized: "File Preview Theme", table: "AgentFilePreview"))
+            Text(String(localized: "File Preview Theme", table: "FilePreview"))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
@@ -149,7 +149,7 @@ struct FilePreviewThemeDetailView: View {
             VStack(spacing: 0) {
                 if !displayLightThemes.isEmpty {
                     themeSection(
-                        title: String(localized: "Light Themes", table: "AgentFilePreview"),
+                        title: String(localized: "Light Themes", table: "FilePreview"),
                         themes: displayLightThemes
                     )
 
@@ -161,7 +161,7 @@ struct FilePreviewThemeDetailView: View {
 
                 if !displayDarkThemes.isEmpty {
                     themeSection(
-                        title: String(localized: "Dark Themes", table: "AgentFilePreview"),
+                        title: String(localized: "Dark Themes", table: "FilePreview"),
                         themes: displayDarkThemes
                     )
                 }

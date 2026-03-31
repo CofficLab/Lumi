@@ -9,11 +9,11 @@ struct FilePreviewEmptyStateView: View {
                 .font(.system(size: 32))
                 .foregroundColor(AppUI.Color.semantic.textTertiary)
 
-            Text(String(localized: "File Preview", table: "AgentFilePreview"))
+            Text(String(localized: "File Preview", table: "FilePreview"))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
 
-            Text(String(localized: "Select File to Preview", table: "AgentFilePreview"))
+            Text(String(localized: "Select File to Preview", table: "FilePreview"))
                 .font(.system(size: 11))
                 .foregroundColor(AppUI.Color.semantic.textTertiary)
                 .multilineTextAlignment(.center)

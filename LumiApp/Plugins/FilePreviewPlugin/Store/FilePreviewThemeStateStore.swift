@@ -2,7 +2,7 @@ import Foundation
 
 /// 文件预览插件主题状态存储（自包含，不依赖 PluginStateStore）。
 enum FilePreviewThemeStateStore {
-    private static let pluginDirName = "AgentFilePreview"
+    private static let pluginDirName = "FilePreview"
     private static let settingsFileName = "theme_state.plist"
     private static let tmpFileName = "theme_state.tmp"
 

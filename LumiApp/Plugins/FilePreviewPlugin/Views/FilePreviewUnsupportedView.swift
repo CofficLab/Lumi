@@ -11,11 +11,11 @@ struct FilePreviewUnsupportedView: View {
                 .font(.system(size: 32))
                 .foregroundColor(AppUI.Color.semantic.textTertiary)
 
-            Text(String(localized: "Preview Not Supported", table: "AgentFilePreview"))
+            Text(String(localized: "Preview Not Supported", table: "FilePreview"))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
 
-            Text(String(localized: "Preview Not Supported Type", table: "AgentFilePreview") + "\n" + fileName)
+            Text(String(localized: "Preview Not Supported Type", table: "FilePreview") + "\n" + fileName)
                 .font(.system(size: 11))
                 .foregroundColor(AppUI.Color.semantic.textTertiary)
                 .multilineTextAlignment(.center)
