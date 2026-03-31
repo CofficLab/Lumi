@@ -1,22 +1,26 @@
 import Foundation
 import MagicKit
 
-/// Grep 工具
+/// Grep 工具（纯 Swift 原生实现）
 ///
-/// 使用 ripgrep (rg) 搜索文件内容。
+/// 使用 FileManager + NSRegularExpression 搜索文件内容。
+/// 零外部依赖，不需要 ripgrep。
+///
 /// 支持：
-/// - 正则表达式搜索
+/// - 正则表达式搜索（基于 NSRegularExpression）
 /// - 多种输出模式（content / files_with_matches / count）
 /// - 上下文行、行号
-/// - Glob 过滤
+/// - Glob / Type 文件过滤
 /// - 分页（head_limit / offset）
+/// - 多行模式
+/// - 大小写敏感/不敏感
 struct GrepTool: AgentTool, SuperLog {
     nonisolated static let emoji = "🔍"
     nonisolated static let verbose = false
 
     let name = "grep"
     let description = """
-Search file contents using ripgrep (rg). Supports regex patterns and multiple output modes.
+Search file contents using regex. Supports multiple output modes and file filtering.
 
 Output modes:
 - `files_with_matches` (default): Shows file paths that contain matches.
@@ -25,7 +29,7 @@ Output modes:
 
 Tips:
 - Use `glob` to filter by file type (e.g., "*.swift", "*.{ts,tsx}").
-- Use `type` for common language types (js, py, rust, go, java, etc.) — more efficient than glob.
+- Use `type` for common language types (swift, js, py, rust, go, java, etc.).
 - Use `head_limit` to limit results (default 250). Pass 0 for unlimited.
 - Use `output_mode: "content"` with `-A`/`-B`/`-C` for context around matches.
 """
@@ -114,7 +118,7 @@ Tips:
         let offset = arguments["offset"]?.value as? Int ?? 0
         let multiline = arguments["multiline"]?.value as? Bool ?? false
 
-        // Determine search path
+        // 确定搜索路径
         let searchPath: String
         if let path = path {
             searchPath = (path as NSString).expandingTildeInPath
@@ -122,240 +126,433 @@ Tips:
             searchPath = FileManager.default.currentDirectoryPath
         }
 
-        // Build ripgrep arguments
-        var args: [String] = ["--hidden", "--max-columns", "500"]
-
-        // Exclude VCS directories
-        let vcsDirs = [".git", ".svn", ".hg", ".bzr"]
-        for dir in vcsDirs {
-            args += ["--glob", "!\(dir)"]
+        // 编译正则表达式
+        let regexOptions: NSRegularExpression.Options = [
+            caseInsensitive ? .caseInsensitive : [],
+        ]
+        let regex: NSRegularExpression
+        do {
+            regex = try NSRegularExpression(pattern: pattern, options: regexOptions)
+        } catch {
+            return "Error: Invalid regex pattern: \(error.localizedDescription)"
         }
 
-        // Multiline mode
-        if multiline {
-            args += ["-U", "--multiline-dotall"]
-        }
-
-        // Case insensitive
-        if caseInsensitive {
-            args.append("-i")
-        }
-
-        // Output mode
-        switch outputMode {
-        case "files_with_matches":
-            args.append("-l")
-        case "count":
-            args.append("-c")
-        case "content":
-            break
-        default:
-            args.append("-l")
-        }
-
-        // Line numbers (content mode only)
-        if showLineNumbers && outputMode == "content" {
-            args.append("-n")
-        }
-
-        // Context lines (content mode only)
-        if outputMode == "content" {
-            if let c = contextBoth {
-                args += ["-C", "\(c)"]
-            } else {
-                if let b = contextBefore { args += ["-B", "\(b)"] }
-                if let a = contextAfter { args += ["-A", "\(a)"] }
-            }
-        }
-
-        // Pattern (handle patterns starting with dash)
-        if pattern.hasPrefix("-") {
-            args += ["-e", pattern]
-        } else {
-            args.append(pattern)
-        }
-
-        // Type filter
-        if let type = type {
-            args += ["--type", type]
-        }
-
-        // Glob filter
+        // 构建 glob 过滤器
+        let globPatterns: [String]
         if let glob = glob {
-            let patterns = glob.split(separator: ",").map(String.init)
-            for p in patterns {
-                args += ["--glob", p.trimmingCharacters(in: .whitespaces)]
-            }
+            globPatterns = glob.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+        } else {
+            globPatterns = []
         }
 
         if Self.verbose {
-            AgentCoreToolsPlugin.logger.info("\(self.t)rg \(args.joined(separator: " ")) in \(searchPath)")
+            AgentCoreToolsPlugin.logger.info("\(self.t)grep '/\(pattern)/' in \(searchPath) mode=\(outputMode)")
         }
 
-        // Execute ripgrep
-        let result = try await runRipgrep(args: args, path: searchPath)
-
-        if result.isEmpty {
-            return "No matches found."
+        // 验证搜索路径
+        let fm = FileManager.default
+        var isDir: ObjCBool = false
+        guard fm.fileExists(atPath: searchPath, isDirectory: &isDir) else {
+            return "Error: Path does not exist: \(searchPath)"
         }
 
-        let lines = result.components(separatedBy: "\n").filter { !$0.isEmpty }
-
-        // Apply pagination
-        let effectiveLimit = headLimit ?? 250  // default limit
-        let isUnlimited = headLimit == 0
-
-        let sliced: [String]
-        let wasTruncated: Bool
-
-        if isUnlimited {
-            sliced = Array(lines.dropFirst(offset))
-            wasTruncated = false
-        } else {
-            let dropped = Array(lines.dropFirst(offset))
-            wasTruncated = dropped.count > effectiveLimit
-            sliced = Array(dropped.prefix(effectiveLimit))
+        // 如果搜索路径是文件，直接搜索该文件
+        if !isDir.boolValue {
+            return searchSingleFile(
+                at: searchPath,
+                relativePath: (searchPath as NSString).lastPathComponent,
+                regex: regex,
+                outputMode: outputMode,
+                showLineNumbers: showLineNumbers,
+                contextBefore: contextBefore,
+                contextAfter: contextAfter,
+                contextBoth: contextBoth,
+                multiline: multiline,
+                headLimit: headLimit,
+                offset: offset
+            )
         }
 
-        // Process results based on output mode
+        // 枚举目录中所有文件
+        let files = enumerateFiles(in: searchPath, maxResults: nil)
+
+        // 过滤文件
+        let filteredFiles = files.filter { _, relativePath in
+            // Type 过滤
+            if let type = type {
+                let fileName = (relativePath as NSString).lastPathComponent
+                if !fileMatchesType(fileName: fileName, type: type) {
+                    return false
+                }
+            }
+
+            // Glob 过滤
+            if !globPatterns.isEmpty {
+                if !globPatterns.contains(where: { matchesGlobPattern($0, path: relativePath) }) {
+                    return false
+                }
+            }
+
+            // 跳过二进制文件（通过扩展名快速判断）
+            let ext = (relativePath as NSString).pathExtension.lowercased()
+            if isBinaryExtension(ext) { return false }
+
+            return true
+        }
+
+        if Self.verbose {
+            AgentCoreToolsPlugin.logger.info("\(self.t)scanning \(filteredFiles.count) files")
+        }
+
+        // 根据输出模式执行搜索
         switch outputMode {
+        case "files_with_matches":
+            return searchFilesWithMatches(
+                files: filteredFiles,
+                regex: regex,
+                multiline: multiline,
+                headLimit: headLimit,
+                offset: offset
+            )
+
         case "content":
-            // Make paths relative for readability
-            let processed = sliced.map { makePathRelative($0, basePath: searchPath) }
-            var output = processed.joined(separator: "\n")
-
-            // Add pagination info
-            if wasTruncated || offset > 0 {
-                var parts: [String] = []
-                if wasTruncated { parts.append("limit: \(effectiveLimit)") }
-                if offset > 0 { parts.append("offset: \(offset)") }
-                output += "\n\n[Showing results with pagination = \(parts.joined(separator: ", "))]"
-            }
-
-            if Self.verbose {
-                AgentCoreToolsPlugin.logger.info("\(self.t)\(sliced.count) lines returned")
-            }
-            return output
+            return searchContent(
+                files: filteredFiles,
+                regex: regex,
+                showLineNumbers: showLineNumbers,
+                contextBefore: contextBefore,
+                contextAfter: contextAfter,
+                contextBoth: contextBoth,
+                multiline: multiline,
+                headLimit: headLimit,
+                offset: offset
+            )
 
         case "count":
-            let processed = sliced.map { makePathRelative($0, basePath: searchPath) }
-            var output = processed.joined(separator: "\n")
+            return searchCount(
+                files: filteredFiles,
+                regex: regex,
+                multiline: multiline,
+                headLimit: headLimit,
+                offset: offset
+            )
 
-            // Parse totals
-            var totalMatches = 0
-            var fileCount = 0
-            for line in processed {
-                if let colonIdx = line.lastIndex(of: ":") {
-                    let afterColon = line[line.index(after: colonIdx)...]
-                    if let count = Int(afterColon) {
-                        totalMatches += count
-                        fileCount += 1
-                    }
-                }
-            }
-
-            let summary = "\n\nFound \(totalMatches) total \(totalMatches == 1 ? "occurrence" : "occurrences") across \(fileCount) \(fileCount == 1 ? "file" : "files")."
-            output += summary
-
-            if wasTruncated || offset > 0 {
-                var parts: [String] = []
-                if wasTruncated { parts.append("limit: \(effectiveLimit)") }
-                if offset > 0 { parts.append("offset: \(offset)") }
-                output += " with pagination = \(parts.joined(separator: ", "))"
-            }
-
-            if Self.verbose {
-                AgentCoreToolsPlugin.logger.info("\(self.t)\(totalMatches) matches in \(fileCount) files")
-            }
-            return output
-
-        default: // files_with_matches
-            // Sort by modification time (most recent first)
-            let sorted = sortByModificationTime(sliced)
-            let relative = sorted.map { makePathRelative($0, basePath: searchPath) }
-            let numFiles = relative.count
-
-            var output = "Found \(numFiles) \(numFiles == 1 ? "file" : "files")"
-            if wasTruncated || offset > 0 {
-                var parts: [String] = []
-                if wasTruncated { parts.append("limit: \(effectiveLimit)") }
-                if offset > 0 { parts.append("offset: \(offset)") }
-                output += " \(parts.joined(separator: ", "))"
-            }
-            output += "\n" + relative.joined(separator: "\n")
-
-            if Self.verbose {
-                AgentCoreToolsPlugin.logger.info("\(self.t)\(numFiles) files found")
-            }
-            return output
+        default:
+            return searchFilesWithMatches(
+                files: filteredFiles,
+                regex: regex,
+                multiline: multiline,
+                headLimit: headLimit,
+                offset: offset
+            )
         }
     }
 
-    // MARK: - Helper Methods
+    // MARK: - Search Modes
 
-    /// Run ripgrep with the given arguments.
-    private func runRipgrep(args: [String], path: String) async throws -> String {
-        try await withCheckedThrowingContinuation { continuation in
-            let process = Process()
-            let stdoutPipe = Pipe()
-            let stderrPipe = Pipe()
+    /// files_with_matches 模式：返回包含匹配的文件路径
+    private func searchFilesWithMatches(
+        files: [(absolute: String, relative: String)],
+        regex: NSRegularExpression,
+        multiline: Bool,
+        headLimit: Int?,
+        offset: Int
+    ) -> String {
+        let effectiveLimit = headLimit ?? 250
+        let isUnlimited = headLimit == 0
 
-            // Try to find rg
-            let rgPaths = ["/opt/homebrew/bin/rg", "/usr/local/bin/rg", "/usr/bin/rg"]
-            var rgURL: URL?
-            for p in rgPaths {
-                if FileManager.default.isExecutableFile(atPath: p) {
-                    rgURL = URL(fileURLWithPath: p)
-                    break
-                }
+        var matchedFiles: [(path: String, relative: String)] = []
+
+        for file in files {
+            guard let content = readFileContent(at: file.absolute) else { continue }
+
+            let text = multiline ? content : content
+            let fullRange = NSRange(text.startIndex..., in: text)
+            if regex.firstMatch(in: text, options: [], range: fullRange) != nil {
+                matchedFiles.append((file.absolute, file.relative))
             }
 
-            guard let executableURL = rgURL else {
-                continuation.resume(returning: "Error: ripgrep (rg) is not installed. Install it with: brew install ripgrep")
-                return
-            }
-
-            process.executableURL = executableURL
-            process.arguments = args
-            process.currentDirectoryURL = URL(fileURLWithPath: path)
-            process.standardOutput = stdoutPipe
-            process.standardError = stderrPipe
-
-            process.terminationHandler = { _ in
-                let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-                let output = String(data: stdoutData, encoding: .utf8) ?? ""
-
-                // Check exit code — ripgrep returns 1 for "no matches" (not an error)
-                if process.terminationStatus == 0 || process.terminationStatus == 1 {
-                    continuation.resume(returning: output)
-                } else {
-                    let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
-                    let errorOutput = String(data: stderrData, encoding: .utf8) ?? ""
-                    continuation.resume(returning: "Error from ripgrep (exit \(process.terminationStatus)): \(errorOutput)")
-                }
-            }
-
-            do {
-                try process.run()
-            } catch {
-                continuation.resume(returning: "Error running ripgrep: \(error.localizedDescription)")
-            }
+            if !isUnlimited && matchedFiles.count >= effectiveLimit + offset { break }
         }
-    }
 
-    /// Make absolute paths relative to a base path for readability.
-    private func makePathRelative(_ line: String, basePath: String) -> String {
-        let trimmedBase = basePath.hasSuffix("/") ? basePath : basePath + "/"
-        return line.replacingOccurrences(of: trimmedBase, with: "")
-    }
+        if matchedFiles.isEmpty { return "No files found" }
 
-    /// Sort file paths by modification time (most recent first).
-    private func sortByModificationTime(_ paths: [String]) -> [String] {
+        // 按修改时间排序
         let fm = FileManager.default
-        return paths.sorted { a, b in
-            let mtimeA = (try? fm.attributesOfItem(atPath: a)[.modificationDate] as? Date) ?? .distantPast
-            let mtimeB = (try? fm.attributesOfItem(atPath: b)[.modificationDate] as? Date) ?? .distantPast
+        let sorted = matchedFiles.sorted { a, b in
+            let mtimeA = (try? fm.attributesOfItem(atPath: a.path)[.modificationDate] as? Date) ?? .distantPast
+            let mtimeB = (try? fm.attributesOfItem(atPath: b.path)[.modificationDate] as? Date) ?? .distantPast
             return mtimeA > mtimeB
         }
+
+        // 分页
+        let paginated = isUnlimited
+            ? Array(sorted.dropFirst(offset))
+            : Array(sorted.dropFirst(offset).prefix(effectiveLimit))
+        let wasTruncated = !isUnlimited && sorted.count - offset > effectiveLimit
+
+        let relativePaths = paginated.map(\.relative)
+        let numFiles = relativePaths.count
+
+        var output = "Found \(numFiles) \(numFiles == 1 ? "file" : "files")"
+        var paginationParts: [String] = []
+        if wasTruncated { paginationParts.append("limit: \(effectiveLimit)") }
+        if offset > 0 { paginationParts.append("offset: \(offset)") }
+        if !paginationParts.isEmpty {
+            output += " \(paginationParts.joined(separator: ", "))"
+        }
+        output += "\n" + relativePaths.joined(separator: "\n")
+
+        if Self.verbose {
+            AgentCoreToolsPlugin.logger.info("\(self.t)\(numFiles) files found")
+        }
+        return output
+    }
+
+    /// content 模式：返回匹配的行内容
+    private func searchContent(
+        files: [(absolute: String, relative: String)],
+        regex: NSRegularExpression,
+        showLineNumbers: Bool,
+        contextBefore: Int?,
+        contextAfter: Int?,
+        contextBoth: Int?,
+        multiline: Bool,
+        headLimit: Int?,
+        offset: Int
+    ) -> String {
+        let effectiveLimit = headLimit ?? 250
+        let isUnlimited = headLimit == 0
+        let beforeLines = contextBoth ?? contextBefore ?? 0
+        let afterLines = contextBoth ?? contextAfter ?? 0
+
+        var outputLines: [String] = []
+        var stopped = false
+
+        for file in files {
+            if stopped { break }
+            guard let content = readFileContent(at: file.absolute) else { continue }
+
+            let lines = content.components(separatedBy: "\n")
+            let matches = findMatchingLines(in: lines, regex: regex)
+
+            for matchLineNum in matches {
+                if !isUnlimited && outputLines.count >= effectiveLimit + offset {
+                    stopped = true
+                    break
+                }
+
+                let contextStart = max(0, matchLineNum - beforeLines)
+                let contextEnd = min(lines.count - 1, matchLineNum + afterLines)
+
+                for lineNum in contextStart...contextEnd {
+                    let line = lines[lineNum]
+                    if showLineNumbers {
+                        outputLines.append("\(file.relative):\(lineNum + 1):\(line)")
+                    } else {
+                        outputLines.append("\(file.relative):\(line)")
+                    }
+                }
+
+                // 在不同匹配之间插入分隔（仅在有上下文时）
+                if beforeLines > 0 || afterLines > 0 {
+                    outputLines.append("--")
+                }
+            }
+        }
+
+        if outputLines.isEmpty { return "No matches found." }
+
+        // 移除末尾的 "--" 分隔符
+        if outputLines.last == "--" { outputLines.removeLast() }
+
+        // 分页
+        let paginated = isUnlimited
+            ? Array(outputLines.dropFirst(offset))
+            : Array(outputLines.dropFirst(offset).prefix(effectiveLimit))
+        let wasTruncated = !isUnlimited && outputLines.count - offset > effectiveLimit
+
+        var output = paginated.joined(separator: "\n")
+
+        if wasTruncated || offset > 0 {
+            var parts: [String] = []
+            if wasTruncated { parts.append("limit: \(effectiveLimit)") }
+            if offset > 0 { parts.append("offset: \(offset)") }
+            output += "\n\n[Showing results with pagination = \(parts.joined(separator: ", "))]"
+        }
+
+        if Self.verbose {
+            AgentCoreToolsPlugin.logger.info("\(self.t)\(paginated.count) lines returned")
+        }
+        return output
+    }
+
+    /// count 模式：返回每个文件的匹配数
+    private func searchCount(
+        files: [(absolute: String, relative: String)],
+        regex: NSRegularExpression,
+        multiline: Bool,
+        headLimit: Int?,
+        offset: Int
+    ) -> String {
+        let effectiveLimit = headLimit ?? 250
+        let isUnlimited = headLimit == 0
+
+        var countEntries: [(relative: String, count: Int)] = []
+
+        for file in files {
+            guard let content = readFileContent(at: file.absolute) else { continue }
+
+            let fullRange = NSRange(content.startIndex..., in: content)
+            let matches = regex.matches(in: content, options: [], range: fullRange)
+            if !matches.isEmpty {
+                countEntries.append((file.relative, matches.count))
+            }
+        }
+
+        if countEntries.isEmpty { return "No matches found." }
+
+        // 分页
+        let paginated = isUnlimited
+            ? Array(countEntries.dropFirst(offset))
+            : Array(countEntries.dropFirst(offset).prefix(effectiveLimit))
+        let wasTruncated = !isUnlimited && countEntries.count - offset > effectiveLimit
+
+        let totalMatches = paginated.reduce(0) { $0 + $1.count }
+        let fileCount = paginated.count
+
+        var output = paginated.map { "\($0.relative):\($0.count)" }.joined(separator: "\n")
+        output += "\n\nFound \(totalMatches) total \(totalMatches == 1 ? "occurrence" : "occurrences") across \(fileCount) \(fileCount == 1 ? "file" : "files")."
+
+        if wasTruncated || offset > 0 {
+            var parts: [String] = []
+            if wasTruncated { parts.append("limit: \(effectiveLimit)") }
+            if offset > 0 { parts.append("offset: \(offset)") }
+            output += " with pagination = \(parts.joined(separator: ", "))"
+        }
+
+        if Self.verbose {
+            AgentCoreToolsPlugin.logger.info("\(self.t)\(totalMatches) matches in \(fileCount) files")
+        }
+        return output
+    }
+
+    // MARK: - Single File Search (when path is a file, not directory)
+
+    private func searchSingleFile(
+        at absolutePath: String,
+        relativePath: String,
+        regex: NSRegularExpression,
+        outputMode: String,
+        showLineNumbers: Bool,
+        contextBefore: Int?,
+        contextAfter: Int?,
+        contextBoth: Int?,
+        multiline: Bool,
+        headLimit: Int?,
+        offset: Int
+    ) -> String {
+        guard let content = readFileContent(at: absolutePath) else {
+            return "Error: Cannot read file: \(absolutePath)"
+        }
+
+        let fullRange = NSRange(content.startIndex..., in: content)
+        let matches = regex.matches(in: content, options: [], range: fullRange)
+
+        if matches.isEmpty { return "No matches found." }
+
+        switch outputMode {
+        case "files_with_matches":
+            return "Found 1 file\n\(relativePath)"
+
+        case "count":
+            return "\(relativePath):\(matches.count)\n\nFound \(matches.count) total \(matches.count == 1 ? "occurrence" : "occurrences") across 1 file."
+
+        case "content":
+            let lines = content.components(separatedBy: "\n")
+            let beforeLines = contextBoth ?? contextBefore ?? 0
+            let afterLines = contextBoth ?? contextAfter ?? 0
+            let effectiveLimit = headLimit ?? 250
+            let isUnlimited = headLimit == 0
+
+            // 找出所有匹配行号
+            let matchedLineNums = findMatchingLines(in: lines, regex: regex)
+
+            var outputLines: [String] = []
+            for matchLineNum in matchedLineNums {
+                if !isUnlimited && outputLines.count >= effectiveLimit { break }
+
+                let ctxStart = max(0, matchLineNum - beforeLines)
+                let ctxEnd = min(lines.count - 1, matchLineNum + afterLines)
+
+                for ln in ctxStart...ctxEnd {
+                    let line = lines[ln]
+                    if showLineNumbers {
+                        outputLines.append("\(relativePath):\(ln + 1):\(line)")
+                    } else {
+                        outputLines.append("\(relativePath):\(line)")
+                    }
+                }
+                if beforeLines > 0 || afterLines > 0 {
+                    outputLines.append("--")
+                }
+            }
+
+            if outputLines.last == "--" { outputLines.removeLast() }
+            return outputLines.isEmpty ? "No matches found." : outputLines.joined(separator: "\n")
+
+        default:
+            return "Found 1 file\n\(relativePath)"
+        }
+    }
+
+    // MARK: - Helpers
+
+    /// 读取文件内容，自动处理编码
+    private func readFileContent(at path: String) -> String? {
+        guard let data = try? Data(contentsOf: URL(fileURLWithPath: path)) else { return nil }
+
+        // 尝试 UTF-8
+        if let str = String(data: data, encoding: .utf8) {
+            // 快速检测二进制：检查前 8KB 中是否有 null 字节
+            let checkSize = min(data.count, 8192)
+            let checkData = data.prefix(checkSize)
+            if checkData.contains(where: { $0 == 0 }) { return nil }
+            return str
+        }
+
+        // 尝试 UTF-16
+        if let str = String(data: data, encoding: .utf16LittleEndian) { return str }
+        if let str = String(data: data, encoding: .utf16BigEndian) { return str }
+
+        return nil
+    }
+
+    /// 在行数组中找到所有匹配正则的行号
+    private func findMatchingLines(in lines: [String], regex: NSRegularExpression) -> [Int] {
+        var matchLineNums: [Int] = []
+        for (idx, line) in lines.enumerated() {
+            let range = NSRange(line.startIndex..., in: line)
+            if regex.firstMatch(in: line, options: [], range: range) != nil {
+                matchLineNums.append(idx)
+            }
+        }
+        return matchLineNums
+    }
+
+    /// 判断文件扩展名是否属于二进制文件
+    private func isBinaryExtension(_ ext: String) -> Bool {
+        let binaryExts: Set<String> = [
+            "png", "jpg", "jpeg", "gif", "bmp", "ico", "webp", "svg",
+            "mp3", "mp4", "wav", "avi", "mov", "mkv", "flv", "wmv",
+            "zip", "tar", "gz", "bz2", "xz", "7z", "rar", "dmg", "iso",
+            "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
+            "exe", "dll", "so", "dylib", "o", "a", "lib",
+            "pyc", "pyo", "class", "jar", "war",
+            "woff", "woff2", "ttf", "otf", "eot",
+            "sqlite", "db", "bin", "dat",
+            "nib", "storyboardc", "xib", "xcassets",
+        ]
+        return binaryExts.contains(ext)
     }
 }
