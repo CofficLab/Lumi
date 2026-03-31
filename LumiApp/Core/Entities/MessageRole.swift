@@ -1,6 +1,7 @@
 import Foundation
 
 public enum MessageRole: String, Codable, Sendable {
+    /// 用户消息，展示在聊天中，会发送给 LLM
     case user
     case assistant
     /// 系统消息，不展示在聊天中，发送给 LLM，适合放系统级提示词
