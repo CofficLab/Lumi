@@ -21,6 +21,12 @@ actor BackgroundAgentTaskPlugin: SuperPlugin, SuperLog {
 
     static let shared = BackgroundAgentTaskPlugin()
 
+    // MARK: - 全局配置
+
+    /// 全局 LLM 配置（由 RootView 从 Environment 同步）
+    private var globalProviderId: String = ""
+    private var globalModel: String = ""
+
     // MARK: - 协调器状态
 
     private var worker: BackgroundAgentTaskWorker?
@@ -129,6 +135,31 @@ actor BackgroundAgentTaskPlugin: SuperPlugin, SuperLog {
         if Self.verbose {
             Self.logger.info("\(self.t) 事件监听已移除")
         }
+    }
+
+    // MARK: - 根视图
+
+    /// 提供根视图包裹器，用于从 Environment 同步 LLM 配置
+    @MainActor
+    func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
+        AnyView(BackgroundTaskConfigRootView(content: content()))
+    }
+
+    // MARK: - 配置管理
+
+    /// 设置全局 LLM 配置（由 RootView 调用）
+    func setGlobalConfig(providerId: String, model: String) {
+        globalProviderId = providerId
+        globalModel = model
+
+        if Self.verbose {
+            Self.logger.info("\(self.t)⚙️ 全局配置已更新：\(providerId) - \(model)")
+        }
+    }
+
+    /// 获取全局 LLM 配置（由 Worker 调用）
+    func getGlobalConfig() -> (providerId: String, model: String) {
+        (globalProviderId, globalModel)
     }
 
     // MARK: - Agent 工具

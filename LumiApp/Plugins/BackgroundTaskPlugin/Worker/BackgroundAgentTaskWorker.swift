@@ -202,8 +202,8 @@ actor BackgroundAgentTaskWorker {
     // MARK: - Task Execution Logic
 
     private func performTaskLogic(taskId: UUID, prompt: String) async throws -> String {
-        // 获取 LLM 配置
-        let config = makeCurrentLLMConfig()
+        // 获取 LLM 配置（从插件的全局配置读取）
+        let config = await makeCurrentLLMConfig()
         
         // 准备服务
         let llmService = LLMService()
@@ -303,7 +303,38 @@ actor BackgroundAgentTaskWorker {
 
     // MARK: - LLM Configuration
 
-    private func makeCurrentLLMConfig() -> LLMConfig {
+    /// 从插件的全局配置获取 LLM 配置
+    /// 配置由 BackgroundTaskConfigRootView 从 Environment 同步
+    private func makeCurrentLLMConfig() async -> LLMConfig {
+        // 从插件获取全局配置
+        let plugin = BackgroundAgentTaskPlugin.shared
+        let (providerId, model) = await plugin.getGlobalConfig()
+
+        // 如果有全局配置，使用它
+        if !providerId.isEmpty, !model.isEmpty {
+            let registry = LLMProviderRegistry()
+            LLMProviderRegistration.registerAllProviders(to: registry)
+
+            guard let providerType = registry.providerType(forId: providerId) else {
+                AppLogger.core.warning("🧵 未知的供应商 ID: \(providerId)，使用默认配置")
+                return .default
+            }
+
+            let apiKey = APIKeyStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
+
+            return LLMConfig(
+                apiKey: apiKey,
+                model: model,
+                providerId: providerId
+            )
+        }
+
+        // 如果没有全局配置，回退到旧逻辑（从 LocalStore 读取）
+        return await makeFallbackLLMConfig()
+    }
+
+    /// 回退配置逻辑：从 LocalStore 读取或使用默认值
+    private func makeFallbackLLMConfig() async -> LLMConfig {
         let registry = LLMProviderRegistry()
         LLMProviderRegistration.registerAllProviders(to: registry)
 
