@@ -52,22 +52,77 @@ enum DBConfig {
         }
     }
     
+    // MARK: - Version Management
+    
+    /// 获取应用版本号
+    ///
+    /// 从 Bundle 中读取 CFBundleShortVersionString（如 "1.2.3"）。
+    /// 如果读取失败，返回 "1.0" 作为默认版本。
+    ///
+    /// - Returns: 版本号字符串
+    static func getAppVersion() -> String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+        return version ?? "1.0"
+    }
+    
+    /// 获取主版本号（Major Version）
+    ///
+    /// 从版本号中提取主版本号。
+    /// 例如：
+    /// - "1.0" -> 1
+    /// - "1.2.3" -> 1
+    /// - "2.0" -> 2
+    ///
+    /// - Parameter version: 完整版本号
+    /// - Returns: 主版本号
+    private static func getMajorVersion(from version: String) -> Int {
+        let components = version.split(separator: ".")
+        guard let major = Int(components.first ?? "1") else {
+            return 1
+        }
+        return major
+    }
+    
+    /// 将版本号转换为数据库目录后缀
+    ///
+    /// 规则：只使用主版本号，同一主版本的所有子版本共享数据库
+    /// - "1.x" -> "v1"
+    /// - "1.0" -> "v1"
+    /// - "1.2.3" -> "v1"
+    /// - "2.0" -> "v2"
+    /// - "2.1.5" -> "v2"
+    ///
+    /// - Parameter version: 版本号字符串
+    /// - Returns: 带有 "v" 前缀的主版本号
+    private static func getVersionSuffix(from version: String) -> String {
+        let majorVersion = getMajorVersion(from: version)
+        return "v\(majorVersion)"
+    }
+    
     // MARK: - Database Paths
     
     /// 获取数据库文件夹目录（应用主库与插件子目录的根目录）
     ///
-    /// 路径格式：
-    /// - Debug: `~/Library/Application Support/com.cofficlab.Lumi/db_debug`
-    /// - Release: `~/Library/Application Support/com.cofficlab.Lumi/db_production`
+    /// 路径格式（带主版本号）：
+    /// - Debug: `~/Library/Application Support/com.cofficlab.Lumi/db_debug_v1`
+    /// - Release: `~/Library/Application Support/com.cofficlab.Lumi/db_production_v2`
+    ///
+    /// 版本号规则：使用主版本号，同一主版本的所有子版本共享数据库
+    /// - 版本 1.x（包括 1.0, 1.1, 1.2...）都使用 v1 目录
+    /// - 版本 2.x（包括 2.0, 2.1, 2.2...）都使用 v2 目录
     ///
     /// - Returns: 数据库目录的 URL
     static func getDBFolderURL() -> URL {
         let appSupport = getAppSupportDirectory()
         
+        // 获取应用版本号并提取主版本号
+        let version = getAppVersion()
+        let versionSuffix = getVersionSuffix(from: version)
+        
         #if DEBUG
-        let dbDirectoryName = "db_debug"
+        let dbDirectoryName = "db_debug_\(versionSuffix)"
         #else
-        let dbDirectoryName = "db_production"
+        let dbDirectoryName = "db_production_\(versionSuffix)"
         #endif
         
         let dbDirectory = appSupport.appendingPathComponent(dbDirectoryName, isDirectory: true)
@@ -169,17 +224,23 @@ extension DBConfig {
         let coreFolderURL: URL
         let dbSizeInBytes: Int64
         let dbSizeFormatted: String
+        let appVersion: String
+        let majorVersion: Int
+        let dbVersionSuffix: String
     }
     
     /// 获取数据库信息
     ///
-    /// 返回数据库文件的路径、大小等信息。
+    /// 返回数据库文件的路径、大小、版本等信息。
     ///
     /// - Returns: 数据库信息对象
     static func getDatabaseInfo() -> DatabaseInfo {
         let dbFileURL = getDBFileURL()
         let dbFolderURL = getDBFolderURL()
         let coreFolderURL = getCoreDBFolderURL()
+        let appVersion = getAppVersion()
+        let majorVersion = getMajorVersion(from: appVersion)
+        let dbVersionSuffix = getVersionSuffix(from: appVersion)
         
         // 获取文件大小
         let attributes = try? FileManager.default.attributesOfItem(atPath: dbFileURL.path)
@@ -191,24 +252,10 @@ extension DBConfig {
             dbFolderURL: dbFolderURL,
             coreFolderURL: coreFolderURL,
             dbSizeInBytes: dbSizeInBytes,
-            dbSizeFormatted: dbSizeFormatted
+            dbSizeFormatted: dbSizeFormatted,
+            appVersion: appVersion,
+            majorVersion: majorVersion,
+            dbVersionSuffix: dbVersionSuffix
         )
-    }
-    
-    /// 打印数据库信息（用于调试）
-    static func printDatabaseInfo() {
-        let info = getDatabaseInfo()
-        
-        // 获取文件名的最后3个组件
-        let pathComponents = info.dbFileURL.path.components(separatedBy: "/")
-        let fileName = pathComponents.suffix(3).joined(separator: "/")
-        
-        print("╔════════════════════════════════════════╗")
-        print("║        Lumi Database Information       ║")
-        print("╠════════════════════════════════════════╣")
-        print("║ File:    \(fileName)")
-        print("║ Size:    \(info.dbSizeFormatted)")
-        print("║ Path:    \(info.dbFolderURL.path)")
-        print("╚════════════════════════════════════════╝")
     }
 }
