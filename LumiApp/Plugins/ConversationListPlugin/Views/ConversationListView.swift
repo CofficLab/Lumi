@@ -12,6 +12,10 @@ struct ConversationListView: View, SuperLog {
 
     /// 会话管理 ViewModel
     @EnvironmentObject var conversationVM: ConversationVM
+    
+    /// 项目管理 ViewModel
+    @EnvironmentObject var projectVM: ProjectVM
+    
     private let selectionStore = ConversationListLocalStore.shared
 
     /// 当前页已加载的会话
@@ -212,11 +216,15 @@ extension ConversationListView {
         didRestoreSelection = true
 
         guard let storedId = selectionStore.loadSelectedConversationId(),
-              conversationVM.fetchConversation(id: storedId) != nil else {
+              let conversation = conversationVM.fetchConversation(id: storedId) else {
             return
         }
 
         conversationVM.setSelectedConversation(storedId)
+        
+        // 恢复会话选择时，也切换到关联的项目
+        switchToProjectIfNeeded(for: conversation)
+        
         if Self.verbose {
             ConversationListPlugin.logger.info("\(self.t)✅ [\(storedId)] 从插件存储恢复会话选择")
         }
@@ -314,6 +322,42 @@ extension ConversationListView {
             }
         }
     }
+
+    /// 如果会话关联了项目，切换到该项目
+    /// - Parameter conversation: 选中的会话
+    private func switchToProjectIfNeeded(for conversation: Conversation) {
+        guard let projectId = conversation.projectId else {
+            if Self.verbose {
+                ConversationListPlugin.logger.info("\(self.t)📁 会话「\(conversation.title)」未关联项目")
+            }
+            return
+        }
+        
+        // 检查项目路径是否有效
+        let projectPath = projectId
+        guard FileManager.default.fileExists(atPath: projectPath) else {
+            ConversationListPlugin.logger.warning("\(self.t)⚠️ 会话关联的项目不存在：\(projectPath)")
+            return
+        }
+        
+        // 检查当前项目是否已经是目标项目
+        if projectVM.currentProject?.path == projectPath {
+            if Self.verbose {
+                ConversationListPlugin.logger.info("\(self.t)✅ 已是当前项目，无需切换：\(projectPath)")
+            }
+            return
+        }
+        
+        // 创建 Project 对象并切换
+        let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
+        let project = Project(name: projectName, path: projectPath, lastUsed: Date())
+        
+        projectVM.switchProject(to: project)
+        
+        if Self.verbose {
+            ConversationListPlugin.logger.info("\(self.t)🔄 已切换到项目：\(projectName) (\(projectPath))")
+        }
+    }
 }
 
 // MARK: - Event Handler
@@ -342,6 +386,11 @@ extension ConversationListView {
                 ConversationListPlugin.logger.info("\(self.t)👉 [\(newId)] 从 List 选择会话")
             }
             self.conversationVM.setSelectedConversation(newId)
+            
+            // 选择会话时，切换到关联的项目
+            if let conversation = conversations.first(where: { $0.id == newId }) {
+                switchToProjectIfNeeded(for: conversation)
+            }
         } else {
             if Self.verbose {
                 ConversationListPlugin.logger.info("\(self.t)👉 清除会话选择")

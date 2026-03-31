@@ -8,6 +8,7 @@
 
 - **分页加载**：使用分页方式渲染会话列表，避免一次性加载全部历史记录
 - **会话选择**：支持选中特定会话，并在应用重启后恢复选择状态
+- **自动切换项目**：选择关联了项目的会话时，自动将当前项目切换到该会话关联的项目
 - **会话删除**：右键菜单删除会话，带确认对话框
 - **实时同步**：通过 `NotificationCenter` 监听会话变更，增量更新列表
 - **折叠面板**：支持折叠/展开侧边栏
@@ -39,6 +40,7 @@ ConversationListPlugin/
 ┌─────────────────────┐
 │  ConversationListView                   主视图
 │  ├─ @EnvironmentObject ConversationVM  从内核获取会话数据
+│  ├─ @EnvironmentObject ProjectVM       从内核获取/设置当前项目
 │  ├─ ConversationListLocalStore         持久化选中状态
 │  └─ 分页加载逻辑                         每页 40 条
 └─────────────────────┘
@@ -75,13 +77,16 @@ ConversationListPlugin/
 
 ### ConversationListView
 
-- **职责**：主列表视图，管理分页加载、选择状态同步
+- **职责**：主列表视图，管理分页加载、选择状态同步、项目切换
 - **分页大小**：每页 40 条记录
 - **状态管理**：
   - `conversations`: 当前页已加载的会话
   - `localSelectedConversationId`: 本地选择的会话 ID
   - `nextOffset`: 下一页偏移量
   - `hasMore`: 是否还有更多数据
+- **核心功能**：
+  - 选择会话时自动切换到关联的项目（`switchToProjectIfNeeded`）
+  - 恢复会话选择时同时恢复项目关联
 
 ### ConversationItemView
 
@@ -102,6 +107,26 @@ ConversationListPlugin/
 - **数据迁移**：支持从旧版本 `app_settings` 迁移数据
 
 ## 事件流
+
+### 会话选择（含项目切换）
+```
+用户点击会话
+    ↓
+localSelectedConversationId 改变
+    ↓
+handleLocalSelectionChange()
+    ↓
+conversationVM.setSelectedConversation()
+    ↓
+switchToProjectIfNeeded(for: conversation)
+    ↓
+if conversation.projectId != nil:
+    ├─ 检查项目路径是否存在
+    ├─ 检查是否已是当前项目
+    └─ projectVM.switchProject(to: project)
+    ↓
+ConversationListLocalStore.saveSelectedConversationId() - 持久化
+```
 
 ### 会话创建
 ```
@@ -127,18 +152,54 @@ NotificationCenter (.conversationDidChange)
 handleConversationDeleted() - 确保同步
 ```
 
-### 会话选择
-```
-用户点击会话
-    ↓
-localSelectedConversationId 改变
-    ↓
-handleLocalSelectionChange()
-    ↓
-conversationVM.setSelectedConversation()
-    ↓
-ConversationListLocalStore.saveSelectedConversationId() - 持久化
-```
+## 核心功能：项目自动切换
+
+### 功能说明
+
+当用户选择一个关联了项目的会话时，插件会自动将当前项目切换到该会话关联的项目。
+
+### 实现逻辑
+
+1. **触发时机**：
+   - 用户点击会话项时（`handleLocalSelectionChange`）
+   - 应用重启后恢复会话选择时（`restoreSelectionFromPluginStoreIfNeeded`）
+
+2. **切换条件**：
+   - 会话的 `projectId` 不为 `nil`
+   - 项目路径在文件系统中存在
+   - 项目路径与当前项目不同
+
+3. **切换流程**：
+   ```swift
+   switchToProjectIfNeeded(for: conversation) {
+       // 1. 检查会话是否关联项目
+       guard let projectId = conversation.projectId else { return }
+       
+       // 2. 验证项目路径存在
+       guard FileManager.default.fileExists(atPath: projectId) else { return }
+       
+       // 3. 避免重复切换
+       guard projectVM.currentProject?.path != projectId else { return }
+       
+       // 4. 创建 Project 对象并切换
+       let project = Project(name: projectName, path: projectId)
+       projectVM.switchProject(to: project)
+   }
+   ```
+
+### 用户体验
+
+- **无缝切换**：选择会话的同时自动切换项目，无需手动操作
+- **智能判断**：只在必要时切换，避免不必要的项目切换
+- **容错处理**：项目路径不存在时记录警告但不影响会话选择
+- **状态恢复**：应用重启后恢复会话时同时恢复项目关联
+
+### 注意事项
+
+1. **项目关联**：会话的 `projectId` 字段存储项目路径（`String?`）
+2. **路径验证**：切换前会检查项目路径是否存在
+3. **避免循环**：检查当前项目是否已经是目标项目
+4. **日志记录**：详细记录项目切换过程，便于调试
 
 ## 注意事项
 
@@ -146,15 +207,21 @@ ConversationListLocalStore.saveSelectedConversationId() - 持久化
 2. **状态同步**：通过 `onChange` 和 `NotificationCenter` 确保本地状态与内核 `ConversationVM` 同步
 3. **时间量化**：`coarseRelativeTime` 函数将时间量化显示，减少 UI 频繁跳变
 4. **数据迁移**：首次运行时从旧版本 `app_settings` 迁移选中状态
+5. **项目切换**：选择会话时自动切换到关联的项目，提升用户体验
 
 ## 依赖关系
 
-- **MagicKit**: 提供内核能力（`ConversationVM`、`AppConfig` 等）
+- **MagicKit**: 提供内核能力（`ConversationVM`、`ProjectVM`、`AppConfig` 等）
 - **SwiftUI**: UI 框架
 - **SwiftData**: 会话数据模型
 - **Foundation**: 文件存储、并发控制
 
 ## 版本历史
+
+### v1.1.0
+- ✨ 新增：选择会话时自动切换到关联的项目
+- ✨ 新增：应用重启后恢复会话时同时恢复项目关联
+- 📝 更新：README 文档，说明项目自动切换功能
 
 ### v1.0.0
 - 初始版本
