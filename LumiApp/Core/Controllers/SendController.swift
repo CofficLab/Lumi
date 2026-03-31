@@ -66,9 +66,7 @@ final class SendController: ObservableObject, SuperLog {
         // 用户主动取消后，补一条系统消息落库（不参与 LLM 上下文）。
         guard shouldPersistCancelMessage else { return }
         let systemMessage = ChatMessage(role: .system, conversationId: conversationId, content: "用户主动取消了对话")
-        Task { @MainActor in
-            await container.conversationVM.saveMessage(systemMessage, to: conversationId)
-        }
+        container.conversationVM.saveMessage(systemMessage, to: conversationId)
     }
 
     /// 结束当前「发送队列」对应的一轮处理。
@@ -90,7 +88,7 @@ final class SendController: ObservableObject, SuperLog {
             container.messagePendingVM.appendMessage(message)
         }
 
-        await container.conversationVM.saveMessage(message, to: conversationId)
+        container.conversationVM.saveMessage(message, to: conversationId)
 
         // 创建发送上下文
         let ctx = SendMessageContext(
@@ -210,7 +208,7 @@ final class SendController: ObservableObject, SuperLog {
             message.toolCalls = calls
         }
 
-        await container.conversationVM.saveMessage(message, to: conversationId)
+        container.conversationVM.saveMessage(message, to: conversationId)
 
         if message.hasToolCalls {
             await send(conversationId: conversationId)
@@ -360,7 +358,7 @@ final class SendController: ObservableObject, SuperLog {
                     isError: true
                 )
             }
-            await container.conversationVM.saveMessage(errorMessage, to: conversationId)
+            container.conversationVM.saveMessage(errorMessage, to: conversationId)
         }
     }
 
@@ -413,7 +411,7 @@ final class SendController: ObservableObject, SuperLog {
                 resultMsg = container.toolExecutionService.createErrorMessage(for: toolCall, error: error, conversationId: conversationId)
             }
 
-            await container.conversationVM.saveMessage(resultMsg, to: conversationId)
+            container.conversationVM.saveMessage(resultMsg, to: conversationId)
         }
     }
 }

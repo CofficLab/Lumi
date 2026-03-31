@@ -43,6 +43,8 @@ extension ChatHistoryService {
         )
 
         if let existingEntity = try? context.fetch(existingDescriptor).first {
+            AppLogger.core.warning("\(Self.t)⚠️ 检测到相同 ID 的消息已存在: \(message.id)")
+            
             existingEntity.apply(from: message)
             existingEntity.conversation = fetchedConversation
             fetchedConversation.updatedAt = Date()
@@ -51,6 +53,7 @@ extension ChatHistoryService {
                 try context.save()
                 let updated = existingEntity.toChatMessage()
                 if let updated {
+                    AppLogger.core.info("\(Self.t)✅ 同步 ID 消息已更新: \(message.id)")
                     NotificationCenter.postMessageSaved(message: updated, conversationId: fetchedConversation.id)
                 }
                 return updated
@@ -70,6 +73,7 @@ extension ChatHistoryService {
         do {
             try context.save()
             if let savedMessage = messageEntity.toChatMessage() {
+                AppLogger.core.debug("\(Self.t)💾 新消息已保存: \(message.id)")
                 NotificationCenter.postMessageSaved(message: savedMessage, conversationId: fetchedConversation.id)
                 return savedMessage
             }
