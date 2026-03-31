@@ -18,7 +18,7 @@ struct BackgroundAgentTaskStatusBarView: View {
                 Image(systemName: "clock.arrow.circlepath")
                     .font(.system(size: 11))
                     // 运行中图标保留蓝色以区分状态
-                    .foregroundColor(runningCount > 0 ? .blue : .gray)
+                    .foregroundColor(runningCount > 0 ? .blue : .white)
 
                 if runningCount > 0 {
                     Text("\(runningCount)")
