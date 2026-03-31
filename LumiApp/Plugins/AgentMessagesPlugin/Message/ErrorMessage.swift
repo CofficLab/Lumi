@@ -69,7 +69,7 @@ struct ErrorMessage: View {
     private var specialErrorView: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top, spacing: 8) {
-                errorIcon
+                ErrorIconView(size: 16, weight: .medium)
                 errorContent
             }
         }
@@ -86,7 +86,7 @@ struct ErrorMessage: View {
     private var defaultErrorView: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top, spacing: 8) {
-                errorIcon
+                ErrorIconView(size: 16, weight: .medium)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(titleText)
                         .font(AppUI.Typography.callout)
@@ -104,14 +104,6 @@ struct ErrorMessage: View {
                 }
             }
         }
-    }
-
-    // MARK: - Error Icon
-
-    private var errorIcon: some View {
-        Image(systemName: "exclamationmark.triangle.fill")
-            .font(.system(size: 16, weight: .medium))
-            .foregroundColor(AppUI.Color.semantic.error)
     }
 
     // MARK: - Error Content
@@ -240,231 +232,5 @@ struct ErrorMessage: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss"
         return formatter.string(for: date) ?? ""
-    }
-}
-
-// MARK: - API Key Missing Error View
-
-/// 当当前供应商未配置 API Key 时，在错误消息中渲染的专用视图。
-/// 提供一个简化的「生成式 UI」卡片，支持直接为当前会话所用的供应商填写 API Key。
-private struct ApiKeyMissingErrorView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
-    @EnvironmentObject private var agentSessionConfig: LLMVM
-    @EnvironmentObject private var providerRegistry: LLMProviderRegistry
-
-    let message: ChatMessage
-
-    @State private var currentProviderId: String = ""
-    @State private var apiKey: String = ""
-
-    private var languagePreference: LanguagePreference {
-        projectVM.languagePreference
-    }
-
-    private var titleText: String {
-        switch languagePreference {
-        case .chinese:
-            return "当前未配置 API Key"
-        case .english:
-            return "API Key is not configured"
-        }
-    }
-
-    private var descriptionText: String {
-        switch languagePreference {
-        case .chinese:
-            return "请为你要使用的 LLM 供应商填写 API Key。配置完成后，可以重新发送本轮请求。"
-        case .english:
-            return "Please provide API keys for the LLM providers you want to use. After configuration, you can resend your request."
-        }
-    }
-
-    private var currentProvider: LLMProviderInfo? {
-        providerRegistry.allProviders().first(where: { $0.id == currentProviderId })
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // 错误图标和标题
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(AppUI.Color.semantic.error)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(titleText)
-                        .font(AppUI.Typography.callout)
-                        .fontWeight(.semibold)
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
-
-                    Text(descriptionText)
-                        .font(AppUI.Typography.caption1)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
-                }
-            }
-
-            // 当前会话所用供应商的 API Key 输入
-            if let provider = currentProvider {
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 6) {
-                        Text(provider.displayName)
-                            .font(AppUI.Typography.caption1)
-                        Spacer()
-                    }
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
-
-                    AppInputField(
-                        LocalizedStringKey(
-                            languagePreference == .chinese
-                                ? "输入 \(provider.displayName) 的 API Key"
-                                : "Enter API Key for \(provider.displayName)"
-                        ),
-                        text: Binding(
-                            get: { apiKey },
-                            set: { newValue in
-                                apiKey = newValue
-                                saveApiKey(newValue)
-                            }
-                        ),
-                        fieldType: .secure
-                    )
-                }
-                .padding(.vertical, 2)
-            }
-        }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 12)
-        .onAppear {
-            initializeProviderAndApiKey()
-        }
-        .onChange(of: message.providerId) { _, newProviderId in
-            // 当错误消息的 providerId 发生变化时，重新初始化
-            if let newProviderId = newProviderId, !newProviderId.isEmpty {
-                currentProviderId = newProviderId
-                reloadApiKeyFromKeychain()
-            }
-        }
-    }
-
-    /// 初始化供应商 ID 和 API Key
-    private func initializeProviderAndApiKey() {
-        // 优先使用错误消息中保存的 providerId
-        if let messageProviderId = message.providerId, !messageProviderId.isEmpty {
-            currentProviderId = messageProviderId
-        } else {
-            // 如果错误消息中没有 providerId，则使用当前全局配置
-            let config = agentSessionConfig.getCurrentConfig()
-            currentProviderId = config.providerId
-        }
-
-        // 从 Keychain 重新加载 API Key
-        reloadApiKeyFromKeychain()
-    }
-
-    /// 从 Keychain 重新加载 API Key
-    private func reloadApiKeyFromKeychain() {
-        apiKey = agentSessionConfig.getApiKey(for: currentProviderId)
-    }
-
-    /// 保存 API Key 到 Keychain
-    private func saveApiKey(_ newValue: String) {
-        agentSessionConfig.setApiKey(newValue, for: currentProviderId)
-
-        // 保存后立即重新加载，确保 UI 显示的是最新保存的值
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [self] in
-            apiKey = agentSessionConfig.getApiKey(for: currentProviderId)
-        }
-    }
-}
-
-// MARK: - LLM Inline Config Error View
-
-/// `LLMServiceError` 转为错误消息后的专用说明（占位键由 `ChatMessage` 定义）。
-private struct LLMInlineConfigErrorView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
-
-    let message: ChatMessage
-
-    private var zh: Bool {
-        projectVM.languagePreference == .chinese
-    }
-
-    private var titleText: String {
-        let c = message.content
-        if c == ChatMessage.llmModelEmptyContentKey {
-            return zh ? "模型未填写" : "Model is empty"
-        }
-        if c == ChatMessage.llmProviderIdEmptyContentKey {
-            return zh ? "供应商未选择" : "Provider is not set"
-        }
-        if c == ChatMessage.llmTemperatureInvalidContentKey {
-            return zh ? "温度参数无效" : "Invalid temperature"
-        }
-        if c == ChatMessage.llmMaxTokensInvalidContentKey {
-            return zh ? "最大 token 无效" : "Invalid max tokens"
-        }
-        if c == ChatMessage.llmProviderNotFoundContentKey {
-            return zh ? "找不到供应商" : "Provider not found"
-        }
-        if c.hasPrefix(ChatMessage.llmInvalidBaseURLContentKey) {
-            return zh ? "Base URL 无效" : "Invalid Base URL"
-        }
-        return zh ? "配置错误" : "Configuration error"
-    }
-
-    private var detailText: String {
-        let c = message.content
-        if c == ChatMessage.llmTemperatureInvalidContentKey, let t = message.temperature {
-            return zh
-                ? "温度应在 0～2 之间，当前为 \(t)。"
-                : "Temperature must be between 0 and 2; current value is \(t)."
-        }
-        if c == ChatMessage.llmMaxTokensInvalidContentKey, let m = message.maxTokens {
-            return zh
-                ? "最大 token 数应大于 0，当前为 \(m)。"
-                : "Max tokens must be greater than 0; current value is \(m)."
-        }
-        if c == ChatMessage.llmProviderNotFoundContentKey, let id = message.providerId, !id.isEmpty {
-            return zh
-                ? "注册表中没有 ID 为「\(id)」的供应商实现。"
-                : "No provider implementation registered for id \"\(id)\"."
-        }
-        if c.hasPrefix(ChatMessage.llmInvalidBaseURLContentKey) {
-            if let raw = ChatMessage.llmInvalidBaseURLPayload(fromContent: c), !raw.isEmpty {
-                return zh ? "无法解析为有效 URL：\(raw)" : "Cannot parse as a valid URL: \(raw)"
-            }
-            return zh ? "供应商返回的 Base URL 无法解析。" : "The provider's Base URL cannot be parsed."
-        }
-        if c == ChatMessage.llmModelEmptyContentKey {
-            return zh ? "请选择或填写模型名称后再发送。" : "Choose or enter a model name before sending."
-        }
-        if c == ChatMessage.llmProviderIdEmptyContentKey {
-            return zh ? "请选择 LLM 供应商。" : "Select an LLM provider."
-        }
-        return ""
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 14))
-                    .foregroundColor(AppUI.Color.semantic.error)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(titleText)
-                        .font(AppUI.Typography.callout)
-                        .fontWeight(.semibold)
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
-                    if !detailText.isEmpty {
-                        Text(detailText)
-                            .font(AppUI.Typography.caption1)
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 12)
     }
 }
