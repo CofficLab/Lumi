@@ -1,13 +1,13 @@
 import MagicKit
-import SwiftUI
 import os
+import SwiftUI
 
-/// 最近项目持久化插件
-/// 负责保存和恢复最近使用的项目列表，提供当前项目管理工具，并在侧边栏显示最近项目
+/// 最近项目插件
+/// 负责保存和恢复最近使用的项目列表，提供当前项目管理工具，在侧边栏显示最近项目，以及在头部显示项目选择器
 actor RecentProjectsPlugin: SuperPlugin {
     /// 插件专用 Logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.recent-projects")
-    
+
     nonisolated static let emoji = "📋"
     nonisolated static let verbose = false
 
@@ -17,6 +17,9 @@ actor RecentProjectsPlugin: SuperPlugin {
     static let iconName = "clock.arrow.circlepath"
     static var order: Int { 10 }
     static let enable: Bool = true
+
+    /// 用户可在设置中启用/禁用此插件
+    static var isConfigurable: Bool { false }
 
     static let shared = RecentProjectsPlugin()
 
@@ -30,10 +33,14 @@ actor RecentProjectsPlugin: SuperPlugin {
     }
 
     @MainActor
-    func addRightHeaderLeadingView() -> AnyView? { nil }
+    func addRightHeaderLeadingView() -> AnyView? {
+        AnyView(ChatHeaderLeadingView())
+    }
 
     @MainActor
-    func addRightHeaderTrailingItems() -> [AnyView] { [] }
+    func addRightHeaderTrailingItems() -> [AnyView] {
+        [AnyView(ProjectButton())]
+    }
 
     @MainActor
     func agentTools() -> [AgentTool] {
@@ -43,6 +50,11 @@ actor RecentProjectsPlugin: SuperPlugin {
             SetCurrentProjectTool(),
             AddProjectTool(),
         ]
+    }
+
+    @MainActor
+    func sendMiddlewares() -> [AnySendMiddleware] {
+        []
     }
 
     // MARK: - Sidebar View

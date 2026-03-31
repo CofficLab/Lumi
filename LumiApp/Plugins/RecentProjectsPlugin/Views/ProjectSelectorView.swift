@@ -17,7 +17,7 @@ struct ProjectSelectorView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text(String(localized: "Select Project", table: "AgentProjectHeader"))
+                Text(String(localized: "Select Project", table: "RecentProjects"))
                     .font(AppUI.Typography.bodyEmphasized)
                     .foregroundColor(AppUI.Color.semantic.textPrimary)
 
@@ -46,7 +46,7 @@ struct ProjectSelectorView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     // Current Project Section
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(String(localized: "Current Project", table: "AgentProjectHeader"))
+                        Text(String(localized: "Current Project", table: "RecentProjects"))
                             .font(.subheadline)
                             .fontWeight(.medium)
                             .foregroundColor(AppUI.Color.semantic.textSecondary)
@@ -59,7 +59,7 @@ struct ProjectSelectorView: View {
                     // Recent Projects Section
                     if !recentProjects.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(String(localized: "Recent Projects", table: "AgentProjectHeader"))
+                            Text(String(localized: "Recent Projects", table: "RecentProjects"))
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                                 .foregroundColor(AppUI.Color.semantic.textSecondary)
@@ -73,7 +73,7 @@ struct ProjectSelectorView: View {
 
                     // Browse Section
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(String(localized: "Browse", table: "AgentProjectHeader"))
+                        Text(String(localized: "Browse", table: "RecentProjects"))
                             .font(.subheadline)
                             .fontWeight(.medium)
                             .foregroundColor(AppUI.Color.semantic.textSecondary)
@@ -111,12 +111,12 @@ struct ProjectSelectorView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(projectVM.currentProjectName.isEmpty ? String(localized: "No Project Selected", table: "AgentProjectHeader") : projectVM.currentProjectName)
+                    Text(projectVM.currentProjectName.isEmpty ? String(localized: "No Project Selected", table: "RecentProjects") : projectVM.currentProjectName)
                         .font(.body)
                         .fontWeight(.medium)
                         .foregroundColor(AppUI.Color.semantic.textPrimary)
 
-                    Text(projectVM.currentProjectPath.isEmpty ? String(localized: "Click Browse Below", table: "AgentProjectHeader") : projectVM.currentProjectPath)
+                    Text(projectVM.currentProjectPath.isEmpty ? String(localized: "Click Browse Below", table: "RecentProjects") : projectVM.currentProjectPath)
                         .font(.caption)
                         .foregroundColor(AppUI.Color.semantic.textTertiary)
                         .lineLimit(2)
@@ -136,7 +136,7 @@ struct ProjectSelectorView: View {
                             .symbolRenderingMode(.hierarchical)
                     }
                     .buttonStyle(.plain)
-                    .help(String(localized: "Clear Project Selection", table: "AgentProjectHeader"))
+                    .help(String(localized: "Clear Project Selection", table: "RecentProjects"))
                 }
             }
         }
@@ -211,7 +211,7 @@ struct ProjectSelectorView: View {
                     .font(.system(size: 20))
                     .foregroundColor(.accentColor)
 
-                Text(String(localized: "Select New Project", table: "AgentProjectHeader"))
+                Text(String(localized: "Select New Project", table: "RecentProjects"))
                     .font(.body)
                     .foregroundColor(AppUI.Color.semantic.textPrimary)
 
@@ -282,7 +282,7 @@ extension ProjectSelectorView {
                 }
             }
         case .failure(let error):
-            AgentProjectHeaderPlugin.logger.error("File import 错误：\(error.localizedDescription)")
+            RecentProjectsPlugin.logger.error("File import 错误：\(error.localizedDescription)")
         }
     }
 }
