@@ -127,7 +127,7 @@ final class SendController: ObservableObject, SuperLog {
             return
         }
         // 允许系统/状态消息插入到尾部，但不应中断发送闭环。
-        // 这里选择“最后一条可驱动消息”（user/tool/assistant）作为状态机输入。
+        // 这里选择"最后一条可驱动消息"（user/tool/assistant）作为状态机输入。
         guard let last = messages.last(where: { $0.role != .system && $0.role != .status }) else {
             if Self.verbose > 1 {
                 AppLogger.core.info("\(Self.t) 没有可驱动消息")
@@ -352,7 +352,8 @@ final class SendController: ObservableObject, SuperLog {
             // 保存错误消息到数据库
             let errorMessage: ChatMessage
             if let llmError = error as? LLMServiceError {
-                errorMessage = llmError.toChatMessage(conversationId: conversationId)
+                // 传递 providerId，以便在 API Key 缺失错误中显示正确的供应商
+                errorMessage = llmError.toChatMessage(conversationId: conversationId, providerId: config.providerId)
             } else {
                 // 其他错误类型，创建通用的错误消息
                 errorMessage = ChatMessage(

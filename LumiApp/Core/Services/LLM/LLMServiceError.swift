@@ -49,26 +49,30 @@ enum LLMServiceError: Error, LocalizedError, Equatable {
 
 extension LLMServiceError {
     /// 转为可落库消息：使用 `ChatMessage+Error` 中的工厂方法创建错误消息
-    func toChatMessage(conversationId: UUID) -> ChatMessage {
+    /// - Parameter conversationId: 会话 ID
+    /// - Parameter providerId: 供应商 ID（可选，用于 API Key 缺失错误）
+    func toChatMessage(conversationId: UUID, providerId: String? = nil) -> ChatMessage {
         switch self {
         case .apiKeyEmpty:
-            ChatMessage.apiKeyMissingMessage(conversationId: conversationId)
+            // 如果错误中没有 providerId，尝试使用传入的 providerId
+            let pid = providerId ?? ""
+            return ChatMessage.apiKeyMissingMessage(providerId: pid, conversationId: conversationId)
         case .modelEmpty:
-            ChatMessage.llmModelEmptyMessage(conversationId: conversationId)
+            return ChatMessage.llmModelEmptyMessage(conversationId: conversationId)
         case .providerIdEmpty:
-            ChatMessage.llmProviderIdEmptyMessage(conversationId: conversationId)
+            return ChatMessage.llmProviderIdEmptyMessage(conversationId: conversationId)
         case let .temperatureOutOfRange(v):
-            ChatMessage.llmTemperatureInvalidMessage(temperature: v, conversationId: conversationId)
+            return ChatMessage.llmTemperatureInvalidMessage(temperature: v, conversationId: conversationId)
         case let .maxTokensInvalid(v):
-            ChatMessage.llmMaxTokensInvalidMessage(maxTokens: v, conversationId: conversationId)
+            return ChatMessage.llmMaxTokensInvalidMessage(maxTokens: v, conversationId: conversationId)
         case let .providerNotFound(providerId):
-            ChatMessage.llmProviderNotFoundMessage(providerId: providerId, conversationId: conversationId)
+            return ChatMessage.llmProviderNotFoundMessage(providerId: providerId, conversationId: conversationId)
         case let .invalidBaseURL(urlString):
-            ChatMessage.llmInvalidBaseURLMessage(baseURL: urlString, conversationId: conversationId)
+            return ChatMessage.llmInvalidBaseURLMessage(baseURL: urlString, conversationId: conversationId)
         case .cancelled:
-            ChatMessage.cancelledMessage(conversationId: conversationId)
+            return ChatMessage.cancelledMessage(conversationId: conversationId)
         case let .requestFailed(message):
-            ChatMessage.llmRequestFailedMessage(message: message, conversationId: conversationId)
+            return ChatMessage.llmRequestFailedMessage(message: message, conversationId: conversationId)
         }
     }
 }

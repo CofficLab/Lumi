@@ -323,7 +323,7 @@ private struct ApiKeyMissingErrorView: View {
                             get: { apiKey },
                             set: { newValue in
                                 apiKey = newValue
-                                agentSessionConfig.setApiKey(newValue, for: currentProviderId)
+                                saveApiKey(newValue)
                             }
                         ),
                         fieldType: .secure
@@ -335,10 +335,44 @@ private struct ApiKeyMissingErrorView: View {
         .padding(.vertical, 10)
         .padding(.horizontal, 12)
         .onAppear {
-            // 基于当前对话使用的配置初始化供应商 / API Key
+            initializeProviderAndApiKey()
+        }
+        .onChange(of: message.providerId) { _, newProviderId in
+            // 当错误消息的 providerId 发生变化时，重新初始化
+            if let newProviderId = newProviderId, !newProviderId.isEmpty {
+                currentProviderId = newProviderId
+                reloadApiKeyFromKeychain()
+            }
+        }
+    }
+
+    /// 初始化供应商 ID 和 API Key
+    private func initializeProviderAndApiKey() {
+        // 优先使用错误消息中保存的 providerId
+        if let messageProviderId = message.providerId, !messageProviderId.isEmpty {
+            currentProviderId = messageProviderId
+        } else {
+            // 如果错误消息中没有 providerId，则使用当前全局配置
             let config = agentSessionConfig.getCurrentConfig()
             currentProviderId = config.providerId
-            apiKey = config.apiKey
+        }
+
+        // 从 Keychain 重新加载 API Key
+        reloadApiKeyFromKeychain()
+    }
+
+    /// 从 Keychain 重新加载 API Key
+    private func reloadApiKeyFromKeychain() {
+        apiKey = agentSessionConfig.getApiKey(for: currentProviderId)
+    }
+
+    /// 保存 API Key 到 Keychain
+    private func saveApiKey(_ newValue: String) {
+        agentSessionConfig.setApiKey(newValue, for: currentProviderId)
+
+        // 保存后立即重新加载，确保 UI 显示的是最新保存的值
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [self] in
+            apiKey = agentSessionConfig.getApiKey(for: currentProviderId)
         }
     }
 }

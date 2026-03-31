@@ -32,12 +32,16 @@ extension ChatMessage {
     // MARK: 工厂
 
     /// API Key 缺失错误消息
-    static func apiKeyMissingMessage(conversationId: UUID) -> ChatMessage {
+    /// - Parameters:
+    ///   - providerId: 触发错误的供应商 ID，用于在错误视图中直接配置该供应商的 API Key
+    ///   - conversationId: 会话 ID
+    static func apiKeyMissingMessage(providerId: String, conversationId: UUID) -> ChatMessage {
         ChatMessage(
             role: .error,
             conversationId: conversationId,
             content: Self.apiKeyMissingSystemContentKey,
-            isError: true
+            isError: true,
+            providerId: providerId
         )
     }
 

@@ -104,9 +104,6 @@ struct AssistantMessage: View {
             AppIdentityRow(title: "Lumi", metadata: identityMetadata)
         } trailing: {
             HStack(alignment: .center, spacing: 12) {
-                // 性能指标组（暂时隐藏）
-//                performanceMetricsGroup
-
                 // 复制按钮
                 CopyMessageButton(
                     content: message.content,
@@ -140,26 +137,6 @@ struct AssistantMessage: View {
             items.append(formatModelName(modelName))
         }
         return items
-    }
-
-    private var performanceMetricsGroup: some View {
-        HStack(alignment: .center, spacing: 8) {
-            if let ttft = message.timeToFirstToken, let latency = message.latency {
-                LatencyProgressBar(ttft: ttft, totalLatency: latency)
-            }
-
-            if let inputTokens = message.inputTokens, let outputTokens = message.outputTokens {
-                TokenProgressBar(inputTokens: inputTokens, outputTokens: outputTokens)
-            } else if let totalTokens = message.totalTokens {
-                HStack(alignment: .center, spacing: 2) {
-                    Image(systemName: "text.alignleft")
-                        .font(.system(size: 8, weight: .medium))
-                    Text("\(totalTokens)")
-                        .font(AppUI.Typography.caption2)
-                }
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
-            }
-        }
     }
 
     private var expandCollapseButton: some View {
