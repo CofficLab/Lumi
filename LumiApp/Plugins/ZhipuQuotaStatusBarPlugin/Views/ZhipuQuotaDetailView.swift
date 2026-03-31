@@ -95,6 +95,59 @@ struct ZhipuQuotaDetailView: View {
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
 
+            Divider()
+
+            // MCP 每月额度
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("MCP 每月额度")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+
+                    Spacer()
+                }
+
+                HStack(spacing: DesignTokens.Spacing.md) {
+                    // 剩余额度
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("剩余")
+                            .font(.system(size: 10))
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        Text("\(data.mcpRemaining)")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(DesignTokens.Color.semantic.success)
+                    }
+
+                    // 已用额度
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("已用")
+                            .font(.system(size: 10))
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        Text("\(data.mcpUsage)")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    }
+
+                    Spacer()
+
+                    // 重置时间
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text("重置")
+                            .font(.system(size: 10))
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        Text(data.mcpResetTime)
+                            .font(.system(size: 11))
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        Text("(\(data.mcpResetTimeRelative))")
+                            .font(.system(size: 10))
+                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                    }
+                }
+                .padding(12)
+                .background(Color(white: 0.95).opacity(0.1))
+                .cornerRadius(8)
+            }
+
             // 状态说明
             VStack(alignment: .leading, spacing: 4) {
                 Text("说明")

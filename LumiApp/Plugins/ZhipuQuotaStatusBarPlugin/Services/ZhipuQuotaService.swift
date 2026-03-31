@@ -9,6 +9,11 @@ struct ZhipuQuotaData {
     let leftPercent: Int
     let nextResetTime: TimeInterval
 
+    // MCP 每月额度相关
+    let mcpRemaining: Int
+    let mcpUsage: Int
+    let mcpNextResetTime: TimeInterval
+
     /// 等级显示文本
     var levelDisplay: String {
         "GLM \(level.isEmpty ? "Lite" : level)"
@@ -36,6 +41,33 @@ struct ZhipuQuotaData {
             return "约 \(Int(interval / 3600)) 小时后"
         } else {
             return "\(Int(interval / 86400)) 天后"
+        }
+    }
+
+    /// MCP 额度重置时间文本
+    var mcpResetTime: String {
+        let date = Date(timeIntervalSince1970: mcpNextResetTime / 1000.0)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        return formatter.string(from: date)
+    }
+
+    /// MCP 额度重置相对时间
+    var mcpResetTimeRelative: String {
+        let date = Date(timeIntervalSince1970: mcpNextResetTime / 1000.0)
+        let now = Date()
+        let interval = date.timeIntervalSince(now)
+
+        if interval < 0 {
+            return "即将重置"
+        } else if interval < 3600 {
+            return "约 \(Int(interval / 60)) 分钟后"
+        } else if interval < 86400 {
+            return "约 \(Int(interval / 3600)) 小时后"
+        } else if interval < 2592000 {
+            return "\(Int(interval / 86400)) 天后"
+        } else {
+            return "\(Int(interval / 2592000)) 个月后"
         }
     }
 
@@ -128,9 +160,14 @@ enum ZhipuQuotaService {
                 return (.unavailable, nil)
             }
 
-            // 查找 5 小时滚动窗口限制
+            // 查找 5 小时滚动窗口限制（TOKENS_LIMIT）
             let rollingLimit = limits.first { limit in
                 (limit["type"] as? String) == "TOKENS_LIMIT" && (limit["number"] as? Int) == 5
+            }
+
+            // 查找 MCP 每月额度限制（TIME_LIMIT, unit=1）
+            let mcpLimit = limits.first { limit in
+                (limit["type"] as? String) == "TIME_LIMIT" && (limit["unit"] as? Int) == 1
             }
 
             if let rollingLimit = rollingLimit,
@@ -140,11 +177,19 @@ enum ZhipuQuotaService {
                 let leftPercent = 100 - usedPercent
                 let level = (dataDict["level"] as? String) ?? ""
 
+                // MCP 额度数据
+                let mcpRemaining = mcpLimit?["remaining"] as? Int ?? 0
+                let mcpUsage = mcpLimit?["usage"] as? Int ?? 0
+                let mcpNextResetTime = mcpLimit?["nextResetTime"] as? TimeInterval ?? nextResetTime
+
                 return (.success(ZhipuQuotaData(
                     level: level,
                     usedPercent: usedPercent,
                     leftPercent: leftPercent,
-                    nextResetTime: nextResetTime
+                    nextResetTime: nextResetTime,
+                    mcpRemaining: mcpRemaining,
+                    mcpUsage: mcpUsage,
+                    mcpNextResetTime: mcpNextResetTime
                 )), nil)
             }
 
@@ -162,11 +207,22 @@ enum ZhipuQuotaService {
                 let leftPercent = 100 - usedPercent
                 let level = (dataDict["level"] as? String) ?? ""
 
+                // MCP 额度数据（备用方案中从同一个限制获取）
+                let mcpLimit = limits.first { limit in
+                    (limit["type"] as? String) == "TIME_LIMIT" && (limit["unit"] as? Int) == 1
+                }
+                let mcpRemaining = mcpLimit?["remaining"] as? Int ?? 0
+                let mcpUsage = mcpLimit?["usage"] as? Int ?? 0
+                let mcpNextResetTime = mcpLimit?["nextResetTime"] as? TimeInterval ?? nextResetTime
+
                 return (.success(ZhipuQuotaData(
                     level: level,
                     usedPercent: usedPercent,
                     leftPercent: leftPercent,
-                    nextResetTime: nextResetTime
+                    nextResetTime: nextResetTime,
+                    mcpRemaining: mcpRemaining,
+                    mcpUsage: mcpUsage,
+                    mcpNextResetTime: mcpNextResetTime
                 )), nil)
             }
 
