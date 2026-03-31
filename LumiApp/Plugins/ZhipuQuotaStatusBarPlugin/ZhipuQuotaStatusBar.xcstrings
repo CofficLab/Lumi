@@ -18,6 +18,7 @@
       }
     },
     "Description" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -263,6 +264,7 @@
       }
     },
     "Zhipu GLM Coding Plan uses a 5-hour rolling window quota. Quota gradually recovers after use." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
