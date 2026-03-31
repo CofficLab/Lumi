@@ -10,8 +10,7 @@ struct ZhipuQuotaData {
     let nextResetTime: TimeInterval
 
     // MCP 每月额度相关
-    let mcpRemaining: Int
-    let mcpUsage: Int
+    let mcpLeftPercent: Int
     let mcpNextResetTime: TimeInterval
 
     /// 等级显示文本
@@ -165,7 +164,7 @@ enum ZhipuQuotaService {
                 (limit["type"] as? String) == "TOKENS_LIMIT" && (limit["number"] as? Int) == 5
             }
 
-            // 查找 MCP 每月额度限制（TIME_LIMIT, unit=5）- 5 小时滚动窗口配额之外的 TIME_LIMIT
+            // 查找 MCP 每月额度限制（TIME_LIMIT, unit=5）
             let mcpLimit = limits.first { limit in
                 (limit["type"] as? String) == "TIME_LIMIT" && (limit["unit"] as? Int) == 5
             }
@@ -177,9 +176,9 @@ enum ZhipuQuotaService {
                 let leftPercent = 100 - usedPercent
                 let level = (dataDict["level"] as? String) ?? ""
 
-                // MCP 额度数据
-                let mcpRemaining = mcpLimit?["remaining"] as? Int ?? 0
-                let mcpUsage = mcpLimit?["usage"] as? Int ?? 0
+                // MCP 额度数据 - 使用 currentValue 计算剩余百分比
+                // currentValue = 0 表示 0%，100 表示 100%
+                let mcpLeftPercent = mcpLimit?["currentValue"] as? Int ?? 0
                 let mcpNextResetTime = mcpLimit?["nextResetTime"] as? TimeInterval ?? nextResetTime
 
                 return (.success(ZhipuQuotaData(
@@ -187,8 +186,7 @@ enum ZhipuQuotaService {
                     usedPercent: usedPercent,
                     leftPercent: leftPercent,
                     nextResetTime: nextResetTime,
-                    mcpRemaining: mcpRemaining,
-                    mcpUsage: mcpUsage,
+                    mcpLeftPercent: mcpLeftPercent,
                     mcpNextResetTime: mcpNextResetTime
                 )), nil)
             }
@@ -207,14 +205,17 @@ enum ZhipuQuotaService {
                 let leftPercent = 100 - usedPercent
                 let level = (dataDict["level"] as? String) ?? ""
 
+                // MCP 额度数据 - 使用 currentValue 计算剩余百分比
+                let mcpLeftPercent = timeLimit["currentValue"] as? Int ?? remaining
+                let mcpNextResetTime = timeLimit["nextResetTime"] as? TimeInterval ?? nextResetTime
+
                 return (.success(ZhipuQuotaData(
                     level: level,
                     usedPercent: usedPercent,
                     leftPercent: leftPercent,
                     nextResetTime: nextResetTime,
-                    mcpRemaining: remaining,
-                    mcpUsage: usage,
-                    mcpNextResetTime: nextResetTime
+                    mcpLeftPercent: mcpLeftPercent,
+                    mcpNextResetTime: mcpNextResetTime
                 )), nil)
             }
 

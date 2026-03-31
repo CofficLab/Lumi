@@ -162,6 +162,7 @@
       }
     },
     "Remaining %{arg}%" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -176,6 +177,9 @@
           }
         }
       }
+    },
+    "Remaining %lld%%" : {
+
     },
     "Reset" : {
       "localizations" : {

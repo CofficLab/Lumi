@@ -114,24 +114,14 @@ struct ZhipuQuotaDetailView: View {
                 }
 
                 HStack(spacing: DesignTokens.Spacing.md) {
-                    // 剩余额度
+                    // 剩余额度百分比
                     VStack(alignment: .leading, spacing: 4) {
                         Text(String(localized: "Remaining", table: "ZhipuQuotaStatusBar"))
                             .font(.system(size: 10))
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        Text("\(data.mcpRemaining)")
+                        Text("\(data.mcpLeftPercent)%")
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(DesignTokens.Color.semantic.success)
-                    }
-
-                    // 已用额度
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(String(localized: "Used", table: "ZhipuQuotaStatusBar"))
-                            .font(.system(size: 10))
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        Text("\(data.mcpUsage)")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                     }
 
                     Spacer()
