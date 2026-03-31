@@ -40,7 +40,7 @@ final class ConversationCreationController: ObservableObject, SuperLog {
             language: languagePreference
         )
         if !systemMessage.isEmpty {
-            await container.conversationVM.saveMessage(
+            container.conversationVM.saveMessage(
                 ChatMessage(role: .system, conversationId: conversation.id, content: systemMessage),
                 to: conversation.id
             )
@@ -52,7 +52,7 @@ final class ConversationCreationController: ObservableObject, SuperLog {
             language: languagePreference
         )
         if !welcomeMessage.isEmpty {
-            await container.conversationVM.saveMessage(
+            container.conversationVM.saveMessage(
                 ChatMessage(role: .assistant, conversationId: conversation.id, content: welcomeMessage),
                 to: conversation.id
             )

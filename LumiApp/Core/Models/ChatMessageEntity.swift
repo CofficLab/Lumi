@@ -99,15 +99,11 @@ final class ChatMessageEntity {
         
         // 防御性编程：即使对象理论上有效，也要检查基本属性
         // SwiftData 可能在访问属性时抛出内部错误
-        do {
-            // 尝试访问基本属性，捕获 SwiftData 内部可能抛出的错误
-            let _ = self.id
-            let _ = self.role
-            let _ = self.content
-        } catch {
-            // 对象已失效，返回 nil 而不是崩溃
-            return nil
-        }
+        // 注意：简单的属性访问不会抛出错误，所以不需要 do-catch
+        // 这里我们只是访问属性来确保对象有效
+        let _ = self.id
+        let _ = self.role
+        let _ = self.content
         
         guard let messageRole = MessageRole(rawValue: role) else {
             return nil
