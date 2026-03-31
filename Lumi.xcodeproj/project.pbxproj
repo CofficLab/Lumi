@@ -145,7 +145,7 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-		0BC122682F7AA6DE00AD2B5D /* Exceptions for "LumiApp" folder in "Embed Libraries" phase from "Lumi" target */ = {
+		F57EEC332F7B4C97001233A2 /* Exceptions for "LumiApp" folder in "Embed Libraries" phase from "Lumi" target */ = {
 			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
 			attributesByRelativePath = {
 				ThirdParty/sqlite/vec0.dylib = (CodeSignOnCopy, );
@@ -178,7 +178,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				F5F4E1E82F3ACC6600C76EA0 /* Exceptions for "LumiApp" folder in "Lumi" target */,
-				0BC122682F7AA6DE00AD2B5D /* Exceptions for "LumiApp" folder in "Embed Libraries" phase from "Lumi" target */,
+				F57EEC332F7B4C97001233A2 /* Exceptions for "LumiApp" folder in "Embed Libraries" phase from "Lumi" target */,
 				F52C2B202F3EDDE200905557 /* Exceptions for "LumiApp" folder in "NettoExtension" target */,
 			);
 			path = LumiApp;
