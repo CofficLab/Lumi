@@ -50,10 +50,6 @@ struct BackgroundTaskListView: View {
 
             Spacer()
 
-            Text(L10n.totalCount(total))
-                .font(AppUI.Typography.caption1)
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
-
             AppButton(
                 "Clear Completed",
                 systemImage: "trash",
@@ -227,7 +223,8 @@ struct BackgroundTaskListView: View {
 
             Spacer()
 
-            Text(L10n.pageIndicator(currentPage, totalPages))
+            // 合并显示：共 X 条 · 第 x/y 页
+            Text(L10n.paginationInfo(total: total, page: currentPage, totalPages: totalPages))
                 .font(AppUI.Typography.caption1)
                 .foregroundColor(AppUI.Color.semantic.textTertiary)
 
@@ -318,7 +315,6 @@ private enum L10n {
 
     // Header - String for Text view
     static var title: String { localized("Background Tasks") }
-    static func totalCount(_ count: Int) -> String { L10n.localized("Total: %lld", count) }
 
     // Table columns - String for Text view
     static var colStatus: String { localized("Status") }
@@ -332,8 +328,13 @@ private enum L10n {
     static var resultLabel: String { localized("Result") }
     static var errorLabel: String { localized("Error Message") }
 
-    // Pagination
-    static func pageIndicator(_ current: Int, _ total: Int) -> String {
-        L10n.localized("Page %lld / %lld", current, total)
+    // Pagination - 合并显示总数和页码
+    static func paginationInfo(total: Int, page: Int, totalPages: Int) -> String {
+        // 格式：共 X 条 · 第 x/y 页
+        let totalStr = localized("Total: %lld").replacingOccurrences(of: "%lld", with: "\(total)")
+        let pageStr = localized("Page %lld / %lld")
+            .replacingOccurrences(of: "%lld", with: "\(page)")
+            .replacingOccurrences(of: "%lld", with: "\(totalPages)")
+        return "\(totalStr) · \(pageStr)"
     }
 }
