@@ -62,7 +62,9 @@ struct ZhipuQuotaStatusBarView: View {
     /// 加载视图
     private var loadingView: some View {
         StatusBarHoverContainer(
-            detailView: ZhipuQuotaDetailView(status: quotaStatus),
+            detailView: ZhipuQuotaDetailView(status: quotaStatus, onRefresh: {
+                refreshQuota()
+            }),
             id: "zhipu-quota-status"
         ) {
             HStack(spacing: 6) {
@@ -80,7 +82,9 @@ struct ZhipuQuotaStatusBarView: View {
     /// 成功视图
     private func successView(_ data: ZhipuQuotaData) -> some View {
         StatusBarHoverContainer(
-            detailView: ZhipuQuotaDetailView(status: quotaStatus),
+            detailView: ZhipuQuotaDetailView(status: quotaStatus, onRefresh: {
+                refreshQuota()
+            }),
             id: "zhipu-quota-status"
         ) {
             HStack(spacing: 6) {
@@ -98,7 +102,9 @@ struct ZhipuQuotaStatusBarView: View {
     /// 错误视图
     private func errorView(_ message: String) -> some View {
         StatusBarHoverContainer(
-            detailView: ZhipuQuotaDetailView(status: quotaStatus),
+            detailView: ZhipuQuotaDetailView(status: quotaStatus, onRefresh: {
+                refreshQuota()
+            }),
             id: "zhipu-quota-status"
         ) {
             HStack(spacing: 6) {
