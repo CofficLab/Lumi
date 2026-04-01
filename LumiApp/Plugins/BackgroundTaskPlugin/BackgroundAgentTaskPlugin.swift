@@ -29,7 +29,7 @@ actor BackgroundAgentTaskPlugin: SuperPlugin, SuperLog {
 
     // MARK: - 协调器状态
 
-    private var worker: BackgroundAgentTaskWorker?
+    private var worker: BackgroundWorker?
     private nonisolated(unsafe) var taskCreationObserver: NSObjectProtocol?
 
     // MARK: - 插件生命周期
@@ -68,7 +68,7 @@ actor BackgroundAgentTaskPlugin: SuperPlugin, SuperLog {
     private func startWorker() async {
         guard worker == nil else { return }
 
-        let newWorker = BackgroundAgentTaskWorker()
+        let newWorker = BackgroundWorker()
         await newWorker.start()
         worker = newWorker
 
