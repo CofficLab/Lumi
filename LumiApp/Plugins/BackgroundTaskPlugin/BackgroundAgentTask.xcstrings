@@ -1,1052 +1,798 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Actions" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Actions"
+  "sourceLanguage": "en",
+  "strings": {
+    "Actions": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actions"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "操作"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "操作"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "操作"
-          }
-        }
-      }
-    },
-    "Are you sure you want to clear all completed and failed tasks? This action cannot be undone." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Are you sure you want to clear all completed and failed tasks? This action cannot be undone."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "确定要清除所有已完成和失败的任务吗？此操作不可撤销。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "確定要清除所有已完成和失敗的任務嗎？此操作不可撤銷。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "操作"
           }
         }
       }
     },
-    "Background Agent Task" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Background Agent Task"
+    "Are you sure you want to clear all completed and failed tasks? This action cannot be undone.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Are you sure you want to clear all completed and failed tasks? This action cannot be undone."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "后台 Agent 任务"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定要清除所有已完成和失败的任务吗？此操作不可撤销。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "後台 Agent 任務"
-          }
-        }
-      }
-    },
-    "Background Agent task created. The system will process this instruction in the background. You can check the task status and results later in the status bar." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Background Agent task created. The system will process this instruction in the background. You can check the task status and results later in the status bar."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已创建后台 Agent 任务，系统会在后台继续处理此指令。你可以稍后在状态栏查看任务状态和结果。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已創建後台 Agent 任務，系統會在後台繼續處理此指令。你可以稍後在狀態欄查看任務狀態和結果。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "確定要清除所有已完成和失敗的任務嗎？此操作不可撤銷。"
           }
         }
       }
     },
-    "Background task completed but no model response received." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Background task completed but no model response received."
+    "Background Agent Task": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background Agent Task"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "后台任务已完成，但未获得模型回复。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "后台 Agent 任务"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "後台任務已完成，但未獲得模型回覆。"
-          }
-        }
-      }
-    },
-    "Background task with specified ID does not exist" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Background task with specified ID does not exist"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "指定 ID 的后台任务不存在"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "指定 ID 的後台任務不存在"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "後台 Agent 任務"
           }
         }
       }
     },
-    "Background Tasks" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Background Tasks"
+    "Background Agent task created. The system will process this instruction in the background. You can check the task status and results later in the status bar.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background Agent task created. The system will process this instruction in the background. You can check the task status and results later in the status bar."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "后台任务"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已创建后台 Agent 任务，系统会在后台继续处理此指令。你可以稍后在状态栏查看任务状态和结果。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "後台任務"
-          }
-        }
-      }
-    },
-    "Cancel" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancel"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已創建後台 Agent 任務，系統會在後台繼續處理此指令。你可以稍後在狀態欄查看任務狀態和結果。"
           }
         }
       }
     },
-    "Clear all completed and failed tasks" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clear all completed and failed tasks"
+    "Background task completed but no model response received.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background task completed but no model response received."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除所有已完成和失败的任务"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "后台任务已完成，但未获得模型回复。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除所有已完成和失敗的任務"
-          }
-        }
-      }
-    },
-    "Clear Completed" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clear Completed"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除已完成"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除已完成"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "後台任務已完成，但未獲得模型回覆。"
           }
         }
       }
     },
-    "Completed" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Completed"
+    "Background task with specified ID does not exist": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background task with specified ID does not exist"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已完成"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "指定 ID 的后台任务不存在"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已完成"
-          }
-        }
-      }
-    },
-    "Confirm Clear" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Confirm Clear"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "确认清除"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "確認清除"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "指定 ID 的後台任務不存在"
           }
         }
       }
     },
-    "Create a background agent task to execute user instructions asynchronously. Suitable for long-running tasks that don't require real-time attention." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create a background agent task to execute user instructions asynchronously. Suitable for long-running tasks that don't require real-time attention."
+    "Background Tasks": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background Tasks"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "接收一条用户指令，将其保存为后台 Agent 任务并在后台异步执行。适用于需要长时间运行或不需要前台实时关注的任务。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "后台任务"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "接收一條用戶指令，將其保存為後台 Agent 任務並在後台異步執行。適用於需要長時間運行或不需要前台實時關注的任務。"
-          }
-        }
-      }
-    },
-    "Created At" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Created At"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "创建时间"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "創建時間"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "後台任務"
           }
         }
       }
     },
-    "Delete this task" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete this task"
+    "Cancel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "删除此任务"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刪除此任務"
-          }
-        }
-      }
-    },
-    "Duration" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Duration"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "耗时"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "耗時"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         }
       }
     },
-    "Error" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Error"
+    "Clear Completed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear Completed"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "错误"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除已完成"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "錯誤"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除已完成"
           }
         }
       }
     },
-    "Error Message" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Error Message"
+    "Completed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completed"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "错误信息"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已完成"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "錯誤信息"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已完成"
           }
         }
       }
     },
-    "Failed" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Failed"
+    "Confirm Clear": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm Clear"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "失败"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确认清除"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "失敗"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "確認清除"
           }
         }
       }
     },
-    "Finished At" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Finished At"
+    "Create a background agent task to execute user instructions asynchronously. Suitable for long-running tasks that don't require real-time attention.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a background agent task to execute user instructions asynchronously. Suitable for long-running tasks that don't require real-time attention."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "完成时间"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接收一条用户指令，将其保存为后台 Agent 任务并在后台异步执行。适用于需要长时间运行或不需要前台实时关注的任务。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "完成時間"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接收一條用戶指令，將其保存為後台 Agent 任務並在後台異步執行。適用於需要長時間運行或不需要前台實時關注的任務。"
           }
         }
       }
     },
-    "Full Instruction" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Full Instruction"
+    "Created At": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Created At"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "指令全文"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建时间"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "指令全文"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "創建時間"
           }
         }
       }
     },
-    "Get detailed information about a background agent task by ID, including instruction, status, result summary, and error message." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Get detailed information about a background agent task by ID, including instruction, status, result summary, and error message."
+    "Duration": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duration"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "根据任务 ID 查询单个后台 Agent 任务的详细信息，包括指令、状态、结果摘要与错误信息。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "耗时"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "根據任務 ID 查詢單個後台 Agent 任務的詳細信息，包括指令、狀態、結果摘要與錯誤信息。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "耗時"
           }
         }
       }
     },
-    "Instruction" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Instruction"
+    "Error Message": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error Message"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "指令"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "错误信息"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "指令"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤信息"
           }
         }
       }
     },
-    "instruction cannot be empty" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "instruction cannot be empty"
+    "Failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "instruction 不能为空"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "失败"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "instruction 不能為空"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "失敗"
           }
         }
       }
     },
-    "List recent background agent tasks and their status. Useful for understanding what tasks are running or have completed." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "List recent background agent tasks and their status. Useful for understanding what tasks are running or have completed."
+    "Finished At": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finished At"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "列出最近的后台 Agent 任务及其状态，供你了解有哪些任务正在运行或已经完成。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完成时间"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "列出最近的後台 Agent 任務及其狀態，供你了解有哪些任務正在運行或已經完成。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完成時間"
           }
         }
       }
     },
-    "Maximum number of tasks to return." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Maximum number of tasks to return."
+    "Full Instruction": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full Instruction"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最多返回多少条任务记录，默认 20。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "指令全文"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最多返回多少條任務記錄，預設 20。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "指令全文"
           }
         }
       }
     },
-    "Message" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Message"
+    "Get detailed information about a background agent task by ID, including instruction, status, result summary, and error message.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get detailed information about a background agent task by ID, including instruction, status, result summary, and error message."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "消息"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "根据任务 ID 查询单个后台 Agent 任务的详细信息，包括指令、状态、结果摘要与错误信息。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "消息"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "根據任務 ID 查詢單個後台 Agent 任務的詳細信息，包括指令、狀態、結果摘要與錯誤信息。"
           }
         }
       }
     },
-    "No background tasks" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No background tasks"
+    "Instruction": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instruction"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暂无后台任务"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "指令"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暫無後台任務"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "指令"
           }
         }
       }
     },
-    "No background tasks found" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No background tasks found"
+    "Invalid LLM configuration": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid LLM configuration"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "没有找到后台任务"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LLM 配置无效"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "沒有找到後台任務"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LLM 配置無效"
           }
         }
       }
     },
-    "No recent tasks" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No recent tasks"
+    "instruction cannot be empty": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "instruction cannot be empty"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暂无任务"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "instruction 不能为空"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暫無任務"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "instruction 不能為空"
           }
         }
       }
     },
-    "Page %lld / %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Page %lld / %lld"
+    "List recent background agent tasks and their status. Useful for understanding what tasks are running or have completed.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List recent background agent tasks and their status. Useful for understanding what tasks are running or have completed."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "第 %lld / %lld 页"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "列出最近的后台 Agent 任务及其状态，供你了解有哪些任务正在运行或已经完成。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "第 %lld / %lld 頁"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "列出最近的後台 Agent 任務及其狀態，供你了解有哪些任務正在運行或已經完成。"
           }
         }
       }
     },
-    "Pending" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pending"
+    "Maximum number of tasks to return.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximum number of tasks to return."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "等待中"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最多返回多少条任务记录，默认 20。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "等待中"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最多返回多少條任務記錄，預設 20。"
           }
         }
       }
     },
-    "Receive instructions and execute tasks asynchronously in the background. Task results are stored in the plugin's own database." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Receive instructions and execute tasks asynchronously in the background. Task results are stored in the plugin's own database."
+    "No background tasks": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No background tasks"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "接收指令并在后台异步执行任务，任务结果存储在插件自有数据库中。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂无后台任务"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "接收指令並在後台異步執行任務，任務結果存儲在插件自有數據庫中。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫無後台任務"
           }
         }
       }
     },
-    "Recent Tasks" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recent Tasks"
+    "Page %lld / %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Page %lld / %lld"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最近任务"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第 %lld / %lld 页"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最近任務"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第 %lld / %lld 頁"
           }
         }
       }
     },
-    "Refresh" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Refresh"
+    "Pending": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pending"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刷新"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待中"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刷新"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待中"
           }
         }
       }
     },
-    "Result" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Result"
+    "Receive instructions and execute tasks asynchronously in the background. Task results are stored in the plugin's own database.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Receive instructions and execute tasks asynchronously in the background. Task results are stored in the plugin's own database."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "执行结果"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接收指令并在后台异步执行任务，任务结果存储在插件自有数据库中。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "執行結果"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接收指令並在後台異步執行任務，任務結果存儲在插件自有數據庫中。"
           }
         }
       }
     },
-    "Result Summary" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Result Summary"
+    "Result": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Result"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "结果摘要"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "执行结果"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "結果摘要"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "執行結果"
           }
         }
       }
     },
-    "Running" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Running"
+    "Running": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Running"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "运行中"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "运行中"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "運行中"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "運行中"
           }
         }
       }
     },
-    "Started At" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Started At"
+    "Started At": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Started At"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "开始时间"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开始时间"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "開始時間"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開始時間"
           }
         }
       }
     },
-    "Status" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Status"
+    "Status": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "状态"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "状态"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "狀態"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "狀態"
           }
         }
       }
     },
-    "Task created successfully" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Task created successfully"
+    "Task ID of the background agent task.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Task ID of the background agent task."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "任务创建成功"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "后台任务的 UUID 字符串。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "任務創建成功"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "後台任務的 UUID 字符串。"
           }
         }
       }
     },
-    "Task ID" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Task ID"
+    "task_id must be a valid UUID string": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "task_id must be a valid UUID string"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "任务 ID"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "task_id 必须是有效的 UUID 字符串"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "任務 ID"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "task_id 必須是有效的 UUID 字符串"
           }
         }
       }
     },
-    "Task ID of the background agent task." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Task ID of the background agent task."
+    "Total: %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total: %lld"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "后台任务的 UUID 字符串。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "共 %lld 条"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "後台任務的 UUID 字符串。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "共 %lld 條"
           }
         }
       }
     },
-    "task_id must be a valid UUID string" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "task_id must be a valid UUID string"
+    "User instruction to execute in background.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User instruction to execute in background."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "task_id 必须是有效的 UUID 字符串"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用户希望在后台执行的自然语言指令。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "task_id 必須是有效的 UUID 字符串"
-          }
-        }
-      }
-    },
-    "Total: %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Total: %lld"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "共 %lld 条"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "共 %lld 條"
-          }
-        }
-      }
-    },
-    "User instruction to execute in background." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "User instruction to execute in background."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "用户希望在后台执行的自然语言指令。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "用戶希望在後台執行的自然語言指令。"
-          }
-        }
-      }
-    },
-    "View Details" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "View Details"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看详情"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看詳情"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用戶希望在後台執行的自然語言指令。"
           }
         }
       }
     }
   },
-  "version" : "1.1"
+  "version": "1.1"
 }

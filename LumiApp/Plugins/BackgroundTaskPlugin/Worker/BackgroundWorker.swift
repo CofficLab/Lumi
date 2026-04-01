@@ -174,7 +174,7 @@ actor BackgroundWorker {
             throw NSError(
                 domain: "BackgroundAgentTaskWorker",
                 code: 500,
-                userInfo: [NSLocalizedDescriptionKey: "LLM 配置无效"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "Invalid LLM configuration", table: "BackgroundAgentTask")]
             )
         }
 
