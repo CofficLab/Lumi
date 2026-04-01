@@ -6239,6 +6239,7 @@
 
     },
     "展开" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

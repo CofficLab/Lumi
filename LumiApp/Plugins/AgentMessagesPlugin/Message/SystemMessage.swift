@@ -33,10 +33,7 @@ struct SystemMessage: View {
 
                     MarkdownView(
                         message: message,
-                        showRawMessage: showRawMessage,
-                        isCollapsible: false,
-                        isExpanded: true,
-                        onToggleExpand: {}
+                        showRawMessage: showRawMessage
                     )
                     .messageBubbleStyle(role: message.role, isError: message.isError)
                 }
