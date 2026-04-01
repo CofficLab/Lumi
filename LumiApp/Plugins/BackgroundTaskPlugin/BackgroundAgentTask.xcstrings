@@ -2,7 +2,6 @@
   "sourceLanguage" : "en",
   "strings" : {
     "Actions" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -25,7 +24,6 @@
       }
     },
     "Are you sure you want to clear all completed and failed tasks? This action cannot be undone." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -91,6 +89,28 @@
         }
       }
     },
+    "Background task completed but no model response received." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Background task completed but no model response received."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "后台任务已完成，但未获得模型回复。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "後台任務已完成，但未獲得模型回覆。"
+          }
+        }
+      }
+    },
     "Background task with specified ID does not exist" : {
       "localizations" : {
         "en" : {
@@ -114,7 +134,6 @@
       }
     },
     "Background Tasks" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -137,7 +156,6 @@
       }
     },
     "Cancel" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -183,7 +201,6 @@
       }
     },
     "Clear Completed" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -206,7 +223,6 @@
       }
     },
     "Completed" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -229,7 +245,6 @@
       }
     },
     "Confirm Clear" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -274,7 +289,6 @@
       }
     },
     "Created At" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -320,7 +334,6 @@
       }
     },
     "Duration" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -366,7 +379,6 @@
       }
     },
     "Error Message" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -389,7 +401,6 @@
       }
     },
     "Failed" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -412,7 +423,6 @@
       }
     },
     "Finished At" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -435,7 +445,6 @@
       }
     },
     "Full Instruction" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -480,7 +489,6 @@
       }
     },
     "Instruction" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -592,7 +600,6 @@
       }
     },
     "No background tasks" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -661,7 +668,6 @@
       }
     },
     "Page %lld / %lld" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -684,7 +690,6 @@
       }
     },
     "Pending" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -775,7 +780,6 @@
       }
     },
     "Result" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -821,7 +825,6 @@
       }
     },
     "Running" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -844,7 +847,6 @@
       }
     },
     "Started At" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -867,7 +869,6 @@
       }
     },
     "Status" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -980,7 +981,6 @@
       }
     },
     "Total: %lld" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1048,5 +1048,5 @@
       }
     }
   },
-  "version" : "1.0"
+  "version" : "1.1"
 }

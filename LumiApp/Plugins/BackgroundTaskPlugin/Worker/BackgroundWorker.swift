@@ -110,7 +110,7 @@ actor BackgroundWorker {
                 throw NSError(
                     domain: "BackgroundAgentTaskWorker",
                     code: 404,
-                    userInfo: [NSLocalizedDescriptionKey: "Task not found"]
+                    userInfo: [NSLocalizedDescriptionKey: String(localized: "Background task with specified ID does not exist", table: "BackgroundAgentTask")]
                 )
             }
 
@@ -238,7 +238,7 @@ actor BackgroundWorker {
         return messages.last ?? ChatMessage(
             role: .system,
             conversationId: taskId,
-            content: "后台任务已完成，但未获得模型回复。"
+            content: String(localized: "Background task completed but no model response received.", table: "BackgroundAgentTask")
         )
     }
 
