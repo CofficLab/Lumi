@@ -2,90 +2,11 @@ import Foundation
 import os
 import MagicKit
 
-/// 智谱配额数据（本地副本，避免跨模块依赖）
-struct ZhipuQuotaData {
-    let level: String
-    let usedPercent: Int
-    let leftPercent: Int
-    let nextResetTime: TimeInterval
-
-    // MCP 每月额度相关
-    let mcpLeftPercent: Int
-    let mcpNextResetTime: TimeInterval
-
-    /// 等级显示文本
-    var levelDisplay: String {
-        "GLM \(level.isEmpty ? "Lite" : level)"
-    }
-
-    /// 重置时间文本（完整日期时间格式）
-    var resetTime: String {
-        let date = Date(timeIntervalSince1970: nextResetTime / 1000.0)
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm"
-        return formatter.string(from: date)
-    }
-
-    /// 重置时间文本（相对时间格式，如"2 小时后"）
-    var resetTimeRelative: String {
-        let date = Date(timeIntervalSince1970: nextResetTime / 1000.0)
-        let now = Date()
-        let interval = date.timeIntervalSince(now)
-
-        if interval < 0 {
-            return "即将重置"
-        } else if interval < 3600 {
-            return "约 \(Int(interval / 60)) 分钟后"
-        } else if interval < 86400 {
-            return "约 \(Int(interval / 3600)) 小时后"
-        } else {
-            return "\(Int(interval / 86400)) 天后"
-        }
-    }
-
-    /// MCP 额度重置时间文本
-    var mcpResetTime: String {
-        let date = Date(timeIntervalSince1970: mcpNextResetTime / 1000.0)
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm"
-        return formatter.string(from: date)
-    }
-
-    /// MCP 额度重置相对时间
-    var mcpResetTimeRelative: String {
-        let date = Date(timeIntervalSince1970: mcpNextResetTime / 1000.0)
-        let now = Date()
-        let interval = date.timeIntervalSince(now)
-
-        if interval < 0 {
-            return "即将重置"
-        } else if interval < 3600 {
-            return "约 \(Int(interval / 60)) 分钟后"
-        } else if interval < 86400 {
-            return "约 \(Int(interval / 3600)) 小时后"
-        } else if interval < 2592000 {
-            return "\(Int(interval / 86400)) 天后"
-        } else {
-            return "\(Int(interval / 2592000)) 个月后"
-        }
-    }
-
-    /// 状态栏显示文本
-    var statusText: String {
-        "\(levelDisplay) | 剩余 \(leftPercent)% | 重置 \(resetTime)"
-    }
-}
-
-/// 智谱配额状态（本地副本，避免跨模块依赖）
-enum ZhipuQuotaStatus {
-    case loading
-    case success(ZhipuQuotaData)
-    case authError
-    case unavailable
-}
-
 /// 智谱配额查询辅助工具
-enum ZhipuQuotaService {
+enum ZhipuQuotaService: SuperLog {
+    nonisolated static let emoji = "📊"
+    nonisolated static let verbose = false
+
     /// 日志
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "zhipu-quota-service")
     /// 默认配额 API 端点
@@ -142,7 +63,7 @@ enum ZhipuQuotaService {
             }
 
             // 记录原始响应
-            ZhipuQuotaService.logger.debug("API 原始响应：\(payload)")
+            ZhipuQuotaService.logger.debug("\(Self.t)API 原始响应：\(payload)")
 
             // 检查 success 字段
             if payload["success"] as? Bool != true {
