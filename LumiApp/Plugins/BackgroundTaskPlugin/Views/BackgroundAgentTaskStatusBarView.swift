@@ -4,13 +4,11 @@ import SwiftUI
 // MARK: - Status Bar View
 
 struct BackgroundAgentTaskStatusBarView: View {
-    @State private var tasks: [BackgroundAgentTask] = []
-    @State private var isPopoverPresented = false
     @State private var runningCount: Int = 0
 
     var body: some View {
         StatusBarHoverContainer(
-            detailView: BackgroundAgentTaskListView(tasks: tasks, onRefresh: reload),
+            detailView: BackgroundAgentTaskListView(onRefresh: reload),
             popoverWidth: 560,
             id: "background-task-status"
         ) {
@@ -35,8 +33,9 @@ struct BackgroundAgentTaskStatusBarView: View {
     }
 
     private func reload() {
-        tasks = BackgroundAgentTaskStore.shared.fetchRecent(limit: 50)
-        runningCount = tasks.filter { BackgroundAgentTaskStatus(rawOrDefault: $0.statusRawValue) == .running }.count
+        // 仅统计运行中的任务数量
+        let allTasks = BackgroundAgentTaskStore.shared.fetchRecent(limit: 1000)
+        runningCount = allTasks.filter { BackgroundAgentTaskStatus(rawOrDefault: $0.statusRawValue) == .running }.count
     }
 }
 
@@ -44,7 +43,6 @@ struct BackgroundAgentTaskStatusBarView: View {
 
 /// 后台任务列表视图（用于在 popover 中显示）
 struct BackgroundAgentTaskListView: View {
-    let tasks: [BackgroundAgentTask]
     let onRefresh: () -> Void
 
     @State private var currentPage: Int = 1
@@ -76,7 +74,6 @@ struct BackgroundAgentTaskListView: View {
             Text(L10n.confirmClearMessage)
         }
         .onAppear {
-            total = tasks.count
             loadPage(1)
         }
     }
@@ -346,11 +343,9 @@ struct BackgroundAgentTaskListView: View {
     }
 
     private func loadPage(_ page: Int) {
-        let startIndex = (page - 1) * pageSize
-        let endIndex = min(startIndex + pageSize, tasks.count)
-
-        displayTasks = Array(tasks[startIndex..<endIndex])
-        total = tasks.count
+        let result = BackgroundAgentTaskStore.shared.fetchPage(page: page, pageSize: pageSize)
+        displayTasks = result.tasks
+        total = result.total
         currentPage = page
         expandedTaskId = nil
     }
