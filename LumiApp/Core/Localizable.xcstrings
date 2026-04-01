@@ -1090,6 +1090,9 @@
         }
       }
     },
+    "Are you sure you want to clear all completed and failed tasks? This action cannot be undone." : {
+
+    },
     "Are you sure you want to delete image %@? This action cannot be undone." : {
       "localizations" : {
         "zh-Hans" : {
@@ -1386,6 +1389,9 @@
         }
       }
     },
+    "Clear Completed" : {
+
+    },
     "Clear History" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1515,6 +1521,9 @@
         }
       }
     },
+    "Completed" : {
+
+    },
     "Configuration" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1562,6 +1571,9 @@
           }
         }
       }
+    },
+    "Confirm Clear" : {
+
     },
     "Confirm Delete" : {
       "localizations" : {
@@ -2315,6 +2327,9 @@
           }
         }
       }
+    },
+    "Failed" : {
+
     },
     "Failed to kill process: \\(error.localizedDescription)" : {
       "extractionState" : "manual",
@@ -3252,6 +3267,9 @@
         }
       }
     },
+    "No background tasks" : {
+
+    },
     "No clipboard records" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3475,6 +3493,9 @@
           }
         }
       }
+    },
+    "Pending" : {
+
     },
     "Permission Required" : {
       "localizations" : {
@@ -3949,6 +3970,9 @@
           }
         }
       }
+    },
+    "Running" : {
+
     },
     "Rust" : {
       "localizations" : {
