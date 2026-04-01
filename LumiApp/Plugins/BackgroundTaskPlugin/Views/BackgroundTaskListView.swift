@@ -1,48 +1,10 @@
 import Foundation
 import SwiftUI
 
-// MARK: - Status Bar View
-
-struct BackgroundAgentTaskStatusBarView: View {
-    @State private var runningCount: Int = 0
-
-    var body: some View {
-        StatusBarHoverContainer(
-            detailView: BackgroundAgentTaskListView(onRefresh: reload),
-            popoverWidth: 560,
-            id: "background-task-status"
-        ) {
-            HStack(spacing: 4) {
-                Image(systemName: "clock.arrow.circlepath")
-                    .font(.system(size: 11))
-                    // 运行中图标保留蓝色以区分状态
-                    .foregroundColor(runningCount > 0 ? .blue : .white)
-
-                if runningCount > 0 {
-                    Text("\(runningCount)")
-                        .font(.system(size: 11))
-                        .opacity(0.8)
-                }
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-        }
-        .onAppear {
-            reload()
-        }
-    }
-
-    private func reload() {
-        // 仅统计运行中的任务数量
-        let allTasks = BackgroundAgentTaskStore.shared.fetchRecent(limit: 1000)
-        runningCount = allTasks.filter { BackgroundAgentTaskStatus(rawOrDefault: $0.statusRawValue) == .running }.count
-    }
-}
-
-// MARK: - Detail List View
+// MARK: - Background Agent Task List View
 
 /// 后台任务列表视图（用于在 popover 中显示）
-struct BackgroundAgentTaskListView: View {
+struct BackgroundTaskListView: View {
     let onRefresh: () -> Void
 
     @State private var currentPage: Int = 1
@@ -267,6 +229,7 @@ struct BackgroundAgentTaskListView: View {
                     .font(.system(size: 11))
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                     .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             if let summary = task.resultSummary, !summary.isEmpty {
@@ -278,6 +241,7 @@ struct BackgroundAgentTaskListView: View {
                         .font(.system(size: 11))
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             } else if let error = task.errorDescription, !error.isEmpty {
                 VStack(alignment: .leading, spacing: 2) {
@@ -288,10 +252,12 @@ struct BackgroundAgentTaskListView: View {
                         .font(.system(size: 11))
                         .foregroundColor(DesignTokens.Color.semantic.error)
                         .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
         }
         .padding(8)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 6)
                 .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.05))
@@ -414,39 +380,39 @@ private enum L10n {
     }
 
     // Header
-    static var title: String { localized("后台任务") }
-    static func totalCount(_ count: Int) -> String { L10n.localized("共 %lld 条", count) }
-    static var clearCompleted: String { localized("清除已完成") }
-    static var clearCompletedHelp: String { localized("清除所有已完成和失败的任务") }
-    static var refresh: String { localized("刷新") }
+    static var title: String { localized("Background Tasks") }
+    static func totalCount(_ count: Int) -> String { L10n.localized("Total: %lld", count) }
+    static var clearCompleted: String { localized("Clear Completed") }
+    static var clearCompletedHelp: String { localized("Clear all completed and failed tasks") }
+    static var refresh: String { localized("Refresh") }
 
     // Alert
-    static var confirmClearTitle: String { localized("确认清除") }
-    static var cancel: String { localized("取消") }
-    static var confirmClearMessage: String { localized("确定要清除所有已完成和失败的任务吗？此操作不可撤销。") }
+    static var confirmClearTitle: String { localized("Confirm Clear") }
+    static var cancel: String { localized("Cancel") }
+    static var confirmClearMessage: String { localized("Are you sure you want to clear all completed and failed tasks? This action cannot be undone.") }
 
     // Table
-    static var colStatus: String { localized("状态") }
-    static var colPrompt: String { localized("指令") }
-    static var colCreatedAt: String { localized("创建时间") }
-    static var colDuration: String { localized("耗时") }
-    static var colActions: String { localized("操作") }
-    static var emptyTitle: String { localized("暂无后台任务") }
+    static var colStatus: String { localized("Status") }
+    static var colPrompt: String { localized("Instruction") }
+    static var colCreatedAt: String { localized("Created At") }
+    static var colDuration: String { localized("Duration") }
+    static var colActions: String { localized("Actions") }
+    static var emptyTitle: String { localized("No background tasks") }
 
     // Detail
-    static var promptFull: String { localized("指令全文") }
-    static var resultLabel: String { localized("执行结果") }
-    static var errorLabel: String { localized("错误信息") }
-    static var deleteHelp: String { localized("删除此任务") }
+    static var promptFull: String { localized("Full Instruction") }
+    static var resultLabel: String { localized("Result") }
+    static var errorLabel: String { localized("Error Message") }
+    static var deleteHelp: String { localized("Delete this task") }
 
     // Pagination
     static func pageIndicator(_ current: Int, _ total: Int) -> String {
-        L10n.localized("第 %lld / %lld 页", current, total)
+        L10n.localized("Page %lld / %lld", current, total)
     }
 
     // Status
-    static var statusPending: String { localized("等待") }
-    static var statusRunning: String { localized("执行") }
-    static var statusSucceeded: String { localized("完成") }
-    static var statusFailed: String { localized("失败") }
+    static var statusPending: String { localized("Pending") }
+    static var statusRunning: String { localized("Running") }
+    static var statusSucceeded: String { localized("Completed") }
+    static var statusFailed: String { localized("Failed") }
 }

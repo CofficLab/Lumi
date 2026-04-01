@@ -2,7 +2,7 @@ import Foundation
 
 struct ListBackgroundTasksTool: AgentTool {
     let name: String = "list_background_agent_tasks"
-    let description: String = "列出最近的后台 Agent 任务及其状态，供你了解有哪些任务正在运行或已经完成。"
+    let description: String = String(localized: "List recent background agent tasks and their status. Useful for understanding what tasks are running or have completed.", table: "BackgroundAgentTask")
 
     var inputSchema: [String: Any] {
         [
@@ -10,7 +10,7 @@ struct ListBackgroundTasksTool: AgentTool {
             "properties": [
                 "limit": [
                     "type": "integer",
-                    "description": "最多返回多少条任务记录，默认 20。",
+                    "description": String(localized: "Maximum number of tasks to return.", table: "BackgroundAgentTask"),
                     "minimum": 1,
                     "maximum": 100
                 ]
