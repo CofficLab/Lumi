@@ -102,9 +102,11 @@ struct BackgroundTaskListView: View {
         HStack(spacing: 0) {
             tableColumn(L10n.colStatus, width: 80)
             tableColumn(L10n.colPrompt, width: nil)
-            tableColumn(L10n.colCreatedAt, width: 100)
-            tableColumn(L10n.colDuration, width: 60, alignment: .trailing)
-            tableColumn(L10n.colActions, width: 50, alignment: .center)
+            tableColumn(L10n.colCreatedAt, width: 90)
+            tableColumn(L10n.colStartedAt, width: 90)
+            tableColumn(L10n.colFinishedAt, width: 90)
+            tableColumn(L10n.colDuration, width: 55, alignment: .trailing)
+            tableColumn(L10n.colActions, width: 40, alignment: .center)
         }
         .padding(.horizontal, AppUI.Spacing.md)
         .padding(.vertical, AppUI.Spacing.sm)
@@ -152,13 +154,25 @@ struct BackgroundTaskListView: View {
                     Text(shortTime(task.createdAt))
                         .font(AppUI.Typography.caption1)
                         .foregroundColor(AppUI.Color.semantic.textTertiary)
-                        .frame(width: 100, alignment: .leading)
+                        .frame(width: 90, alignment: .leading)
+
+                    // 开始时间列
+                    Text(task.startedAt.map { shortTime($0) } ?? "-")
+                        .font(AppUI.Typography.caption1)
+                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .frame(width: 90, alignment: .leading)
+
+                    // 完成时间列
+                    Text(task.finishedAt.map { shortTime($0) } ?? "-")
+                        .font(AppUI.Typography.caption1)
+                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .frame(width: 90, alignment: .leading)
 
                     // 耗时列
                     Text(durationText(task: task))
                         .font(AppUI.Typography.caption1)
                         .foregroundColor(AppUI.Color.semantic.textTertiary)
-                        .frame(width: 60, alignment: .trailing)
+                        .frame(width: 55, alignment: .trailing)
 
                     // 操作列 - 使用 AppIconButton
                     AppIconButton(
@@ -166,7 +180,7 @@ struct BackgroundTaskListView: View {
                         tint: AppUI.Color.semantic.textTertiary,
                         action: { deleteTask(task) }
                     )
-                    .frame(width: 50, alignment: .center)
+                    .frame(width: 40, alignment: .center)
                 }
                 .contentShape(Rectangle())
                 .onTapGesture {
@@ -320,6 +334,8 @@ private enum L10n {
     static var colStatus: String { localized("Status") }
     static var colPrompt: String { localized("Instruction") }
     static var colCreatedAt: String { localized("Created At") }
+    static var colStartedAt: String { localized("Started At") }
+    static var colFinishedAt: String { localized("Finished At") }
     static var colDuration: String { localized("Duration") }
     static var colActions: String { localized("Actions") }
 

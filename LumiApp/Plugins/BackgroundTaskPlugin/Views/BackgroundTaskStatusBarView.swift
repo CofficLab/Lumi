@@ -9,7 +9,7 @@ struct BackgroundTaskStatusBarView: View {
     var body: some View {
         StatusBarHoverContainer(
             detailView: BackgroundTaskListView(onRefresh: reload),
-            popoverWidth: 560,
+            popoverWidth: 720,
             id: "background-task-status"
         ) {
             HStack(spacing: 4) {
