@@ -2,7 +2,7 @@ import Foundation
 
 struct GetBackgroundTaskDetailTool: AgentTool {
     let name: String = "get_background_agent_task_detail"
-    let description: String = "根据任务 ID 查询单个后台 Agent 任务的详细信息，包括指令、状态、结果摘要与错误信息。"
+    let description: String = String(localized: "Get detailed information about a background agent task by ID, including instruction, status, result summary, and error message.", table: "BackgroundAgentTask")
 
     var inputSchema: [String: Any] {
         [
@@ -10,7 +10,7 @@ struct GetBackgroundTaskDetailTool: AgentTool {
             "properties": [
                 "task_id": [
                     "type": "string",
-                    "description": "后台任务的 UUID 字符串。"
+                    "description": String(localized: "Task ID of the background agent task.", table: "BackgroundAgentTask")
                 ]
             ],
             "required": ["task_id"]
@@ -27,7 +27,7 @@ struct GetBackgroundTaskDetailTool: AgentTool {
             throw NSError(
                 domain: "GetBackgroundAgentTaskDetailTool",
                 code: 400,
-                userInfo: [NSLocalizedDescriptionKey: "task_id 必须是有效的 UUID 字符串"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "task_id must be a valid UUID string", table: "BackgroundAgentTask")]
             )
         }
 
@@ -35,7 +35,7 @@ struct GetBackgroundTaskDetailTool: AgentTool {
             let result: [String: Any] = [
                 "found": false,
                 "task_id": idString,
-                "message": "指定 ID 的后台任务不存在"
+                "message": String(localized: "Background task with specified ID does not exist", table: "BackgroundAgentTask")
             ]
             let data = try JSONSerialization.data(withJSONObject: result, options: [.prettyPrinted])
             return String(data: data, encoding: .utf8) ?? "{\"found\":false}"

@@ -8,8 +8,8 @@ actor BackgroundAgentTaskPlugin: SuperPlugin, SuperLog {
     nonisolated static let verbose = false
 
     static let id: String = "BackgroundAgentTaskPlugin"
-    static let displayName: String = String(localized: "后台 Agent 任务", table: "BackgroundAgentTask")
-    static let description: String = String(localized: "接收指令并在后台异步执行任务，任务结果存储在插件自有数据库中。", table: "BackgroundAgentTask")
+    static let displayName: String = String(localized: "Background Agent Task", table: "BackgroundAgentTask")
+    static let description: String = String(localized: "Receive instructions and execute tasks asynchronously in the background. Task results are stored in the plugin's own database.", table: "BackgroundAgentTask")
     static let iconName: String = "clock.arrow.circlepath"
     static let isConfigurable: Bool = false
     static let enable: Bool = true
@@ -29,7 +29,7 @@ actor BackgroundAgentTaskPlugin: SuperPlugin, SuperLog {
 
     // MARK: - 协调器状态
 
-    private var worker: BackgroundAgentTaskWorker?
+    private var worker: BackgroundWorker?
     private nonisolated(unsafe) var taskCreationObserver: NSObjectProtocol?
 
     // MARK: - 插件生命周期
@@ -68,7 +68,7 @@ actor BackgroundAgentTaskPlugin: SuperPlugin, SuperLog {
     private func startWorker() async {
         guard worker == nil else { return }
 
-        let newWorker = BackgroundAgentTaskWorker()
+        let newWorker = BackgroundWorker()
         await newWorker.start()
         worker = newWorker
 
@@ -142,7 +142,7 @@ actor BackgroundAgentTaskPlugin: SuperPlugin, SuperLog {
     /// 提供根视图包裹器，用于从 Environment 同步 LLM 配置
     @MainActor
     func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
-        AnyView(BackgroundTaskConfigRootView(content: content()))
+        AnyView(BackgroundTaskRootView(content: content()))
     }
 
     // MARK: - 配置管理
@@ -171,7 +171,7 @@ actor BackgroundAgentTaskPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func addStatusBarTrailingView() -> AnyView? {
-        AnyView(BackgroundAgentTaskStatusBarView())
+        AnyView(BackgroundTaskStatusBarView())
     }
 }
 

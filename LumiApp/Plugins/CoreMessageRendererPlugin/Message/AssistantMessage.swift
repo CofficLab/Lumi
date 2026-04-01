@@ -9,7 +9,6 @@ struct AssistantMessage: View {
     let isLastMessage: Bool
     let relatedToolOutputs: [ChatMessage]
 
-    @ObservedObject private var expansionState = MessageExpansionState.shared
     @Binding var showRawMessage: Bool
     private static let timestampFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -19,16 +18,6 @@ struct AssistantMessage: View {
 
     private var renderMetadata: MessageRenderMetadata {
         MessageRenderCache.shared.metadata(for: message)
-    }
-
-    // MARK: - Computed
-
-    private var isLongMessage: Bool {
-        renderMetadata.isLongMessage
-    }
-
-    private var isExpanded: Bool {
-        expansionState.isExpanded(id: message.id, defaultExpanded: !renderMetadata.shouldDefaultCollapse)
     }
 
     private var shouldShowThinkingProcess: Bool {
@@ -78,17 +67,7 @@ struct AssistantMessage: View {
                     } else {
                         MarkdownView(
                             message: message,
-                            showRawMessage: showRawMessage,
-                            isCollapsible: isLongMessage,
-                            isExpanded: isExpanded,
-                            onToggleExpand: {
-                                Task { @MainActor in
-                                    expansionState.toggleExpansion(
-                                        id: message.id,
-                                        defaultExpanded: !renderMetadata.shouldDefaultCollapse
-                                    )
-                                }
-                            }
+                            showRawMessage: showRawMessage
                         )
                         .messageBubbleStyle(role: message.role, isError: message.isError)
                     }
@@ -112,11 +91,6 @@ struct AssistantMessage: View {
 
                 // 用户消息才显示重发，这里是助手消息，不需要重发按钮
 
-                // 折叠/展开按钮（仅当内容是长消息时显示）
-                if isLongMessage {
-                    expandCollapseButton
-                }
-
                 // 时间戳
                 Text(formatTimestamp(message.timestamp))
                     .font(AppUI.Typography.caption2)
@@ -137,23 +111,6 @@ struct AssistantMessage: View {
             items.append(formatModelName(modelName))
         }
         return items
-    }
-
-    private var expandCollapseButton: some View {
-        Group {
-            if isExpanded {
-                CollapseButton(action: {
-                    Task { @MainActor in
-                        expansionState.toggleExpansion(
-                            id: message.id,
-                            defaultExpanded: !renderMetadata.shouldDefaultCollapse
-                        )
-                    }
-                })
-            } else {
-                AppTag("已折叠")
-            }
-        }
     }
 
     // MARK: - Helper Methods (Header)

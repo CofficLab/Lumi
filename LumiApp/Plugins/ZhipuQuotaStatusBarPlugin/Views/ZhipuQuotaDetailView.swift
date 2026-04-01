@@ -4,6 +4,14 @@ import MagicKit
 /// 智谱 GLM 配额详情视图（在 popover 中显示）
 struct ZhipuQuotaDetailView: View {
     let status: ZhipuQuotaStatus
+    let onRefresh: (() -> Void)?
+
+    @State private var isRefreshing: Bool = false
+
+    init(status: ZhipuQuotaStatus, onRefresh: (() -> Void)? = nil) {
+        self.status = status
+        self.onRefresh = onRefresh
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
@@ -18,6 +26,17 @@ struct ZhipuQuotaDetailView: View {
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
                 Spacer()
+
+                // 刷新按钮
+                Button(action: {
+                    triggerRefresh()
+                }) {
+                    Image(systemName: isRefreshing ? "arrow.clockwise" : "arrow.clockwise")
+                        .font(.system(size: 14))
+                        .rotationEffect(.degrees(isRefreshing ? 360 : 0))
+                }
+                .buttonStyle(.plain)
+                .disabled(isRefreshing)
             }
 
             Divider()
@@ -193,6 +212,17 @@ struct ZhipuQuotaDetailView: View {
             return .orange
         } else {
             return .red
+        }
+    }
+
+    /// 触发刷新
+    private func triggerRefresh() {
+        guard !isRefreshing else { return }
+        isRefreshing = true
+        onRefresh?()
+        // 动画完成后重置状态
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            isRefreshing = false
         }
     }
 }

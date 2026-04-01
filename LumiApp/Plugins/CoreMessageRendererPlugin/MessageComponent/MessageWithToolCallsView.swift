@@ -9,39 +9,16 @@ struct MessageWithToolCallsView: View {
     @EnvironmentObject var permissionRequestViewModel: PermissionRequestVM
     @EnvironmentObject var timelineViewModel: ChatTimelineViewModel
 
-    @ObservedObject private var expansionState = MessageExpansionState.shared
     @State private var showRawMessage: Bool = false
     @State private var expandedParameterToolCallIDs = Set<String>()
     @State private var expandedResultToolCallIDs = Set<String>()
-
-    private var renderMetadata: MessageRenderMetadata {
-        MessageRenderCache.shared.metadata(for: message)
-    }
-
-    private var isLongMessage: Bool {
-        renderMetadata.isLongMessage
-    }
-
-    private var isExpanded: Bool {
-        expansionState.isExpanded(id: message.id, defaultExpanded: !renderMetadata.shouldDefaultCollapse)
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if !message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !shouldHideMessageBody {
                 MarkdownView(
                     message: message,
-                    showRawMessage: showRawMessage,
-                    isCollapsible: isLongMessage,
-                    isExpanded: isExpanded,
-                    onToggleExpand: {
-                        Task { @MainActor in
-                            expansionState.toggleExpansion(
-                                id: message.id,
-                                defaultExpanded: !renderMetadata.shouldDefaultCollapse
-                            )
-                        }
-                    }
+                    showRawMessage: showRawMessage
                 )
                 .messageBubbleStyle(role: message.role, isError: message.isError)
             }

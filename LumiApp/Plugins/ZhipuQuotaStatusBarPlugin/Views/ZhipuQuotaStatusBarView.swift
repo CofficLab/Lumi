@@ -4,7 +4,10 @@ import Foundation
 import os
 
 /// 智谱 GLM 配额状态栏视图
-struct ZhipuQuotaStatusBarView: View {
+struct ZhipuQuotaStatusBarView: View, SuperLog {
+    nonisolated static let emoji = "📊"
+    nonisolated static let verbose = true
+
     @EnvironmentObject private var llmVM: LLMVM
     @State private var quotaStatus: ZhipuQuotaStatus = .loading
     @State private var lastUpdateTime: Date?
@@ -62,7 +65,9 @@ struct ZhipuQuotaStatusBarView: View {
     /// 加载视图
     private var loadingView: some View {
         StatusBarHoverContainer(
-            detailView: ZhipuQuotaDetailView(status: quotaStatus),
+            detailView: ZhipuQuotaDetailView(status: quotaStatus, onRefresh: {
+                refreshQuota()
+            }),
             id: "zhipu-quota-status"
         ) {
             HStack(spacing: 6) {
@@ -80,7 +85,9 @@ struct ZhipuQuotaStatusBarView: View {
     /// 成功视图
     private func successView(_ data: ZhipuQuotaData) -> some View {
         StatusBarHoverContainer(
-            detailView: ZhipuQuotaDetailView(status: quotaStatus),
+            detailView: ZhipuQuotaDetailView(status: quotaStatus, onRefresh: {
+                refreshQuota()
+            }),
             id: "zhipu-quota-status"
         ) {
             HStack(spacing: 6) {
@@ -98,7 +105,9 @@ struct ZhipuQuotaStatusBarView: View {
     /// 错误视图
     private func errorView(_ message: String) -> some View {
         StatusBarHoverContainer(
-            detailView: ZhipuQuotaDetailView(status: quotaStatus),
+            detailView: ZhipuQuotaDetailView(status: quotaStatus, onRefresh: {
+                refreshQuota()
+            }),
             id: "zhipu-quota-status"
         ) {
             HStack(spacing: 6) {
@@ -144,9 +153,9 @@ struct ZhipuQuotaStatusBarView: View {
                 lastUpdateTime = Date()
 
                 if case .success(let data) = result.status {
-                    ZhipuQuotaStatusBarPlugin.logger.info("智谱 GLM 配额更新：\(data.statusText)")
+                    ZhipuQuotaStatusBarPlugin.logger.info("\(Self.t)智谱 GLM 配额更新：\(data.statusText)")
                 } else {
-                    ZhipuQuotaStatusBarPlugin.logger.warning("智谱 GLM 配额获取失败")
+                    ZhipuQuotaStatusBarPlugin.logger.warning("\(Self.t)智谱 GLM 配额获取失败")
                 }
             }
         }

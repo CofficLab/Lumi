@@ -3,6 +3,8 @@ import SwiftUI
 // MARK: - Chat Bubble
 
 /// 聊天气泡组件，用于显示用户消息、助手回复和工具输出
+///
+/// **新架构**：通过 MessageRendererVM 获取渲染视图，不再硬编码判断消息类型。
 struct ChatBubble: View {
     /// 消息对象
     let message: ChatMessage
@@ -14,6 +16,7 @@ struct ChatBubble: View {
     let isStreaming: Bool
 
     @State private var showRawMessage: Bool = false
+    @EnvironmentObject var messageRendererVM: MessageRendererVM
 
     /// 初始化
     /// - Parameters:
@@ -35,68 +38,40 @@ struct ChatBubble: View {
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             // MARK: - Avatar
-
+            
             AvatarChatView(role: message.role, isToolOutput: message.isToolOutput)
 
             // MARK: - Content
-
-            VStack(alignment: .leading, spacing: 4) {
-                if message.role == .assistant {
-                    if isStreaming {
-                        StreamingAssistantRowView(message: message)
-                            .messageBubbleStyle(role: message.role, isError: message.isError)
-                    } else {
-                        AssistantMessage(
-                            message: message,
-                            isLastMessage: isLastMessage,
-                            relatedToolOutputs: relatedToolOutputs,
-                            showRawMessage: $showRawMessage
-                        )
-                    }
-                } else if message.role == .tool || message.isToolOutput {
-                    ToolOutputView(message: message)
+            
+            // 特殊情况：流式消息（UI 层特殊状态，不通过渲染器处理）
+            if message.role == .assistant && isStreaming {
+                StreamingAssistantRowView(message: message)
+                    .messageBubbleStyle(role: message.role, isError: message.isError)
+            } else {
+                // 使用环境变量中的 VM 获取渲染视图（新架构）
+                if let renderer = messageRendererVM.findRenderer(for: message) {
+                    renderer.render(message: message, showRawMessage: $showRawMessage)
                 } else {
-                    // 用户/系统/状态/错误消息
-                    VStack(alignment: .leading, spacing: 4) {
-                        switch message.role {
-                        case .user:
-                            UserMessage(
-                                message: message,
-                                showRawMessage: $showRawMessage
-                            )
-                        case .system:
-                            SystemMessage(
-                                message: message,
-                                showRawMessage: $showRawMessage
-                            )
-                        case .status:
-                            StatusMessage(
-                                message: message
-                            )
-                        case .error:
-                            ErrorMessage(
-                                message: message,
-                                showRawMessage: $showRawMessage
-                            )
-                        case .tool:
-                            ToolOutputView(message: message)
-                        default:
-                            MarkdownView(
-                                message: message,
-                                showRawMessage: showRawMessage,
-                                isCollapsible: false,
-                                isExpanded: true,
-                                onToggleExpand: {}
-                            )
-                            .messageBubbleStyle(role: message.role, isError: message.isError)
-                        }
-                    }
+                    // 兜底：如果没有匹配的渲染器，显示原始内容
+                    fallbackView
                 }
-
             }
 
             Spacer()
         }
     }
-
+    
+    // MARK: - Fallback View
+    
+    /// 兜底视图：当注册表中没有匹配的渲染器时使用
+    private var fallbackView: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(message.content)
+                .font(.body)
+                .foregroundColor(.primary)
+        }
+        .padding()
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(8)
+    }
 }

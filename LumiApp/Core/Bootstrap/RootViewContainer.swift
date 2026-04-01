@@ -33,6 +33,7 @@ final class RootViewContainer: ObservableObject {
 
     let appProvider: GlobalVM
     let pluginVM: PluginVM
+    let messageRendererVM: MessageRendererVM
     let mystiqueThemeManager: ThemeManager
     let projectVM: ProjectVM
     let chatHistoryVM: ChatHistoryVM
@@ -92,6 +93,7 @@ final class RootViewContainer: ObservableObject {
 
         self.appProvider = GlobalVM()
         self.pluginVM = PluginVM.shared
+        self.messageRendererVM = MessageRendererVM.shared
         self.mystiqueThemeManager = appProvider.themeManager
         self.projectVM = Lumi.ProjectVM(
             contextService: contextService,

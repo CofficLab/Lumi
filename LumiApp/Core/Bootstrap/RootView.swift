@@ -48,6 +48,7 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(container.projectVM)
             .environmentObject(container.providerRegistry)
             .environmentObject(container.pluginVM)
+            .environmentObject(container.messageRendererVM)
             .environmentObject(container.conversationTurnServices)
             .environmentObject(container.agentSessionConfig)
             .environmentObject(container.chatHistoryVM)

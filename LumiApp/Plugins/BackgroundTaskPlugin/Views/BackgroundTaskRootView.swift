@@ -9,7 +9,7 @@ import os
 /// 2. 将配置同步到 BackgroundAgentTaskPlugin，供 Worker 使用
 /// 3. 监听配置变化，自动更新插件中的配置
 @MainActor
-struct BackgroundTaskConfigRootView<Content: View>: View, SuperLog {
+struct BackgroundTaskRootView<Content: View>: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static var emoji: String { "🧵" }
     /// 是否输出详细日志
