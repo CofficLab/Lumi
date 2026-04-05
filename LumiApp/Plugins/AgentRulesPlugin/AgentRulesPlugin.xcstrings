@@ -1,0 +1,142 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Agent Rules" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent Rules"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent 规则"
+          }
+        }
+      }
+    },
+    "Create a new rule document in the .agent/rules directory. The document will be created as a Markdown file with the specified title and content." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create a new rule document in the .agent/rules directory. The document will be created as a Markdown file with the specified title and content."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 .agent/rules 目录中创建新的规则文档。文档将创建为带有指定标题和内容的 Markdown 文件。"
+          }
+        }
+      }
+    },
+    "List all rule documents in the .agent/rules directory. Returns metadata including filename, title, description, file size, and modification date for each rule document." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List all rule documents in the .agent/rules directory. Returns metadata including filename, title, description, file size, and modification date for each rule document."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "列出 .agent/rules 目录中的所有规则文档。返回每个规则文档的元数据，包括文件名、标题、描述、文件大小和修改日期。"
+          }
+        }
+      }
+    },
+    "Manage rule documents in .agent/rules directory" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage rule documents in .agent/rules directory"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理 .agent/rules 目录中的规则文档"
+          }
+        }
+      }
+    },
+    "Maximum number of rules to return (default: all)." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maximum number of rules to return (default: all)."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返回的最大规则数（默认：全部）。"
+          }
+        }
+      }
+    },
+    "The content of the rule document in Markdown format. If empty, only the title heading will be created." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The content of the rule document in Markdown format. If empty, only the title heading will be created."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "规则文档的内容（Markdown 格式）。如果为空，将仅创建标题标题。"
+          }
+        }
+      }
+    },
+    "The filename for the new rule document (without .md extension, will be added automatically). Use kebab-case or snake_case naming convention." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The filename for the new rule document (without .md extension, will be added automatically). Use kebab-case or snake_case naming convention."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新规则文档的文件名（不含 .md 扩展名，将自动添加）。使用 kebab-case 或 snake_case 命名约定。"
+          }
+        }
+      }
+    },
+    "The title of the rule document (will be added as a level 1 heading)." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The title of the rule document (will be added as a level 1 heading)."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "规则文档的标题（将作为一级标题添加）。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

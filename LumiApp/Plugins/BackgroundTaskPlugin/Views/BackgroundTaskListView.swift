@@ -25,15 +25,15 @@ struct BackgroundTaskListView: View {
             paginationBar
         }
         .frame(minHeight: 500)
-        .alert("Confirm Clear", isPresented: $showClearConfirm) {
-            Button("Cancel", role: .cancel) {}
-            Button("Clear Completed", role: .destructive) {
+        .alert(String(localized: "Confirm Clear", table: "BackgroundAgentTask"), isPresented: $showClearConfirm) {
+            Button(String(localized: "Cancel", table: "BackgroundAgentTask"), role: .cancel) {}
+            Button(String(localized: "Clear Completed", table: "BackgroundAgentTask"), role: .destructive) {
                 BackgroundAgentTaskStore.shared.deleteCompleted()
                 loadPage(min(currentPage, totalPages))
                 onRefresh()
             }
         } message: {
-            Text("Are you sure you want to clear all completed and failed tasks? This action cannot be undone.")
+            Text(String(localized: "Are you sure you want to clear all completed and failed tasks? This action cannot be undone.", table: "BackgroundAgentTask"))
         }
         .onAppear {
             loadPage(1)
@@ -44,19 +44,30 @@ struct BackgroundTaskListView: View {
 
     private var headerBar: some View {
         HStack {
-            Text(L10n.title)
+            Text(String(localized: "Background Tasks", table: "BackgroundAgentTask"))
                 .font(AppUI.Typography.bodyEmphasized)
                 .foregroundColor(AppUI.Color.semantic.textPrimary)
 
             Spacer()
 
-            AppButton(
-                "Clear Completed",
-                systemImage: "trash",
-                style: .ghost,
-                size: .small,
-                action: { showClearConfirm = true }
-            )
+            Button {
+                showClearConfirm = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "trash")
+                    Text(String(localized: "Clear Completed", table: "BackgroundAgentTask"))
+                }
+                .font(AppUI.Typography.caption1)
+                .foregroundStyle(Color.accentColor)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                        .stroke(Color.accentColor.opacity(0.25), lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous))
+            }
+            .buttonStyle(.plain)
             .disabled(total == 0)
 
             AppIconButton(
@@ -81,10 +92,16 @@ struct BackgroundTaskListView: View {
             GlassDivider()
 
             if displayTasks.isEmpty {
-                AppEmptyState(
-                    icon: "tray",
-                    title: "No background tasks"
-                )
+                VStack(spacing: AppUI.Spacing.md) {
+                    Image(systemName: "tray")
+                        .font(.system(size: 48))
+                        .foregroundColor(AppUI.Color.semantic.textSecondary.opacity(0.6))
+                    Text(String(localized: "No background tasks", table: "BackgroundAgentTask"))
+                        .font(AppUI.Typography.bodyEmphasized)
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(AppUI.Spacing.xl)
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
@@ -100,13 +117,13 @@ struct BackgroundTaskListView: View {
 
     private var tableHeaderRow: some View {
         HStack(spacing: 0) {
-            tableColumn(L10n.colStatus, width: 80)
-            tableColumn(L10n.colPrompt, width: nil)
-            tableColumn(L10n.colCreatedAt, width: 90)
-            tableColumn(L10n.colStartedAt, width: 90)
-            tableColumn(L10n.colFinishedAt, width: 90)
-            tableColumn(L10n.colDuration, width: 55, alignment: .trailing)
-            tableColumn(L10n.colActions, width: 40, alignment: .center)
+            tableColumn(String(localized: "Status", table: "BackgroundAgentTask"), width: 80)
+            tableColumn(String(localized: "Instruction", table: "BackgroundAgentTask"), width: nil)
+            tableColumn(String(localized: "Created At", table: "BackgroundAgentTask"), width: 90)
+            tableColumn(String(localized: "Started At", table: "BackgroundAgentTask"), width: 90)
+            tableColumn(String(localized: "Finished At", table: "BackgroundAgentTask"), width: 90)
+            tableColumn(String(localized: "Duration", table: "BackgroundAgentTask"), width: 55, alignment: .trailing)
+            tableColumn(String(localized: "Actions", table: "BackgroundAgentTask"), width: 40, alignment: .center)
         }
         .padding(.horizontal, AppUI.Spacing.md)
         .padding(.vertical, AppUI.Spacing.sm)
@@ -138,7 +155,7 @@ struct BackgroundTaskListView: View {
         return GlassRow {
             VStack(spacing: 0) {
                 HStack(spacing: 0) {
-                    // 状态列 - 使用 GlassBadge
+                    // 状态列
                     statusBadge(for: status)
                         .frame(width: 80, alignment: .leading)
 
@@ -174,7 +191,7 @@ struct BackgroundTaskListView: View {
                         .foregroundColor(AppUI.Color.semantic.textTertiary)
                         .frame(width: 55, alignment: .trailing)
 
-                    // 操作列 - 使用 AppIconButton
+                    // 操作列
                     AppIconButton(
                         systemImage: "xmark",
                         tint: AppUI.Color.semantic.textTertiary,
@@ -200,14 +217,20 @@ struct BackgroundTaskListView: View {
     private func taskDetail(_ task: BackgroundAgentTask) -> some View {
         VStack(alignment: .leading, spacing: AppUI.Spacing.sm) {
             // 指令全文
-            GlassKeyValueRow(label: L10n.promptFull, value: task.originalPrompt)
+            GlassKeyValueRow(
+                label: String(localized: "Full Instruction", table: "BackgroundAgentTask"),
+                value: task.originalPrompt
+            )
 
             // 执行结果或错误信息
             if let summary = task.resultSummary, !summary.isEmpty {
-                GlassKeyValueRow(label: L10n.resultLabel, value: summary)
+                GlassKeyValueRow(
+                    label: String(localized: "Result", table: "BackgroundAgentTask"),
+                    value: summary
+                )
             } else if let error = task.errorDescription, !error.isEmpty {
                 VStack(alignment: .leading, spacing: AppUI.Spacing.xs) {
-                    Text(L10n.errorLabel)
+                    Text(String(localized: "Error Message", table: "BackgroundAgentTask"))
                         .font(AppUI.Typography.caption1)
                         .foregroundColor(AppUI.Color.semantic.textTertiary)
                     Text(error)
@@ -237,8 +260,7 @@ struct BackgroundTaskListView: View {
 
             Spacer()
 
-            // 合并显示：共 X 条 · 第 x/y 页
-            Text(L10n.paginationInfo(total: total, page: currentPage, totalPages: totalPages))
+            Text(paginationText)
                 .font(AppUI.Typography.caption1)
                 .foregroundColor(AppUI.Color.semantic.textTertiary)
 
@@ -284,13 +306,40 @@ struct BackgroundTaskListView: View {
 
     private func statusBadge(for status: BackgroundAgentTaskStatus) -> some View {
         let style = badgeStyle(for: status)
-        let label: LocalizedStringKey = switch status {
-        case .pending: "Pending"
-        case .running: "Running"
-        case .succeeded: "Completed"
-        case .failed: "Failed"
+        let label: String = switch status {
+        case .pending: String(localized: "Pending", table: "BackgroundAgentTask")
+        case .running: String(localized: "Running", table: "BackgroundAgentTask")
+        case .succeeded: String(localized: "Completed", table: "BackgroundAgentTask")
+        case .failed: String(localized: "Failed", table: "BackgroundAgentTask")
         }
-        return GlassBadge(text: label, style: style)
+        let fgColor: Color = switch style {
+        case .warning: AppUI.Color.semantic.warning
+        case .info: AppUI.Color.semantic.info
+        case .success: AppUI.Color.semantic.success
+        case .error: AppUI.Color.semantic.error
+        default: AppUI.Color.semantic.textSecondary
+        }
+        let bgColor = fgColor.opacity(0.15)
+        return Text(label)
+            .font(DesignTokens.Typography.caption1)
+            .foregroundColor(fgColor)
+            .padding(.horizontal, DesignTokens.Spacing.sm)
+            .padding(.vertical, DesignTokens.Spacing.xs)
+            .background(bgColor)
+            .overlay(
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.full)
+                    .stroke(fgColor.opacity(0.2), lineWidth: 1)
+            )
+            .cornerRadius(DesignTokens.Radius.full)
+    }
+
+    private var paginationText: String {
+        let totalStr = String(localized: "Total: %lld", table: "BackgroundAgentTask")
+            .replacingOccurrences(of: "%lld", with: "\(total)")
+        let pageStr = String(localized: "Page %lld / %lld", table: "BackgroundAgentTask")
+            .replacingOccurrences(of: "%lld", with: "\(currentPage)")
+            .replacingOccurrences(of: "%lld", with: "\(totalPages)")
+        return "\(totalStr) · \(pageStr)"
     }
 
     private func shortTime(_ date: Date) -> String {
@@ -311,46 +360,5 @@ struct BackgroundTaskListView: View {
         } else {
             return String(format: "%.1fh", interval / 3600)
         }
-    }
-}
-
-// MARK: - Localization
-
-private enum L10n {
-    static let table = "BackgroundAgentTask"
-
-    static func localized(_ key: String) -> String {
-        String(localized: String.LocalizationValue(key), table: table)
-    }
-
-    static func localized(_ key: String, _ args: CVarArg...) -> String {
-        String(format: localized(key), arguments: args)
-    }
-
-    // Header - String for Text view
-    static var title: String { localized("Background Tasks") }
-
-    // Table columns - String for Text view
-    static var colStatus: String { localized("Status") }
-    static var colPrompt: String { localized("Instruction") }
-    static var colCreatedAt: String { localized("Created At") }
-    static var colStartedAt: String { localized("Started At") }
-    static var colFinishedAt: String { localized("Finished At") }
-    static var colDuration: String { localized("Duration") }
-    static var colActions: String { localized("Actions") }
-
-    // Detail labels - String for GlassKeyValueRow
-    static var promptFull: String { localized("Full Instruction") }
-    static var resultLabel: String { localized("Result") }
-    static var errorLabel: String { localized("Error Message") }
-
-    // Pagination - 合并显示总数和页码
-    static func paginationInfo(total: Int, page: Int, totalPages: Int) -> String {
-        // 格式：共 X 条 · 第 x/y 页
-        let totalStr = localized("Total: %lld").replacingOccurrences(of: "%lld", with: "\(total)")
-        let pageStr = localized("Page %lld / %lld")
-            .replacingOccurrences(of: "%lld", with: "\(page)")
-            .replacingOccurrences(of: "%lld", with: "\(totalPages)")
-        return "\(totalStr) · \(pageStr)"
     }
 }
