@@ -44,14 +44,6 @@ actor AgentRulesPlugin: SuperPlugin, SuperLog {
         }
     }
 
-    // MARK: - 根视图
-
-    /// 提供根视图包裹器，用于从 Environment 同步当前项目路径
-    @MainActor
-    func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
-        AnyView(AgentRulesRootView(content: content()))
-    }
-
     // MARK: - Agent 工具
 
     @MainActor
