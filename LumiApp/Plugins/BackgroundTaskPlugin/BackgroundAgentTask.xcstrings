@@ -243,24 +243,24 @@
         }
       }
     },
-    "Create a background agent task to execute user instructions asynchronously. Suitable for long-running tasks that don't require real-time attention.": {
+    "Create a background agent task to execute user instructions asynchronously. IMPORTANT: If a task can be decomposed into smaller independent subtasks, always create multiple separate background tasks instead of one large task. Each subtask should be self-contained and executable. This improves parallelism, error isolation, and progress tracking.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Create a background agent task to execute user instructions asynchronously. Suitable for long-running tasks that don't require real-time attention."
+            "value": "Create a background agent task to execute user instructions asynchronously. IMPORTANT: If a task can be decomposed into smaller independent subtasks, always create multiple separate background tasks instead of one large task. Each subtask should be self-contained and executable. This improves parallelism, error isolation, and progress tracking."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "接收一条用户指令，将其保存为后台 Agent 任务并在后台异步执行。适用于需要长时间运行或不需要前台实时关注的任务。"
+            "value": "接收一条用户指令，将其保存为后台 Agent 任务并在后台异步执行。重要提示：如果一个任务可以拆解成多个独立的小任务，务必创建多个单独的后台任务而不是一个大任务。每个子任务应该是独立且可执行的。这样可以提高并行度、隔离错误并更好地跟踪进度。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "接收一條用戶指令，將其保存為後台 Agent 任務並在後台異步執行。適用於需要長時間運行或不需要前台實時關注的任務。"
+            "value": "接收一條用戶指令，將其保存為後台 Agent 任務並在後台異步執行。重要提示：如果一個任務可以拆解成多個獨立的小任務，務必創建多個單獨的後台任務而不是一個大任務。每個子任務應該是獨立且可執行的。這樣可以提高並行度、隔離錯誤並更好地跟踪進度。"
           }
         }
       }

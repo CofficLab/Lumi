@@ -1,8 +1,8 @@
 import Foundation
 
-struct CreateBackgroundAgentTaskTool: AgentTool {
+struct CreateBackgroundTaskTool: AgentTool {
     let name: String = "create_background_agent_task"
-    let description: String = String(localized: "Create a background agent task to execute user instructions asynchronously. Suitable for long-running tasks that don't require real-time attention.", table: "BackgroundAgentTask")
+    let description: String = String(localized: "Create a background agent task to execute user instructions asynchronously. IMPORTANT: If a task can be decomposed into smaller independent subtasks, always create multiple separate background tasks instead of one large task. Each subtask should be self-contained and executable. This improves parallelism, error isolation, and progress tracking.", table: "BackgroundAgentTask")
 
     var inputSchema: [String: Any] {
         [
