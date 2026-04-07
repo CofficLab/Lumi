@@ -50,6 +50,13 @@ actor AgentRulesPlugin: SuperPlugin, SuperLog {
     func agentToolFactories() -> [AnyAgentToolFactory] {
         [AnyAgentToolFactory(AgentRulesToolFactory())]
     }
+
+    // MARK: - 发送中间件
+
+    @MainActor
+    func sendMiddlewares() -> [AnySendMiddleware] {
+        [AnySendMiddleware(AgentRulesContextSendMiddleware())]
+    }
 }
 
 // MARK: - 工具工厂
