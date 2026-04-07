@@ -339,7 +339,10 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
     func outlineViewSelectionDidChange(_ notification: Notification) {
         guard let outlineView = notification.object as? NSOutlineView,
               let node = outlineView.item(atRow: outlineView.selectedRow) as? FileNode else { return }
-        
+
+        // 仅文件触发外部选中同步；目录只保留树内选中态，不改变右侧预览目标。
+        guard !node.isDirectory else { return }
+
         // 触发选中回调
         onSelect?(node.url)
     }
@@ -1124,11 +1127,9 @@ struct FileTreeView: NSViewRepresentable {
         }
         if let selectedURL = selectedFileURL {
             let currentSelected = context.coordinator.externalSelectedFileURL
-            if currentSelected?.standardizedFileURL != selectedURL.standardizedFileURL {
+            let didExternalSelectionChange = currentSelected?.standardizedFileURL != selectedURL.standardizedFileURL
+            if didExternalSelectionChange {
                 context.coordinator.externalSelectedFileURL = selectedURL
-            }
-            let outlineSelected = context.coordinator.currentOutlineSelectedFileURL
-            if outlineSelected?.standardizedFileURL != selectedURL.standardizedFileURL {
                 context.coordinator.selectExternalFileIfNeeded()
             }
         }
