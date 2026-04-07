@@ -2,21 +2,26 @@ import Foundation
 
 /// 列出 Agent 规则文档工具
 ///
-/// 返回 .agent/rules 目录中所有规则文档的列表
+/// 返回指定项目 .agent/rules 目录中所有规则文档的列表
 struct ListAgentRulesTool: AgentTool {
     let name: String = "list_agent_rules"
-    let description: String = String(localized: "List all rule documents in the .agent/rules directory. Returns metadata including filename, title, description, file size, and modification date for each rule document.", table: "AgentRules")
+    let description: String = String(localized: "List all rule documents in the .agent/rules directory of a project. Returns metadata including filename, title, description, file size, and modification date for each rule document.", table: "AgentRules")
 
     var inputSchema: [String: Any] {
         [
             "type": "object",
             "properties": [
+                "project_path": [
+                    "type": "string",
+                    "description": String(localized: "Absolute path to the project directory containing .agent/rules folder.", table: "AgentRules")
+                ],
                 "limit": [
                     "type": "integer",
                     "description": String(localized: "Maximum number of rules to return (default: all).", table: "AgentRules"),
                     "minimum": 1
                 ]
-            ]
+            ],
+            "required": ["project_path"]
         ]
     }
 
@@ -25,8 +30,12 @@ struct ListAgentRulesTool: AgentTool {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
+        guard let projectPath = arguments["project_path"]?.value as? String, !projectPath.isEmpty else {
+            throw AgentRulesError.invalidFileFormat("project_path is required")
+        }
+
         let limitValue = arguments["limit"]?.value as? Int
-        var rules = try await AgentRulesService.shared.listRules()
+        var rules = try await AgentRulesService.shared.listRules(projectPath: projectPath)
 
         // 应用限制
         if let limit = limitValue, limit > 0 {

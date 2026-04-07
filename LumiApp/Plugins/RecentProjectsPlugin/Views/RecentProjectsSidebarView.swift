@@ -1,71 +1,48 @@
 import SwiftUI
 import MagicKit
+import UniformTypeIdentifiers
 
 /// 最近项目侧边栏视图
 struct RecentProjectsSidebarView: View {
     @EnvironmentObject var projectVM: ProjectVM
-    
-    /// 折叠状态
-    @AppStorage("Sidebar_RecentProjects_Expanded") private var isExpanded: Bool = true
-    @State private var isHovered: Bool = false
+    @State private var isFileImporterPresented = false
+    @State private var isDropTargeted = false
+
+    private let store = RecentProjectsStore()
 
     var body: some View {
         VStack(spacing: 0) {
-            // 标题栏
-            headerView
-            
-            if isExpanded {
-                GlassDivider()
-                
-                // 最近项目列表
-                if !recentProjects.isEmpty {
-                    recentProjectsList
-                } else {
-                    emptyView
-                }
+            // 最近项目列表
+            if !recentProjects.isEmpty {
+                recentProjectsList
+            } else {
+                emptyView
             }
+
+            GlassDivider()
+
+            tipsCard
+                .padding(.horizontal, 8)
+                .padding(.vertical, 8)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-    
-    // MARK: - Header
-
-    private var headerView: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
-                    .frame(width: 16, height: 16)
-
-                Image(systemName: "clock.arrow.circlepath")
-                    .font(.system(size: 14))
-                    .foregroundColor(.accentColor)
-
-                Text(String(localized: "Recent Projects", table: "RecentProjects"))
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
-
-                Spacer()
-                
-                if !recentProjects.isEmpty {
-                    GlassBadge(text: "\(recentProjects.count)", style: .neutral)
-                }
+        .dropDestination(
+            for: URL.self,
+            action: { urls, _ in
+                handleProjectFolderDrop(urls: urls)
+            },
+            isTargeted: { targeted in
+                isDropTargeted = targeted
             }
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(isHovered ? Color.primary.opacity(0.05) : Color.clear)
-        .contentShape(Rectangle())
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHovered = hovering
-            }
-        }
-        .onTapGesture {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isExpanded.toggle()
+        )
+        .overlay {
+            if isDropTargeted {
+                DropOverlayCard(
+                    title: "松开即可添加项目",
+                    subtitle: "将项目文件夹拖到侧边栏，自动加入最近项目并切换"
+                )
+                .transition(.opacity)
+                .animation(.easeInOut(duration: 0.15), value: isDropTargeted)
             }
         }
     }
@@ -88,8 +65,7 @@ struct RecentProjectsSidebarView: View {
 
     private func projectRow(_ project: Project) -> some View {
         let isSelected = projectVM.currentProjectPath == project.path
-        let isRowHovered = projectVM.currentProjectPath == project.path
-        
+
         return Button(action: {
             switchToProject(project)
         }) {
@@ -151,11 +127,101 @@ struct RecentProjectsSidebarView: View {
     private var recentProjects: [Project] {
         projectVM.recentProjects
     }
+
+    private var tipsCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "folder.badge.plus")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.accentColor)
+                Text("添加项目")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+            }
+
+            Text("将项目目录拖动到这里来添加，或者点击下方按钮选择。")
+                .font(.system(size: 10))
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button(action: { isFileImporterPresented = true }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 11))
+                    Text(String(localized: "Select New Project", table: "RecentProjects"))
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 6)
+            }
+            .buttonStyle(.plain)
+            .foregroundColor(.white)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(AppUI.Color.semantic.primary)
+            )
+        }
+        .padding(10)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.white.opacity(0.04))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(
+                    isDropTargeted ? Color.accentColor.opacity(0.65) : Color.white.opacity(0.14),
+                    style: StrokeStyle(lineWidth: isDropTargeted ? 1.5 : 1, dash: [6, 4])
+                )
+        )
+        .animation(.easeInOut(duration: 0.15), value: isDropTargeted)
+        .fileImporter(
+            isPresented: $isFileImporterPresented,
+            allowedContentTypes: [.folder],
+            allowsMultipleSelection: false
+        ) { result in
+            handleFileImport(result)
+        }
+    }
     
     // MARK: - Actions
     
     private func switchToProject(_ project: Project) {
         projectVM.switchProject(to: project)
+    }
+
+    private func handleFileImport(_ result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            guard let folderURL = urls.first else { return }
+            addProjectAndSwitch(to: folderURL.standardizedFileURL)
+        case .failure(let error):
+            RecentProjectsPlugin.logger.error("File import 错误：\(error.localizedDescription)")
+        }
+    }
+
+    private func handleProjectFolderDrop(urls: [URL]) -> Bool {
+        let normalizedURLs = urls.map(\.standardizedFileURL)
+        guard let folderURL = normalizedURLs.first(where: { isDirectory($0) }) else {
+            return false
+        }
+        addProjectAndSwitch(to: folderURL)
+        return true
+    }
+
+    private func addProjectAndSwitch(to folderURL: URL) {
+        let project = Project(
+            name: folderURL.lastPathComponent,
+            path: folderURL.path,
+            lastUsed: Date()
+        )
+
+        store.addProject(name: project.name, path: project.path)
+        projectVM.setRecentProjects(store.loadProjects())
+        projectVM.switchProject(to: project)
+    }
+
+    private func isDirectory(_ url: URL) -> Bool {
+        (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true
     }
 }
 

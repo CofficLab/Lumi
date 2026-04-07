@@ -15,7 +15,7 @@ actor AgentNativeFileTreePlugin: SuperPlugin, SuperLog {
     nonisolated static let verbose = false
 
     static let id: String = "AgentNativeFileTree"
-    static let displayName: String = String(localized: "Native File Tree", table: "AgentNativeFileTree")
+    static let displayName: String = String(localized: "File Tree", table: "AgentNativeFileTree")
     static let description: String = String(localized: "High-performance file tree using NSOutlineView", table: "AgentNativeFileTree")
     static let iconName: String = "folder.fill"
     static let isConfigurable: Bool = false

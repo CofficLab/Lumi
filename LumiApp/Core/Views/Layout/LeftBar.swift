@@ -5,6 +5,7 @@ import SwiftUI
 /// 顶部显示模式切换，下方根据不同模式显示不同内容
 struct LeftSidebar: View {
     @Binding var sidebarVisibility: Bool
+    @State private var selectedSidebarTabId: String = ""
 
     @EnvironmentObject var app: GlobalVM
     @EnvironmentObject var pluginProvider: PluginVM
@@ -36,12 +37,16 @@ struct LeftSidebar: View {
             // 在 App 模式下，恢复上次选中的导航
             if app.selectedMode == .app {
                 restoreAppModeNavigation()
+            } else {
+                restoreAgentModeSidebarTabSelection()
             }
         }
         .onChange(of: app.selectedMode) { _, newMode in
             // 切换到 App 模式时，恢复上次选中的导航
             if newMode == .app {
                 restoreAppModeNavigation()
+            } else {
+                restoreAgentModeSidebarTabSelection()
             }
         }
     }
@@ -96,19 +101,41 @@ struct LeftSidebar: View {
     // MARK: - Agent 模式内容
 
     private var agentModeContent: some View {
-        let sidebarViews = pluginProvider.getSidebarViews()
+        let sidebarItems = pluginProvider.getSidebarTabItems()
+        let selectedId = sidebarItems.contains(where: { $0.id == selectedSidebarTabId })
+            ? selectedSidebarTabId
+            : (sidebarItems.first?.id ?? "")
 
         return Group {
-            if sidebarViews.isEmpty {
+            if sidebarItems.isEmpty {
                 // 默认内容
                 emptyState(message: "Agent 模式侧边栏", subtitle: "暂无插件提供侧边栏视图")
             } else {
-                // 显示插件提供的侧边栏视图
+                // 顶部 Tab 切换，内容区仅显示当前选中的插件侧边栏视图
                 VStack(spacing: 0) {
-                    ForEach(Array(sidebarViews.enumerated()), id: \.offset) { _, view in
-                        view
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        AppTabBar(
+                            tabs: sidebarItems.map {
+                                AppTabBar.Tab(title: $0.title, icon: $0.icon, id: $0.id)
+                            },
+                            selectedTab: Binding(
+                                get: { selectedId },
+                                set: {
+                                    selectedSidebarTabId = $0
+                                    AppSettingStore.saveSelectedAgentSidebarTabId($0)
+                                }
+                            )
+                        )
+                        .padding(.horizontal, AppUI.Spacing.sm)
+                        .padding(.vertical, AppUI.Spacing.sm)
                     }
-                    Spacer(minLength: 0)
+
+                    GlassDivider()
+
+                    if let selectedItem = sidebarItems.first(where: { $0.id == selectedId }) {
+                        selectedItem.view
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    }
                 }
             }
         }
@@ -135,6 +162,26 @@ struct LeftSidebar: View {
             let defaultEntry = entries.first { $0.isDefault } ?? entries.first
             app.selectedNavigationId = defaultEntry?.id
         }
+    }
+
+    /// 恢复 Agent 模式下上次选中的侧边栏 Tab
+    private func restoreAgentModeSidebarTabSelection() {
+        let sidebarItems = pluginProvider.getSidebarTabItems()
+
+        guard sidebarItems.isNotEmpty else {
+            selectedSidebarTabId = ""
+            return
+        }
+
+        if let savedTabId = AppSettingStore.loadSelectedAgentSidebarTabId(),
+           sidebarItems.contains(where: { $0.id == savedTabId }) {
+            selectedSidebarTabId = savedTabId
+            return
+        }
+
+        let fallbackTabId = sidebarItems[0].id
+        selectedSidebarTabId = fallbackTabId
+        AppSettingStore.saveSelectedAgentSidebarTabId(fallbackTabId)
     }
 
     // MARK: - 辅助视图

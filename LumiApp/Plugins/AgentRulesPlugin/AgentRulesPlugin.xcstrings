@@ -1,6 +1,23 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Absolute path to the project directory containing .agent/rules folder." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Absolute path to the project directory containing .agent/rules folder."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "包含 .agent/rules 文件夹的项目目录的绝对路径。"
+          }
+        }
+      }
+    },
     "Agent Rules" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -18,36 +35,36 @@
         }
       }
     },
-    "Create a new rule document in the .agent/rules directory. The document will be created as a Markdown file with the specified title and content." : {
+    "Create a new rule document in the .agent/rules directory of a project. The document will be created as a Markdown file with the specified title and content." : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Create a new rule document in the .agent/rules directory. The document will be created as a Markdown file with the specified title and content."
+            "value" : "Create a new rule document in the .agent/rules directory of a project. The document will be created as a Markdown file with the specified title and content."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在 .agent/rules 目录中创建新的规则文档。文档将创建为带有指定标题和内容的 Markdown 文件。"
+            "value" : "在项目的 .agent/rules 目录中创建新的规则文档。文档将创建为带有指定标题和内容的 Markdown 文件。"
           }
         }
       }
     },
-    "List all rule documents in the .agent/rules directory. Returns metadata including filename, title, description, file size, and modification date for each rule document." : {
+    "List all rule documents in the .agent/rules directory of a project. Returns metadata including filename, title, description, file size, and modification date for each rule document." : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "List all rule documents in the .agent/rules directory. Returns metadata including filename, title, description, file size, and modification date for each rule document."
+            "value" : "List all rule documents in the .agent/rules directory of a project. Returns metadata including filename, title, description, file size, and modification date for each rule document."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "列出 .agent/rules 目录中的所有规则文档。返回每个规则文档的元数据，包括文件名、标题、描述、文件大小和修改日期。"
+            "value" : "列出项目的 .agent/rules 目录中的所有规则文档。返回每个规则文档的元数据，包括文件名、标题、描述、文件大小和修改日期。"
           }
         }
       }

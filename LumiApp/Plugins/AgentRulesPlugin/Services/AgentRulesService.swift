@@ -6,57 +6,15 @@ import Foundation
 actor AgentRulesService {
     static let shared = AgentRulesService()
 
-    /// 当前项目路径（由 RootView 同步）
-    private var currentProjectPath: String = ""
-
-    /// 设置当前项目路径
-    func setCurrentProjectPath(_ path: String) {
-        currentProjectPath = path
-    }
-
-    /// 获取当前项目路径
-    func getCurrentProjectPath() -> String {
-        currentProjectPath
-    }
-
-    /// 规则目录路径
-    private var rulesDirectoryURL: URL {
-        // 优先使用当前项目路径
-        if !currentProjectPath.isEmpty {
-            let projectURL = URL(fileURLWithPath: currentProjectPath)
-            let rulesPath = projectURL.appending(path: ".agent/rules")
-            if FileManager.default.fileExists(atPath: rulesPath.path()) {
-                return rulesPath
-            }
-        }
-
-        // 获取项目根目录（回退方案）
-        if let cwd = URL(string: FileManager.default.currentDirectoryPath) {
-            let rulesPath = cwd.appending(path: ".agent/rules")
-            if FileManager.default.fileExists(atPath: rulesPath.path()) {
-                return rulesPath
-            }
-        }
-
-        // 回退到主 bundle 资源路径（用于开发环境）
-        if let resourcePath = Bundle.main.resourcePath {
-            let rulesPath = URL(fileURLWithPath: resourcePath)
-                .deletingLastPathComponent()
-                .deletingLastPathComponent()
-                .appending(path: ".agent/rules")
-            if FileManager.default.fileExists(atPath: rulesPath.path()) {
-                return rulesPath
-            }
-        }
-
-        // 最终回退到主目录下的 .agent/rules
-        let homeDir = FileManager.default.homeDirectoryForCurrentUser
-        return homeDir.appending(path: ".agent/rules")
+    /// 获取规则目录路径
+    private func getRulesDirectoryURL(for projectPath: String) -> URL {
+        let projectURL = URL(fileURLWithPath: projectPath)
+        return projectURL.appending(path: ".agent/rules")
     }
 
     /// 获取规则文档列表
-    func listRules() async throws -> [AgentRuleMetadata] {
-        let directoryURL = rulesDirectoryURL
+    func listRules(projectPath: String) async throws -> [AgentRuleMetadata] {
+        let directoryURL = getRulesDirectoryURL(for: projectPath)
 
         // 确保目录存在
         guard FileManager.default.fileExists(atPath: directoryURL.path()) else {
@@ -114,8 +72,8 @@ actor AgentRulesService {
     }
 
     /// 读取规则文档内容
-    func readRule(filename: String) async throws -> AgentRule {
-        let directoryURL = rulesDirectoryURL
+    func readRule(projectPath: String, filename: String) async throws -> AgentRule {
+        let directoryURL = getRulesDirectoryURL(for: projectPath)
         let fileURL = directoryURL.appending(path: filename)
 
         // 确保文件存在
@@ -157,11 +115,12 @@ actor AgentRulesService {
 
     /// 创建新的规则文档
     func createRule(
+        projectPath: String,
         filename: String,
         title: String,
         content: String
     ) async throws -> AgentRule {
-        let directoryURL = rulesDirectoryURL
+        let directoryURL = getRulesDirectoryURL(for: projectPath)
 
         // 确保目录存在，不存在则创建
         if !FileManager.default.fileExists(atPath: directoryURL.path()) {

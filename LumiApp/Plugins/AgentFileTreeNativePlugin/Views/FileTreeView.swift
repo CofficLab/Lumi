@@ -149,16 +149,13 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
             watcher.startWatching(url: url)
         }
 
-        Task.detached(priority: .userInitiated) {
-            let urls = (try? FileNode.sortedContents(at: url)) ?? []
-            await MainActor.run {
-                self.rootNodes = urls.map { FileNode(url: $0) }
-                self.outlineView?.reloadData()
-                self.restoreExpandedNodes()
-                self.selectExternalFileIfNeeded()
-                self.updateWatcherForExpandedNodes()
-            }
-        }
+        // 顶层显示项目 root 节点，而不是直接平铺 root 下的子项。
+        rootNodes = [FileNode(url: url)]
+        outlineView?.reloadData()
+        expandRootNodeIfNeeded()
+        restoreExpandedNodes()
+        selectExternalFileIfNeeded()
+        updateWatcherForExpandedNodes()
     }
 
     func setExpandedRelativePaths(_ paths: Set<String>) {
@@ -342,7 +339,10 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
     func outlineViewSelectionDidChange(_ notification: Notification) {
         guard let outlineView = notification.object as? NSOutlineView,
               let node = outlineView.item(atRow: outlineView.selectedRow) as? FileNode else { return }
-        
+
+        // 仅文件触发外部选中同步；目录只保留树内选中态，不改变右侧预览目标。
+        guard !node.isDirectory else { return }
+
         // 触发选中回调
         onSelect?(node.url)
     }
@@ -630,6 +630,14 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         return nil
     }
 
+    private func expandRootNodeIfNeeded() {
+        guard let outlineView else { return }
+        guard let rootNode = rootNodes.first else { return }
+        if rootNode.isDirectory, !outlineView.isItemExpanded(rootNode) {
+            outlineView.expandItem(rootNode)
+        }
+    }
+
     
     private func refreshNode(_ oldNode: FileNode, withNewURL newURL: URL) {
         let newNode = FileNode(url: newURL)
@@ -668,7 +676,7 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         guard let node = sender.representedObject as? FileNode else { return }
         
         // 获取项目根路径
-        let rootPath = rootNodes.first?.url.deletingLastPathComponent().path ?? ""
+        let rootPath = currentRootURL?.standardizedFileURL.path ?? ""
         let fullPath = node.url.path
         
         // 计算相对路径
@@ -798,22 +806,18 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
     /// 重新加载根目录
     private func reloadRootDirectory() {
         guard let url = currentRootURL else { return }
-        Task.detached(priority: .userInitiated) {
-            let urls = (try? FileNode.sortedContents(at: url)) ?? []
-            await MainActor.run {
-                // 记住当前选中项
-                let previousSelectedURL = self.currentOutlineSelectedFileURL
+        // 记住当前选中项
+        let previousSelectedURL = currentOutlineSelectedFileURL
 
-                self.rootNodes = urls.map { FileNode(url: $0) }
-                self.outlineView?.reloadData()
-                self.restoreExpandedNodes()
+        rootNodes = [FileNode(url: url)]
+        outlineView?.reloadData()
+        expandRootNodeIfNeeded()
+        restoreExpandedNodes()
 
-                // 恢复选中项
-                if let previousURL = previousSelectedURL,
-                   let node = self.findNode(for: previousURL) {
-                    self.selectNodeInOutline(node)
-                }
-            }
+        // 恢复选中项
+        if let previousURL = previousSelectedURL,
+           let node = findNode(for: previousURL) {
+            selectNodeInOutline(node)
         }
     }
 
@@ -932,11 +936,19 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
         let targetPath = standardizedTargetURL.path
         guard targetPath == rootPath || targetPath.hasPrefix(rootPath + "/") else { return nil }
 
+        guard let rootNode = rootNodes.first(where: { $0.url.standardizedFileURL == rootURL }) else { return nil }
+
         let relative = String(targetPath.dropFirst(rootPath.count)).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        guard !relative.isEmpty else { return nil }
+        if relative.isEmpty {
+            return rootNode
+        }
 
         let components = relative.split(separator: "/").map(String.init)
-        var currentLevel = rootNodes
+        outlineView?.expandItem(rootNode)
+        await loadChildrenIfNeeded(rootNode)
+        outlineView?.reloadItem(rootNode, reloadChildren: true)
+
+        var currentLevel = rootNode.children
         var currentNode: FileNode?
 
         for (index, component) in components.enumerated() {
@@ -1115,11 +1127,9 @@ struct FileTreeView: NSViewRepresentable {
         }
         if let selectedURL = selectedFileURL {
             let currentSelected = context.coordinator.externalSelectedFileURL
-            if currentSelected?.standardizedFileURL != selectedURL.standardizedFileURL {
+            let didExternalSelectionChange = currentSelected?.standardizedFileURL != selectedURL.standardizedFileURL
+            if didExternalSelectionChange {
                 context.coordinator.externalSelectedFileURL = selectedURL
-            }
-            let outlineSelected = context.coordinator.currentOutlineSelectedFileURL
-            if outlineSelected?.standardizedFileURL != selectedURL.standardizedFileURL {
                 context.coordinator.selectExternalFileIfNeeded()
             }
         }

@@ -35,6 +35,13 @@ import Combine
 /// ```
 @MainActor
 final class PluginVM: ObservableObject, SuperLog {
+    struct SidebarTabItem: Identifiable {
+        let id: String
+        let title: String
+        let icon: String
+        let view: AnyView
+    }
+
     /// 全局单例
     ///
     /// 整个应用共享同一个 PluginVM 实例。
@@ -73,6 +80,8 @@ final class PluginVM: ObservableObject, SuperLog {
     private var cancellables = Set<AnyCancellable>()
     private var sidebarViewsCache: [AnyView]?
     private var sidebarViewsCacheKey: String?
+    private var sidebarTabItemsCache: [SidebarTabItem]?
+    private var sidebarTabItemsCacheKey: String?
 
     // MARK: - Tools Cache
 
@@ -99,6 +108,8 @@ final class PluginVM: ObservableObject, SuperLog {
             .sink { [weak self] _ in
                 self?.sidebarViewsCache = nil
                 self?.sidebarViewsCacheKey = nil
+                self?.sidebarTabItemsCache = nil
+                self?.sidebarTabItemsCacheKey = nil
                 self?.cachedAgentTools = nil
                 self?.cachedAgentToolFactories = nil
                 self?.cachedSendMiddlewares = nil
@@ -216,6 +227,8 @@ final class PluginVM: ObservableObject, SuperLog {
     @objc private func handleFileSelectionChanged(_ notification: Notification) {
         sidebarViewsCache = nil
         sidebarViewsCacheKey = nil
+        sidebarTabItemsCache = nil
+        sidebarTabItemsCacheKey = nil
         objectWillChange.send()
     }
 
@@ -237,6 +250,8 @@ final class PluginVM: ObservableObject, SuperLog {
         // 插件列表将被重建，相关缓存一并清空
         sidebarViewsCache = nil
         sidebarViewsCacheKey = nil
+        sidebarTabItemsCache = nil
+        sidebarTabItemsCacheKey = nil
         cachedAgentTools = nil
         cachedAgentToolFactories = nil
         cachedSendMiddlewares = nil
@@ -431,23 +446,49 @@ final class PluginVM: ObservableObject, SuperLog {
             .compactMap { $0.addStatusBarContentView() }
     }
 
-    /// 获取所有插件提供的侧边栏视图（用于 Agent 模式）
+    /// 获取所有插件提供的侧边栏 Tab 项（用于 Agent 模式）
     ///
-    /// 收集所有启用插件提供的侧边栏视图。
-    /// 多个插件的侧边栏会从上到下垂直堆叠显示。
+    /// 收集所有启用插件提供的侧边栏视图和元信息。
+    /// 每个插件视图对应一个可切换的 Tab。
     ///
-    /// - Returns: 侧边栏视图数组
-    func getSidebarViews() -> [AnyView] {
+    /// - Returns: 侧边栏 Tab 项数组
+    func getSidebarTabItems() -> [SidebarTabItem] {
         let enabledPlugins = plugins.filter { isPluginEnabled($0) }
         let cacheKey = enabledPlugins.map(\.instanceLabel).joined(separator: "|")
 
-        if let sidebarViewsCache, sidebarViewsCacheKey == cacheKey {
-            return sidebarViewsCache
+        if let sidebarTabItemsCache, sidebarTabItemsCacheKey == cacheKey {
+            return sidebarTabItemsCache
         }
 
-        let views = enabledPlugins.compactMap { $0.addSidebarView() }
+        let items = enabledPlugins.compactMap { plugin -> SidebarTabItem? in
+            guard let view = plugin.addSidebarView() else { return nil }
+            let pluginType = type(of: plugin)
+            return SidebarTabItem(
+                id: plugin.instanceLabel,
+                title: pluginType.displayName,
+                icon: pluginType.iconName,
+                view: view
+            )
+        }
+
+        sidebarTabItemsCache = items
+        sidebarTabItemsCacheKey = cacheKey
+
+        return items
+    }
+
+    /// 获取所有插件提供的侧边栏视图（用于 Agent 模式）
+    ///
+    /// 收集所有启用插件提供的侧边栏视图。
+    ///
+    /// - Returns: 侧边栏视图数组
+    func getSidebarViews() -> [AnyView] {
+        let views = getSidebarTabItems().map(\.view)
         sidebarViewsCache = views
-        sidebarViewsCacheKey = cacheKey
+        sidebarViewsCacheKey = plugins
+            .filter { isPluginEnabled($0) }
+            .map(\.instanceLabel)
+            .joined(separator: "|")
 
         if Self.verbose {
             let pluginNames = plugins.map { String(describing: type(of: $0)) }
