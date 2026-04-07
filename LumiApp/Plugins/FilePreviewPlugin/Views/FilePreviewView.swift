@@ -82,8 +82,102 @@ final class FilePreviewUndoState: ObservableObject {
     }
 }
 
+private struct BreadcrumbPopoverRow: Identifiable {
+    let url: URL
+    let isDirectory: Bool
+    let level: Int
+
+    var id: String { url.standardizedFileURL.path }
+    var name: String { url.lastPathComponent }
+}
+
+private struct BreadcrumbPopoverRowsView: View {
+    let rows: [BreadcrumbPopoverRow]
+    let activeItemPath: String
+    let selectedFilePath: String?
+    let isDirectoryExpanded: (URL) -> Bool
+    let onToggleDirectory: (URL) -> Void
+    let onSelectFile: (URL) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            ForEach(rows, id: \BreadcrumbPopoverRow.id) { (row: BreadcrumbPopoverRow) in
+                let isActiveItem = row.url.standardizedFileURL.path == activeItemPath
+                let isSelectedFile = row.url.standardizedFileURL.path == selectedFilePath
+
+                HStack(spacing: 6) {
+                    Color.clear
+                        .frame(width: CGFloat(row.level) * 14)
+
+                    if row.isDirectory {
+                        Button {
+                            onToggleDirectory(row.url)
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: isDirectoryExpanded(row.url) ? "chevron.down" : "chevron.right")
+                                    .font(.system(size: 9, weight: .semibold))
+                                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                                    .frame(width: 12)
+                                Image(systemName: "folder")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(AppUI.Color.semantic.primary)
+                                Text(row.name)
+                                    .font(.system(size: 12, weight: isActiveItem ? .semibold : .regular))
+                                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                                Spacer(minLength: 0)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        Button {
+                            onSelectFile(row.url)
+                        } label: {
+                            HStack(spacing: 6) {
+                                Color.clear.frame(width: 12)
+                                Image(systemName: "doc")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                Text(row.name)
+                                    .font(.system(size: 12, weight: isSelectedFile ? .semibold : .regular))
+                                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                                Spacer(minLength: 0)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill((isActiveItem || isSelectedFile) ? AppUI.Color.semantic.primary.opacity(0.12) : Color.clear)
+                )
+            }
+        }
+    }
+}
+
 /// 文件预览视图
 struct FilePreviewView: View {
+    private struct BreadcrumbItem: Identifiable {
+        let index: Int
+        let name: String
+        let url: URL
+        let isDirectory: Bool
+
+        var id: Int { index }
+    }
+
+    private struct BreadcrumbSiblingItem: Identifiable {
+        let url: URL
+        let isDirectory: Bool
+
+        var id: String { url.path }
+        var name: String { url.lastPathComponent }
+    }
+
     @EnvironmentObject var ProjectVM: ProjectVM
 
     /// 主题更新触发器
@@ -108,6 +202,12 @@ struct FilePreviewView: View {
 
     /// 用于隐藏菜单的延迟任务
     @State private var hideMenuTask: Task<Void, Never>? = nil
+
+    /// 当前打开的面包屑弹出层索引
+    @State private var activeBreadcrumbPopoverIndex: Int? = nil
+
+    /// 面包屑弹出层中已展开的目录路径
+    @State private var expandedBreadcrumbDirectoryPaths: Set<String> = []
 
     /// 撤销/重做状态管理
     @StateObject private var undoState = FilePreviewUndoState()
@@ -183,57 +283,197 @@ struct FilePreviewView: View {
     // MARK: - Breadcrumb Section
 
     /// 面包屑路径段列表（相对于项目根，若无项目则全路径）
-    private var breadcrumbSegments: [String] {
+    private var breadcrumbItems: [BreadcrumbItem] {
         guard let fileURL = ProjectVM.selectedFileURL else { return [] }
-        let fullPath = fileURL.path
+
+        let fullPath = fileURL.standardizedFileURL.path
         if let projectPath = ProjectVM.currentProject?.path,
-           fullPath.hasPrefix(projectPath) {
-            var relative = String(fullPath.dropFirst(projectPath.count))
-            if relative.hasPrefix("/") { relative = String(relative.dropFirst()) }
-            return relative.split(separator: "/").map(String.init)
+           fullPath.hasPrefix(projectPath + "/") {
+            let relative = String(fullPath.dropFirst(projectPath.count + 1))
+            let segments = relative.split(separator: "/").map(String.init)
+            var runningPath = projectPath
+
+            return segments.enumerated().map { index, segment in
+                runningPath += "/" + segment
+                let segmentURL = URL(fileURLWithPath: runningPath)
+                let isDirectory = (try? segmentURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+                return BreadcrumbItem(index: index, name: segment, url: segmentURL, isDirectory: isDirectory)
+            }
         }
-        return fullPath.split(separator: "/").map(String.init)
+
+        let segments = fullPath.split(separator: "/").map(String.init)
+        var runningPath = ""
+
+        return segments.enumerated().map { index, segment in
+            runningPath += "/" + segment
+            let segmentURL = URL(fileURLWithPath: runningPath)
+            let isDirectory = (try? segmentURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+            return BreadcrumbItem(index: index, name: segment, url: segmentURL, isDirectory: isDirectory)
+        }
+    }
+
+    private func childItems(in directoryURL: URL) -> [BreadcrumbSiblingItem] {
+        let urls: [URL]
+        do {
+            urls = try FileManager.default.contentsOfDirectory(
+                at: directoryURL,
+                includingPropertiesForKeys: [.isDirectoryKey],
+                options: []
+            )
+        } catch {
+            return []
+        }
+
+        return urls.map { url in
+            let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+            return BreadcrumbSiblingItem(url: url, isDirectory: isDirectory)
+        }
+        .sorted { a, b in
+            if a.isDirectory != b.isDirectory {
+                return a.isDirectory
+            }
+            return a.name.localizedStandardCompare(b.name) == .orderedAscending
+        }
+    }
+
+    private func isDirectoryExpanded(_ url: URL) -> Bool {
+        expandedBreadcrumbDirectoryPaths.contains(url.standardizedFileURL.path)
+    }
+
+    private func toggleDirectoryExpansion(_ url: URL) {
+        let path = url.standardizedFileURL.path
+        if expandedBreadcrumbDirectoryPaths.contains(path) {
+            expandedBreadcrumbDirectoryPaths.remove(path)
+        } else {
+            expandedBreadcrumbDirectoryPaths.insert(path)
+        }
+    }
+
+    private func openBreadcrumbPopover(for item: BreadcrumbItem) {
+        let rootURL = item.url.deletingLastPathComponent().standardizedFileURL
+        let startURL = (item.isDirectory ? item.url : item.url.deletingLastPathComponent()).standardizedFileURL
+        var expanded: Set<String> = []
+        var cursor = startURL
+
+        while cursor.path != rootURL.path {
+            expanded.insert(cursor.path)
+            let parent = cursor.deletingLastPathComponent().standardizedFileURL
+            if parent.path == cursor.path { break }
+            cursor = parent
+        }
+
+        expandedBreadcrumbDirectoryPaths = expanded
+        activeBreadcrumbPopoverIndex = item.index
+    }
+
+    private func flattenedBreadcrumbRows(
+        from items: [BreadcrumbSiblingItem],
+        level: Int = 0
+    ) -> [BreadcrumbPopoverRow] {
+        var rows: [BreadcrumbPopoverRow] = []
+
+        for item in items {
+            rows.append(BreadcrumbPopoverRow(url: item.url, isDirectory: item.isDirectory, level: level))
+            if item.isDirectory, isDirectoryExpanded(item.url) {
+                let children = childItems(in: item.url)
+                rows.append(contentsOf: flattenedBreadcrumbRows(from: children, level: level + 1))
+            }
+        }
+
+        return rows
+    }
+
+    private func breadcrumbPopoverContent(for item: BreadcrumbItem) -> some View {
+        let siblings = childItems(in: item.url.deletingLastPathComponent())
+        let rows = flattenedBreadcrumbRows(from: siblings)
+        let selectedFilePath = ProjectVM.selectedFileURL?.standardizedFileURL.path
+        let activeItemPath = item.url.standardizedFileURL.path
+
+        return ScrollView {
+            VStack(alignment: .leading, spacing: 1) {
+                if rows.isEmpty {
+                    Text(String(localized: "No Items", table: "FilePreview"))
+                        .font(.system(size: 12))
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                } else {
+                    BreadcrumbPopoverRowsView(
+                        rows: rows,
+                        activeItemPath: activeItemPath,
+                        selectedFilePath: selectedFilePath,
+                        isDirectoryExpanded: { url in isDirectoryExpanded(url) },
+                        onToggleDirectory: { url in toggleDirectoryExpansion(url) },
+                        onSelectFile: { url in
+                            ProjectVM.selectFile(at: url)
+                            activeBreadcrumbPopoverIndex = nil
+                        }
+                    )
+                }
+            }
+            .padding(6)
+        }
+        .frame(width: 460, height: 280)
     }
 
     private var breadcrumbSection: some View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 2) {
-                    ForEach(Array(breadcrumbSegments.enumerated()), id: \.offset) { index, segment in
-                        let isLast = index == breadcrumbSegments.count - 1
+                    ForEach(breadcrumbItems) { item in
+                        let isLast = item.index == breadcrumbItems.count - 1
 
-                        if index > 0 {
+                        if item.index > 0 {
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 9, weight: .semibold))
                                 .foregroundColor(AppUI.Color.semantic.textTertiary)
                                 .padding(.horizontal, 1)
                         }
 
-                        Text(segment)
-                            .font(.system(size: 11, weight: isLast ? .semibold : .regular))
-                            .foregroundColor(
-                                isLast
-                                    ? AppUI.Color.semantic.textPrimary
-                                    : AppUI.Color.semantic.textSecondary
-                            )
-                            .lineLimit(1)
-                            .id(index)
+                        Button {
+                            openBreadcrumbPopover(for: item)
+                        } label: {
+                            Text(item.name)
+                                .font(.system(size: 11, weight: isLast ? .semibold : .regular))
+                                .foregroundColor(
+                                    isLast
+                                        ? AppUI.Color.semantic.textPrimary
+                                        : AppUI.Color.semantic.textSecondary
+                                )
+                                .lineLimit(1)
+                        }
+                        .buttonStyle(.plain)
+                        .popover(
+                            isPresented: Binding(
+                                get: { activeBreadcrumbPopoverIndex == item.index },
+                                set: { isPresented in
+                                    if !isPresented, activeBreadcrumbPopoverIndex == item.index {
+                                        activeBreadcrumbPopoverIndex = nil
+                                    }
+                                }
+                            ),
+                            arrowEdge: .bottom
+                        ) {
+                            breadcrumbPopoverContent(for: item)
+                        }
+                        .id(item.index)
                     }
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
             }
             .onAppear {
-                if let last = breadcrumbSegments.indices.last {
+                if let last = breadcrumbItems.indices.last {
                     proxy.scrollTo(last, anchor: .trailing)
                 }
             }
             .onChange(of: ProjectVM.selectedFileURL) { _, _ in
-                if let last = breadcrumbSegments.indices.last {
+                if let last = breadcrumbItems.indices.last {
                     withAnimation(.easeOut(duration: 0.2)) {
                         proxy.scrollTo(last, anchor: .trailing)
                     }
                 }
+                activeBreadcrumbPopoverIndex = nil
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
