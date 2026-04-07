@@ -28,6 +28,7 @@ final class InputQueueVM: ObservableObject, SuperLog {
             text: trimmed,
             images: images
         )
+        NotificationCenter.postUserDidSendMessage()
     }
 
     func consumePendingRequest(id: UUID) -> InputEnqueueRequest? {
@@ -36,4 +37,3 @@ final class InputQueueVM: ObservableObject, SuperLog {
         return request
     }
 }
-
