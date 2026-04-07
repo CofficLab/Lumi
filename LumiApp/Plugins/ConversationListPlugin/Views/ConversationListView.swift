@@ -35,30 +35,20 @@ struct ConversationListView: View, SuperLog {
     /// 每页大小
     private let pageSize: Int = 40
 
-    /// 折叠状态
-    @AppStorage("Sidebar_ConversationList_Expanded") private var isExpanded: Bool = true
-
     private let listTopAnchorId = "conversation_list_top_anchor"
 
     var body: some View {
         ScrollViewReader { proxy in
             VStack(spacing: 0) {
-                // 标题栏
-                ConversationListHeader(isExpanded: $isExpanded)
-
-                if isExpanded {
-                    GlassDivider()
-
-                    // 对话列表内容
-                    if conversations.isEmpty {
-                        if isLoadingPage {
-                            loadingView
-                        } else {
-                            ConversationListEmptyView()
-                        }
+                // 对话列表内容
+                if conversations.isEmpty {
+                    if isLoadingPage {
+                        loadingView
                     } else {
-                        conversationListContent(proxy: proxy)
+                        ConversationListEmptyView()
                     }
+                } else {
+                    conversationListContent(proxy: proxy)
                 }
             }
             .onAppear(perform: performInitialLoadIfNeeded)
@@ -306,8 +296,6 @@ extension ConversationListView {
     }
 
     private func handleAgentConversationCreated(conversationId: UUID, proxy: ScrollViewProxy) {
-        guard isExpanded else { return }
-
         // 如果当前分页尚未包含新会话，先刷新第一页再尝试滚动到顶部。
         let containsRow = conversations.contains(where: { $0.id == conversationId })
         if !containsRow, !isLoadingPage {
@@ -315,7 +303,6 @@ extension ConversationListView {
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            guard isExpanded else { return }
             withAnimation(.easeOut(duration: 0.2)) {
                 // 滚动到绝对顶部锚点，避免 List 内部 padding 导致未到顶
                 proxy.scrollTo(listTopAnchorId, anchor: .top)

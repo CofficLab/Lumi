@@ -11,23 +11,10 @@ struct ProjectTreeView: View {
     /// 是否正在加载项目结构
     @State private var isLoading = false
 
-    /// 侧边栏中文件树区域的折叠状态
-    @AppStorage("Sidebar_ProjectTree_Expanded") private var isExpanded: Bool = true
-
-    /// 标题栏 hover 状态，用于高亮交互区域
-    @State private var isHeaderHovered: Bool = false
-
     var body: some View {
         VStack(spacing: 0) {
-            // 标题栏
-            headerView
-
-            if isExpanded {
-                GlassDivider()
-
-                // 文件树内容
-                contentView
-            }
+            // 文件树内容
+            contentView
         }
         .frame(maxHeight: .infinity)
         .onChange(of: projectVM.currentProjectPath) { _, newPath in
@@ -42,49 +29,6 @@ struct ProjectTreeView: View {
 // MARK: - View
 
 extension ProjectTreeView {
-    private var headerView: some View {
-        HStack(spacing: 6) {
-            // 折叠箭头
-            Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
-                .frame(width: 16, height: 16)
-
-            // 文件树图标
-            Image(systemName: "folder.fill")
-                .font(.system(size: 13))
-                .foregroundColor(.accentColor)
-
-            // 标题
-            Text(String(localized: "Project Files", table: "ProjectTree"))
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
-
-            Spacer()
-
-            Button(action: { loadProject(at: projectVM.currentProjectPath) }) {
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(isHeaderHovered ? Color.primary.opacity(0.05) : Color.clear)
-        .contentShape(Rectangle())
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHeaderHovered = hovering
-            }
-        }
-        .onTapGesture {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isExpanded.toggle()
-            }
-        }
-    }
-
     @ViewBuilder
     private var contentView: some View {
         if isLoading && rootURLs.isEmpty {

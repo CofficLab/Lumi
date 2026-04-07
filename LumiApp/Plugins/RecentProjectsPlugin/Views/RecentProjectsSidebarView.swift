@@ -4,70 +4,17 @@ import MagicKit
 /// 最近项目侧边栏视图
 struct RecentProjectsSidebarView: View {
     @EnvironmentObject var projectVM: ProjectVM
-    
-    /// 折叠状态
-    @AppStorage("Sidebar_RecentProjects_Expanded") private var isExpanded: Bool = true
-    @State private var isHovered: Bool = false
 
     var body: some View {
         VStack(spacing: 0) {
-            // 标题栏
-            headerView
-            
-            if isExpanded {
-                GlassDivider()
-                
-                // 最近项目列表
-                if !recentProjects.isEmpty {
-                    recentProjectsList
-                } else {
-                    emptyView
-                }
+            // 最近项目列表
+            if !recentProjects.isEmpty {
+                recentProjectsList
+            } else {
+                emptyView
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-    
-    // MARK: - Header
-
-    private var headerView: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
-                    .frame(width: 16, height: 16)
-
-                Image(systemName: "clock.arrow.circlepath")
-                    .font(.system(size: 14))
-                    .foregroundColor(.accentColor)
-
-                Text(String(localized: "Recent Projects", table: "RecentProjects"))
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
-
-                Spacer()
-                
-                if !recentProjects.isEmpty {
-                    GlassBadge(text: "\(recentProjects.count)", style: .neutral)
-                }
-            }
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(isHovered ? Color.primary.opacity(0.05) : Color.clear)
-        .contentShape(Rectangle())
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHovered = hovering
-            }
-        }
-        .onTapGesture {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isExpanded.toggle()
-            }
-        }
     }
     
     // MARK: - Recent Projects List

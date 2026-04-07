@@ -5,39 +5,29 @@ import MagicKit
 struct AgentNativeFileTreeContainer: View {
     @EnvironmentObject var ProjectVM: ProjectVM
 
-    /// 折叠状态
-    @AppStorage("Sidebar_FileTree_Expanded") private var isExpanded: Bool = true
-    @State private var isHovered: Bool = false
     @State private var expandedRelativePaths: Set<String> = []
     private let selectionStore = FileTreeSelectionStore()
     private let expansionStore = FileTreeExpansionStore()
 
     var body: some View {
         VStack(spacing: 0) {
-            // 标题栏
-            headerView
-
-            if isExpanded {
-                GlassDivider()
-
-                // 文件树
-                if self.ProjectVM.isProjectSelected {
-                    FileTreeView(
-                        rootURL: URL(fileURLWithPath: ProjectVM.currentProjectPath),
-                        selectedFileURL: ProjectVM.selectedFileURL,
-                        expandedRelativePaths: expandedRelativePaths,
-                        onSelect: { url in
-                            ProjectVM.selectFile(at: url)
-                            persistSelectionIfNeeded(url)
-                        },
-                        onExpandedPathsChanged: { paths in
-                            expandedRelativePaths = paths
-                            persistExpandedPathsIfNeeded(paths)
-                        }
-                    )
-                } else {
-                    emptyView
-                }
+            // 文件树
+            if self.ProjectVM.isProjectSelected {
+                FileTreeView(
+                    rootURL: URL(fileURLWithPath: ProjectVM.currentProjectPath),
+                    selectedFileURL: ProjectVM.selectedFileURL,
+                    expandedRelativePaths: expandedRelativePaths,
+                    onSelect: { url in
+                        ProjectVM.selectFile(at: url)
+                        persistSelectionIfNeeded(url)
+                    },
+                    onExpandedPathsChanged: { paths in
+                        expandedRelativePaths = paths
+                        persistExpandedPathsIfNeeded(paths)
+                    }
+                )
+            } else {
+                emptyView
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -52,52 +42,6 @@ struct AgentNativeFileTreeContainer: View {
         .onChange(of: ProjectVM.selectedFileURL) { _, newURL in
             guard let url = newURL else { return }
             persistSelectionIfNeeded(url)
-        }
-    }
-
-    // MARK: - Header
-
-    private var headerView: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
-                    .frame(width: 16, height: 16)
-
-                Image(systemName: "folder.fill")
-                    .font(.system(size: 14))
-                    .foregroundColor(.accentColor)
-
-                Text(String(localized: "File Tree", table: "AgentNativeFileTree"))
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
-
-                Spacer()
-            }
-
-            if !ProjectVM.currentProjectPath.isEmpty {
-                Text(ProjectVM.currentProjectPath)
-                    .font(.system(size: 9))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary.opacity(0.7))
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            }
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(isHovered ? Color.primary.opacity(0.05) : Color.clear)
-        .contentShape(Rectangle())
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHovered = hovering
-            }
-        }
-        .onTapGesture {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isExpanded.toggle()
-            }
         }
     }
 
