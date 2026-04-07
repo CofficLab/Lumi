@@ -451,6 +451,9 @@
         }
       }
     },
+    "%llds" : {
+
+    },
     "•" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5359,6 +5362,9 @@
         }
       }
     },
+    "停止中…" : {
+
+    },
     "停止分析" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5407,6 +5413,9 @@
           }
         }
       }
+    },
+    "停止本轮" : {
+
     },
     "停止生成" : {
       "extractionState" : "stale",
@@ -6272,6 +6281,9 @@
           }
         }
       }
+    },
+    "工具执行" : {
+
     },
     "工具输出" : {
       "extractionState" : "stale",
@@ -8624,6 +8636,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "输入问题或命令，按 Command + 回车发送，Shift + 回车换行"
+          }
+        }
+      }
+    },
+    "输出：%lld 行，%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "输出：%1$lld 行，%2$@"
           }
         }
       }

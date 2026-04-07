@@ -20,8 +20,8 @@ struct ChatToolbarView: View, SuperLog {
     /// 入队器：只负责把输入入队到发送队列
     @EnvironmentObject private var inputQueueVM: InputQueueVM
 
-    /// 发送链路瞬时状态（有状态文案时表示正在处理，显示「停止」）
-    @EnvironmentObject private var conversationSendStatusVM: ConversationStatusVM
+    /// 消息队列状态（用于判断是否真的在处理）
+    @EnvironmentObject private var messageQueueVM: MessageQueueVM
 
     /// 输入框本地状态 ViewModel
     @ObservedObject var inputViewModel: InputViewModel
@@ -58,7 +58,7 @@ extension ChatToolbarView {
     /// 当前会话是否处于 `SendController` 等写入的发送状态中（用于发送/停止切换）。
     private var isSendPipelineActive: Bool {
         guard let id = conversationVM.selectedConversationId else { return false }
-        return conversationSendStatusVM.statusMessage(for: id) != nil
+        return messageQueueVM.isProcessing(for: id)
     }
 
     /// 发送/停止按钮视图

@@ -30,6 +30,86 @@ class ShellService: SuperLog {
         }
     }
 
+    private final class LockedExecutionProgress: @unchecked Sendable {
+        private let lock = NSLock()
+        private var totalBytes = 0
+        private var totalLines = 0
+        private var outputTail = ""
+        private static let maxTailChars = 120
+
+        private static func sanitizeStatusPreviewLine(_ raw: String) -> String {
+            // 去掉 ANSI 控制序列（颜色、光标控制等）
+            let ansiStripped = raw.replacingOccurrences(
+                of: #"\u{001B}\[[0-9;?]*[ -/]*[@-~]"#,
+                with: "",
+                options: .regularExpression
+            )
+
+            // 去掉不可见控制字符（保留普通可见字符与空格）
+            let scalars = ansiStripped.unicodeScalars.filter { scalar in
+                if scalar == "\t" || scalar == " " { return true }
+                return scalar.value >= 0x20 && scalar.value != 0x7F
+            }
+            let cleaned = String(String.UnicodeScalarView(scalars))
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+
+            if cleaned.count <= Self.maxTailChars {
+                return cleaned
+            }
+            return String(cleaned.suffix(Self.maxTailChars))
+        }
+
+        func append(_ chunk: Data) {
+            lock.lock()
+            totalBytes += chunk.count
+            totalLines += chunk.reduce(0) { $1 == 0x0A ? $0 + 1 : $0 }
+            if let text = String(data: chunk, encoding: .utf8), !text.isEmpty {
+                outputTail.append(text)
+                if outputTail.count > Self.maxTailChars {
+                    outputTail = String(outputTail.suffix(Self.maxTailChars))
+                }
+                let segments = outputTail.split(whereSeparator: { $0 == "\n" || $0 == "\r" })
+                let latestNonEmpty = segments.reversed().first(where: { !$0.trimmingCharacters(in: .whitespaces).isEmpty })
+                let candidate = latestNonEmpty.map(String.init) ?? outputTail
+                outputTail = Self.sanitizeStatusPreviewLine(candidate)
+            }
+            lock.unlock()
+        }
+
+        func snapshot(elapsedSeconds: Int) -> ShellExecutionProgressSnapshot {
+            lock.lock()
+            let snapshot = ShellExecutionProgressSnapshot(
+                elapsedSeconds: max(0, elapsedSeconds),
+                totalBytes: totalBytes,
+                totalLines: totalLines,
+                latestOutputPreview: outputTail
+            )
+            lock.unlock()
+            return snapshot
+        }
+    }
+
+    private actor ActiveExecutionProgressStore {
+        private var progress: LockedExecutionProgress?
+        private var startedAt: Date?
+
+        func set(progress: LockedExecutionProgress, startedAt: Date) {
+            self.progress = progress
+            self.startedAt = startedAt
+        }
+
+        func clear() {
+            progress = nil
+            startedAt = nil
+        }
+
+        func snapshot() -> ShellExecutionProgressSnapshot? {
+            guard let progress, let startedAt else { return nil }
+            let elapsed = Int(Date().timeIntervalSince(startedAt))
+            return progress.snapshot(elapsedSeconds: elapsed)
+        }
+    }
+
     // MARK: - Logger
 
     nonisolated static let emoji = "🐚"
@@ -64,6 +144,12 @@ class ShellService: SuperLog {
     /// 是否正在运行（供同步访问）
     private(set) var isRunning: Bool = false
 
+    private let activeProgressStore = ActiveExecutionProgressStore()
+
+    func progressSnapshot() async -> ShellExecutionProgressSnapshot? {
+        await activeProgressStore.snapshot()
+    }
+
     func execute(_ command: String) async throws -> String {
         if Self.verbose {
             AgentCoreToolsPlugin.logger.info("\(self.t) 执行命令: \n\(command)")
@@ -85,8 +171,13 @@ class ShellService: SuperLog {
             }
         }
 
-        return try await Task.detached(priority: .userInitiated) {
-            let startedAt = Date()
+        let startedAt = Date()
+        let executionProgress = LockedExecutionProgress()
+        await activeProgressStore.set(progress: executionProgress, startedAt: startedAt)
+
+        let result: String
+        do {
+            result = try await Task.detached(priority: .userInitiated) {
             let process = Process()
             let stdoutPipe = Pipe()
             let stderrPipe = Pipe()
@@ -115,6 +206,7 @@ class ShellService: SuperLog {
                 let chunk = handle.availableData
                 if !chunk.isEmpty {
                     stdoutBuffer.append(chunk)
+                    executionProgress.append(chunk)
                     if Self.verbose {
                         AgentCoreToolsPlugin.logger.info("\(self.t) stdout +\(chunk.count) bytes")
                     }
@@ -124,6 +216,7 @@ class ShellService: SuperLog {
                 let chunk = handle.availableData
                 if !chunk.isEmpty {
                     stderrBuffer.append(chunk)
+                    executionProgress.append(chunk)
                     if Self.verbose {
                         AgentCoreToolsPlugin.logger.info("\(self.t) stderr +\(chunk.count) bytes")
                     }
@@ -135,9 +228,15 @@ class ShellService: SuperLog {
                 AgentCoreToolsPlugin.logger.info("\(self.t) process started pid=\(process.processIdentifier)")
             }
 
-            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                process.terminationHandler = { _ in
-                    continuation.resume()
+            try await withTaskCancellationHandler {
+                try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                    process.terminationHandler = { _ in
+                        continuation.resume()
+                    }
+                }
+            } onCancel: {
+                if process.isRunning {
+                    process.terminate()
                 }
             }
 
@@ -149,6 +248,7 @@ class ShellService: SuperLog {
             let finalStdout = stdoutHandle.availableData
             if !finalStdout.isEmpty {
                 stdoutBuffer.append(finalStdout)
+                executionProgress.append(finalStdout)
                 if Self.verbose {
                     AgentCoreToolsPlugin.logger.info("\(self.t) stdout(final) +\(finalStdout.count) bytes")
                 }
@@ -156,6 +256,7 @@ class ShellService: SuperLog {
             let finalStderr = stderrHandle.availableData
             if !finalStderr.isEmpty {
                 stderrBuffer.append(finalStderr)
+                executionProgress.append(finalStderr)
                 if Self.verbose {
                     AgentCoreToolsPlugin.logger.info("\(self.t) stderr(final) +\(finalStderr.count) bytes")
                 }
@@ -165,6 +266,10 @@ class ShellService: SuperLog {
             let stderrData = stderrBuffer.snapshot()
             let output = String(data: stdoutData, encoding: .utf8) ?? ""
             let errorOutput = String(data: stderrData, encoding: .utf8) ?? ""
+
+            if Task.isCancelled {
+                throw CancellationError()
+            }
 
             if Self.verbose {
                 let duration = Date().timeIntervalSince(startedAt)
@@ -180,8 +285,26 @@ class ShellService: SuperLog {
             }
 
             return output + (errorOutput.isEmpty ? "" : "\nError:\n\(errorOutput)")
-        }.value
+            }.value
+        } catch {
+            await activeProgressStore.clear()
+            throw error
+        }
+        await activeProgressStore.clear()
+
+        await MainActor.run {
+            currentOutput = result
+            outputPublisher.send(result)
+        }
+        return result
     }
+}
+
+struct ShellExecutionProgressSnapshot: Sendable {
+    let elapsedSeconds: Int
+    let totalBytes: Int
+    let totalLines: Int
+    let latestOutputPreview: String
 }
 
 // MARK: - Sendable Conformance
