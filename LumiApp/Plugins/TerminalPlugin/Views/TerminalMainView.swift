@@ -1,7 +1,9 @@
 import SwiftUI
+import SwiftTerm
 
 struct TerminalMainView: View {
-    @StateObject private var viewModel = TerminalManagerViewModel()
+    @EnvironmentObject private var projectVM: ProjectVM
+    @StateObject private var viewModel = TerminalTabsViewModel()
     
     var body: some View {
         VStack(spacing: 0) {
@@ -18,7 +20,7 @@ struct TerminalMainView: View {
                     }
                     
                     Button(action: {
-                        viewModel.createSession()
+                        viewModel.createSession(workingDirectory: currentProjectPathForTerminal)
                     }) {
                         Image(systemName: "plus")
                             .frame(width: 24, height: 24)
@@ -33,13 +35,24 @@ struct TerminalMainView: View {
             
             // Content
             if let session = viewModel.selectedSession {
-                TerminalView(session: session)
+                TerminalSessionContainerView(session: session)
             } else {
                 Text("No open terminals")
                     .foregroundColor(AppUI.Color.semantic.textSecondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+        .onAppear {
+            viewModel.updateDefaultWorkingDirectory(currentProjectPathForTerminal)
+        }
+        .onChange(of: projectVM.currentProjectPath) { _, _ in
+            viewModel.updateDefaultWorkingDirectory(currentProjectPathForTerminal)
+        }
+    }
+
+    private var currentProjectPathForTerminal: String? {
+        let path = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        return path.isEmpty ? nil : path
     }
 }
 
@@ -82,34 +95,48 @@ struct TerminalTabItem: View {
     }
 }
 
-struct TerminalView: View {
+struct TerminalSessionContainerView: View {
     @ObservedObject var session: TerminalSession
     
     var body: some View {
-        ConsoleTextView(text: $session.output, onInput: { data in
-            session.sendInput(data)
-        })
+        NativeTerminalHostView(session: session)
         .background(AppUI.Color.basePalette.deepBackground)
     }
 }
 
+struct NativeTerminalHostView: NSViewRepresentable {
+    @ObservedObject var session: TerminalSession
+
+    func makeNSView(context: Context) -> LocalProcessTerminalView {
+        // SwiftTerm 终端会话是长生命周期对象，直接复用对应的 NSView。
+        session.terminalView
+    }
+
+    func updateNSView(_ nsView: LocalProcessTerminalView, context: Context) {}
+}
+
 @MainActor
-class TerminalManagerViewModel: ObservableObject {
+final class TerminalTabsViewModel: ObservableObject {
     @Published var sessions: [TerminalSession] = []
     @Published var selectedSessionId: UUID?
+    private var defaultWorkingDirectory: String?
     
     init() {
-        createSession()
+        createSession(workingDirectory: defaultWorkingDirectory)
     }
     
     var selectedSession: TerminalSession? {
         sessions.first(where: { $0.id == selectedSessionId })
     }
     
-    func createSession() {
-        let session = TerminalSession()
+    func createSession(workingDirectory: String?) {
+        let session = TerminalSession(workingDirectory: workingDirectory ?? defaultWorkingDirectory)
         sessions.append(session)
         selectedSessionId = session.id
+    }
+
+    func updateDefaultWorkingDirectory(_ path: String?) {
+        defaultWorkingDirectory = path
     }
     
     func selectSession(_ id: UUID) {
@@ -127,6 +154,7 @@ class TerminalManagerViewModel: ObservableObject {
             }
         }
     }
+
 }
 
 // MARK: - Preview

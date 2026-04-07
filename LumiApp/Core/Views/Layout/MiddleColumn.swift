@@ -4,6 +4,7 @@ import SwiftUI
 struct MiddleColumn: View {
     @EnvironmentObject var app: GlobalVM
     @EnvironmentObject var pluginProvider: PluginVM
+    @SceneStorage("Agent.MiddleColumn.SelectedDetailId") private var selectedDetailId: String = ""
 
     var body: some View {
         Group {
@@ -19,15 +20,28 @@ struct MiddleColumn: View {
 
     @ViewBuilder
     private var agentDetailContent: some View {
-        let detailViews = pluginProvider.getDetailViews()
-        if detailViews.isEmpty {
+        let entries = pluginProvider.getAgentDetailEntries()
+        if entries.isEmpty {
             Color.clear
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            // 直接返回第一个 detail view（目前只有一个 FilePreviewPlugin）
-            detailViews[0]
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .frame(minWidth: 200, idealWidth: 300)
+            VStack(spacing: 0) {
+                if entries.count > 1 {
+                    detailSwitcher(entries: entries)
+                    GlassDivider()
+                }
+
+                currentEntry(in: entries).view
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(minWidth: 200, idealWidth: 300)
+            .onAppear {
+                ensureValidSelection(entries: entries)
+            }
+            .onChange(of: entries.map(\.id).joined(separator: "|")) { _, _ in
+                ensureValidSelection(entries: entries)
+            }
         }
     }
 
@@ -38,5 +52,52 @@ struct MiddleColumn: View {
         } else {
             NavigationEmptyGuideView()
         }
+    }
+
+    private func ensureValidSelection(entries: [PluginVM.AgentDetailEntry]) {
+        guard !entries.isEmpty else {
+            selectedDetailId = ""
+            return
+        }
+
+        if entries.contains(where: { $0.id == selectedDetailId }) {
+            return
+        }
+        selectedDetailId = entries[0].id
+    }
+
+    private func currentEntry(in entries: [PluginVM.AgentDetailEntry]) -> PluginVM.AgentDetailEntry {
+        if let selected = entries.first(where: { $0.id == selectedDetailId }) {
+            return selected
+        }
+        return entries[0]
+    }
+
+    private func detailSwitcher(entries: [PluginVM.AgentDetailEntry]) -> some View {
+        HStack(spacing: AppUI.Spacing.sm) {
+            ForEach(entries) { entry in
+                Button(action: {
+                    selectedDetailId = entry.id
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: entry.icon)
+                        Text(entry.title)
+                            .lineLimit(1)
+                    }
+                    .font(AppUI.Typography.caption1)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .foregroundColor(selectedDetailId == entry.id ? .white : AppUI.Color.semantic.textPrimary)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppUI.Radius.sm, style: .continuous)
+                            .fill(selectedDetailId == entry.id ? Color.accentColor : Color.white.opacity(0.08))
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, AppUI.Spacing.md)
+        .padding(.vertical, AppUI.Spacing.sm)
     }
 }

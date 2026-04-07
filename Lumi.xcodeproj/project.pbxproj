@@ -20,6 +20,7 @@
 		0B1A4F912F662D8500F15618 /* MLXVLM in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F902F662D8500F15618 /* MLXVLM */; };
 		0B2F7D682F3A301D00AD7E94 /* LumiFinder.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0B8027C42F6C4E7F007FD39D /* MagicKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B8027C32F6C4E7F007FD39D /* MagicKit */; };
+		0BBB11E02F85467D00F53902 /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 0BBB11DF2F85467D00F53902 /* SwiftTerm */; };
 		0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE04A742F409A6E0028FDF4 /* MCP */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
@@ -206,6 +207,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0BBB11E02F85467D00F53902 /* SwiftTerm in Frameworks */,
 				0B1A4F892F662D8500F15618 /* MLXOptimizers in Frameworks */,
 				0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */,
 				0B1A4F812F662D8500F15618 /* MLXFFT in Frameworks */,
@@ -349,6 +351,7 @@
 				0B1A4F8A2F662D8500F15618 /* MLXRandom */,
 				F5BE65D02F6BB1130091C1FD /* Markdown */,
 				F5485E312F7A077B00566188 /* CodeEditor */,
+				0BBB11DF2F85467D00F53902 /* SwiftTerm */,
 			);
 			productName = "SwiftUI-Template";
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -422,6 +425,7 @@
 				0B1A4F922F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */,
 				F5BE65CF2F6BB1130091C1FD /* XCRemoteSwiftPackageReference "swift-markdown" */,
 				F5485E302F7A077B00566188 /* XCRemoteSwiftPackageReference "CodeEditor" */,
+				0BBB11DE2F85467D00F53902 /* XCRemoteSwiftPackageReference "SwiftTerm" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -1015,6 +1019,14 @@
 				kind = branch;
 			};
 		};
+		0BBB11DE2F85467D00F53902 /* XCRemoteSwiftPackageReference "SwiftTerm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/migueldeicaza/SwiftTerm";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.5.0;
+			};
+		};
 		0BE04A732F409A6E0028FDF4 /* XCRemoteSwiftPackageReference "swift-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/modelcontextprotocol/swift-sdk.git";
@@ -1132,6 +1144,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F5826C842F35731C0079B285 /* XCRemoteSwiftPackageReference "MagicKit" */;
 			productName = MagicKit;
+		};
+		0BBB11DF2F85467D00F53902 /* SwiftTerm */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0BBB11DE2F85467D00F53902 /* XCRemoteSwiftPackageReference "SwiftTerm" */;
+			productName = SwiftTerm;
 		};
 		0BE04A742F409A6E0028FDF4 /* MCP */ = {
 			isa = XCSwiftPackageProductDependency;
