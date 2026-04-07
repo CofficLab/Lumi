@@ -40,6 +40,7 @@ struct RightColumn: View {
 
         HeaderView(leadingView: leadingView, trailingItems: trailingItems)
             .frame(minHeight: AppConfig.headerHeight)
+            .zIndex(100)
     }
 
     @ViewBuilder
