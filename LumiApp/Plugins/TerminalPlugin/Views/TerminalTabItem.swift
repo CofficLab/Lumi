@@ -1,4 +1,3 @@
-import Foundation
 import SwiftUI
 
 struct TerminalTabItem: View {
@@ -7,38 +6,23 @@ struct TerminalTabItem: View {
     let onSelect: () -> Void
     let onClose: () -> Void
 
-    @State private var isHovered = false
-
     var body: some View {
-        HStack(spacing: 6) {
-            Text(title)
-                .font(.caption)
-                .foregroundColor(isSelected ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textSecondary)
-
-            if isHovered {
-                Button(action: onClose) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 10))
-                        .foregroundColor(
-                            isHovered
-                                ? AppUI.Color.semantic.textSecondary
-                                : AppUI.Color.semantic.textTertiary
-                        )
-                }
-                .buttonStyle(.plain)
+        Text(title)
+            .font(.caption)
+            .foregroundColor(isSelected ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textSecondary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity)
+            .background(backgroundShape)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                onSelect()
             }
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .frame(maxWidth: .infinity)
-        .background(backgroundShape)
-        .contentShape(Rectangle())
-        .onHover { hovering in
-            isHovered = hovering
-        }
-        .onTapGesture {
-            onSelect()
-        }
+            .contextMenu {
+                Button(action: onClose) {
+                    Label("Close Tab", systemImage: "xmark")
+                }
+            }
     }
 
     @ViewBuilder
