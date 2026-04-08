@@ -28,7 +28,6 @@ actor TerminalPlugin: SuperPlugin, SuperLog {
     nonisolated func onDisable() {}
     
     // MARK: - UI
-    // App 模式导航入口 + Agent 中栏入口都复用同一个 SwiftTerm 容器视图。
     
     @MainActor
     func addNavigationEntries() -> [NavigationEntry]? {
