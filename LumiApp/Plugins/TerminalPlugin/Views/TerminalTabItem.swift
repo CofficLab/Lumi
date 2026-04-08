@@ -10,9 +10,10 @@ struct TerminalTabItem: View {
         Text(title)
             .font(.caption)
             .foregroundColor(isSelected ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textSecondary)
+            .frame(maxWidth: .infinity)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
             .background(backgroundShape)
             .onTapGesture {
                 onSelect()
