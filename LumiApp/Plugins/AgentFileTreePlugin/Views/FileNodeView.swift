@@ -76,13 +76,9 @@ struct FileNodeView: View {
             )
             .contentShape(Rectangle())
             .onDrag {
-                // 提供拖拽数据
-                let itemProvider = NSItemProvider(object: url as NSURL)
-                itemProvider.registerObject(ofClass: NSString.self, visibility: .all) { completion in
-                    completion(url.path as NSString, nil)
-                    return nil
-                }
-                return itemProvider
+                // 直接返回 NSURL 对象，这样可以保持真实的文件路径引用
+                // 避免创建临时缓存文件
+                return NSItemProvider(object: url as NSURL)
             } preview: {
                 // 拖拽预览
                 DragPreview(fileURL: url)
