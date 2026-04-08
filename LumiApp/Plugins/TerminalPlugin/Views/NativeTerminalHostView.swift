@@ -11,4 +11,10 @@ struct NativeTerminalHostView: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: LocalProcessTerminalView, context: Context) {}
+    
+    static func dismantleNSView(_ nsView: LocalProcessTerminalView, coordinator: ()) {
+        // 当 SwiftUI 从视图层级中移除终端视图时，不要销毁它
+        // 只需要将其从 superview 中移除，保持内部状态完整
+        nsView.removeFromSuperview()
+    }
 }

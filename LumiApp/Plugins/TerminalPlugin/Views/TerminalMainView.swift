@@ -39,14 +39,20 @@ struct TerminalMainView: View {
             .padding(6)
             .appSurface(style: .glass, cornerRadius: 0)
 
-            // Content
-            if let session = viewModel.selectedSession {
-                TerminalSessionContainerView(session: session)
-                    .id(session.id)
-            } else {
+            // Content - 所有终端视图都保持存在，通过 opacity 控制显示
+            // 这样可以避免 Tab 切换时视图被销毁重建导致的状态丢失
+            if viewModel.sessions.isEmpty {
                 Text("No open terminals")
                     .foregroundColor(AppUI.Color.semantic.textSecondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ZStack {
+                    ForEach(viewModel.sessions) { session in
+                        TerminalSessionContainerView(session: session)
+                            .opacity(viewModel.selectedSessionId == session.id ? 1 : 0)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .onAppear {
