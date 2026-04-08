@@ -9,14 +9,21 @@ struct TerminalMainView: View {
         VStack(spacing: 0) {
             // Tab Bar
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 2) {
-                    ForEach(viewModel.sessions) { session in
+                HStack(spacing: 0) {
+                    ForEach(Array(viewModel.sessions.enumerated()), id: \.element.id) { index, session in
                         TerminalTabItem(
                             title: session.title,
                             isSelected: viewModel.selectedSessionId == session.id,
                             onSelect: { viewModel.selectSession(session.id) },
                             onClose: { viewModel.closeSession(session.id) }
                         )
+
+                        // 标签之间的分隔线（最后一个标签后不加）
+                        if index < viewModel.sessions.count - 1 {
+                            Rectangle()
+                                .fill(AppUI.Color.semantic.textTertiary.opacity(0.3))
+                                .frame(width: 1, height: 14)
+                        }
                     }
 
                     Button(action: {
