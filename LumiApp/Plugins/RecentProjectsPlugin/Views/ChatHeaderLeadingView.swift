@@ -8,17 +8,8 @@ struct ChatHeaderLeadingView: View {
     @State private var isDropdownPresented = false
     @State private var hoverState = false
 
-    private let iconSize: CGFloat = 14
-
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: "hammer.fill")
-                .font(.system(size: iconSize))
-                .foregroundColor(.accentColor)
-                .padding(4)
-                .background(Color.accentColor.opacity(0.1))
-                .clipShape(Circle())
-
             Text(projectVM.currentProjectName.isEmpty ? "Lumi" : projectVM.currentProjectName)
                 .font(AppUI.Typography.body)
                 .fontWeight(.medium)
