@@ -1,45 +1,58 @@
-import SwiftUI
 import SwiftTerm
+import SwiftUI
 
 struct TerminalMainView: View {
     @EnvironmentObject private var projectVM: ProjectVM
     @StateObject private var viewModel = TerminalTabsViewModel()
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Tab Bar
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 2) {
-                    ForEach(viewModel.sessions) { session in
-                        TerminalTabItem(
-                            title: session.title,
-                            isSelected: viewModel.selectedSessionId == session.id,
-                            onSelect: { viewModel.selectSession(session.id) },
-                            onClose: { viewModel.closeSession(session.id) }
-                        )
+            HStack(spacing: 0) {
+                ForEach(Array(viewModel.sessions.enumerated()), id: \.element.id) { index, session in
+                    TerminalTabItem(
+                        title: session.title,
+                        isSelected: viewModel.selectedSessionId == session.id,
+                        onSelect: { viewModel.selectSession(session.id) },
+                        onClose: { viewModel.closeSession(session.id) }
+                    )
+
+                    // 标签之间的分隔线（最后一个标签后不加）
+                    if index < viewModel.sessions.count - 1 {
+                        Rectangle()
+                            .fill(AppUI.Color.semantic.textTertiary.opacity(0.3))
+                            .frame(width: 1, height: 14)
+                            .padding(.horizontal, 2)
                     }
-                    
-                    Button(action: {
-                        viewModel.createSession(workingDirectory: currentProjectPathForTerminal)
-                    }) {
-                        Image(systemName: "plus")
-                            .frame(width: 24, height: 24)
-                            .appSurface(style: .glass, cornerRadius: AppUI.Radius.sm)
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.leading, 4)
                 }
-                .padding(6)
+
+                Button(action: {
+                    viewModel.createSession(workingDirectory: currentProjectPathForTerminal)
+                }) {
+                    Image(systemName: "plus")
+                        .frame(width: 24, height: 24)
+                        .appSurface(style: .glass, cornerRadius: AppUI.Radius.sm)
+                }
+                .buttonStyle(.plain)
+                .padding(.leading, 4)
             }
-            .appSurface(style: .glass, cornerRadius: AppUI.Radius.sm)
-            
-            // Content
-            if let session = viewModel.selectedSession {
-                TerminalSessionContainerView(session: session)
-            } else {
+            .padding(6)
+            .appSurface(style: .glass, cornerRadius: 0)
+
+            // Content - 所有终端视图都保持存在，通过 opacity 控制显示
+            // 这样可以避免 Tab 切换时视图被销毁重建导致的状态丢失
+            if viewModel.sessions.isEmpty {
                 Text("No open terminals")
                     .foregroundColor(AppUI.Color.semantic.textSecondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ZStack {
+                    ForEach(viewModel.sessions) { session in
+                        TerminalSessionContainerView(session: session)
+                            .opacity(viewModel.selectedSessionId == session.id ? 1 : 0)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .onAppear {
@@ -54,107 +67,6 @@ struct TerminalMainView: View {
         let path = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         return path.isEmpty ? nil : path
     }
-}
-
-struct TerminalTabItem: View {
-    let title: String
-    let isSelected: Bool
-    let onSelect: () -> Void
-    let onClose: () -> Void
-    
-    var body: some View {
-        HStack(spacing: 6) {
-            Text(title)
-                .font(.caption)
-                .foregroundColor(isSelected ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textSecondary)
-            
-            if isSelected {
-                Button(action: onClose) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 10))
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(backgroundShape)
-        .onTapGesture {
-            onSelect()
-        }
-    }
-
-    @ViewBuilder
-    var backgroundShape: some View {
-        if isSelected {
-            Color.clear
-                .appSurface(style: .glass, cornerRadius: AppUI.Radius.sm)
-        } else {
-            Color.clear
-        }
-    }
-}
-
-struct TerminalSessionContainerView: View {
-    @ObservedObject var session: TerminalSession
-    
-    var body: some View {
-        NativeTerminalHostView(session: session)
-        .background(AppUI.Color.basePalette.deepBackground)
-    }
-}
-
-struct NativeTerminalHostView: NSViewRepresentable {
-    @ObservedObject var session: TerminalSession
-
-    func makeNSView(context: Context) -> LocalProcessTerminalView {
-        // SwiftTerm 终端会话是长生命周期对象，直接复用对应的 NSView。
-        session.terminalView
-    }
-
-    func updateNSView(_ nsView: LocalProcessTerminalView, context: Context) {}
-}
-
-@MainActor
-final class TerminalTabsViewModel: ObservableObject {
-    @Published var sessions: [TerminalSession] = []
-    @Published var selectedSessionId: UUID?
-    private var defaultWorkingDirectory: String?
-    
-    init() {
-        createSession(workingDirectory: defaultWorkingDirectory)
-    }
-    
-    var selectedSession: TerminalSession? {
-        sessions.first(where: { $0.id == selectedSessionId })
-    }
-    
-    func createSession(workingDirectory: String?) {
-        let session = TerminalSession(workingDirectory: workingDirectory ?? defaultWorkingDirectory)
-        sessions.append(session)
-        selectedSessionId = session.id
-    }
-
-    func updateDefaultWorkingDirectory(_ path: String?) {
-        defaultWorkingDirectory = path
-    }
-    
-    func selectSession(_ id: UUID) {
-        selectedSessionId = id
-    }
-    
-    func closeSession(_ id: UUID) {
-        if let index = sessions.firstIndex(where: { $0.id == id }) {
-            let session = sessions[index]
-            session.terminate()
-            sessions.remove(at: index)
-
-            if selectedSessionId == id {
-                selectedSessionId = sessions.last?.id
-            }
-        }
-    }
-
 }
 
 // MARK: - Preview

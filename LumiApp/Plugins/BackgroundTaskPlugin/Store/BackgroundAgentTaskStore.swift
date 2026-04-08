@@ -6,7 +6,7 @@ actor BackgroundAgentTaskStore: TaskStoreProtocol {
     nonisolated static let shared = BackgroundAgentTaskStore()
 
     private let container: ModelContainer
-    private let queue = DispatchQueue(label: "BackgroundAgentTaskStore.queue", qos: .utility)
+    private let queue = DispatchQueue(label: "BackgroundAgentTaskStore.queue", qos: .userInitiated)
 
     private init() {
         let schema = Schema([BackgroundAgentTask.self])

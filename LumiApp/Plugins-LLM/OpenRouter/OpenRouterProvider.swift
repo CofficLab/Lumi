@@ -41,6 +41,7 @@ final class OpenRouterProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked
         "openai/gpt-5",
         "openai/gpt-5-mini",
         "openai/gpt-oss-20b:free",
+        "qwen/qwen3.6-plus",
         "stepfun/step-3.5-flash:free",
         "z-ai/glm-4.5-air:free",
     ]
@@ -175,7 +176,6 @@ final class OpenRouterProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked
             if let choices = json?["choices"] as? [[String: Any]],
                let firstChoice = choices.first,
                let delta = firstChoice["delta"] as? [String: Any] {
-
                 if let content = delta["content"] as? String {
                     return StreamChunk(content: content, eventType: .textDelta)
                 }
@@ -220,7 +220,6 @@ final class OpenRouterProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked
             return nil
         }
     }
-
 }
 
 // MARK: - 消息转换
