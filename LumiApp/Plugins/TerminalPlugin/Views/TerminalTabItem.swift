@@ -15,7 +15,7 @@ struct TerminalTabItem: View {
                 .font(.caption)
                 .foregroundColor(isSelected ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textSecondary)
 
-            if isHovered || isSelected {
+            if isHovered {
                 Button(action: onClose) {
                     Image(systemName: "xmark")
                         .font(.system(size: 10))
@@ -30,6 +30,7 @@ struct TerminalTabItem: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
+        .frame(maxWidth: .infinity)
         .background(backgroundShape)
         .contentShape(Rectangle())
         .onHover { hovering in

@@ -8,36 +8,34 @@ struct TerminalMainView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Tab Bar
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 0) {
-                    ForEach(Array(viewModel.sessions.enumerated()), id: \.element.id) { index, session in
-                        TerminalTabItem(
-                            title: session.title,
-                            isSelected: viewModel.selectedSessionId == session.id,
-                            onSelect: { viewModel.selectSession(session.id) },
-                            onClose: { viewModel.closeSession(session.id) }
-                        )
+            HStack(spacing: 0) {
+                ForEach(Array(viewModel.sessions.enumerated()), id: \.element.id) { index, session in
+                    TerminalTabItem(
+                        title: session.title,
+                        isSelected: viewModel.selectedSessionId == session.id,
+                        onSelect: { viewModel.selectSession(session.id) },
+                        onClose: { viewModel.closeSession(session.id) }
+                    )
 
-                        // 标签之间的分隔线（最后一个标签后不加）
-                        if index < viewModel.sessions.count - 1 {
-                            Rectangle()
-                                .fill(AppUI.Color.semantic.textTertiary.opacity(0.3))
-                                .frame(width: 1, height: 14)
-                        }
+                    // 标签之间的分隔线（最后一个标签后不加）
+                    if index < viewModel.sessions.count - 1 {
+                        Rectangle()
+                            .fill(AppUI.Color.semantic.textTertiary.opacity(0.3))
+                            .frame(width: 1, height: 14)
                     }
-
-                    Button(action: {
-                        viewModel.createSession(workingDirectory: currentProjectPathForTerminal)
-                    }) {
-                        Image(systemName: "plus")
-                            .frame(width: 24, height: 24)
-                            .appSurface(style: .glass, cornerRadius: AppUI.Radius.sm)
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.leading, 4)
                 }
-                .padding(6)
+
+                Button(action: {
+                    viewModel.createSession(workingDirectory: currentProjectPathForTerminal)
+                }) {
+                    Image(systemName: "plus")
+                        .frame(width: 24, height: 24)
+                        .appSurface(style: .glass, cornerRadius: AppUI.Radius.sm)
+                }
+                .buttonStyle(.plain)
+                .padding(.leading, 4)
             }
+            .padding(6)
             .appSurface(style: .glass, cornerRadius: AppUI.Radius.sm)
 
             // Content
