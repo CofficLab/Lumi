@@ -23,10 +23,11 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
     // MARK: - 配置相关
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_Aliyun"
-    static let defaultModel = "qwen3.5-plus"
+    static let defaultModel = "qwen3.6-plus"
 
     static let availableModels = [
         "qwen3.5-plus",
+        "qwen3.6-plus",
         "glm-4.7",
         "glm-5",
         "MiniMax-M2.5",

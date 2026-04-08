@@ -15,9 +15,10 @@ struct DragPreview: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(Color(nsColor: .windowBackgroundColor).opacity(0.9))
-        .cornerRadius(8)
-        .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.orange.opacity(0.95))
+        )
     }
 
     private var iconForFileURL: String {

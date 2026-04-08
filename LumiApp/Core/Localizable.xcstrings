@@ -6504,9 +6504,6 @@
         }
       }
     },
-    "应用版本" : {
-
-    },
     "开启新会话" : {
       "extractionState" : "stale",
       "localizations" : {

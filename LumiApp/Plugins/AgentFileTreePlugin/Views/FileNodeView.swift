@@ -75,6 +75,14 @@ struct FileNodeView: View {
                 rowBackground(isSelected: isSelected)
             )
             .contentShape(Rectangle())
+            .onDrag {
+                // 直接返回 NSURL 对象，这样可以保持真实的文件路径引用
+                // 避免创建临时缓存文件
+                return NSItemProvider(object: url as NSURL)
+            } preview: {
+                // 拖拽预览
+                DragPreview(fileURL: url)
+            }
             .contextMenu {
                 Button {
                     openInFinder()
