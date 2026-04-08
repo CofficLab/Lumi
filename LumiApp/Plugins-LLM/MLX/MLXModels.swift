@@ -9,109 +9,11 @@ public enum MLXModels {
     // MARK: - 推荐模型（按优先级排序）
 
     /// 所有推荐模型（按 priority 排序）
-    public static let recommended: [LocalModelInfo] = [
-        // Qwen 系列 - 中文友好，性价比高
-        LocalModelInfo(
-            id: "mlx-community/Qwen3.5-0.8B-OptiQ-4bit",
-            displayName: "Qwen 3.5 0.8B OptiQ",
-            description: "极小体积，适合入门与低内存设备",
-            size: "~0.6 GB",
-            minRAM: 4,
-            expectedBytes: 600_000_000,
-            supportsVision: false,
-            supportsTools: true,
-            priority: 0,
-            series: "Qwen 系列"
-        ),
-        LocalModelInfo(
-            id: "mlx-community/Qwen3.5-4B-OptiQ-4bit",
-            displayName: "Qwen 3.5 4B OptiQ",
-            description: "轻量中文模型，OptiQ 量化",
-            size: "~2.5 GB",
-            minRAM: 8,
-            expectedBytes: 2_500_000_000,
-            supportsVision: false,
-            supportsTools: true,
-            priority: 1,
-            series: "Qwen 系列"
-        ),
-        LocalModelInfo(
-            id: "mlx-community/Qwen3.5-9B-4bit",
-            displayName: "Qwen 3.5 9B",
-            description: "阿里云最新模型，中文能力强，支持工具调用",
-            size: "~6 GB",
-            minRAM: 16,
-            expectedBytes: 6_000_000_000,
-            supportsVision: false,
-            supportsTools: true,
-            priority: 2,
-            series: "Qwen 系列"
-        ),
-        LocalModelInfo(
-            id: "mlx-community/Qwen3.5-14B-4bit",
-            displayName: "Qwen 3.5 14B",
-            description: "更强的中文模型，适合复杂任务",
-            size: "~9 GB",
-            minRAM: 24,
-            expectedBytes: 9_000_000_000,
-            supportsVision: false,
-            supportsTools: true,
-            priority: 3,
-            series: "Qwen 系列"
-        ),
-        LocalModelInfo(
-            id: "mlx-community/Qwen2-VL-7B-Instruct-4bit",
-            displayName: "Qwen2 VL 7B",
-            description: "支持图片理解的视觉语言模型",
-            size: "~5 GB",
-            minRAM: 16,
-            expectedBytes: 5_000_000_000,
-            supportsVision: true,
-            supportsTools: false,
-            priority: 10,
-            series: "Qwen 系列"
-        ),
-
-        // Mistral 系列 - 轻量高效
-        LocalModelInfo(
-            id: "mlx-community/Mistral-Nemo-12B-Instruct-4bit",
-            displayName: "Mistral Nemo 12B",
-            description: "轻量高效，适合日常使用",
-            size: "~7 GB",
-            minRAM: 16,
-            expectedBytes: 7_000_000_000,
-            supportsVision: false,
-            supportsTools: true,
-            priority: 4,
-            series: "Mistral 系列"
-        ),
-
-        // Llama 系列 - 通用能力强
-        LocalModelInfo(
-            id: "mlx-community/Llama-3.2-3B-Instruct-4bit",
-            displayName: "Llama 3.2 3B",
-            description: "超轻量，适合低配置设备",
-            size: "~2 GB",
-            minRAM: 8,
-            expectedBytes: 2_000_000_000,
-            supportsVision: false,
-            supportsTools: true,
-            priority: 5,
-            series: "Llama 系列"
-        ),
-        LocalModelInfo(
-            id: "mlx-community/Llama-3.3-70B-Instruct-4bit",
-            displayName: "Llama 3.3 70B",
-            description: "最强开源模型，需要高配置",
-            size: "~40 GB",
-            minRAM: 64,
-            expectedBytes: 40_000_000_000,
-            supportsVision: false,
-            supportsTools: true,
-            priority: 6,
-            series: "Llama 系列"
-        ),
-    ]
+    public static let recommended: [LocalModelInfo] = 
+        QwenModels.all + 
+        MistralModels.all + 
+        LlamaModels.all + 
+        Gemma4Models.all
 
     // MARK: - 按内存要求过滤
 
