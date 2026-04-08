@@ -12,6 +12,8 @@ final class TerminalSession: ObservableObject, Identifiable {
     /// SwiftTerm 原生终端视图（每个会话一个实例）
     let terminalView: LocalProcessTerminalView
     private let initialWorkingDirectory: String?
+    /// KVO 观察系统外观变化
+    private var appearanceObservation: NSKeyValueObservation?
     
     init(workingDirectory: String? = nil) {
         self.initialWorkingDirectory = workingDirectory
@@ -25,8 +27,17 @@ final class TerminalSession: ObservableObject, Identifiable {
         terminalView.processDelegate = self
         terminalView.configureNativeColors()
         terminalView.font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
-        terminalView.nativeBackgroundColor = NSColor.black
-        terminalView.nativeForegroundColor = NSColor.textColor
+
+        // 根据系统外观动态设置终端颜色
+        applyColors()
+
+        // 监听系统外观变化（KVO 观察 NSApp.effectiveAppearance）
+        appearanceObservation = NSApp.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
+            Task { @MainActor [weak self] in
+                self?.applyColors()
+            }
+        }
+
         terminalView.startProcess(
             executable: "/bin/zsh",
             args: ["-f", "-i"],
@@ -38,6 +49,20 @@ final class TerminalSession: ObservableObject, Identifiable {
             currentDirectory: initialWorkingDirectory
         )
         isConnected = true
+    }
+
+    /// 根据当前系统外观设置终端的前景/背景色
+    private func applyColors() {
+        let isDark = NSApp.effectiveAppearance.bestMatch(
+            from: [.darkAqua, .aqua]
+        ) == .darkAqua
+
+        terminalView.nativeBackgroundColor = isDark
+            ? NSColor(red: 0.11, green: 0.11, blue: 0.12, alpha: 1.0)  // 深色背景
+            : NSColor.white                                                  // 白色背景
+        terminalView.nativeForegroundColor = isDark
+            ? NSColor(white: 0.92, alpha: 1.0)   // 浅色文字
+            : NSColor(white: 0.12, alpha: 1.0)   // 深色文字
     }
     
     func terminate() {
