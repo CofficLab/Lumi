@@ -11,6 +11,12 @@ struct StatusMessage: View {
         if message.content == ChatMessage.turnCompletedSystemContentKey {
             // 对话轮次结束的专用视图
             TurnCompletedDivider(message: message)
+        } else if let snapshot = ToolExecutionStatusSnapshot.parse(from: message.content) {
+            ToolExecutionStatusCardView(
+                snapshot: snapshot,
+                conversationId: message.conversationId
+            )
+                .messageBubbleStyle(role: message.role, isError: message.isError)
         } else {
             PlainTextMessageContentView(
                 content: message.content,

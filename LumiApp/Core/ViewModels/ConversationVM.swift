@@ -192,4 +192,27 @@ final class ConversationVM: ObservableObject, SuperLog {
     func fetchConversation(id: UUID) -> Conversation? {
         chatHistoryService.fetchConversation(id: id)
     }
+
+    // MARK: - 项目-对话联动
+
+    /// 切换到指定项目最近使用的对话
+    /// - Parameter projectId: 项目路径
+    /// - Returns: 是否成功找到并切换到关联对话
+    @discardableResult
+    func switchToLatestConversation(forProject projectId: String) -> Bool {
+        guard let conversation = chatHistoryService.fetchLatestConversation(projectId: projectId) else {
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)📁 项目 [\(projectId)] 无关联对话")
+            }
+            return false
+        }
+
+        setSelectedConversation(conversation.id)
+
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t)📁 已切换到项目 [\(projectId)] 的最近对话：\(conversation.title)")
+        }
+
+        return true
+    }
 }

@@ -1,77 +1,67 @@
 import Foundation
-import Combine
 import SwiftUI
+import AppKit
+import SwiftTerm
 
 @MainActor
-class TerminalSession: ObservableObject, Identifiable {
+final class TerminalSession: ObservableObject, Identifiable {
     let id = UUID()
     @Published var title: String = "Terminal"
-    @Published var output: NSAttributedString = NSAttributedString()
     @Published var isConnected: Bool = false
+
+    /// SwiftTerm 原生终端视图（每个会话一个实例）
+    let terminalView: LocalProcessTerminalView
+    private let initialWorkingDirectory: String?
     
-    private let pty = PseudoTerminal()
-    private let parser = ANSIParser()
-    private var rawData = Data() // Buffer
-    
-    init() {
-        setupPTY()
+    init(workingDirectory: String? = nil) {
+        self.initialWorkingDirectory = workingDirectory
+        self.terminalView = LocalProcessTerminalView(frame: .zero)
+        setupTerminal()
     }
     
-    private func setupPTY() {
-        pty.onOutput = { [weak self] data in
-            guard let self = self else { return }
-            self.handleOutput(data)
-        }
-        
-        pty.onProcessTerminated = { [weak self] in
-            DispatchQueue.main.async {
-                self?.isConnected = false
-                self?.appendSystemMessage("Session ended.")
-            }
-        }
-        
-        do {
-            try pty.start()
-            isConnected = true
-        } catch {
-            appendSystemMessage("Failed to start terminal: \(error)")
-        }
-    }
-    
-    private func handleOutput(_ data: Data) {
-        // Append to raw buffer and re-parse?
-        // For efficiency, we should append to attributed string directly if parser supports incremental.
-        // Our simple parser parses whole string.
-        // Let's just append raw data and parse only the new chunk?
-        // No, because ANSI codes can span chunks.
-        
-        // MVP: Append to rawData and re-parse everything (slow but simple)
-        // Optimization: Keep a clean buffer.
-        
-        rawData.append(data)
-        
-        // Limit buffer size
-        if rawData.count > 1_000_000 {
-            rawData = rawData.suffix(500_000)
-        }
-        
-        self.output = parser.parse(data: rawData)
-    }
-    
-    func sendInput(_ data: Data) {
-        guard isConnected else { return }
-        pty.write(data)
-    }
-    
-    private func appendSystemMessage(_ text: String) {
-        let str = "\n[Lumi Terminal] \(text)\n"
-        if let data = str.data(using: .utf8) {
-            rawData.append(data)
-            self.output = parser.parse(data: rawData)
-        }
+    // MARK: - Lifecycle
+
+    private func setupTerminal() {
+        terminalView.processDelegate = self
+        terminalView.configureNativeColors()
+        terminalView.font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
+        terminalView.nativeBackgroundColor = NSColor.black
+        terminalView.nativeForegroundColor = NSColor.textColor
+        terminalView.startProcess(
+            executable: "/bin/zsh",
+            args: ["-f", "-i"],
+            environment: [
+                "TERM=xterm-256color",
+                "LANG=en_US.UTF-8",
+                "PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+            ],
+            currentDirectory: initialWorkingDirectory
+        )
+        isConnected = true
     }
     
     func terminate() {
-        pty.terminate()
+        terminalView.terminate()
+        isConnected = false
+    }
+}
+
+extension TerminalSession: LocalProcessTerminalViewDelegate {
+    // MARK: - LocalProcessTerminalViewDelegate
+
+    nonisolated func sizeChanged(source: LocalProcessTerminalView, newCols: Int, newRows: Int) {}
+
+    nonisolated func setTerminalTitle(source: LocalProcessTerminalView, title: String) {
+        Task { @MainActor [weak self] in
+            self?.title = title.isEmpty ? "Terminal" : title
+        }
+    }
+
+    nonisolated func hostCurrentDirectoryUpdate(source: TerminalView, directory: String?) {}
+
+    nonisolated func processTerminated(source: TerminalView, exitCode: Int32?) {
+        Task { @MainActor [weak self] in
+            self?.isConnected = false
+        }
     }
 }

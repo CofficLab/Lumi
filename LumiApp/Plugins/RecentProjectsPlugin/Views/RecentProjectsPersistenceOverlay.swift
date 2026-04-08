@@ -2,12 +2,15 @@ import MagicKit
 import SwiftUI
 
 /// 最近项目持久化覆盖层
-/// 在 RootView 出现时恢复最近项目列表和当前项目，监听项目切换保存
+/// 在 RootView 出现时恢复最近项目列表和当前项目，监听项目切换保存，
+/// 并在项目切换时自动联动切换到关联的对话
 struct RecentProjectsPersistenceOverlay<Content: View>: View, SuperLog {
     nonisolated static var verbose: Bool { true }
     nonisolated static var emoji: String { "📋" }
 
     @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var conversationVM: ConversationVM
+    @EnvironmentObject private var conversationCreationVM: ConversationCreationVM
 
     let content: Content
 
@@ -76,6 +79,11 @@ extension RecentProjectsPersistenceOverlay {
 
         // 同时更新持久化的当前项目
         store.setCurrentProject(name: name, path: newPath)
+
+        // 项目切换 → 联动切换对话
+        // 仅在真正切换时触发（oldPath != newPath），跳过首次恢复
+        guard !oldPath.isEmpty, oldPath != newPath else { return }
+        switchConversationForProject(newPath)
     }
 
     /// 处理 SetCurrentProjectTool 发出的事件，同步到 ProjectVM
@@ -87,6 +95,35 @@ extension RecentProjectsPersistenceOverlay {
         let projects = store.loadProjects()
         if let matched = projects.first(where: { $0.path == path }) {
             projectVM.switchProject(to: matched)
+        }
+
+        // Agent 工具触发项目切换 → 同样联动对话
+        switchConversationForProject(path)
+    }
+}
+
+// MARK: - Project-Conversation Sync
+
+extension RecentProjectsPersistenceOverlay {
+    /// 项目切换时，自动切换到该项目最近使用的对话
+    /// 如果该项目没有关联对话，则新建一个
+    private func switchConversationForProject(_ projectPath: String) {
+        let switched = conversationVM.switchToLatestConversation(forProject: projectPath)
+
+        if switched {
+            if Self.verbose {
+                RecentProjectsPlugin.logger.info("\(Self.t)✅ 已切换到项目 [\(projectPath)] 的最近对话")
+            }
+            return
+        }
+
+        // 该项目没有关联对话 → 新建一个
+        if Self.verbose {
+            RecentProjectsPlugin.logger.info("\(Self.t)📁 项目 [\(projectPath)] 无关联对话，创建新对话")
+        }
+
+        Task {
+            await conversationCreationVM.createNewConversation()
         }
     }
 }

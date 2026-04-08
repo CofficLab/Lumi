@@ -395,28 +395,109 @@ final class SendController: ObservableObject, SuperLog {
         guard let toolCalls = assistantMessage.toolCalls, !toolCalls.isEmpty else { return }
 
         let statusVM = container.conversationSendStatusVM
+        let totalCount = toolCalls.count
 
-        for toolCall in toolCalls {
-            statusVM.setStatus(
+        for (index, toolCall) in toolCalls.enumerated() {
+            if Task.isCancelled {
+                statusVM.applyToolProgressEvent(conversationId: conversationId, event: .cancelledAll)
+                break
+            }
+
+            let step = index + 1
+            let startedAt = Date()
+            let initialShellStats = await Self.shellStats(for: toolCall.name)
+            statusVM.applyToolProgressEvent(
                 conversationId: conversationId,
-                content: "正在执行工具：\(toolCall.name)…"
+                event: .running(
+                    toolName: toolCall.name,
+                    current: step,
+                    total: totalCount,
+                    elapsedSeconds: 0,
+                    shellStats: initialShellStats
+                )
             )
+
+            let progressTask = Task { [weak statusVM] in
+                while !Task.isCancelled {
+                    let elapsed = Int(Date().timeIntervalSince(startedAt))
+                    let shellStats = await Self.shellStats(for: toolCall.name)
+                    await MainActor.run {
+                        statusVM?.applyToolProgressEvent(
+                            conversationId: conversationId,
+                            event: .running(
+                                toolName: toolCall.name,
+                                current: step,
+                                total: totalCount,
+                                elapsedSeconds: elapsed,
+                                shellStats: shellStats
+                            )
+                        )
+                    }
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+                }
+            }
 
             // 执行工具
             let resultMsg: ChatMessage
             do {
-                let result = try await container.toolExecutionService.executeTool(toolCall)
+                let result = try await withTaskCancellationHandler {
+                    try await container.toolExecutionService.executeTool(toolCall)
+                } onCancel: {
+                    progressTask.cancel()
+                }
+                progressTask.cancel()
                 resultMsg = ChatMessage(
                     role: .tool,
                     conversationId: conversationId,
                     content: result,
                     toolCallID: toolCall.id
                 )
+                statusVM.applyToolProgressEvent(
+                    conversationId: conversationId,
+                    event: .completed(toolName: toolCall.name, current: step, total: totalCount)
+                )
+            } catch is CancellationError {
+                progressTask.cancel()
+                statusVM.applyToolProgressEvent(
+                    conversationId: conversationId,
+                    event: .cancelled(toolName: toolCall.name, current: step, total: totalCount)
+                )
+                break
             } catch {
+                progressTask.cancel()
                 resultMsg = container.toolExecutionService.createErrorMessage(for: toolCall, error: error, conversationId: conversationId)
+                statusVM.applyToolProgressEvent(
+                    conversationId: conversationId,
+                    event: .failed(
+                        toolName: toolCall.name,
+                        current: step,
+                        total: totalCount,
+                        errorSummary: Self.errorSummary(from: error)
+                    )
+                )
             }
 
             container.conversationVM.saveMessage(resultMsg, to: conversationId)
         }
+    }
+
+    private static func errorSummary(from error: Error) -> String {
+        error.localizedDescription
+            .split(whereSeparator: \.isNewline)
+            .first
+            .map(String.init)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? "未知错误"
+    }
+
+    private static func shellStats(for toolName: String) async -> ToolProgressShellStats? {
+        guard toolName == "run_command",
+              let snapshot = await ShellService.shared.progressSnapshot() else {
+            return nil
+        }
+        return ToolProgressShellStats(
+            totalLines: snapshot.totalLines,
+            totalBytes: snapshot.totalBytes,
+            latestOutputPreview: snapshot.latestOutputPreview
+        )
     }
 }

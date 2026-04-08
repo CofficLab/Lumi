@@ -168,6 +168,25 @@ extension ChatHistoryService {
         }
     }
 
+    /// 获取指定项目最近更新的一个对话
+    /// - Parameter projectId: 项目路径
+    /// - Returns: 该项目最近使用的对话，不存在时返回 nil
+    func fetchLatestConversation(projectId: String) -> Conversation? {
+        let context = self.getContext()
+        var descriptor = FetchDescriptor<Conversation>(
+            predicate: #Predicate { $0.projectId == projectId },
+            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = 1
+
+        do {
+            return try context.fetch(descriptor).first
+        } catch {
+            AppLogger.core.error("\(Self.t)❌ 获取项目最新对话失败：\(error.localizedDescription)")
+            return nil
+        }
+    }
+
     /// 根据 ID 获取对话
     func fetchConversation(id: UUID) -> Conversation? {
         let context = self.getContext()
