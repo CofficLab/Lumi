@@ -22,8 +22,11 @@ struct AgentNativeFileTreeContainer: View {
                         persistSelectionIfNeeded(url)
                     },
                     onExpandedPathsChanged: { paths in
-                        expandedRelativePaths = paths
-                        persistExpandedPathsIfNeeded(paths)
+                        // 避免在视图更新期间直接修改状态
+                        DispatchQueue.main.async {
+                            expandedRelativePaths = paths
+                            persistExpandedPathsIfNeeded(paths)
+                        }
                     }
                 )
             } else {

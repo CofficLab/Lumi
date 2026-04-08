@@ -22,6 +22,7 @@ struct TerminalMainView: View {
                         Rectangle()
                             .fill(AppUI.Color.semantic.textTertiary.opacity(0.3))
                             .frame(width: 1, height: 14)
+                            .padding(.horizontal, 2)
                     }
                 }
 
@@ -36,7 +37,7 @@ struct TerminalMainView: View {
                 .padding(.leading, 4)
             }
             .padding(6)
-            .appSurface(style: .glass, cornerRadius: AppUI.Radius.sm)
+            .appSurface(style: .glass, cornerRadius: 0)
 
             // Content
             if let session = viewModel.selectedSession {

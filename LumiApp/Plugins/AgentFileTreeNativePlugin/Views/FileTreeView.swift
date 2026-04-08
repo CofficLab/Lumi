@@ -260,21 +260,15 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
     
     func outlineView(_ outlineView: NSOutlineView, viewFor tableColumn: NSTableColumn?, item: Any) -> NSView? {
         guard let node = item as? FileNode else { return nil }
-        
+
         let cell = NSTableCellView()
-        
-        let stack = NSStackView()
-        stack.orientation = .horizontal
-        stack.spacing = 6
-        stack.alignment = .centerY
-        
+
         // 图标
         let icon = NSImageView()
         icon.image = NSImage(systemSymbolName: iconName(for: node), accessibilityDescription: nil)
         icon.contentTintColor = node.isDirectory ? .controlAccentColor : .secondaryLabelColor
-        icon.frame = NSRect(x: 0, y: 0, width: 14, height: 14)
-        stack.addArrangedSubview(icon)
-        
+        icon.translatesAutoresizingMaskIntoConstraints = false
+
         // 名称（重命名时切为可编辑输入框）
         let textField: NSTextField
         if renamingNodeURL == node.url {
@@ -284,6 +278,7 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
             editor.drawsBackground = false
             editor.focusRingType = .none
             editor.lineBreakMode = .byClipping
+            editor.translatesAutoresizingMaskIntoConstraints = false
             editor.setContentHuggingPriority(.defaultLow, for: .horizontal)
             editor.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
             editor.delegate = self
@@ -310,21 +305,39 @@ class FileTreeDataSource: NSObject, NSOutlineViewDataSource, NSOutlineViewDelega
             label.font = .systemFont(ofSize: 11)
             label.textColor = .labelColor
             label.lineBreakMode = .byTruncatingMiddle
+            label.translatesAutoresizingMaskIntoConstraints = false
             label.setContentHuggingPriority(.defaultLow, for: .horizontal)
             label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
             textField = label
             cell.textField = label
         }
-        stack.addArrangedSubview(textField)
-        
-        cell.addSubview(stack)
-        stack.translatesAutoresizingMaskIntoConstraints = false
+
+        cell.addSubview(icon)
+        cell.addSubview(textField)
+
+        // 使用极低优先级的约束，避免冲突
+        let spacingConstraint = textField.leadingAnchor.constraint(equalTo: icon.trailingAnchor, constant: 2)
+        spacingConstraint.priority = .defaultLow
+
+        let trailingConstraint = textField.trailingAnchor.constraint(lessThanOrEqualTo: cell.trailingAnchor, constant: -2)
+        trailingConstraint.priority = .defaultHigh
+
+        let iconWidthConstraint = icon.widthAnchor.constraint(equalToConstant: 14)
+        iconWidthConstraint.priority = .defaultHigh
+
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: cell.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -4),
-            stack.centerYAnchor.constraint(equalTo: cell.centerYAnchor)
+            // 图标约束
+            iconWidthConstraint,
+            icon.heightAnchor.constraint(equalToConstant: 14),
+            icon.leadingAnchor.constraint(equalTo: cell.leadingAnchor),
+            icon.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
+
+            // 文本约束
+            spacingConstraint,
+            trailingConstraint,
+            textField.centerYAnchor.constraint(equalTo: cell.centerYAnchor)
         ])
-        
+
         return cell
     }
     

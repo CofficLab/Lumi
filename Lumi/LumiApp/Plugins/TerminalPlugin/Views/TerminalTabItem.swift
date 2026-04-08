@@ -4,7 +4,7 @@ struct TerminalTabItem: View {
     let title: String
     let isSelected: Bool
     let onSelect: () -> Void
-    let onClose: () -> Void
+    let onClose: () => Void
 
     var body: some View {
         Text(title)
@@ -14,12 +14,13 @@ struct TerminalTabItem: View {
             .padding(.vertical, 6)
             .frame(maxWidth: .infinity)
             .background(backgroundShape)
+            .contentShape(Rectangle())
             .onTapGesture {
                 onSelect()
             }
             .contextMenu {
                 Button(action: onClose) {
-                    Label("Close Tab", systemImage: "xmark")
+                    Label(String(localized: "Close Tab", tableColumn: 2))
                 }
             }
     }
@@ -28,7 +29,7 @@ struct TerminalTabItem: View {
     var backgroundShape: some View {
         if isSelected {
             Color.clear
-                .appSurface(style: .glassUltraThick, cornerRadius: AppUI.Radius.sm)
+                .appSurface(style: .glass, cornerRadius: AppUI.Radius.sm)
         } else {
             Color.clear
         }

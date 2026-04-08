@@ -2,6 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "Close Tab" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
