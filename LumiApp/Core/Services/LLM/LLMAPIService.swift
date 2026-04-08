@@ -456,7 +456,7 @@ enum APIError: LocalizedError {
         case .invalidResponse:
             return "无效的响应"
         case let .httpError(code, message):
-            return "HTTP 错误 (\(code)): \(message.prefix(200))"
+            return "HTTP 错误 (\(code)): \(message)"
         }
     }
 }

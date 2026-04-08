@@ -67,23 +67,13 @@ struct DefaultErrorView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top, spacing: 8) {
-                ErrorIconView(size: 16, weight: .medium)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(AppUI.Typography.callout)
-                        .fontWeight(.semibold)
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
-
-                    if !message.isEmpty {
-                        PlainTextMessageContentView(
-                            content: message,
-                            monospaced: false
-                        )
-                        .font(AppUI.Typography.caption1)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
-                    }
-                }
+            if !message.isEmpty {
+                PlainTextMessageContentView(
+                    content: message,
+                    monospaced: false
+                )
+                .font(AppUI.Typography.caption1)
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
         }
     }
