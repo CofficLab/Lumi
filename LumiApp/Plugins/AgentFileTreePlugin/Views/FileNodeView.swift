@@ -75,6 +75,18 @@ struct FileNodeView: View {
                 rowBackground(isSelected: isSelected)
             )
             .contentShape(Rectangle())
+            .onDrag {
+                // 提供拖拽数据
+                let itemProvider = NSItemProvider(object: url as NSURL)
+                itemProvider.registerObject(ofClass: NSString.self, visibility: .all) { completion in
+                    completion(url.path as NSString, nil)
+                    return nil
+                }
+                return itemProvider
+            } preview: {
+                // 拖拽预览
+                DragPreview(fileURL: url)
+            }
             .contextMenu {
                 Button {
                     openInFinder()
