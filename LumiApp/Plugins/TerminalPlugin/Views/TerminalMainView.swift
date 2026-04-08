@@ -36,6 +36,7 @@ struct TerminalMainView: View {
             // Content
             if let session = viewModel.selectedSession {
                 TerminalSessionContainerView(session: session)
+                    .id(session.id)
             } else {
                 Text("No open terminals")
                     .foregroundColor(AppUI.Color.semantic.textSecondary)
