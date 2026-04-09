@@ -261,7 +261,6 @@ struct FilePreviewView: View {
                 FilePreviewEmptyStateView()
             }
         }
-        .background(AppUI.Material.glassThick)
         .onChange(of: ProjectVM.selectedFileURL) { _, newURL in
             loadFileContent(from: newURL)
         }
