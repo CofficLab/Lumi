@@ -35,6 +35,15 @@ struct FileNodeView: View {
     /// 删除确认对话框
     @State private var showDeleteConfirmation: Bool = false
 
+    /// 新建文件对话框
+    @State private var showNewFileSheet: Bool = false
+
+    /// 新建文件夹对话框
+    @State private var showNewFolderSheet: Bool = false
+
+    /// 新项目名称输入
+    @State private var newItemName: String = ""
+
     /// 记录上次刷新令牌的值，用于判断是否需要重新加载
     @State private var lastRefreshToken: Int = 0
 
@@ -96,6 +105,25 @@ struct FileNodeView: View {
                 DragPreview(fileURL: url)
             }
             .contextMenu {
+                // 新建菜单（仅文件夹显示）
+                if isDirectory {
+                    Button {
+                        newItemName = ""
+                        showNewFileSheet = true
+                    } label: {
+                        Label(String(localized: "New File", table: "ProjectTree"), systemImage: "doc.badge.plus")
+                    }
+
+                    Button {
+                        newItemName = ""
+                        showNewFolderSheet = true
+                    } label: {
+                        Label(String(localized: "New Folder", table: "ProjectTree"), systemImage: "folder.badge.plus")
+                    }
+
+                    Divider()
+                }
+
                 Button {
                     openInFinder()
                 } label: {
@@ -139,6 +167,32 @@ struct FileNodeView: View {
                 Button(String(localized: "Cancel", table: "ProjectTree"), role: .cancel) {}
             } message: {
                 Text(String(localized: "This item will be moved to the Trash.", table: "ProjectTree"))
+            }
+            // 新建文件对话框
+            .alert(
+                String(localized: "New File", table: "ProjectTree"),
+                isPresented: $showNewFileSheet
+            ) {
+                TextField(String(localized: "File name", table: "ProjectTree"), text: $newItemName)
+                Button(String(localized: "Create", table: "ProjectTree")) {
+                    createNewFile()
+                }
+                Button(String(localized: "Cancel", table: "ProjectTree"), role: .cancel) {}
+            } message: {
+                Text(String(localized: "Enter the name for the new file.", table: "ProjectTree"))
+            }
+            // 新建文件夹对话框
+            .alert(
+                String(localized: "New Folder", table: "ProjectTree"),
+                isPresented: $showNewFolderSheet
+            ) {
+                TextField(String(localized: "Folder name", table: "ProjectTree"), text: $newItemName)
+                Button(String(localized: "Create", table: "ProjectTree")) {
+                    createNewFolder()
+                }
+                Button(String(localized: "Cancel", table: "ProjectTree"), role: .cancel) {}
+            } message: {
+                Text(String(localized: "Enter the name for the new folder.", table: "ProjectTree"))
             }
 
             if isDirectory && isExpanded && !children.isEmpty {
@@ -348,6 +402,58 @@ extension FileNodeView {
             print("📁 Moved to trash: \(url.path)")
         } catch {
             print("📁 Failed to move to trash: \(error.localizedDescription)")
+        }
+    }
+
+    /// 新建文件
+    private func createNewFile() {
+        guard !newItemName.isEmpty else { return }
+
+        // 确定目标目录：如果是文件夹，在当前目录下创建；如果是文件，在父目录下创建
+        let targetDirectory = isDirectory ? url : url.deletingLastPathComponent()
+        let newFileURL = targetDirectory.appendingPathComponent(newItemName)
+
+        // 创建空文件（FileManager.createFile 不抛出错误）
+        let success = FileManager.default.createFile(atPath: newFileURL.path, contents: nil, attributes: nil)
+        if success {
+            print("📁 Created file: \(newFileURL.path)")
+
+            // 如果是文件夹且未展开，先展开它
+            if isDirectory && !isExpanded {
+                isExpanded = true
+                onDirectoryExpanded?(url)
+            }
+
+            // 立即重新加载子节点
+            reloadChildren()
+        } else {
+            print("📁 Failed to create file: \(newFileURL.path)")
+        }
+    }
+
+    /// 新建文件夹
+    private func createNewFolder() {
+        guard !newItemName.isEmpty else { return }
+
+        // 确定目标目录：如果是文件夹，在当前目录下创建；如果是文件，在父目录下创建
+        let targetDirectory = isDirectory ? url : url.deletingLastPathComponent()
+        let newFolderURL = targetDirectory.appendingPathComponent(newItemName)
+
+        do {
+            // 创建文件夹
+            try FileManager.default.createDirectory(at: newFolderURL, withIntermediateDirectories: false)
+            print("📁 Created folder: \(newFolderURL.path)")
+
+            // 如果是文件夹且未展开，先展开它
+            if isDirectory && !isExpanded {
+                isExpanded = true
+                onDirectoryExpanded?(url)
+            }
+
+            // 立即重新加载子节点
+            reloadChildren()
+        } catch {
+            print("📁 Failed to create folder: \(error.localizedDescription)")
         }
     }
 }
