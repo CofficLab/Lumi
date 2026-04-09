@@ -31,7 +31,7 @@ struct LeftSidebar: View {
             modeContent
                 .frame(maxHeight: .infinity)
         }
-        .appSurface(style: .glassUltraThick, cornerRadius: 0)
+        .appSurface(style: .glassThick, cornerRadius: 0)
         .ignoresSafeArea()
         .onAppear {
             // 在 App 模式下，恢复上次选中的导航

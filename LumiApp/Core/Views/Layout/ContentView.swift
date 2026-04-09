@@ -86,13 +86,6 @@ struct ContentView: View, SuperLog {
 
                         StatusBar()
                     }
-                    .task {
-                        if ContentView.verbose {
-                            let rightMiddleViews = pluginProvider.getRightMiddleViews()
-                            let rightBottomViews = pluginProvider.getRightBottomViews()
-                            AppLogger.core.info("\(ContentView.emoji) Agent Mode: 右侧栏中间=\(rightMiddleViews.count), 底部=\(rightBottomViews.count)")
-                        }
-                    }
                 }
             },
             openSettings: openSettings,
@@ -380,7 +373,6 @@ struct ContentViewBody<Content: View>: View {
 
     var body: some View {
         content
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onOpenSettings(perform: openSettings)
             .onOpenPluginSettings(perform: openPluginSettings)
             .background {
