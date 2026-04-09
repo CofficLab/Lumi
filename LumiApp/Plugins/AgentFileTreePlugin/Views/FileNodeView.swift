@@ -14,6 +14,15 @@ struct FileNodeView: View {
     /// 选中某个文件节点的回调
     let onSelect: (URL) -> Void
 
+    /// 目录展开时的回调（用于注册文件系统监听）
+    let onDirectoryExpanded: ((URL) -> Void)?
+
+    /// 目录折叠时的回调（用于取消文件系统监听）
+    let onDirectoryCollapsed: ((URL) -> Void)?
+
+    /// 外部刷新令牌，变化时重新加载子节点
+    let refreshToken: Int
+
     /// 本地展开状态
     @State private var isExpanded: Bool = false
 
@@ -25,6 +34,9 @@ struct FileNodeView: View {
 
     /// 删除确认对话框
     @State private var showDeleteConfirmation: Bool = false
+
+    /// 记录上次刷新令牌的值，用于判断是否需要重新加载
+    @State private var lastRefreshToken: Int = 0
 
     /// 是否文件夹
     private var isDirectory: Bool {
@@ -136,10 +148,20 @@ struct FileNodeView: View {
                             url: childURL,
                             depth: depth + 1,
                             selectedURL: selectedURL,
-                            onSelect: onSelect
+                            onSelect: onSelect,
+                            onDirectoryExpanded: onDirectoryExpanded,
+                            onDirectoryCollapsed: onDirectoryCollapsed,
+                            refreshToken: refreshToken
                         )
                     }
                 }
+            }
+        }
+        .onChange(of: refreshToken) { _, newValue in
+            guard newValue != lastRefreshToken else { return }
+            lastRefreshToken = newValue
+            if isDirectory && isExpanded {
+                reloadChildren()
             }
         }
     }
@@ -193,8 +215,13 @@ extension FileNodeView {
     private func handleTap() {
         if isDirectory {
             isExpanded.toggle()
-            if isExpanded && children.isEmpty {
-                loadChildren()
+            if isExpanded {
+                onDirectoryExpanded?(url)
+                if children.isEmpty {
+                    loadChildren()
+                }
+            } else {
+                onDirectoryCollapsed?(url)
             }
         }
         onSelect(url)
@@ -225,6 +252,39 @@ extension FileNodeView {
                 }
             } catch {
                 print("📁 loadChildren error: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// 重新加载子节点（文件系统变化后调用）
+    private func reloadChildren() {
+        Task.detached(priority: .userInitiated) {
+            do {
+                let contents = try FileManager.default.contentsOfDirectory(
+                    at: url,
+                    includingPropertiesForKeys: [.isDirectoryKey],
+                    options: [.skipsHiddenFiles]
+                )
+
+                // 排序：文件夹在前
+                let sorted = contents.sorted { a, b in
+                    let aIsDir = (try? a.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+                    let bIsDir = (try? b.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+                    if aIsDir == bIsDir {
+                        return a.lastPathComponent.localizedStandardCompare(b.lastPathComponent) == .orderedAscending
+                    }
+                    return aIsDir
+                }
+
+                await MainActor.run {
+                    self.children = sorted
+                }
+            } catch {
+                // 目录可能已被删除，折叠该节点
+                await MainActor.run {
+                    self.children = []
+                    self.isExpanded = false
+                }
             }
         }
     }
@@ -299,6 +359,9 @@ extension FileNodeView {
         url: URL(fileURLWithPath: "/tmp"),
         depth: 0,
         selectedURL: nil,
-        onSelect: { _ in }
+        onSelect: { _ in },
+        onDirectoryExpanded: { _ in },
+        onDirectoryCollapsed: { _ in },
+        refreshToken: 0
     )
 }
