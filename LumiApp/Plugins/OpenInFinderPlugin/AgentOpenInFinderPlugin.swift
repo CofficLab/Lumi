@@ -60,8 +60,12 @@ struct OpenInFinderStatusBarView: View {
             Button(action: {
                 openInFinder()
             }) {
-                Image(systemName: "folder.fill")
-                    .font(.system(size: 10))
+                HStack(spacing: 6) {
+                    Image(systemName: "folder.fill")
+                        .font(.system(size: 12))
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
             }
             .buttonStyle(.plain)
             .help(String(localized: "在 Finder 中打开当前项目", table: "AgentOpenInFinder"))
@@ -70,10 +74,17 @@ struct OpenInFinderStatusBarView: View {
 
     /// 无项目时的视图
     private var emptyView: some View {
-        Image(systemName: "folder.fill")
-            .font(.system(size: 10))
-            .foregroundColor(.secondary.opacity(0.5))
-            .help(String(localized: "无项目", table: "AgentOpenInFinder"))
+        HStack(spacing: 6) {
+            Image(systemName: "folder.fill")
+                .font(.system(size: 10))
+
+            Text("Finder")
+                .font(.system(size: 11))
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .foregroundColor(.secondary.opacity(0.5))
+        .help(String(localized: "无项目", table: "AgentOpenInFinder"))
     }
 
     private func openInFinder() {
