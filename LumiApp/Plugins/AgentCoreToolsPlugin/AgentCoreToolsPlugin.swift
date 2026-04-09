@@ -37,7 +37,6 @@ private struct CoreToolsFactory: AgentToolFactory {
             WriteFileTool(),
             EditFileTool(),
             GlobTool(),
-            GrepTool(),
             // 命令执行
             ShellTool(),
         ]
