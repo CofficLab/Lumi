@@ -124,7 +124,8 @@ struct LeftSidebar: View {
                                     selectedSidebarTabId = $0
                                     AppSettingStore.saveSelectedAgentSidebarTabId($0)
                                 }
-                            )
+                            ),
+                            showText: false  // Agent 模式只显示图标，不显示文字
                         )
                         .padding(.horizontal, AppUI.Spacing.sm)
                         .padding(.vertical, AppUI.Spacing.sm)
