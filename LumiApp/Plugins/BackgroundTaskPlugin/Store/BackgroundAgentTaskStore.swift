@@ -6,7 +6,6 @@ actor BackgroundAgentTaskStore: TaskStoreProtocol {
     nonisolated static let shared = BackgroundAgentTaskStore()
 
     private let container: ModelContainer
-    private let queue = DispatchQueue(label: "BackgroundAgentTaskStore.queue", qos: .userInitiated)
 
     private init() {
         let schema = Schema([BackgroundAgentTask.self])
@@ -32,24 +31,22 @@ actor BackgroundAgentTaskStore: TaskStoreProtocol {
     // MARK: - Public Methods - Task Management
 
     /// 创建新的后台任务（并存入数据库）
-    nonisolated func enqueue(prompt: String) -> UUID {
+    func enqueue(prompt: String) -> UUID {
         let id = UUID()
         let pendingStatus = BackgroundAgentTaskStatus.pending.rawValue
-        
-        queue.async { [container] in
-            let context = ModelContext(container)
-            let task = BackgroundAgentTask(
-                id: id,
-                originalPrompt: prompt,
-                statusRawValue: pendingStatus
-            )
-            context.insert(task)
-            try? context.save()
-        }
-        
+
+        let context = ModelContext(container)
+        let task = BackgroundAgentTask(
+            id: id,
+            originalPrompt: prompt,
+            statusRawValue: pendingStatus
+        )
+        context.insert(task)
+        try? context.save()
+
         // 发出通知（Store 的唯一职责之一）
         NotificationCenter.postBackgroundAgentTaskDidCreate(taskId: id)
-        
+
         return id
     }
 
