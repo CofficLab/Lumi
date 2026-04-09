@@ -41,6 +41,9 @@ struct FileNodeView: View {
     /// 新建文件夹对话框
     @State private var showNewFolderSheet: Bool = false
 
+    /// 重命名对话框
+    @State private var showRenameSheet: Bool = false
+
     /// 新项目名称输入
     @State private var newItemName: String = ""
 
@@ -124,6 +127,19 @@ struct FileNodeView: View {
                     Divider()
                 }
 
+                // 重命名（文件和文件夹都显示）
+                Button {
+                    newItemName = fileName
+                    // 延迟弹出对话框，确保 newItemName 已更新
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        showRenameSheet = true
+                    }
+                } label: {
+                    Label(String(localized: "Rename", table: "ProjectTree"), systemImage: "pencil")
+                }
+
+                Divider()
+
                 Button {
                     openInFinder()
                 } label: {
@@ -193,6 +209,19 @@ struct FileNodeView: View {
                 Button(String(localized: "Cancel", table: "ProjectTree"), role: .cancel) {}
             } message: {
                 Text(String(localized: "Enter the name for the new folder.", table: "ProjectTree"))
+            }
+            // 重命名对话框
+            .alert(
+                String(localized: "Rename", table: "ProjectTree"),
+                isPresented: $showRenameSheet
+            ) {
+                TextField(String(localized: "New name", table: "ProjectTree"), text: $newItemName)
+                Button(String(localized: "Rename", table: "ProjectTree")) {
+                    renameItem()
+                }
+                Button(String(localized: "Cancel", table: "ProjectTree"), role: .cancel) {}
+            } message: {
+                Text(String(localized: "Enter the new name for this item.", table: "ProjectTree"))
             }
 
             if isDirectory && isExpanded && !children.isEmpty {
@@ -454,6 +483,23 @@ extension FileNodeView {
             reloadChildren()
         } catch {
             print("📁 Failed to create folder: \(error.localizedDescription)")
+        }
+    }
+
+    /// 重命名文件/文件夹
+    private func renameItem() {
+        guard !newItemName.isEmpty else { return }
+        guard newItemName != fileName else { return } // 名称未改变，无需操作
+
+        // 构建新的 URL
+        let newURL = url.deletingLastPathComponent().appendingPathComponent(newItemName)
+
+        do {
+            // 使用 FileManager 移动文件到新路径（即重命名）
+            try FileManager.default.moveItem(at: url, to: newURL)
+            print("📁 Renamed: \(url.path) -> \(newURL.path)")
+        } catch {
+            print("📁 Failed to rename: \(error.localizedDescription)")
         }
     }
 }

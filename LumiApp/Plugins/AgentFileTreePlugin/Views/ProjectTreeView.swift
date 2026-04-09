@@ -132,7 +132,9 @@ extension ProjectTreeView {
         // 创建新的监听器
         watcher = ProjectTreeWatcher { changedURL in
             Self.logger.info("🔄 文件系统变化检测: \(changedURL.lastPathComponent)")
-            handleFileSystemChange(changedURL: changedURL, rootURL: rootURL)
+            Task { @MainActor in
+                handleFileSystemChange(changedURL: changedURL, rootURL: rootURL)
+            }
         }
 
         // 开始监听根目录
