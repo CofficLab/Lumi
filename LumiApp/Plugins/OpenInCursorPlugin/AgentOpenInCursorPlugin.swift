@@ -64,7 +64,7 @@ struct OpenInCursorStatusBarView: View {
                 HStack(spacing: 6) {
                     Image.cursorApp
                         .resizable()
-                        .frame(width: 12, height: 12)
+                        .frame(width: 16, height: 16)
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)

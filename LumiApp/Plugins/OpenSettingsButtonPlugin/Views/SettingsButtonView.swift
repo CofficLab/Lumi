@@ -104,10 +104,6 @@ struct KeyboardShortcutBadge: View {
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 3)
-                    .background(
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(DesignTokens.Color.semantic.secondary.opacity(0.15))
-                    )
             }
         }
     }
