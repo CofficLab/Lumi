@@ -2,7 +2,7 @@ import MagicKit
 import os
 import SwiftUI
 
-/// 项目文件树视图 - 使用 List 优化性能，支持文件系统变化自动刷新
+/// 项目文件树视图
 struct ProjectTreeView: View {
     @EnvironmentObject var projectVM: ProjectVM
 
@@ -54,33 +54,28 @@ struct ProjectTreeView: View {
 
 extension ProjectTreeView {
     private var fileList: some View {
-        List {
-            ForEach(rootURLs, id: \.self) { url in
-                FileNodeView(
-                    url: url,
-                    depth: 0,
-                    selectedURL: projectVM.selectedFileURL,
-                    onSelect: { selectedURL in
-                        projectVM.selectFile(at: selectedURL)
-                    },
-                    onDirectoryExpanded: { dirURL in
-                        handleDirectoryExpanded(dirURL)
-                    },
-                    onDirectoryCollapsed: { dirURL in
-                        handleDirectoryCollapsed(dirURL)
-                    },
-                    refreshToken: refreshToken
-                )
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                .listRowBackground(Color.clear)
+        ScrollView {
+            LazyVStack(spacing: 0) {
+                ForEach(rootURLs, id: \.self) { url in
+                    FileNodeView(
+                        url: url,
+                        depth: 0,
+                        selectedURL: projectVM.selectedFileURL,
+                        onSelect: { selectedURL in
+                            projectVM.selectFile(at: selectedURL)
+                        },
+                        onDirectoryExpanded: { dirURL in
+                            handleDirectoryExpanded(dirURL)
+                        },
+                        onDirectoryCollapsed: { dirURL in
+                            handleDirectoryCollapsed(dirURL)
+                        },
+                        refreshToken: refreshToken
+                    )
+                }
             }
         }
-        .environment(\.defaultMinListRowHeight, 0)
-        .listStyle(.plain)
         .scrollIndicators(.hidden)
-        .listRowBackground(Color.clear)
-        .padding(.horizontal, -8)
     }
 
     private var loadingView: some View {
