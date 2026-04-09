@@ -1,6 +1,6 @@
-import SwiftUI
 import MagicKit
 import os
+import SwiftUI
 
 /// 项目文件树视图 - 使用 List 优化性能，支持文件系统变化自动刷新
 struct ProjectTreeView: View {
@@ -22,12 +22,17 @@ struct ProjectTreeView: View {
     @State private var refreshToken: Int = 0
 
     /// Logger
-    nonisolated private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree")
+    private nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree")
 
     var body: some View {
         VStack(spacing: 0) {
-            // 文件树内容
-            contentView
+            if isLoading && rootURLs.isEmpty {
+                loadingView
+            } else if rootURLs.isEmpty {
+                emptyView
+            } else {
+                fileList
+            }
         }
         .frame(maxHeight: .infinity)
         .onChange(of: projectVM.currentProjectPath) { _, newPath in
@@ -48,17 +53,6 @@ struct ProjectTreeView: View {
 // MARK: - View
 
 extension ProjectTreeView {
-    @ViewBuilder
-    private var contentView: some View {
-        if isLoading && rootURLs.isEmpty {
-            loadingView
-        } else if rootURLs.isEmpty {
-            emptyView
-        } else {
-            fileList
-        }
-    }
-
     private var fileList: some View {
         List {
             ForEach(rootURLs, id: \.self) { url in
