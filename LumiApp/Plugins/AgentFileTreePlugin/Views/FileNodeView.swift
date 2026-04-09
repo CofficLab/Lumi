@@ -14,6 +14,15 @@ struct FileNodeView: View {
     /// 选中某个文件节点的回调
     let onSelect: (URL) -> Void
 
+    /// 目录展开时的回调（用于注册文件系统监听）
+    let onDirectoryExpanded: ((URL) -> Void)?
+
+    /// 目录折叠时的回调（用于取消文件系统监听）
+    let onDirectoryCollapsed: ((URL) -> Void)?
+
+    /// 外部刷新令牌，变化时重新加载子节点
+    let refreshToken: Int
+
     /// 本地展开状态
     @State private var isExpanded: Bool = false
 
@@ -25,6 +34,21 @@ struct FileNodeView: View {
 
     /// 删除确认对话框
     @State private var showDeleteConfirmation: Bool = false
+
+    /// 新建文件对话框
+    @State private var showNewFileSheet: Bool = false
+
+    /// 新建文件夹对话框
+    @State private var showNewFolderSheet: Bool = false
+
+    /// 重命名对话框
+    @State private var showRenameSheet: Bool = false
+
+    /// 新项目名称输入
+    @State private var newItemName: String = ""
+
+    /// 记录上次刷新令牌的值，用于判断是否需要重新加载
+    @State private var lastRefreshToken: Int = 0
 
     /// 是否文件夹
     private var isDirectory: Bool {
@@ -84,6 +108,38 @@ struct FileNodeView: View {
                 DragPreview(fileURL: url)
             }
             .contextMenu {
+                // 新建菜单（仅文件夹显示）
+                if isDirectory {
+                    Button {
+                        newItemName = ""
+                        showNewFileSheet = true
+                    } label: {
+                        Label(String(localized: "New File", table: "ProjectTree"), systemImage: "doc.badge.plus")
+                    }
+
+                    Button {
+                        newItemName = ""
+                        showNewFolderSheet = true
+                    } label: {
+                        Label(String(localized: "New Folder", table: "ProjectTree"), systemImage: "folder.badge.plus")
+                    }
+
+                    Divider()
+                }
+
+                // 重命名（文件和文件夹都显示）
+                Button {
+                    newItemName = fileName
+                    // 延迟弹出对话框，确保 newItemName 已更新
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        showRenameSheet = true
+                    }
+                } label: {
+                    Label(String(localized: "Rename", table: "ProjectTree"), systemImage: "pencil")
+                }
+
+                Divider()
+
                 Button {
                     openInFinder()
                 } label: {
@@ -128,6 +184,45 @@ struct FileNodeView: View {
             } message: {
                 Text(String(localized: "This item will be moved to the Trash.", table: "ProjectTree"))
             }
+            // 新建文件对话框
+            .alert(
+                String(localized: "New File", table: "ProjectTree"),
+                isPresented: $showNewFileSheet
+            ) {
+                TextField(String(localized: "File name", table: "ProjectTree"), text: $newItemName)
+                Button(String(localized: "Create", table: "ProjectTree")) {
+                    createNewFile()
+                }
+                Button(String(localized: "Cancel", table: "ProjectTree"), role: .cancel) {}
+            } message: {
+                Text(String(localized: "Enter the name for the new file.", table: "ProjectTree"))
+            }
+            // 新建文件夹对话框
+            .alert(
+                String(localized: "New Folder", table: "ProjectTree"),
+                isPresented: $showNewFolderSheet
+            ) {
+                TextField(String(localized: "Folder name", table: "ProjectTree"), text: $newItemName)
+                Button(String(localized: "Create", table: "ProjectTree")) {
+                    createNewFolder()
+                }
+                Button(String(localized: "Cancel", table: "ProjectTree"), role: .cancel) {}
+            } message: {
+                Text(String(localized: "Enter the name for the new folder.", table: "ProjectTree"))
+            }
+            // 重命名对话框
+            .alert(
+                String(localized: "Rename", table: "ProjectTree"),
+                isPresented: $showRenameSheet
+            ) {
+                TextField(String(localized: "New name", table: "ProjectTree"), text: $newItemName)
+                Button(String(localized: "Rename", table: "ProjectTree")) {
+                    renameItem()
+                }
+                Button(String(localized: "Cancel", table: "ProjectTree"), role: .cancel) {}
+            } message: {
+                Text(String(localized: "Enter the new name for this item.", table: "ProjectTree"))
+            }
 
             if isDirectory && isExpanded && !children.isEmpty {
                 VStack(spacing: 0) {
@@ -136,10 +231,20 @@ struct FileNodeView: View {
                             url: childURL,
                             depth: depth + 1,
                             selectedURL: selectedURL,
-                            onSelect: onSelect
+                            onSelect: onSelect,
+                            onDirectoryExpanded: onDirectoryExpanded,
+                            onDirectoryCollapsed: onDirectoryCollapsed,
+                            refreshToken: refreshToken
                         )
                     }
                 }
+            }
+        }
+        .onChange(of: refreshToken) { _, newValue in
+            guard newValue != lastRefreshToken else { return }
+            lastRefreshToken = newValue
+            if isDirectory && isExpanded {
+                reloadChildren()
             }
         }
     }
@@ -193,8 +298,13 @@ extension FileNodeView {
     private func handleTap() {
         if isDirectory {
             isExpanded.toggle()
-            if isExpanded && children.isEmpty {
-                loadChildren()
+            if isExpanded {
+                onDirectoryExpanded?(url)
+                if children.isEmpty {
+                    loadChildren()
+                }
+            } else {
+                onDirectoryCollapsed?(url)
             }
         }
         onSelect(url)
@@ -207,11 +317,17 @@ extension FileNodeView {
                 let contents = try FileManager.default.contentsOfDirectory(
                     at: url,
                     includingPropertiesForKeys: [.isDirectoryKey],
-                    options: [.skipsHiddenFiles]
+                    options: []
                 )
 
+                // 过滤 .DS_Store 和 .git
+                let filtered = contents.filter { url in
+                    let name = url.lastPathComponent
+                    return name != ".DS_Store" && name != ".git"
+                }
+
                 // 排序：文件夹在前
-                let sorted = contents.sorted { a, b in
+                let sorted = filtered.sorted { a, b in
                     let aIsDir = (try? a.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
                     let bIsDir = (try? b.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
                     if aIsDir == bIsDir {
@@ -225,6 +341,45 @@ extension FileNodeView {
                 }
             } catch {
                 print("📁 loadChildren error: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// 重新加载子节点（文件系统变化后调用）
+    private func reloadChildren() {
+        Task.detached(priority: .userInitiated) {
+            do {
+                let contents = try FileManager.default.contentsOfDirectory(
+                    at: url,
+                    includingPropertiesForKeys: [.isDirectoryKey],
+                    options: []
+                )
+
+                // 过滤 .DS_Store 和 .git
+                let filtered = contents.filter { url in
+                    let name = url.lastPathComponent
+                    return name != ".DS_Store" && name != ".git"
+                }
+
+                // 排序：文件夹在前
+                let sorted = filtered.sorted { a, b in
+                    let aIsDir = (try? a.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+                    let bIsDir = (try? b.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+                    if aIsDir == bIsDir {
+                        return a.lastPathComponent.localizedStandardCompare(b.lastPathComponent) == .orderedAscending
+                    }
+                    return aIsDir
+                }
+
+                await MainActor.run {
+                    self.children = sorted
+                }
+            } catch {
+                // 目录可能已被删除，折叠该节点
+                await MainActor.run {
+                    self.children = []
+                    self.isExpanded = false
+                }
             }
         }
     }
@@ -290,6 +445,75 @@ extension FileNodeView {
             print("📁 Failed to move to trash: \(error.localizedDescription)")
         }
     }
+
+    /// 新建文件
+    private func createNewFile() {
+        guard !newItemName.isEmpty else { return }
+
+        // 确定目标目录：如果是文件夹，在当前目录下创建；如果是文件，在父目录下创建
+        let targetDirectory = isDirectory ? url : url.deletingLastPathComponent()
+        let newFileURL = targetDirectory.appendingPathComponent(newItemName)
+
+        // 创建空文件（FileManager.createFile 不抛出错误）
+        let success = FileManager.default.createFile(atPath: newFileURL.path, contents: nil, attributes: nil)
+        if success {
+            print("📁 Created file: \(newFileURL.path)")
+
+            // 如果是文件夹且未展开，先展开它
+            if isDirectory && !isExpanded {
+                isExpanded = true
+                onDirectoryExpanded?(url)
+            }
+
+            // 立即重新加载子节点
+            reloadChildren()
+        } else {
+            print("📁 Failed to create file: \(newFileURL.path)")
+        }
+    }
+
+    /// 新建文件夹
+    private func createNewFolder() {
+        guard !newItemName.isEmpty else { return }
+
+        // 确定目标目录：如果是文件夹，在当前目录下创建；如果是文件，在父目录下创建
+        let targetDirectory = isDirectory ? url : url.deletingLastPathComponent()
+        let newFolderURL = targetDirectory.appendingPathComponent(newItemName)
+
+        do {
+            // 创建文件夹
+            try FileManager.default.createDirectory(at: newFolderURL, withIntermediateDirectories: false)
+            print("📁 Created folder: \(newFolderURL.path)")
+
+            // 如果是文件夹且未展开，先展开它
+            if isDirectory && !isExpanded {
+                isExpanded = true
+                onDirectoryExpanded?(url)
+            }
+
+            // 立即重新加载子节点
+            reloadChildren()
+        } catch {
+            print("📁 Failed to create folder: \(error.localizedDescription)")
+        }
+    }
+
+    /// 重命名文件/文件夹
+    private func renameItem() {
+        guard !newItemName.isEmpty else { return }
+        guard newItemName != fileName else { return } // 名称未改变，无需操作
+
+        // 构建新的 URL
+        let newURL = url.deletingLastPathComponent().appendingPathComponent(newItemName)
+
+        do {
+            // 使用 FileManager 移动文件到新路径（即重命名）
+            try FileManager.default.moveItem(at: url, to: newURL)
+            print("📁 Renamed: \(url.path) -> \(newURL.path)")
+        } catch {
+            print("📁 Failed to rename: \(error.localizedDescription)")
+        }
+    }
 }
 
 // MARK: - Preview
@@ -299,6 +523,9 @@ extension FileNodeView {
         url: URL(fileURLWithPath: "/tmp"),
         depth: 0,
         selectedURL: nil,
-        onSelect: { _ in }
+        onSelect: { _ in },
+        onDirectoryExpanded: { _ in },
+        onDirectoryCollapsed: { _ in },
+        refreshToken: 0
     )
 }

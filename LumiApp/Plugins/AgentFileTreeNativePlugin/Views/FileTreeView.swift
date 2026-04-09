@@ -62,7 +62,13 @@ class FileNode: NSObject {
             options: []
         )
 
-        return contents.sorted { a, b in
+        // 过滤 .DS_Store 和 .git
+        let filtered = contents.filter { url in
+            let name = url.lastPathComponent
+            return name != ".DS_Store" && name != ".git"
+        }
+
+        return filtered.sorted { a, b in
             let aIsDir = (try? a.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
             let bIsDir = (try? b.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
             if aIsDir == bIsDir {

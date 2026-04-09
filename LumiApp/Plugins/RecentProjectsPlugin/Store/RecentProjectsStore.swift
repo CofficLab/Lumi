@@ -19,6 +19,10 @@ final class RecentProjectsStore: @unchecked Sendable {
     private static let currentProjectFileName = "current_project.json"
     private static let currentProjectTmpFileName = "current_project.tmp"
     
+    // Current file: <dbRoot>/RecentProjects/settings/current_file.json
+    private static let currentFileFileName = "current_file.json"
+    private static let currentFileTmpFileName = "current_file.tmp"
+    
     /// 最大保存项目数量
     private static let maxProjectsCount = 500
 
@@ -210,4 +214,68 @@ final class RecentProjectsStore: @unchecked Sendable {
         currentSettingsDirURL()
             .appendingPathComponent(Self.currentProjectFileName, isDirectory: false)
     }
+    
+    // MARK: - Current File
+    
+    /// 获取当前选中的文件
+    func getCurrentFile() -> (path: String, lastSelected: Date)? {
+        queue.sync {
+            let fileURL = currentFileFileURL()
+            guard FileManager.default.fileExists(atPath: fileURL.path) else { return nil }
+            guard let data = try? Data(contentsOf: fileURL) else { return nil }
+            guard let fileInfo = try? JSONDecoder().decode(CurrentFileInfo.self, from: data) else { return nil }
+            return (fileInfo.path, fileInfo.lastSelected)
+        }
+    }
+    
+    /// 设置当前选中的文件
+    func setCurrentFile(path: String) {
+        queue.sync {
+            let fileInfo = CurrentFileInfo(path: path, lastSelected: Date())
+            persistCurrentFile(fileInfo)
+        }
+    }
+    
+    /// 清除当前文件
+    func clearCurrentFile() {
+        queue.sync {
+            let fileURL = currentFileFileURL()
+            try? FileManager.default.removeItem(at: fileURL)
+        }
+    }
+    
+    private func currentFileFileURL() -> URL {
+        currentSettingsDirURL()
+            .appendingPathComponent(Self.currentFileFileName, isDirectory: false)
+    }
+    
+    private func persistCurrentFile(_ fileInfo: CurrentFileInfo) {
+        let fileManager = FileManager.default
+        let settingsDir = currentSettingsDirURL()
+        try? fileManager.createDirectory(at: settingsDir, withIntermediateDirectories: true, attributes: nil)
+
+        let fileURL = currentFileFileURL()
+        let tmpURL = settingsDir.appendingPathComponent(Self.currentFileTmpFileName, isDirectory: false)
+
+        guard let data = try? JSONEncoder().encode(fileInfo) else { return }
+
+        do {
+            try data.write(to: tmpURL, options: .atomic)
+            if fileManager.fileExists(atPath: fileURL.path) {
+                _ = try? fileManager.replaceItemAt(fileURL, withItemAt: tmpURL)
+            } else {
+                try fileManager.moveItem(at: tmpURL, to: fileURL)
+            }
+        } catch {
+            try? fileManager.removeItem(at: tmpURL)
+        }
+    }
+}
+
+// MARK: - Current File Info
+
+/// 当前文件信息
+private struct CurrentFileInfo: Codable {
+    let path: String
+    let lastSelected: Date
 }

@@ -44,6 +44,7 @@ struct AppTabBar: View {
 
     let tabs: [Tab]
     @Binding var selectedTab: String
+    var showText: Bool = true
 
     /// 简单初始化：仅标题
     init(tabs: [String], selectedTab: Binding<String>) {
@@ -52,9 +53,10 @@ struct AppTabBar: View {
     }
 
     /// 完整初始化：带图标
-    init(tabs: [Tab], selectedTab: Binding<String>) {
+    init(tabs: [Tab], selectedTab: Binding<String>, showText: Bool = true) {
         self.tabs = tabs
         self._selectedTab = selectedTab
+        self.showText = showText
     }
 
     var body: some View {
@@ -63,7 +65,8 @@ struct AppTabBar: View {
                 AppTabButton(
                     title: tab.title,
                     icon: tab.icon,
-                    isSelected: selectedTab == tab.id
+                    isSelected: selectedTab == tab.id,
+                    showText: showText
                 ) {
                     selectedTab = tab.id
                 }
@@ -78,6 +81,7 @@ private struct AppTabButton: View {
     let title: String
     let icon: String?
     let isSelected: Bool
+    let showText: Bool
     let action: () -> Void
 
     @State private var isHovered = false
@@ -89,8 +93,10 @@ private struct AppTabButton: View {
                     Image(systemName: icon)
                         .font(.system(size: 10))
                 }
-                Text(title)
-                    .font(AppUI.Typography.caption1)
+                if showText {
+                    Text(title)
+                        .font(AppUI.Typography.caption1)
+                }
             }
             .foregroundColor(isSelected ? .white : AppUI.Color.semantic.textSecondary)
             .padding(.horizontal, 12)

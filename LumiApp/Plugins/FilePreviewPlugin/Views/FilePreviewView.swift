@@ -212,6 +212,9 @@ struct FilePreviewView: View {
     /// 撤销/重做状态管理
     @StateObject private var undoState = FilePreviewUndoState()
 
+    /// 自动保存管理器
+    @StateObject private var autoSaver = FileAutoSaver()
+
     private static let themeStorageKey = "FilePreview.SelectedCodeEditorTheme"
     private static let textProbeBytes = 8192
     private static let readOnlyThresholdBytes: Int64 = 512 * 1024
@@ -261,7 +264,6 @@ struct FilePreviewView: View {
                 FilePreviewEmptyStateView()
             }
         }
-        .background(AppUI.Material.glassThick)
         .onChange(of: ProjectVM.selectedFileURL) { _, newURL in
             loadFileContent(from: newURL)
         }
@@ -276,6 +278,16 @@ struct FilePreviewView: View {
         .onChange(of: undoState.content) { _, newContent in
             if fileContent != newContent {
                 fileContent = newContent
+            }
+        }
+        .onChange(of: fileContent) { oldValue, newValue in
+            // 内容变化时触发自动保存
+            handleContentChange(oldValue: oldValue, newValue: newValue)
+        }
+        .onChange(of: autoSaver.state) { oldState, newState in
+            // 保存成功后更新 persistedContent
+            if case .saved = newState {
+                persistedContent = fileContent
             }
         }
     }
@@ -418,49 +430,60 @@ struct FilePreviewView: View {
 
     private var breadcrumbSection: some View {
         ScrollViewReader { proxy in
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 2) {
-                    ForEach(breadcrumbItems) { item in
-                        let isLast = item.index == breadcrumbItems.count - 1
+            HStack(spacing: 0) {
+                // 面包屑路径
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 2) {
+                        ForEach(breadcrumbItems) { item in
+                            let isLast = item.index == breadcrumbItems.count - 1
 
-                        if item.index > 0 {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 9, weight: .semibold))
-                                .foregroundColor(AppUI.Color.semantic.textTertiary)
-                                .padding(.horizontal, 1)
-                        }
+                            if item.index > 0 {
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 9, weight: .semibold))
+                                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                                    .padding(.horizontal, 1)
+                            }
 
-                        Button {
-                            openBreadcrumbPopover(for: item)
-                        } label: {
-                            Text(item.name)
-                                .font(.system(size: 11, weight: isLast ? .semibold : .regular))
-                                .foregroundColor(
-                                    isLast
-                                        ? AppUI.Color.semantic.textPrimary
-                                        : AppUI.Color.semantic.textSecondary
-                                )
-                                .lineLimit(1)
-                        }
-                        .buttonStyle(.plain)
-                        .popover(
-                            isPresented: Binding(
-                                get: { activeBreadcrumbPopoverIndex == item.index },
-                                set: { isPresented in
-                                    if !isPresented, activeBreadcrumbPopoverIndex == item.index {
-                                        activeBreadcrumbPopoverIndex = nil
+                            Button {
+                                openBreadcrumbPopover(for: item)
+                            } label: {
+                                Text(item.name)
+                                    .font(.system(size: 11, weight: isLast ? .semibold : .regular))
+                                    .foregroundColor(
+                                        isLast
+                                            ? AppUI.Color.semantic.textPrimary
+                                            : AppUI.Color.semantic.textSecondary
+                                    )
+                                    .lineLimit(1)
+                            }
+                            .buttonStyle(.plain)
+                            .popover(
+                                isPresented: Binding(
+                                    get: { activeBreadcrumbPopoverIndex == item.index },
+                                    set: { isPresented in
+                                        if !isPresented, activeBreadcrumbPopoverIndex == item.index {
+                                            activeBreadcrumbPopoverIndex = nil
+                                        }
                                     }
-                                }
-                            ),
-                            arrowEdge: .bottom
-                        ) {
-                            breadcrumbPopoverContent(for: item)
+                                ),
+                                arrowEdge: .bottom
+                            ) {
+                                breadcrumbPopoverContent(for: item)
+                            }
+                            .id(item.index)
                         }
-                        .id(item.index)
                     }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
+                
+                Spacer(minLength: 0)
+                
+                // 保存状态指示器
+                if canPreviewCurrentFile && !isReadOnlyPreview {
+                    FileSaveStatusIndicator(state: autoSaver.state)
+                        .padding(.trailing, 10)
+                }
             }
             .onAppear {
                 if let last = breadcrumbItems.indices.last {
@@ -717,6 +740,26 @@ struct FilePreviewView: View {
         }
     }
 
+    // MARK: - Auto Save Handling
+
+    /// 处理内容变化，触发自动保存
+    private func handleContentChange(oldValue: String, newValue: String) {
+        // 忽略加载文件时的内容变化
+        guard canPreviewCurrentFile else { return }
+        
+        // 忽略只读模式的内容变化
+        guard !isReadOnlyPreview else { return }
+        
+        // 确保有选中的文件
+        guard let fileURL = ProjectVM.selectedFileURL else { return }
+        
+        // 只在内容真正改变时触发保存
+        guard newValue != persistedContent, newValue != oldValue else { return }
+        
+        // 触发自动保存
+        autoSaver.save(content: newValue, to: fileURL)
+    }
+
     // MARK: - File Loading
 
     private func loadFileContent(from url: URL?) {
@@ -730,6 +773,7 @@ struct FilePreviewView: View {
             showSelectionMenu = false
             undoState.content = ""
             undoState.clearHistory()
+            autoSaver.reset()
             return
         }
 
@@ -744,6 +788,7 @@ struct FilePreviewView: View {
             showSelectionMenu = false
             undoState.content = ""
             undoState.clearHistory()
+            autoSaver.reset()
             return
         }
 
@@ -763,6 +808,7 @@ struct FilePreviewView: View {
                         self.showSelectionMenu = false
                         self.undoState.content = ""
                         self.undoState.clearHistory()
+                        self.autoSaver.reset()
                     }
                     return
                 }
@@ -788,6 +834,7 @@ struct FilePreviewView: View {
                     self.showSelectionMenu = false
                     self.undoState.content = content
                     self.undoState.clearHistory()
+                    self.autoSaver.reset()
                 }
             } catch {
                 await MainActor.run {
@@ -799,6 +846,7 @@ struct FilePreviewView: View {
                     self.isTruncatedPreview = false
                     self.textSelection = nil
                     self.showSelectionMenu = false
+                    self.autoSaver.reset()
                 }
             }
         }

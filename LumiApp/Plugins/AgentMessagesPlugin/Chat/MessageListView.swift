@@ -1,6 +1,6 @@
 import AppKit
-import SwiftUI
 import MagicKit
+import SwiftUI
 
 /// 消息列表视图组件
 struct MessageListView: View {
@@ -117,7 +117,7 @@ extension MessageListView {
                     isStreaming: false
                 )
                 .id(row.id)
-                .padding(.horizontal)
+                .padding(.horizontal, 0)
                 .padding(.vertical, 4)
                 .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                 .listRowSeparator(.hidden)
@@ -137,6 +137,7 @@ extension MessageListView {
             }
         }
         .listStyle(.plain)
+        .scrollContentBackground(.hidden)
         .environment(\.preferOuterScroll, true)
         .accessibilityLabel("消息列表")
         .accessibilityHint("按时间顺序展示会话消息")
@@ -302,7 +303,7 @@ extension MessageListView {
 
     private func buildDisplayRows(from messages: [ChatMessage], statusRow: DisplayRow? = nil) -> [DisplayRow] {
         var rows = messages.map { message in
-            return DisplayRow(
+            DisplayRow(
                 id: message.id,
                 message: message,
                 relatedToolOutputs: timelineViewModel.toolOutputs(for: message)
