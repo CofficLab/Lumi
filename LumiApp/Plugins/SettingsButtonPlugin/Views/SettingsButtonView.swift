@@ -7,50 +7,29 @@ struct SettingsButtonView: View {
 
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.settings-button.view")
 
-    // MARK: - State
-
-    @State private var isHovering = false
-
     // MARK: - Constants
 
     private let iconSize: CGFloat = 12
-    private let textFontSize: CGFloat = 12
-    private let horizontalPadding: CGFloat = 10
-    private let verticalPadding: CGFloat = 5
-    private let cornerRadius: CGFloat = 6
 
     // MARK: - Body
 
     var body: some View {
-        Button(action: {
-            openSettings()
-        }) {
-            HStack(spacing: 6) {
-                Image(systemName: "gearshape.fill")
-                    .font(.system(size: iconSize))
-                    .foregroundColor(.white)
+        StatusBarHoverContainer(
+            detailView: SettingsDetailView(),
+            id: "settings-status"
+        ) {
+            Button(action: {
+                openSettings()
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: iconSize))
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
             }
-            .padding(.horizontal, horizontalPadding)
-            .padding(.vertical, verticalPadding)
-            .background(backgroundView)
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHovering = hovering
-            }
-        }
-        .appTooltip("打开设置")
-    }
-
-    @ViewBuilder
-    private var backgroundView: some View {
-        if isHovering {
-            RoundedRectangle(cornerRadius: cornerRadius)
-                .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.08))
-        } else {
-            RoundedRectangle(cornerRadius: cornerRadius)
-                .fill(Color.clear)
+            .buttonStyle(.plain)
+            .help("打开设置")
         }
     }
 
@@ -60,6 +39,77 @@ struct SettingsButtonView: View {
     private func openSettings() {
         logger.debug("用户点击设置按钮，打开设置窗口")
         NotificationCenter.default.post(name: .openSettings, object: nil)
+    }
+}
+
+// MARK: - Detail View
+
+/// 设置详情视图（在 popover 中显示）
+struct SettingsDetailView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+            // 标题
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 16))
+
+                Text("设置")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+
+                Spacer()
+
+                Button(action: {
+                    NotificationCenter.default.post(name: .openSettings, object: nil)
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.up.right.square")
+                        Text("打开")
+                    }
+                    .font(.system(size: 12))
+                }
+                .buttonStyle(.borderedProminent)
+            }
+
+            Divider()
+
+            // 快捷键提示
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                Text("快捷键")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+
+                HStack(spacing: DesignTokens.Spacing.md) {
+                    KeyboardShortcutBadge(keys: ["⌘", ","])
+                    Text("打开设置")
+                        .font(.system(size: 12))
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                }
+            }
+        }
+        .padding()
+        .frame(width: 280)
+    }
+}
+
+/// 键盘快捷键徽章
+struct KeyboardShortcutBadge: View {
+    let keys: [String]
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(keys, id: \.self) { key in
+                Text(key)
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(DesignTokens.Color.semantic.secondary.opacity(0.15))
+                    )
+            }
+        }
     }
 }
 
