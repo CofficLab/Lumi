@@ -1,23 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Open in Xcode" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open in Xcode"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 Xcode 中打开"
-          }
-        }
-      }
-    },
     "Displays a button in the header to open the current project in Xcode" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31,6 +14,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在 header 中显示一个按钮，用于在 Xcode 中打开当前项目"
+          }
+        }
+      }
+    },
+    "Open in Xcode" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in Xcode"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Xcode 中打开"
           }
         }
       }
@@ -51,6 +51,9 @@
           }
         }
       }
+    },
+    "无项目" : {
+
     }
   },
   "version" : "1.0"

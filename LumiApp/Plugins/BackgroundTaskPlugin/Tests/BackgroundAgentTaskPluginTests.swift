@@ -17,7 +17,7 @@ final class BackgroundAgentTaskPluginTests: XCTestCase {
 
     func testTaskCreation() async throws {
         // 创建任务
-        let taskId = BackgroundAgentTaskStore.shared.enqueue(
+        let taskId = await BackgroundAgentTaskStore.shared.enqueue(
             prompt: "这是一个测试任务"
         )
 
@@ -43,7 +43,7 @@ final class BackgroundAgentTaskPluginTests: XCTestCase {
 
     func testWorkerAutoExecution() async throws {
         // 创建任务
-        let taskId = BackgroundAgentTaskStore.shared.enqueue(
+        let taskId = await BackgroundAgentTaskStore.shared.enqueue(
             prompt: "测试Worker自动执行"
         )
 
@@ -75,7 +75,7 @@ final class BackgroundAgentTaskPluginTests: XCTestCase {
         // 创建多个任务
         var taskIds: [UUID] = []
         for i in 0..<10 {
-            let id = BackgroundAgentTaskStore.shared.enqueue(
+            let id = await BackgroundAgentTaskStore.shared.enqueue(
                 prompt: "并发测试任务 \(i)"
             )
             taskIds.append(id)
@@ -110,7 +110,7 @@ final class BackgroundAgentTaskPluginTests: XCTestCase {
 
     func testEventDrivenExecution() async throws {
         // 创建任务
-        let taskId = BackgroundAgentTaskStore.shared.enqueue(
+        let taskId = await BackgroundAgentTaskStore.shared.enqueue(
             prompt: "事件驱动测试"
         )
 
@@ -135,7 +135,7 @@ final class BackgroundAgentTaskPluginTests: XCTestCase {
         var taskIds: [UUID] = []
 
         for i in 0..<count {
-            let id = BackgroundAgentTaskStore.shared.enqueue(
+            let id = await BackgroundAgentTaskStore.shared.enqueue(
                 prompt: "批量任务 \(i)"
             )
             taskIds.append(id)
@@ -185,8 +185,8 @@ final class BackgroundAgentTaskPluginTests: XCTestCase {
 
     func testTaskQuery() async throws {
         // 创建一些任务
-        let taskId1 = BackgroundAgentTaskStore.shared.enqueue(prompt: "查询测试1")
-        let taskId2 = BackgroundAgentTaskStore.shared.enqueue(prompt: "查询测试2")
+        let taskId1 = await BackgroundAgentTaskStore.shared.enqueue(prompt: "查询测试1")
+        let taskId2 = await BackgroundAgentTaskStore.shared.enqueue(prompt: "查询测试2")
 
         // 等待写入
         try await Task.sleep(nanoseconds: 100_000_000)
@@ -210,7 +210,7 @@ final class BackgroundAgentTaskPluginTests: XCTestCase {
     // MARK: - 测试任务状态转换
 
     func testTaskStatusTransition() async throws {
-        let taskId = BackgroundAgentTaskStore.shared.enqueue(
+        let taskId = await BackgroundAgentTaskStore.shared.enqueue(
             prompt: "状态转换测试"
         )
 
@@ -244,7 +244,7 @@ final class BackgroundAgentTaskPluginTests: XCTestCase {
 
     func testConcurrentClaiming() async throws {
         // 创建单个任务
-        let taskId = BackgroundAgentTaskStore.shared.enqueue(
+        let taskId = await BackgroundAgentTaskStore.shared.enqueue(
             prompt: "并发认领测试"
         )
 
@@ -275,7 +275,7 @@ final class BackgroundAgentTaskPluginTests: XCTestCase {
 
     func testTaskDeletion() async throws {
         // 创建任务
-        let taskId = BackgroundAgentTaskStore.shared.enqueue(
+        let taskId = await BackgroundAgentTaskStore.shared.enqueue(
             prompt: "删除测试任务"
         )
 
@@ -300,8 +300,8 @@ final class BackgroundAgentTaskPluginTests: XCTestCase {
 
     func testClearCompletedTasks() async throws {
         // 创建几个任务
-        let taskId1 = BackgroundAgentTaskStore.shared.enqueue(prompt: "清空测试1")
-        let taskId2 = BackgroundAgentTaskStore.shared.enqueue(prompt: "清空测试2")
+        let taskId1 = await BackgroundAgentTaskStore.shared.enqueue(prompt: "清空测试1")
+        let taskId2 = await BackgroundAgentTaskStore.shared.enqueue(prompt: "清空测试2")
 
         // 等待写入
         try await Task.sleep(nanoseconds: 100_000_000)

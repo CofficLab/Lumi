@@ -1734,6 +1734,9 @@
         }
       }
     },
+    "Cursor" : {
+
+    },
     "Data" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2378,6 +2381,9 @@
     "File indexing is automatic when switching projects" : {
 
     },
+    "Finder" : {
+
+    },
     "General" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2445,6 +2451,9 @@
     "Git 信息" : {
 
     },
+    "GitHub Desktop" : {
+
+    },
     "GitHub Tools" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2460,6 +2469,9 @@
           }
         }
       }
+    },
+    "GitOK" : {
+
     },
     "Grant Permission" : {
       "localizations" : {
@@ -4993,6 +5005,9 @@
         }
       }
     },
+    "URL" : {
+
+    },
     "Usage" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5121,6 +5136,9 @@
           }
         }
       }
+    },
+    "Xcode" : {
+
     },
     "Xcode 环境很干净！" : {
       "localizations" : {
@@ -6138,6 +6156,9 @@
         }
       }
     },
+    "复制 URL" : {
+
+    },
     "复制消息内容" : {
       "localizations" : {
         "zh-Hans" : {
@@ -6153,6 +6174,9 @@
           }
         }
       }
+    },
+    "复制路径" : {
+
     },
     "复制错误信息" : {
       "extractionState" : "stale",
@@ -6605,6 +6629,9 @@
         }
       }
     },
+    "当前项目没有远程仓库" : {
+
+    },
     "当插件标记为可配置时，会在此处显示" : {
       "localizations" : {
         "zh-Hans" : {
@@ -6668,6 +6695,9 @@
           }
         }
       }
+    },
+    "打开" : {
+
     },
     "打开App Support目录" : {
       "localizations" : {
@@ -7235,6 +7265,9 @@
       }
     },
     "无法获取 Git 信息" : {
+
+    },
+    "无远程仓库" : {
 
     },
     "显示上一个窗口" : {
@@ -8680,6 +8713,9 @@
         }
       }
     },
+    "远程仓库" : {
+
+    },
     "远程供应商" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9004,6 +9040,9 @@
           }
         }
       }
+    },
+    "项目" : {
+
     },
     "项目文件" : {
       "extractionState" : "stale",

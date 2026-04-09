@@ -1,23 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Open in GitHub Desktop" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open in GitHub Desktop"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 GitHub Desktop 中打开"
-          }
-        }
-      }
-    },
     "Open current project in GitHub Desktop" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31,6 +14,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在 GitHub Desktop 中打开当前项目"
+          }
+        }
+      }
+    },
+    "Open in GitHub Desktop" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in GitHub Desktop"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 GitHub Desktop 中打开"
           }
         }
       }
@@ -51,6 +51,9 @@
           }
         }
       }
+    },
+    "无项目" : {
+
     }
   },
   "version" : "1.0"
