@@ -317,11 +317,17 @@ extension FileNodeView {
                 let contents = try FileManager.default.contentsOfDirectory(
                     at: url,
                     includingPropertiesForKeys: [.isDirectoryKey],
-                    options: [.skipsHiddenFiles]
+                    options: []
                 )
 
+                // 过滤 .DS_Store 和 .git
+                let filtered = contents.filter { url in
+                    let name = url.lastPathComponent
+                    return name != ".DS_Store" && name != ".git"
+                }
+
                 // 排序：文件夹在前
-                let sorted = contents.sorted { a, b in
+                let sorted = filtered.sorted { a, b in
                     let aIsDir = (try? a.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
                     let bIsDir = (try? b.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
                     if aIsDir == bIsDir {
@@ -346,11 +352,17 @@ extension FileNodeView {
                 let contents = try FileManager.default.contentsOfDirectory(
                     at: url,
                     includingPropertiesForKeys: [.isDirectoryKey],
-                    options: [.skipsHiddenFiles]
+                    options: []
                 )
 
+                // 过滤 .DS_Store 和 .git
+                let filtered = contents.filter { url in
+                    let name = url.lastPathComponent
+                    return name != ".DS_Store" && name != ".git"
+                }
+
                 // 排序：文件夹在前
-                let sorted = contents.sorted { a, b in
+                let sorted = filtered.sorted { a, b in
                     let aIsDir = (try? a.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
                     let bIsDir = (try? b.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
                     if aIsDir == bIsDir {
