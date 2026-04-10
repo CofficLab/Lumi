@@ -95,7 +95,7 @@ struct AssistantMessage: View {
                     .foregroundColor(AppUI.Color.semantic.textSecondary)
 
                 // 切换原始消息按钮
-                RawMessageToggleButton(showRawMessage: $showRawMessage)
+                // RawMessageToggleButton(showRawMessage: $showRawMessage)
             }
         }
     }
