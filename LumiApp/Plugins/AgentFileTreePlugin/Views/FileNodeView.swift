@@ -206,6 +206,7 @@ struct FileNodeView: View {
         Button { openInFinder() } label: { Label(String(localized: "Reveal in Finder", table: "ProjectTree"), systemImage: "finder") }
         Button { openInVSCode() } label: { Label(String(localized: "Open in VS Code", table: "ProjectTree"), systemImage: "chevron.left.forwardslash.chevron.right") }
         Button { openInTerminal() } label: { Label(String(localized: "Open in Terminal", table: "ProjectTree"), systemImage: "terminal") }
+        Button { copyPath() } label: { Label(String(localized: "Copy Path", table: "ProjectTree"), systemImage: "doc.on.doc") }
         Divider()
         Button(role: .destructive) { showDeleteConfirmation = true } label: {
             Label(String(localized: "Move to Trash", table: "ProjectTree"), systemImage: "trash")
@@ -323,6 +324,10 @@ extension FileNodeView {
 
     private func openInTerminal() {
         ProjectTreeFileService.openInTerminal(url)
+    }
+
+    private func copyPath() {
+        ProjectTreeFileService.copyPath(url)
     }
 }
 
