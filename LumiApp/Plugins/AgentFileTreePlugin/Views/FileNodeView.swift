@@ -1,14 +1,8 @@
 import MagicKit
-import os
 import SwiftUI
 
 /// 文件树节点视图 - 完全独立实现，无外部依赖
 struct FileNodeView: View {
-    /// 环境对象，用于获取项目路径
-    @EnvironmentObject private var projectVM: ProjectVM
-    /// 日志前缀的表情符号（文件树节点）
-    nonisolated static let emoji = "📁"
-
     let url: URL
     let depth: Int
 
@@ -21,17 +15,11 @@ struct FileNodeView: View {
     /// 外部刷新令牌，变化时重新加载子节点
     let refreshToken: Int
 
-    /// 是否为根节点（depth == 0）
-    private var isRoot: Bool { depth == 0 }
-
     /// 本地展开状态
     @State private var isExpanded: Bool = false
 
     /// 本地子节点缓存
     @State private var children: [URL] = []
-
-    /// 是否正在加载子节点
-    @State private var isLoading: Bool = false
 
     /// 是否处于 hover 状态（用于高亮当前行）
     @State private var isHovering: Bool = false
@@ -53,12 +41,6 @@ struct FileNodeView: View {
 
     /// 记录上次刷新令牌的值，用于判断是否需要重新加载
     @State private var lastRefreshToken: Int = 0
-
-    /// 文件系统变化监听器（根节点专用）
-    @State private var watcher: ProjectTreeWatcher?
-
-    /// 当前正在监控的已展开子目录集合（根节点专用）
-    @State private var expandedSubDirectoryURLs: Set<URL> = []
 
     /// 是否文件夹
     private var isDirectory: Bool {
@@ -229,30 +211,6 @@ struct FileNodeView: View {
         }
     }
 
-    // MARK: - Watcher (Root Node Only)
-
-    private func setupWatcherIfNeeded() {
-        guard isRoot, watcher == nil else { return }
-
-        let currentURL = url
-        watcher = ProjectTreeWatcher { changedURL in
-            Task { @MainActor [self] in
-                self.handleFileSystemChange(changedURL: changedURL, rootURL: currentURL)
-            }
-        }
-        watcher?.startWatching(url: url)
-    }
-
-    private func handleFileSystemChange(changedURL: URL, rootURL: URL) {
-        let standardizedChanged = changedURL.standardizedFileURL
-        let standardizedRoot = rootURL.standardizedFileURL
-
-        if standardizedChanged.path == standardizedRoot.path {
-            reloadChildren()
-        }
-        lastRefreshToken = refreshToken + 1
-    }
-
     // MARK: - View Helpers
 
     private var iconName: String {
@@ -275,19 +233,16 @@ struct FileNodeView: View {
 
 extension FileNodeView {
     private func loadChildren() {
-        isLoading = true
         let currentURL = url
         Task.detached(priority: .userInitiated) { [self] in
             do {
                 let sorted = try ProjectTreeFileService.loadContents(of: currentURL)
                 await MainActor.run { [self] in
                     self.children = sorted
-                    self.isLoading = false
                 }
             } catch {
                 await MainActor.run { [self] in
                     self.children = []
-                    self.isLoading = false
                 }
             }
         }
@@ -327,14 +282,6 @@ extension FileNodeView {
 
     private func openInTerminal() {
         ProjectTreeFileService.openInTerminal(url)
-    }
-
-    private func copyPath() {
-        ProjectTreeFileService.copyPath(url)
-    }
-
-    private func copyRelativePath() {
-        ProjectTreeFileService.copyRelativePath(url, projectPath: projectVM.currentProjectPath)
     }
 }
 
