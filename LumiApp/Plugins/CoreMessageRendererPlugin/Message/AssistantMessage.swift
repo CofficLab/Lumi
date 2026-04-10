@@ -42,9 +42,9 @@ struct AssistantMessage: View {
                 VStack(alignment: .leading, spacing: 4) {
                     headerSection
 
-                    if shouldShowThinkingProcess {
-                        ThinkingProcessView(thinkingText: thinkingText)
-                    }
+//                    if shouldShowThinkingProcess {
+//                        ThinkingProcessView(thinkingText: thinkingText)
+//                    }
 
                     if message.hasToolCalls {
                         MessageWithToolCallsView(
