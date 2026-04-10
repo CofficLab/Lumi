@@ -70,6 +70,9 @@
         }
       }
     },
+    "Empty folder" : {
+
+    },
     "Enter the name for the new file." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -112,6 +115,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "請輸入新資料夾的名稱。"
+          }
+        }
+      }
+    },
+    "Enter the new name for this item." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter the new name for this item."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请输入新的名称。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請輸入新的名稱。"
           }
         }
       }
@@ -254,6 +280,29 @@
         }
       }
     },
+    "New name" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New name"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新名称"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新名稱"
+          }
+        }
+      }
+    },
     "No project" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -369,6 +418,29 @@
         }
       }
     },
+    "Rename" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重命名"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新命名"
+          }
+        }
+      }
+    },
     "Reveal in Finder" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -434,75 +506,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "該項目將被移到垃圾桶。"
-          }
-        }
-      }
-    },
-    "Rename" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rename"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重命名"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新命名"
-          }
-        }
-      }
-    },
-    "New name" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "New name"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新名称"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新名稱"
-          }
-        }
-      }
-    },
-    "Enter the new name for this item." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enter the new name for this item."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请输入新的名称。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請輸入新的名稱。"
           }
         }
       }

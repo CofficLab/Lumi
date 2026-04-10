@@ -18,20 +18,20 @@ struct FileNodeView: View {
     /// 选中某个文件节点的回调
     let onSelect: (URL) -> Void
 
-    /// 目录展开时的回调（用于注册文件系统监听）
-    let onDirectoryExpanded: ((URL) -> Void)?
-
-    /// 目录折叠时的回调（用于取消文件系统监听）
-    let onDirectoryCollapsed: ((URL) -> Void)?
-
     /// 外部刷新令牌，变化时重新加载子节点
     let refreshToken: Int
+
+    /// 是否为根节点（depth == 0）
+    private var isRoot: Bool { depth == 0 }
 
     /// 本地展开状态
     @State private var isExpanded: Bool = false
 
     /// 本地子节点缓存
     @State private var children: [URL] = []
+
+    /// 是否正在加载子节点
+    @State private var isLoading: Bool = false
 
     /// 是否处于 hover 状态（用于高亮当前行）
     @State private var isHovering: Bool = false
@@ -54,6 +54,12 @@ struct FileNodeView: View {
     /// 记录上次刷新令牌的值，用于判断是否需要重新加载
     @State private var lastRefreshToken: Int = 0
 
+    /// 文件系统变化监听器（根节点专用）
+    @State private var watcher: ProjectTreeWatcher?
+
+    /// 当前正在监控的已展开子目录集合（根节点专用）
+    @State private var expandedSubDirectoryURLs: Set<URL> = []
+
     /// 是否文件夹
     private var isDirectory: Bool {
         (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
@@ -64,30 +70,129 @@ struct FileNodeView: View {
         url.lastPathComponent
     }
 
+    // MARK: - Init
+
+    init(
+        url: URL,
+        depth: Int,
+        selectedURL: URL? = nil,
+        onSelect: @escaping (URL) -> Void,
+        refreshToken: Int = 0
+    ) {
+        self.url = url
+        self.depth = depth
+        self.selectedURL = selectedURL
+        self.onSelect = onSelect
+        self.refreshToken = refreshToken
+    }
+
+    // MARK: - Body
+
     var body: some View {
+        if isRoot {
+            rootBody
+        } else {
+            normalNodeBody
+        }
+    }
+
+    // MARK: - Root Node Body
+
+    @ViewBuilder
+    private var rootBody: some View {
+        VStack(spacing: 0) {
+            // 根节点本身（项目名称）
+            rootNodeRow
+
+            // 子节点列表
+            if isLoading {
+                FileTreeLoadingView()
+            } else if children.isEmpty {
+                FileTreeEmptyView()
+            } else if isExpanded {
+                LazyVStack(spacing: 0) {
+                    ForEach(children, id: \.self) { childURL in
+                        FileNodeView(
+                            url: childURL,
+                            depth: 1,
+                            selectedURL: selectedURL,
+                            onSelect: onSelect,
+                            refreshToken: refreshToken
+                        )
+                    }
+                }
+            }
+        }
+        .onAppear {
+            if !isExpanded { isExpanded = true }
+            if children.isEmpty && !isLoading { loadChildren() }
+            setupWatcherIfNeeded()
+        }
+        .onDisappear {
+            watcher?.stopAll()
+            watcher = nil
+        }
+        .onChange(of: refreshToken) { _, newValue in
+            handleRefreshTokenChange(newValue)
+        }
+    }
+
+    /// 根节点行视图
+    @ViewBuilder
+    private var rootNodeRow: some View {
+        HStack(spacing: 6) {
+            Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                .font(.system(size: 8, weight: .semibold))
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .frame(width: 10)
+
+            Image(systemName: "folder.fill")
+                .font(.system(size: 10))
+                .foregroundColor(.accentColor)
+                .frame(width: 14)
+
+            Text(url.lastPathComponent)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .lineLimit(1)
+
+            Spacer()
+        }
+        .padding(.vertical, 4)
+        .padding(.horizontal, 6)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isExpanded.toggle()
+                if isExpanded && children.isEmpty && !isLoading {
+                    loadChildren()
+                }
+            }
+        }
+    }
+
+    // MARK: - Normal Node Body
+
+    @ViewBuilder
+    private var normalNodeBody: some View {
         let isSelected = selectedURL == url
 
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 6) {
-                // 展开箭头（仅目录）
                 if isDirectory {
                     Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                         .font(.system(size: 8, weight: .semibold))
                         .foregroundColor(AppUI.Color.semantic.textSecondary)
                         .frame(width: 10)
                 } else {
-                    // 与目录图标对齐
-                    Color.clear
-                        .frame(width: 10)
+                    Color.clear.frame(width: 10)
                 }
 
-                // 图标
                 Image(systemName: iconName)
                     .font(.system(size: 10))
                     .foregroundColor(isDirectory ? .accentColor : .secondary)
                     .frame(width: 14)
 
-                // 名称
                 Text(fileName)
                     .font(.system(size: 10))
                     .foregroundColor(isSelected ? Color.white : .primary)
@@ -99,145 +204,49 @@ struct FileNodeView: View {
             .padding(.horizontal, 6)
             .padding(.leading, CGFloat(depth) * 12)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                rowBackground(isSelected: isSelected)
-            )
+            .background(rowBackground(isSelected: isSelected))
             .contentShape(Rectangle())
-            .onDrag {
-                // 直接返回 NSURL 对象，这样可以保持真实的文件路径引用
-                // 避免创建临时缓存文件
-                NSItemProvider(object: url as NSURL)
-            } preview: {
-                // 拖拽预览
+            .onDrag { NSItemProvider(object: url as NSURL) } preview: {
                 DragPreview(fileURL: url)
             }
-            .contextMenu {
-                // 新建菜单（仅文件夹显示）
-                if isDirectory {
-                    Button {
-                        newItemName = ""
-                        showNewFileSheet = true
-                    } label: {
-                        Label(String(localized: "New File", table: "ProjectTree"), systemImage: "doc.badge.plus")
-                    }
-
-                    Button {
-                        newItemName = ""
-                        showNewFolderSheet = true
-                    } label: {
-                        Label(String(localized: "New Folder", table: "ProjectTree"), systemImage: "folder.badge.plus")
-                    }
-
-                    Divider()
-                }
-
-                // 重命名（文件和文件夹都显示）
-                Button {
-                    newItemName = fileName
-                    // 延迟弹出对话框，确保 newItemName 已更新
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                        showRenameSheet = true
-                    }
-                } label: {
-                    Label(String(localized: "Rename", table: "ProjectTree"), systemImage: "pencil")
-                }
-
-                Divider()
-
-                Button {
-                    openInFinder()
-                } label: {
-                    Label(String(localized: "Reveal in Finder", table: "ProjectTree"), systemImage: "finder")
-                }
-
-                Button {
-                    openInVSCode()
-                } label: {
-                    Label(String(localized: "Open in VS Code", table: "ProjectTree"), systemImage: "chevron.left.forwardslash.chevron.right")
-                }
-
-                Button {
-                    openInTerminal()
-                } label: {
-                    Label(String(localized: "Open in Terminal", table: "ProjectTree"), systemImage: "terminal")
-                }
-
-                Divider()
-
-                Button(role: .destructive) {
-                    showDeleteConfirmation = true
-                } label: {
-                    Label(String(localized: "Move to Trash", table: "ProjectTree"), systemImage: "trash")
-                }
-            }
-            .onTapGesture {
-                handleTap()
-            }
-            .onHover { hovering in
-                isHovering = hovering
-            }
+            .contextMenu { contextMenuContent }
+            .onTapGesture { handleTap() }
+            .onHover { hovering in isHovering = hovering }
             .confirmationDialog(
                 String(localized: "Are you sure you want to delete \"\(fileName)\"?", table: "ProjectTree"),
                 isPresented: $showDeleteConfirmation,
                 titleVisibility: .visible
             ) {
-                Button(String(localized: "Move to Trash", table: "ProjectTree"), role: .destructive) {
-                    deleteItem()
-                }
+                Button(String(localized: "Move to Trash", table: "ProjectTree"), role: .destructive) { deleteItem() }
                 Button(String(localized: "Cancel", table: "ProjectTree"), role: .cancel) {}
             } message: {
                 Text(String(localized: "This item will be moved to the Trash.", table: "ProjectTree"))
             }
-            // 新建文件对话框
-            .alert(
-                String(localized: "New File", table: "ProjectTree"),
-                isPresented: $showNewFileSheet
-            ) {
+            .alert(String(localized: "New File", table: "ProjectTree"), isPresented: $showNewFileSheet) {
                 TextField(String(localized: "File name", table: "ProjectTree"), text: $newItemName)
-                Button(String(localized: "Create", table: "ProjectTree")) {
-                    createNewFile()
-                }
+                Button(String(localized: "Create", table: "ProjectTree")) { createNewFile() }
                 Button(String(localized: "Cancel", table: "ProjectTree"), role: .cancel) {}
-            } message: {
-                Text(String(localized: "Enter the name for the new file.", table: "ProjectTree"))
-            }
-            // 新建文件夹对话框
-            .alert(
-                String(localized: "New Folder", table: "ProjectTree"),
-                isPresented: $showNewFolderSheet
-            ) {
+            } message: { Text(String(localized: "Enter the name for the new file.", table: "ProjectTree")) }
+            .alert(String(localized: "New Folder", table: "ProjectTree"), isPresented: $showNewFolderSheet) {
                 TextField(String(localized: "Folder name", table: "ProjectTree"), text: $newItemName)
-                Button(String(localized: "Create", table: "ProjectTree")) {
-                    createNewFolder()
-                }
+                Button(String(localized: "Create", table: "ProjectTree")) { createNewFolder() }
                 Button(String(localized: "Cancel", table: "ProjectTree"), role: .cancel) {}
-            } message: {
-                Text(String(localized: "Enter the name for the new folder.", table: "ProjectTree"))
-            }
-            // 重命名对话框
-            .alert(
-                String(localized: "Rename", table: "ProjectTree"),
-                isPresented: $showRenameSheet
-            ) {
+            } message: { Text(String(localized: "Enter the name for the new folder.", table: "ProjectTree")) }
+            .alert(String(localized: "Rename", table: "ProjectTree"), isPresented: $showRenameSheet) {
                 TextField(String(localized: "New name", table: "ProjectTree"), text: $newItemName)
-                Button(String(localized: "Rename", table: "ProjectTree")) {
-                    renameItem()
-                }
+                Button(String(localized: "Rename", table: "ProjectTree")) { renameItem() }
                 Button(String(localized: "Cancel", table: "ProjectTree"), role: .cancel) {}
-            } message: {
-                Text(String(localized: "Enter the new name for this item.", table: "ProjectTree"))
-            }
+            } message: { Text(String(localized: "Enter the new name for this item.", table: "ProjectTree")) }
 
+            // 子节点
             if isDirectory && isExpanded && !children.isEmpty {
-                VStack(spacing: 0) {
+                LazyVStack(spacing: 0) {
                     ForEach(children, id: \.self) { childURL in
                         FileNodeView(
                             url: childURL,
                             depth: depth + 1,
                             selectedURL: selectedURL,
                             onSelect: onSelect,
-                            onDirectoryExpanded: onDirectoryExpanded,
-                            onDirectoryCollapsed: onDirectoryCollapsed,
                             refreshToken: refreshToken
                         )
                     }
@@ -245,65 +254,59 @@ struct FileNodeView: View {
             }
         }
         .onChange(of: refreshToken) { _, newValue in
-            guard newValue != lastRefreshToken else { return }
-            lastRefreshToken = newValue
-            if isDirectory && isExpanded {
-                reloadChildren()
-            }
+            handleRefreshTokenChange(newValue)
         }
     }
-}
 
-// MARK: - Event Handler
+    // MARK: - Context Menu
 
-extension FileNodeView {
-    /// 处理点击事件
+    @ViewBuilder
+    private var contextMenuContent: some View {
+        if isDirectory {
+            Button {
+                newItemName = ""
+                showNewFileSheet = true
+            } label: {
+                Label(String(localized: "New File", table: "ProjectTree"), systemImage: "doc.badge.plus")
+            }
+            Button {
+                newItemName = ""
+                showNewFolderSheet = true
+            } label: {
+                Label(String(localized: "New Folder", table: "ProjectTree"), systemImage: "folder.badge.plus")
+            }
+            Divider()
+        }
+
+        Button {
+            newItemName = fileName
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { showRenameSheet = true }
+        } label: {
+            Label(String(localized: "Rename", table: "ProjectTree"), systemImage: "pencil")
+        }
+
+        Divider()
+        Button { openInFinder() } label: { Label(String(localized: "Reveal in Finder", table: "ProjectTree"), systemImage: "finder") }
+        Button { openInVSCode() } label: { Label(String(localized: "Open in VS Code", table: "ProjectTree"), systemImage: "chevron.left.forwardslash.chevron.right") }
+        Button { openInTerminal() } label: { Label(String(localized: "Open in Terminal", table: "ProjectTree"), systemImage: "terminal") }
+        Divider()
+        Button(role: .destructive) { showDeleteConfirmation = true } label: {
+            Label(String(localized: "Move to Trash", table: "ProjectTree"), systemImage: "trash")
+        }
+    }
+
+    // MARK: - Event Handler
+
     private func handleTap() {
         if isDirectory {
             isExpanded.toggle()
-            if isExpanded {
-                onDirectoryExpanded?(url)
-                if children.isEmpty {
-                    loadChildren()
-                }
-            } else {
-                onDirectoryCollapsed?(url)
+            if isExpanded && children.isEmpty {
+                loadChildren()
             }
         }
         onSelect(url)
     }
 
-    /// 处理右键菜单操作
-    private func handleContextMenuAction(_ action: FileContextMenuAction) {
-        switch action {
-        case .newFile:
-            newItemName = ""
-            showNewFileSheet = true
-        case .newFolder:
-            newItemName = ""
-            showNewFolderSheet = true
-        case .rename:
-            newItemName = fileName
-            // 延迟弹出对话框，确保 newItemName 已更新
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                showRenameSheet = true
-            }
-        case .revealInFinder:
-            openInFinder()
-        case .openInVSCode:
-            openInVSCode()
-        case .openInTerminal:
-            openInTerminal()
-        case .delete:
-            showDeleteConfirmation = true
-        case .copyPath:
-            copyPath()
-        case .copyRelativePath:
-            copyRelativePath()
-        }
-    }
-
-    /// 处理刷新令牌变化
     private func handleRefreshTokenChange(_ newValue: Int) {
         guard newValue != lastRefreshToken else { return }
         lastRefreshToken = newValue
@@ -312,18 +315,32 @@ extension FileNodeView {
         }
     }
 
-    /// 处理拖拽开始
-    private func handleDragStart() -> NSItemProvider {
-        // 直接返回 NSURL 对象，这样可以保持真实的文件路径引用
-        // 避免创建临时缓存文件
-        return NSItemProvider(object: url as NSURL)
+    // MARK: - Watcher (Root Node Only)
+
+    private func setupWatcherIfNeeded() {
+        guard isRoot, watcher == nil else { return }
+
+        let currentURL = url
+        watcher = ProjectTreeWatcher { changedURL in
+            Task { @MainActor [self] in
+                self.handleFileSystemChange(changedURL: changedURL, rootURL: currentURL)
+            }
+        }
+        watcher?.startWatching(url: url)
     }
-}
 
-// MARK: - View Helpers
+    private func handleFileSystemChange(changedURL: URL, rootURL: URL) {
+        let standardizedChanged = changedURL.standardizedFileURL
+        let standardizedRoot = rootURL.standardizedFileURL
 
-extension FileNodeView {
-    /// 当前节点对应的系统图标名称
+        if standardizedChanged.path == standardizedRoot.path {
+            reloadChildren()
+        }
+        lastRefreshToken = refreshToken + 1
+    }
+
+    // MARK: - View Helpers
+
     private var iconName: String {
         if isDirectory {
             return isExpanded ? "folder.fill" : "folder"
@@ -331,18 +348,11 @@ extension FileNodeView {
         return ProjectTreeFileService.getFileIcon(for: url)
     }
 
-    /// 根据选中与 hover 状态计算当前行背景色
-    /// - Parameter isSelected: 当前节点是否被选中
-    /// - Returns: 行背景颜色
     fileprivate func rowBackground(isSelected: Bool) -> Color {
         if isSelected {
-            return isHovering
-                ? Color.accentColor.opacity(0.28)
-                : Color.accentColor.opacity(0.22)
+            return isHovering ? Color.accentColor.opacity(0.28) : Color.accentColor.opacity(0.22)
         } else {
-            return isHovering
-                ? Color.primary.opacity(0.06)
-                : Color.clear
+            return isHovering ? Color.primary.opacity(0.06) : Color.clear
         }
     }
 }
@@ -350,161 +360,95 @@ extension FileNodeView {
 // MARK: - Actions
 
 extension FileNodeView {
-    /// 加载当前目录下的子节点，并按"目录在前"的规则排序
     private func loadChildren() {
-        Task.detached(priority: .userInitiated) {
+        isLoading = true
+        let currentURL = url
+        Task.detached(priority: .userInitiated) { [self] in
             do {
                 let contents = try FileManager.default.contentsOfDirectory(
-                    at: url,
+                    at: currentURL,
                     includingPropertiesForKeys: [.isDirectoryKey],
                     options: []
                 )
-
-                // 使用 Service 进行过滤和排序
                 let sorted = ProjectTreeFileService.filterAndSortContents(contents)
-
-                await MainActor.run {
+                await MainActor.run { [self] in
                     self.children = sorted
+                    self.isLoading = false
                 }
             } catch {
-                // 忽略错误
-            }
-        }
-    }
-
-    /// 重新加载子节点（文件系统变化后调用）
-    private func reloadChildren() {
-        Task.detached(priority: .userInitiated) {
-            do {
-                let contents = try FileManager.default.contentsOfDirectory(
-                    at: url,
-                    includingPropertiesForKeys: [.isDirectoryKey],
-                    options: []
-                )
-
-                // 使用 Service 进行过滤和排序
-                let sorted = ProjectTreeFileService.filterAndSortContents(contents)
-
-                await MainActor.run {
-                    self.children = sorted
-                }
-            } catch {
-                // 目录可能已被删除，折叠该节点
-                await MainActor.run {
+                await MainActor.run { [self] in
                     self.children = []
-                    self.isExpanded = false
+                    self.isLoading = false
                 }
             }
         }
     }
 
-    /// 在 Finder 中显示文件/文件夹
-    private func openInFinder() {
-        NSWorkspace.shared.activateFileViewerSelecting([url])
+    private func reloadChildren() { loadChildren() }
+
+    private func createNewFile() {
+        guard !newItemName.isEmpty else { return }
+        let fileURL = url.appendingPathComponent(newItemName)
+        FileManager.default.createFile(atPath: fileURL.path, contents: nil)
+        reloadChildren()
     }
 
-    /// 在 VS Code 中打开文件/文件夹
+    private func createNewFolder() {
+        guard !newItemName.isEmpty else { return }
+        let folderURL = url.appendingPathComponent(newItemName)
+        try? FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: false)
+        reloadChildren()
+    }
+
+    private func renameItem() {
+        guard !newItemName.isEmpty else { return }
+        let newURL = url.deletingLastPathComponent().appendingPathComponent(newItemName)
+        try? FileManager.default.moveItem(at: url, to: newURL)
+        onSelect(newURL)
+        reloadChildren()
+    }
+
+    private func deleteItem() {
+        try? FileManager.default.trashItem(at: url, resultingItemURL: nil)
+        reloadChildren()
+    }
+
+    private func openInFinder() {
+        NSWorkspace.shared.selectFile(url.path, inFileViewerRootedAtPath: "")
+    }
+
     private func openInVSCode() {
         ProjectTreeFileService.openInVSCode(url)
     }
 
-    /// 在终端中打开（打开目录或文件所在目录）
     private func openInTerminal() {
         ProjectTreeFileService.openInTerminal(url)
     }
 
-    /// 删除文件/文件夹（移到废纸篓）
-    private func deleteItem() {
-        do {
-            // 移动到废纸篓
-            var resultURL: NSURL?
-            try FileManager.default.trashItem(at: url, resultingItemURL: &resultURL)
-        } catch {
-            // 忽略错误
-        }
-    }
-
-    /// 新建文件
-    private func createNewFile() {
-        guard !newItemName.isEmpty else { return }
-
-        // 确定目标目录：如果是文件夹，在当前目录下创建；如果是文件，在父目录下创建
-        let targetDirectory = isDirectory ? url : url.deletingLastPathComponent()
-        let newFileURL = targetDirectory.appendingPathComponent(newItemName)
-
-        // 创建空文件（FileManager.createFile 不抛出错误）
-        let success = FileManager.default.createFile(atPath: newFileURL.path, contents: nil, attributes: nil)
-        if success {
-            // 如果是文件夹且未展开，先展开它
-            if isDirectory && !isExpanded {
-                isExpanded = true
-                onDirectoryExpanded?(url)
-            }
-
-            // 立即重新加载子节点
-            reloadChildren()
-        }
-    }
-
-    /// 新建文件夹
-    private func createNewFolder() {
-        guard !newItemName.isEmpty else { return }
-
-        // 确定目标目录：如果是文件夹，在当前目录下创建；如果是文件，在父目录下创建
-        let targetDirectory = isDirectory ? url : url.deletingLastPathComponent()
-        let newFolderURL = targetDirectory.appendingPathComponent(newItemName)
-
-        do {
-            // 创建文件夹
-            try FileManager.default.createDirectory(at: newFolderURL, withIntermediateDirectories: false)
-
-            // 如果是文件夹且未展开，先展开它
-            if isDirectory && !isExpanded {
-                isExpanded = true
-                onDirectoryExpanded?(url)
-            }
-
-            // 立即重新加载子节点
-            reloadChildren()
-        } catch {
-            // 忽略错误
-        }
-    }
-
-    /// 重命名文件/文件夹
-    private func renameItem() {
-        guard !newItemName.isEmpty else { return }
-        guard newItemName != fileName else { return } // 名称未改变，无需操作
-
-        // 构建新的 URL
-        let newURL = url.deletingLastPathComponent().appendingPathComponent(newItemName)
-
-        do {
-            // 使用 FileManager 移动文件到新路径（即重命名）
-            try FileManager.default.moveItem(at: url, to: newURL)
-        } catch {
-            // 忽略错误
-        }
-    }
-
-    /// 复制文件路径到剪贴板
     private func copyPath() {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(url.path, forType: .string)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(url.path, forType: .string)
     }
 
-    /// 复制相对路径到剪贴板
     private func copyRelativePath() {
-        let rootPath = projectVM.currentProjectPath
-        guard !rootPath.isEmpty else { return }
-
-        let relativePath = url.path
-            .replacingOccurrences(of: rootPath, with: "")
-            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(relativePath, forType: .string)
+        let projectPath = projectVM.currentProjectPath
+        guard !projectPath.isEmpty else { return }
+        let relativePath = url.path.replacingOccurrences(of: projectPath + "/", with: "")
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(relativePath, forType: .string)
     }
+}
+
+// MARK: - Preview
+
+#Preview {
+    let testURL = URL(fileURLWithPath: NSHomeDirectory())
+
+    return FileNodeView(
+        url: testURL,
+        depth: 0,
+        selectedURL: nil,
+        onSelect: { _ in }
+    )
+    .frame(width: 250, height: 400)
 }
