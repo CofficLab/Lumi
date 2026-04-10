@@ -136,12 +136,16 @@ final class FileAutoSaver: ObservableObject {
     private func performSave(content: String, to url: URL) {
         state = .saving
 
-        Task.detached(priority: .userInitiated) { [weak self] in
+        // 捕获必要的值，避免捕获 self
+        let successState: FileSaveState = .saved
+        let notFoundError = String(localized: "File not found", table: "FilePreview")
+
+        Task.detached(priority: .userInitiated) {
             do {
                 // 检查文件是否存在
                 guard FileManager.default.fileExists(atPath: url.path) else {
-                    await MainActor.run {
-                        self?.state = .error(String(localized: "File not found", table: "FilePreview"))
+                    await MainActor.run { [notFoundError] in
+                        self.state = .error(notFoundError)
                     }
                     return
                 }
@@ -150,19 +154,17 @@ final class FileAutoSaver: ObservableObject {
                 try content.write(to: url, atomically: true, encoding: .utf8)
 
                 await MainActor.run {
-                    self?.state = .saved
-                    self?.scheduleSuccessClear()
+                    self.state = successState
+                    self.scheduleSuccessClear()
                 }
             } catch {
+                let errorMessage = String(
+                    localized: "Save failed: \(error.localizedDescription)",
+                    table: "FilePreview"
+                )
                 await MainActor.run {
-                    let errorMessage = String(
-                        localized: "Save failed: \(error.localizedDescription)",
-                        table: "FilePreview"
-                    )
-                    self?.state = .error(errorMessage)
-
-                    // 错误状态也自动清除
-                    self?.scheduleSuccessClear()
+                    self.state = .error(errorMessage)
+                    self.scheduleSuccessClear()
                 }
             }
         }
