@@ -14,15 +14,17 @@ struct ProjectTreeView: View {
             if projectVM.currentProjectPath.isEmpty {
                 FileTreeNoProjectView()
             } else {
-                FileNodeView(
-                    url: URL(fileURLWithPath: projectVM.currentProjectPath),
-                    depth: 0,  // depth == 0 表示根节点
-                    selectedURL: projectVM.selectedFileURL,
-                    onSelect: { selectedURL in
-                        projectVM.selectFile(at: selectedURL)
-                    },
-                    refreshToken: rootRefreshToken
-                )
+                ScrollView {
+                    FileNodeView(
+                        url: URL(fileURLWithPath: projectVM.currentProjectPath),
+                        depth: 0,  // depth == 0 表示根节点
+                        selectedURL: projectVM.selectedFileURL,
+                        onSelect: { selectedURL in
+                            projectVM.selectFile(at: selectedURL)
+                        },
+                        refreshToken: rootRefreshToken
+                    )
+                }
             }
         }
         .frame(maxHeight: .infinity)
