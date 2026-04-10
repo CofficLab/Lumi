@@ -86,31 +86,31 @@ struct FileNodeView: View {
         let isSelected = selectedURL == url
 
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 6) {
+            HStack(spacing: 4) {
                 if isDirectory {
                     Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                        .font(.system(size: 8, weight: .semibold))
+                        .font(.system(size: 9, weight: .semibold))
                         .foregroundColor(AppUI.Color.semantic.textSecondary)
-                        .frame(width: 10)
+                        .frame(width: 12)
                 } else {
-                    Color.clear.frame(width: 10)
+                    Color.clear.frame(width: 12)
                 }
 
                 Image(systemName: iconName)
-                    .font(.system(size: 10))
+                    .font(.system(size: 12))
                     .foregroundColor(isDirectory ? .accentColor : .secondary)
-                    .frame(width: 14)
+                    .frame(width: 16)
 
                 Text(fileName)
-                    .font(.system(size: 10))
+                    .font(.system(size: 11))
                     .foregroundColor(isSelected ? Color.white : .primary)
                     .lineLimit(1)
 
                 Spacer()
             }
-            .padding(.vertical, 3)
+            .padding(.vertical, 4)
             .padding(.horizontal, 6)
-            .padding(.leading, CGFloat(depth) * 12)
+            .padding(.leading, CGFloat(depth) * 16)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(rowBackground(isSelected: isSelected))
             .contentShape(Rectangle())
@@ -149,7 +149,7 @@ struct FileNodeView: View {
 
             // 子节点
             if isDirectory && isExpanded && !children.isEmpty {
-                LazyVStack(spacing: 0) {
+                LazyVStack(spacing: 2) {
                     ForEach(children, id: \.self) { childURL in
                         FileNodeView(
                             url: childURL,

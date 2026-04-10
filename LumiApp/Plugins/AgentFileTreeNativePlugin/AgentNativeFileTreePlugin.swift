@@ -11,7 +11,7 @@ actor AgentNativeFileTreePlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "🌲"
-    nonisolated static let enable = true
+    nonisolated static let enable = false
     nonisolated static let verbose = false
 
     static let id: String = "AgentNativeFileTree"
