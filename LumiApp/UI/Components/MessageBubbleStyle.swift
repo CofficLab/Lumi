@@ -1,5 +1,5 @@
-import SwiftUI
 import MagicKit
+import SwiftUI
 
 // MARK: - Message Bubble Style Extensions
 
@@ -14,7 +14,6 @@ extension View {
         isError: Bool,
         style: AppMessageBubbleStyle = .default
     ) -> some View {
-        self
-            .appMessageBubble(role: role, isError: isError, style: style)
+        self.appMessageBubble(role: role, isError: isError, style: style)
     }
 }

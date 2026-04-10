@@ -1,8 +1,6 @@
 import MagicKit
 import SwiftUI
 
-// MARK: - User Message
-//
 /// 负责完整渲染一条用户消息（包含头部与正文）
 struct UserMessage: View {
     let message: ChatMessage
@@ -40,7 +38,8 @@ struct UserMessage: View {
 
     private var header: some View {
         MessageHeaderView {
-            HStack(alignment: .center, spacing: 4) {
+            HStack(alignment: .center, spacing: 6) {
+                AvatarView.user
                 Text(currentUserName)
                     .font(DesignTokens.Typography.caption1)
                     .fontWeight(.medium)
@@ -59,7 +58,7 @@ struct UserMessage: View {
                     .font(DesignTokens.Typography.caption2)
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-                RawMessageToggleButton(showRawMessage: $showRawMessage)
+                // RawMessageToggleButton(showRawMessage: $showRawMessage)
             }
         }
     }

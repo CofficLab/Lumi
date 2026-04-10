@@ -48,7 +48,7 @@ struct MessageWithToolCallsView: View {
         VStack(alignment: .leading, spacing: 8) {
             AppCard(
                 style: .subtle,
-                padding: EdgeInsets(top: 10, leading: 14, bottom: 10, trailing: 14)
+                padding: EdgeInsets(top: 5, leading: 10, bottom: 5, trailing: 10)
             ) {
                 HStack(spacing: 8) {
                     HStack(spacing: 6) {
@@ -76,7 +76,6 @@ struct MessageWithToolCallsView: View {
 
                     AppIconButton(
                         systemImage: "slider.horizontal.3",
-                        label: "参数",
                         tint: isParametersExpanded
                             ? AppUI.Color.semantic.textPrimary
                             : AppUI.Color.semantic.textSecondary,
@@ -87,15 +86,11 @@ struct MessageWithToolCallsView: View {
                     }
 
                     if isLoadingResult {
-                        HStack(spacing: 4) {
-                            ProgressView()
-                                .controlSize(.small)
-                            AppTag("结果")
-                        }
+                        ProgressView()
+                            .controlSize(.small)
                     } else {
                         AppIconButton(
                             systemImage: "doc.text.magnifyingglass",
-                            label: "结果",
                             tint: isResultsExpanded
                                 ? AppUI.Color.semantic.textPrimary
                                 : AppUI.Color.semantic.textSecondary,
@@ -109,7 +104,7 @@ struct MessageWithToolCallsView: View {
             }
 
             if isParametersExpanded {
-                ToolCallContentSectionView(toolCall: toolCall, title: "参数")
+                ToolCallContentSectionView(toolCall: toolCall)
             }
 
             if isResultsExpanded {
@@ -163,7 +158,6 @@ struct MessageWithToolCallsView: View {
 
 private struct ToolCallContentSectionView: View {
     let toolCall: ToolCall
-    let title: String
 
     private var formattedArguments: String? {
         guard !toolCall.arguments.isEmpty,
@@ -186,7 +180,7 @@ private struct ToolCallContentSectionView: View {
 
     var body: some View {
         if let formattedArguments {
-            GenericToolSectionView(title: title, content: formattedArguments)
+            GenericToolSectionView(content: formattedArguments)
         }
     }
 }
@@ -214,7 +208,7 @@ private struct ToolResultSectionView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .modifier(SubtleToolCardModifier())
         } else if !combinedContent.isEmpty {
-            GenericToolSectionView(title: "结果", content: combinedContent)
+            GenericToolSectionView(content: combinedContent)
         } else {
             HStack(spacing: 8) {
                 Image(systemName: "info.circle")
@@ -230,7 +224,6 @@ private struct ToolResultSectionView: View {
 }
 
 private struct GenericToolSectionView: View {
-    let title: String
     let content: String
 
     var body: some View {
@@ -238,17 +231,11 @@ private struct GenericToolSectionView: View {
             style: .subtle,
             padding: EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12)
         ) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(title)
-                    .font(AppUI.Typography.caption1)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
-
-                Text(content)
-                    .font(AppUI.Typography.code)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .textSelection(.enabled)
-            }
+            Text(content)
+                .font(AppUI.Typography.code)
+                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .textSelection(.enabled)
         }
     }
 }

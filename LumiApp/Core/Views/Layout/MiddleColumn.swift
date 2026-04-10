@@ -4,7 +4,7 @@ import SwiftUI
 struct MiddleColumn: View {
     @EnvironmentObject var app: GlobalVM
     @EnvironmentObject var pluginProvider: PluginVM
-    @SceneStorage("Agent.MiddleColumn.SelectedDetailId") private var selectedDetailId: String = ""
+    @EnvironmentObject var layoutVM: LayoutVM
 
     var body: some View {
         Group {
@@ -39,8 +39,8 @@ struct MiddleColumn: View {
             .onAppear {
                 ensureValidSelection(entries: entries)
             }
-            .onChange(of: entries.map(\.id).joined(separator: "|")) { _, _ in
-                ensureValidSelection(entries: entries)
+            .onChange(of: entries) { _, newEntries in
+                ensureValidSelection(entries: newEntries)
             }
         }
     }
@@ -55,19 +55,12 @@ struct MiddleColumn: View {
     }
 
     private func ensureValidSelection(entries: [PluginVM.AgentDetailEntry]) {
-        guard !entries.isEmpty else {
-            selectedDetailId = ""
-            return
-        }
-
-        if entries.contains(where: { $0.id == selectedDetailId }) {
-            return
-        }
-        selectedDetailId = entries[0].id
+        let availableIds = entries.map { $0.id }
+        layoutVM.restoreSelectedDetail(from: availableIds)
     }
 
     private func currentEntry(in entries: [PluginVM.AgentDetailEntry]) -> PluginVM.AgentDetailEntry {
-        if let selected = entries.first(where: { $0.id == selectedDetailId }) {
+        if let selected = entries.first(where: { $0.id == layoutVM.selectedAgentDetailId }) {
             return selected
         }
         return entries[0]
@@ -77,7 +70,7 @@ struct MiddleColumn: View {
         HStack(spacing: AppUI.Spacing.sm) {
             ForEach(entries) { entry in
                 Button(action: {
-                    selectedDetailId = entry.id
+                    layoutVM.selectAgentDetail(entry.id)
                 }) {
                     HStack(spacing: 6) {
                         Image(systemName: entry.icon)
@@ -87,10 +80,10 @@ struct MiddleColumn: View {
                     .font(AppUI.Typography.caption1)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .foregroundColor(selectedDetailId == entry.id ? .white : AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(layoutVM.selectedAgentDetailId == entry.id ? .white : AppUI.Color.semantic.textPrimary)
                     .background(
                         RoundedRectangle(cornerRadius: AppUI.Radius.sm, style: .continuous)
-                            .fill(selectedDetailId == entry.id ? Color.accentColor : Color.white.opacity(0.08))
+                            .fill(layoutVM.selectedAgentDetailId == entry.id ? Color.accentColor : Color.white.opacity(0.08))
                     )
                 }
                 .buttonStyle(.plain)

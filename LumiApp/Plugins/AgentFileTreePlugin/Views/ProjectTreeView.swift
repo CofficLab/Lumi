@@ -39,6 +39,12 @@ struct ProjectTreeView: View {
             setupWatcher(for: newPath)
             loadProject(at: newPath)
         }
+        .onChange(of: projectVM.selectedFileURL) { _, newURL in
+            // 当选中文件变化时，自动展开包含该文件的目录
+            if let url = newURL {
+                expandToFile(url)
+            }
+        }
         .onAppear {
             setupWatcher(for: projectVM.currentProjectPath)
             loadProject(at: projectVM.currentProjectPath)
@@ -46,6 +52,11 @@ struct ProjectTreeView: View {
         .onDisappear {
             watcher?.stopAll()
             watcher = nil
+        }
+        .onSyncSelectedFile { path in
+            // 监听 syncSelectedFile 通知，确保文件树能同步选中状态
+            let url = URL(fileURLWithPath: path)
+            projectVM.selectFile(at: url)
         }
     }
 }
@@ -203,6 +214,37 @@ extension ProjectTreeView {
                     self.isLoading = false
                 }
             }
+        }
+    }
+
+    /// 自动展开到指定文件所在的目录
+    private func expandToFile(_ fileURL: URL) {
+        // 获取当前项目的根路径
+        let rootPath = projectVM.currentProjectPath
+        guard !rootPath.isEmpty else { return }
+
+        let rootURL = URL(fileURLWithPath: rootPath)
+
+        // 确保文件在项目目录下
+        guard fileURL.path.hasPrefix(rootPath) else { return }
+
+        // 获取文件相对于根目录的路径组件
+        let relativePath = fileURL.path.replacingOccurrences(of: rootPath + "/", with: "")
+        let components = relativePath.split(separator: "/").map(String.init)
+
+        // 逐级展开目录
+        var currentURL = rootURL
+        let directoriesToExpand = components.dropLast()
+
+        for dirName in directoriesToExpand {
+            currentURL = currentURL.appendingPathComponent(dirName)
+            expandedDirectoryURLs.insert(currentURL)
+            watcher?.startWatching(url: currentURL)
+        }
+
+        // 刷新令牌以触发子节点重新加载
+        if !components.isEmpty {
+            refreshToken += 1
         }
     }
 }

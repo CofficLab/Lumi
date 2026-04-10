@@ -31,10 +31,13 @@ struct ToolOutputView: View {
 
     private var toolOutputHeader: some View {
         MessageHeaderView {
-            AppIdentityRow(
-                title: "工具输出",
-                metadata: lineCountCached > 1 ? ["\(lineCountCached) 行"] : []
-            )
+            HStack(alignment: .center, spacing: 6) {
+                AvatarView.tool
+                AppIdentityRow(
+                    title: "工具输出",
+                    metadata: lineCountCached > 1 ? ["\(lineCountCached) 行"] : []
+                )
+            }
         } trailing: {
             HStack(alignment: .center, spacing: 12) {
                 // 复制按钮（与 User / Assistant 一致）

@@ -70,8 +70,13 @@ struct OpenInGitHubDesktopStatusBarView: View {
             Button(action: {
                 openInGitHubDesktop()
             }) {
-                Image(systemName: "desktopcomputer")
-                    .font(.system(size: 10))
+                HStack(spacing: 6) {
+                    Image.githubDesktopApp
+                        .resizable()
+                        .frame(width: 12, height: 12)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
             }
             .buttonStyle(.plain)
             .help(String(localized: "在 GitHub Desktop 中打开当前项目", table: "AgentOpenInGitHubDesktop"))
@@ -80,10 +85,18 @@ struct OpenInGitHubDesktopStatusBarView: View {
 
     /// 无项目时的视图
     private var emptyView: some View {
-        Image(systemName: "desktopcomputer")
-            .font(.system(size: 10))
-            .foregroundColor(.secondary.opacity(0.5))
-            .help(String(localized: "无项目", table: "AgentOpenInGitHubDesktop"))
+        HStack(spacing: 6) {
+            Image.githubDesktopApp
+                .resizable()
+                .frame(width: 10, height: 10)
+
+            Text("GitHub Desktop")
+                .font(.system(size: 11))
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .foregroundColor(.secondary.opacity(0.5))
+        .help(String(localized: "无项目", table: "AgentOpenInGitHubDesktop"))
     }
 
     private func openInGitHubDesktop() {

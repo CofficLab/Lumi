@@ -77,8 +77,8 @@ struct InputAreaView: View, SuperLog {
             .accessibilityHint(String(localized: "Chat Toolbar Hint", table: "AgentInput"))
         }
         .background(.background)
-        .cornerRadius(12)
-        .overlay(inputAreaBorderOverlay)
+        .overlay(RoundedRectangle(cornerRadius: 0)
+            .stroke(Color.black.opacity(0.1), lineWidth: 1))
         .overlay {
             if !canChat {
                 noConversationOverlay
@@ -100,12 +100,6 @@ struct InputAreaView: View, SuperLog {
 // MARK: - View
 
 extension InputAreaView {
-    /// 输入区域边框
-    private var inputAreaBorderOverlay: some View {
-        RoundedRectangle(cornerRadius: 12)
-            .stroke(Color.black.opacity(0.1), lineWidth: 1)
-    }
-
     /// 无会话时的遮罩层
     private var noConversationOverlay: some View {
         ZStack {
@@ -193,7 +187,7 @@ extension InputAreaView {
     /// 处理回车键
     private func handleEnter() {
         guard canChat else { return }
-        
+
         if commandSuggestionViewModel.isVisible,
            let suggestion = commandSuggestionViewModel.getCurrentSuggestion() {
             // 选择命令建议
@@ -232,7 +226,7 @@ extension InputAreaView {
             // 使用 append 方法自动处理空格和光标位置
             inputViewModel.append(fileURL.path)
         }
-        
+
         if Self.verbose {
             AgentInputPlugin.logger.info("\(Self.t)✅ handleFileDrop 完成，text.count=\(inputViewModel.text.count), cursorPosition=\(inputViewModel.cursorPosition)")
         }

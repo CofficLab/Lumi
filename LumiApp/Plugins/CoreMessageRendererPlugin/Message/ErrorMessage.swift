@@ -161,7 +161,10 @@ struct ErrorMessage: View {
 
     private var header: some View {
         MessageHeaderView {
-            AppIdentityRow(title: titleText)
+            HStack(alignment: .center, spacing: 6) {
+                AvatarView.error
+                AppIdentityRow(title: titleText)
+            }
         } trailing: {
             HStack(alignment: .center, spacing: 12) {
                 CopyMessageButton(

@@ -26,7 +26,7 @@ struct AppCard<Content: View>: View {
             .padding(padding)
             .background(background)
             .overlay(border)
-            .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous))
     }
 
     private var background: some View {

@@ -1,13 +1,11 @@
-import SwiftUI
 import MagicKit
+import SwiftUI
 
 /// 思考过程展示视图（可展开/折叠）
 /// 用于显示 AI 助手的思考过程，支持展开查看详情
 struct ThinkingProcessView: View {
     /// 思考内容文本
     let thinkingText: String
-    /// 是否正在思考中
-    let isThinking: Bool
     /// 是否已展开
     @State private var isExpanded: Bool = false
 
@@ -24,19 +22,23 @@ struct ThinkingProcessView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            MessageHeaderView {
-                withAnimation(.easeInOut(duration: 0.2)) {
+        AppCard(
+            style: .subtle,
+            padding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+        ) {
+            VStack(alignment: .leading, spacing: 0) {
+                // Header 部分（可点击展开/折叠）
+                MessageHeaderView {
                     HStack(spacing: 6) {
                         Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                             .font(.system(size: 10, weight: .semibold))
                             .foregroundColor(AppUI.Color.semantic.textSecondary)
 
-                        Text(isThinking ? "思考过程…" : "思考过程")
+                        Text("思考过程")
                             .font(AppUI.Typography.caption1)
                             .foregroundColor(AppUI.Color.semantic.textSecondary)
 
-                        // 折叠时展示一小段预览，降低存在感但能提示有内容
+                        // 折叠时展示一小段预览
                         if !isExpanded, !previewText.isEmpty {
                             Text(previewText)
                                 .font(AppUI.Typography.caption2)
@@ -44,47 +46,25 @@ struct ThinkingProcessView: View {
                                 .lineLimit(1)
                         }
                     }
+                } trailing: {
+                    EmptyView()
                 }
-            } trailing: {
-                // 思考中的动画点
-                if isThinking {
-                    HStack(spacing: 2) {
-                        ForEach(0..<3) { i in
-                            Circle()
-                                .fill(AppUI.Color.semantic.textSecondary)
-                                .frame(width: 4, height: 4)
-                                .opacity(isThinking ? 1.0 : 0.5)
-                                .animation(
-                                    .easeInOut(duration: 0.6)
-                                    .repeatForever(autoreverses: true)
-                                    .delay(Double(i) * 0.2),
-                                    value: isThinking
-                                )
-                        }
-                    }
-                }
-            }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                withAnimation(.easeInOut(duration: 0.2)) {
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
+                .onTapGesture {
                     isExpanded.toggle()
                 }
-            }
 
-            // 思考内容（展开时显示）：深色块 + 固定浅色字，保证任意主题下都清晰可读
-            if isExpanded && !thinkingText.isEmpty {
-                AppCard(
-                    style: .subtle,
-                    padding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
-                ) {
-                    ScrollView(showsIndicators: true) {
-                        Text(thinkingText)
-                            .font(AppUI.Typography.code)
-                            .foregroundColor(AppUI.Color.semantic.textPrimary)
-                            .padding(12)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .frame(maxHeight: 220)
+                // 思考内容（展开时显示）
+                if isExpanded && !thinkingText.isEmpty {
+                    Divider()
+                        .opacity(0.2)
+                    Text(thinkingText)
+                        .font(AppUI.Typography.code)
+                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
         }
@@ -96,8 +76,7 @@ struct ThinkingProcessView: View {
 
 #Preview("ThinkingProcessView - Small") {
     ThinkingProcessView(
-        thinkingText: "这是一个示例思考过程文本，用于测试 ThinkingProcessView 组件的显示效果。",
-        isThinking: true
+        thinkingText: "这是一个示例思考过程文本，用于测试 ThinkingProcessView 组件的显示效果。"
     )
     .padding()
     .frame(width: 800, height: 600)
@@ -105,8 +84,7 @@ struct ThinkingProcessView: View {
 
 #Preview("ThinkingProcessView - Large") {
     ThinkingProcessView(
-        thinkingText: "这是一个示例思考过程文本，用于测试 ThinkingProcessView 组件的显示效果。\n\n思考过程可以包含多行文本，展示 AI 助手的推理过程。",
-        isThinking: false
+        thinkingText: "这是一个示例思考过程文本，用于测试 ThinkingProcessView 组件的显示效果。\n\n思考过程可以包含多行文本，展示 AI 助手的推理过程。"
     )
     .padding()
     .frame(width: 1200, height: 1200)

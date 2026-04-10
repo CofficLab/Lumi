@@ -88,6 +88,7 @@ enum AppSettingStore {
 
     private static let selectedNavigationIdKey = "App_SelectedNavigationId"
     private static let selectedAgentSidebarTabIdKey = "App_SelectedAgentSidebarTabId"
+    private static let selectedAgentDetailIdKey = "App_SelectedAgentDetailId"
 
     /// 加载 App 模式下的上次选中导航入口 ID
     static func loadSelectedNavigationId() -> String? {
@@ -107,6 +108,16 @@ enum AppSettingStore {
     /// 保存 Agent 模式下选中的侧边栏 Tab ID
     static func saveSelectedAgentSidebarTabId(_ id: String?) {
         set(id, forKey: selectedAgentSidebarTabIdKey)
+    }
+
+    /// 加载 Agent 模式下上次选中的 Detail ID
+    static func loadSelectedAgentDetailId() -> String? {
+        object(forKey: selectedAgentDetailIdKey) as? String
+    }
+
+    /// 保存 Agent 模式下选中的 Detail ID
+    static func saveSelectedAgentDetailId(_ id: String?) {
+        set(id, forKey: selectedAgentDetailIdKey)
     }
 
     // MARK: - Settings Selection

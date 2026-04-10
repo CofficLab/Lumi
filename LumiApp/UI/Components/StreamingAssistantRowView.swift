@@ -16,7 +16,10 @@ struct StreamingAssistantRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             MessageHeaderView {
-                AppIdentityRow(title: "Lumi", metadata: ["生成中"])
+                HStack(alignment: .center, spacing: 6) {
+                    AvatarView.assistant
+                    AppIdentityRow(title: "Lumi", metadata: ["生成中"])
+                }
             } trailing: {
                 HStack(spacing: 6) {
                     ProgressView()

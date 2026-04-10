@@ -6641,6 +6641,9 @@
         }
       }
     },
+    "快捷键" : {
+
+    },
     "思考过程" : {
       "localizations" : {
         "zh-Hans" : {
@@ -6658,6 +6661,7 @@
       }
     },
     "思考过程…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

@@ -85,10 +85,13 @@ private struct LoadingLocalModelRenderer: SuperMessageRenderer {
         AnyView(
             VStack(alignment: .leading, spacing: 4) {
                 MessageHeaderView {
-                    AppIdentityRow(
-                        title: "System",
-                        titleColor: AppUI.Color.semantic.textSecondary
-                    )
+                    HStack(alignment: .center, spacing: 6) {
+                        AvatarView.system
+                        AppIdentityRow(
+                            title: "System",
+                            titleColor: AppUI.Color.semantic.textSecondary
+                        )
+                    }
                 } trailing: {
                     Text(formatTimestamp(message.timestamp))
                         .font(AppUI.Typography.caption2)
@@ -119,12 +122,7 @@ private struct ToolOutputRenderer: SuperMessageRenderer {
     
     @MainActor
     func render(message: ChatMessage, showRawMessage: Binding<Bool>) -> AnyView {
-        AnyView(
-            VStack(alignment: .leading, spacing: 4) {
-                RoleLabel.tool
-                ToolOutputView(message: message)
-            }
-        )
+        AnyView(ToolOutputView(message: message))
     }
 }
 

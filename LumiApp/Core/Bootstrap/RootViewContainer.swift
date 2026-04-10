@@ -36,6 +36,7 @@ final class RootViewContainer: ObservableObject {
     let messageRendererVM: MessageRendererVM
     let mystiqueThemeManager: ThemeManager
     let projectVM: ProjectVM
+    let layoutVM: LayoutVM
     let chatHistoryVM: ChatHistoryVM
     let commandSuggestionVM: CommandSuggestionVM
     let permissionRequestVM: PermissionRequestVM
@@ -99,6 +100,7 @@ final class RootViewContainer: ObservableObject {
             contextService: contextService,
             llmService: llmService
         )
+        self.layoutVM = LayoutVM()
 
         // ========================================
         // 聊天历史服务
