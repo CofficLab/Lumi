@@ -50,7 +50,6 @@ struct InputView: View, SuperLog {
                 .allowsHitTesting(canChat)
                 .opacity(canChat ? 1 : 0.6)
         }
-        .padding()
         .onAppear(perform: onAppear)
         .popover(isPresented: $isModelSelectorPresented, arrowEdge: .bottom) {
             ModelSelectorView()
