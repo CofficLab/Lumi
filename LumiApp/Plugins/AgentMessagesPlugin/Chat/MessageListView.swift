@@ -117,7 +117,7 @@ extension MessageListView {
                     isStreaming: false
                 )
                 .id(row.id)
-                .padding(.horizontal, 0)
+                .padding(.horizontal, 6)
                 .padding(.vertical, 4)
                 .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                 .listRowSeparator(.hidden)

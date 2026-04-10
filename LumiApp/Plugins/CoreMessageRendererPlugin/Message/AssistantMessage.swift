@@ -32,26 +32,18 @@ struct AssistantMessage: View {
         return ""
     }
 
-    private var isThinking: Bool {
-        false
-    }
-
     // MARK: - Body
 
     var body: some View {
         Group {
             if message.isToolOutput {
-                // 助手角色下的工具输出消息：使用工具视图渲染（ToolOutputView 自带头像 header）
                 ToolOutputView(message: message)
             } else {
                 VStack(alignment: .leading, spacing: 4) {
                     headerSection
 
                     if shouldShowThinkingProcess {
-                        ThinkingProcessView(
-                            thinkingText: thinkingText,
-                            isThinking: isThinking
-                        )
+                        ThinkingProcessView(thinkingText: thinkingText)
                     }
 
                     if message.hasToolCalls {

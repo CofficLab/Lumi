@@ -6661,6 +6661,7 @@
       }
     },
     "思考过程…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
