@@ -199,6 +199,9 @@ enum ProjectTreeFileService {
     }
 
     /// 读取目录内容（过滤并排序后返回）
+    ///
+    /// 使用 `skipsSubdirectoryDescendants` 避免递归遍历子目录，
+    /// 同时利用预取的 `isDirectoryKey` 资源值做排序，减少额外 I/O。
     /// - Parameter url: 目录 URL
     /// - Returns: 过滤并排序后的子项 URL 列表
     /// - Throws: 文件系统读取错误
@@ -206,7 +209,7 @@ enum ProjectTreeFileService {
         let contents = try FileManager.default.contentsOfDirectory(
             at: url,
             includingPropertiesForKeys: [.isDirectoryKey],
-            options: []
+            options: .skipsSubdirectoryDescendants
         )
         return filterAndSortContents(contents)
     }

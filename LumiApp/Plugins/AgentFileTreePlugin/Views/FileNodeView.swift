@@ -45,10 +45,8 @@ struct FileNodeView: View {
     /// 记录上次刷新令牌的值，用于判断是否需要重新加载
     @State private var lastRefreshToken: Int = 0
 
-    /// 是否文件夹
-    private var isDirectory: Bool {
-        ProjectTreeFileService.isDirectory(url)
-    }
+    /// 是否文件夹（启动时缓存，避免 body 求值时反复调 FileManager）
+    private let isDirectory: Bool
 
     /// 文件名（不含路径）
     private var fileName: String {
@@ -71,6 +69,9 @@ struct FileNodeView: View {
         self.onSelect = onSelect
         self.refreshToken = refreshToken
         self.projectRootPath = projectRootPath
+
+        // 在 init 时一次性缓存 isDirectory，避免 body 求值时反复做文件系统 I/O
+        self.isDirectory = ProjectTreeFileService.isDirectory(url)
 
         // 从 store 恢复展开状态
         if !projectRootPath.isEmpty {
