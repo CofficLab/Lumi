@@ -1,6 +1,6 @@
 import MagicKit
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 /// 待发送消息队列视图
 /// 显示在输入框上方，展示等待发送的消息列表（不包括正在发送的消息）
@@ -76,18 +76,12 @@ struct PendingMessagesView: View, SuperLog {
                 .frame(maxHeight: min(CGFloat(waitingMessages.count) * 36, 120))
             }
             .padding(10)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(nsColor: .controlBackgroundColor).opacity(0.8))
-            )
             .overlay(
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: 0)
                     .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
             )
             .onAppear(perform: updateConversationTitle)
-            .onChange(of: conversationVM.selectedConversationId) { _, _ in
-                updateConversationTitle()
-            }
+            .onChange(of: conversationVM.selectedConversationId, updateConversationTitle)
             )
         }
         return AnyView(EmptyView())

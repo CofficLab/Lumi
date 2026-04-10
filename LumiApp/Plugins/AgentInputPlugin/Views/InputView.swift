@@ -33,7 +33,7 @@ struct InputView: View, SuperLog {
     }
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 0) {
             // 待发送消息队列
             PendingMessagesView()
 
@@ -46,6 +46,7 @@ struct InputView: View, SuperLog {
 
             // 快捷输入视图（仅在有项目选中时显示）
             QuickInputView(inputViewModel: inputViewModel)
+                .padding(.vertical, 8)
                 .padding(.horizontal, 8)
                 .allowsHitTesting(canChat)
                 .opacity(canChat ? 1 : 0.6)
