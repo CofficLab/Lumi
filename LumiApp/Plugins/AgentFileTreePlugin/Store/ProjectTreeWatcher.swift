@@ -64,10 +64,19 @@ final class ProjectTreeWatcher: SuperLog, @unchecked Sendable {
         )
 
         let onChange = self.onChange
-        source.setEventHandler { [weak self] in
+        source.setEventHandler {
             let capturedURL = url
-            DispatchQueue.main.async {
-                self?.handleDebouncedChange(url: capturedURL)
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+
+                // 防抖处理
+                let key = capturedURL.standardizedFileURL.path
+                self.pendingRefreshes[key]?.cancel()
+                self.pendingRefreshes[key] = Task {
+                    try? await Task.sleep(nanoseconds: self.debounceInterval)
+                    self.pendingRefreshes.removeValue(forKey: key)
+                }
+
                 onChange(capturedURL)
             }
         }
@@ -125,6 +134,7 @@ final class ProjectTreeWatcher: SuperLog, @unchecked Sendable {
     // MARK: - Private
 
     /// 防抖处理：短时间内同一目录的多次变化合并为一次
+    @MainActor
     private func handleDebouncedChange(url: URL) {
         let key = url.standardizedFileURL.path
         pendingRefreshes[key]?.cancel()
