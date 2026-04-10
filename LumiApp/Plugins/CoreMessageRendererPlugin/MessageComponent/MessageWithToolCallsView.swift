@@ -48,7 +48,7 @@ struct MessageWithToolCallsView: View {
         VStack(alignment: .leading, spacing: 8) {
             AppCard(
                 style: .subtle,
-                padding: EdgeInsets(top: 10, leading: 14, bottom: 10, trailing: 14)
+                padding: EdgeInsets(top: 5, leading: 10, bottom: 5, trailing: 10)
             ) {
                 HStack(spacing: 8) {
                     HStack(spacing: 6) {

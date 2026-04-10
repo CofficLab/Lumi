@@ -22,39 +22,44 @@ struct ThinkingProcessView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            MessageHeaderView {
-                HStack(spacing: 6) {
-                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+        AppCard(
+            style: .subtle,
+            padding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+        ) {
+            VStack(alignment: .leading, spacing: 0) {
+                // Header 部分（可点击展开/折叠）
+                MessageHeaderView {
+                    HStack(spacing: 6) {
+                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
 
-                    Text("思考过程")
-                        .font(AppUI.Typography.caption1)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        Text("思考过程")
+                            .font(AppUI.Typography.caption1)
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
 
-                    // 折叠时展示一小段预览，降低存在感但能提示有内容
-                    if !isExpanded, !previewText.isEmpty {
-                        Text(previewText)
-                            .font(AppUI.Typography.caption2)
-                            .foregroundColor(AppUI.Color.semantic.textSecondary.opacity(0.8))
-                            .lineLimit(1)
+                        // 折叠时展示一小段预览
+                        if !isExpanded, !previewText.isEmpty {
+                            Text(previewText)
+                                .font(AppUI.Typography.caption2)
+                                .foregroundColor(AppUI.Color.semantic.textSecondary.opacity(0.8))
+                                .lineLimit(1)
+                        }
                     }
+                } trailing: {
+                    EmptyView()
                 }
-            } trailing: {
-                EmptyView()
-            }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                isExpanded.toggle()
-            }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    isExpanded.toggle()
+                }
 
-            // 思考内容（展开时显示）：深色块 + 固定浅色字，保证任意主题下都清晰可读
-            if isExpanded && !thinkingText.isEmpty {
-                AppCard(
-                    style: .subtle,
-                    padding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
-                ) {
+                // 思考内容（展开时显示）
+                if isExpanded && !thinkingText.isEmpty {
+                    Divider()
+                        .opacity(0.2)
                     Text(thinkingText)
                         .font(AppUI.Typography.code)
                         .foregroundColor(AppUI.Color.semantic.textPrimary)
