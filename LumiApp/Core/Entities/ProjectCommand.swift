@@ -104,7 +104,7 @@ struct CommandFrontmatter {
 
         // 提取 frontmatter 内容
         let frontmatterLines = Array(lines[1 ..< frontmatterEndIndex])
-        let frontmatterString = frontmatterLines.joined(separator: "\n")
+        _ = frontmatterLines.joined(separator: "\n")
 
         // 提取 body
         let bodyStartIndex = frontmatterEndIndex + 1
