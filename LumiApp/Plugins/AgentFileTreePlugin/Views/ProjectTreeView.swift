@@ -22,7 +22,7 @@ struct ProjectTreeView: View {
     @State private var refreshToken: Int = 0
 
     /// Logger
-    private nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree")
+    private nonisolated static let logger = ProjectTreePlugin.logger
 
     var body: some View {
         VStack(spacing: 0) {
@@ -35,29 +35,11 @@ struct ProjectTreeView: View {
             }
         }
         .frame(maxHeight: .infinity)
-        .onChange(of: projectVM.currentProjectPath) { _, newPath in
-            setupWatcher(for: newPath)
-            loadProject(at: newPath)
-        }
-        .onChange(of: projectVM.selectedFileURL) { _, newURL in
-            // 当选中文件变化时，自动展开包含该文件的目录
-            if let url = newURL {
-                expandToFile(url)
-            }
-        }
-        .onAppear {
-            setupWatcher(for: projectVM.currentProjectPath)
-            loadProject(at: projectVM.currentProjectPath)
-        }
-        .onDisappear {
-            watcher?.stopAll()
-            watcher = nil
-        }
-        .onSyncSelectedFile { path in
-            // 监听 syncSelectedFile 通知，确保文件树能同步选中状态
-            let url = URL(fileURLWithPath: path)
-            projectVM.selectFile(at: url)
-        }
+        .onChange(of: projectVM.currentProjectPath, onProjectPathChanged)
+        .onChange(of: projectVM.selectedFileURL, onSelectedFileChanged)
+        .onAppear(perform: onAppear)
+        .onDisappear(perform: onDisappear)
+        .onSyncSelectedFile(perform: onSyncSelectedFile)
     }
 }
 
@@ -113,9 +95,35 @@ extension ProjectTreeView {
     }
 }
 
-// MARK: - Watcher
+// MARK: - Event Handler
 
 extension ProjectTreeView {
+    private func onSyncSelectedFile(path: String) {
+        let url = URL(fileURLWithPath: path)
+        projectVM.selectFile(at: url)
+    }
+
+    private func onProjectPathChanged() {
+        setupWatcher(for: self.projectVM.currentProjectPath)
+        loadProject(at: self.projectVM.currentProjectPath)
+    }
+
+    private func onAppear() {
+        setupWatcher(for: projectVM.currentProjectPath)
+        loadProject(at: projectVM.currentProjectPath)
+    }
+
+    private func onDisappear() {
+        watcher?.stopAll()
+        watcher = nil
+    }
+
+    private func onSelectedFileChanged() {
+        if let url = projectVM.selectedFileURL {
+            expandToFile(url)
+        }
+    }
+
     /// 设置文件系统监听器
     private func setupWatcher(for path: String) {
         // 先停止旧的监听
@@ -188,21 +196,8 @@ extension ProjectTreeView {
                     options: []
                 )
 
-                // 过滤 .DS_Store 和 .git
-                let filtered = contents.filter { url in
-                    let name = url.lastPathComponent
-                    return name != ".DS_Store" && name != ".git"
-                }
-
-                // 排序：文件夹在前
-                let sorted = filtered.sorted { a, b in
-                    let aIsDir = (try? a.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-                    let bIsDir = (try? b.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-                    if aIsDir == bIsDir {
-                        return a.lastPathComponent.localizedStandardCompare(b.lastPathComponent) == .orderedAscending
-                    }
-                    return aIsDir
-                }
+                // 使用 Service 进行过滤和排序
+                let sorted = ProjectTreeFileService.filterAndSortContents(contents)
 
                 await MainActor.run {
                     self.rootURLs = sorted

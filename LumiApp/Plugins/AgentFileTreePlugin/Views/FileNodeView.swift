@@ -1,4 +1,6 @@
 import SwiftUI
+import MagicKit
+import os
 
 /// 文件树节点视图 - 完全独立实现，无外部依赖
 struct FileNodeView: View {
@@ -258,21 +260,7 @@ extension FileNodeView {
         if isDirectory {
             return isExpanded ? "folder.fill" : "folder"
         }
-        return iconForFile(url)
-    }
-
-    /// 根据文件扩展名返回对应的系统图标名称
-    /// - Parameter url: 文件路径
-    /// - Returns: 用于显示的 SF Symbol 名称
-    private func iconForFile(_ url: URL) -> String {
-        let ext = url.pathExtension.lowercased()
-        switch ext {
-        case "swift": return "swift"
-        case "md", "txt", "json", "xml", "yaml", "yml": return "doc.text"
-        case "png", "jpg", "jpeg", "gif", "svg": return "photo"
-        case "pdf": return "doc.richtext"
-        default: return "doc"
-        }
+        return ProjectTreeFileService.getFileIcon(for: url)
     }
 
     /// 根据选中与 hover 状态计算当前行背景色
@@ -320,21 +308,8 @@ extension FileNodeView {
                     options: []
                 )
 
-                // 过滤 .DS_Store 和 .git
-                let filtered = contents.filter { url in
-                    let name = url.lastPathComponent
-                    return name != ".DS_Store" && name != ".git"
-                }
-
-                // 排序：文件夹在前
-                let sorted = filtered.sorted { a, b in
-                    let aIsDir = (try? a.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-                    let bIsDir = (try? b.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-                    if aIsDir == bIsDir {
-                        return a.lastPathComponent.localizedStandardCompare(b.lastPathComponent) == .orderedAscending
-                    }
-                    return aIsDir
-                }
+                // 使用 Service 进行过滤和排序
+                let sorted = ProjectTreeFileService.filterAndSortContents(contents)
 
                 await MainActor.run {
                     self.children = sorted
@@ -355,21 +330,8 @@ extension FileNodeView {
                     options: []
                 )
 
-                // 过滤 .DS_Store 和 .git
-                let filtered = contents.filter { url in
-                    let name = url.lastPathComponent
-                    return name != ".DS_Store" && name != ".git"
-                }
-
-                // 排序：文件夹在前
-                let sorted = filtered.sorted { a, b in
-                    let aIsDir = (try? a.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-                    let bIsDir = (try? b.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-                    if aIsDir == bIsDir {
-                        return a.lastPathComponent.localizedStandardCompare(b.lastPathComponent) == .orderedAscending
-                    }
-                    return aIsDir
-                }
+                // 使用 Service 进行过滤和排序
+                let sorted = ProjectTreeFileService.filterAndSortContents(contents)
 
                 await MainActor.run {
                     self.children = sorted
