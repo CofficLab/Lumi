@@ -150,7 +150,7 @@ struct FileNodeView: View {
 
             // 子节点
             if isDirectory && isExpanded && !children.isEmpty {
-                LazyVStack(spacing: 2) {
+                VStack(spacing: 2) {
                     ForEach(children, id: \.self) { childURL in
                         FileNodeView(
                             url: childURL,
