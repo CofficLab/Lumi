@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import MagicKit
+import AppKit
 
 /// 项目文件树文件服务
 /// 负责处理文件相关的无状态逻辑：图标、名称、过滤、排序等
@@ -119,5 +120,54 @@ enum ProjectTreeFileService {
         // 仅对常见文档类型显示修改日期
         let documentExtensions = ["swift", "m", "h", "md", "txt", "json", "xml", "yaml", "yml"]
         return documentExtensions.contains(ext)
+    }
+
+    /// 在终端中打开指定路径
+    /// - Parameter url: 文件或目录 URL
+    static func openInTerminal(_ url: URL) {
+        let targetPath: String
+        let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+        
+        if isDirectory {
+            targetPath = url.path
+        } else {
+            targetPath = url.deletingLastPathComponent().path
+        }
+
+        // 使用 AppleScript 打开 Terminal 并 cd 到目标目录
+        let script = """
+        tell application "Terminal"
+            activate
+            if (count of windows) > 0 then
+                do script "cd '\(targetPath)'" in front window
+            else
+                do script "cd '\(targetPath)'"
+            end if
+        end tell
+        """
+
+        if let scriptObject = NSAppleScript(source: script) {
+            var errorDict: NSDictionary?
+            scriptObject.executeAndReturnError(&errorDict)
+            if errorDict != nil {
+                // 备选方案：直接打开 Terminal.app
+                NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Terminal.app"))
+            }
+        }
+    }
+
+    /// 在 VS Code 中打开文件或文件夹
+    /// - Parameter url: 文件或文件夹 URL
+    static func openInVSCode(_ url: URL) {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = ["code", url.path]
+
+        do {
+            try process.run()
+        } catch {
+            // 备选方案：使用 NSWorkspace 打开
+            NSWorkspace.shared.open(url)
+        }
     }
 }

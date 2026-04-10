@@ -1,9 +1,11 @@
-import SwiftUI
 import MagicKit
 import os
+import SwiftUI
 
 /// 文件树节点视图 - 完全独立实现，无外部依赖
 struct FileNodeView: View {
+    /// 环境对象，用于获取项目路径
+    @EnvironmentObject private var projectVM: ProjectVM
     /// 日志前缀的表情符号（文件树节点）
     nonisolated static let emoji = "📁"
 
@@ -104,7 +106,7 @@ struct FileNodeView: View {
             .onDrag {
                 // 直接返回 NSURL 对象，这样可以保持真实的文件路径引用
                 // 避免创建临时缓存文件
-                return NSItemProvider(object: url as NSURL)
+                NSItemProvider(object: url as NSURL)
             } preview: {
                 // 拖拽预览
                 DragPreview(fileURL: url)
@@ -252,34 +254,7 @@ struct FileNodeView: View {
     }
 }
 
-// MARK: - View Helpers
-
-extension FileNodeView {
-    /// 当前节点对应的系统图标名称
-    private var iconName: String {
-        if isDirectory {
-            return isExpanded ? "folder.fill" : "folder"
-        }
-        return ProjectTreeFileService.getFileIcon(for: url)
-    }
-
-    /// 根据选中与 hover 状态计算当前行背景色
-    /// - Parameter isSelected: 当前节点是否被选中
-    /// - Returns: 行背景颜色
-    fileprivate func rowBackground(isSelected: Bool) -> Color {
-        if isSelected {
-            return isHovering
-            ? Color.accentColor.opacity(0.28)
-            : Color.accentColor.opacity(0.22)
-        } else {
-            return isHovering
-            ? Color.primary.opacity(0.06)
-            : Color.clear
-        }
-    }
-}
-
-// MARK: - Actions
+// MARK: - Event Handler
 
 extension FileNodeView {
     /// 处理点击事件
@@ -298,6 +273,83 @@ extension FileNodeView {
         onSelect(url)
     }
 
+    /// 处理右键菜单操作
+    private func handleContextMenuAction(_ action: FileContextMenuAction) {
+        switch action {
+        case .newFile:
+            newItemName = ""
+            showNewFileSheet = true
+        case .newFolder:
+            newItemName = ""
+            showNewFolderSheet = true
+        case .rename:
+            newItemName = fileName
+            // 延迟弹出对话框，确保 newItemName 已更新
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                showRenameSheet = true
+            }
+        case .revealInFinder:
+            openInFinder()
+        case .openInVSCode:
+            openInVSCode()
+        case .openInTerminal:
+            openInTerminal()
+        case .delete:
+            showDeleteConfirmation = true
+        case .copyPath:
+            copyPath()
+        case .copyRelativePath:
+            copyRelativePath()
+        }
+    }
+
+    /// 处理刷新令牌变化
+    private func handleRefreshTokenChange(_ newValue: Int) {
+        guard newValue != lastRefreshToken else { return }
+        lastRefreshToken = newValue
+        if isDirectory && isExpanded {
+            reloadChildren()
+        }
+    }
+
+    /// 处理拖拽开始
+    private func handleDragStart() -> NSItemProvider {
+        // 直接返回 NSURL 对象，这样可以保持真实的文件路径引用
+        // 避免创建临时缓存文件
+        return NSItemProvider(object: url as NSURL)
+    }
+}
+
+// MARK: - View Helpers
+
+extension FileNodeView {
+    /// 当前节点对应的系统图标名称
+    private var iconName: String {
+        if isDirectory {
+            return isExpanded ? "folder.fill" : "folder"
+        }
+        return ProjectTreeFileService.getFileIcon(for: url)
+    }
+
+    /// 根据选中与 hover 状态计算当前行背景色
+    /// - Parameter isSelected: 当前节点是否被选中
+    /// - Returns: 行背景颜色
+    fileprivate func rowBackground(isSelected: Bool) -> Color {
+        if isSelected {
+            return isHovering
+                ? Color.accentColor.opacity(0.28)
+                : Color.accentColor.opacity(0.22)
+        } else {
+            return isHovering
+                ? Color.primary.opacity(0.06)
+                : Color.clear
+        }
+    }
+}
+
+// MARK: - Actions
+
+extension FileNodeView {
     /// 加载当前目录下的子节点，并按"目录在前"的规则排序
     private func loadChildren() {
         Task.detached(priority: .userInitiated) {
@@ -315,7 +367,7 @@ extension FileNodeView {
                     self.children = sorted
                 }
             } catch {
-                print("📁 loadChildren error: \(error.localizedDescription)")
+                // 忽略错误
             }
         }
     }
@@ -353,47 +405,12 @@ extension FileNodeView {
 
     /// 在 VS Code 中打开文件/文件夹
     private func openInVSCode() {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = ["code", url.path]
-        
-        do {
-            try process.run()
-            process.terminationHandler = { _ in
-                print("📁 VS Code opened: \(url.path)")
-            }
-        } catch {
-            print("📁 Failed to open VS Code: \(error.localizedDescription)")
-            // 备选方案：使用 NSWorkspace 打开
-            NSWorkspace.shared.open(url)
-        }
+        ProjectTreeFileService.openInVSCode(url)
     }
 
     /// 在终端中打开（打开目录或文件所在目录）
     private func openInTerminal() {
-        let targetPath = isDirectory ? url.path : url.deletingLastPathComponent().path
-        
-        // 使用 AppleScript 打开 Terminal 并 cd 到目标目录
-        let script = """
-        tell application "Terminal"
-            activate
-            if (count of windows) > 0 then
-                do script "cd '\(targetPath)'" in front window
-            else
-                do script "cd '\(targetPath)'"
-            end if
-        end tell
-        """
-        
-        if let scriptObject = NSAppleScript(source: script) {
-            var errorDict: NSDictionary?
-            scriptObject.executeAndReturnError(&errorDict)
-            if let error = errorDict {
-                print("📁 AppleScript error: \(error)")
-                // 备选方案：直接打开 Terminal.app
-                NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Terminal.app"))
-            }
-        }
+        ProjectTreeFileService.openInTerminal(url)
     }
 
     /// 删除文件/文件夹（移到废纸篓）
@@ -402,9 +419,8 @@ extension FileNodeView {
             // 移动到废纸篓
             var resultURL: NSURL?
             try FileManager.default.trashItem(at: url, resultingItemURL: &resultURL)
-            print("📁 Moved to trash: \(url.path)")
         } catch {
-            print("📁 Failed to move to trash: \(error.localizedDescription)")
+            // 忽略错误
         }
     }
 
@@ -419,8 +435,6 @@ extension FileNodeView {
         // 创建空文件（FileManager.createFile 不抛出错误）
         let success = FileManager.default.createFile(atPath: newFileURL.path, contents: nil, attributes: nil)
         if success {
-            print("📁 Created file: \(newFileURL.path)")
-
             // 如果是文件夹且未展开，先展开它
             if isDirectory && !isExpanded {
                 isExpanded = true
@@ -429,8 +443,6 @@ extension FileNodeView {
 
             // 立即重新加载子节点
             reloadChildren()
-        } else {
-            print("📁 Failed to create file: \(newFileURL.path)")
         }
     }
 
@@ -445,7 +457,6 @@ extension FileNodeView {
         do {
             // 创建文件夹
             try FileManager.default.createDirectory(at: newFolderURL, withIntermediateDirectories: false)
-            print("📁 Created folder: \(newFolderURL.path)")
 
             // 如果是文件夹且未展开，先展开它
             if isDirectory && !isExpanded {
@@ -456,7 +467,7 @@ extension FileNodeView {
             // 立即重新加载子节点
             reloadChildren()
         } catch {
-            print("📁 Failed to create folder: \(error.localizedDescription)")
+            // 忽略错误
         }
     }
 
@@ -471,23 +482,29 @@ extension FileNodeView {
         do {
             // 使用 FileManager 移动文件到新路径（即重命名）
             try FileManager.default.moveItem(at: url, to: newURL)
-            print("📁 Renamed: \(url.path) -> \(newURL.path)")
         } catch {
-            print("📁 Failed to rename: \(error.localizedDescription)")
+            // 忽略错误
         }
     }
-}
 
-// MARK: - Preview
+    /// 复制文件路径到剪贴板
+    private func copyPath() {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(url.path, forType: .string)
+    }
 
-#Preview("FileNodeView") {
-    FileNodeView(
-        url: URL(fileURLWithPath: "/tmp"),
-        depth: 0,
-        selectedURL: nil,
-        onSelect: { _ in },
-        onDirectoryExpanded: { _ in },
-        onDirectoryCollapsed: { _ in },
-        refreshToken: 0
-    )
+    /// 复制相对路径到剪贴板
+    private func copyRelativePath() {
+        let rootPath = projectVM.currentProjectPath
+        guard !rootPath.isEmpty else { return }
+
+        let relativePath = url.path
+            .replacingOccurrences(of: rootPath, with: "")
+            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(relativePath, forType: .string)
+    }
 }
