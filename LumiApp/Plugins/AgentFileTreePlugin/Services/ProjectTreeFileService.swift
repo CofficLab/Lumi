@@ -170,4 +170,114 @@ enum ProjectTreeFileService {
             NSWorkspace.shared.open(url)
         }
     }
+
+    /// 复制文件绝对路径到剪贴板
+    /// - Parameter url: 文件 URL
+    static func copyPath(_ url: URL) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(url.path, forType: .string)
+    }
+
+    /// 复制文件相对路径到剪贴板
+    /// - Parameters:
+    ///   - url: 文件 URL
+    ///   - projectPath: 项目根路径
+    static func copyRelativePath(_ url: URL, projectPath: String) {
+        guard !projectPath.isEmpty else { return }
+        let relativePath = url.path.replacingOccurrences(of: projectPath + "/", with: "")
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(relativePath, forType: .string)
+    }
+
+    // MARK: - 文件系统查询
+
+    /// 判断 URL 是否为目录
+    /// - Parameter url: 文件或目录 URL
+    /// - Returns: 是否为目录
+    static func isDirectory(_ url: URL) -> Bool {
+        (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+    }
+
+    /// 读取目录内容（过滤并排序后返回）
+    /// - Parameter url: 目录 URL
+    /// - Returns: 过滤并排序后的子项 URL 列表
+    /// - Throws: 文件系统读取错误
+    static func loadContents(of url: URL) throws -> [URL] {
+        let contents = try FileManager.default.contentsOfDirectory(
+            at: url,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: []
+        )
+        return filterAndSortContents(contents)
+    }
+
+    // MARK: - 文件操作
+
+    /// 在指定目录下创建新文件
+    /// - Parameters:
+    ///   - parentURL: 父目录 URL
+    ///   - name: 新文件名
+    /// - Returns: 创建成功返回新文件 URL，失败返回 nil
+    @discardableResult
+    static func createFile(in parentURL: URL, name: String) -> URL? {
+        guard !name.isEmpty else { return nil }
+        let fileURL = parentURL.appendingPathComponent(name)
+        let success = FileManager.default.createFile(atPath: fileURL.path, contents: nil)
+        return success ? fileURL : nil
+    }
+
+    /// 在指定目录下创建新文件夹
+    /// - Parameters:
+    ///   - parentURL: 父目录 URL
+    ///   - name: 新文件夹名
+    /// - Returns: 创建成功返回新文件夹 URL，失败返回 nil
+    @discardableResult
+    static func createFolder(in parentURL: URL, name: String) -> URL? {
+        guard !name.isEmpty else { return nil }
+        let folderURL = parentURL.appendingPathComponent(name)
+        do {
+            try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: false)
+            return folderURL
+        } catch {
+            return nil
+        }
+    }
+
+    /// 重命名文件或文件夹
+    /// - Parameters:
+    ///   - url: 原始 URL
+    ///   - newName: 新名称
+    /// - Returns: 重命名成功返回新 URL，失败返回 nil
+    @discardableResult
+    static func renameItem(at url: URL, newName: String) -> URL? {
+        guard !newName.isEmpty else { return nil }
+        let newURL = url.deletingLastPathComponent().appendingPathComponent(newName)
+        do {
+            try FileManager.default.moveItem(at: url, to: newURL)
+            return newURL
+        } catch {
+            return nil
+        }
+    }
+
+    /// 将文件或文件夹移入废纸篓
+    /// - Parameter url: 要删除的 URL
+    /// - Returns: 是否成功
+    @discardableResult
+    static func trashItem(at url: URL) -> Bool {
+        do {
+            try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    // MARK: - 外部应用
+
+    /// 在 Finder 中显示文件
+    /// - Parameter url: 文件或目录 URL
+    static func openInFinder(_ url: URL) {
+        NSWorkspace.shared.selectFile(url.path, inFileViewerRootedAtPath: "")
+    }
 }

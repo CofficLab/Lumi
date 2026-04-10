@@ -62,7 +62,7 @@ struct FileNodeView: View {
 
     /// 是否文件夹
     private var isDirectory: Bool {
-        (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+        ProjectTreeFileService.isDirectory(url)
     }
 
     /// 文件名（不含路径）
@@ -89,92 +89,6 @@ struct FileNodeView: View {
     // MARK: - Body
 
     var body: some View {
-        if isRoot {
-            rootBody
-        } else {
-            normalNodeBody
-        }
-    }
-
-    // MARK: - Root Node Body
-
-    @ViewBuilder
-    private var rootBody: some View {
-        VStack(spacing: 0) {
-            // 根节点本身（项目名称）
-            rootNodeRow
-
-            // 子节点列表
-            if isLoading {
-                FileTreeLoadingView()
-            } else if children.isEmpty {
-                FileTreeEmptyView()
-            } else if isExpanded {
-                LazyVStack(spacing: 0) {
-                    ForEach(children, id: \.self) { childURL in
-                        FileNodeView(
-                            url: childURL,
-                            depth: 1,
-                            selectedURL: selectedURL,
-                            onSelect: onSelect,
-                            refreshToken: refreshToken
-                        )
-                    }
-                }
-            }
-        }
-        .onAppear {
-            if !isExpanded { isExpanded = true }
-            if children.isEmpty && !isLoading { loadChildren() }
-            setupWatcherIfNeeded()
-        }
-        .onDisappear {
-            watcher?.stopAll()
-            watcher = nil
-        }
-        .onChange(of: refreshToken) { _, newValue in
-            handleRefreshTokenChange(newValue)
-        }
-    }
-
-    /// 根节点行视图
-    @ViewBuilder
-    private var rootNodeRow: some View {
-        HStack(spacing: 6) {
-            Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                .font(.system(size: 8, weight: .semibold))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
-                .frame(width: 10)
-
-            Image(systemName: "folder.fill")
-                .font(.system(size: 10))
-                .foregroundColor(.accentColor)
-                .frame(width: 14)
-
-            Text(url.lastPathComponent)
-                .font(.system(size: 10, weight: .medium))
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
-                .lineLimit(1)
-
-            Spacer()
-        }
-        .padding(.vertical, 4)
-        .padding(.horizontal, 6)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isExpanded.toggle()
-                if isExpanded && children.isEmpty && !isLoading {
-                    loadChildren()
-                }
-            }
-        }
-    }
-
-    // MARK: - Normal Node Body
-
-    @ViewBuilder
-    private var normalNodeBody: some View {
         let isSelected = selectedURL == url
 
         VStack(alignment: .leading, spacing: 0) {
@@ -365,12 +279,7 @@ extension FileNodeView {
         let currentURL = url
         Task.detached(priority: .userInitiated) { [self] in
             do {
-                let contents = try FileManager.default.contentsOfDirectory(
-                    at: currentURL,
-                    includingPropertiesForKeys: [.isDirectoryKey],
-                    options: []
-                )
-                let sorted = ProjectTreeFileService.filterAndSortContents(contents)
+                let sorted = try ProjectTreeFileService.loadContents(of: currentURL)
                 await MainActor.run { [self] in
                     self.children = sorted
                     self.isLoading = false
@@ -387,34 +296,29 @@ extension FileNodeView {
     private func reloadChildren() { loadChildren() }
 
     private func createNewFile() {
-        guard !newItemName.isEmpty else { return }
-        let fileURL = url.appendingPathComponent(newItemName)
-        FileManager.default.createFile(atPath: fileURL.path, contents: nil)
+        ProjectTreeFileService.createFile(in: url, name: newItemName)
         reloadChildren()
     }
 
     private func createNewFolder() {
-        guard !newItemName.isEmpty else { return }
-        let folderURL = url.appendingPathComponent(newItemName)
-        try? FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: false)
+        ProjectTreeFileService.createFolder(in: url, name: newItemName)
         reloadChildren()
     }
 
     private func renameItem() {
-        guard !newItemName.isEmpty else { return }
-        let newURL = url.deletingLastPathComponent().appendingPathComponent(newItemName)
-        try? FileManager.default.moveItem(at: url, to: newURL)
-        onSelect(newURL)
+        if let newURL = ProjectTreeFileService.renameItem(at: url, newName: newItemName) {
+            onSelect(newURL)
+        }
         reloadChildren()
     }
 
     private func deleteItem() {
-        try? FileManager.default.trashItem(at: url, resultingItemURL: nil)
+        ProjectTreeFileService.trashItem(at: url)
         reloadChildren()
     }
 
     private func openInFinder() {
-        NSWorkspace.shared.selectFile(url.path, inFileViewerRootedAtPath: "")
+        ProjectTreeFileService.openInFinder(url)
     }
 
     private func openInVSCode() {
@@ -426,16 +330,11 @@ extension FileNodeView {
     }
 
     private func copyPath() {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(url.path, forType: .string)
+        ProjectTreeFileService.copyPath(url)
     }
 
     private func copyRelativePath() {
-        let projectPath = projectVM.currentProjectPath
-        guard !projectPath.isEmpty else { return }
-        let relativePath = url.path.replacingOccurrences(of: projectPath + "/", with: "")
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(relativePath, forType: .string)
+        ProjectTreeFileService.copyRelativePath(url, projectPath: projectVM.currentProjectPath)
     }
 }
 
