@@ -132,7 +132,7 @@ actor PromptService: SuperLog {
     /// 欢迎消息（未选择项目时）
     func getWelcomeMessage() -> String {
         """
-        👋 Welcome to Dev Assistant!
+        Welcome to Dev Assistant!
 
         Before we start, please select a project to work on. You can:
 
@@ -214,67 +214,14 @@ actor PromptService: SuperLog {
     ///   - language: 语言偏好
     ///   - conversationId: 会话 ID（用于显示当前会话标识）
     func getEmptySessionWelcomeMessage(projectName: String? = nil, projectPath: String? = nil, language: LanguagePreference = .chinese, conversationId: UUID? = nil) -> String {
-        // 构建项目上下文描述
-        let projectContext: String
-        if let name = projectName, let path = projectPath, !name.isEmpty {
-            projectContext = """
-            **当前项目**: \(name)
-            **项目路径**: \(path)
-            """
-        } else {
-            projectContext = "**项目**: 未选择"
-        }
-
-        // 格式化当前时间
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy 年 MM 月 dd 日 HH:mm"
-        let currentTime = dateFormatter.string(from: Date())
-
-        // 构建会话 ID 显示
-        let sessionIdDisplay: String
-        if let id = conversationId {
-            let shortId = id.uuidString.prefix(8)
-            sessionIdDisplay = "**会话 ID**: `\(shortId)`\n"
-        } else {
-            sessionIdDisplay = ""
-        }
-
         switch language {
         case .chinese:
             return """
-            👋 你好！我是你的智能助手 Lumi。
-
-            \(projectContext)
-            
-            **当前时间**: \(currentTime)  
-            
-            \(sessionIdDisplay)
-            我可以帮你：
-            - **分析代码** - 阅读和理解项目结构
-            - **执行命令** - 运行构建、测试和脚本
-            - **修改文件** - 编辑代码和创建新文件
-            - **解答问题** - 提供技术支持和建议
-
-            请告诉我你需要什么帮助？
+            你好！请告诉我你需要什么帮助。
             """
         case .english:
-            dateFormatter.dateFormat = "MMMM dd, yyyy HH:mm"
-            let currentTimeEN = dateFormatter.string(from: Date())
             return """
-            👋 Hello! I'm your intelligent assistant, Lumi.
-
-            \(projectContext)  
-            
-            **Current Time**: \(currentTimeEN)  
-            
-            \(sessionIdDisplay)
-            I can help you:
-            - **Analyze code** - Read and understand project structure
-            - **Execute commands** - Run builds, tests, and scripts
-            - **Modify files** - Edit code and create new files
-            - **Answer questions** - Provide technical support and advice
-
-            How can I help you today?
+            Hello! How can I help you today?
             """
         }
     }
