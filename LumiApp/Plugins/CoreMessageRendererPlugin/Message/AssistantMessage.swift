@@ -1,8 +1,6 @@
 import MagicKit
 import SwiftUI
 
-// MARK: - Assistant Message
-//
 /// 负责完整渲染一条助手消息（包含头部、思考过程、工具调用与正文）
 struct AssistantMessage: View {
     let message: ChatMessage

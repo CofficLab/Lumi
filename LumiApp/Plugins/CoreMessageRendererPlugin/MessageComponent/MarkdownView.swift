@@ -16,7 +16,6 @@ extension EnvironmentValues {
 }
 
 /// Markdown 消息视图，负责渲染聊天消息内容
-/// 使用内置原生渲染（基于 swift-markdown AST）
 struct MarkdownView: View {
     let message: ChatMessage
     let showRawMessage: Bool
@@ -41,7 +40,7 @@ struct MarkdownView: View {
     }
 
     private var nativeMarkdownContent: some View {
-        NativeMarkdownContent(
+        MarkdownContent(
             content: message.content
         )
         .id("native-\(message.id.uuidString)-\(renderMetadata.contentHash)")

@@ -2,8 +2,8 @@ import SwiftUI
 import MagicKit
 import Markdown
 
-/// 原生 Markdown 渲染视图（自研块级解析 + 轻量行内样式）
-struct NativeMarkdownContent: View {
+/// Markdown 渲染视图
+struct MarkdownContent: View {
     let content: String
 
     @Environment(\.preferOuterScroll) private var preferOuterScroll
