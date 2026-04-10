@@ -15,6 +15,9 @@ struct FileNodeView: View {
     /// 外部刷新令牌，变化时重新加载子节点
     let refreshToken: Int
 
+    /// 项目根目录路径，用于计算相对路径和存储展开状态
+    let projectRootPath: String
+
     /// 本地展开状态
     @State private var isExpanded: Bool = false
 
@@ -59,13 +62,22 @@ struct FileNodeView: View {
         depth: Int,
         selectedURL: URL? = nil,
         onSelect: @escaping (URL) -> Void,
-        refreshToken: Int = 0
+        refreshToken: Int = 0,
+        projectRootPath: String = ""
     ) {
         self.url = url
         self.depth = depth
         self.selectedURL = selectedURL
         self.onSelect = onSelect
         self.refreshToken = refreshToken
+        self.projectRootPath = projectRootPath
+
+        // 从 store 恢复展开状态
+        if !projectRootPath.isEmpty {
+            let relativePath = url.path.replacingOccurrences(of: projectRootPath, with: "")
+            let store = AgentFileTreePluginLocalStore.shared
+            _isExpanded = State(initialValue: store.expandedPaths(for: projectRootPath).contains(relativePath))
+        }
     }
 
     // MARK: - Body
@@ -102,8 +114,9 @@ struct FileNodeView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(rowBackground(isSelected: isSelected))
             .contentShape(Rectangle())
-            .onDrag { NSItemProvider(object: url as NSURL) } preview: {
-                DragPreview(fileURL: url)
+            .overlay {
+                // 使用 AppKit 原生拖拽 overlay，避免 SwiftUI .onDrag 将文件复制到缓存目录
+                FileDragSourceOverlay(fileURL: url)
             }
             .contextMenu { contextMenuContent }
             .onTapGesture { handleTap() }
@@ -143,10 +156,17 @@ struct FileNodeView: View {
                             depth: depth + 1,
                             selectedURL: selectedURL,
                             onSelect: onSelect,
-                            refreshToken: refreshToken
+                            refreshToken: refreshToken,
+                            projectRootPath: projectRootPath
                         )
                     }
                 }
+            }
+        }
+        .onAppear {
+            // 恢复展开状态时，children 尚未加载，需要补加载
+            if isDirectory && isExpanded && children.isEmpty {
+                loadChildren()
             }
         }
         .onChange(of: refreshToken) { _, newValue in
@@ -196,6 +216,7 @@ struct FileNodeView: View {
     private func handleTap() {
         if isDirectory {
             isExpanded.toggle()
+            persistExpansionState()
             if isExpanded && children.isEmpty {
                 loadChildren()
             }
@@ -232,6 +253,25 @@ struct FileNodeView: View {
 // MARK: - Actions
 
 extension FileNodeView {
+    // MARK: - Expansion Persistence
+
+    /// 当前节点相对于项目根目录的路径
+    private var relativePath: String {
+        url.path.replacingOccurrences(of: projectRootPath, with: "")
+    }
+
+    /// 将当前展开/折叠状态持久化到 store
+    private func persistExpansionState() {
+        guard !projectRootPath.isEmpty else { return }
+        let store = AgentFileTreePluginLocalStore.shared
+        if isExpanded {
+            store.addExpandedPath(relativePath, for: projectRootPath)
+        } else {
+            store.removeExpandedPath(relativePath, for: projectRootPath)
+        }
+    }
+
+    // MARK: - Data Loading
     private func loadChildren() {
         let currentURL = url
         Task.detached(priority: .userInitiated) { [self] in

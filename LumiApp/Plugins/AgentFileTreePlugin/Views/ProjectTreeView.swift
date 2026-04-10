@@ -22,7 +22,8 @@ struct ProjectTreeView: View {
                         onSelect: { selectedURL in
                             projectVM.selectFile(at: selectedURL)
                         },
-                        refreshToken: rootRefreshToken
+                        refreshToken: rootRefreshToken,
+                        projectRootPath: projectVM.currentProjectPath
                     )
                 }
             }
