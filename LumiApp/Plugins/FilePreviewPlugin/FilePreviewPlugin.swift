@@ -73,6 +73,11 @@ actor FilePreviewPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
+    /// Add root view overlay - 监听文件选择变化
+    @MainActor func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
+        AnyView(FilePreviewRootOverlay(content: content()))
+    }
+
     /// Add detail view - 显示文件预览
     /// - Returns: FilePreviewView to be shown in the detail panel
     @MainActor func addDetailView() -> AnyView? {
