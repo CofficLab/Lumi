@@ -77,7 +77,6 @@ struct InputAreaView: View, SuperLog {
             .accessibilityHint(String(localized: "Chat Toolbar Hint", table: "AgentInput"))
         }
         .background(.background)
-        .cornerRadius(12)
         .overlay(inputAreaBorderOverlay)
         .overlay {
             if !canChat {
