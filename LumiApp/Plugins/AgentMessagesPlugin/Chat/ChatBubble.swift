@@ -37,11 +37,7 @@ struct ChatBubble: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
-            // MARK: - Avatar
-            
             AvatarChatView(role: message.role, isToolOutput: message.isToolOutput)
-
-            // MARK: - Content
             
             // 特殊情况：流式消息（UI 层特殊状态，不通过渲染器处理）
             if message.role == .assistant && isStreaming {
