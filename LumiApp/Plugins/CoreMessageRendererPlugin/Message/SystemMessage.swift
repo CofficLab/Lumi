@@ -13,11 +13,8 @@ struct SystemMessage: View {
     var body: some View {
         Group {
             if message.isToolOutput {
-                // 工具输出消息：使用专用样式，不展示 System 头部
-                VStack(alignment: .leading, spacing: 4) {
-                    RoleLabel.tool
-                    ToolOutputView(message: message)
-                }
+                // 工具输出消息：使用专用样式（ToolOutputView 自带头像 header）
+                ToolOutputView(message: message)
             } else if message.content == ChatMessage.loadingLocalModelSystemContentKey
                 || message.content == ChatMessage.loadingLocalModelDoneSystemContentKey {
                 // 专门的「正在加载/已就绪」本地模型系统消息，展示模型基本信息
@@ -45,10 +42,13 @@ struct SystemMessage: View {
 
     private var header: some View {
         MessageHeaderView {
-            AppIdentityRow(
-                title: "System",
-                titleColor: AppUI.Color.semantic.textSecondary
-            )
+            HStack(alignment: .center, spacing: 6) {
+                AvatarView.system
+                AppIdentityRow(
+                    title: "System",
+                    titleColor: AppUI.Color.semantic.textSecondary
+                )
+            }
         } trailing: {
             HStack(alignment: .center, spacing: 12) {
                 Text(formatTimestamp(message.timestamp))

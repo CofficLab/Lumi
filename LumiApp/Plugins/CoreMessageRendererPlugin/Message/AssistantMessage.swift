@@ -41,11 +41,8 @@ struct AssistantMessage: View {
     var body: some View {
         Group {
             if message.isToolOutput {
-                // 助手角色下的工具输出消息：使用工具视图渲染
-                VStack(alignment: .leading, spacing: 4) {
-                    RoleLabel.tool
-                    ToolOutputView(message: message)
-                }
+                // 助手角色下的工具输出消息：使用工具视图渲染（ToolOutputView 自带头像 header）
+                ToolOutputView(message: message)
             } else {
                 VStack(alignment: .leading, spacing: 4) {
                     headerSection
@@ -78,7 +75,10 @@ struct AssistantMessage: View {
 
     private var headerSection: some View {
         MessageHeaderView {
-            AppIdentityRow(title: "Lumi", metadata: identityMetadata)
+            HStack(alignment: .center, spacing: 6) {
+                AvatarView.assistant
+                AppIdentityRow(title: "Lumi", metadata: identityMetadata)
+            }
         } trailing: {
             HStack(alignment: .center, spacing: 12) {
                 // 复制按钮

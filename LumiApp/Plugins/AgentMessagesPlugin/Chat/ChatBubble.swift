@@ -1,10 +1,6 @@
 import SwiftUI
 
-// MARK: - Chat Bubble
-
 /// 聊天气泡组件，用于显示用户消息、助手回复和工具输出
-///
-/// **新架构**：通过 MessageRendererVM 获取渲染视图，不再硬编码判断消息类型。
 struct ChatBubble: View {
     /// 消息对象
     let message: ChatMessage
@@ -36,38 +32,20 @@ struct ChatBubble: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
-            AvatarChatView(role: message.role, isToolOutput: message.isToolOutput)
-            
-            // 特殊情况：流式消息（UI 层特殊状态，不通过渲染器处理）
-            if message.role == .assistant && isStreaming {
-                StreamingAssistantRowView(message: message)
-                    .messageBubbleStyle(role: message.role, isError: message.isError)
+        ZStack {
+            if let renderer = messageRendererVM.findRenderer(for: message) {
+                renderer.render(message: message, showRawMessage: $showRawMessage)
             } else {
-                // 使用环境变量中的 VM 获取渲染视图（新架构）
-                if let renderer = messageRendererVM.findRenderer(for: message) {
-                    renderer.render(message: message, showRawMessage: $showRawMessage)
-                } else {
-                    // 兜底：如果没有匹配的渲染器，显示原始内容
-                    fallbackView
+                // 兜底：如果没有匹配的渲染器，显示原始内容
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(message.content)
+                        .font(.body)
+                        .foregroundColor(.primary)
                 }
+                .padding()
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(8)
             }
-
-            Spacer()
         }
-    }
-    
-    // MARK: - Fallback View
-    
-    /// 兜底视图：当注册表中没有匹配的渲染器时使用
-    private var fallbackView: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(message.content)
-                .font(.body)
-                .foregroundColor(.primary)
-        }
-        .padding()
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(8)
     }
 }

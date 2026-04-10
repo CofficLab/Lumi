@@ -38,7 +38,8 @@ struct UserMessage: View {
 
     private var header: some View {
         MessageHeaderView {
-            HStack(alignment: .center, spacing: 4) {
+            HStack(alignment: .center, spacing: 6) {
+                AvatarView.user
                 Text(currentUserName)
                     .font(DesignTokens.Typography.caption1)
                     .fontWeight(.medium)
