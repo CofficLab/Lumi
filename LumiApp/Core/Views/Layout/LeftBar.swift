@@ -5,10 +5,10 @@ import SwiftUI
 /// 顶部显示模式切换，下方根据不同模式显示不同内容
 struct LeftSidebar: View {
     @Binding var sidebarVisibility: Bool
-    @State private var selectedSidebarTabId: String = ""
-
+    
     @EnvironmentObject var app: GlobalVM
     @EnvironmentObject var pluginProvider: PluginVM
+    @EnvironmentObject var layoutVM: LayoutVM
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
@@ -47,6 +47,13 @@ struct LeftSidebar: View {
                 restoreAppModeNavigation()
             } else {
                 restoreAgentModeSidebarTabSelection()
+            }
+        }
+        .onChange(of: pluginProvider.getSidebarTabItems()) { _, newItems in
+            // 当侧边栏标签列表变化时，恢复选中状态
+            if app.selectedMode == .agent {
+                let availableIds = newItems.map { $0.id }
+                layoutVM.restoreSelectedTab(from: availableIds)
             }
         }
     }
@@ -102,8 +109,8 @@ struct LeftSidebar: View {
 
     private var agentModeContent: some View {
         let sidebarItems = pluginProvider.getSidebarTabItems()
-        let selectedId = sidebarItems.contains(where: { $0.id == selectedSidebarTabId })
-            ? selectedSidebarTabId
+        let selectedId = sidebarItems.contains(where: { $0.id == layoutVM.selectedAgentSidebarTabId })
+            ? layoutVM.selectedAgentSidebarTabId
             : (sidebarItems.first?.id ?? "")
 
         return Group {
@@ -120,9 +127,8 @@ struct LeftSidebar: View {
                             },
                             selectedTab: Binding(
                                 get: { selectedId },
-                                set: {
-                                    selectedSidebarTabId = $0
-                                    AppSettingStore.saveSelectedAgentSidebarTabId($0)
+                                set: { newTabId in
+                                    layoutVM.selectAgentSidebarTab(newTabId)
                                 }
                             ),
                             showText: false  // Agent 模式只显示图标，不显示文字
@@ -168,21 +174,8 @@ struct LeftSidebar: View {
     /// 恢复 Agent 模式下上次选中的侧边栏 Tab
     private func restoreAgentModeSidebarTabSelection() {
         let sidebarItems = pluginProvider.getSidebarTabItems()
-
-        guard sidebarItems.isNotEmpty else {
-            selectedSidebarTabId = ""
-            return
-        }
-
-        if let savedTabId = AppSettingStore.loadSelectedAgentSidebarTabId(),
-           sidebarItems.contains(where: { $0.id == savedTabId }) {
-            selectedSidebarTabId = savedTabId
-            return
-        }
-
-        let fallbackTabId = sidebarItems[0].id
-        selectedSidebarTabId = fallbackTabId
-        AppSettingStore.saveSelectedAgentSidebarTabId(fallbackTabId)
+        let availableIds = sidebarItems.map { $0.id }
+        layoutVM.restoreSelectedTab(from: availableIds)
     }
 
     // MARK: - 辅助视图

@@ -35,18 +35,26 @@ import Combine
 /// ```
 @MainActor
 final class PluginVM: ObservableObject, SuperLog {
-    struct SidebarTabItem: Identifiable {
+    struct SidebarTabItem: Identifiable, Equatable {
         let id: String
         let title: String
         let icon: String
         let view: AnyView
+        
+        static func == (lhs: SidebarTabItem, rhs: SidebarTabItem) -> Bool {
+            lhs.id == rhs.id
+        }
     }
 
-    struct AgentDetailEntry: Identifiable {
+    struct AgentDetailEntry: Identifiable, Equatable {
         let id: String
         let title: String
         let icon: String
         let view: AnyView
+        
+        static func == (lhs: AgentDetailEntry, rhs: AgentDetailEntry) -> Bool {
+            lhs.id == rhs.id
+        }
     }
     /// 全局单例
     ///
