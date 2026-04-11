@@ -3,13 +3,10 @@ import SwiftUI
 
 struct TerminalSessionContainerView: View {
     @ObservedObject var session: TerminalSession
-    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         NativeTerminalHostView(session: session)
-            .background(colorScheme == .dark
-                ? Color(red: 0.11, green: 0.11, blue: 0.12)
-                : .white
-            )
+        // 背景色由 LumiTerminalView 的 nativeBackgroundColor 管理，
+        // 与编辑器主题保持同步，无需额外 SwiftUI 背景
     }
 }

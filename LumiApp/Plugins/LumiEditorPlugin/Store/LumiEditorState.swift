@@ -225,6 +225,13 @@ final class LumiEditorState: ObservableObject {
         themePreset = preset
         currentTheme = LumiEditorThemeAdapter.theme(from: preset)
         persistConfig()
+
+        // 通知终端插件同步更新颜色
+        NotificationCenter.default.post(
+            name: .lumiEditorThemeDidChange,
+            object: nil,
+            userInfo: ["theme": preset]
+        )
     }
     
     // MARK: - File Loading

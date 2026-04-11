@@ -21,9 +21,6 @@ struct LumiEditorRootView: View {
                 
                 // 编辑器主体
                 editorContent
-                
-                // 底部状态栏
-                LumiEditorStatusBarView(state: state)
             } else {
                 // 空状态
                 emptyState

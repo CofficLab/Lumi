@@ -329,9 +329,6 @@
         }
       }
     },
-    "%lld lines" : {
-
-    },
     "%lld 个项目" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2851,16 +2848,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "延遲"
-          }
-        }
-      }
-    },
-    "Ln %lld, Col %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Ln %1$lld, Col %2$lld"
           }
         }
       }
