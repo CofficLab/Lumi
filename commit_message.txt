@@ -1,1 +1,0 @@
-feat(i18n): add antigravity plugin localization entries
