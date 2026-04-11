@@ -51,6 +51,11 @@ actor LumiEditorPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
+    /// 包裹 RootView，确保文件选择监听始终生效
+    @MainActor func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
+        AnyView(LumiEditorRootOverlay(content: content()))
+    }
+
     /// Add detail view - 显示代码编辑器（内含状态栏）
     @MainActor func addDetailView() -> AnyView? {
         AnyView(LumiEditorRootView())

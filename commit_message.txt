@@ -1,0 +1,1 @@
+feat(editor): add root view wrapper for consistent file selection listening
