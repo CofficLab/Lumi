@@ -56,7 +56,7 @@ struct TerminalMainView: View {
             }
         }
         .onAppear {
-            viewModel.updateDefaultWorkingDirectory(currentProjectPathForTerminal)
+            viewModel.ensureInitialSession(workingDirectory: currentProjectPathForTerminal)
         }
         .onChange(of: projectVM.currentProjectPath) { _, _ in
             viewModel.updateDefaultWorkingDirectory(currentProjectPathForTerminal)

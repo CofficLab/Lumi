@@ -19,6 +19,9 @@
 		0B1A4F8F2F662D8500F15618 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F8E2F662D8500F15618 /* MLXLMCommon */; };
 		0B1A4F912F662D8500F15618 /* MLXVLM in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F902F662D8500F15618 /* MLXVLM */; };
 		0B2F7D682F3A301D00AD7E94 /* LumiFinder.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		0B4548682F89F3B500C6B7C8 /* CodeEditSourceEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 0B4548672F89F3B500C6B7C8 /* CodeEditSourceEditor */; };
+		0B45486B2F89F3C200C6B7C8 /* CodeEditTextView in Frameworks */ = {isa = PBXBuildFile; productRef = 0B45486A2F89F3C200C6B7C8 /* CodeEditTextView */; };
+		0B45486E2F89F49C00C6B7C8 /* CodeEditLanguages in Frameworks */ = {isa = PBXBuildFile; productRef = 0B45486D2F89F49C00C6B7C8 /* CodeEditLanguages */; };
 		0B8027C42F6C4E7F007FD39D /* MagicKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B8027C32F6C4E7F007FD39D /* MagicKit */; };
 		0BBB11E02F85467D00F53902 /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 0BBB11DF2F85467D00F53902 /* SwiftTerm */; };
 		0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE04A742F409A6E0028FDF4 /* MCP */; };
@@ -207,9 +210,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0B45486B2F89F3C200C6B7C8 /* CodeEditTextView in Frameworks */,
+				0B45486E2F89F49C00C6B7C8 /* CodeEditLanguages in Frameworks */,
 				0BBB11E02F85467D00F53902 /* SwiftTerm in Frameworks */,
 				0B1A4F892F662D8500F15618 /* MLXOptimizers in Frameworks */,
 				0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */,
+				0B4548682F89F3B500C6B7C8 /* CodeEditSourceEditor in Frameworks */,
 				0B1A4F812F662D8500F15618 /* MLXFFT in Frameworks */,
 				F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */,
 				F5485E322F7A077B00566188 /* CodeEditor in Frameworks */,
@@ -352,6 +358,9 @@
 				F5BE65D02F6BB1130091C1FD /* Markdown */,
 				F5485E312F7A077B00566188 /* CodeEditor */,
 				0BBB11DF2F85467D00F53902 /* SwiftTerm */,
+				0B4548672F89F3B500C6B7C8 /* CodeEditSourceEditor */,
+				0B45486A2F89F3C200C6B7C8 /* CodeEditTextView */,
+				0B45486D2F89F49C00C6B7C8 /* CodeEditLanguages */,
 			);
 			productName = "SwiftUI-Template";
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -426,6 +435,9 @@
 				F5BE65CF2F6BB1130091C1FD /* XCRemoteSwiftPackageReference "swift-markdown" */,
 				F5485E302F7A077B00566188 /* XCRemoteSwiftPackageReference "CodeEditor" */,
 				0BBB11DE2F85467D00F53902 /* XCRemoteSwiftPackageReference "SwiftTerm" */,
+				0B4548662F89F3B400C6B7C8 /* XCRemoteSwiftPackageReference "CodeEditSourceEditor" */,
+				0B4548692F89F3C200C6B7C8 /* XCRemoteSwiftPackageReference "CodeEditTextView" */,
+				0B45486C2F89F49C00C6B7C8 /* XCRemoteSwiftPackageReference "CodeEditLanguages" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -1019,6 +1031,30 @@
 				kind = branch;
 			};
 		};
+		0B4548662F89F3B400C6B7C8 /* XCRemoteSwiftPackageReference "CodeEditSourceEditor" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/CodeEditApp/CodeEditSourceEditor";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.15.2;
+			};
+		};
+		0B4548692F89F3C200C6B7C8 /* XCRemoteSwiftPackageReference "CodeEditTextView" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/CodeEditApp/CodeEditTextView";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.12.0;
+			};
+		};
+		0B45486C2F89F49C00C6B7C8 /* XCRemoteSwiftPackageReference "CodeEditLanguages" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/CodeEditApp/CodeEditLanguages";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.1.20;
+			};
+		};
 		0BBB11DE2F85467D00F53902 /* XCRemoteSwiftPackageReference "SwiftTerm" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/migueldeicaza/SwiftTerm";
@@ -1139,6 +1175,21 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0B1A4F922F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
 			productName = MLXVLM;
+		};
+		0B4548672F89F3B500C6B7C8 /* CodeEditSourceEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B4548662F89F3B400C6B7C8 /* XCRemoteSwiftPackageReference "CodeEditSourceEditor" */;
+			productName = CodeEditSourceEditor;
+		};
+		0B45486A2F89F3C200C6B7C8 /* CodeEditTextView */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B4548692F89F3C200C6B7C8 /* XCRemoteSwiftPackageReference "CodeEditTextView" */;
+			productName = CodeEditTextView;
+		};
+		0B45486D2F89F49C00C6B7C8 /* CodeEditLanguages */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B45486C2F89F49C00C6B7C8 /* XCRemoteSwiftPackageReference "CodeEditLanguages" */;
+			productName = CodeEditLanguages;
 		};
 		0B8027C32F6C4E7F007FD39D /* MagicKit */ = {
 			isa = XCSwiftPackageProductDependency;

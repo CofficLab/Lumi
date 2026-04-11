@@ -52,6 +52,7 @@ final class RootViewContainer: ObservableObject {
     let conversationSendStatusVM: ConversationStatusVM
     let projectContextRequestVM: ProjectContextRequestVM
 
+    let gitVM: GitVM
     let agentSessionConfig: LLMVM
     let captureThinkingContent: Bool
 
@@ -151,6 +152,7 @@ final class RootViewContainer: ObservableObject {
         // Agent 配置
         // ========================================
 
+        self.gitVM = GitVM()
         self.agentSessionConfig = LLMVM(llmService: llmService)
 
         self.toolExecutionService = ToolExecutionService(toolService: toolService)

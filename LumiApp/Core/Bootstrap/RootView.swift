@@ -66,6 +66,7 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(container.chatTimelineViewModel)
             .environmentObject(container.conversationSendStatusVM)
             .environmentObject(container.projectContextRequestVM)
+            .environmentObject(container.gitVM)
             .environmentObject(container.mystiqueThemeManager)
             .modelContainer(container.modelContainer)
             .onAppear(perform: onAppear)

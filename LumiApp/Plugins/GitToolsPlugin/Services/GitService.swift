@@ -161,13 +161,94 @@ final class GitService: @unchecked Sendable, SuperLog {
         return logs
     }
 
+    // MARK: - Commit Detail
+
+    /// 获取指定 commit 的详细信息（包含完整消息体）
+    func getCommitDetail(path: String?, hash: String) async throws -> GitCommitDetail {
+        let workDir = path.map { URL(fileURLWithPath: $0) } ?? URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+
+        // 获取 commit 详细信息：hash, author, email, date, subject, body
+        let format = "%H|%an|%ae|%ai|%s%n%n%b"
+        let args = ["log", "-1", "--pretty=format:\(format)", hash]
+        let output = try await runGitCommand(args: args, in: workDir)
+
+        let lines = output.components(separatedBy: "\n")
+        guard let firstLine = lines.first else {
+            throw NSError(domain: "GitService", code: -1, userInfo: [NSLocalizedDescriptionKey: "无法解析 commit 信息"])
+        }
+
+        let parts = firstLine.components(separatedBy: "|")
+        guard parts.count >= 5 else {
+            throw NSError(domain: "GitService", code: -1, userInfo: [NSLocalizedDescriptionKey: "commit 格式不正确"])
+        }
+
+        let commitHash = parts[0]
+        let author = parts[1]
+        let email = parts[2]
+        let date = parts[3]
+        let message = parts.dropFirst(4).joined(separator: "|")
+
+        // body 为第一行之后的所有内容
+        let body = lines.dropFirst().joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // 获取 diff 统计
+        let statsArgs = ["show", "--numstat", "--format=", hash]
+        var stats: GitDiffStats? = nil
+        do {
+            let statsOutput = try await runGitCommand(args: statsArgs, in: workDir)
+            var filesChanged = 0
+            var insertions = 0
+            var deletions = 0
+
+            for line in statsOutput.components(separatedBy: "\n").filtering({ !$0.isEmpty }) {
+                let statParts = line.components(separatedBy: "\t")
+                if statParts.count >= 3 {
+                    filesChanged += 1
+                    if statParts[0] != "-" {
+                        insertions += Int(statParts[0]) ?? 0
+                    }
+                    if statParts[1] != "-" {
+                        deletions += Int(statParts[1]) ?? 0
+                    }
+                }
+            }
+
+            if filesChanged > 0 {
+                stats = GitDiffStats(filesChanged: filesChanged, insertions: insertions, deletions: deletions)
+            }
+        } catch {
+            // 忽略统计获取失败
+        }
+
+        // 获取变更文件列表
+        let nameOnlyArgs = ["diff-tree", "--no-commit-id", "--name-only", "-r", hash]
+        var changedFiles: [String] = []
+        do {
+            let filesOutput = try await runGitCommand(args: nameOnlyArgs, in: workDir)
+            changedFiles = filesOutput.components(separatedBy: "\n").filtering({ !$0.isEmpty })
+        } catch {
+            // 忽略
+        }
+
+        return GitCommitDetail(
+            hash: commitHash,
+            author: author,
+            email: email,
+            date: date,
+            message: message,
+            body: body,
+            stats: stats,
+            changedFiles: changedFiles
+        )
+    }
+
     // MARK: - Helper
 
-    private func runGitCommand(args: String..., in directory: URL) async throws -> String {
+    func runGitCommand(args: String..., in directory: URL) async throws -> String {
         try await runGitCommand(args: args, in: directory)
     }
 
-    private func runGitCommand(args: [String], in directory: URL) async throws -> String {
+    func runGitCommand(args: [String], in directory: URL) async throws -> String {
         let process = Process()
         let pipe = Pipe()
 

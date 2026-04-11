@@ -504,6 +504,12 @@
         }
       }
     },
+    "2 Spaces" : {
+
+    },
+    "4 Spaces" : {
+
+    },
     "5,000 次/小时" : {
       "localizations" : {
         "zh-Hans" : {
@@ -519,6 +525,9 @@
           }
         }
       }
+    },
+    "8 Spaces" : {
+
     },
     "60 次/小时" : {
       "localizations" : {
@@ -647,6 +656,9 @@
           }
         }
       }
+    },
+    "A" : {
+
     },
     "About" : {
       "extractionState" : "stale",
@@ -2498,6 +2510,9 @@
         }
       }
     },
+    "Hash" : {
+
+    },
     "History / Layers" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3278,6 +3293,9 @@
           }
         }
       }
+    },
+    "No content" : {
+
     },
     "No Listening Ports" : {
       "localizations" : {
@@ -4559,6 +4577,9 @@
         }
       }
     },
+    "Tab (↹)" : {
+
+    },
     "Tab Information" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5713,6 +5734,9 @@
         }
       }
     },
+    "加载失败" : {
+
+    },
     "加载更早消息" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5927,6 +5951,12 @@
           }
         }
       }
+    },
+    "变更文件" : {
+
+    },
+    "变更统计" : {
+
     },
     "可用：%@" : {
       "localizations" : {
@@ -6152,6 +6182,9 @@
     "复制 URL" : {
 
     },
+    "复制完整 Hash" : {
+
+    },
     "复制消息内容" : {
       "localizations" : {
         "zh-Hans" : {
@@ -6220,9 +6253,6 @@
           }
         }
       }
-    },
-    "将文件夹拖到消息列表区域，自动切换为当前项目" : {
-
     },
     "将模型加载到内存以进行推理" : {
       "localizations" : {
@@ -7449,6 +7479,9 @@
         }
       }
     },
+    "暂无提交记录" : {
+
+    },
     "暂无目录数据" : {
       "localizations" : {
         "zh-Hans" : {
@@ -7750,6 +7783,9 @@
           }
         }
       }
+    },
+    "正在加载..." : {
+
     },
     "正在加载历史消息…" : {
       "localizations" : {
@@ -8466,6 +8502,9 @@
         }
       }
     },
+    "请先选择一个项目" : {
+
+    },
     "请先选择或添加项目，RAG 才能建立与展示索引。" : {
 
     },
@@ -8485,6 +8524,9 @@
           }
         }
       }
+    },
+    "请在左侧选择一个 Commit" : {
+
     },
     "请审阅操作风险并选择允许或拒绝" : {
       "extractionState" : "stale",

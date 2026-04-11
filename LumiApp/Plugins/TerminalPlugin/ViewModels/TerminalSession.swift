@@ -9,70 +9,122 @@ final class TerminalSession: ObservableObject, Identifiable {
     @Published var title: String = "Terminal"
     @Published var isConnected: Bool = false
 
-    /// SwiftTerm 原生终端视图（每个会话一个实例）
-    let terminalView: LocalProcessTerminalView
+    /// 自定义终端视图（零尺寸保护 + 无障碍）
+    let terminalView: LumiTerminalView
     private let initialWorkingDirectory: String?
     /// KVO 观察系统外观变化
     private var appearanceObservation: NSKeyValueObservation?
-    
+    /// 当前编辑器主题名称（用于终端颜色同步）
+    private var currentThemeName: LumiEditorThemeAdapter.PresetTheme
+
     init(workingDirectory: String? = nil) {
         self.initialWorkingDirectory = workingDirectory
-        self.terminalView = LocalProcessTerminalView(frame: .zero)
+        self.terminalView = LumiTerminalView(frame: .zero)
+
+        // 读取当前编辑器主题
+        if let themeRaw = LumiEditorConfigStore.loadString(forKey: LumiEditorConfigStore.themeNameKey),
+           let preset = LumiEditorThemeAdapter.PresetTheme(rawValue: themeRaw) {
+            self.currentThemeName = preset
+        } else {
+            self.currentThemeName = .xcodeDark
+        }
+
         setupTerminal()
     }
-    
+
     // MARK: - Lifecycle
 
     private func setupTerminal() {
         terminalView.processDelegate = self
-        terminalView.configureNativeColors()
         terminalView.font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
+        terminalView.getTerminal().silentLog = true
 
-        // 根据系统外观动态设置终端颜色
-        applyColors()
+        // 应用主题颜色
+        applyThemeColors()
 
-        // 监听系统外观变化（KVO 观察 NSApp.effectiveAppearance）
+        // 监听系统外观变化
         appearanceObservation = NSApp.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
             Task { @MainActor [weak self] in
-                self?.applyColors()
+                self?.applyThemeColors()
             }
         }
 
-        terminalView.startProcess(
-            executable: "/bin/zsh",
-            args: ["-f", "-i"],
-            environment: [
-                "TERM=xterm-256color",
-                "LANG=en_US.UTF-8",
-                "PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-            ],
-            currentDirectory: initialWorkingDirectory
-        )
-        isConnected = true
+        // 监听编辑器主题变化
+        NotificationCenter.default.addObserver(
+            forName: .lumiEditorThemeDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let themeName = notification.userInfo?["theme"] as? LumiEditorThemeAdapter.PresetTheme else { return }
+            self?.currentThemeName = themeName
+            self?.applyThemeColors()
+        }
+
+        // 启动 shell 进程（使用 Shell Integration）
+        startShell()
     }
 
-    /// 根据当前系统外观设置终端的前景/背景色
-    private func applyColors() {
-        let isDark = NSApp.effectiveAppearance.bestMatch(
-            from: [.darkAqua, .aqua]
-        ) == .darkAqua
+    /// 启动 shell 进程
+    private func startShell() {
+        let shell = ShellIntegration.autoDetectShell()
+        let shellPath = shell.defaultPath
 
-        terminalView.nativeBackgroundColor = isDark
-            ? NSColor(red: 0.11, green: 0.11, blue: 0.12, alpha: 1.0)  // 深色背景
-            : NSColor.white                                                  // 白色背景
-        terminalView.nativeForegroundColor = isDark
-            ? NSColor(white: 0.92, alpha: 1.0)   // 浅色文字
-            : NSColor(white: 0.12, alpha: 1.0)   // 深色文字
+        var environment = buildEnvironment()
+
+        do {
+            let args = try ShellIntegration.setupIntegration(
+                for: shell,
+                environment: &environment,
+                useLogin: true
+            )
+
+            terminalView.startProcess(
+                executable: shellPath,
+                args: args,
+                environment: environment,
+                execName: shell.rawValue,
+                currentDirectory: initialWorkingDirectory
+            )
+            isConnected = true
+        } catch {
+            // Shell Integration 失败时 fallback 到普通启动
+            terminalView.startProcess(
+                executable: shellPath,
+                args: ["-l", "-i"],
+                environment: buildEnvironment(),
+                execName: shell.rawValue,
+                currentDirectory: initialWorkingDirectory
+            )
+            isConnected = true
+        }
     }
-    
+
+    /// 构建环境变量
+    private func buildEnvironment() -> [String] {
+        var env = Terminal.getEnvironmentVariables()
+        env.append("TERM_PROGRAM=Lumi_Terminal")
+        env.append("TERM=xterm-256color")
+        env.append("LANG=en_US.UTF-8")
+        // 补充常用 PATH
+        env.append("PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin")
+        return env
+    }
+
+    /// 应用主题颜色到终端
+    private func applyThemeColors() {
+        let colors = TerminalThemeAdapter.colors(for: currentThemeName)
+        TerminalThemeAdapter.apply(colors, to: terminalView)
+    }
+
     func terminate() {
         terminalView.terminate()
         isConnected = false
     }
 }
 
+// MARK: - LocalProcessTerminalViewDelegate
+
 extension TerminalSession: LocalProcessTerminalViewDelegate {
-    // MARK: - LocalProcessTerminalViewDelegate
 
     nonisolated func sizeChanged(source: LocalProcessTerminalView, newCols: Int, newRows: Int) {}
 
@@ -89,4 +141,11 @@ extension TerminalSession: LocalProcessTerminalViewDelegate {
             self?.isConnected = false
         }
     }
+}
+
+// MARK: - Notification Name
+
+extension Notification.Name {
+    /// 编辑器主题变更通知
+    static let lumiEditorThemeDidChange = Notification.Name("lumiEditorThemeDidChange")
 }

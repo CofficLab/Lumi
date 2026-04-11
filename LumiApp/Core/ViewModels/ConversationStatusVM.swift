@@ -67,8 +67,8 @@ final class ConversationStatusVM: ObservableObject {
         streamingTextBufferByConversationId[conversationId] = nil
     }
 
-    private static let statusTailBufferMax = 50
-    private static let shellStatusPreviewMax = 80
+    private static let statusTailBufferMax = 20
+    private static let shellStatusPreviewMax = 50
 
     /// 换行压成空格后只保留尾部最多 `statusTailBufferMax` 字，供状态行缓冲（写入侧截断）。
     private static func normalizedStatusTailBuffer(from raw: String) -> String {
