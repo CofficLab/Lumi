@@ -117,7 +117,8 @@ actor BackgroundAgentTaskStore: TaskStoreProtocol {
     // MARK: - Protocol Implementation - Worker Interface
 
     /// 认领下一个待执行的任务（从 pending → running）
-    func claimNextPendingTask() -> UUID? {
+    /// nonisolated: 在调用方的执行上下文运行，避免高 QoS 线程等待 actor default QoS 队列（优先级反转）
+    nonisolated func claimNextPendingTask() -> UUID? {
         let context = ModelContext(container)
         let pendingStatus = BackgroundAgentTaskStatus.pending.rawValue
         let runningStatus = BackgroundAgentTaskStatus.running.rawValue

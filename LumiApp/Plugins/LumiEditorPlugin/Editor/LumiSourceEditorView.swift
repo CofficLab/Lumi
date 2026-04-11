@@ -30,8 +30,8 @@ struct LumiSourceEditorView: View {
     }
     
     var body: some View {
-        // 确保配置只在必要时更新
-        let config = getConfiguration()
+        // 直接读取缓存，不在 body 中写 @State（避免 "Modifying state during view update"）
+        let config = cachedConfig ?? buildConfiguration()
         
         Group {
             if let content = state.content {
@@ -49,7 +49,7 @@ struct LumiSourceEditorView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        // 关键：当这些值变化时，重建配置
+        // 关键：当这些值变化时，重建配置（在 onChange / onAppear 中写 @State 是安全的）
         .onChange(of: state.fontSize) { _, _ in updateConfigCache() }
         .onChange(of: state.wrapLines) { _, _ in updateConfigCache() }
         .onChange(of: state.showGutter) { _, _ in updateConfigCache() }
@@ -60,21 +60,14 @@ struct LumiSourceEditorView: View {
         .onChange(of: state.themePreset) { _, _ in updateConfigCache() }
         .onChange(of: state.currentTheme) { _, _ in updateConfigCache() }
         .onAppear {
-            updateConfigCache()
+            // 首次出现时确保缓存已建立
+            if cachedConfig == nil { updateConfigCache() }
         }
     }
     
     // MARK: - Configuration Management
     
-    /// 获取当前配置（使用缓存）
-    private func getConfiguration() -> SourceEditorConfiguration {
-        if let cached = cachedConfig {
-            return cached
-        }
-        let newConfig = buildConfiguration()
-        cachedConfig = newConfig
-        return newConfig
-    }
+    // getConfiguration() 已移除——body 直接读 cachedConfig ?? buildConfiguration()
     
     /// 强制更新配置缓存
     private func updateConfigCache() {
