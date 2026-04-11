@@ -905,6 +905,9 @@
         }
       }
     },
+    "Antigravity" : {
+
+    },
     "API 密钥" : {
       "localizations" : {
         "zh-Hans" : {
@@ -6043,6 +6046,9 @@
           }
         }
       }
+    },
+    "在 Antigravity 中打开当前项目" : {
+
     },
     "在 Cursor 中打开当前项目" : {
 
