@@ -378,29 +378,36 @@ final class LumiEditorState: ObservableObject {
         
         saveState = .saving
         
-        Task.detached(priority: .userInitiated) { [weak self] in
+        // 使用普通 Task（继承 MainActor 隔离），文件 I/O 通过 withCheckedThrowingContinuation 移到后台线程
+        // 避免 Task.detached 导致的 "sending self risks causing data races" 编译错误
+        Task {
             do {
                 guard FileManager.default.fileExists(atPath: url.path) else {
-                    await MainActor.run {
-                        self?.saveState = .error(String(localized: "File not found", table: "LumiEditor"))
-                        self?.scheduleSuccessClear()
-                    }
+                    saveState = .error(String(localized: "File not found", table: "LumiEditor"))
+                    scheduleSuccessClear()
                     return
                 }
                 
-                try content.write(to: url, atomically: true, encoding: .utf8)
+                // 在后台线程执行文件写入，不阻塞 MainActor
+                let contentCopy = content
+                try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                    DispatchQueue.global(qos: .userInitiated).async {
+                        do {
+                            try contentCopy.write(to: url, atomically: true, encoding: .utf8)
+                            continuation.resume()
+                        } catch {
+                            continuation.resume(throwing: error)
+                        }
+                    }
+                }
                 
-                await MainActor.run {
-                    self?.persistedContentHash = content.hashValue
-                    self?.hasUnsavedChanges = false
-                    self?.saveState = .saved
-                    self?.scheduleSuccessClear()
-                }
+                persistedContentHash = content.hashValue
+                hasUnsavedChanges = false
+                saveState = .saved
+                scheduleSuccessClear()
             } catch {
-                await MainActor.run {
-                    self?.saveState = .error(String(localized: "Save failed: \(error.localizedDescription)", table: "LumiEditor"))
-                    self?.scheduleSuccessClear()
-                }
+                saveState = .error(String(localized: "Save failed: \(error.localizedDescription)", table: "LumiEditor"))
+                scheduleSuccessClear()
             }
         }
     }

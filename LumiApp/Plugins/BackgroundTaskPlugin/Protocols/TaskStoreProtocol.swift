@@ -5,17 +5,17 @@ import MagicKit
 /// Store 只负责数据存储，不执行任务
 protocol TaskStoreProtocol: Actor {
     /// 认领下一个待执行的任务（从 pending → running）
-    func claimNextPendingTask() -> UUID?
+    nonisolated func claimNextPendingTask() async -> UUID?
 
     /// 获取任务详情
-    func fetchTaskDetails(_ taskId: UUID) async -> (prompt: String, conversationId: UUID)?
+    nonisolated func fetchTaskDetails(_ taskId: UUID) async -> (prompt: String, conversationId: UUID)?
 
     /// 更新任务状态
-    func updateTask(
+    nonisolated func updateTask(
         id: UUID,
         status: BackgroundAgentTaskStatus,
         resultSummary: String?,
         errorDescription: String?,
         finishedAt: Date?
-    )
+    ) async
 }

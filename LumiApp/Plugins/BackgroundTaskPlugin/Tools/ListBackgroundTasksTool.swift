@@ -31,7 +31,7 @@ struct ListBackgroundTasksTool: AgentTool {
             limit = 20
         }
 
-        let tasks = BackgroundAgentTaskStore.shared.fetchRecent(limit: limit)
+        let tasks = await BackgroundAgentTaskStore.shared.fetchRecent(limit: limit)
 
         let payload: [[String: Any]] = tasks.map { task in
             var dict: [String: Any] = [

@@ -31,7 +31,7 @@ struct GetBackgroundTaskDetailTool: AgentTool {
             )
         }
 
-        guard let task = BackgroundAgentTaskStore.shared.fetchById(uuid) else {
+        guard let task = await BackgroundAgentTaskStore.shared.fetchById(uuid) else {
             let result: [String: Any] = [
                 "found": false,
                 "task_id": idString,
