@@ -6,8 +6,14 @@ final class TerminalTabsViewModel: ObservableObject {
     @Published var selectedSessionId: UUID?
     private var defaultWorkingDirectory: String?
 
-    init() {
-        createSession(workingDirectory: defaultWorkingDirectory)
+    init() {}
+
+    /// 确保至少有一个终端会话，使用指定的工作目录
+    func ensureInitialSession(workingDirectory: String?) {
+        defaultWorkingDirectory = workingDirectory
+        if sessions.isEmpty {
+            createSession(workingDirectory: workingDirectory)
+        }
     }
 
     var selectedSession: TerminalSession? {
