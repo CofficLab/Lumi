@@ -7,6 +7,7 @@ import MagicKit
 /// 支持分页加载、切换项目时自动刷新。
 struct GitCommitHistorySidebarView: View {
     @EnvironmentObject var projectVM: ProjectVM
+    @EnvironmentObject var gitVM: GitVM
 
     /// 提交列表数据
     @State private var commits: [GitCommitLog] = []
@@ -72,6 +73,7 @@ struct GitCommitHistorySidebarView: View {
                     )
                     .onTapGesture {
                         selectedCommitHash = commit.hash
+                        gitVM.selectCommit(hash: commit.hash)
                     }
                     .onAppear {
                         // 在最后几个 commit 出现时触发加载更多
@@ -156,6 +158,7 @@ struct GitCommitHistorySidebarView: View {
             hasMoreCommits = true
             loadedCount = 0
             selectedCommitHash = nil
+            gitVM.clearSelection()
             return
         }
 
@@ -185,6 +188,8 @@ struct GitCommitHistorySidebarView: View {
                     self.loading = false
                     self.loadedCount = newCommits.count
                     self.selectedCommitHash = newCommits.first?.hash
+                    // 同步首次选中到 GitVM
+                    self.gitVM.selectCommit(hash: newCommits.first?.hash)
                 }
             } catch {
                 if Task.isCancelled { return }
