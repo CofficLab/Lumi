@@ -1,5 +1,5 @@
 {
-  "originHash" : "91948f79150262a8914984240cce1baad71ead9040e1f7863551fbb08f8dc66d",
+  "originHash" : "50c30ac11667c6622f092ed029b499f90d8358ac9ae5890738b70047eae7b59e",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -83,6 +83,15 @@
       }
     },
     {
+      "identity" : "libgit2swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nookery/Libgit2swift",
+      "state" : {
+        "branch" : "main",
+        "revision" : "8149c8c5d048d947745b7bcf860f153e4107636a"
+      }
+    },
+    {
       "identity" : "magicalert",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/nookery/MagicAlert.git",
@@ -92,12 +101,30 @@
       }
     },
     {
+      "identity" : "magicdiffview",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nookery/MagicDiffView",
+      "state" : {
+        "branch" : "main",
+        "revision" : "1e790a3fc6d23ebfcf154533ddb93628068fa698"
+      }
+    },
+    {
       "identity" : "magickit",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/MagicKit",
       "state" : {
         "revision" : "ad6bc183adde0cbf22cdfe805deb5efd45f9a371",
         "version" : "1.5.23"
+      }
+    },
+    {
+      "identity" : "magiclog",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nookery/MagicLog.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "f3680135b72e6c2158d21fba5769f17ba77798e5"
       }
     },
     {

@@ -19,6 +19,14 @@ final class GitVM: ObservableObject, SuperLog {
     /// GitCommitDetailPlugin 会监听此属性变化来显示对应的 commit 详情。
     @Published private(set) var selectedCommitHash: String?
 
+    // MARK: - File Selection
+
+    /// 当前在 commit detail 中选中的变更文件路径
+    ///
+    /// 由 GitCommitDetailView 中的文件列表设置，
+    /// 用于在 diff 视图中显示对应文件的差异。
+    @Published private(set) var selectedCommitFile: String?
+
     // MARK: - Init
 
     init() {}
@@ -45,6 +53,16 @@ final class GitVM: ObservableObject, SuperLog {
 
         if Self.verbose {
             AppLogger.core.info("\(Self.t)📌 已清除 commit 选择")
+        }
+    }
+
+    /// 设置当前选中的变更文件
+    /// - Parameter file: 文件相对路径，传 nil 表示取消选中
+    func selectCommitFile(_ file: String?) {
+        selectedCommitFile = file
+
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t)📄 选中文件: \(file ?? "nil")")
         }
     }
 }

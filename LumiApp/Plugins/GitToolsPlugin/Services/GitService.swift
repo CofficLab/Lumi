@@ -242,6 +242,41 @@ final class GitService: @unchecked Sendable, SuperLog {
         )
     }
 
+    // MARK: - Commit File Diff
+
+    /// 获取指定 commit 中某个文件的变更前后内容
+    ///
+    /// 使用 `git show <hash>:<file>` 获取文件内容，
+    /// 以及 `git show <hash>^:<file>` 获取前一个版本的内容。
+    /// - Parameters:
+    ///   - path: Git 仓库路径
+    ///   - hash: commit hash
+    ///   - file: 文件相对路径
+    /// - Returns: (beforeContent, afterContent)，新增文件 before 为 nil，删除文件 after 为 nil
+    func getCommitFileContentChange(path: String?, hash: String, file: String) async throws -> (before: String?, after: String?) {
+        let workDir = path.map { URL(fileURLWithPath: $0) } ?? URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+
+        // 获取变更后的内容（该 commit 中的版本）
+        let afterContent: String?
+        do {
+            afterContent = try await runGitCommand(args: ["show", "\(hash):\(file)"], in: workDir)
+        } catch {
+            // 文件可能被删除
+            afterContent = nil
+        }
+
+        // 获取变更前的内容（该 commit 的父版本）
+        let beforeContent: String?
+        do {
+            beforeContent = try await runGitCommand(args: ["show", "\(hash)^:\(file)"], in: workDir)
+        } catch {
+            // 文件可能是新增的
+            beforeContent = nil
+        }
+
+        return (beforeContent, afterContent)
+    }
+
     // MARK: - Helper
 
     func runGitCommand(args: String..., in directory: URL) async throws -> String {

@@ -26,6 +26,8 @@ struct GitCommitDetailRootOverlay<Content: View>: View {
             guard newHash != nil else { return }
             // 有 commit 被选中时，自动切换到 GitCommitDetail 插件
             layoutVM.selectAgentDetail(GitCommitDetailPlugin.id)
+            // 同时激活侧边栏的 Commit History 标签
+            layoutVM.selectAgentSidebarTab(GitCommitHistoryPlugin.id)
         }
     }
 }
