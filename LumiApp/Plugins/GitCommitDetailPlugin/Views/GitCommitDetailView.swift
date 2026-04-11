@@ -42,6 +42,9 @@ struct GitCommitDetailView: View {
     /// 未提交变更文件列表
     @State private var uncommittedFiles: [GitChangedFile] = []
 
+    /// commit 模式下的变更文件列表（含变更类型）
+    @State private var commitChangedFiles: [GitChangedFile] = []
+
     /// 是否正在加载未提交变更
     @State private var loadingWorkingState: Bool = false
 
@@ -356,7 +359,7 @@ struct GitCommitDetailView: View {
         VStack(spacing: 0) {
             // 文件列表标题栏
             HStack {
-                Text("\(detail.changedFiles.count) 个文件")
+                Text("\(commitChangedFiles.count) 个文件")
                     .font(.system(size: 10, weight: .medium))
                     .foregroundColor(AppUI.Color.semantic.textSecondary)
                 Spacer()
@@ -367,34 +370,12 @@ struct GitCommitDetailView: View {
 
             Divider()
 
-            // 文件列表
-            List(detail.changedFiles, id: \.self, selection: $selectedFile) { file in
-                fileRow(file)
+            // 文件列表：使用含变更类型的 GitChangedFile
+            List(commitChangedFiles, id: \.path, selection: $selectedFile) { file in
+                uncommittedFileRow(file)
             }
             .listStyle(.plain)
         }
-    }
-
-    private func fileRow(_ file: String) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: fileIcon(for: file))
-                .font(.system(size: 10))
-                .foregroundColor(fileIconColor(for: file))
-
-            Text(file)
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .textSelection(.enabled)
-
-            Spacer()
-
-            // 变更类型标记
-            changeTypeBadge(for: file)
-        }
-        .padding(.vertical, 2)
-        .contentShape(Rectangle())
     }
 
     /// 根据文件扩展名返回图标
@@ -620,6 +601,7 @@ struct GitCommitDetailView: View {
 
         guard let hash = hash, !path.isEmpty else {
             commitDetail = nil
+            commitChangedFiles = []
             loading = false
             errorMessage = nil
             return
@@ -632,26 +614,30 @@ struct GitCommitDetailView: View {
 
         loadTask = Task {
             do {
-                let detail = try await GitService.shared.getCommitDetail(
-                    path: path,
-                    hash: hash
-                )
+                // 并行加载 commit 详情和变更文件列表
+                async let detailTask = GitService.shared.getCommitDetail(path: path, hash: hash)
+                async let filesTask = Task.detached(priority: .userInitiated) {
+                    try GitService.shared.getCommitChangedFiles(path: path, hash: hash)
+                }
+
+                let detail = try await detailTask
+                let files = (try? await filesTask.value) ?? []
 
                 if Task.isCancelled { return }
 
                 await MainActor.run {
-                    // 确保结果与当前选中一致
                     guard self.gitVM.selectedCommitHash == hash else { return }
                     self.commitDetail = detail
+                    self.commitChangedFiles = files
                     self.loading = false
-                    // 自动选中第一个文件
-                    self.selectedFile = detail.changedFiles.first
+                    self.selectedFile = files.first?.path
                 }
             } catch {
                 if Task.isCancelled { return }
 
                 await MainActor.run {
                     self.commitDetail = nil
+                    self.commitChangedFiles = []
                     self.loading = false
                     self.errorMessage = error.localizedDescription
                 }

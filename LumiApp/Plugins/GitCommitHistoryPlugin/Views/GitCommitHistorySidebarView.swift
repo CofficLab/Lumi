@@ -1,3 +1,4 @@
+import LibGit2Swift
 import SwiftUI
 import MagicKit
 
@@ -498,39 +499,22 @@ enum DateParseHelper {
 // MARK: - GitService Extension
 
 extension GitService {
-    /// 获取带跳过的提交日志（分页加载用）
+    /// 获取带跳过的提交日志（分页加载用），使用 LibGit2Swift
     func getLogWithSkip(path: String?, count: Int, skip: Int, branch: String?) async throws -> [GitCommitLog] {
-        let workDir = path.map { URL(fileURLWithPath: $0) } ?? URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+        let repoPath = path ?? FileManager.default.currentDirectoryPath
 
-        var args: [String] = [
-            "log",
-            "-\(count)",
-            "--skip=\(skip)",
-            "--pretty=format:%H|%an|%ae|%ai|%s",
-        ]
+        let gitCommits = try LibGit2.getCommitList(at: repoPath, limit: count, skip: skip)
 
-        if let branch = branch {
-            args.append(branch)
+        let dateFormatter = ISO8601DateFormatter()
+        return gitCommits.map { commit in
+            GitCommitLog(
+                hash: commit.hash,
+                author: commit.author,
+                email: commit.email,
+                date: dateFormatter.string(from: commit.date),
+                message: commit.message.components(separatedBy: "\n").first ?? commit.message
+            )
         }
-
-        let output = try await runGitCommand(args: args, in: workDir)
-
-        var logs: [GitCommitLog] = []
-
-        for line in output.components(separatedBy: "\n").filtering({ !$0.isEmpty }) {
-            let parts = line.components(separatedBy: "|")
-            if parts.count >= 5 {
-                logs.append(GitCommitLog(
-                    hash: parts[0],
-                    author: parts[1],
-                    email: parts[2],
-                    date: parts[3],
-                    message: parts.dropFirst(4).joined(separator: "|")
-                ))
-            }
-        }
-
-        return logs
     }
 }
 
