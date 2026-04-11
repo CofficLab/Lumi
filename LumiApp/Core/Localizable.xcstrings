@@ -329,6 +329,9 @@
         }
       }
     },
+    "%lld lines" : {
+
+    },
     "%lld 个项目" : {
       "localizations" : {
         "zh-Hans" : {
@@ -504,6 +507,12 @@
         }
       }
     },
+    "2 Spaces" : {
+
+    },
+    "4 Spaces" : {
+
+    },
     "5,000 次/小时" : {
       "localizations" : {
         "zh-Hans" : {
@@ -519,6 +528,9 @@
           }
         }
       }
+    },
+    "8 Spaces" : {
+
     },
     "60 次/小时" : {
       "localizations" : {
@@ -647,6 +659,9 @@
           }
         }
       }
+    },
+    "A" : {
+
     },
     "About" : {
       "extractionState" : "stale",
@@ -2840,6 +2855,16 @@
         }
       }
     },
+    "Ln %lld, Col %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ln %1$lld, Col %2$lld"
+          }
+        }
+      }
+    },
     "Load" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3278,6 +3303,9 @@
           }
         }
       }
+    },
+    "No content" : {
+
     },
     "No Listening Ports" : {
       "localizations" : {
@@ -4558,6 +4586,9 @@
           }
         }
       }
+    },
+    "Tab (↹)" : {
+
     },
     "Tab Information" : {
       "extractionState" : "stale",
