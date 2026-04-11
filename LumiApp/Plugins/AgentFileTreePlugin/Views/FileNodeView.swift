@@ -222,8 +222,9 @@ struct FileNodeView: View {
             if isExpanded && children.isEmpty {
                 loadChildren()
             }
+        } else {
+            onSelect(url)
         }
-        onSelect(url)
     }
 
     private func handleRefreshTokenChange(_ newValue: Int) {
