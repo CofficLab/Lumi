@@ -34,8 +34,9 @@ actor BackgroundWorker {
         guard !isRunning else { return }
         isRunning = true
 
-        // 启动主循环
-        workerTask = Task.detached { [weak self] in
+        // 明确指定 .background priority，避免继承调用方可能的高优先级
+        // 从而防止 actor 队列（default QoS）产生优先级反转警告
+        workerTask = Task.detached(priority: .background) { [weak self] in
             await self?.mainLoop()
         }
     }
@@ -49,8 +50,12 @@ actor BackgroundWorker {
     // MARK: - External Triggers
 
     /// 外部通知有新任务创建
+    /// 使用 Task.detached(priority: .utility) 而非 Task { }：
+    /// taskDidCreate() 通常由 NotificationCenter 在主线程（User-Interactive QoS）回调，
+    /// 普通 Task { } 会继承调用方 QoS，导致后续 context.fetch() 的内部 I/O 线程
+    /// （Background QoS）被 User-Interactive 线程同步等待，产生优先级反转。
     nonisolated func taskDidCreate() {
-        Task { [weak self] in
+        Task.detached(priority: .utility) { [weak self] in
             await self?.fetchAndExecuteNextTask()
         }
     }
@@ -90,8 +95,8 @@ actor BackgroundWorker {
 
         runningTaskCount += 1
 
-        // 异步执行任务
-        Task.detached { [weak self, taskId] in
+        // 异步执行任务（.utility 优先级，后台任务不需要高优先级）
+        Task.detached(priority: .utility) { [weak self, taskId] in
             await self?.executeTask(taskId: taskId)
         }
 

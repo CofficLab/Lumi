@@ -28,7 +28,7 @@ final class BackgroundAgentTaskPluginTests: XCTestCase {
         try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
 
         // 验证任务已存入数据库
-        let task = BackgroundAgentTaskStore.shared.fetchById(taskId)
+        let task = await BackgroundAgentTaskStore.shared.fetchById(taskId)
         XCTAssertNotNil(task)
         XCTAssertEqual(task?.originalPrompt, "这是一个测试任务")
 
@@ -51,7 +51,7 @@ final class BackgroundAgentTaskPluginTests: XCTestCase {
         try await Task.sleep(nanoseconds: 5_000_000_000) // 5秒
 
         // 检查任务状态
-        let task = BackgroundAgentTaskStore.shared.fetchById(taskId)
+        let task = await BackgroundAgentTaskStore.shared.fetchById(taskId)
         XCTAssertNotNil(task)
 
         let status = BackgroundAgentTaskStatus(rawOrDefault: task!.statusRawValue)
@@ -89,7 +89,7 @@ final class BackgroundAgentTaskPluginTests: XCTestCase {
         // 检查同时运行的任务数量
         var runningCount = 0
         for taskId in taskIds {
-            if let task = BackgroundAgentTaskStore.shared.fetchById(taskId) {
+            if let task = await BackgroundAgentTaskStore.shared.fetchById(taskId) {
                 let status = BackgroundAgentTaskStatus(rawOrDefault: task.statusRawValue)
                 if status == .running {
                     runningCount += 1
@@ -117,7 +117,7 @@ final class BackgroundAgentTaskPluginTests: XCTestCase {
         // 立即检查，任务应该很快被认领
         try await Task.sleep(nanoseconds: 1_000_000_000) // 1秒
 
-        let task = BackgroundAgentTaskStore.shared.fetchById(taskId)
+        let task = await BackgroundAgentTaskStore.shared.fetchById(taskId)
         XCTAssertNotNil(task)
 
         let status = BackgroundAgentTaskStatus(rawOrDefault: task!.statusRawValue)
@@ -153,7 +153,7 @@ final class BackgroundAgentTaskPluginTests: XCTestCase {
         var runningCount = 0
 
         for taskId in taskIds {
-            if let task = BackgroundAgentTaskStore.shared.fetchById(taskId) {
+            if let task = await BackgroundAgentTaskStore.shared.fetchById(taskId) {
                 let status = BackgroundAgentTaskStatus(rawOrDefault: task.statusRawValue)
                 switch status {
                 case .succeeded:
@@ -192,15 +192,15 @@ final class BackgroundAgentTaskPluginTests: XCTestCase {
         try await Task.sleep(nanoseconds: 100_000_000)
 
         // 测试 fetchRecent
-        let recentTasks = BackgroundAgentTaskStore.shared.fetchRecent(limit: 10)
+        let recentTasks = await BackgroundAgentTaskStore.shared.fetchRecent(limit: 10)
         XCTAssertTrue(recentTasks.count >= 2, "应该至少有2个任务")
 
         // 测试 fetchById
-        let task1 = BackgroundAgentTaskStore.shared.fetchById(taskId1)
+        let task1 = await BackgroundAgentTaskStore.shared.fetchById(taskId1)
         XCTAssertNotNil(task1)
         XCTAssertEqual(task1?.originalPrompt, "查询测试1")
 
-        let task2 = BackgroundAgentTaskStore.shared.fetchById(taskId2)
+        let task2 = await BackgroundAgentTaskStore.shared.fetchById(taskId2)
         XCTAssertNotNil(task2)
         XCTAssertEqual(task2?.originalPrompt, "查询测试2")
 
@@ -215,7 +215,7 @@ final class BackgroundAgentTaskPluginTests: XCTestCase {
         )
 
         // 初始状态：pending
-        var task = BackgroundAgentTaskStore.shared.fetchById(taskId)
+        var task = await BackgroundAgentTaskStore.shared.fetchById(taskId)
         var status = BackgroundAgentTaskStatus(rawOrDefault: task!.statusRawValue)
         XCTAssertEqual(status, .pending)
 
@@ -223,7 +223,7 @@ final class BackgroundAgentTaskPluginTests: XCTestCase {
         try await Task.sleep(nanoseconds: 3_000_000_000)
 
         // 状态应该变为 running 或 succeeded
-        task = BackgroundAgentTaskStore.shared.fetchById(taskId)
+        task = await BackgroundAgentTaskStore.shared.fetchById(taskId)
         status = BackgroundAgentTaskStatus(rawOrDefault: task!.statusRawValue)
         XCTAssertTrue(
             status == .running || status == .succeeded,
@@ -252,7 +252,7 @@ final class BackgroundAgentTaskPluginTests: XCTestCase {
         try await Task.sleep(nanoseconds: 2_000_000_000)
 
         // 检查任务状态
-        let task = BackgroundAgentTaskStore.shared.fetchById(taskId)
+        let task = await BackgroundAgentTaskStore.shared.fetchById(taskId)
         XCTAssertNotNil(task)
 
         let status = BackgroundAgentTaskStatus(rawOrDefault: task!.statusRawValue)
@@ -283,14 +283,14 @@ final class BackgroundAgentTaskPluginTests: XCTestCase {
         try await Task.sleep(nanoseconds: 100_000_000)
 
         // 验证任务存在
-        var task = BackgroundAgentTaskStore.shared.fetchById(taskId)
+        var task = await BackgroundAgentTaskStore.shared.fetchById(taskId)
         XCTAssertNotNil(task)
 
         // 删除任务
-        BackgroundAgentTaskStore.shared.delete(taskId)
+        await BackgroundAgentTaskStore.shared.delete(taskId)
 
         // 验证任务已删除
-        task = BackgroundAgentTaskStore.shared.fetchById(taskId)
+        task = await BackgroundAgentTaskStore.shared.fetchById(taskId)
         XCTAssertNil(task)
 
         print("✅ 任务删除测试通过")
@@ -310,11 +310,11 @@ final class BackgroundAgentTaskPluginTests: XCTestCase {
         // 注意：实际场景中任务会被 Worker 执行
 
         // 清空已完成任务（当前可能没有已完成的）
-        BackgroundAgentTaskStore.shared.deleteCompleted()
+        await BackgroundAgentTaskStore.shared.deleteCompleted()
 
         // 验证任务仍存在（因为它们不是已完成状态）
-        let task1 = BackgroundAgentTaskStore.shared.fetchById(taskId1)
-        let task2 = BackgroundAgentTaskStore.shared.fetchById(taskId2)
+        let task1 = await BackgroundAgentTaskStore.shared.fetchById(taskId1)
+        let task2 = await BackgroundAgentTaskStore.shared.fetchById(taskId2)
 
         // 如果任务被 Worker 执行完成了，那么它们会被删除
         // 如果还在 pending 或 running，则不会被删除

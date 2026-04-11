@@ -33,8 +33,10 @@ struct BackgroundTaskStatusBarView: View {
     }
 
     private func reload() {
-        // 仅统计运行中的任务数量
-        let allTasks = BackgroundAgentTaskStore.shared.fetchRecent(limit: 1000)
-        runningCount = allTasks.filter { BackgroundAgentTaskStatus(rawOrDefault: $0.statusRawValue) == .running }.count
+        Task {
+            // 仅统计运行中的任务数量
+            let allTasks = await BackgroundAgentTaskStore.shared.fetchRecent(limit: 1000)
+            runningCount = allTasks.filter { BackgroundAgentTaskStatus(rawOrDefault: $0.statusRawValue) == .running }.count
+        }
     }
 }

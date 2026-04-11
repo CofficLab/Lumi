@@ -28,9 +28,11 @@ struct BackgroundTaskListView: View {
         .alert(String(localized: "Confirm Clear", table: "BackgroundAgentTask"), isPresented: $showClearConfirm) {
             Button(String(localized: "Cancel", table: "BackgroundAgentTask"), role: .cancel) {}
             Button(String(localized: "Clear Completed", table: "BackgroundAgentTask"), role: .destructive) {
-                BackgroundAgentTaskStore.shared.deleteCompleted()
-                loadPage(min(currentPage, totalPages))
-                onRefresh()
+                Task {
+                    await BackgroundAgentTaskStore.shared.deleteCompleted()
+                    loadPage(min(currentPage, totalPages))
+                    onRefresh()
+                }
             }
         } message: {
             Text(String(localized: "Are you sure you want to clear all completed and failed tasks? This action cannot be undone.", table: "BackgroundAgentTask"))
@@ -280,17 +282,21 @@ struct BackgroundTaskListView: View {
     // MARK: - Actions
 
     private func deleteTask(_ task: BackgroundAgentTask) {
-        BackgroundAgentTaskStore.shared.delete(task.id)
-        loadPage(min(currentPage, max(1, totalPages)))
-        onRefresh()
+        Task {
+            await BackgroundAgentTaskStore.shared.delete(task.id)
+            await loadPage(min(currentPage, max(1, totalPages)))
+            onRefresh()
+        }
     }
 
     private func loadPage(_ page: Int) {
-        let result = BackgroundAgentTaskStore.shared.fetchPage(page: page, pageSize: pageSize)
-        displayTasks = result.tasks
-        total = result.total
-        currentPage = page
-        expandedTaskId = nil
+        Task {
+            let result = await BackgroundAgentTaskStore.shared.fetchPage(page: page, pageSize: pageSize)
+            displayTasks = result.tasks
+            total = result.total
+            currentPage = page
+            expandedTaskId = nil
+        }
     }
 
     // MARK: - Helpers
