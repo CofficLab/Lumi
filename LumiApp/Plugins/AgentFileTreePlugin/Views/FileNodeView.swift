@@ -18,6 +18,9 @@ struct FileNodeView: View {
     /// 项目根目录路径，用于计算相对路径和存储展开状态
     let projectRootPath: String
 
+    /// 展开/折叠变化回调，通知协调器更新文件系统监听列表
+    let onExpansionChange: ((String, Bool) -> Void)?
+
     /// 本地展开状态
     @State private var isExpanded: Bool = false
 
@@ -61,7 +64,8 @@ struct FileNodeView: View {
         selectedURL: URL? = nil,
         onSelect: @escaping (URL) -> Void,
         refreshToken: Int = 0,
-        projectRootPath: String = ""
+        projectRootPath: String = "",
+        onExpansionChange: ((String, Bool) -> Void)? = nil
     ) {
         self.url = url
         self.depth = depth
@@ -69,6 +73,7 @@ struct FileNodeView: View {
         self.onSelect = onSelect
         self.refreshToken = refreshToken
         self.projectRootPath = projectRootPath
+        self.onExpansionChange = onExpansionChange
 
         // 在 init 时一次性缓存 isDirectory，避免 body 求值时反复做文件系统 I/O
         self.isDirectory = ProjectTreeFileService.isDirectory(url)
@@ -158,7 +163,8 @@ struct FileNodeView: View {
                             selectedURL: selectedURL,
                             onSelect: onSelect,
                             refreshToken: refreshToken,
-                            projectRootPath: projectRootPath
+                            projectRootPath: projectRootPath,
+                            onExpansionChange: onExpansionChange
                         )
                     }
                 }
@@ -168,6 +174,10 @@ struct FileNodeView: View {
             // 恢复展开状态时，children 尚未加载，需要补加载
             if isDirectory && isExpanded && children.isEmpty {
                 loadChildren()
+            }
+            // 恢复展开状态时通知协调器（用于文件系统监听）
+            if isDirectory && isExpanded {
+                notifyExpansionChanged(isExpanded: true)
             }
         }
         .onChange(of: refreshToken) { _, newValue in
@@ -219,6 +229,7 @@ struct FileNodeView: View {
         if isDirectory {
             isExpanded.toggle()
             persistExpansionState()
+            notifyExpansionChanged(isExpanded: isExpanded)
             if isExpanded && children.isEmpty {
                 loadChildren()
             }
@@ -272,6 +283,12 @@ extension FileNodeView {
         } else {
             store.removeExpandedPath(relativePath, for: projectRootPath)
         }
+    }
+
+    /// 通知协调器展开状态变化（用于更新文件系统监听列表）
+    private func notifyExpansionChanged(isExpanded: Bool) {
+        guard !projectRootPath.isEmpty, isDirectory else { return }
+        onExpansionChange?(relativePath, isExpanded)
     }
 
     // MARK: - Data Loading
