@@ -120,9 +120,11 @@ struct FileNodeView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(rowBackground(isSelected: isSelected))
             .contentShape(Rectangle())
-            .overlay {
-                // 使用 AppKit 原生拖拽 overlay，避免 SwiftUI .onDrag 将文件复制到缓存目录
-                FileDragSourceOverlay(fileURL: url)
+            .onDrag {
+                // 传递纯文本路径字符串，接收方直接拿到绝对路径，不会触发文件缓存复制
+                NSItemProvider(object: url.path as NSString)
+            } preview: {
+                DragPreview(fileURL: url)
             }
             .contextMenu { contextMenuContent }
             .onTapGesture { handleTap() }
