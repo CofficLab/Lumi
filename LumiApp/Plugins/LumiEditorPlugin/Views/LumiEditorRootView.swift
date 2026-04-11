@@ -32,10 +32,12 @@ struct LumiEditorRootView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(nsColor: .textBackgroundColor))
         .onChange(of: projectVM.selectedFileURL) { _, newURL in
+            state.projectRootPath = projectVM.currentProject?.path
             state.loadFile(from: newURL)
         }
         .onAppear {
             // 初始加载
+            state.projectRootPath = projectVM.currentProject?.path
             if projectVM.isFileSelected {
                 state.loadFile(from: projectVM.selectedFileURL)
             }

@@ -13,6 +13,7 @@ struct LumiSourceEditorView: View {
     /// 编辑器协调器
     private let textCoordinator: LumiEditorCoordinator
     private let cursorCoordinator: LumiCursorCoordinator
+    private let contextMenuCoordinator: LumiContextMenuCoordinator
     
     /// tree-sitter 客户端
     @State private var treeSitterClient = TreeSitterClient()
@@ -25,6 +26,7 @@ struct LumiSourceEditorView: View {
         self._state = ObservedObject(wrappedValue: state)
         self.textCoordinator = LumiEditorCoordinator(state: state)
         self.cursorCoordinator = LumiCursorCoordinator(state: state)
+        self.contextMenuCoordinator = LumiContextMenuCoordinator(state: state)
     }
     
     var body: some View {
@@ -39,7 +41,7 @@ struct LumiSourceEditorView: View {
                     configuration: config,
                     state: $state.editorState,
                     highlightProviders: [treeSitterClient],
-                    coordinators: [textCoordinator, cursorCoordinator]
+                    coordinators: [textCoordinator, cursorCoordinator, contextMenuCoordinator]
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {

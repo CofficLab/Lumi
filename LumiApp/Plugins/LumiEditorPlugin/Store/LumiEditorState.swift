@@ -36,6 +36,27 @@ final class LumiEditorState: ObservableObject {
     /// 文件名
     @Published var fileName: String = ""
     
+    /// 当前项目根路径（由 LumiEditorRootView 设置，用于计算相对路径）
+    var projectRootPath: String?
+    
+    /// 当前文件相对于项目根目录的路径（用于构建选区位置信息）
+    /// 若无项目则返回文件名
+    var relativeFilePath: String {
+        guard let url = currentFileURL else { return "" }
+        guard let projectPath = projectRootPath else {
+            return url.lastPathComponent
+        }
+        let absolutePath = url.path
+        guard absolutePath.hasPrefix(projectPath) else {
+            return url.lastPathComponent
+        }
+        var relative = String(absolutePath.dropFirst(projectPath.count))
+        if relative.hasPrefix("/") {
+            relative = String(relative.dropFirst())
+        }
+        return relative
+    }
+    
     // MARK: - Editor State
     
     /// 编辑器状态（光标位置、滚动位置、查找文本等）
