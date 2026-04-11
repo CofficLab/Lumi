@@ -7,8 +7,8 @@ import MagicKit
 /// 显示当前选中 commit 的完整信息，包括提交消息、作者、时间、
 /// 变更统计，以及可交互的文件列表和 Diff 视图。
 ///
-/// 参考 GitOK 的 GitDetail + FileList + FileDetail 实现，
-/// 使用 HSplitView 将文件列表与 Diff 视图并排展示。
+/// 当 selectedCommitHash 为 nil 时，显示当前工作区的未提交变更（工作状态模式），
+/// 参考 GitOK 的 WorkingStateView + FileList + FileDetail 实现。
 struct GitCommitDetailView: View {
     @EnvironmentObject var projectVM: ProjectVM
     @EnvironmentObject var gitVM: GitVM
@@ -37,9 +37,21 @@ struct GitCommitDetailView: View {
     /// 当前加载任务
     @State private var loadTask: Task<Void, Never>?
 
+    // MARK: - Working State (未提交变更)
+
+    /// 未提交变更文件列表
+    @State private var uncommittedFiles: [GitChangedFile] = []
+
+    /// 是否正在加载未提交变更
+    @State private var loadingWorkingState: Bool = false
+
     var body: some View {
         VStack(spacing: 0) {
-            if let detail = commitDetail {
+            if gitVM.selectedCommitHash == nil {
+                // 工作状态模式：显示未提交变更
+                workingStateContent
+            } else if let detail = commitDetail {
+                // Commit 详情模式
                 commitDetailContent(detail)
             } else if loading {
                 loadingView
@@ -53,25 +65,166 @@ struct GitCommitDetailView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear {
-            loadCommitDetail()
+            handleSelectionChange()
         }
         .onChange(of: gitVM.selectedCommitHash) { _, _ in
             selectedFile = nil
             oldText = ""
             newText = ""
-            loadCommitDetail()
+            handleSelectionChange()
         }
         .onChange(of: projectVM.currentProjectPath) { _, _ in
             commitDetail = nil
             errorMessage = nil
+            uncommittedFiles = []
             selectedFile = nil
             oldText = ""
             newText = ""
-            loadCommitDetail()
+            handleSelectionChange()
         }
         .onChange(of: selectedFile) { _, newFile in
             loadFileDiff(file: newFile)
         }
+    }
+
+    // MARK: - Handle Selection Change
+
+    /// 根据当前选中状态决定加载工作状态还是 commit 详情
+    private func handleSelectionChange() {
+        if gitVM.selectedCommitHash == nil {
+            // 工作状态模式：加载未提交变更
+            loadWorkingState()
+        } else {
+            // Commit 详情模式
+            loadCommitDetail()
+        }
+    }
+
+    // MARK: - Working State Content
+
+    /// 工作状态模式的内容：显示未提交变更的文件列表 + Diff
+    private var workingStateContent: some View {
+        VStack(spacing: 0) {
+            // 顶部：工作状态摘要
+            workingStateSummary
+
+            Divider()
+
+            // 文件列表 + Diff
+            if !uncommittedFiles.isEmpty {
+                HSplitView {
+                    // 左侧：未提交文件列表
+                    uncommittedFileListSection
+                        .frame(minWidth: 180, idealWidth: 220, maxWidth: 300)
+
+                    // 右侧：Diff 视图
+                    diffViewSection
+                }
+            } else if loadingWorkingState {
+                loadingView
+            } else {
+                cleanWorkspaceView
+            }
+        }
+    }
+
+    private var workingStateSummary: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 6) {
+                if uncommittedFiles.isEmpty {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                        .font(.system(size: 12))
+                } else {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .foregroundColor(.orange)
+                        .font(.system(size: 12))
+                }
+
+                Text("当前工作状态")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+
+                Spacer()
+
+                if !uncommittedFiles.isEmpty {
+                    Text("\(uncommittedFiles.count) 个文件")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(.orange)
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+    }
+
+    /// 未提交文件列表
+    private var uncommittedFileListSection: some View {
+        VStack(spacing: 0) {
+            // 标题栏
+            HStack {
+                Text("\(uncommittedFiles.count) 个文件")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                Spacer()
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Color(NSColor.controlBackgroundColor))
+
+            Divider()
+
+            // 文件列表
+            List(uncommittedFiles, id: \.path, selection: $selectedFile) { file in
+                uncommittedFileRow(file)
+            }
+            .listStyle(.plain)
+        }
+    }
+
+    private func uncommittedFileRow(_ file: GitChangedFile) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: fileIcon(for: file.path))
+                .font(.system(size: 10))
+                .foregroundColor(fileIconColor(for: file.path))
+
+            Text(file.path)
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .textSelection(.enabled)
+
+            Spacer()
+
+            // 变更类型标记
+            Text(file.changeType.displayLabel)
+                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .foregroundColor(file.changeType.color)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 1)
+                .background(file.changeType.color.opacity(0.1))
+                .cornerRadius(3)
+        }
+        .padding(.vertical, 2)
+        .contentShape(Rectangle())
+    }
+
+    /// 工作区干净视图
+    private var cleanWorkspaceView: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "checkmark.circle")
+                .font(.system(size: 32))
+                .foregroundColor(.green.opacity(0.5))
+            Text("工作区干净")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(AppUI.Color.semantic.textPrimary)
+            Text("所有更改已提交")
+                .font(.system(size: 11))
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Commit Detail Content
@@ -197,7 +350,7 @@ struct GitCommitDetailView: View {
         }
     }
 
-    // MARK: - File List Section
+    // MARK: - File List Section (Commit)
 
     private func fileListSection(_ detail: GitCommitDetail) -> some View {
         VStack(spacing: 0) {
@@ -290,7 +443,7 @@ struct GitCommitDetailView: View {
             .cornerRadius(3)
     }
 
-    // MARK: - Diff View Section
+    // MARK: - Diff View Section (Shared)
 
     private var diffViewSection: some View {
         VStack(spacing: 0) {
@@ -428,6 +581,39 @@ struct GitCommitDetailView: View {
 
     // MARK: - Actions
 
+    /// 加载工作状态（未提交变更）
+    private func loadWorkingState() {
+        let path = projectVM.currentProjectPath
+        guard !path.isEmpty else {
+            uncommittedFiles = []
+            loadingWorkingState = false
+            return
+        }
+
+        loadingWorkingState = true
+
+        Task {
+            do {
+                let files = try await GitService.shared.getUncommittedChanges(path: path)
+
+                await MainActor.run {
+                    self.uncommittedFiles = files
+                    self.loadingWorkingState = false
+                    // 自动选中第一个文件
+                    self.selectedFile = files.first?.path
+                }
+            } catch {
+                await MainActor.run {
+                    self.uncommittedFiles = []
+                    self.loadingWorkingState = false
+                }
+
+                GitCommitDetailPlugin.logger.error("加载未提交变更失败: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// 加载 commit 详情
     private func loadCommitDetail() {
         let hash = gitVM.selectedCommitHash
         let path = projectVM.currentProjectPath
@@ -480,7 +666,6 @@ struct GitCommitDetailView: View {
         diffTask?.cancel()
 
         guard let file = file,
-              let hash = gitVM.selectedCommitHash,
               !projectVM.currentProjectPath.isEmpty else {
             oldText = ""
             newText = ""
@@ -489,32 +674,67 @@ struct GitCommitDetailView: View {
 
         loadingDiff = true
 
-        diffTask = Task.detached(priority: .userInitiated) {
-            do {
-                let (before, after) = try await GitService.shared.getCommitFileContentChange(
-                    path: projectVM.currentProjectPath,
-                    hash: hash,
-                    file: file
-                )
+        let path = projectVM.currentProjectPath
 
-                if Task.isCancelled { return }
+        // 判断是工作状态模式还是 commit 模式
+        if let hash = gitVM.selectedCommitHash {
+            // Commit 模式
+            diffTask = Task.detached(priority: .userInitiated) {
+                do {
+                    let (before, after) = try await GitService.shared.getCommitFileContentChange(
+                        path: path,
+                        hash: hash,
+                        file: file
+                    )
 
-                await MainActor.run {
-                    guard self.selectedFile == file else { return }
-                    self.oldText = before ?? ""
-                    self.newText = after ?? ""
-                    self.loadingDiff = false
+                    if Task.isCancelled { return }
+
+                    await MainActor.run {
+                        guard self.selectedFile == file else { return }
+                        self.oldText = before ?? ""
+                        self.newText = after ?? ""
+                        self.loadingDiff = false
+                    }
+                } catch {
+                    if Task.isCancelled { return }
+
+                    await MainActor.run {
+                        self.oldText = ""
+                        self.newText = ""
+                        self.loadingDiff = false
+                    }
+
+                    GitCommitDetailPlugin.logger.error("加载文件 diff 失败: \(error.localizedDescription)")
                 }
-            } catch {
-                if Task.isCancelled { return }
+            }
+        } else {
+            // 工作状态模式
+            diffTask = Task.detached(priority: .userInitiated) {
+                do {
+                    let (before, after) = try await GitService.shared.getUncommittedFileContentChange(
+                        path: path,
+                        file: file
+                    )
 
-                await MainActor.run {
-                    self.oldText = ""
-                    self.newText = ""
-                    self.loadingDiff = false
+                    if Task.isCancelled { return }
+
+                    await MainActor.run {
+                        guard self.selectedFile == file else { return }
+                        self.oldText = before ?? ""
+                        self.newText = after ?? ""
+                        self.loadingDiff = false
+                    }
+                } catch {
+                    if Task.isCancelled { return }
+
+                    await MainActor.run {
+                        self.oldText = ""
+                        self.newText = ""
+                        self.loadingDiff = false
+                    }
+
+                    GitCommitDetailPlugin.logger.error("加载未提交文件 diff 失败: \(error.localizedDescription)")
                 }
-
-                GitCommitDetailPlugin.logger.error("加载文件 diff 失败: \(error.localizedDescription)")
             }
         }
     }

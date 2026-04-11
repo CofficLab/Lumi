@@ -242,6 +242,84 @@ final class GitService: @unchecked Sendable, SuperLog {
         )
     }
 
+    // MARK: - Working State
+
+    /// 获取未提交变更的文件列表
+    ///
+    /// 通过 `git status --porcelain` 解析出有变更的文件。
+    /// - Parameter path: Git 仓库路径
+    /// - Returns: 变更文件信息数组，包含文件路径和变更类型
+    func getUncommittedChanges(path: String?) async throws -> [GitChangedFile] {
+        let workDir = path.map { URL(fileURLWithPath: $0) } ?? URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+
+        let output = try await runGitCommand(args: ["status", "--porcelain"], in: workDir)
+        var files: [GitChangedFile] = []
+
+        for line in output.components(separatedBy: "\n").filtering({ !$0.isEmpty }) {
+            guard line.count >= 3 else { continue }
+            let statusCode = String(line.prefix(2)).trimmingCharacters(in: .whitespaces)
+            let filePath = String(line.dropFirst(3))
+
+            let changeType: GitChangeType
+            switch statusCode {
+            case "M", " M", "MM":
+                changeType = .modified
+            case "A", "A ", "AM":
+                changeType = .added
+            case "D", " D":
+                changeType = .deleted
+            case "R", "R ":
+                changeType = .renamed
+            case "??":
+                changeType = .untracked
+            default:
+                changeType = .modified
+            }
+
+            files.append(GitChangedFile(path: filePath, changeType: changeType))
+        }
+
+        return files.sorted { $0.path < $1.path }
+    }
+
+    /// 获取未提交文件的内容差异
+    ///
+    /// 使用 `git diff` 和 `git show HEAD:<file>` 获取变更前后内容。
+    /// - Parameters:
+    ///   - path: Git 仓库路径
+    ///   - file: 文件相对路径
+    /// - Returns: (beforeContent, afterContent)
+    func getUncommittedFileContentChange(path: String?, file: String) async throws -> (before: String?, after: String?) {
+        let workDir = path.map { URL(fileURLWithPath: $0) } ?? URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+
+        // 获取 HEAD 中的版本（变更前）
+        let beforeContent: String?
+        do {
+            beforeContent = try await runGitCommand(args: ["show", "HEAD:\(file)"], in: workDir)
+        } catch {
+            // 文件可能是新增的（不在 HEAD 中）
+            beforeContent = nil
+        }
+
+        // 获取工作区版本（变更后）
+        let fullPath: String
+        if let path = path, !path.isEmpty {
+            fullPath = (path as NSString).appendingPathComponent(file)
+        } else {
+            fullPath = file
+        }
+
+        let afterContent: String?
+        if FileManager.default.fileExists(atPath: fullPath) {
+            afterContent = try? String(contentsOfFile: fullPath, encoding: .utf8)
+        } else {
+            // 文件可能被删除
+            afterContent = nil
+        }
+
+        return (beforeContent, afterContent)
+    }
+
     // MARK: - Commit File Diff
 
     /// 获取指定 commit 中某个文件的变更前后内容
