@@ -87,7 +87,9 @@ enum TerminalThemeAdapter {
         terminalView.caretColor = colors.cursor
         terminalView.caretTextColor = colors.cursor
         terminalView.selectedTextBackgroundColor = colors.selection
-        terminalView.layer?.backgroundColor = colors.background.cgColor
+        // NSView 层背景设为透明，由 SwiftUI 层统一渲染背景色，
+        // 避免 padding 区域与终端内容区域出现两种背景色
+        terminalView.layer?.backgroundColor = CGColor.clear
 
         if colors.ansiColors.count == 16 {
             terminalView.installColors(colors.ansiColors)
