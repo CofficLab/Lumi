@@ -128,6 +128,7 @@ jobs:
             -scheme ${{ env.SCHEME }} \
             -archivePath ./temp/${{ env.SCHEME }}.xcarchive \
             -configuration Release \
+            -skipPackagePluginValidation \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="-" \
             DEVELOPMENT_TEAM="${{ steps.signing.outputs.team_id }}" \
