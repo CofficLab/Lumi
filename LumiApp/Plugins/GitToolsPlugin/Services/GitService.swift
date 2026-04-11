@@ -163,11 +163,11 @@ final class GitService: @unchecked Sendable, SuperLog {
 
     // MARK: - Helper
 
-    private func runGitCommand(args: String..., in directory: URL) async throws -> String {
+    func runGitCommand(args: String..., in directory: URL) async throws -> String {
         try await runGitCommand(args: args, in: directory)
     }
 
-    private func runGitCommand(args: [String], in directory: URL) async throws -> String {
+    func runGitCommand(args: [String], in directory: URL) async throws -> String {
         let process = Process()
         let pipe = Pipe()
 
