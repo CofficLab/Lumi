@@ -14,6 +14,7 @@ struct GitCommitDetailView: View {
 
     @EnvironmentObject var projectVM: ProjectVM
     @EnvironmentObject var gitVM: GitVM
+    @EnvironmentObject private var layoutVM: LayoutVM
 
     /// 当前加载的 commit 详情
     @State private var commitDetail: GitCommitDetail?
@@ -68,6 +69,7 @@ struct GitCommitDetailView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear {
+            activateCommitHistorySidebar()
             handleSelectionChange()
         }
         .onChange(of: gitVM.selectedCommitHash) { _, _ in
@@ -91,6 +93,13 @@ struct GitCommitDetailView: View {
     }
 
     // MARK: - 私有方法
+
+    /// 当 Detail 视图出现时，激活左侧栏的 Commit History 标签
+    private func activateCommitHistorySidebar() {
+        if layoutVM.selectedAgentSidebarTabId != GitCommitHistoryPlugin.id {
+            layoutVM.selectAgentSidebarTab(GitCommitHistoryPlugin.id)
+        }
+    }
 
     /// 根据当前选中状态决定加载工作状态还是 commit 详情
     private func handleSelectionChange() {
