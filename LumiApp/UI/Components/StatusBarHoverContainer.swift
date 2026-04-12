@@ -143,10 +143,9 @@ struct StatusBarHoverContainer<Content: View, Detail: View>: View {
         GeometryReader { geometry in
             ZStack {
                 if isHovering {
-                    // 使用系统选区颜色，提高透明度以增强可见性
-                    // 在深色模式下使用白色选区，浅色模式下使用蓝色选区
+                    // 使用白色半透明覆盖，确保在彩色状态栏背景（蓝/黄）上都清晰可见
                     RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                        .fill(Color(nsColor: .selectedContentBackgroundColor).opacity(0.35))
+                        .fill(Color.white.opacity(0.25))
                         .transition(.opacity)
                 }
             }
