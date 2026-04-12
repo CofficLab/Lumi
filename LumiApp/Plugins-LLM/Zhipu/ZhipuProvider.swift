@@ -31,7 +31,6 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
         "glm-4.6",
         "glm-4.5",
         "glm-4.5-air",
-        "glm-4.5-x",
     ]
 
     static let contextWindowSizes: [String: Int] = [
