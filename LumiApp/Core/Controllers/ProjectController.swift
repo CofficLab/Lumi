@@ -2,9 +2,6 @@ import Foundation
 import MagicKit
 
 /// 项目上下文与 Root 系统提示词联动
-///
-/// 处理会话切换时的项目同步、`ProjectContextRequest` 触发的切换/清除，以及启动时恢复已选项目。
-/// 由 `RootView` 注入 `RootViewContainer` 使用。
 @MainActor
 final class ProjectController: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"

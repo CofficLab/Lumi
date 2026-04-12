@@ -2,14 +2,6 @@ import Foundation
 import MagicKit
 
 /// 聊天发送与回合驱动控制器
-///
-/// 根据落库消息驱动「请求模型 → 工具执行」闭环，并与发送队列、状态栏联动。
-/// 由 `RootView` 注入 `RootViewContainer` 使用。
-///
-/// ## 架构说明
-/// - 内核不知道 RAG 等插件的内部服务
-/// - 插件通过中间件机制参与消息发送流程
-/// - 插件内部服务由插件自己管理
 @MainActor
 final class SendController: ObservableObject, SuperLog {
     nonisolated static let emoji = "📤"
@@ -119,7 +111,7 @@ final class SendController: ObservableObject, SuperLog {
         await send(conversationId: conversationId)
     }
 
-    /// 根据会话中**已落库的最后一条消息**驱动后续步骤
+    /// 根据会话中已落库的最后一条消息驱动后续步骤
     func send(conversationId: UUID) async {
         let messages = self.chatService.loadMessages(forConversationId: conversationId) ?? []
         guard !messages.isEmpty else {
@@ -255,8 +247,21 @@ final class SendController: ObservableObject, SuperLog {
         return true
     }
 
-    /// 使用当前会话配置与可用工具，对给定消息列表发起**一次**流式模型请求。
-    /// 使用当前会话配置与可用工具，对给定消息列表发起**一次**流式模型请求。
+    // MARK: - 流式请求重试配置
+
+    /// 流式请求最大重试次数
+    private nonisolated let maxStreamRetries: Int = 3
+
+    /// 流式请求重试初始等待时间（秒）
+    private nonisolated let streamRetryBaseDelay: Double = 2.0
+
+    /// 流式请求重试退避倍数
+    private nonisolated let streamRetryBackoffMultiplier: Double = 2.0
+
+    /// 使用当前会话配置与可用工具，对给定消息列表发起流式模型请求。
+    ///
+    /// 内建重试机制：遇到可重试的瞬时错误（网络超时、5xx 服务端错误、429 速率限制等）时，
+    /// 自动按指数退避重试，最多 `maxStreamRetries` 次。取消操作不重试。
     private func streamAssistantReply(
         conversationId: UUID,
         messages: [ChatMessage],
@@ -289,82 +294,170 @@ final class SendController: ObservableObject, SuperLog {
         // 使用线程安全的 MetadataHolder
         let metadataHolder = MetadataHolder()
 
-        do {
-            statusVM.setStatus(conversationId: conversationId, content: "正在发送消息…")
+        // ── 重试循环 ──────────────────────────────────────────
+        var lastError: Error?
 
-            let assistantMessage = try await container.llmService.sendStreamingMessage(
-                messages: messagesForLLM,
-                config: config,
-                tools: toolsArg,
-                onChunk: onStreamChunk,
-                onRequestStart: { metadata in
-                    // 线程安全地设置元数据
-                    Task {
-                        await metadataHolder.set(metadata)
-                    }
+        for attempt in 1 ... maxStreamRetries {
+            // 检查取消
+            if Task.isCancelled {
+                finishSendTurn(conversationId: conversationId, emitCompletionEvent: false)
+                statusVM.setStatus(conversationId: conversationId, content: "已停止生成")
+                return
+            }
 
-                    Task { @MainActor in
-                        statusVM.setStatus(conversationId: conversationId, content: "正在发送消息，大小：\(metadata.formattedBodySize)")
-                    }
+            do {
+                if attempt == 1 {
+                    statusVM.setStatus(conversationId: conversationId, content: "正在发送消息…")
+                } else {
+                    statusVM.setStatus(conversationId: conversationId, content: "正在重试 (\(attempt)/\(maxStreamRetries))…")
                 }
-            )
 
-            // 计算耗时并调用后置管线（如果有元数据）
-            if let metadata = await metadataHolder.get() {
-                var mutableMetadata = metadata
-                mutableMetadata.duration = CFAbsoluteTimeGetCurrent() - startTime
-                let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
-                await pipeline.runPost(metadata: mutableMetadata, response: assistantMessage)
-            }
+                let assistantMessage = try await container.llmService.sendStreamingMessage(
+                    messages: messagesForLLM,
+                    config: config,
+                    tools: toolsArg,
+                    onChunk: onStreamChunk,
+                    onRequestStart: { metadata in
+                        Task {
+                            await metadataHolder.set(metadata)
+                        }
 
-            await onMessageReceived(message: assistantMessage, conversationId: conversationId)
-        } catch LLMServiceError.cancelled {
-            AppLogger.core.info("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 发送已取消")
-            finishSendTurn(conversationId: conversationId, emitCompletionEvent: false)
-            statusVM.setStatus(conversationId: conversationId, content: "已停止生成")
-
-            // 取消时调用后置管线（如果有元数据）
-            if let metadata = await metadataHolder.get() {
-                var mutableMetadata = metadata
-                mutableMetadata.error = LLMServiceError.cancelled
-                mutableMetadata.duration = CFAbsoluteTimeGetCurrent() - startTime
-                let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
-                await pipeline.runPost(metadata: mutableMetadata, response: nil)
-            }
-
-        } catch {
-            AppLogger.core.error("\(Self.t) 请求模型失败：\(error)")
-            finishSendTurn(conversationId: conversationId)
-
-            // 失败时调用后置管线（如果有元数据）
-            if let metadata = await metadataHolder.get() {
-                var mutableMetadata = metadata
-                mutableMetadata.error = error
-                mutableMetadata.duration = CFAbsoluteTimeGetCurrent() - startTime
-                if let apiError = error as? APIError,
-                   case let .httpError(statusCode, _) = apiError {
-                    mutableMetadata.responseStatusCode = statusCode
-                }
-                let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
-                await pipeline.runPost(metadata: mutableMetadata, response: nil)
-            }
-
-            // 保存错误消息到数据库
-            let errorMessage: ChatMessage
-            if let llmError = error as? LLMServiceError {
-                // 传递 providerId，以便在 API Key 缺失错误中显示正确的供应商
-                errorMessage = llmError.toChatMessage(conversationId: conversationId, providerId: config.providerId)
-            } else {
-                // 其他错误类型，创建通用的错误消息
-                errorMessage = ChatMessage(
-                    role: .assistant,
-                    conversationId: conversationId,
-                    content: error.localizedDescription,
-                    isError: true
+                        Task { @MainActor in
+                            statusVM.setStatus(conversationId: conversationId, content: "正在发送消息，大小：\(metadata.formattedBodySize)")
+                        }
+                    }
                 )
+
+                // ✅ 成功 → 计算耗时并调用后置管线
+                if let metadata = await metadataHolder.get() {
+                    var mutableMetadata = metadata
+                    mutableMetadata.duration = CFAbsoluteTimeGetCurrent() - startTime
+                    let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
+                    await pipeline.runPost(metadata: mutableMetadata, response: assistantMessage)
+                }
+
+                await onMessageReceived(message: assistantMessage, conversationId: conversationId)
+                return // 成功，退出重试循环
+
+            } catch LLMServiceError.cancelled {
+                // 取消不重试
+                AppLogger.core.info("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 发送已取消")
+                finishSendTurn(conversationId: conversationId, emitCompletionEvent: false)
+                statusVM.setStatus(conversationId: conversationId, content: "已停止生成")
+
+                if let metadata = await metadataHolder.get() {
+                    var mutableMetadata = metadata
+                    mutableMetadata.error = LLMServiceError.cancelled
+                    mutableMetadata.duration = CFAbsoluteTimeGetCurrent() - startTime
+                    let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
+                    await pipeline.runPost(metadata: mutableMetadata, response: nil)
+                }
+                return
+
+            } catch {
+                lastError = error
+
+                // 判断是否可重试
+                guard attempt < maxStreamRetries, isRetryableStreamError(error) else {
+                    break // 不可重试或重试耗尽，跳出循环
+                }
+
+                // 计算退避延迟
+                let delay = calculateStreamRetryDelay(for: attempt)
+                AppLogger.core.info("\(Self.t) ⚠️ 流式请求失败（第 \(attempt) 次），\(Int(delay)) 秒后重试：\(error.localizedDescription)")
+                statusVM.setStatus(conversationId: conversationId, content: "请求失败，\(Int(delay)) 秒后重试 (\(attempt + 1)/\(maxStreamRetries))…")
+
+                do {
+                    try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                } catch {
+                    // sleep 被取消，直接退出
+                    finishSendTurn(conversationId: conversationId, emitCompletionEvent: false)
+                    return
+                }
             }
-            container.conversationVM.saveMessage(errorMessage, to: conversationId)
         }
+
+        // ── 重试耗尽或不可重试的错误 → 记录并结束 ──────────
+        guard let error = lastError else { return }
+
+        AppLogger.core.error("\(Self.t) 请求模型最终失败：\(error.localizedDescription)")
+        finishSendTurn(conversationId: conversationId)
+
+        // 失败时调用后置管线
+        if let metadata = await metadataHolder.get() {
+            var mutableMetadata = metadata
+            mutableMetadata.error = error
+            mutableMetadata.duration = CFAbsoluteTimeGetCurrent() - startTime
+            if let apiError = error as? APIError,
+               case let .httpError(statusCode, _) = apiError {
+                mutableMetadata.responseStatusCode = statusCode
+            }
+            let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
+            await pipeline.runPost(metadata: mutableMetadata, response: nil)
+        }
+
+        // 保存错误消息到数据库
+        let errorMessage: ChatMessage
+        if let llmError = error as? LLMServiceError {
+            errorMessage = llmError.toChatMessage(conversationId: conversationId, providerId: config.providerId)
+        } else {
+            errorMessage = ChatMessage(
+                role: .assistant,
+                conversationId: conversationId,
+                content: error.localizedDescription,
+                isError: true
+            )
+        }
+        container.conversationVM.saveMessage(errorMessage, to: conversationId)
+    }
+
+    // MARK: - 流式请求重试辅助
+
+    /// 判断流式请求遇到的错误是否可重试。
+    ///
+    /// 可重试：网络超时、网络断开、5xx 服务端错误、429 速率限制。
+    /// 不可重试：配置错误（API Key 为空等）、用户取消、客户端 4xx 错误。
+    private func isRetryableStreamError(_ error: Error) -> Bool {
+        // LLMServiceError 中只有 requestFailed 可能是瞬时网络/API 错误
+        if let llmError = error as? LLMServiceError {
+            switch llmError {
+            case .requestFailed:
+                return true
+            case .cancelled:
+                return false
+            default:
+                // 配置类错误（apiKeyEmpty、modelEmpty 等）不重试
+                return false
+            }
+        }
+
+        // APIError（来自 HTTP 层）
+        if let apiError = error as? APIError {
+            switch apiError {
+            case let .httpError(statusCode, _):
+                // 429 速率限制：重试
+                if statusCode == 429 { return true }
+                // 5xx 服务端错误：重试
+                if (500 ... 599).contains(statusCode) { return true }
+                // 其他 4xx 客户端错误：不重试
+                return false
+            case .requestFailed:
+                // 底层网络错误（超时、断开等）：重试
+                return true
+            default:
+                return false
+            }
+        }
+
+        // 其他未知错误：保守不重试
+        return false
+    }
+
+    /// 计算流式请求重试的退避延迟（指数退避 + 随机抖动）
+    private func calculateStreamRetryDelay(for attempt: Int) -> Double {
+        let delay = streamRetryBaseDelay * pow(streamRetryBackoffMultiplier, Double(attempt - 1))
+        let jitter = Double.random(in: 0 ... 1.0)
+        return delay + jitter
     }
 
     private func consumeTransientSystemPrompts(for conversationId: UUID) -> [String] {
