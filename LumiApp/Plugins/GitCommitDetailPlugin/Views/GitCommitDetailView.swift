@@ -7,9 +7,11 @@ import MagicKit
 /// 显示当前选中 commit 的完整信息，包括提交消息、作者、时间、
 /// 变更统计，以及可交互的文件列表和 Diff 视图。
 ///
-/// 当 selectedCommitHash 为 nil 时，显示当前工作区的未提交变更（工作状态模式），
-/// 参考 GitOK 的 WorkingStateView + FileList + FileDetail 实现。
+/// 当 selectedCommitHash 为 nil 时，显示当前工作区的未提交变更（工作状态模式）。
 struct GitCommitDetailView: View {
+
+    // MARK: - 属性
+
     @EnvironmentObject var projectVM: ProjectVM
     @EnvironmentObject var gitVM: GitVM
 
@@ -37,8 +39,6 @@ struct GitCommitDetailView: View {
     /// 当前加载任务
     @State private var loadTask: Task<Void, Never>?
 
-    // MARK: - Working State (未提交变更)
-
     /// 未提交变更文件列表
     @State private var uncommittedFiles: [GitChangedFile] = []
 
@@ -48,13 +48,13 @@ struct GitCommitDetailView: View {
     /// 是否正在加载未提交变更
     @State private var loadingWorkingState: Bool = false
 
+    // MARK: - Body
+
     var body: some View {
         VStack(spacing: 0) {
             if gitVM.selectedCommitHash == nil {
-                // 工作状态模式：显示未提交变更
                 workingStateContent
             } else if let detail = commitDetail {
-                // Commit 详情模式
                 commitDetailContent(detail)
             } else if loading {
                 loadingView
@@ -90,37 +90,30 @@ struct GitCommitDetailView: View {
         }
     }
 
-    // MARK: - Handle Selection Change
+    // MARK: - 私有方法
 
     /// 根据当前选中状态决定加载工作状态还是 commit 详情
     private func handleSelectionChange() {
         if gitVM.selectedCommitHash == nil {
-            // 工作状态模式：加载未提交变更
             loadWorkingState()
         } else {
-            // Commit 详情模式
             loadCommitDetail()
         }
     }
 
-    // MARK: - Working State Content
+    // MARK: - Working State Views
 
-    /// 工作状态模式的内容：显示未提交变更的文件列表 + Diff
     private var workingStateContent: some View {
         VStack(spacing: 0) {
-            // 顶部：工作状态摘要
             workingStateSummary
 
             Divider()
 
-            // 文件列表 + Diff
             if !uncommittedFiles.isEmpty {
                 HSplitView {
-                    // 左侧：未提交文件列表
                     uncommittedFileListSection
                         .frame(minWidth: 180, idealWidth: 220, maxWidth: 300)
 
-                    // 右侧：Diff 视图
                     diffViewSection
                 }
             } else if loadingWorkingState {
@@ -144,14 +137,14 @@ struct GitCommitDetailView: View {
                         .font(.system(size: 12))
                 }
 
-                Text("当前工作状态")
+                Text(String(localized: "Working State", table: "GitCommitDetail"))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(AppUI.Color.semantic.textPrimary)
 
                 Spacer()
 
                 if !uncommittedFiles.isEmpty {
-                    Text("\(uncommittedFiles.count) 个文件")
+                    Text(String(localized: "\(uncommittedFiles.count) \(uncommittedFiles.count == 1 ? "file" : "files")", table: "GitCommitDetail"))
                         .font(.system(size: 10, weight: .medium))
                         .foregroundColor(.orange)
                 }
@@ -162,12 +155,10 @@ struct GitCommitDetailView: View {
         .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
     }
 
-    /// 未提交文件列表
     private var uncommittedFileListSection: some View {
         VStack(spacing: 0) {
-            // 标题栏
             HStack {
-                Text("\(uncommittedFiles.count) 个文件")
+                Text(String(localized: "\(uncommittedFiles.count) \(uncommittedFiles.count == 1 ? "file" : "files")", table: "GitCommitDetail"))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundColor(AppUI.Color.semantic.textSecondary)
                 Spacer()
@@ -178,7 +169,6 @@ struct GitCommitDetailView: View {
 
             Divider()
 
-            // 文件列表
             List(uncommittedFiles, id: \.path, selection: $selectedFile) { file in
                 fileRow(file)
             }
@@ -186,81 +176,44 @@ struct GitCommitDetailView: View {
         }
     }
 
-    private func fileRow(_ file: GitChangedFile) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: GitCommitDetailService.fileIcon(for: file.path))
-                .font(.system(size: 10))
-                .foregroundColor(GitCommitDetailService.fileIconColor(for: file.path))
-
-            Text(file.path)
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .textSelection(.enabled)
-
-            Spacer()
-
-            // 变更类型标记
-            Text(file.changeType.displayLabel)
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
-                .foregroundColor(file.changeType.color)
-                .padding(.horizontal, 4)
-                .padding(.vertical, 1)
-                .background(file.changeType.color.opacity(0.1))
-                .cornerRadius(3)
-        }
-        .padding(.vertical, 2)
-        .contentShape(Rectangle())
-    }
-
-    /// 工作区干净视图
     private var cleanWorkspaceView: some View {
         VStack(spacing: 8) {
             Image(systemName: "checkmark.circle")
                 .font(.system(size: 32))
                 .foregroundColor(.green.opacity(0.5))
-            Text("工作区干净")
+            Text(String(localized: "Clean Workspace", table: "GitCommitDetail"))
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(AppUI.Color.semantic.textPrimary)
-            Text("所有更改已提交")
+            Text(String(localized: "All changes committed", table: "GitCommitDetail"))
                 .font(.system(size: 11))
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    // MARK: - Commit Detail Content
+    // MARK: - Commit Detail Views
 
     private func commitDetailContent(_ detail: GitCommitDetail) -> some View {
         VStack(spacing: 0) {
-            // 上半部分：commit 信息摘要（紧凑）
             commitSummarySection(detail)
 
             Divider()
 
-            // 下半部分：文件列表 + Diff 视图
             if !detail.changedFiles.isEmpty {
                 HSplitView {
-                    // 左侧：文件列表
                     fileListSection(detail)
                         .frame(minWidth: 180, idealWidth: 220, maxWidth: 300)
 
-                    // 右侧：Diff 视图
                     diffViewSection
                 }
             } else {
-                // 没有变更文件时显示提示
                 noFilesView
             }
         }
     }
 
-    // MARK: - Commit Summary Section
-
     private func commitSummarySection(_ detail: GitCommitDetail) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            // 提交消息
             HStack(alignment: .top, spacing: 6) {
                 Image(systemName: "circle.circle.fill")
                     .foregroundColor(.accentColor)
@@ -276,7 +229,6 @@ struct GitCommitDetailView: View {
                 Spacer()
             }
 
-            // 元信息行：作者 + 时间 + Hash
             HStack(spacing: 12) {
                 metaLabel(icon: "person.fill", value: detail.author)
                 metaLabel(icon: "clock.fill", value: GitCommitDetailService.formattedDate(detail.date))
@@ -288,7 +240,6 @@ struct GitCommitDetailView: View {
                 }
             }
 
-            // Commit Body（如果有）
             if !detail.body.isEmpty {
                 Text(detail.body)
                     .font(.system(size: 11))
@@ -342,7 +293,7 @@ struct GitCommitDetailView: View {
 
     private func statsBadges(_ stats: GitDiffStats) -> some View {
         HStack(spacing: 8) {
-            statBadge(value: "\(stats.filesChanged)", label: "文件", color: AppUI.Color.semantic.textPrimary)
+            statBadge(value: "\(stats.filesChanged)", label: String(localized: "files", table: "GitCommitDetail"), color: AppUI.Color.semantic.textPrimary)
             statBadge(value: "+\(stats.insertions)", label: nil, color: .green)
             statBadge(value: "-\(stats.deletions)", label: nil, color: .red)
         }
@@ -361,13 +312,10 @@ struct GitCommitDetailView: View {
         }
     }
 
-    // MARK: - File List Section (Commit)
-
     private func fileListSection(_ detail: GitCommitDetail) -> some View {
         VStack(spacing: 0) {
-            // 文件列表标题栏
             HStack {
-                Text("\(commitChangedFiles.count) 个文件")
+                Text(String(localized: "\(commitChangedFiles.count) \(commitChangedFiles.count == 1 ? "file" : "files")", table: "GitCommitDetail"))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundColor(AppUI.Color.semantic.textSecondary)
                 Spacer()
@@ -378,7 +326,6 @@ struct GitCommitDetailView: View {
 
             Divider()
 
-            // 文件列表：使用含变更类型的 GitChangedFile
             List(commitChangedFiles, id: \.path, selection: $selectedFile) { file in
                 fileRow(file)
             }
@@ -386,12 +333,38 @@ struct GitCommitDetailView: View {
         }
     }
 
-    // MARK: - Diff View Section (Shared)
+    private func fileRow(_ file: GitChangedFile) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: GitCommitDetailService.fileIcon(for: file.path))
+                .font(.system(size: 10))
+                .foregroundColor(GitCommitDetailService.fileIconColor(for: file.path))
+
+            Text(file.path)
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .textSelection(.enabled)
+
+            Spacer()
+
+            Text(file.changeType.displayLabel)
+                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .foregroundColor(file.changeType.color)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 1)
+                .background(file.changeType.color.opacity(0.1))
+                .cornerRadius(3)
+        }
+        .padding(.vertical, 2)
+        .contentShape(Rectangle())
+    }
+
+    // MARK: - Diff View
 
     private var diffViewSection: some View {
         VStack(spacing: 0) {
             if let file = selectedFile {
-                // 文件路径标题
                 HStack(spacing: 6) {
                     Image(systemName: "doc.text")
                         .foregroundColor(.secondary)
@@ -415,18 +388,17 @@ struct GitCommitDetailView: View {
                     VStack(spacing: 6) {
                         ProgressView()
                             .controlSize(.small)
-                        Text("加载差异...")
+                        Text(String(localized: "Loading diff...", table: "GitCommitDetail"))
                             .font(.system(size: 10))
                             .foregroundColor(AppUI.Color.semantic.textSecondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if oldText.isEmpty && newText.isEmpty {
-                    // 二进制文件或无法显示的内容
                     VStack(spacing: 6) {
                         Image(systemName: "doc.questionmark")
                             .font(.system(size: 20))
                             .foregroundColor(.secondary.opacity(0.5))
-                        Text("无法显示此文件的差异")
+                        Text(String(localized: "Cannot display diff for this file", table: "GitCommitDetail"))
                             .font(.system(size: 10))
                             .foregroundColor(AppUI.Color.semantic.textSecondary)
                     }
@@ -440,12 +412,11 @@ struct GitCommitDetailView: View {
                     )
                 }
             } else {
-                // 未选中文件
                 VStack(spacing: 8) {
                     Image(systemName: "doc.text.magnifyingglass")
                         .font(.system(size: 24))
                         .foregroundColor(.secondary.opacity(0.4))
-                    Text("选择左侧文件查看差异")
+                    Text(String(localized: "Select a file to view diff", table: "GitCommitDetail"))
                         .font(.system(size: 11))
                         .foregroundColor(AppUI.Color.semantic.textSecondary)
                 }
@@ -454,27 +425,25 @@ struct GitCommitDetailView: View {
         }
     }
 
-    // MARK: - No Files View
+    // MARK: - State Views
 
     private var noFilesView: some View {
         VStack(spacing: 8) {
             Image(systemName: "doc.text")
                 .font(.system(size: 24))
                 .foregroundColor(.secondary.opacity(0.4))
-            Text("此提交无文件变更")
+            Text(String(localized: "No file changes in this commit", table: "GitCommitDetail"))
                 .font(.system(size: 11))
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    // MARK: - State Views
-
     private var loadingView: some View {
         VStack(spacing: 8) {
             ProgressView()
                 .controlSize(.regular)
-            Text("正在加载...")
+            Text(String(localized: "Loading...", table: "GitCommitDetail"))
                 .font(.system(size: 11))
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
@@ -486,7 +455,7 @@ struct GitCommitDetailView: View {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 24))
                 .foregroundColor(.orange.opacity(0.6))
-            Text("加载失败")
+            Text(String(localized: "Failed to load", table: "GitCommitDetail"))
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(AppUI.Color.semantic.textPrimary)
             Text(error)
@@ -503,7 +472,7 @@ struct GitCommitDetailView: View {
             Image(systemName: "circle.circle")
                 .font(.system(size: 24))
                 .foregroundColor(.secondary.opacity(0.5))
-            Text("请在左侧选择一个 Commit")
+            Text(String(localized: "Please select a commit from the sidebar", table: "GitCommitDetail"))
                 .font(.system(size: 11))
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
@@ -515,14 +484,14 @@ struct GitCommitDetailView: View {
             Image(systemName: "folder.badge.questionmark")
                 .font(.system(size: 24))
                 .foregroundColor(.secondary.opacity(0.5))
-            Text("请先选择一个项目")
+            Text(String(localized: "Please select a project first", table: "GitCommitDetail"))
                 .font(.system(size: 11))
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    // MARK: - Data Loading
+    // MARK: - 数据加载
 
     /// 加载工作状态（未提交变更）
     private func loadWorkingState() {
@@ -542,7 +511,6 @@ struct GitCommitDetailView: View {
                 await MainActor.run {
                     self.uncommittedFiles = files
                     self.loadingWorkingState = false
-                    // 自动选中第一个文件
                     self.selectedFile = files.first?.path
                 }
             } catch {
@@ -569,7 +537,6 @@ struct GitCommitDetailView: View {
             return
         }
 
-        // 取消之前的任务
         loadTask?.cancel()
         loading = true
         errorMessage = nil
@@ -652,9 +619,9 @@ struct GitCommitDetailView: View {
     }
 }
 
-// MARK: - Preview
+// MARK: - 预览
 
-#Preview {
+#Preview("GitCommitDetail") {
     GitCommitDetailView()
         .inRootView()
         .frame(width: 700, height: 600)

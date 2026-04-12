@@ -21,6 +21,9 @@ final class LumiEditorCoordinator: TextViewCoordinator {
         let state = self.state
         // 延迟到下一个 RunLoop，避免 "Modifying state during view update"
         DispatchQueue.main.async {
+            if state == nil {
+                print("⚠️ [LumiEditor] LumiEditorCoordinator: state is nil!")
+            }
             state?.notifyContentChanged()
         }
     }

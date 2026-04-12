@@ -333,9 +333,19 @@ final class LumiEditorState: ObservableObject {
     
     /// 通知内容已变更（由 TextViewCoordinator 调用）
     func notifyContentChanged() {
+        if content == nil {
+            print("⚠️ [LumiEditor] notifyContentChanged: content is nil")
+            return
+        }
+        if persistedContentHash == nil {
+            print("⚠️ [LumiEditor] notifyContentChanged: persistedContentHash is nil")
+            return
+        }
         guard let content = content?.string, let currentHash = persistedContentHash else { return }
         
         let newHash = content.hashValue
+        print("✏️ [LumiEditor] notifyContentChanged: newHash=\(newHash), persistedHash=\(currentHash), changed=\(newHash != currentHash), contentLength=\(content.count)")
+        
         if newHash != currentHash {
             hasUnsavedChanges = true
             saveState = .editing
@@ -374,8 +384,12 @@ final class LumiEditorState: ObservableObject {
     
     /// 执行保存
     private func performSave(content: String, to url: URL?) {
-        guard let url else { return }
+        guard let url else {
+            print("⚠️ [LumiEditor] performSave: url is nil")
+            return
+        }
         
+        print("💾 [LumiEditor] performSave: saving to \(url.path), contentLength=\(content.count)")
         saveState = .saving
         
         // 使用普通 Task（继承 MainActor 隔离），文件 I/O 通过 withCheckedThrowingContinuation 移到后台线程
@@ -383,6 +397,7 @@ final class LumiEditorState: ObservableObject {
         Task {
             do {
                 guard FileManager.default.fileExists(atPath: url.path) else {
+                    print("⚠️ [LumiEditor] performSave: file not found at \(url.path)")
                     saveState = .error(String(localized: "File not found", table: "LumiEditor"))
                     scheduleSuccessClear()
                     return
@@ -401,11 +416,13 @@ final class LumiEditorState: ObservableObject {
                     }
                 }
                 
+                print("✅ [LumiEditor] performSave: saved successfully")
                 persistedContentHash = content.hashValue
                 hasUnsavedChanges = false
                 saveState = .saved
                 scheduleSuccessClear()
             } catch {
+                print("❌ [LumiEditor] performSave: \(error)")
                 saveState = .error(String(localized: "Save failed: \(error.localizedDescription)", table: "LumiEditor"))
                 scheduleSuccessClear()
             }
