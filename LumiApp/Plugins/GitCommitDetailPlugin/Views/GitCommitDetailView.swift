@@ -192,127 +192,305 @@ struct GitCommitDetailView: View {
 
     // MARK: - Clean Workspace View
 
+    /// 工作区干净时的仓库概览视图，参考 GitOK 的仓库信息区块设计
     private var cleanWorkspaceView: some View {
         ScrollView {
-            VStack(spacing: 16) {
-                // 顶部：干净状态提示
-                VStack(spacing: 6) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 28))
-                        .foregroundColor(.green)
-                    Text(String(localized: "Clean Workspace", table: "GitCommitDetail"))
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
-                    Text(String(localized: "All changes committed", table: "GitCommitDetail"))
-                        .font(.system(size: 11))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
-                }
-                .padding(.top, 24)
-
-                // 项目信息区域
+            VStack(spacing: 0) {
                 if let info = projectGitInfo {
-                    projectInfoGrid(info)
+                    repoOverviewContent(info)
+                } else {
+                    // 无信息时的简单提示
+                    VStack(spacing: 6) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 28))
+                            .foregroundColor(.green)
+                        Text(String(localized: "Clean Workspace", table: "GitCommitDetail"))
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        Text(String(localized: "All changes committed", table: "GitCommitDetail"))
+                            .font(.system(size: 11))
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    }
+                    .padding(.top, 40)
                 }
             }
             .frame(maxWidth: .infinity)
         }
     }
 
-    private func projectInfoGrid(_ info: GitCommitDetailService.ProjectGitInfo) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 6) {
-                Image(systemName: "info.circle")
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
-                Text(String(localized: "Project Info", table: "GitCommitDetail"))
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
-            }
+    // MARK: - Repo Overview Content
 
-            VStack(spacing: 1) {
-                projectInfoRow(icon: "arrow.triangle.branch", label: String(localized: "Branch", table: "GitCommitDetail"), value: info.branch)
-                projectInfoRow(icon: "globe", label: String(localized: "Remote", table: "GitCommitDetail"), value: info.remote)
-                projectInfoRow(icon: "number.circle", label: String(localized: "Total Commits", table: "GitCommitDetail"), value: "\(info.totalCommits)")
-                projectInfoRow(icon: "person.2", label: String(localized: "Contributors", table: "GitCommitDetail"), value: "\(info.contributors.count)")
+    /// 仓库概览主内容：仓库标题 + 统计指标 + 最近提交 + 贡献者
+    private func repoOverviewContent(_ info: GitCommitDetailService.ProjectGitInfo) -> some View {
+        VStack(spacing: 0) {
+            // 顶部区域：仓库名 + 分支 + 状态
+            repoHeaderSection(info)
 
-                if !info.contributors.isEmpty {
-                    contributorsList(info.contributors)
-                }
+            Divider()
+                .padding(.horizontal, 16)
 
+            // 统计指标卡片行
+            repoStatsRow(info)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+
+            Divider()
+                .padding(.horizontal, 16)
+
+            // 最近提交
+            repoLastCommitSection(info)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+
+            // 贡献者（仅在有人时显示）
+            if !info.contributors.isEmpty {
                 Divider()
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, 16)
 
-                projectInfoRow(icon: "text.bubble", label: String(localized: "Last Commit", table: "GitCommitDetail"), value: info.lastCommitMessage)
-                projectInfoRow(icon: "person.fill", label: String(localized: "Author", table: "GitCommitDetail"), value: info.lastCommitAuthor)
-                projectInfoRow(icon: "clock.fill", label: String(localized: "Date", table: "GitCommitDetail"), value: info.lastCommitDate)
+                repoContributorsSection(info)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
             }
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(Color(NSColor.controlBackgroundColor).opacity(0.6))
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 6))
         }
-        .padding(.horizontal, 16)
     }
 
-    private func projectInfoRow(icon: String, label: String, value: String) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.system(size: 10))
-                .foregroundColor(.secondary)
-                .frame(width: 14)
+    // MARK: - Repo Header
 
-            Text(label)
-                .font(.system(size: 11))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
-                .frame(width: 80, alignment: .leading)
-
-            Text(value)
-                .font(.system(size: 11))
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
-                .lineLimit(2)
-                .textSelection(.enabled)
-
-            Spacer()
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-    }
-
-    private func contributorsList(_ contributors: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+    /// 仓库头部：仓库名称、分支 badge、干净状态
+    private func repoHeaderSection(_ info: GitCommitDetailService.ProjectGitInfo) -> some View {
+        VStack(spacing: 8) {
+            // 仓库名称
             HStack(spacing: 8) {
-                Image(systemName: "person.2.fill")
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
-                    .frame(width: 14)
+                Image(systemName: "square.stack.3d.up.fill")
+                    .font(.system(size: 16))
+                    .foregroundColor(DesignTokens.Color.semantic.primary)
 
-                Text(String(localized: "Team", table: "GitCommitDetail"))
-                    .font(.system(size: 11))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
-                    .frame(width: 80, alignment: .leading)
-
-                FlowLayout(spacing: 4) {
-                    ForEach(contributors.prefix(8), id: \.self) { name in
-                        HStack(spacing: 3) {
-                            Image(systemName: "person.circle.fill")
-                                .font(.system(size: 9))
-                                .foregroundColor(.secondary)
-                            Text(name)
-                                .font(.system(size: 10))
-                                .foregroundColor(AppUI.Color.semantic.textPrimary)
-                        }
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background(Color.secondary.opacity(0.08))
-                        .cornerRadius(4)
-                    }
-                }
+                Text(projectVM.currentProjectName)
+                    .font(DesignTokens.Typography.title3)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .lineLimit(1)
 
                 Spacer()
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
+
+            // 分支 + Remote + 干净状态
+            HStack(spacing: 8) {
+                // 分支 badge
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.triangle.branch")
+                        .font(.system(size: 9))
+                    Text(info.branch)
+                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                }
+                .foregroundColor(DesignTokens.Color.semantic.info)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(DesignTokens.Color.semantic.info.opacity(0.1))
+                .cornerRadius(4)
+
+                // Remote badge
+                if info.remote != "—" {
+                    HStack(spacing: 4) {
+                        Image(systemName: "globe")
+                            .font(.system(size: 9))
+                        Text(info.remote)
+                            .font(.system(size: 11, weight: .medium, design: .monospaced))
+                            .lineLimit(1)
+                    }
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Color.secondary.opacity(0.08))
+                    .cornerRadius(4)
+                }
+
+                Spacer()
+
+                // 干净状态标识
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 10))
+                        .foregroundColor(.green)
+                    Text(String(localized: "Clean", table: "GitCommitDetail"))
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(.green)
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 16)
+        .padding(.bottom, 12)
+    }
+
+    // MARK: - Repo Stats Row
+
+    /// 统计指标卡片行：Total Commits / Contributors
+    private func repoStatsRow(_ info: GitCommitDetailService.ProjectGitInfo) -> some View {
+        HStack(spacing: 10) {
+            // Total Commits
+            repoStatCard(
+                icon: "sourcecontrol",
+                iconColor: DesignTokens.Color.semantic.primary,
+                value: "\(info.totalCommits)",
+                label: String(localized: "Total Commits", table: "GitCommitDetail")
+            )
+
+            // Contributors
+            repoStatCard(
+                icon: "person.2.fill",
+                iconColor: DesignTokens.Color.semantic.warning,
+                value: "\(info.contributors.count)",
+                label: String(localized: "Contributors", table: "GitCommitDetail")
+            )
+
+            Spacer()
+        }
+    }
+
+    /// 单个统计指标卡片
+    private func repoStatCard(icon: String, iconColor: Color, value: String, label: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 5) {
+                Image(systemName: icon)
+                    .font(.system(size: 11))
+                    .foregroundColor(iconColor)
+                Text(label)
+                    .font(.system(size: 10))
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            }
+
+            Text(value)
+                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(NSColor.controlBackgroundColor).opacity(0.6))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Repo Last Commit Section
+
+    /// 最近提交区块
+    private func repoLastCommitSection(_ info: GitCommitDetailService.ProjectGitInfo) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // 区块标题
+            HStack(spacing: 5) {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.system(size: 10))
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                Text(String(localized: "Latest Commit", table: "GitCommitDetail"))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            }
+
+            // Commit 内容卡片
+            VStack(alignment: .leading, spacing: 6) {
+                // Commit message
+                Text(info.lastCommitMessage)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .lineLimit(2)
+                    .textSelection(.enabled)
+
+                Divider()
+                    .padding(.vertical, 2)
+
+                // 作者 + 时间
+                HStack(spacing: 12) {
+                    // 作者
+                    HStack(spacing: 4) {
+                        Image(systemName: "person.circle.fill")
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                        Text(info.lastCommitAuthor)
+                            .font(.system(size: 11))
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .lineLimit(1)
+                    }
+
+                    // 时间
+                    HStack(spacing: 4) {
+                        Image(systemName: "clock.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                        Text(info.lastCommitDate)
+                            .font(.system(size: 11))
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    }
+                }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(NSColor.controlBackgroundColor).opacity(0.6))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+            )
+        }
+    }
+
+    // MARK: - Repo Contributors Section
+
+    /// 贡献者区块
+    private func repoContributorsSection(_ info: GitCommitDetailService.ProjectGitInfo) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // 区块标题
+            HStack(spacing: 5) {
+                Image(systemName: "person.2")
+                    .font(.system(size: 10))
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                Text(String(localized: "Contributors", table: "GitCommitDetail"))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+
+                Spacer()
+
+                Text("\(info.contributors.count)")
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+            }
+
+            // 贡献者列表
+            FlowLayout(spacing: 6) {
+                ForEach(info.contributors.prefix(12), id: \.self) { name in
+                    HStack(spacing: 4) {
+                        // 基于名字生成固定颜色的圆形头像
+                        Circle()
+                            .fill(Color.adaptive(from: name))
+                            .frame(width: 16, height: 16)
+                            .overlay(
+                                Text(String(name.prefix(1)).uppercased())
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundColor(.white)
+                            )
+
+                        Text(name)
+                            .font(.system(size: 11))
+                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                            .lineLimit(1)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color(NSColor.controlBackgroundColor).opacity(0.6))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                    )
+                }
+            }
         }
     }
 
