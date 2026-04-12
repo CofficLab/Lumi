@@ -5,6 +5,7 @@ import SwiftUI
 /// 项目文件树视图
 struct ProjectTreeView: View {
     @EnvironmentObject var projectVM: ProjectVM
+    @EnvironmentObject var layoutVM: LayoutVM
 
     /// 刷新协调器，管理文件系统监听和刷新令牌
     @StateObject private var coordinator = ProjectTreeRefreshCoordinator()
@@ -41,6 +42,10 @@ struct ProjectTreeView: View {
         .onSyncSelectedFile(perform: onSyncSelectedFile)
         .onReceive(coordinator.$refreshToken) { newToken in
             onCoordinatorRefresh(newToken)
+        }
+        .onAppear {
+            // 激活中间栏的代码编辑器 Detail 视图
+            layoutVM.selectAgentDetail(LumiEditorPlugin.id)
         }
     }
 
