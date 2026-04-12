@@ -55,6 +55,13 @@ protocol SuperLLMProvider: Sendable {
     /// 建议按版本/性能排序，最新的/最好的放在前面。
     static var availableModels: [String] { get }
 
+    /// 模型上下文窗口大小映射
+    ///
+    /// 键为模型名称，值为上下文窗口大小（Token 数）。
+    /// 例如 `["gpt-4o": 128000, "gpt-4o-mini": 128000]`。
+    /// 未在此映射中列出的模型默认不显示上下文大小。
+    static var contextWindowSizes: [String: Int] { get }
+
     // MARK: - API
 
     /// API 基础 URL
@@ -140,5 +147,10 @@ extension SuperLLMProvider {
     /// 默认实现：供应商默认启用
     static var isEnabled: Bool {
         true
+    }
+
+    /// 默认实现：空映射（不显示上下文大小）
+    static var contextWindowSizes: [String: Int] {
+        [:]
     }
 }

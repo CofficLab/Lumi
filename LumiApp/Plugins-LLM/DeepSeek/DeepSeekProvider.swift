@@ -27,6 +27,11 @@ final class DeepSeekProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked S
         "deepseek-coder",
     ]
 
+    static let contextWindowSizes: [String: Int] = [
+        "deepseek-chat": 128_000,
+        "deepseek-coder": 128_000,
+    ]
+
     // MARK: - SuperLLMProvider
 
     override init() {

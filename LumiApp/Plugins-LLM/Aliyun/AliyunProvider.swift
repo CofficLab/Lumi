@@ -33,6 +33,15 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
         "kimi-k2.5",
     ]
 
+    static let contextWindowSizes: [String: Int] = [
+        "qwen3.5-plus": 131_072,
+        "qwen3.6-plus": 131_072,
+        "glm-4.7": 128_000,
+        "glm-5": 128_000,
+        "MiniMax-M2.5": 1_000_000,
+        "kimi-k2.5": 131_072,
+    ]
+
     // MARK: - SuperLLMProvider
 
     override init() {

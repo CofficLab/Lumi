@@ -34,6 +34,20 @@ final class AiRouterProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
         "gpt-5.1-codex",
     ]
 
+    static let contextWindowSizes: [String: Int] = [
+        "gpt-5.1-codex-max": 128_000,
+        "gpt-5.2-codex": 128_000,
+        "gpt-5.4-mini": 128_000,
+        "gpt-5": 128_000,
+        "gpt-5.1-codex-mini": 128_000,
+        "gpt-5.2": 128_000,
+        "gpt-5.3-codex": 128_000,
+        "gpt-5.4": 128_000,
+        "gpt-5-codex": 128_000,
+        "gpt-5.1": 128_000,
+        "gpt-5.1-codex": 128_000,
+    ]
+
     // MARK: - 启用状态配置
 
     // 要禁用此供应商，请将此值设置为 false
