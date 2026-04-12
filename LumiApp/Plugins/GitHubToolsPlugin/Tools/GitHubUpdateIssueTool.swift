@@ -4,8 +4,7 @@ import MagicKit
 /// GitHub 更新 Issue 工具
 struct GitHubUpdateIssueTool: AgentTool, SuperLog {
     nonisolated static let emoji = "✏️"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     let name = "github_update_issue"
     let description = "更新 GitHub Issue 的信息，包括标题、描述、状态、标签、指派人员和里程碑。"
 

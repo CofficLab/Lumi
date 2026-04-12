@@ -5,8 +5,7 @@ import MagicKit
 @MainActor
 class DockerManagerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🐳"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     @Published var images: [DockerImage] = []
     @Published var filteredImages: [DockerImage] = []
     @Published var selectedImage: DockerImage?

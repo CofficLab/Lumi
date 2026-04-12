@@ -10,8 +10,7 @@ import os
 final class MegaLLMProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.megallm")
     nonisolated static let emoji = "🟣"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     // MARK: - Basic Info
 
     static let id = "megallm"

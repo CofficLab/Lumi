@@ -4,8 +4,7 @@ import MagicKit
 /// GitHub 添加 Issue 评论工具
 struct GitHubAddIssueCommentTool: AgentTool, SuperLog {
     nonisolated static let emoji = "💬"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     let name = "github_add_issue_comment"
     let description = "在 GitHub Issue 中添加评论，支持 Markdown 格式。"
 

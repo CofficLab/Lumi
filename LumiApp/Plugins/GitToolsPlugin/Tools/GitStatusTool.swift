@@ -4,8 +4,7 @@ import MagicKit
 /// Git 状态工具
 struct GitStatusTool: AgentTool, SuperLog {
     nonisolated static let emoji = "📊"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     let name = "git_status"
     let description = "获取 Git 仓库的当前状态，包括分支信息、文件变更等。返回结构化的 JSON 数据。"
 

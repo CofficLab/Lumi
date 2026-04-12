@@ -4,8 +4,7 @@ import MagicKit
 /// GitHub 重新打开 Issue 工具
 struct GitHubReopenIssueTool: AgentTool, SuperLog {
     nonisolated static let emoji = "🔓"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     let name = "github_reopen_issue"
     let description = "重新打开已关闭的 GitHub Issue。"
 

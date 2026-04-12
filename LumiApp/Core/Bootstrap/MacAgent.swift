@@ -31,8 +31,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     nonisolated static let emoji = "🍎"
     
     /// 是否启用详细日志
-    static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     // MARK: - Controllers
 
     /// 状态栏控制器

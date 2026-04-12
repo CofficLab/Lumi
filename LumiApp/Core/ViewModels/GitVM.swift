@@ -9,8 +9,7 @@ import SwiftUI
 @MainActor
 final class GitVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "🔀"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     // MARK: - Commit Selection
 
     /// 当前选中的 commit hash

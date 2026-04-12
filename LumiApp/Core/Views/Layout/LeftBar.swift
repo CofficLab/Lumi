@@ -208,8 +208,7 @@ struct LeftSidebar: View {
 /// 应用模式切换器，在 App 模式和 Agent 模式之间切换
 private struct ModeSwitcherView: View, SuperLog {
     nonisolated static let emoji = "🔄"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     @EnvironmentObject var app: GlobalVM
     @Environment(\.windowState) var windowState
 

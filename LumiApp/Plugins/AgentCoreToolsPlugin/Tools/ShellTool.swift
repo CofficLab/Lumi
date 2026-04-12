@@ -11,8 +11,7 @@ import MagicKit
 /// - 内核只认识 Tool 抽象，不关心具体实现细节
 struct ShellTool: AgentTool, SuperLog {
     nonisolated static let emoji = "💻"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     let name = "run_command"
     let description = "Execute a shell command in terminal. Use this to run build commands, git commands, or other system tools."
 

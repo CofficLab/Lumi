@@ -4,8 +4,7 @@ import MagicKit
 /// GitHub 仓库信息工具
 struct GitHubRepoInfoTool: AgentTool, SuperLog {
     nonisolated static let emoji = "📦"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     let name = "github_repo_info"
     let description = "获取 GitHub 仓库的基本信息，包括 star 数、forks、描述、主要语言等。"
 

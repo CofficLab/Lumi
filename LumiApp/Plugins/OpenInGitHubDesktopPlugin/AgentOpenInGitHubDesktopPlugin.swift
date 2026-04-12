@@ -17,8 +17,7 @@ import SwiftUI
 /// 如果用户未安装 GitHub Desktop，按钮会被禁用或无响应。
 actor AgentOpenInGitHubDesktopPlugin: SuperPlugin {
     nonisolated static let emoji = "🐙"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     static let id = "AgentOpenInGitHubDesktop"
     static let displayName = String(localized: "Open in GitHub Desktop", table: "AgentOpenInGitHubDesktop")
     static let description = String(localized: "Open current project in GitHub Desktop", table: "AgentOpenInGitHubDesktop")

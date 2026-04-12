@@ -7,8 +7,7 @@ import MagicKit
 @MainActor
 final class ConversationCreationController: ObservableObject, SuperLog {
     nonisolated static let emoji = "💬"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     private let container: RootViewContainer
 
     init(container: RootViewContainer) {

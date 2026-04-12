@@ -6,8 +6,7 @@ struct GitHubPluginSettingsView: View, SuperLog {
     // MARK: - SuperLog
 
     nonisolated static let emoji = "🐙"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     // MARK: - State
 
     /// GitHub Token 输入

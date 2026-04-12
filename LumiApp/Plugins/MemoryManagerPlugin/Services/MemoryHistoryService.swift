@@ -4,8 +4,7 @@ import MagicKit
 
 @MainActor
 class MemoryHistoryService: ObservableObject, SuperLog {
-    nonisolated static let verbose = false
-    static let shared = MemoryHistoryService()
+    nonisolated static let verbose: Bool = false    static let shared = MemoryHistoryService()
     nonisolated static let emoji = "📈"
 
     // High resolution buffer (1s interval) - Keep last 1 hour

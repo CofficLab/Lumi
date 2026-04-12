@@ -4,8 +4,7 @@ import MagicKit
 /// 项目清理服务 - 在后台执行扫描和清理操作
 class ProjectCleanerService: @unchecked Sendable, SuperLog {
     nonisolated static let emoji = "📁"
-    nonisolated static let verbose = true
-    static let shared = ProjectCleanerService()
+    nonisolated static let verbose: Bool = true    static let shared = ProjectCleanerService()
     private let fileManager = FileManager.default
 
     // 注意：状态管理已移至 ViewModel，Service 只负责后台操作

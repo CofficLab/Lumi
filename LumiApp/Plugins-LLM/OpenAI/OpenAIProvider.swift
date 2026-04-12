@@ -8,8 +8,7 @@ import os
 final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.openai")
     nonisolated static let emoji = "🟢"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     // MARK: - 基础信息
 
     static let id = "openai"

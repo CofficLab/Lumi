@@ -4,8 +4,7 @@ import MagicKit
 /// 获取当前项目工具
 struct GetCurrentProjectTool: AgentTool, SuperLog {
     nonisolated static let emoji = "📁"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     let name = "get_current_project"
     let description = "获取当前选中的项目信息，包括项目名称和路径。如果没有选择项目，返回空信息。"
 

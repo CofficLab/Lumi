@@ -5,8 +5,7 @@ import MagicKit
 @MainActor
 class CacheCleanerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🗑️"
-    nonisolated static let verbose = true
-    @Published var categories: [CacheCategory] = []
+    nonisolated static let verbose: Bool = true    @Published var categories: [CacheCategory] = []
     @Published var isScanning = false
     @Published var isCleaning = false
     @Published var scanProgress: String = ""

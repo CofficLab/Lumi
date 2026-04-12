@@ -7,8 +7,7 @@ struct CommandSuggestionView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "💡"
     /// 是否输出详细日志
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     /// 环境对象：命令建议视图模型
     @EnvironmentObject var viewModel: CommandSuggestionVM
 

@@ -9,8 +9,7 @@ actor RecentProjectsPlugin: SuperPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.recent-projects")
 
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     static let id = "RecentProjects"
     static let displayName = String(localized: "Recent Projects", table: "RecentProjects")
     static let description = String(localized: "Persist recent projects list and manage current project", table: "RecentProjects")

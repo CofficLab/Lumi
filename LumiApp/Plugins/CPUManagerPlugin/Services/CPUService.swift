@@ -7,8 +7,7 @@ import MagicKit
 class CPUService: ObservableObject, SuperLog {
     static let shared = CPUService()
     nonisolated static let emoji = "🧠"
-    nonisolated static let verbose = false
-    
+    nonisolated static let verbose: Bool = false    
     // MARK: - Published Properties
     
     /// 当前总 CPU 使用率 (0.0 - 100.0)

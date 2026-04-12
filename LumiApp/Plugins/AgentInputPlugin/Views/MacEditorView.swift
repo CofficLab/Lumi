@@ -8,8 +8,7 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "✏️"
     /// 是否输出详细日志
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     /// 最小高度
     static let minHeight: CGFloat = 64
     /// 最大高度
@@ -224,8 +223,7 @@ class EditorTextView: NSTextView, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "📝"
     /// 是否输出详细日志
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
         let pasteboard = sender.draggingPasteboard
         

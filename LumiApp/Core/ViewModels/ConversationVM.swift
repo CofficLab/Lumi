@@ -10,8 +10,7 @@ final class ConversationVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "💬"
 
     /// 是否启用详细日志
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     // MARK: - 服务依赖
 
     /// 聊天历史服务

@@ -14,11 +14,9 @@ actor ConversationListPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "💬"
 
     /// Whether to enable this plugin
-    nonisolated static let enable = true
-
+    nonisolated static let enable: Bool = true
     /// Whether to enable verbose log output
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     /// Plugin unique identifier
     static let id: String = "ConversationList"
 

@@ -22,8 +22,7 @@ import MagicKit
 /// - 不依赖 `RootViewContainer.shared`
 struct DelayMessageTool: AgentTool, SuperLog {
     nonisolated static let emoji = "⏳"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     let name = "delay_message"
     let description = "Send a delayed user message to a conversation after a specified number of seconds. The current turn will end, and a new turn will start when the message arrives. Use get_current_conversation first to obtain the conversation ID."
 

@@ -17,8 +17,7 @@ import os
 public final class MLXInferenceService: ObservableObject, SuperLog {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.mlx")
     nonisolated public static let emoji = "🧠"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     // MARK: - Published Properties
 
     /// 当前服务状态

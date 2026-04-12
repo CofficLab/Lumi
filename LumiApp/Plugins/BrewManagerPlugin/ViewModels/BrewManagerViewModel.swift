@@ -6,8 +6,7 @@ import MagicKit
 @MainActor
 class BrewManagerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🍺"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     @Published var installedPackages: [BrewPackage] = []
     @Published var outdatedPackages: [BrewPackage] = []
     @Published var searchResults: [BrewPackage] = []

@@ -4,8 +4,7 @@ import SwiftUI
 /// 消息插件 - 负责显示聊天消息列表
 actor AgentMessagesPlugin: SuperPlugin {
     nonisolated static let emoji = "💬"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     static let id = "DevAssistantMessages"
     static let displayName = String(localized: "Dev Assistant Messages", table: "AgentMessages")
     static let description = String(localized: "DevAssistant chat messages", table: "AgentMessages")

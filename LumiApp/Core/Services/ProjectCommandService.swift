@@ -22,8 +22,7 @@ private final class LockedDataBuffer: @unchecked Sendable {
 /// 项目命令加载服务 - 负责从 .agent/commands 目录加载命令
 actor ProjectCommandLoader: SuperLog {
     nonisolated static let emoji = "📜"
-    nonisolated static let verbose = false
-    
+    nonisolated static let verbose: Bool = false    
     private let fileManager: FileManager
     
     init(fileManager: FileManager = .default) {
@@ -173,8 +172,7 @@ actor ProjectCommandLoader: SuperLog {
 /// 命令执行服务 - 负责处理和执行项目命令
 actor ProjectCommandExecutor: SuperLog {
     nonisolated static let emoji = "⚡"
-    nonisolated static let verbose = false
-    
+    nonisolated static let verbose: Bool = false    
     private let commandLoader: ProjectCommandLoader
     private var loadedCommands: [ProjectCommand] = []
     private var currentProjectPath: String?

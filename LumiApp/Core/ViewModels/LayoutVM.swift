@@ -9,8 +9,7 @@ import MagicKit
 final class LayoutVM: ObservableObject, SuperLog {
     
     nonisolated static let emoji = "🖥️"
-    nonisolated static let verbose = false
-    
+    nonisolated static let verbose: Bool = false    
     // MARK: - Published Properties
     
     /// 当前选中的 Agent 模式侧边栏 Tab ID
@@ -25,12 +24,12 @@ final class LayoutVM: ObservableObject, SuperLog {
         // 从持久化存储恢复上次选中的标签
         if let savedTabId = AppSettingStore.loadSelectedAgentSidebarTabId() {
             self.selectedAgentSidebarTabId = savedTabId
-            AppLogger.layout.info("\(Self.t)恢复侧边栏标签: \(savedTabId)")
+            if Self.verbose { AppLogger.layout.info("\(Self.t)恢复侧边栏标签: \(savedTabId)") }
         }
         // 从持久化存储恢复上次选中的 detail ID
         if let savedDetailId = AppSettingStore.loadSelectedAgentDetailId() {
             self.selectedAgentDetailId = savedDetailId
-            AppLogger.layout.info("\(Self.t)恢复 Detail 视图: \(savedDetailId)")
+            if Self.verbose { AppLogger.layout.info("\(Self.t)恢复 Detail 视图: \(savedDetailId)") }
         }
     }
     
@@ -43,7 +42,7 @@ final class LayoutVM: ObservableObject, SuperLog {
     func selectAgentSidebarTab(_ tabId: String, reason: String) {
         let old = selectedAgentSidebarTabId
         guard tabId != old else { return }
-        AppLogger.layout.info("\(Self.t)Sidebar tab: \(old) → \(tabId), reason: \(reason)")
+        if Self.verbose { AppLogger.layout.info("\(Self.t)Sidebar tab: \(old) → \(tabId), reason: \(reason)") }
         selectedAgentSidebarTabId = tabId
         AppSettingStore.saveSelectedAgentSidebarTabId(tabId)
     }
@@ -62,11 +61,11 @@ final class LayoutVM: ObservableObject, SuperLog {
             // 尝试从持久化存储恢复
             if let savedTabId = AppSettingStore.loadSelectedAgentSidebarTabId(),
                availableTabIds.contains(savedTabId) {
-                AppLogger.layout.info("\(Self.t)restoreSelectedTab: 恢复 \(savedTabId)")
+                if Self.verbose { AppLogger.layout.info("\(Self.t)restoreSelectedTab: 恢复 \(savedTabId)") }
                 selectedAgentSidebarTabId = savedTabId
             } else {
                 let fallback = availableTabIds[0]
-                AppLogger.layout.info("\(Self.t)restoreSelectedTab: 回退到首个可用标签 \(fallback)")
+                if Self.verbose { AppLogger.layout.info("\(Self.t)restoreSelectedTab: 回退到首个可用标签 \(fallback)") }
                 selectedAgentSidebarTabId = fallback
                 AppSettingStore.saveSelectedAgentSidebarTabId(selectedAgentSidebarTabId)
             }
@@ -83,7 +82,7 @@ final class LayoutVM: ObservableObject, SuperLog {
     func selectAgentDetail(_ detailId: String) {
         let old = selectedAgentDetailId
         guard detailId != old else { return }
-        AppLogger.layout.info("\(Self.t)Detail: \(old) → \(detailId)")
+        if Self.verbose { AppLogger.layout.info("\(Self.t)Detail: \(old) → \(detailId)") }
         selectedAgentDetailId = detailId
         AppSettingStore.saveSelectedAgentDetailId(detailId)
     }
@@ -102,11 +101,11 @@ final class LayoutVM: ObservableObject, SuperLog {
             // 尝试从持久化存储恢复
             if let savedDetailId = AppSettingStore.loadSelectedAgentDetailId(),
                availableDetailIds.contains(savedDetailId) {
-                AppLogger.layout.info("\(Self.t)restoreSelectedDetail: 恢复 \(savedDetailId)")
+                if Self.verbose { AppLogger.layout.info("\(Self.t)restoreSelectedDetail: 恢复 \(savedDetailId)") }
                 selectedAgentDetailId = savedDetailId
             } else {
                 let fallback = availableDetailIds[0]
-                AppLogger.layout.info("\(Self.t)restoreSelectedDetail: 回退到首个可用 Detail \(fallback)")
+                if Self.verbose { AppLogger.layout.info("\(Self.t)restoreSelectedDetail: 回退到首个可用 Detail \(fallback)") }
                 selectedAgentDetailId = fallback
                 AppSettingStore.saveSelectedAgentDetailId(selectedAgentDetailId)
             }
@@ -118,13 +117,13 @@ final class LayoutVM: ObservableObject, SuperLog {
     
     /// 清除选中的标签（当没有可用标签时）
     func clearSelectedTab() {
-        AppLogger.layout.info("\(Self.t)清除侧边栏标签选中")
+        if Self.verbose { AppLogger.layout.info("\(Self.t)清除侧边栏标签选中") }
         selectedAgentSidebarTabId = ""
     }
     
     /// 清除选中的 Detail（当没有可用时）
     func clearSelectedDetail() {
-        AppLogger.layout.info("\(Self.t)清除 Detail 视图选中")
+        if Self.verbose { AppLogger.layout.info("\(Self.t)清除 Detail 视图选中") }
         selectedAgentDetailId = ""
     }
 }

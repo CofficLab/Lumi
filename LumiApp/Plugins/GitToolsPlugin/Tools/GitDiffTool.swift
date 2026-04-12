@@ -5,8 +5,7 @@ import SwiftUI
 /// Git 差异工具
 struct GitDiffTool: AgentTool, SuperLog {
     nonisolated static let emoji = "🔍"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     let name = "git_diff"
     let description = "查看 Git 仓库的代码变更。支持查看工作区变更或暂存区变更。"
 

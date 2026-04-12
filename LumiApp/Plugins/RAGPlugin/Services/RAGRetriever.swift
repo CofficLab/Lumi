@@ -2,8 +2,7 @@ import Foundation
 
 struct RAGRetriever {
     private let store: RAGSQLiteStore
-    private static let verbose = false
-
+    private nonisolated static let verbose: Bool = false
     init(store: RAGSQLiteStore) {
         self.store = store
     }

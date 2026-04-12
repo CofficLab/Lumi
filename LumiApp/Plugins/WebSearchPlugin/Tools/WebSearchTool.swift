@@ -10,8 +10,7 @@ import MagicKit
 /// 当前为轻量级实现，仅返回提示信息，可根据需求后续接入真实搜索 API。
 struct WebSearchTool: AgentTool, SuperLog {
     nonisolated static let emoji = "🔍"
-    nonisolated static let verbose = false
-    
+    nonisolated static let verbose: Bool = false    
     let name = "web_search"
     let description = """
 Search the web for real-time information.

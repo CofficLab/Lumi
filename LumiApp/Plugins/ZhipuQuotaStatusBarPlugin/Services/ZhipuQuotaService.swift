@@ -5,8 +5,7 @@ import MagicKit
 /// 智谱配额查询辅助工具
 enum ZhipuQuotaService: SuperLog {
     nonisolated static let emoji = "📊"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     /// 默认配额 API 端点
     private static let defaultQuotaURL = "https://bigmodel.cn/api/monitor/usage/quota/limit"
 
@@ -16,12 +15,16 @@ enum ZhipuQuotaService: SuperLog {
     /// 获取配额信息
     /// - Returns: 配额结果
     static func fetchQuota() async -> (status: ZhipuQuotaStatus, data: ZhipuQuotaData?) {
-        ZhipuQuotaStatusBarPlugin.logger.info("\(Self.t)开始获取配额信息")
+        if Self.verbose {
+            ZhipuQuotaStatusBarPlugin.logger.info("\(Self.t)开始获取配额信息")
+        }
 
         // 获取 API Key
         let apiKey = APIKeyStore.shared.string(forKey: "DevAssistant_ApiKey_Zhipu") ?? ""
         guard !apiKey.isEmpty else {
-            ZhipuQuotaStatusBarPlugin.logger.warning("\(Self.t)API Key 为空，跳过配额查询")
+            if Self.verbose {
+                ZhipuQuotaStatusBarPlugin.logger.warning("\(Self.t)API Key 为空，跳过配额查询")
+            }
             return (.authError, nil)
         }
 
@@ -50,7 +53,9 @@ enum ZhipuQuotaService: SuperLog {
 
             // 认证失败
             if httpResponse.statusCode == 401 || httpResponse.statusCode == 1001 {
-                ZhipuQuotaStatusBarPlugin.logger.warning("\(Self.t)认证失败，HTTP \(httpResponse.statusCode)")
+                if Self.verbose {
+                    ZhipuQuotaStatusBarPlugin.logger.warning("\(Self.t)认证失败，HTTP \(httpResponse.statusCode)")
+                }
                 return (.authError, nil)
             }
 
@@ -67,16 +72,22 @@ enum ZhipuQuotaService: SuperLog {
                 return (.unavailable, nil)
             }
 
-            ZhipuQuotaStatusBarPlugin.logger.debug("\(Self.t)API 原始响应：\(payload)")
+            if Self.verbose {
+                ZhipuQuotaStatusBarPlugin.logger.debug("\(Self.t)API 原始响应：\(payload)")
+            }
 
             // 检查 success 字段
             if payload["success"] as? Bool != true {
                 let code = payload["code"] as? Int
                 if code == 1001 || code == 401 {
-                    ZhipuQuotaStatusBarPlugin.logger.warning("\(Self.t)业务层认证失败，code: \(code ?? -1)")
+                    if Self.verbose {
+                        ZhipuQuotaStatusBarPlugin.logger.warning("\(Self.t)业务层认证失败，code: \(code ?? -1)")
+                    }
                     return (.authError, nil)
                 }
-                ZhipuQuotaStatusBarPlugin.logger.warning("\(Self.t)业务层返回失败，code: \(code ?? -1)")
+                if Self.verbose {
+                    ZhipuQuotaStatusBarPlugin.logger.warning("\(Self.t)业务层返回失败，code: \(code ?? -1)")
+                }
                 return (.unavailable, nil)
             }
 
@@ -116,7 +127,9 @@ enum ZhipuQuotaService: SuperLog {
                     mcpLeftPercent: mcpLeftPercent,
                     mcpNextResetTime: mcpNextResetTime
                 )
-                ZhipuQuotaStatusBarPlugin.logger.info("\(Self.t)配额查询成功(rolling): \(quotaData.statusText)")
+                if Self.verbose {
+                    ZhipuQuotaStatusBarPlugin.logger.info("\(Self.t)配额查询成功(rolling): \(quotaData.statusText)")
+                }
                 return (.success(quotaData), nil)
             }
 
@@ -146,11 +159,15 @@ enum ZhipuQuotaService: SuperLog {
                     mcpLeftPercent: mcpLeftPercent,
                     mcpNextResetTime: mcpNextResetTime
                 )
-                ZhipuQuotaStatusBarPlugin.logger.info("\(Self.t)配额查询成功(timeLimit fallback): \(quotaData.statusText)")
+                if Self.verbose {
+                    ZhipuQuotaStatusBarPlugin.logger.info("\(Self.t)配额查询成功(timeLimit fallback): \(quotaData.statusText)")
+                }
                 return (.success(quotaData), nil)
             }
 
-            ZhipuQuotaStatusBarPlugin.logger.warning("\(Self.t)未找到匹配的配额限制类型")
+            if Self.verbose {
+                ZhipuQuotaStatusBarPlugin.logger.warning("\(Self.t)未找到匹配的配额限制类型")
+            }
             return (.unavailable, nil)
 
         } catch {

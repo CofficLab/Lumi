@@ -8,8 +8,7 @@ import MagicKit
 /// 使用 SwiftData 持久化到 `AppConfig.getDBFolderURL()/ClipboardManager/history.sqlite`
 actor ClipboardHistoryManager: SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose = false
-    
+    nonisolated static let verbose: Bool = false    
     // MARK: - Singleton
     
     static let shared = ClipboardHistoryManager()

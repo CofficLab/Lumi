@@ -4,8 +4,7 @@ import MagicKit
 /// 添加项目到最近列表工具
 struct AddProjectTool: AgentTool, SuperLog {
     nonisolated static let emoji = "📁"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     let name = "add_recent_project"
     let description = "将指定项目添加到最近项目列表。添加后会更新 projectVM 中的最近项目。"
 

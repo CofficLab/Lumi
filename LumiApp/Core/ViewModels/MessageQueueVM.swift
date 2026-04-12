@@ -5,8 +5,7 @@ import MagicKit
 @MainActor
 final class MessageQueueVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📤"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     // MARK: - 队列状态
 
     /// 所有队列中的消息（包含 pending 和 processing 状态）

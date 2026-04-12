@@ -8,8 +8,7 @@ struct DebugCommand: Commands, SuperLog {
     nonisolated static let emoji = "🐛"
 
     /// 是否启用详细日志输出
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     var body: some Commands {
         SidebarCommands()
 

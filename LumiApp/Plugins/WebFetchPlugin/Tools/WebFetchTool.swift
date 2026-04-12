@@ -7,8 +7,7 @@ import MagicKit
 /// 支持处理 HTML、纯文本、JSON 等多种内容类型。
 struct WebFetchTool: AgentTool, SuperLog {
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose = false
-    
+    nonisolated static let verbose: Bool = false    
     let name = "web_fetch"
     let description = """
 Fetch and extract content from a URL. Converts HTML to Markdown format automatically.

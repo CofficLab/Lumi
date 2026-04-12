@@ -4,8 +4,7 @@ import MagicKit
 /// GitHub Issue 列表工具
 struct GitHubIssueListTool: AgentTool, SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     let name = "github_issues"
     let description = "获取 GitHub 仓库的 Issue 列表，支持按状态（open/closed/all）筛选。"
 

@@ -11,8 +11,7 @@ actor GitHubCLIDetectPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🐚"
 
     /// 是否启用详细日志
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     // MARK: - Plugin Properties
 
     static let id: String = "GitHubCLIDetect"

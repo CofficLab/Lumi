@@ -5,8 +5,7 @@ import os
 actor BackgroundAgentTaskPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.background-agent-task")
     nonisolated static let emoji = "🧵"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     static let id: String = "BackgroundAgentTaskPlugin"
     static let displayName: String = String(localized: "Background Agent Task", table: "BackgroundAgentTask")
     static let description: String = String(localized: "Receive instructions and execute tasks asynchronously in the background. Task results are stored in the plugin's own database.", table: "BackgroundAgentTask")

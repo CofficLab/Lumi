@@ -5,8 +5,7 @@ import MagicKit
 
 /// MCP 服务：负责管理 MCP 服务器连接和工具发现（插件内部实现细节）。
 final class MCPService: SuperLog, @unchecked Sendable {
-    nonisolated static let verbose = true
-    nonisolated static let emoji = "🐘"
+    nonisolated static let verbose: Bool = true    nonisolated static let emoji = "🐘"
 
     // MARK: - Combine Publishers
 

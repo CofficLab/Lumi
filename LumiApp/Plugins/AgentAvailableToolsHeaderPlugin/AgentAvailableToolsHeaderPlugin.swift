@@ -4,8 +4,7 @@ import SwiftUI
 /// 可用工具头部插件：右侧栏 header 中展示"可用工具"按钮
 actor AgentAvailableToolsHeaderPlugin: SuperPlugin {
     nonisolated static let emoji = "🧰"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     static let id = "AgentAvailableToolsHeader"
     static let displayName = String(localized: "Tools", table: "AgentAvailableToolsHeader")
     static let description = String(localized: "Show all available tools", table: "AgentAvailableToolsHeader")

@@ -42,7 +42,9 @@ actor RAGService: SuperLog {
     }
 
     init() {
-        AppLogger.core.info("\(Self.t)🦞 RAG 服务已创建")
+        if Self.verbose > 0 {
+            AppLogger.core.info("\(Self.t)🦞 RAG 服务已创建")
+        }
     }
 
     // MARK: - Lifecycle

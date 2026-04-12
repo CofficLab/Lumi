@@ -68,8 +68,7 @@ final class PluginVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "🔌"
 
     /// 是否启用详细日志输出
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     /// 已加载的插件列表
     ///
     /// 包含所有成功注册的插件实例。

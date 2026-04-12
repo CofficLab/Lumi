@@ -4,8 +4,7 @@ import MagicKit
 /// 设置当前项目工具
 struct SetCurrentProjectTool: AgentTool, SuperLog {
     nonisolated static let emoji = "📁"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     let name = "set_current_project"
     let description = "设置当前选中的项目。需要提供项目路径。"
 

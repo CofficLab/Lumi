@@ -8,8 +8,7 @@ actor AgentMCPToolsPlugin: SuperPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.mcp-tools")
 
     nonisolated static let emoji = "🐘"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     static let id = "AgentMCPTools"
     static let displayName = String(localized: "MCP Tools", table: "AgentMCPTools")
     static let description = String(localized: "MCP-backed tools (hidden)", table: "AgentMCPTools")

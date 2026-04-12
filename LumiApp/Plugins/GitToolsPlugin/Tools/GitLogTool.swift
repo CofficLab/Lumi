@@ -4,8 +4,7 @@ import MagicKit
 /// Git 日志工具
 struct GitLogTool: AgentTool, SuperLog {
     nonisolated static let emoji = "📜"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     let name = "git_log"
     let description = "查看 Git 提交历史。支持限制数量、查看特定分支或文件的日志。"
 

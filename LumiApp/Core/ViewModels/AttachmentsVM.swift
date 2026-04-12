@@ -5,8 +5,7 @@ import MagicKit
 @MainActor
 final class AttachmentsVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📎"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     @Published private(set) var pendingAttachments: [AgentPendingImageAttachment] = []
 
     func removeAttachment(id: UUID) {

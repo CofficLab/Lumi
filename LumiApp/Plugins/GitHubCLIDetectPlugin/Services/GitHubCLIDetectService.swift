@@ -6,8 +6,7 @@ import MagicKit
 /// 检测用户是否安装了 GitHub CLI (gh) 命令行工具
 final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
     nonisolated static let emoji = "🔍"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     static let shared = GitHubCLIDetectService()
 
     private init() {}

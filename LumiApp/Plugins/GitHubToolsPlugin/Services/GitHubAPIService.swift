@@ -6,8 +6,7 @@ import MagicKit
 /// 封装 GitHub REST API v3 的网络请求
 final class GitHubAPIService: @unchecked Sendable, SuperLog {
     nonisolated static let emoji = "🐙"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     static let shared = GitHubAPIService()
 
     /// API 基础 URL

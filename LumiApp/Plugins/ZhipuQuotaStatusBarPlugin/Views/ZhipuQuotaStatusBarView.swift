@@ -6,8 +6,7 @@ import os
 /// 智谱 GLM 配额状态栏视图
 struct ZhipuQuotaStatusBarView: View, SuperLog {
     nonisolated static let emoji = "📊"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     @EnvironmentObject private var llmVM: LLMVM
     @State private var quotaStatus: ZhipuQuotaStatus = .loading
     @State private var lastUpdateTime: Date?
@@ -152,10 +151,12 @@ struct ZhipuQuotaStatusBarView: View, SuperLog {
                 quotaStatus = result.status
                 lastUpdateTime = Date()
 
-                if case .success(let data) = result.status {
-                    ZhipuQuotaStatusBarPlugin.logger.info("\(Self.t)配额刷新成功: \(data.statusText)")
-                } else {
-                    ZhipuQuotaStatusBarPlugin.logger.warning("\(Self.t)配额刷新失败")
+                if Self.verbose {
+                    if case .success(let data) = result.status {
+                        ZhipuQuotaStatusBarPlugin.logger.info("\(Self.t)配额刷新成功: \(data.statusText)")
+                    } else {
+                        ZhipuQuotaStatusBarPlugin.logger.warning("\(Self.t)配额刷新失败")
+                    }
                 }
             }
         }

@@ -6,8 +6,7 @@ struct ChatToolbarView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "🧰"
     /// 是否输出详细日志
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     @EnvironmentObject var conversationTurnServices: ConversationTurnServices
     @EnvironmentObject var llmVM: LLMVM
     @EnvironmentObject var projectVM: ProjectVM
