@@ -112,7 +112,7 @@ extension RootView {
 
     func onResumeSendAfterToolPermission(_ conversationId: UUID) {
         Task {
-            await sendController.send(conversationId: conversationId)
+            await sendController.resumeAfterPermissionGranted(conversationId: conversationId)
         }
     }
 
