@@ -56,12 +56,6 @@
         }
       }
     },
-    "Author" : {
-
-    },
-    "Branch" : {
-
-    },
     "Cannot display diff for this file" : {
       "localizations" : {
         "en" : {
@@ -83,6 +77,9 @@
           }
         }
       }
+    },
+    "Clean" : {
+
     },
     "Clean Workspace" : {
       "localizations" : {
@@ -129,9 +126,6 @@
       }
     },
     "Contributors" : {
-
-    },
-    "Date" : {
 
     },
     "Display selected Git commit detail" : {
@@ -200,7 +194,7 @@
         }
       }
     },
-    "Last Commit" : {
+    "Latest Commit" : {
 
     },
     "Loading diff..." : {
@@ -313,12 +307,6 @@
         }
       }
     },
-    "Project Info" : {
-
-    },
-    "Remote" : {
-
-    },
     "Select a file to view diff" : {
       "localizations" : {
         "en" : {
@@ -340,9 +328,6 @@
           }
         }
       }
-    },
-    "Team" : {
-
     },
     "Total Commits" : {
 
