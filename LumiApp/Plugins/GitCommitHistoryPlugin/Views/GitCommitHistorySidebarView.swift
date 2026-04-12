@@ -10,6 +10,7 @@ import MagicKit
 struct GitCommitHistorySidebarView: View {
     @EnvironmentObject var projectVM: ProjectVM
     @EnvironmentObject var gitVM: GitVM
+    @EnvironmentObject var layoutVM: LayoutVM
 
     /// 提交列表数据
     @State private var commits: [GitCommitLog] = []
@@ -171,6 +172,10 @@ struct GitCommitHistorySidebarView: View {
         .onTapGesture {
             selectedCommitHash = nil
             gitVM.selectCommit(hash: nil)
+            // 确保侧边栏也选中这个标签
+            if layoutVM.selectedAgentSidebarTabId != GitCommitHistoryPlugin.id {
+                layoutVM.selectAgentSidebarTab(GitCommitHistoryPlugin.id)
+            }
         }
     }
 

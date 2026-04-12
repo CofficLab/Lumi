@@ -180,17 +180,17 @@ struct GitCommitDetailView: View {
 
             // 文件列表
             List(uncommittedFiles, id: \.path, selection: $selectedFile) { file in
-                uncommittedFileRow(file)
+                fileRow(file)
             }
             .listStyle(.plain)
         }
     }
 
-    private func uncommittedFileRow(_ file: GitChangedFile) -> some View {
+    private func fileRow(_ file: GitChangedFile) -> some View {
         HStack(spacing: 6) {
-            Image(systemName: fileIcon(for: file.path))
+            Image(systemName: GitCommitDetailService.fileIcon(for: file.path))
                 .font(.system(size: 10))
-                .foregroundColor(fileIconColor(for: file.path))
+                .foregroundColor(GitCommitDetailService.fileIconColor(for: file.path))
 
             Text(file.path)
                 .font(.system(size: 11, design: .monospaced))
@@ -279,7 +279,7 @@ struct GitCommitDetailView: View {
             // 元信息行：作者 + 时间 + Hash
             HStack(spacing: 12) {
                 metaLabel(icon: "person.fill", value: detail.author)
-                metaLabel(icon: "clock.fill", value: formattedDate(detail.date))
+                metaLabel(icon: "clock.fill", value: GitCommitDetailService.formattedDate(detail.date))
                 hashLabel(detail)
 
                 if let stats = detail.stats {
@@ -322,7 +322,15 @@ struct GitCommitDetailView: View {
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
 
             Button {
-                copyHash(detail.hash)
+                GitCommitDetailService.copyHash(detail.hash)
+                withAnimation(.spring()) {
+                    isCopied = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    withAnimation(.spring()) {
+                        isCopied = false
+                    }
+                }
             } label: {
                 Image(systemName: isCopied ? "checkmark.circle.fill" : "doc.on.doc")
                     .font(.system(size: 9))
@@ -372,56 +380,10 @@ struct GitCommitDetailView: View {
 
             // 文件列表：使用含变更类型的 GitChangedFile
             List(commitChangedFiles, id: \.path, selection: $selectedFile) { file in
-                uncommittedFileRow(file)
+                fileRow(file)
             }
             .listStyle(.plain)
         }
-    }
-
-    /// 根据文件扩展名返回图标
-    private func fileIcon(for file: String) -> String {
-        let ext = (file as NSString).pathExtension.lowercased()
-        switch ext {
-        case "swift": return "swift"
-        case "js", "ts", "jsx", "tsx": return "doc.text.fill"
-        case "json": return "braces"
-        case "md", "markdown": return "doc.text"
-        case "yml", "yaml": return "doc.text"
-        case "plist": return "gearshape"
-        case "png", "jpg", "jpeg", "gif", "svg", "ico": return "photo"
-        case "xcodeproj", "xcworkspace": return "hammer"
-        case "html", "css": return "globe"
-        case "py": return "doc.text.fill"
-        case "rb": return "doc.text.fill"
-        case "go": return "doc.text.fill"
-        case "rs": return "doc.text.fill"
-        default: return "doc.text"
-        }
-    }
-
-    /// 文件图标颜色
-    private func fileIconColor(for file: String) -> Color {
-        let ext = (file as NSString).pathExtension.lowercased()
-        switch ext {
-        case "swift": return .orange
-        case "js", "ts": return .yellow
-        case "json": return .green
-        case "md": return .blue
-        default: return .secondary
-        }
-    }
-
-    /// 根据 commit detail 的信息推断变更类型
-    /// 注：由于 changedFiles 只包含文件名，无法精确判断变更类型，
-    /// 这里统一显示为变更标记
-    private func changeTypeBadge(for file: String) -> some View {
-        Text("M")
-            .font(.system(size: 9, weight: .bold, design: .monospaced))
-            .foregroundColor(.orange)
-            .padding(.horizontal, 4)
-            .padding(.vertical, 1)
-            .background(Color.orange.opacity(0.1))
-            .cornerRadius(3)
     }
 
     // MARK: - Diff View Section (Shared)
@@ -560,7 +522,7 @@ struct GitCommitDetailView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    // MARK: - Actions
+    // MARK: - Data Loading
 
     /// 加载工作状态（未提交变更）
     private func loadWorkingState() {
@@ -575,7 +537,7 @@ struct GitCommitDetailView: View {
 
         Task {
             do {
-                let files = try await GitService.shared.getUncommittedChanges(path: path)
+                let files = try await GitCommitDetailService.loadUncommittedFiles(path: path)
 
                 await MainActor.run {
                     self.uncommittedFiles = files
@@ -614,14 +576,10 @@ struct GitCommitDetailView: View {
 
         loadTask = Task {
             do {
-                // 并行加载 commit 详情和变更文件列表
-                async let detailTask = GitService.shared.getCommitDetail(path: path, hash: hash)
-                async let filesTask = Task.detached(priority: .userInitiated) {
-                    try GitService.shared.getCommitChangedFiles(path: path, hash: hash)
-                }
-
-                let detail = try await detailTask
-                let files = (try? await filesTask.value) ?? []
+                let (detail, files) = try await GitCommitDetailService.loadCommitDetail(
+                    path: path,
+                    hash: hash
+                )
 
                 if Task.isCancelled { return }
 
@@ -661,102 +619,36 @@ struct GitCommitDetailView: View {
         loadingDiff = true
 
         let path = projectVM.currentProjectPath
+        let hash = gitVM.selectedCommitHash
 
-        // 判断是工作状态模式还是 commit 模式
-        if let hash = gitVM.selectedCommitHash {
-            // Commit 模式
-            diffTask = Task.detached(priority: .userInitiated) {
-                do {
-                    let (before, after) = try await GitService.shared.getCommitFileContentChange(
-                        path: path,
-                        hash: hash,
-                        file: file
-                    )
+        diffTask = Task.detached(priority: .userInitiated) {
+            do {
+                let (before, after) = try await GitCommitDetailService.loadFileDiff(
+                    file: file,
+                    projectPath: path,
+                    commitHash: hash
+                )
 
-                    if Task.isCancelled { return }
+                if Task.isCancelled { return }
 
-                    await MainActor.run {
-                        guard self.selectedFile == file else { return }
-                        self.oldText = before ?? ""
-                        self.newText = after ?? ""
-                        self.loadingDiff = false
-                    }
-                } catch {
-                    if Task.isCancelled { return }
-
-                    await MainActor.run {
-                        self.oldText = ""
-                        self.newText = ""
-                        self.loadingDiff = false
-                    }
-
-                    GitCommitDetailPlugin.logger.error("加载文件 diff 失败: \(error.localizedDescription)")
+                await MainActor.run {
+                    guard self.selectedFile == file else { return }
+                    self.oldText = before
+                    self.newText = after
+                    self.loadingDiff = false
                 }
-            }
-        } else {
-            // 工作状态模式
-            diffTask = Task.detached(priority: .userInitiated) {
-                do {
-                    let (before, after) = try await GitService.shared.getUncommittedFileContentChange(
-                        path: path,
-                        file: file
-                    )
+            } catch {
+                if Task.isCancelled { return }
 
-                    if Task.isCancelled { return }
-
-                    await MainActor.run {
-                        guard self.selectedFile == file else { return }
-                        self.oldText = before ?? ""
-                        self.newText = after ?? ""
-                        self.loadingDiff = false
-                    }
-                } catch {
-                    if Task.isCancelled { return }
-
-                    await MainActor.run {
-                        self.oldText = ""
-                        self.newText = ""
-                        self.loadingDiff = false
-                    }
-
-                    GitCommitDetailPlugin.logger.error("加载未提交文件 diff 失败: \(error.localizedDescription)")
+                await MainActor.run {
+                    self.oldText = ""
+                    self.newText = ""
+                    self.loadingDiff = false
                 }
+
+                GitCommitDetailPlugin.logger.error("加载文件 diff 失败: \(error.localizedDescription)")
             }
         }
-    }
-
-    private func copyHash(_ hash: String) {
-        #if os(macOS)
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(hash, forType: .string)
-        #endif
-
-        withAnimation(.spring()) {
-            isCopied = true
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            withAnimation(.spring()) {
-                isCopied = false
-            }
-        }
-    }
-
-    // MARK: - Date Formatting
-
-    private func formattedDate(_ dateString: String) -> String {
-        let formatters = DateParseHelper.formatHandlers
-
-        for formatter in formatters {
-            if let date = formatter.date(from: dateString) {
-                let displayFormatter = DateFormatter()
-                displayFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                displayFormatter.locale = Locale(identifier: "en_US_POSIX")
-                return displayFormatter.string(from: date)
-            }
-        }
-
-        return dateString
     }
 }
 

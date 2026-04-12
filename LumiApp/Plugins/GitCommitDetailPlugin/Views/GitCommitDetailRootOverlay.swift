@@ -24,10 +24,20 @@ struct GitCommitDetailRootOverlay<Content: View>: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onChange(of: gitVM.selectedCommitHash) { _, newHash in
             guard newHash != nil else { return }
+            
+            GitCommitDetailPlugin.logger.info("Commit selected: \(newHash?.prefix(7) ?? "nil"), activating Detail and Sidebar tabs")
+            
             // 有 commit 被选中时，自动切换到 GitCommitDetail 插件
-            layoutVM.selectAgentDetail(GitCommitDetailPlugin.id)
+            if layoutVM.selectedAgentDetailId != GitCommitDetailPlugin.id {
+                GitCommitDetailPlugin.logger.info("Switching to GitCommitDetail plugin")
+                layoutVM.selectAgentDetail(GitCommitDetailPlugin.id)
+            }
+            
             // 同时激活侧边栏的 Commit History 标签
-            layoutVM.selectAgentSidebarTab(GitCommitHistoryPlugin.id)
+            if layoutVM.selectedAgentSidebarTabId != GitCommitHistoryPlugin.id {
+                GitCommitDetailPlugin.logger.info("Switching to GitCommitHistory plugin in sidebar")
+                layoutVM.selectAgentSidebarTab(GitCommitHistoryPlugin.id)
+            }
         }
     }
 }
