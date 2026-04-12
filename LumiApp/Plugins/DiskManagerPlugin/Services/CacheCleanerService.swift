@@ -5,7 +5,8 @@ import MagicKit
 /// 缓存清理服务 - 在后台执行扫描和清理操作
 class CacheCleanerService: @unchecked Sendable, SuperLog {
     nonisolated static let emoji = "🗑️"
-    nonisolated static let verbose: Bool = true    static let shared = CacheCleanerService()
+    nonisolated static let verbose: Bool = true
+    static let shared = CacheCleanerService()
 
     // 注意：状态管理已移至 ViewModel，Service 只负责后台操作
     private init() {}

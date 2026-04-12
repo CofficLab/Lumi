@@ -9,7 +9,8 @@ import MagicKit
 final class LayoutVM: ObservableObject, SuperLog {
     
     nonisolated static let emoji = "🖥️"
-    nonisolated static let verbose: Bool = false    
+    nonisolated static let verbose: Bool = false
+    
     // MARK: - Published Properties
     
     /// 当前选中的 Agent 模式侧边栏 Tab ID

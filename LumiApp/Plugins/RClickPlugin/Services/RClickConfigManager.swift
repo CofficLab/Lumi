@@ -8,7 +8,8 @@ import MagicKit
 @MainActor
 class RClickConfigManager: ObservableObject, SuperLog {
     nonisolated static let emoji = "🖱️"
-    nonisolated static let verbose: Bool = false    
+    nonisolated static let verbose: Bool = false
+    
     static let shared = RClickConfigManager()
     
     private let store = RClickPluginLocalStore.shared

@@ -4,7 +4,8 @@ import MagicKit
 /// 上下文服务，管理 Agent 模式的上下文信息
 actor ContextService: Sendable, SuperLog {
     nonisolated static let emoji = "📂"
-    nonisolated static let verbose: Bool = false    private struct CachedFilePreview: Sendable {
+    nonisolated static let verbose: Bool = false
+    private struct CachedFilePreview: Sendable {
         let preview: String
         let modifiedAt: Date?
         let fileSize: UInt64

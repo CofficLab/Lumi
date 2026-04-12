@@ -9,7 +9,8 @@ import SwiftUI
 /// 完全基于 LibGit2Swift 的原生 Git 操作，不使用任何命令行调用。
 /// 参考 GitOK 的 Project+File 实现。
 final class GitService: @unchecked Sendable, SuperLog {
-    nonisolated static let verbose: Bool = false    nonisolated static let emoji = "📦"
+    nonisolated static let verbose: Bool = false
+    nonisolated static let emoji = "📦"
     static let shared = GitService()
 
     private init() {}

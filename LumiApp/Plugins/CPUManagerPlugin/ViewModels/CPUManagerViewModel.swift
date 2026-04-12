@@ -6,7 +6,8 @@ import MagicKit
 @MainActor
 class CPUManagerViewModel: ObservableObject {
     static let emoji = "🧠"
-    nonisolated static let verbose: Bool = false    
+    nonisolated static let verbose: Bool = false
+    
     @Published var cpuUsage: Double = 0.0
     @Published var loadAverage: [Double] = [0, 0, 0]
     

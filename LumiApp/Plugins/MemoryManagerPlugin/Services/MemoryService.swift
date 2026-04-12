@@ -7,7 +7,8 @@ import MagicKit
 class MemoryService: ObservableObject, SuperLog {
     static let shared = MemoryService()
     nonisolated static let emoji = "💾"
-    nonisolated static let verbose: Bool = false    
+    nonisolated static let verbose: Bool = false
+    
     // MARK: - Published Properties
     
     /// Memory usage percentage (0.0 - 100.0)

@@ -14,7 +14,8 @@ actor AgentInputPlugin: SuperPlugin {
     static let description = String(localized: "Agent input area", table: "AgentInput")
     static let iconName = "textformat.abc"
     static var order: Int { 83 }
-    nonisolated static let enable: Bool = true    static let shared = AgentInputPlugin()
+    nonisolated static let enable: Bool = true
+    static let shared = AgentInputPlugin()
 
     // MARK: - Lifecycle
 
