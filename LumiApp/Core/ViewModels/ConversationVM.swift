@@ -58,7 +58,7 @@ final class ConversationVM: ObservableObject, SuperLog {
             }
             return
         }
-        await saveMessage(message, to: conversationId)
+        saveMessage(message, to: conversationId)
     }
 
     /// 保存消息到指定对话
