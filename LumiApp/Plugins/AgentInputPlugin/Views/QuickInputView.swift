@@ -6,8 +6,7 @@ struct QuickInputView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "⚡"
     /// 是否输出详细日志
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     /// 输入框本地状态 ViewModel
     @ObservedObject var inputViewModel: InputViewModel
 

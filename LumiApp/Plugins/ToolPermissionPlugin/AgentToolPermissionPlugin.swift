@@ -3,8 +3,7 @@ import SwiftUI
 /// 工具执行授权浮层：在根视图上叠加 `PermissionRequestView`，与聊天区域解耦。
 actor AgentToolPermissionPlugin: SuperPlugin {
     nonisolated static let emoji = "🔐"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     static let id = "AgentToolPermission"
     static let displayName = String(localized: "Tool Permission", table: "AgentToolPermission")
     static let description = String(localized: "Tool permission overlay at root", table: "AgentToolPermission")

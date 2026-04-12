@@ -11,8 +11,7 @@ actor GitCommitHistoryPlugin: SuperPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.git-commit-history")
 
     nonisolated static let emoji = "📝"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     static let id = "GitCommitHistory"
     static let displayName = String(localized: "Commit History", table: "GitCommitHistory")
     static let description = String(localized: "Display Git commit history in sidebar", table: "GitCommitHistory")

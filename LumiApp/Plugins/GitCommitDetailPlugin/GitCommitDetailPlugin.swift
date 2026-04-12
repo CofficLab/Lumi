@@ -11,12 +11,11 @@ actor GitCommitDetailPlugin: SuperPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.git-commit-detail")
 
     nonisolated static let emoji = "🔍"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     static let id = "GitCommitDetail"
     static let displayName = String(localized: "Commit Detail", table: "GitCommitDetail")
     static let description = String(localized: "Display selected Git commit detail", table: "GitCommitDetail")
-    static let iconName = "git.commit"
+    static let iconName = "arrow.triangle.merge"
     static var order: Int { 12 }
     static let enable: Bool = true
 

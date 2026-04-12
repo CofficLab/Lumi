@@ -30,8 +30,7 @@ struct ModelSelectorView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "🌐"
     /// 是否输出详细日志
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     /// 环境对象：用于关闭当前视图
     @Environment(\.dismiss) private var dismiss
 

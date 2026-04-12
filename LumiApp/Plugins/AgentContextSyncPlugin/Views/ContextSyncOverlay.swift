@@ -97,7 +97,7 @@ extension ContextSyncOverlay {
         )
 
         // 保存消息
-        await chatHistoryVM.saveMessage(message, toConversationId: conversationId)
+        chatHistoryVM.saveMessage(message, toConversationId: conversationId)
 
         if Self.verbose {
             AppLogger.core.info("\(Self.t)✅ 已添加项目切换系统消息: \(content)")

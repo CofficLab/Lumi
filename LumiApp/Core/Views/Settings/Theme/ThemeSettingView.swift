@@ -17,9 +17,6 @@ struct ThemeSettingView: View {
                     // 主题选择器卡片
                     themeSelectorCard
 
-                    // 主题说明卡片
-                    themeDescriptionCard
-
                     Spacer()
                 }
                 .padding(.horizontal, AppUI.Spacing.lg)
@@ -56,63 +53,6 @@ struct ThemeSettingView: View {
                 ThemeSelectorView()
                     .environmentObject(themeManager)
             }
-        }
-    }
-
-    // MARK: - Theme Description Card
-
-    private var themeDescriptionCard: some View {
-        GlassCard {
-            VStack(alignment: .leading, spacing: AppUI.Spacing.sm) {
-                GlassSectionHeader(
-                    icon: "info.circle.fill",
-                    title: "主题说明",
-                    subtitle: "了解不同主题的特点"
-                )
-
-                GlassDivider()
-
-                VStack(alignment: .leading, spacing: AppUI.Spacing.xs) {
-                    themeDescriptionItem(
-                        icon: "moon.stars.fill",
-                        title: "精致神秘",
-                        description: "以深色为主，配合神秘的紫色光晕和玻璃态效果"
-                    )
-
-                    themeDescriptionItem(
-                        icon: "sun.max.fill",
-                        title: "清新明亮",
-                        description: "以浅色为主，保持清晰明亮的视觉体验"
-                    )
-
-                    themeDescriptionItem(
-                        icon: "desktopcomputer",
-                        title: "跟随系统",
-                        description: "自动根据 macOS 系统外观切换主题"
-                    )
-                }
-            }
-        }
-    }
-
-    // MARK: - Helper Methods
-
-    private func themeDescriptionItem(icon: String, title: String, description: String) -> some View {
-        VStack(alignment: .leading, spacing: AppUI.Spacing.xs) {
-            HStack(spacing: AppUI.Spacing.xs) {
-                Image(systemName: icon)
-                    .font(.system(size: 12))
-                    .foregroundColor(AppUI.Color.semantic.primary)
-
-                Text(title)
-                    .font(AppUI.Typography.body)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
-            }
-
-            Text(description)
-                .font(AppUI.Typography.caption1)
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
-                .padding(.leading, 18)
         }
     }
 }

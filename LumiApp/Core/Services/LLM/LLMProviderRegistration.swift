@@ -5,8 +5,7 @@ import ObjectiveC.runtime
 /// 使用 Objective‑C Runtime 扫描 `SuperLLMProvider` 并注册到 `ProviderRegistry`。
 enum LLMProviderRegistration: SuperLog {
     nonisolated static let emoji = "🧩"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     static func registerAllProviders(to registry: LLMProviderRegistry) {
         var count: UInt32 = 0
         guard let classList = objc_copyClassList(&count) else {

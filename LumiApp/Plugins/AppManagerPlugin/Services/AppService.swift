@@ -6,8 +6,7 @@ import SwiftUI
 /// 应用服务
 final class AppService: @unchecked Sendable, SuperLog {
     nonisolated static let emoji = "📦"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     private let cacheManager = CacheManager.shared
 
     // 标准应用安装路径
@@ -110,7 +109,9 @@ final class AppService: @unchecked Sendable, SuperLog {
                             $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
                         }
 
-                        AppManagerPlugin.logger.info("\(t)扫描完成: 发现 \(sortedApps.count) 个应用")
+                        if Self.verbose {
+                            AppManagerPlugin.logger.info("\(t)扫描完成: 发现 \(sortedApps.count) 个应用")
+                        }
                         continuation.resume(returning: sortedApps)
                     }
                 }
@@ -260,7 +261,9 @@ final class AppService: @unchecked Sendable, SuperLog {
 
     /// 删除指定的文件列表
     func deleteFiles(_ files: [RelatedFile]) async throws {
-        AppManagerPlugin.logger.info("\(self.t)开始删除 \(files.count) 个文件")
+        if Self.verbose {
+            AppManagerPlugin.logger.info("\(self.t)开始删除 \(files.count) 个文件")
+        }
         let fileManager = FileManager.default
         for file in files {
             // 使用 trashItem 放入废纸篓，比较安全
@@ -269,7 +272,9 @@ final class AppService: @unchecked Sendable, SuperLog {
                 AppManagerPlugin.logger.info("\(self.t)  └─ 已移至废纸篓：\((file.path as NSString).lastPathComponent)")
             }
         }
-        AppManagerPlugin.logger.info("\(self.t)删除完成：\(files.count) 个文件已移至废纸篓")
+        if Self.verbose {
+            AppManagerPlugin.logger.info("\(self.t)删除完成：\(files.count) 个文件已移至废纸篓")
+        }
     }
 
     /// 保存缓存
@@ -282,7 +287,9 @@ final class AppService: @unchecked Sendable, SuperLog {
 
     /// 卸载应用
     func uninstallApp(_ app: AppModel) async throws {
-        AppManagerPlugin.logger.info("\(self.t)准备卸载应用: \(app.displayName)")
+        if Self.verbose {
+            AppManagerPlugin.logger.info("\(self.t)准备卸载应用: \(app.displayName)")
+        }
 
         let fileManager = FileManager.default
         let appPath = app.bundleURL.path
@@ -301,7 +308,9 @@ final class AppService: @unchecked Sendable, SuperLog {
 
         // 移到废纸篓
         try fileManager.trashItem(at: app.bundleURL, resultingItemURL: nil)
-        AppManagerPlugin.logger.info("\(self.t)应用已移至废纸篓: \(app.displayName)")
+        if Self.verbose {
+            AppManagerPlugin.logger.info("\(self.t)应用已移至废纸篓: \(app.displayName)")
+        }
     }
 
     /// 在 Finder 中显示应用

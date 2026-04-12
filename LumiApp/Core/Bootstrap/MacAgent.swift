@@ -1,4 +1,5 @@
 import AppKit
+import LibGit2Swift
 import MagicKit
 import SwiftUI
 
@@ -30,8 +31,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     nonisolated static let emoji = "🍎"
     
     /// 是否启用详细日志
-    static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     // MARK: - Controllers
 
     /// 状态栏控制器
@@ -54,6 +54,9 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
             AppLogger.core.info("\(self.t)应用启动完成")
         }
 
+        // 初始化 libgit2（必须在任何 Git 操作之前调用）
+        LibGit2.initialize()
+
         setupControllers()
 
         // 发送应用启动完成的通知
@@ -74,6 +77,9 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
         }
 
         cleanupApplication()
+
+        // 清理 libgit2
+        LibGit2.shutdown()
 
         // 发送应用即将终止的通知
         // 让插件和组件保存状态、断开连接

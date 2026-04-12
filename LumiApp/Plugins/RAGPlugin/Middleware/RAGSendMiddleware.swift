@@ -18,8 +18,7 @@ import os
 @MainActor
 final class RAGSendMiddleware: SendMiddleware, SuperLog {
     nonisolated static let emoji = "🦞"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     let id = "rag"
     let order: Int = 100
 
@@ -140,7 +139,7 @@ final class RAGSendMiddleware: SendMiddleware, SuperLog {
             }
 
             // ⚠️ 性能预警：超过 300ms 显示警告
-            if retrieveDuration > 300 {
+            if Self.verbose, retrieveDuration > 300 {
                 RAGPlugin.logger.warning("\(Self.t)   ⚠️ RAG 检索耗时过长：\(String(format: "%.2f", retrieveDuration))ms (>300ms)")
             }
 
@@ -154,10 +153,10 @@ final class RAGSendMiddleware: SendMiddleware, SuperLog {
 
             if Self.verbose {
                 RAGPlugin.logger.info("\(Self.t)   📄 找到 \(response.results.count) 个相关文档:")
-            }
-            for (index, result) in response.results.enumerated() {
-                RAGPlugin.logger.info("\(Self.t)      [\(index + 1)] \(result.source) (相似度：\(String(format: "%.2f", result.score)))")
-                RAGPlugin.logger.info("\(Self.t)          \(result.content.prefix(50))...")
+                for (index, result) in response.results.enumerated() {
+                    RAGPlugin.logger.info("\(Self.t)      [\(index + 1)] \(result.source) (相似度：\(String(format: "%.2f", result.score)))")
+                    RAGPlugin.logger.info("\(Self.t)          \(result.content.prefix(50))...")
+                }
             }
 
             let augmentedPrompt = RAGContextBuilder.buildPrompt(

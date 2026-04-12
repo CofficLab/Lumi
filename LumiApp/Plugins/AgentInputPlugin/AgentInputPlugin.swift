@@ -8,14 +8,13 @@ actor AgentInputPlugin: SuperPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.input")
 
     nonisolated static let emoji = "✏️"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     static let id = "AgentInput"
     static let displayName = String(localized: "Agent Input", table: "AgentInput")
     static let description = String(localized: "Agent input area", table: "AgentInput")
     static let iconName = "textformat.abc"
     static var order: Int { 83 }
-    static let enable = true
+    nonisolated static let enable: Bool = true
     static let shared = AgentInputPlugin()
 
     // MARK: - Lifecycle

@@ -24,6 +24,8 @@
 		0B45486E2F89F49C00C6B7C8 /* CodeEditLanguages in Frameworks */ = {isa = PBXBuildFile; productRef = 0B45486D2F89F49C00C6B7C8 /* CodeEditLanguages */; };
 		0B8027C42F6C4E7F007FD39D /* MagicKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B8027C32F6C4E7F007FD39D /* MagicKit */; };
 		0BBB11E02F85467D00F53902 /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 0BBB11DF2F85467D00F53902 /* SwiftTerm */; };
+		0BC2F1DB2F8A931C00B45F10 /* MagicDiffView in Frameworks */ = {isa = PBXBuildFile; productRef = 0BC2F1DA2F8A931C00B45F10 /* MagicDiffView */; };
+		0BC2F1DE2F8A94CE00B45F10 /* LibGit2Swift in Frameworks */ = {isa = PBXBuildFile; productRef = 0BC2F1DD2F8A94CE00B45F10 /* LibGit2Swift */; };
 		0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE04A742F409A6E0028FDF4 /* MCP */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
@@ -215,6 +217,7 @@
 				0BBB11E02F85467D00F53902 /* SwiftTerm in Frameworks */,
 				0B1A4F892F662D8500F15618 /* MLXOptimizers in Frameworks */,
 				0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */,
+				0BC2F1DE2F8A94CE00B45F10 /* LibGit2Swift in Frameworks */,
 				0B4548682F89F3B500C6B7C8 /* CodeEditSourceEditor in Frameworks */,
 				0B1A4F812F662D8500F15618 /* MLXFFT in Frameworks */,
 				F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */,
@@ -222,6 +225,7 @@
 				0B1A4F852F662D8500F15618 /* MLXLinalg in Frameworks */,
 				F5A640842F3ED7060039A761 /* _ConnectionPoolTestUtils in Frameworks */,
 				F5A640822F3ED7060039A761 /* _ConnectionPoolModule in Frameworks */,
+				0BC2F1DB2F8A931C00B45F10 /* MagicDiffView in Frameworks */,
 				F5A640872F3ED72C0039A761 /* MySQLNIO in Frameworks */,
 				0B1A4F832F662D8500F15618 /* MLXFast in Frameworks */,
 				F5A640802F3ED7060039A761 /* PostgresNIO in Frameworks */,
@@ -361,6 +365,8 @@
 				0B4548672F89F3B500C6B7C8 /* CodeEditSourceEditor */,
 				0B45486A2F89F3C200C6B7C8 /* CodeEditTextView */,
 				0B45486D2F89F49C00C6B7C8 /* CodeEditLanguages */,
+				0BC2F1DA2F8A931C00B45F10 /* MagicDiffView */,
+				0BC2F1DD2F8A94CE00B45F10 /* LibGit2Swift */,
 			);
 			productName = "SwiftUI-Template";
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -438,6 +444,8 @@
 				0B4548662F89F3B400C6B7C8 /* XCRemoteSwiftPackageReference "CodeEditSourceEditor" */,
 				0B4548692F89F3C200C6B7C8 /* XCRemoteSwiftPackageReference "CodeEditTextView" */,
 				0B45486C2F89F49C00C6B7C8 /* XCRemoteSwiftPackageReference "CodeEditLanguages" */,
+				0BC2F1D92F8A931C00B45F10 /* XCRemoteSwiftPackageReference "MagicDiffView" */,
+				0BC2F1DC2F8A94CE00B45F10 /* XCRemoteSwiftPackageReference "Libgit2swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -1063,6 +1071,22 @@
 				minimumVersion = 1.5.0;
 			};
 		};
+		0BC2F1D92F8A931C00B45F10 /* XCRemoteSwiftPackageReference "MagicDiffView" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/nookery/MagicDiffView";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+		0BC2F1DC2F8A94CE00B45F10 /* XCRemoteSwiftPackageReference "Libgit2swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/nookery/Libgit2swift";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 		0BE04A732F409A6E0028FDF4 /* XCRemoteSwiftPackageReference "swift-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/modelcontextprotocol/swift-sdk.git";
@@ -1200,6 +1224,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0BBB11DE2F85467D00F53902 /* XCRemoteSwiftPackageReference "SwiftTerm" */;
 			productName = SwiftTerm;
+		};
+		0BC2F1DA2F8A931C00B45F10 /* MagicDiffView */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0BC2F1D92F8A931C00B45F10 /* XCRemoteSwiftPackageReference "MagicDiffView" */;
+			productName = MagicDiffView;
+		};
+		0BC2F1DD2F8A94CE00B45F10 /* LibGit2Swift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0BC2F1DC2F8A94CE00B45F10 /* XCRemoteSwiftPackageReference "Libgit2swift" */;
+			productName = LibGit2Swift;
 		};
 		0BE04A742F409A6E0028FDF4 /* MCP */ = {
 			isa = XCSwiftPackageProductDependency;

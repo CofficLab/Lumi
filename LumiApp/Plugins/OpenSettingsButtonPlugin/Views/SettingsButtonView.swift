@@ -37,7 +37,6 @@ struct SettingsButtonView: View {
 
     /// 打开设置窗口
     private func openSettings() {
-        logger.debug("用户点击设置按钮，打开设置窗口")
         NotificationCenter.default.post(name: .openSettings, object: nil)
     }
 }

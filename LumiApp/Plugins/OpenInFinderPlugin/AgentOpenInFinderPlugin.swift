@@ -7,8 +7,7 @@ import SwiftUI
 /// 在 Agent 模式的状态栏左侧添加图标，点击后在 Finder 中打开当前项目目录。
 actor AgentOpenInFinderPlugin: SuperPlugin {
     nonisolated static let emoji = "📂"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     static let id = "AgentOpenInFinder"
     static let displayName = String(localized: "Open in Finder", table: "AgentOpenInFinder")
     static let description = String(localized: "Open current project in Finder", table: "AgentOpenInFinder")

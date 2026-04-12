@@ -5,8 +5,7 @@ import MagicKit
 @MainActor
 class XcodeCleanerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🧹"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     @Published var itemsByCategory: [XcodeCleanCategory: [XcodeCleanItem]] = [:]
     @Published var isScanning = false
     @Published var isCleaning = false

@@ -6,8 +6,7 @@ import Sparkle
 @MainActor
 class UpdateController: NSObject, SuperLog {
     nonisolated static let emoji = "✨"
-    static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     // MARK: - Properties
 
     /// Sparkle 更新控制器，提供应用自动更新功能

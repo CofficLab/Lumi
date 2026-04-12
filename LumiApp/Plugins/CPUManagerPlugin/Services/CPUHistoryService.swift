@@ -5,7 +5,7 @@ import OSLog
 
 @MainActor
 class CPUHistoryService: ObservableObject, SuperLog {
-    nonisolated static let verbose = false
+    nonisolated static let verbose: Bool = false
     static let shared = CPUHistoryService()
     nonisolated static let emoji = "📈"
 

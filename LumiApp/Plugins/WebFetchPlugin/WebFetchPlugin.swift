@@ -14,8 +14,7 @@ actor WebFetchPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🌐"
     
     /// 是否启用详细日志
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     static let id: String = "WebFetch"
     static let displayName: String = String(localized: "Web Fetch", table: "WebFetch")
     static let description: String = String(localized: "提供网页抓取和内容提取功能，支持 HTML 转 Markdown。", table: "WebFetch")

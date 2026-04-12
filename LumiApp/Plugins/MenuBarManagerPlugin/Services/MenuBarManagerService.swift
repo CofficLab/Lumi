@@ -9,7 +9,7 @@ import MagicKit
 @MainActor
 class MenuBarManagerService: ObservableObject, SuperLog {
     nonisolated static let emoji = "🍎"
-    nonisolated static let verbose = false
+    nonisolated static let verbose: Bool = false
     static let shared = MenuBarManagerService()
     
     // MARK: - Published Properties

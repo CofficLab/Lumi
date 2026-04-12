@@ -6,6 +6,7 @@ import MagicKit
 struct LumiEditorRootView: View {
     
     @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var layoutVM: LayoutVM
     
     /// 编辑器状态
     @StateObject private var state = LumiEditorState()
@@ -33,6 +34,9 @@ struct LumiEditorRootView: View {
             state.loadFile(from: newURL)
         }
         .onAppear {
+            // 激活左侧栏的 ProjectTree 插件
+            layoutVM.selectAgentSidebarTab(ProjectTreePlugin.id, reason: "LumiEditor appeared")
+            
             // 初始加载
             state.projectRootPath = projectVM.currentProject?.path
             if projectVM.isFileSelected {

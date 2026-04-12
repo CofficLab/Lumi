@@ -7,8 +7,7 @@ import SwiftUI
 /// 允许 AI 助手读取指定路径的文件内容。
 struct ReadFileTool: AgentTool, SuperLog {
     nonisolated static let emoji = "📄"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     let name = "read_file"
     let description = "Read the contents of a file at the given path. Use this to examine code or configuration files."
 

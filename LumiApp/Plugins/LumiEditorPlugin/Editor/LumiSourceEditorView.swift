@@ -10,10 +10,13 @@ struct LumiSourceEditorView: View {
     
     @ObservedObject var state: LumiEditorState
     
-    /// 编辑器协调器
-    private let textCoordinator: LumiEditorCoordinator
-    private let cursorCoordinator: LumiCursorCoordinator
-    private let contextMenuCoordinator: LumiContextMenuCoordinator
+    /// 编辑器协调器（使用 @State 确保在 View 更新间保持同一实例）
+    /// 之前作为普通 let 属性，每次 View struct 重建时会创建新实例，
+    /// 导致旧实例被 ARC 释放，TextViewController 中的 WeakCoordinator 弱引用失效，
+    /// coordinator 回调不再被触发，自动保存失效。
+    @State private var textCoordinator: LumiEditorCoordinator?
+    @State private var cursorCoordinator: LumiCursorCoordinator?
+    @State private var contextMenuCoordinator: LumiContextMenuCoordinator?
     
     /// tree-sitter 客户端
     @State private var treeSitterClient = TreeSitterClient()
@@ -24,17 +27,13 @@ struct LumiSourceEditorView: View {
     
     init(state: LumiEditorState) {
         self._state = ObservedObject(wrappedValue: state)
-        self.textCoordinator = LumiEditorCoordinator(state: state)
-        self.cursorCoordinator = LumiCursorCoordinator(state: state)
-        self.contextMenuCoordinator = LumiContextMenuCoordinator(state: state)
     }
     
     var body: some View {
-        // 直接读取缓存，不在 body 中写 @State（避免 "Modifying state during view update"）
         let config = cachedConfig ?? buildConfiguration()
         
         Group {
-            if let content = state.content {
+            if let content = state.content, let textCoordinator, let cursorCoordinator, let contextMenuCoordinator {
                 SourceEditor(
                     content,
                     language: resolvedLanguage,
@@ -60,14 +59,23 @@ struct LumiSourceEditorView: View {
         .onChange(of: state.themePreset) { _, _ in updateConfigCache() }
         .onChange(of: state.currentTheme) { _, _ in updateConfigCache() }
         .onAppear {
-            // 首次出现时确保缓存已建立
-            if cachedConfig == nil { updateConfigCache() }
+            // 首次出现时初始化协调器和配置缓存
+            if textCoordinator == nil {
+                textCoordinator = LumiEditorCoordinator(state: state)
+            }
+            if cursorCoordinator == nil {
+                cursorCoordinator = LumiCursorCoordinator(state: state)
+            }
+            if contextMenuCoordinator == nil {
+                contextMenuCoordinator = LumiContextMenuCoordinator(state: state)
+            }
+            if cachedConfig == nil {
+                updateConfigCache()
+            }
         }
     }
     
     // MARK: - Configuration Management
-    
-    // getConfiguration() 已移除——body 直接读 cachedConfig ?? buildConfiguration()
     
     /// 强制更新配置缓存
     private func updateConfigCache() {

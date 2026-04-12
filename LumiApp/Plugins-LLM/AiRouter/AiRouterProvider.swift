@@ -8,8 +8,7 @@ import os
 final class AiRouterProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.airouter")
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     // MARK: - 基础信息
 
     static let id = "airouter"

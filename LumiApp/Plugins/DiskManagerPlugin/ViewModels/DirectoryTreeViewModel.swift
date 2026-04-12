@@ -4,8 +4,7 @@ import MagicKit
 @MainActor
 final class DirectoryTreeViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     @Published var rootEntries: [DirectoryEntry] = []
     @Published var isScanning = false
     @Published var scanProgress: ScanProgress?

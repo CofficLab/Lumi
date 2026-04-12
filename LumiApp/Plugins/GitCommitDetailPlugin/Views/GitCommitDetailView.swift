@@ -1,13 +1,21 @@
+import MagicDiffView
 import SwiftUI
 import MagicKit
 
 /// Git Commit 详情视图
 ///
-/// 显示当前选中 commit 的完整信息，参考 GitOK 的 CommitInfoView。
-/// 当 GitVM 中选中的 commit 变化时自动刷新。
+/// 显示当前选中 commit 的完整信息，包括提交消息、作者、时间、
+/// 变更统计，以及可交互的文件列表和 Diff 视图。
+///
+/// 当 selectedCommitHash 为 nil 时，显示当前工作区的未提交变更（工作状态模式）。
+/// 工作区干净时，显示项目 Git 概览信息。
 struct GitCommitDetailView: View {
+
+    // MARK: - 属性
+
     @EnvironmentObject var projectVM: ProjectVM
     @EnvironmentObject var gitVM: GitVM
+    @EnvironmentObject private var layoutVM: LayoutVM
 
     /// 当前加载的 commit 详情
     @State private var commitDetail: GitCommitDetail?
@@ -21,12 +29,37 @@ struct GitCommitDetailView: View {
     /// Hash 是否已复制
     @State private var isCopied = false
 
+    /// 当前选中的文件（用于文件列表高亮）
+    @State private var selectedFile: String?
+
+    /// Diff 视图相关状态
+    @State private var oldText: String = ""
+    @State private var newText: String = ""
+    @State private var loadingDiff: Bool = false
+    @State private var diffTask: Task<Void, Never>?
+
     /// 当前加载任务
     @State private var loadTask: Task<Void, Never>?
 
+    /// 未提交变更文件列表
+    @State private var uncommittedFiles: [GitChangedFile] = []
+
+    /// commit 模式下的变更文件列表（含变更类型）
+    @State private var commitChangedFiles: [GitChangedFile] = []
+
+    /// 是否正在加载未提交变更
+    @State private var loadingWorkingState: Bool = false
+
+    /// 项目 Git 概览信息（工作区干净时显示）
+    @State private var projectGitInfo: GitCommitDetailService.ProjectGitInfo?
+
+    // MARK: - Body
+
     var body: some View {
         VStack(spacing: 0) {
-            if let detail = commitDetail {
+            if gitVM.selectedCommitHash == nil {
+                workingStateContent
+            } else if let detail = commitDetail {
                 commitDetailContent(detail)
             } else if loading {
                 loadingView
@@ -40,231 +73,398 @@ struct GitCommitDetailView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear {
-            loadCommitDetail()
+            activateCommitHistorySidebar()
+            handleSelectionChange()
         }
         .onChange(of: gitVM.selectedCommitHash) { _, _ in
-            loadCommitDetail()
+            selectedFile = nil
+            oldText = ""
+            newText = ""
+            handleSelectionChange()
         }
         .onChange(of: projectVM.currentProjectPath) { _, _ in
             commitDetail = nil
             errorMessage = nil
+            uncommittedFiles = []
+            selectedFile = nil
+            oldText = ""
+            newText = ""
+            projectGitInfo = nil
+            handleSelectionChange()
+        }
+        .onChange(of: selectedFile) { _, newFile in
+            loadFileDiff(file: newFile)
+        }
+    }
+
+    // MARK: - 私有方法
+
+    /// 当 Detail 视图出现时，激活左侧栏的 Commit History 标签
+    private func activateCommitHistorySidebar() {
+        if layoutVM.selectedAgentSidebarTabId != GitCommitHistoryPlugin.id {
+            layoutVM.selectAgentSidebarTab(GitCommitHistoryPlugin.id, reason: "CommitDetail: view appeared")
+        }
+    }
+
+    /// 根据当前选中状态决定加载工作状态还是 commit 详情
+    private func handleSelectionChange() {
+        if gitVM.selectedCommitHash == nil {
+            loadWorkingState()
+        } else {
             loadCommitDetail()
         }
     }
 
-    // MARK: - Commit Detail Content
+    // MARK: - Working State Views
 
-    private func commitDetailContent(_ detail: GitCommitDetail) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                // MARK: 提交消息头部
-                commitMessageSection(detail)
+    private var workingStateContent: some View {
+        VStack(spacing: 0) {
+            workingStateSummary
 
-                Divider()
-                    .padding(.vertical, 8)
+            Divider()
 
-                // MARK: Commit Body（如果有）
-                if !detail.body.isEmpty {
-                    commitBodySection(detail)
-                    Divider()
-                        .padding(.vertical, 8)
+            if !uncommittedFiles.isEmpty {
+                HSplitView {
+                    uncommittedFileListSection
+                        .frame(minWidth: 180, idealWidth: 220, maxWidth: 300)
+
+                    diffViewSection
                 }
-
-                // MARK: 详细信息行
-                commitMetaSection(detail)
-
-                Divider()
-                    .padding(.vertical, 8)
-
-                // MARK: 变更统计
-                if let stats = detail.stats {
-                    commitStatsSection(stats)
-                    Divider()
-                        .padding(.vertical, 8)
-                }
-
-                // MARK: 变更文件列表
-                if !detail.changedFiles.isEmpty {
-                    commitFilesSection(detail)
-                }
-            }
-            .padding(16)
-        }
-    }
-
-    // MARK: - Commit Message Section
-
-    private func commitMessageSection(_ detail: GitCommitDetail) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: "circle.circle.fill")
-                .foregroundColor(.accentColor)
-                .font(.system(size: 12))
-                .padding(.top, 3)
-
-            Text(detail.message)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
-                .lineLimit(5)
-                .textSelection(.enabled)
-
-            Spacer()
-        }
-    }
-
-    // MARK: - Commit Body Section
-
-    private func commitBodySection(_ detail: GitCommitDetail) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: "text.alignleft")
-                .foregroundColor(.secondary)
-                .font(.system(size: 12))
-                .padding(.top, 2)
-
-            Text(detail.body)
-                .font(.system(size: 12))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
-                .lineLimit(20)
-                .textSelection(.enabled)
-
-            Spacer()
-        }
-    }
-
-    // MARK: - Commit Meta Section
-
-    private func commitMetaSection(_ detail: GitCommitDetail) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // 作者
-            metaRow(icon: "person.circle.fill", label: "Author", value: "\(detail.author) <\(detail.email)>")
-
-            // 时间
-            metaRow(icon: "clock.fill", label: "Date", value: formattedDate(detail.date))
-
-            // Hash（可复制）
-            hashRow(detail)
-        }
-    }
-
-    private func metaRow(icon: String, label: String, value: String) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon)
-                .foregroundColor(.secondary)
-                .font(.system(size: 11))
-                .frame(width: 14)
-
-            Text(label)
-                .font(.system(size: 11, weight: .medium))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
-                .frame(width: 42, alignment: .leading)
-
-            Text(value)
-                .font(.system(size: 11))
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
-                .lineLimit(1)
-                .textSelection(.enabled)
-
-            Spacer()
-        }
-    }
-
-    private func hashRow(_ detail: GitCommitDetail) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: "number.circle.fill")
-                .foregroundColor(.secondary)
-                .font(.system(size: 11))
-                .frame(width: 14)
-
-            Text("Hash")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
-                .frame(width: 42, alignment: .leading)
-
-            Text(detail.hash.prefix(7))
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
-
-            Spacer()
-
-            // 复制按钮
-            Button {
-                copyHash(detail.hash)
-            } label: {
-                Image(systemName: isCopied ? "checkmark.circle.fill" : "doc.on.doc")
-                    .font(.system(size: 10))
-                    .foregroundColor(isCopied ? .green : AppUI.Color.semantic.textSecondary)
-            }
-            .buttonStyle(.plain)
-            .help(isCopied ? "已复制" : "复制完整 Hash")
-        }
-    }
-
-    // MARK: - Commit Stats Section
-
-    private func commitStatsSection(_ stats: GitDiffStats) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("变更统计")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
-
-            HStack(spacing: 16) {
-                statBadge(
-                    icon: "doc.fill",
-                    value: "\(stats.filesChanged)",
-                    label: "文件"
-                )
-
-                statBadge(
-                    icon: "arrow.up.circle.fill",
-                    value: "+\(stats.insertions)",
-                    label: "插入",
-                    color: .green
-                )
-
-                statBadge(
-                    icon: "arrow.down.circle.fill",
-                    value: "-\(stats.deletions)",
-                    label: "删除",
-                    color: .red
-                )
+            } else if loadingWorkingState {
+                loadingView
+            } else {
+                cleanWorkspaceView
             }
         }
     }
 
-    private func statBadge(icon: String, value: String, label: String, color: Color = AppUI.Color.semantic.textPrimary) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.system(size: 10))
-                .foregroundColor(color)
-            Text(value)
-                .font(.system(size: 11, weight: .medium, design: .monospaced))
-                .foregroundColor(color)
-            Text(label)
-                .font(.system(size: 10))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+    private var workingStateSummary: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 6) {
+                if uncommittedFiles.isEmpty {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                        .font(.system(size: 12))
+                } else {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .foregroundColor(.orange)
+                        .font(.system(size: 12))
+                }
+
+                Text(String(localized: "Working State", table: "GitCommitDetail"))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+
+                Spacer()
+
+                if !uncommittedFiles.isEmpty {
+                    Text(String(localized: "\(uncommittedFiles.count) \(uncommittedFiles.count == 1 ? "file" : "files")", table: "GitCommitDetail"))
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(.orange)
+                }
+            }
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
     }
 
-    // MARK: - Commit Files Section
+    private var uncommittedFileListSection: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text(String(localized: "\(uncommittedFiles.count) \(uncommittedFiles.count == 1 ? "file" : "files")", table: "GitCommitDetail"))
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                Spacer()
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Color(NSColor.controlBackgroundColor))
 
-    private func commitFilesSection(_ detail: GitCommitDetail) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("变更文件")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+            Divider()
 
-            ForEach(detail.changedFiles, id: \.self) { file in
+            List(uncommittedFiles, id: \.path, selection: $selectedFile) { file in
                 fileRow(file)
             }
+            .listStyle(.plain)
         }
     }
 
-    private func fileRow(_ file: String) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: "doc.text")
+    // MARK: - Clean Workspace View
+
+    private var cleanWorkspaceView: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                // 顶部：干净状态提示
+                VStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 28))
+                        .foregroundColor(.green)
+                    Text(String(localized: "Clean Workspace", table: "GitCommitDetail"))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    Text(String(localized: "All changes committed", table: "GitCommitDetail"))
+                        .font(.system(size: 11))
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                }
+                .padding(.top, 24)
+
+                // 项目信息区域
+                if let info = projectGitInfo {
+                    projectInfoGrid(info)
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    private func projectInfoGrid(_ info: GitCommitDetailService.ProjectGitInfo) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 6) {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                Text(String(localized: "Project Info", table: "GitCommitDetail"))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+            }
+
+            VStack(spacing: 1) {
+                projectInfoRow(icon: "arrow.triangle.branch", label: String(localized: "Branch", table: "GitCommitDetail"), value: info.branch)
+                projectInfoRow(icon: "globe", label: String(localized: "Remote", table: "GitCommitDetail"), value: info.remote)
+                projectInfoRow(icon: "number.circle", label: String(localized: "Total Commits", table: "GitCommitDetail"), value: "\(info.totalCommits)")
+                projectInfoRow(icon: "person.2", label: String(localized: "Contributors", table: "GitCommitDetail"), value: "\(info.contributors.count)")
+
+                if !info.contributors.isEmpty {
+                    contributorsList(info.contributors)
+                }
+
+                Divider()
+                    .padding(.vertical, 4)
+
+                projectInfoRow(icon: "text.bubble", label: String(localized: "Last Commit", table: "GitCommitDetail"), value: info.lastCommitMessage)
+                projectInfoRow(icon: "person.fill", label: String(localized: "Author", table: "GitCommitDetail"), value: info.lastCommitAuthor)
+                projectInfoRow(icon: "clock.fill", label: String(localized: "Date", table: "GitCommitDetail"), value: info.lastCommitDate)
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color(NSColor.controlBackgroundColor).opacity(0.6))
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+        }
+        .padding(.horizontal, 16)
+    }
+
+    private func projectInfoRow(icon: String, label: String, value: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
                 .font(.system(size: 10))
                 .foregroundColor(.secondary)
+                .frame(width: 14)
 
-            Text(file)
+            Text(label)
+                .font(.system(size: 11))
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .frame(width: 80, alignment: .leading)
+
+            Text(value)
+                .font(.system(size: 11))
+                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .lineLimit(2)
+                .textSelection(.enabled)
+
+            Spacer()
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+    }
+
+    private func contributorsList(_ contributors: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Image(systemName: "person.2.fill")
+                    .font(.system(size: 10))
+                    .foregroundColor(.secondary)
+                    .frame(width: 14)
+
+                Text(String(localized: "Team", table: "GitCommitDetail"))
+                    .font(.system(size: 11))
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .frame(width: 80, alignment: .leading)
+
+                FlowLayout(spacing: 4) {
+                    ForEach(contributors.prefix(8), id: \.self) { name in
+                        HStack(spacing: 3) {
+                            Image(systemName: "person.circle.fill")
+                                .font(.system(size: 9))
+                                .foregroundColor(.secondary)
+                            Text(name)
+                                .font(.system(size: 10))
+                                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(Color.secondary.opacity(0.08))
+                        .cornerRadius(4)
+                    }
+                }
+
+                Spacer()
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+        }
+    }
+
+    // MARK: - Commit Detail Views
+
+    private func commitDetailContent(_ detail: GitCommitDetail) -> some View {
+        VStack(spacing: 0) {
+            commitSummarySection(detail)
+
+            Divider()
+
+            if !detail.changedFiles.isEmpty {
+                HSplitView {
+                    fileListSection(detail)
+                        .frame(minWidth: 180, idealWidth: 220, maxWidth: 300)
+
+                    diffViewSection
+                }
+            } else {
+                noFilesView
+            }
+        }
+    }
+
+    private func commitSummarySection(_ detail: GitCommitDetail) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .top, spacing: 6) {
+                Image(systemName: "circle.circle.fill")
+                    .foregroundColor(.accentColor)
+                    .font(.system(size: 10))
+                    .padding(.top, 2)
+
+                Text(detail.message)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .lineLimit(2)
+                    .textSelection(.enabled)
+
+                Spacer()
+            }
+
+            HStack(spacing: 12) {
+                metaLabel(icon: "person.fill", value: detail.author)
+                metaLabel(icon: "clock.fill", value: GitCommitDetailService.formattedDate(detail.date))
+                hashLabel(detail)
+
+                if let stats = detail.stats {
+                    Spacer()
+                    statsBadges(stats)
+                }
+            }
+
+            if !detail.body.isEmpty {
+                Text(detail.body)
+                    .font(.system(size: 11))
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .lineLimit(3)
+                    .textSelection(.enabled)
+                    .padding(.leading, 16)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+    }
+
+    private func metaLabel(icon: String, value: String) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: icon)
+                .font(.system(size: 9))
+                .foregroundColor(.secondary)
+            Text(value)
+                .font(.system(size: 10))
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .lineLimit(1)
+        }
+    }
+
+    private func hashLabel(_ detail: GitCommitDetail) -> some View {
+        HStack(spacing: 2) {
+            Text(detail.hash.prefix(7))
+                .font(.system(size: 10, design: .monospaced))
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
+
+            Button {
+                GitCommitDetailService.copyHash(detail.hash)
+                withAnimation(.spring()) {
+                    isCopied = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    withAnimation(.spring()) {
+                        isCopied = false
+                    }
+                }
+            } label: {
+                Image(systemName: isCopied ? "checkmark.circle.fill" : "doc.on.doc")
+                    .font(.system(size: 9))
+                    .foregroundColor(isCopied ? .green : .secondary)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func statsBadges(_ stats: GitDiffStats) -> some View {
+        HStack(spacing: 8) {
+            statBadge(value: "\(stats.filesChanged)", label: String(localized: "files", table: "GitCommitDetail"), color: AppUI.Color.semantic.textPrimary)
+            statBadge(value: "+\(stats.insertions)", label: nil, color: .green)
+            statBadge(value: "-\(stats.deletions)", label: nil, color: .red)
+        }
+    }
+
+    private func statBadge(value: String, label: String?, color: Color) -> some View {
+        HStack(spacing: 2) {
+            Text(value)
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .foregroundColor(color)
+            if let label = label {
+                Text(label)
+                    .font(.system(size: 9))
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+            }
+        }
+    }
+
+    private func fileListSection(_ detail: GitCommitDetail) -> some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text(String(localized: "\(commitChangedFiles.count) \(commitChangedFiles.count == 1 ? "file" : "files")", table: "GitCommitDetail"))
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                Spacer()
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Color(NSColor.controlBackgroundColor))
+
+            Divider()
+
+            List(commitChangedFiles, id: \.path, selection: $selectedFile) { file in
+                fileRow(file)
+            }
+            .listStyle(.plain)
+        }
+    }
+
+    private func fileRow(_ file: GitChangedFile) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: GitCommitDetailService.fileIcon(for: file.path))
+                .font(.system(size: 10))
+                .foregroundColor(GitCommitDetailService.fileIconColor(for: file.path))
+
+            Text(file.path)
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundColor(AppUI.Color.semantic.textPrimary)
                 .lineLimit(1)
@@ -272,17 +472,103 @@ struct GitCommitDetailView: View {
                 .textSelection(.enabled)
 
             Spacer()
+
+            Text(file.changeType.displayLabel)
+                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .foregroundColor(file.changeType.color)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 1)
+                .background(file.changeType.color.opacity(0.1))
+                .cornerRadius(3)
         }
         .padding(.vertical, 2)
+        .contentShape(Rectangle())
+    }
+
+    // MARK: - Diff View
+
+    private var diffViewSection: some View {
+        VStack(spacing: 0) {
+            if let file = selectedFile {
+                HStack(spacing: 6) {
+                    Image(systemName: "doc.text")
+                        .foregroundColor(.secondary)
+                        .font(.system(size: 11))
+
+                    Text(file)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+
+                    Spacer()
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color(NSColor.controlBackgroundColor))
+
+                Divider()
+
+                if loadingDiff {
+                    VStack(spacing: 6) {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text(String(localized: "Loading diff...", table: "GitCommitDetail"))
+                            .font(.system(size: 10))
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if oldText.isEmpty && newText.isEmpty {
+                    VStack(spacing: 6) {
+                        Image(systemName: "doc.questionmark")
+                            .font(.system(size: 20))
+                            .foregroundColor(.secondary.opacity(0.5))
+                        Text(String(localized: "Cannot display diff for this file", table: "GitCommitDetail"))
+                            .font(.system(size: 10))
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    MagicDiffView(
+                        oldText: oldText,
+                        newText: newText,
+                        enableCollapsing: true,
+                        minUnchangedLines: 3
+                    )
+                }
+            } else {
+                VStack(spacing: 8) {
+                    Image(systemName: "doc.text.magnifyingglass")
+                        .font(.system(size: 24))
+                        .foregroundColor(.secondary.opacity(0.4))
+                    Text(String(localized: "Select a file to view diff", table: "GitCommitDetail"))
+                        .font(.system(size: 11))
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
     }
 
     // MARK: - State Views
+
+    private var noFilesView: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "doc.text")
+                .font(.system(size: 24))
+                .foregroundColor(.secondary.opacity(0.4))
+            Text(String(localized: "No file changes in this commit", table: "GitCommitDetail"))
+                .font(.system(size: 11))
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
 
     private var loadingView: some View {
         VStack(spacing: 8) {
             ProgressView()
                 .controlSize(.regular)
-            Text("正在加载...")
+            Text(String(localized: "Loading...", table: "GitCommitDetail"))
                 .font(.system(size: 11))
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
@@ -294,7 +580,7 @@ struct GitCommitDetailView: View {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 24))
                 .foregroundColor(.orange.opacity(0.6))
-            Text("加载失败")
+            Text(String(localized: "Failed to load", table: "GitCommitDetail"))
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(AppUI.Color.semantic.textPrimary)
             Text(error)
@@ -311,7 +597,7 @@ struct GitCommitDetailView: View {
             Image(systemName: "circle.circle")
                 .font(.system(size: 24))
                 .foregroundColor(.secondary.opacity(0.5))
-            Text("请在左侧选择一个 Commit")
+            Text(String(localized: "Please select a commit from the sidebar", table: "GitCommitDetail"))
                 .font(.system(size: 11))
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
@@ -323,99 +609,190 @@ struct GitCommitDetailView: View {
             Image(systemName: "folder.badge.questionmark")
                 .font(.system(size: 24))
                 .foregroundColor(.secondary.opacity(0.5))
-            Text("请先选择一个项目")
+            Text(String(localized: "Please select a project first", table: "GitCommitDetail"))
                 .font(.system(size: 11))
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    // MARK: - Actions
+    // MARK: - 数据加载
 
+    /// 加载工作状态（未提交变更）
+    private func loadWorkingState() {
+        let path = projectVM.currentProjectPath
+        guard !path.isEmpty else {
+            uncommittedFiles = []
+            loadingWorkingState = false
+            projectGitInfo = nil
+            return
+        }
+
+        loadingWorkingState = true
+
+        Task {
+            async let filesTask: [GitChangedFile] = {
+                do {
+                    return try await GitCommitDetailService.loadUncommittedFiles(path: path)
+                } catch {
+                    GitCommitDetailPlugin.logger.error("加载未提交变更失败: \(error.localizedDescription)")
+                    return []
+                }
+            }()
+            async let infoTask = GitCommitDetailService.loadProjectGitInfo(path: path)
+
+            let files = await filesTask
+            let info = await infoTask
+
+            self.uncommittedFiles = files
+            self.loadingWorkingState = false
+            self.selectedFile = files.first?.path
+
+            // 只在工作区干净时显示项目信息
+            if files.isEmpty {
+                self.projectGitInfo = info
+            } else {
+                self.projectGitInfo = nil
+            }
+        }
+    }
+
+    /// 加载 commit 详情
     private func loadCommitDetail() {
         let hash = gitVM.selectedCommitHash
         let path = projectVM.currentProjectPath
 
         guard let hash = hash, !path.isEmpty else {
             commitDetail = nil
+            commitChangedFiles = []
             loading = false
             errorMessage = nil
             return
         }
 
-        // 取消之前的任务
         loadTask?.cancel()
         loading = true
         errorMessage = nil
 
         loadTask = Task {
             do {
-                let detail = try await GitService.shared.getCommitDetail(
+                let (detail, files) = try await GitCommitDetailService.loadCommitDetail(
                     path: path,
                     hash: hash
                 )
 
                 if Task.isCancelled { return }
 
-                await MainActor.run {
-                    // 确保结果与当前选中一致
-                    guard self.gitVM.selectedCommitHash == hash else { return }
-                    self.commitDetail = detail
-                    self.loading = false
-                }
+                guard self.gitVM.selectedCommitHash == hash else { return }
+                self.commitDetail = detail
+                self.commitChangedFiles = files
+                self.loading = false
+                self.selectedFile = files.first?.path
             } catch {
                 if Task.isCancelled { return }
 
-                await MainActor.run {
-                    self.commitDetail = nil
-                    self.loading = false
-                    self.errorMessage = error.localizedDescription
-                }
+                self.commitDetail = nil
+                self.commitChangedFiles = []
+                self.loading = false
+                self.errorMessage = error.localizedDescription
 
                 GitCommitDetailPlugin.logger.error("加载 commit 详情失败: \(error.localizedDescription)")
             }
         }
     }
 
-    private func copyHash(_ hash: String) {
-        #if os(macOS)
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(hash, forType: .string)
-        #endif
+    /// 加载选中文件的 diff 内容
+    private func loadFileDiff(file: String?) {
+        diffTask?.cancel()
 
-        withAnimation(.spring()) {
-            isCopied = true
+        guard let file = file,
+              !projectVM.currentProjectPath.isEmpty else {
+            oldText = ""
+            newText = ""
+            return
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            withAnimation(.spring()) {
-                isCopied = false
+        loadingDiff = true
+
+        let path = projectVM.currentProjectPath
+        let hash = gitVM.selectedCommitHash
+
+        diffTask = Task.detached(priority: .userInitiated) {
+            do {
+                let (before, after) = try await GitCommitDetailService.loadFileDiff(
+                    file: file,
+                    projectPath: path,
+                    commitHash: hash
+                )
+
+                if Task.isCancelled { return }
+
+                await MainActor.run {
+                    guard self.selectedFile == file else { return }
+                    self.oldText = before
+                    self.newText = after
+                    self.loadingDiff = false
+                }
+            } catch {
+                if Task.isCancelled { return }
+
+                await MainActor.run {
+                    self.oldText = ""
+                    self.newText = ""
+                    self.loadingDiff = false
+                }
+
+                GitCommitDetailPlugin.logger.error("加载文件 diff 失败: \(error.localizedDescription)")
             }
         }
-    }
-
-    // MARK: - Date Formatting
-
-    private func formattedDate(_ dateString: String) -> String {
-        let formatters = DateParseHelper.formatHandlers
-
-        for formatter in formatters {
-            if let date = formatter.date(from: dateString) {
-                let displayFormatter = DateFormatter()
-                displayFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                displayFormatter.locale = Locale(identifier: "en_US_POSIX")
-                return displayFormatter.string(from: date)
-            }
-        }
-
-        return dateString
     }
 }
 
-// MARK: - Preview
+// MARK: - Flow Layout
 
-#Preview {
+/// 简单的流式布局，用于自动换行显示标签
+private struct FlowLayout: Layout {
+    var spacing: CGFloat = 4
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let result = arrange(proposal: proposal, subviews: subviews)
+        return result.size
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let result = arrange(proposal: proposal, subviews: subviews)
+        for (index, position) in result.positions.enumerated() {
+            subviews[index].place(at: CGPoint(x: bounds.minX + position.x, y: bounds.minY + position.y), proposal: .unspecified)
+        }
+    }
+
+    private func arrange(proposal: ProposedViewSize, subviews: Subviews) -> (size: CGSize, positions: [CGPoint]) {
+        let maxWidth = proposal.width ?? .infinity
+        var positions: [CGPoint] = []
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > maxWidth && x > 0 {
+                x = 0
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            positions.append(CGPoint(x: x, y: y))
+            rowHeight = max(rowHeight, size.height)
+            x += size.width + spacing
+        }
+
+        return (CGSize(width: maxWidth, height: y + rowHeight), positions)
+    }
+}
+
+// MARK: - 预览
+
+#Preview("GitCommitDetail") {
     GitCommitDetailView()
         .inRootView()
-        .frame(width: 400, height: 600)
+        .frame(width: 700, height: 600)
 }

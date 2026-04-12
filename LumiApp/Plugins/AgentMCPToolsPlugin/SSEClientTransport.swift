@@ -6,7 +6,7 @@ import MCP
 /// A Transport that communicates via Server-Sent Events (SSE)
 actor SSEClientTransport: Transport, SuperLog {
     nonisolated static let emoji = "📡"
-    nonisolated static let verbose = false
+    nonisolated static let verbose: Bool = false
     nonisolated let logger: Logging.Logger
     let url: URL
     let headers: [String: String]
@@ -30,7 +30,9 @@ actor SSEClientTransport: Transport, SuperLog {
     }
 
     func connect() async throws {
-        AgentMCPToolsPlugin.logger.info("\(Self.t)Connecting to SSE: \(self.url.absoluteString)")
+        if Self.verbose {
+            AgentMCPToolsPlugin.logger.info("\(Self.t)Connecting to SSE: \(self.url.absoluteString)")
+        }
 
         var request = URLRequest(url: url)
         for (key, value) in headers {
@@ -51,7 +53,9 @@ actor SSEClientTransport: Transport, SuperLog {
                     throw NSError(domain: "SSEClientTransport", code: statusCode, userInfo: [NSLocalizedDescriptionKey: "Invalid status code: \(statusCode)"])
                 }
 
-                AgentMCPToolsPlugin.logger.info("\(Self.t)SSE Connected")
+                if Self.verbose {
+                    AgentMCPToolsPlugin.logger.info("\(Self.t)SSE Connected")
+                }
 
                 var currentEvent: String?
                 var currentData: String = ""
@@ -91,7 +95,9 @@ actor SSEClientTransport: Transport, SuperLog {
                 }
 
                 // Stream ended
-                AgentMCPToolsPlugin.logger.info("\(Self.t)SSE Stream ended")
+                if Self.verbose {
+                    AgentMCPToolsPlugin.logger.info("\(Self.t)SSE Stream ended")
+                }
                 self.messageContinuation.finish()
 
             } catch {
@@ -108,7 +114,9 @@ actor SSEClientTransport: Transport, SuperLog {
 
             if let endpoint = URL(string: endpointString, relativeTo: self.url) {
                 self.endpointURL = endpoint
-                AgentMCPToolsPlugin.logger.info("\(Self.t)SSE Endpoint received: \(endpoint.absoluteString)")
+                if Self.verbose {
+                    AgentMCPToolsPlugin.logger.info("\(Self.t)SSE Endpoint received: \(endpoint.absoluteString)")
+                }
             } else {
                 AgentMCPToolsPlugin.logger.error("\(Self.t)Invalid endpoint URL: \(endpointString)")
             }

@@ -15,8 +15,7 @@ actor WebSearchPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🔍"
     
     /// 是否启用详细日志
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     static let id: String = "WebSearch"
     static let displayName: String = String(localized: "Web Search", table: "WebSearch")
     static let description: String = String(localized: "提供网页搜索功能支持，满足 Qwen 等模型的 Function Calling 限制。", table: "WebSearch")

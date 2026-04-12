@@ -5,8 +5,7 @@ import MagicKit
 /// 大文件相关服务：扫描、进度、删除、Finder 展示
 final class LargeFilesService: @unchecked Sendable, SuperLog {
     nonisolated static let emoji = "📄"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     static let shared = LargeFilesService()
 
     private let coordinator = LargeFilesScanCoordinator()

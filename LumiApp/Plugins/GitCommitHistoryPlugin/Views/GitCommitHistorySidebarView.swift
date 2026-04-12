@@ -1,13 +1,16 @@
+import LibGit2Swift
 import SwiftUI
 import MagicKit
 
 /// Git 提交历史侧边栏视图
 ///
-/// 参考 GitOK 的 CommitList 实现，显示当前项目的提交历史。
+/// 参考 GitOK 的 CommitList + WorkingStateView 实现，显示当前项目的提交历史。
+/// 列表顶部有一个 "当前状态" 入口，展示未提交的变更数量，点击后可以在 Detail 中查看工作区 diff。
 /// 支持分页加载、切换项目时自动刷新。
 struct GitCommitHistorySidebarView: View {
     @EnvironmentObject var projectVM: ProjectVM
     @EnvironmentObject var gitVM: GitVM
+    @EnvironmentObject var layoutVM: LayoutVM
 
     /// 提交列表数据
     @State private var commits: [GitCommitLog] = []
@@ -33,15 +36,19 @@ struct GitCommitHistorySidebarView: View {
     /// 是否选中了某个 commit
     @State private var selectedCommitHash: String? = nil
 
+    /// 未提交变更的文件数量
+    @State private var uncommittedFileCount: Int = 0
+
+    /// 是否正在加载未提交变更数量
+    @State private var loadingUncommittedCount: Bool = false
+
     var body: some View {
         VStack(spacing: 0) {
             // 提交列表
-            if !commits.isEmpty {
+            if !commits.isEmpty || projectVM.isProjectSelected {
                 commitListView
             } else if loading {
                 loadingView
-            } else if projectVM.isProjectSelected {
-                emptyView
             } else {
                 noProjectView
             }
@@ -66,6 +73,12 @@ struct GitCommitHistorySidebarView: View {
     private var commitListView: some View {
         ScrollView {
             LazyVStack(spacing: 0) {
+                // 顶部：工作状态入口
+                workingStateView
+
+                Divider()
+
+                // Commit 列表
                 ForEach(Array(commits.enumerated()), id: \.element.hash) { index, commit in
                     GitCommitRow(
                         commit: commit,
@@ -91,7 +104,7 @@ struct GitCommitHistorySidebarView: View {
                 }
 
                 if loading && !commits.isEmpty {
-                HStack {
+                    HStack {
                         Spacer()
                         ProgressView()
                             .controlSize(.small)
@@ -99,6 +112,69 @@ struct GitCommitHistorySidebarView: View {
                     }
                     .frame(height: 36)
                 }
+            }
+        }
+    }
+
+    // MARK: - Working State View
+
+    /// 工作状态入口，参考 GitOK 的 WorkingStateView
+    /// 点击后清空 selectedCommitHash，Detail 面板会显示未提交的变更文件和 diff
+    private var workingStateView: some View {
+        let isWorkingStateSelected = selectedCommitHash == nil
+
+        return HStack(spacing: 10) {
+            // 图标
+            if loadingUncommittedCount {
+                ProgressView()
+                    .controlSize(.small)
+            } else if uncommittedFileCount == 0 {
+                Image(systemName: "checkmark.circle")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.green)
+            } else {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.orange)
+            }
+
+            // 文本
+            VStack(alignment: .leading, spacing: 2) {
+                if uncommittedFileCount == 0 {
+                    Text("工作区干净")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+
+                    Text("所有更改已提交")
+                        .font(.system(size: 10))
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                } else {
+                    Text("当前状态")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+
+                    Text("\(uncommittedFileCount) 个文件未提交")
+                        .font(.system(size: 10))
+                        .foregroundColor(.orange)
+                }
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(
+            isWorkingStateSelected
+                ? Color.accentColor.opacity(0.08)
+                : Color.clear
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            selectedCommitHash = nil
+            gitVM.selectCommit(hash: nil)
+            // 确保侧边栏也选中这个标签
+            if layoutVM.selectedAgentSidebarTabId != GitCommitHistoryPlugin.id {
+                layoutVM.selectAgentSidebarTab(GitCommitHistoryPlugin.id, reason: "CommitHistory: working state tapped")
             }
         }
     }
@@ -114,21 +190,6 @@ struct GitCommitHistorySidebarView: View {
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    // MARK: - Empty View
-
-    private var emptyView: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "clock.badge.checkmark")
-                .font(.system(size: 24))
-                .foregroundColor(.secondary.opacity(0.5))
-            Text("暂无提交记录")
-                .font(.system(size: 11))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.vertical, 20)
     }
 
     // MARK: - No Project View
@@ -158,6 +219,7 @@ struct GitCommitHistorySidebarView: View {
             hasMoreCommits = true
             loadedCount = 0
             selectedCommitHash = nil
+            uncommittedFileCount = 0
             gitVM.clearSelection()
             return
         }
@@ -173,23 +235,26 @@ struct GitCommitHistorySidebarView: View {
         currentRefreshTask = Task {
             if Task.isCancelled { return }
 
-            do {
-                let newCommits = try await GitService.shared.getLog(
-                    path: path,
-                    count: pageSize,
-                    branch: nil,
-                    file: nil
-                )
+            // 并行加载：commit 列表 + 未提交变更数量
+            async let commitsTask = GitService.shared.getLog(
+                path: path,
+                count: pageSize,
+                branch: nil,
+                file: nil
+            )
+            async let uncommittedTask = loadUncommittedCount(path: path)
 
+            do {
+                let newCommits = try await commitsTask
                 if Task.isCancelled { return }
 
                 await MainActor.run {
                     self.commits = newCommits
                     self.loading = false
                     self.loadedCount = newCommits.count
-                    self.selectedCommitHash = newCommits.first?.hash
-                    // 同步首次选中到 GitVM
-                    self.gitVM.selectCommit(hash: newCommits.first?.hash)
+                    // 默认选中工作状态（selectedCommitHash = nil）
+                    self.selectedCommitHash = nil
+                    self.gitVM.selectCommit(hash: nil)
                 }
             } catch {
                 if Task.isCancelled { return }
@@ -200,6 +265,31 @@ struct GitCommitHistorySidebarView: View {
                 }
 
                 GitCommitHistoryPlugin.logger.error("刷新提交列表失败: \(error.localizedDescription)")
+            }
+
+            // 加载未提交变更数量（不阻塞 commit 列表的显示）
+            await uncommittedTask
+        }
+    }
+
+    /// 加载未提交变更的文件数量
+    private func loadUncommittedCount(path: String) async {
+        await MainActor.run {
+            loadingUncommittedCount = true
+        }
+
+        do {
+            let files = try await GitService.shared.getUncommittedChanges(path: path)
+            if Task.isCancelled { return }
+
+            await MainActor.run {
+                self.uncommittedFileCount = files.count
+                self.loadingUncommittedCount = false
+            }
+        } catch {
+            await MainActor.run {
+                self.uncommittedFileCount = 0
+                self.loadingUncommittedCount = false
             }
         }
     }
@@ -414,39 +504,22 @@ enum DateParseHelper {
 // MARK: - GitService Extension
 
 extension GitService {
-    /// 获取带跳过的提交日志（分页加载用）
+    /// 获取带跳过的提交日志（分页加载用），使用 LibGit2Swift
     func getLogWithSkip(path: String?, count: Int, skip: Int, branch: String?) async throws -> [GitCommitLog] {
-        let workDir = path.map { URL(fileURLWithPath: $0) } ?? URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+        let repoPath = path ?? FileManager.default.currentDirectoryPath
 
-        var args: [String] = [
-            "log",
-            "-\(count)",
-            "--skip=\(skip)",
-            "--pretty=format:%H|%an|%ae|%ai|%s",
-        ]
+        let gitCommits = try LibGit2.getCommitList(at: repoPath, limit: count, skip: skip)
 
-        if let branch = branch {
-            args.append(branch)
+        let dateFormatter = ISO8601DateFormatter()
+        return gitCommits.map { commit in
+            GitCommitLog(
+                hash: commit.hash,
+                author: commit.author,
+                email: commit.email,
+                date: dateFormatter.string(from: commit.date),
+                message: commit.message.components(separatedBy: "\n").first ?? commit.message
+            )
         }
-
-        let output = try await runGitCommand(args: args, in: workDir)
-
-        var logs: [GitCommitLog] = []
-
-        for line in output.components(separatedBy: "\n").filtering({ !$0.isEmpty }) {
-            let parts = line.components(separatedBy: "|")
-            if parts.count >= 5 {
-                logs.append(GitCommitLog(
-                    hash: parts[0],
-                    author: parts[1],
-                    email: parts[2],
-                    date: parts[3],
-                    message: parts.dropFirst(4).joined(separator: "|")
-                ))
-            }
-        }
-
-        return logs
     }
 }
 

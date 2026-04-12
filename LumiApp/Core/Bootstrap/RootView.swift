@@ -20,7 +20,7 @@ import SwiftUI
 /// ```
 struct RootView<Content>: View, SuperLog where Content: View {
     nonisolated static var emoji: String { "📤" }
-    nonisolated static var verbose: Bool { true }
+    nonisolated static var verbose: Bool { false }
 
     /// 视图内容
     var content: Content
@@ -34,8 +34,8 @@ struct RootView<Content>: View, SuperLog where Content: View {
     /// 项目上下文与系统提示词（与 `container` 同源，见 `ProjectController.init(container:)`）。
     @StateObject var projectController = ProjectController(container: RootViewContainer.shared)
 
-    /// 新会话创建流程（与 `container` 同源）。
-    @StateObject var conversationCreationController = ConversationCreationController(container: RootViewContainer.shared)
+    /// 会话控制器（创建、删除、重命名等会话操作）。
+    @StateObject var conversationController = ConversationController(container: RootViewContainer.shared)
 
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
@@ -112,7 +112,7 @@ extension RootView {
 
     func onResumeSendAfterToolPermission(_ conversationId: UUID) {
         Task {
-            await sendController.send(conversationId: conversationId)
+            await sendController.resumeAfterPermissionGranted(conversationId: conversationId)
         }
     }
 
@@ -155,7 +155,7 @@ extension RootView {
         guard let requestId = container.conversationCreationVM.pendingRequest else { return }
         guard container.conversationCreationVM.consumePendingRequest(id: requestId) != nil else { return }
 
-        Task { await conversationCreationController.handlePendingRequest(requestId: requestId) }
+        Task { await conversationController.handleCreationRequest(requestId: requestId) }
     }
 
     func onTaskCancellationRequested() {

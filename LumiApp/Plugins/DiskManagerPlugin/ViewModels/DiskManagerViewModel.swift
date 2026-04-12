@@ -5,8 +5,7 @@ import MagicKit
 @MainActor
 class DiskManagerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "💿"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     @Published var diskUsage: DiskUsage?
     @Published var largeFiles: [LargeFileEntry] = []
     @Published var rootEntries: [DirectoryEntry] = [] // Directory tree root nodes

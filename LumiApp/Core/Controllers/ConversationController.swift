@@ -1,13 +1,24 @@
 import Foundation
 import MagicKit
 
-/// 处理「创建新会话」请求：落库会话、选中、首条 system / welcome 消息。
+/// 会话控制器
 ///
-/// 由 `RootView` 注入 `RootViewContainer` 使用。
+/// 负责会话级别的用户操作，是 UI 层操作会话的唯一入口。
+///
+/// ## 当前功能
+///
+/// | 功能 | 方法 | 说明 |
+/// |------|------|------|
+/// | 创建会话 | `handleCreationRequest(requestId:)` | 落库、选中、注入 system/welcome 消息 |
+///
+/// ## 设计原则
+///
+/// - **Controller 只编排**：不直接操作数据库，而是委托给 `ChatHistoryService` / `ConversationVM` 等服务
+/// - **可扩展**：后续会话删除、重命名、复制等操作都可以加在这里
 @MainActor
-final class ConversationCreationController: ObservableObject, SuperLog {
+final class ConversationController: ObservableObject, SuperLog {
     nonisolated static let emoji = "💬"
-    nonisolated static let verbose = true
+    nonisolated static let verbose: Bool = true
 
     private let container: RootViewContainer
 
@@ -15,8 +26,17 @@ final class ConversationCreationController: ObservableObject, SuperLog {
         self.container = container
     }
 
-    /// 执行创建流程（调用方需已 `consumePendingRequest`）
-    func handlePendingRequest(requestId: UUID) async {
+    // MARK: - 创建会话
+
+    /// 执行创建会话流程（调用方需已 `consumePendingRequest`）。
+    ///
+    /// 流程：
+    /// 1. 在数据库中创建会话
+    /// 2. 选中该会话
+    /// 3. 发送 `agentConversationCreated` 通知
+    /// 4. 注入 system 上下文消息（项目信息、工具列表等）
+    /// 5. 注入 welcome 消息（引导语）
+    func handleCreationRequest(requestId: UUID) async {
         let projectId = container.projectVM.isProjectSelected ? container.projectVM.currentProjectPath : nil
         let projectName = container.projectVM.isProjectSelected ? container.projectVM.currentProjectName : nil
         let projectPath = container.projectVM.isProjectSelected ? container.projectVM.currentProjectPath : nil

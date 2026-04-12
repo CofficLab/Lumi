@@ -31,8 +31,7 @@ enum SlashCommandResult {
 /// 只负责命令解析和执行，不直接操作消息，返回结果由调用方处理
 actor SlashCommandService: SuperLog {
     nonisolated static let emoji = "⌨️"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     /// 内置命令列表
     private let builtInCommands = ["clear", "help", "plan", "mcp"]
 

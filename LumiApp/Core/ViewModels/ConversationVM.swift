@@ -10,8 +10,7 @@ final class ConversationVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "💬"
 
     /// 是否启用详细日志
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     // MARK: - 服务依赖
 
     /// 聊天历史服务
@@ -59,7 +58,7 @@ final class ConversationVM: ObservableObject, SuperLog {
             }
             return
         }
-        await saveMessage(message, to: conversationId)
+        saveMessage(message, to: conversationId)
     }
 
     /// 保存消息到指定对话
@@ -74,7 +73,9 @@ final class ConversationVM: ObservableObject, SuperLog {
     /// - Parameter conversation: 要删除的对话
     /// - Note: 调用方（如 AgentRuntime）需要负责清理相关的消息发送队列
     func deleteConversation(_ conversation: Conversation) {
-        AppLogger.core.info("\(Self.t)🗑️ 开始删除对话：\(conversation.title)")
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t)🗑️ 开始删除对话：\(conversation.title)")
+        }
 
         // 如果删除的是选中的对话，清理状态
         if selectedConversationId == conversation.id {
@@ -83,7 +84,9 @@ final class ConversationVM: ObservableObject, SuperLog {
 
         chatHistoryService.deleteConversation(conversation)
 
-        AppLogger.core.info("\(Self.t)✅ 对话已删除：\(conversation.title)")
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t)✅ 对话已删除：\(conversation.title)")
+        }
     }
 
     /// 更新对话标题
