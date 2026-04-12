@@ -36,14 +36,18 @@ actor ContextService: Sendable, SuperLog {
         if self.projectRoot?.path != url?.path {
             self.openFiles.removeAll(keepingCapacity: false)
             self.filePreviewCache.removeAll(keepingCapacity: false)
-            AppLogger.core.info("\(self.t)Project root changed, cleared tracked file context")
+            if Self.verbose {
+                AppLogger.core.info("\(self.t)Project root changed, cleared tracked file context")
+            }
         }
         self.projectRoot = url
     }
 
     func trackOpenFile(_ url: URL) {
         guard url.isFileURL else {
-            AppLogger.core.warning("\(self.t)Ignored non-file URL in trackOpenFile")
+            if Self.verbose {
+                AppLogger.core.warning("\(self.t)Ignored non-file URL in trackOpenFile")
+            }
             return
         }
 
