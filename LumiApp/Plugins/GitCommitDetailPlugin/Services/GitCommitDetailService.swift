@@ -101,6 +101,108 @@ enum GitCommitDetailService {
         try await GitService.shared.getUncommittedChanges(path: path)
     }
 
+    // MARK: - Project Overview Info
+
+    /// 项目 Git 概览信息
+    struct ProjectGitInfo {
+        let branch: String
+        let remote: String
+        let totalCommits: Int
+        let contributors: [String]
+        let lastCommitMessage: String
+        let lastCommitAuthor: String
+        let lastCommitDate: String
+    }
+
+    /// 加载项目 Git 概览信息（工作区干净时显示）
+    static func loadProjectGitInfo(path: String) async -> ProjectGitInfo? {
+        // 并发执行多个 git 命令
+        async let branchTask = runGit(path, args: ["rev-parse", "--abbrev-ref", "HEAD"])
+        async let remoteTask = runGit(path, args: ["remote", "-v"])
+        async let totalCommitsTask = runGit(path, args: ["rev-list", "--count", "HEAD"])
+        async let shortlogTask = runGit(path, args: ["shortlog", "-sn", "HEAD"])
+        async let lastMsgTask = runGit(path, args: ["log", "-1", "--pretty=%s"])
+        async let lastAuthorTask = runGit(path, args: ["log", "-1", "--pretty=%an"])
+        async let lastDateTask = runGit(path, args: ["log", "-1", "--pretty=%ai"])
+
+        let branch = await branchTask.trimmingCharacters(in: .whitespacesAndNewlines)
+        let remoteRaw = await remoteTask
+        let totalCommitsStr = await totalCommitsTask.trimmingCharacters(in: .whitespacesAndNewlines)
+        let shortlog = await shortlogTask
+        let lastMsg = await lastMsgTask.trimmingCharacters(in: .whitespacesAndNewlines)
+        let lastAuthor = await lastAuthorTask.trimmingCharacters(in: .whitespacesAndNewlines)
+        let lastDate = await lastDateTask.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !branch.isEmpty else { return nil }
+
+        // 解析 remote：取第一行的第一个 URL 部分
+        let remote: String
+        if let firstLine = remoteRaw.components(separatedBy: "\n").first {
+            // 格式: "origin\tgit@github.com:user/repo.git (fetch)"
+            let parts = firstLine.components(separatedBy: "\t")
+            if parts.count > 1 {
+                let urlString = parts[1].components(separatedBy: " ").first ?? parts[1]
+                // 提取简洁的路径部分 (user/repo)
+                if urlString.hasSuffix(".git") {
+                    remote = String(urlString.dropLast(4))
+                        .components(separatedBy: ":").last ?? urlString
+                } else {
+                    remote = urlString
+                }
+            } else {
+                remote = firstLine
+            }
+        } else {
+            remote = "—"
+        }
+
+        // 解析贡献者
+        let contributors = shortlog.components(separatedBy: "\n")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+            .map { line -> String in
+                // 格式: "  123\tAuthor Name"
+                let parts = line.components(separatedBy: "\t")
+                return parts.count > 1 ? parts[1] : line
+            }
+
+        let totalCommits = Int(totalCommitsStr) ?? 0
+
+        return ProjectGitInfo(
+            branch: branch,
+            remote: remote,
+            totalCommits: totalCommits,
+            contributors: contributors,
+            lastCommitMessage: lastMsg.isEmpty ? "—" : lastMsg,
+            lastCommitAuthor: lastAuthor.isEmpty ? "—" : lastAuthor,
+            lastCommitDate: lastDate.isEmpty ? "—" : formattedDate(lastDate)
+        )
+    }
+
+    // MARK: - Git Command Helper
+
+    /// 执行 git 命令并返回输出
+    private static func runGit(_ path: String, args: [String]) async -> String {
+        await Task.detached {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+            process.arguments = ["git", "-C", path] + args
+
+            let pipe = Pipe()
+            process.standardOutput = pipe
+            process.standardError = FileHandle.nullDevice
+
+            do {
+                try process.run()
+                process.waitUntilExit()
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                return String(data: data, encoding: .utf8) ?? ""
+            } catch {
+                return ""
+            }
+        }.value
+    }
+
     // MARK: - Load File Diff
 
     /// 加载指定文件的 diff 内容

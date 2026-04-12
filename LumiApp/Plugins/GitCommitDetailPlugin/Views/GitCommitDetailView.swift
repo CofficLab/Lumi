@@ -8,6 +8,7 @@ import MagicKit
 /// 变更统计，以及可交互的文件列表和 Diff 视图。
 ///
 /// 当 selectedCommitHash 为 nil 时，显示当前工作区的未提交变更（工作状态模式）。
+/// 工作区干净时，显示项目 Git 概览信息。
 struct GitCommitDetailView: View {
 
     // MARK: - 属性
@@ -49,6 +50,9 @@ struct GitCommitDetailView: View {
     /// 是否正在加载未提交变更
     @State private var loadingWorkingState: Bool = false
 
+    /// 项目 Git 概览信息（工作区干净时显示）
+    @State private var projectGitInfo: GitCommitDetailService.ProjectGitInfo?
+
     // MARK: - Body
 
     var body: some View {
@@ -85,6 +89,7 @@ struct GitCommitDetailView: View {
             selectedFile = nil
             oldText = ""
             newText = ""
+            projectGitInfo = nil
             handleSelectionChange()
         }
         .onChange(of: selectedFile) { _, newFile in
@@ -185,19 +190,130 @@ struct GitCommitDetailView: View {
         }
     }
 
+    // MARK: - Clean Workspace View
+
     private var cleanWorkspaceView: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "checkmark.circle")
-                .font(.system(size: 32))
-                .foregroundColor(.green.opacity(0.5))
-            Text(String(localized: "Clean Workspace", table: "GitCommitDetail"))
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
-            Text(String(localized: "All changes committed", table: "GitCommitDetail"))
+        ScrollView {
+            VStack(spacing: 16) {
+                // 顶部：干净状态提示
+                VStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 28))
+                        .foregroundColor(.green)
+                    Text(String(localized: "Clean Workspace", table: "GitCommitDetail"))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    Text(String(localized: "All changes committed", table: "GitCommitDetail"))
+                        .font(.system(size: 11))
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                }
+                .padding(.top, 24)
+
+                // 项目信息区域
+                if let info = projectGitInfo {
+                    projectInfoGrid(info)
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    private func projectInfoGrid(_ info: GitCommitDetailService.ProjectGitInfo) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 6) {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                Text(String(localized: "Project Info", table: "GitCommitDetail"))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+            }
+
+            VStack(spacing: 1) {
+                projectInfoRow(icon: "arrow.triangle.branch", label: String(localized: "Branch", table: "GitCommitDetail"), value: info.branch)
+                projectInfoRow(icon: "globe", label: String(localized: "Remote", table: "GitCommitDetail"), value: info.remote)
+                projectInfoRow(icon: "number.circle", label: String(localized: "Total Commits", table: "GitCommitDetail"), value: "\(info.totalCommits)")
+                projectInfoRow(icon: "person.2", label: String(localized: "Contributors", table: "GitCommitDetail"), value: "\(info.contributors.count)")
+
+                if !info.contributors.isEmpty {
+                    contributorsList(info.contributors)
+                }
+
+                Divider()
+                    .padding(.vertical, 4)
+
+                projectInfoRow(icon: "text.bubble", label: String(localized: "Last Commit", table: "GitCommitDetail"), value: info.lastCommitMessage)
+                projectInfoRow(icon: "person.fill", label: String(localized: "Author", table: "GitCommitDetail"), value: info.lastCommitAuthor)
+                projectInfoRow(icon: "clock.fill", label: String(localized: "Date", table: "GitCommitDetail"), value: info.lastCommitDate)
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color(NSColor.controlBackgroundColor).opacity(0.6))
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+        }
+        .padding(.horizontal, 16)
+    }
+
+    private func projectInfoRow(icon: String, label: String, value: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 10))
+                .foregroundColor(.secondary)
+                .frame(width: 14)
+
+            Text(label)
                 .font(.system(size: 11))
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .frame(width: 80, alignment: .leading)
+
+            Text(value)
+                .font(.system(size: 11))
+                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .lineLimit(2)
+                .textSelection(.enabled)
+
+            Spacer()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+    }
+
+    private func contributorsList(_ contributors: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Image(systemName: "person.2.fill")
+                    .font(.system(size: 10))
+                    .foregroundColor(.secondary)
+                    .frame(width: 14)
+
+                Text(String(localized: "Team", table: "GitCommitDetail"))
+                    .font(.system(size: 11))
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .frame(width: 80, alignment: .leading)
+
+                FlowLayout(spacing: 4) {
+                    ForEach(contributors.prefix(8), id: \.self) { name in
+                        HStack(spacing: 3) {
+                            Image(systemName: "person.circle.fill")
+                                .font(.system(size: 9))
+                                .foregroundColor(.secondary)
+                            Text(name)
+                                .font(.system(size: 10))
+                                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(Color.secondary.opacity(0.08))
+                        .cornerRadius(4)
+                    }
+                }
+
+                Spacer()
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+        }
     }
 
     // MARK: - Commit Detail Views
@@ -508,27 +624,35 @@ struct GitCommitDetailView: View {
         guard !path.isEmpty else {
             uncommittedFiles = []
             loadingWorkingState = false
+            projectGitInfo = nil
             return
         }
 
         loadingWorkingState = true
 
         Task {
-            do {
-                let files = try await GitCommitDetailService.loadUncommittedFiles(path: path)
-
-                await MainActor.run {
-                    self.uncommittedFiles = files
-                    self.loadingWorkingState = false
-                    self.selectedFile = files.first?.path
+            async let filesTask: [GitChangedFile] = {
+                do {
+                    return try await GitCommitDetailService.loadUncommittedFiles(path: path)
+                } catch {
+                    GitCommitDetailPlugin.logger.error("加载未提交变更失败: \(error.localizedDescription)")
+                    return []
                 }
-            } catch {
-                await MainActor.run {
-                    self.uncommittedFiles = []
-                    self.loadingWorkingState = false
-                }
+            }()
+            async let infoTask = GitCommitDetailService.loadProjectGitInfo(path: path)
 
-                GitCommitDetailPlugin.logger.error("加载未提交变更失败: \(error.localizedDescription)")
+            let files = await filesTask
+            let info = await infoTask
+
+            self.uncommittedFiles = files
+            self.loadingWorkingState = false
+            self.selectedFile = files.first?.path
+
+            // 只在工作区干净时显示项目信息
+            if files.isEmpty {
+                self.projectGitInfo = info
+            } else {
+                self.projectGitInfo = nil
             }
         }
     }
@@ -559,22 +683,18 @@ struct GitCommitDetailView: View {
 
                 if Task.isCancelled { return }
 
-                await MainActor.run {
-                    guard self.gitVM.selectedCommitHash == hash else { return }
-                    self.commitDetail = detail
-                    self.commitChangedFiles = files
-                    self.loading = false
-                    self.selectedFile = files.first?.path
-                }
+                guard self.gitVM.selectedCommitHash == hash else { return }
+                self.commitDetail = detail
+                self.commitChangedFiles = files
+                self.loading = false
+                self.selectedFile = files.first?.path
             } catch {
                 if Task.isCancelled { return }
 
-                await MainActor.run {
-                    self.commitDetail = nil
-                    self.commitChangedFiles = []
-                    self.loading = false
-                    self.errorMessage = error.localizedDescription
-                }
+                self.commitDetail = nil
+                self.commitChangedFiles = []
+                self.loading = false
+                self.errorMessage = error.localizedDescription
 
                 GitCommitDetailPlugin.logger.error("加载 commit 详情失败: \(error.localizedDescription)")
             }
@@ -625,6 +745,47 @@ struct GitCommitDetailView: View {
                 GitCommitDetailPlugin.logger.error("加载文件 diff 失败: \(error.localizedDescription)")
             }
         }
+    }
+}
+
+// MARK: - Flow Layout
+
+/// 简单的流式布局，用于自动换行显示标签
+private struct FlowLayout: Layout {
+    var spacing: CGFloat = 4
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let result = arrange(proposal: proposal, subviews: subviews)
+        return result.size
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let result = arrange(proposal: proposal, subviews: subviews)
+        for (index, position) in result.positions.enumerated() {
+            subviews[index].place(at: CGPoint(x: bounds.minX + position.x, y: bounds.minY + position.y), proposal: .unspecified)
+        }
+    }
+
+    private func arrange(proposal: ProposedViewSize, subviews: Subviews) -> (size: CGSize, positions: [CGPoint]) {
+        let maxWidth = proposal.width ?? .infinity
+        var positions: [CGPoint] = []
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > maxWidth && x > 0 {
+                x = 0
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            positions.append(CGPoint(x: x, y: y))
+            rowHeight = max(rowHeight, size.height)
+            x += size.width + spacing
+        }
+
+        return (CGSize(width: maxWidth, height: y + rowHeight), positions)
     }
 }
 
