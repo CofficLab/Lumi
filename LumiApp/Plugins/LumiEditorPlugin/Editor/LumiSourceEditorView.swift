@@ -30,48 +30,55 @@ struct LumiSourceEditorView: View {
     }
     
     var body: some View {
-        let config = cachedConfig ?? buildConfiguration()
-        
-        Group {
-            if let content = state.content, let textCoordinator, let cursorCoordinator, let contextMenuCoordinator {
-                SourceEditor(
-                    content,
-                    language: resolvedLanguage,
-                    configuration: config,
-                    state: $state.editorState,
-                    highlightProviders: [treeSitterClient],
-                    coordinators: [textCoordinator, cursorCoordinator, contextMenuCoordinator]
-                )
+        editorContent
+            .onAppear(perform: initializeCoordinators)
+            .onChange(of: state.fontSize) { _, _ in updateConfigCache() }
+            .onChange(of: state.wrapLines) { _, _ in updateConfigCache() }
+            .onChange(of: state.showGutter) { _, _ in updateConfigCache() }
+            .onChange(of: state.showMinimap) { _, _ in updateConfigCache() }
+            .onChange(of: state.showFoldingRibbon) { _, _ in updateConfigCache() }
+            .onChange(of: state.tabWidth) { _, _ in updateConfigCache() }
+            .onChange(of: state.useSpaces) { _, _ in updateConfigCache() }
+            .onChange(of: state.themePreset) { _, _ in updateConfigCache() }
+            .onChange(of: state.currentTheme) { _, _ in updateConfigCache() }
+    }
+
+    /// 编辑器主体内容（拆分为独立视图以减轻编译器类型推断负担）
+    @ViewBuilder
+    private var editorContent: some View {
+        if let content = state.content,
+           let textCoordinator,
+           let cursorCoordinator,
+           let contextMenuCoordinator {
+            let config = cachedConfig ?? buildConfiguration()
+            SourceEditor(
+                content,
+                language: resolvedLanguage,
+                configuration: config,
+                state: $state.editorState,
+                highlightProviders: [treeSitterClient],
+                coordinators: [textCoordinator, cursorCoordinator, contextMenuCoordinator]
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            Text("No content")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                Text("No content")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
         }
-        // 关键：当这些值变化时，重建配置（在 onChange / onAppear 中写 @State 是安全的）
-        .onChange(of: state.fontSize) { _, _ in updateConfigCache() }
-        .onChange(of: state.wrapLines) { _, _ in updateConfigCache() }
-        .onChange(of: state.showGutter) { _, _ in updateConfigCache() }
-        .onChange(of: state.showMinimap) { _, _ in updateConfigCache() }
-        .onChange(of: state.showFoldingRibbon) { _, _ in updateConfigCache() }
-        .onChange(of: state.tabWidth) { _, _ in updateConfigCache() }
-        .onChange(of: state.useSpaces) { _, _ in updateConfigCache() }
-        .onChange(of: state.themePreset) { _, _ in updateConfigCache() }
-        .onChange(of: state.currentTheme) { _, _ in updateConfigCache() }
-        .onAppear {
-            // 首次出现时初始化协调器和配置缓存
-            if textCoordinator == nil {
-                textCoordinator = LumiEditorCoordinator(state: state)
-            }
-            if cursorCoordinator == nil {
-                cursorCoordinator = LumiCursorCoordinator(state: state)
-            }
-            if contextMenuCoordinator == nil {
-                contextMenuCoordinator = LumiContextMenuCoordinator(state: state)
-            }
-            if cachedConfig == nil {
-                updateConfigCache()
-            }
+    }
+
+    /// 首次出现时初始化协调器和配置缓存
+    private func initializeCoordinators() {
+        if textCoordinator == nil {
+            textCoordinator = LumiEditorCoordinator(state: state)
+        }
+        if cursorCoordinator == nil {
+            cursorCoordinator = LumiCursorCoordinator(state: state)
+        }
+        if contextMenuCoordinator == nil {
+            contextMenuCoordinator = LumiContextMenuCoordinator(state: state)
+        }
+        if cachedConfig == nil {
+            updateConfigCache()
         }
     }
     
