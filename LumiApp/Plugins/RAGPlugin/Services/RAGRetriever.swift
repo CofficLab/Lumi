@@ -1,8 +1,11 @@
 import Foundation
+import MagicKit
 
-struct RAGRetriever {
+struct RAGRetriever: SuperLog {
+    nonisolated static let emoji = "🦞"
+    nonisolated static let verbose: Bool = false
+
     private let store: RAGSQLiteStore
-    private nonisolated static let verbose: Bool = false
     init(store: RAGSQLiteStore) {
         self.store = store
     }
@@ -81,8 +84,8 @@ struct RAGRetriever {
         }
 
         // ⚠️ 性能预警
-        if totalDuration > 200 {
-            AppLogger.core.warning("[RAGRetriever] ⚠️ retrieve 耗时过长：\(String(format: "%.2f", totalDuration))ms (>200ms) [ANN=\(String(format: "%.0f", annDuration))ms, scoring=\(String(format: "%.0f", scoringDuration))ms, candidates=\(candidates.count)]")
+        if Self.verbose, totalDuration > 200 {
+            AppLogger.core.warning("\(Self.t)⚠️ retrieve 耗时过长：\(String(format: "%.2f", totalDuration))ms (>200ms) [ANN=\(String(format: "%.0f", annDuration))ms, scoring=\(String(format: "%.0f", scoringDuration))ms, candidates=\(candidates.count)]")
         }
 
         return top.map {

@@ -335,7 +335,9 @@ struct RAGStatusBarView: View, SuperLog {
             if error.localizedDescription.contains("RAG 服务未初始化") {
                 isNotInitialized = true
                 errorMessage = nil
-                RAGPlugin.logger.info("\(Self.t)RAG service not initialized")
+                if Self.verbose {
+                    RAGPlugin.logger.info("\(Self.t)RAG service not initialized")
+                }
                 return
             }
 

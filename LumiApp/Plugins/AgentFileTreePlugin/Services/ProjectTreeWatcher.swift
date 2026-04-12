@@ -1,5 +1,6 @@
 import Foundation
 import os
+import MagicKit
 
 /// 文件树目录变化监听器
 ///
@@ -10,7 +11,7 @@ import os
 /// - 仅监听当前已展开的目录（懒监听，避免不必要的系统开销）
 /// - 同一目录短时间内多次事件会合并（防抖）
 /// - 所有公开方法线程安全
-final class ProjectTreeWatcher: @unchecked Sendable {
+final class ProjectTreeWatcher: @unchecked Sendable, SuperLog {
 
     // MARK: - Types
 
@@ -25,6 +26,8 @@ final class ProjectTreeWatcher: @unchecked Sendable {
 
     // MARK: - Properties
 
+    nonisolated static let emoji = "🌳"
+    nonisolated static let verbose: Bool = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree.watcher")
 
     /// 当前活跃的监控，key 为标准化路径
@@ -71,7 +74,9 @@ final class ProjectTreeWatcher: @unchecked Sendable {
 
             let fd = Darwin.open(key, O_EVTONLY)
             guard fd >= 0 else {
-                Self.logger.warning("⚠️ 无法打开文件描述符监控目录：\(key)")
+                if Self.verbose {
+                    Self.logger.warning("\(Self.t)⚠️ 无法打开文件描述符监控目录：\(key)")
+                }
                 return
             }
 
@@ -92,7 +97,9 @@ final class ProjectTreeWatcher: @unchecked Sendable {
             source.resume()
             watches[key] = Watch(fileDescriptor: fd, source: source)
 
-            Self.logger.info("👁️ 开始监控目录：\(url.lastPathComponent)")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)👁️ 开始监控目录：\(url.lastPathComponent)")
+            }
         }
     }
 
@@ -106,7 +113,9 @@ final class ProjectTreeWatcher: @unchecked Sendable {
             pendingRefreshes[key]?.cancel()
             pendingRefreshes.removeValue(forKey: key)
 
-            Self.logger.info("🛑 停止监控目录：\(url.lastPathComponent)")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)🛑 停止监控目录：\(url.lastPathComponent)")
+            }
         }
     }
 
@@ -123,7 +132,9 @@ final class ProjectTreeWatcher: @unchecked Sendable {
             }
             pendingRefreshes.removeAll()
 
-            Self.logger.info("🛑 已停止所有目录监控")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)🛑 已停止所有目录监控")
+            }
         }
     }
 

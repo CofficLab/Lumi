@@ -1,5 +1,6 @@
 import Foundation
 import os
+import MagicKit
 
 /// 弱引用盒子，用于解决 init 中闭包捕获 self 的顺序问题
 private final class WeakBox<T: AnyObject>: @unchecked Sendable {
@@ -19,9 +20,12 @@ private final class WeakBox<T: AnyObject>: @unchecked Sendable {
 /// 2. FileNodeView 展开/折叠时调用 coordinator 的 addExpandedPath / removeExpandedPath
 /// 3. coordinator 自动更新 watcher 的监控列表
 /// 4. 文件系统变化时 coordinator 递增刷新令牌
-final class ProjectTreeRefreshCoordinator: ObservableObject, @unchecked Sendable {
+final class ProjectTreeRefreshCoordinator: ObservableObject, @unchecked Sendable, SuperLog {
 
     // MARK: - Properties
+
+    nonisolated static let emoji = "🌳"
+    nonisolated static let verbose: Bool = false
 
     /// 刷新令牌，每次变化时递增。SwiftUI 视图监听此值来触发重新加载。
     @Published var refreshToken: Int = 0
@@ -153,12 +157,16 @@ final class ProjectTreeRefreshCoordinator: ObservableObject, @unchecked Sendable
 
         watcher.updateWatchedDirectories(directoryURLs)
 
-        Self.logger.info("📡 已更新监控列表：\(directoryURLs.count) 个目录")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)📡 已更新监控列表：\(directoryURLs.count) 个目录")
+        }
     }
 
     /// 处理目录变化事件
     private func handleDirectoryChanged(url: URL) {
-        Self.logger.info("🔄 检测到目录变化：\(url.lastPathComponent)")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)🔄 检测到目录变化：\(url.lastPathComponent)")
+        }
         triggerRefresh()
     }
 
@@ -170,7 +178,9 @@ final class ProjectTreeRefreshCoordinator: ObservableObject, @unchecked Sendable
             try? await Task.sleep(nanoseconds: interval)
             guard let self else { return }
             self.refreshToken += 1
-            Self.logger.info("✅ 刷新令牌递增：\(self.refreshToken)")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)✅ 刷新令牌递增：\(self.refreshToken)")
+            }
         }
     }
 }

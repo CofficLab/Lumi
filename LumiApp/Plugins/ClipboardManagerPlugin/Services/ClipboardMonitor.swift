@@ -32,7 +32,9 @@ class ClipboardMonitor: ObservableObject, SuperLog {
     func stopMonitoring() {
         timer?.invalidate()
         timer = nil
-        ClipboardManagerPlugin.logger.info("\(Self.t)🛑 Clipboard monitoring stopped")
+        if Self.verbose {
+            ClipboardManagerPlugin.logger.info("\(Self.t)🛑 Clipboard monitoring stopped")
+        }
     }
     
     private func checkForChanges() {

@@ -138,7 +138,9 @@ extension ConversationListView {
                 }
             } else {
                 // 选中的会话不存在于列表中，清除选择
-                ConversationListPlugin.logger.info("\(self.t)⚠️ [\(selectedId)] 选中的会话不存在于列表中")
+                if Self.verbose {
+                    ConversationListPlugin.logger.info("\(self.t)⚠️ [\(selectedId)] 选中的会话不存在于列表中")
+                }
                 localSelectedConversationId = nil
             }
         } else {
@@ -322,7 +324,9 @@ extension ConversationListView {
         // 检查项目路径是否有效
         let projectPath = projectId
         guard FileManager.default.fileExists(atPath: projectPath) else {
-            ConversationListPlugin.logger.warning("\(self.t)⚠️ 会话关联的项目不存在：\(projectPath)")
+            if Self.verbose {
+                ConversationListPlugin.logger.warning("\(self.t)⚠️ 会话关联的项目不存在：\(projectPath)")
+            }
             return
         }
         
@@ -354,7 +358,9 @@ extension ConversationListView {
         // 如果当前选中的会话不在新列表中，清除选择
         if let localId = localSelectedConversationId {
             if !newConversations.contains(where: { $0.id == localId }) {
-                ConversationListPlugin.logger.info("\(self.t)⚠️ 当前选中的会话已不在列表中，清除选择")
+                if Self.verbose {
+                    ConversationListPlugin.logger.info("\(self.t)⚠️ 当前选中的会话已不在列表中，清除选择")
+                }
                 localSelectedConversationId = nil
             }
         }
