@@ -20,7 +20,7 @@ import SwiftUI
 /// ```
 struct RootView<Content>: View, SuperLog where Content: View {
     nonisolated static var emoji: String { "📤" }
-    nonisolated static var verbose: Bool { true }
+    nonisolated static var verbose: Bool { false }
 
     /// 视图内容
     var content: Content
