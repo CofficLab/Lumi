@@ -150,8 +150,8 @@ extension InputAreaView {
         // 添加高度变化动画
         .animation(.easeInOut(duration: 0.15), value: editorHeight)
         // 监听文本变化以触发命令建议
-        .onChange(of: inputViewModel.text) { newValue in
-            commandSuggestionViewModel.updateSuggestions(for: newValue)
+        .onChange(of: inputViewModel.text) {
+            commandSuggestionViewModel.updateSuggestions(for: inputViewModel.text)
         }
     }
 }

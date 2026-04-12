@@ -5,25 +5,13 @@ import Security
 /// LLM API 服务
 ///
 /// 专门负责大语言模型 API 请求，包括消息发送、流式响应等。
-/// 此类可以在后台线程执行
+/// 此类是纯粹的网络层，不包含重试逻辑——重试策略由调用方统一管理。
 class LLMAPIService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🌐"
     nonisolated static let verbose: Bool = false
     /// URLSession 配置
     private nonisolated let session: URLSession
-    private nonisolated let decoder: JSONDecoder
     private nonisolated let tlsDelegate: TLSValidationDelegate
-
-    // MARK: - 重试配置
-
-    /// 最大重试次数
-    private nonisolated let maxRetries: Int = 3
-
-    /// 初始重试等待时间（秒）
-    private nonisolated let baseRetryDelay: Double = 1.0
-
-    /// 重试退避倍数（指数增长）
-    private nonisolated let retryBackoffMultiplier: Double = 2.0
 
     init() {
         let configuration = URLSessionConfiguration.default
@@ -35,16 +23,17 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
             delegate: tlsDelegate,
             delegateQueue: nil
         )
-        self.decoder = JSONDecoder()
 
         if Self.verbose {
-            AppLogger.core.info("\(self.t)✅ LLM API 服务已初始化（最大重试次数：\(self.maxRetries)）")
+            AppLogger.core.info("\(self.t)✅ LLM API 服务已初始化")
         }
     }
 
     // MARK: - LLM 请求
 
-    /// 发送聊天完成请求（带重试机制）
+    /// 发送聊天完成请求（单次，不含重试）。
+    ///
+    /// 重试策略由 `LLMRequester` 统一管理。
     ///
     /// - Parameters:
     ///   - request: 已构建好的 URLRequest（包含 URL、Headers、Method 等）
@@ -55,12 +44,48 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         request: URLRequest,
         body: [String: Any]
     ) async throws -> Data {
-        let (data, _) = try await sendRequestWithRetry(
-            request: request,
-            body: body
-        )
+        var mutableRequest = request
 
-        return data
+        // 序列化请求体
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: body)
+            mutableRequest.httpBody = jsonData
+        } catch {
+            AppLogger.core.error("\(self.t)JSON 序列化失败：\(error.localizedDescription)")
+            throw APIError.jsonSerializationFailed(underlying: error)
+        }
+
+        if Self.verbose {
+            let allHeaders = mutableRequest.allHTTPHeaderFields ?? [:]
+            AppLogger.core.info("\(self.t)LLM 请求头:")
+            for (key, value) in allHeaders {
+                let maskedValue = maskSensitiveValue(key: key, value: value)
+                AppLogger.core.info("\(self.t)  \(key): \(maskedValue)")
+            }
+        }
+
+        if Self.verbose {
+            let url = mutableRequest.url?.absoluteString ?? "unknown"
+            let method = mutableRequest.httpMethod ?? "unknown"
+            AppLogger.core.info("\(self.t)发送 LLM \(method) 请求到：\(url)")
+        }
+
+        do {
+            let (data, response) = try await session.data(for: mutableRequest)
+            try validateResponse(response, data: data)
+
+            if Self.verbose {
+                AppLogger.core.info("\(self.t)LLM 请求成功，收到 \(data.count) 字节数据")
+            }
+
+            return data
+
+        } catch let error as APIError {
+            throw error
+        } catch {
+            AppLogger.core.error("\(self.t)LLM 请求失败：\(error.localizedDescription)")
+            throw APIError.requestFailed(underlying: error)
+        }
     }
 
     /// 发送流式聊天请求
@@ -274,142 +299,7 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
         }
     }
 
-    // MARK: - 带重试的请求
-
-    private func sendRequestWithRetry(
-        request: URLRequest,
-        body: [String: Any]?
-    ) async throws -> (Data, URLResponse) {
-        var lastError: Error?
-
-        for attempt in 1 ... maxRetries {
-            do {
-                if Self.verbose && attempt > 1 {
-                    AppLogger.core.info("\(self.t)🔄 重试 LLM 请求 (尝试 \(attempt)/\(self.maxRetries))")
-                }
-
-                var mutableRequest = request
-                let result = try await sendRequest(
-                    request: &mutableRequest,
-                    body: body
-                )
-
-                if Self.verbose && attempt > 1 {
-                    AppLogger.core.info("\(self.t)✅ LLM 重试成功")
-                }
-
-                return result
-
-            } catch {
-                lastError = error
-
-                if attempt < maxRetries && isRetryableError(error) {
-                    let delay = calculateRetryDelay(for: attempt)
-                    AppLogger.core.info("\(self.t)⚠️ LLM 请求失败 (\(error.localizedDescription))，\(Int(delay)) 秒后重试...")
-                    try await Task.sleep(nanoseconds: UInt64(delay * 1000000000))
-                } else {
-                    if Self.verbose {
-                        AppLogger.core.info("\(self.t)❌ LLM 请求最终失败：\(error.localizedDescription)")
-                    }
-                    throw error
-                }
-            }
-        }
-
-        throw lastError ?? APIError.requestFailed(underlying: NSError(
-            domain: "LLMAPIService",
-            code: -1,
-            userInfo: [NSLocalizedDescriptionKey: "未知错误"]
-        ))
-    }
-
-    /// 发送请求（不解析 JSON）
-    private func sendRequest(
-        request: inout URLRequest,
-        body: [String: Any]?
-    ) async throws -> (Data, URLResponse) {
-        // 序列化请求体
-        if let body = body {
-            do {
-                let jsonData = try JSONSerialization.data(withJSONObject: body)
-                request.httpBody = jsonData
-            } catch {
-                AppLogger.core.error("\(self.t)JSON 序列化失败：\(error.localizedDescription)")
-                throw APIError.jsonSerializationFailed(underlying: error)
-            }
-        }
-
-        if Self.verbose {
-            let allHeaders = request.allHTTPHeaderFields ?? [:]
-            AppLogger.core.info("\(self.t)LLM 请求头:")
-            for (key, value) in allHeaders {
-                // ✅ 使用统一的脱敏函数
-                let maskedValue = maskSensitiveValue(key: key, value: value)
-                AppLogger.core.info("\(self.t)  \(key): \(maskedValue)")
-            }
-        }
-
-        if Self.verbose {
-            let url = request.url?.absoluteString ?? "unknown"
-            let method = request.httpMethod ?? "unknown"
-            AppLogger.core.info("\(self.t)发送 LLM \(method) 请求到：\(url)")
-        }
-
-        do {
-            let (data, response) = try await session.data(for: request)
-            try validateResponse(response, data: data)
-
-            if Self.verbose {
-                AppLogger.core.info("\(self.t)LLM 请求成功，收到 \(data.count) 字节数据")
-            }
-
-            return (data, response)
-
-        } catch let error as APIError {
-            throw error
-        } catch {
-            AppLogger.core.error("\(self.t)LLM 请求失败：\(error.localizedDescription)")
-            throw APIError.requestFailed(underlying: error)
-        }
-    }
-
-    // MARK: - 错误判断
-
-    /// 判断错误是否可重试
-    private func isRetryableError(_ error: Error) -> Bool {
-        switch error {
-        case let APIError.requestFailed(underlying):
-            let nsError = underlying as NSError
-            if nsError.code == NSURLErrorTimedOut {
-                return true
-            }
-            if nsError.code == NSURLErrorNotConnectedToInternet ||
-                nsError.code == NSURLErrorCannotConnectToHost ||
-                nsError.code == NSURLErrorNetworkConnectionLost {
-                return true
-            }
-            return false
-
-        case let APIError.httpError(statusCode, _):
-            if (500 ... 599).contains(statusCode) {
-                return true
-            }
-            if statusCode == 429 {
-                return true
-            }
-            return false
-
-        default:
-            return false
-        }
-    }
-
-    /// 计算重试延迟时间（指数退避）
-    private func calculateRetryDelay(for attempt: Int) -> Double {
-        let delay = baseRetryDelay * pow(retryBackoffMultiplier, Double(attempt - 1))
-        let jitter = Double.random(in: 0 ... 0.5)
-        return delay + jitter
-    }
+    // MARK: - 响应验证
 
     /// 验证 LLM API 响应
     private func validateResponse(_ response: URLResponse, data: Data) throws {

@@ -260,9 +260,16 @@ final class LLMRequester: SuperLog {
 
     /// 判断错误是否可重试。
     ///
-    /// 可重试：网络超时、网络断开、5xx 服务端错误、429 速率限制。
-    /// 不可重试：配置错误（API Key 为空等）、用户取消、客户端 4xx 错误。
+    /// 可重试：
+    /// - 网络层：超时、断网、连接丢失
+    /// - HTTP 层：429 速率限制、5xx 服务端错误
+    ///
+    /// 不可重试：
+    /// - 配置错误（API Key 为空、模型为空等）
+    /// - 用户取消
+    /// - 客户端 4xx 错误（非 429）
     static func isRetryable(_ error: Error) -> Bool {
+        // ── LLMServiceError ──
         if let llmError = error as? LLMServiceError {
             switch llmError {
             case .requestFailed: return true
@@ -271,14 +278,23 @@ final class LLMRequester: SuperLog {
             }
         }
 
+        // ── APIError（由 LLMAPIService 直接抛出）──
         if let apiError = error as? APIError {
             switch apiError {
             case let .httpError(statusCode, _):
                 if statusCode == 429 { return true }
                 if (500 ... 599).contains(statusCode) { return true }
                 return false
-            case .requestFailed: return true
-            default:             return false
+            case let .requestFailed(underlying):
+                // 网络层错误：超时、断网、连接丢失
+                let nsError = underlying as NSError
+                if nsError.code == NSURLErrorTimedOut { return true }
+                if nsError.code == NSURLErrorNotConnectedToInternet { return true }
+                if nsError.code == NSURLErrorCannotConnectToHost { return true }
+                if nsError.code == NSURLErrorNetworkConnectionLost { return true }
+                return false
+            default:
+                return false
             }
         }
 

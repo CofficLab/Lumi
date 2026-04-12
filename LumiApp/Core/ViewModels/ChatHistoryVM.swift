@@ -63,6 +63,7 @@ final class ChatHistoryVM: ObservableObject {
     }
 
     /// 异步保存消息
+    @discardableResult
     func saveMessage(_ message: ChatMessage, toConversationId conversationId: UUID) -> ChatMessage? {
         chatHistoryService.saveMessage(message, toConversationId: conversationId)
     }
