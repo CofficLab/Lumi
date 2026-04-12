@@ -27,7 +27,7 @@ struct GitCommitDetailRootOverlay<Content: View>: View {
             // 同时激活侧边栏的 Commit History 标签
             if layoutVM.selectedAgentSidebarTabId != GitCommitHistoryPlugin.id {
                 GitCommitDetailPlugin.logger.info("Switching to GitCommitHistory plugin in sidebar")
-                layoutVM.selectAgentSidebarTab(GitCommitHistoryPlugin.id)
+                layoutVM.selectAgentSidebarTab(GitCommitHistoryPlugin.id, reason: "CommitDetailOverlay: commit selected")
             }
         }
     }

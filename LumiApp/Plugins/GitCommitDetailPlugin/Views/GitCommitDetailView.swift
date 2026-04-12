@@ -102,7 +102,7 @@ struct GitCommitDetailView: View {
     /// 当 Detail 视图出现时，激活左侧栏的 Commit History 标签
     private func activateCommitHistorySidebar() {
         if layoutVM.selectedAgentSidebarTabId != GitCommitHistoryPlugin.id {
-            layoutVM.selectAgentSidebarTab(GitCommitHistoryPlugin.id)
+            layoutVM.selectAgentSidebarTab(GitCommitHistoryPlugin.id, reason: "CommitDetail: view appeared")
         }
     }
 

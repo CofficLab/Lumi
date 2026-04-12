@@ -128,7 +128,7 @@ struct LeftSidebar: View {
                             selectedTab: Binding(
                                 get: { selectedId },
                                 set: { newTabId in
-                                    layoutVM.selectAgentSidebarTab(newTabId)
+                                    layoutVM.selectAgentSidebarTab(newTabId, reason: "LeftBar tab clicked")
                                 }
                             ),
                             showText: false  // Agent 模式只显示图标，不显示文字
