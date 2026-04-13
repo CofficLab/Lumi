@@ -1,8 +1,8 @@
 import MagicKit
 import SwiftUI
 
-/// 自动批准开关插件：右侧栏 header 中的 Auto-Approve 切换
-actor AgentAutoApproveHeaderPlugin: SuperPlugin {
+/// 自动批准开关插件
+actor AgentAutoApprovePlugin: SuperPlugin {
     nonisolated static let emoji = "✅"
     nonisolated static let verbose: Bool = false
     static let id = "AgentAutoApproveHeader"
@@ -16,7 +16,7 @@ actor AgentAutoApproveHeaderPlugin: SuperPlugin {
     
     static let enable: Bool = true
 
-    static let shared = AgentAutoApproveHeaderPlugin()
+    static let shared = AgentAutoApprovePlugin()
 
     nonisolated func onRegister() {}
     nonisolated func onEnable() {}

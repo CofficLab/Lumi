@@ -1,8 +1,8 @@
 import MagicKit
 import SwiftUI
 
-/// 语言切换头部插件：右侧栏 header 中的语言选择器
-actor AgentLanguageHeaderPlugin: SuperPlugin {
+/// 语言切换插件
+actor AgentLanguagePlugin: SuperPlugin {
     nonisolated static let emoji = "🌐"
     nonisolated static let verbose: Bool = false
     static let id = "AgentLanguageHeader"
@@ -16,7 +16,7 @@ actor AgentLanguageHeaderPlugin: SuperPlugin {
     
     static let enable: Bool = true
 
-    static let shared = AgentLanguageHeaderPlugin()
+    static let shared = AgentLanguagePlugin()
 
     nonisolated func onRegister() {}
     nonisolated func onEnable() {}

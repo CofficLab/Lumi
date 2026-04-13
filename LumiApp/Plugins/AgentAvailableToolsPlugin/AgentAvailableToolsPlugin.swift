@@ -1,8 +1,8 @@
 import MagicKit
 import SwiftUI
 
-/// 可用工具头部插件：右侧栏 header 中展示"可用工具"按钮
-actor AgentAvailableToolsHeaderPlugin: SuperPlugin {
+/// 可用工具插件
+actor AgentAvailableToolsPlugin: SuperPlugin {
     nonisolated static let emoji = "🧰"
     nonisolated static let verbose: Bool = false
     static let id = "AgentAvailableToolsHeader"
@@ -16,7 +16,7 @@ actor AgentAvailableToolsHeaderPlugin: SuperPlugin {
     
     static let enable: Bool = true
 
-    static let shared = AgentAvailableToolsHeaderPlugin()
+    static let shared = AgentAvailableToolsPlugin()
 
     nonisolated func onRegister() {}
     nonisolated func onEnable() {}
