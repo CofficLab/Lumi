@@ -13,7 +13,7 @@ import SwiftUI
 ///
 /// 这个插件将原本硬编码在 AgentMessagesPlugin 中的渲染逻辑集中管理，
 /// 使 AgentMessagesPlugin 只负责消息列表的展示，而不关心具体的消息类型和渲染方式。
-actor CoreMessageRendererPlugin: SuperPlugin {
+actor MessageRendererPlugin: SuperPlugin {
     static let id = "CoreMessageRenderer"
     static let displayName = String(localized: "核心消息渲染器", table: "CoreMessageRenderer")
     static let description = String(localized: "提供内置消息类型的渲染支持", table: "CoreMessageRenderer")
