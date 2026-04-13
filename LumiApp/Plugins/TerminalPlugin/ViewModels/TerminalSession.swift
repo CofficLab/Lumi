@@ -117,6 +117,21 @@ final class TerminalSession: ObservableObject, Identifiable {
     }
 
     func terminate() {
+        // 向整个进程组发送 SIGTERM，确保 shell 及其所有子进程（如 pnpm dev 启动的 node）都被清理
+        if let process = terminalView.process, process.shellPid > 0 {
+            // forkpty 创建的 shell 会成为新会话的领导者，其 PID 即为进程组 PGID
+            let pgid = pid_t(process.shellPid)
+            killpg(pgid, SIGTERM)
+
+            // 给进程组一点时间优雅退出，之后强制 SIGKILL
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [pid = process.shellPid] in
+                // 检查进程是否还在运行，避免向已回收的 PID 发信号
+                if kill(pid, 0) == 0 {
+                    killpg(pid, SIGKILL)
+                }
+            }
+        }
+
         terminalView.terminate()
         isConnected = false
     }
