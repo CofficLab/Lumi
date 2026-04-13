@@ -20,6 +20,9 @@ final class ChatMessageEntity {
     var providerId: String?      // 例如："anthropic", "openai", "zhipu"
     var modelName: String?       // 例如："claude-sonnet-4-20250514", "gpt-4o"
     
+    /// 原始错误详情（如 HTTP 状态码、响应体等），用于在 UI 底部折叠展示
+    var rawErrorDetail: String?
+
     /// 性能指标和请求元数据（1:1 关系，可选）
     @Relationship(deleteRule: .cascade)
     var metrics: MessageMetricsEntity?
@@ -167,7 +170,8 @@ final class ChatMessageEntity {
             requestId: requestId,
             temperature: temperature,
             maxTokens: maxTokens,
-            thinkingContent: thinkingContent
+            thinkingContent: thinkingContent,
+            rawErrorDetail: rawErrorDetail
         )
     }
     
@@ -189,6 +193,7 @@ final class ChatMessageEntity {
         toolCallID = message.toolCallID
         providerId = message.providerId
         modelName = message.modelName
+        rawErrorDetail = message.rawErrorDetail
         
         // 更新或创建性能指标
         if message.hasPerformanceData {
@@ -240,7 +245,10 @@ final class ChatMessageEntity {
             providerId: message.providerId,
             modelName: message.modelName
         )
-        
+
+        // 写入 rawErrorDetail（init 不包含该参数，需单独赋值）
+        entity.rawErrorDetail = message.rawErrorDetail
+
         // 创建性能指标（如果有数据）
         if message.hasPerformanceData {
             let metricsEntity = MessageMetricsEntity.from(message)

@@ -39,20 +39,34 @@ final class TurnFinalizer: SuperLog {
     ) {
         AppLogger.core.error("\(Self.t) 回合因错误终止：\(error.localizedDescription)")
 
-        let errorMessage: ChatMessage
+        // 提取原始 HTTP 错误详情
+        let rawDetail = Self.extractRawErrorDetail(from: error)
+
+        var errorMessage: ChatMessage
         if let llmError = error as? LLMServiceError {
             errorMessage = llmError.toChatMessage(conversationId: conversationId, providerId: providerId)
+            errorMessage.rawErrorDetail = rawDetail
         } else {
             errorMessage = ChatMessage(
                 role: .assistant,
                 conversationId: conversationId,
                 content: error.localizedDescription,
-                isError: true
+                isError: true,
+                rawErrorDetail: rawDetail
             )
         }
 
         conversationVM.saveMessage(errorMessage, to: conversationId)
         finishTurn(conversationId: conversationId)
+    }
+
+    /// 从 Error 中提取原始 HTTP 错误详情（状态码 + 响应体），用于 UI 折叠展示。
+    private static func extractRawErrorDetail(from error: Error) -> String? {
+        if let apiError = error as? APIError,
+           case let .httpError(statusCode, message) = apiError {
+            return "HTTP \(statusCode)\n\(message)"
+        }
+        return nil
     }
 
     /// 因取消结束一轮对话。

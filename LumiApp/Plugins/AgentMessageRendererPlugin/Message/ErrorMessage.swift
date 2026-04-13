@@ -39,43 +39,50 @@ struct ErrorMessage: View {
             SpecialErrorView(
                 title: errorTitle(for: ChatMessage.apiRequestFailedErrorKey),
                 description: errorDescription(for: ChatMessage.apiRequestFailedErrorKey),
-                suggestion: errorSuggestion(for: ChatMessage.apiRequestFailedErrorKey)
+                suggestion: errorSuggestion(for: ChatMessage.apiRequestFailedErrorKey),
+                rawErrorDetail: message.rawErrorDetail
             )
         } else if message.content == ChatMessage.networkConnectionErrorKey {
             SpecialErrorView(
                 title: errorTitle(for: ChatMessage.networkConnectionErrorKey),
                 description: errorDescription(for: ChatMessage.networkConnectionErrorKey),
-                suggestion: errorSuggestion(for: ChatMessage.networkConnectionErrorKey)
+                suggestion: errorSuggestion(for: ChatMessage.networkConnectionErrorKey),
+                rawErrorDetail: message.rawErrorDetail
             )
         } else if message.content == ChatMessage.parsingErrorKey {
             SpecialErrorView(
                 title: errorTitle(for: ChatMessage.parsingErrorKey),
                 description: errorDescription(for: ChatMessage.parsingErrorKey),
-                suggestion: errorSuggestion(for: ChatMessage.parsingErrorKey)
+                suggestion: errorSuggestion(for: ChatMessage.parsingErrorKey),
+                rawErrorDetail: message.rawErrorDetail
             )
         } else if message.content == ChatMessage.authenticationErrorKey {
             SpecialErrorView(
                 title: errorTitle(for: ChatMessage.authenticationErrorKey),
                 description: errorDescription(for: ChatMessage.authenticationErrorKey),
-                suggestion: errorSuggestion(for: ChatMessage.authenticationErrorKey)
+                suggestion: errorSuggestion(for: ChatMessage.authenticationErrorKey),
+                rawErrorDetail: message.rawErrorDetail
             )
         } else if message.content == ChatMessage.quotaExceededErrorKey {
             SpecialErrorView(
                 title: errorTitle(for: ChatMessage.quotaExceededErrorKey),
                 description: errorDescription(for: ChatMessage.quotaExceededErrorKey),
-                suggestion: errorSuggestion(for: ChatMessage.quotaExceededErrorKey)
+                suggestion: errorSuggestion(for: ChatMessage.quotaExceededErrorKey),
+                rawErrorDetail: message.rawErrorDetail
             )
         } else if message.content == ChatMessage.modelNotAvailableErrorKey {
             SpecialErrorView(
                 title: errorTitle(for: ChatMessage.modelNotAvailableErrorKey),
                 description: errorDescription(for: ChatMessage.modelNotAvailableErrorKey),
-                suggestion: errorSuggestion(for: ChatMessage.modelNotAvailableErrorKey)
+                suggestion: errorSuggestion(for: ChatMessage.modelNotAvailableErrorKey),
+                rawErrorDetail: message.rawErrorDetail
             )
         } else if message.content == ChatMessage.loadingLocalModelFailedSystemContentKey {
             SpecialErrorView(
                 title: errorTitle(for: ChatMessage.loadingLocalModelFailedSystemContentKey),
                 description: errorDescription(for: ChatMessage.loadingLocalModelFailedSystemContentKey),
-                suggestion: errorSuggestion(for: ChatMessage.loadingLocalModelFailedSystemContentKey)
+                suggestion: errorSuggestion(for: ChatMessage.loadingLocalModelFailedSystemContentKey),
+                rawErrorDetail: message.rawErrorDetail
             )
         } else if message.content == ChatMessage.llmModelEmptyContentKey ||
                   message.content == ChatMessage.llmProviderIdEmptyContentKey ||
@@ -87,7 +94,8 @@ struct ErrorMessage: View {
         } else {
             DefaultErrorView(
                 title: titleText,
-                message: message.content
+                message: message.content,
+                rawErrorDetail: message.rawErrorDetail
             )
         }
     }

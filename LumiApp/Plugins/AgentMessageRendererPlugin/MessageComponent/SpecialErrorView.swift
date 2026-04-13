@@ -1,6 +1,61 @@
 import MagicKit
 import SwiftUI
 
+/// 原始 HTTP 错误详情折叠视图
+///
+/// 在错误气泡底部以可折叠的形式展示原始的 HTTP 状态码和响应体，
+/// 便于用户或开发者排查问题。
+struct RawErrorDetailView: View {
+    let rawDetail: String
+    @EnvironmentObject private var projectVM: ProjectVM
+    @State private var isExpanded = false
+
+    private var zh: Bool {
+        projectVM.languagePreference == .chinese
+    }
+
+    private var toggleText: String {
+        isExpanded
+            ? (zh ? "隐藏原始错误" : "Hide Raw Error")
+            : (zh ? "显示原始错误" : "Show Raw Error")
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isExpanded.toggle()
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 9, weight: .semibold))
+                    Text(toggleText)
+                        .font(AppUI.Typography.caption2)
+                }
+                .foregroundColor(AppUI.Color.semantic.textTertiary)
+            }
+            .buttonStyle(.plain)
+
+            if isExpanded {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    Text(rawDetail)
+                        .font(AppUI.Typography.footnote.monospaced())
+                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .textSelection(.enabled)
+                        .padding(8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color.white.opacity(0.05))
+                        )
+                }
+                .frame(maxHeight: 150)
+            }
+        }
+    }
+}
+
 /// 特殊错误内容视图（包含图标、标题、描述和建议）
 struct SpecialErrorContentView: View {
     let title: String
@@ -43,6 +98,7 @@ struct SpecialErrorView: View {
     let title: String
     let description: String
     let suggestion: String?
+    let rawErrorDetail: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -54,6 +110,15 @@ struct SpecialErrorView: View {
                     suggestion: suggestion
                 )
             }
+
+            // 底部：原始 HTTP 错误折叠区域
+            if let rawErrorDetail, !rawErrorDetail.isEmpty {
+                Divider()
+                    .overlay(Color.white.opacity(0.15))
+                    .padding(.top, 2)
+
+                RawErrorDetailView(rawDetail: rawErrorDetail)
+            }
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 12)
@@ -64,6 +129,7 @@ struct SpecialErrorView: View {
 struct DefaultErrorView: View {
     let title: String
     let message: String
+    let rawErrorDetail: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -74,6 +140,14 @@ struct DefaultErrorView: View {
                 )
                 .font(AppUI.Typography.caption1)
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
+            }
+
+            // 底部：原始 HTTP 错误折叠区域
+            if let rawErrorDetail, !rawErrorDetail.isEmpty {
+                Divider()
+                    .overlay(Color.white.opacity(0.15))
+
+                RawErrorDetailView(rawDetail: rawErrorDetail)
             }
         }
     }

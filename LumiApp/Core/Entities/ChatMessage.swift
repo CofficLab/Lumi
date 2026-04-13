@@ -71,6 +71,9 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     /// 思考过程文本
     var thinkingContent: String?
 
+    /// 原始错误详情（如 HTTP 状态码、响应体等），用于在 UI 底部折叠展示
+    var rawErrorDetail: String?
+
     /// 是否为临时状态消息（用于 UI 展示"连接中/等待响应/生成中"等）
     var isTransientStatus: Bool = false
 
@@ -176,6 +179,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
          thinkingDuration: Double? = nil, finishReason: String? = nil,
          requestId: String? = nil, temperature: Double? = nil,
          maxTokens: Int? = nil, thinkingContent: String? = nil,
+         rawErrorDetail: String? = nil,
          isTransientStatus: Bool = false,
          queueStatus: MessageQueueStatus? = nil) {
         self.id = UUID()
@@ -201,6 +205,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         self.temperature = temperature
         self.maxTokens = maxTokens
         self.thinkingContent = thinkingContent
+        self.rawErrorDetail = rawErrorDetail
         self.isTransientStatus = isTransientStatus
         self.queueStatus = queueStatus
     }
@@ -242,6 +247,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
          thinkingDuration: Double? = nil, finishReason: String? = nil,
          requestId: String? = nil, temperature: Double? = nil,
          maxTokens: Int? = nil, thinkingContent: String? = nil,
+         rawErrorDetail: String? = nil,
          isTransientStatus: Bool = false,
          queueStatus: MessageQueueStatus? = nil) {
         self.id = id
@@ -267,6 +273,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         self.temperature = temperature
         self.maxTokens = maxTokens
         self.thinkingContent = thinkingContent
+        self.rawErrorDetail = rawErrorDetail
         self.isTransientStatus = isTransientStatus
         self.queueStatus = queueStatus
     }
