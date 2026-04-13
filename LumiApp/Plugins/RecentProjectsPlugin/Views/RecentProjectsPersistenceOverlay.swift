@@ -5,7 +5,7 @@ import SwiftUI
 /// 在 RootView 出现时恢复最近项目列表和当前项目，监听项目切换保存，
 /// 并在项目切换时自动联动切换到关联的对话
 struct RecentProjectsPersistenceOverlay<Content: View>: View, SuperLog {
-    nonisolated static var verbose: Bool { true }
+    nonisolated static var verbose: Bool { false }
     nonisolated static var emoji: String { "📋" }
 
     @EnvironmentObject private var projectVM: ProjectVM

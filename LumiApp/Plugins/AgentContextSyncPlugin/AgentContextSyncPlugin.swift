@@ -3,11 +3,11 @@ import MagicKit
 import SwiftUI
 import os
 
-/// Agent Context Sync Plugin: 监听项目变化并同步上下文到 Agent
+/// Agent Context Sync Plugin: 在消息发送时注入项目上下文
 ///
 /// 功能：
-/// - 监听 projectVM 中当前项目路径的变化
-/// - 当项目变化时，向当前对话添加系统消息，告知大模型用户切换了项目
+/// - 通过中间件在发送消息时注入当前项目信息
+/// - 不再将上下文保存到数据库，而是作为临时提示词注入
 actor AgentContextSyncPlugin: SuperPlugin, SuperLog {
     /// 插件专用 Logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.context-sync")
@@ -56,19 +56,18 @@ actor AgentContextSyncPlugin: SuperPlugin, SuperLog {
         }
     }
 
-    // MARK: - Views
+    // MARK: - Middlewares
 
     @MainActor
-    func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
-        AnyView(ContextSyncOverlay(content: content()))
+    func sendMiddlewares() -> [AnySendMiddleware] {
+        [AnySendMiddleware(AgentContextSyncSendMiddleware())]
     }
+
+    // MARK: - Agent Tools
 
     @MainActor
     func agentTools() -> [AgentTool] { [] }
 
     @MainActor
     func agentToolFactories() -> [AnyAgentToolFactory] { [] }
-
-    @MainActor
-    func sendMiddlewares() -> [AnySendMiddleware] { [] }
 }
