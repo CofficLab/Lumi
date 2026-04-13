@@ -44,6 +44,15 @@ struct ConversationTimelineView: View, SuperLog {
         .onChange(of: conversationVM.selectedConversationId) { _, _ in
             refreshMessageCount()
         }
+        .onMessageSaved { message, conversationId in
+            // 只刷新当前选中对话的消息
+            guard conversationId == conversationVM.selectedConversationId else { return }
+            refreshMessageCount()
+            
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)📬 收到消息保存事件，刷新统计: conversationId=\(conversationId)")
+            }
+        }
     }
 
     /// 刷新消息数量和 token 总数
