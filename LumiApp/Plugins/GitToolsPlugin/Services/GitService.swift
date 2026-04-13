@@ -208,6 +208,24 @@ final class GitService: @unchecked Sendable, SuperLog {
         LibGit2.isGitRepository(at: path)
     }
 
+    // MARK: - Unpushed Commits
+
+    /// 获取未推送到远程的 commit 哈希列表
+    /// 使用 LibGit2Swift 原生实现，参考 GitOK 的 Project.getUnPushedCommits()
+    func getUnpushedCommitHashes(path: String?) -> [String] {
+        let repoPath = resolvePath(path)
+
+        do {
+            let unpushedCommits = try LibGit2.getUnPushedCommits(at: repoPath, verbose: false)
+            return unpushedCommits.map { $0.hash }
+        } catch {
+            if Self.verbose {
+                AppLogger.core.error("\(Self.t)❌ 获取未推送 commit 失败: \(error.localizedDescription)")
+            }
+            return []
+        }
+    }
+
     // MARK: - Helper
 
     private func resolvePath(_ path: String?) -> String {

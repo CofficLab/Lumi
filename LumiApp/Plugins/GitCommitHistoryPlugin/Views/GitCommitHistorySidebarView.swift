@@ -82,7 +82,8 @@ struct GitCommitHistorySidebarView: View {
                 ForEach(Array(commits.enumerated()), id: \.element.hash) { index, commit in
                     GitCommitRow(
                         commit: commit,
-                        isSelected: selectedCommitHash == commit.hash
+                        isSelected: selectedCommitHash == commit.hash,
+                        isUnpushed: gitVM.isCommitUnpushed(commit.hash)
                     )
                     .onTapGesture {
                         selectedCommitHash = commit.hash
@@ -221,6 +222,7 @@ struct GitCommitHistorySidebarView: View {
             selectedCommitHash = nil
             uncommittedFileCount = 0
             gitVM.clearSelection()
+            gitVM.clearUnpushedCommits()
             return
         }
 
@@ -235,7 +237,7 @@ struct GitCommitHistorySidebarView: View {
         currentRefreshTask = Task {
             if Task.isCancelled { return }
 
-            // 并行加载：commit 列表 + 未提交变更数量
+            // 并行加载：commit 列表 + 未提交变更数量 + 未推送 commit
             async let commitsTask = GitService.shared.getLog(
                 path: path,
                 count: pageSize,
@@ -243,6 +245,11 @@ struct GitCommitHistorySidebarView: View {
                 file: nil
             )
             async let uncommittedTask = loadUncommittedCount(path: path)
+
+            // 在后台加载未推送 commit hashes
+            let unpushedHashes = await Task.detached(priority: .userInitiated) {
+                GitService.shared.getUnpushedCommitHashes(path: path)
+            }.value
 
             do {
                 let newCommits = try await commitsTask
@@ -255,6 +262,8 @@ struct GitCommitHistorySidebarView: View {
                     // 默认选中工作状态（selectedCommitHash = nil）
                     self.selectedCommitHash = nil
                     self.gitVM.selectCommit(hash: nil)
+                    // 更新未推送 commit 状态
+                    self.gitVM.updateUnpushedCommitHashes(unpushedHashes)
                 }
             } catch {
                 if Task.isCancelled { return }
@@ -262,6 +271,8 @@ struct GitCommitHistorySidebarView: View {
                 await MainActor.run {
                     self.commits = []
                     self.loading = false
+                    // 即使加载 commit 失败，也尝试更新未推送状态
+                    self.gitVM.updateUnpushedCommitHashes(unpushedHashes)
                 }
 
                 GitCommitHistoryPlugin.logger.error("刷新提交列表失败: \(error.localizedDescription)")
@@ -349,9 +360,13 @@ struct GitCommitHistorySidebarView: View {
 /// 提交记录行视图
 ///
 /// 参考 GitOK 的 CommitRow 实现，显示单个 Git 提交的信息。
+/// 未推送到远程的 commit 会在右侧显示一个橙色向上箭头图标标记。
 struct GitCommitRow: View {
     let commit: GitCommitLog
     let isSelected: Bool
+
+    /// 是否未推送到远程
+    var isUnpushed: Bool = false
 
     /// 鼠标悬停状态
     @State private var isHovered = false
@@ -375,11 +390,23 @@ struct GitCommitRow: View {
 
                 // 主要内容
                 VStack(alignment: .leading, spacing: 3) {
-                    // 提交消息
-                    Text(commit.message)
-                        .font(.system(size: 12, weight: isSelected ? .medium : .regular))
-                        .foregroundColor(isSelected ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textPrimary.opacity(0.85))
-                        .lineLimit(2)
+                    // 提交消息 + 未推送图标
+                    HStack(alignment: .top, spacing: 4) {
+                        Text(commit.message)
+                            .font(.system(size: 12, weight: isSelected ? .medium : .regular))
+                            .foregroundColor(isSelected ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textPrimary.opacity(0.85))
+                            .lineLimit(2)
+
+                        Spacer()
+
+                        // 未推送到远程的图标标记
+                        if isUnpushed {
+                            Image(systemName: "arrow.up.circle.fill")
+                                .font(.system(size: 11))
+                                .foregroundColor(.orange)
+                                .help("未推送到远程仓库")
+                        }
+                    }
 
                     // 作者 + 时间
                     HStack(spacing: 4) {
