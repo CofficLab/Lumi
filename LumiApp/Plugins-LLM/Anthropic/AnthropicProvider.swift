@@ -88,7 +88,15 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
         tools: [AgentTool]?,
         systemPrompt: String
     ) throws -> [String: Any] {
-        let systemMessage = messages.first(where: { $0.role == .system })?.content ?? systemPrompt
+        // 合并所有 system 消息：预设提示词 + transient 注入的上下文提示词
+        let systemParts = messages
+            .filter { $0.role == .system }
+            .map(\.content)
+            .filter { !$0.isEmpty }
+        let systemMessage = systemParts.isEmpty
+            ? systemPrompt
+            : systemParts.joined(separator: "\n\n")
+
         let conversationMessages = messages
             .filter { $0.shouldSendToLLM }
             .map { transformMessage($0) }

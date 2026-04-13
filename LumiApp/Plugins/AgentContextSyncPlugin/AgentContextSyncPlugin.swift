@@ -62,12 +62,4 @@ actor AgentContextSyncPlugin: SuperPlugin, SuperLog {
     func sendMiddlewares() -> [AnySendMiddleware] {
         [AnySendMiddleware(AgentContextSyncSendMiddleware())]
     }
-
-    // MARK: - Agent Tools
-
-    @MainActor
-    func agentTools() -> [AgentTool] { [] }
-
-    @MainActor
-    func agentToolFactories() -> [AnyAgentToolFactory] { [] }
 }

@@ -32,11 +32,15 @@ final class AgentContextSyncSendMiddleware: SendMiddleware, SuperLog {
     ) async {
         let projectPath = ctx.projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         let projectName = ctx.projectVM.currentProjectName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let selectedFileURL = ctx.projectVM.selectedFileURL
+        let codeSelectionRange = ctx.projectVM.codeSelectionRange
 
         if Self.verbose {
             AgentContextSyncPlugin.logger.info("\(Self.t)🔄 Agent Context Sync 中间件：检查项目信息")
             AgentContextSyncPlugin.logger.info("\(Self.t)   项目名称：\(projectName.isEmpty ? "<未选择>" : projectName)")
             AgentContextSyncPlugin.logger.info("\(Self.t)   项目路径：\(projectPath.isEmpty ? "<未选择>" : projectPath)")
+            AgentContextSyncPlugin.logger.info("\(Self.t)   选中文件：\(selectedFileURL?.path ?? "<未选择>")")
+            AgentContextSyncPlugin.logger.info("\(Self.t)   代码选区：\(codeSelectionRange?.description ?? "<无>")")
         }
 
         // 未选择项目时跳过
@@ -51,7 +55,9 @@ final class AgentContextSyncSendMiddleware: SendMiddleware, SuperLog {
         // 构建项目上下文提示词
         let prompt = buildProjectContextPrompt(
             projectName: projectName,
-            projectPath: projectPath
+            projectPath: projectPath,
+            selectedFileURL: selectedFileURL,
+            codeSelectionRange: codeSelectionRange
         )
         ctx.transientSystemPrompts.append(prompt)
 
@@ -67,7 +73,12 @@ final class AgentContextSyncSendMiddleware: SendMiddleware, SuperLog {
     // MARK: - 提示词构建
 
     /// 将项目信息格式化为系统提示词
-    private func buildProjectContextPrompt(projectName: String, projectPath: String) -> String {
+    private func buildProjectContextPrompt(
+        projectName: String,
+        projectPath: String,
+        selectedFileURL: URL?,
+        codeSelectionRange: CodeSelectionRange?
+    ) -> String {
         var lines: [String] = []
 
         lines.append("## Current Project Context")
@@ -76,6 +87,29 @@ final class AgentContextSyncSendMiddleware: SendMiddleware, SuperLog {
         lines.append("")
         lines.append("**Project Name**: \(projectName.isEmpty ? "Unknown" : projectName)")
         lines.append("**Project Path**: `\(projectPath)`")
+
+        // 注入当前选中文件信息
+        if let fileURL = selectedFileURL {
+            let filePath = fileURL.path
+            let relativePath: String
+            if filePath.hasPrefix(projectPath) {
+                let index = filePath.index(filePath.startIndex, offsetBy: projectPath.count)
+                relativePath = String(filePath[index...]).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            } else {
+                relativePath = filePath
+            }
+            lines.append("**Selected File**: `\(relativePath.isEmpty ? filePath : relativePath)`")
+
+            // 注入代码选区信息
+            if let range = codeSelectionRange {
+                if range.isSingleLine {
+                    lines.append("**Code Selection**: Line \(range.startLine), columns \(range.startColumn)-\(range.endColumn)")
+                } else {
+                    lines.append("**Code Selection**: Lines \(range.startLine)-\(range.endLine) (columns \(range.startColumn)-\(range.endColumn))")
+                }
+            }
+        }
+
         lines.append("")
         lines.append("You should be aware of the project context when responding to user queries. If the user asks about files, code, or project-specific topics, consider the current project path as the working directory.")
         lines.append("")
