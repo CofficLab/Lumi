@@ -4,8 +4,7 @@ import SwiftUI
 /// 语言切换头部插件：右侧栏 header 中的语言选择器
 actor AgentLanguageHeaderPlugin: SuperPlugin {
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     static let id = "AgentLanguageHeader"
     static let displayName = String(localized: "Language Selector", table: "AgentLanguageHeader")
     static let description = String(localized: "AI response language in header", table: "AgentLanguageHeader")

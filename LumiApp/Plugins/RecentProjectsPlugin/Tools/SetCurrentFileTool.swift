@@ -4,8 +4,7 @@ import MagicKit
 /// 设置当前文件工具
 struct SetCurrentFileTool: AgentTool, SuperLog {
     nonisolated static let emoji = "📄"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     let name = "set_current_file"
     let description = "设置当前选中的文件。需要提供文件路径。"
 

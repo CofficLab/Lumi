@@ -4,7 +4,7 @@ import MagicKit
 /// 上下文服务，管理 Agent 模式的上下文信息
 actor ContextService: Sendable, SuperLog {
     nonisolated static let emoji = "📂"
-    nonisolated static let verbose = false
+    nonisolated static let verbose: Bool = false
     private struct CachedFilePreview: Sendable {
         let preview: String
         let modifiedAt: Date?
@@ -36,14 +36,18 @@ actor ContextService: Sendable, SuperLog {
         if self.projectRoot?.path != url?.path {
             self.openFiles.removeAll(keepingCapacity: false)
             self.filePreviewCache.removeAll(keepingCapacity: false)
-            AppLogger.core.info("\(self.t)Project root changed, cleared tracked file context")
+            if Self.verbose {
+                AppLogger.core.info("\(self.t)Project root changed, cleared tracked file context")
+            }
         }
         self.projectRoot = url
     }
 
     func trackOpenFile(_ url: URL) {
         guard url.isFileURL else {
-            AppLogger.core.warning("\(self.t)Ignored non-file URL in trackOpenFile")
+            if Self.verbose {
+                AppLogger.core.warning("\(self.t)Ignored non-file URL in trackOpenFile")
+            }
             return
         }
 

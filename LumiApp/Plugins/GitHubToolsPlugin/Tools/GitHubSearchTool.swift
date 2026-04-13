@@ -4,8 +4,7 @@ import MagicKit
 /// GitHub 搜索工具
 struct GitHubSearchTool: AgentTool, SuperLog {
     nonisolated static let emoji = "🔍"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     let name = "github_search"
     let description = "在 GitHub 上搜索仓库和代码。支持关键词、语言、stars 等条件筛选。"
 

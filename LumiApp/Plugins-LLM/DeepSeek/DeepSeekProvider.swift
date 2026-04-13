@@ -10,8 +10,7 @@ import os
 final class DeepSeekProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.deepseek")
     nonisolated static let emoji = "🟠"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     // MARK: - Basic Info
 
     static let id = "deepseek"
@@ -26,6 +25,11 @@ final class DeepSeekProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked S
     static let availableModels = [
         "deepseek-chat",
         "deepseek-coder",
+    ]
+
+    static let contextWindowSizes: [String: Int] = [
+        "deepseek-chat": 128_000,
+        "deepseek-coder": 128_000,
     ]
 
     // MARK: - SuperLLMProvider

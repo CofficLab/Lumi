@@ -4,8 +4,7 @@ import MagicKit
 /// GitHub 创建 Issue 工具
 struct GitHubCreateIssueTool: AgentTool, SuperLog {
     nonisolated static let emoji = "✍️"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     let name = "github_create_issue"
     let description = "在 GitHub 仓库中创建新的 Issue。支持设置标题、描述、标签、指派人员和里程碑。"
 

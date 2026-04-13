@@ -329,6 +329,9 @@
         }
       }
     },
+    "%lld 个文件未提交" : {
+
+    },
     "%lld 个项目" : {
       "localizations" : {
         "zh-Hans" : {
@@ -504,6 +507,12 @@
         }
       }
     },
+    "2 Spaces" : {
+
+    },
+    "4 Spaces" : {
+
+    },
     "5,000 次/小时" : {
       "localizations" : {
         "zh-Hans" : {
@@ -519,6 +528,9 @@
           }
         }
       }
+    },
+    "8 Spaces" : {
+
     },
     "60 次/小时" : {
       "localizations" : {
@@ -647,6 +659,9 @@
           }
         }
       }
+    },
+    "A" : {
+
     },
     "About" : {
       "extractionState" : "stale",
@@ -892,6 +907,9 @@
           }
         }
       }
+    },
+    "Antigravity" : {
+
     },
     "API 密钥" : {
       "localizations" : {
@@ -3279,6 +3297,9 @@
         }
       }
     },
+    "No content" : {
+
+    },
     "No Listening Ports" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4414,6 +4435,9 @@
         }
       }
     },
+    "Status" : {
+
+    },
     "Stop" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4558,6 +4582,9 @@
           }
         }
       }
+    },
+    "Tab (↹)" : {
+
     },
     "Tab Information" : {
       "extractionState" : "stale",
@@ -6014,6 +6041,9 @@
         }
       }
     },
+    "在 Antigravity 中打开当前项目" : {
+
+    },
     "在 Cursor 中打开当前项目" : {
 
     },
@@ -6220,9 +6250,6 @@
           }
         }
       }
-    },
-    "将文件夹拖到消息列表区域，自动切换为当前项目" : {
-
     },
     "将模型加载到内存以进行推理" : {
       "localizations" : {
@@ -6605,6 +6632,9 @@
         }
       }
     },
+    "当前状态" : {
+
+    },
     "当前项目" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6692,6 +6722,9 @@
           }
         }
       }
+    },
+    "所有更改已提交" : {
+
     },
     "打开" : {
 
@@ -7751,6 +7784,9 @@
         }
       }
     },
+    "正在加载..." : {
+
+    },
     "正在加载历史消息…" : {
       "localizations" : {
         "zh-Hans" : {
@@ -8465,6 +8501,9 @@
           }
         }
       }
+    },
+    "请先选择一个项目" : {
+
     },
     "请先选择或添加项目，RAG 才能建立与展示索引。" : {
 

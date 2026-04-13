@@ -5,8 +5,7 @@ import SwiftData
 /// 请求日志历史管理器（HTTP 视角）
 actor RequestLogHistoryManager: SuperLog {
     nonisolated static let emoji = "📝"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     static let shared = RequestLogHistoryManager()
 
     private let container: ModelContainer

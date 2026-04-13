@@ -58,13 +58,14 @@ final class ChatHistoryVM: ObservableObject {
     }
 
     /// 异步加载对话消息
-    func loadMessagesAsync(forConversationId conversationId: UUID) async -> [ChatMessage]? {
-        await chatHistoryService.loadMessages(forConversationId: conversationId)
+    func loadMessagesAsync(forConversationId conversationId: UUID) -> [ChatMessage]? {
+        chatHistoryService.loadMessages(forConversationId: conversationId)
     }
 
     /// 异步保存消息
-    func saveMessage(_ message: ChatMessage, toConversationId conversationId: UUID) async -> ChatMessage? {
-        await chatHistoryService.saveMessage(message, toConversationId: conversationId)
+    @discardableResult
+    func saveMessage(_ message: ChatMessage, toConversationId conversationId: UUID) -> ChatMessage? {
+        chatHistoryService.saveMessage(message, toConversationId: conversationId)
     }
 
     /// 异步更新消息

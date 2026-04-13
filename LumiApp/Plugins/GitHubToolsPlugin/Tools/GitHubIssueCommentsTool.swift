@@ -4,8 +4,7 @@ import MagicKit
 /// GitHub Issue 评论列表工具
 struct GitHubIssueCommentsTool: AgentTool, SuperLog {
     nonisolated static let emoji = "💬"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     let name = "github_issue_comments"
     let description = "获取 GitHub Issue 的评论列表。"
 

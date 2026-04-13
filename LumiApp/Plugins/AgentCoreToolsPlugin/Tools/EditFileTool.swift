@@ -11,8 +11,7 @@ import MagicKit
 /// - 详细的 diff 输出
 struct EditFileTool: AgentTool, SuperLog {
     nonisolated static let emoji = "🔧"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     let name = "edit_file"
     let description = """
 Performs exact string replacements in files.

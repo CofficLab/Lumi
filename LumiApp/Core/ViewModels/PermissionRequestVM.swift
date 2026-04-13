@@ -12,8 +12,7 @@ struct PendingToolPermissionSession: Equatable, Sendable {
 @MainActor
 final class PermissionRequestVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "🔐"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     /// 待处理权限请求
     @Published public fileprivate(set) var pendingPermissionRequest: PermissionRequest?
 

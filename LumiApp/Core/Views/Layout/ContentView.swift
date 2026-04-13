@@ -9,8 +9,7 @@ struct ContentView: View, SuperLog {
     /// emoji 标识符
     nonisolated static let emoji = "📱"
     /// 是否启用详细日志输出
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     @EnvironmentObject var app: GlobalVM
     @EnvironmentObject var pluginProvider: PluginVM
     @EnvironmentObject var themeManager: ThemeManager

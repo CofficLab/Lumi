@@ -30,8 +30,7 @@ struct ModelSelectorView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "🌐"
     /// 是否输出详细日志
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     /// 环境对象：用于关闭当前视图
     @Environment(\.dismiss) private var dismiss
 
@@ -177,7 +176,7 @@ struct ModelSelectorView: View, SuperLog {
         }
     }
 
-    /// 单行模型：名称、性能条、选中态
+    /// 单行模型：名称（左）、上下文大小（右）、性能条、选中态
     /// - Parameters:
     ///   - provider: 供应商信息
     ///   - model: 模型 ID（用于选中/保存）
@@ -188,9 +187,28 @@ struct ModelSelectorView: View, SuperLog {
             selectModel(providerId: provider.id, model: model)
         }) {
             HStack {
-                VStack(alignment: .leading) {
-                    Text(displayName ?? model)
-                        .font(AppUI.Typography.body)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Text(displayName ?? model)
+                            .font(AppUI.Typography.body)
+                            .lineLimit(1)
+                        Spacer()
+                        if let contextSize = provider.contextWindowSizes[model] {
+                            Text(formatContextSize(contextSize))
+                                .font(.caption2)
+                                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 1)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 3)
+                                        .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
+                                )
+                        }
+                        if isSelected(providerId: provider.id, model: model) {
+                            Image(systemName: "checkmark")
+                                .foregroundColor(.accentColor)
+                        }
+                    }
                     if let stat = findDetailedStat(providerId: provider.id, modelName: model), stat.avgTTFT > 0 {
                         ModelLatencyProgressBar(
                             ttft: stat.avgTTFT,
@@ -199,11 +217,6 @@ struct ModelSelectorView: View, SuperLog {
                             tps: stat.avgTPS
                         )
                     }
-                }
-                Spacer()
-                if isSelected(providerId: provider.id, model: model) {
-                    Image(systemName: "checkmark")
-                        .foregroundColor(.accentColor)
                 }
             }
             .padding(.vertical, 6)
@@ -317,6 +330,21 @@ extension ModelSelectorView {
     private func findDetailedStat(providerId: String, modelName: String) -> ModelPerformanceStats? {
         let key = "\(providerId)|\(modelName)"
         return detailedStats[key]
+    }
+
+    /// 格式化上下文窗口大小为人类可读字符串
+    /// - Parameter tokens: Token 数量
+    /// - Returns: 格式化后的字符串，如 "200K"、"1M"、"8K"
+    private func formatContextSize(_ tokens: Int) -> String {
+        if tokens >= 1_000_000 {
+            let value = Double(tokens) / 1_000_000.0
+            return value == floor(value) ? "\(Int(value))M" : String(format: "%.1fM", value)
+        } else if tokens >= 1_000 {
+            let value = Double(tokens) / 1_000.0
+            return value == floor(value) ? "\(Int(value))K" : String(format: "%.0fK", value)
+        } else {
+            return "\(tokens)"
+        }
     }
 }
 

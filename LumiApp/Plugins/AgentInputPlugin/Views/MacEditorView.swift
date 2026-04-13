@@ -8,8 +8,7 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "✏️"
     /// 是否输出详细日志
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     /// 最小高度
     static let minHeight: CGFloat = 64
     /// 最大高度
@@ -97,11 +96,12 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
             textView.delegate = context.coordinator
         }
 
-        let targetPosition = min(cursorPosition, text.count)
+        // 将 Swift String.Index (Character 索引) 转换为 UTF-16 索引，匹配 NSTextView 的 selectedRange
+        let targetPosition = Self.swiftToUTF16Index(cursorPosition, in: text)
         let needsSelectionUpdate = textView.selectedRange().location != targetPosition || textChanged
         let needsFocus = isFocused && nsView.window.map { $0.firstResponder != textView } ?? false
 
-        // 将高度/选区/焦点的更新推迟到当前 view 更新结束后，避免 “Modifying state during view update”
+        // 将高度/选区/焦点的更新推迟到当前 view 更新结束后，避免 "Modifying state during view update"
         if textChanged || needsSelectionUpdate || needsFocus {
             let position = targetPosition
             DispatchQueue.main.async {
@@ -116,6 +116,30 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
                 }
             }
         }
+    }
+
+    /// 将 Swift Character 索引转换为 UTF-16 索引
+    ///
+    /// Swift String 的 count 返回 Character 数量，而 NSTextView 的 selectedRange 使用 UTF-16 编码偏移。
+    /// 对于 emoji（如 🌳）、某些特殊 Unicode 字符，一个 Character 可能对应多个 UTF-16 code unit，
+    /// 导致光标位置错乱。此方法确保索引转换正确。
+    static func swiftToUTF16Index(_ swiftIndex: Int, in string: String) -> Int {
+        let clampedIndex = min(swiftIndex, string.count)
+        guard let index = string.index(string.startIndex, offsetBy: clampedIndex, limitedBy: string.endIndex) else {
+            return (string as NSString).length
+        }
+        return string.utf16.distance(from: string.startIndex, to: index)
+    }
+
+    /// 将 UTF-16 索引转换为 Swift Character 索引
+    static func utf16ToSwiftIndex(_ utf16Index: Int, in string: String) -> Int {
+        let utf16Clamped = min(utf16Index, string.utf16.count)
+        let utf16Start = string.utf16.startIndex
+        guard let utf16Target = string.utf16.index(utf16Start, offsetBy: utf16Clamped, limitedBy: string.utf16.endIndex) else {
+            return string.count
+        }
+        let swiftTarget = String.Index(utf16Target, within: string) ?? string.endIndex
+        return string.distance(from: string.startIndex, to: swiftTarget)
     }
 
     func makeCoordinator() -> Coordinator {
@@ -172,10 +196,11 @@ extension MacEditorView {
             guard let textView = notification.object as? NSTextView else { return }
             parent.text = textView.string
             
-            // 同步光标位置
-            let location = textView.selectedRange().location
-            if parent.cursorPosition != location {
-                parent.cursorPosition = location
+            // 同步光标位置：将 NSTextView 的 UTF-16 索引转换为 Swift Character 索引
+            let utf16Location = textView.selectedRange().location
+            let swiftLocation = MacEditorView.utf16ToSwiftIndex(utf16Location, in: textView.string)
+            if parent.cursorPosition != swiftLocation {
+                parent.cursorPosition = swiftLocation
             }
             
             // 文本变化时更新高度
@@ -224,8 +249,7 @@ class EditorTextView: NSTextView, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "📝"
     /// 是否输出详细日志
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
         let pasteboard = sender.draggingPasteboard
         

@@ -33,6 +33,7 @@ struct ZhipuQuotaDetailView: View {
                 }) {
                     Image(systemName: isRefreshing ? "arrow.clockwise" : "arrow.clockwise")
                         .font(.system(size: 14))
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
                         .rotationEffect(.degrees(isRefreshing ? 360 : 0))
                 }
                 .buttonStyle(.plain)

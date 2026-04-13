@@ -5,8 +5,7 @@ import MagicKit
 @MainActor
 class HostsFileService: SuperLog {
     nonisolated static let emoji = "📝"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     static let shared = HostsFileService()
     private let hostsPath = "/etc/hosts"
 

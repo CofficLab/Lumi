@@ -18,12 +18,40 @@ struct StatusMessage: View {
             )
                 .messageBubbleStyle(role: message.role, isError: message.isError)
         } else {
-            PlainTextMessageContentView(
-                content: message.content,
-                monospaced: false
-            )
-            .font(AppUI.Typography.caption1)
-            .messageBubbleStyle(role: message.role, isError: message.isError)
+            VStack(alignment: .leading, spacing: 4) {
+                header
+
+                PlainTextMessageContentView(
+                    content: message.content,
+                    monospaced: false
+                )
+                .font(AppUI.Typography.caption1)
+                .messageBubbleStyle(role: message.role, isError: message.isError)
+            }
         }
+    }
+
+    // MARK: - Header
+
+    private var header: some View {
+        MessageHeaderView {
+            HStack(alignment: .center, spacing: 6) {
+                AvatarView.status
+                Text("Status")
+                    .font(DesignTokens.Typography.caption1)
+                    .fontWeight(.medium)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+            }
+        } trailing: {
+            Text(formatTimestamp(message.timestamp))
+                .font(DesignTokens.Typography.caption2)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+        }
+    }
+
+    private func formatTimestamp(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        return formatter.string(for: date) ?? ""
     }
 }

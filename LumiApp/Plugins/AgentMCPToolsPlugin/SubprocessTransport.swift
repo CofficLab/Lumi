@@ -25,8 +25,7 @@ actor SubprocessTransport: Transport, SuperLog {
     var logger: Logging.Logger
 
     nonisolated static let emoji = "📟"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     let command: String
     let arguments: [String]
     let environment: [String: String]

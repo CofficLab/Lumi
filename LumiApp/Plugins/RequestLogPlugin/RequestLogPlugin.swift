@@ -7,8 +7,7 @@ import MagicKit
 /// 用于调试和审计。
 actor RequestLogPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "📝"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     static let id = "RequestLog"
     static let displayName: String = String(localized: "PluginName", table: "RequestLog")
     static let description: String = String(localized: "PluginDescription", table: "RequestLog")

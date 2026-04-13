@@ -220,13 +220,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "当前供应商"
+            "value" : "当前"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "目前供應商"
+            "value" : "目前"
           }
         }
       }
@@ -289,13 +289,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "本地供应商"
+            "value" : "本地"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "本地供應商"
+            "value" : "本地"
           }
         }
       }
@@ -473,13 +473,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "远程供应商"
+            "value" : "远程"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "遠程供應商"
+            "value" : "遠程"
           }
         }
       }

@@ -4,8 +4,7 @@ import SwiftUI
 /// 自动批准开关插件：右侧栏 header 中的 Auto-Approve 切换
 actor AgentAutoApproveHeaderPlugin: SuperPlugin {
     nonisolated static let emoji = "✅"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     static let id = "AgentAutoApproveHeader"
     static let displayName = String(localized: "Auto-Approve Toggle", table: "AgentAutoApproveHeader")
     static let description = String(localized: "Auto-approve toggle in chat header", table: "AgentAutoApproveHeader")

@@ -90,7 +90,7 @@ private struct HeaderView: View {
     private let iconSize: CGFloat = 14
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 0) {
             if let leading = leadingView {
                 leading
             } else {
@@ -108,7 +108,7 @@ private struct HeaderView: View {
                 }
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 12)
     }
 
     private var defaultLeadingView: some View {

@@ -4,8 +4,7 @@ import MagicKit
 /// GitHub 文件内容获取工具
 struct GitHubFileContentTool: AgentTool, SuperLog {
     nonisolated static let emoji = "📄"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     let name = "github_file_content"
     let description = "获取 GitHub 仓库中指定文件的内容。支持读取 README、源代码文件等。"
 

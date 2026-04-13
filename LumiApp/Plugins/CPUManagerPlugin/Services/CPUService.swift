@@ -7,7 +7,7 @@ import MagicKit
 class CPUService: ObservableObject, SuperLog {
     static let shared = CPUService()
     nonisolated static let emoji = "🧠"
-    nonisolated static let verbose = false
+    nonisolated static let verbose: Bool = false
     
     // MARK: - Published Properties
     

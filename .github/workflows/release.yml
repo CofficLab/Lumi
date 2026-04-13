@@ -29,7 +29,7 @@ env:
 
 jobs:
   release_pipeline:
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
         with:
@@ -40,7 +40,7 @@ jobs:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: "26.2"
+          xcode-version: "26.3"
 
       # =================================================================================================
       # 1. 版本计算与项目更新
@@ -128,6 +128,7 @@ jobs:
             -scheme ${{ env.SCHEME }} \
             -archivePath ./temp/${{ env.SCHEME }}.xcarchive \
             -configuration Release \
+            -skipPackagePluginValidation \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="-" \
             DEVELOPMENT_TEAM="${{ steps.signing.outputs.team_id }}" \

@@ -32,8 +32,7 @@ struct PortInfo: Identifiable, Hashable {
 
 final class PortScanner: Sendable, SuperLog {
     nonisolated static let emoji = "🔌"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     static let shared = PortScanner()
 
     private init() {}

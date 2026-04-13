@@ -65,8 +65,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🧰"
     
     /// 是否启用详细日志
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     // MARK: - Properties
 
     /// 所有可用工具

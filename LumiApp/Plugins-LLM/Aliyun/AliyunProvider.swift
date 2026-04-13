@@ -12,8 +12,7 @@ import os
 final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.aliyun")
     nonisolated static let emoji = "🔵"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     // MARK: - 基础信息
 
     static let id = "aliyun"
@@ -32,6 +31,15 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
         "glm-5",
         "MiniMax-M2.5",
         "kimi-k2.5",
+    ]
+
+    static let contextWindowSizes: [String: Int] = [
+        "qwen3.5-plus": 131_072,
+        "qwen3.6-plus": 131_072,
+        "glm-4.7": 128_000,
+        "glm-5": 128_000,
+        "MiniMax-M2.5": 1_000_000,
+        "kimi-k2.5": 131_072,
     ]
 
     // MARK: - SuperLLMProvider

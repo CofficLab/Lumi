@@ -8,8 +8,7 @@ import os
 final class AiRouterProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.airouter")
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     // MARK: - 基础信息
 
     static let id = "airouter"
@@ -33,6 +32,20 @@ final class AiRouterProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
         "gpt-5-codex",
         "gpt-5.1",
         "gpt-5.1-codex",
+    ]
+
+    static let contextWindowSizes: [String: Int] = [
+        "gpt-5.1-codex-max": 128_000,
+        "gpt-5.2-codex": 128_000,
+        "gpt-5.4-mini": 128_000,
+        "gpt-5": 128_000,
+        "gpt-5.1-codex-mini": 128_000,
+        "gpt-5.2": 128_000,
+        "gpt-5.3-codex": 128_000,
+        "gpt-5.4": 128_000,
+        "gpt-5-codex": 128_000,
+        "gpt-5.1": 128_000,
+        "gpt-5.1-codex": 128_000,
     ]
 
     // MARK: - 启用状态配置

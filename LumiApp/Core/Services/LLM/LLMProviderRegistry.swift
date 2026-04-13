@@ -13,8 +13,7 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
     nonisolated static let emoji = "📋"
 
     /// 是否启用详细日志
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     /// 初始化供应商注册表
     ///
     /// 创建新的注册表实例，具体供应商由外部插件通过 `register(...)` 注入。
@@ -90,7 +89,8 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
                     availableModels: type.availableModels,
                     defaultModel: type.defaultModel,
                     isLocal: isLocal,
-                    isEnabled: type.isEnabled
+                    isEnabled: type.isEnabled,
+                    contextWindowSizes: type.contextWindowSizes
                 )
             }
     }
@@ -109,7 +109,8 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
                 availableModels: type.availableModels,
                 defaultModel: type.defaultModel,
                 isLocal: isLocal,
-                isEnabled: type.isEnabled
+                isEnabled: type.isEnabled,
+                contextWindowSizes: type.contextWindowSizes
             )
         }
     }

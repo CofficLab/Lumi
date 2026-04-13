@@ -4,8 +4,7 @@ import SwiftUI
 /// 新建对话头部插件：右侧栏 header 中的新建对话按钮
 actor AgentNewChatHeaderPlugin: SuperPlugin {
     nonisolated static let emoji = "💬"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     static let id = "AgentChatToolbar"
     static let displayName = String(localized: "New Chat Button", table: "AgentNewChat")
     static let description = String(localized: "Create new chat from header", table: "AgentNewChat")

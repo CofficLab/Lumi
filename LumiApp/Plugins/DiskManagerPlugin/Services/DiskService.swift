@@ -5,7 +5,7 @@ import MagicKit
 /// 磁盘服务 - 在后台执行扫描和清理操作
 class DiskService: @unchecked Sendable, SuperLog {
     nonisolated static let emoji = "💽"
-    nonisolated static let verbose = true
+    nonisolated static let verbose: Bool = true
     static let shared = DiskService()
 
     private let coordinator = ScanCoordinator()

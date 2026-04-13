@@ -4,8 +4,7 @@ import MagicKit
 /// 列出最近项目工具
 struct ListRecentProjectsTool: AgentTool, SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     let name = "list_recent_projects"
     let description = "Get a list of recently used projects. Returns project names, paths, and last used times. Useful for understanding what projects the user has been working on."
 

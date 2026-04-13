@@ -5,246 +5,84 @@ import SwiftUI
 /// 项目文件树视图
 struct ProjectTreeView: View {
     @EnvironmentObject var projectVM: ProjectVM
+    @EnvironmentObject var layoutVM: LayoutVM
 
-    /// 当前项目根目录下的一级文件 / 文件夹
-    @State private var rootURLs: [URL] = []
+    /// 刷新协调器，管理文件系统监听和刷新令牌
+    @StateObject private var coordinator = ProjectTreeRefreshCoordinator()
 
-    /// 是否正在加载项目结构
-    @State private var isLoading = false
-
-    /// 文件系统变化监听器
-    @State private var watcher: ProjectTreeWatcher?
-
-    /// 当前正在监控的已展开目录集合
-    @State private var expandedDirectoryURLs: Set<URL> = []
-
-    /// 全局刷新令牌，每次文件系统变化时递增，触发所有展开节点重新加载
-    @State private var refreshToken: Int = 0
-
-    /// Logger
-    private nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree")
+    /// 根节点刷新令牌（由协调器驱动 + 手动驱动）
+    @State private var rootRefreshToken: Int = 0
 
     var body: some View {
         VStack(spacing: 0) {
-            if isLoading && rootURLs.isEmpty {
-                loadingView
-            } else if rootURLs.isEmpty {
-                emptyView
+            if projectVM.currentProjectPath.isEmpty {
+                FileTreeNoProjectView()
             } else {
-                fileList
-            }
-        }
-        .frame(maxHeight: .infinity)
-        .onChange(of: projectVM.currentProjectPath) { _, newPath in
-            setupWatcher(for: newPath)
-            loadProject(at: newPath)
-        }
-        .onChange(of: projectVM.selectedFileURL) { _, newURL in
-            // 当选中文件变化时，自动展开包含该文件的目录
-            if let url = newURL {
-                expandToFile(url)
-            }
-        }
-        .onAppear {
-            setupWatcher(for: projectVM.currentProjectPath)
-            loadProject(at: projectVM.currentProjectPath)
-        }
-        .onDisappear {
-            watcher?.stopAll()
-            watcher = nil
-        }
-        .onSyncSelectedFile { path in
-            // 监听 syncSelectedFile 通知，确保文件树能同步选中状态
-            let url = URL(fileURLWithPath: path)
-            projectVM.selectFile(at: url)
-        }
-    }
-}
-
-// MARK: - View
-
-extension ProjectTreeView {
-    private var fileList: some View {
-        ScrollView {
-            LazyVStack(spacing: 0) {
-                ForEach(rootURLs, id: \.self) { url in
+                ScrollView {
                     FileNodeView(
-                        url: url,
-                        depth: 0,
+                        url: URL(fileURLWithPath: projectVM.currentProjectPath),
+                        depth: 0,  // depth == 0 表示根节点
                         selectedURL: projectVM.selectedFileURL,
                         onSelect: { selectedURL in
                             projectVM.selectFile(at: selectedURL)
                         },
-                        onDirectoryExpanded: { dirURL in
-                            handleDirectoryExpanded(dirURL)
-                        },
-                        onDirectoryCollapsed: { dirURL in
-                            handleDirectoryCollapsed(dirURL)
-                        },
-                        refreshToken: refreshToken
+                        refreshToken: rootRefreshToken,
+                        projectRootPath: projectVM.currentProjectPath,
+                        onExpansionChange: { relativePath, isExpanded in
+                            handleExpansionChange(relativePath: relativePath, isExpanded: isExpanded)
+                        }
                     )
                 }
             }
         }
-        .scrollIndicators(.hidden)
-    }
-
-    private var loadingView: some View {
-        VStack(spacing: 8) {
-            ProgressView()
-                .scaleEffect(0.8)
-            Text(String(localized: "Loading...", table: "ProjectTree"))
-                .font(.system(size: 10))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+        .frame(maxHeight: .infinity)
+        .onChange(of: projectVM.currentProjectPath, onProjectPathChanged)
+        .onChange(of: projectVM.selectedFileURL, onSelectedFileChanged)
+        .onDisappear(perform: onDisappear)
+        .onSyncSelectedFile(perform: onSyncSelectedFile)
+        .onReceive(coordinator.$refreshToken) { newToken in
+            onCoordinatorRefresh(newToken)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private var emptyView: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "folder")
-                .font(.system(size: 24))
-                .foregroundColor(.secondary.opacity(0.5))
-            Text(String(localized: "No project", table: "ProjectTree"))
-                .font(.system(size: 11))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+        .onAppear {
+            // 激活中间栏的代码编辑器 Detail 视图
+            layoutVM.selectAgentDetail(LumiEditorPlugin.id)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-// MARK: - Watcher
-
-extension ProjectTreeView {
-    /// 设置文件系统监听器
-    private func setupWatcher(for path: String) {
-        // 先停止旧的监听
-        watcher?.stopAll()
-        expandedDirectoryURLs.removeAll()
-
-        guard !path.isEmpty else {
-            watcher = nil
-            return
-        }
-
-        let rootURL = URL(fileURLWithPath: path)
-
-        // 创建新的监听器
-        watcher = ProjectTreeWatcher { changedURL in
-            Self.logger.info("🔄 文件系统变化检测: \(changedURL.lastPathComponent)")
-            Task { @MainActor in
-                handleFileSystemChange(changedURL: changedURL, rootURL: rootURL)
-            }
-        }
-
-        // 开始监听根目录
-        watcher?.startWatching(url: rootURL)
     }
 
-    /// 目录展开时注册监听
-    private func handleDirectoryExpanded(_ dirURL: URL) {
-        expandedDirectoryURLs.insert(dirURL)
-        watcher?.startWatching(url: dirURL)
-    }
+    // MARK: - Event Handler
 
-    /// 目录折叠时取消监听
-    private func handleDirectoryCollapsed(_ dirURL: URL) {
-        expandedDirectoryURLs.remove(dirURL)
-        watcher?.stopWatching(url: dirURL)
-    }
-
-    /// 处理文件系统变化
-    private func handleFileSystemChange(changedURL: URL, rootURL: URL) {
-        let standardizedChanged = changedURL.standardizedFileURL
-        let standardizedRoot = rootURL.standardizedFileURL
-
-        if standardizedChanged.path == standardizedRoot.path {
-            // 根目录变化 → 重新加载整个根列表
-            loadProject(at: rootURL.path)
-        }
-
-        // 无论是否根目录变化，都递增刷新令牌，触发所有已展开目录重新加载子节点
-        refreshToken += 1
-    }
-}
-
-// MARK: - Action
-
-extension ProjectTreeView {
-    private func loadProject(at path: String) {
-        guard !path.isEmpty else {
-            rootURLs = []
-            return
-        }
-
+    private func onSyncSelectedFile(path: String) {
         let url = URL(fileURLWithPath: path)
-        isLoading = true
-
-        Task.detached(priority: .userInitiated) {
-            do {
-                let contents = try FileManager.default.contentsOfDirectory(
-                    at: url,
-                    includingPropertiesForKeys: [.isDirectoryKey],
-                    options: []
-                )
-
-                // 过滤 .DS_Store 和 .git
-                let filtered = contents.filter { url in
-                    let name = url.lastPathComponent
-                    return name != ".DS_Store" && name != ".git"
-                }
-
-                // 排序：文件夹在前
-                let sorted = filtered.sorted { a, b in
-                    let aIsDir = (try? a.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-                    let bIsDir = (try? b.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-                    if aIsDir == bIsDir {
-                        return a.lastPathComponent.localizedStandardCompare(b.lastPathComponent) == .orderedAscending
-                    }
-                    return aIsDir
-                }
-
-                await MainActor.run {
-                    self.rootURLs = sorted
-                    self.isLoading = false
-                }
-            } catch {
-                await MainActor.run {
-                    self.rootURLs = []
-                    self.isLoading = false
-                }
-            }
-        }
+        projectVM.selectFile(at: url)
     }
 
-    /// 自动展开到指定文件所在的目录
-    private func expandToFile(_ fileURL: URL) {
-        // 获取当前项目的根路径
-        let rootPath = projectVM.currentProjectPath
-        guard !rootPath.isEmpty else { return }
+    private func onProjectPathChanged() {
+        // 项目路径变化时，更新协调器并递增刷新令牌
+        coordinator.setProjectRootPath(projectVM.currentProjectPath)
+        rootRefreshToken += 1
+    }
 
-        let rootURL = URL(fileURLWithPath: rootPath)
+    private func onSelectedFileChanged() {
+        // 自动展开到选中文件的逻辑需要在 FileNodeView 中处理
+    }
 
-        // 确保文件在项目目录下
-        guard fileURL.path.hasPrefix(rootPath) else { return }
+    private func onDisappear() {
+        coordinator.stop()
+    }
 
-        // 获取文件相对于根目录的路径组件
-        let relativePath = fileURL.path.replacingOccurrences(of: rootPath + "/", with: "")
-        let components = relativePath.split(separator: "/").map(String.init)
+    /// 协调器检测到文件系统变化时，递增根刷新令牌驱动整棵树刷新
+    private func onCoordinatorRefresh(_ newToken: Int) {
+        guard newToken > 0 else { return }
+        rootRefreshToken += 1
+        ProjectTreeRefreshCoordinator.logger.info("🌳 协调器驱动刷新，令牌：\(rootRefreshToken)")
+    }
 
-        // 逐级展开目录
-        var currentURL = rootURL
-        let directoriesToExpand = components.dropLast()
-
-        for dirName in directoriesToExpand {
-            currentURL = currentURL.appendingPathComponent(dirName)
-            expandedDirectoryURLs.insert(currentURL)
-            watcher?.startWatching(url: currentURL)
-        }
-
-        // 刷新令牌以触发子节点重新加载
-        if !components.isEmpty {
-            refreshToken += 1
+    /// 子节点展开/折叠时通知协调器更新监听列表
+    private func handleExpansionChange(relativePath: String, isExpanded: Bool) {
+        if isExpanded {
+            coordinator.addExpandedPath(relativePath)
+        } else {
+            coordinator.removeExpandedPath(relativePath)
         }
     }
 }

@@ -128,7 +128,7 @@ struct LeftSidebar: View {
                             selectedTab: Binding(
                                 get: { selectedId },
                                 set: { newTabId in
-                                    layoutVM.selectAgentSidebarTab(newTabId)
+                                    layoutVM.selectAgentSidebarTab(newTabId, reason: "LeftBar tab clicked")
                                 }
                             ),
                             showText: false  // Agent 模式只显示图标，不显示文字
@@ -208,8 +208,7 @@ struct LeftSidebar: View {
 /// 应用模式切换器，在 App 模式和 Agent 模式之间切换
 private struct ModeSwitcherView: View, SuperLog {
     nonisolated static let emoji = "🔄"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     @EnvironmentObject var app: GlobalVM
     @Environment(\.windowState) var windowState
 

@@ -7,7 +7,7 @@ import Combine
 @MainActor
 class TextSelectionManager: ObservableObject, SuperLog {
     nonisolated static let emoji = "✂️"
-    nonisolated static let verbose = false
+    nonisolated static let verbose: Bool = false
     
     static let shared = TextSelectionManager()
     

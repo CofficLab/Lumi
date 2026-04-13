@@ -209,12 +209,8 @@ extension LocalProviderSettingsView {
         localModelsLoading = true
         localActionError = nil
         defer { localModelsLoading = false }
-        do {
-            localAvailableModels = await local.getAvailableModels()
-            localCachedIds = await local.getCachedModels()
-        } catch {
-            localActionError = error.localizedDescription
-        }
+        localAvailableModels = await local.getAvailableModels()
+        localCachedIds = await local.getCachedModels()
     }
 
     private func downloadLocalModel(id: String) async {

@@ -11,8 +11,7 @@ import os
 final class OpenRouterProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.openrouter")
     nonisolated static let emoji = "🔵"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     // MARK: - Basic Info
 
     static let id = "openrouter"
@@ -44,6 +43,28 @@ final class OpenRouterProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked
         "qwen/qwen3.6-plus",
         "stepfun/step-3.5-flash:free",
         "z-ai/glm-4.5-air:free",
+    ]
+
+    static let contextWindowSizes: [String: Int] = [
+        "alibaba/qwen3.5-397b": 131_072,
+        "anthropic/claude-haiku-4-5-20251001": 200_000,
+        "anthropic/claude-opus-4-5-20251101": 200_000,
+        "anthropic/claude-sonnet-4-5-20250929": 200_000,
+        "bytedance-seed/seedream-4.5": 128_000,
+        "deepseek/deepseek-v3.1": 128_000,
+        "google/gemma-3-27b-it:free": 131_072,
+        "google/gemini-pro-2.5": 1_000_000,
+        "meta-llama/llama-3.3-70b-instruct": 128_000,
+        "minimax/minimax-m2.1": 1_000_000,
+        "minimax/minimax-m2.5:free": 1_000_000,
+        "nvidia/nemotron-3-super-120b-a12b:free": 128_000,
+        "openai/gpt-4o": 128_000,
+        "openai/gpt-5": 128_000,
+        "openai/gpt-5-mini": 128_000,
+        "openai/gpt-oss-20b:free": 128_000,
+        "qwen/qwen3.6-plus": 131_072,
+        "stepfun/step-3.5-flash:free": 128_000,
+        "z-ai/glm-4.5-air:free": 128_000,
     ]
 
     // MARK: - SuperLLMProvider

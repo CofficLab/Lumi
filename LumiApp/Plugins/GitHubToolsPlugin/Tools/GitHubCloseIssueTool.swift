@@ -4,8 +4,7 @@ import MagicKit
 /// GitHub 关闭 Issue 工具
 struct GitHubCloseIssueTool: AgentTool, SuperLog {
     nonisolated static let emoji = "🔒"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     let name = "github_close_issue"
     let description = "关闭指定的 GitHub Issue。"
 

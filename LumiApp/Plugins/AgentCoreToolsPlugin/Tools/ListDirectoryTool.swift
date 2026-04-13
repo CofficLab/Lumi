@@ -4,8 +4,7 @@ import SwiftUI
 
 struct ListDirectoryTool: AgentTool, SuperLog {
     nonisolated static let emoji = "📁"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     let name = "ls"
     let description = "List files and directories at a given path. Useful for exploring the project structure."
 

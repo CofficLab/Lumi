@@ -6,8 +6,7 @@ import MagicKit
 /// 提供工具调用循环检测中间件，防止 AI Agent 进入无限循环。
 actor ToolCallLoopDetectionPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🔄"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     static let id = "tool-call-loop-detection"
     static let displayName: String = String(localized: "工具调用循环检测", table: "ToolCallLoopDetection")
     static let description: String = String(localized: "检测并防止工具调用进入无限循环。", table: "ToolCallLoopDetection")

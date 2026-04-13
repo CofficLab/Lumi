@@ -4,8 +4,7 @@ import MagicKit
 /// GitHub Issue 详情工具
 struct GitHubIssueDetailTool: AgentTool, SuperLog {
     nonisolated static let emoji = "📄"
-    nonisolated static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     let name = "github_issue_detail"
     let description = "获取 GitHub Issue 的详细信息，包括标题、描述、状态、标签、评论数等。"
 

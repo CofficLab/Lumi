@@ -4,8 +4,7 @@ import MagicKit
 /// 获取当前文件工具
 struct GetCurrentFileTool: AgentTool, SuperLog {
     nonisolated static let emoji = "📄"
-    nonisolated static let verbose = true
-
+    nonisolated static let verbose: Bool = true
     let name = "get_current_file"
     let description = "获取当前选中的文件信息，包括文件路径和最后选择时间。如果没有选择文件，返回空信息。"
 

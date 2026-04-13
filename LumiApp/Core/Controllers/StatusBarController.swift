@@ -31,8 +31,7 @@ class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
     nonisolated static let emoji = "📊"
     
     /// 是否启用详细日志
-    static let verbose = false
-
+    nonisolated static let verbose: Bool = false
     // MARK: - Properties
 
     /// 系统状态栏项

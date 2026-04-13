@@ -103,6 +103,10 @@ struct RecentProjectsSidebarView: View {
                     .fill(isSelected ? Color.accentColor.opacity(0.15) : Color.clear)
             )
             .contentShape(Rectangle())  // 确保整个区域可点击
+            .overlay {
+                // 使用 AppKit 原生拖拽 overlay，拖到输入框时自动填充项目路径
+                ProjectDragSourceOverlay(projectPath: project.path, projectName: project.name)
+            }
         }
         .buttonStyle(.plain)
     }

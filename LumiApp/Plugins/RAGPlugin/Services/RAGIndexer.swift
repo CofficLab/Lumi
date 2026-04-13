@@ -30,7 +30,9 @@ struct RAGIndexer: SuperLog {
     func rebuildProjectIndex(at projectPath: String) throws -> RAGIndexStats {
         let files = discoverFiles(in: projectPath)
         let indexedStates = try store.fetchIndexedFileStates(projectPath: projectPath)
-        AppLogger.core.info("\(Self.t) 全量重建开始 files=\(files.count) oldIndexedFiles=\(indexedStates.count)")
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t) 全量重建开始 files=\(files.count) oldIndexedFiles=\(indexedStates.count)")
+        }
 
         for state in indexedStates.values {
             try store.deleteChunks(projectPath: projectPath, filePath: state.filePath)
@@ -48,9 +50,11 @@ struct RAGIndexer: SuperLog {
             embeddingDimension: embeddingProvider.dimension
         )
         stats.chunkCount = chunkCount
-        AppLogger.core.info(
-            "\(Self.t) 全量重建结束 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) fileCount=\(fileCount) chunkCount=\(chunkCount)"
-        )
+        if Self.verbose {
+            AppLogger.core.info(
+                "\(Self.t) 全量重建结束 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) fileCount=\(fileCount) chunkCount=\(chunkCount)"
+            )
+        }
         return stats
     }
 

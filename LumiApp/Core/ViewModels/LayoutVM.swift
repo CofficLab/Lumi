@@ -1,10 +1,15 @@
 import Foundation
 import SwiftUI
+import os
+import MagicKit
 
 /// 布局 ViewModel - 负责管理界面布局相关的状态
 /// 包括中间栏（Agent 模式侧边栏）的标签选择状态
 @MainActor
-final class LayoutVM: ObservableObject {
+final class LayoutVM: ObservableObject, SuperLog {
+    
+    nonisolated static let emoji = "🖥️"
+    nonisolated static let verbose: Bool = false
     
     // MARK: - Published Properties
     
@@ -20,19 +25,25 @@ final class LayoutVM: ObservableObject {
         // 从持久化存储恢复上次选中的标签
         if let savedTabId = AppSettingStore.loadSelectedAgentSidebarTabId() {
             self.selectedAgentSidebarTabId = savedTabId
+            if Self.verbose { AppLogger.layout.info("\(Self.t)恢复侧边栏标签: \(savedTabId)") }
         }
         // 从持久化存储恢复上次选中的 detail ID
         if let savedDetailId = AppSettingStore.loadSelectedAgentDetailId() {
             self.selectedAgentDetailId = savedDetailId
+            if Self.verbose { AppLogger.layout.info("\(Self.t)恢复 Detail 视图: \(savedDetailId)") }
         }
     }
     
     // MARK: - Agent Sidebar Tab
     
     /// 设置当前选中的 Agent 模式侧边栏 Tab
-    /// - Parameter tabId: 标签 ID
-    func selectAgentSidebarTab(_ tabId: String) {
-        guard tabId != selectedAgentSidebarTabId else { return }
+    /// - Parameters:
+    ///   - tabId: 标签 ID
+    ///   - reason: 切换原因，用于日志追踪
+    func selectAgentSidebarTab(_ tabId: String, reason: String) {
+        let old = selectedAgentSidebarTabId
+        guard tabId != old else { return }
+        if Self.verbose { AppLogger.layout.info("\(Self.t)Sidebar tab: \(old) → \(tabId), reason: \(reason)") }
         selectedAgentSidebarTabId = tabId
         AppSettingStore.saveSelectedAgentSidebarTabId(tabId)
     }
@@ -41,6 +52,7 @@ final class LayoutVM: ObservableObject {
     /// - Parameter availableTabIds: 当前可用的标签 ID 列表
     func restoreSelectedTab(from availableTabIds: [String]) {
         guard !availableTabIds.isEmpty else {
+            if Self.verbose { AppLogger.layout.debug("\(Self.t)restoreSelectedTab: 无可用标签，清空选中") }
             selectedAgentSidebarTabId = ""
             return
         }
@@ -50,12 +62,17 @@ final class LayoutVM: ObservableObject {
             // 尝试从持久化存储恢复
             if let savedTabId = AppSettingStore.loadSelectedAgentSidebarTabId(),
                availableTabIds.contains(savedTabId) {
+                if Self.verbose { AppLogger.layout.info("\(Self.t)restoreSelectedTab: 恢复 \(savedTabId)") }
                 selectedAgentSidebarTabId = savedTabId
             } else {
-                // 使用第一个可用标签作为默认值
-                selectedAgentSidebarTabId = availableTabIds[0]
+                let fallback = availableTabIds[0]
+                if Self.verbose { AppLogger.layout.info("\(Self.t)restoreSelectedTab: 回退到首个可用标签 \(fallback)") }
+                selectedAgentSidebarTabId = fallback
                 AppSettingStore.saveSelectedAgentSidebarTabId(selectedAgentSidebarTabId)
             }
+        } else {
+            let current = selectedAgentSidebarTabId
+            if Self.verbose { AppLogger.layout.debug("\(Self.t)restoreSelectedTab: 当前选中 \(current) 仍有效") }
         }
     }
     
@@ -64,7 +81,9 @@ final class LayoutVM: ObservableObject {
     /// 设置当前选中的 Agent 模式 Detail 视图 ID
     /// - Parameter detailId: Detail 视图 ID
     func selectAgentDetail(_ detailId: String) {
-        guard detailId != selectedAgentDetailId else { return }
+        let old = selectedAgentDetailId
+        guard detailId != old else { return }
+        if Self.verbose { AppLogger.layout.info("\(Self.t)Detail: \(old) → \(detailId)") }
         selectedAgentDetailId = detailId
         AppSettingStore.saveSelectedAgentDetailId(detailId)
     }
@@ -73,6 +92,7 @@ final class LayoutVM: ObservableObject {
     /// - Parameter availableDetailIds: 当前可用的 Detail ID 列表
     func restoreSelectedDetail(from availableDetailIds: [String]) {
         guard !availableDetailIds.isEmpty else {
+            if Self.verbose { AppLogger.layout.debug("\(Self.t)restoreSelectedDetail: 无可用 Detail，清空选中") }
             selectedAgentDetailId = ""
             return
         }
@@ -82,22 +102,29 @@ final class LayoutVM: ObservableObject {
             // 尝试从持久化存储恢复
             if let savedDetailId = AppSettingStore.loadSelectedAgentDetailId(),
                availableDetailIds.contains(savedDetailId) {
+                if Self.verbose { AppLogger.layout.info("\(Self.t)restoreSelectedDetail: 恢复 \(savedDetailId)") }
                 selectedAgentDetailId = savedDetailId
             } else {
-                // 使用第一个可用作为默认值
-                selectedAgentDetailId = availableDetailIds[0]
+                let fallback = availableDetailIds[0]
+                if Self.verbose { AppLogger.layout.info("\(Self.t)restoreSelectedDetail: 回退到首个可用 Detail \(fallback)") }
+                selectedAgentDetailId = fallback
                 AppSettingStore.saveSelectedAgentDetailId(selectedAgentDetailId)
             }
+        } else {
+            let current = selectedAgentDetailId
+            if Self.verbose { AppLogger.layout.debug("\(Self.t)restoreSelectedDetail: 当前选中 \(current) 仍有效") }
         }
     }
     
     /// 清除选中的标签（当没有可用标签时）
     func clearSelectedTab() {
+        if Self.verbose { AppLogger.layout.info("\(Self.t)清除侧边栏标签选中") }
         selectedAgentSidebarTabId = ""
     }
     
     /// 清除选中的 Detail（当没有可用时）
     func clearSelectedDetail() {
+        if Self.verbose { AppLogger.layout.info("\(Self.t)清除 Detail 视图选中") }
         selectedAgentDetailId = ""
     }
 }
