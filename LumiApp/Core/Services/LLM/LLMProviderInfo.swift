@@ -22,4 +22,7 @@ struct LLMProviderInfo: Identifiable, Equatable, Sendable {
 
     /// 是否启用（可通过供应商定义文件配置）
     let isEnabled: Bool
+
+    /// 模型上下文窗口大小映射（模型名 → Token 数）
+    let contextWindowSizes: [String: Int]
 }

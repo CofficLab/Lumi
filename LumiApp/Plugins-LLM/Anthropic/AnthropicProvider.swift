@@ -53,6 +53,16 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
         "claude-3-haiku-20240307",
     ]
 
+    static let contextWindowSizes: [String: Int] = [
+        "claude-sonnet-4-20250514": 200_000,
+        "claude-opus-4-20250514": 200_000,
+        "claude-3-5-sonnet-20241022": 200_000,
+        "claude-3-5-sonnet-20240620": 200_000,
+        "claude-3-opus-20240229": 200_000,
+        "claude-3-sonnet-20240229": 200_000,
+        "claude-3-haiku-20240307": 200_000,
+    ]
+
     // MARK: - SuperLLMProvider
 
     override init() {

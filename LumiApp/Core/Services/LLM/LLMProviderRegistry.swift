@@ -89,7 +89,8 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
                     availableModels: type.availableModels,
                     defaultModel: type.defaultModel,
                     isLocal: isLocal,
-                    isEnabled: type.isEnabled
+                    isEnabled: type.isEnabled,
+                    contextWindowSizes: type.contextWindowSizes
                 )
             }
     }
@@ -108,7 +109,8 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
                 availableModels: type.availableModels,
                 defaultModel: type.defaultModel,
                 isLocal: isLocal,
-                isEnabled: type.isEnabled
+                isEnabled: type.isEnabled,
+                contextWindowSizes: type.contextWindowSizes
             )
         }
     }

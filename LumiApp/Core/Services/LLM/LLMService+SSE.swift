@@ -162,6 +162,15 @@ extension LLMService {
             throw LLMServiceError.cancelled
         } catch let e as LLMServiceError {
             throw e
+        } catch let apiError as APIError {
+            // 确保 HTTP 错误包含状态码信息
+            let errorMessage: String
+            if case let .httpError(statusCode, message) = apiError {
+                errorMessage = "[HTTP \(statusCode)] \(message)"
+            } else {
+                errorMessage = apiError.localizedDescription
+            }
+            throw LLMServiceError.requestFailed(errorMessage)
         } catch {
             throw LLMServiceError.requestFailed(error.localizedDescription)
         }
