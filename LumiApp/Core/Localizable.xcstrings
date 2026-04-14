@@ -5204,6 +5204,16 @@
     "上下文 %@" : {
 
     },
+    "上下文 %@/%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "上下文 %1$@/%2$@"
+          }
+        }
+      }
+    },
     "上传图片" : {
       "extractionState" : "stale",
       "localizations" : {
