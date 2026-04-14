@@ -10,6 +10,8 @@ enum ModelSelectorTab: String, CaseIterable {
     case current
     /// 常用模型（跨供应商）
     case frequent
+    /// TPS 较快的模型
+    case fast
     /// 本地供应商
     case local
     /// 远程供应商
@@ -24,6 +26,8 @@ enum ModelSelectorTab: String, CaseIterable {
             return String(localized: "Current Provider", table: "AgentInput")
         case .frequent:
             return String(localized: "Frequent", table: "AgentInput")
+        case .fast:
+            return String(localized: "Fast", table: "AgentInput")
         case .local:
             return String(localized: "Local Providers", table: "AgentInput")
         case .remote:
@@ -48,6 +52,21 @@ struct FrequentModelEntry: Identifiable {
     let lastUsedAt: Date
 }
 
+/// TPS 较快的模型条目
+struct FastModelEntry: Identifiable {
+    /// 唯一标识（providerId + modelName 组合）
+    let id: String
+    /// 供应商 ID
+    let providerId: String
+    /// 供应商显示名称
+    let providerDisplayName: String
+    /// 模型名称
+    let modelName: String
+    /// 平均 TPS
+    let avgTPS: Double
+    /// 样本数量
+    let sampleCount: Int
+}
 /// 模型选择器视图
 /// 允许用户从所有已注册的供应商和模型中选择
 struct ModelSelectorView: View, SuperLog {
@@ -75,6 +94,9 @@ struct ModelSelectorView: View, SuperLog {
 
     /// 常用模型列表（跨供应商，按使用频率排序）
     @State private var frequentModels: [FrequentModelEntry] = []
+
+    /// TPS 较快的模型列表
+    @State private var fastModels: [FastModelEntry] = []
 
     /// 搜索关键词（用于过滤模型/供应商）
     @State private var searchText: String = ""
@@ -135,6 +157,8 @@ struct ModelSelectorView: View, SuperLog {
                         currentProviderList
                     case .frequent:
                         frequentModelsList
+                    case .fast:
+                        fastModelsList
                     case .local:
                         providerList(
                             providers: filteredProviders(from: localProviders),
@@ -155,6 +179,7 @@ struct ModelSelectorView: View, SuperLog {
         .task {
             loadLatencyStats()
             loadFrequentModels()
+            loadFastModels()
         }
         .task(id: selectedTab) {
             if selectedTab == .current {
@@ -314,6 +339,90 @@ struct ModelSelectorView: View, SuperLog {
                             .font(.caption2)
                             .foregroundColor(AppUI.Color.semantic.textSecondary)
                     }
+                    if let stat = findDetailedStat(providerId: entry.providerId, modelName: entry.modelName), stat.avgTTFT > 0 {
+                        ModelLatencyProgressBar(
+                            ttft: stat.avgTTFT,
+                            totalLatency: stat.avgLatency,
+                            sampleCount: stat.sampleCount,
+                            tps: stat.avgTPS
+                        )
+                    }
+                }
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(isSelected(providerId: entry.providerId, model: entry.modelName) ? Color.accentColor.opacity(0.15) : Color.clear)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(isSelected(providerId: entry.providerId, model: entry.modelName) ? Color.accentColor.opacity(0.3) : Color.clear, lineWidth: 1)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            if hovering && !isSelected(providerId: entry.providerId, model: entry.modelName) {
+                NSCursor.pointingHand.push()
+            } else {
+                NSCursor.pop()
+            }
+        }
+    }
+
+    // MARK: - Fast Models List
+
+    /// TPS 较快模型列表（跨供应商，按 TPS 降序，最多 10 个）
+    @ViewBuilder
+    private var fastModelsList: some View {
+        let filteredEntries = filteredFastModels()
+        if filteredEntries.isEmpty {
+            ContentUnavailableView {
+                Label(String(localized: "No Fast Models", table: "AgentInput"), systemImage: "bolt.fill")
+            } description: {
+                Text(String(localized: "No Fast Models Description", table: "AgentInput"))
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            List {
+                ForEach(filteredEntries) { entry in
+                    fastModelRow(entry: entry)
+                }
+            }
+        }
+    }
+
+    /// TPS 较快模型单行
+    @ViewBuilder
+    private func fastModelRow(entry: FastModelEntry) -> some View {
+        Button(action: {
+            selectModel(providerId: entry.providerId, model: entry.modelName)
+        }) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Text(entry.modelName)
+                            .font(AppUI.Typography.body)
+                            .lineLimit(1)
+
+                        Text(entry.providerDisplayName)
+                            .font(.caption2)
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1)
+                            .background(
+                                RoundedRectangle(cornerRadius: 3)
+                                    .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
+                            )
+
+                        Spacer()
+
+                        Text(String(format: "%.1f t/s", entry.avgTPS))
+                            .font(.caption2)
+                            .foregroundColor(.green)
+                    }
+
                     if let stat = findDetailedStat(providerId: entry.providerId, modelName: entry.modelName), stat.avgTTFT > 0 {
                         ModelLatencyProgressBar(
                             ttft: stat.avgTTFT,
@@ -707,6 +816,56 @@ extension ModelSelectorView {
         }
     }
 
+    /// 加载 TPS 较快模型列表（跨供应商，按 TPS 降序，最多 10 个）
+    private func loadFastModels() {
+        let providers = llmVM.allProviders
+        let providerMap = Dictionary(uniqueKeysWithValues: providers.map { ($0.id, $0) })
+
+        let entries = detailedStats.values
+            .filter { stat in
+                stat.avgTPS > 0 && stat.sampleCount > 0
+            }
+            .filter { stat in
+                guard let provider = providerMap[stat.providerId] else { return false }
+                return provider.availableModels.contains(stat.modelName)
+            }
+            .map { stat -> FastModelEntry in
+                let provider = providerMap[stat.providerId]
+                return FastModelEntry(
+                    id: "\(stat.providerId)|\(stat.modelName)",
+                    providerId: stat.providerId,
+                    providerDisplayName: provider?.displayName ?? stat.providerId,
+                    modelName: stat.modelName,
+                    avgTPS: stat.avgTPS,
+                    sampleCount: stat.sampleCount
+                )
+            }
+            .sorted { lhs, rhs in
+                if lhs.avgTPS == rhs.avgTPS {
+                    return lhs.sampleCount > rhs.sampleCount
+                }
+                return lhs.avgTPS > rhs.avgTPS
+            }
+
+        fastModels = Array(entries.prefix(10))
+
+        if Self.verbose {
+            AgentInputPlugin.logger.info("\(Self.t)⚡️ 加载到 \(fastModels.count) 个较快模型")
+        }
+    }
+
+    /// 根据搜索词过滤 TPS 较快模型
+    private func filteredFastModels() -> [FastModelEntry] {
+        let keyword = normalizedSearchText
+        guard !keyword.isEmpty else { return fastModels }
+
+        return fastModels.filter { entry in
+            entry.modelName.localizedCaseInsensitiveContains(keyword)
+                || entry.providerDisplayName.localizedCaseInsensitiveContains(keyword)
+                || entry.providerId.localizedCaseInsensitiveContains(keyword)
+        }
+    }
+
     /// 模型项是否匹配当前搜索词（匹配模型名、展示名、系列、供应商）
     private func matchesSearch(provider: LLMProviderInfo, model: String, displayName: String? = nil, series: String? = nil) -> Bool {
         let keyword = normalizedSearchText
@@ -736,6 +895,8 @@ extension ModelSelectorView {
             return "scope"
         case .frequent:
             return "clock.arrow.circlepath"
+        case .fast:
+            return "bolt.fill"
         case .local:
             return "laptopcomputer"
         case .remote:
