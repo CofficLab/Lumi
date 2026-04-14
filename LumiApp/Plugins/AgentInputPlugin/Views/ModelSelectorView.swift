@@ -6,6 +6,8 @@ import SwiftUI
 enum ModelSelectorTab: String, CaseIterable {
     /// 当前供应商
     case current
+    /// 常用模型（跨供应商）
+    case frequent
     /// 本地供应商
     case local
     /// 远程供应商
@@ -16,12 +18,30 @@ enum ModelSelectorTab: String, CaseIterable {
         switch self {
         case .current:
             return String(localized: "Current Provider", table: "AgentInput")
+        case .frequent:
+            return String(localized: "Frequent", table: "AgentInput")
         case .local:
             return String(localized: "Local Providers", table: "AgentInput")
         case .remote:
             return String(localized: "Remote Providers", table: "AgentInput")
         }
     }
+}
+
+/// 常用模型条目，用于跨供应商展示最近常用的模型
+struct FrequentModelEntry: Identifiable {
+    /// 唯一标识（providerId + modelName 组合）
+    let id: String
+    /// 供应商 ID
+    let providerId: String
+    /// 供应商显示名称
+    let providerDisplayName: String
+    /// 模型名称
+    let modelName: String
+    /// 使用次数
+    let useCount: Int
+    /// 最后使用时间
+    let lastUsedAt: Date
 }
 
 /// 模型选择器视图
@@ -42,6 +62,9 @@ struct ModelSelectorView: View, SuperLog {
 
     /// 当前选中的 Tab，默认显示当前供应商
     @State private var selectedTab: ModelSelectorTab = .current
+
+    /// 常用模型列表（跨供应商，按使用频率排序）
+    @State private var frequentModels: [FrequentModelEntry] = []
 
     /// 本地供应商的模型详情（按 providerId -> [LocalModelInfo]），用于按系列展示
     @State private var localModelInfosByProvider: [String: [LocalModelInfo]] = [:]
@@ -88,6 +111,8 @@ struct ModelSelectorView: View, SuperLog {
                 switch selectedTab {
                 case .current:
                     currentProviderList
+                case .frequent:
+                    frequentModelsList
                 case .local:
                     providerList(providers: localProviders, emptyMessage: String(localized: "No Local Providers", table: "AgentInput"))
                 case .remote:
@@ -100,6 +125,7 @@ struct ModelSelectorView: View, SuperLog {
         .background(AppUI.Material.glass)
         .task {
             loadLatencyStats()
+            loadFrequentModels()
         }
         .task(id: selectedTab) {
             if selectedTab == .current {
@@ -140,6 +166,94 @@ struct ModelSelectorView: View, SuperLog {
         } else {
             ContentUnavailableView {
                 Label(String(localized: "No Provider Selected", table: "AgentInput"), systemImage: "tray")
+            }
+        }
+    }
+
+    // MARK: - Frequent Models List
+
+    /// 常用模型列表（跨供应商，按使用频率排序）
+    @ViewBuilder
+    private var frequentModelsList: some View {
+        if frequentModels.isEmpty {
+            ContentUnavailableView {
+                Label(String(localized: "No Frequent Models", table: "AgentInput"), systemImage: "clock.arrow.circlepath")
+            } description: {
+                Text(String(localized: "No Frequent Models Description", table: "AgentInput"))
+            }
+        } else {
+            List {
+                ForEach(frequentModels) { entry in
+                    frequentModelRow(entry: entry)
+                }
+            }
+        }
+    }
+
+    /// 常用模型的单行视图，显示模型名、供应商标签和性能信息
+    @ViewBuilder
+    private func frequentModelRow(entry: FrequentModelEntry) -> some View {
+        Button(action: {
+            selectModel(providerId: entry.providerId, model: entry.modelName)
+        }) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Text(entry.modelName)
+                            .font(AppUI.Typography.body)
+                            .lineLimit(1)
+
+                        // 供应商标签
+                        Text(entry.providerDisplayName)
+                            .font(.caption2)
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1)
+                            .background(
+                                RoundedRectangle(cornerRadius: 3)
+                                    .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
+                            )
+
+                        Spacer()
+
+                        // 使用次数
+                        Text("\(entry.useCount)")
+                            .font(.caption2)
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+
+                        if isSelected(providerId: entry.providerId, model: entry.modelName) {
+                            Image(systemName: "checkmark")
+                                .foregroundColor(.accentColor)
+                        }
+                    }
+                    if let stat = findDetailedStat(providerId: entry.providerId, modelName: entry.modelName), stat.avgTTFT > 0 {
+                        ModelLatencyProgressBar(
+                            ttft: stat.avgTTFT,
+                            totalLatency: stat.avgLatency,
+                            sampleCount: stat.sampleCount,
+                            tps: stat.avgTPS
+                        )
+                    }
+                }
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(isSelected(providerId: entry.providerId, model: entry.modelName) ? Color.accentColor.opacity(0.15) : Color.clear)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(isSelected(providerId: entry.providerId, model: entry.modelName) ? Color.accentColor.opacity(0.3) : Color.clear, lineWidth: 1)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            if hovering && !isSelected(providerId: entry.providerId, model: entry.modelName) {
+                NSCursor.pointingHand.push()
+            } else {
+                NSCursor.pop()
             }
         }
     }
@@ -307,6 +421,51 @@ extension ModelSelectorView {
         detailedStats = chatHistoryVM.getModelDetailedStats()
         if Self.verbose {
             AgentInputPlugin.logger.info("\(Self.t)📊 加载到 \(detailedStats.count) 个模型的性能统计")
+        }
+    }
+
+    /// 加载常用模型列表
+    /// 从聊天历史中统计每个 provider+model 的使用次数，按次数降序排列，最多显示 10 个
+    private func loadFrequentModels() {
+        let stats = chatHistoryVM.getModelLatencyStats()
+        let providers = llmVM.allProviders
+        let providerMap = Dictionary(uniqueKeysWithValues: providers.map { ($0.id, $0) })
+
+        // 按 (providerId, modelName) 聚合使用次数
+        var usageDict: [String: (providerId: String, modelName: String, count: Int)] = [:]
+        for stat in stats {
+            let key = "\(stat.providerId)|\(stat.modelName)"
+            if var existing = usageDict[key] {
+                existing.count += stat.sampleCount
+                usageDict[key] = existing
+            } else {
+                usageDict[key] = (providerId: stat.providerId, modelName: stat.modelName, count: stat.sampleCount)
+            }
+        }
+
+        // 只保留当前已注册供应商中仍然可用的模型
+        let entries = usageDict.values
+            .filter { entry in
+                guard let provider = providerMap[entry.providerId] else { return false }
+                return provider.availableModels.contains(entry.modelName)
+            }
+            .map { entry -> FrequentModelEntry in
+                let provider = providerMap[entry.providerId]
+                return FrequentModelEntry(
+                    id: "\(entry.providerId)|\(entry.modelName)",
+                    providerId: entry.providerId,
+                    providerDisplayName: provider?.displayName ?? entry.providerId,
+                    modelName: entry.modelName,
+                    useCount: entry.count,
+                    lastUsedAt: Date()  // 简化：不追踪精确的最后使用时间
+                )
+            }
+            .sorted { $0.useCount > $1.useCount }
+
+        frequentModels = Array(entries.prefix(10))
+
+        if Self.verbose {
+            AgentInputPlugin.logger.info("\(Self.t)📊 加载到 \(frequentModels.count) 个常用模型")
         }
     }
 
