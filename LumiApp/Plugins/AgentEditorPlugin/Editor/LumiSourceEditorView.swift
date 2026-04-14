@@ -18,6 +18,9 @@ struct LumiSourceEditorView: View {
     @State private var cursorCoordinator: LumiCursorCoordinator?
     @State private var contextMenuCoordinator: LumiContextMenuCoordinator?
     
+    /// 跳转到定义代理（Cmd+Click）
+    @StateObject private var jumpDelegate = LumiJumpToDefinitionDelegate()
+    
     /// tree-sitter 客户端
     @State private var treeSitterClient = TreeSitterClient()
     
@@ -31,7 +34,12 @@ struct LumiSourceEditorView: View {
     
     var body: some View {
         editorContent
-            .onAppear(perform: initializeCoordinators)
+            .onAppear {
+                initializeCoordinators()
+                // 初始化跳转定义代理
+                jumpDelegate.textStorage = state.content
+                jumpDelegate.treeSitterClient = treeSitterClient
+            }
             .onChange(of: state.fontSize) { _, _ in updateConfigCache() }
             .onChange(of: state.wrapLines) { _, _ in updateConfigCache() }
             .onChange(of: state.showGutter) { _, _ in updateConfigCache() }
@@ -41,6 +49,10 @@ struct LumiSourceEditorView: View {
             .onChange(of: state.useSpaces) { _, _ in updateConfigCache() }
             .onChange(of: state.themePreset) { _, _ in updateConfigCache() }
             .onChange(of: state.currentTheme) { _, _ in updateConfigCache() }
+            .onChange(of: state.content) { _, newContent in
+                jumpDelegate.textStorage = newContent
+                jumpDelegate.treeSitterClient = treeSitterClient
+            }
     }
 
     /// 编辑器主体内容（拆分为独立视图以减轻编译器类型推断负担）
@@ -57,7 +69,8 @@ struct LumiSourceEditorView: View {
                 configuration: config,
                 state: $state.editorState,
                 highlightProviders: [treeSitterClient],
-                coordinators: [textCoordinator, cursorCoordinator, contextMenuCoordinator]
+                coordinators: [textCoordinator, cursorCoordinator, contextMenuCoordinator],
+                jumpToDefinitionDelegate: jumpDelegate
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
