@@ -251,11 +251,13 @@ struct ModelSelectorView: View, SuperLog {
                 ContentUnavailableView {
                     Label(String(localized: "No Matching Models", table: "AgentInput"), systemImage: "magnifyingglass")
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         } else {
             ContentUnavailableView {
                 Label(String(localized: "No Provider Selected", table: "AgentInput"), systemImage: "tray")
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
@@ -271,6 +273,7 @@ struct ModelSelectorView: View, SuperLog {
             } description: {
                 Text(String(localized: "No Frequent Models Description", table: "AgentInput"))
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             List {
                 ForEach(filteredEntries) { entry in
@@ -350,6 +353,7 @@ struct ModelSelectorView: View, SuperLog {
             ContentUnavailableView {
                 Label(emptyMessage, systemImage: "tray")
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             List {
                 ForEach(providers) { provider in
