@@ -28,6 +28,10 @@ final class LumiEditorCoordinator: TextViewCoordinator {
         }
     }
     
+    nonisolated func textViewDidChangeSelection(controller: TextViewController) {
+        // 预留：可用于 LSP hover 请求（鼠标悬停时触发）
+    }
+    
     nonisolated func prepareCoordinator(controller: TextViewController) {}
     
     nonisolated func destroy() {

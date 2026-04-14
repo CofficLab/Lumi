@@ -32,6 +32,9 @@ final class LumiEditorState: ObservableObject {
     /// 上次持久化的内容哈希（用于检测变更）
     private var persistedContentHash: Int?
     
+    /// LSP 协调器（用于语言服务器集成）
+    let lspCoordinator = LumiLSPCoordinator()
+    
     /// 当前文件是否可编辑
     @Published var isEditable: Bool = true
     
@@ -316,6 +319,18 @@ final class LumiEditorState: ObservableObject {
                     
                     // 启动文件变化监听器（检测外部编辑器的修改）
                     self.setupFileWatcher(for: loadingURL)
+                    
+                    // 初始化 LSP 集成
+                    let languageId = self.detectedLanguage?.id.rawValue ?? self.languageIdForExtension(self.fileExtension)
+                    if let languageId {
+                        Task {
+                            await self.lspCoordinator.openFile(
+                                uri: loadingURL.absoluteString,
+                                languageId: languageId,
+                                content: content
+                            )
+                        }
+                    }
                 }
             } catch {
                 await MainActor.run { [weak self] in
@@ -344,6 +359,9 @@ final class LumiEditorState: ObservableObject {
         
         // 清理文件监听器
         cleanupFileWatcher()
+        
+        // 关闭 LSP 文档
+        lspCoordinator.closeFile()
     }
     
     // MARK: - Content Change Detection
@@ -367,6 +385,11 @@ final class LumiEditorState: ObservableObject {
             hasUnsavedChanges = true
             saveState = .editing
             scheduleAutoSave(content: content)
+            
+            // 通知 LSP 文档变更（带防抖）
+            if let uri = currentFileURL?.absoluteString {
+                lspCoordinator.contentDidChange(content)
+            }
         } else {
             hasUnsavedChanges = false
             saveState = .idle
@@ -562,6 +585,11 @@ final class LumiEditorState: ObservableObject {
         hasUnsavedChanges = false
         saveState = .idle
         totalLines = newContent.filter { $0 == "\n" }.count + 1
+        
+        // 通知 LSP 文档内容已替换
+        if let uri = currentFileURL?.absoluteString {
+            lspCoordinator.contentDidChange(newContent)
+        }
     }
     
     /// 获取文件的修改日期
@@ -602,6 +630,43 @@ final class LumiEditorState: ObservableObject {
         
         let ratio = Double(controlByteCount) / Double(sample.count)
         return ratio < 0.05
+    }
+    
+    // MARK: - LSP Helpers
+    
+    /// 根据文件扩展名获取 LSP 语言标识
+    private func languageIdForExtension(_ ext: String) -> String? {
+        let mapping: [String: String] = [
+            "swift": "swift",
+            "py": "python",
+            "js": "javascript",
+            "ts": "typescript",
+            "jsx": "javascript",
+            "tsx": "typescript",
+            "rs": "rust",
+            "go": "go",
+            "c": "c",
+            "cpp": "cpp",
+            "h": "c",
+            "hpp": "cpp",
+            "m": "objective-c",
+            "mm": "objective-cpp",
+            "rb": "ruby",
+            "java": "java",
+            "kt": "kotlin",
+            "php": "php",
+            "sh": "bash",
+            "json": "json",
+            "yaml": "yaml",
+            "yml": "yaml",
+            "xml": "xml",
+            "html": "html",
+            "css": "css",
+            "scss": "scss",
+            "md": "markdown",
+            "sql": "sql",
+        ]
+        return mapping[ext.lowercased()]
     }
 }
 

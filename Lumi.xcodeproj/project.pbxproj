@@ -22,6 +22,8 @@
 		0B4548682F89F3B500C6B7C8 /* CodeEditSourceEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 0B4548672F89F3B500C6B7C8 /* CodeEditSourceEditor */; };
 		0B45486B2F89F3C200C6B7C8 /* CodeEditTextView in Frameworks */ = {isa = PBXBuildFile; productRef = 0B45486A2F89F3C200C6B7C8 /* CodeEditTextView */; };
 		0B45486E2F89F49C00C6B7C8 /* CodeEditLanguages in Frameworks */ = {isa = PBXBuildFile; productRef = 0B45486D2F89F49C00C6B7C8 /* CodeEditLanguages */; };
+		0B6DF8562F8E77E100FA0CAC /* LanguageServerProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = 0B6DF8552F8E77E100FA0CAC /* LanguageServerProtocol */; };
+		0B6DF8592F8E780800FA0CAC /* LanguageClient in Frameworks */ = {isa = PBXBuildFile; productRef = 0B6DF8582F8E780800FA0CAC /* LanguageClient */; };
 		0B8027C42F6C4E7F007FD39D /* MagicKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B8027C32F6C4E7F007FD39D /* MagicKit */; };
 		0BBB11E02F85467D00F53902 /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 0BBB11DF2F85467D00F53902 /* SwiftTerm */; };
 		0BC2F1DB2F8A931C00B45F10 /* MagicDiffView in Frameworks */ = {isa = PBXBuildFile; productRef = 0BC2F1DA2F8A931C00B45F10 /* MagicDiffView */; };
@@ -214,10 +216,12 @@
 			files = (
 				0B45486B2F89F3C200C6B7C8 /* CodeEditTextView in Frameworks */,
 				0B45486E2F89F49C00C6B7C8 /* CodeEditLanguages in Frameworks */,
+				0B6DF8592F8E780800FA0CAC /* LanguageClient in Frameworks */,
 				0BBB11E02F85467D00F53902 /* SwiftTerm in Frameworks */,
 				0B1A4F892F662D8500F15618 /* MLXOptimizers in Frameworks */,
 				0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */,
 				0BC2F1DE2F8A94CE00B45F10 /* LibGit2Swift in Frameworks */,
+				0B6DF8562F8E77E100FA0CAC /* LanguageServerProtocol in Frameworks */,
 				0B4548682F89F3B500C6B7C8 /* CodeEditSourceEditor in Frameworks */,
 				0B1A4F812F662D8500F15618 /* MLXFFT in Frameworks */,
 				F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */,
@@ -367,6 +371,8 @@
 				0B45486D2F89F49C00C6B7C8 /* CodeEditLanguages */,
 				0BC2F1DA2F8A931C00B45F10 /* MagicDiffView */,
 				0BC2F1DD2F8A94CE00B45F10 /* LibGit2Swift */,
+				0B6DF8552F8E77E100FA0CAC /* LanguageServerProtocol */,
+				0B6DF8582F8E780800FA0CAC /* LanguageClient */,
 			);
 			productName = "SwiftUI-Template";
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -446,6 +452,8 @@
 				0B45486C2F89F49C00C6B7C8 /* XCRemoteSwiftPackageReference "CodeEditLanguages" */,
 				0BC2F1D92F8A931C00B45F10 /* XCRemoteSwiftPackageReference "MagicDiffView" */,
 				0BC2F1DC2F8A94CE00B45F10 /* XCRemoteSwiftPackageReference "Libgit2swift" */,
+				0B6DF8542F8E77E100FA0CAC /* XCRemoteSwiftPackageReference "LanguageServerProtocol" */,
+				0B6DF8572F8E780800FA0CAC /* XCRemoteSwiftPackageReference "LanguageClient" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -1063,6 +1071,22 @@
 				minimumVersion = 0.1.20;
 			};
 		};
+		0B6DF8542F8E77E100FA0CAC /* XCRemoteSwiftPackageReference "LanguageServerProtocol" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ChimeHQ/LanguageServerProtocol";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.14.0;
+			};
+		};
+		0B6DF8572F8E780800FA0CAC /* XCRemoteSwiftPackageReference "LanguageClient" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ChimeHQ/LanguageClient";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.8.2;
+			};
+		};
 		0BBB11DE2F85467D00F53902 /* XCRemoteSwiftPackageReference "SwiftTerm" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/migueldeicaza/SwiftTerm";
@@ -1214,6 +1238,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0B45486C2F89F49C00C6B7C8 /* XCRemoteSwiftPackageReference "CodeEditLanguages" */;
 			productName = CodeEditLanguages;
+		};
+		0B6DF8552F8E77E100FA0CAC /* LanguageServerProtocol */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B6DF8542F8E77E100FA0CAC /* XCRemoteSwiftPackageReference "LanguageServerProtocol" */;
+			productName = LanguageServerProtocol;
+		};
+		0B6DF8582F8E780800FA0CAC /* LanguageClient */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B6DF8572F8E780800FA0CAC /* XCRemoteSwiftPackageReference "LanguageClient" */;
+			productName = LanguageClient;
 		};
 		0B8027C32F6C4E7F007FD39D /* MagicKit */ = {
 			isa = XCSwiftPackageProductDependency;
