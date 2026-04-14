@@ -61,14 +61,33 @@ struct ConversationTimelineDetailView: View, SuperLog {
     private var headerView: some View {
         ConversationTimelineHeader(
             itemCount: timelineItems.count,
-            totalTokens: totalTokens,
+            currentContextTokens: currentContextTokens,
             onRefresh: loadTimelineItems
         )
     }
 
-    /// 对话总 token 数
-    private var totalTokens: Int {
-        timelineItems.reduce(0) { $0 + ($1.inputTokens ?? 0) + ($1.outputTokens ?? 0) }
+    /// 当前上下文窗口使用量（用于判断是否接近模型上限）
+    private var currentContextTokens: Int {
+        // 取最后一条 assistant 消息的 inputTokens 作为当前上下文基础
+        let baseContext = timelineItems.last(where: { $0.role == .assistant })?.inputTokens ?? 0
+        
+        // 找出最后一条 assistant 之后的用户消息索引
+        let lastAssistantIndex = timelineItems.firstIndex { $0.role == .assistant } ?? -1
+        
+        // 计算新增用户消息的 tokens
+        let newTokens: Int
+        if lastAssistantIndex >= 0 && lastAssistantIndex < timelineItems.count - 1 {
+            let newMessages = timelineItems[(lastAssistantIndex + 1)...]
+                .filter { $0.role == .user }
+            // 用户消息通常没有 inputTokens，按内容长度估算（字符数/4）
+            newTokens = newMessages.reduce(0) {
+                $0 + $1.content.count / 4
+            }
+        } else {
+            newTokens = 0
+        }
+        
+        return baseContext + newTokens
     }
 
     /// 消息列表视图

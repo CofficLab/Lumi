@@ -13,7 +13,7 @@ func formatToken(_ value: Int) -> String {
 /// 对话时间线标题栏
 struct ConversationTimelineHeader: View {
     let itemCount: Int
-    let totalTokens: Int
+    let currentContextTokens: Int
     let onRefresh: () -> Void
 
     var body: some View {
@@ -28,12 +28,12 @@ struct ConversationTimelineHeader: View {
                         .font(.system(size: 11))
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-                    // 总 Token 数
-                    if totalTokens > 0 {
+                    // 当前上下文 Token 数
+                    if currentContextTokens > 0 {
                         HStack(spacing: 4) {
                             Image(systemName: "chart.bar.xaxis")
                                 .font(.system(size: 9))
-                            Text("总计 \(formatToken(totalTokens)) tokens")
+                            Text("上下文 \(formatToken(currentContextTokens))")
                                 .font(.system(size: 11))
                         }
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
