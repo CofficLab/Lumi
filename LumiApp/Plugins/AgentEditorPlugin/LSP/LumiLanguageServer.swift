@@ -18,6 +18,10 @@ final class LumiLanguageServer: @unchecked Sendable {
     private(set) var pid: pid_t
     private(set) var rootPath: URL
     private(set) var openDocuments: [String: Int] = [:]
+    private(set) var documentContents: [String: String] = [:]
+    private(set) var semanticTokenMap: LumiSemanticTokenMap?
+    private var eventTask: Task<Void, Never>?
+    var onPublishDiagnostics: ((PublishDiagnosticsParams) -> Void)?
     
     private init(
         languageId: String,
@@ -33,6 +37,7 @@ final class LumiLanguageServer: @unchecked Sendable {
         self.pid = pid
         self.capabilities = capabilities
         self.rootPath = rootPath
+        self.semanticTokenMap = LumiSemanticTokenMap(semanticCapability: capabilities.semanticTokensProvider)
     }
     
     static func create(
@@ -66,7 +71,7 @@ final class LumiLanguageServer: @unchecked Sendable {
         
         Self.logger.info("Server initialized, PID: \(process.processIdentifier)")
         
-        return LumiLanguageServer(
+        let languageServer = LumiLanguageServer(
             languageId: languageId,
             config: config,
             server: initServer,
@@ -74,6 +79,8 @@ final class LumiLanguageServer: @unchecked Sendable {
             capabilities: initResult.capabilities,
             rootPath: URL(filePath: workspacePath)
         )
+        languageServer.startListeningToEvents()
+        return languageServer
     }
     
     // MARK: - Init Params (简化版，参考 CodeEdit 的核心能力)
@@ -172,6 +179,7 @@ final class LumiLanguageServer: @unchecked Sendable {
     func openDocument(uri: String, languageId: String, text: String) async throws {
         guard !openDocuments.keys.contains(uri) else { return }
         openDocuments[uri] = 0
+        documentContents[uri] = text
         
         let doc = TextDocumentItem(uri: uri, languageId: languageId, version: 0, text: text)
         try await server.textDocumentDidOpen(DidOpenTextDocumentParams(textDocument: doc))
@@ -181,6 +189,7 @@ final class LumiLanguageServer: @unchecked Sendable {
     func closeDocument(uri: String) async throws {
         guard openDocuments.keys.contains(uri) else { return }
         openDocuments.removeValue(forKey: uri)
+        documentContents.removeValue(forKey: uri)
         
         try await server.textDocumentDidClose(DidCloseTextDocumentParams(textDocument: TextDocumentIdentifier(uri: uri)))
         Self.logger.debug("Closed: \(uri)")
@@ -190,6 +199,7 @@ final class LumiLanguageServer: @unchecked Sendable {
         guard let version = openDocuments[uri] else { return }
         let newVersion = version + 1
         openDocuments[uri] = newVersion
+        documentContents[uri] = text
         
         let event = TextDocumentContentChangeEvent(range: nil, rangeLength: nil, text: text)
         let params = DidChangeTextDocumentParams(
@@ -197,6 +207,57 @@ final class LumiLanguageServer: @unchecked Sendable {
             contentChanges: [event]
         )
         try await server.textDocumentDidChange(params)
+    }
+    
+    struct DocumentChange: Sendable {
+        let range: LSPRange
+        let text: String
+    }
+    
+    func documentDidChange(uri: String, changes: [DocumentChange], fullText: String?) async throws {
+        guard !changes.isEmpty else { return }
+        guard let version = openDocuments[uri] else { return }
+        
+        let syncKind = resolveDocumentSyncKind()
+        let newVersion = version + 1
+        openDocuments[uri] = newVersion
+        
+        switch syncKind {
+        case .incremental:
+            let events = changes.map {
+                TextDocumentContentChangeEvent(range: $0.range, rangeLength: nil, text: $0.text)
+            }
+            try await server.textDocumentDidChange(
+                DidChangeTextDocumentParams(
+                    textDocument: VersionedTextDocumentIdentifier(uri: uri, version: newVersion),
+                    contentChanges: events
+                )
+            )
+            if let content = applyChanges(changes, to: documentContents[uri]) {
+                documentContents[uri] = content
+            } else if let fullText {
+                documentContents[uri] = fullText
+            }
+        case .full:
+            let textToSend: String
+            if let fullText {
+                textToSend = fullText
+            } else if let existing = documentContents[uri], let updated = applyChanges(changes, to: existing) {
+                textToSend = updated
+            } else {
+                return
+            }
+            documentContents[uri] = textToSend
+            let event = TextDocumentContentChangeEvent(range: nil, rangeLength: nil, text: textToSend)
+            try await server.textDocumentDidChange(
+                DidChangeTextDocumentParams(
+                    textDocument: VersionedTextDocumentIdentifier(uri: uri, version: newVersion),
+                    contentChanges: [event]
+                )
+            )
+        case .none:
+            return
+        }
     }
     
     // MARK: - LSP Capabilities
@@ -258,11 +319,113 @@ final class LumiLanguageServer: @unchecked Sendable {
         return try await server.formatting(params)
     }
     
+    func semanticTokens(uri: String) async throws -> SemanticTokens? {
+        let params = SemanticTokensParams(textDocument: TextDocumentIdentifier(uri: uri))
+        return try await server.semanticTokensFull(params)
+    }
+    
+    func semanticTokensDelta(uri: String, previousResultId: String) async throws -> SemanticTokensDeltaResponse {
+        let params = SemanticTokensDeltaParams(
+            textDocument: TextDocumentIdentifier(uri: uri),
+            previousResultId: previousResultId
+        )
+        return try await server.semanticTokensFullDelta(params)
+    }
+    
     // MARK: - Shutdown
     
     func shutdown() async throws {
         Self.logger.info("Shutting down server for \(self.languageId)")
+        eventTask?.cancel()
+        eventTask = nil
         try await server.shutdownAndExit()
         Self.logger.info("Server shut down")
+    }
+    
+    deinit {
+        eventTask?.cancel()
+    }
+    
+    // MARK: - Event Listening
+    
+    private func startListeningToEvents() {
+        eventTask?.cancel()
+        eventTask = Task.detached { [weak self] in
+            guard let self else { return }
+            for await event in self.server.eventSequence {
+                if Task.isCancelled { return }
+                switch event {
+                case let .notification(notification):
+                    switch notification {
+                    case let .textDocumentPublishDiagnostics(params):
+                        self.onPublishDiagnostics?(params)
+                    default:
+                        continue
+                    }
+                default:
+                    continue
+                }
+            }
+        }
+    }
+    
+    // MARK: - Document Sync Helpers
+    
+    private func resolveDocumentSyncKind() -> TextDocumentSyncKind {
+        switch capabilities.textDocumentSync {
+        case .optionA(let options):
+            return options.change ?? .none
+        case .optionB(let kind):
+            return kind
+        default:
+            return .none
+        }
+    }
+
+    var completionTriggerCharacters: Set<String> {
+        Set(capabilities.completionProvider?.triggerCharacters ?? [])
+    }
+    
+    private func applyChanges(_ changes: [DocumentChange], to content: String?) -> String? {
+        guard let content else { return nil }
+        var result = content
+        for change in changes {
+            guard let nsRange = nsRange(from: change.range, in: result) else { return nil }
+            if let swiftRange = Range(nsRange, in: result) {
+                result.replaceSubrange(swiftRange, with: change.text)
+            } else {
+                return nil
+            }
+        }
+        return result
+    }
+    
+    private func nsRange(from lspRange: LSPRange, in content: String) -> NSRange? {
+        let startOffset = utf16Offset(for: lspRange.start, in: content)
+        let endOffset = utf16Offset(for: lspRange.end, in: content)
+        guard let startOffset, let endOffset, endOffset >= startOffset else { return nil }
+        return NSRange(location: startOffset, length: endOffset - startOffset)
+    }
+    
+    private func utf16Offset(for position: Position, in content: String) -> Int? {
+        var line = 0
+        var utf16Offset = 0
+        var lineStartOffset = 0
+        
+        for scalar in content.unicodeScalars {
+            if line == position.line {
+                break
+            }
+            utf16Offset += scalar.utf16.count
+            if scalar == "\n" {
+                line += 1
+                lineStartOffset = utf16Offset
+            }
+        }
+        
+        guard line == position.line else { return nil }
+        
+        let targetOffset = lineStartOffset + position.character
+        return min(targetOffset, content.utf16.count)
     }
 }

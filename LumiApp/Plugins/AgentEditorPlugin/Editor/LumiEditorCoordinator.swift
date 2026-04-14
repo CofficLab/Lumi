@@ -3,13 +3,15 @@ import AppKit
 import CodeEditSourceEditor
 import CodeEditTextView
 import SwiftUI
+import LanguageServerProtocol
 
 /// 文本变更协调器
 /// 监听 CodeEditSourceEditor 的文本变更，通知 LumiEditorState 触发自动保存
-final class LumiEditorCoordinator: TextViewCoordinator {
+final class LumiEditorCoordinator: TextViewCoordinator, TextViewDelegate {
     
     /// 弱引用状态管理器
     private weak var state: LumiEditorState?
+    private var editedRange: LSPRange?
     
     init(state: LumiEditorState) {
         self.state = state
@@ -36,6 +38,59 @@ final class LumiEditorCoordinator: TextViewCoordinator {
     
     nonisolated func destroy() {
         state = nil
+    }
+    
+    func textView(_ textView: TextView, willReplaceContentsIn range: NSRange, with string: String) {
+        editedRange = Self.lspRange(from: range, in: textView.string)
+    }
+    
+    func textView(_ textView: TextView, didReplaceContentsIn range: NSRange, with string: String) {
+        guard let lspRange = editedRange else { return }
+        editedRange = nil
+        let state = self.state
+        DispatchQueue.main.async {
+            state?.notifyLSPIncrementalChange(range: lspRange, text: string)
+        }
+    }
+    
+    private static func lspRange(from nsRange: NSRange, in text: String) -> LSPRange? {
+        let utf16Count = text.utf16.count
+        let startOffset = nsRange.location
+        let endOffset = nsRange.location + nsRange.length
+        
+        guard startOffset >= 0, endOffset >= startOffset, endOffset <= utf16Count else {
+            return nil
+        }
+        
+        guard let start = lspPosition(utf16Offset: startOffset, in: text),
+              let end = lspPosition(utf16Offset: endOffset, in: text) else {
+            return nil
+        }
+        
+        return LSPRange(start: start, end: end)
+    }
+    
+    private static func lspPosition(utf16Offset: Int, in text: String) -> Position? {
+        guard utf16Offset >= 0, utf16Offset <= text.utf16.count else { return nil }
+        
+        var line = 0
+        var character = 0
+        var consumed = 0
+        
+        for unit in text.utf16 {
+            if consumed >= utf16Offset {
+                break
+            }
+            if unit == 0x0A {
+                line += 1
+                character = 0
+            } else {
+                character += 1
+            }
+            consumed += 1
+        }
+        
+        return Position(line: line, character: character)
     }
 }
 

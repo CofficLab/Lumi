@@ -17,9 +17,11 @@ struct LumiSourceEditorView: View {
     @State private var textCoordinator: LumiEditorCoordinator?
     @State private var cursorCoordinator: LumiCursorCoordinator?
     @State private var contextMenuCoordinator: LumiContextMenuCoordinator?
+    @State private var semanticTokenProvider: LumiSemanticTokenHighlightProvider?
     
     /// 跳转到定义代理（Cmd+Click）
     @StateObject private var jumpDelegate = LumiJumpToDefinitionDelegate()
+    @State private var completionDelegate = LumiLSPCompletionDelegate()
     
     /// tree-sitter 客户端
     @State private var treeSitterClient = TreeSitterClient()
@@ -36,9 +38,7 @@ struct LumiSourceEditorView: View {
         editorContent
             .onAppear {
                 initializeCoordinators()
-                // 初始化跳转定义代理
-                jumpDelegate.textStorage = state.content
-                jumpDelegate.treeSitterClient = treeSitterClient
+                wireDelegates()
             }
             .onChange(of: state.fontSize) { _, _ in updateConfigCache() }
             .onChange(of: state.wrapLines) { _, _ in updateConfigCache() }
@@ -51,7 +51,9 @@ struct LumiSourceEditorView: View {
             .onChange(of: state.currentTheme) { _, _ in updateConfigCache() }
             .onChange(of: state.content) { _, newContent in
                 jumpDelegate.textStorage = newContent
-                jumpDelegate.treeSitterClient = treeSitterClient
+            }
+            .onChange(of: state.currentFileURL) { _, _ in
+                updateConfigCache()
             }
     }
 
@@ -59,17 +61,18 @@ struct LumiSourceEditorView: View {
     @ViewBuilder
     private var editorContent: some View {
         if let content = state.content,
-           let textCoordinator,
-           let cursorCoordinator,
-           let contextMenuCoordinator {
+           textCoordinator != nil,
+           cursorCoordinator != nil,
+           contextMenuCoordinator != nil {
             let config = cachedConfig ?? buildConfiguration()
             SourceEditor(
                 content,
                 language: resolvedLanguage,
                 configuration: config,
                 state: $state.editorState,
-                highlightProviders: [treeSitterClient],
-                coordinators: [textCoordinator, cursorCoordinator, contextMenuCoordinator],
+                highlightProviders: activeHighlightProviders,
+                coordinators: activeCoordinators,
+                completionDelegate: completionDelegate,
                 jumpToDefinitionDelegate: jumpDelegate
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -90,9 +93,27 @@ struct LumiSourceEditorView: View {
         if contextMenuCoordinator == nil {
             contextMenuCoordinator = LumiContextMenuCoordinator(state: state)
         }
+        if semanticTokenProvider == nil {
+            semanticTokenProvider = LumiSemanticTokenHighlightProvider(uriProvider: { [weak state] in
+                state?.currentFileURL?.absoluteString
+            })
+        }
         if cachedConfig == nil {
             updateConfigCache()
         }
+    }
+
+    private func wireDelegates() {
+        jumpDelegate.textStorage = state.content
+        jumpDelegate.treeSitterClient = treeSitterClient
+        jumpDelegate.lspCoordinator = state.lspCoordinator
+        jumpDelegate.currentFileURLProvider = { [weak state] in
+            state?.currentFileURL
+        }
+        jumpDelegate.onOpenExternalDefinition = { [weak state] url, target in
+            state?.openDefinitionLocation(url: url, target: target)
+        }
+        completionDelegate.lspCoordinator = state.lspCoordinator
     }
     
     // MARK: - Configuration Management
@@ -106,6 +127,21 @@ struct LumiSourceEditorView: View {
     
     private var resolvedLanguage: CodeLanguage {
         state.detectedLanguage ?? CodeLanguage.allLanguages.first { $0.tsName == "swift" } ?? CodeLanguage.allLanguages[0]
+    }
+    
+    private var activeHighlightProviders: [any HighlightProviding] {
+        if let semanticTokenProvider {
+            return [semanticTokenProvider, treeSitterClient]
+        }
+        return [treeSitterClient]
+    }
+    
+    private var activeCoordinators: [TextViewCoordinator] {
+        var result: [TextViewCoordinator] = []
+        if let textCoordinator { result.append(textCoordinator) }
+        if let cursorCoordinator { result.append(cursorCoordinator) }
+        if let contextMenuCoordinator { result.append(contextMenuCoordinator) }
+        return result
     }
     
     // MARK: - Configuration
@@ -142,7 +178,8 @@ struct LumiSourceEditorView: View {
             peripherals: .init(
                 showGutter: state.showGutter,
                 showMinimap: state.showMinimap,
-                showFoldingRibbon: state.showFoldingRibbon
+                showFoldingRibbon: state.showFoldingRibbon,
+                codeSuggestionTriggerCharacters: completionDelegate.completionTriggerCharacters()
             )
         )
     }

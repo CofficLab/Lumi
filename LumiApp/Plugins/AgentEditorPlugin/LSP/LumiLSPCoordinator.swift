@@ -1,6 +1,7 @@
 import SwiftUI
-import CodeEditSourceEditor
+@preconcurrency import CodeEditSourceEditor
 import CodeEditTextView
+import CodeEditLanguages
 import LanguageServerProtocol
 import Combine
 import os
@@ -22,6 +23,10 @@ class LumiLSPCoordinator: ObservableObject {
     
     // MARK: - Lifecycle
     
+    func setProjectRootPath(_ path: String?) {
+        lspService.setProjectRootPath(path)
+    }
+    
     /// 打开文件时调用
     func openFile(uri: String, languageId: String, content: String) async {
         self.fileURI = uri
@@ -41,18 +46,31 @@ class LumiLSPCoordinator: ObservableObject {
     }
     
     /// 文档内容变更
-    func contentDidChange(_ content: String) {
+    func updateDocumentSnapshot(_ content: String) {
+        guard let uri = fileURI else { return }
+        lspService.updateDocumentSnapshot(uri: uri, text: content)
+    }
+    
+    /// 文档内容增量变更
+    func contentDidChange(range: LSPRange, text: String) {
         guard let uri = fileURI else { return }
         version += 1
-        lspService.documentDidChange(uri: uri, text: content)
+        lspService.documentDidChange(uri: uri, range: range, text: text)
+    }
+    
+    /// 文档内容被整段替换（外部修改等）
+    func replaceDocument(_ content: String) {
+        guard let uri = fileURI else { return }
+        version += 1
+        lspService.replaceDocument(uri: uri, text: content)
     }
     
     // MARK: - LSP Features
     
     /// 请求代码补全
-    func requestCompletion(line: Int, character: Int) async {
-        guard let uri = fileURI else { return }
-        await lspService.requestCompletion(uri: uri, line: line, character: character)
+    func requestCompletion(line: Int, character: Int) async -> [CompletionItem] {
+        guard let uri = fileURI else { return [] }
+        return await lspService.requestCompletion(uri: uri, line: line, character: character)
     }
     
     /// 请求悬停提示
@@ -65,6 +83,10 @@ class LumiLSPCoordinator: ObservableObject {
     func requestDefinition(line: Int, character: Int) async -> Location? {
         guard let uri = fileURI else { return nil }
         return await lspService.requestDefinition(uri: uri, line: line, character: character)
+    }
+
+    func completionTriggerCharacters() -> Set<String> {
+        lspService.completionTriggerCharacters
     }
 }
 
@@ -230,5 +252,367 @@ struct LSPHoverTooltip: View {
                     .fill(colorScheme == .dark ? Color(nsColor: .controlBackgroundColor) : Color.white)
                     .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 2)
             )
+    }
+}
+
+// MARK: - Semantic Tokens
+
+struct LumiSemanticTokenMap: Sendable {
+    private let tokenTypeMap: [CaptureName?]
+    private let modifierMap: [CaptureModifier?]
+    
+    init(semanticCapability: TwoTypeOption<SemanticTokensOptions, SemanticTokensRegistrationOptions>?) {
+        guard let semanticCapability else {
+            tokenTypeMap = []
+            modifierMap = []
+            return
+        }
+        
+        let legend: SemanticTokensLegend
+        switch semanticCapability {
+        case .optionA(let options):
+            legend = options.legend
+        case .optionB(let options):
+            legend = options.legend
+        }
+        
+        tokenTypeMap = legend.tokenTypes.map { CaptureName.fromString($0) }
+        modifierMap = legend.tokenModifiers.map { CaptureModifier.fromString($0) }
+    }
+    
+    func decode(tokens: [SemanticToken], content: String) -> [HighlightRange] {
+        tokens.compactMap { token in
+            guard let range = Self.nsRange(
+                line: Int(token.line),
+                character: Int(token.char),
+                length: Int(token.length),
+                in: content
+            ) else {
+                return nil
+            }
+            
+            let typeIndex = Int(token.type)
+            let capture = tokenTypeMap.indices.contains(typeIndex) ? tokenTypeMap[typeIndex] : nil
+            let modifiers = decodeModifier(token.modifiers)
+            
+            return HighlightRange(range: range, capture: capture, modifiers: modifiers)
+        }
+    }
+    
+    private func decodeModifier(_ raw: UInt32) -> CaptureModifierSet {
+        var result: CaptureModifierSet = []
+        var raw = raw
+        while raw > 0 {
+            let idx = raw.trailingZeroBitCount
+            raw &= ~(1 << idx)
+            guard let modifier = modifierMap.indices.contains(idx) ? modifierMap[idx] : nil else { continue }
+            result.insert(modifier)
+        }
+        return result
+    }
+    
+    static func nsRange(line: Int, character: Int, length: Int, in content: String) -> NSRange? {
+        guard line >= 0, character >= 0, length >= 0 else { return nil }
+        guard let start = utf16Offset(line: line, character: character, in: content) else { return nil }
+        let end = start + length
+        guard end <= content.utf16.count else { return nil }
+        return NSRange(location: start, length: length)
+    }
+    
+    private static func utf16Offset(line: Int, character: Int, in content: String) -> Int? {
+        var currentLine = 0
+        var offset = 0
+        var lineStartOffset = 0
+        
+        for scalar in content.unicodeScalars {
+            if currentLine == line {
+                break
+            }
+            offset += scalar.utf16.count
+            if scalar == "\n" {
+                currentLine += 1
+                lineStartOffset = offset
+            }
+        }
+        
+        guard currentLine == line else { return nil }
+        return min(lineStartOffset + character, content.utf16.count)
+    }
+}
+
+private struct LumiSemanticTokenRange {
+    let line: UInt32
+    let char: UInt32
+    let length: UInt32
+}
+
+private final class LumiSemanticTokenStorage {
+    private struct CurrentState {
+        let resultId: String?
+        let tokenData: [UInt32]
+        let tokens: [SemanticToken]
+    }
+    
+    private var state: CurrentState?
+    
+    var lastResultId: String? { state?.resultId }
+    var hasReceivedData: Bool { state != nil }
+    var tokens: [SemanticToken] { state?.tokens ?? [] }
+    
+    func setData(_ data: borrowing SemanticTokens) {
+        state = CurrentState(resultId: data.resultId, tokenData: data.data, tokens: data.decode())
+    }
+    
+    func applyDelta(_ deltas: SemanticTokensDelta) -> [LumiSemanticTokenRange] {
+        guard var tokenData = state?.tokenData else { return [] }
+        var invalidatedSet: [LumiSemanticTokenRange] = []
+        
+        for edit in deltas.edits.sorted(by: { $0.start > $1.start }) {
+            invalidatedSet.append(
+                contentsOf: invalidatedRanges(start: edit.start, length: edit.deleteCount, data: tokenData[...])
+            )
+            
+            if edit.deleteCount > 0 {
+                tokenData.replaceSubrange(Int(edit.start)..<Int(edit.start + edit.deleteCount), with: edit.data ?? [])
+            } else {
+                tokenData.insert(contentsOf: edit.data ?? [], at: Int(edit.start))
+            }
+            
+            if let inserted = edit.data, !inserted.isEmpty {
+                invalidatedSet.append(
+                    contentsOf: invalidatedRanges(start: edit.start, length: UInt(inserted.count), data: tokenData[...])
+                )
+            }
+        }
+        
+        let decodedTokens = SemanticTokens(data: tokenData).decode()
+        state = CurrentState(resultId: deltas.resultId, tokenData: tokenData, tokens: decodedTokens)
+        return invalidatedSet
+    }
+    
+    private func invalidatedRanges(start: UInt, length: UInt, data: ArraySlice<UInt32>) -> [LumiSemanticTokenRange] {
+        guard length > 0, !data.isEmpty else { return [] }
+        
+        var ranges: [LumiSemanticTokenRange] = []
+        var idx = Int(start - (start % 5))
+        let end = Int(start + length)
+        
+        while idx + 2 < data.count && idx < end {
+            ranges.append(
+                LumiSemanticTokenRange(
+                    line: data[idx],
+                    char: data[idx + 1],
+                    length: data[idx + 2]
+                )
+            )
+            idx += 5
+        }
+        return ranges
+    }
+}
+
+@MainActor
+final class LumiSemanticTokenHighlightProvider: HighlightProviding {
+    private let lspService = LumiLSPService.shared
+    private let uriProvider: () -> String?
+    private var textView: TextView?
+    private var highlights: [HighlightRange] = []
+    private var storage = LumiSemanticTokenStorage()
+    private var isRefreshing = false
+    private var needsRefreshAgain = false
+    private var pendingEditCallback: ((Result<IndexSet, Error>) -> Void)?
+    private var pendingFallbackRange: NSRange?
+    private var viewportRefreshTask: Task<Void, Never>?
+    private var scrollBoundsObserver: NSObjectProtocol?
+    private var scrollFrameObserver: NSObjectProtocol?
+    
+    init(uriProvider: @escaping () -> String?) {
+        self.uriProvider = uriProvider
+    }
+    
+    func setUp(textView: TextView, codeLanguage: CodeLanguage) {
+        self.textView = textView
+        installViewportObservers(for: textView)
+        refreshSemanticTokens()
+    }
+    
+    func scheduleViewportRefresh() {
+        viewportRefreshTask?.cancel()
+        viewportRefreshTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 250_000_000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                self?.refreshSemanticTokens()
+            }
+        }
+    }
+    
+    func applyEdit(
+        textView: TextView,
+        range: NSRange,
+        delta: Int,
+        completion: @escaping @MainActor (Result<IndexSet, Error>) -> Void
+    ) {
+        if let previous = pendingEditCallback {
+            previous(.success(IndexSet()))
+        }
+        pendingEditCallback = completion
+        pendingFallbackRange = expandedInvalidationRange(
+            from: range,
+            delta: delta,
+            documentLength: textView.documentRange.length
+        )
+        refreshSemanticTokens()
+    }
+    
+    func queryHighlightsFor(
+        textView: TextView,
+        range: NSRange,
+        completion: @escaping @MainActor (Result<[HighlightRange], Error>) -> Void
+    ) {
+        let query = range
+        let result = highlights.compactMap { item -> HighlightRange? in
+            let intersection = NSIntersectionRange(item.range, query)
+            guard intersection.length > 0 else { return nil }
+            return HighlightRange(range: intersection, capture: item.capture, modifiers: item.modifiers)
+        }
+        completion(.success(result))
+    }
+    
+    private func refreshSemanticTokens() {
+        guard !isRefreshing else {
+            needsRefreshAgain = true
+            return
+        }
+        guard let uri = uriProvider(), let textView else { return }
+        isRefreshing = true
+        
+        Task { [weak self] in
+            guard let self else { return }
+            defer {
+                Task { @MainActor in
+                    self.isRefreshing = false
+                    if self.needsRefreshAgain {
+                        self.needsRefreshAgain = false
+                        self.refreshSemanticTokens()
+                    }
+                }
+            }
+            
+            guard let map = await MainActor.run(body: { self.lspService.currentSemanticTokenMap }) else {
+                return
+            }
+            
+            let invalidatedRanges: [NSRange]
+            
+            if let previousResultId = storage.lastResultId,
+               let deltaResponse = await lspService.requestSemanticTokensDelta(uri: uri, previousResultId: previousResultId) {
+                switch deltaResponse {
+                case .optionA(let full):
+                    storage.setData(full)
+                    invalidatedRanges = [textView.documentRange]
+                case .optionB(let delta):
+                    let changed = storage.applyDelta(delta)
+                    invalidatedRanges = changed.compactMap {
+                        LumiSemanticTokenMap.nsRange(
+                            line: Int($0.line),
+                            character: Int($0.char),
+                            length: Int($0.length),
+                            in: textView.string
+                        )
+                    }
+                case .none:
+                    if let full = await lspService.requestSemanticTokens(uri: uri) {
+                        storage.setData(full)
+                        invalidatedRanges = [textView.documentRange]
+                    } else {
+                        invalidatedRanges = []
+                    }
+                }
+            } else if let full = await lspService.requestSemanticTokens(uri: uri) {
+                storage.setData(full)
+                invalidatedRanges = [textView.documentRange]
+            } else {
+                return
+            }
+            
+            let decoded = map.decode(tokens: storage.tokens, content: textView.string)
+            await MainActor.run {
+                self.highlights = decoded
+                self.completePendingEdit(using: invalidatedRanges, documentRange: textView.documentRange)
+            }
+        }
+    }
+    
+    private func expandedInvalidationRange(from range: NSRange, delta: Int, documentLength: Int) -> NSRange {
+        let padding = 128
+        let start = max(0, range.location - padding)
+        let length = max(0, range.length + max(0, delta) + padding * 2)
+        let end = min(documentLength, start + length)
+        return NSRange(location: start, length: max(0, end - start))
+    }
+    
+    private func completePendingEdit(using ranges: [NSRange], documentRange: NSRange) {
+        guard let callback = pendingEditCallback else { return }
+        pendingEditCallback = nil
+        
+        if !ranges.isEmpty {
+            callback(.success(IndexSet(ranges: ranges)))
+            pendingFallbackRange = nil
+            return
+        }
+        
+        if let fallback = pendingFallbackRange, fallback.length > 0 {
+            callback(.success(IndexSet(integersIn: fallback)))
+            pendingFallbackRange = nil
+            return
+        }
+        
+        callback(.success(IndexSet(integersIn: documentRange)))
+    }
+    
+    private func installViewportObservers(for textView: TextView) {
+        scrollBoundsObserver.map(NotificationCenter.default.removeObserver)
+        scrollFrameObserver.map(NotificationCenter.default.removeObserver)
+        scrollBoundsObserver = nil
+        scrollFrameObserver = nil
+        
+        guard let scrollView = textView.enclosingScrollView else { return }
+        let clipView = scrollView.contentView
+        
+        scrollBoundsObserver = NotificationCenter.default.addObserver(
+            forName: NSView.boundsDidChangeNotification,
+            object: clipView,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.scheduleViewportRefresh()
+            }
+        }
+        
+        scrollFrameObserver = NotificationCenter.default.addObserver(
+            forName: NSView.frameDidChangeNotification,
+            object: clipView,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.scheduleViewportRefresh()
+            }
+        }
+    }
+    
+    private func removeViewportObservers() {
+        if let observer = scrollBoundsObserver {
+            NotificationCenter.default.removeObserver(observer)
+            scrollBoundsObserver = nil
+        }
+        if let observer = scrollFrameObserver {
+            NotificationCenter.default.removeObserver(observer)
+            scrollFrameObserver = nil
+        }
+    }
+    
+    deinit {
+        viewportRefreshTask?.cancel()
     }
 }

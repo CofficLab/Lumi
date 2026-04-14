@@ -4,6 +4,7 @@ import Combine
 import CodeEditSourceEditor
 import CodeEditTextView
 import CodeEditLanguages
+import LanguageServerProtocol
 
 /// 编辑器状态管理器
 /// 管理当前文件的内容（NSTextStorage）、光标位置、编辑器配置等
@@ -323,6 +324,8 @@ final class LumiEditorState: ObservableObject {
                     // 初始化 LSP 集成
                     let languageId = self.detectedLanguage?.id.rawValue ?? self.languageIdForExtension(self.fileExtension)
                     if let languageId {
+                        let rootPath = self.projectRootPath ?? loadingURL.deletingLastPathComponent().path
+                        self.lspCoordinator.setProjectRootPath(rootPath)
                         Task {
                             await self.lspCoordinator.openFile(
                                 uri: loadingURL.absoluteString,
@@ -337,6 +340,22 @@ final class LumiEditorState: ObservableObject {
                     self?.resetState()
                 }
             }
+        }
+    }
+
+    /// 从跳转定义入口打开文件并移动光标
+    func openDefinitionLocation(url: URL, target: CursorPosition) {
+        loadFile(from: url)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            for _ in 0..<40 {
+                if self.currentFileURL == url, self.content != nil {
+                    self.editorState.cursorPositions = [target]
+                    return
+                }
+                try? await Task.sleep(for: .milliseconds(50))
+            }
+            self.editorState.cursorPositions = [target]
         }
     }
     
@@ -385,15 +404,16 @@ final class LumiEditorState: ObservableObject {
             hasUnsavedChanges = true
             saveState = .editing
             scheduleAutoSave(content: content)
-            
-            // 通知 LSP 文档变更（带防抖）
-            if let uri = currentFileURL?.absoluteString {
-                lspCoordinator.contentDidChange(content)
-            }
+            lspCoordinator.updateDocumentSnapshot(content)
         } else {
             hasUnsavedChanges = false
             saveState = .idle
         }
+    }
+    
+    /// 通知 LSP 发生增量文本变更（由编辑器 coordinator 转发）
+    func notifyLSPIncrementalChange(range: LSPRange, text: String) {
+        lspCoordinator.contentDidChange(range: range, text: text)
     }
     
     // MARK: - Auto Save
@@ -587,9 +607,7 @@ final class LumiEditorState: ObservableObject {
         totalLines = newContent.filter { $0 == "\n" }.count + 1
         
         // 通知 LSP 文档内容已替换
-        if let uri = currentFileURL?.absoluteString {
-            lspCoordinator.contentDidChange(newContent)
-        }
+        lspCoordinator.replaceDocument(newContent)
     }
     
     /// 获取文件的修改日期

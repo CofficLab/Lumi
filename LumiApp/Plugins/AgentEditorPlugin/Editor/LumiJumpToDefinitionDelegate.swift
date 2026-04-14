@@ -6,6 +6,7 @@ import CodeEditSourceEditor
 import CodeEditTextView
 import CodeEditLanguages
 import SwiftTreeSitter
+import LanguageServerProtocol
 import os
 
 /// Lumi 的「跳转到定义」代理
@@ -21,6 +22,9 @@ final class LumiJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDele
     
     weak var treeSitterClient: TreeSitterClient?
     weak var textStorage: NSTextStorage?
+    weak var lspCoordinator: LumiLSPCoordinator?
+    var currentFileURLProvider: (() -> URL?)?
+    var onOpenExternalDefinition: ((URL, CursorPosition) -> Void)?
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.jump-to-definition")
     
     // MARK: - JumpToDefinitionDelegate
@@ -38,6 +42,16 @@ final class LumiJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDele
         }
         
         logger.debug("🔍 JumpToDefinition: '\(word)' at \(range.location)")
+
+        // 0. 优先：通过 LSP 查询定义（支持跨文件）
+        if let link = await findDefinitionViaLSP(
+            word: word,
+            cursorRange: range,
+            textStorage: textStorage
+        ) {
+            logger.debug("✅ LSP matched: '\(word)'")
+            return [link]
+        }
         
         // 1. 优先：通过 AST 查找定义（精确）
         if let definitionRange = await findDefinitionViaAST(
@@ -67,7 +81,63 @@ final class LumiJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDele
     
     /// 打开链接（本地跳转由引擎自动处理，这里仅记录日志）
     func openLink(link: JumpToDefinitionLink) {
-        logger.debug("📍 Opening link: \(link.label)")
+        logger.debug("📍 Opening link: \(link.label) -> \(link.url?.absoluteString ?? "local")")
+        guard let url = link.url else { return }
+        onOpenExternalDefinition?(url, link.targetRange)
+    }
+
+    // MARK: - LSP 查找
+
+    private func findDefinitionViaLSP(
+        word: String,
+        cursorRange: NSRange,
+        textStorage: NSTextStorage
+    ) async -> JumpToDefinitionLink? {
+        guard let coordinator = lspCoordinator else { return nil }
+        let content = textStorage.string
+
+        guard let lspPosition = Self.lspPosition(utf16Offset: cursorRange.location, in: content) else {
+            return nil
+        }
+
+        guard let location = await coordinator.requestDefinition(
+            line: lspPosition.line,
+            character: lspPosition.character
+        ) else {
+            return nil
+        }
+
+        let currentURI = currentFileURLProvider?()?.absoluteString
+        let isSameFile = currentURI == location.uri
+
+        if isSameFile,
+           let targetRange = Self.nsRange(from: location.range, in: content) {
+            return createLink(
+                for: word,
+                targetRange: CursorPosition(range: NSRange(location: targetRange.location, length: 0)),
+                textStorage: textStorage
+            )
+        }
+
+        guard let url = URL(string: location.uri) else { return nil }
+        let targetPosition = CursorPosition(
+            start: CursorPosition.Position(
+                line: Int(location.range.start.line) + 1,
+                column: Int(location.range.start.character) + 1
+            ),
+            end: nil
+        )
+        let preview = Self.previewLine(from: url, at: location.range.start) ?? word
+
+        return JumpToDefinitionLink(
+            url: url,
+            targetRange: targetPosition,
+            typeName: word,
+            sourcePreview: preview,
+            documentation: nil,
+            image: Image(systemName: "arrow.right.square.fill"),
+            imageColor: Color(NSColor.systemBlue)
+        )
     }
     
     // MARK: - AST 查找（核心逻辑）
@@ -273,6 +343,62 @@ final class LumiJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDele
             image: Image(systemName: "arrow.right.square.fill"),
             imageColor: Color(NSColor.systemBlue)
         )
+    }
+
+    private static func lspPosition(utf16Offset: Int, in text: String) -> Position? {
+        guard utf16Offset >= 0, utf16Offset <= text.utf16.count else { return nil }
+        var line = 0
+        var character = 0
+        var consumed = 0
+        for unit in text.utf16 {
+            if consumed >= utf16Offset {
+                break
+            }
+            if unit == 0x0A {
+                line += 1
+                character = 0
+            } else {
+                character += 1
+            }
+            consumed += 1
+        }
+        return Position(line: line, character: character)
+    }
+
+    private static func nsRange(from lspRange: LSPRange, in content: String) -> NSRange? {
+        guard let start = utf16Offset(for: lspRange.start, in: content),
+              let end = utf16Offset(for: lspRange.end, in: content),
+              end >= start else {
+            return nil
+        }
+        return NSRange(location: start, length: end - start)
+    }
+
+    private static func utf16Offset(for position: Position, in content: String) -> Int? {
+        var line = 0
+        var utf16Offset = 0
+        var lineStartOffset = 0
+        for scalar in content.unicodeScalars {
+            if line == position.line {
+                break
+            }
+            utf16Offset += scalar.utf16.count
+            if scalar == "\n" {
+                line += 1
+                lineStartOffset = utf16Offset
+            }
+        }
+        guard line == position.line else { return nil }
+        return min(lineStartOffset + position.character, content.utf16.count)
+    }
+
+    private static func previewLine(from fileURL: URL, at position: Position) -> String? {
+        guard fileURL.isFileURL,
+              let content = try? String(contentsOf: fileURL, encoding: .utf8) else { return nil }
+        let lines = content.split(separator: "\n", omittingEmptySubsequences: false)
+        let lineIndex = Int(position.line)
+        guard lines.indices.contains(lineIndex) else { return nil }
+        return String(lines[lineIndex]).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 

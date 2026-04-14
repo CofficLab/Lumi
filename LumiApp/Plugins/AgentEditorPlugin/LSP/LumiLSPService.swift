@@ -30,9 +30,9 @@ final class LumiLSPService: ObservableObject {
     private var projectRootPath: String?
     
     private var changeDebounceTimer: Timer?
-    private var pendingText: String?
+    private var pendingChanges: [LumiLanguageServer.DocumentChange] = []
+    private var latestDocumentSnapshot: String?
     
-    var onCompletion: (([CompletionItem]) -> Void)?
     var onHover: ((String?) -> Void)?
     
     init() {
@@ -72,6 +72,11 @@ final class LumiLSPService: ObservableObject {
                 config: config,
                 workspacePath: projectPath
             )
+            newServer.onPublishDiagnostics = { [weak self] params in
+                Task { @MainActor [weak self] in
+                    self?.handlePublishDiagnostics(params)
+                }
+            }
             
             server = newServer
             isInitializing = false
@@ -84,6 +89,10 @@ final class LumiLSPService: ObservableObject {
     }
     
     // MARK: - Document Lifecycle
+    
+    func setProjectRootPath(_ projectPath: String?) {
+        projectRootPath = projectPath
+    }
     
     func openDocument(uri: String, languageId: String, text: String) async {
         if server == nil || activeLanguageId != languageId {
@@ -99,6 +108,9 @@ final class LumiLSPService: ObservableObject {
         
         currentURI = uri
         currentVersion = 0
+        latestDocumentSnapshot = text
+        pendingChanges.removeAll()
+        currentDiagnostics = []
         
         do {
             try await server.openDocument(uri: uri, languageId: languageId, text: text)
@@ -115,6 +127,8 @@ final class LumiLSPService: ObservableObject {
                 if currentURI == uri {
                     currentURI = nil
                     currentDiagnostics = []
+                    latestDocumentSnapshot = nil
+                    pendingChanges.removeAll()
                 }
             } catch {
                 logger.error("Failed to close document: \(error)")
@@ -122,9 +136,15 @@ final class LumiLSPService: ObservableObject {
         }
     }
     
-    func documentDidChange(uri: String, text: String) {
+    func updateDocumentSnapshot(uri: String, text: String) {
+        guard uri == currentURI else { return }
+        latestDocumentSnapshot = text
+    }
+    
+    func documentDidChange(uri: String, range: LSPRange, text: String) {
+        guard uri == currentURI else { return }
         currentVersion += 1
-        pendingText = text
+        pendingChanges.append(.init(range: range, text: text))
         
         changeDebounceTimer?.invalidate()
         changeDebounceTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { [weak self] _ in
@@ -135,25 +155,43 @@ final class LumiLSPService: ObservableObject {
     }
     
     private func flushChange(uri: String) async {
-        guard let server, let text = pendingText else { return }
+        guard let server, !pendingChanges.isEmpty else { return }
+        let changes = pendingChanges
+        let snapshot = latestDocumentSnapshot
         do {
-            try await server.documentDidChange(uri: uri, text: text)
-            pendingText = nil
+            try await server.documentDidChange(uri: uri, changes: changes, fullText: snapshot)
+            pendingChanges.removeAll()
         } catch {
             logger.error("Failed to send change: \(error)")
         }
     }
     
+    func replaceDocument(uri: String, text: String) {
+        guard uri == currentURI else { return }
+        latestDocumentSnapshot = text
+        pendingChanges.removeAll()
+        changeDebounceTimer?.invalidate()
+        changeDebounceTimer = nil
+        guard let server else { return }
+        Task {
+            do {
+                try await server.documentDidChange(uri: uri, text: text)
+            } catch {
+                logger.error("Failed to replace document text: \(error)")
+            }
+        }
+    }
+    
     // MARK: - LSP Features
     
-    func requestCompletion(uri: String, line: Int, character: Int) async {
-        guard let server else { return }
+    func requestCompletion(uri: String, line: Int, character: Int) async -> [CompletionItem] {
+        guard let server else { return [] }
         do {
             let response: CompletionResponse = try await server.completion(uri: uri, line: line, character: character)
-            let items = parseCompletionItems(response)
-            await MainActor.run { onCompletion?(items) }
+            return parseCompletionItems(response)
         } catch {
             logger.error("Completion failed: \(error)")
+            return []
         }
     }
     
@@ -189,6 +227,34 @@ final class LumiLSPService: ObservableObject {
         }
     }
     
+    func requestSemanticTokens(uri: String) async -> SemanticTokens? {
+        guard let server else { return nil }
+        do {
+            return try await server.semanticTokens(uri: uri)
+        } catch {
+            logger.error("Semantic tokens failed: \(error)")
+            return nil
+        }
+    }
+    
+    func requestSemanticTokensDelta(uri: String, previousResultId: String) async -> SemanticTokensDeltaResponse? {
+        guard let server else { return nil }
+        do {
+            return try await server.semanticTokensDelta(uri: uri, previousResultId: previousResultId)
+        } catch {
+            logger.error("Semantic token delta failed: \(error)")
+            return nil
+        }
+    }
+    
+    var currentSemanticTokenMap: LumiSemanticTokenMap? {
+        server?.semanticTokenMap
+    }
+
+    var completionTriggerCharacters: Set<String> {
+        server?.completionTriggerCharacters ?? []
+    }
+    
     // MARK: - Cleanup
     
     func stopAll() {
@@ -199,6 +265,8 @@ final class LumiLSPService: ObservableObject {
         currentURI = nil
         currentDiagnostics = []
         activeLanguageId = nil
+        latestDocumentSnapshot = nil
+        pendingChanges.removeAll()
     }
     
     // MARK: - Parsing
@@ -252,5 +320,11 @@ final class LumiLSPService: ObservableObject {
             guard let link = links.first else { return nil }
             return Location(uri: link.targetUri, range: link.targetSelectionRange)
         }
+    }
+    
+    private func handlePublishDiagnostics(_ params: PublishDiagnosticsParams) {
+        guard let currentURI else { return }
+        guard params.uri == currentURI else { return }
+        currentDiagnostics = params.diagnostics
     }
 }
