@@ -43,24 +43,14 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_Anthropic"
     static let defaultModel = "claude-sonnet-4-20250514"
 
-    static let availableModels = [
-        "claude-sonnet-4-20250514",
-        "claude-opus-4-20250514",
-        "claude-3-5-sonnet-20241022",
-        "claude-3-5-sonnet-20240620",
-        "claude-3-opus-20240229",
-        "claude-3-sonnet-20240229",
-        "claude-3-haiku-20240307",
-    ]
-
-    static let contextWindowSizes: [String: Int] = [
-        "claude-sonnet-4-20250514": 200_000,
-        "claude-opus-4-20250514": 200_000,
-        "claude-3-5-sonnet-20241022": 200_000,
-        "claude-3-5-sonnet-20240620": 200_000,
-        "claude-3-opus-20240229": 200_000,
-        "claude-3-sonnet-20240229": 200_000,
-        "claude-3-haiku-20240307": 200_000,
+    static let modelCatalog: [LLMModelCatalogItem] = [
+        .init(id: "claude-sonnet-4-20250514", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
+        .init(id: "claude-opus-4-20250514", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
+        .init(id: "claude-3-5-sonnet-20241022", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
+        .init(id: "claude-3-5-sonnet-20240620", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
+        .init(id: "claude-3-opus-20240229", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
+        .init(id: "claude-3-sonnet-20240229", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
+        .init(id: "claude-3-haiku-20240307", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
     ]
 
     // MARK: - SuperLLMProvider
@@ -88,7 +78,15 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
         tools: [AgentTool]?,
         systemPrompt: String
     ) throws -> [String: Any] {
-        let systemMessage = messages.first(where: { $0.role == .system })?.content ?? systemPrompt
+        // 合并所有 system 消息：预设提示词 + transient 注入的上下文提示词
+        let systemParts = messages
+            .filter { $0.role == .system }
+            .map(\.content)
+            .filter { !$0.isEmpty }
+        let systemMessage = systemParts.isEmpty
+            ? systemPrompt
+            : systemParts.joined(separator: "\n\n")
+
         let conversationMessages = messages
             .filter { $0.shouldSendToLLM }
             .map { transformMessage($0) }

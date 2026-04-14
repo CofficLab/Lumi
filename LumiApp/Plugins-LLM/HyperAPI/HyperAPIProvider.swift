@@ -2,22 +2,22 @@ import Foundation
 import MagicKit
 import os
 
-/// AiRouter API 供应商实现
+/// HyperAPI 供应商实现
 ///
-/// AiRouter (airouter.org) 完全兼容 OpenAI 格式
-final class AiRouterProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
-    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.airouter")
+/// HyperAPI (hyperapi.cc) 完全兼容 OpenAI 格式
+final class HyperAPIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.hyperapi")
     nonisolated static let emoji = "🌐"
     nonisolated static let verbose: Bool = false
     // MARK: - 基础信息
 
-    static let id = "airouter"
-    static let displayName = String(localized: "AiRouter", table: "AiRouter")
-    static let description = String(localized: "LLM Router by airouter.org", table: "AiRouter")
+    static let id = "hyperapi"
+    static let displayName = String(localized: "HyperAPI", table: "HyperAPI")
+    static let description = String(localized: "LLM Router by hyperapi.cc", table: "HyperAPI")
 
     // MARK: - 配置相关
 
-    static let apiKeyStorageKey = "DevAssistant_ApiKey_AiRouter"
+    static let apiKeyStorageKey = "DevAssistant_ApiKey_HyperAPI"
     static let defaultModel = "gpt-5"
 
     static let modelCatalog: [LLMModelCatalogItem] = [
@@ -37,7 +37,7 @@ final class AiRouterProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     // MARK: - 启用状态配置
 
     // 要禁用此供应商，请将此值设置为 false
-    static let isEnabled = false
+    static let isEnabled = true
 
     // MARK: - SuperLLMProvider
 
@@ -46,7 +46,7 @@ final class AiRouterProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     }
 
     var baseURL: String {
-        "https://api.airouter.org/v1/chat/completions"
+        "https://hyperapi.cc/v1/chat/completions"
     }
 
     func buildRequest(url: URL, apiKey: String) -> URLRequest {
@@ -79,10 +79,10 @@ final class AiRouterProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     }
 
     func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
-        let result = try JSONDecoder().decode(AiRouterResponse.self, from: data)
+        let result = try JSONDecoder().decode(HyperAPIResponse.self, from: data)
 
         guard let choiceMessage = result.choices.first?.message else {
-            throw NSError(domain: "AiRouterProvider", code: -1, userInfo: [NSLocalizedDescriptionKey: "No choices in response"])
+            throw NSError(domain: "HyperAPIProvider", code: -1, userInfo: [NSLocalizedDescriptionKey: "No choices in response"])
         }
 
         let content = choiceMessage.content ?? ""
@@ -116,7 +116,7 @@ final class AiRouterProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
     /// 解析流式响应数据块
     ///
-    /// AiRouter 完全兼容 OpenAI SSE 格式
+    /// HyperAPI 完全兼容 OpenAI SSE 格式
     func parseStreamChunk(data: Data) throws -> StreamChunk? {
         guard let text = String(data: data, encoding: .utf8) else {
             return nil
@@ -214,7 +214,7 @@ final class AiRouterProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
 // MARK: - 消息转换
 
-extension AiRouterProvider {
+extension HyperAPIProvider {
     func transformMessage(_ message: ChatMessage) -> [String: Any] {
         if let toolCallID = message.toolCallID {
             return [
@@ -245,7 +245,7 @@ extension AiRouterProvider {
 
 // MARK: - 工具格式
 
-extension AiRouterProvider {
+extension HyperAPIProvider {
     func formatTool(_ tool: AgentTool) -> [String: Any] {
         [
             "type": "function",

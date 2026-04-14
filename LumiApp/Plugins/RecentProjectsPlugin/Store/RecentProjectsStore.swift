@@ -1,9 +1,6 @@
 import Foundation
 
 /// 最近项目存储
-///
-/// - 目标：不依赖 `PluginStateStore`，自己实现文件型持久化
-/// - 兼容：若旧版本仍在 `StatePersistencePlugin/settings/state.plist` 内保存，则会在首次读取时尝试迁移
 final class RecentProjectsStore: @unchecked Sendable {
     private let queue = DispatchQueue(label: "RecentProjectsStore.queue", qos: .userInitiated)
 

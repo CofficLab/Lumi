@@ -82,6 +82,7 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
             .map { type in
                 let instance = createProvider(id: type.id)
                 let isLocal = (instance as? any SuperLocalLLMProvider) != nil
+                let capabilities = validatedCapabilities(for: type, isLocal: isLocal)
                 return LLMProviderInfo(
                     id: type.id,
                     displayName: type.displayName,
@@ -90,7 +91,8 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
                     defaultModel: type.defaultModel,
                     isLocal: isLocal,
                     isEnabled: type.isEnabled,
-                    contextWindowSizes: type.contextWindowSizes
+                    contextWindowSizes: type.contextWindowSizes,
+                    modelCapabilities: capabilities
                 )
             }
     }
@@ -102,6 +104,7 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
         providerTypes.map { type in
             let instance = createProvider(id: type.id)
             let isLocal = (instance as? any SuperLocalLLMProvider) != nil
+            let capabilities = validatedCapabilities(for: type, isLocal: isLocal)
             return LLMProviderInfo(
                 id: type.id,
                 displayName: type.displayName,
@@ -110,9 +113,32 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
                 defaultModel: type.defaultModel,
                 isLocal: isLocal,
                 isEnabled: type.isEnabled,
-                contextWindowSizes: type.contextWindowSizes
+                contextWindowSizes: type.contextWindowSizes,
+                modelCapabilities: capabilities
             )
         }
+    }
+
+    /// 校验并返回供应商的模型能力声明
+    ///
+    /// 规则：
+    /// - 本地供应商不强制（能力来自 `LocalModelInfo`）；
+    /// - 远程供应商必须为每个 available model 提供能力声明。
+    private func validatedCapabilities(
+        for type: any SuperLLMProvider.Type,
+        isLocal: Bool
+    ) -> [String: LLMModelCapabilities] {
+        let capabilities = type.modelCapabilities
+        guard !isLocal else { return capabilities }
+
+        let missing = type.availableModels.filter { capabilities[$0] == nil }
+        if !missing.isEmpty {
+            let missingModels = missing.joined(separator: ", ")
+            AppLogger.core.error("\(self.t) 远程供应商 \(type.displayName) 缺少模型能力声明：\(missingModels)")
+            preconditionFailure("\(self.t) 远程供应商 \(type.displayName) 缺少模型能力声明：\(missingModels)")
+        }
+
+        return capabilities
     }
 
     /// 创建供应商实例

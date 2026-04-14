@@ -25,4 +25,7 @@ struct LLMProviderInfo: Identifiable, Equatable, Sendable {
 
     /// 模型上下文窗口大小映射（模型名 → Token 数）
     let contextWindowSizes: [String: Int]
+
+    /// 模型能力映射（模型名 → 能力声明）
+    let modelCapabilities: [String: LLMModelCapabilities]
 }

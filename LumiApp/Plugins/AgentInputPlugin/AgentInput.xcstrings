@@ -47,6 +47,9 @@
         }
       }
     },
+    "All" : {
+
+    },
     "Build Mode Description" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -254,6 +257,55 @@
         }
       }
     },
+    "Frequent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frequent"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "常用"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "常用"
+          }
+        }
+      }
+    },
+    "Fast" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fast"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "较快"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "較快"
+          }
+        }
+      }
+    },
+    "Image" : {
+
+    },
     "Input Area" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -346,6 +398,98 @@
         }
       }
     },
+    "No Frequent Models" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Frequent Models"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无常用模型"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無常用模型"
+          }
+        }
+      }
+    },
+    "No Frequent Models Description" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your frequently used models will appear here"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你常用的模型会显示在这里"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你常用的模型會顯示在這裡"
+          }
+        }
+      }
+    },
+    "No Fast Models" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Fast Models"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无较快模型"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無較快模型"
+          }
+        }
+      }
+    },
+    "No Fast Models Description" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Models with higher TPS will appear here"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TPS 较高的模型会显示在这里"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TPS 較高的模型會顯示在這裡"
+          }
+        }
+      }
+    },
     "No Local Providers" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -368,6 +512,9 @@
           }
         }
       }
+    },
+    "No Matching Models" : {
+
     },
     "No Model Selected" : {
       "extractionState" : "manual",
@@ -414,6 +561,9 @@
           }
         }
       }
+    },
+    "No Providers" : {
+
     },
     "No Remote Providers" : {
       "extractionState" : "manual",
@@ -506,6 +656,9 @@
           }
         }
       }
+    },
+    "Search Models" : {
+
     },
     "Select Model" : {
       "extractionState" : "manual",
@@ -621,6 +774,12 @@
           }
         }
       }
+    },
+    "Text" : {
+
+    },
+    "Tools" : {
+
     },
     "Upload Image" : {
       "extractionState" : "manual",

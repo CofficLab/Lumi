@@ -24,22 +24,13 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
     static let apiKeyStorageKey = "DevAssistant_ApiKey_Aliyun"
     static let defaultModel = "qwen3.6-plus"
 
-    static let availableModels = [
-        "qwen3.5-plus",
-        "qwen3.6-plus",
-        "glm-4.7",
-        "glm-5",
-        "MiniMax-M2.5",
-        "kimi-k2.5",
-    ]
-
-    static let contextWindowSizes: [String: Int] = [
-        "qwen3.5-plus": 131_072,
-        "qwen3.6-plus": 131_072,
-        "glm-4.7": 128_000,
-        "glm-5": 128_000,
-        "MiniMax-M2.5": 1_000_000,
-        "kimi-k2.5": 131_072,
+    static let modelCatalog: [LLMModelCatalogItem] = [
+        .init(id: "qwen3.5-plus", spec: .init(contextWindowSize: 131_072, supportsVision: false, supportsTools: true)),
+        .init(id: "qwen3.6-plus", spec: .init(contextWindowSize: 131_072, supportsVision: false, supportsTools: true)),
+        .init(id: "glm-4.7", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "glm-5", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "MiniMax-M2.5", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
+        .init(id: "kimi-k2.5", spec: .init(contextWindowSize: 131_072, supportsVision: false, supportsTools: true)),
     ]
 
     // MARK: - SuperLLMProvider
@@ -66,7 +57,15 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
         tools: [AgentTool]?,
         systemPrompt: String
     ) throws -> [String: Any] {
-        let systemMessage = messages.first(where: { $0.role == .system })?.content ?? systemPrompt
+        // 合并所有 system 消息：预设提示词 + transient 注入的上下文提示词
+        let systemParts = messages
+            .filter { $0.role == .system }
+            .map(\.content)
+            .filter { !$0.isEmpty }
+        let systemMessage = systemParts.isEmpty
+            ? systemPrompt
+            : systemParts.joined(separator: "\n\n")
+
         let conversationMessages = messages
             .filter { $0.shouldSendToLLM }
             .map { transformMessage($0) }

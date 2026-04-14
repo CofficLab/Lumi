@@ -4,8 +4,14 @@ import SwiftUI
 
 /// 模型选择器 Tab 类型
 enum ModelSelectorTab: String, CaseIterable {
+    /// 全部供应商与模型
+    case all
     /// 当前供应商
     case current
+    /// 常用模型（跨供应商）
+    case frequent
+    /// TPS 较快的模型
+    case fast
     /// 本地供应商
     case local
     /// 远程供应商
@@ -14,8 +20,14 @@ enum ModelSelectorTab: String, CaseIterable {
     /// Tab 显示标题
     var displayTitle: String {
         switch self {
+        case .all:
+            return String(localized: "All", table: "AgentInput")
         case .current:
             return String(localized: "Current Provider", table: "AgentInput")
+        case .frequent:
+            return String(localized: "Frequent", table: "AgentInput")
+        case .fast:
+            return String(localized: "Fast", table: "AgentInput")
         case .local:
             return String(localized: "Local Providers", table: "AgentInput")
         case .remote:
@@ -24,6 +36,37 @@ enum ModelSelectorTab: String, CaseIterable {
     }
 }
 
+/// 常用模型条目，用于跨供应商展示最近常用的模型
+struct FrequentModelEntry: Identifiable {
+    /// 唯一标识（providerId + modelName 组合）
+    let id: String
+    /// 供应商 ID
+    let providerId: String
+    /// 供应商显示名称
+    let providerDisplayName: String
+    /// 模型名称
+    let modelName: String
+    /// 使用次数
+    let useCount: Int
+    /// 最后使用时间
+    let lastUsedAt: Date
+}
+
+/// TPS 较快的模型条目
+struct FastModelEntry: Identifiable {
+    /// 唯一标识（providerId + modelName 组合）
+    let id: String
+    /// 供应商 ID
+    let providerId: String
+    /// 供应商显示名称
+    let providerDisplayName: String
+    /// 模型名称
+    let modelName: String
+    /// 平均 TPS
+    let avgTPS: Double
+    /// 样本数量
+    let sampleCount: Int
+}
 /// 模型选择器视图
 /// 允许用户从所有已注册的供应商和模型中选择
 struct ModelSelectorView: View, SuperLog {
@@ -40,8 +83,23 @@ struct ModelSelectorView: View, SuperLog {
     /// 模型性能统计
     @State private var detailedStats: [String: ModelPerformanceStats] = [:]
 
-    /// 当前选中的 Tab，默认显示当前供应商
-    @State private var selectedTab: ModelSelectorTab = .current
+    /// 当前选中的 Tab，默认显示全部
+    @State private var selectedTab: ModelSelectorTab = .all
+
+    /// 当前 hover 的 Tab
+    @State private var hoveringTab: ModelSelectorTab? = nil
+
+    /// 当前 hover 的模型
+    @State private var hoveringModelId: String? = nil
+
+    /// 常用模型列表（跨供应商，按使用频率排序）
+    @State private var frequentModels: [FrequentModelEntry] = []
+
+    /// TPS 较快的模型列表
+    @State private var fastModels: [FastModelEntry] = []
+
+    /// 搜索关键词（用于过滤模型/供应商）
+    @State private var searchText: String = ""
 
     /// 本地供应商的模型详情（按 providerId -> [LocalModelInfo]），用于按系列展示
     @State private var localModelInfosByProvider: [String: [LocalModelInfo]] = [:]
@@ -60,56 +118,114 @@ struct ModelSelectorView: View, SuperLog {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Header: Tab + Close
-            HStack(spacing: 12) {
-                Picker("", selection: $selectedTab) {
-                    ForEach(ModelSelectorTab.allCases, id: \.self) { tab in
-                        Text(tab.displayTitle).tag(tab)
-                    }
-                }
-                .pickerStyle(.segmented)
-
-                Spacer()
-
-                Button(action: { dismiss() }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
-                }
-                .buttonStyle(.plain)
-            }
-            .padding()
-            .background(Color(nsColor: .controlBackgroundColor))
+        HStack(spacing: 0) {
+            tabSidebar
+                .frame(width: 120)
+                .background(Color(nsColor: .controlBackgroundColor))
 
             Divider()
 
-            // List of Providers and Models
-            Group {
-                switch selectedTab {
-                case .current:
-                    currentProviderList
-                case .local:
-                    providerList(providers: localProviders, emptyMessage: String(localized: "No Local Providers", table: "AgentInput"))
-                case .remote:
-                    providerList(providers: remoteProviders, emptyMessage: String(localized: "No Remote Providers", table: "AgentInput"))
+            VStack(spacing: 0) {
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    TextField(String(localized: "Search Models", table: "AgentInput"), text: $searchText)
+                        .textFieldStyle(.plain)
+
+                    Spacer()
+
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    }
+                    .buttonStyle(.plain)
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(nsColor: .controlBackgroundColor))
+
+                Divider()
+
+                Group {
+                    switch selectedTab {
+                    case .all:
+                        providerList(
+                            providers: filteredProviders(from: llmVM.allProviders),
+                            emptyMessage: String(localized: "No Providers", table: "AgentInput")
+                        )
+                    case .current:
+                        currentProviderList
+                    case .frequent:
+                        frequentModelsList
+                    case .fast:
+                        fastModelsList
+                    case .local:
+                        providerList(
+                            providers: filteredProviders(from: localProviders),
+                            emptyMessage: String(localized: "No Local Providers", table: "AgentInput")
+                        )
+                    case .remote:
+                        providerList(
+                            providers: filteredProviders(from: remoteProviders),
+                            emptyMessage: String(localized: "No Remote Providers", table: "AgentInput")
+                        )
+                    }
+                }
+                .listStyle(.sidebar)
             }
-            .listStyle(.sidebar)
         }
-        .frame(width: 350, height: 400)
+        .frame(width: 520, height: 400)
         .background(AppUI.Material.glass)
         .task {
             loadLatencyStats()
+            loadFrequentModels()
+            loadFastModels()
         }
         .task(id: selectedTab) {
             if selectedTab == .current {
                 if currentProvider?.isLocal == true {
                     await loadLocalModelInfos(providerIds: [llmVM.selectedProviderId])
                 }
-            } else if selectedTab == .local {
+            } else if selectedTab == .local || selectedTab == .all {
                 await loadLocalModelInfos(providerIds: localProviders.map(\.id))
             }
         }
+    }
+
+    // MARK: - Tab Sidebar
+
+    @ViewBuilder
+    private var tabSidebar: some View {
+        VStack(spacing: 4) {
+            ForEach(ModelSelectorTab.allCases, id: \.self) { tab in
+                Button(action: { selectedTab = tab }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: tabIconName(for: tab))
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .frame(width: 16, alignment: .center)
+                        Text(tab.displayTitle)
+                            .font(AppUI.Typography.body)
+                            .lineLimit(1)
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(tabBackgroundColor(for: tab))
+                    )
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .onHover { hovering in
+                    hoveringTab = hovering ? tab : nil
+                }
+            }
+            Spacer()
+        }
+        .padding(8)
     }
 
     // MARK: - Current Provider List
@@ -118,28 +234,223 @@ struct ModelSelectorView: View, SuperLog {
     @ViewBuilder
     private var currentProviderList: some View {
         if let provider = currentProvider {
-            List {
-                Section(header: sectionHeader(for: provider)) {
-                    if provider.isLocal, let infos = localModelInfosByProvider[provider.id], !infos.isEmpty {
-                        let fallbackSeries = "其他"
-                        let grouped = Dictionary(grouping: infos) { $0.series ?? fallbackSeries }
-                        ForEach(grouped.keys.sorted(), id: \.self) { seriesName in
-                            Section(header: Text(seriesName).font(AppUI.Typography.subheadline).foregroundColor(AppUI.Color.semantic.textSecondary)) {
-                                ForEach(grouped[seriesName] ?? [], id: \.id) { info in
-                                    modelRow(provider: provider, model: info.id, displayName: info.displayName)
+            if hasVisibleModels(provider: provider) {
+                List {
+                    Section(header: sectionHeader(for: provider)) {
+                        if provider.isLocal, let infos = localModelInfosByProvider[provider.id], !infos.isEmpty {
+                            let filteredInfos = infos.filter {
+                                matchesSearch(provider: provider, model: $0.id, displayName: $0.displayName, series: $0.series)
+                            }
+                            let fallbackSeries = "其他"
+                            let grouped = Dictionary(grouping: filteredInfos) { $0.series ?? fallbackSeries }
+                            ForEach(grouped.keys.sorted(), id: \.self) { seriesName in
+                                Section(header: Text(seriesName).font(AppUI.Typography.subheadline).foregroundColor(AppUI.Color.semantic.textSecondary)) {
+                                    ForEach(grouped[seriesName] ?? [], id: \.id) { info in
+                                        modelRow(
+                                            provider: provider,
+                                            model: info.id,
+                                            displayName: info.displayName,
+                                            supportsVision: info.supportsVision,
+                                            supportsTools: info.supportsTools
+                                        )
+                                    }
                                 }
                             }
-                        }
-                    } else {
-                        ForEach(provider.availableModels, id: \.self) { model in
-                            modelRow(provider: provider, model: model)
+                        } else {
+                            let filteredModels = provider.availableModels.filter {
+                                matchesSearch(provider: provider, model: $0)
+                            }
+                            ForEach(filteredModels, id: \.self) { model in
+                                let caps = capabilityValues(provider: provider, model: model)
+                                modelRow(
+                                    provider: provider,
+                                    model: model,
+                                    supportsVision: caps.supportsVision,
+                                    supportsTools: caps.supportsTools
+                                )
+                            }
                         }
                     }
                 }
+            } else {
+                ContentUnavailableView {
+                    Label(String(localized: "No Matching Models", table: "AgentInput"), systemImage: "magnifyingglass")
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         } else {
             ContentUnavailableView {
                 Label(String(localized: "No Provider Selected", table: "AgentInput"), systemImage: "tray")
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    // MARK: - Frequent Models List
+
+    /// 常用模型列表（跨供应商，按使用频率排序）
+    @ViewBuilder
+    private var frequentModelsList: some View {
+        let filteredEntries = filteredFrequentModels()
+        if filteredEntries.isEmpty {
+            ContentUnavailableView {
+                Label(String(localized: "No Frequent Models", table: "AgentInput"), systemImage: "clock.arrow.circlepath")
+            } description: {
+                Text(String(localized: "No Frequent Models Description", table: "AgentInput"))
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            List {
+                ForEach(filteredEntries) { entry in
+                    frequentModelRow(entry: entry)
+                }
+            }
+        }
+    }
+
+    /// 常用模型的单行视图，显示模型名、供应商标签和性能信息
+    @ViewBuilder
+    private func frequentModelRow(entry: FrequentModelEntry) -> some View {
+        Button(action: {
+            selectModel(providerId: entry.providerId, model: entry.modelName)
+        }) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Text(entry.modelName)
+                            .font(AppUI.Typography.body)
+                            .lineLimit(1)
+
+                        // 供应商标签
+                        Text(entry.providerDisplayName)
+                            .font(.caption2)
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1)
+                            .background(
+                                RoundedRectangle(cornerRadius: 3)
+                                    .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
+                            )
+
+                        Spacer()
+
+                        // 使用次数
+                        Text("\(entry.useCount)")
+                            .font(.caption2)
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    }
+                    if let stat = findDetailedStat(providerId: entry.providerId, modelName: entry.modelName), stat.avgTTFT > 0 {
+                        ModelLatencyProgressBar(
+                            ttft: stat.avgTTFT,
+                            totalLatency: stat.avgLatency,
+                            sampleCount: stat.sampleCount,
+                            tps: stat.avgTPS
+                        )
+                    }
+                }
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(isSelected(providerId: entry.providerId, model: entry.modelName) ? Color.accentColor.opacity(0.15) : Color.clear)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(isSelected(providerId: entry.providerId, model: entry.modelName) ? Color.accentColor.opacity(0.3) : Color.clear, lineWidth: 1)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            if hovering && !isSelected(providerId: entry.providerId, model: entry.modelName) {
+                NSCursor.pointingHand.push()
+            } else {
+                NSCursor.pop()
+            }
+        }
+    }
+
+    // MARK: - Fast Models List
+
+    /// TPS 较快模型列表（跨供应商，按 TPS 降序，最多 10 个）
+    @ViewBuilder
+    private var fastModelsList: some View {
+        let filteredEntries = filteredFastModels()
+        if filteredEntries.isEmpty {
+            ContentUnavailableView {
+                Label(String(localized: "No Fast Models", table: "AgentInput"), systemImage: "bolt.fill")
+            } description: {
+                Text(String(localized: "No Fast Models Description", table: "AgentInput"))
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            List {
+                ForEach(filteredEntries) { entry in
+                    fastModelRow(entry: entry)
+                }
+            }
+        }
+    }
+
+    /// TPS 较快模型单行
+    @ViewBuilder
+    private func fastModelRow(entry: FastModelEntry) -> some View {
+        Button(action: {
+            selectModel(providerId: entry.providerId, model: entry.modelName)
+        }) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Text(entry.modelName)
+                            .font(AppUI.Typography.body)
+                            .lineLimit(1)
+
+                        Text(entry.providerDisplayName)
+                            .font(.caption2)
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1)
+                            .background(
+                                RoundedRectangle(cornerRadius: 3)
+                                    .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
+                            )
+
+                        Spacer()
+
+                        Text(String(format: "%.1f t/s", entry.avgTPS))
+                            .font(.caption2)
+                            .foregroundColor(.green)
+                    }
+
+                    if let stat = findDetailedStat(providerId: entry.providerId, modelName: entry.modelName), stat.avgTTFT > 0 {
+                        ModelLatencyProgressBar(
+                            ttft: stat.avgTTFT,
+                            totalLatency: stat.avgLatency,
+                            sampleCount: stat.sampleCount,
+                            tps: stat.avgTPS
+                        )
+                    }
+                }
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(isSelected(providerId: entry.providerId, model: entry.modelName) ? Color.accentColor.opacity(0.15) : Color.clear)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(isSelected(providerId: entry.providerId, model: entry.modelName) ? Color.accentColor.opacity(0.3) : Color.clear, lineWidth: 1)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            if hovering && !isSelected(providerId: entry.providerId, model: entry.modelName) {
+                NSCursor.pointingHand.push()
+            } else {
+                NSCursor.pop()
             }
         }
     }
@@ -151,23 +462,42 @@ struct ModelSelectorView: View, SuperLog {
             ContentUnavailableView {
                 Label(emptyMessage, systemImage: "tray")
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             List {
                 ForEach(providers) { provider in
                     Section(header: sectionHeader(for: provider)) {
                         if provider.isLocal, let infos = localModelInfosByProvider[provider.id], !infos.isEmpty {
+                            let filteredInfos = infos.filter {
+                                matchesSearch(provider: provider, model: $0.id, displayName: $0.displayName, series: $0.series)
+                            }
                             let fallbackSeries = "其他"
-                            let grouped = Dictionary(grouping: infos) { $0.series ?? fallbackSeries }
+                            let grouped = Dictionary(grouping: filteredInfos) { $0.series ?? fallbackSeries }
                             ForEach(grouped.keys.sorted(), id: \.self) { seriesName in
                                 Section(header: Text(seriesName).font(AppUI.Typography.subheadline).foregroundColor(AppUI.Color.semantic.textSecondary)) {
                                     ForEach(grouped[seriesName] ?? [], id: \.id) { info in
-                                        modelRow(provider: provider, model: info.id, displayName: info.displayName)
+                                        modelRow(
+                                            provider: provider,
+                                            model: info.id,
+                                            displayName: info.displayName,
+                                            supportsVision: info.supportsVision,
+                                            supportsTools: info.supportsTools
+                                        )
                                     }
                                 }
                             }
                         } else {
-                            ForEach(provider.availableModels, id: \.self) { model in
-                                modelRow(provider: provider, model: model)
+                            let filteredModels = provider.availableModels.filter {
+                                matchesSearch(provider: provider, model: $0)
+                            }
+                            ForEach(filteredModels, id: \.self) { model in
+                                let caps = capabilityValues(provider: provider, model: model)
+                                modelRow(
+                                    provider: provider,
+                                    model: model,
+                                    supportsVision: caps.supportsVision,
+                                    supportsTools: caps.supportsTools
+                                )
                             }
                         }
                     }
@@ -181,32 +511,59 @@ struct ModelSelectorView: View, SuperLog {
     ///   - provider: 供应商信息
     ///   - model: 模型 ID（用于选中/保存）
     ///   - displayName: 可选展示名；本地模型用 displayName，远程用 nil 则显示 model
+    ///   - supportsVision: 是否支持视觉输入（可选）
+    ///   - supportsTools: 是否支持工具调用（可选）
     @ViewBuilder
-    private func modelRow(provider: LLMProviderInfo, model: String, displayName: String? = nil) -> some View {
+    private func modelRow(
+        provider: LLMProviderInfo,
+        model: String,
+        displayName: String? = nil,
+        supportsVision: Bool? = nil,
+        supportsTools: Bool? = nil
+    ) -> some View {
         Button(action: {
             selectModel(providerId: provider.id, model: model)
         }) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    HStack {
-                        Text(displayName ?? model)
-                            .font(AppUI.Typography.body)
-                            .lineLimit(1)
-                        Spacer()
-                        if let contextSize = provider.contextWindowSizes[model] {
-                            Text(formatContextSize(contextSize))
-                                .font(.caption2)
-                                .foregroundColor(AppUI.Color.semantic.textSecondary)
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 1)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 3)
-                                        .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
-                                )
-                        }
-                        if isSelected(providerId: provider.id, model: model) {
-                            Image(systemName: "checkmark")
-                                .foregroundColor(.accentColor)
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text(displayName ?? model)
+                                    .font(AppUI.Typography.body)
+                                    .lineLimit(1)
+
+                                Spacer()
+                                if let contextSize = provider.contextWindowSizes[model] {
+                                    Text(formatContextSize(contextSize))
+                                        .font(.caption2)
+                                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                        .padding(.horizontal, 4)
+                                        .padding(.vertical, 1)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 3)
+                                                .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
+                                        )
+                                }
+                            }
+
+                            HStack(spacing: 6) {
+                                if let supportsVision {
+                                    capabilityBadge(
+                                        title: supportsVision
+                                            ? String(localized: "Image", table: "AgentInput")
+                                            : String(localized: "Text", table: "AgentInput"),
+                                        systemImage: supportsVision ? "photo" : "text.bubble"
+                                    )
+                                }
+
+                                if let supportsTools, supportsTools {
+                                    capabilityBadge(
+                                        title: String(localized: "Tools", table: "AgentInput"),
+                                        systemImage: "wrench.and.screwdriver"
+                                    )
+                                }
+                            }
                         }
                     }
                     if let stat = findDetailedStat(providerId: provider.id, modelName: model), stat.avgTTFT > 0 {
@@ -223,7 +580,7 @@ struct ModelSelectorView: View, SuperLog {
             .padding(.horizontal, 8)
             .background(
                 RoundedRectangle(cornerRadius: 6)
-                    .fill(isSelected(providerId: provider.id, model: model) ? Color.accentColor.opacity(0.15) : Color.clear)
+                    .fill(modelRowBackgroundColor(providerId: provider.id, model: model))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 6)
@@ -233,12 +590,36 @@ struct ModelSelectorView: View, SuperLog {
         }
         .buttonStyle(.plain)
         .onHover { hovering in
-            if hovering && !isSelected(providerId: provider.id, model: model) {
-                NSCursor.pointingHand.push()
+            if hovering {
+                hoveringModelId = modelRowHoverId(providerId: provider.id, model: model)
+                if !isSelected(providerId: provider.id, model: model) {
+                    NSCursor.pointingHand.push()
+                }
             } else {
+                if hoveringModelId == modelRowHoverId(providerId: provider.id, model: model) {
+                    hoveringModelId = nil
+                }
                 NSCursor.pop()
             }
         }
+    }
+
+    @ViewBuilder
+    private func capabilityBadge(title: String, systemImage: String) -> some View {
+        HStack(spacing: 2) {
+            Image(systemName: systemImage)
+                .font(.system(size: 8, weight: .medium))
+            Text(title)
+                .font(.caption2)
+        }
+        .foregroundColor(AppUI.Color.semantic.textSecondary)
+        .padding(.horizontal, 4)
+        .padding(.vertical, 1)
+        .background(
+            RoundedRectangle(cornerRadius: 3)
+                .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
+        )
+        .help(title)
     }
 }
 
@@ -310,6 +691,51 @@ extension ModelSelectorView {
         }
     }
 
+    /// 加载常用模型列表
+    /// 从聊天历史中统计每个 provider+model 的使用次数，按次数降序排列，最多显示 10 个
+    private func loadFrequentModels() {
+        let stats = chatHistoryVM.getModelLatencyStats()
+        let providers = llmVM.allProviders
+        let providerMap = Dictionary(uniqueKeysWithValues: providers.map { ($0.id, $0) })
+
+        // 按 (providerId, modelName) 聚合使用次数
+        var usageDict: [String: (providerId: String, modelName: String, count: Int)] = [:]
+        for stat in stats {
+            let key = "\(stat.providerId)|\(stat.modelName)"
+            if var existing = usageDict[key] {
+                existing.count += stat.sampleCount
+                usageDict[key] = existing
+            } else {
+                usageDict[key] = (providerId: stat.providerId, modelName: stat.modelName, count: stat.sampleCount)
+            }
+        }
+
+        // 只保留当前已注册供应商中仍然可用的模型
+        let entries = usageDict.values
+            .filter { entry in
+                guard let provider = providerMap[entry.providerId] else { return false }
+                return provider.availableModels.contains(entry.modelName)
+            }
+            .map { entry -> FrequentModelEntry in
+                let provider = providerMap[entry.providerId]
+                return FrequentModelEntry(
+                    id: "\(entry.providerId)|\(entry.modelName)",
+                    providerId: entry.providerId,
+                    providerDisplayName: provider?.displayName ?? entry.providerId,
+                    modelName: entry.modelName,
+                    useCount: entry.count,
+                    lastUsedAt: Date()  // 简化：不追踪精确的最后使用时间
+                )
+            }
+            .sorted { $0.useCount > $1.useCount }
+
+        frequentModels = Array(entries.prefix(10))
+
+        if Self.verbose {
+            AgentInputPlugin.logger.info("\(Self.t)📊 加载到 \(frequentModels.count) 个常用模型")
+        }
+    }
+
     /// 加载指定供应商的模型详情（含系列），用于按系列展示
     /// - Parameter providerIds: 需要加载模型详情的供应商 ID 列表
     private func loadLocalModelInfos(providerIds: [String]) async {
@@ -330,6 +756,179 @@ extension ModelSelectorView {
     private func findDetailedStat(providerId: String, modelName: String) -> ModelPerformanceStats? {
         let key = "\(providerId)|\(modelName)"
         return detailedStats[key]
+    }
+
+    /// 读取模型能力声明（用于远程模型 badge 展示）
+    /// - Parameters:
+    ///   - provider: 供应商信息
+    ///   - model: 模型 ID
+    /// - Returns: (supportsVision, supportsTools)
+    private func capabilityValues(provider: LLMProviderInfo, model: String) -> (supportsVision: Bool?, supportsTools: Bool?) {
+        // 本地模型优先使用 LocalModelInfo；若未提供则不显示
+        if provider.isLocal {
+            return (nil, nil)
+        }
+
+        guard let caps = provider.modelCapabilities[model] else {
+            AgentInputPlugin.logger.error("\(Self.t) 远程模型缺少能力声明: provider=\(provider.id), model=\(model)")
+            return (nil, nil)
+        }
+
+        return (caps.supportsVision, caps.supportsTools)
+    }
+
+    /// 根据搜索词过滤供应商（保留至少有一个可见模型的供应商）
+    private func filteredProviders(from providers: [LLMProviderInfo]) -> [LLMProviderInfo] {
+        let keyword = normalizedSearchText
+        guard !keyword.isEmpty else { return providers }
+
+        return providers.filter { provider in
+            hasVisibleModels(provider: provider)
+        }
+    }
+
+    /// 判断供应商在当前搜索词下是否还有可见模型
+    private func hasVisibleModels(provider: LLMProviderInfo) -> Bool {
+        if matchesSearch(provider: provider, model: "") {
+            return true
+        }
+
+        if provider.isLocal, let infos = localModelInfosByProvider[provider.id], !infos.isEmpty {
+            return infos.contains { info in
+                matchesSearch(provider: provider, model: info.id, displayName: info.displayName, series: info.series)
+            }
+        }
+
+        return provider.availableModels.contains { model in
+            matchesSearch(provider: provider, model: model)
+        }
+    }
+
+    /// 根据搜索词过滤常用模型
+    private func filteredFrequentModels() -> [FrequentModelEntry] {
+        let keyword = normalizedSearchText
+        guard !keyword.isEmpty else { return frequentModels }
+
+        return frequentModels.filter { entry in
+            entry.modelName.localizedCaseInsensitiveContains(keyword)
+                || entry.providerDisplayName.localizedCaseInsensitiveContains(keyword)
+                || entry.providerId.localizedCaseInsensitiveContains(keyword)
+        }
+    }
+
+    /// 加载 TPS 较快模型列表（跨供应商，按 TPS 降序，最多 10 个）
+    private func loadFastModels() {
+        let providers = llmVM.allProviders
+        let providerMap = Dictionary(uniqueKeysWithValues: providers.map { ($0.id, $0) })
+
+        let entries = detailedStats.values
+            .filter { stat in
+                stat.avgTPS > 0 && stat.sampleCount > 0
+            }
+            .filter { stat in
+                guard let provider = providerMap[stat.providerId] else { return false }
+                return provider.availableModels.contains(stat.modelName)
+            }
+            .map { stat -> FastModelEntry in
+                let provider = providerMap[stat.providerId]
+                return FastModelEntry(
+                    id: "\(stat.providerId)|\(stat.modelName)",
+                    providerId: stat.providerId,
+                    providerDisplayName: provider?.displayName ?? stat.providerId,
+                    modelName: stat.modelName,
+                    avgTPS: stat.avgTPS,
+                    sampleCount: stat.sampleCount
+                )
+            }
+            .sorted { lhs, rhs in
+                if lhs.avgTPS == rhs.avgTPS {
+                    return lhs.sampleCount > rhs.sampleCount
+                }
+                return lhs.avgTPS > rhs.avgTPS
+            }
+
+        fastModels = Array(entries.prefix(10))
+
+        if Self.verbose {
+            AgentInputPlugin.logger.info("\(Self.t)⚡️ 加载到 \(fastModels.count) 个较快模型")
+        }
+    }
+
+    /// 根据搜索词过滤 TPS 较快模型
+    private func filteredFastModels() -> [FastModelEntry] {
+        let keyword = normalizedSearchText
+        guard !keyword.isEmpty else { return fastModels }
+
+        return fastModels.filter { entry in
+            entry.modelName.localizedCaseInsensitiveContains(keyword)
+                || entry.providerDisplayName.localizedCaseInsensitiveContains(keyword)
+                || entry.providerId.localizedCaseInsensitiveContains(keyword)
+        }
+    }
+
+    /// 模型项是否匹配当前搜索词（匹配模型名、展示名、系列、供应商）
+    private func matchesSearch(provider: LLMProviderInfo, model: String, displayName: String? = nil, series: String? = nil) -> Bool {
+        let keyword = normalizedSearchText
+        guard !keyword.isEmpty else { return true }
+
+        return [
+            model,
+            displayName ?? "",
+            series ?? "",
+            provider.displayName,
+            provider.id,
+        ]
+        .contains { $0.localizedCaseInsensitiveContains(keyword) }
+    }
+
+    /// 规范化搜索词
+    private var normalizedSearchText: String {
+        searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Tab 图标
+    private func tabIconName(for tab: ModelSelectorTab) -> String {
+        switch tab {
+        case .all:
+            return "globe"
+        case .current:
+            return "scope"
+        case .frequent:
+            return "clock.arrow.circlepath"
+        case .fast:
+            return "bolt.fill"
+        case .local:
+            return "laptopcomputer"
+        case .remote:
+            return "cloud"
+        }
+    }
+
+    /// Tab 背景色
+    private func tabBackgroundColor(for tab: ModelSelectorTab) -> Color {
+        if selectedTab == tab {
+            return Color.accentColor.opacity(0.15)
+        }
+        if hoveringTab == tab {
+            return Color.accentColor.opacity(0.08)
+        }
+        return Color.clear
+    }
+
+    /// 模型行 hover key
+    private func modelRowHoverId(providerId: String, model: String) -> String {
+        "\(providerId)|\(model)"
+    }
+
+    /// 模型行背景色
+    private func modelRowBackgroundColor(providerId: String, model: String) -> Color {
+        if isSelected(providerId: providerId, model: model) {
+            return Color.accentColor.opacity(0.15)
+        }
+        if hoveringModelId == modelRowHoverId(providerId: providerId, model: model) {
+            return Color.accentColor.opacity(0.08)
+        }
+        return Color.clear
     }
 
     /// 格式化上下文窗口大小为人类可读字符串

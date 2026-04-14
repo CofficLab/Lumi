@@ -66,49 +66,50 @@ struct RecentProjectsSidebarView: View {
     private func projectRow(_ project: Project) -> some View {
         let isSelected = projectVM.currentProjectPath == project.path
 
-        return Button(action: {
-            switchToProject(project)
-        }) {
-            HStack(spacing: 8) {
-                Image(systemName: isSelected ? "folder.fill" : "folder")
-                    .font(.system(size: 14))
-                    .foregroundColor(isSelected ? .accentColor : .secondary)
+        return HStack(spacing: 8) {
+            Image(systemName: isSelected ? "folder.fill" : "folder")
+                .font(.system(size: 14))
+                .foregroundColor(isSelected ? .accentColor : .secondary)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(project.name)
+                    .font(.system(size: 12))
+                    .fontWeight(isSelected ? .semibold : .regular)
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .lineLimit(1)
                 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(project.name)
-                        .font(.system(size: 12))
-                        .fontWeight(isSelected ? .semibold : .regular)
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
-                        .lineLimit(1)
-                    
-                    Text(project.path)
-                        .font(.system(size: 9))
-                        .foregroundColor(.secondary.opacity(0.7))
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                }
-                
-                Spacer()
-                
-                if isSelected {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(.accentColor)
-                }
+                Text(project.path)
+                    .font(.system(size: 9))
+                    .foregroundColor(.secondary.opacity(0.7))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(isSelected ? Color.accentColor.opacity(0.15) : Color.clear)
-            )
-            .contentShape(Rectangle())  // 确保整个区域可点击
-            .overlay {
-                // 使用 AppKit 原生拖拽 overlay，拖到输入框时自动填充项目路径
-                ProjectDragSourceOverlay(projectPath: project.path, projectName: project.name)
+            
+            Spacer()
+            
+            if isSelected {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(.accentColor)
             }
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(isSelected ? Color.accentColor.opacity(0.15) : Color.clear)
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            switchToProject(project)
+        }
+        .onDrag {
+            // 传递纯文本路径字符串，与文件树的拖拽方式一致，
+            // 拖到输入框时 EditorTextView 会自动识别绝对路径并插入
+            NSItemProvider(object: project.path as NSString)
+        } preview: {
+            DragPreview(fileURL: URL(fileURLWithPath: project.path))
+        }
     }
     
     // MARK: - Empty View
