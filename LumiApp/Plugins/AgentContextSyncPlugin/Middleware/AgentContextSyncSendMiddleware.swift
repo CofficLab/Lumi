@@ -34,6 +34,7 @@ final class AgentContextSyncSendMiddleware: SendMiddleware, SuperLog {
         let projectName = ctx.projectVM.currentProjectName.trimmingCharacters(in: .whitespacesAndNewlines)
         let selectedFileURL = ctx.projectVM.selectedFileURL
         let codeSelectionRange = ctx.projectVM.codeSelectionRange
+        let recentProjects = ctx.projectVM.getRecentProjects()
 
         if Self.verbose {
             AgentContextSyncPlugin.logger.info("\(Self.t)🔄 Agent Context Sync 中间件：检查项目信息")
@@ -57,7 +58,8 @@ final class AgentContextSyncSendMiddleware: SendMiddleware, SuperLog {
             projectName: projectName,
             projectPath: projectPath,
             selectedFileURL: selectedFileURL,
-            codeSelectionRange: codeSelectionRange
+            codeSelectionRange: codeSelectionRange,
+            recentProjects: recentProjects
         )
         ctx.transientSystemPrompts.append(prompt)
 
@@ -77,7 +79,8 @@ final class AgentContextSyncSendMiddleware: SendMiddleware, SuperLog {
         projectName: String,
         projectPath: String,
         selectedFileURL: URL?,
-        codeSelectionRange: CodeSelectionRange?
+        codeSelectionRange: CodeSelectionRange?,
+        recentProjects: [Project]
     ) -> String {
         var lines: [String] = []
 
@@ -107,6 +110,28 @@ final class AgentContextSyncSendMiddleware: SendMiddleware, SuperLog {
                 } else {
                     lines.append("**Code Selection**: Lines \(range.startLine)-\(range.endLine) (columns \(range.startColumn)-\(range.endColumn))")
                 }
+            }
+        }
+
+        // 注入最近使用的项目列表
+        if !recentProjects.isEmpty {
+            lines.append("")
+            lines.append("## Recently Used Projects")
+            lines.append("")
+            lines.append("The user has recently worked on the following projects:")
+            lines.append("")
+
+            // 排除当前项目，只显示其他最近项目
+            let otherRecentProjects = recentProjects.filter { $0.path != projectPath }
+            if !otherRecentProjects.isEmpty {
+                for project in otherRecentProjects {
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateFormat = "yyyy-MM-dd"
+                    let lastUsedStr = dateFormatter.string(from: project.lastUsed)
+                    lines.append("- **\(project.name)** (`\(project.path)`) — last used: \(lastUsedStr)")
+                }
+                lines.append("")
+                lines.append("The user may want to reference or switch to one of these projects.")
             }
         }
 
