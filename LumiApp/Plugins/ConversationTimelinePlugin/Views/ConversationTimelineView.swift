@@ -9,6 +9,7 @@ struct ConversationTimelineView: View, SuperLog {
 
     @EnvironmentObject private var conversationVM: ConversationVM
     @EnvironmentObject private var chatHistoryVM: ChatHistoryVM
+    @EnvironmentObject private var llmVM: LLMVM
     @State private var messageCount: Int = 0
     @State private var currentContextTokens: Int = 0
 
@@ -29,7 +30,7 @@ struct ConversationTimelineView: View, SuperLog {
 
                         if currentContextTokens > 0 {
                             Divider().frame(height: 12)
-                            Text(formatToken(currentContextTokens))
+                            Text(contextTokenLabel)
                                 .font(.system(size: 11))
                         }
                     }
@@ -44,6 +45,12 @@ struct ConversationTimelineView: View, SuperLog {
         .onChange(of: conversationVM.selectedConversationId) { _, _ in
             refreshMessageCount()
         }
+        .onChange(of: llmVM.currentModel) { _, _ in
+            refreshMessageCount()
+        }
+        .onChange(of: llmVM.selectedProviderId) { _, _ in
+            refreshMessageCount()
+        }
         .onMessageSaved { message, conversationId in
             // 只刷新当前选中对话的消息
             guard conversationId == conversationVM.selectedConversationId else { return }
@@ -53,6 +60,27 @@ struct ConversationTimelineView: View, SuperLog {
                 AppLogger.core.info("\(Self.t)📬 收到消息保存事件，刷新统计: conversationId=\(conversationId)")
             }
         }
+    }
+
+    /// 格式化上下文 token 显示标签（如 "100k/200k"）
+    private var contextTokenLabel: String {
+        let limit = currentModelContextLimit
+        if limit > 0 {
+            return "\(formatToken(currentContextTokens))/\(formatToken(limit))"
+        }
+        return formatToken(currentContextTokens)
+    }
+
+    /// 获取当前模型的上下文窗口大小
+    private var currentModelContextLimit: Int {
+        let providerId = llmVM.selectedProviderId
+        let model = llmVM.currentModel
+        let providers = llmVM.availableProviders
+        
+        guard let provider = providers.first(where: { $0.id == providerId }) else {
+            return 0
+        }
+        return provider.contextWindowSizes[model] ?? 0
     }
 
     /// 刷新消息数量和当前上下文 token 数

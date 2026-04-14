@@ -14,6 +14,7 @@ func formatToken(_ value: Int) -> String {
 struct ConversationTimelineHeader: View {
     let itemCount: Int
     let currentContextTokens: Int
+    let contextLimit: Int
     let onRefresh: () -> Void
 
     var body: some View {
@@ -33,8 +34,13 @@ struct ConversationTimelineHeader: View {
                         HStack(spacing: 4) {
                             Image(systemName: "chart.bar.xaxis")
                                 .font(.system(size: 9))
-                            Text("上下文 \(formatToken(currentContextTokens))")
-                                .font(.system(size: 11))
+                            if contextLimit > 0 {
+                                Text("上下文 \(formatToken(currentContextTokens))/\(formatToken(contextLimit))")
+                                    .font(.system(size: 11))
+                            } else {
+                                Text("上下文 \(formatToken(currentContextTokens))")
+                                    .font(.system(size: 11))
+                            }
                         }
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                     }

@@ -11,6 +11,7 @@ struct ConversationTimelineDetailView: View, SuperLog {
 
     let conversationId: UUID
     @EnvironmentObject private var chatHistoryVM: ChatHistoryVM
+    @EnvironmentObject private var llmVM: LLMVM
     @State private var timelineItems: [MessageTimelineItem] = []
 
     var body: some View {
@@ -62,8 +63,21 @@ struct ConversationTimelineDetailView: View, SuperLog {
         ConversationTimelineHeader(
             itemCount: timelineItems.count,
             currentContextTokens: currentContextTokens,
+            contextLimit: currentModelContextLimit,
             onRefresh: loadTimelineItems
         )
+    }
+
+    /// 获取当前模型的上下文窗口大小
+    private var currentModelContextLimit: Int {
+        let providerId = llmVM.selectedProviderId
+        let model = llmVM.currentModel
+        let providers = llmVM.availableProviders
+        
+        guard let provider = providers.first(where: { $0.id == providerId }) else {
+            return 0
+        }
+        return provider.contextWindowSizes[model] ?? 0
     }
 
     /// 当前上下文窗口使用量（用于判断是否接近模型上限）
