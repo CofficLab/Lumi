@@ -34,7 +34,7 @@ final class MegaLLMProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Se
         .init(id: "gpt-5-mini", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
         .init(id: "gpt-5.3-codex", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
         .init(id: "llama3.3-70b-instruct", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
-        .init(id: "minimaxai/minimax-m2.1", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
+        .init(id: "minimaxai/minimax-m2.1", spec: .init(contextWindowSize: 204_800, supportsVision: false, supportsTools: true)),
         .init(id: "newclaude-opus-4-6", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
     ]
 

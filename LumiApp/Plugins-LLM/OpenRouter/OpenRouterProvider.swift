@@ -40,7 +40,7 @@ final class OpenRouterProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked
         .init(id: "openai/gpt-5", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
         .init(id: "openai/gpt-5-mini", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
         .init(id: "openai/gpt-oss-20b:free", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
-        .init(id: "qwen/qwen3.6-plus", spec: .init(contextWindowSize: 131_072, supportsVision: false, supportsTools: true)),
+        .init(id: "qwen/qwen3.6-plus", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
         .init(id: "stepfun/step-3.5-flash:free", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
         .init(id: "z-ai/glm-4.5-air:free", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
     ]
