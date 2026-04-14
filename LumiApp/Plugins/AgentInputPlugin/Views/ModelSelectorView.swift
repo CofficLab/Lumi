@@ -4,6 +4,8 @@ import SwiftUI
 
 /// 模型选择器 Tab 类型
 enum ModelSelectorTab: String, CaseIterable {
+    /// 全部供应商与模型
+    case all
     /// 当前供应商
     case current
     /// 常用模型（跨供应商）
@@ -16,6 +18,8 @@ enum ModelSelectorTab: String, CaseIterable {
     /// Tab 显示标题
     var displayTitle: String {
         switch self {
+        case .all:
+            return String(localized: "All", table: "AgentInput")
         case .current:
             return String(localized: "Current Provider", table: "AgentInput")
         case .frequent:
@@ -60,11 +64,20 @@ struct ModelSelectorView: View, SuperLog {
     /// 模型性能统计
     @State private var detailedStats: [String: ModelPerformanceStats] = [:]
 
-    /// 当前选中的 Tab，默认显示当前供应商
-    @State private var selectedTab: ModelSelectorTab = .current
+    /// 当前选中的 Tab，默认显示全部
+    @State private var selectedTab: ModelSelectorTab = .all
+
+    /// 当前 hover 的 Tab
+    @State private var hoveringTab: ModelSelectorTab? = nil
+
+    /// 当前 hover 的模型
+    @State private var hoveringModelId: String? = nil
 
     /// 常用模型列表（跨供应商，按使用频率排序）
     @State private var frequentModels: [FrequentModelEntry] = []
+
+    /// 搜索关键词（用于过滤模型/供应商）
+    @State private var searchText: String = ""
 
     /// 本地供应商的模型详情（按 providerId -> [LocalModelInfo]），用于按系列展示
     @State private var localModelInfosByProvider: [String: [LocalModelInfo]] = [:]
@@ -83,45 +96,61 @@ struct ModelSelectorView: View, SuperLog {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Header: Tab + Close
-            HStack(spacing: 12) {
-                Picker("", selection: $selectedTab) {
-                    ForEach(ModelSelectorTab.allCases, id: \.self) { tab in
-                        Text(tab.displayTitle).tag(tab)
-                    }
-                }
-                .pickerStyle(.segmented)
-
-                Spacer()
-
-                Button(action: { dismiss() }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
-                }
-                .buttonStyle(.plain)
-            }
-            .padding()
-            .background(Color(nsColor: .controlBackgroundColor))
+        HStack(spacing: 0) {
+            tabSidebar
+                .frame(width: 120)
+                .background(Color(nsColor: .controlBackgroundColor))
 
             Divider()
 
-            // List of Providers and Models
-            Group {
-                switch selectedTab {
-                case .current:
-                    currentProviderList
-                case .frequent:
-                    frequentModelsList
-                case .local:
-                    providerList(providers: localProviders, emptyMessage: String(localized: "No Local Providers", table: "AgentInput"))
-                case .remote:
-                    providerList(providers: remoteProviders, emptyMessage: String(localized: "No Remote Providers", table: "AgentInput"))
+            VStack(spacing: 0) {
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    TextField(String(localized: "Search Models", table: "AgentInput"), text: $searchText)
+                        .textFieldStyle(.plain)
+
+                    Spacer()
+
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    }
+                    .buttonStyle(.plain)
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(nsColor: .controlBackgroundColor))
+
+                Divider()
+
+                Group {
+                    switch selectedTab {
+                    case .all:
+                        providerList(
+                            providers: filteredProviders(from: llmVM.allProviders),
+                            emptyMessage: String(localized: "No Providers", table: "AgentInput")
+                        )
+                    case .current:
+                        currentProviderList
+                    case .frequent:
+                        frequentModelsList
+                    case .local:
+                        providerList(
+                            providers: filteredProviders(from: localProviders),
+                            emptyMessage: String(localized: "No Local Providers", table: "AgentInput")
+                        )
+                    case .remote:
+                        providerList(
+                            providers: filteredProviders(from: remoteProviders),
+                            emptyMessage: String(localized: "No Remote Providers", table: "AgentInput")
+                        )
+                    }
+                }
+                .listStyle(.sidebar)
             }
-            .listStyle(.sidebar)
         }
-        .frame(width: 350, height: 400)
+        .frame(width: 520, height: 400)
         .background(AppUI.Material.glass)
         .task {
             loadLatencyStats()
@@ -132,10 +161,46 @@ struct ModelSelectorView: View, SuperLog {
                 if currentProvider?.isLocal == true {
                     await loadLocalModelInfos(providerIds: [llmVM.selectedProviderId])
                 }
-            } else if selectedTab == .local {
+            } else if selectedTab == .local || selectedTab == .all {
                 await loadLocalModelInfos(providerIds: localProviders.map(\.id))
             }
         }
+    }
+
+    // MARK: - Tab Sidebar
+
+    @ViewBuilder
+    private var tabSidebar: some View {
+        VStack(spacing: 4) {
+            ForEach(ModelSelectorTab.allCases, id: \.self) { tab in
+                Button(action: { selectedTab = tab }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: tabIconName(for: tab))
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .frame(width: 16, alignment: .center)
+                        Text(tab.displayTitle)
+                            .font(AppUI.Typography.body)
+                            .lineLimit(1)
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(tabBackgroundColor(for: tab))
+                    )
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .onHover { hovering in
+                    hoveringTab = hovering ? tab : nil
+                }
+            }
+            Spacer()
+        }
+        .padding(8)
     }
 
     // MARK: - Current Provider List
@@ -144,35 +209,47 @@ struct ModelSelectorView: View, SuperLog {
     @ViewBuilder
     private var currentProviderList: some View {
         if let provider = currentProvider {
-            List {
-                Section(header: sectionHeader(for: provider)) {
-                    if provider.isLocal, let infos = localModelInfosByProvider[provider.id], !infos.isEmpty {
-                        let fallbackSeries = "其他"
-                        let grouped = Dictionary(grouping: infos) { $0.series ?? fallbackSeries }
-                        ForEach(grouped.keys.sorted(), id: \.self) { seriesName in
-                            Section(header: Text(seriesName).font(AppUI.Typography.subheadline).foregroundColor(AppUI.Color.semantic.textSecondary)) {
-                                ForEach(grouped[seriesName] ?? [], id: \.id) { info in
-                                    modelRow(
-                                        provider: provider,
-                                        model: info.id,
-                                        displayName: info.displayName,
-                                        supportsVision: info.supportsVision,
-                                        supportsTools: info.supportsTools
-                                    )
+            if hasVisibleModels(provider: provider) {
+                List {
+                    Section(header: sectionHeader(for: provider)) {
+                        if provider.isLocal, let infos = localModelInfosByProvider[provider.id], !infos.isEmpty {
+                            let filteredInfos = infos.filter {
+                                matchesSearch(provider: provider, model: $0.id, displayName: $0.displayName, series: $0.series)
+                            }
+                            let fallbackSeries = "其他"
+                            let grouped = Dictionary(grouping: filteredInfos) { $0.series ?? fallbackSeries }
+                            ForEach(grouped.keys.sorted(), id: \.self) { seriesName in
+                                Section(header: Text(seriesName).font(AppUI.Typography.subheadline).foregroundColor(AppUI.Color.semantic.textSecondary)) {
+                                    ForEach(grouped[seriesName] ?? [], id: \.id) { info in
+                                        modelRow(
+                                            provider: provider,
+                                            model: info.id,
+                                            displayName: info.displayName,
+                                            supportsVision: info.supportsVision,
+                                            supportsTools: info.supportsTools
+                                        )
+                                    }
                                 }
                             }
-                        }
-                    } else {
-                        ForEach(provider.availableModels, id: \.self) { model in
-                            let caps = capabilityValues(provider: provider, model: model)
-                            modelRow(
-                                provider: provider,
-                                model: model,
-                                supportsVision: caps.supportsVision,
-                                supportsTools: caps.supportsTools
-                            )
+                        } else {
+                            let filteredModels = provider.availableModels.filter {
+                                matchesSearch(provider: provider, model: $0)
+                            }
+                            ForEach(filteredModels, id: \.self) { model in
+                                let caps = capabilityValues(provider: provider, model: model)
+                                modelRow(
+                                    provider: provider,
+                                    model: model,
+                                    supportsVision: caps.supportsVision,
+                                    supportsTools: caps.supportsTools
+                                )
+                            }
                         }
                     }
+                }
+            } else {
+                ContentUnavailableView {
+                    Label(String(localized: "No Matching Models", table: "AgentInput"), systemImage: "magnifyingglass")
                 }
             }
         } else {
@@ -187,7 +264,8 @@ struct ModelSelectorView: View, SuperLog {
     /// 常用模型列表（跨供应商，按使用频率排序）
     @ViewBuilder
     private var frequentModelsList: some View {
-        if frequentModels.isEmpty {
+        let filteredEntries = filteredFrequentModels()
+        if filteredEntries.isEmpty {
             ContentUnavailableView {
                 Label(String(localized: "No Frequent Models", table: "AgentInput"), systemImage: "clock.arrow.circlepath")
             } description: {
@@ -195,7 +273,7 @@ struct ModelSelectorView: View, SuperLog {
             }
         } else {
             List {
-                ForEach(frequentModels) { entry in
+                ForEach(filteredEntries) { entry in
                     frequentModelRow(entry: entry)
                 }
             }
@@ -232,11 +310,6 @@ struct ModelSelectorView: View, SuperLog {
                         Text("\(entry.useCount)")
                             .font(.caption2)
                             .foregroundColor(AppUI.Color.semantic.textSecondary)
-
-                        if isSelected(providerId: entry.providerId, model: entry.modelName) {
-                            Image(systemName: "checkmark")
-                                .foregroundColor(.accentColor)
-                        }
                     }
                     if let stat = findDetailedStat(providerId: entry.providerId, modelName: entry.modelName), stat.avgTTFT > 0 {
                         ModelLatencyProgressBar(
@@ -282,8 +355,11 @@ struct ModelSelectorView: View, SuperLog {
                 ForEach(providers) { provider in
                     Section(header: sectionHeader(for: provider)) {
                         if provider.isLocal, let infos = localModelInfosByProvider[provider.id], !infos.isEmpty {
+                            let filteredInfos = infos.filter {
+                                matchesSearch(provider: provider, model: $0.id, displayName: $0.displayName, series: $0.series)
+                            }
                             let fallbackSeries = "其他"
-                            let grouped = Dictionary(grouping: infos) { $0.series ?? fallbackSeries }
+                            let grouped = Dictionary(grouping: filteredInfos) { $0.series ?? fallbackSeries }
                             ForEach(grouped.keys.sorted(), id: \.self) { seriesName in
                                 Section(header: Text(seriesName).font(AppUI.Typography.subheadline).foregroundColor(AppUI.Color.semantic.textSecondary)) {
                                     ForEach(grouped[seriesName] ?? [], id: \.id) { info in
@@ -298,7 +374,10 @@ struct ModelSelectorView: View, SuperLog {
                                 }
                             }
                         } else {
-                            ForEach(provider.availableModels, id: \.self) { model in
+                            let filteredModels = provider.availableModels.filter {
+                                matchesSearch(provider: provider, model: $0)
+                            }
+                            ForEach(filteredModels, id: \.self) { model in
                                 let caps = capabilityValues(provider: provider, model: model)
                                 modelRow(
                                     provider: provider,
@@ -334,42 +413,44 @@ struct ModelSelectorView: View, SuperLog {
         }) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    HStack {
-                        Text(displayName ?? model)
-                            .font(AppUI.Typography.body)
-                            .lineLimit(1)
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text(displayName ?? model)
+                                    .font(AppUI.Typography.body)
+                                    .lineLimit(1)
 
-                        if let supportsVision {
-                            capabilityBadge(
-                                title: supportsVision
-                                    ? String(localized: "Image", table: "AgentInput")
-                                    : String(localized: "Text", table: "AgentInput"),
-                                systemImage: supportsVision ? "photo" : "text.bubble"
-                            )
-                        }
+                                Spacer()
+                                if let contextSize = provider.contextWindowSizes[model] {
+                                    Text(formatContextSize(contextSize))
+                                        .font(.caption2)
+                                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                        .padding(.horizontal, 4)
+                                        .padding(.vertical, 1)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 3)
+                                                .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
+                                        )
+                                }
+                            }
 
-                        if let supportsTools, supportsTools {
-                            capabilityBadge(
-                                title: String(localized: "Tools", table: "AgentInput"),
-                                systemImage: "wrench.and.screwdriver"
-                            )
-                        }
+                            HStack(spacing: 6) {
+                                if let supportsVision {
+                                    capabilityBadge(
+                                        title: supportsVision
+                                            ? String(localized: "Image", table: "AgentInput")
+                                            : String(localized: "Text", table: "AgentInput"),
+                                        systemImage: supportsVision ? "photo" : "text.bubble"
+                                    )
+                                }
 
-                        Spacer()
-                        if let contextSize = provider.contextWindowSizes[model] {
-                            Text(formatContextSize(contextSize))
-                                .font(.caption2)
-                                .foregroundColor(AppUI.Color.semantic.textSecondary)
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 1)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 3)
-                                        .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
-                                )
-                        }
-                        if isSelected(providerId: provider.id, model: model) {
-                            Image(systemName: "checkmark")
-                                .foregroundColor(.accentColor)
+                                if let supportsTools, supportsTools {
+                                    capabilityBadge(
+                                        title: String(localized: "Tools", table: "AgentInput"),
+                                        systemImage: "wrench.and.screwdriver"
+                                    )
+                                }
+                            }
                         }
                     }
                     if let stat = findDetailedStat(providerId: provider.id, modelName: model), stat.avgTTFT > 0 {
@@ -386,7 +467,7 @@ struct ModelSelectorView: View, SuperLog {
             .padding(.horizontal, 8)
             .background(
                 RoundedRectangle(cornerRadius: 6)
-                    .fill(isSelected(providerId: provider.id, model: model) ? Color.accentColor.opacity(0.15) : Color.clear)
+                    .fill(modelRowBackgroundColor(providerId: provider.id, model: model))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 6)
@@ -396,9 +477,15 @@ struct ModelSelectorView: View, SuperLog {
         }
         .buttonStyle(.plain)
         .onHover { hovering in
-            if hovering && !isSelected(providerId: provider.id, model: model) {
-                NSCursor.pointingHand.push()
+            if hovering {
+                hoveringModelId = modelRowHoverId(providerId: provider.id, model: model)
+                if !isSelected(providerId: provider.id, model: model) {
+                    NSCursor.pointingHand.push()
+                }
             } else {
+                if hoveringModelId == modelRowHoverId(providerId: provider.id, model: model) {
+                    hoveringModelId = nil
+                }
                 NSCursor.pop()
             }
         }
@@ -575,6 +662,108 @@ extension ModelSelectorView {
         }
 
         return (caps.supportsVision, caps.supportsTools)
+    }
+
+    /// 根据搜索词过滤供应商（保留至少有一个可见模型的供应商）
+    private func filteredProviders(from providers: [LLMProviderInfo]) -> [LLMProviderInfo] {
+        let keyword = normalizedSearchText
+        guard !keyword.isEmpty else { return providers }
+
+        return providers.filter { provider in
+            hasVisibleModels(provider: provider)
+        }
+    }
+
+    /// 判断供应商在当前搜索词下是否还有可见模型
+    private func hasVisibleModels(provider: LLMProviderInfo) -> Bool {
+        if matchesSearch(provider: provider, model: "") {
+            return true
+        }
+
+        if provider.isLocal, let infos = localModelInfosByProvider[provider.id], !infos.isEmpty {
+            return infos.contains { info in
+                matchesSearch(provider: provider, model: info.id, displayName: info.displayName, series: info.series)
+            }
+        }
+
+        return provider.availableModels.contains { model in
+            matchesSearch(provider: provider, model: model)
+        }
+    }
+
+    /// 根据搜索词过滤常用模型
+    private func filteredFrequentModels() -> [FrequentModelEntry] {
+        let keyword = normalizedSearchText
+        guard !keyword.isEmpty else { return frequentModels }
+
+        return frequentModels.filter { entry in
+            entry.modelName.localizedCaseInsensitiveContains(keyword)
+                || entry.providerDisplayName.localizedCaseInsensitiveContains(keyword)
+                || entry.providerId.localizedCaseInsensitiveContains(keyword)
+        }
+    }
+
+    /// 模型项是否匹配当前搜索词（匹配模型名、展示名、系列、供应商）
+    private func matchesSearch(provider: LLMProviderInfo, model: String, displayName: String? = nil, series: String? = nil) -> Bool {
+        let keyword = normalizedSearchText
+        guard !keyword.isEmpty else { return true }
+
+        return [
+            model,
+            displayName ?? "",
+            series ?? "",
+            provider.displayName,
+            provider.id,
+        ]
+        .contains { $0.localizedCaseInsensitiveContains(keyword) }
+    }
+
+    /// 规范化搜索词
+    private var normalizedSearchText: String {
+        searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Tab 图标
+    private func tabIconName(for tab: ModelSelectorTab) -> String {
+        switch tab {
+        case .all:
+            return "globe"
+        case .current:
+            return "scope"
+        case .frequent:
+            return "clock.arrow.circlepath"
+        case .local:
+            return "laptopcomputer"
+        case .remote:
+            return "cloud"
+        }
+    }
+
+    /// Tab 背景色
+    private func tabBackgroundColor(for tab: ModelSelectorTab) -> Color {
+        if selectedTab == tab {
+            return Color.accentColor.opacity(0.15)
+        }
+        if hoveringTab == tab {
+            return Color.accentColor.opacity(0.08)
+        }
+        return Color.clear
+    }
+
+    /// 模型行 hover key
+    private func modelRowHoverId(providerId: String, model: String) -> String {
+        "\(providerId)|\(model)"
+    }
+
+    /// 模型行背景色
+    private func modelRowBackgroundColor(providerId: String, model: String) -> Color {
+        if isSelected(providerId: providerId, model: model) {
+            return Color.accentColor.opacity(0.15)
+        }
+        if hoveringModelId == modelRowHoverId(providerId: providerId, model: model) {
+            return Color.accentColor.opacity(0.08)
+        }
+        return Color.clear
     }
 
     /// 格式化上下文窗口大小为人类可读字符串
