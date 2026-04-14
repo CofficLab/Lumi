@@ -23,24 +23,14 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
     static let apiKeyStorageKey = "DevAssistant_ApiKey_Zhipu"
     static let defaultModel = "glm-4.7"
 
-    static let availableModels = [
-        "glm-5.1",
-        "glm-5-turbo",
-        "glm-5",
-        "glm-4.7",
-        "glm-4.6",
-        "glm-4.5",
-        "glm-4.5-air",
-    ]
-
-    static let contextWindowSizes: [String: Int] = [
-        "glm-5.1": 200_000,
-        "glm-5-turbo": 128_000,
-        "glm-5": 128_000,
-        "glm-4.7": 128_000,
-        "glm-4.6": 128_000,
-        "glm-4.5": 128_000,
-        "glm-4.5-air": 128_000,
+    static let modelCatalog: [LLMModelCatalogItem] = [
+        .init(id: "glm-5.1", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
+        .init(id: "glm-5-turbo", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "glm-5", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "glm-4.7", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "glm-4.6", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "glm-4.5", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "glm-4.5-air", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
     ]
 
     // MARK: - SuperLLMProvider

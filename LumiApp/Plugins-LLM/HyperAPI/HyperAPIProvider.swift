@@ -20,32 +20,18 @@ final class HyperAPIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     static let apiKeyStorageKey = "DevAssistant_ApiKey_HyperAPI"
     static let defaultModel = "gpt-5"
 
-    static let availableModels = [
-        "gpt-5.1-codex-max",
-        "gpt-5.2-codex",
-        "gpt-5.4-mini",
-        "gpt-5",
-        "gpt-5.1-codex-mini",
-        "gpt-5.2",
-        "gpt-5.3-codex",
-        "gpt-5.4",
-        "gpt-5-codex",
-        "gpt-5.1",
-        "gpt-5.1-codex",
-    ]
-
-    static let contextWindowSizes: [String: Int] = [
-        "gpt-5.1-codex-max": 128_000,
-        "gpt-5.2-codex": 128_000,
-        "gpt-5.4-mini": 128_000,
-        "gpt-5": 128_000,
-        "gpt-5.1-codex-mini": 128_000,
-        "gpt-5.2": 128_000,
-        "gpt-5.3-codex": 128_000,
-        "gpt-5.4": 128_000,
-        "gpt-5-codex": 128_000,
-        "gpt-5.1": 128_000,
-        "gpt-5.1-codex": 128_000,
+    static let modelCatalog: [LLMModelCatalogItem] = [
+        .init(id: "gpt-5.1-codex-max", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.2-codex", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.4-mini", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.1-codex-mini", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.2", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.3-codex", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.4", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5-codex", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.1", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.1-codex", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
     ]
 
     // MARK: - 启用状态配置

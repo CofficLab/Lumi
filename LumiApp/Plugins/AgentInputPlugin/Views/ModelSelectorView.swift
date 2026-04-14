@@ -152,13 +152,25 @@ struct ModelSelectorView: View, SuperLog {
                         ForEach(grouped.keys.sorted(), id: \.self) { seriesName in
                             Section(header: Text(seriesName).font(AppUI.Typography.subheadline).foregroundColor(AppUI.Color.semantic.textSecondary)) {
                                 ForEach(grouped[seriesName] ?? [], id: \.id) { info in
-                                    modelRow(provider: provider, model: info.id, displayName: info.displayName)
+                                    modelRow(
+                                        provider: provider,
+                                        model: info.id,
+                                        displayName: info.displayName,
+                                        supportsVision: info.supportsVision,
+                                        supportsTools: info.supportsTools
+                                    )
                                 }
                             }
                         }
                     } else {
                         ForEach(provider.availableModels, id: \.self) { model in
-                            modelRow(provider: provider, model: model)
+                            let caps = capabilityValues(provider: provider, model: model)
+                            modelRow(
+                                provider: provider,
+                                model: model,
+                                supportsVision: caps.supportsVision,
+                                supportsTools: caps.supportsTools
+                            )
                         }
                     }
                 }
@@ -275,13 +287,25 @@ struct ModelSelectorView: View, SuperLog {
                             ForEach(grouped.keys.sorted(), id: \.self) { seriesName in
                                 Section(header: Text(seriesName).font(AppUI.Typography.subheadline).foregroundColor(AppUI.Color.semantic.textSecondary)) {
                                     ForEach(grouped[seriesName] ?? [], id: \.id) { info in
-                                        modelRow(provider: provider, model: info.id, displayName: info.displayName)
+                                        modelRow(
+                                            provider: provider,
+                                            model: info.id,
+                                            displayName: info.displayName,
+                                            supportsVision: info.supportsVision,
+                                            supportsTools: info.supportsTools
+                                        )
                                     }
                                 }
                             }
                         } else {
                             ForEach(provider.availableModels, id: \.self) { model in
-                                modelRow(provider: provider, model: model)
+                                let caps = capabilityValues(provider: provider, model: model)
+                                modelRow(
+                                    provider: provider,
+                                    model: model,
+                                    supportsVision: caps.supportsVision,
+                                    supportsTools: caps.supportsTools
+                                )
                             }
                         }
                     }
@@ -295,8 +319,16 @@ struct ModelSelectorView: View, SuperLog {
     ///   - provider: 供应商信息
     ///   - model: 模型 ID（用于选中/保存）
     ///   - displayName: 可选展示名；本地模型用 displayName，远程用 nil 则显示 model
+    ///   - supportsVision: 是否支持视觉输入（可选）
+    ///   - supportsTools: 是否支持工具调用（可选）
     @ViewBuilder
-    private func modelRow(provider: LLMProviderInfo, model: String, displayName: String? = nil) -> some View {
+    private func modelRow(
+        provider: LLMProviderInfo,
+        model: String,
+        displayName: String? = nil,
+        supportsVision: Bool? = nil,
+        supportsTools: Bool? = nil
+    ) -> some View {
         Button(action: {
             selectModel(providerId: provider.id, model: model)
         }) {
@@ -306,6 +338,23 @@ struct ModelSelectorView: View, SuperLog {
                         Text(displayName ?? model)
                             .font(AppUI.Typography.body)
                             .lineLimit(1)
+
+                        if let supportsVision {
+                            capabilityBadge(
+                                title: supportsVision
+                                    ? String(localized: "Image", table: "AgentInput")
+                                    : String(localized: "Text", table: "AgentInput"),
+                                systemImage: supportsVision ? "photo" : "text.bubble"
+                            )
+                        }
+
+                        if let supportsTools, supportsTools {
+                            capabilityBadge(
+                                title: String(localized: "Tools", table: "AgentInput"),
+                                systemImage: "wrench.and.screwdriver"
+                            )
+                        }
+
                         Spacer()
                         if let contextSize = provider.contextWindowSizes[model] {
                             Text(formatContextSize(contextSize))
@@ -353,6 +402,24 @@ struct ModelSelectorView: View, SuperLog {
                 NSCursor.pop()
             }
         }
+    }
+
+    @ViewBuilder
+    private func capabilityBadge(title: String, systemImage: String) -> some View {
+        HStack(spacing: 2) {
+            Image(systemName: systemImage)
+                .font(.system(size: 8, weight: .medium))
+            Text(title)
+                .font(.caption2)
+        }
+        .foregroundColor(AppUI.Color.semantic.textSecondary)
+        .padding(.horizontal, 4)
+        .padding(.vertical, 1)
+        .background(
+            RoundedRectangle(cornerRadius: 3)
+                .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
+        )
+        .help(title)
     }
 }
 
@@ -489,6 +556,25 @@ extension ModelSelectorView {
     private func findDetailedStat(providerId: String, modelName: String) -> ModelPerformanceStats? {
         let key = "\(providerId)|\(modelName)"
         return detailedStats[key]
+    }
+
+    /// 读取模型能力声明（用于远程模型 badge 展示）
+    /// - Parameters:
+    ///   - provider: 供应商信息
+    ///   - model: 模型 ID
+    /// - Returns: (supportsVision, supportsTools)
+    private func capabilityValues(provider: LLMProviderInfo, model: String) -> (supportsVision: Bool?, supportsTools: Bool?) {
+        // 本地模型优先使用 LocalModelInfo；若未提供则不显示
+        if provider.isLocal {
+            return (nil, nil)
+        }
+
+        guard let caps = provider.modelCapabilities[model] else {
+            AgentInputPlugin.logger.error("\(Self.t) 远程模型缺少能力声明: provider=\(provider.id), model=\(model)")
+            return (nil, nil)
+        }
+
+        return (caps.supportsVision, caps.supportsTools)
     }
 
     /// 格式化上下文窗口大小为人类可读字符串

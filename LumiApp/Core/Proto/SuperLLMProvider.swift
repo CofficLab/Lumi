@@ -1,6 +1,57 @@
 import Foundation
 import OSLog
 
+/// 模型能力声明
+///
+/// 用于在 UI 中展示模型的能力徽章（如视觉、工具调用）。
+struct LLMModelCapabilities: Sendable, Equatable {
+    /// 是否支持视觉输入（图片）
+    let supportsVision: Bool
+    /// 是否支持工具调用
+    let supportsTools: Bool
+
+    init(supportsVision: Bool, supportsTools: Bool) {
+        self.supportsVision = supportsVision
+        self.supportsTools = supportsTools
+    }
+}
+
+/// 单个模型的声明信息
+///
+/// 将上下文窗口与能力声明统一到一个结构体中，避免多处重复维护。
+struct LLMModelSpec: Sendable, Equatable {
+    /// 上下文窗口大小（Token 数）
+    let contextWindowSize: Int?
+    /// 模型能力
+    let capabilities: LLMModelCapabilities
+
+    init(
+        contextWindowSize: Int? = nil,
+        supportsVision: Bool,
+        supportsTools: Bool
+    ) {
+        self.contextWindowSize = contextWindowSize
+        self.capabilities = .init(
+            supportsVision: supportsVision,
+            supportsTools: supportsTools
+        )
+    }
+}
+
+/// 模型目录条目（有序）
+///
+/// 用于在单一结构中同时声明「模型 ID + 规格」，
+/// 并保持模型展示顺序稳定。
+struct LLMModelCatalogItem: Sendable, Equatable {
+    let id: String
+    let spec: LLMModelSpec
+
+    init(id: String, spec: LLMModelSpec) {
+        self.id = id
+        self.spec = spec
+    }
+}
+
 /// LLM 供应商协议
 ///
 /// 定义 LLM 供应商必须实现的接口，用于统一不同供应商的接入方式。
@@ -49,11 +100,23 @@ protocol SuperLLMProvider: Sendable {
     /// 用户未选择模型时使用的默认模型。
     static var defaultModel: String { get }
 
+    /// 可用模型目录（有序）
+    ///
+    /// 用于声明模型展示顺序；每个条目包含模型 ID 与规格。
+    static var modelCatalog: [LLMModelCatalogItem] { get }
+
     /// 可用模型列表
     ///
     /// 用户可选择的所有模型。
     /// 建议按版本/性能排序，最新的/最好的放在前面。
     static var availableModels: [String] { get }
+
+    /// 单个模型声明（模型名 → 规格）
+    ///
+    /// 统一声明：
+    /// - 上下文窗口大小（contextWindowSize）
+    /// - 能力（supportsVision / supportsTools）
+    static var modelSpecs: [String: LLMModelSpec] { get }
 
     /// 模型上下文窗口大小映射
     ///
@@ -61,6 +124,12 @@ protocol SuperLLMProvider: Sendable {
     /// 例如 `["gpt-4o": 128000, "gpt-4o-mini": 128000]`。
     /// 未在此映射中列出的模型默认不显示上下文大小。
     static var contextWindowSizes: [String: Int] { get }
+
+    /// 模型能力声明映射（模型名 → 能力）
+    ///
+    /// 远程供应商必须为每个 `availableModels` 项提供能力声明，
+    /// 用于 UI 显示能力徽章（Image / Text / Tools）。
+    static var modelCapabilities: [String: LLMModelCapabilities] { get }
 
     // MARK: - API
 
@@ -149,8 +218,37 @@ extension SuperLLMProvider {
         true
     }
 
-    /// 默认实现：空映射（不显示上下文大小）
+    /// 默认实现：空模型目录
+    static var modelCatalog: [LLMModelCatalogItem] {
+        []
+    }
+
+    /// 默认实现：由 modelCatalog 派生可用模型列表（保持声明顺序）
+    static var availableModels: [String] {
+        modelCatalog.map(\.id)
+    }
+
+    /// 默认实现：由 modelCatalog 派生模型规格映射
+    static var modelSpecs: [String: LLMModelSpec] {
+        Dictionary(uniqueKeysWithValues: modelCatalog.map { ($0.id, $0.spec) })
+    }
+
+    /// 默认实现：从 modelSpecs 派生上下文窗口映射
     static var contextWindowSizes: [String: Int] {
-        [:]
+        var result: [String: Int] = [:]
+        for (model, spec) in modelSpecs {
+            if let context = spec.contextWindowSize {
+                result[model] = context
+            }
+        }
+        return result
+    }
+
+    /// 默认实现：从 modelSpecs 派生能力映射
+    ///
+    /// 注意：远程供应商会在注册表阶段做完整性校验，
+    /// 要求 `availableModels` 中每个模型都必须有能力声明。
+    static var modelCapabilities: [String: LLMModelCapabilities] {
+        Dictionary(uniqueKeysWithValues: modelSpecs.map { ($0.key, $0.value.capabilities) })
     }
 }

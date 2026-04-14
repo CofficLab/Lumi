@@ -22,14 +22,9 @@ final class DeepSeekProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked S
     static let apiKeyStorageKey = "DevAssistant_ApiKey_DeepSeek"
     static let defaultModel = "deepseek-chat"
 
-    static let availableModels = [
-        "deepseek-chat",
-        "deepseek-coder",
-    ]
-
-    static let contextWindowSizes: [String: Int] = [
-        "deepseek-chat": 128_000,
-        "deepseek-coder": 128_000,
+    static let modelCatalog: [LLMModelCatalogItem] = [
+        .init(id: "deepseek-chat", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "deepseek-coder", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
     ]
 
     // MARK: - SuperLLMProvider

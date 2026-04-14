@@ -277,6 +277,9 @@
         }
       }
     },
+    "Image" : {
+
+    },
     "Input Area" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -690,6 +693,12 @@
           }
         }
       }
+    },
+    "Text" : {
+
+    },
+    "Tools" : {
+
     },
     "Upload Image" : {
       "extractionState" : "manual",

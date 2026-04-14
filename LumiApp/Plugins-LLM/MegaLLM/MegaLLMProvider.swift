@@ -22,36 +22,20 @@ final class MegaLLMProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Se
     static let apiKeyStorageKey = "DevAssistant_ApiKey_MegaLLM"
     static let defaultModel = "gpt-5-mini"
 
-    static let availableModels = [
-        "alibaba-qwen3.5-397b",
-        "claude-haiku-4-5-20251001",
-        "claude-opus-4-5-20251101",
-        "claude-opus-4-6",
-        "claude-sonnet-4-5-20250929",
-        "claude-sonnet-4-6",
-        "deepseek-ai/deepseek-v3.1",
-        "grok-4.1-fast-reasoning",
-        "gpt-5-mini",
-        "gpt-5.3-codex",
-        "llama3.3-70b-instruct",
-        "minimaxai/minimax-m2.1",
-        "newclaude-opus-4-6",
-    ]
-
-    static let contextWindowSizes: [String: Int] = [
-        "alibaba-qwen3.5-397b": 131_072,
-        "claude-haiku-4-5-20251001": 200_000,
-        "claude-opus-4-5-20251101": 200_000,
-        "claude-opus-4-6": 200_000,
-        "claude-sonnet-4-5-20250929": 200_000,
-        "claude-sonnet-4-6": 200_000,
-        "deepseek-ai/deepseek-v3.1": 128_000,
-        "grok-4.1-fast-reasoning": 128_000,
-        "gpt-5-mini": 128_000,
-        "gpt-5.3-codex": 128_000,
-        "llama3.3-70b-instruct": 128_000,
-        "minimaxai/minimax-m2.1": 1_000_000,
-        "newclaude-opus-4-6": 200_000,
+    static let modelCatalog: [LLMModelCatalogItem] = [
+        .init(id: "alibaba-qwen3.5-397b", spec: .init(contextWindowSize: 131_072, supportsVision: false, supportsTools: true)),
+        .init(id: "claude-haiku-4-5-20251001", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
+        .init(id: "claude-opus-4-5-20251101", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
+        .init(id: "claude-opus-4-6", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
+        .init(id: "claude-sonnet-4-5-20250929", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
+        .init(id: "claude-sonnet-4-6", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
+        .init(id: "deepseek-ai/deepseek-v3.1", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "grok-4.1-fast-reasoning", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5-mini", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.3-codex", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "llama3.3-70b-instruct", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "minimaxai/minimax-m2.1", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
+        .init(id: "newclaude-opus-4-6", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
     ]
 
     // MARK: - SuperLLMProvider

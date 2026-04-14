@@ -20,20 +20,12 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     static let apiKeyStorageKey = "DevAssistant_ApiKey_OpenAI"
     static let defaultModel = "gpt-4o"
 
-    static let availableModels = [
-        "gpt-4o",
-        "gpt-4o-mini",
-        "gpt-4-turbo",
-        "gpt-4",
-        "gpt-3.5-turbo",
-    ]
-
-    static let contextWindowSizes: [String: Int] = [
-        "gpt-4o": 128_000,
-        "gpt-4o-mini": 128_000,
-        "gpt-4-turbo": 128_000,
-        "gpt-4": 8_192,
-        "gpt-3.5-turbo": 16_385,
+    static let modelCatalog: [LLMModelCatalogItem] = [
+        .init(id: "gpt-4o", spec: .init(contextWindowSize: 128_000, supportsVision: true, supportsTools: true)),
+        .init(id: "gpt-4o-mini", spec: .init(contextWindowSize: 128_000, supportsVision: true, supportsTools: true)),
+        .init(id: "gpt-4-turbo", spec: .init(contextWindowSize: 128_000, supportsVision: true, supportsTools: true)),
+        .init(id: "gpt-4", spec: .init(contextWindowSize: 8_192, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-3.5-turbo", spec: .init(contextWindowSize: 16_385, supportsVision: false, supportsTools: true)),
     ]
 
     // MARK: - SuperLLMProvider
