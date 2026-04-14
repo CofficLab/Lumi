@@ -10,6 +10,17 @@ import CodeEditLanguages
 @MainActor
 final class LumiEditorState: ObservableObject {
     
+    // MARK: - External File Watching
+    
+    /// 轮询定时器
+    private var pollTimer: Timer?
+    
+    /// 上次已知的文件修改日期
+    private var lastKnownModificationDate: Date?
+    
+    /// 轮询间隔（秒）
+    private static let pollInterval: TimeInterval = 1.0
+    
     // MARK: - File State
     
     /// 当前文件 URL
@@ -302,6 +313,9 @@ final class LumiEditorState: ObservableObject {
                     
                     // 计算行数
                     self.totalLines = content.filter { $0 == "\n" }.count + 1
+                    
+                    // 启动文件变化监听器（检测外部编辑器的修改）
+                    self.setupFileWatcher(for: loadingURL)
                 }
             } catch {
                 await MainActor.run { [weak self] in
@@ -327,6 +341,9 @@ final class LumiEditorState: ObservableObject {
         cursorLine = 1
         cursorColumn = 1
         totalLines = 0
+        
+        // 清理文件监听器
+        cleanupFileWatcher()
     }
     
     // MARK: - Content Change Detection
@@ -444,6 +461,115 @@ final class LumiEditorState: ObservableObject {
     }
     
     // MARK: - File Helpers
+
+    // MARK: - External File Watching
+    
+    /// 设置文件变化监听器
+    /// 使用定时轮询方案，兼容所有外部编辑器的保存方式（包括原子保存）
+    private func setupFileWatcher(for url: URL) {
+        cleanupFileWatcher()
+        
+        lastKnownModificationDate = Self.getModificationDate(of: url)
+        
+        // 创建定时器，每次触发时检查文件是否被外部修改
+        let timer = Timer.scheduledTimer(
+            withTimeInterval: Self.pollInterval,
+            repeats: true
+        ) { [weak self] _ in
+            guard let self else { return }
+            DispatchQueue.main.async {
+                self.pollFileChange(url: url)
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        pollTimer = timer
+        
+        print("✏️ [LumiEditor] 已启动文件轮询监听：\(url.lastPathComponent)")
+    }
+    
+    /// 停止文件监听
+    private func cleanupFileWatcher() {
+        pollTimer?.invalidate()
+        pollTimer = nil
+        lastKnownModificationDate = nil
+    }
+    
+    /// 轮询检查文件是否变化
+    private func pollFileChange(url: URL) {
+        // 有未保存修改时不覆盖
+        guard !hasUnsavedChanges else { return }
+        
+        let currentModDate = Self.getModificationDate(of: url)
+        
+        // 文件可能被删除
+        guard let currentModDate else {
+            return
+        }
+        
+        // 修改日期没变，跳过
+        if let lastDate = lastKnownModificationDate,
+           currentModDate.timeIntervalSince(lastDate) < 0.5 {
+            return
+        }
+        
+        // 修改日期变了，读取内容对比
+        reloadIfFileChangedExternally(url: url, currentModDate: currentModDate)
+    }
+    
+    /// 检查文件内容是否变化并重新加载
+    private func reloadIfFileChangedExternally(url: URL, currentModDate: Date) {
+        guard let currentContent = content?.string else { return }
+        let currentHash = currentContent.hashValue
+        
+        Task {
+            do {
+                let fileHandle = try FileHandle(forReadingFrom: url)
+                let data = try fileHandle.readToEnd()
+                try fileHandle.close()
+                
+                guard let data, let newContent = String(data: data, encoding: .utf8) else { return }
+                let newHash = newContent.hashValue
+                
+                guard newHash != currentHash else {
+                    // 内容没变，只更新修改日期
+                    self.lastKnownModificationDate = currentModDate
+                    return
+                }
+                
+                self.applyExternalContent(newContent, modificationDate: currentModDate)
+            } catch {
+                print("⚠️ [LumiEditor] 读取外部文件失败：\(error)")
+            }
+        }
+    }
+    
+    /// 应用外部修改到编辑器
+    private func applyExternalContent(_ newContent: String, modificationDate: Date) {
+        guard !hasUnsavedChanges else { return }
+        
+        print("🔄 [LumiEditor] 检测到外部修改，重新加载：\(currentFileURL?.lastPathComponent ?? "")")
+        
+        // 关键：原地替换现有 NSTextStorage 的内容，而不是创建新对象
+        // SourceEditor 持有的是旧 NSTextStorage 的引用，替换引用不会触发 UI 更新
+        if let existingContent = content {
+            existingContent.mutableString.setString(newContent)
+        } else {
+            content = NSTextStorage(string: newContent)
+        }
+        
+        persistedContentHash = newContent.hashValue
+        lastKnownModificationDate = modificationDate
+        hasUnsavedChanges = false
+        saveState = .idle
+        totalLines = newContent.filter { $0 == "\n" }.count + 1
+    }
+    
+    /// 获取文件的修改日期
+    private static func getModificationDate(of url: URL) -> Date? {
+        try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
+    }
+
+    // MARK: - File Loading
     
     /// 读取截断内容
     private func readTruncatedContent(from url: URL, maxBytes: Int) throws -> String {
