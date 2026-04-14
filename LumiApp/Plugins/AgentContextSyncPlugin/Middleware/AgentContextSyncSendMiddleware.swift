@@ -138,11 +138,6 @@ final class AgentContextSyncSendMiddleware: SendMiddleware, SuperLog {
         lines.append("")
         lines.append("You should be aware of the project context when responding to user queries. If the user asks about files, code, or project-specific topics, consider the current project path as the working directory.")
         lines.append("")
-        lines.append("You can use the following tools to interact with the project:")
-        lines.append("- `project_overview`: Get an overview of the current project")
-        lines.append("- `ls`: List files and directories in the project")
-        lines.append("- `read_file`: Read file contents from the project")
-        lines.append("- `write_file` / `edit_file`: Create or modify files in the project")
 
         return lines.joined(separator: "\n")
     }
