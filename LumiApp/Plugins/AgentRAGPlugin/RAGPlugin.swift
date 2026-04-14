@@ -11,7 +11,7 @@ import os
 /// - 服务在插件启用时自动初始化
 actor RAGPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🦞"
-    nonisolated static let enable: Bool = false
+    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = false
 
     static let id = "rag"
