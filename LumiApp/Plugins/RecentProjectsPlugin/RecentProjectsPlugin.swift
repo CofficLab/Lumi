@@ -46,7 +46,7 @@ actor RecentProjectsPlugin: SuperPlugin {
         [
             ListRecentProjectsTool(),
             GetCurrentProjectTool(),
-            SetCurrentProjectTool(),
+//            SetCurrentProjectTool(),
             AddProjectTool(),
             GetCurrentFileTool(),
             SetCurrentFileTool(),
