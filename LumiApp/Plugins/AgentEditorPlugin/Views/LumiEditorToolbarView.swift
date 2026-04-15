@@ -159,46 +159,52 @@ struct LumiEditorToolbarView: View {
     @StateObject private var diagnosticsManager = LumiDiagnosticsManager()
     
     private var lspStatusIndicator: some View {
-        HStack(spacing: 8) {
-            if diagnosticsManager.errorCount > 0 {
-                HStack(spacing: 3) {
-                    Image(systemName: "xmark.circle.fill")
+        Button {
+            state.toggleProblemsPanel()
+        } label: {
+            HStack(spacing: 8) {
+                if diagnosticsManager.errorCount > 0 {
+                    HStack(spacing: 3) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 9))
+                            .foregroundColor(AppUI.Color.semantic.error)
+                        Text("\(diagnosticsManager.errorCount)")
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundColor(AppUI.Color.semantic.error)
+                    }
+                }
+
+                if diagnosticsManager.warningCount > 0 {
+                    HStack(spacing: 3) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 9))
+                            .foregroundColor(AppUI.Color.semantic.warning)
+                        Text("\(diagnosticsManager.warningCount)")
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundColor(AppUI.Color.semantic.warning)
+                    }
+                }
+
+                if !LumiLSPService.shared.isAvailable {
+                    Image(systemName: "circle")
+                        .font(.system(size: 6))
+                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .help(String(localized: "LSP not available", table: "LumiEditor"))
+                } else if LumiLSPService.shared.isInitializing {
+                    ProgressView()
+                        .scaleEffect(0.5)
+                        .help(String(localized: "LSP initializing...", table: "LumiEditor"))
+                } else {
+                    Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 9))
-                        .foregroundColor(AppUI.Color.semantic.error)
-                    Text("\(diagnosticsManager.errorCount)")
-                        .font(.system(size: 9, weight: .medium))
-                        .foregroundColor(AppUI.Color.semantic.error)
+                        .foregroundColor(AppUI.Color.semantic.success)
+                        .help(String(localized: "LSP active", table: "LumiEditor"))
                 }
             }
-            
-            if diagnosticsManager.warningCount > 0 {
-                HStack(spacing: 3) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 9))
-                        .foregroundColor(AppUI.Color.semantic.warning)
-                    Text("\(diagnosticsManager.warningCount)")
-                        .font(.system(size: 9, weight: .medium))
-                        .foregroundColor(AppUI.Color.semantic.warning)
-                }
-            }
-            
-            if !LumiLSPService.shared.isAvailable {
-                Image(systemName: "circle")
-                    .font(.system(size: 6))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
-                    .help(String(localized: "LSP not available", table: "LumiEditor"))
-            } else if LumiLSPService.shared.isInitializing {
-                ProgressView()
-                    .scaleEffect(0.5)
-                    .help(String(localized: "LSP initializing...", table: "LumiEditor"))
-            } else {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 9))
-                    .foregroundColor(AppUI.Color.semantic.success)
-                    .help(String(localized: "LSP active", table: "LumiEditor"))
-            }
+            .opacity(diagnosticsManager.errorCount > 0 || diagnosticsManager.warningCount > 0 || !LumiLSPService.shared.isAvailable ? 1 : 0.5)
         }
-        .opacity(diagnosticsManager.errorCount > 0 || diagnosticsManager.warningCount > 0 || !LumiLSPService.shared.isAvailable ? 1 : 0.5)
+        .buttonStyle(.plain)
+        .help(String(localized: "Toggle Problems", table: "LumiEditor"))
     }
     
     // MARK: - Theme Picker

@@ -691,6 +691,9 @@
         }
       }
     },
+    "No Problems" : {
+
+    },
     "No references found" : {
       "localizations" : {
         "en" : {
@@ -756,6 +759,9 @@
           }
         }
       }
+    },
+    "Problems" : {
+
     },
     "Professional code editor with syntax highlighting, code folding, minimap, and find/replace" : {
       "localizations" : {
@@ -1050,6 +1056,9 @@
           }
         }
       }
+    },
+    "Toggle Problems" : {
+
     },
     "Unsupported File" : {
       "localizations" : {

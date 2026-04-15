@@ -26,6 +26,51 @@ final class LumiEditorState: ObservableObject {
         let path: String
         let preview: String
     }
+
+    // MARK: - Problems
+
+    /// 当前文件的诊断列表（Problems 面板数据源）
+    @Published var problemDiagnostics: [Diagnostic] = []
+
+    /// 是否展示 Problems 面板
+    @Published var isProblemsPanelPresented: Bool = false
+
+    private var diagnosticsCancellable: AnyCancellable?
+
+    private func bindDiagnostics() {
+        diagnosticsCancellable?.cancel()
+        diagnosticsCancellable = LumiLSPService.shared.$currentDiagnostics
+            .receive(on: RunLoop.main)
+            .sink { [weak self] diags in
+                self?.problemDiagnostics = diags
+                // 面板打开时保持打开；面板关闭时不强制弹出
+            }
+    }
+
+    func toggleProblemsPanel() {
+        if isProblemsPanelPresented {
+            isProblemsPanelPresented = false
+        } else {
+            // 打开 problems 时优先关闭 references，避免右侧面板冲突
+            isReferencePanelPresented = false
+            isProblemsPanelPresented = true
+        }
+    }
+
+    func closeProblemsPanel() {
+        isProblemsPanelPresented = false
+    }
+
+    func openProblem(_ diag: Diagnostic) {
+        let line = Int(diag.range.start.line) + 1
+        let column = Int(diag.range.start.character) + 1
+        editorState.cursorPositions = [
+            CursorPosition(
+                start: .init(line: line, column: column),
+                end: nil
+            )
+        ]
+    }
     
     // MARK: - External File Watching
     
@@ -215,9 +260,10 @@ final class LumiEditorState: ObservableObject {
     // MARK: - Init
     
     init() {
+        bindDiagnostics()
         restoreConfig()
     }
-    
+
     // MARK: - Config Persistence
     
     /// 从持久化存储恢复配置
@@ -348,6 +394,7 @@ final class LumiEditorState: ObservableObject {
                     self.hoverText = nil
                     self.referenceResults = []
                     self.isReferencePanelPresented = false
+                    self.isProblemsPanelPresented = false
                     
                     // 启动文件变化监听器（检测外部编辑器的修改）
                     self.setupFileWatcher(for: loadingURL)
@@ -441,6 +488,8 @@ final class LumiEditorState: ObservableObject {
         hoverText = nil
         referenceResults = []
         isReferencePanelPresented = false
+        problemDiagnostics = []
+        isProblemsPanelPresented = false
         
         // 清理文件监听器
         cleanupFileWatcher()
