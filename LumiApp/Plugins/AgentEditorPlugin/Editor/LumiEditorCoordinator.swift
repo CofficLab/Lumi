@@ -104,6 +104,35 @@ final class LumiEditorCoordinator: TextViewCoordinator, TextViewDelegate {
             let line = max(cursor.line - 1, 0)
             let character = max(cursor.column - 1, 0)
             state.hoverText = await state.lspCoordinator.requestHover(line: line, character: character)
+            
+            // 触发文档高亮（Symbol Highlight）
+            if let fileURL = state.currentFileURL, let content = state.content {
+                await state.documentHighlightProvider.requestHighlight(
+                    uri: fileURL.absoluteString,
+                    line: line,
+                    character: character,
+                    content: content.string
+                )
+            }
+            
+            // 触发代码动作（如果有诊断）
+            if let fileURL = state.currentFileURL, let contentString = state.content?.string {
+                let diagnostics = state.problemDiagnostics.filter { diag in
+                    Int(diag.range.start.line) + 1 == cursor.line ||
+                    (Int(diag.range.start.line) + 1 < cursor.line && Int(diag.range.end.line) + 1 >= cursor.line)
+                }
+                if !diagnostics.isEmpty {
+                    await state.codeActionProvider.requestCodeActionsForLine(
+                        uri: fileURL.absoluteString,
+                        line: line,
+                        character: character,
+                        diagnostics: diagnostics,
+                        content: contentString
+                    )
+                } else {
+                    state.codeActionProvider.clear()
+                }
+            }
         }
     }
     

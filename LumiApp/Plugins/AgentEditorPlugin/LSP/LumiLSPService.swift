@@ -270,6 +270,55 @@ final class LumiLSPService: ObservableObject {
         }
     }
     
+    func requestSignatureHelp(uri: String, line: Int, character: Int) async -> SignatureHelp? {
+        guard let server else { return nil }
+        guard server.capabilities.signatureHelpProvider != nil else { return nil }
+        do {
+            return try await server.signatureHelp(uri: uri, line: line, character: character)
+        } catch {
+            logger.error("Signature help failed: \(error)")
+            return nil
+        }
+    }
+    
+    func requestInlayHint(uri: String, startLine: Int, startCharacter: Int, endLine: Int, endCharacter: Int) async -> [InlayHint]? {
+        guard let server else { return nil }
+        guard server.capabilities.inlayHintProvider != nil else { return nil }
+        do {
+            return try await server.inlayHint(uri: uri, startLine: startLine, startCharacter: startCharacter, endLine: endLine, endCharacter: endCharacter)
+        } catch {
+            logger.error("Inlay hint failed: \(error)")
+            return nil
+        }
+    }
+    
+    func requestDocumentHighlight(uri: String, line: Int, character: Int) async -> [DocumentHighlight] {
+        guard let server else { return [] }
+        guard server.capabilities.documentHighlightProvider != nil else { return [] }
+        do {
+            return try await server.documentHighlight(uri: uri, line: line, character: character)
+        } catch {
+            logger.error("Document highlight failed: \(error)")
+            return []
+        }
+    }
+    
+    func requestCodeAction(uri: String, range: LSPRange, diagnostics: [Diagnostic], triggerKinds: [CodeActionKind]? = nil) async -> [CodeAction] {
+        guard let server else { return [] }
+        guard server.capabilities.codeActionProvider != nil else { return [] }
+        do {
+            let context = CodeActionContext(
+                diagnostics: diagnostics,
+                only: triggerKinds,
+                triggerKind: .invoked
+            )
+            return try await server.codeAction(uri: uri, range: range, context: context)
+        } catch {
+            logger.error("Code action failed: \(error)")
+            return []
+        }
+    }
+    
     func requestSemanticTokens(uri: String) async -> SemanticTokens? {
         guard let server else { return nil }
         do {

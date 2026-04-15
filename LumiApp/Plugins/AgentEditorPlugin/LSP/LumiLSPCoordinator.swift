@@ -108,6 +108,30 @@ class LumiLSPCoordinator: ObservableObject {
         guard let uri = fileURI else { return nil }
         return await lspService.requestFormatting(uri: uri, tabSize: tabSize, insertSpaces: insertSpaces)
     }
+    
+    /// 请求签名帮助
+    func requestSignatureHelp(line: Int, character: Int) async -> SignatureHelp? {
+        guard let uri = fileURI else { return nil }
+        return await lspService.requestSignatureHelp(uri: uri, line: line, character: character)
+    }
+    
+    /// 请求内联提示
+    func requestInlayHint(startLine: Int, startCharacter: Int, endLine: Int, endCharacter: Int) async -> [InlayHint]? {
+        guard let uri = fileURI else { return nil }
+        return await lspService.requestInlayHint(uri: uri, startLine: startLine, startCharacter: startCharacter, endLine: endLine, endCharacter: endCharacter)
+    }
+    
+    /// 请求文档高亮
+    func requestDocumentHighlight(line: Int, character: Int) async -> [DocumentHighlight] {
+        guard let uri = fileURI else { return [] }
+        return await lspService.requestDocumentHighlight(uri: uri, line: line, character: character)
+    }
+    
+    /// 请求代码动作
+    func requestCodeAction(range: LSPRange, diagnostics: [Diagnostic], triggerKinds: [CodeActionKind]? = nil) async -> [CodeAction] {
+        guard let uri = fileURI else { return [] }
+        return await lspService.requestCodeAction(uri: uri, range: range, diagnostics: diagnostics, triggerKinds: triggerKinds)
+    }
 
     func completionTriggerCharacters() -> Set<String> {
         lspService.completionTriggerCharacters

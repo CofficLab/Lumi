@@ -331,6 +331,49 @@ final class LumiLanguageServer: @unchecked Sendable {
         return try await server.semanticTokensFullDelta(params)
     }
     
+    func signatureHelp(uri: String, line: Int, character: Int) async throws -> SignatureHelpResponse {
+        let params = TextDocumentPositionParams(
+            textDocument: TextDocumentIdentifier(uri: uri),
+            position: Position(line: line, character: character)
+        )
+        return try await server.signatureHelp(params)
+    }
+    
+    func inlayHint(uri: String, startLine: Int, startCharacter: Int, endLine: Int, endCharacter: Int) async throws -> InlayHintResponse {
+        let range = LSPRange(
+            start: Position(line: startLine, character: startCharacter),
+            end: Position(line: endLine, character: endCharacter)
+        )
+        let params = InlayHintParams(
+            workDoneToken: nil,
+            textDocument: TextDocumentIdentifier(uri: uri),
+            range: range
+        )
+        return try await server.inlayHint(params)
+    }
+    
+    func documentHighlight(uri: String, line: Int, character: Int) async throws -> [DocumentHighlight] {
+        let params = DocumentHighlightParams(
+            textDocument: TextDocumentIdentifier(uri: uri),
+            position: Position(line: line, character: character)
+        )
+        return try await server.documentHighlight(params) ?? []
+    }
+    
+    func codeAction(
+        uri: String,
+        range: LSPRange,
+        context: CodeActionContext
+    ) async throws -> [CodeAction] {
+        let params = CodeActionParams(
+            textDocument: TextDocumentIdentifier(uri: uri),
+            range: range,
+            context: context
+        )
+        let response = try await server.codeAction(params)
+        return parseCodeActionResponse(response)
+    }
+    
     // MARK: - Shutdown
     
     func shutdown() async throws {
@@ -383,6 +426,19 @@ final class LumiLanguageServer: @unchecked Sendable {
 
     var completionTriggerCharacters: Set<String> {
         Set(capabilities.completionProvider?.triggerCharacters ?? [])
+    }
+    
+    /// CodeActionResponse = [TwoTypeOption<Command, CodeAction>]?
+    private func parseCodeActionResponse(_ response: CodeActionResponse) -> [CodeAction] {
+        guard let response else { return [] }
+        return response.compactMap { item -> CodeAction? in
+            switch item {
+            case .optionA(let command):
+                return CodeAction(title: command.title, command: command)
+            case .optionB(let action):
+                return action
+            }
+        }
     }
     
     private func applyChanges(_ changes: [DocumentChange], to content: String?) -> String? {

@@ -310,6 +310,9 @@
         }
       }
     },
+    "%lld available" : {
+
+    },
     "%lld images" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1498,6 +1501,9 @@
       }
     },
     "Close Tab" : {
+
+    },
+    "Code Actions" : {
 
     },
     "Collecting data..." : {

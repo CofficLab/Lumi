@@ -119,6 +119,17 @@ final class LumiEditorState: ObservableObject {
     /// LSP 协调器（用于语言服务器集成）
     let lspCoordinator = LumiLSPCoordinator()
     
+    // MARK: - New LSP Providers
+    
+    /// 签名帮助提供者
+    let signatureHelpProvider = LumiSignatureHelpProvider()
+    /// 内联提示提供者
+    let inlayHintProvider = LumiInlayHintProvider()
+    /// 文档高亮提供者
+    let documentHighlightProvider = LumiDocumentHighlightProvider()
+    /// 代码动作提供者
+    let codeActionProvider = LumiCodeActionProvider()
+    
     /// 跳转定义代理（右键和 Cmd+Click 共享）
     weak var jumpDelegate: LumiJumpToDefinitionDelegate?
     

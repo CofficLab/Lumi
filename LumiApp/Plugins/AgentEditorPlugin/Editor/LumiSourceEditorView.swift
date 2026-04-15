@@ -18,6 +18,9 @@ struct LumiSourceEditorView: View {
     @State private var cursorCoordinator: LumiCursorCoordinator?
     @State private var contextMenuCoordinator: LumiContextMenuCoordinator?
     @State private var semanticTokenProvider: LumiSemanticTokenHighlightProvider?
+    @State private var documentHighlightProvider: LumiDocumentHighlightHighlighter?
+    @State private var signatureHelpProvider = LumiSignatureHelpProvider()
+    @State private var codeActionPanelPresented: Bool = false
     
     /// 跳转到定义代理（Cmd+Click / 右键跳转共用同一实例）
     @StateObject private var jumpDelegate: LumiJumpToDefinitionDelegate = {
@@ -81,9 +84,38 @@ struct LumiSourceEditorView: View {
             .overlay(alignment: .topTrailing) {
                 hoverPreview
             }
+            .overlay(alignment: .bottomLeading) {
+                signatureHelpOverlay
+            }
+            .overlay(alignment: .topLeading) {
+                codeActionOverlay
+            }
         } else {
             Text(String(localized: "No content available", table: "LumiEditor"))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+    
+    @ViewBuilder
+    private var signatureHelpOverlay: some View {
+        if let help = state.signatureHelpProvider.currentHelp {
+            LumiSignatureHelpView(item: help)
+                .padding(.leading, 12)
+                .padding(.bottom, 32)
+        }
+    }
+    
+    @ViewBuilder
+    private var codeActionOverlay: some View {
+        if state.codeActionProvider.isVisible {
+            LumiCodeActionPanel(
+                actions: state.codeActionProvider.actions
+            ) { action in
+                // 执行代码动作后关闭面板
+                state.codeActionProvider.clear()
+            }
+            .padding(.leading, 12)
+            .padding(.top, 48)
         }
     }
 
@@ -123,6 +155,11 @@ struct LumiSourceEditorView: View {
                 state?.currentFileURL?.absoluteString
             })
         }
+        if documentHighlightProvider == nil {
+            documentHighlightProvider = LumiDocumentHighlightHighlighter(
+                provider: state.documentHighlightProvider
+            )
+        }
         if cachedConfig == nil {
             updateConfigCache()
         }
@@ -161,10 +198,14 @@ struct LumiSourceEditorView: View {
     }
     
     private var activeHighlightProviders: [any HighlightProviding] {
+        var providers: [any HighlightProviding] = [treeSitterClient]
         if let semanticTokenProvider {
-            return [semanticTokenProvider, treeSitterClient]
+            providers.insert(semanticTokenProvider, at: 0)
         }
-        return [treeSitterClient]
+        if let documentHighlightProvider {
+            providers.append(documentHighlightProvider)
+        }
+        return providers
     }
     
     private var activeCoordinators: [TextViewCoordinator] {
