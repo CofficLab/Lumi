@@ -380,6 +380,187 @@ final class LumiLSPService: ObservableObject {
         server?.completionTriggerCharacters ?? []
     }
     
+    // MARK: - New LSP Features
+    
+    // MARK: Folding Range
+    
+    func requestFoldingRange(uri: String) async -> [FoldingRange] {
+        guard let server else { return [] }
+        guard server.capabilities.foldingRangeProvider != nil else { return [] }
+        do {
+            let response = try await server.foldingRange(uri: uri)
+            return response ?? []
+        } catch {
+            logger.error("Folding range failed: \(error)")
+            return []
+        }
+    }
+    
+    // MARK: Selection Range
+    
+    func requestSelectionRange(uri: String, line: Int, character: Int) async -> [SelectionRange] {
+        guard let server else { return [] }
+        do {
+            return try await server.selectionRange(uri: uri, line: line, character: character) ?? []
+        } catch {
+            logger.error("Selection range failed: \(error)")
+            return []
+        }
+    }
+    
+    // MARK: Document Link
+    
+    func requestDocumentLinks(uri: String) async -> [DocumentLink] {
+        guard let server else { return [] }
+        guard server.capabilities.documentLinkProvider != nil else { return [] }
+        do {
+            return try await server.documentLink(uri: uri) ?? []
+        } catch {
+            logger.error("Document link failed: \(error)")
+            return []
+        }
+    }
+    
+    func resolveDocumentLink(_ link: LumiDocumentLink) async -> DocumentLink? {
+        guard let server else { return nil }
+        let lspLink = DocumentLink(
+            range: link.range,
+            target: link.target,
+            tooltip: link.tooltip,
+            data: link.data
+        )
+        do {
+            return try await server.resolveDocumentLink(lspLink)
+        } catch {
+            logger.error("Resolve document link failed: \(error)")
+            return nil
+        }
+    }
+    
+    func resolveDocumentLinkLSP(_ link: DocumentLink) async -> DocumentLink? {
+        guard let server else { return nil }
+        do {
+            return try await server.resolveDocumentLink(link)
+        } catch {
+            logger.error("Resolve document link failed: \(error)")
+            return nil
+        }
+    }
+    
+    // MARK: Document Color
+    
+    func requestDocumentColors(uri: String) async -> [ColorInformation] {
+        guard let server else { return [] }
+        guard server.capabilities.colorProvider != nil else { return [] }
+        do {
+            return try await server.documentColor(uri: uri)
+        } catch {
+            logger.error("Document color failed: \(error)")
+            return []
+        }
+    }
+    
+    func requestColorPresentation(uri: String, red: Double, green: Double, blue: Double, alpha: Double, range: LSPRange) async -> [ColorPresentation] {
+        guard let server else { return [] }
+        let color = Color(red: Float(red), green: Float(green), blue: Float(blue), alpha: Float(alpha))
+        do {
+            return try await server.colorPresentation(uri: uri, color: color, range: range)
+        } catch {
+            logger.error("Color presentation failed: \(error)")
+            return []
+        }
+    }
+    
+    // MARK: Call Hierarchy
+    
+    func requestCallHierarchyPrepare(uri: String, line: Int, character: Int) async -> [CallHierarchyItem] {
+        guard let server else { return [] }
+        guard server.capabilities.callHierarchyProvider != nil else { return [] }
+        do {
+            return try await server.callHierarchyPrepare(uri: uri, line: line, character: character) ?? []
+        } catch {
+            logger.error("Call hierarchy prepare failed: \(error)")
+            return []
+        }
+    }
+    
+    func requestCallHierarchyIncomingCalls(item: CallHierarchyItem) async -> [CallHierarchyIncomingCall] {
+        guard let server else { return [] }
+        do {
+            return (try await server.callHierarchyIncomingCalls(item: item)) ?? []
+        } catch {
+            logger.error("Call hierarchy incoming calls failed: \(error)")
+            return []
+        }
+    }
+    
+    func requestCallHierarchyOutgoingCalls(item: CallHierarchyItem) async -> [CallHierarchyOutgoingCall] {
+        guard let server else { return [] }
+        do {
+            return (try await server.callHierarchyOutgoingCalls(item: item)) ?? []
+        } catch {
+            logger.error("Call hierarchy outgoing calls failed: \(error)")
+            return []
+        }
+    }
+    
+    // MARK: Workspace Symbol
+    
+    func requestWorkspaceSymbols(query: String) async -> WorkspaceSymbolResponse {
+        guard let server else { return nil }
+        do {
+            return try await server.workspaceSymbol(query: query)
+        } catch {
+            logger.error("Workspace symbol failed: \(error)")
+            return nil
+        }
+    }
+    
+    // MARK: Will Save / Will Save Wait Until
+    
+    // Note: willSave and willSaveWaitUntil are available via ServerConnection
+    // but not exposed via InitializingServer convenience methods
+    var supportsWillSave: Bool {
+        guard let server else { return false }
+        switch server.capabilities.textDocumentSync {
+        case .optionA(let options):
+            return options.willSave == true
+        default:
+            return false
+        }
+    }
+    
+    var supportsWillSaveWaitUntil: Bool {
+        guard let server else { return false }
+        switch server.capabilities.textDocumentSync {
+        case .optionA(let options):
+            return options.willSaveWaitUntil == true
+        default:
+            return false
+        }
+    }
+    
+    // MARK: Execute Command
+    
+    func executeCommand(command: String, arguments: [LanguageServerProtocol.LSPAny]? = nil) async -> LanguageServerProtocol.LSPAny? {
+        guard let server else { return nil }
+        guard let commands = server.capabilities.executeCommandProvider?.commands,
+              commands.contains(command) else {
+            logger.warning("Command \(command) not supported by server")
+            return nil
+        }
+        do {
+            return try await server.executeCommand(command: command, arguments: arguments)
+        } catch {
+            logger.error("Execute command failed: \(error)")
+            return nil
+        }
+    }
+    
+    // MARK: - Progress Notifications
+    
+    let progressProvider = LumiLSPProgressProvider()
+    
     // MARK: - Cleanup
     
     func stopAll() {

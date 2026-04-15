@@ -157,6 +157,48 @@ class LumiLSPCoordinator: ObservableObject {
     func completionTriggerCharacters() -> Set<String> {
         lspService.completionTriggerCharacters
     }
+    
+    // MARK: - New LSP Features
+    
+    /// 请求折叠范围
+    func requestFoldingRange() async -> [FoldingRange] {
+        guard let uri = fileURI else { return [] }
+        return await lspService.requestFoldingRange(uri: uri)
+    }
+    
+    /// 请求选择范围
+    func requestSelectionRange(line: Int, character: Int) async -> [SelectionRange] {
+        guard let uri = fileURI else { return [] }
+        return await lspService.requestSelectionRange(uri: uri, line: line, character: character)
+    }
+    
+    /// 请求文档链接
+    func requestDocumentLinks() async -> [DocumentLink] {
+        guard let uri = fileURI else { return [] }
+        return await lspService.requestDocumentLinks(uri: uri)
+    }
+    
+    /// 请求文档颜色
+    func requestDocumentColors() async -> [ColorInformation] {
+        guard let uri = fileURI else { return [] }
+        return await lspService.requestDocumentColors(uri: uri)
+    }
+    
+    /// 请求调用层级
+    func requestCallHierarchy(line: Int, character: Int) async {
+        guard let uri = fileURI else { return }
+        await lspService.requestCallHierarchyPrepare(uri: uri, line: line, character: character)
+    }
+    
+    /// 请求工作区符号
+    func requestWorkspaceSymbols(query: String) async -> WorkspaceSymbolResponse {
+        return await lspService.requestWorkspaceSymbols(query: query)
+    }
+    
+    /// 执行 LSP 自定义命令
+    func executeCommand(command: String, arguments: [LanguageServerProtocol.LSPAny]? = nil) async -> LanguageServerProtocol.LSPAny? {
+        return await lspService.executeCommand(command: command, arguments: arguments)
+    }
 }
 
 // MARK: - Diagnostics Manager

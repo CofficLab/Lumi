@@ -21,6 +21,7 @@ final class LumiLanguageServer: @unchecked Sendable {
     private(set) var semanticTokenMap: LumiSemanticTokenMap?
     private var eventTask: Task<Void, Never>?
     var onPublishDiagnostics: ((PublishDiagnosticsParams) -> Void)?
+    var onProgressUpdate: ((String, LanguageServerProtocol.LSPAny?) -> Void)?
     
     private init(
         languageId: String,
@@ -398,7 +399,88 @@ final class LumiLanguageServer: @unchecked Sendable {
         return try await server.implementation(params)
     }
     
-    // MARK: - Shutdown
+    // MARK: - New LSP Capabilities
+    
+    // MARK: Folding Range
+    
+    func foldingRange(uri: String) async throws -> FoldingRangeResponse {
+        let params = FoldingRangeParams(textDocument: TextDocumentIdentifier(uri: uri))
+        return try await server.sendRequest(.foldingRange(params, ClientRequest.NullHandler))
+    }
+    
+    // MARK: Selection Range
+    
+    func selectionRange(uri: String, line: Int, character: Int) async throws -> [SelectionRange]? {
+        let params = SelectionRangeParams(
+            textDocument: TextDocumentIdentifier(uri: uri),
+            positions: [Position(line: line, character: character)]
+        )
+        return try await server.sendRequest(.selectionRange(params, ClientRequest.NullHandler))
+    }
+    
+    // MARK: Document Link
+    
+    func documentLink(uri: String) async throws -> [DocumentLink]? {
+        // DocumentLinkParams in LSP lib doesn't have textDocument field - need to work around
+        let params = DocumentLinkParams()
+        return try await server.sendRequest(.documentLink(params, ClientRequest.NullHandler))
+    }
+    
+    func resolveDocumentLink(_ link: DocumentLink) async throws -> DocumentLink {
+        return try await server.sendRequest(.documentLinkResolve(link, ClientRequest.NullHandler))
+    }
+    
+    // MARK: Document Color
+    
+    func documentColor(uri: String) async throws -> [ColorInformation] {
+        let params = DocumentColorParams(textDocument: TextDocumentIdentifier(uri: uri))
+        return try await server.sendRequest(.documentColor(params, ClientRequest.NullHandler))
+    }
+    
+    func colorPresentation(uri: String, color: Color, range: LSPRange) async throws -> [ColorPresentation] {
+        let params = ColorPresentationParams(
+            textDocument: TextDocumentIdentifier(uri: uri),
+            color: color,
+            range: range
+        )
+        return try await server.sendRequest(.colorPresentation(params, ClientRequest.NullHandler))
+    }
+    
+    // MARK: Call Hierarchy
+    
+    func callHierarchyPrepare(uri: String, line: Int, character: Int) async throws -> [CallHierarchyItem]? {
+        let params = CallHierarchyPrepareParams(
+            textDocument: TextDocumentIdentifier(uri: uri),
+            position: Position(line: line, character: character)
+        )
+        return try await server.sendRequest(.prepareCallHierarchy(params, ClientRequest.NullHandler))
+    }
+    
+    func callHierarchyIncomingCalls(item: CallHierarchyItem) async throws -> [CallHierarchyIncomingCall]? {
+        let params = CallHierarchyIncomingCallsParams(item: item)
+        return try await server.sendRequest(.callHierarchyIncomingCalls(params, ClientRequest.NullHandler))
+    }
+    
+    func callHierarchyOutgoingCalls(item: CallHierarchyItem) async throws -> [CallHierarchyOutgoingCall]? {
+        let params = CallHierarchyOutgoingCallsParams(item: item)
+        return try await server.sendRequest(.callHierarchyOutgoingCalls(params, ClientRequest.NullHandler))
+    }
+    
+    // MARK: Workspace Symbol
+    
+    func workspaceSymbol(query: String) async throws -> WorkspaceSymbolResponse {
+        let params = WorkspaceSymbolParams(query: query)
+        return try await server.sendRequest(.workspaceSymbol(params, ClientRequest.NullHandler))
+    }
+    
+    // MARK: Execute Command
+    
+    func executeCommand(command: String, arguments: [LanguageServerProtocol.LSPAny]? = nil) async throws -> LSPAny? {
+        let params = ExecuteCommandParams(command: command, arguments: arguments)
+        return try await server.sendRequest(.workspaceExecuteCommand(params, ClientRequest.NullHandler))
+    }
+    
+    // MARK: Shutdown
     
     func shutdown() async throws {
         Self.logger.info("Shutting down server for \(self.languageId)")
@@ -425,6 +507,17 @@ final class LumiLanguageServer: @unchecked Sendable {
                     switch notification {
                     case let .textDocumentPublishDiagnostics(params):
                         self.onPublishDiagnostics?(params)
+                    case let .protocolProgress(params):
+                        // Handle $/progress notifications
+                        // ProgressToken = TwoTypeOption<Int, String>
+                        let tokenStr: String
+                        switch params.token {
+                        case .optionA(let i): tokenStr = String(i)
+                        case .optionB(let s): tokenStr = s
+                        }
+                        self.onProgressUpdate?(tokenStr, params.value)
+                    case let .windowShowMessage(params):
+                        Self.logger.info("LSP Message [\(params.type.rawValue)]: \(params.message)")
                     default:
                         continue
                     }
