@@ -52,6 +52,9 @@ final class LumiEditorState: ObservableObject {
     /// LSP 协调器（用于语言服务器集成）
     let lspCoordinator = LumiLSPCoordinator()
     
+    /// 跳转定义代理（右键和 Cmd+Click 共享）
+    weak var jumpDelegate: LumiJumpToDefinitionDelegate?
+    
     /// 当前文件是否可编辑
     @Published var isEditable: Bool = true
     

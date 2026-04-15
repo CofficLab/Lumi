@@ -19,15 +19,17 @@ struct LumiSourceEditorView: View {
     @State private var contextMenuCoordinator: LumiContextMenuCoordinator?
     @State private var semanticTokenProvider: LumiSemanticTokenHighlightProvider?
     
-    /// 跳转到定义代理（Cmd+Click）
-    @StateObject private var jumpDelegate = LumiJumpToDefinitionDelegate()
+    /// 跳转到定义代理（Cmd+Click / 右键跳转共用同一实例）
+    @StateObject private var jumpDelegate: LumiJumpToDefinitionDelegate = {
+        let d = LumiJumpToDefinitionDelegate()
+        return d
+    }()
     @State private var completionDelegate = LumiLSPCompletionDelegate()
     
     /// tree-sitter 客户端
     @State private var treeSitterClient = TreeSitterClient()
     
-    /// 缓存的配置（避免每次 body 重渲染都创建新对象导致 reloadUI）
-    /// 使用 @State 确保只初始化一次
+    /// 缓存的配置
     @State private var cachedConfig: SourceEditorConfiguration?
     
     init(state: LumiEditorState) {
@@ -136,6 +138,11 @@ struct LumiSourceEditorView: View {
         jumpDelegate.onOpenExternalDefinition = { [weak state] url, target in
             state?.openDefinitionLocation(url: url, target: target)
         }
+        state.jumpDelegate = jumpDelegate
+        
+        // 将 jumpDelegate 注入 coordinator，供非隔离方法使用
+        textCoordinator?.jumpDelegate = jumpDelegate
+        
         completionDelegate.lspCoordinator = state.lspCoordinator
     }
     

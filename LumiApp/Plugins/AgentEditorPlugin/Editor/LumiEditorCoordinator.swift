@@ -13,12 +13,20 @@ final class LumiEditorCoordinator: TextViewCoordinator, TextViewDelegate {
     private weak var state: LumiEditorState?
     private var editedRange: LSPRange?
     private var hoverTask: Task<Void, Never>?
+    private weak var textViewController: TextViewController?
+    /// 跳转定义代理（由外部注入）
+    weak var jumpDelegate: LumiJumpToDefinitionDelegate?
     
     init(state: LumiEditorState) {
         self.state = state
     }
     
     // MARK: - TextViewCoordinator
+    
+    nonisolated func prepareCoordinator(controller: TextViewController) {
+        textViewController = controller
+        jumpDelegate?.textViewController = controller
+    }
     
     nonisolated func textViewDidChangeText(controller: TextViewController) {
         let state = self.state
@@ -53,12 +61,11 @@ final class LumiEditorCoordinator: TextViewCoordinator, TextViewDelegate {
         }
     }
     
-    nonisolated func prepareCoordinator(controller: TextViewController) {}
-    
     nonisolated func destroy() {
         hoverTask?.cancel()
         hoverTask = nil
         state = nil
+        textViewController = nil
     }
     
     func textView(_ textView: TextView, willReplaceContentsIn range: NSRange, with string: String) {
@@ -418,70 +425,19 @@ final class LumiContextMenuHelper: NSObject {
     }
 
     private static func performGoToDefinition(textView: TextView, state: LumiEditorState) {
+        // 获取当前选区作为跳转起点
         let selection = textView.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
         guard selection.location != NSNotFound else { return }
-
-        let content = textView.string
-        guard let pos = lspPosition(utf16Offset: selection.location, in: content) else { return }
-
-        state.showStatusToast(
-            String(localized: "Finding definition...", table: "LumiEditor"),
-            level: .info,
-            duration: 1.2
-        )
-
+        
+        // 通过 delegate 复用 Cmd+Click 同一套跳转流程
         Task { @MainActor in
-            guard let location = await state.lspCoordinator.requestDefinition(
-                line: Int(pos.line),
-                character: Int(pos.character)
-            ) else {
-                state.showStatusToast(
-                    String(localized: "No definition found", table: "LumiEditor"),
-                    level: .warning
-                )
-                return
-            }
-
-            guard let url = URL(string: location.uri) else {
-                state.showStatusToast(
-                    String(localized: "Definition URL is invalid", table: "LumiEditor"),
-                    level: .error
-                )
-                return
-            }
-            let target = CursorPosition(
-                start: CursorPosition.Position(
-                    line: Int(location.range.start.line) + 1,
-                    column: Int(location.range.start.character) + 1
-                ),
-                end: CursorPosition.Position(
-                    line: Int(location.range.end.line) + 1,
-                    column: Int(location.range.end.character) + 1
-                )
-            )
-
-            // 与 Cmd+Click 行为对齐：同文件时直接在当前 textView 上设置选区，保证可见高亮
-            if state.currentFileURL == url {
-                let rawRange = nsRange(from: location.range, in: content)
-                let resolvedRange: NSRange? = {
-                    guard let rawRange else { return nil }
-                    if rawRange.length > 0 { return rawRange }
-                    return expandedWordRange(at: rawRange.location, in: content)
-                }()
-
-                if let resolvedRange {
-                    textView.selectionManager.setSelectedRange(resolvedRange)
-                    textView.scrollSelectionToVisible()
-                } else {
-                    state.openDefinitionLocation(url: url, target: target, highlightLine: true)
-                }
-            } else {
-                state.openDefinitionLocation(url: url, target: target, highlightLine: true)
-            }
             state.showStatusToast(
-                String(localized: "Jumped to definition", table: "LumiEditor"),
-                level: .success
+                String(localized: "Finding definition...", table: "LumiEditor"),
+                level: .info,
+                duration: 1.2
             )
+            
+            await state.jumpDelegate?.performGoToDefinition(forRange: selection)
         }
     }
 

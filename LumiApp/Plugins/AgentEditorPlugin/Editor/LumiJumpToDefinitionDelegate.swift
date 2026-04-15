@@ -18,11 +18,13 @@ import os
 /// 3. 调用此 Delegate 的 queryLinks 方法
 /// 4. 此方法通过 AST 或正则查找定义位置
 /// 5. 引擎自动执行跳转或显示多定义弹窗
+@preconcurrency
 final class LumiJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDelegate {
     
     weak var treeSitterClient: TreeSitterClient?
     weak var textStorage: NSTextStorage?
     weak var lspCoordinator: LumiLSPCoordinator?
+    weak var textViewController: TextViewController?
     var currentFileURLProvider: (() -> URL?)?
     var onOpenExternalDefinition: ((URL, CursorPosition) -> Void)?
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.jump-to-definition")
@@ -84,6 +86,45 @@ final class LumiJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDele
         logger.debug("📍 Opening link: \(link.label) -> \(link.url?.absoluteString ?? "local")")
         guard let url = link.url else { return }
         onOpenExternalDefinition?(url, link.targetRange)
+    }
+    
+    /// 右键菜单可直接调用此方法复用完整跳转流程
+    @MainActor
+    func performGoToDefinition(forRange range: NSRange) async {
+        guard let textStorage, let controller = textViewController else { return }
+        guard let links = await queryLinks(forRange: range, textView: controller),
+              !links.isEmpty else {
+            NSSound.beep()
+            return
+        }
+        
+        if links.count == 1 {
+            let link = links[0]
+            if link.url != nil {
+                onOpenExternalDefinition?(link.url!, link.targetRange)
+            } else {
+                // 同文件跳转：将 range 扩展到整行，保证选中背景高亮
+                let targetNSRange = link.targetRange.range
+                var selectionRange = targetNSRange
+                if targetNSRange.length == 0,
+                   let swiftRange = Range(targetNSRange, in: textStorage.string) {
+                    let lineRange = textStorage.string.lineRange(for: swiftRange)
+                    selectionRange = NSRange(lineRange, in: textStorage.string)
+                }
+                controller.textView.selectionManager.setSelectedRange(selectionRange)
+                controller.textView.scrollSelectionToVisible()
+            }
+        } else {
+            // 多定义情况：弹出选择窗口
+            if let range = Range(range, in: textStorage.string) {
+                let lineRange = textStorage.string.lineRange(for: range)
+                let nsLineRange = NSRange(lineRange, in: textStorage.string)
+                let _ = (textStorage.string as NSString).substring(with: nsLineRange)
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .prefix(80)
+                // TODO: show multi-definition popover
+            }
+        }
     }
 
     // MARK: - LSP 查找

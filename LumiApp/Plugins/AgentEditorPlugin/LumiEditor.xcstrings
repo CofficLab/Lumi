@@ -158,6 +158,7 @@
       }
     },
     "Definition URL is invalid" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -444,6 +445,7 @@
       }
     },
     "Jumped to definition" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -645,6 +647,7 @@
       }
     },
     "No definition found" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
