@@ -1088,8 +1088,18 @@ final class LumiEditorState: ObservableObject {
         let baseSelection: LumiMultiCursorSelection
         let query: String
 
+        // 检查当前选区的文本是否与旧 session 的 query 匹配
+        // 只有当前选区文本和旧 session 的 query 一致时才复用 session
+        let currentSelectionText: String? = {
+            if normalizedRange.length > 0 {
+                return text.substring(with: normalizedRange)
+            }
+            return nil
+        }()
+
         if let session = multiCursorSearchSession,
-           selectionText(for: session.baseSelection) == session.query {
+           selectionText(for: session.baseSelection) == session.query,
+           currentSelectionText == session.query {
             baseSelection = session.baseSelection
             query = session.query
         } else {

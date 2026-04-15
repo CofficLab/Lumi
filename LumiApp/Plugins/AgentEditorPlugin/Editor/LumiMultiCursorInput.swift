@@ -182,6 +182,14 @@ final class LumiMultiCursorInputHelper: NSObject {
 
         if commandPressed, !shiftPressed, key == "d" {
             let currentSelection = textView.selectionManager.textSelections.last?.range ?? NSRange(location: NSNotFound, length: 0)
+            // 同步选区到 state，确保 addNextOccurrence 使用最新的选区
+            let mapped = textView.selectionManager.textSelections
+                .map { $0.range }
+                .filter { $0.location != NSNotFound }
+                .map { LumiMultiCursorSelection(location: $0.location, length: $0.length) }
+            if !mapped.isEmpty {
+                state.setSelections(mapped)
+            }
             if let ranges = state.addNextOccurrence(from: currentSelection) {
                 textView.selectionManager.setSelectedRanges(ranges)
             }
