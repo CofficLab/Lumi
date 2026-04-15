@@ -692,7 +692,7 @@ final class LumiEditorState: ObservableObject {
                 scheduleSuccessClear()
             } catch {
                 print("❌ [LumiEditor] performSave: \(error)")
-                saveState = .error(String(localized: "Save failed: \(error.localizedDescription)", table: "LumiEditor"))
+                saveState = .error(String(localized: "Save failed", table: "LumiEditor") + ": \(error.localizedDescription)")
                 scheduleSuccessClear()
             }
         }

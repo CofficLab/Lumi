@@ -284,16 +284,6 @@
         }
       }
     },
-    "%@:%lld:%lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@:%2$lld:%3$lld"
-          }
-        }
-      }
-    },
     "%lld" : {
       "localizations" : {
         "zh-Hans" : {
@@ -678,9 +668,6 @@
           }
         }
       }
-    },
-    "A" : {
-
     },
     "About" : {
       "extractionState" : "stale",
@@ -3316,9 +3303,6 @@
         }
       }
     },
-    "No content" : {
-
-    },
     "No Listening Ports" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3887,9 +3871,6 @@
           }
         }
       }
-    },
-    "References (%lld)" : {
-
     },
     "Refresh" : {
       "localizations" : {

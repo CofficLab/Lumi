@@ -43,7 +43,7 @@ struct LumiEditorToolbarView: View {
     
     private var fontSizer: some View {
         HStack(spacing: 2) {
-            Text("A")
+            Text(String(localized: "A", table: "LumiEditor"))
                 .font(.system(size: 10))
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
             

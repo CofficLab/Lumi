@@ -80,7 +80,7 @@ struct LumiSourceEditorView: View {
                 hoverPreview
             }
         } else {
-            Text("No content")
+            Text(String(localized: "No content available", table: "LumiEditor"))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }

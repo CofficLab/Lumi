@@ -23,10 +23,10 @@ actor LumiEditorPlugin: SuperPlugin, SuperLog {
     static let id: String = "LumiEditor"
 
     /// Plugin display name
-    static let displayName: String = String(localized: "代码编辑器", table: "LumiEditor")
+    static let displayName: String = String(localized: "Code Editor", table: "LumiEditor")
 
     /// Plugin functional description
-    static let description: String = String(localized: "专业级代码编辑器，支持语法高亮、代码折叠、Minimap、查找替换", table: "LumiEditor")
+    static let description: String = String(localized: "Professional code editor with syntax highlighting, code folding, minimap, and find/replace", table: "LumiEditor")
 
     /// Plugin icon name
     static let iconName: String = "chevron.left.forwardslash.chevron.right"

@@ -24,7 +24,7 @@ struct LumiEditorReferencesPanelView: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            Text("References (\(state.referenceResults.count))")
+            Text(String(localized: "References", table: "LumiEditor") + " (\(state.referenceResults.count))")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(AppUI.Color.semantic.textPrimary)
 
@@ -52,7 +52,7 @@ struct LumiEditorReferencesPanelView: View {
                         state.openReference(item)
                     } label: {
                         VStack(alignment: .leading, spacing: 3) {
-                            Text("\(item.path):\(item.line):\(item.column)")
+                            Text(String(localized: "Location", table: "LumiEditor") + ": \(item.path):\(item.line):\(item.column)")
                                 .font(.system(size: 11, weight: .medium))
                                 .foregroundColor(AppUI.Color.semantic.textPrimary)
                                 .lineLimit(1)
