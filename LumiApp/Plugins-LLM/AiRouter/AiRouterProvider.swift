@@ -21,17 +21,17 @@ final class AiRouterProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     static let defaultModel = "gpt-5"
 
     static let modelCatalog: [LLMModelCatalogItem] = [
-        .init(id: "gpt-5.1-codex-max", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.1-codex-max", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
         .init(id: "gpt-5.2-codex", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
         .init(id: "gpt-5.4-mini", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
         .init(id: "gpt-5", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.1-codex-mini", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.1-codex-mini", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
         .init(id: "gpt-5.2", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
         .init(id: "gpt-5.3-codex", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
         .init(id: "gpt-5.4", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
         .init(id: "gpt-5-codex", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.1", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.1-codex", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.1", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.1-codex", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
     ]
 
     // MARK: - 启用状态配置
