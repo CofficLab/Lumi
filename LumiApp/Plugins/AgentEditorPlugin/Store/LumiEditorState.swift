@@ -206,6 +206,9 @@ final class LumiEditorState: ObservableObject {
     
     /// 是否显示代码折叠
     @Published var showFoldingRibbon: Bool = true
+
+    /// 右侧面板宽度
+    @Published var sidePanelWidth: CGFloat = 360
     
     // MARK: - Auto Save
     
@@ -303,6 +306,9 @@ final class LumiEditorState: ObservableObject {
         if let sf = LumiEditorConfigStore.loadBool(forKey: LumiEditorConfigStore.showFoldingRibbonKey) {
             showFoldingRibbon = sf
         }
+        if let panelWidth = LumiEditorConfigStore.loadDouble(forKey: LumiEditorConfigStore.sidePanelWidthKey) {
+            sidePanelWidth = clampedSidePanelWidth(panelWidth)
+        }
         // 恢复主题
         if let themeRaw = LumiEditorConfigStore.loadString(forKey: LumiEditorConfigStore.themeNameKey),
            let preset = LumiEditorThemeAdapter.PresetTheme(rawValue: themeRaw) {
@@ -321,6 +327,7 @@ final class LumiEditorState: ObservableObject {
         LumiEditorConfigStore.saveValue(showGutter, forKey: LumiEditorConfigStore.showGutterKey)
         LumiEditorConfigStore.saveValue(showFoldingRibbon, forKey: LumiEditorConfigStore.showFoldingRibbonKey)
         LumiEditorConfigStore.saveValue(themePreset.rawValue, forKey: LumiEditorConfigStore.themeNameKey)
+        LumiEditorConfigStore.saveValue(sidePanelWidth, forKey: LumiEditorConfigStore.sidePanelWidthKey)
     }
     
     /// 切换主题
@@ -631,6 +638,18 @@ final class LumiEditorState: ObservableObject {
 
     func closeReferencePanel() {
         isReferencePanelPresented = false
+    }
+
+    func updateSidePanelWidth(by delta: CGFloat) {
+        sidePanelWidth = clampedSidePanelWidth(sidePanelWidth + delta)
+    }
+
+    private func clampedSidePanelWidth(_ width: Double) -> CGFloat {
+        CGFloat(min(max(width, 240), 720))
+    }
+
+    func persistSidePanelWidth() {
+        LumiEditorConfigStore.saveValue(sidePanelWidth, forKey: LumiEditorConfigStore.sidePanelWidthKey)
     }
 
     func openReference(_ reference: ReferenceResult) {
