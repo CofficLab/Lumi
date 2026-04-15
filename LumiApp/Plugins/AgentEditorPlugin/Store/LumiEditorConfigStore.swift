@@ -26,6 +26,7 @@ enum LumiEditorConfigStore {
     static let showGutterKey = "showGutter"
     static let showFoldingRibbonKey = "showFoldingRibbon"
     static let themeNameKey = "themeName"
+    static let sidePanelWidthKey = "sidePanelWidth"
 
     // MARK: - Load / Save
 

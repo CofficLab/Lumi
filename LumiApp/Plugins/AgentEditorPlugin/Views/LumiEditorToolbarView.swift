@@ -1,5 +1,6 @@
 import SwiftUI
 import MagicKit
+import CodeEditTextView
 
 /// 编辑器工具栏视图
 /// 包含字体大小、缩进、主题切换等设置
@@ -23,6 +24,12 @@ struct LumiEditorToolbarView: View {
             // 中间：切换开关（可压缩）
             toggleButtons
             
+            // LSP 状态指示器
+            lspStatusIndicator
+
+            // LSP 动作菜单
+            lspActionsMenu
+
             Spacer(minLength: 0)
             
             // 右侧：主题选择
@@ -37,7 +44,7 @@ struct LumiEditorToolbarView: View {
     
     private var fontSizer: some View {
         HStack(spacing: 2) {
-            Text("A")
+            Text(String(localized: "A", table: "LumiEditor"))
                 .font(.system(size: 10))
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
             
@@ -137,15 +144,75 @@ struct LumiEditorToolbarView: View {
                 state.persistConfig()
             }
             
-            // 代码折叠
+            // 多光标
             ToolbarToggle(
-                icon: "chevron.down",
-                isActive: state.showFoldingRibbon
+                icon: "cursorarrow.rays",
+                isActive: state.multiCursorState.isEnabled
             ) {
-                state.showFoldingRibbon.toggle()
-                state.persistConfig()
+                if state.multiCursorState.isEnabled {
+                    state.clearMultiCursors()
+                } else {
+                    state.addNextOccurrence()
+                }
+                syncSelectionsToFocusedTextView()
             }
+            .help(state.multiCursorState.isEnabled
+                ? String(localized: "Clear Additional Cursors", table: "LumiEditor")
+                : String(localized: "Add Next Occurrence", table: "LumiEditor"))
         }
+    }
+    
+    // MARK: - LSP Status Indicator
+    
+    @StateObject private var diagnosticsManager = LumiDiagnosticsManager()
+    
+    private var lspStatusIndicator: some View {
+        Button {
+            state.toggleProblemsPanel()
+        } label: {
+            HStack(spacing: 8) {
+                if diagnosticsManager.errorCount > 0 {
+                    HStack(spacing: 3) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 9))
+                            .foregroundColor(AppUI.Color.semantic.error)
+                        Text("\(diagnosticsManager.errorCount)")
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundColor(AppUI.Color.semantic.error)
+                    }
+                }
+
+                if diagnosticsManager.warningCount > 0 {
+                    HStack(spacing: 3) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 9))
+                            .foregroundColor(AppUI.Color.semantic.warning)
+                        Text("\(diagnosticsManager.warningCount)")
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundColor(AppUI.Color.semantic.warning)
+                    }
+                }
+
+                if !LumiLSPService.shared.isAvailable {
+                    Image(systemName: "circle")
+                        .font(.system(size: 6))
+                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .help(String(localized: "LSP not available", table: "LumiEditor"))
+                } else if LumiLSPService.shared.isInitializing {
+                    ProgressView()
+                        .scaleEffect(0.5)
+                        .help(String(localized: "LSP initializing...", table: "LumiEditor"))
+                } else {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 9))
+                        .foregroundColor(AppUI.Color.semantic.success)
+                        .help(String(localized: "LSP active", table: "LumiEditor"))
+                }
+            }
+            .opacity(diagnosticsManager.errorCount > 0 || diagnosticsManager.warningCount > 0 || !LumiLSPService.shared.isAvailable ? 1 : 0.5)
+        }
+        .buttonStyle(.plain)
+        .help(String(localized: "Toggle Problems", table: "LumiEditor"))
     }
     
     // MARK: - Theme Picker
@@ -172,6 +239,57 @@ struct LumiEditorToolbarView: View {
         }
         .menuStyle(.borderlessButton)
         .frame(height: 20)
+    }
+
+    // MARK: - LSP Actions
+
+    private var lspActionsMenu: some View {
+        Menu {
+            Button {
+                Task { @MainActor in
+                    await state.formatDocumentWithLSP()
+                }
+            } label: {
+                Label(
+                    String(localized: "Format Document", table: "LumiEditor"),
+                    systemImage: "text.alignleft"
+                )
+            }
+
+            Button {
+                Task { @MainActor in
+                    await state.showReferencesFromCurrentCursor()
+                }
+            } label: {
+                Label(
+                    String(localized: "Find References", table: "LumiEditor"),
+                    systemImage: "link"
+                )
+            }
+
+            Button {
+                state.promptRenameSymbol()
+            } label: {
+                Label(
+                    String(localized: "Rename Symbol", table: "LumiEditor"),
+                    systemImage: "pencil.and.list.clipboard"
+                )
+            }
+        } label: {
+            Image(systemName: "wand.and.stars")
+                .font(.system(size: 10))
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .frame(width: 22, height: 22)
+        }
+        .menuStyle(.borderlessButton)
+        .frame(height: 20)
+        .help(String(localized: "LSP Actions", table: "LumiEditor"))
+    }
+
+    private func syncSelectionsToFocusedTextView() {
+        guard let responder = NSApp.keyWindow?.firstResponder else { return }
+        guard let textView = responder as? TextView else { return }
+        textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
     }
 }
 

@@ -34,7 +34,7 @@ class CPUService: ObservableObject, SuperLog {
         subscribersCount += 1
         if monitoringTimer == nil {
             if Self.verbose {
-                CPUManagerPlugin.logger.info("\(self.t)Starting CPU monitoring")
+                DeviceInfoPlugin.logger.info("\(self.t)Starting CPU monitoring")
             }
             // Initial fetch
             updateCPUUsage()
@@ -51,7 +51,7 @@ class CPUService: ObservableObject, SuperLog {
         subscribersCount = max(0, subscribersCount - 1)
         if subscribersCount == 0 {
             if Self.verbose {
-                CPUManagerPlugin.logger.info("\(self.t)Stopping CPU monitoring")
+                DeviceInfoPlugin.logger.info("\(self.t)Stopping CPU monitoring")
             }
             monitoringTimer?.invalidate()
             monitoringTimer = nil

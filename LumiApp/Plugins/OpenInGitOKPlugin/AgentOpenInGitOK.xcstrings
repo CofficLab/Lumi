@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "GitOK 未安装" : {
+
+    },
     "Open current project in GitOK" : {
       "extractionState" : "manual",
       "localizations" : {

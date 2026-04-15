@@ -2,36 +2,36 @@ import Foundation
 import MagicKit
 import os
 
-/// HyperAPI 供应商实现
+/// FlyMux API 供应商实现
 ///
-/// HyperAPI (hyperapi.cc) 完全兼容 OpenAI 格式
-final class HyperAPIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
-    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.hyperapi")
-    nonisolated static let emoji = "🌐"
+/// FlyMux (flymux.com) 完全兼容 OpenAI 格式
+final class FlyMuxProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.flymux")
+    nonisolated static let emoji = "🚀"
     nonisolated static let verbose: Bool = false
     // MARK: - 基础信息
 
-    static let id = "hyperapi"
-    static let displayName = String(localized: "HyperAPI", table: "HyperAPI")
-    static let description = String(localized: "LLM Router by hyperapi.cc", table: "HyperAPI")
+    static let id = "flymux"
+    static let displayName = String(localized: "FlyMux", table: "FlyMux")
+    static let description = String(localized: "AI API Gateway by flymux.com", table: "FlyMux")
 
     // MARK: - 配置相关
 
-    static let apiKeyStorageKey = "DevAssistant_ApiKey_HyperAPI"
-    static let defaultModel = "gpt-5"
+    static let apiKeyStorageKey = "DevAssistant_ApiKey_FlyMux"
+    static let defaultModel = "gpt-5.1-codex"
 
     static let modelCatalog: [LLMModelCatalogItem] = [
-        .init(id: "gpt-5.1-codex-max", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.2-codex", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.4-mini", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.1-codex-mini", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.2", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5.3-codex", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
         .init(id: "gpt-5.4", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-5-codex", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.4-mini", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.4-openai-compact", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.3", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.3-codex", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.2", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.2-codex", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
         .init(id: "gpt-5.1", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
         .init(id: "gpt-5.1-codex", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.1-codex-max", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.1-codex-mini", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
     ]
 
     // MARK: - 启用状态配置
@@ -46,7 +46,7 @@ final class HyperAPIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     }
 
     var baseURL: String {
-        "https://hyperapi.cc/v1/chat/completions"
+        "https://api.flymux.com/v1/chat/completions"
     }
 
     func buildRequest(url: URL, apiKey: String) -> URLRequest {
@@ -79,10 +79,10 @@ final class HyperAPIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     }
 
     func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
-        let result = try JSONDecoder().decode(HyperAPIResponse.self, from: data)
+        let result = try JSONDecoder().decode(FlyMuxResponse.self, from: data)
 
         guard let choiceMessage = result.choices.first?.message else {
-            throw NSError(domain: "HyperAPIProvider", code: -1, userInfo: [NSLocalizedDescriptionKey: "No choices in response"])
+            throw NSError(domain: "FlyMuxProvider", code: -1, userInfo: [NSLocalizedDescriptionKey: "No choices in response"])
         }
 
         let content = choiceMessage.content ?? ""
@@ -116,7 +116,7 @@ final class HyperAPIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
     /// 解析流式响应数据块
     ///
-    /// HyperAPI 完全兼容 OpenAI SSE 格式
+    /// FlyMux 完全兼容 OpenAI SSE 格式
     func parseStreamChunk(data: Data) throws -> StreamChunk? {
         guard let text = String(data: data, encoding: .utf8) else {
             return nil
@@ -214,7 +214,7 @@ final class HyperAPIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
 // MARK: - 消息转换
 
-extension HyperAPIProvider {
+extension FlyMuxProvider {
     func transformMessage(_ message: ChatMessage) -> [String: Any] {
         if let toolCallID = message.toolCallID {
             return [
@@ -245,7 +245,7 @@ extension HyperAPIProvider {
 
 // MARK: - 工具格式
 
-extension HyperAPIProvider {
+extension FlyMuxProvider {
     func formatTool(_ tool: AgentTool) -> [String: Any] {
         [
             "type": "function",

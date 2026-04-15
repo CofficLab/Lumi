@@ -10,7 +10,8 @@ import os
 /// - 不再将上下文保存到数据库，而是作为临时提示词注入
 actor AgentContextSyncPlugin: SuperPlugin, SuperLog {
     /// 插件专用 Logger
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.context-sync")
+    nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi", category: "plugin.context-sync")
 
     // MARK: - Plugin Properties
 
@@ -19,7 +20,8 @@ actor AgentContextSyncPlugin: SuperPlugin, SuperLog {
     nonisolated static let verbose: Bool = false
     static let id: String = "AgentContextSync"
     static let displayName: String = String(localized: "Context Sync", table: "AgentContextSync")
-    static let description: String = String(localized: "Sync project context to conversation", table: "AgentContextSync")
+    static let description: String = String(
+        localized: "Sync project context to conversation", table: "AgentContextSync")
     static let iconName: String = "arrow.triangle.2.circlepath"
     static let isConfigurable: Bool = false
     static var order: Int { 1 }
