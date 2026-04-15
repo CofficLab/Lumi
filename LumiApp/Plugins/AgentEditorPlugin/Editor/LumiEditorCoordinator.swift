@@ -41,9 +41,16 @@ final class LumiEditorCoordinator: TextViewCoordinator, TextViewDelegate {
     
     nonisolated func textViewDidChangeSelection(controller: TextViewController) {
         let state = self.state
+        let selectionRanges = controller.textView?.selectionManager.textSelections.map(\.range) ?? []
+        let cursorPositions = controller.cursorPositions
         hoverTask?.cancel()
         hoverTask = Task { @MainActor [weak state] in
             guard let state else { return }
+            state.logMultiCursorInput(
+                action: "coordinator.selectionDidChange",
+                textViewSelections: selectionRanges,
+                note: "cursorPositions=\(cursorPositions.count)"
+            )
             
             // 多光标模式下，跳过 syncSelections 和 clearUnfocusedMultiCursorsIfNeeded。
             // 原因：CodeEditSourceEditor 的 updateCursorPosition() 会把 textSelections 转换为

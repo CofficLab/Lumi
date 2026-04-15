@@ -19,6 +19,8 @@ final class LumiMultiCursorInputInstaller: NSObject {
             swizzleInsertText(for: targetClass)
             swizzleDeleteBackward(for: targetClass)
             swizzlePerformKeyEquivalent(for: targetClass)
+            swizzleMoveLeft(for: targetClass)
+            swizzleMoveRight(for: targetClass)
             swizzleCancelOperation(for: targetClass)
         }
 
@@ -83,6 +85,40 @@ final class LumiMultiCursorInputInstaller: NSObject {
         class_replaceMethod(targetClass, selector, imp_implementationWithBlock(block), method_getTypeEncoding(method))
     }
 
+    private func swizzleMoveLeft(for targetClass: AnyClass) {
+        let selector = #selector(NSResponder.moveLeft(_:))
+        guard let method = class_getInstanceMethod(targetClass, selector) else { return }
+        let originalIMP = method_getImplementation(method)
+
+        let block: @convention(block) (TextView, Any?) -> Void = { textView, sender in
+            if let helper = Self.helper(for: textView), helper.handleMoveLeft() {
+                return
+            }
+
+            typealias Original = @convention(c) (AnyObject, Selector, Any?) -> Void
+            unsafeBitCast(originalIMP, to: Original.self)(textView, selector, sender)
+        }
+
+        class_replaceMethod(targetClass, selector, imp_implementationWithBlock(block), method_getTypeEncoding(method))
+    }
+
+    private func swizzleMoveRight(for targetClass: AnyClass) {
+        let selector = #selector(NSResponder.moveRight(_:))
+        guard let method = class_getInstanceMethod(targetClass, selector) else { return }
+        let originalIMP = method_getImplementation(method)
+
+        let block: @convention(block) (TextView, Any?) -> Void = { textView, sender in
+            if let helper = Self.helper(for: textView), helper.handleMoveRight() {
+                return
+            }
+
+            typealias Original = @convention(c) (AnyObject, Selector, Any?) -> Void
+            unsafeBitCast(originalIMP, to: Original.self)(textView, selector, sender)
+        }
+
+        class_replaceMethod(targetClass, selector, imp_implementationWithBlock(block), method_getTypeEncoding(method))
+    }
+
     private func swizzleCancelOperation(for targetClass: AnyClass) {
         let selector = #selector(NSResponder.cancelOperation(_:))
         guard let method = class_getInstanceMethod(targetClass, selector) else { return }
@@ -131,6 +167,11 @@ final class LumiMultiCursorInputHelper: NSObject {
         defer { isApplyingMultiCursorEdit = false }
 
         let selections = state.multiCursorState.all
+        state.logMultiCursorInput(
+            action: "insertText.before",
+            textViewSelections: textView.selectionManager.textSelections.map(\.range),
+            note: "replacementRange=\(NSStringFromRange(replacementRange)) textLength=\((text as NSString).length)"
+        )
         let result = LumiMultiCursorEditEngine.apply(
             text: textView.string,
             selections: selections,
@@ -142,6 +183,11 @@ final class LumiMultiCursorInputHelper: NSObject {
         state.totalLines = result.text.filter { $0 == "\n" }.count + 1
         state.setSelections(result.selections)
         textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
+        state.logMultiCursorInput(
+            action: "insertText.after",
+            textViewSelections: textView.selectionManager.textSelections.map(\.range),
+            note: "resultSelectionCount=\(result.selections.count)"
+        )
         state.lspCoordinator.replaceDocument(result.text)
         state.notifyContentChanged()
         return true
@@ -156,6 +202,10 @@ final class LumiMultiCursorInputHelper: NSObject {
         defer { isApplyingMultiCursorEdit = false }
 
         let selections = state.multiCursorState.all
+        state.logMultiCursorInput(
+            action: "deleteBackward.before",
+            textViewSelections: textView.selectionManager.textSelections.map(\.range)
+        )
         let result = LumiMultiCursorEditEngine.apply(
             text: textView.string,
             selections: selections,
@@ -167,6 +217,11 @@ final class LumiMultiCursorInputHelper: NSObject {
         state.totalLines = result.text.filter { $0 == "\n" }.count + 1
         state.setSelections(result.selections)
         textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
+        state.logMultiCursorInput(
+            action: "deleteBackward.after",
+            textViewSelections: textView.selectionManager.textSelections.map(\.range),
+            note: "resultSelectionCount=\(result.selections.count)"
+        )
         state.lspCoordinator.replaceDocument(result.text)
         state.notifyContentChanged()
         return true
@@ -182,6 +237,11 @@ final class LumiMultiCursorInputHelper: NSObject {
 
         if commandPressed, !shiftPressed, key == "d" {
             let currentSelection = textView.selectionManager.textSelections.last?.range ?? NSRange(location: NSNotFound, length: 0)
+            state.logMultiCursorInput(
+                action: "cmd+d.before",
+                textViewSelections: textView.selectionManager.textSelections.map(\.range),
+                note: "currentSelection=\(NSStringFromRange(currentSelection))"
+            )
             // 同步选区到 state，确保 addNextOccurrence 使用最新的选区
             let mapped = textView.selectionManager.textSelections
                 .map { $0.range }
@@ -192,21 +252,45 @@ final class LumiMultiCursorInputHelper: NSObject {
             }
             if let ranges = state.addNextOccurrence(from: currentSelection) {
                 textView.selectionManager.setSelectedRanges(ranges)
+                state.logMultiCursorInput(
+                    action: "cmd+d.after",
+                    textViewSelections: textView.selectionManager.textSelections.map(\.range),
+                    note: "appliedRangeCount=\(ranges.count)"
+                )
             }
             return true
         }
 
         if commandPressed, !shiftPressed, key == "u" {
+            state.logMultiCursorInput(
+                action: "cmd+u.before",
+                textViewSelections: textView.selectionManager.textSelections.map(\.range)
+            )
             if let ranges = state.removeLastOccurrenceSelection() {
                 textView.selectionManager.setSelectedRanges(ranges)
+                state.logMultiCursorInput(
+                    action: "cmd+u.after",
+                    textViewSelections: textView.selectionManager.textSelections.map(\.range),
+                    note: "appliedRangeCount=\(ranges.count)"
+                )
             }
             return true
         }
 
         if commandPressed, shiftPressed, key == "l" {
             let currentSelection = textView.selectionManager.textSelections.last?.range ?? NSRange(location: NSNotFound, length: 0)
+            state.logMultiCursorInput(
+                action: "cmd+shift+l.before",
+                textViewSelections: textView.selectionManager.textSelections.map(\.range),
+                note: "currentSelection=\(NSStringFromRange(currentSelection))"
+            )
             if let ranges = state.addAllOccurrences(from: currentSelection) {
                 textView.selectionManager.setSelectedRanges(ranges)
+                state.logMultiCursorInput(
+                    action: "cmd+shift+l.after",
+                    textViewSelections: textView.selectionManager.textSelections.map(\.range),
+                    note: "appliedRangeCount=\(ranges.count)"
+                )
             }
             return true
         }
@@ -214,12 +298,52 @@ final class LumiMultiCursorInputHelper: NSObject {
         return false
     }
 
+    func handleMoveLeft() -> Bool {
+        handleMove(selectorName: "moveLeft")
+    }
+
+    func handleMoveRight() -> Bool {
+        handleMove(selectorName: "moveRight")
+    }
+
     func handleCancelOperation() -> Bool {
         guard let textView, let state else { return false }
         guard state.multiCursorState.isEnabled else { return false }
 
+        state.logMultiCursorInput(
+            action: "cancel.before",
+            textViewSelections: textView.selectionManager.textSelections.map(\.range)
+        )
         state.clearMultiCursors()
         textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
+        state.logMultiCursorInput(
+            action: "cancel.after",
+            textViewSelections: textView.selectionManager.textSelections.map(\.range)
+        )
         return true
+    }
+
+    private func handleMove(selectorName: String) -> Bool {
+        guard let textView, let state else { return false }
+        guard state.multiCursorState.all.count > 1 else { return false }
+        guard !isApplyingMultiCursorEdit else { return false }
+
+        state.logMultiCursorInput(
+            action: "\(selectorName).before",
+            textViewSelections: textView.selectionManager.textSelections.map(\.range),
+            note: "visibleTextSelections=\(textView.selectionManager.textSelections.count)"
+        )
+
+        DispatchQueue.main.async {
+            textView.needsLayout = true
+            textView.layoutSubtreeIfNeeded()
+            state.logMultiCursorInput(
+                action: "\(selectorName).afterAsyncRefresh",
+                textViewSelections: textView.selectionManager.textSelections.map(\.range),
+                note: "forcedLayoutRefresh=true"
+            )
+        }
+
+        return false
     }
 }

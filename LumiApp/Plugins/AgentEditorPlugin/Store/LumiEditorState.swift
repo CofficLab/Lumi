@@ -1030,6 +1030,7 @@ final class LumiEditorState: ObservableObject {
 
     func clearMultiCursors() {
         multiCursorState.clearSecondary()
+        logMultiCursorState(action: "clearMultiCursors")
         endMultiCursorSearchSession()
     }
 
@@ -1042,6 +1043,7 @@ final class LumiEditorState: ObservableObject {
 
     func setPrimarySelection(_ selection: LumiMultiCursorSelection) {
         multiCursorState.setPrimary(selection)
+        logMultiCursorState(action: "setPrimarySelection")
     }
 
     func setSelections(_ selections: [LumiMultiCursorSelection]) {
@@ -1051,6 +1053,7 @@ final class LumiEditorState: ObservableObject {
         }
         multiCursorState.primary = first
         multiCursorState.secondary = Array(selections.dropFirst())
+        logMultiCursorState(action: "setSelections", note: "incomingCount=\(selections.count)")
 
         if selections.count != 1 {
             return
@@ -1068,6 +1071,26 @@ final class LumiEditorState: ObservableObject {
 
     func currentSelectionsAsNSRanges() -> [NSRange] {
         multiCursorState.all.map { NSRange(location: $0.location, length: $0.length) }
+    }
+
+    func logMultiCursorState(action: String, note: String? = nil) {
+        let selections = multiCursorState.all
+        let summary = selections.enumerated().map { index, selection in
+            "#\(index){loc=\(selection.location),len=\(selection.length)}"
+        }.joined(separator: ", ")
+        let message = note.map { "\(action) | \($0) | stateCount=\(selections.count) | [\(summary)]" }
+            ?? "\(action) | stateCount=\(selections.count) | [\(summary)]"
+        LumiEditorPlugin.logger.info("[UI] | ✏️ LumiEditorState             | multi-cursor state | \(message, privacy: .public)")
+    }
+
+    func logMultiCursorInput(action: String, textViewSelections: [NSRange], note: String? = nil) {
+        let rendered = textViewSelections.enumerated().map { index, range in
+            "#\(index){\(NSStringFromRange(range))}"
+        }.joined(separator: ", ")
+        let details = note.map { "\(action) | \($0) | textViewCount=\(textViewSelections.count) | [\(rendered)]" }
+            ?? "\(action) | textViewCount=\(textViewSelections.count) | [\(rendered)]"
+        LumiEditorPlugin.logger.info("[UI] | ✏️ LumiEditorState             | multi-cursor input | \(details, privacy: .public)")
+        logMultiCursorState(action: "input-state-sync", note: action)
     }
 
     func addNextOccurrence() {
@@ -1123,6 +1146,7 @@ final class LumiEditorState: ObservableObject {
                 history: [baseSelection]
             )
             multiCursorState.replaceAll([baseSelection])
+            logMultiCursorState(action: "addNextOccurrence.sessionStarted", note: "query=\(query)")
         }
 
         let allMatches = ranges(of: query, in: text)
@@ -1138,6 +1162,7 @@ final class LumiEditorState: ObservableObject {
             if !selectedSet.contains(candidate) {
                 multiCursorState.addSecondary(candidate)
                 multiCursorSearchSession?.history.append(candidate)
+                logMultiCursorState(action: "addNextOccurrence.added", note: "query=\(query)")
                 return currentSelectionsAsNSRanges()
             }
         }
@@ -1176,6 +1201,7 @@ final class LumiEditorState: ObservableObject {
             history: matches
         )
         multiCursorState.replaceAll(matches)
+        logMultiCursorState(action: "addAllOccurrences", note: "query=\(query)")
         return currentSelectionsAsNSRanges()
     }
 
@@ -1193,6 +1219,7 @@ final class LumiEditorState: ObservableObject {
         session.history.removeLast()
         multiCursorSearchSession = session
         multiCursorState.replaceAll(session.history)
+        logMultiCursorState(action: "removeLastOccurrenceSelection")
         return currentSelectionsAsNSRanges()
     }
 
