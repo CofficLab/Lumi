@@ -144,6 +144,7 @@ struct LumiSourceEditorView: View {
         textCoordinator?.jumpDelegate = jumpDelegate
         
         completionDelegate.lspCoordinator = state.lspCoordinator
+        completionDelegate.editorState = state
     }
     
     // MARK: - Configuration Management

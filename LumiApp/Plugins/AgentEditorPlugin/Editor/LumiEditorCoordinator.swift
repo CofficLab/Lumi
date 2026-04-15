@@ -44,6 +44,7 @@ final class LumiEditorCoordinator: TextViewCoordinator, TextViewDelegate {
         hoverTask?.cancel()
         hoverTask = Task { @MainActor [weak state] in
             guard let state else { return }
+            Self.syncSelections(from: controller, to: state)
             let cursor = controller.cursorPositions.first?.start
 
             guard let cursor else {
@@ -143,6 +144,18 @@ final class LumiEditorCoordinator: TextViewCoordinator, TextViewDelegate {
         
         return Position(line: line, character: character)
     }
+
+    @MainActor
+    private static func syncSelections(from controller: TextViewController, to state: LumiEditorState) {
+        let selections = controller.textView?.selectionManager.textSelections ?? []
+        let mapped = selections
+            .map { $0.range }
+            .filter { $0.location != NSNotFound }
+            .map { LumiMultiCursorSelection(location: $0.location, length: $0.length) }
+
+        guard !mapped.isEmpty else { return }
+        state.setSelections(mapped)
+    }
 }
 
 /// 光标位置协调器
@@ -215,6 +228,7 @@ final class LumiContextMenuCoordinator: TextViewCoordinator {
 
         Task { @MainActor [weak state] in
             guard let state else { return }
+            LumiMultiCursorInputInstaller.shared.register(textView: textView, state: state)
             LumiContextMenuManager.shared.register(textView: textView, state: state)
         }
     }
@@ -370,6 +384,26 @@ final class LumiContextMenuHelper: NSObject {
             }
         }
         menu.insertItem(formatItem, at: 0)
+
+        let addNextOccurrenceItem = buildInjectedItem(
+            title: String(localized: "Add Next Occurrence", table: "LumiEditor"),
+            image: "plus.magnifyingglass"
+        ) {
+            let currentSelection = textView.selectionManager.textSelections.last?.range ?? NSRange(location: NSNotFound, length: 0)
+            state.addNextOccurrence(from: currentSelection)
+            textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
+        }
+        addNextOccurrenceItem.isEnabled = hasSelection
+        menu.insertItem(addNextOccurrenceItem, at: 0)
+
+        let clearCursorsItem = buildInjectedItem(
+            title: String(localized: "Clear Additional Cursors", table: "LumiEditor"),
+            image: "cursorarrow.motionlines"
+        ) {
+            state.clearMultiCursors()
+        }
+        clearCursorsItem.isEnabled = state.multiCursorState.isEnabled
+        menu.insertItem(clearCursorsItem, at: 0)
 
         let middleSeparator = NSMenuItem.separator()
         middleSeparator.tag = injectedSeparatorTag

@@ -164,6 +164,9 @@ final class LumiEditorState: ObservableObject {
     /// 当前 LSP Hover 文本（用于提示展示）
     @Published var hoverText: String?
 
+    /// 多光标编辑状态
+    @Published var multiCursorState = LumiMultiCursorState()
+
     /// References 结果列表（右侧面板）
     @Published var referenceResults: [ReferenceResult] = []
 
@@ -1016,6 +1019,95 @@ final class LumiEditorState: ObservableObject {
     }
 
     // MARK: - LSP Edit Utilities
+
+    func clearMultiCursors() {
+        multiCursorState.clearSecondary()
+    }
+
+    func setPrimarySelection(_ selection: LumiMultiCursorSelection) {
+        multiCursorState.setPrimary(selection)
+    }
+
+    func setSelections(_ selections: [LumiMultiCursorSelection]) {
+        guard let first = selections.first else { return }
+        multiCursorState.primary = first
+        multiCursorState.secondary = Array(selections.dropFirst())
+    }
+
+    func currentSelectionsAsNSRanges() -> [NSRange] {
+        multiCursorState.all.map { NSRange(location: $0.location, length: $0.length) }
+    }
+
+    func addNextOccurrence() {
+        let range = NSRange(
+            location: multiCursorState.primary.location,
+            length: multiCursorState.primary.length
+        )
+        addNextOccurrence(from: range)
+    }
+
+    func addNextOccurrence(from range: NSRange) {
+        guard let content else { return }
+        let text = content.string as NSString
+        let safeRange = NSRange(
+            location: min(max(range.location, 0), text.length),
+            length: min(max(range.length, 0), max(0, text.length - min(max(range.location, 0), text.length)))
+        )
+
+        guard safeRange.location != NSNotFound,
+              safeRange.length > 0,
+              NSMaxRange(safeRange) <= text.length else {
+            showStatusToast(
+                String(localized: "Select text before adding next occurrence", table: "LumiEditor"),
+                level: .warning
+            )
+            return
+        }
+
+        let needle = text.substring(with: safeRange)
+        guard !needle.isEmpty else { return }
+
+        setPrimarySelection(.init(location: safeRange.location, length: safeRange.length))
+
+        let searchStart = max(NSMaxRange(safeRange), 0)
+        let searchRange = NSRange(location: searchStart, length: max(0, text.length - searchStart))
+        let found = text.range(of: needle, options: [], range: searchRange)
+
+        guard found.location != NSNotFound else {
+            showStatusToast(
+                String(localized: "No more occurrences found", table: "LumiEditor"),
+                level: .warning
+            )
+            return
+        }
+
+        multiCursorState.addSecondary(.init(location: found.location, length: found.length))
+    }
+
+    func multiCursorSummaryText() -> String {
+        let count = multiCursorState.all.count
+        if count <= 1 { return "1" }
+        return "\(count)" + String(localized: " cursors", table: "LumiEditor")
+    }
+
+    func applyMultiCursorReplacement(_ replacement: String) -> [LumiMultiCursorSelection]? {
+        guard let existing = content else { return nil }
+        let selections = multiCursorState.all
+        guard selections.count > 1 else { return nil }
+
+        let result = LumiMultiCursorEditEngine.apply(
+            text: existing.string,
+            selections: selections,
+            operation: .replaceSelection(replacement)
+        )
+
+        existing.mutableString.setString(result.text)
+        totalLines = result.text.filter { $0 == "\n" }.count + 1
+        setSelections(result.selections)
+        lspCoordinator.replaceDocument(result.text)
+        notifyContentChanged()
+        return result.selections
+    }
 
     private func currentLSPPosition() -> (line: Int, character: Int) {
         (

@@ -1,6 +1,28 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    " cursors" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " cursors"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " 个光标"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " 個游標"
+          }
+        }
+      }
+    },
     "%@:%lld:%lld" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -68,6 +90,28 @@
         }
       }
     },
+    "Add Next Occurrence" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Next Occurrence"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加下一个匹配项"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加下一個匹配項"
+          }
+        }
+      }
+    },
     "Add Selection to Chat" : {
       "localizations" : {
         "en" : {
@@ -131,6 +175,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "取消"
+          }
+        }
+      }
+    },
+    "Clear Additional Cursors" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Additional Cursors"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除额外光标"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除額外游標"
           }
         }
       }
@@ -691,6 +757,28 @@
         }
       }
     },
+    "No more occurrences found" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No more occurrences found"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未找到更多匹配项"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未找到更多匹配項"
+          }
+        }
+      }
+    },
     "No Problems" : {
 
     },
@@ -1053,6 +1141,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "選擇文件開始編輯"
+          }
+        }
+      }
+    },
+    "Select text before adding next occurrence" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select text before adding next occurrence"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请先选中文本再添加下一个匹配项"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請先選中文本再添加下一個匹配項"
           }
         }
       }

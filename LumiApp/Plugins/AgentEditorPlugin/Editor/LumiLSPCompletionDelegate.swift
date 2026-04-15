@@ -8,6 +8,7 @@ import LanguageServerProtocol
 final class LumiLSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
 
     weak var lspCoordinator: LumiLSPCoordinator?
+    weak var editorState: LumiEditorState?
 
     private var activeItems: [LumiCodeSuggestionEntry] = []
     private var requestAnchor: CursorPosition?
@@ -101,6 +102,14 @@ final class LumiLSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
             replacementRange = NSRange(location: anchorOffset, length: 0)
         } else {
             replacementRange = NSRange(location: view.string.utf16.count, length: 0)
+        }
+
+        if let selections = editorState?.applyMultiCursorReplacement(item.replacementText),
+           selections.count > 1 {
+            if let first = selections.first {
+                view.selectionManager.setSelectedRange(NSRange(location: first.location, length: first.length))
+            }
+            return
         }
 
         view.replaceCharacters(in: replacementRange, with: item.replacementText)

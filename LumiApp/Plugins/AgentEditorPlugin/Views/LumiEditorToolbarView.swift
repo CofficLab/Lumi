@@ -143,14 +143,20 @@ struct LumiEditorToolbarView: View {
                 state.persistConfig()
             }
             
-            // 代码折叠
+            // 多光标
             ToolbarToggle(
-                icon: "chevron.down",
-                isActive: state.showFoldingRibbon
+                icon: "cursorarrow.rays",
+                isActive: state.multiCursorState.isEnabled
             ) {
-                state.showFoldingRibbon.toggle()
-                state.persistConfig()
+                if state.multiCursorState.isEnabled {
+                    state.clearMultiCursors()
+                } else {
+                    state.addNextOccurrence()
+                }
             }
+            .help(state.multiCursorState.isEnabled
+                ? String(localized: "Clear Additional Cursors", table: "LumiEditor")
+                : String(localized: "Add Next Occurrence", table: "LumiEditor"))
         }
     }
     
