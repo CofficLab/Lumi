@@ -27,7 +27,7 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
     static let modelCatalog: [LLMModelCatalogItem] = [
         .init(id: "qwen3.5-plus", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
         .init(id: "qwen3.6-plus", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
-        .init(id: "glm-4.7", spec: .init(contextWindowSize: 131_072, supportsVision: false, supportsTools: true)),
+        .init(id: "glm-4.7", spec: .init(contextWindowSize: 200_000, supportsVision: false, supportsTools: true)),
         .init(id: "glm-5", spec: .init(contextWindowSize: 202_752, supportsVision: false, supportsTools: true)),
         .init(id: "MiniMax-M2.5", spec: .init(contextWindowSize: 204_800, supportsVision: false, supportsTools: true)),
         .init(id: "kimi-k2.5", spec: .init(contextWindowSize: 262_144, supportsVision: false, supportsTools: true)),
