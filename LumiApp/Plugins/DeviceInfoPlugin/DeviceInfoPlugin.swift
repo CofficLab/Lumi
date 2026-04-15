@@ -1,14 +1,15 @@
 import MagicKit
 import SwiftUI
-import AppKit
-import Foundation
+import os
 
-/// 设备信息插件：展示当前设备的详细信息
 actor DeviceInfoPlugin: SuperPlugin, SuperLog {
+    /// 插件专用 Logger
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.device-info")
+
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "💻"
-    nonisolated static let enable: Bool = false
+    nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = false
 
     static let id: String = "DeviceInfo"
@@ -24,9 +25,24 @@ actor DeviceInfoPlugin: SuperPlugin, SuperLog {
     nonisolated var instanceLabel: String { Self.id }
     static let shared = DeviceInfoPlugin()
 
-    init() {}
+    init() {
+        Task { @MainActor in
+            // Start background CPU history recording
+            CPUHistoryService.shared.startRecording()
+        }
+    }
 
     // MARK: - UI Contributions
+
+    @MainActor
+    func addStatusBarContentView() -> AnyView? {
+        AnyView(DeviceInfoStatusBarContentView())
+    }
+
+    @MainActor
+    func addStatusBarPopupView() -> AnyView? {
+        AnyView(DeviceInfoStatusBarPopupView())
+    }
 
     @MainActor
     func addNavigationEntries() -> [NavigationEntry]? {
