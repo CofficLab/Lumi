@@ -74,15 +74,39 @@ class LumiLSPCoordinator: ObservableObject {
     }
     
     /// 请求悬停提示
-    func requestHover(line: Int, character: Int) async {
-        guard let uri = fileURI else { return }
-        await lspService.requestHover(uri: uri, line: line, character: character)
+    func requestHover(line: Int, character: Int) async -> String? {
+        guard let uri = fileURI else { return nil }
+        return await lspService.requestHover(uri: uri, line: line, character: character)
     }
     
     /// 请求定义位置
     func requestDefinition(line: Int, character: Int) async -> Location? {
         guard let uri = fileURI else { return nil }
         return await lspService.requestDefinition(uri: uri, line: line, character: character)
+    }
+
+    /// 请求引用
+    func requestReferences(line: Int, character: Int) async -> [Location] {
+        guard let uri = fileURI else { return [] }
+        return await lspService.requestReferences(uri: uri, line: line, character: character)
+    }
+
+    /// 请求文档符号
+    func requestDocumentSymbols() async -> [DocumentSymbol] {
+        guard let uri = fileURI else { return [] }
+        return await lspService.requestDocumentSymbols(uri: uri)
+    }
+
+    /// 请求重命名
+    func requestRename(line: Int, character: Int, newName: String) async -> WorkspaceEdit? {
+        guard let uri = fileURI else { return nil }
+        return await lspService.requestRename(uri: uri, line: line, character: character, newName: newName)
+    }
+
+    /// 请求格式化
+    func requestFormatting(tabSize: Int, insertSpaces: Bool) async -> [TextEdit]? {
+        guard let uri = fileURI else { return nil }
+        return await lspService.requestFormatting(uri: uri, tabSize: tabSize, insertSpaces: insertSpaces)
     }
 
     func completionTriggerCharacters() -> Set<String> {

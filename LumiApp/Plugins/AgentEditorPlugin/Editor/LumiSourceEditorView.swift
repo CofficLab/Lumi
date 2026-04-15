@@ -76,9 +76,32 @@ struct LumiSourceEditorView: View {
                 jumpToDefinitionDelegate: jumpDelegate
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .overlay(alignment: .topTrailing) {
+                hoverPreview
+            }
         } else {
             Text("No content")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    @ViewBuilder
+    private var hoverPreview: some View {
+        if let hoverText = state.hoverText?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !hoverText.isEmpty {
+            Text(hoverText)
+                .font(.system(size: 11, design: .monospaced))
+                .lineLimit(6)
+                .multilineTextAlignment(.leading)
+                .padding(8)
+                .frame(maxWidth: 420, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color(nsColor: .controlBackgroundColor))
+                        .shadow(color: .black.opacity(0.15), radius: 6, x: 0, y: 2)
+                )
+                .padding(.top, 8)
+                .padding(.trailing, 8)
         }
     }
 

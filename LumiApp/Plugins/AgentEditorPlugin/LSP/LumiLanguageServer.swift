@@ -4,8 +4,7 @@ import LanguageClient
 import LanguageServerProtocol
 import os
 
-/// Lumi 的语言服务器包装器
-/// 参考 CodeEdit 的 LanguageServer.swift
+/// 语言服务器包装器
 /// 注意：不使用 @MainActor，让调用方自行处理并发
 final class LumiLanguageServer: @unchecked Sendable {
     

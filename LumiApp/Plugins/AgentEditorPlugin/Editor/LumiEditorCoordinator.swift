@@ -12,6 +12,7 @@ final class LumiEditorCoordinator: TextViewCoordinator, TextViewDelegate {
     /// 弱引用状态管理器
     private weak var state: LumiEditorState?
     private var editedRange: LSPRange?
+    private var hoverTask: Task<Void, Never>?
     
     init(state: LumiEditorState) {
         self.state = state
@@ -31,12 +32,32 @@ final class LumiEditorCoordinator: TextViewCoordinator, TextViewDelegate {
     }
     
     nonisolated func textViewDidChangeSelection(controller: TextViewController) {
-        // 预留：可用于 LSP hover 请求（鼠标悬停时触发）
+        let state = self.state
+        let cursor = controller.cursorPositions.first?.start
+        hoverTask?.cancel()
+        hoverTask = Task { @MainActor [weak state] in
+            guard let state else { return }
+
+            guard let cursor else {
+                state.hoverText = nil
+                return
+            }
+
+            // 轻量防抖，避免快速移动光标时频繁请求 LSP
+            try? await Task.sleep(for: .milliseconds(220))
+            guard !Task.isCancelled else { return }
+
+            let line = max(cursor.line - 1, 0)
+            let character = max(cursor.column - 1, 0)
+            state.hoverText = await state.lspCoordinator.requestHover(line: line, character: character)
+        }
     }
     
     nonisolated func prepareCoordinator(controller: TextViewController) {}
     
     nonisolated func destroy() {
+        hoverTask?.cancel()
+        hoverTask = nil
         state = nil
     }
     
@@ -252,7 +273,9 @@ final class LumiContextMenuHelper: NSObject {
 
     private weak var textView: TextView?
     private weak var state: LumiEditorState?
-    private var currentTarget: LumiContextMenuTarget?
+    private var currentTargets: [LumiContextMenuTarget] = []
+    private let injectedItemTag = 991
+    private let injectedSeparatorTag = 992
 
     init(textView: TextView, state: LumiEditorState) {
         self.textView = textView
@@ -261,87 +284,236 @@ final class LumiContextMenuHelper: NSObject {
 
     /// 在右键菜单中注入自定义项
     func injectCustomItems(into menu: NSMenu) {
-        let addTitle = String(localized: "Add to Chat", table: "LumiEditor")
+        // 先清除之前注入的项（防止重复）
+        menu.items
+            .enumerated()
+            .reversed()
+            .forEach { index, item in
+                if item.tag == injectedItemTag || (item.isSeparatorItem && item.tag == injectedSeparatorTag) {
+                    menu.removeItem(at: index)
+                }
+            }
 
-        // 先清除之前可能注入的项（防止重复）
-        while let idx = menu.items.firstIndex(where: { $0.title == addTitle }) {
-            menu.removeItem(at: idx)
-        }
-        while let idx = menu.items.firstIndex(where: { $0.tag == 999 && $0.isSeparatorItem }) {
-            menu.removeItem(at: idx)
-        }
+        guard let textView, let state else { return }
 
-        // 检查是否有选区
-        guard let textView,
-              textView.selectionManager.textSelections.contains(where: { !$0.range.isEmpty }) else {
-            return
-        }
+        let hasSelection = textView.selectionManager.textSelections.contains { !$0.range.isEmpty }
+        currentTargets.removeAll()
 
-        let state = self.state
-        let target = LumiContextMenuTarget { [weak self] in
-            guard let self, let textView = self.textView, let state else { return }
-            Self.performAddToChat(textView: textView, state: state)
-        }
-        self.currentTarget = target
+        // 插入分隔符到顶部
+        let topSeparator = NSMenuItem.separator()
+        topSeparator.tag = injectedSeparatorTag
+        menu.insertItem(topSeparator, at: 0)
 
-        let menuItem = NSMenuItem(
-            title: addTitle,
+        // LSP / Chat actions
+        let renameItem = buildInjectedItem(
+            title: String(localized: "Rename Symbol", table: "LumiEditor"),
+            image: "pencil.and.list.clipboard"
+        ) {
+            state.promptRenameSymbol()
+        }
+        menu.insertItem(renameItem, at: 0)
+
+        let goToDefinitionItem = buildInjectedItem(
+            title: String(localized: "Go to Definition", table: "LumiEditor"),
+            image: "arrow.right.square"
+        ) {
+            Self.performGoToDefinition(textView: textView, state: state)
+        }
+        menu.insertItem(goToDefinitionItem, at: 0)
+
+        let referencesItem = buildInjectedItem(
+            title: String(localized: "Find References", table: "LumiEditor"),
+            image: "link"
+        ) {
+            Task { @MainActor in
+                await state.showReferencesFromCurrentCursor()
+            }
+        }
+        menu.insertItem(referencesItem, at: 0)
+
+        let formatItem = buildInjectedItem(
+            title: String(localized: "Format Document", table: "LumiEditor"),
+            image: "text.alignleft"
+        ) {
+            Task { @MainActor in
+                await state.formatDocumentWithLSP()
+            }
+        }
+        menu.insertItem(formatItem, at: 0)
+
+        let middleSeparator = NSMenuItem.separator()
+        middleSeparator.tag = injectedSeparatorTag
+        menu.insertItem(middleSeparator, at: 0)
+
+        let addLocationItem = buildInjectedItem(
+            title: String(localized: "Add Location to Chat", table: "LumiEditor"),
+            image: "mappin.and.ellipse"
+        ) {
+            Self.performAddLocationToChat(textView: textView, state: state)
+        }
+        menu.insertItem(addLocationItem, at: 0)
+
+        if hasSelection {
+            let addSelectionItem = buildInjectedItem(
+                title: String(localized: "Add Selection to Chat", table: "LumiEditor"),
+                image: "bubble.left.and.text.bubble.right"
+            ) {
+                Self.performAddSelectionToChat(textView: textView, state: state)
+            }
+            menu.insertItem(addSelectionItem, at: 0)
+        }
+    }
+
+    private func buildInjectedItem(
+        title: String,
+        image: String,
+        action: @escaping () -> Void
+    ) -> NSMenuItem {
+        let target = LumiContextMenuTarget(action: action)
+        currentTargets.append(target)
+
+        let item = NSMenuItem(
+            title: title,
             action: #selector(LumiContextMenuTarget.addToChatClicked),
             keyEquivalent: ""
         )
-        menuItem.target = target
-        menuItem.image = NSImage(systemSymbolName: "bubble.left.and.text.bubble.right", accessibilityDescription: nil)
-
-        let separator = NSMenuItem.separator()
-        separator.tag = 999
-
-        // 插入到菜单最顶部
-        menu.insertItem(separator, at: 0)
-        menu.insertItem(menuItem, at: 0)
+        item.target = target
+        item.tag = injectedItemTag
+        item.image = NSImage(systemSymbolName: image, accessibilityDescription: nil)
+        return item
     }
 
     // MARK: - Add to Chat Action
 
-    private static func performAddToChat(textView: TextView, state: LumiEditorState) {
+    private static func performAddSelectionToChat(textView: TextView, state: LumiEditorState) {
         let selections = textView.selectionManager.textSelections
         guard let firstSelection = selections.first, !firstSelection.range.isEmpty else { return }
-
+        let fullText = textView.string as NSString
         let range = firstSelection.range
-        let fullText = textView.string
-        guard range.location + range.length <= fullText.count else { return }
-        let nsRange = NSRange(location: range.location, length: range.length)
-        let selectedText = (fullText as NSString).substring(with: nsRange)
+        guard range.location != NSNotFound, NSMaxRange(range) <= fullText.length else { return }
+        let selectedText = fullText.substring(with: range)
         guard !selectedText.isEmpty else { return }
+        let locationText = selectionLocationText(range: range, fullText: fullText, state: state)
+        let languageHint = state.fileExtension
 
-        let textBeforeStart = (fullText as NSString).substring(with: NSRange(location: 0, length: range.location))
-        let textBeforeEnd = (fullText as NSString).substring(with: NSRange(location: 0, length: range.location + range.length))
+        let payload = """
+        \(locationText)
+        ```\(languageHint)
+        \(selectedText)
+        ```
+        """
+        NotificationCenter.postAddToChat(text: payload)
+    }
+
+    private static func performAddLocationToChat(textView: TextView, state: LumiEditorState) {
+        let selection = textView.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
+        let fullText = textView.string as NSString
+        guard selection.location != NSNotFound else { return }
+        let safeSelection = NSRange(
+            location: min(max(selection.location, 0), fullText.length),
+            length: min(max(selection.length, 0), max(0, fullText.length - min(max(selection.location, 0), fullText.length)))
+        )
+        let locationText = selectionLocationText(range: safeSelection, fullText: fullText, state: state)
+        NotificationCenter.postAddToChat(text: locationText)
+    }
+
+    private static func performGoToDefinition(textView: TextView, state: LumiEditorState) {
+        let selection = textView.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
+        guard selection.location != NSNotFound else { return }
+
+        let content = textView.string
+        guard let pos = lspPosition(utf16Offset: selection.location, in: content) else { return }
+
+        state.showStatusToast(
+            String(localized: "Finding definition...", table: "LumiEditor"),
+            level: .info,
+            duration: 1.2
+        )
+
+        Task { @MainActor in
+            guard let location = await state.lspCoordinator.requestDefinition(
+                line: Int(pos.line),
+                character: Int(pos.character)
+            ) else {
+                state.showStatusToast(
+                    String(localized: "No definition found", table: "LumiEditor"),
+                    level: .warning
+                )
+                return
+            }
+
+            guard let url = URL(string: location.uri) else {
+                state.showStatusToast(
+                    String(localized: "Definition URL is invalid", table: "LumiEditor"),
+                    level: .error
+                )
+                return
+            }
+            let target = CursorPosition(
+                start: CursorPosition.Position(
+                    line: Int(location.range.start.line) + 1,
+                    column: Int(location.range.start.character) + 1
+                ),
+                end: CursorPosition.Position(
+                    line: Int(location.range.end.line) + 1,
+                    column: Int(location.range.end.character) + 1
+                )
+            )
+            state.openDefinitionLocation(url: url, target: target)
+            state.showStatusToast(
+                String(localized: "Jumped to definition", table: "LumiEditor"),
+                level: .success
+            )
+        }
+    }
+
+    private static func selectionLocationText(range: NSRange, fullText: NSString, state: LumiEditorState) -> String {
+        let startOffset = max(0, min(range.location, fullText.length))
+        let endOffset = max(startOffset, min(NSMaxRange(range), fullText.length))
+
+        let textBeforeStart = fullText.substring(with: NSRange(location: 0, length: startOffset))
+        let textBeforeEnd = fullText.substring(with: NSRange(location: 0, length: endOffset))
 
         let startLine = textBeforeStart.filter { $0 == "\n" }.count + 1
-        let startColumn: Int
-        if let lastNL = textBeforeStart.lastIndex(of: "\n") {
-            startColumn = textBeforeStart.distance(from: textBeforeStart.index(after: lastNL), to: textBeforeStart.endIndex) + 1
-        } else {
-            startColumn = textBeforeStart.count + 1
-        }
-
+        let startColumn = computeColumn(in: textBeforeStart)
         let endLine = textBeforeEnd.filter { $0 == "\n" }.count + 1
-        let endColumn: Int
-        if let lastNL = textBeforeEnd.lastIndex(of: "\n") {
-            endColumn = textBeforeEnd.distance(from: textBeforeEnd.index(after: lastNL), to: textBeforeEnd.endIndex) + 1
-        } else {
-            endColumn = textBeforeEnd.count + 1
-        }
-
+        let endColumn = computeColumn(in: textBeforeEnd)
         let filePath = state.relativeFilePath
 
-        let locationText: String
         if startLine == endLine && startColumn == endColumn {
-            locationText = "\(filePath):\(startLine):\(startColumn)"
-        } else {
-            locationText = "\(filePath):\(startLine):\(startColumn)-\(endLine):\(endColumn)"
+            return "\(filePath):\(startLine):\(startColumn)"
+        }
+        return "\(filePath):\(startLine):\(startColumn)-\(endLine):\(endColumn)"
+    }
+
+    private static func computeColumn(in text: String) -> Int {
+        if let lastNL = text.lastIndex(of: "\n") {
+            return text.distance(from: text.index(after: lastNL), to: text.endIndex) + 1
+        }
+        return text.count + 1
+    }
+
+    private static func lspPosition(utf16Offset: Int, in text: String) -> Position? {
+        guard utf16Offset >= 0, utf16Offset <= text.utf16.count else { return nil }
+
+        var line = 0
+        var character = 0
+        var consumed = 0
+
+        for unit in text.utf16 {
+            if consumed >= utf16Offset {
+                break
+            }
+            if unit == 0x0A {
+                line += 1
+                character = 0
+            } else {
+                character += 1
+            }
+            consumed += 1
         }
 
-        NotificationCenter.postAddToChat(text: locationText)
+        return Position(line: line, character: character)
     }
 }
 

@@ -52,6 +52,7 @@ struct CoreApp: App {
             DebugCommand()
             SettingsCommand()
             ConfigCommand()
+            EditorCommand()
 
             // 添加检查更新菜单项
             // 位于应用信息菜单之后

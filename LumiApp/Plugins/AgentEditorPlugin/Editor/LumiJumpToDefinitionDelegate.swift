@@ -125,7 +125,10 @@ final class LumiJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDele
                 line: Int(location.range.start.line) + 1,
                 column: Int(location.range.start.character) + 1
             ),
-            end: nil
+            end: CursorPosition.Position(
+                line: Int(location.range.end.line) + 1,
+                column: Int(location.range.end.character) + 1
+            )
         )
         let preview = Self.previewLine(from: url, at: location.range.start) ?? word
 

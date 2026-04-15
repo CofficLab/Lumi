@@ -12,19 +12,25 @@ struct LumiEditorRootView: View {
     @StateObject private var state = LumiEditorState()
     
     var body: some View {
-        VStack(spacing: 0) {
-            if projectVM.isFileSelected {
-                // Header 区域：面包屑 + 工具栏（带背景，覆盖编辑器）
-                headerArea
-                
-                // 文件信息提示
-                fileInfoBanner
-                
-                // 编辑器主体
-                editorContent
-            } else {
-                // 空状态
-                emptyState
+        HStack(spacing: 0) {
+            VStack(spacing: 0) {
+                if projectVM.isFileSelected {
+                    // Header 区域：面包屑 + 工具栏（带背景，覆盖编辑器）
+                    headerArea
+
+                    // 文件信息提示
+                    fileInfoBanner
+
+                    // 编辑器主体
+                    editorContent
+                } else {
+                    // 空状态
+                    emptyState
+                }
+            }
+
+            if state.isReferencePanelPresented {
+                LumiEditorReferencesPanelView(state: state)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -48,6 +54,22 @@ struct LumiEditorRootView: View {
             if state.hasUnsavedChanges {
                 state.saveNow()
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .lumiEditorFormatDocument)) { _ in
+            guard projectVM.isFileSelected else { return }
+            Task { @MainActor in
+                await state.formatDocumentWithLSP()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .lumiEditorFindReferences)) { _ in
+            guard projectVM.isFileSelected else { return }
+            Task { @MainActor in
+                await state.showReferencesFromCurrentCursor()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .lumiEditorRenameSymbol)) { _ in
+            guard projectVM.isFileSelected else { return }
+            state.promptRenameSymbol()
         }
     }
     
@@ -162,6 +184,7 @@ struct LumiEditorRootView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
+
 }
 
 // MARK: - Preview

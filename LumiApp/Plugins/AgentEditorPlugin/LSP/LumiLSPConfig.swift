@@ -1,8 +1,21 @@
 import Foundation
 
 /// LSP 配置：定义语言服务器二进制路径和默认参数
-/// 参考 CodeEdit 的 LanguageServerBinary 结构
 struct LumiLSPConfig {
+
+    /// 当前内建支持的语言 ID（用于可用性探测和 UI 状态）
+    static let supportedLanguageIds: [String] = [
+        "swift",
+        "python",
+        "typescript",
+        "javascript",
+        "rust",
+        "go",
+        "cpp",
+        "c",
+        "objective-c",
+        "objective-cpp",
+    ]
     
     /// 语言服务器二进制配置
     struct ServerConfig {

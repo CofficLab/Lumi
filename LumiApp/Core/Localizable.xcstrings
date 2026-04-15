@@ -284,6 +284,16 @@
         }
       }
     },
+    "%@:%lld:%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@:%2$lld:%3$lld"
+          }
+        }
+      }
+    },
     "%lld" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3877,6 +3887,9 @@
           }
         }
       }
+    },
+    "References (%lld)" : {
+
     },
     "Refresh" : {
       "localizations" : {
@@ -7689,6 +7702,9 @@
     "松开即可添加项目" : {
 
     },
+    "查找引用" : {
+
+    },
     "查看 Issue 列表" : {
       "localizations" : {
         "zh-Hans" : {
@@ -7736,6 +7752,9 @@
           }
         }
       }
+    },
+    "格式化文档" : {
+
     },
     "检查更新..." : {
       "localizations" : {
@@ -8402,6 +8421,9 @@
         }
       }
     },
+    "编辑器" : {
+
+    },
     "聊天工具栏" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9002,6 +9024,9 @@
           }
         }
       }
+    },
+    "重命名符号" : {
+
     },
     "重建" : {
 

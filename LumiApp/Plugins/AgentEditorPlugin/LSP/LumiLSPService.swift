@@ -41,10 +41,19 @@ final class LumiLSPService: ObservableObject {
     
     // MARK: - Availability
     
-    func checkAvailability() {
-        let swiftAvailable = LumiLSPConfig.findServer(for: "swift") != nil
-        isAvailable = swiftAvailable
-        logger.info("LSP availability: Swift = \(swiftAvailable ? "yes" : "no")")
+    func checkAvailability(for languageId: String? = nil) {
+        if let languageId {
+            let available = LumiLSPConfig.findServer(for: languageId) != nil
+            isAvailable = available
+            logger.info("LSP availability: \(languageId) = \(available ? "yes" : "no")")
+            return
+        }
+
+        let available = LumiLSPConfig.supportedLanguageIds.contains {
+            LumiLSPConfig.findServer(for: $0) != nil
+        }
+        isAvailable = available
+        logger.info("LSP availability(any) = \(available ? "yes" : "no")")
     }
     
     // MARK: - Server Management
@@ -95,6 +104,8 @@ final class LumiLSPService: ObservableObject {
     }
     
     func openDocument(uri: String, languageId: String, text: String) async {
+        checkAvailability(for: languageId)
+
         if server == nil || activeLanguageId != languageId {
             if let root = projectRootPath {
                 await startServer(for: languageId, projectPath: root)
@@ -195,14 +206,16 @@ final class LumiLSPService: ObservableObject {
         }
     }
     
-    func requestHover(uri: String, line: Int, character: Int) async {
-        guard let server else { return }
+    func requestHover(uri: String, line: Int, character: Int) async -> String? {
+        guard let server else { return nil }
         do {
             let hover = try await server.hover(uri: uri, line: line, character: character)
             let content = parseHoverContent(hover)
             await MainActor.run { onHover?(content) }
+            return content
         } catch {
             logger.error("Hover failed: \(error)")
+            return nil
         }
     }
     
@@ -224,6 +237,36 @@ final class LumiLSPService: ObservableObject {
         } catch {
             logger.error("References failed: \(error)")
             return []
+        }
+    }
+
+    func requestDocumentSymbols(uri: String) async -> [DocumentSymbol] {
+        guard let server else { return [] }
+        do {
+            return try await server.documentSymbols(uri: uri)
+        } catch {
+            logger.error("Document symbols failed: \(error)")
+            return []
+        }
+    }
+
+    func requestRename(uri: String, line: Int, character: Int, newName: String) async -> WorkspaceEdit? {
+        guard let server else { return nil }
+        do {
+            return try await server.rename(uri: uri, line: line, character: character, newName: newName)
+        } catch {
+            logger.error("Rename failed: \(error)")
+            return nil
+        }
+    }
+
+    func requestFormatting(uri: String, tabSize: Int, insertSpaces: Bool) async -> [TextEdit]? {
+        guard let server else { return nil }
+        do {
+            return try await server.formatting(uri: uri, tabSize: tabSize, insertSpaces: insertSpaces)
+        } catch {
+            logger.error("Formatting failed: \(error)")
+            return nil
         }
     }
     

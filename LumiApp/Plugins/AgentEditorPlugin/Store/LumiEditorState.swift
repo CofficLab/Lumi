@@ -1,6 +1,7 @@
 import Foundation
 import AppKit
 import Combine
+import MagicAlert
 import CodeEditSourceEditor
 import CodeEditTextView
 import CodeEditLanguages
@@ -10,6 +11,21 @@ import LanguageServerProtocol
 /// 管理当前文件的内容（NSTextStorage）、光标位置、编辑器配置等
 @MainActor
 final class LumiEditorState: ObservableObject {
+    enum StatusLevel {
+        case info
+        case success
+        case warning
+        case error
+    }
+
+    struct ReferenceResult: Identifiable, Equatable {
+        let id = UUID()
+        let url: URL
+        let line: Int
+        let column: Int
+        let path: String
+        let preview: String
+    }
     
     // MARK: - External File Watching
     
@@ -82,7 +98,16 @@ final class LumiEditorState: ObservableObject {
     
     /// 当前列号
     @Published var cursorColumn: Int = 1
-    
+
+    /// 当前 LSP Hover 文本（用于提示展示）
+    @Published var hoverText: String?
+
+    /// References 结果列表（右侧面板）
+    @Published var referenceResults: [ReferenceResult] = []
+
+    /// 是否展示 References 面板
+    @Published var isReferencePanelPresented: Bool = false
+
     /// 总行数
     @Published var totalLines: Int = 0
     
@@ -133,7 +158,7 @@ final class LumiEditorState: ObservableObject {
     
     /// 成功状态清除任务
     private var successClearTask: Task<Void, Never>?
-    
+
     /// 自动保存延迟（秒）
     static let autoSaveDelay: TimeInterval = 1.5
     
@@ -317,6 +342,9 @@ final class LumiEditorState: ObservableObject {
                     
                     // 计算行数
                     self.totalLines = content.filter { $0 == "\n" }.count + 1
+                    self.hoverText = nil
+                    self.referenceResults = []
+                    self.isReferencePanelPresented = false
                     
                     // 启动文件变化监听器（检测外部编辑器的修改）
                     self.setupFileWatcher(for: loadingURL)
@@ -375,6 +403,9 @@ final class LumiEditorState: ObservableObject {
         cursorLine = 1
         cursorColumn = 1
         totalLines = 0
+        hoverText = nil
+        referenceResults = []
+        isReferencePanelPresented = false
         
         // 清理文件监听器
         cleanupFileWatcher()
@@ -387,24 +418,24 @@ final class LumiEditorState: ObservableObject {
     
     /// 通知内容已变更（由 TextViewCoordinator 调用）
     func notifyContentChanged() {
-        if content == nil {
+        guard let content else {
             print("⚠️ [LumiEditor] notifyContentChanged: content is nil")
             return
         }
-        if persistedContentHash == nil {
+        guard let currentHash = persistedContentHash else {
             print("⚠️ [LumiEditor] notifyContentChanged: persistedContentHash is nil")
             return
         }
-        guard let content = content?.string, let currentHash = persistedContentHash else { return }
         
-        let newHash = content.hashValue
-        print("✏️ [LumiEditor] notifyContentChanged: newHash=\(newHash), persistedHash=\(currentHash), changed=\(newHash != currentHash), contentLength=\(content.count)")
+        let contentString = content.string
+        let newHash = contentString.hashValue
+        print("✏️ [LumiEditor] notifyContentChanged: newHash=\(newHash), persistedHash=\(currentHash), changed=\(newHash != currentHash), contentLength=\(contentString.count)")
         
         if newHash != currentHash {
             hasUnsavedChanges = true
             saveState = .editing
-            scheduleAutoSave(content: content)
-            lspCoordinator.updateDocumentSnapshot(content)
+            scheduleAutoSave(content: contentString)
+            lspCoordinator.updateDocumentSnapshot(contentString)
         } else {
             hasUnsavedChanges = false
             saveState = .idle
@@ -414,6 +445,184 @@ final class LumiEditorState: ObservableObject {
     /// 通知 LSP 发生增量文本变更（由编辑器 coordinator 转发）
     func notifyLSPIncrementalChange(range: LSPRange, text: String) {
         lspCoordinator.contentDidChange(range: range, text: text)
+    }
+
+    // MARK: - LSP Actions
+
+    /// 执行文档格式化（LSP formatting）
+    func formatDocumentWithLSP() async {
+        guard canPreview, isEditable else { return }
+        showStatusToast(
+            String(localized: "Formatting document...", table: "LumiEditor"),
+            level: .info,
+            duration: 1.2
+        )
+        let tabSize = tabWidth
+        let insertSpaces = useSpaces
+        guard let edits = await lspCoordinator.requestFormatting(tabSize: tabSize, insertSpaces: insertSpaces),
+              !edits.isEmpty else {
+            showStatusToast(
+                String(localized: "No formatting changes", table: "LumiEditor"),
+                level: .warning
+            )
+            return
+        }
+        applyEditsToCurrentDocument(edits)
+        showStatusToast(
+            String(localized: "Document formatted", table: "LumiEditor"),
+            level: .success
+        )
+    }
+
+    /// 查询当前光标位置的引用并弹窗展示
+    func showReferencesFromCurrentCursor() async {
+        guard let fileURL = currentFileURL else { return }
+        showStatusToast(
+            String(localized: "Finding references...", table: "LumiEditor"),
+            level: .info,
+            duration: 1.2
+        )
+        let position = currentLSPPosition()
+        let references = await lspCoordinator.requestReferences(
+            line: position.line,
+            character: position.character
+        )
+        guard !references.isEmpty else {
+            referenceResults = []
+            isReferencePanelPresented = false
+            showStatusToast(
+                String(localized: "No references found", table: "LumiEditor"),
+                level: .warning
+            )
+            return
+        }
+
+        let items = references.compactMap { location -> ReferenceResult? in
+            guard let url = URL(string: location.uri) else { return nil }
+            let displayPath: String
+            if url == fileURL {
+                displayPath = relativeFilePath
+            } else {
+                displayPath = displayPathForURL(url)
+            }
+            let line = Int(location.range.start.line) + 1
+            let column = Int(location.range.start.character) + 1
+            let preview = previewLine(from: url, at: line) ?? ""
+            return ReferenceResult(
+                url: url,
+                line: line,
+                column: column,
+                path: displayPath,
+                preview: preview
+            )
+        }
+
+        referenceResults = items.sorted {
+            if $0.path != $1.path { return $0.path < $1.path }
+            if $0.line != $1.line { return $0.line < $1.line }
+            return $0.column < $1.column
+        }
+        isReferencePanelPresented = !referenceResults.isEmpty
+        showStatusToast(
+            String(localized: "Found references:", table: "LumiEditor") + " \(referenceResults.count)",
+            level: .success
+        )
+    }
+
+    func closeReferencePanel() {
+        isReferencePanelPresented = false
+    }
+
+    func openReference(_ reference: ReferenceResult) {
+        let target = CursorPosition(
+            start: CursorPosition.Position(line: reference.line, column: reference.column),
+            end: nil
+        )
+        openDefinitionLocation(url: reference.url, target: target)
+    }
+
+    func showStatusToast(_ message: String, level: StatusLevel, duration: TimeInterval = 1.8) {
+        let safeDuration = max(1.0, duration)
+        switch level {
+        case .info:
+            alert_info(message, duration: safeDuration)
+        case .success:
+            alert_success(message, duration: safeDuration)
+        case .warning:
+            alert_warning(message, duration: max(safeDuration, 2.0))
+        case .error:
+            alert_error(message, duration: max(safeDuration, 2.0), autoDismiss: true)
+        }
+    }
+
+    /// 触发重命名（先弹框输入新名称，再请求 LSP rename）
+    func promptRenameSymbol() {
+        guard canPreview, isEditable else { return }
+
+        let alert = NSAlert()
+        alert.messageText = String(localized: "Rename Symbol", table: "LumiEditor")
+        alert.informativeText = String(localized: "Enter a new symbol name:", table: "LumiEditor")
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: String(localized: "Rename", table: "LumiEditor"))
+        alert.addButton(withTitle: String(localized: "Cancel", table: "LumiEditor"))
+
+        let input = NSTextField(frame: NSRect(x: 0, y: 0, width: 320, height: 22))
+        input.placeholderString = String(localized: "New name", table: "LumiEditor")
+        alert.accessoryView = input
+
+        let response = alert.runModal()
+        guard response == .alertFirstButtonReturn else { return }
+        let newName = input.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !newName.isEmpty else {
+            showStatusToast(
+                String(localized: "Rename cancelled", table: "LumiEditor"),
+                level: .warning
+            )
+            return
+        }
+
+        showStatusToast(
+            String(localized: "Renaming symbol...", table: "LumiEditor"),
+            level: .info,
+            duration: 1.2
+        )
+
+        Task { @MainActor [weak self] in
+            await self?.renameSymbolWithLSP(to: newName)
+        }
+    }
+
+    private func renameSymbolWithLSP(to newName: String) async {
+        guard let currentURI = currentFileURL?.absoluteString else { return }
+        let position = currentLSPPosition()
+        guard let edit = await lspCoordinator.requestRename(
+            line: position.line,
+            character: position.character,
+            newName: newName
+        ) else {
+            showStatusToast(
+                String(localized: "Rename failed", table: "LumiEditor"),
+                level: .error
+            )
+            return
+        }
+
+        var changedFiles = 0
+        changedFiles += applyWorkspaceChanges(edit.changes, currentURI: currentURI)
+        changedFiles += applyDocumentChanges(edit.documentChanges, currentURI: currentURI)
+
+        if changedFiles == 0 {
+            showStatusToast(
+                String(localized: "Rename not applied", table: "LumiEditor"),
+                level: .warning
+            )
+            return
+        }
+
+        showStatusToast(
+            String(localized: "Rename completed, updated files:", table: "LumiEditor") + " \(changedFiles)",
+            level: .success
+        )
     }
     
     // MARK: - Auto Save
@@ -685,6 +894,166 @@ final class LumiEditorState: ObservableObject {
             "sql": "sql",
         ]
         return mapping[ext.lowercased()]
+    }
+
+    // MARK: - LSP Edit Utilities
+
+    private func currentLSPPosition() -> (line: Int, character: Int) {
+        (
+            max(cursorLine - 1, 0),
+            max(cursorColumn - 1, 0)
+        )
+    }
+
+    private func applyEditsToCurrentDocument(_ edits: [TextEdit]) {
+        guard let existing = content else { return }
+        let original = existing.string
+        guard let updated = Self.applyingTextEdits(edits, to: original), updated != original else { return }
+
+        existing.mutableString.setString(updated)
+        totalLines = updated.filter { $0 == "\n" }.count + 1
+        lspCoordinator.replaceDocument(updated)
+        notifyContentChanged()
+    }
+
+    private func applyWorkspaceChanges(
+        _ changes: [String: [TextEdit]]?,
+        currentURI: String
+    ) -> Int {
+        guard let changes, !changes.isEmpty else { return 0 }
+        var changedFiles = 0
+
+        for (uri, textEdits) in changes {
+            guard !textEdits.isEmpty else { continue }
+            if uri == currentURI {
+                applyEditsToCurrentDocument(textEdits)
+                changedFiles += 1
+                continue
+            }
+            guard let url = URL(string: uri), url.isFileURL else { continue }
+            if applyTextEdits(textEdits, toFile: url) {
+                changedFiles += 1
+            }
+        }
+        return changedFiles
+    }
+
+    private func applyDocumentChanges(
+        _ documentChanges: [WorkspaceEditDocumentChange]?,
+        currentURI: String
+    ) -> Int {
+        guard let documentChanges else { return 0 }
+        var changedFiles = 0
+
+        for change in documentChanges {
+            switch change {
+            case .textDocumentEdit(let item):
+                let uri = item.textDocument.uri
+                let edits = item.edits
+                guard !edits.isEmpty else { continue }
+
+                if uri == currentURI {
+                    applyEditsToCurrentDocument(edits)
+                    changedFiles += 1
+                } else if let url = URL(string: uri), url.isFileURL, applyTextEdits(edits, toFile: url) {
+                    changedFiles += 1
+                }
+            case .createFile, .renameFile, .deleteFile:
+                // 资源操作（创建/重命名/删除）暂不在当前轮支持
+                continue
+            }
+        }
+
+        return changedFiles
+    }
+
+    private func applyTextEdits(_ edits: [TextEdit], toFile url: URL) -> Bool {
+        do {
+            let original = try String(contentsOf: url, encoding: .utf8)
+            guard let updated = Self.applyingTextEdits(edits, to: original), updated != original else {
+                return false
+            }
+            try updated.write(to: url, atomically: true, encoding: .utf8)
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    private static func applyingTextEdits(_ edits: [TextEdit], to content: String) -> String? {
+        let sorted = edits.sorted { lhs, rhs in
+            if lhs.range.start.line != rhs.range.start.line {
+                return lhs.range.start.line > rhs.range.start.line
+            }
+            return lhs.range.start.character > rhs.range.start.character
+        }
+
+        var result = content
+        for edit in sorted {
+            guard let nsRange = nsRange(from: edit.range, in: result),
+                  let swiftRange = Range(nsRange, in: result) else {
+                return nil
+            }
+            result.replaceSubrange(swiftRange, with: edit.newText)
+        }
+        return result
+    }
+
+    private static func nsRange(from lspRange: LSPRange, in content: String) -> NSRange? {
+        guard let start = utf16Offset(for: lspRange.start, in: content),
+              let end = utf16Offset(for: lspRange.end, in: content),
+              end >= start else {
+            return nil
+        }
+        return NSRange(location: start, length: end - start)
+    }
+
+    private static func utf16Offset(for position: Position, in content: String) -> Int? {
+        var line = 0
+        var utf16Offset = 0
+        var lineStartOffset = 0
+
+        for scalar in content.unicodeScalars {
+            if line == position.line {
+                break
+            }
+            utf16Offset += scalar.utf16.count
+            if scalar == "\n" {
+                line += 1
+                lineStartOffset = utf16Offset
+            }
+        }
+
+        guard line == position.line else { return nil }
+        return min(lineStartOffset + position.character, content.utf16.count)
+    }
+
+    private func displayPathForURL(_ url: URL) -> String {
+        guard let projectPath = projectRootPath else { return url.lastPathComponent }
+        let absolutePath = url.path
+        guard absolutePath.hasPrefix(projectPath) else { return url.lastPathComponent }
+        var relative = String(absolutePath.dropFirst(projectPath.count))
+        if relative.hasPrefix("/") {
+            relative.removeFirst()
+        }
+        return relative
+    }
+
+    private func presentInfoAlert(title: String, message: String) {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = message
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: String(localized: "OK", table: "LumiEditor"))
+        alert.runModal()
+    }
+
+    private func previewLine(from url: URL, at lineNumber: Int) -> String? {
+        guard lineNumber > 0 else { return nil }
+        guard let content = try? String(contentsOf: url, encoding: .utf8) else { return nil }
+        let lines = content.components(separatedBy: .newlines)
+        guard lineNumber - 1 < lines.count else { return nil }
+        return lines[lineNumber - 1].trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 

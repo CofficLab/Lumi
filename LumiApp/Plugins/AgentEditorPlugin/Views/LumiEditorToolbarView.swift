@@ -25,7 +25,10 @@ struct LumiEditorToolbarView: View {
             
             // LSP 状态指示器
             lspStatusIndicator
-            
+
+            // LSP 动作菜单
+            lspActionsMenu
+
             Spacer(minLength: 0)
             
             // 右侧：主题选择
@@ -222,6 +225,51 @@ struct LumiEditorToolbarView: View {
         }
         .menuStyle(.borderlessButton)
         .frame(height: 20)
+    }
+
+    // MARK: - LSP Actions
+
+    private var lspActionsMenu: some View {
+        Menu {
+            Button {
+                Task { @MainActor in
+                    await state.formatDocumentWithLSP()
+                }
+            } label: {
+                Label(
+                    String(localized: "Format Document", table: "LumiEditor"),
+                    systemImage: "text.alignleft"
+                )
+            }
+
+            Button {
+                Task { @MainActor in
+                    await state.showReferencesFromCurrentCursor()
+                }
+            } label: {
+                Label(
+                    String(localized: "Find References", table: "LumiEditor"),
+                    systemImage: "link"
+                )
+            }
+
+            Button {
+                state.promptRenameSymbol()
+            } label: {
+                Label(
+                    String(localized: "Rename Symbol", table: "LumiEditor"),
+                    systemImage: "pencil.and.list.clipboard"
+                )
+            }
+        } label: {
+            Image(systemName: "wand.and.stars")
+                .font(.system(size: 10))
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .frame(width: 22, height: 22)
+        }
+        .menuStyle(.borderlessButton)
+        .frame(height: 20)
+        .help(String(localized: "LSP Actions", table: "LumiEditor"))
     }
 }
 

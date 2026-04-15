@@ -1,6 +1,12 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Add Location to Chat" : {
+
+    },
+    "Add Selection to Chat" : {
+
+    },
     "Add to Chat" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -17,6 +23,9 @@
           }
         }
       }
+    },
+    "Cancel" : {
+
     },
     "Code Editor" : {
       "extractionState" : "manual",
@@ -35,6 +44,12 @@
         }
       }
     },
+    "Definition URL is invalid" : {
+
+    },
+    "Document formatted" : {
+
+    },
     "Editing..." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -51,6 +66,9 @@
           }
         }
       }
+    },
+    "Enter a new symbol name:" : {
+
     },
     "File not found" : {
       "extractionState" : "manual",
@@ -86,6 +104,30 @@
         }
       }
     },
+    "Find References" : {
+
+    },
+    "Finding definition..." : {
+
+    },
+    "Finding references..." : {
+
+    },
+    "Format Document" : {
+
+    },
+    "Formatting document..." : {
+
+    },
+    "Found references:" : {
+
+    },
+    "Go to Definition" : {
+
+    },
+    "Jumped to definition" : {
+
+    },
     "Large File Read-Only Preview" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -103,6 +145,9 @@
         }
       }
     },
+    "LSP Actions" : {
+
+    },
     "LSP active" : {
 
     },
@@ -110,6 +155,9 @@
 
     },
     "LSP not available" : {
+
+    },
+    "New name" : {
 
     },
     "No Changes" : {
@@ -129,6 +177,18 @@
         }
       }
     },
+    "No definition found" : {
+
+    },
+    "No formatting changes" : {
+
+    },
+    "No references found" : {
+
+    },
+    "OK" : {
+
+    },
     "Preview Truncated for Large File" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -145,6 +205,27 @@
           }
         }
       }
+    },
+    "Rename" : {
+
+    },
+    "Rename cancelled" : {
+
+    },
+    "Rename completed, updated files:" : {
+
+    },
+    "Rename failed" : {
+
+    },
+    "Rename not applied" : {
+
+    },
+    "Rename Symbol" : {
+
+    },
+    "Renaming symbol..." : {
+
     },
     "Save failed: %@" : {
       "extractionState" : "manual",
