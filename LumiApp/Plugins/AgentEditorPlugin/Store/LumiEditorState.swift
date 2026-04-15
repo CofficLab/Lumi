@@ -32,6 +32,9 @@ final class LumiEditorState: ObservableObject {
     /// 当前文件的诊断列表（Problems 面板数据源）
     @Published var problemDiagnostics: [Diagnostic] = []
 
+    /// 当前选中的问题，用于列表高亮与编辑器同步
+    @Published var selectedProblemDiagnostic: Diagnostic?
+
     /// 是否展示 Problems 面板
     @Published var isProblemsPanelPresented: Bool = false
 
@@ -43,6 +46,10 @@ final class LumiEditorState: ObservableObject {
             .receive(on: RunLoop.main)
             .sink { [weak self] diags in
                 self?.problemDiagnostics = diags
+                if let selected = self?.selectedProblemDiagnostic,
+                   diags.contains(where: { $0 == selected }) == false {
+                    self?.selectedProblemDiagnostic = nil
+                }
                 // 面板打开时保持打开；面板关闭时不强制弹出
             }
     }
@@ -62,12 +69,19 @@ final class LumiEditorState: ObservableObject {
     }
 
     func openProblem(_ diag: Diagnostic) {
+        selectedProblemDiagnostic = diag
         let line = Int(diag.range.start.line) + 1
         let column = Int(diag.range.start.character) + 1
+        let endLine = Int(diag.range.end.line) + 1
+        let endColumn = Int(diag.range.end.character) + 1
+        let hasSelection = endLine > line || endColumn > column
+
         editorState.cursorPositions = [
             CursorPosition(
                 start: .init(line: line, column: column),
-                end: nil
+                end: hasSelection
+                    ? .init(line: endLine, column: endColumn)
+                    : nil
             )
         ]
     }
@@ -394,6 +408,7 @@ final class LumiEditorState: ObservableObject {
                     self.hoverText = nil
                     self.referenceResults = []
                     self.isReferencePanelPresented = false
+                    self.selectedProblemDiagnostic = nil
                     self.isProblemsPanelPresented = false
                     
                     // 启动文件变化监听器（检测外部编辑器的修改）
@@ -489,6 +504,7 @@ final class LumiEditorState: ObservableObject {
         referenceResults = []
         isReferencePanelPresented = false
         problemDiagnostics = []
+        selectedProblemDiagnostic = nil
         isProblemsPanelPresented = false
         
         // 清理文件监听器

@@ -3,7 +3,7 @@ import MagicKit
 import LanguageServerProtocol
 
 /// LSP Problems 面板（当前文件）
-struct LumiEditorProblemsPanelView: View {
+struct ProblemsPanelView: View {
     @ObservedObject var state: LumiEditorState
 
     var body: some View {
@@ -46,22 +46,31 @@ struct LumiEditorProblemsPanelView: View {
     }
 
     private var content: some View {
-        ScrollView {
-            LazyVStack(spacing: 6) {
-                if state.problemDiagnostics.isEmpty {
-                    emptyState
-                } else {
-                    ForEach(Array(state.problemDiagnostics.enumerated()), id: \.offset) { _, diag in
-                        Button {
-                            state.openProblem(diag)
-                        } label: {
-                            row(for: diag)
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(spacing: 6) {
+                    if state.problemDiagnostics.isEmpty {
+                        emptyState
+                    } else {
+                        ForEach(Array(state.problemDiagnostics.enumerated()), id: \.offset) { index, diag in
+                            Button {
+                                state.openProblem(diag)
+                            } label: {
+                                row(for: diag)
+                            }
+                            .buttonStyle(.plain)
+                            .id(index)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
+                .padding(8)
             }
-            .padding(8)
+            .onAppear {
+                scrollToSelectedProblem(with: proxy)
+            }
+            .onChange(of: state.selectedProblemDiagnostic) { _, _ in
+                scrollToSelectedProblem(with: proxy)
+            }
         }
     }
 
@@ -83,6 +92,7 @@ struct LumiEditorProblemsPanelView: View {
         let (icon, color) = iconAndColor(for: diag.severity)
         let line = Int(diag.range.start.line) + 1
         let column = Int(diag.range.start.character) + 1
+        let isSelected = state.selectedProblemDiagnostic == diag
 
         return VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
@@ -115,8 +125,34 @@ struct LumiEditorProblemsPanelView: View {
         .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 6)
-                .fill(AppUI.Color.semantic.textTertiary.opacity(0.06))
+                .fill(
+                    isSelected
+                        ? color.opacity(0.16)
+                        : AppUI.Color.semantic.textTertiary.opacity(0.06)
+                )
         )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(
+                    isSelected
+                        ? color.opacity(0.55)
+                        : .clear,
+                    lineWidth: 1
+                )
+        )
+    }
+
+    private func scrollToSelectedProblem(with proxy: ScrollViewProxy) {
+        guard let selected = state.selectedProblemDiagnostic,
+              let index = state.problemDiagnostics.firstIndex(of: selected) else {
+            return
+        }
+
+        DispatchQueue.main.async {
+            withAnimation(.easeInOut(duration: 0.18)) {
+                proxy.scrollTo(index, anchor: .center)
+            }
+        }
     }
 
     private func iconAndColor(for severity: DiagnosticSeverity?) -> (String, SwiftUI.Color) {
@@ -136,6 +172,6 @@ struct LumiEditorProblemsPanelView: View {
 }
 
 #Preview {
-    LumiEditorProblemsPanelView(state: LumiEditorState())
+    ProblemsPanelView(state: LumiEditorState())
         .inRootView()
 }

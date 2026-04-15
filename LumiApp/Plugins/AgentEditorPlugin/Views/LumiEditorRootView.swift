@@ -32,7 +32,7 @@ struct LumiEditorRootView: View {
             if state.isReferencePanelPresented {
                 LumiEditorReferencesPanelView(state: state)
             } else if state.isProblemsPanelPresented {
-                LumiEditorProblemsPanelView(state: state)
+                ProblemsPanelView(state: state)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

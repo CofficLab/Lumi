@@ -41,15 +41,38 @@ final class LumiEditorCoordinator: TextViewCoordinator, TextViewDelegate {
     
     nonisolated func textViewDidChangeSelection(controller: TextViewController) {
         let state = self.state
-        let cursor = controller.cursorPositions.first?.start
         hoverTask?.cancel()
         hoverTask = Task { @MainActor [weak state] in
             guard let state else { return }
+            let cursor = controller.cursorPositions.first?.start
 
             guard let cursor else {
+                state.selectedProblemDiagnostic = nil
                 state.hoverText = nil
                 return
             }
+
+            state.selectedProblemDiagnostic = state.problemDiagnostics.first(where: { diag in
+                let startLine = Int(diag.range.start.line) + 1
+                let endLine = Int(diag.range.end.line) + 1
+                let startColumn = Int(diag.range.start.character) + 1
+                let endColumn = Int(diag.range.end.character) + 1
+
+                if cursor.line < startLine || cursor.line > endLine {
+                    return false
+                }
+                if startLine == endLine {
+                    let upperBound = max(endColumn, startColumn)
+                    return cursor.column >= startColumn && cursor.column <= upperBound
+                }
+                if cursor.line == startLine {
+                    return cursor.column >= startColumn
+                }
+                if cursor.line == endLine {
+                    return cursor.column <= max(endColumn, 1)
+                }
+                return true
+            })
 
             // 轻量防抖，避免快速移动光标时频繁请求 LSP
             try? await Task.sleep(for: .milliseconds(220))
