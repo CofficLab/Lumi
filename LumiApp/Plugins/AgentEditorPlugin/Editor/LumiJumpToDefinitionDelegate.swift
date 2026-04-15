@@ -49,7 +49,7 @@ final class LumiJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDele
         if let link = await findDefinitionViaLSP(
             word: word,
             cursorRange: range,
-            textStorage: textStorage
+            content: content
         ) {
             logger.debug("✅ LSP matched: '\(word)'")
             return [link]
@@ -59,22 +59,22 @@ final class LumiJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDele
         if let definitionRange = await findDefinitionViaAST(
             word: word,
             cursorRange: range,
-            textStorage: textStorage
+            content: content
         ) {
             let position = CursorPosition(range: definitionRange)
             logger.debug("✅ AST matched: '\(word)' -> \(definitionRange.location)")
-            return [createLink(for: word, targetRange: position, textStorage: textStorage)]
+            return [createLink(for: word, targetRange: position, content: content)]
         }
         
         // 2. 回退：通过正则匹配（快速但不够精确）
         if let fallbackRange = findDefinitionViaRegex(
             word: word,
             cursorRange: range,
-            textStorage: textStorage
+            content: content
         ) {
             let position = CursorPosition(range: fallbackRange)
             logger.debug("✅ Regex matched: '\(word)' -> \(fallbackRange.location)")
-            return [createLink(for: word, targetRange: position, textStorage: textStorage)]
+            return [createLink(for: word, targetRange: position, content: content)]
         }
         
         logger.debug("❌ No definition found for: '\(word)'")
@@ -91,39 +91,97 @@ final class LumiJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDele
     /// 右键菜单可直接调用此方法复用完整跳转流程
     @MainActor
     func performGoToDefinition(forRange range: NSRange) async {
-        guard let textStorage, let controller = textViewController else { return }
-        guard let links = await queryLinks(forRange: range, textView: controller),
-              !links.isEmpty else {
-            NSSound.beep()
+        await performGoToNavigation(forRange: range, kind: .definition, fallbackToAST: true, fallbackToRegex: true)
+    }
+
+    /// 跳转到声明（仅 LSP）
+    @MainActor
+    func performGoToDeclaration(forRange range: NSRange) async {
+        await performGoToNavigation(forRange: range, kind: .declaration, fallbackToAST: false, fallbackToRegex: false)
+    }
+
+    /// 跳转到类型定义（仅 LSP）
+    @MainActor
+    func performGoToTypeDefinition(forRange range: NSRange) async {
+        await performGoToNavigation(forRange: range, kind: .typeDefinition, fallbackToAST: false, fallbackToRegex: false)
+    }
+
+    /// 跳转到实现（仅 LSP）
+    @MainActor
+    func performGoToImplementation(forRange range: NSRange) async {
+        await performGoToNavigation(forRange: range, kind: .implementation, fallbackToAST: false, fallbackToRegex: false)
+    }
+
+    /// 通用 LSP 导航跳转方法
+    @MainActor
+    private func performGoToNavigation(
+        forRange range: NSRange,
+        kind: LSPNavigationKind,
+        fallbackToAST: Bool,
+        fallbackToRegex: Bool
+    ) async {
+        guard let ts = textStorage, let controller = textViewController else { return }
+        let content = ts.string
+        let word = (content as NSString).substring(with: range)
+
+        // 1. 优先通过 LSP 查找
+        if let link = await findLocationViaLSP(
+            kind: kind,
+            word: word,
+            cursorRange: range,
+            content: content
+        ) {
+            openNavigationLink(link, textStorage: ts, controller: controller)
             return
         }
-        
-        if links.count == 1 {
-            let link = links[0]
-            if link.url != nil {
-                onOpenExternalDefinition?(link.url!, link.targetRange)
-            } else {
-                // 同文件跳转：将 range 扩展到整行，保证选中背景高亮
-                let targetNSRange = link.targetRange.range
-                var selectionRange = targetNSRange
-                if targetNSRange.length == 0,
-                   let swiftRange = Range(targetNSRange, in: textStorage.string) {
-                    let lineRange = textStorage.string.lineRange(for: swiftRange)
-                    selectionRange = NSRange(lineRange, in: textStorage.string)
-                }
-                controller.textView.selectionManager.setSelectedRange(selectionRange)
-                controller.textView.scrollSelectionToVisible()
-            }
+
+        // 2. 回退：通过 AST（仅 Definition 支持）
+        if fallbackToAST,
+           let definitionRange = await findDefinitionViaAST(
+               word: word,
+               cursorRange: range,
+               content: content
+           ) {
+            let position = CursorPosition(range: definitionRange)
+            let link = createLink(for: word, targetRange: position, content: content)
+            openNavigationLink(link, textStorage: ts, controller: controller)
+            return
+        }
+
+        // 3. 回退：通过正则（仅 Definition 支持）
+        if fallbackToRegex,
+           let fallbackRange = findDefinitionViaRegex(
+               word: word,
+               cursorRange: range,
+               content: content
+           ) {
+            let position = CursorPosition(range: fallbackRange)
+            let link = createLink(for: word, targetRange: position, content: content)
+            openNavigationLink(link, textStorage: ts, controller: controller)
+            return
+        }
+
+        // 未找到目标
+        NSSound.beep()
+    }
+
+    /// 打开导航链接（同文件 / 跨文件）
+    @MainActor
+    private func openNavigationLink(_ link: JumpToDefinitionLink, textStorage: NSTextStorage, controller: TextViewController) {
+        if let url = link.url {
+            // 跨文件跳转
+            onOpenExternalDefinition?(url, link.targetRange)
         } else {
-            // 多定义情况：弹出选择窗口
-            if let range = Range(range, in: textStorage.string) {
-                let lineRange = textStorage.string.lineRange(for: range)
-                let nsLineRange = NSRange(lineRange, in: textStorage.string)
-                let _ = (textStorage.string as NSString).substring(with: nsLineRange)
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                    .prefix(80)
-                // TODO: show multi-definition popover
+            // 同文件跳转
+            let targetNSRange = link.targetRange.range
+            var selectionRange = targetNSRange
+            if targetNSRange.length == 0,
+               let swiftRange = Range(targetNSRange, in: textStorage.string) {
+                let lineRange = textStorage.string.lineRange(for: swiftRange)
+                selectionRange = NSRange(lineRange, in: textStorage.string)
             }
+            controller.textView.selectionManager.setSelectedRange(selectionRange)
+            controller.textView.scrollSelectionToVisible()
         }
     }
 
@@ -132,21 +190,112 @@ final class LumiJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDele
     private func findDefinitionViaLSP(
         word: String,
         cursorRange: NSRange,
-        textStorage: NSTextStorage
+        content: String
+    ) async -> JumpToDefinitionLink? {
+        return await findLocationViaLSP(
+            kind: .definition,
+            word: word,
+            cursorRange: cursorRange,
+            content: content
+        )
+    }
+
+    /// 通过 LSP 查找声明位置
+    func findDeclarationLocation(
+        word: String,
+        cursorRange: NSRange,
+        content: String
+    ) async -> JumpToDefinitionLink? {
+        return await findLocationViaLSP(
+            kind: .declaration,
+            word: word,
+            cursorRange: cursorRange,
+            content: content
+        )
+    }
+
+    /// 通过 LSP 查找类型定义位置
+    func findTypeDefinitionLocation(
+        word: String,
+        cursorRange: NSRange,
+        content: String
+    ) async -> JumpToDefinitionLink? {
+        return await findLocationViaLSP(
+            kind: .typeDefinition,
+            word: word,
+            cursorRange: cursorRange,
+            content: content
+        )
+    }
+
+    /// 通过 LSP 查找实现位置
+    func findImplementationLocation(
+        word: String,
+        cursorRange: NSRange,
+        content: String
+    ) async -> JumpToDefinitionLink? {
+        return await findLocationViaLSP(
+            kind: .implementation,
+            word: word,
+            cursorRange: cursorRange,
+            content: content
+        )
+    }
+
+    /// LSP 导航位置查找类型
+    private enum LSPNavigationKind {
+        case definition
+        case declaration
+        case typeDefinition
+        case implementation
+
+        var toastFinding: String {
+            switch self {
+            case .definition: return String(localized: "Finding definition...", table: "LumiEditor")
+            case .declaration: return String(localized: "Finding declaration...", table: "LumiEditor")
+            case .typeDefinition: return String(localized: "Finding type definition...", table: "LumiEditor")
+            case .implementation: return String(localized: "Finding implementation...", table: "LumiEditor")
+            }
+        }
+    }
+
+    private func findLocationViaLSP(
+        kind: LSPNavigationKind,
+        word: String,
+        cursorRange: NSRange,
+        content: String
     ) async -> JumpToDefinitionLink? {
         guard let coordinator = lspCoordinator else { return nil }
-        let content = textStorage.string
 
         guard let lspPosition = Self.lspPosition(utf16Offset: cursorRange.location, in: content) else {
             return nil
         }
 
-        guard let location = await coordinator.requestDefinition(
-            line: lspPosition.line,
-            character: lspPosition.character
-        ) else {
-            return nil
+        let location: Location?
+        switch kind {
+        case .definition:
+            location = await coordinator.requestDefinition(
+                line: lspPosition.line,
+                character: lspPosition.character
+            )
+        case .declaration:
+            location = await coordinator.requestDeclaration(
+                line: lspPosition.line,
+                character: lspPosition.character
+            )
+        case .typeDefinition:
+            location = await coordinator.requestTypeDefinition(
+                line: lspPosition.line,
+                character: lspPosition.character
+            )
+        case .implementation:
+            location = await coordinator.requestImplementation(
+                line: lspPosition.line,
+                character: lspPosition.character
+            )
         }
+
+        guard let location else { return nil }
 
         let currentURI = currentFileURLProvider?()?.absoluteString
         let isSameFile = currentURI == location.uri
@@ -156,7 +305,7 @@ final class LumiJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDele
             return createLink(
                 for: word,
                 targetRange: CursorPosition(range: NSRange(location: targetRange.location, length: 0)),
-                textStorage: textStorage
+                content: content
             )
         }
 
@@ -179,9 +328,18 @@ final class LumiJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDele
             typeName: word,
             sourcePreview: preview,
             documentation: nil,
-            image: Image(systemName: "arrow.right.square.fill"),
+            image: imageForNavigationKind(kind),
             imageColor: Color(NSColor.systemBlue)
         )
+    }
+
+    private func imageForNavigationKind(_ kind: LSPNavigationKind) -> Image {
+        switch kind {
+        case .definition: return Image(systemName: "arrow.right.square.fill")
+        case .declaration: return Image(systemName: "doc.badge.plus.fill")
+        case .typeDefinition: return Image(systemName: "square.on.square.fill")
+        case .implementation: return Image(systemName: "arrowtriangle.right.fill")
+        }
     }
     
     // MARK: - AST 查找（核心逻辑）
@@ -190,7 +348,7 @@ final class LumiJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDele
     private func findDefinitionViaAST(
         word: String,
         cursorRange: NSRange,
-        textStorage: NSTextStorage
+        content: String
     ) async -> NSRange? {
         guard let treeSitterClient = treeSitterClient else { return nil }
         
@@ -203,7 +361,7 @@ final class LumiJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDele
                     word: word,
                     cursorRange: cursorRange,
                     node: nodeResult.node,
-                    content: textStorage.string
+                    content: content
                 ) {
                     return defRange
                 }
@@ -328,9 +486,8 @@ final class LumiJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDele
     private func findDefinitionViaRegex(
         word: String,
         cursorRange: NSRange,
-        textStorage: NSTextStorage
+        content: String
     ) -> NSRange? {
-        let content = textStorage.string
         let escapedWord = NSRegularExpression.escapedPattern(for: word)
         
         // 多语言定义模式
@@ -368,9 +525,8 @@ final class LumiJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDele
     private func createLink(
         for word: String,
         targetRange: CursorPosition,
-        textStorage: NSTextStorage
+        content: String
     ) -> JumpToDefinitionLink {
-        let content = textStorage.string
         let swiftRange = Range(targetRange.range, in: content) ?? content.startIndex..<content.endIndex
         let lineRange = content.lineRange(for: swiftRange)
         let nsLineRange = NSRange(lineRange, in: content)

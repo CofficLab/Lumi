@@ -339,6 +339,39 @@ final class LumiLSPService: ObservableObject {
         }
     }
     
+    func requestDeclaration(uri: String, line: Int, character: Int) async -> DeclarationResponse {
+        guard let server else { return nil }
+        guard server.capabilities.declarationProvider != nil else { return nil }
+        do {
+            return try await server.declaration(uri: uri, line: line, character: character)
+        } catch {
+            logger.error("Declaration failed: \(error)")
+            return nil
+        }
+    }
+    
+    func requestTypeDefinition(uri: String, line: Int, character: Int) async -> TypeDefinitionResponse {
+        guard let server else { return nil }
+        guard server.capabilities.typeDefinitionProvider != nil else { return nil }
+        do {
+            return try await server.typeDefinition(uri: uri, line: line, character: character)
+        } catch {
+            logger.error("Type definition failed: \(error)")
+            return nil
+        }
+    }
+    
+    func requestImplementation(uri: String, line: Int, character: Int) async -> ImplementationResponse {
+        guard let server else { return nil }
+        guard server.capabilities.implementationProvider != nil else { return nil }
+        do {
+            return try await server.implementation(uri: uri, line: line, character: character)
+        } catch {
+            logger.error("Implementation failed: \(error)")
+            return nil
+        }
+    }
+    
     var currentSemanticTokenMap: LumiSemanticTokenMap? {
         server?.semanticTokenMap
     }
@@ -402,6 +435,21 @@ final class LumiLSPService: ObservableObject {
     
     /// DefinitionResponse = ThreeTypeOption<Location, [Location], [LocationLink]>?
     private func parseDefinitionLocation(_ response: DefinitionResponse) -> Location? {
+        guard let response else { return nil }
+        switch response {
+        case .optionA(let location):
+            return location
+        case .optionB(let locations):
+            return locations.first
+        case .optionC(let links):
+            guard let link = links.first else { return nil }
+            return Location(uri: link.targetUri, range: link.targetSelectionRange)
+        }
+    }
+
+    /// DeclarationResponse / TypeDefinitionResponse / ImplementationResponse
+    /// 三者均为 ThreeTypeOption<Location, [Location], [LocationLink]>? 结构
+    nonisolated func parseLocationResponse(_ response: ThreeTypeOption<Location, [Location], [LocationLink]>?) -> Location? {
         guard let response else { return nil }
         switch response {
         case .optionA(let location):

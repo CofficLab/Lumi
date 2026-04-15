@@ -133,6 +133,27 @@ class LumiLSPCoordinator: ObservableObject {
         return await lspService.requestCodeAction(uri: uri, range: range, diagnostics: diagnostics, triggerKinds: triggerKinds)
     }
 
+    /// 请求声明位置
+    func requestDeclaration(line: Int, character: Int) async -> Location? {
+        guard let uri = fileURI else { return nil }
+        let response = await lspService.requestDeclaration(uri: uri, line: line, character: character)
+        return lspService.parseLocationResponse(response)
+    }
+
+    /// 请求类型定义位置
+    func requestTypeDefinition(line: Int, character: Int) async -> Location? {
+        guard let uri = fileURI else { return nil }
+        let response = await lspService.requestTypeDefinition(uri: uri, line: line, character: character)
+        return lspService.parseLocationResponse(response)
+    }
+
+    /// 请求实现位置
+    func requestImplementation(line: Int, character: Int) async -> Location? {
+        guard let uri = fileURI else { return nil }
+        let response = await lspService.requestImplementation(uri: uri, line: line, character: character)
+        return lspService.parseLocationResponse(response)
+    }
+
     func completionTriggerCharacters() -> Set<String> {
         lspService.completionTriggerCharacters
     }

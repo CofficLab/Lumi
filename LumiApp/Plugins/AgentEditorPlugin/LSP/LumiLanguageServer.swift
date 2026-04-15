@@ -374,6 +374,30 @@ final class LumiLanguageServer: @unchecked Sendable {
         return parseCodeActionResponse(response)
     }
     
+    func declaration(uri: String, line: Int, character: Int) async throws -> DeclarationResponse {
+        let params = TextDocumentPositionParams(
+            textDocument: TextDocumentIdentifier(uri: uri),
+            position: Position(line: line, character: character)
+        )
+        return try await server.declaration(params)
+    }
+    
+    func typeDefinition(uri: String, line: Int, character: Int) async throws -> TypeDefinitionResponse {
+        let params = TextDocumentPositionParams(
+            textDocument: TextDocumentIdentifier(uri: uri),
+            position: Position(line: line, character: character)
+        )
+        return try await server.typeDefinition(params)
+    }
+    
+    func implementation(uri: String, line: Int, character: Int) async throws -> ImplementationResponse {
+        let params = TextDocumentPositionParams(
+            textDocument: TextDocumentIdentifier(uri: uri),
+            position: Position(line: line, character: character)
+        )
+        return try await server.implementation(params)
+    }
+    
     // MARK: - Shutdown
     
     func shutdown() async throws {

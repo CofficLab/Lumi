@@ -423,6 +423,30 @@ final class LumiContextMenuHelper: NSObject {
         }
         menu.insertItem(goToDefinitionItem, at: 0)
 
+        let goToDeclarationItem = buildInjectedItem(
+            title: String(localized: "Go to Declaration", table: "LumiEditor"),
+            image: "doc.badge.plus"
+        ) {
+            Self.performGoToDeclaration(textView: textView, state: state)
+        }
+        menu.insertItem(goToDeclarationItem, at: 0)
+
+        let goToTypeDefinitionItem = buildInjectedItem(
+            title: String(localized: "Go to Type Definition", table: "LumiEditor"),
+            image: "square.on.square"
+        ) {
+            Self.performGoToTypeDefinition(textView: textView, state: state)
+        }
+        menu.insertItem(goToTypeDefinitionItem, at: 0)
+
+        let goToImplementationItem = buildInjectedItem(
+            title: String(localized: "Go to Implementation", table: "LumiEditor"),
+            image: "arrowtriangle.right"
+        ) {
+            Self.performGoToImplementation(textView: textView, state: state)
+        }
+        menu.insertItem(goToImplementationItem, at: 0)
+
         let referencesItem = buildInjectedItem(
             title: String(localized: "Find References", table: "LumiEditor"),
             image: "link"
@@ -566,6 +590,51 @@ final class LumiContextMenuHelper: NSObject {
             )
             
             await state.jumpDelegate?.performGoToDefinition(forRange: selection)
+        }
+    }
+
+    private static func performGoToDeclaration(textView: TextView, state: LumiEditorState) {
+        let selection = textView.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
+        guard selection.location != NSNotFound else { return }
+        
+        Task { @MainActor in
+            state.showStatusToast(
+                String(localized: "Finding declaration...", table: "LumiEditor"),
+                level: .info,
+                duration: 1.2
+            )
+            
+            await state.jumpDelegate?.performGoToDeclaration(forRange: selection)
+        }
+    }
+
+    private static func performGoToTypeDefinition(textView: TextView, state: LumiEditorState) {
+        let selection = textView.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
+        guard selection.location != NSNotFound else { return }
+        
+        Task { @MainActor in
+            state.showStatusToast(
+                String(localized: "Finding type definition...", table: "LumiEditor"),
+                level: .info,
+                duration: 1.2
+            )
+            
+            await state.jumpDelegate?.performGoToTypeDefinition(forRange: selection)
+        }
+    }
+
+    private static func performGoToImplementation(textView: TextView, state: LumiEditorState) {
+        let selection = textView.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
+        guard selection.location != NSNotFound else { return }
+        
+        Task { @MainActor in
+            state.showStatusToast(
+                String(localized: "Finding implementation...", table: "LumiEditor"),
+                level: .info,
+                duration: 1.2
+            )
+            
+            await state.jumpDelegate?.performGoToImplementation(forRange: selection)
         }
     }
 

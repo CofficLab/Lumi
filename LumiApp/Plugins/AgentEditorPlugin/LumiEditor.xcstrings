@@ -378,6 +378,9 @@
         }
       }
     },
+    "Finding declaration..." : {
+
+    },
     "Finding definition..." : {
       "localizations" : {
         "en" : {
@@ -400,6 +403,9 @@
         }
       }
     },
+    "Finding implementation..." : {
+
+    },
     "Finding references..." : {
       "localizations" : {
         "en" : {
@@ -421,6 +427,9 @@
           }
         }
       }
+    },
+    "Finding type definition..." : {
+
     },
     "Format Document" : {
       "localizations" : {
@@ -488,6 +497,9 @@
         }
       }
     },
+    "Go to Declaration" : {
+
+    },
     "Go to Definition" : {
       "localizations" : {
         "en" : {
@@ -509,6 +521,12 @@
           }
         }
       }
+    },
+    "Go to Implementation" : {
+
+    },
+    "Go to Type Definition" : {
+
     },
     "Jumped to definition" : {
       "extractionState" : "stale",
