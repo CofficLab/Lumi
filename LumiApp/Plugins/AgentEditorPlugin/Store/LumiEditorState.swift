@@ -372,19 +372,51 @@ final class LumiEditorState: ObservableObject {
     }
 
     /// 从跳转定义入口打开文件并移动光标
-    func openDefinitionLocation(url: URL, target: CursorPosition) {
+    func openDefinitionLocation(url: URL, target: CursorPosition, highlightLine: Bool = false) {
         loadFile(from: url)
         Task { @MainActor [weak self] in
             guard let self else { return }
             for _ in 0..<40 {
                 if self.currentFileURL == url, self.content != nil {
-                    self.editorState.cursorPositions = [target]
+                    let finalTarget = highlightLine
+                        ? self.lineHighlightCursorPosition(from: target)
+                        : target
+                    self.editorState.cursorPositions = [finalTarget]
                     return
                 }
                 try? await Task.sleep(for: .milliseconds(50))
             }
-            self.editorState.cursorPositions = [target]
+            let finalTarget = highlightLine
+                ? self.lineHighlightCursorPosition(from: target)
+                : target
+            self.editorState.cursorPositions = [finalTarget]
         }
+    }
+
+    private func lineHighlightCursorPosition(from target: CursorPosition) -> CursorPosition {
+        let line = max(target.start.line, 1)
+        guard let content else {
+            return CursorPosition(
+                start: .init(line: line, column: 1),
+                end: .init(line: line, column: max(target.start.column, 1))
+            )
+        }
+
+        let lines = content.string.components(separatedBy: .newlines)
+        let index = line - 1
+        guard lines.indices.contains(index) else {
+            return CursorPosition(
+                start: .init(line: line, column: 1),
+                end: .init(line: line, column: max(target.start.column, 1))
+            )
+        }
+
+        let lineText = lines[index]
+        let endColumn = max(lineText.count + 1, target.start.column)
+        return CursorPosition(
+            start: .init(line: line, column: 1),
+            end: .init(line: line, column: endColumn)
+        )
     }
     
     /// 重置状态

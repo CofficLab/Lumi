@@ -459,7 +459,25 @@ final class LumiContextMenuHelper: NSObject {
                     column: Int(location.range.end.character) + 1
                 )
             )
-            state.openDefinitionLocation(url: url, target: target)
+
+            // 与 Cmd+Click 行为对齐：同文件时直接在当前 textView 上设置选区，保证可见高亮
+            if state.currentFileURL == url {
+                let rawRange = nsRange(from: location.range, in: content)
+                let resolvedRange: NSRange? = {
+                    guard let rawRange else { return nil }
+                    if rawRange.length > 0 { return rawRange }
+                    return expandedWordRange(at: rawRange.location, in: content)
+                }()
+
+                if let resolvedRange {
+                    textView.selectionManager.setSelectedRange(resolvedRange)
+                    textView.scrollSelectionToVisible()
+                } else {
+                    state.openDefinitionLocation(url: url, target: target, highlightLine: true)
+                }
+            } else {
+                state.openDefinitionLocation(url: url, target: target, highlightLine: true)
+            }
             state.showStatusToast(
                 String(localized: "Jumped to definition", table: "LumiEditor"),
                 level: .success
@@ -514,6 +532,73 @@ final class LumiContextMenuHelper: NSObject {
         }
 
         return Position(line: line, character: character)
+    }
+
+    private static func nsRange(from lspRange: LSPRange, in content: String) -> NSRange? {
+        guard let start = utf16Offset(for: lspRange.start, in: content),
+              let end = utf16Offset(for: lspRange.end, in: content),
+              end >= start else {
+            return nil
+        }
+        return NSRange(location: start, length: end - start)
+    }
+
+    private static func utf16Offset(for position: Position, in content: String) -> Int? {
+        var line = 0
+        var utf16Offset = 0
+        var lineStartOffset = 0
+
+        for scalar in content.unicodeScalars {
+            if line == position.line {
+                break
+            }
+            utf16Offset += scalar.utf16.count
+            if scalar == "\n" {
+                line += 1
+                lineStartOffset = utf16Offset
+            }
+        }
+
+        guard line == position.line else { return nil }
+        return min(lineStartOffset + position.character, content.utf16.count)
+    }
+
+    private static func expandedWordRange(at utf16Offset: Int, in content: String) -> NSRange? {
+        let ns = content as NSString
+        guard utf16Offset >= 0, utf16Offset <= ns.length else { return nil }
+        guard ns.length > 0 else { return NSRange(location: 0, length: 0) }
+
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_"))
+
+        let pivot: Int = {
+            if utf16Offset < ns.length { return utf16Offset }
+            return max(ns.length - 1, 0)
+        }()
+
+        func isAllowed(_ index: Int) -> Bool {
+            guard index >= 0, index < ns.length else { return false }
+            let c = ns.substring(with: NSRange(location: index, length: 1)).unicodeScalars.first
+            return c.map { allowed.contains($0) } ?? false
+        }
+
+        var start = pivot
+        var end = pivot
+
+        if !isAllowed(pivot), utf16Offset > 0, isAllowed(utf16Offset - 1) {
+            start = utf16Offset - 1
+            end = utf16Offset - 1
+        }
+
+        guard isAllowed(start) else { return NSRange(location: utf16Offset, length: 0) }
+
+        while start > 0, isAllowed(start - 1) {
+            start -= 1
+        }
+        while end + 1 < ns.length, isAllowed(end + 1) {
+            end += 1
+        }
+
+        return NSRange(location: start, length: end - start + 1)
     }
 }
 
