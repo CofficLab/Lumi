@@ -71,7 +71,7 @@ struct LumiSourceEditorView: View {
                 content,
                 language: resolvedLanguage,
                 configuration: config,
-                state: $state.editorState,
+                state: multiCursorSafeBinding,
                 highlightProviders: activeHighlightProviders,
                 coordinators: activeCoordinators,
                 completionDelegate: completionDelegate,
@@ -176,6 +176,32 @@ struct LumiSourceEditorView: View {
     }
     
     // MARK: - Configuration
+    
+    /// 在多光标模式下，拦截 cursorPositions 的回写，防止
+    /// CodeEditSourceEditor 的 updateCursorPosition() → Coordinator → SwiftUI → setCursorPositions
+    /// 反馈循环导致部分光标丢失。
+    ///
+    /// 根因：updateCursorPosition() 对每个 textSelection 调用 textLineForOffset，
+    /// 如果 layoutManager 尚未布局某个 offset（例如光标在可见区域外），
+    /// 该 selection 会被跳过，cursorPositions 数量少于 textSelections。
+    /// 然后 SwiftUI Binding 回写触发 setCursorPositions 把减少后的选区覆盖回 selectionManager。
+    private var multiCursorSafeBinding: Binding<SourceEditorState> {
+        Binding<SourceEditorState>(
+            get: { state.editorState },
+            set: { newState in
+                // 多光标模式下，忽略 cursorPositions 的回写，只保留其他状态字段
+                if state.multiCursorState.all.count > 1 {
+                    state.editorState.scrollPosition = newState.scrollPosition
+                    state.editorState.findText = newState.findText
+                    state.editorState.replaceText = newState.replaceText
+                    state.editorState.findPanelVisible = newState.findPanelVisible
+                    // 不更新 cursorPositions，避免不完整的选区覆盖编辑器
+                } else {
+                    state.editorState = newState
+                }
+            }
+        )
+    }
     
     /// 构建编辑器配置
     @MainActor

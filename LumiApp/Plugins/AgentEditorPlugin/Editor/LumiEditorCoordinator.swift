@@ -44,8 +44,22 @@ final class LumiEditorCoordinator: TextViewCoordinator, TextViewDelegate {
         hoverTask?.cancel()
         hoverTask = Task { @MainActor [weak state] in
             guard let state else { return }
-            Self.syncSelections(from: controller, to: state)
-            state.clearUnfocusedMultiCursorsIfNeeded()
+            
+            // 多光标模式下，跳过 syncSelections 和 clearUnfocusedMultiCursorsIfNeeded。
+            // 原因：CodeEditSourceEditor 的 updateCursorPosition() 会把 textSelections 转换为
+            // cursorPositions（基于 line/column），如果 layoutManager 尚未布局某些 offset，
+            // textLineForOffset 会返回 nil 导致部分选区丢失。然后 Coordinator 通过 Binding
+            // 回写 cursorPositions → SwiftUI 触发 updateNSViewController → setCursorPositions
+            // 把减少后的选区覆盖回 selectionManager，导致光标丢失。
+            let cursorCount = controller.textView?.selectionManager.textSelections.count ?? 0
+            let stateCount = state.multiCursorState.all.count
+            let isMultiCursorSession = stateCount > 1 || cursorCount > 1
+            
+            if !isMultiCursorSession {
+                Self.syncSelections(from: controller, to: state)
+                state.clearUnfocusedMultiCursorsIfNeeded()
+            }
+            
             let cursor = controller.cursorPositions.first?.start
 
             guard let cursor else {
