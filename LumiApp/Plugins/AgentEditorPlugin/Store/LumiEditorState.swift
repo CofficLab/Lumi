@@ -7,6 +7,16 @@ import CodeEditTextView
 import CodeEditLanguages
 import LanguageServerProtocol
 
+/// LSP 引用查询结果
+struct ReferenceResult: Identifiable, Equatable {
+    let id = UUID()
+    let url: URL
+    let line: Int
+    let column: Int
+    let path: String
+    let preview: String
+}
+
 /// 编辑器状态管理器
 /// 管理当前文件的内容（NSTextStorage）、光标位置、编辑器配置等
 @MainActor
@@ -18,13 +28,10 @@ final class LumiEditorState: ObservableObject {
         case error
     }
 
-    struct ReferenceResult: Identifiable, Equatable {
-        let id = UUID()
-        let url: URL
-        let line: Int
-        let column: Int
-        let path: String
-        let preview: String
+    private struct MultiCursorSearchSession {
+        let query: String
+        let baseSelection: LumiMultiCursorSelection
+        var history: [LumiMultiCursorSelection]
     }
 
     // MARK: - Problems
@@ -39,6 +46,7 @@ final class LumiEditorState: ObservableObject {
     @Published var isProblemsPanelPresented: Bool = false
 
     private var diagnosticsCancellable: AnyCancellable?
+    private var multiCursorSearchSession: MultiCursorSearchSession?
 
     private func bindDiagnostics() {
         diagnosticsCancellable?.cancel()
@@ -1022,6 +1030,14 @@ final class LumiEditorState: ObservableObject {
 
     func clearMultiCursors() {
         multiCursorState.clearSecondary()
+        endMultiCursorSearchSession()
+    }
+
+    func clearUnfocusedMultiCursorsIfNeeded() {
+        guard multiCursorState.isEnabled else { return }
+        guard multiCursorState.all.count <= 1 else { return }
+        multiCursorState.clearSecondary()
+        endMultiCursorSearchSession()
     }
 
     func setPrimarySelection(_ selection: LumiMultiCursorSelection) {
@@ -1029,9 +1045,25 @@ final class LumiEditorState: ObservableObject {
     }
 
     func setSelections(_ selections: [LumiMultiCursorSelection]) {
-        guard let first = selections.first else { return }
+        guard let first = selections.first else {
+            clearMultiCursors()
+            return
+        }
         multiCursorState.primary = first
         multiCursorState.secondary = Array(selections.dropFirst())
+
+        if selections.count != 1 {
+            return
+        }
+
+        if let session = multiCursorSearchSession,
+           session.baseSelection == first,
+           selectionText(for: first) == session.query {
+            multiCursorSearchSession?.history = [first]
+            return
+        }
+
+        endMultiCursorSearchSession()
     }
 
     func currentSelectionsAsNSRanges() -> [NSRange] {
@@ -1043,45 +1075,115 @@ final class LumiEditorState: ObservableObject {
             location: multiCursorState.primary.location,
             length: multiCursorState.primary.length
         )
-        addNextOccurrence(from: range)
+        _ = addNextOccurrence(from: range)
     }
 
-    func addNextOccurrence(from range: NSRange) {
-        guard let content else { return }
+    @discardableResult
+    func addNextOccurrence(from range: NSRange) -> [NSRange]? {
+        guard let content else { return nil }
         let text = content.string as NSString
-        let safeRange = NSRange(
-            location: min(max(range.location, 0), text.length),
-            length: min(max(range.length, 0), max(0, text.length - min(max(range.location, 0), text.length)))
+        let normalizedRange = normalizedRange(range, in: text)
+        guard normalizedRange.location != NSNotFound else { return nil }
+
+        let baseSelection: LumiMultiCursorSelection
+        let query: String
+
+        if let session = multiCursorSearchSession,
+           selectionText(for: session.baseSelection) == session.query {
+            baseSelection = session.baseSelection
+            query = session.query
+        } else {
+            guard let resolvedSelection = resolvedBaseSelection(from: normalizedRange, in: text) else {
+                showStatusToast(
+                    String(localized: "Select text before adding next occurrence", table: "LumiEditor"),
+                    level: .warning
+                )
+                return nil
+            }
+
+            let resolvedQuery = text.substring(with: nsRange(from: resolvedSelection))
+            guard !resolvedQuery.isEmpty else { return nil }
+
+            baseSelection = resolvedSelection
+            query = resolvedQuery
+
+            multiCursorSearchSession = MultiCursorSearchSession(
+                query: query,
+                baseSelection: baseSelection,
+                history: [baseSelection]
+            )
+            multiCursorState.replaceAll([baseSelection])
+        }
+
+        let allMatches = ranges(of: query, in: text)
+        let selectedSet = Set(multiCursorState.all)
+        let anchorIndex = allMatches.firstIndex(of: baseSelection)
+            ?? allMatches.firstIndex(of: multiCursorState.primary)
+            ?? 0
+
+        guard !allMatches.isEmpty else { return currentSelectionsAsNSRanges() }
+
+        for step in 1...allMatches.count {
+            let candidate = allMatches[(anchorIndex + step) % allMatches.count]
+            if !selectedSet.contains(candidate) {
+                multiCursorState.addSecondary(candidate)
+                multiCursorSearchSession?.history.append(candidate)
+                return currentSelectionsAsNSRanges()
+            }
+        }
+
+        showStatusToast(
+            String(localized: "No more occurrences found", table: "LumiEditor"),
+            level: .warning
         )
+        return currentSelectionsAsNSRanges()
+    }
 
-        guard safeRange.location != NSNotFound,
-              safeRange.length > 0,
-              NSMaxRange(safeRange) <= text.length else {
+    func addAllOccurrences(from range: NSRange) -> [NSRange]? {
+        guard let content else { return nil }
+        let text = content.string as NSString
+        let normalizedRange = normalizedRange(range, in: text)
+        guard normalizedRange.location != NSNotFound else { return nil }
+
+        let baseSelection = resolvedBaseSelection(from: normalizedRange, in: text)
+        guard let baseSelection else {
             showStatusToast(
-                String(localized: "Select text before adding next occurrence", table: "LumiEditor"),
+                String(localized: "Select text before selecting all occurrences", table: "LumiEditor"),
                 level: .warning
             )
-            return
+            return nil
         }
 
-        let needle = text.substring(with: safeRange)
-        guard !needle.isEmpty else { return }
+        let query = text.substring(with: nsRange(from: baseSelection))
+        guard !query.isEmpty else { return nil }
 
-        setPrimarySelection(.init(location: safeRange.location, length: safeRange.length))
+        let matches = ranges(of: query, in: text)
+        guard !matches.isEmpty else { return nil }
 
-        let searchStart = max(NSMaxRange(safeRange), 0)
-        let searchRange = NSRange(location: searchStart, length: max(0, text.length - searchStart))
-        let found = text.range(of: needle, options: [], range: searchRange)
+        multiCursorSearchSession = MultiCursorSearchSession(
+            query: query,
+            baseSelection: baseSelection,
+            history: matches
+        )
+        multiCursorState.replaceAll(matches)
+        return currentSelectionsAsNSRanges()
+    }
 
-        guard found.location != NSNotFound else {
-            showStatusToast(
-                String(localized: "No more occurrences found", table: "LumiEditor"),
-                level: .warning
-            )
-            return
+    func removeLastOccurrenceSelection() -> [NSRange]? {
+        guard multiCursorState.isEnabled else { return nil }
+        guard var session = multiCursorSearchSession else {
+            clearMultiCursors()
+            return currentSelectionsAsNSRanges()
+        }
+        guard session.history.count > 1 else {
+            clearMultiCursors()
+            return currentSelectionsAsNSRanges()
         }
 
-        multiCursorState.addSecondary(.init(location: found.location, length: found.length))
+        session.history.removeLast()
+        multiCursorSearchSession = session
+        multiCursorState.replaceAll(session.history)
+        return currentSelectionsAsNSRanges()
     }
 
     func multiCursorSummaryText() -> String {
@@ -1106,6 +1208,7 @@ final class LumiEditorState: ObservableObject {
         setSelections(result.selections)
         lspCoordinator.replaceDocument(result.text)
         notifyContentChanged()
+        endMultiCursorSearchSession()
         return result.selections
     }
 
@@ -1265,6 +1368,113 @@ final class LumiEditorState: ObservableObject {
         let lines = content.components(separatedBy: .newlines)
         guard lineNumber - 1 < lines.count else { return nil }
         return lines[lineNumber - 1].trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func endMultiCursorSearchSession() {
+        multiCursorSearchSession = nil
+    }
+
+    private func selectionText(for selection: LumiMultiCursorSelection) -> String? {
+        guard let content else { return nil }
+        let text = content.string as NSString
+        let range = nsRange(from: selection)
+        guard range.location != NSNotFound, NSMaxRange(range) <= text.length else { return nil }
+        return text.substring(with: range)
+    }
+
+    private func normalizedRange(_ range: NSRange, in text: NSString) -> NSRange {
+        guard range.location != NSNotFound else { return NSRange(location: NSNotFound, length: 0) }
+        let location = min(max(range.location, 0), text.length)
+        let length = min(max(range.length, 0), max(0, text.length - location))
+        return NSRange(location: location, length: length)
+    }
+
+    private func resolvedBaseSelection(from range: NSRange, in text: NSString) -> LumiMultiCursorSelection? {
+        if range.length > 0 {
+            return LumiMultiCursorSelection(location: range.location, length: range.length)
+        }
+
+        guard let wordRange = wordRange(at: range.location, in: text) else {
+            return nil
+        }
+        guard wordRange.length > 0 else { return nil }
+        return LumiMultiCursorSelection(location: wordRange.location, length: wordRange.length)
+    }
+
+    private func wordRange(at location: Int, in text: NSString) -> NSRange? {
+        guard text.length > 0 else { return nil }
+        let clampedLocation = min(max(location, 0), text.length)
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_"))
+
+        func isWordCharacter(at index: Int) -> Bool {
+            guard index >= 0, index < text.length else { return false }
+            let scalar = text.substring(with: NSRange(location: index, length: 1)).unicodeScalars.first
+            return scalar.map { allowed.contains($0) } ?? false
+        }
+
+        var pivot = clampedLocation
+        if pivot == text.length {
+            pivot = max(text.length - 1, 0)
+        }
+        if !isWordCharacter(at: pivot), clampedLocation > 0, isWordCharacter(at: clampedLocation - 1) {
+            pivot = clampedLocation - 1
+        }
+        guard isWordCharacter(at: pivot) else { return nil }
+
+        var start = pivot
+        var end = pivot
+        while start > 0, isWordCharacter(at: start - 1) {
+            start -= 1
+        }
+        while end + 1 < text.length, isWordCharacter(at: end + 1) {
+            end += 1
+        }
+        return NSRange(location: start, length: end - start + 1)
+    }
+
+    private func ranges(of needle: String, in text: NSString) -> [LumiMultiCursorSelection] {
+        guard !needle.isEmpty else { return [] }
+        var result: [LumiMultiCursorSelection] = []
+        var searchLocation = 0
+        let needleLength = (needle as NSString).length
+        let shouldMatchWholeWord = isWholeWordSelection(needle)
+
+        while searchLocation <= text.length - needleLength {
+            let searchRange = NSRange(location: searchLocation, length: text.length - searchLocation)
+            let found = text.range(of: needle, options: [], range: searchRange)
+            guard found.location != NSNotFound else { break }
+
+            let selection = LumiMultiCursorSelection(location: found.location, length: found.length)
+            if !shouldMatchWholeWord || isWholeWordMatch(selection, in: text) {
+                result.append(selection)
+            }
+
+            searchLocation = found.location + max(found.length, 1)
+        }
+
+        return result
+    }
+
+    private func isWholeWordSelection(_ text: String) -> Bool {
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_"))
+        return text.unicodeScalars.allSatisfy { allowed.contains($0) }
+    }
+
+    private func isWholeWordMatch(_ selection: LumiMultiCursorSelection, in text: NSString) -> Bool {
+        let lowerIndex = selection.location - 1
+        let upperIndex = selection.upperBound
+        return !isWordCharacter(at: lowerIndex, in: text) && !isWordCharacter(at: upperIndex, in: text)
+    }
+
+    private func isWordCharacter(at index: Int, in text: NSString) -> Bool {
+        guard index >= 0, index < text.length else { return false }
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_"))
+        let scalar = text.substring(with: NSRange(location: index, length: 1)).unicodeScalars.first
+        return scalar.map { allowed.contains($0) } ?? false
+    }
+
+    private func nsRange(from selection: LumiMultiCursorSelection) -> NSRange {
+        NSRange(location: selection.location, length: selection.length)
     }
 }
 

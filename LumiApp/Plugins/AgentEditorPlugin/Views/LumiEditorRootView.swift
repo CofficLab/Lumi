@@ -1,16 +1,16 @@
-import SwiftUI
 import MagicKit
+import SwiftUI
 
 /// 编辑器主视图（根入口）
 /// 组合面包屑、工具栏、编辑器、状态栏
 struct LumiEditorRootView: View {
-    
+
     @EnvironmentObject private var projectVM: ProjectVM
     @EnvironmentObject private var layoutVM: LayoutVM
-    
+
     /// 编辑器状态
     @StateObject private var state = LumiEditorState()
-    
+
     var body: some View {
         HStack(spacing: 0) {
             VStack(spacing: 0) {
@@ -44,7 +44,7 @@ struct LumiEditorRootView: View {
         .onAppear {
             // 激活左侧栏的 ProjectTree 插件
             layoutVM.selectAgentSidebarTab(ProjectTreePlugin.id, reason: "LumiEditor appeared")
-            
+
             // 初始加载
             state.projectRootPath = projectVM.currentProject?.path
             if projectVM.isFileSelected {
@@ -74,17 +74,17 @@ struct LumiEditorRootView: View {
             state.promptRenameSymbol()
         }
     }
-    
+
     // MARK: - Header Area
-    
+
     /// Header 区域：包含面包屑和工具栏，带背景色覆盖编辑器内容
     private var headerArea: some View {
         VStack(spacing: 0) {
             // 面包屑导航
             LumiEditorBreadcrumbView(state: state)
-            
+
             GlassDivider()
-            
+
             // 工具栏（紧凑模式）
             LumiEditorToolbarView(state: state)
         }
@@ -96,24 +96,24 @@ struct LumiEditorRootView: View {
         // 使用 zIndex 确保 header 在编辑器上层
         .zIndex(1)
     }
-    
+
     // MARK: - Editor Content
-    
+
     @ViewBuilder
     private var editorContent: some View {
         if state.canPreview {
             LumiSourceEditorView(state: state)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .id(state.currentFileURL) // 文件切换时重建编辑器
+                .id(state.currentFileURL)  // 文件切换时重建编辑器
                 // 关键：裁剪溢出的内容，防止行号延伸到 header
                 .clipped()
         } else if projectVM.isFileSelected {
             unsupportedFileView
         }
     }
-    
+
     // MARK: - File Info Banner
-    
+
     @ViewBuilder
     private var fileInfoBanner: some View {
         if state.isTruncated || !state.isEditable {
@@ -123,9 +123,12 @@ struct LumiEditorRootView: View {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .font(.system(size: 9))
                             .foregroundColor(AppUI.Color.semantic.warning)
-                        Text(String(localized: "Preview Truncated for Large File", table: "LumiEditor"))
-                            .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.warning)
+                        Text(
+                            String(
+                                localized: "Preview Truncated for Large File", table: "LumiEditor")
+                        )
+                        .font(.system(size: 9))
+                        .foregroundColor(AppUI.Color.semantic.warning)
                     }
                 }
                 if !state.isEditable {
@@ -148,38 +151,38 @@ struct LumiEditorRootView: View {
             .zIndex(1)
         }
     }
-    
+
     // MARK: - Empty State
-    
+
     private var emptyState: some View {
         VStack(spacing: 12) {
             Image(systemName: "chevron.left.forwardslash.chevron.right")
                 .font(.system(size: 36, weight: .thin))
                 .foregroundColor(AppUI.Color.semantic.textTertiary)
-            
+
             Text(String(localized: "Code Editor", table: "LumiEditor"))
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
-            
+
             Text(String(localized: "Select a file to start editing", table: "LumiEditor"))
                 .font(.system(size: 12))
                 .foregroundColor(AppUI.Color.semantic.textTertiary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-    
+
     // MARK: - Unsupported File
-    
+
     private var unsupportedFileView: some View {
         VStack(spacing: 12) {
             Image(systemName: "doc.questionmark")
                 .font(.system(size: 36, weight: .thin))
                 .foregroundColor(AppUI.Color.semantic.textTertiary)
-            
+
             Text(String(localized: "Unsupported File", table: "LumiEditor"))
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
-            
+
             Text(state.fileName)
                 .font(.system(size: 12))
                 .foregroundColor(AppUI.Color.semantic.textTertiary)

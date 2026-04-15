@@ -177,10 +177,29 @@ final class LumiMultiCursorInputHelper: NSObject {
         guard event.type == .keyDown else { return false }
 
         let commandPressed = event.modifierFlags.contains(.command)
-        if commandPressed, event.charactersIgnoringModifiers?.lowercased() == "d" {
+        let shiftPressed = event.modifierFlags.contains(.shift)
+        let key = event.charactersIgnoringModifiers?.lowercased()
+
+        if commandPressed, !shiftPressed, key == "d" {
             let currentSelection = textView.selectionManager.textSelections.last?.range ?? NSRange(location: NSNotFound, length: 0)
-            state.addNextOccurrence(from: currentSelection)
-            textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
+            if let ranges = state.addNextOccurrence(from: currentSelection) {
+                textView.selectionManager.setSelectedRanges(ranges)
+            }
+            return true
+        }
+
+        if commandPressed, !shiftPressed, key == "u" {
+            if let ranges = state.removeLastOccurrenceSelection() {
+                textView.selectionManager.setSelectedRanges(ranges)
+            }
+            return true
+        }
+
+        if commandPressed, shiftPressed, key == "l" {
+            let currentSelection = textView.selectionManager.textSelections.last?.range ?? NSRange(location: NSNotFound, length: 0)
+            if let ranges = state.addAllOccurrences(from: currentSelection) {
+                textView.selectionManager.setSelectedRanges(ranges)
+            }
             return true
         }
 

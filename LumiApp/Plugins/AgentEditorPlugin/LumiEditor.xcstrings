@@ -1145,6 +1145,9 @@
         }
       }
     },
+    "Select All Occurrences" : {
+
+    },
     "Select text before adding next occurrence" : {
       "localizations" : {
         "en" : {
@@ -1166,6 +1169,9 @@
           }
         }
       }
+    },
+    "Select text before selecting all occurrences" : {
+
     },
     "Toggle Problems" : {
 

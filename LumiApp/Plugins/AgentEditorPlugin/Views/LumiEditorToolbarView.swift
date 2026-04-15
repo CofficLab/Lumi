@@ -1,5 +1,6 @@
 import SwiftUI
 import MagicKit
+import CodeEditTextView
 
 /// 编辑器工具栏视图
 /// 包含字体大小、缩进、主题切换等设置
@@ -153,6 +154,7 @@ struct LumiEditorToolbarView: View {
                 } else {
                     state.addNextOccurrence()
                 }
+                syncSelectionsToFocusedTextView()
             }
             .help(state.multiCursorState.isEnabled
                 ? String(localized: "Clear Additional Cursors", table: "LumiEditor")
@@ -282,6 +284,12 @@ struct LumiEditorToolbarView: View {
         .menuStyle(.borderlessButton)
         .frame(height: 20)
         .help(String(localized: "LSP Actions", table: "LumiEditor"))
+    }
+
+    private func syncSelectionsToFocusedTextView() {
+        guard let responder = NSApp.keyWindow?.firstResponder else { return }
+        guard let textView = responder as? TextView else { return }
+        textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
     }
 }
 

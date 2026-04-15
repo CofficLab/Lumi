@@ -45,6 +45,7 @@ final class LumiEditorCoordinator: TextViewCoordinator, TextViewDelegate {
         hoverTask = Task { @MainActor [weak state] in
             guard let state else { return }
             Self.syncSelections(from: controller, to: state)
+            state.clearUnfocusedMultiCursorsIfNeeded()
             let cursor = controller.cursorPositions.first?.start
 
             guard let cursor else {
@@ -390,11 +391,24 @@ final class LumiContextMenuHelper: NSObject {
             image: "plus.magnifyingglass"
         ) {
             let currentSelection = textView.selectionManager.textSelections.last?.range ?? NSRange(location: NSNotFound, length: 0)
-            state.addNextOccurrence(from: currentSelection)
-            textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
+            if let ranges = state.addNextOccurrence(from: currentSelection) {
+                textView.selectionManager.setSelectedRanges(ranges)
+            }
         }
         addNextOccurrenceItem.isEnabled = hasSelection
         menu.insertItem(addNextOccurrenceItem, at: 0)
+
+        let selectAllOccurrencesItem = buildInjectedItem(
+            title: String(localized: "Select All Occurrences", table: "LumiEditor"),
+            image: "text.magnifyingglass"
+        ) {
+            let currentSelection = textView.selectionManager.textSelections.last?.range ?? NSRange(location: NSNotFound, length: 0)
+            if let ranges = state.addAllOccurrences(from: currentSelection) {
+                textView.selectionManager.setSelectedRanges(ranges)
+            }
+        }
+        selectAllOccurrencesItem.isEnabled = hasSelection
+        menu.insertItem(selectAllOccurrencesItem, at: 0)
 
         let clearCursorsItem = buildInjectedItem(
             title: String(localized: "Clear Additional Cursors", table: "LumiEditor"),
