@@ -155,6 +155,13 @@ final class LumiEditorCoordinator: TextViewCoordinator, TextViewDelegate {
             .map { LumiMultiCursorSelection(location: $0.location, length: $0.length) }
 
         guard !mapped.isEmpty else { return }
+
+        // 如果当前正在进行多光标会话，且编辑器回传的选区数量少于 state 中的数量，
+        // 不覆盖 state，避免 setSelectedRanges 的 Set 去重导致选区丢失
+        if state.multiCursorState.all.count > mapped.count {
+            return
+        }
+
         state.setSelections(mapped)
     }
 }
