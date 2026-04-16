@@ -265,7 +265,6 @@ struct CPUTooltipView: View {
         .padding(6)
         .background(AppUI.Material.glass)
         .cornerRadius(6)
-        .shadow(radius: 2)
     }
     
     private func formatDate(_ timestamp: TimeInterval) -> String {

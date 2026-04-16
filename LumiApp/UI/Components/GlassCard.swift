@@ -15,6 +15,7 @@ struct GlassCard<Content: View>: View {
     // MARK: - 配置
     var cornerRadius: CGFloat = DesignTokens.Radius.md
     var padding: EdgeInsets = DesignTokens.Spacing.cardPadding
+    var showShadow: Bool = true
     var shadowIntensity: Double = 1.0
     var glowColor: SwiftUI.Color? = nil
     var borderIntensity: Double = 0.08
@@ -27,12 +28,7 @@ struct GlassCard<Content: View>: View {
             .padding(padding)
             .background(cardBackground)
             .overlay(cardBorder)
-            .shadow(
-                color: shadowColor,
-                radius: shadowRadius,
-                x: 0,
-                y: shadowOffset
-            )
+            .modifier(ShadowModifier(showShadow: showShadow, color: shadowColor, radius: shadowRadius, offset: shadowOffset))
             .glowEffect(
                 color: glowColor ?? DesignTokens.Color.basePalette.glowAccent,
                 radius: glowRadius,
@@ -87,12 +83,34 @@ struct GlassCard<Content: View>: View {
     }
 }
 
+// MARK: - 阴影修饰符
+private struct ShadowModifier: ViewModifier {
+    let showShadow: Bool
+    let color: SwiftUI.Color
+    let radius: CGFloat
+    let offset: CGFloat
+
+    func body(content: Content) -> some View {
+        if showShadow {
+            content
+                .shadow(
+                    color: color,
+                    radius: radius,
+                    x: 0,
+                    y: offset
+                )
+        } else {
+            content
+        }
+    }
+}
+
 // MARK: - 预览
 #Preview("玻璃卡片") {
     VStack(spacing: DesignTokens.Spacing.lg) {
         GlassCard {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                Text("玻璃卡片")
+                Text("玻璃卡片（带阴影）")
                     .font(DesignTokens.Typography.title3)
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
@@ -102,8 +120,26 @@ struct GlassCard<Content: View>: View {
             }
         }
 
+        GlassCard(showShadow: false) {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                Text("玻璃卡片（无阴影）")
+                    .font(DesignTokens.Typography.title3)
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+
+                Text("简洁的毛玻璃效果，没有阴影")
+                    .font(DesignTokens.Typography.body)
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            }
+        }
+
         GlassCard(glowColor: .purple) {
             Text("带光晕的卡片")
+                .font(DesignTokens.Typography.body)
+                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+        }
+
+        GlassCard(showShadow: false, glowColor: .blue) {
+            Text("无阴影带光晕")
                 .font(DesignTokens.Typography.body)
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
         }

@@ -1,5 +1,7 @@
 import Foundation
 
+// MARK: - Memory Monitoring Models
+
 enum MemoryTimeRange: String, CaseIterable, Identifiable {
     case hour1 = "1h"
     case hour4 = "4h"

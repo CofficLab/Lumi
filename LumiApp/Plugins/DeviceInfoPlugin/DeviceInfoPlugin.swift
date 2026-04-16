@@ -27,8 +27,8 @@ actor DeviceInfoPlugin: SuperPlugin, SuperLog {
 
     init() {
         Task { @MainActor in
-            // Start background CPU history recording
             CPUHistoryService.shared.startRecording()
+            _ = MemoryHistoryService.shared
         }
     }
 

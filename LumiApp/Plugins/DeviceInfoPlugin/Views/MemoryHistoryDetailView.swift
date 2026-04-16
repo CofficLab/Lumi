@@ -1,20 +1,19 @@
-import SwiftUI
 import MagicKit
+import SwiftUI
 
 struct MemoryHistoryDetailView: View {
     @ObservedObject private var historyService = MemoryHistoryService.shared
     @State private var selectedRange: MemoryTimeRange = .hour1
-    
+
     var body: some View {
         VStack(spacing: 12) {
-            // Header
             HStack {
                 Text("Memory Usage Trend")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(AppUI.Color.semantic.textTertiary)
-                
+
                 Spacer()
-                
+
                 Picker("Time Range", selection: $selectedRange) {
                     ForEach(MemoryTimeRange.allCases) { range in
                         Text(range.rawValue).tag(range)
@@ -27,17 +26,14 @@ struct MemoryHistoryDetailView: View {
             }
             .padding(.horizontal, 12)
             .padding(.top, 12)
-            
-            // Graph
-            GlassCard(cornerRadius: 6, padding: EdgeInsets()) {
+
+            GlassCard(cornerRadius: 0, padding: EdgeInsets(), showShadow: false) {
                 MemoryHistoryGraphView(
                     dataPoints: historyService.getData(for: selectedRange),
                     timeRange: selectedRange
                 )
             }
-            .frame(height: 140)
-            .padding(.horizontal, 12)
-            .padding(.bottom, 12)
+            .frame(height: 180)
         }
     }
 }

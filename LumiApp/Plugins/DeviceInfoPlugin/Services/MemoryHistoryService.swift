@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import Foundation
 import MagicKit
 
 @MainActor
@@ -8,10 +8,7 @@ class MemoryHistoryService: ObservableObject, SuperLog {
     static let shared = MemoryHistoryService()
     nonisolated static let emoji = "📈"
 
-    // High resolution buffer (1s interval) - Keep last 1 hour
     @Published var recentHistory: [MemoryDataPoint] = []
-
-    // Low resolution buffer (1m interval) - Keep last 30 days
     @Published var longTermHistory: [MemoryDataPoint] = []
 
     private let maxRecentPoints = 3600
@@ -36,6 +33,38 @@ class MemoryHistoryService: ObservableObject, SuperLog {
         startRecording()
     }
 
+    // MARK: - Public Methods
+
+    func startRecording() {
+        MemoryService.shared.startMonitoring()
+        MemoryService.shared.$memoryUsagePercentage
+            .combineLatest(MemoryService.shared.$usedMemory)
+            .sink { [weak self] pct, bytes in
+                self?.recordDataPoint(pct: pct, bytes: bytes)
+            }
+            .store(in: &cancellables)
+    }
+
+    func getData(for range: MemoryTimeRange) -> [MemoryDataPoint] {
+        let now = Date().timeIntervalSince1970
+        let cutoff = now - range.duration
+
+        switch range {
+        case .hour1:
+            return recentHistory.filter { $0.timestamp >= cutoff }
+        default:
+            var points = longTermHistory.filter { $0.timestamp >= cutoff }
+            if minuteAccumulator.count > 0 {
+                let avgPct = minuteAccumulator.sumPct / Double(minuteAccumulator.count)
+                let avgBytes = minuteAccumulator.sumBytes / UInt64(minuteAccumulator.count)
+                points.append(MemoryDataPoint(timestamp: now, usagePercentage: avgPct, usedBytes: avgBytes))
+            }
+            return points
+        }
+    }
+
+    // MARK: - Private Methods
+
     private func createStorageDirectoryIfNeeded() {
         guard let directory = storageFileURL?.deletingLastPathComponent() else { return }
         if !fileManager.fileExists(atPath: directory.path) {
@@ -43,27 +72,15 @@ class MemoryHistoryService: ObservableObject, SuperLog {
         }
     }
 
-    func startRecording() {
-        MemoryService.shared.startMonitoring()
-        MemoryService.shared.$memoryUsagePercentage
-            .combineLatest(MemoryService.shared.$usedMemory)
-            .sink { [weak self] (pct, bytes) in
-                self?.recordDataPoint(pct: pct, bytes: bytes)
-            }
-            .store(in: &cancellables)
-    }
-
     private func recordDataPoint(pct: Double, bytes: UInt64) {
         let now = Date().timeIntervalSince1970
         let point = MemoryDataPoint(timestamp: now, usagePercentage: pct, usedBytes: bytes)
 
-        // Update Recent History
         recentHistory.append(point)
         if recentHistory.count > maxRecentPoints {
             recentHistory.removeFirst(recentHistory.count - maxRecentPoints)
         }
 
-        // Update Long Term History
         let currentMinute = floor(now / 60) * 60
 
         if currentMinute > lastMinuteTimestamp {
@@ -89,26 +106,6 @@ class MemoryHistoryService: ObservableObject, SuperLog {
         minuteAccumulator.sumBytes += bytes
         minuteAccumulator.count += 1
     }
-
-    func getData(for range: MemoryTimeRange) -> [MemoryDataPoint] {
-        let now = Date().timeIntervalSince1970
-        let cutoff = now - range.duration
-
-        switch range {
-        case .hour1:
-            return recentHistory.filter { $0.timestamp >= cutoff }
-        default:
-            var points = longTermHistory.filter { $0.timestamp >= cutoff }
-            if minuteAccumulator.count > 0 {
-                let avgPct = minuteAccumulator.sumPct / Double(minuteAccumulator.count)
-                let avgBytes = minuteAccumulator.sumBytes / UInt64(minuteAccumulator.count)
-                points.append(MemoryDataPoint(timestamp: now, usagePercentage: avgPct, usedBytes: avgBytes))
-            }
-            return points
-        }
-    }
-
-    // MARK: - Persistence
 
     private func saveHistory() {
         let historyToSave = longTermHistory

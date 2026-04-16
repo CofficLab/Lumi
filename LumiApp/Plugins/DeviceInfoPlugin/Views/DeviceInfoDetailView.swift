@@ -1,3 +1,5 @@
+import SwiftUI
+
 /// 详细信息页面（点击状态栏后展开的详细内容）
 struct DeviceInfoDetailView: View {
     @StateObject private var viewModel = SystemMonitorViewModel()

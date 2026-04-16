@@ -9,8 +9,6 @@ struct MemoryStatusBarPopupView: View {
         HoverableContainerView(detailView: MemoryHistoryDetailView()) {
             VStack(spacing: 0) {
                 liveStatsView
-
-                // History trend chart (last 60 seconds)
                 miniTrendView
             }
         }
@@ -29,14 +27,11 @@ struct MemoryStatusBarPopupView: View {
                     .font(.system(size: 12, weight: .medium))
             }
 
-            // Progress bar
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
-                    // Background bar
                     RoundedRectangle(cornerRadius: 3)
                         .fill(AppUI.Color.semantic.textTertiary.opacity(0.2))
 
-                    // Progress bar
                     RoundedRectangle(cornerRadius: 3)
                         .fill(
                             LinearGradient(
@@ -49,14 +44,13 @@ struct MemoryStatusBarPopupView: View {
                 }
             }
             .frame(height: 6)
-        }.padding()
+        }
+        .padding()
     }
-
-    // MARK: - Mini Trend View
 
     private var miniTrendView: some View {
         let recentData = Array(historyService.recentHistory.suffix(60))
-        let maxValue = 100.0 // Memory usage is always 0-100%
+        let maxValue = 100.0
 
         return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 4) {
@@ -70,7 +64,6 @@ struct MemoryStatusBarPopupView: View {
 
                 Spacer()
 
-                // Legend
                 HStack(spacing: 6) {
                     HStack(spacing: 3) {
                         Circle()
@@ -84,10 +77,8 @@ struct MemoryStatusBarPopupView: View {
             }
             .padding(.horizontal, 12)
 
-            // Mini chart
             GeometryReader { geometry in
                 ZStack {
-                    // Background grid lines
                     ForEach(0 ..< 3) { i in
                         let y = CGFloat(i) * geometry.size.height / 2
                         Path { path in
@@ -97,7 +88,6 @@ struct MemoryStatusBarPopupView: View {
                         .stroke(AppUI.Color.semantic.textTertiary.opacity(0.1), lineWidth: 1)
                     }
 
-                    // Memory usage area
                     if !recentData.isEmpty {
                         MiniGraphArea(
                             data: recentData.map { $0.usagePercentage },
@@ -114,7 +104,6 @@ struct MemoryStatusBarPopupView: View {
                             )
                         )
 
-                        // Memory usage line
                         MiniGraphLine(
                             data: recentData.map { $0.usagePercentage },
                             maxValue: maxValue
