@@ -6,30 +6,30 @@ struct CPUStatusBarChartRenderer {
     
     // MARK: - Constants
     
-    static let imageSize = NSSize(width: 72, height: 14)
+    private static let barWidth: CGFloat = 4
     private static let horizontalSpacing: CGFloat = 1
     private static let minimumBarHeight: CGFloat = 1
     private static let cornerRadius: CGFloat = 0.5
+    private static let imageHeight: CGFloat = 14
     
     // MARK: - Public Methods
     
     static func makeImage(from usage: [Double]) -> NSImage {
+        let barCount = max(usage.count, 1)
+        let totalSpacing = horizontalSpacing * CGFloat(max(0, barCount - 1))
+        let totalWidth = CGFloat(barCount) * barWidth + totalSpacing
+        let imageSize = NSSize(width: totalWidth, height: imageHeight)
+        
         let image = NSImage(size: imageSize)
         image.lockFocus()
         NSColor.clear.setFill()
         NSBezierPath(rect: NSRect(origin: .zero, size: imageSize)).fill()
         
         let values = normalizedValues(from: usage)
-        let barCount = max(values.count, 1)
-        let totalSpacing = horizontalSpacing * CGFloat(max(0, barCount - 1))
-        let availableWidth = imageSize.width - totalSpacing
-        let barWidth = max(4, floor(availableWidth / CGFloat(barCount)))
         let chartHeight = imageSize.height - 1
-        let totalBarsWidth = CGFloat(barCount) * barWidth + totalSpacing
-        let startX = max(0, floor((imageSize.width - totalBarsWidth) / 2))
         
         for (index, value) in values.enumerated() {
-            let x = startX + CGFloat(index) * (barWidth + horizontalSpacing)
+            let x = CGFloat(index) * (barWidth + horizontalSpacing)
             let height = max(minimumBarHeight, chartHeight * value)
             let rect = NSRect(
                 x: x,
