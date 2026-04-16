@@ -128,7 +128,17 @@ protocol SuperPlugin: Actor {
     /// 提供导航入口（用于侧边栏导航）
     @MainActor func addNavigationEntries() -> [NavigationEntry]?
 
-    /// 添加状态栏弹窗视图
+    /// 添加状态栏弹窗视图列表
+    ///
+    /// 返回该插件提供的所有状态栏弹窗视图。支持一个插件注册多个弹窗。
+    /// 多个弹窗会在状态栏弹窗中垂直堆叠显示。
+    @MainActor func addStatusBarPopupViews() -> [AnyView]
+
+    /// 添加状态栏弹窗视图（向后兼容，默认返回单个视图包装为数组）
+    ///
+    /// - Returns: 状态栏弹窗视图，如果不需要则返回 nil
+    /// - Deprecated: 使用 `addStatusBarPopupViews()` 替代
+    @available(*, deprecated, message: "Use addStatusBarPopupViews() returning [AnyView] instead")
     @MainActor func addStatusBarPopupView() -> AnyView?
 
     /// 添加状态栏内容视图

@@ -449,12 +449,13 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// 收集所有启用插件提供的状态栏弹窗视图。
     /// 当用户点击菜单栏图标时显示。
+    /// 每个插件可以提供多个弹窗视图，所有视图会被扁平化合并。
     ///
     /// - Returns: 状态栏弹窗视图数组
     func getStatusBarPopupViews() -> [AnyView] {
         plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addStatusBarPopupView() }
+            .flatMap { $0.addStatusBarPopupViews() }
     }
 
     /// 获取所有插件提供的状态栏内容视图
