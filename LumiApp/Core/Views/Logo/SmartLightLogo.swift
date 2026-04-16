@@ -188,9 +188,9 @@ struct SmartLightLogo: View {
         Image(systemName: "bolt.fill")
             .resizable()
             .aspectRatio(contentMode: .fit)
-            .foregroundStyle(.white)
+            .foregroundStyle(.primary)
+            .colorInvert()
             .frame(width: size * 0.5, height: size * 0.5)
-            .shadow(color: .white.opacity(0.6), radius: 2)
     }
 
     /// 菜单栏（已激活） — 彩色，无动画
