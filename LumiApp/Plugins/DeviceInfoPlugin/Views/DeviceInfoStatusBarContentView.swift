@@ -1,25 +1,28 @@
 import SwiftUI
 import Combine
 
-/// Status bar content view for Device Info plugin
-/// Displays real-time CPU usage percentage
+/// 状态栏内容视图（CPU 每核瞬时柱状图）
 struct DeviceInfoStatusBarContentView: View {
+    
     // MARK: - Properties
-
+    
     @StateObject private var viewModel = CPUManagerViewModel()
-
+    
     // MARK: - Body
-
+    
     var body: some View {
-        VStack(alignment: .trailing, spacing: 0) {
-            Text(String(format: "%.0f%%", viewModel.cpuUsage))
-                .font(.system(size: 9, weight: .medium))
-                .monospacedDigit()
-                .lineLimit(1)
-                .fixedSize()
-                .foregroundColor(AppUI.Color.semantic.info)
-        }
-        .frame(width: 38)
+        Image(nsImage: CPUStatusBarChartRenderer.makeImage(from: viewModel.perCoreUsage))
+            .interpolation(.none)
+            .help(helpText)
+    }
+    
+    // MARK: - Computed Properties
+    
+    private var helpText: String {
+        let coreCount = viewModel.perCoreUsage.count
+        return coreCount > 0
+            ? String(format: "CPU %.0f%% · %d Cores", viewModel.cpuUsage, coreCount)
+            : String(format: "CPU %.0f%%", viewModel.cpuUsage)
     }
 }
 
@@ -27,12 +30,10 @@ struct DeviceInfoStatusBarContentView: View {
 
 #Preview("Device Info Status Bar Content") {
     HStack(spacing: 4) {
-        // Mock Logo
         Circle()
             .fill(AppUI.Color.semantic.info)
             .frame(width: 16, height: 16)
-
-        // CPU Usage Content
+        
         DeviceInfoStatusBarContentView()
     }
     .padding()
