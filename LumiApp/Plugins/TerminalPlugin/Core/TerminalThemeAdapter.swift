@@ -45,7 +45,7 @@ enum TerminalThemeAdapter {
     // MARK: - Theme Mapping
 
     /// 根据编辑器主题获取终端颜色
-    static func colors(for themeName: LumiEditorThemeAdapter.PresetTheme) -> TerminalColors {
+    static func colors(for themeName: EditorThemeAdapter.PresetTheme) -> TerminalColors {
         switch themeName {
         case .xcodeDark:      return xcodeDarkColors()
         case .xcodeLight:     return xcodeLightColors()

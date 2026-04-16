@@ -45,7 +45,16 @@ extension SuperPlugin {
     /// 默认实现：不提供导航入口
     @MainActor func addNavigationEntries() -> [NavigationEntry]? { nil }
 
+    /// 默认实现：不提供弹窗视图列表（兼容旧版 `addStatusBarPopupView`）
+    @MainActor func addStatusBarPopupViews() -> [AnyView] {
+        if let view = addStatusBarPopupView() {
+            return [view]
+        }
+        return []
+    }
+
     /// 默认实现：不提供弹窗视图
+    @available(*, deprecated, message: "Use addStatusBarPopupViews() returning [AnyView] instead")
     @MainActor func addStatusBarPopupView() -> AnyView? { nil }
 
     /// 默认实现：不提供状态栏内容视图

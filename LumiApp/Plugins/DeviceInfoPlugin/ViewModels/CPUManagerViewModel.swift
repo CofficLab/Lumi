@@ -8,10 +8,15 @@ class CPUManagerViewModel: ObservableObject {
     static let emoji = "🧠"
     nonisolated static let verbose: Bool = false
     
+    // MARK: - Properties
+    
     @Published var cpuUsage: Double = 0.0
+    @Published var perCoreUsage: [Double] = []
     @Published var loadAverage: [Double] = [0, 0, 0]
     
     private var cancellables = Set<AnyCancellable>()
+    
+    // MARK: - Initialization
     
     init() {
         startMonitoring()
@@ -22,21 +27,29 @@ class CPUManagerViewModel: ObservableObject {
             CPUService.shared.stopMonitoring()
         }
     }
-
+    
+    // MARK: - Public Methods
+    
     func startMonitoring() {
         CPUService.shared.startMonitoring()
         
-        CPUService.shared.$cpuUsage
-            .combineLatest(CPUService.shared.$loadAverage)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] (usage, load) in
-                self?.cpuUsage = usage
-                self?.loadAverage = load
-            }
-            .store(in: &cancellables)
+        Publishers.CombineLatest3(
+            CPUService.shared.$cpuUsage,
+            CPUService.shared.$perCoreUsage,
+            CPUService.shared.$loadAverage
+        )
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] usage, perCoreUsage, load in
+            self?.cpuUsage = usage
+            self?.perCoreUsage = perCoreUsage
+            self?.loadAverage = load
+        }
+        .store(in: &cancellables)
     }
     
+    // MARK: - Computed Properties
+    
     var formattedLoadAverage: String {
-        return loadAverage.map { String(format: "%.2f", $0) }.joined(separator: "  ")
+        loadAverage.map { String(format: "%.2f", $0) }.joined(separator: "  ")
     }
 }

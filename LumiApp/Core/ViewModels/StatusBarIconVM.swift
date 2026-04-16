@@ -11,6 +11,6 @@ class StatusBarIconVM: ObservableObject {
 }
 
 #Preview("LogoView - Snapshot") {
-    LogoView(variant: .appIcon)
+    LogoView(scene: .appIcon)
         .inMagicContainer(.init(width: 500, height: 500), scale: 1)
 }

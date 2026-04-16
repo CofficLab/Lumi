@@ -15,15 +15,15 @@ final class TerminalSession: ObservableObject, Identifiable {
     /// KVO 观察系统外观变化
     private var appearanceObservation: NSKeyValueObservation?
     /// 当前编辑器主题名称（用于终端颜色同步）
-    private var currentThemeName: LumiEditorThemeAdapter.PresetTheme
+    private var currentThemeName: EditorThemeAdapter.PresetTheme
 
     init(workingDirectory: String? = nil) {
         self.initialWorkingDirectory = workingDirectory
         self.terminalView = LumiTerminalView(frame: .zero)
 
         // 读取当前编辑器主题
-        if let themeRaw = LumiEditorConfigStore.loadString(forKey: LumiEditorConfigStore.themeNameKey),
-           let preset = LumiEditorThemeAdapter.PresetTheme(rawValue: themeRaw) {
+        if let themeRaw = EditorConfigStore.loadString(forKey: EditorConfigStore.themeNameKey),
+           let preset = EditorThemeAdapter.PresetTheme(rawValue: themeRaw) {
             self.currentThemeName = preset
         } else {
             self.currentThemeName = .xcodeDark
@@ -55,7 +55,7 @@ final class TerminalSession: ObservableObject, Identifiable {
             object: nil,
             queue: .main
         ) { [weak self] notification in
-            guard let themeName = notification.userInfo?["theme"] as? LumiEditorThemeAdapter.PresetTheme else { return }
+            guard let themeName = notification.userInfo?["theme"] as? EditorThemeAdapter.PresetTheme else { return }
             self?.currentThemeName = themeName
             self?.applyThemeColors()
         }

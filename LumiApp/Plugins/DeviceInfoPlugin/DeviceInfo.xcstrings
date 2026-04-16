@@ -1,72 +1,118 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "Device Info": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "设备信息"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Device Info" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Device Info"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "設備資訊"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设备信息"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Device Info"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設備資訊"
           }
         }
       }
     },
-    "Overview": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "概览"
+    "Memory Monitor" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memory Monitor"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "概覽"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "内存监控"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Overview"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "記憶體監控"
           }
         }
       }
     },
-    "Show system status like CPU, Memory, Disk, Battery, etc.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "显示 CPU、内存、磁盘、电池等系统状态"
+    "Overview" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Overview"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "顯示 CPU、記憶體、磁碟、電池等系統狀態"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概览"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Show system status like CPU, Memory, Disk, Battery, etc."
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概覽"
+          }
+        }
+      }
+    },
+    "Real-time monitoring of system memory usage" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Real-time monitoring of system memory usage"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "实时监控系统内存使用情况"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即時監控系統記憶體使用情況"
+          }
+        }
+      }
+    },
+    "Show system status like CPU, Memory, Disk, Battery, etc." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show system status like CPU, Memory, Disk, Battery, etc."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示 CPU、内存、磁盘、电池等系统状态"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示 CPU、記憶體、磁碟、電池等系統狀態"
           }
         }
       }
     }
   },
-  "version": "1.1"
+  "version" : "1.1"
 }
