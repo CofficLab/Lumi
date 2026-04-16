@@ -133,8 +133,7 @@ struct StatusBarIconView: View {
                 variant: .statusBar,
                 isActive: viewModel.isActive
             )
-            .infinite()
-            .frame(width: 16, height: 16)
+            .frame(width: 22, height: 22)
 
             // 插件提供的内容视图
             ForEach(viewModel.contentViews.indices, id: \.self) { index in
