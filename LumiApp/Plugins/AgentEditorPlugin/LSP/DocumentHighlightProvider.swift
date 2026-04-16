@@ -7,9 +7,9 @@ import Foundation
 /// Document Highlight 提供者
 /// 高亮当前光标所在位置的所有符号引用
 @MainActor
-final class LumiDocumentHighlightProvider: ObservableObject {
+final class DocumentHighlightProvider: ObservableObject {
     
-    private let lspService = LumiLSPService.shared
+    private let lspService = LSPService.shared
     
     /// 当前高亮的范围（NSRange 集合，用于编辑器高亮）
     @Published var highlightRanges: [NSRange] = []
@@ -79,11 +79,11 @@ final class LumiDocumentHighlightProvider: ObservableObject {
 
 /// 基于 LSP 文档高亮的 HighlightProvider
 @MainActor
-final class LumiDocumentHighlightHighlighter: HighlightProviding {
+final class DocumentHighlightHighlighter: HighlightProviding {
     
-    private var provider: LumiDocumentHighlightProvider
+    private var provider: DocumentHighlightProvider
     
-    init(provider: LumiDocumentHighlightProvider) {
+    init(provider: DocumentHighlightProvider) {
         self.provider = provider
     }
     

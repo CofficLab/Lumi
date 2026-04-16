@@ -6,12 +6,12 @@ import LanguageServerProtocol
 /// Inlay Hint 提供者
 /// 在编辑器中显示类型推断、参数名等内联提示
 @MainActor
-final class LumiInlayHintProvider: ObservableObject {
+final class InlayHintProvider: ObservableObject {
     
-    private let lspService = LumiLSPService.shared
+    private let lspService = LSPService.shared
     
     /// 当前可见范围内的 inlay hints
-    @Published var hints: [LumiInlayHintItem] = []
+    @Published var hints: [InlayHintItem] = []
     
     /// 检查服务器是否支持 inlay hints
     var isAvailable: Bool {
@@ -32,7 +32,7 @@ final class LumiInlayHintProvider: ObservableObject {
         hints = newHints.compactMap { hint in
             let text = formatLabel(hint.label)
             guard !text.isEmpty else { return nil }
-            return LumiInlayHintItem(
+            return InlayHintItem(
                 line: Int(hint.position.line),
                 character: Int(hint.position.character),
                 text: text,
@@ -75,7 +75,7 @@ final class LumiInlayHintProvider: ObservableObject {
 }
 
 /// Inlay Hint 数据模型
-struct LumiInlayHintItem: Identifiable {
+struct InlayHintItem: Identifiable {
     let id = UUID()
     let line: Int
     let character: Int
@@ -99,9 +99,9 @@ struct LumiInlayHintItem: Identifiable {
 // MARK: - UI View
 
 /// 内联提示标签视图（用于叠加在编辑器文本上）
-struct LumiInlayHintLabel: View {
+struct InlayHintLabel: View {
     
-    let hint: LumiInlayHintItem
+    let hint: InlayHintItem
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {

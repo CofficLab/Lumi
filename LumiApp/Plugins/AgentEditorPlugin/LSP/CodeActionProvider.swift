@@ -6,12 +6,12 @@ import LanguageServerProtocol
 /// Code Action 提供者
 /// 为诊断问题提供快速修复建议（灯泡图标）
 @MainActor
-final class LumiCodeActionProvider: ObservableObject {
+final class CodeActionProvider: ObservableObject {
     
-    private let lspService = LumiLSPService.shared
+    private let lspService = LSPService.shared
     
     /// 当前可用的代码动作
-    @Published var actions: [LumiCodeActionItem] = []
+    @Published var actions: [CodeActionItem] = []
     /// 是否在请求中
     @Published var isLoading: Bool = false
     /// 是否需要显示
@@ -28,9 +28,9 @@ final class LumiCodeActionProvider: ObservableObject {
         let codeActions = await lspService.requestCodeAction(uri: uri, range: range, diagnostics: diagnostics)
         isLoading = false
         
-        actions = codeActions.compactMap { action -> LumiCodeActionItem? in
+        actions = codeActions.compactMap { action -> CodeActionItem? in
             guard action.disabled == nil else { return nil }
-            return LumiCodeActionItem(
+            return CodeActionItem(
                 title: action.title,
                 kind: action.kind ?? "",
                 action: action,
@@ -165,7 +165,7 @@ final class LumiCodeActionProvider: ObservableObject {
 }
 
 /// Code Action 数据模型
-struct LumiCodeActionItem: Identifiable {
+struct CodeActionItem: Identifiable {
     let id = UUID()
     let title: String
     let kind: String
@@ -188,9 +188,9 @@ struct LumiCodeActionItem: Identifiable {
 // MARK: - UI Views
 
 /// 代码动作弹窗
-struct LumiCodeActionPanel: View {
+struct CodeActionPanel: View {
     
-    let actions: [LumiCodeActionItem]
+    let actions: [CodeActionItem]
     let onActionSelected: (CodeAction) -> Void
     
     @State private var selectedIndex: Int = 0
@@ -246,7 +246,7 @@ struct LumiCodeActionPanel: View {
 /// 单个代码动作行
 struct CodeActionRow: View {
     
-    let action: LumiCodeActionItem
+    let action: CodeActionItem
     let isSelected: Bool
     let onTap: () -> Void
     
@@ -286,7 +286,7 @@ struct CodeActionRow: View {
 }
 
 /// 灯泡指示器（显示在有问题的行号旁）
-struct LumiLightbulbIndicator: View {
+struct LightbulbIndicator: View {
     
     let hasActions: Bool
     let onTap: () -> Void

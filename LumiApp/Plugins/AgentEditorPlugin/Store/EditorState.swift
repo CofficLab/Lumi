@@ -20,7 +20,7 @@ struct ReferenceResult: Identifiable, Equatable {
 /// 编辑器状态管理器
 /// 管理当前文件的内容（NSTextStorage）、光标位置、编辑器配置等
 @MainActor
-final class LumiEditorState: ObservableObject {
+final class EditorState: ObservableObject {
     enum StatusLevel {
         case info
         case success
@@ -30,8 +30,8 @@ final class LumiEditorState: ObservableObject {
 
     private struct MultiCursorSearchSession {
         let query: String
-        let baseSelection: LumiMultiCursorSelection
-        var history: [LumiMultiCursorSelection]
+        let baseSelection: MultiCursorSelection
+        var history: [MultiCursorSelection]
     }
 
     // MARK: - Problems
@@ -50,7 +50,7 @@ final class LumiEditorState: ObservableObject {
 
     private func bindDiagnostics() {
         diagnosticsCancellable?.cancel()
-        diagnosticsCancellable = LumiLSPService.shared.$currentDiagnostics
+        diagnosticsCancellable = LSPService.shared.$currentDiagnostics
             .receive(on: RunLoop.main)
             .sink { [weak self] diags in
                 self?.problemDiagnostics = diags
@@ -117,21 +117,21 @@ final class LumiEditorState: ObservableObject {
     private var persistedContentHash: Int?
     
     /// LSP 协调器（用于语言服务器集成）
-    let lspCoordinator = LumiLSPCoordinator()
+    let lspCoordinator = LSPCoordinator()
     
     // MARK: - New LSP Providers
     
     /// 签名帮助提供者
-    let signatureHelpProvider = LumiSignatureHelpProvider()
+    let signatureHelpProvider = SignatureHelpProvider()
     /// 内联提示提供者
-    let inlayHintProvider = LumiInlayHintProvider()
+    let inlayHintProvider = InlayHintProvider()
     /// 文档高亮提供者
-    let documentHighlightProvider = LumiDocumentHighlightProvider()
+    let documentHighlightProvider = DocumentHighlightProvider()
     /// 代码动作提供者
-    let codeActionProvider = LumiCodeActionProvider()
+    let codeActionProvider = CodeActionProvider()
     
     /// 跳转定义代理（右键和 Cmd+Click 共享）
-    weak var jumpDelegate: LumiJumpToDefinitionDelegate?
+    weak var jumpDelegate: EditorJumpToDefinitionDelegate?
     
     /// 当前文件是否可编辑
     @Published var isEditable: Bool = true
@@ -148,7 +148,7 @@ final class LumiEditorState: ObservableObject {
     /// 文件名
     @Published var fileName: String = ""
     
-    /// 当前项目根路径（由 LumiEditorRootView 设置，用于计算相对路径）
+    /// 当前项目根路径（由 EditorRootView 设置，用于计算相对路径）
     var projectRootPath: String?
     
     /// 当前文件相对于项目根目录的路径（用于构建选区位置信息）
@@ -184,7 +184,7 @@ final class LumiEditorState: ObservableObject {
     @Published var hoverText: String?
 
     /// 多光标编辑状态
-    @Published var multiCursorState = LumiMultiCursorState()
+    @Published var multiCursorState = MultiCursorState()
 
     /// References 结果列表（右侧面板）
     @Published var referenceResults: [ReferenceResult] = []
@@ -201,7 +201,7 @@ final class LumiEditorState: ObservableObject {
     // MARK: - Theme
     
     /// 当前主题预设
-    @Published var themePreset: LumiEditorThemeAdapter.PresetTheme = .xcodeDark
+    @Published var themePreset: EditorThemeAdapter.PresetTheme = .xcodeDark
     
     /// 当前主题（缓存，避免每次重建）
     @Published private(set) var currentTheme: EditorTheme?
@@ -307,55 +307,55 @@ final class LumiEditorState: ObservableObject {
     
     /// 从持久化存储恢复配置
     private func restoreConfig() {
-        if let fs = LumiEditorConfigStore.loadDouble(forKey: LumiEditorConfigStore.fontSizeKey) {
+        if let fs = EditorConfigStore.loadDouble(forKey: EditorConfigStore.fontSizeKey) {
             fontSize = fs
         }
-        if let tw = LumiEditorConfigStore.loadInt(forKey: LumiEditorConfigStore.tabWidthKey) {
+        if let tw = EditorConfigStore.loadInt(forKey: EditorConfigStore.tabWidthKey) {
             tabWidth = tw
         }
-        if let us = LumiEditorConfigStore.loadBool(forKey: LumiEditorConfigStore.useSpacesKey) {
+        if let us = EditorConfigStore.loadBool(forKey: EditorConfigStore.useSpacesKey) {
             useSpaces = us
         }
-        if let wl = LumiEditorConfigStore.loadBool(forKey: LumiEditorConfigStore.wrapLinesKey) {
+        if let wl = EditorConfigStore.loadBool(forKey: EditorConfigStore.wrapLinesKey) {
             wrapLines = wl
         }
-        if let sm = LumiEditorConfigStore.loadBool(forKey: LumiEditorConfigStore.showMinimapKey) {
+        if let sm = EditorConfigStore.loadBool(forKey: EditorConfigStore.showMinimapKey) {
             showMinimap = sm
         }
-        if let sg = LumiEditorConfigStore.loadBool(forKey: LumiEditorConfigStore.showGutterKey) {
+        if let sg = EditorConfigStore.loadBool(forKey: EditorConfigStore.showGutterKey) {
             showGutter = sg
         }
-        if let sf = LumiEditorConfigStore.loadBool(forKey: LumiEditorConfigStore.showFoldingRibbonKey) {
+        if let sf = EditorConfigStore.loadBool(forKey: EditorConfigStore.showFoldingRibbonKey) {
             showFoldingRibbon = sf
         }
-        if let panelWidth = LumiEditorConfigStore.loadDouble(forKey: LumiEditorConfigStore.sidePanelWidthKey) {
+        if let panelWidth = EditorConfigStore.loadDouble(forKey: EditorConfigStore.sidePanelWidthKey) {
             sidePanelWidth = clampedSidePanelWidth(panelWidth)
         }
         // 恢复主题
-        if let themeRaw = LumiEditorConfigStore.loadString(forKey: LumiEditorConfigStore.themeNameKey),
-           let preset = LumiEditorThemeAdapter.PresetTheme(rawValue: themeRaw) {
+        if let themeRaw = EditorConfigStore.loadString(forKey: EditorConfigStore.themeNameKey),
+           let preset = EditorThemeAdapter.PresetTheme(rawValue: themeRaw) {
             themePreset = preset
         }
-        currentTheme = LumiEditorThemeAdapter.theme(from: themePreset)
+        currentTheme = EditorThemeAdapter.theme(from: themePreset)
     }
     
     /// 持久化当前配置
     func persistConfig() {
-        LumiEditorConfigStore.saveValue(fontSize, forKey: LumiEditorConfigStore.fontSizeKey)
-        LumiEditorConfigStore.saveValue(tabWidth, forKey: LumiEditorConfigStore.tabWidthKey)
-        LumiEditorConfigStore.saveValue(useSpaces, forKey: LumiEditorConfigStore.useSpacesKey)
-        LumiEditorConfigStore.saveValue(wrapLines, forKey: LumiEditorConfigStore.wrapLinesKey)
-        LumiEditorConfigStore.saveValue(showMinimap, forKey: LumiEditorConfigStore.showMinimapKey)
-        LumiEditorConfigStore.saveValue(showGutter, forKey: LumiEditorConfigStore.showGutterKey)
-        LumiEditorConfigStore.saveValue(showFoldingRibbon, forKey: LumiEditorConfigStore.showFoldingRibbonKey)
-        LumiEditorConfigStore.saveValue(themePreset.rawValue, forKey: LumiEditorConfigStore.themeNameKey)
-        LumiEditorConfigStore.saveValue(sidePanelWidth, forKey: LumiEditorConfigStore.sidePanelWidthKey)
+        EditorConfigStore.saveValue(fontSize, forKey: EditorConfigStore.fontSizeKey)
+        EditorConfigStore.saveValue(tabWidth, forKey: EditorConfigStore.tabWidthKey)
+        EditorConfigStore.saveValue(useSpaces, forKey: EditorConfigStore.useSpacesKey)
+        EditorConfigStore.saveValue(wrapLines, forKey: EditorConfigStore.wrapLinesKey)
+        EditorConfigStore.saveValue(showMinimap, forKey: EditorConfigStore.showMinimapKey)
+        EditorConfigStore.saveValue(showGutter, forKey: EditorConfigStore.showGutterKey)
+        EditorConfigStore.saveValue(showFoldingRibbon, forKey: EditorConfigStore.showFoldingRibbonKey)
+        EditorConfigStore.saveValue(themePreset.rawValue, forKey: EditorConfigStore.themeNameKey)
+        EditorConfigStore.saveValue(sidePanelWidth, forKey: EditorConfigStore.sidePanelWidthKey)
     }
     
     /// 切换主题
-    func setTheme(_ preset: LumiEditorThemeAdapter.PresetTheme) {
+    func setTheme(_ preset: EditorThemeAdapter.PresetTheme) {
         themePreset = preset
-        currentTheme = LumiEditorThemeAdapter.theme(from: preset)
+        currentTheme = EditorThemeAdapter.theme(from: preset)
         persistConfig()
 
         // 通知终端插件同步更新颜色
@@ -548,17 +548,17 @@ final class LumiEditorState: ObservableObject {
     /// 通知内容已变更（由 TextViewCoordinator 调用）
     func notifyContentChanged() {
         guard let content else {
-            print("⚠️ [LumiEditor] notifyContentChanged: content is nil")
+            print("⚠️ [Editor] notifyContentChanged: content is nil")
             return
         }
         guard let currentHash = persistedContentHash else {
-            print("⚠️ [LumiEditor] notifyContentChanged: persistedContentHash is nil")
+            print("⚠️ [Editor] notifyContentChanged: persistedContentHash is nil")
             return
         }
         
         let contentString = content.string
         let newHash = contentString.hashValue
-        print("✏️ [LumiEditor] notifyContentChanged: newHash=\(newHash), persistedHash=\(currentHash), changed=\(newHash != currentHash), contentLength=\(contentString.count)")
+        print("✏️ [Editor] notifyContentChanged: newHash=\(newHash), persistedHash=\(currentHash), changed=\(newHash != currentHash), contentLength=\(contentString.count)")
         
         if newHash != currentHash {
             hasUnsavedChanges = true
@@ -671,7 +671,7 @@ final class LumiEditorState: ObservableObject {
     }
 
     func persistSidePanelWidth() {
-        LumiEditorConfigStore.saveValue(sidePanelWidth, forKey: LumiEditorConfigStore.sidePanelWidthKey)
+        EditorConfigStore.saveValue(sidePanelWidth, forKey: EditorConfigStore.sidePanelWidthKey)
     }
 
     func openReference(_ reference: ReferenceResult) {
@@ -795,11 +795,11 @@ final class LumiEditorState: ObservableObject {
     /// 执行保存
     private func performSave(content: String, to url: URL?) {
         guard let url else {
-            print("⚠️ [LumiEditor] performSave: url is nil")
+            print("⚠️ [Editor] performSave: url is nil")
             return
         }
         
-        print("💾 [LumiEditor] performSave: saving to \(url.path), contentLength=\(content.count)")
+        print("💾 [Editor] performSave: saving to \(url.path), contentLength=\(content.count)")
         saveState = .saving
         
         // 使用普通 Task（继承 MainActor 隔离），文件 I/O 通过 withCheckedThrowingContinuation 移到后台线程
@@ -807,7 +807,7 @@ final class LumiEditorState: ObservableObject {
         Task {
             do {
                 guard FileManager.default.fileExists(atPath: url.path) else {
-                    print("⚠️ [LumiEditor] performSave: file not found at \(url.path)")
+                    print("⚠️ [Editor] performSave: file not found at \(url.path)")
                     saveState = .error(String(localized: "File not found", table: "LumiEditor"))
                     scheduleSuccessClear()
                     return
@@ -826,13 +826,13 @@ final class LumiEditorState: ObservableObject {
                     }
                 }
                 
-                print("✅ [LumiEditor] performSave: saved successfully")
+                print("✅ [Editor] performSave: saved successfully")
                 persistedContentHash = content.hashValue
                 hasUnsavedChanges = false
                 saveState = .saved
                 scheduleSuccessClear()
             } catch {
-                print("❌ [LumiEditor] performSave: \(error)")
+                print("❌ [Editor] performSave: \(error)")
                 saveState = .error(String(localized: "Save failed", table: "LumiEditor") + ": \(error.localizedDescription)")
                 scheduleSuccessClear()
             }
@@ -877,7 +877,7 @@ final class LumiEditorState: ObservableObject {
         RunLoop.main.add(timer, forMode: .common)
         pollTimer = timer
         
-        print("✏️ [LumiEditor] 已启动文件轮询监听：\(url.lastPathComponent)")
+        print("✏️ [Editor] 已启动文件轮询监听：\(url.lastPathComponent)")
     }
     
     /// 停止文件监听
@@ -931,7 +931,7 @@ final class LumiEditorState: ObservableObject {
                 
                 self.applyExternalContent(newContent, modificationDate: currentModDate)
             } catch {
-                print("⚠️ [LumiEditor] 读取外部文件失败：\(error)")
+                print("⚠️ [Editor] 读取外部文件失败：\(error)")
             }
         }
     }
@@ -940,7 +940,7 @@ final class LumiEditorState: ObservableObject {
     private func applyExternalContent(_ newContent: String, modificationDate: Date) {
         guard !hasUnsavedChanges else { return }
         
-        print("🔄 [LumiEditor] 检测到外部修改，重新加载：\(currentFileURL?.lastPathComponent ?? "")")
+        print("🔄 [Editor] 检测到外部修改，重新加载：\(currentFileURL?.lastPathComponent ?? "")")
         
         // 关键：原地替换现有 NSTextStorage 的内容，而不是创建新对象
         // SourceEditor 持有的是旧 NSTextStorage 的引用，替换引用不会触发 UI 更新
@@ -1052,12 +1052,12 @@ final class LumiEditorState: ObservableObject {
         endMultiCursorSearchSession()
     }
 
-    func setPrimarySelection(_ selection: LumiMultiCursorSelection) {
+    func setPrimarySelection(_ selection: MultiCursorSelection) {
         multiCursorState.setPrimary(selection)
         logMultiCursorState(action: "setPrimarySelection")
     }
 
-    func setSelections(_ selections: [LumiMultiCursorSelection]) {
+    func setSelections(_ selections: [MultiCursorSelection]) {
         guard let first = selections.first else {
             clearMultiCursors()
             return
@@ -1091,7 +1091,7 @@ final class LumiEditorState: ObservableObject {
         }.joined(separator: ", ")
         let message = note.map { "\(action) | \($0) | stateCount=\(selections.count) | [\(summary)]" }
             ?? "\(action) | stateCount=\(selections.count) | [\(summary)]"
-        LumiEditorPlugin.logger.info("[UI] | ✏️ LumiEditorState             | multi-cursor state | \(message, privacy: .public)")
+        EditorPlugin.logger.info("[UI] | ✏️ EditorState             | multi-cursor state | \(message, privacy: .public)")
     }
 
     func logMultiCursorInput(action: String, textViewSelections: [NSRange], note: String? = nil) {
@@ -1100,7 +1100,7 @@ final class LumiEditorState: ObservableObject {
         }.joined(separator: ", ")
         let details = note.map { "\(action) | \($0) | textViewCount=\(textViewSelections.count) | [\(rendered)]" }
             ?? "\(action) | textViewCount=\(textViewSelections.count) | [\(rendered)]"
-        LumiEditorPlugin.logger.info("[UI] | ✏️ LumiEditorState             | multi-cursor input | \(details, privacy: .public)")
+        EditorPlugin.logger.info("[UI] | ✏️ EditorState             | multi-cursor input | \(details, privacy: .public)")
         logMultiCursorState(action: "input-state-sync", note: action)
     }
 
@@ -1119,7 +1119,7 @@ final class LumiEditorState: ObservableObject {
         let normalizedRange = normalizedRange(range, in: text)
         guard normalizedRange.location != NSNotFound else { return nil }
 
-        let baseSelection: LumiMultiCursorSelection
+        let baseSelection: MultiCursorSelection
         let query: String
 
         // 检查当前选区的文本是否与旧 session 的 query 匹配
@@ -1240,12 +1240,12 @@ final class LumiEditorState: ObservableObject {
         return "\(count)" + String(localized: " cursors", table: "LumiEditor")
     }
 
-    func applyMultiCursorReplacement(_ replacement: String) -> [LumiMultiCursorSelection]? {
+    func applyMultiCursorReplacement(_ replacement: String) -> [MultiCursorSelection]? {
         guard let existing = content else { return nil }
         let selections = multiCursorState.all
         guard selections.count > 1 else { return nil }
 
-        let result = LumiMultiCursorEditEngine.apply(
+        let result = MultiCursorEditEngine.apply(
             text: existing.string,
             selections: selections,
             operation: .replaceSelection(replacement)
@@ -1422,7 +1422,7 @@ final class LumiEditorState: ObservableObject {
         multiCursorSearchSession = nil
     }
 
-    private func selectionText(for selection: LumiMultiCursorSelection) -> String? {
+    private func selectionText(for selection: MultiCursorSelection) -> String? {
         guard let content else { return nil }
         let text = content.string as NSString
         let range = nsRange(from: selection)
@@ -1437,16 +1437,16 @@ final class LumiEditorState: ObservableObject {
         return NSRange(location: location, length: length)
     }
 
-    private func resolvedBaseSelection(from range: NSRange, in text: NSString) -> LumiMultiCursorSelection? {
+    private func resolvedBaseSelection(from range: NSRange, in text: NSString) -> MultiCursorSelection? {
         if range.length > 0 {
-            return LumiMultiCursorSelection(location: range.location, length: range.length)
+            return MultiCursorSelection(location: range.location, length: range.length)
         }
 
         guard let wordRange = wordRange(at: range.location, in: text) else {
             return nil
         }
         guard wordRange.length > 0 else { return nil }
-        return LumiMultiCursorSelection(location: wordRange.location, length: wordRange.length)
+        return MultiCursorSelection(location: wordRange.location, length: wordRange.length)
     }
 
     private func wordRange(at location: Int, in text: NSString) -> NSRange? {
@@ -1480,9 +1480,9 @@ final class LumiEditorState: ObservableObject {
         return NSRange(location: start, length: end - start + 1)
     }
 
-    private func ranges(of needle: String, in text: NSString) -> [LumiMultiCursorSelection] {
+    private func ranges(of needle: String, in text: NSString) -> [MultiCursorSelection] {
         guard !needle.isEmpty else { return [] }
-        var result: [LumiMultiCursorSelection] = []
+        var result: [MultiCursorSelection] = []
         var searchLocation = 0
         let needleLength = (needle as NSString).length
         let shouldMatchWholeWord = isWholeWordSelection(needle)
@@ -1492,7 +1492,7 @@ final class LumiEditorState: ObservableObject {
             let found = text.range(of: needle, options: [], range: searchRange)
             guard found.location != NSNotFound else { break }
 
-            let selection = LumiMultiCursorSelection(location: found.location, length: found.length)
+            let selection = MultiCursorSelection(location: found.location, length: found.length)
             if !shouldMatchWholeWord || isWholeWordMatch(selection, in: text) {
                 result.append(selection)
             }
@@ -1508,7 +1508,7 @@ final class LumiEditorState: ObservableObject {
         return text.unicodeScalars.allSatisfy { allowed.contains($0) }
     }
 
-    private func isWholeWordMatch(_ selection: LumiMultiCursorSelection, in text: NSString) -> Bool {
+    private func isWholeWordMatch(_ selection: MultiCursorSelection, in text: NSString) -> Bool {
         let lowerIndex = selection.location - 1
         let upperIndex = selection.upperBound
         return !isWordCharacter(at: lowerIndex, in: text) && !isWordCharacter(at: upperIndex, in: text)
@@ -1521,7 +1521,7 @@ final class LumiEditorState: ObservableObject {
         return scalar.map { allowed.contains($0) } ?? false
     }
 
-    private func nsRange(from selection: LumiMultiCursorSelection) -> NSRange {
+    private func nsRange(from selection: MultiCursorSelection) -> NSRange {
         NSRange(location: selection.location, length: selection.length)
     }
 }

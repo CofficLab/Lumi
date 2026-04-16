@@ -2,16 +2,16 @@ import AppKit
 import CodeEditTextView
 
 @MainActor
-final class LumiMultiCursorInputInstaller: NSObject {
+final class MultiCursorInputInstaller: NSObject {
 
-    static let shared = LumiMultiCursorInputInstaller()
+    static let shared = MultiCursorInputInstaller()
 
     private static let swizzledKey = malloc(1)!
     private static let helperKey = malloc(1)!
 
     private override init() {}
 
-    func register(textView: TextView, state: LumiEditorState) {
+    func register(textView: TextView, state: EditorState) {
         let targetClass = object_getClass(textView)!
 
         if objc_getAssociatedObject(targetClass, Self.swizzledKey) == nil {
@@ -25,13 +25,13 @@ final class LumiMultiCursorInputInstaller: NSObject {
         }
 
         if objc_getAssociatedObject(textView, Self.helperKey) == nil {
-            let helper = LumiMultiCursorInputHelper(textView: textView, state: state)
+            let helper = MultiCursorInputHelper(textView: textView, state: state)
             objc_setAssociatedObject(textView, Self.helperKey, helper, .OBJC_ASSOCIATION_RETAIN)
         }
     }
 
-    static func helper(for textView: TextView) -> LumiMultiCursorInputHelper? {
-        objc_getAssociatedObject(textView, helperKey) as? LumiMultiCursorInputHelper
+    static func helper(for textView: TextView) -> MultiCursorInputHelper? {
+        objc_getAssociatedObject(textView, helperKey) as? MultiCursorInputHelper
     }
 
     private func swizzleInsertText(for targetClass: AnyClass) {
@@ -138,13 +138,13 @@ final class LumiMultiCursorInputInstaller: NSObject {
 }
 
 @MainActor
-final class LumiMultiCursorInputHelper: NSObject {
+final class MultiCursorInputHelper: NSObject {
 
     private weak var textView: TextView?
-    private weak var state: LumiEditorState?
+    private weak var state: EditorState?
     private var isApplyingMultiCursorEdit = false
 
-    init(textView: TextView, state: LumiEditorState) {
+    init(textView: TextView, state: EditorState) {
         self.textView = textView
         self.state = state
     }
@@ -172,7 +172,7 @@ final class LumiMultiCursorInputHelper: NSObject {
             textViewSelections: textView.selectionManager.textSelections.map(\.range),
             note: "replacementRange=\(NSStringFromRange(replacementRange)) textLength=\((text as NSString).length)"
         )
-        let result = LumiMultiCursorEditEngine.apply(
+        let result = MultiCursorEditEngine.apply(
             text: textView.string,
             selections: selections,
             operation: .replaceSelection(text)
@@ -206,7 +206,7 @@ final class LumiMultiCursorInputHelper: NSObject {
             action: "deleteBackward.before",
             textViewSelections: textView.selectionManager.textSelections.map(\.range)
         )
-        let result = LumiMultiCursorEditEngine.apply(
+        let result = MultiCursorEditEngine.apply(
             text: textView.string,
             selections: selections,
             operation: .deleteBackward
@@ -246,7 +246,7 @@ final class LumiMultiCursorInputHelper: NSObject {
             let mapped = textView.selectionManager.textSelections
                 .map { $0.range }
                 .filter { $0.location != NSNotFound }
-                .map { LumiMultiCursorSelection(location: $0.location, length: $0.length) }
+                .map { MultiCursorSelection(location: $0.location, length: $0.length) }
             if !mapped.isEmpty {
                 state.setSelections(mapped)
             }

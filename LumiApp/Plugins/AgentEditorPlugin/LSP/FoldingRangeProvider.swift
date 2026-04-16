@@ -5,18 +5,18 @@ import LanguageServerProtocol
 
 /// 代码折叠范围提供者
 @MainActor
-final class LumiFoldingRangeProvider: ObservableObject {
+final class FoldingRangeProvider: ObservableObject {
     
-    private let lspService = LumiLSPService.shared
+    private let lspService = LSPService.shared
     
-    @Published var ranges: [LumiFoldingRange] = []
+    @Published var ranges: [FoldingRangeItem] = []
     
     var isAvailable: Bool { lspService.isAvailable }
     
     func requestRanges(uri: String) async {
         let serverRanges = await lspService.requestFoldingRange(uri: uri)
         ranges = serverRanges.map { range in
-            LumiFoldingRange(
+            FoldingRangeItem(
                 startLine: Int(range.startLine),
                 endLine: Int(range.endLine),
                 startCharacter: range.startCharacter.map { Int($0) },
@@ -30,7 +30,7 @@ final class LumiFoldingRangeProvider: ObservableObject {
     func clear() { ranges.removeAll() }
 }
 
-struct LumiFoldingRange: Identifiable, Hashable {
+struct FoldingRangeItem: Identifiable, Hashable {
     let id = UUID()
     let startLine: Int
     let endLine: Int

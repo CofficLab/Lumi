@@ -1,7 +1,7 @@
 import Foundation
 
-/// LumiEditor 插件配置持久化存储
-enum LumiEditorConfigStore {
+/// Editor plugin config persistence store
+enum EditorConfigStore {
     private static let pluginDirName = "LumiEditor"
     private static let settingsFileName = "editor_config.plist"
     private static let tmpFileName = "editor_config.tmp"

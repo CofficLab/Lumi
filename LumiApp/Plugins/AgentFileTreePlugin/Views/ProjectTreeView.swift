@@ -45,7 +45,7 @@ struct ProjectTreeView: View {
         }
         .onAppear {
             // 激活中间栏的代码编辑器 Detail 视图
-            layoutVM.selectAgentDetail(LumiEditorPlugin.id)
+            layoutVM.selectAgentDetail(EditorPlugin.id)
         }
     }
 

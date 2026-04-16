@@ -4,9 +4,9 @@ import os
 import MagicKit
 import Combine
 
-/// LumiEditor Plugin: 专业级代码编辑器
+/// Editor Plugin: 专业级代码编辑器
 /// 基于 CodeEditSourceEditor (tree-sitter) 实现代码高亮、行号、代码折叠、Minimap、查找替换等功能
-actor LumiEditorPlugin: SuperPlugin, SuperLog {
+actor EditorPlugin: SuperPlugin, SuperLog {
     /// 插件专用 Logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.lumi-editor")
 
@@ -45,17 +45,17 @@ actor LumiEditorPlugin: SuperPlugin, SuperLog {
     }
 
     /// Plugin singleton instance
-    static let shared = LumiEditorPlugin()
+    static let shared = EditorPlugin()
 
     // MARK: - UI Contributions
 
     /// 包裹 RootView，确保文件选择监听始终生效
     @MainActor func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
-        AnyView(LumiEditorRootOverlay(content: content()))
+        AnyView(EditorRootOverlay(content: content()))
     }
 
     /// Add detail view - 显示代码编辑器（内含状态栏）
     @MainActor func addDetailView() -> AnyView? {
-        AnyView(LumiEditorRootView())
+        AnyView(EditorRootView())
     }
 }

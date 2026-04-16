@@ -4,13 +4,13 @@ import LanguageServerProtocol
 
 /// 调用层级提供者
 @MainActor
-final class LumiCallHierarchyProvider: ObservableObject {
+final class CallHierarchyProvider: ObservableObject {
     
-    private let lspService = LumiLSPService.shared
+    private let lspService = LSPService.shared
     
-    @Published var rootItem: LumiCallHierarchyItem?
-    @Published var incomingCalls: [LumiCallHierarchyCall] = []
-    @Published var outgoingCalls: [LumiCallHierarchyCall] = []
+    @Published var rootItem: EditorCallHierarchyItem?
+    @Published var incomingCalls: [EditorCallHierarchyCall] = []
+    @Published var outgoingCalls: [EditorCallHierarchyCall] = []
     @Published var isLoading: Bool = false
     
     var isAvailable: Bool { lspService.isAvailable }
@@ -24,22 +24,44 @@ final class LumiCallHierarchyProvider: ObservableObject {
             rootItem = nil; incomingCalls = []; outgoingCalls = []
             return
         }
-        rootItem = LumiCallHierarchyItem(item: firstItem)
-        await fetchIncomingCalls(item: firstItem)
-        await fetchOutgoingCalls(item: firstItem)
+        rootItem = EditorCallHierarchyItem(item: firstItem)
+        await fetchIncomingCalls(item: rootItem!)
+        await fetchOutgoingCalls(item: rootItem!)
     }
     
-    func fetchIncomingCalls(item: CallHierarchyItem) async {
-        let calls = await lspService.requestCallHierarchyIncomingCalls(item: item)
+    func fetchIncomingCalls(item: EditorCallHierarchyItem) async {
+        // Convert back to LSP CallHierarchyItem for service call
+        let lspItem = LanguageServerProtocol.CallHierarchyItem(
+            name: item.name,
+            kind: item.kind,
+            tag: nil,
+            detail: nil,
+            uri: item.uri,
+            range: item.range,
+            selectionRange: item.selectionRange,
+            data: item.data
+        )
+        let calls = await lspService.requestCallHierarchyIncomingCalls(item: lspItem)
         incomingCalls = calls.compactMap { call in
-            LumiCallHierarchyCall(item: call.from, fromRanges: call.fromRanges)
+            EditorCallHierarchyCall(item: call.from, fromRanges: call.fromRanges)
         }
     }
     
-    func fetchOutgoingCalls(item: CallHierarchyItem) async {
-        let calls = await lspService.requestCallHierarchyOutgoingCalls(item: item)
+    func fetchOutgoingCalls(item: EditorCallHierarchyItem) async {
+        // Convert back to LSP CallHierarchyItem for service call
+        let lspItem = LanguageServerProtocol.CallHierarchyItem(
+            name: item.name,
+            kind: item.kind,
+            tag: nil,
+            detail: nil,
+            uri: item.uri,
+            range: item.range,
+            selectionRange: item.selectionRange,
+            data: item.data
+        )
+        let calls = await lspService.requestCallHierarchyOutgoingCalls(item: lspItem)
         outgoingCalls = calls.compactMap { call in
-            LumiCallHierarchyCall(item: call.to, fromRanges: call.fromRanges)
+            EditorCallHierarchyCall(item: call.to, fromRanges: call.fromRanges)
         }
     }
     
@@ -48,7 +70,7 @@ final class LumiCallHierarchyProvider: ObservableObject {
     }
 }
 
-struct LumiCallHierarchyItem: Identifiable, Equatable, Hashable {
+struct EditorCallHierarchyItem: Identifiable, Equatable, Hashable {
     let id = UUID()
     let name: String
     let kind: SymbolKind
@@ -57,7 +79,7 @@ struct LumiCallHierarchyItem: Identifiable, Equatable, Hashable {
     let selectionRange: LSPRange
     let data: LanguageServerProtocol.LSPAny?
     
-    init(item: CallHierarchyItem) {
+    init(item: LanguageServerProtocol.CallHierarchyItem) {
         self.name = item.name
         self.kind = item.kind
         self.uri = item.uri
@@ -95,21 +117,21 @@ struct LumiCallHierarchyItem: Identifiable, Equatable, Hashable {
     }
 }
 
-struct LumiCallHierarchyCall: Identifiable, Equatable {
+struct EditorCallHierarchyCall: Identifiable, Equatable {
     let id = UUID()
-    let item: LumiCallHierarchyItem
+    let item: EditorCallHierarchyItem
     let fromRanges: [LSPRange]
     
-    init(item: CallHierarchyItem, fromRanges: [LSPRange]) {
-        self.item = LumiCallHierarchyItem(item: item)
+    init(item: LanguageServerProtocol.CallHierarchyItem, fromRanges: [LSPRange]) {
+        self.item = EditorCallHierarchyItem(item: item)
         self.fromRanges = fromRanges
     }
 }
 
-struct LumiCallHierarchyTreeView: View {
-    let calls: [LumiCallHierarchyCall]
+struct CallHierarchyTreeView: View {
+    let calls: [EditorCallHierarchyCall]
     let direction: CallHierarchyDirection
-    let onSelect: (LumiCallHierarchyItem) -> Void
+    let onSelect: (EditorCallHierarchyItem) -> Void
     
     enum CallHierarchyDirection {
         case incoming, outgoing
@@ -131,8 +153,8 @@ struct LumiCallHierarchyTreeView: View {
 }
 
 struct CallHierarchyRowView: View {
-    let item: LumiCallHierarchyItem
-    let onSelect: (LumiCallHierarchyItem) -> Void
+    let item: EditorCallHierarchyItem
+    let onSelect: (EditorCallHierarchyItem) -> Void
     
     var body: some View {
         HStack(spacing: 6) {

@@ -6,26 +6,26 @@ import os
 
 /// 语言服务器包装器
 /// 注意：不使用 @MainActor，让调用方自行处理并发
-final class LumiLanguageServer: @unchecked Sendable {
+final class LanguageServer: @unchecked Sendable {
     
     static let logger = Logger(subsystem: "com.coffic.lumi", category: "lsp.server")
     
     let languageId: String
-    let config: LumiLSPConfig.ServerConfig
+    let config: LSPConfig.ServerConfig
     private(set) var server: InitializingServer
     var capabilities: ServerCapabilities
     private(set) var pid: pid_t
     private(set) var rootPath: URL
     private(set) var openDocuments: [String: Int] = [:]
     private(set) var documentContents: [String: String] = [:]
-    private(set) var semanticTokenMap: LumiSemanticTokenMap?
+    private(set) var semanticTokenMap: SemanticTokenMap?
     private var eventTask: Task<Void, Never>?
     var onPublishDiagnostics: ((PublishDiagnosticsParams) -> Void)?
     var onProgressUpdate: ((String, LanguageServerProtocol.LSPAny?) -> Void)?
     
     private init(
         languageId: String,
-        config: LumiLSPConfig.ServerConfig,
+        config: LSPConfig.ServerConfig,
         server: InitializingServer,
         pid: pid_t,
         capabilities: ServerCapabilities,
@@ -37,14 +37,14 @@ final class LumiLanguageServer: @unchecked Sendable {
         self.pid = pid
         self.capabilities = capabilities
         self.rootPath = rootPath
-        self.semanticTokenMap = LumiSemanticTokenMap(semanticCapability: capabilities.semanticTokensProvider)
+        self.semanticTokenMap = SemanticTokenMap(semanticCapability: capabilities.semanticTokensProvider)
     }
     
     static func create(
         languageId: String,
-        config: LumiLSPConfig.ServerConfig,
+        config: LSPConfig.ServerConfig,
         workspacePath: String
-    ) async throws -> LumiLanguageServer {
+    ) async throws -> LanguageServer {
         Self.logger.info("Creating server for \(languageId)")
         
         let execParams = Process.ExecutionParameters(
@@ -71,7 +71,7 @@ final class LumiLanguageServer: @unchecked Sendable {
         
         Self.logger.info("Server initialized, PID: \(process.processIdentifier)")
         
-        let languageServer = LumiLanguageServer(
+        let languageServer = LanguageServer(
             languageId: languageId,
             config: config,
             server: initServer,

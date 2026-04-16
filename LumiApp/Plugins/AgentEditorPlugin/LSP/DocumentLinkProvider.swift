@@ -4,18 +4,18 @@ import LanguageServerProtocol
 
 /// 文档链接提供者
 @MainActor
-final class LumiDocumentLinkProvider: ObservableObject {
+final class DocumentLinkProvider: ObservableObject {
     
-    private let lspService = LumiLSPService.shared
+    private let lspService = LSPService.shared
     
-    @Published var links: [LumiDocumentLink] = []
+    @Published var links: [EditorDocumentLink] = []
     
     var isAvailable: Bool { lspService.isAvailable }
     
     func requestLinks(uri: String) async {
         let serverLinks = await lspService.requestDocumentLinks(uri: uri)
         links = serverLinks.map { serverLink in
-            LumiDocumentLink(
+            EditorDocumentLink(
                 range: serverLink.range,
                 target: serverLink.target,
                 tooltip: serverLink.tooltip,
@@ -24,7 +24,7 @@ final class LumiDocumentLinkProvider: ObservableObject {
         }
     }
     
-    func resolveLink(_ link: inout LumiDocumentLink) async {
+    func resolveLink(_ link: inout EditorDocumentLink) async {
         guard link.target == nil else { return }
         let lspLink = LanguageServerProtocol.DocumentLink(
             range: link.range, target: nil, tooltip: nil, data: link.data
@@ -37,7 +37,7 @@ final class LumiDocumentLinkProvider: ObservableObject {
     
     func clear() { links.removeAll() }
     
-    func linkAtPosition(line: Int, character: Int) -> LumiDocumentLink? {
+    func linkAtPosition(line: Int, character: Int) -> EditorDocumentLink? {
         let position = Position(line: line, character: character)
         return links.first { link in
             position >= link.range.start && position <= link.range.end
@@ -45,7 +45,7 @@ final class LumiDocumentLinkProvider: ObservableObject {
     }
 }
 
-struct LumiDocumentLink: Identifiable, Equatable {
+struct EditorDocumentLink: Identifiable, Equatable {
     let id = UUID()
     var range: LSPRange
     var target: DocumentUri?
@@ -63,9 +63,9 @@ struct LumiDocumentLink: Identifiable, Equatable {
     }
 }
 
-struct LumiDocumentLinkView: View {
+struct DocumentLinkView: View {
     let text: String
-    let link: LumiDocumentLink
+    let link: EditorDocumentLink
     let onTap: () -> Void
     
     var body: some View {

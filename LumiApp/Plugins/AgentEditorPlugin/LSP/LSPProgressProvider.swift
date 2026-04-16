@@ -4,9 +4,9 @@ import LanguageServerProtocol
 
 /// LSP 进度通知提供者
 @MainActor
-final class LumiLSPProgressProvider: ObservableObject {
+final class LSPProgressProvider: ObservableObject {
     
-    @Published var activeTasks: [String: LumiProgressTask] = [:]
+    @Published var activeTasks: [String: ProgressTask] = [:]
     
     func updateProgress(token: String, value: LanguageServerProtocol.LSPAny?) {
         guard case .hash(let dict) = value else { return }
@@ -18,7 +18,7 @@ final class LumiLSPProgressProvider: ObservableObject {
             let message = dict["message"] as? String
             let percentage = (dict["percentage"] as? Double).map { Double($0) }
             let cancellable = (dict["cancellable"] as? Bool) == true
-            let task = LumiProgressTask(
+            let task = ProgressTask(
                 token: token, title: title, message: message,
                 percentage: percentage, cancellable: cancellable, state: .inProgress
             )
@@ -51,7 +51,7 @@ final class LumiLSPProgressProvider: ObservableObject {
 }
 
 /// 进度任务
-struct LumiProgressTask: Identifiable, Equatable {
+struct ProgressTask: Identifiable, Equatable {
     var id: String { token }
     let token: String
     let title: String
@@ -67,8 +67,8 @@ struct LumiProgressTask: Identifiable, Equatable {
 
 // MARK: - UI View
 
-struct LumiLSPProgressIndicatorView: View {
-    @ObservedObject var provider: LumiLSPProgressProvider
+struct LSPProgressIndicatorView: View {
+    @ObservedObject var provider: LSPProgressProvider
     
     var body: some View {
         ForEach(provider.activeTasks.values.sorted(by: { $0.token < $1.token })) { task in

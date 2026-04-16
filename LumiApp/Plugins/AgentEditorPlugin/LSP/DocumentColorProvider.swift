@@ -3,18 +3,18 @@ import LanguageServerProtocol
 
 /// 文档颜色提供者
 @MainActor
-final class LumiDocumentColorProvider: ObservableObject {
+final class DocumentColorProvider: ObservableObject {
     
-    private let lspService = LumiLSPService.shared
+    private let lspService = LSPService.shared
     
-    @Published var colors: [LumiDocumentColor] = []
+    @Published var colors: [EditorDocumentColor] = []
     
     var isAvailable: Bool { lspService.isAvailable }
     
     func requestColors(uri: String) async {
         let serverColors = await lspService.requestDocumentColors(uri: uri)
         colors = serverColors.map { info in
-            LumiDocumentColor(
+            EditorDocumentColor(
                 range: info.range,
                 red: Double(info.color.red),
                 green: Double(info.color.green),
@@ -24,7 +24,7 @@ final class LumiDocumentColorProvider: ObservableObject {
         }
     }
     
-    func requestColorPresentations(uri: String, color: LumiDocumentColor) async -> [ColorPresentation] {
+    func requestColorPresentations(uri: String, color: EditorDocumentColor) async -> [ColorPresentation] {
         let range = color.range
         return await lspService.requestColorPresentation(
             uri: uri,
@@ -38,7 +38,7 @@ final class LumiDocumentColorProvider: ObservableObject {
     
     func clear() { colors.removeAll() }
     
-    func colorAtPosition(line: Int, character: Int) -> LumiDocumentColor? {
+    func colorAtPosition(line: Int, character: Int) -> EditorDocumentColor? {
         let position = Position(line: line, character: character)
         return colors.first { c in
             position >= c.range.start && position <= c.range.end
@@ -46,7 +46,7 @@ final class LumiDocumentColorProvider: ObservableObject {
     }
 }
 
-struct LumiDocumentColor: Identifiable, Equatable {
+struct EditorDocumentColor: Identifiable, Equatable {
     let id = UUID()
     let range: LSPRange
     let red: Double
@@ -107,8 +107,8 @@ struct LumiDocumentColor: Identifiable, Equatable {
     }
 }
 
-struct LumiColorPreview: View {
-    let color: LumiDocumentColor
+struct ColorPreview: View {
+    let color: EditorDocumentColor
     var body: some View {
         Circle()
             .fill(Color(nsColor: color.nsColor))

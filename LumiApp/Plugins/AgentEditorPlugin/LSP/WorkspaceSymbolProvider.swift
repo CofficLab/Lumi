@@ -4,11 +4,11 @@ import LanguageServerProtocol
 
 /// 工作区符号搜索提供者
 @MainActor
-final class LumiWorkspaceSymbolProvider: ObservableObject {
+final class WorkspaceSymbolProvider: ObservableObject {
     
-    private let lspService = LumiLSPService.shared
+    private let lspService = LSPService.shared
     
-    @Published var symbols: [LumiWorkspaceSymbol] = []
+    @Published var symbols: [WorkspaceSymbolItem] = []
     @Published var isSearching: Bool = false
     @Published var searchError: String?
     
@@ -25,26 +25,26 @@ final class LumiWorkspaceSymbolProvider: ObservableObject {
         switch response {
         case .optionA(let infos):
             symbols = infos.map { info in
-                LumiWorkspaceSymbol(
+                WorkspaceSymbolItem(
                     name: info.name, kind: info.kind,
-                    location: LumiSymbolLocation(uri: info.location.uri, range: info.location.range),
+                    location: SymbolLocation(uri: info.location.uri, range: info.location.range),
                     containerName: info.containerName, tags: info.tags, detail: nil, data: nil
                 )
             }
         case .optionB(let wsSymbols):
-            symbols = wsSymbols.compactMap { ws -> LumiWorkspaceSymbol? in
+            symbols = wsSymbols.compactMap { ws -> WorkspaceSymbolItem? in
                 guard let locOpt = ws.location else { return nil }
                 switch locOpt {
                 case .optionA(let loc):
-                    return LumiWorkspaceSymbol(
+                    return WorkspaceSymbolItem(
                         name: ws.name, kind: ws.kind,
-                        location: LumiSymbolLocation(uri: loc.uri, range: loc.range),
+                        location: SymbolLocation(uri: loc.uri, range: loc.range),
                         containerName: nil, tags: ws.tags, detail: nil, data: nil
                     )
                 case .optionB(let identifier):
-                    return LumiWorkspaceSymbol(
+                    return WorkspaceSymbolItem(
                         name: ws.name, kind: ws.kind,
-                        location: LumiSymbolLocation(uri: identifier.uri, range: LSPRange(start: .zero, end: .zero)),
+                        location: SymbolLocation(uri: identifier.uri, range: LSPRange(start: .zero, end: .zero)),
                         containerName: nil, tags: ws.tags, detail: nil, data: nil
                     )
                 }
@@ -55,7 +55,7 @@ final class LumiWorkspaceSymbolProvider: ObservableObject {
     
     func clear() { symbols = []; isSearching = false; searchError = nil }
     
-    func filterLocalResults(query: String) -> [LumiWorkspaceSymbol] {
+    func filterLocalResults(query: String) -> [WorkspaceSymbolItem] {
         guard !query.isEmpty else { return symbols }
         let lowercased = query.lowercased()
         return symbols.filter { sym in
@@ -65,11 +65,11 @@ final class LumiWorkspaceSymbolProvider: ObservableObject {
     }
 }
 
-struct LumiWorkspaceSymbol: Identifiable, Equatable {
+struct WorkspaceSymbolItem: Identifiable, Equatable {
     let id = UUID()
     let name: String
     let kind: SymbolKind
-    let location: LumiSymbolLocation
+    let location: SymbolLocation
     let containerName: String?
     let tags: [SymbolTag]?
     let detail: String?
@@ -109,18 +109,18 @@ struct LumiWorkspaceSymbol: Identifiable, Equatable {
     }
 }
 
-struct LumiSymbolLocation: Equatable {
+struct SymbolLocation: Equatable {
     let uri: String
     let range: LSPRange
 }
 
-struct LumiWorkspaceSymbolSearchView: View {
-    @ObservedObject var provider: LumiWorkspaceSymbolProvider
+struct WorkspaceSymbolItemSearchView: View {
+    @ObservedObject var provider: WorkspaceSymbolProvider
     @State private var query: String = ""
     @State private var selectedIndex: Int = 0
-    let onSelect: (LumiWorkspaceSymbol) -> Void
+    let onSelect: (WorkspaceSymbolItem) -> Void
     
-    var filteredSymbols: [LumiWorkspaceSymbol] {
+    var filteredSymbols: [WorkspaceSymbolItem] {
         provider.filterLocalResults(query: query)
     }
     
@@ -156,7 +156,7 @@ struct LumiWorkspaceSymbolSearchView: View {
 }
 
 struct WorkspaceSymbolRow: View {
-    let symbol: LumiWorkspaceSymbol
+    let symbol: WorkspaceSymbolItem
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: symbol.iconSymbol).font(.system(size: 12)).frame(width: 20).foregroundColor(.accentColor)

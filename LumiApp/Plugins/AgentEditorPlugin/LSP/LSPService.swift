@@ -9,9 +9,9 @@ import Combine
 /// 基于 LanguageClient + LanguageServerProtocol + JSONRPC
 /// 完全参考 CodeEdit 的 LSPService 架构
 @MainActor
-final class LumiLSPService: ObservableObject {
+final class LSPService: ObservableObject {
     
-    static let shared = LumiLSPService()
+    static let shared = LSPService()
     
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "lsp.service")
     
@@ -24,13 +24,13 @@ final class LumiLSPService: ObservableObject {
     
     // MARK: - Properties
     
-    private var server: LumiLanguageServer?
+    private var server: LanguageServer?
     private var currentURI: String?
     private var currentVersion: Int = 0
     private var projectRootPath: String?
     
     private var changeDebounceTimer: Timer?
-    private var pendingChanges: [LumiLanguageServer.DocumentChange] = []
+    private var pendingChanges: [LanguageServer.DocumentChange] = []
     private var latestDocumentSnapshot: String?
     
     var onHover: ((String?) -> Void)?
@@ -43,14 +43,14 @@ final class LumiLSPService: ObservableObject {
     
     func checkAvailability(for languageId: String? = nil) {
         if let languageId {
-            let available = LumiLSPConfig.findServer(for: languageId) != nil
+            let available = LSPConfig.findServer(for: languageId) != nil
             isAvailable = available
             logger.info("LSP availability: \(languageId) = \(available ? "yes" : "no")")
             return
         }
 
-        let available = LumiLSPConfig.supportedLanguageIds.contains {
-            LumiLSPConfig.findServer(for: $0) != nil
+        let available = LSPConfig.supportedLanguageIds.contains {
+            LSPConfig.findServer(for: $0) != nil
         }
         isAvailable = available
         logger.info("LSP availability(any) = \(available ? "yes" : "no")")
@@ -65,7 +65,7 @@ final class LumiLSPService: ObservableObject {
             server = nil
         }
         
-        guard let config = LumiLSPConfig.defaultConfig(for: languageId) else {
+        guard let config = LSPConfig.defaultConfig(for: languageId) else {
             logger.warning("No server config for \(languageId)")
             return
         }
@@ -76,7 +76,7 @@ final class LumiLSPService: ObservableObject {
         projectRootPath = projectPath
         
         do {
-            let newServer = try await LumiLanguageServer.create(
+            let newServer = try await LanguageServer.create(
                 languageId: languageId,
                 config: config,
                 workspacePath: projectPath
@@ -372,7 +372,7 @@ final class LumiLSPService: ObservableObject {
         }
     }
     
-    var currentSemanticTokenMap: LumiSemanticTokenMap? {
+    var currentSemanticTokenMap: SemanticTokenMap? {
         server?.semanticTokenMap
     }
 
@@ -421,7 +421,7 @@ final class LumiLSPService: ObservableObject {
         }
     }
     
-    func resolveDocumentLink(_ link: LumiDocumentLink) async -> DocumentLink? {
+    func resolveDocumentLink(_ link: EditorDocumentLink) async -> DocumentLink? {
         guard let server else { return nil }
         let lspLink = DocumentLink(
             range: link.range,
@@ -559,7 +559,7 @@ final class LumiLSPService: ObservableObject {
     
     // MARK: - Progress Notifications
     
-    let progressProvider = LumiLSPProgressProvider()
+    let progressProvider = LSPProgressProvider()
     
     // MARK: - Cleanup
     

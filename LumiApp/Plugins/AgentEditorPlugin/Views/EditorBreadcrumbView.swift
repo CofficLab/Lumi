@@ -48,11 +48,11 @@ struct BreadcrumbSibling: Identifiable, Equatable {
 
 /// 面包屑导航视图
 /// 参考 CodeEdit JumpBar 设计：每个路径段可点击弹出菜单，显示同级文件列表
-struct LumiEditorBreadcrumbView: View {
+struct EditorBreadcrumbView: View {
 
     @EnvironmentObject private var projectVM: ProjectVM
     @Environment(\.colorScheme) private var colorScheme
-    @ObservedObject var state: LumiEditorState
+    @ObservedObject var state: EditorState
 
     /// 面包屑路径段列表
     private var breadcrumbItems: [BreadcrumbItem] {

@@ -2,8 +2,8 @@ import SwiftUI
 import MagicKit
 
 /// LSP References 结果面板
-struct LumiEditorReferencesPanelView: View {
-    @ObservedObject var state: LumiEditorState
+struct EditorReferencesPanelView: View {
+    @ObservedObject var state: EditorState
     @State private var dragStartWidth: CGFloat?
     @State private var isResizeHandleHovering = false
 

@@ -9,7 +9,7 @@ import SwiftTreeSitter
 import LanguageServerProtocol
 import os
 
-/// Lumi 的「跳转到定义」代理
+/// Jump-to-definition delegate
 /// 基于 Tree-Sitter AST 实现文件内跳转（Cmd+Click）
 /// 
 /// 工作原理：
@@ -19,11 +19,11 @@ import os
 /// 4. 此方法通过 AST 或正则查找定义位置
 /// 5. 引擎自动执行跳转或显示多定义弹窗
 @preconcurrency
-final class LumiJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDelegate {
+final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDelegate {
     
     weak var treeSitterClient: TreeSitterClient?
     weak var textStorage: NSTextStorage?
-    weak var lspCoordinator: LumiLSPCoordinator?
+    weak var lspCoordinator: LSPCoordinator?
     weak var textViewController: TextViewController?
     var currentFileURLProvider: (() -> URL?)?
     var onOpenExternalDefinition: ((URL, CursorPosition) -> Void)?

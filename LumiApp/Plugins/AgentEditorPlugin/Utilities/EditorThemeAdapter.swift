@@ -3,7 +3,7 @@ import CodeEditSourceEditor
 
 /// 主题适配器
 /// 将预设配色映射到 CodeEditSourceEditor 的 EditorTheme
-enum LumiEditorThemeAdapter {
+enum EditorThemeAdapter {
     
     /// 预设主题
     enum PresetTheme: String, CaseIterable {

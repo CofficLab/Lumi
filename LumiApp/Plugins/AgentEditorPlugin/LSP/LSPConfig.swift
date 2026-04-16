@@ -1,7 +1,7 @@
 import Foundation
 
 /// LSP 配置：定义语言服务器二进制路径和默认参数
-struct LumiLSPConfig {
+struct LSPConfig {
 
     /// 当前内建支持的语言 ID（用于可用性探测和 UI 状态）
     static let supportedLanguageIds: [String] = [

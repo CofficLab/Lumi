@@ -4,9 +4,9 @@ import CodeEditTextView
 
 /// 编辑器工具栏视图
 /// 包含字体大小、缩进、主题切换等设置
-struct LumiEditorToolbarView: View {
+struct EditorToolbarView: View {
     
-    @ObservedObject var state: LumiEditorState
+    @ObservedObject var state: EditorState
     
     var body: some View {
         HStack(spacing: 6) {
@@ -164,7 +164,7 @@ struct LumiEditorToolbarView: View {
     
     // MARK: - LSP Status Indicator
     
-    @StateObject private var diagnosticsManager = LumiDiagnosticsManager()
+    @StateObject private var diagnosticsManager = DiagnosticsManager()
     
     private var lspStatusIndicator: some View {
         Button {
@@ -193,12 +193,12 @@ struct LumiEditorToolbarView: View {
                     }
                 }
 
-                if !LumiLSPService.shared.isAvailable {
+                if !LSPService.shared.isAvailable {
                     Image(systemName: "circle")
                         .font(.system(size: 6))
                         .foregroundColor(AppUI.Color.semantic.textTertiary)
                         .help(String(localized: "LSP not available", table: "LumiEditor"))
-                } else if LumiLSPService.shared.isInitializing {
+                } else if LSPService.shared.isInitializing {
                     ProgressView()
                         .scaleEffect(0.5)
                         .help(String(localized: "LSP initializing...", table: "LumiEditor"))
@@ -209,7 +209,7 @@ struct LumiEditorToolbarView: View {
                         .help(String(localized: "LSP active", table: "LumiEditor"))
                 }
             }
-            .opacity(diagnosticsManager.errorCount > 0 || diagnosticsManager.warningCount > 0 || !LumiLSPService.shared.isAvailable ? 1 : 0.5)
+            .opacity(diagnosticsManager.errorCount > 0 || diagnosticsManager.warningCount > 0 || !LSPService.shared.isAvailable ? 1 : 0.5)
         }
         .buttonStyle(.plain)
         .help(String(localized: "Toggle Problems", table: "LumiEditor"))
@@ -219,7 +219,7 @@ struct LumiEditorToolbarView: View {
     
     private var themePicker: some View {
         Menu {
-            ForEach(LumiEditorThemeAdapter.PresetTheme.allCases, id: \.rawValue) { preset in
+            ForEach(EditorThemeAdapter.PresetTheme.allCases, id: \.rawValue) { preset in
                 Button {
                     state.setTheme(preset)
                 } label: {

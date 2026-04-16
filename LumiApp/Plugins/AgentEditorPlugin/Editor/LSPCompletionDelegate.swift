@@ -5,12 +5,12 @@ import CodeEditTextView
 import LanguageServerProtocol
 
 @MainActor
-final class LumiLSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
+final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
 
-    weak var lspCoordinator: LumiLSPCoordinator?
-    weak var editorState: LumiEditorState?
+    weak var lspCoordinator: LSPCoordinator?
+    weak var editorState: EditorState?
 
-    private var activeItems: [LumiCodeSuggestionEntry] = []
+    private var activeItems: [any CodeEditSourceEditor.CodeSuggestionEntry] = []
     private var requestAnchor: CursorPosition?
     private var requestAnchorOffset: Int?
 
@@ -22,14 +22,14 @@ final class LumiLSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
     func completionSuggestionsRequested(
         textView: TextViewController,
         cursorPosition: CursorPosition
-    ) async -> (windowPosition: CursorPosition, items: [CodeSuggestionEntry])? {
+    ) async -> (windowPosition: CursorPosition, items: [any CodeEditSourceEditor.CodeSuggestionEntry])? {
         guard let coordinator = lspCoordinator else { return nil }
         guard let editorTextView = textView.textView else { return nil }
 
         let line = max(cursorPosition.start.line - 1, 0)
         let character = max(cursorPosition.start.column - 1, 0)
         let completionItems = await coordinator.requestCompletion(line: line, character: character)
-        let entries = completionItems.map(LumiCodeSuggestionEntry.init(item:))
+        let entries = completionItems.map(EditorCodeSuggestionEntry.init(item:))
         guard !entries.isEmpty else { return nil }
 
         let content = editorTextView.string
@@ -42,7 +42,7 @@ final class LumiLSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
     func completionOnCursorMove(
         textView: TextViewController,
         cursorPosition: CursorPosition
-    ) -> [CodeSuggestionEntry]? {
+    ) -> [any CodeEditSourceEditor.CodeSuggestionEntry]? {
         guard !activeItems.isEmpty else { return nil }
         guard let anchor = requestAnchor else { return nil }
         guard let editorTextView = textView.textView else { return nil }
@@ -62,9 +62,11 @@ final class LumiLSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
         guard prefixLength > 0 else { return activeItems }
         let prefix = content.substring(with: NSRange(location: anchorOffset, length: prefixLength)).lowercased()
 
-        let filtered = activeItems.filter { item in
-            item.label.lowercased().hasPrefix(prefix) ||
-            item.filterText?.lowercased().hasPrefix(prefix) == true
+        let filtered = activeItems.compactMap { item -> (any CodeEditSourceEditor.CodeSuggestionEntry)? in
+            guard let entry = item as? EditorCodeSuggestionEntry else { return item }
+            let matches = entry.label.lowercased().hasPrefix(prefix) ||
+                entry.filterText?.lowercased().hasPrefix(prefix) == true
+            return matches ? item : nil
         }
         return filtered.isEmpty ? nil : filtered
     }
@@ -76,11 +78,11 @@ final class LumiLSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
     }
 
     func completionWindowApplyCompletion(
-        item: CodeSuggestionEntry,
+        item: any CodeEditSourceEditor.CodeSuggestionEntry,
         textView: TextViewController,
         cursorPosition: CursorPosition?
     ) {
-        guard let item = item as? LumiCodeSuggestionEntry else { return }
+        guard let item = item as? EditorCodeSuggestionEntry else { return }
         guard let view = textView.textView else { return }
 
         let replacementRange: NSRange
@@ -127,7 +129,7 @@ final class LumiLSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
         }
     }
 
-    func completionWindowDidSelect(item: CodeSuggestionEntry) {}
+    func completionWindowDidSelect(item: any CodeEditSourceEditor.CodeSuggestionEntry) {}
 
     private static func utf16Offset(for position: CursorPosition.Position, in content: String) -> Int? {
         guard position.line > 0, position.column > 0 else { return nil }
@@ -180,7 +182,7 @@ final class LumiLSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
     }
 }
 
-private struct LumiCodeSuggestionEntry: CodeSuggestionEntry {
+private struct EditorCodeSuggestionEntry: CodeEditSourceEditor.CodeSuggestionEntry {
     let item: CompletionItem
 
     var label: String { item.label }

@@ -4,7 +4,7 @@ import LanguageServerProtocol
 
 /// LSP Problems 面板（当前文件）
 struct ProblemsPanelView: View {
-    @ObservedObject var state: LumiEditorState
+    @ObservedObject var state: EditorState
     @State private var dragStartWidth: CGFloat?
     @State private var isResizeHandleHovering = false
 
@@ -225,6 +225,6 @@ struct ProblemsPanelView: View {
 }
 
 #Preview {
-    ProblemsPanelView(state: LumiEditorState())
+    ProblemsPanelView(state: EditorState())
         .inRootView()
 }

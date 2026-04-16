@@ -6,28 +6,28 @@ import MagicKit
 
 /// 代码编辑器主视图
 /// 基于 CodeEditSourceEditor 实现专业级编辑体验
-struct LumiSourceEditorView: View {
+struct SourceEditorView: View {
     
-    @ObservedObject var state: LumiEditorState
+    @ObservedObject var state: EditorState
     
     /// 编辑器协调器（使用 @State 确保在 View 更新间保持同一实例）
     /// 之前作为普通 let 属性，每次 View struct 重建时会创建新实例，
     /// 导致旧实例被 ARC 释放，TextViewController 中的 WeakCoordinator 弱引用失效，
     /// coordinator 回调不再被触发，自动保存失效。
-    @State private var textCoordinator: LumiEditorCoordinator?
-    @State private var cursorCoordinator: LumiCursorCoordinator?
-    @State private var contextMenuCoordinator: LumiContextMenuCoordinator?
-    @State private var semanticTokenProvider: LumiSemanticTokenHighlightProvider?
-    @State private var documentHighlightProvider: LumiDocumentHighlightHighlighter?
-    @State private var signatureHelpProvider = LumiSignatureHelpProvider()
+    @State private var textCoordinator: EditorCoordinator?
+    @State private var cursorCoordinator: CursorCoordinator?
+    @State private var contextMenuCoordinator: ContextMenuCoordinator?
+    @State private var semanticTokenProvider: SemanticTokenHighlightProvider?
+    @State private var documentHighlightProvider: DocumentHighlightHighlighter?
+    @State private var signatureHelpProvider = SignatureHelpProvider()
     @State private var codeActionPanelPresented: Bool = false
     
     /// 跳转到定义代理（Cmd+Click / 右键跳转共用同一实例）
-    @StateObject private var jumpDelegate: LumiJumpToDefinitionDelegate = {
-        let d = LumiJumpToDefinitionDelegate()
+    @StateObject private var jumpDelegate: EditorJumpToDefinitionDelegate = {
+        let d = EditorJumpToDefinitionDelegate()
         return d
     }()
-    @State private var completionDelegate = LumiLSPCompletionDelegate()
+    @State private var completionDelegate = LSPCompletionDelegate()
     
     /// tree-sitter 客户端
     @State private var treeSitterClient = TreeSitterClient()
@@ -35,7 +35,7 @@ struct LumiSourceEditorView: View {
     /// 缓存的配置
     @State private var cachedConfig: SourceEditorConfiguration?
     
-    init(state: LumiEditorState) {
+    init(state: EditorState) {
         self._state = ObservedObject(wrappedValue: state)
     }
     
@@ -99,7 +99,7 @@ struct LumiSourceEditorView: View {
     @ViewBuilder
     private var signatureHelpOverlay: some View {
         if let help = state.signatureHelpProvider.currentHelp {
-            LumiSignatureHelpView(item: help)
+            SignatureHelpView(item: help)
                 .padding(.leading, 12)
                 .padding(.bottom, 32)
         }
@@ -108,7 +108,7 @@ struct LumiSourceEditorView: View {
     @ViewBuilder
     private var codeActionOverlay: some View {
         if state.codeActionProvider.isVisible {
-            LumiCodeActionPanel(
+            CodeActionPanel(
                 actions: state.codeActionProvider.actions
             ) { action in
                 // 执行代码动作后关闭面板
@@ -142,21 +142,21 @@ struct LumiSourceEditorView: View {
     /// 首次出现时初始化协调器和配置缓存
     private func initializeCoordinators() {
         if textCoordinator == nil {
-            textCoordinator = LumiEditorCoordinator(state: state)
+            textCoordinator = EditorCoordinator(state: state)
         }
         if cursorCoordinator == nil {
-            cursorCoordinator = LumiCursorCoordinator(state: state)
+            cursorCoordinator = CursorCoordinator(state: state)
         }
         if contextMenuCoordinator == nil {
-            contextMenuCoordinator = LumiContextMenuCoordinator(state: state)
+            contextMenuCoordinator = ContextMenuCoordinator(state: state)
         }
         if semanticTokenProvider == nil {
-            semanticTokenProvider = LumiSemanticTokenHighlightProvider(uriProvider: { [weak state] in
+            semanticTokenProvider = SemanticTokenHighlightProvider(uriProvider: { [weak state] in
                 state?.currentFileURL?.absoluteString
             })
         }
         if documentHighlightProvider == nil {
-            documentHighlightProvider = LumiDocumentHighlightHighlighter(
+            documentHighlightProvider = DocumentHighlightHighlighter(
                 provider: state.documentHighlightProvider
             )
         }
@@ -252,7 +252,7 @@ struct LumiSourceEditorView: View {
         
         return SourceEditorConfiguration(
             appearance: .init(
-                theme: state.currentTheme ?? LumiEditorThemeAdapter.theme(from: .xcodeDark),
+                theme: state.currentTheme ?? EditorThemeAdapter.theme(from: .xcodeDark),
                 useThemeBackground: true,
                 font: NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular),
                 lineHeightMultiple: lineHeightMultiple,

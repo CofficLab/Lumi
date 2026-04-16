@@ -6,12 +6,12 @@ import LanguageServerProtocol
 /// 签名帮助提供者
 /// 监听输入触发字符，在光标位置显示函数签名信息
 @MainActor
-final class LumiSignatureHelpProvider: ObservableObject {
+final class SignatureHelpProvider: ObservableObject {
     
-    private let lspService = LumiLSPService.shared
+    private let lspService = LSPService.shared
     
     /// 当前签名帮助信息
-    @Published var currentHelp: LumiSignatureHelpItem?
+    @Published var currentHelp: SignatureHelpItem?
     /// 是否正在加载
     @Published var isLoading: Bool = false
     
@@ -46,12 +46,12 @@ final class LumiSignatureHelpProvider: ObservableObject {
         let activeSignature = help.signatures[activeIndex]
         let activeParamIndex = help.activeParameter ?? 0
         
-        currentHelp = LumiSignatureHelpItem(
+        currentHelp = SignatureHelpItem(
             label: activeSignature.label,
             documentation: extractDocumentation(from: activeSignature.documentation),
-            parameters: activeSignature.parameters?.compactMap { param -> LumiSignatureParam? in
+            parameters: activeSignature.parameters?.compactMap { param -> SignatureParam? in
                 guard let label = extractParamLabel(from: param.label) else { return nil }
-                return LumiSignatureParam(
+                return SignatureParam(
                     label: label,
                     documentation: extractParamDocumentation(from: param.documentation)
                 )
@@ -92,15 +92,15 @@ final class LumiSignatureHelpProvider: ObservableObject {
 }
 
 /// 签名帮助数据模型
-struct LumiSignatureHelpItem: Identifiable {
+struct SignatureHelpItem: Identifiable {
     let id = UUID()
     let label: String
     let documentation: String?
-    let parameters: [LumiSignatureParam]
+    let parameters: [SignatureParam]
     let activeParameterIndex: Int
 }
 
-struct LumiSignatureParam: Identifiable {
+struct SignatureParam: Identifiable {
     let id = UUID()
     let label: String
     let documentation: String?
@@ -109,9 +109,9 @@ struct LumiSignatureParam: Identifiable {
 // MARK: - UI Views
 
 /// 签名帮助视图
-struct LumiSignatureHelpView: View {
+struct SignatureHelpView: View {
     
-    let item: LumiSignatureHelpItem
+    let item: SignatureHelpItem
     
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {

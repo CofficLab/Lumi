@@ -3,11 +3,11 @@ import LanguageServerProtocol
 
 /// 选择范围扩展提供者
 @MainActor
-final class LumiSelectionRangeProvider: ObservableObject {
+final class SelectionRangeProvider: ObservableObject {
     
-    private let lspService = LumiLSPService.shared
+    private let lspService = LSPService.shared
     
-    @Published var rangeChain: [LumiSelectionRange] = []
+    @Published var rangeChain: [EditorSelectionRange] = []
     @Published var currentLevel: Int = -1
     
     var isAvailable: Bool { lspService.isAvailable }
@@ -23,13 +23,13 @@ final class LumiSelectionRangeProvider: ObservableObject {
         currentLevel = rangeChain.isEmpty ? -1 : 0
     }
     
-    func expandSelection() -> LumiSelectionRange? {
+    func expandSelection() -> EditorSelectionRange? {
         guard !rangeChain.isEmpty else { return nil }
         currentLevel = min(currentLevel + 1, rangeChain.count - 1)
         return rangeChain[currentLevel]
     }
     
-    func shrinkSelection() -> LumiSelectionRange? {
+    func shrinkSelection() -> EditorSelectionRange? {
         guard !rangeChain.isEmpty else { return nil }
         currentLevel = max(currentLevel - 1, 0)
         return rangeChain[currentLevel]
@@ -40,11 +40,11 @@ final class LumiSelectionRangeProvider: ObservableObject {
         currentLevel = -1
     }
     
-    private func flattenSelectionRange(_ range: SelectionRange) -> [LumiSelectionRange] {
-        var result: [LumiSelectionRange] = []
+    private func flattenSelectionRange(_ range: SelectionRange) -> [EditorSelectionRange] {
+        var result: [EditorSelectionRange] = []
         var current: SelectionRange? = range
         while let node = current {
-            result.append(LumiSelectionRange(
+            result.append(EditorSelectionRange(
                 startLine: Int(node.range.start.line),
                 startCharacter: Int(node.range.start.character),
                 endLine: Int(node.range.end.line),
@@ -57,7 +57,7 @@ final class LumiSelectionRangeProvider: ObservableObject {
     }
 }
 
-struct LumiSelectionRange: Identifiable, Hashable {
+struct EditorSelectionRange: Identifiable, Hashable {
     let id = UUID()
     let startLine: Int
     let startCharacter: Int

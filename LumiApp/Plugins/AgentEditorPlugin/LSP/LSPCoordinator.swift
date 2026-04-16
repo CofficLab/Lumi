@@ -9,10 +9,10 @@ import os
 /// 编辑器 LSP 协调器
 /// 负责将 LSP 服务与 CodeEditSourceEditor 集成
 @MainActor
-class LumiLSPCoordinator: ObservableObject {
+class LSPCoordinator: ObservableObject {
     
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "lsp.coordinator")
-    private let lspService = LumiLSPService.shared
+    private let lspService = LSPService.shared
     
     /// 当前文件 URI
     var fileURI: String?
@@ -206,9 +206,9 @@ class LumiLSPCoordinator: ObservableObject {
 /// LSP 诊断管理器
 /// 使用 LanguageServerProtocol 的 Diagnostic 类型
 @MainActor
-final class LumiDiagnosticsManager: ObservableObject {
+final class DiagnosticsManager: ObservableObject {
     
-    private let lspService = LumiLSPService.shared
+    private let lspService = LSPService.shared
     
     /// 当前诊断列表（使用 LSP 标准类型）
     @Published var diagnostics: [Diagnostic] = []
@@ -256,9 +256,9 @@ final class LumiDiagnosticsManager: ObservableObject {
 
 /// LSP 代码补全提供者
 @MainActor
-final class LumiCompletionProvider: ObservableObject {
+final class CompletionProvider: ObservableObject {
     
-    private let lspService = LumiLSPService.shared
+    private let lspService = LSPService.shared
     
     @Published var completionItems: [CompletionItem] = []
     @Published var isLoading: Bool = false
@@ -319,7 +319,7 @@ final class LumiCompletionProvider: ObservableObject {
 
 struct LSPDiagnosticStatusBarItem: View {
     
-    @StateObject private var diagnosticsManager = LumiDiagnosticsManager()
+    @StateObject private var diagnosticsManager = DiagnosticsManager()
     
     var body: some View {
         HStack(spacing: 12) {
@@ -368,7 +368,7 @@ struct LSPHoverTooltip: View {
 
 // MARK: - Semantic Tokens
 
-struct LumiSemanticTokenMap: Sendable {
+struct SemanticTokenMap: Sendable {
     private let tokenTypeMap: [CaptureName?]
     private let modifierMap: [CaptureModifier?]
     
@@ -451,13 +451,13 @@ struct LumiSemanticTokenMap: Sendable {
     }
 }
 
-private struct LumiSemanticTokenRange {
+private struct SemanticTokenRange {
     let line: UInt32
     let char: UInt32
     let length: UInt32
 }
 
-private final class LumiSemanticTokenStorage {
+private final class SemanticTokenStorage {
     private struct CurrentState {
         let resultId: String?
         let tokenData: [UInt32]
@@ -474,9 +474,9 @@ private final class LumiSemanticTokenStorage {
         state = CurrentState(resultId: data.resultId, tokenData: data.data, tokens: data.decode())
     }
     
-    func applyDelta(_ deltas: SemanticTokensDelta) -> [LumiSemanticTokenRange] {
+    func applyDelta(_ deltas: SemanticTokensDelta) -> [SemanticTokenRange] {
         guard var tokenData = state?.tokenData else { return [] }
-        var invalidatedSet: [LumiSemanticTokenRange] = []
+        var invalidatedSet: [SemanticTokenRange] = []
         
         for edit in deltas.edits.sorted(by: { $0.start > $1.start }) {
             invalidatedSet.append(
@@ -501,16 +501,16 @@ private final class LumiSemanticTokenStorage {
         return invalidatedSet
     }
     
-    private func invalidatedRanges(start: UInt, length: UInt, data: ArraySlice<UInt32>) -> [LumiSemanticTokenRange] {
+    private func invalidatedRanges(start: UInt, length: UInt, data: ArraySlice<UInt32>) -> [SemanticTokenRange] {
         guard length > 0, !data.isEmpty else { return [] }
         
-        var ranges: [LumiSemanticTokenRange] = []
+        var ranges: [SemanticTokenRange] = []
         var idx = Int(start - (start % 5))
         let end = Int(start + length)
         
         while idx + 2 < data.count && idx < end {
             ranges.append(
-                LumiSemanticTokenRange(
+                SemanticTokenRange(
                     line: data[idx],
                     char: data[idx + 1],
                     length: data[idx + 2]
@@ -523,12 +523,12 @@ private final class LumiSemanticTokenStorage {
 }
 
 @MainActor
-final class LumiSemanticTokenHighlightProvider: HighlightProviding {
-    private let lspService = LumiLSPService.shared
+final class SemanticTokenHighlightProvider: HighlightProviding {
+    private let lspService = LSPService.shared
     private let uriProvider: () -> String?
     private var textView: TextView?
     private var highlights: [HighlightRange] = []
-    private var storage = LumiSemanticTokenStorage()
+    private var storage = SemanticTokenStorage()
     private var isRefreshing = false
     private var needsRefreshAgain = false
     private var pendingEditCallback: ((Result<IndexSet, Error>) -> Void)?
@@ -625,7 +625,7 @@ final class LumiSemanticTokenHighlightProvider: HighlightProviding {
                 case .optionB(let delta):
                     let changed = storage.applyDelta(delta)
                     invalidatedRanges = changed.compactMap {
-                        LumiSemanticTokenMap.nsRange(
+                        SemanticTokenMap.nsRange(
                             line: Int($0.line),
                             character: Int($0.char),
                             length: Int($0.length),

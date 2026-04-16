@@ -6,18 +6,18 @@ import SwiftUI
 import LanguageServerProtocol
 
 /// 文本变更协调器
-/// 监听 CodeEditSourceEditor 的文本变更，通知 LumiEditorState 触发自动保存
-final class LumiEditorCoordinator: TextViewCoordinator, TextViewDelegate {
+/// 监听 CodeEditSourceEditor 的文本变更，通知 EditorState 触发自动保存
+final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
     
     /// 弱引用状态管理器
-    private weak var state: LumiEditorState?
+    private weak var state: EditorState?
     private var editedRange: LSPRange?
     private var hoverTask: Task<Void, Never>?
     private weak var textViewController: TextViewController?
     /// 跳转定义代理（由外部注入）
-    weak var jumpDelegate: LumiJumpToDefinitionDelegate?
+    weak var jumpDelegate: EditorJumpToDefinitionDelegate?
     
-    init(state: LumiEditorState) {
+    init(state: EditorState) {
         self.state = state
     }
     
@@ -33,7 +33,7 @@ final class LumiEditorCoordinator: TextViewCoordinator, TextViewDelegate {
         // 延迟到下一个 RunLoop，避免 "Modifying state during view update"
         DispatchQueue.main.async {
             if state == nil {
-                print("⚠️ [LumiEditor] LumiEditorCoordinator: state is nil!")
+                print("⚠️ [Editor] EditorCoordinator: state is nil!")
             }
             state?.notifyContentChanged()
         }
@@ -197,12 +197,12 @@ final class LumiEditorCoordinator: TextViewCoordinator, TextViewDelegate {
     }
 
     @MainActor
-    private static func syncSelections(from controller: TextViewController, to state: LumiEditorState) {
+    private static func syncSelections(from controller: TextViewController, to state: EditorState) {
         let selections = controller.textView?.selectionManager.textSelections ?? []
         let mapped = selections
             .map { $0.range }
             .filter { $0.location != NSNotFound }
-            .map { LumiMultiCursorSelection(location: $0.location, length: $0.length) }
+            .map { MultiCursorSelection(location: $0.location, length: $0.length) }
 
         guard !mapped.isEmpty else { return }
 
@@ -218,11 +218,11 @@ final class LumiEditorCoordinator: TextViewCoordinator, TextViewDelegate {
 
 /// 光标位置协调器
 /// 监听光标位置变化，更新行号/列号信息
-final class LumiCursorCoordinator: TextViewCoordinator {
+final class CursorCoordinator: TextViewCoordinator {
     
-    private weak var state: LumiEditorState?
+    private weak var state: EditorState?
     
-    init(state: LumiEditorState) {
+    init(state: EditorState) {
         self.state = state
     }
     
@@ -270,11 +270,11 @@ final class LumiCursorCoordinator: TextViewCoordinator {
 ///
 /// 因此我们通过 ObjC runtime 的 `class_replaceMethod` 替换 textView 实例所属类
 /// 的 `menu(for:)` 实现。新实现先调用原始方法获取标准菜单，再往其中插入自定义项。
-final class LumiContextMenuCoordinator: TextViewCoordinator {
+final class ContextMenuCoordinator: TextViewCoordinator {
 
-    private weak var state: LumiEditorState?
+    private weak var state: EditorState?
 
-    init(state: LumiEditorState) {
+    init(state: EditorState) {
         self.state = state
     }
 
@@ -286,8 +286,8 @@ final class LumiContextMenuCoordinator: TextViewCoordinator {
 
         Task { @MainActor [weak state] in
             guard let state else { return }
-            LumiMultiCursorInputInstaller.shared.register(textView: textView, state: state)
-            LumiContextMenuManager.shared.register(textView: textView, state: state)
+            MultiCursorInputInstaller.shared.register(textView: textView, state: state)
+            ContextMenuManager.shared.register(textView: textView, state: state)
         }
     }
 
@@ -303,9 +303,9 @@ final class LumiContextMenuCoordinator: TextViewCoordinator {
 /// 使用全局单例 + associated object 的方式，在 swizzle 后的 `menu(for:)` 中
 /// 通过 textView 实例查找对应的 helper 来注入自定义菜单项。
 @MainActor
-final class LumiContextMenuManager {
+final class ContextMenuManager {
 
-    static let shared = LumiContextMenuManager()
+    static let shared = ContextMenuManager()
 
     /// 关联对象 key：标记是否已经 swizzle 过该类
     private static let swizzledKey = malloc(1)!
@@ -316,7 +316,7 @@ final class LumiContextMenuManager {
     private init() {}
 
     /// 注册 textView，执行 swizzle（仅首次）并绑定 helper
-    func register(textView: TextView, state: LumiEditorState) {
+    func register(textView: TextView, state: EditorState) {
         let targetClass = object_getClass(textView)!
 
         // 确保这个类只 swizzle 一次
@@ -327,14 +327,14 @@ final class LumiContextMenuManager {
 
         // 为每个 textView 实例绑定 helper
         if objc_getAssociatedObject(textView, Self.helperKey) == nil {
-            let helper = LumiContextMenuHelper(textView: textView, state: state)
+            let helper = ContextMenuHelper(textView: textView, state: state)
             objc_setAssociatedObject(textView, Self.helperKey, helper, .OBJC_ASSOCIATION_RETAIN)
         }
     }
 
     /// 获取某个 textView 实例关联的 helper
-    static func helperForTextView(_ textView: TextView) -> LumiContextMenuHelper? {
-        objc_getAssociatedObject(textView, helperKey) as? LumiContextMenuHelper
+    static func helperForTextView(_ textView: TextView) -> ContextMenuHelper? {
+        objc_getAssociatedObject(textView, helperKey) as? ContextMenuHelper
     }
 
     // MARK: - Swizzle
@@ -355,7 +355,7 @@ final class LumiContextMenuManager {
             guard let menu = originalMenu else { return nil }
 
             // 在主线程查找 helper 并注入自定义项
-            if let helper = LumiContextMenuManager.helperForTextView(textView) {
+            if let helper = ContextMenuManager.helperForTextView(textView) {
                 helper.injectCustomItems(into: menu)
             }
 
@@ -371,15 +371,15 @@ final class LumiContextMenuManager {
 
 /// 每个 textView 实例对应一个 helper，负责注入自定义菜单项
 @MainActor
-final class LumiContextMenuHelper: NSObject {
+final class ContextMenuHelper: NSObject {
 
     private weak var textView: TextView?
-    private weak var state: LumiEditorState?
-    private var currentTargets: [LumiContextMenuTarget] = []
+    private weak var state: EditorState?
+    private var currentTargets: [ContextMenuTarget] = []
     private let injectedItemTag = 991
     private let injectedSeparatorTag = 992
 
-    init(textView: TextView, state: LumiEditorState) {
+    init(textView: TextView, state: EditorState) {
         self.textView = textView
         self.state = state
     }
@@ -528,12 +528,12 @@ final class LumiContextMenuHelper: NSObject {
         image: String,
         action: @escaping () -> Void
     ) -> NSMenuItem {
-        let target = LumiContextMenuTarget(action: action)
+        let target = ContextMenuTarget(action: action)
         currentTargets.append(target)
 
         let item = NSMenuItem(
             title: title,
-            action: #selector(LumiContextMenuTarget.addToChatClicked),
+            action: #selector(ContextMenuTarget.addToChatClicked),
             keyEquivalent: ""
         )
         item.target = target
@@ -544,7 +544,7 @@ final class LumiContextMenuHelper: NSObject {
 
     // MARK: - Add to Chat Action
 
-    private static func performAddSelectionToChat(textView: TextView, state: LumiEditorState) {
+    private static func performAddSelectionToChat(textView: TextView, state: EditorState) {
         let selections = textView.selectionManager.textSelections
         guard let firstSelection = selections.first, !firstSelection.range.isEmpty else { return }
         let fullText = textView.string as NSString
@@ -564,7 +564,7 @@ final class LumiContextMenuHelper: NSObject {
         NotificationCenter.postAddToChat(text: payload)
     }
 
-    private static func performAddLocationToChat(textView: TextView, state: LumiEditorState) {
+    private static func performAddLocationToChat(textView: TextView, state: EditorState) {
         let selection = textView.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
         let fullText = textView.string as NSString
         guard selection.location != NSNotFound else { return }
@@ -576,7 +576,7 @@ final class LumiContextMenuHelper: NSObject {
         NotificationCenter.postAddToChat(text: locationText)
     }
 
-    private static func performGoToDefinition(textView: TextView, state: LumiEditorState) {
+    private static func performGoToDefinition(textView: TextView, state: EditorState) {
         // 获取当前选区作为跳转起点
         let selection = textView.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
         guard selection.location != NSNotFound else { return }
@@ -593,7 +593,7 @@ final class LumiContextMenuHelper: NSObject {
         }
     }
 
-    private static func performGoToDeclaration(textView: TextView, state: LumiEditorState) {
+    private static func performGoToDeclaration(textView: TextView, state: EditorState) {
         let selection = textView.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
         guard selection.location != NSNotFound else { return }
         
@@ -608,7 +608,7 @@ final class LumiContextMenuHelper: NSObject {
         }
     }
 
-    private static func performGoToTypeDefinition(textView: TextView, state: LumiEditorState) {
+    private static func performGoToTypeDefinition(textView: TextView, state: EditorState) {
         let selection = textView.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
         guard selection.location != NSNotFound else { return }
         
@@ -623,7 +623,7 @@ final class LumiContextMenuHelper: NSObject {
         }
     }
 
-    private static func performGoToImplementation(textView: TextView, state: LumiEditorState) {
+    private static func performGoToImplementation(textView: TextView, state: EditorState) {
         let selection = textView.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
         guard selection.location != NSNotFound else { return }
         
@@ -638,7 +638,7 @@ final class LumiContextMenuHelper: NSObject {
         }
     }
 
-    private static func selectionLocationText(range: NSRange, fullText: NSString, state: LumiEditorState) -> String {
+    private static func selectionLocationText(range: NSRange, fullText: NSString, state: EditorState) -> String {
         let startOffset = max(0, min(range.location, fullText.length))
         let endOffset = max(startOffset, min(NSMaxRange(range), fullText.length))
 
@@ -757,7 +757,7 @@ final class LumiContextMenuHelper: NSObject {
 
 // MARK: - Menu Target
 
-final class LumiContextMenuTarget: NSObject {
+final class ContextMenuTarget: NSObject {
     private let action: () -> Void
 
     init(action: @escaping () -> Void) {

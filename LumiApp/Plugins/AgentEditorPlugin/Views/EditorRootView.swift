@@ -3,13 +3,13 @@ import SwiftUI
 
 /// 编辑器主视图（根入口）
 /// 组合面包屑、工具栏、编辑器、状态栏
-struct LumiEditorRootView: View {
+struct EditorRootView: View {
 
     @EnvironmentObject private var projectVM: ProjectVM
     @EnvironmentObject private var layoutVM: LayoutVM
 
     /// 编辑器状态
-    @StateObject private var state = LumiEditorState()
+    @StateObject private var state = EditorState()
 
     var body: some View {
         HStack(spacing: 0) {
@@ -30,7 +30,7 @@ struct LumiEditorRootView: View {
             }
 
             if state.isReferencePanelPresented {
-                LumiEditorReferencesPanelView(state: state)
+                EditorReferencesPanelView(state: state)
             } else if state.isProblemsPanelPresented {
                 ProblemsPanelView(state: state)
             }
@@ -43,7 +43,7 @@ struct LumiEditorRootView: View {
         }
         .onAppear {
             // 激活左侧栏的 ProjectTree 插件
-            layoutVM.selectAgentSidebarTab(ProjectTreePlugin.id, reason: "LumiEditor appeared")
+            layoutVM.selectAgentSidebarTab(ProjectTreePlugin.id, reason: "Editor appeared")
 
             // 初始加载
             state.projectRootPath = projectVM.currentProject?.path
@@ -81,12 +81,12 @@ struct LumiEditorRootView: View {
     private var headerArea: some View {
         VStack(spacing: 0) {
             // 面包屑导航
-            LumiEditorBreadcrumbView(state: state)
+            EditorBreadcrumbView(state: state)
 
             GlassDivider()
 
             // 工具栏（紧凑模式）
-            LumiEditorToolbarView(state: state)
+            EditorToolbarView(state: state)
         }
         // 关键：添加背景色，确保覆盖下方的编辑器内容（如行号）
         .background(
@@ -102,7 +102,7 @@ struct LumiEditorRootView: View {
     @ViewBuilder
     private var editorContent: some View {
         if state.canPreview {
-            LumiSourceEditorView(state: state)
+            SourceEditorView(state: state)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .id(state.currentFileURL)  // 文件切换时重建编辑器
                 // 关键：裁剪溢出的内容，防止行号延伸到 header
@@ -195,6 +195,6 @@ struct LumiEditorRootView: View {
 // MARK: - Preview
 
 #Preview {
-    LumiEditorRootView()
+    EditorRootView()
         .inRootView()
 }

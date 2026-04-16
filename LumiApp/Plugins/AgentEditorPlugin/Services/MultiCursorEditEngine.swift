@@ -1,25 +1,25 @@
 import Foundation
 
-enum LumiMultiCursorOperation {
+enum MultiCursorOperation {
     case replaceSelection(String)
     case insert(String)
     case deleteBackward
 }
 
-struct LumiMultiCursorEditResult {
+struct MultiCursorEditResult {
     let text: String
-    let selections: [LumiMultiCursorSelection]
+    let selections: [MultiCursorSelection]
 }
 
 /// 多光标编辑引擎
 /// 以“从后往前”顺序应用编辑，避免前序编辑导致后续 range 偏移
-enum LumiMultiCursorEditEngine {
+enum MultiCursorEditEngine {
 
     static func apply(
         text: String,
-        selections: [LumiMultiCursorSelection],
-        operation: LumiMultiCursorOperation
-    ) -> LumiMultiCursorEditResult {
+        selections: [MultiCursorSelection],
+        operation: MultiCursorOperation
+    ) -> MultiCursorEditResult {
         guard !selections.isEmpty else {
             return .init(text: text, selections: [])
         }
@@ -30,7 +30,7 @@ enum LumiMultiCursorEditEngine {
             .map { normalized($0, maxLength: ns.length) }
             .sorted { $0.location > $1.location }
 
-        var newSelections: [LumiMultiCursorSelection] = []
+        var newSelections: [MultiCursorSelection] = []
 
         for sel in ordered {
             let safe = normalized(sel, maxLength: ns.length)
@@ -65,7 +65,7 @@ enum LumiMultiCursorEditEngine {
         return .init(text: buffer, selections: newSelections.sorted { $0.location < $1.location })
     }
 
-    private static func normalized(_ selection: LumiMultiCursorSelection, maxLength: Int) -> LumiMultiCursorSelection {
+    private static func normalized(_ selection: MultiCursorSelection, maxLength: Int) -> MultiCursorSelection {
         let location = min(max(0, selection.location), maxLength)
         let maxSelectable = max(0, maxLength - location)
         let length = min(max(0, selection.length), maxSelectable)
