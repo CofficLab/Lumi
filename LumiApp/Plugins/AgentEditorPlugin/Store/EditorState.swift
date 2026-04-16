@@ -6,6 +6,7 @@ import CodeEditSourceEditor
 import CodeEditTextView
 import CodeEditLanguages
 import LanguageServerProtocol
+import UniformTypeIdentifiers
 
 /// LSP 引用查询结果
 struct ReferenceResult: Identifiable, Equatable {
@@ -141,6 +142,9 @@ final class EditorState: ObservableObject {
     
     /// 当前文件是否可预览
     @Published var canPreview: Bool = false
+
+    /// 当前文件是否为二进制/非文本文件（需要用 QuickLook 预览而非代码编辑器）
+    @Published var isBinaryFile: Bool = false
     
     /// 文件扩展名
     @Published var fileExtension: String = ""
@@ -395,7 +399,7 @@ final class EditorState: ObservableObject {
                 
                 guard try isLikelyTextFile(url: url) else {
                     await MainActor.run { [weak self] in
-                        self?.resetState()
+                        self?.loadBinaryFile(from: loadingURL)
                     }
                     return
                 }
@@ -519,6 +523,7 @@ final class EditorState: ObservableObject {
         content = nil
         persistedContentHash = nil
         canPreview = false
+        isBinaryFile = false
         isEditable = true
         isTruncated = false
         fileExtension = ""
@@ -541,6 +546,52 @@ final class EditorState: ObservableObject {
         
         // 关闭 LSP 文档
         lspCoordinator.closeFile()
+    }
+    
+    /// 加载二进制/非文本文件进行预览
+    /// 不尝试解析内容，只设置文件元数据，供 QuickLook 预览使用
+    func loadBinaryFile(from url: URL) {
+        // 清理旧状态
+        saveTask?.cancel()
+        saveTask = nil
+        successClearTask?.cancel()
+        successClearTask = nil
+        cleanupFileWatcher()
+        lspCoordinator.closeFile()
+        
+        let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+        if isDirectory {
+            resetState()
+            return
+        }
+        
+        let fileSize = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+        
+        currentFileURL = url
+        content = nil
+        persistedContentHash = nil
+        canPreview = false
+        isBinaryFile = true
+        isEditable = false
+        isTruncated = false
+        fileExtension = url.pathExtension.lowercased()
+        fileName = url.lastPathComponent
+        hasUnsavedChanges = false
+        saveState = .idle
+        detectedLanguage = nil
+        cursorLine = 1
+        cursorColumn = 1
+        totalLines = 0
+        hoverText = nil
+        referenceResults = []
+        isReferencePanelPresented = false
+        problemDiagnostics = []
+        selectedProblemDiagnostic = nil
+        isProblemsPanelPresented = false
+        
+        // 计算文件大小显示信息
+        let sizeText = ByteCountFormatter.string(fromByteCount: Int64(fileSize), countStyle: .file)
+        print("📎 [Editor] 加载二进制文件: \(url.lastPathComponent), 大小: \(sizeText)")
     }
     
     // MARK: - Content Change Detection

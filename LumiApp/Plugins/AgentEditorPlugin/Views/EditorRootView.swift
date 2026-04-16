@@ -107,6 +107,10 @@ struct EditorRootView: View {
                 .id(state.currentFileURL)  // 文件切换时重建编辑器
                 // 关键：裁剪溢出的内容，防止行号延伸到 header
                 .clipped()
+        } else if state.isBinaryFile, let fileURL = state.currentFileURL {
+            // 二进制/非文本文件预览
+            NonTextFilePreviewView(fileURL: fileURL)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if projectVM.isFileSelected {
             unsupportedFileView
         }
