@@ -9,7 +9,7 @@ struct SettingsSidebarHeaderView: View {
             Spacer().frame(height: 50)
 
             // App 图标
-            LogoView(variant: .about)
+            LogoView(scene: .about)
                 .frame(width: 64, height: 64)
 
             // App 名称
