@@ -17,18 +17,9 @@ struct DeviceInfoStatusBarContentView: View {
                 .monospacedDigit()
                 .lineLimit(1)
                 .fixedSize()
-                .foregroundColor(cpuColor)
+                .foregroundColor(AppUI.Color.semantic.info)
         }
         .frame(width: 38)
-    }
-
-    // MARK: - Helpers
-
-    private var cpuColor: Color {
-        let value = viewModel.cpuUsage
-        if value < 60 { return .green }
-        if value < 85 { return .orange }
-        return .red
     }
 }
 
