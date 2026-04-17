@@ -38,7 +38,7 @@ final class MCPToolAdapter: AgentTool, @unchecked Sendable, SuperLog {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
-        if Self.verbose {
+        if AgentMCPToolsPlugin.verbose {
             AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 开始执行 MCP 工具: \(self.name)")
             AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 原始工具名: \(self.mcpTool.name)")
         }
@@ -49,7 +49,7 @@ final class MCPToolAdapter: AgentTool, @unchecked Sendable, SuperLog {
         do {
             let data = try JSONSerialization.data(withJSONObject: anyArguments)
             mcpArguments = try JSONDecoder().decode([String: Value].self, from: data)
-            if Self.verbose {
+            if AgentMCPToolsPlugin.verbose {
                 AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 参数数量: \(mcpArguments.count)")
             }
         } catch {
@@ -57,7 +57,7 @@ final class MCPToolAdapter: AgentTool, @unchecked Sendable, SuperLog {
             throw error
         }
 
-        if Self.verbose {
+        if AgentMCPToolsPlugin.verbose {
             AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 调用 client.callTool...")
         }
         let startTime = Date()
@@ -66,7 +66,7 @@ final class MCPToolAdapter: AgentTool, @unchecked Sendable, SuperLog {
             let result = try await client.callTool(name: mcpTool.name, arguments: mcpArguments)
             let duration = Date().timeIntervalSince(startTime)
 
-            if Self.verbose {
+            if AgentMCPToolsPlugin.verbose {
                 AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 工具调用成功 (耗时: \(String(format: "%.2f", duration))s)")
             }
 
@@ -100,7 +100,7 @@ final class MCPToolAdapter: AgentTool, @unchecked Sendable, SuperLog {
             }
             let output = outputParts.joined(separator: "\n")
 
-            if Self.verbose {
+            if AgentMCPToolsPlugin.verbose {
                 AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 返回内容长度: \(output.count) 字符")
             }
             return output
