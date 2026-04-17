@@ -2,7 +2,7 @@ import MagicKit
 import SwiftUI
 import Foundation
 import Combine
-import OSLog
+import os
 
 /// Time Status Plugin: Displays the current time in the status bar
 actor TimeStatusPlugin: SuperPlugin, SuperLog {
@@ -11,7 +11,7 @@ actor TimeStatusPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🕐"
 
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id: String = "TimeStatus"
     static let navigationId: String? = nil

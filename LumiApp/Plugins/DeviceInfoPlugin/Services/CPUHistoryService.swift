@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 import MagicKit
-import OSLog
+import os
 
 @MainActor
 class CPUHistoryService: ObservableObject, SuperLog {

@@ -38,8 +38,10 @@ final class MCPToolAdapter: AgentTool, @unchecked Sendable, SuperLog {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
-        AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 开始执行 MCP 工具: \(self.name)")
-        AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 原始工具名: \(self.mcpTool.name)")
+        if Self.verbose {
+            AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 开始执行 MCP 工具: \(self.name)")
+            AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 原始工具名: \(self.mcpTool.name)")
+        }
 
         let anyArguments: [String: Any] = arguments.mapValues { $0.value }
 
@@ -47,20 +49,26 @@ final class MCPToolAdapter: AgentTool, @unchecked Sendable, SuperLog {
         do {
             let data = try JSONSerialization.data(withJSONObject: anyArguments)
             mcpArguments = try JSONDecoder().decode([String: Value].self, from: data)
-            AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 参数数量: \(mcpArguments.count)")
+            if Self.verbose {
+                AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 参数数量: \(mcpArguments.count)")
+            }
         } catch {
             AgentMCPToolsPlugin.logger.error("\(self.t)[MCP] 参数转换失败: \(error.localizedDescription)")
             throw error
         }
 
-        AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 调用 client.callTool...")
+        if Self.verbose {
+            AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 调用 client.callTool...")
+        }
         let startTime = Date()
 
         do {
             let result = try await client.callTool(name: mcpTool.name, arguments: mcpArguments)
             let duration = Date().timeIntervalSince(startTime)
 
-            AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 工具调用成功 (耗时: \(String(format: "%.2f", duration))s)")
+            if Self.verbose {
+                AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 工具调用成功 (耗时: \(String(format: "%.2f", duration))s)")
+            }
 
             if result.isError ?? false {
                 let errorMessage = result.content.compactMap { content -> String? in
@@ -92,7 +100,9 @@ final class MCPToolAdapter: AgentTool, @unchecked Sendable, SuperLog {
             }
             let output = outputParts.joined(separator: "\n")
 
-            AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 返回内容长度: \(output.count) 字符")
+            if Self.verbose {
+                AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 返回内容长度: \(output.count) 字符")
+            }
             return output
         } catch {
             let duration = Date().timeIntervalSince(startTime)

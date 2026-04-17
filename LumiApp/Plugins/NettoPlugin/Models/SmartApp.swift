@@ -1,7 +1,7 @@
 import AppKit
 import Foundation
 import SwiftUI
-import OSLog
+import os
 
 struct SmartApp: Identifiable, Sendable, Equatable, Hashable {
     // MARK: - Properties
@@ -96,7 +96,7 @@ extension SmartApp {
 // MARK: - Static Properties & Helper Logic
 
 extension SmartApp {
-    private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.cofficlab.lumi", category: "SmartApp")
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.netto")
 
     /// Current running app list (deduplicated)
     static let appList: [SmartApp] = getRunningAppList().map {

@@ -1,5 +1,5 @@
 import SwiftUI
-import OSLog
+import os
 
 /// 设置按钮视图（状态栏左侧）
 struct SettingsButtonView: View {

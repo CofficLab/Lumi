@@ -115,16 +115,7 @@ private extension ConversationItemView {
 #Preview("会话项 - 默认状态") {
     ConversationItemView(
         conversation: Conversation.example(),
-        onDelete: { ConversationListPlugin.logger.info("\(ConversationListPlugin.t)删除") }
-    )
-    .frame(width: 280)
-    .padding()
-}
-
-#Preview("会话项 - 长标题") {
-    ConversationItemView(
-        conversation: Conversation.example(title: "这是一个非常长的会话标题，用于测试标题截断效果"),
-        onDelete: { ConversationListPlugin.logger.info("\(ConversationListPlugin.t)删除") }
+        onDelete: { if ConversationListPlugin.verbose { ConversationListPlugin.logger.info("\(ConversationListPlugin.t)删除") } }
     )
     .frame(width: 200)
     .padding()

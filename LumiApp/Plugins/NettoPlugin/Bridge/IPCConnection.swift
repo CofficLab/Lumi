@@ -12,7 +12,7 @@ import NetworkExtension
 /// The IPCConnection class is used by both the app and the system extension to communicate with each other
 class IPCConnection: NSObject, @unchecked Sendable {
     static let shared = IPCConnection()
-    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.cofficlab.lumi", category: "IPCConnection")
+    private let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.netto")
     
     var listener: NSXPCListener?
     var currentConnection: NSXPCConnection?

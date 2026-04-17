@@ -1,9 +1,9 @@
 import Foundation
-import OSLog
+import os
 
 class AppSettingRepo: ObservableObject, @unchecked Sendable {
     static let shared = AppSettingRepo()
-    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.cofficlab.lumi", category: "AppSettingRepo")
+    private let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.netto")
     
     @Published var settings: [String: AppSetting] = [:]
     

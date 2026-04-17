@@ -1,7 +1,7 @@
 import MagicKit
 import SwiftUI
 import Foundation
-import OSLog
+import os
 
 /// 在 Xcode 中打开项目插件
 ///
@@ -11,7 +11,7 @@ actor AgentOpenInXcodePlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "💻"
 
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id: String = "AgentOpenInXcode"
     static let displayName: String = String(localized: "Open in Xcode", table: "AgentOpenInXcode")

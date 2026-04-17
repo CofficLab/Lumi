@@ -1,7 +1,7 @@
 import MagicKit
 import SwiftUI
 import Foundation
-import OSLog
+import os
 
 /// 在浏览器中打开远程仓库插件
 ///
@@ -11,7 +11,7 @@ actor AgentOpenRemotePlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🌐"
 
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id: String = "AgentOpenRemote"
     static let displayName: String = String(localized: "Open Remote Repository", table: "AgentOpenRemote")

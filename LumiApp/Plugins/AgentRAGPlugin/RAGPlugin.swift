@@ -22,7 +22,7 @@ actor RAGPlugin: SuperPlugin, SuperLog {
     static let isConfigurable: Bool = false
     static var order: Int { 200 }
 
-    static let logger = Logger(subsystem: "com.coffic.lumi", category: "RAG")
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rag")
 
     nonisolated var instanceLabel: String { Self.id }
     static let shared = RAGPlugin()

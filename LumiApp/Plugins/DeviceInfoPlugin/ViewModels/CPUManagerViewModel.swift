@@ -1,6 +1,6 @@
 import Foundation
 import Combine
-import OSLog
+import os
 import MagicKit
 
 @MainActor

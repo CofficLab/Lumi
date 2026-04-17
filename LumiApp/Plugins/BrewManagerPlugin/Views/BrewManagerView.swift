@@ -1,4 +1,4 @@
-import OSLog
+import os
 import SwiftUI
 
 struct BrewManagerView: View {
