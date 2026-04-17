@@ -1,7 +1,7 @@
 import Foundation
 import LibGit2Swift
 import MagicKit
-import OSLog
+import os
 import SwiftUI
 
 /// Git 服务

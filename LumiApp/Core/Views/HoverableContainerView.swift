@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import AppKit
 
 /// 悬停协调器，用于管理多个悬停容器之间的互斥状态
 @MainActor
@@ -112,6 +113,7 @@ struct HoverableContainerView<Content: View, Detail: View>: View {
             }
             .popover(isPresented: $isPresented, arrowEdge: .leading) {
                 detailView
+                    .background(SpaceAwarePopoverWindowConfigurator())
                     .onHover { hovering in
                         coordinator.onHover(id: self.id, isHovering: hovering)
                     }
@@ -146,6 +148,26 @@ struct HoverableContainerView<Content: View, Detail: View>: View {
             } else {
                 EmptyView()
             }
+        }
+    }
+}
+
+/// 配置 SwiftUI popover 对应窗口的 Space 行为
+///
+/// 让详情视图在全屏 Space 中也能正常显示。
+private struct SpaceAwarePopoverWindowConfigurator: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        ConfigView()
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    private final class ConfigView: NSView {
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            guard let window else { return }
+            window.collectionBehavior.insert(.canJoinAllSpaces)
+            window.collectionBehavior.insert(.fullScreenAuxiliary)
         }
     }
 }

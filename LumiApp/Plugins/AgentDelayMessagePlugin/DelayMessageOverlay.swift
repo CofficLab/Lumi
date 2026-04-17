@@ -11,7 +11,7 @@ struct DelayMessageOverlay<Content: View>: View, SuperLog {
     nonisolated static var emoji: String { "⏳" }
     nonisolated static var verbose: Bool { DelayMessagePlugin.verbose }
     nonisolated static var logger: Logger {
-        Logger(subsystem: "com.coffic.lumi", category: "delay-message.overlay")
+        DelayMessagePlugin.logger
     }
 
     let content: Content

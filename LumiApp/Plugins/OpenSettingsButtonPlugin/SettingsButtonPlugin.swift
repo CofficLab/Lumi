@@ -1,7 +1,7 @@
 import MagicKit
 import SwiftUI
 import Foundation
-import OSLog
+import os
 
 /// Settings Button Plugin: Displays a settings button on the left side of the status bar
 actor SettingsButtonPlugin: SuperPlugin, SuperLog {
@@ -13,7 +13,7 @@ actor SettingsButtonPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "⚙️"
 
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id: String = "SettingsButton"
     static let navigationId: String? = nil

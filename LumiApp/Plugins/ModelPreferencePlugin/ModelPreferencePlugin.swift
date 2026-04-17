@@ -9,7 +9,7 @@ actor ModelPreferencePlugin: SuperPlugin, SuperLog {
     nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = false
     /// 专用 Logger
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "model-preference.plugin")
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.model-preference")
 
     static let id = "ModelPreference"
     static let navigationId: String? = nil

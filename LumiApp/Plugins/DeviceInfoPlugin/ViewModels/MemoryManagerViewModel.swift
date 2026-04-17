@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 import MagicKit
-import OSLog
+import os
 
 @MainActor
 class MemoryManagerViewModel: ObservableObject, SuperLog {

@@ -15,7 +15,7 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
     nonisolated static var verbose: Bool { ModelPreferencePlugin.verbose }
     /// 专用 Logger
     nonisolated static var logger: Logger {
-        Logger(subsystem: "com.coffic.lumi", category: "model-preference.root-view")
+        ModelPreferencePlugin.logger
     }
 
     let content: Content

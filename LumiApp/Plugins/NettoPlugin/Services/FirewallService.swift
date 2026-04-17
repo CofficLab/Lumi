@@ -1,7 +1,7 @@
 import Foundation
 @preconcurrency import NetworkExtension
 import SystemExtensions
-import OSLog
+import os
 import AppKit
 import SwiftUI
 
@@ -16,7 +16,7 @@ enum FilterStatus: String, CaseIterable {
 
 class FirewallService: NSObject, ObservableObject, @unchecked Sendable {
     static let shared = FirewallService()
-    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.cofficlab.lumi", category: "FirewallService")
+    private let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.netto")
     
     @Published var status: FilterStatus = .indeterminate
     @Published var events: [FirewallEvent] = []
