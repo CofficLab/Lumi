@@ -3,28 +3,6 @@ import MagicKit
 import SwiftUI
 
 /// 状态栏控制器
-///
-/// 负责管理 macOS 菜单栏（状态栏）图标和弹出窗口。
-///
-/// ## 功能概述
-///
-/// - **图标管理**: 根据应用状态显示不同样式的状态栏图标
-/// - **弹窗控制**: 点击图标显示/隐藏弹出窗口
-/// - **插件集成**: 集成各插件提供的状态栏内容视图和弹窗视图
-/// - **事件处理**: 处理应用失去焦点、窗口变化等事件
-///
-/// ## 视图结构
-///
-/// ```text
-/// 状态栏图标
-///     │
-///     └── 点击 ──→ 弹出窗口 (NSPopover)
-///                     │
-///                     ├── 插件提供的弹窗视图 (getStatusBarPopupViews)
-///                     ├── 显示主窗口按钮
-///                     ├── 检查更新按钮
-///                     └── 退出按钮
-/// ```
 @MainActor
 class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
     /// 日志标识符
@@ -32,6 +10,7 @@ class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
     
     /// 是否启用详细日志
     nonisolated static let verbose: Bool = false
+    
     // MARK: - Properties
 
     /// 系统状态栏项
@@ -63,12 +42,24 @@ class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
     /// 点击状态栏图标时显示的弹窗。
     /// 使用 NSPopover 实现，行为为 transient（点击外部自动关闭）。
     private var popover: NSPopover?
+    
+    /// 最近一次弹窗显示时间
+    ///
+    /// 用于避免在全屏/Space 切换时，刚显示就被 didResignActive 立即关闭。
+    private var lastPopoverShownAt: Date?
 
     /// 插件 VM弱引用
     ///
     /// 弱引用避免循环引用。
     /// 用于获取插件提供的状态栏相关视图。
     private weak var pluginProvider: PluginVM?
+    
+    /// 调整 popover 窗口的空间行为，避免在全屏 Space 下不可见
+    private func configurePopoverWindowForSpaces() {
+        guard let popoverWindow = popover?.contentViewController?.view.window else { return }
+        popoverWindow.collectionBehavior.insert(.canJoinAllSpaces)
+        popoverWindow.collectionBehavior.insert(.fullScreenAuxiliary)
+    }
 
     // MARK: - Public Methods
 
@@ -255,6 +246,10 @@ class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
     ///
     /// 当用户切换到其他应用时，关闭弹窗。
     @objc private func handleApplicationResignedActive() {
+        if let shownAt = lastPopoverShownAt,
+           Date().timeIntervalSince(shownAt) < 0.35 {
+            return
+        }
         closePopover()
     }
 
@@ -291,22 +286,28 @@ class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
     private func showPopover() {
         guard let button = statusItem?.button else { return }
 
-        // 如果弹窗不存在，创建它
-        if popover == nil {
-            popover = NSPopover()
-            popover?.contentSize = NSSize(width: 280, height: 400)
-            // transient: 点击弹窗外部区域会自动关闭
-            popover?.behavior = .transient
-            // 启用动画效果
-            popover?.animates = true
-            popover?.delegate = self
-            popover?.contentViewController = NSHostingController(
-                rootView: createPopupView()
-            )
-        }
+        // 在多屏/全屏切换后复用旧实例可能导致弹窗位置落在错误屏幕，故每次都重建
+        closePopover()
+        popover = NSPopover()
+        popover?.contentSize = NSSize(width: 280, height: 400)
+        // transient: 点击弹窗外部区域会自动关闭
+        popover?.behavior = .transient
+        // 启用动画效果
+        popover?.animates = true
+        popover?.delegate = self
+        popover?.contentViewController = NSHostingController(
+            rootView: createPopupView()
+        )
 
         // 显示弹窗，锚定在按钮底部
         popover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        configurePopoverWindowForSpaces()
+        lastPopoverShownAt = Date()
+        
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.configurePopoverWindowForSpaces()
+        }
 
         // 添加全局事件监听器，检测点击外部区域
         addGlobalEventMonitor()
@@ -320,6 +321,11 @@ class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
     ///
     /// 监听全局鼠标点击事件，用于检测用户点击其他应用。
     private var eventMonitor: Any?
+    
+    /// 延迟安装全局监听的任务
+    ///
+    /// 避免“触发弹窗的同一次点击”立即被全局监听捕获并关闭弹窗。
+    private var eventMonitorInstallTask: DispatchWorkItem?
 
     /// 添加全局事件监听
     ///
@@ -327,19 +333,29 @@ class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
     private func addGlobalEventMonitor() {
         // 先移除旧的监听器
         removeGlobalEventMonitor()
+        
+        eventMonitorInstallTask?.cancel()
+        let task = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            // 如果这时弹窗已不存在或已关闭，就不再安装监听器
+            guard let popover = self.popover, popover.isShown else { return }
 
-        // 监听全局鼠标点击事件
-        let globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
-            Task { @MainActor in
-                self?.closePopover()
+            // 监听全局鼠标点击事件
+            let globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+                Task { @MainActor in
+                    self?.closePopover()
+                }
             }
+            self.eventMonitor = globalMonitor
         }
-
-        self.eventMonitor = globalMonitor
+        eventMonitorInstallTask = task
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: task)
     }
 
     /// 移除全局事件监听
     private func removeGlobalEventMonitor() {
+        eventMonitorInstallTask?.cancel()
+        eventMonitorInstallTask = nil
         if let monitor = eventMonitor {
             NSEvent.removeMonitor(monitor)
             eventMonitor = nil
@@ -353,9 +369,6 @@ class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
     /// - Parameter popover: 弹窗实例
     /// - Returns: 是否允许关闭
     func popoverShouldClose(_ popover: NSPopover) -> Bool {
-        if Self.verbose {
-            AppLogger.core.info("\(self.t)Popover 应该关闭")
-        }
         return true
     }
 
@@ -363,9 +376,6 @@ class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
     ///
     /// 清理全局事件监听器。
     func popoverDidClose(_ notification: Notification) {
-        if Self.verbose {
-            AppLogger.core.info("\(self.t)Popover 已关闭")
-        }
         removeGlobalEventMonitor()
     }
 
