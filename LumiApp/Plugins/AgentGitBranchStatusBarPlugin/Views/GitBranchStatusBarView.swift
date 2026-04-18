@@ -10,13 +10,13 @@ import MagicKit
 struct GitBranchStatusBarView: View {
     @EnvironmentObject private var projectVM: ProjectVM
     @State private var branch: String?
-    @State private var gitInfo: GitInfo?
 
     var body: some View {
         Group {
             if let branch {
                 StatusBarHoverContainer(
                     detailView: GitBranchPickerPanel(),
+                    popoverWidth: 500,
                     id: "git-branch-status"
                 ) {
                     HStack(spacing: 6) {
@@ -47,16 +47,13 @@ struct GitBranchStatusBarView: View {
         let path = projectVM.currentProjectPath
         guard !path.isEmpty else {
             branch = nil
-            gitInfo = nil
             return
         }
 
         Task.detached { [path] in
             let result = GitBranchService.currentBranch(at: path)
-            let info = GitBranchService.getGitInfo(at: path)
             await MainActor.run {
                 self.branch = result
-                self.gitInfo = info
             }
         }
     }

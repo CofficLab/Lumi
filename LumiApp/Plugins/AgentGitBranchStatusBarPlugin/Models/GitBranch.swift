@@ -26,27 +26,3 @@ enum GitError: LocalizedError {
         }
     }
 }
-
-/// Git 分支模型
-struct GitBranch: Identifiable, Equatable {
-    let id = UUID()
-    let name: String
-    let isCurrent: Bool
-    let isRemote: Bool
-    let lastCommitSubject: String?
-    let lastCommitDate: Date?
-
-    /// 显示名称（远程分支去掉 origin/ 前缀）
-    var displayName: String {
-        if isRemote, let range = name.range(of: "/") {
-            return String(name[range.upperBound...])
-        }
-        return name
-    }
-
-    /// 远程名称（如 origin）
-    var remoteName: String? {
-        guard isRemote, let range = name.range(of: "/") else { return nil }
-        return String(name[..<range.lowerBound])
-    }
-}

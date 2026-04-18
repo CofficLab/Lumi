@@ -3,11 +3,11 @@ import MagicKit
 
 /// Git 分支详情视图（在 popover 中显示）
 struct GitBranchDetailView: View {
-    let gitInfo: GitInfo?
+    let branchName: String?
+    let isDirty: Bool?
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-            // 标题
             HStack(spacing: DesignTokens.Spacing.sm) {
                 Image(systemName: "arrow.triangle.branch")
                     .font(.system(size: 16))
@@ -22,14 +22,10 @@ struct GitBranchDetailView: View {
 
             Divider()
 
-            if let info = gitInfo {
-                // Git 信息网格
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                    GitInfoRow(label: String(localized: "Current Branch", table: "GitBranchStatusBar"), value: info.branch)
-                    GitInfoRow(label: String(localized: "Remote", table: "GitBranchStatusBar"), value: info.remote)
-                    GitInfoRow(label: String(localized: "Last Commit", table: "GitBranchStatusBar"), value: info.lastCommit)
-                    GitInfoRow(label: String(localized: "Author", table: "GitBranchStatusBar"), value: info.author)
+            if let branch = branchName {
+                GitInfoRow(label: String(localized: "Current Branch", table: "GitBranchStatusBar"), value: branch)
 
+                if let dirty = isDirty {
                     HStack(spacing: DesignTokens.Spacing.sm) {
                         Text(String(localized: "Status", table: "GitBranchStatusBar"))
                             .font(.system(size: 12))
@@ -38,10 +34,10 @@ struct GitBranchDetailView: View {
 
                         HStack(spacing: 4) {
                             Circle()
-                                .fill(info.isDirty ? DesignTokens.Color.semantic.warning : DesignTokens.Color.semantic.success)
+                                .fill(dirty ? DesignTokens.Color.semantic.warning : DesignTokens.Color.semantic.success)
                                 .frame(width: 6, height: 6)
 
-                            Text(info.isDirty
+                            Text(dirty
                                 ? String(localized: "Uncommitted Changes", table: "GitBranchStatusBar")
                                 : String(localized: "Clean Working Tree", table: "GitBranchStatusBar"))
                                 .font(.system(size: 12))
@@ -94,12 +90,6 @@ struct GitInfoRow: View {
 // MARK: - 预览
 
 #Preview("Detail View") {
-    GitBranchDetailView(gitInfo: GitInfo(
-        branch: "main",
-        remote: "origin",
-        lastCommit: "Fix status bar hover effect",
-        author: "Developer",
-        isDirty: true
-    ))
-    .frame(width: 300)
+    GitBranchDetailView(branchName: "main", isDirty: true)
+        .frame(width: 300)
 }

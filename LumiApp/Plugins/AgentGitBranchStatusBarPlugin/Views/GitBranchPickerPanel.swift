@@ -1,32 +1,47 @@
 import SwiftUI
 import MagicKit
+import LibGit2Swift
 
 /// Git 分支切换面板
 struct GitBranchPickerPanel: View {
     @EnvironmentObject private var projectVM: ProjectVM
+    @Environment(\.colorScheme) private var colorScheme
 
-    @State private var localBranches: [GitBranch] = []
-    @State private var remoteBranches: [GitBranch] = []
+    @State private var branches: [GitBranch] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var searchText = ""
-    @State private var isForceCheckout = false
-    @State private var showRemoteBranches = false
     @State private var performingAction: String?
 
     @State private var showCreateBranchAlert = false
     @State private var createBranchName = ""
 
-    // MARK: - Filtered Data
+    // MARK: - Computed
 
-    var filteredLocalBranches: [GitBranch] {
-        guard !searchText.isEmpty else { return localBranches }
-        return localBranches.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+    /// 当前分支
+    private var currentBranch: GitBranch? {
+        branches.first { $0.isCurrent }
     }
 
-    var filteredRemoteBranches: [GitBranch] {
-        guard !searchText.isEmpty else { return remoteBranches }
-        return remoteBranches.filter { $0.displayName.localizedCaseInsensitiveContains(searchText) }
+    /// 非当前分支（搜索过滤后）
+    private var filteredBranches: [GitBranch] {
+        let others = branches.filter { !$0.isCurrent }
+        guard !searchText.isEmpty else { return others }
+        return others.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+    }
+
+    // MARK: - Adaptive Colors
+
+    private var currentBranchBackground: Color {
+        colorScheme == .light
+            ? DesignTokens.Color.semantic.primary.opacity(0.08)
+            : DesignTokens.Color.semantic.primary.opacity(0.15)
+    }
+
+    private var footerBackground: Color {
+        colorScheme == .light
+            ? Color(hex: "F5F5F7")
+            : DesignTokens.Color.basePalette.surfaceBackground
     }
 
     // MARK: - Body
@@ -34,71 +49,71 @@ struct GitBranchPickerPanel: View {
     var body: some View {
         VStack(spacing: 0) {
             headerSection
-            Divider()
 
             if isLoading {
+                Divider()
                 loadingView
             } else if let error = errorMessage {
+                Divider()
                 errorView(message: error)
             } else {
                 contentSection
             }
 
-            Divider()
-            footerSection
+            if let action = performingAction {
+                Divider()
+                actionFooterView(message: action)
+            }
         }
-        .frame(width: 320)
         .task { await loadBranches() }
         .alert(isPresented: $showCreateBranchAlert) {
             createBranchAlert
         }
+        .frame(height: 500)
     }
 
     // MARK: - Header
 
     private var headerSection: some View {
-        VStack(spacing: DesignTokens.Spacing.sm) {
-            HStack {
-                Image(systemName: "arrow.triangle.branch")
-                    .font(.system(size: 14))
-                    .foregroundColor(DesignTokens.Color.semantic.primary)
+        HStack(spacing: DesignTokens.Spacing.sm) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 12))
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-                Text(String(localized: "Switch Branch", table: "GitBranchStatusBar"))
-                    .font(.system(size: 14, weight: .semibold))
+            TextField(String(localized: "Search branches…", table: "GitBranchStatusBar"), text: $searchText)
+                .font(.system(size: 12))
+                .textFieldStyle(.plain)
+                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
-                Spacer()
-
-                if !isLoading {
-                    Button(action: { Task { await loadBranches() } }) {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 12))
-                    }
-                    .buttonStyle(.plain)
-                    .help(String(localized: "Refresh", table: "GitBranchStatusBar"))
+            if !searchText.isEmpty {
+                Button(action: { searchText = "" }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 12))
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
+                .buttonStyle(.plain)
             }
 
-            HStack(spacing: DesignTokens.Spacing.sm) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 12))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            Divider()
+                .frame(height: 14)
 
-                TextField(String(localized: "Search branches…", table: "GitBranchStatusBar"), text: $searchText)
-                    .font(.system(size: 12))
-                    .textFieldStyle(.plain)
-
-                if !searchText.isEmpty {
-                    Button(action: { searchText = "" }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 12))
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                    }
-                    .buttonStyle(.plain)
+            if !isLoading {
+                Button(action: { Task { await loadBranches() } }) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 12))
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
+                .buttonStyle(.plain)
+                .help(String(localized: "Refresh", table: "GitBranchStatusBar"))
+
+                Button(action: { showCreateBranchAlert = true }) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 12))
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                }
+                .buttonStyle(.plain)
+                .help(String(localized: "New Branch", table: "GitBranchStatusBar"))
             }
-            .padding(DesignTokens.Spacing.sm)
-            .background(DesignTokens.Color.basePalette.surfaceBackground)
-            .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm))
         }
         .padding(.horizontal, DesignTokens.Spacing.md)
         .padding(.vertical, DesignTokens.Spacing.sm)
@@ -109,122 +124,104 @@ struct GitBranchPickerPanel: View {
     private var contentSection: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                branchSectionHeader(
-                    title: String(localized: "Local Branches", table: "GitBranchStatusBar"),
-                    count: localBranches.count
-                )
+                // 当前分支
+                if let current = currentBranch {
+                    Text(String(localized: "Current Branch", table: "GitBranchStatusBar"))
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
-                if filteredLocalBranches.isEmpty {
-                    emptyStateView(icon: "folder", message: String(localized: "No branches found", table: "GitBranchStatusBar"))
-                } else {
+                    currentBranchRow(branch: current)
+                        .padding(.bottom, DesignTokens.Spacing.sm)
+                }
+
+                // 其他分支
+                if !filteredBranches.isEmpty {
+                    Divider().padding(.vertical, DesignTokens.Spacing.xs)
+
+                    Text(String(localized: "Other Branches", table: "GitBranchStatusBar"))
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+
                     VStack(spacing: 2) {
-                        ForEach(filteredLocalBranches) { branch in
+                        ForEach(filteredBranches) { branch in
                             branchRow(branch: branch)
                         }
                     }
                 }
 
-                if !remoteBranches.isEmpty {
-                    Divider().padding(.vertical, DesignTokens.Spacing.xs)
-
-                    branchSectionHeader(
-                        title: String(localized: "Remote Branches", table: "GitBranchStatusBar"),
-                        count: remoteBranches.count,
-                        isCollapsible: true
-                    )
-
-                    if showRemoteBranches {
-                        if filteredRemoteBranches.isEmpty {
-                            emptyStateView(icon: "globe", message: String(localized: "No remote branches found", table: "GitBranchStatusBar"))
-                        } else {
-                            VStack(spacing: 2) {
-                                ForEach(filteredRemoteBranches) { branch in
-                                    remoteBranchRow(branch: branch)
-                                }
-                            }
-                        }
-                    }
+                if currentBranch == nil && filteredBranches.isEmpty {
+                    emptyStateView(icon: "folder", message: String(localized: "No branches found", table: "GitBranchStatusBar"))
                 }
             }
-            .padding(.horizontal, DesignTokens.Spacing.md)
-            .padding(.bottom, DesignTokens.Spacing.md)
         }
     }
 
     // MARK: - Footer
 
-    private var footerSection: some View {
-        HStack(spacing: DesignTokens.Spacing.sm) {
-            Button(action: { showCreateBranchAlert = true }) {
-                Label(String(localized: "New Branch", table: "GitBranchStatusBar"), systemImage: "plus")
-                    .font(.system(size: 12))
-            }
-            .buttonStyle(.plain)
-
+    /// 操作状态栏：仅在切换/创建分支时显示，空闲时隐藏
+    private func actionFooterView(message: String) -> some View {
+        HStack {
+            ProgressView()
+                .scaleEffect(0.7)
+            Text(message)
+                .font(.system(size: 11))
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             Spacer()
-
-            if let performingAction {
-                Text(performingAction)
-                    .font(.system(size: 11))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-            }
         }
-        .padding(.horizontal, DesignTokens.Spacing.md)
-        .padding(.vertical, DesignTokens.Spacing.sm)
-        .background(DesignTokens.Color.basePalette.surfaceBackground)
+        .background(footerBackground)
     }
 
     // MARK: - Subviews
 
-    private func branchSectionHeader(title: String, count: Int, isCollapsible: Bool = false) -> some View {
-        HStack {
-            Text("\(title) (\(count))")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                .textCase(.uppercase)
+    /// 当前分支行（不可点击）
+    private func currentBranchRow(branch: GitBranch) -> some View {
+        HStack(spacing: DesignTokens.Spacing.sm) {
+            Image(systemName: "checkmark")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(DesignTokens.Color.semantic.primary)
+                .frame(width: 16, alignment: .center)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(branch.name)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(DesignTokens.Color.semantic.primary)
+                    .lineLimit(1)
+
+                if !branch.latestCommitMessage.isEmpty {
+                    Text(branch.latestCommitMessage)
+                        .font(.system(size: 11))
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .lineLimit(1)
+                }
+            }
 
             Spacer()
-
-            if isCollapsible {
-                Button(action: { showRemoteBranches.toggle() }) {
-                    Image(systemName: showRemoteBranches ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 10))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                }
-                .buttonStyle(.plain)
-            }
         }
-        .padding(.top, DesignTokens.Spacing.xs)
+        .padding(.horizontal, DesignTokens.Spacing.sm)
+        .padding(.vertical, DesignTokens.Spacing.xs)
+        .background(currentBranchBackground)
+        .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm))
     }
 
+    /// 可切换分支行
     private func branchRow(branch: GitBranch) -> some View {
         Button(action: {
-            if !branch.isCurrent {
-                Task { await performCheckout(branch: branch.name) }
-            }
+            Task { await performCheckout(branch: branch.name) }
         }) {
             HStack(spacing: DesignTokens.Spacing.sm) {
-                if branch.isCurrent {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 12))
-                        .foregroundColor(DesignTokens.Color.semantic.primary)
-                        .frame(width: 16)
-                } else {
-                    Image(systemName: "circle")
-                        .font(.system(size: 12))
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                        .frame(width: 16)
-                }
+                Image(systemName: "arrow.triangle.branch")
+                    .font(.system(size: 12))
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                    .frame(width: 16, alignment: .center)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(branch.name)
-                        .font(.system(size: 13, weight: branch.isCurrent ? .medium : .regular))
-                        .foregroundColor(branch.isCurrent
-                            ? DesignTokens.Color.semantic.primary
-                            : DesignTokens.Color.semantic.textPrimary)
+                        .font(.system(size: 13))
+                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .lineLimit(1)
 
-                    if let subject = branch.lastCommitSubject {
-                        Text(subject)
+                    if !branch.latestCommitMessage.isEmpty {
+                        Text(branch.latestCommitMessage)
                             .font(.system(size: 11))
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                             .lineLimit(1)
@@ -232,59 +229,12 @@ struct GitBranchPickerPanel: View {
                 }
 
                 Spacer()
-
-                if let date = branch.lastCommitDate {
-                    Text(date.relativeFormat)
-                        .font(.system(size: 10))
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                }
-            }
-            .padding(.horizontal, DesignTokens.Spacing.sm)
-            .padding(.vertical, DesignTokens.Spacing.xs)
-            .background(branch.isCurrent ? DesignTokens.Color.semantic.primary.opacity(0.08) : Color.clear)
-            .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm))
-        }
-        .buttonStyle(.plain)
-        .disabled(performingAction != nil)
-    }
-
-    private func remoteBranchRow(branch: GitBranch) -> some View {
-        Button(action: {
-            Task { await performRemoteCheckout(branch: branch.name) }
-        }) {
-            HStack(spacing: DesignTokens.Spacing.sm) {
-                Image(systemName: "arrow.down.circle")
-                    .font(.system(size: 12))
-                    .foregroundColor(DesignTokens.Color.semantic.info)
-                    .frame(width: 16)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(branch.displayName)
-                        .font(.system(size: 13))
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-
-                    if let remoteName = branch.remoteName {
-                        Text(remoteName)
-                            .font(.system(size: 10))
-                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                    }
-                }
-
-                Spacer()
-
-                if let subject = branch.lastCommitSubject {
-                    Text(subject)
-                        .font(.system(size: 11))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                        .lineLimit(1)
-                }
             }
             .padding(.horizontal, DesignTokens.Spacing.sm)
             .padding(.vertical, DesignTokens.Spacing.xs)
             .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm))
         }
         .buttonStyle(.plain)
-        .help(String(localized: "Checkout as tracking branch", table: "GitBranchStatusBar"))
         .disabled(performingAction != nil)
     }
 
@@ -350,45 +300,37 @@ struct GitBranchPickerPanel: View {
 
     // MARK: - Actions
 
-    /// Result types for detached tasks
-    private struct BranchLoadResult {
-        let branches: [GitBranch]
-        let remote: [GitBranch]
-        let error: String?
-    }
-
-    private struct ActionResult {
-        let error: String?
-    }
-
     private func loadBranches() async {
         isLoading = true
         errorMessage = nil
 
         let path = projectVM.currentProjectPath
+        guard !path.isEmpty else {
+            isLoading = false
+            return
+        }
 
-        let result: BranchLoadResult = await Task.detached {
-            guard !path.isEmpty else {
-                return BranchLoadResult(branches: [], remote: [], error: String(localized: "No project path", table: "GitBranchStatusBar"))
-            }
-
+        let branchNames: [(name: String, isCurrent: Bool, message: String)] = await Task.detached {
             let branches = GitBranchService.listLocalBranches(at: path)
-            let remote = GitBranchService.listRemoteBranches(at: path)
-            return BranchLoadResult(branches: branches, remote: remote, error: nil)
+            return branches.map { (name: $0.name, isCurrent: $0.isCurrent, message: $0.latestCommitMessage) }
         }.value
 
-        await MainActor.run {
-            isLoading = false
-            if let error = result.error {
-                errorMessage = error
-            } else {
-                localBranches = result.branches.sorted { a, b in
-                    if a.isCurrent { return true }
-                    if b.isCurrent { return false }
-                    return a.name < b.name
-                }
-                remoteBranches = result.remote.sorted { $0.name < $1.name }
-            }
+        let branches = branchNames.map { info -> GitBranch in
+            GitBranch(
+                id: info.name,
+                name: info.name,
+                isCurrent: info.isCurrent,
+                upstream: nil,
+                latestCommitHash: "",
+                latestCommitMessage: info.message
+            )
+        }
+
+        isLoading = false
+        if branches.isEmpty {
+            errorMessage = String(localized: "No branches found", table: "GitBranchStatusBar")
+        } else {
+            self.branches = branches
         }
     }
 
@@ -397,47 +339,18 @@ struct GitBranchPickerPanel: View {
         performingAction = String(localized: "Switching to \(branch)…", table: "GitBranchStatusBar")
         errorMessage = nil
 
-        let result: ActionResult = await Task.detached {
+        let error: String? = await Task.detached {
             do {
-                try GitBranchService.checkout(branch: branch, at: path, force: false)
-                return ActionResult(error: nil)
+                try GitBranchService.checkout(branch: branch, at: path)
+                return nil
             } catch {
-                return ActionResult(error: error.localizedDescription)
+                return error.localizedDescription
             }
         }.value
 
         await MainActor.run {
             performingAction = nil
-            if let error = result.error {
-                if error.contains("stash") || error.contains("commit") || error.contains("uncommitted") {
-                    isForceCheckout = true
-                    errorMessage = String(localized: "Uncommitted changes. Force checkout?", table: "GitBranchStatusBar")
-                } else {
-                    errorMessage = error
-                }
-            } else {
-                Task { await loadBranches() }
-            }
-        }
-    }
-
-    private func performRemoteCheckout(branch: String) async {
-        let path = projectVM.currentProjectPath
-        performingAction = String(localized: "Creating tracking branch…", table: "GitBranchStatusBar")
-        errorMessage = nil
-
-        let result: ActionResult = await Task.detached {
-            do {
-                try GitBranchService.checkoutRemoteBranch(branch, at: path)
-                return ActionResult(error: nil)
-            } catch {
-                return ActionResult(error: error.localizedDescription)
-            }
-        }.value
-
-        await MainActor.run {
-            performingAction = nil
-            if let error = result.error {
+            if let error {
                 errorMessage = error
             } else {
                 Task { await loadBranches() }
@@ -450,33 +363,23 @@ struct GitBranchPickerPanel: View {
         performingAction = String(localized: "Creating branch \(name)…", table: "GitBranchStatusBar")
         errorMessage = nil
 
-        let result: ActionResult = await Task.detached {
+        let error: String? = await Task.detached {
             do {
                 try GitBranchService.createBranch(name, at: path)
-                return ActionResult(error: nil)
+                return nil
             } catch {
-                return ActionResult(error: error.localizedDescription)
+                return error.localizedDescription
             }
         }.value
 
         await MainActor.run {
             performingAction = nil
-            if let error = result.error {
+            if let error {
                 errorMessage = error
             } else {
                 Task { await loadBranches() }
             }
         }
-    }
-}
-
-// MARK: - Date Extension
-
-private extension Date {
-    var relativeFormat: String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: self, relativeTo: Date())
     }
 }
 
