@@ -215,6 +215,9 @@ struct FileNodeView: View {
         }
 
         Divider()
+        Button { addToConversation() } label: {
+            Label(String(localized: "Add to Conversation", table: "ProjectTree"), systemImage: "bubble.left.and.bubble.right")
+        }
         Button { openInFinder() } label: { Label(String(localized: "Reveal in Finder", table: "ProjectTree"), systemImage: "finder") }
         Button { openInVSCode() } label: { Label(String(localized: "Open in VS Code", table: "ProjectTree"), systemImage: "chevron.left.forwardslash.chevron.right") }
         Button { openInTerminal() } label: { Label(String(localized: "Open in Terminal", table: "ProjectTree"), systemImage: "terminal") }
@@ -348,6 +351,11 @@ extension FileNodeView {
 
     private func copyPath() {
         ProjectTreeFileService.copyPath(url)
+    }
+
+    /// 与拖入输入区相同：图片走附件，其它文件插入路径
+    private func addToConversation() {
+        NotificationCenter.postFileDroppedToChat(fileURL: url)
     }
 }
 
