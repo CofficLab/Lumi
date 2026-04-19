@@ -17,13 +17,6 @@ Lumi 是一款面向 macOS 的 AI 驱动的个人桌面助理应用。
 ```mermaid
 graph TB
     subgraph "Lumi App"
-        subgraph "Plugins 插件层"
-            B1[Agent 工具插件<br/>文件树/终端/MCP]
-            B2[系统管理插件<br/>CPU/内存/磁盘]
-            B3[开发工具插件<br/>数据库/Docker/Brew]
-            B4[效率工具插件<br/>剪贴板/文本]
-        end
-        
         subgraph "Core 核心层"
             A1[Bootstrap<br/>应用启动]
             A2[Services<br/>LLM/工具/任务]
@@ -33,18 +26,25 @@ graph TB
             A6[Contact<br/>插件协议]
         end
         
+        subgraph "Plugins 插件层"
+            B1[Agent 工具插件<br/>文件树/终端/MCP]
+            B2[系统管理插件<br/>CPU/内存/磁盘]
+            B3[开发工具插件<br/>数据库/Docker/Brew]
+            B4[效率工具插件<br/>剪贴板/文本]
+        end
+        
         subgraph "UI 界面层"
             C1[Themes<br/>主题系统]
             C2[DesignSystem<br/>设计系统]
         end
     end
     
-    B1 --> A6
-    B2 --> A6
-    B3 --> A6
-    B4 --> A6
-    B1 --> A2
-    C2 --> C1
+    A6 --> B1
+    A6 --> B2
+    A6 --> B3
+    A6 --> B4
+    A2 --> B1
+    C1 --> C2
 ```
 
 ### 插件系统

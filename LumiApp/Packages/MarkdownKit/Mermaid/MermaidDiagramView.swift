@@ -79,7 +79,28 @@ public struct MermaidDiagramView: View {
             )
 
             await MainActor.run {
-                renderedImage = image
+                if let image, let cgImage = image.cgImage {
+                    let size = image.size
+                    guard size.width > 0, size.height > 0 else {
+                        renderedImage = image
+                        renderError = nil
+                        return
+                    }
+                    // macOS bitmap path in BeautifulMermaid omits the Y flip that `MermaidLayer.renderImage` applies.
+                    let corrected = NSImage(size: size)
+                    corrected.lockFocus()
+                    defer { corrected.unlockFocus() }
+                    if let cg = NSGraphicsContext.current?.cgContext {
+                        cg.translateBy(x: 0, y: size.height)
+                        cg.scaleBy(x: 1, y: -1)
+                        cg.draw(cgImage, in: CGRect(origin: .zero, size: size))
+                        renderedImage = corrected
+                    } else {
+                        renderedImage = image
+                    }
+                } else {
+                    renderedImage = image
+                }
                 renderError = nil
             }
         } catch {
