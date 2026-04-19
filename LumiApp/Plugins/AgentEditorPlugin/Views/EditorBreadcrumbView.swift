@@ -210,7 +210,7 @@ struct EditorBreadcrumbView: View {
         .buttonStyle(.plain)
         .help(String(localized: "Preview Markdown", table: "LumiEditor"))
         .popover(isPresented: $isMarkdownPreviewPresented, arrowEdge: .bottom) {
-            MarkdownPreviewPopover(state: state)
+            MarkdownPreview(state: state)
         }
     }
 

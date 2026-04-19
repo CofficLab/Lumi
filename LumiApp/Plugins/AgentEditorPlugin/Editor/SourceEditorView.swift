@@ -141,8 +141,10 @@ struct SourceEditorView: View {
 
     /// 首次出现时初始化协调器和配置缓存
     private func initializeCoordinators() {
+        print("🔧 [AutoSave] initializeCoordinators | textCoordinator=\(textCoordinator != nil) | cursorCoordinator=\(cursorCoordinator != nil) | contextMenuCoordinator=\(contextMenuCoordinator != nil) | content=\(state.content != nil) | fileURL=\(state.currentFileURL?.lastPathComponent ?? "nil")")
         if textCoordinator == nil {
             textCoordinator = EditorCoordinator(state: state)
+            print("🔧 [AutoSave] 创建了新的 EditorCoordinator")
         }
         if cursorCoordinator == nil {
             cursorCoordinator = CursorCoordinator(state: state)

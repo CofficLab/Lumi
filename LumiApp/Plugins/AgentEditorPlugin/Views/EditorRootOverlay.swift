@@ -13,8 +13,8 @@ struct EditorRootOverlay<Content: View>: View {
             content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onChange(of: projectVM.selectedFileURL) { _, newURL in
-            guard newURL != nil else { return }
+        .onChange(of: projectVM.selectedFileURL) {
+            guard projectVM.selectedFileURL != nil else { return }
             // 有文件被选中时，激活代码编辑器 Detail 和文件树 Sidebar
             layoutVM.selectAgentDetail(EditorPlugin.id)
             layoutVM.selectAgentSidebarTab(ProjectTreePlugin.id, reason: "EditorRootOverlay.file selected")

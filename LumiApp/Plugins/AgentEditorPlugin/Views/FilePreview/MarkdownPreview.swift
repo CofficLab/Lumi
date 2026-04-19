@@ -3,7 +3,7 @@ import Markdown
 
 /// Markdown 预览 Popover
 /// 在面包屑导航右侧的预览按钮点击后弹出，展示当前 md 文件的渲染效果
-struct MarkdownPreviewPopover: View {
+struct MarkdownPreview: View {
 
     /// 编辑器状态（读取文件内容）
     @ObservedObject var state: EditorState

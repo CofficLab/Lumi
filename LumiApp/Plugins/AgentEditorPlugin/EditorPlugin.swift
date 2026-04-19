@@ -4,8 +4,7 @@ import os
 import MagicKit
 import Combine
 
-/// Editor Plugin: 专业级代码编辑器
-/// 基于 CodeEditSourceEditor (tree-sitter) 实现代码高亮、行号、代码折叠、Minimap、查找替换等功能
+/// Editor Plugin: 代码编辑器
 actor EditorPlugin: SuperPlugin, SuperLog {
     /// 插件专用 Logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.lumi-editor")

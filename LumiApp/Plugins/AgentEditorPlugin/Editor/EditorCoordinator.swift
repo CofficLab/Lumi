@@ -26,14 +26,16 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
     nonisolated func prepareCoordinator(controller: TextViewController) {
         textViewController = controller
         jumpDelegate?.textViewController = controller
+        print("🔧 [AutoSave] EditorCoordinator.prepareCoordinator | state=\(state != nil)")
     }
     
     nonisolated func textViewDidChangeText(controller: TextViewController) {
         let state = self.state
+        print("📝 [AutoSave] EditorCoordinator.textViewDidChangeText 触发 | state=\(state != nil) | textLen=\(controller.textView?.string.count ?? -1)")
         // 延迟到下一个 RunLoop，避免 "Modifying state during view update"
         DispatchQueue.main.async {
             if state == nil {
-                print("⚠️ [Editor] EditorCoordinator: state is nil!")
+                print("⚠️ [AutoSave] EditorCoordinator.textViewDidChangeText: state is nil! Coordinator 已被释放")
             }
             state?.notifyContentChanged()
         }
@@ -137,6 +139,7 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
     }
     
     nonisolated func destroy() {
+        print("🗑️ [AutoSave] EditorCoordinator.destroy | state=\(state != nil)")
         hoverTask?.cancel()
         hoverTask = nil
         state = nil
@@ -153,6 +156,10 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
         let state = self.state
         DispatchQueue.main.async {
             state?.notifyLSPIncrementalChange(range: lspRange, text: string)
+            // 关键：CodeEditSourceEditor 对实现了 TextViewDelegate 的 coordinator
+            // 只调用 textView(_:didReplaceContentsIn:with:)，不会调用 textViewDidChangeText(controller:)。
+            // 因此自动保存逻辑必须在这里触发。
+            state?.notifyContentChanged()
         }
     }
     
