@@ -15,7 +15,7 @@ Lumi is an AI-powered personal desktop assistant application for macOS.
 ### Application Architecture
 
 ```mermaid
-graph TB
+graph BT
     subgraph "Lumi App"
         subgraph "Core Layer"
             A1[Bootstrap<br/>App Launch]
