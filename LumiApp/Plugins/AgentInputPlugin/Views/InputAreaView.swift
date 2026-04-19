@@ -1,3 +1,4 @@
+import AppKit
 import MagicKit
 import SwiftUI
 import UniformTypeIdentifiers
@@ -38,6 +39,12 @@ struct InputAreaView: View, SuperLog {
     /// 编辑器动态高度
     @State private var editorHeight: CGFloat = MacEditorView.minHeight
 
+    /// 图片文件正拖过输入框（显示「松开可添加」提示，由 `NSTextView` 更新）
+    @State private var isImageDragHovering = false
+
+    /// 图片拖过附件预览条时显示同一提示（SwiftUI 区不会触发 `NSTextView` 的 dragging 回调）
+    @State private var isAttachmentStripImageDragHint = false
+
     /// 是否允许输入/发送（必须先选中会话）
     private var canChat: Bool {
         ConversationVM.selectedConversationId != nil
@@ -45,13 +52,39 @@ struct InputAreaView: View, SuperLog {
 
     var body: some View {
         VStack(spacing: 8) {
-            // 附件预览区域
+            // 附件预览区域（SwiftUI 会拦截命中测试；需单独 onDrop，否则拖放无法到达下方 NSTextView）
             if !agentAttachmentsVM.pendingAttachments.isEmpty {
-                AttachmentPreviewView(
-                    attachments: agentAttachmentsVM.pendingAttachments,
-                    onRemove: { id in
-                        agentAttachmentsVM.removeAttachment(id: id)
+                VStack(spacing: 0) {
+                    AttachmentPreviewView(
+                        attachments: agentAttachmentsVM.pendingAttachments,
+                        onRemove: { id in
+                            agentAttachmentsVM.removeAttachment(id: id)
+                        }
+                    )
+                    .frame(maxWidth: .infinity)
+                    Rectangle()
+                        .fill(Color(nsColor: .separatorColor))
+                        .frame(height: 1)
+                        .padding(.horizontal, 16)
+                    // 与下方编辑器的 spacing: 8 对齐，避免拖到夹缝无效
+                    Color.clear
+                        .frame(height: 8)
+                        .contentShape(Rectangle())
+                }
+                .overlay {
+                    if canChat, isAttachmentStripImageDragHint {
+                        imageDropHoverOverlay
                     }
+                }
+                .animation(.easeInOut(duration: 0.12), value: isAttachmentStripImageDragHint)
+                .onDrop(
+                    of: [UTType.fileURL, UTType.utf8PlainText],
+                    delegate: ChatAttachmentStripDropDelegate(
+                        isImageHintVisible: $isAttachmentStripImageDragHint,
+                        canAcceptDrop: { canChat },
+                        shouldShowImageHint: { InputAreaView.dropInfoSuggestsChatImage($0) },
+                        onPerform: { acceptChatFileDropFromProviders($0) }
+                    )
                 )
             }
 
@@ -145,7 +178,8 @@ extension InputAreaView {
             onArrowDown: handleArrowDown,
             onEnter: handleEnter,
             isFocused: $isInputFocused,
-            cursorPosition: $inputViewModel.cursorPosition
+            cursorPosition: $inputViewModel.cursorPosition,
+            isImageDragHovering: $isImageDragHovering
         )
         // 添加高度变化动画
         .animation(.easeInOut(duration: 0.15), value: editorHeight)
@@ -153,6 +187,41 @@ extension InputAreaView {
         .onChange(of: inputViewModel.text) {
             commandSuggestionViewModel.updateSuggestions(for: inputViewModel.text)
         }
+        .overlay {
+            if canChat, isImageDragHovering {
+                imageDropHoverOverlay
+            }
+        }
+        .animation(.easeInOut(duration: 0.12), value: isImageDragHovering)
+    }
+
+    /// 图片拖入输入框时的松开提示
+    private var imageDropHoverOverlay: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(.ultraThinMaterial)
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(
+                    style: StrokeStyle(lineWidth: 2, dash: [7, 5]),
+                    antialiased: true
+                )
+                .foregroundStyle(.secondary.opacity(0.65))
+
+            VStack(spacing: 8) {
+                Image(systemName: "photo.badge.plus")
+                    .font(.title2)
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.secondary)
+
+                Text(String(localized: "Release to add image to chat", table: "AgentInput"))
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 12)
+            }
+        }
+        .allowsHitTesting(false)
+        .transition(.opacity)
     }
 }
 
@@ -206,6 +275,57 @@ extension InputAreaView {
 // MARK: - Action
 
 extension InputAreaView {
+    /// 与 `handleFileDrop` / `EditorTextView` 中「按图片附件处理」的扩展名一致
+    fileprivate static let chatImagePathExtensions: Set<String> = [
+        "jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp", "heic",
+    ]
+
+    /// 根据 `DropInfo` 判断是否应显示「松开添加图片」提示（附件条等 SwiftUI 拖放区）
+    fileprivate static func dropInfoSuggestsChatImage(_ info: DropInfo) -> Bool {
+        let imageUTTypes: [UTType] = [.image, .jpeg, .png, .gif, .webP, .heic, .tiff, .bmp]
+        if imageUTTypes.contains(where: { !info.itemProviders(for: [$0]).isEmpty }) {
+            return true
+        }
+        for provider in info.itemProviders(for: [.item]) {
+            if let suggested = provider.suggestedName {
+                let ext = (suggested as NSString).pathExtension.lowercased()
+                if chatImagePathExtensions.contains(ext) {
+                    return true
+                }
+            }
+            for id in provider.registeredTypeIdentifiers {
+                if let ut = UTType(id), ut.conforms(to: .image) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
+    /// 在附件预览等 SwiftUI 区域内接受拖放（Finder 为 fileURL，项目树为 UTF8 路径字符串）
+    private func acceptChatFileDropFromProviders(_ providers: [NSItemProvider]) -> Bool {
+        guard canChat, let provider = providers.first else { return false }
+        if provider.canLoadObject(ofClass: URL.self) {
+            provider.loadObject(ofClass: URL.self) { item, _ in
+                guard let url = item as? URL else { return }
+                Task { @MainActor in
+                    handleFileDrop(fileURL: url)
+                }
+            }
+            return true
+        }
+        if provider.canLoadObject(ofClass: String.self) {
+            provider.loadObject(ofClass: String.self) { item, _ in
+                guard let path = item as? String, path.hasPrefix("/") else { return }
+                Task { @MainActor in
+                    handleFileDrop(fileURL: URL(fileURLWithPath: path))
+                }
+            }
+            return true
+        }
+        return false
+    }
+
     /// 处理从项目树拖放的文件
     /// - Parameter fileURL: 拖放的文件 URL
     private func handleFileDrop(fileURL: URL) {
@@ -229,6 +349,50 @@ extension InputAreaView {
         if Self.verbose {
             AgentInputPlugin.logger.info("\(Self.t)✅ handleFileDrop 完成，text.count=\(inputViewModel.text.count), cursorPosition=\(inputViewModel.cursorPosition)")
         }
+    }
+}
+
+// MARK: - Attachment strip drop
+
+/// 附件预览条拖放：执行落盘逻辑，并在拖入图片时驱动与编辑器一致的「松开添加」提示
+private struct ChatAttachmentStripDropDelegate: DropDelegate {
+    @Binding var isImageHintVisible: Bool
+    var canAcceptDrop: () -> Bool
+    var shouldShowImageHint: (DropInfo) -> Bool
+    var onPerform: ([NSItemProvider]) -> Bool
+
+    func validateDrop(info: DropInfo) -> Bool {
+        guard canAcceptDrop() else { return false }
+        return !info.itemProviders(for: [UTType.fileURL]).isEmpty
+            || !info.itemProviders(for: [UTType.utf8PlainText]).isEmpty
+    }
+
+    func dropEntered(info: DropInfo) {
+        updateHint(info)
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        updateHint(info)
+        return validateDrop(info: info) ? DropProposal(operation: .copy) : DropProposal(operation: .forbidden)
+    }
+
+    func dropExited(info: DropInfo) {
+        isImageHintVisible = false
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        isImageHintVisible = false
+        let providers = info.itemProviders(for: [UTType.fileURL, UTType.utf8PlainText])
+        guard !providers.isEmpty else { return false }
+        return onPerform(providers)
+    }
+
+    private func updateHint(_ info: DropInfo) {
+        guard validateDrop(info: info) else {
+            isImageHintVisible = false
+            return
+        }
+        isImageHintVisible = shouldShowImageHint(info)
     }
 }
 
