@@ -86,6 +86,13 @@ final class LSPService: ObservableObject {
                     self?.handlePublishDiagnostics(params)
                 }
             }
+            newServer.onProgressUpdate = { [weak self] token, value in
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    self.progressProvider.updateProgress(token: token, value: value)
+                    self.objectWillChange.send()
+                }
+            }
             
             server = newServer
             isInitializing = false
@@ -318,6 +325,34 @@ final class LSPService: ObservableObject {
             return []
         }
     }
+
+    /// 服务器声明 `codeActionProvider.resolveProvider` 时用于补全 `edit` / `command`
+    var codeActionResolveSupported: Bool {
+        guard let server else { return false }
+        switch server.capabilities.codeActionProvider {
+        case .optionB(let options):
+            return options.resolveProvider == true
+        default:
+            return false
+        }
+    }
+
+    func resolveCodeAction(_ action: CodeAction) async -> CodeAction? {
+        guard codeActionResolveSupported else { return nil }
+        guard let server else { return nil }
+        do {
+            return try await server.codeActionResolve(action)
+        } catch {
+            logger.error("codeAction/resolve failed: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    /// 当前语言服务器是否支持 inlay hint
+    var supportsInlayHints: Bool {
+        guard let server else { return false }
+        return server.capabilities.inlayHintProvider != nil
+    }
     
     func requestSemanticTokens(uri: String) async -> SemanticTokens? {
         guard let server else { return nil }
@@ -544,10 +579,9 @@ final class LSPService: ObservableObject {
     
     func executeCommand(command: String, arguments: [LanguageServerProtocol.LSPAny]? = nil) async -> LanguageServerProtocol.LSPAny? {
         guard let server else { return nil }
-        guard let commands = server.capabilities.executeCommandProvider?.commands,
-              commands.contains(command) else {
-            logger.warning("Command \(command) not supported by server")
-            return nil
+        if let commands = server.capabilities.executeCommandProvider?.commands,
+           !commands.contains(command) {
+            logger.warning("Command \(command) not listed in server capabilities; attempting anyway")
         }
         do {
             return try await server.executeCommand(command: command, arguments: arguments)
@@ -573,6 +607,7 @@ final class LSPService: ObservableObject {
         activeLanguageId = nil
         latestDocumentSnapshot = nil
         pendingChanges.removeAll()
+        progressProvider.clear()
     }
     
     // MARK: - Parsing

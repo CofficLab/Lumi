@@ -41,6 +41,9 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
     /// 光标位置绑定
     @Binding var cursorPosition: Int
 
+    /// 是否有可添加的图片正拖过输入框（用于显示「松开可添加」提示）
+    @Binding var isImageDragHovering: Bool
+
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSScrollView()
         scrollView.drawsBackground = false
@@ -81,6 +84,15 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
 
     func updateNSView(_ nsView: NSScrollView, context: Context) {
         guard let textView = nsView.documentView as? EditorTextView else { return }
+
+        textView.imageDragHoverHandler = { [weak coordinator = context.coordinator] hovering in
+            guard let coordinator else { return }
+            DispatchQueue.main.async {
+                if coordinator.parent.isImageDragHovering != hovering {
+                    coordinator.parent.isImageDragHovering = hovering
+                }
+            }
+        }
 
         // 如果用户正在使用输入法组合文字（存在 markedText），不要强制同步，否则会打断输入状态
         if textView.hasMarkedText() {
@@ -250,6 +262,59 @@ class EditorTextView: NSTextView, SuperLog {
     nonisolated static let emoji = "📝"
     /// 是否输出详细日志
     nonisolated static let verbose: Bool = false
+
+    /// 与 `InputAreaView.handleFileDrop` 中作为图片附件处理的扩展名一致
+    private static let imagePathExtensions: Set<String> = [
+        "jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp", "heic",
+    ]
+
+    /// 拖放悬停状态回调（主线程更新 SwiftUI）
+    var imageDragHoverHandler: ((Bool) -> Void)?
+
+    /// 拖放数据是否为「会按图片附件处理」的文件（与 `performDragOperation` + `handleFileDrop` 对齐）
+    private func draggingInfoContainsChatImageFile(_ sender: NSDraggingInfo) -> Bool {
+        let pasteboard = sender.draggingPasteboard
+        if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL] {
+            return urls.contains { Self.imagePathExtensions.contains($0.pathExtension.lowercased()) }
+        }
+        if let strings = pasteboard.readObjects(forClasses: [NSString.self], options: nil) as? [String],
+           let first = strings.first,
+           first.hasPrefix("/")
+        {
+            let ext = URL(fileURLWithPath: first).pathExtension.lowercased()
+            return Self.imagePathExtensions.contains(ext)
+        }
+        return false
+    }
+
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        if draggingInfoContainsChatImageFile(sender) {
+            imageDragHoverHandler?(true)
+            return .copy
+        }
+        imageDragHoverHandler?(false)
+        return super.draggingEntered(sender)
+    }
+
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+        if draggingInfoContainsChatImageFile(sender) {
+            imageDragHoverHandler?(true)
+            return .copy
+        }
+        imageDragHoverHandler?(false)
+        return super.draggingUpdated(sender)
+    }
+
+    override func draggingExited(_ sender: NSDraggingInfo?) {
+        imageDragHoverHandler?(false)
+        super.draggingExited(sender)
+    }
+
+    override func concludeDragOperation(_ sender: NSDraggingInfo?) {
+        imageDragHoverHandler?(false)
+        super.concludeDragOperation(sender)
+    }
+
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
         let pasteboard = sender.draggingPasteboard
         
@@ -300,7 +365,8 @@ class EditorTextView: NSTextView, SuperLog {
         @State private var height: CGFloat = 64
         @State private var isFocused = true
         @State private var cursorPosition = 0
-        
+        @State private var isImageDragHovering = false
+
         var body: some View {
             VStack {
                 MacEditorView(
@@ -311,13 +377,14 @@ class EditorTextView: NSTextView, SuperLog {
                     onArrowDown: {},
                     onEnter: {},
                     isFocused: $isFocused,
-                    cursorPosition: $cursorPosition
+                    cursorPosition: $cursorPosition,
+                    isImageDragHovering: $isImageDragHovering
                 )
                 .frame(height: height)
                 .padding()
                 .background(Color.gray.opacity(0.2))
                 .cornerRadius(8)
-                
+
                 Text("Height: \(Int(height))")
                     .font(.caption)
                     .foregroundColor(AppUI.Color.semantic.textSecondary)
@@ -326,7 +393,7 @@ class EditorTextView: NSTextView, SuperLog {
             .frame(width: 400)
         }
     }
-    
+
     return PreviewWrapper()
         .inRootView()
 }

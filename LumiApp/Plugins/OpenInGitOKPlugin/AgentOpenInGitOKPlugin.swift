@@ -8,9 +8,9 @@ import SwiftUI
 /// 
 /// ## 实现方式
 ///
-/// 使用 NSWorkspace 通过 GitOK 的 Bundle ID (com.yueyi.GitOK) 定位应用，
-/// 然后通过 URL Scheme `gitok://openProject?path=...` 打开项目。
-/// 回退方案: 直接通过 `NSWorkspace.open(_:withApplicationAt:)` 打开项目。
+/// 使用 NSWorkspace 的 `open(_:withApplicationAt:configuration:)` 将项目文件夹
+/// 直接传给 GitOK 打开。这与 GitHub Desktop 插件使用完全相同的 API，
+/// macOS 会自动处理全屏 Space 切换。
 /// 
 /// ## 注意事项
 ///
@@ -199,6 +199,9 @@ enum GitOKLauncher {
     }
 
     /// 在 GitOK 中打开项目
+    /// 使用与 GitHub Desktop 插件完全相同的 API：
+    /// `NSWorkspace.shared.open([folderURL], withApplicationAt:appURL, configuration:)`
+    /// 将项目文件夹作为 document 传给 GitOK，macOS 会自动处理全屏 Space 切换。
     /// - Parameter projectURL: 项目目录 URL
     static func openProject(_ projectURL: URL) {
         guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
@@ -206,24 +209,6 @@ enum GitOKLauncher {
             return
         }
 
-        // 方式 1: 尝试使用 URL Scheme 打开项目
-        let encodedPath = projectURL.path.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        if let schemeURL = URL(string: "gitok://openProject?path=\(encodedPath)") {
-            let config = NSWorkspace.OpenConfiguration()
-            config.activates = true
-            NSWorkspace.shared.open(schemeURL, configuration: config) { _, error in
-                if let error {
-                    AppLogger.core.warning("通过 URL Scheme 打开 GitOK 失败: \(error.localizedDescription)，尝试直接打开项目")
-                    doOpenProject(projectURL, appURL: appURL)
-                }
-            }
-        } else {
-            doOpenProject(projectURL, appURL: appURL)
-        }
-    }
-
-    /// 使用指定应用打开项目目录
-    private static func doOpenProject(_ projectURL: URL, appURL: URL) {
         let config = NSWorkspace.OpenConfiguration()
         config.activates = true
         NSWorkspace.shared.open([projectURL], withApplicationAt: appURL, configuration: config) { _, error in

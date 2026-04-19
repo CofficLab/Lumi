@@ -15,8 +15,7 @@ final class InlayHintProvider: ObservableObject {
     
     /// 检查服务器是否支持 inlay hints
     var isAvailable: Bool {
-        // 通过 lspService 的 isAvailable 判断
-        lspService.isAvailable
+        lspService.supportsInlayHints
     }
     
     /// 请求可见区域的 inlay hints
@@ -76,7 +75,7 @@ final class InlayHintProvider: ObservableObject {
 
 /// Inlay Hint 数据模型
 struct InlayHintItem: Identifiable {
-    let id = UUID()
+    var id: String { "\(line):\(character):\(text)" }
     let line: Int
     let character: Int
     let text: String
@@ -118,10 +117,57 @@ struct InlayHintLabel: View {
                 RoundedRectangle(cornerRadius: 3)
                     .fill(Color(nsColor: .controlBackgroundColor).opacity(0.6))
             )
-            .onTapGesture {
-                if let tooltip = hint.tooltip {
-                    // TODO: 显示 tooltip
-                }
-            }
+            .help(hint.tooltip ?? "")
     }
 }
+
+// MARK: - Visible range for LSP `textDocument/inlayHint`
+
+enum EditorInlayHintLayout {
+    /// 将可见区域映射为 LSP 行范围（0-based），供 `textDocument/inlayHint` 使用
+    static func visibleDocumentLSPRange(in textView: TextView) -> LSPRange? {
+        let str = textView.string
+        guard !str.isEmpty, let lm = textView.layoutManager else { return nil }
+
+        let vis = textView.visibleRect
+        let hInset = textView.edgeInsets + textView.textInsets
+        let top = CGPoint(x: vis.minX + hInset.left + 4, y: vis.minY + 4)
+        let bottom = CGPoint(x: vis.midX, y: max(vis.minY + 4, vis.maxY - 4))
+
+        guard let startOffset = lm.textOffsetAtPoint(top),
+              let endOffset = lm.textOffsetAtPoint(bottom) else { return nil }
+
+        let pad = 400
+        let len = str.utf16.count
+        let lo = max(0, min(startOffset, endOffset) - pad)
+        let hi = min(len, max(startOffset, endOffset) + pad)
+
+        let startPos = lspPosition(utf16Offset: lo, in: str)
+        let endPos = lspPosition(utf16Offset: hi, in: str)
+        return LSPRange(
+            start: Position(line: startPos.line, character: startPos.character),
+            end: Position(line: endPos.line, character: endPos.character)
+        )
+    }
+
+    private static func lspPosition(utf16Offset: Int, in content: String) -> (line: Int, character: Int) {
+        var line = 0
+        var column = 0
+        var offset = 0
+        for scalar in content.unicodeScalars {
+            let len = scalar.utf16.count
+            if offset + len > utf16Offset {
+                return (line, column)
+            }
+            if scalar == "\n" {
+                line += 1
+                column = 0
+            } else {
+                column += len
+            }
+            offset += len
+        }
+        return (line, column)
+    }
+}
+

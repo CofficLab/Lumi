@@ -93,6 +93,11 @@ struct EditorBreadcrumbView: View {
     /// 首段截断宽度
     @State private var firstCrumbWidth: CGFloat?
 
+    /// 当前文件是否为 Markdown 格式
+    private var isMarkdownFile: Bool {
+        state.fileExtension == "md" || state.fileExtension == "mdx"
+    }
+
     var body: some View {
         HStack(spacing: 0) {
             // 面包屑路径
@@ -150,9 +155,14 @@ struct EditorBreadcrumbView: View {
             .frame(height: Self.crumbHeight)
             .padding(.leading, 8)
 
-            // 右侧：保存状态 + 语言标签（固定宽度，不被路径挤压）
+            // 右侧：保存状态 + Markdown 预览按钮 + 语言标签（固定宽度，不被路径挤压）
             HStack(spacing: 6) {
                 saveStateIndicator
+
+                // Markdown 预览按钮（仅 md 文件显示）
+                if isMarkdownFile {
+                    markdownPreviewButton
+                }
 
                 if let lang = state.detectedLanguage {
                     Text(languageDisplayName(lang))
@@ -168,6 +178,38 @@ struct EditorBreadcrumbView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: AppConfig.headerHeight)
+    }
+
+    // MARK: - Markdown Preview Button
+
+    /// Markdown 预览/源码切换按钮
+    @ViewBuilder
+    private var markdownPreviewButton: some View {
+        Button {
+            state.isMarkdownPreviewMode.toggle()
+        } label: {
+            Image(systemName: state.isMarkdownPreviewMode ? "doc.text" : "eye")
+                .font(.system(size: 10))
+                .foregroundColor(
+                    state.isMarkdownPreviewMode
+                        ? AppUI.Color.semantic.primary
+                        : AppUI.Color.semantic.textSecondary
+                )
+                .frame(width: 22, height: 22)
+                .background(
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(
+                            state.isMarkdownPreviewMode
+                                ? AppUI.Color.semantic.primary.opacity(0.1)
+                                : Color.clear
+                        )
+                )
+        }
+        .buttonStyle(.plain)
+        .help(state.isMarkdownPreviewMode
+            ? String(localized: "Show Source", table: "LumiEditor")
+            : String(localized: "Preview Markdown", table: "LumiEditor")
+        )
     }
 
     // MARK: - Truncation Logic

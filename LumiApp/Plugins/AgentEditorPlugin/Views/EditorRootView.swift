@@ -101,7 +101,18 @@ struct EditorRootView: View {
 
     @ViewBuilder
     private var editorContent: some View {
-        if state.canPreview {
+        if state.isMarkdownFile {
+            if state.isMarkdownPreviewMode {
+                // Markdown 预览模式
+                markdownPreviewContent
+            } else {
+                // 源码模式
+                SourceEditorView(state: state)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .id(state.currentFileURL)
+                    .clipped()
+            }
+        } else if state.canPreview {
             SourceEditorView(state: state)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .id(state.currentFileURL)  // 文件切换时重建编辑器
@@ -114,6 +125,27 @@ struct EditorRootView: View {
         } else if projectVM.isFileSelected {
             unsupportedFileView
         }
+    }
+
+    /// Markdown 渲染预览（内联替换编辑器）
+    @ViewBuilder
+    private var markdownPreviewContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                if let content = state.content?.string, !content.isEmpty {
+                    MarkdownBlockRenderer(markdown: content)
+                        .padding(20)
+                } else {
+                    Text("No content to preview")
+                        .font(.system(size: 12))
+                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .padding(40)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(nsColor: .textBackgroundColor))
     }
 
     // MARK: - File Info Banner

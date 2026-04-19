@@ -7,6 +7,7 @@ import CodeEditTextView
 struct EditorToolbarView: View {
     
     @ObservedObject var state: EditorState
+    @ObservedObject private var lspService = LSPService.shared
     
     var body: some View {
         HStack(spacing: 6) {
@@ -26,6 +27,11 @@ struct EditorToolbarView: View {
             
             // LSP 状态指示器
             lspStatusIndicator
+
+            if !lspService.progressProvider.activeTasks.isEmpty {
+                LSPProgressIndicatorView(provider: lspService.progressProvider)
+                    .frame(maxWidth: 200)
+            }
 
             // LSP 动作菜单
             lspActionsMenu

@@ -611,6 +611,29 @@
         }
       }
     },
+    "Release to add image to chat" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Release to add image to the chat"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "松开即可将图片添加到聊天"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "鬆開即可將圖片加入聊天"
+          }
+        }
+      }
+    },
     "Remote Providers" : {
       "extractionState" : "manual",
       "localizations" : {

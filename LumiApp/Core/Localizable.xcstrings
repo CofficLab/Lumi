@@ -2487,9 +2487,6 @@
         }
       }
     },
-    "Git 信息" : {
-
-    },
     "GitHub Desktop" : {
 
     },
@@ -2838,6 +2835,16 @@
         }
       }
     },
+    "L%lld %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "L%1$lld %2$@"
+          }
+        }
+      }
+    },
     "Last 60 seconds" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3098,6 +3105,9 @@
         }
       }
     },
+    "Mermaid render failed" : {
+
+    },
     "More" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3324,6 +3334,9 @@
           }
         }
       }
+    },
+    "No content to preview" : {
+
     },
     "No Listening Ports" : {
       "localizations" : {
@@ -7344,9 +7357,6 @@
     "无%@" : {
 
     },
-    "无法获取 Git 信息" : {
-
-    },
     "无远程仓库" : {
 
     },
@@ -7582,9 +7592,6 @@
           }
         }
       }
-    },
-    "有未提交更改" : {
-
     },
     "未发现可清理的项目" : {
       "localizations" : {

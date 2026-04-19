@@ -114,8 +114,10 @@ final class EditorState: ObservableObject {
     /// 当前文件内容（NSTextStorage，CodeEditSourceEditor 要求）
     @Published var content: NSTextStorage?
     
-    /// 上次持久化的内容哈希（用于检测变更）
-    private var persistedContentHash: Int?
+    /// 上次持久化的内容快照（用于检测变更）
+    /// 使用完整字符串存储而非 hashValue，因为 hashValue 存在哈希碰撞，
+    /// 可能导致编辑后的内容被误判为"未变更"，从而跳过自动保存。
+    private var persistedContentSnapshot: String?
     
     /// LSP 协调器（用于语言服务器集成）
     let lspCoordinator = LSPCoordinator()
@@ -133,6 +135,33 @@ final class EditorState: ObservableObject {
     
     /// 跳转定义代理（右键和 Cmd+Click 共享）
     weak var jumpDelegate: EditorJumpToDefinitionDelegate?
+
+    /// 当前获得焦点的 `TextView`（Code Action、Inlay 可见范围等）
+    weak var focusedTextView: TextView?
+
+    private var inlayHintRefreshTask: Task<Void, Never>?
+
+    /// 在光标稳定后刷新可见区域内的 Inlay Hints
+    func scheduleInlayHintsRefreshIfNeeded(controller: TextViewController) {
+        inlayHintRefreshTask?.cancel()
+        guard LSPService.shared.supportsInlayHints else { return }
+        guard currentFileURL != nil else { return }
+        let uriSnapshot = currentFileURL?.absoluteString
+        inlayHintRefreshTask = Task { @MainActor [weak self, weak controller] in
+            try? await Task.sleep(for: .milliseconds(380))
+            guard let self, !Task.isCancelled else { return }
+            guard let uri = uriSnapshot ?? self.currentFileURL?.absoluteString else { return }
+            guard let tv = controller?.textView else { return }
+            guard let range = EditorInlayHintLayout.visibleDocumentLSPRange(in: tv) else { return }
+            await self.inlayHintProvider.requestHints(
+                uri: uri,
+                startLine: range.start.line,
+                startCharacter: range.start.character,
+                endLine: range.end.line,
+                endCharacter: range.end.character
+            )
+        }
+    }
     
     /// 当前文件是否可编辑
     @Published var isEditable: Bool = true
@@ -142,6 +171,14 @@ final class EditorState: ObservableObject {
     
     /// 当前文件是否可预览
     @Published var canPreview: Bool = false
+
+    /// 当前文件是否为 Markdown 预览模式
+    @Published var isMarkdownPreviewMode: Bool = false
+
+    /// 当前文件是否为 Markdown 格式
+    var isMarkdownFile: Bool {
+        fileExtension == "md" || fileExtension == "mdx"
+    }
 
     /// 当前文件是否为二进制/非文本文件（需要用 QuickLook 预览而非代码编辑器）
     @Published var isBinaryFile: Bool = false
@@ -420,7 +457,7 @@ final class EditorState: ObservableObject {
                     
                     self.currentFileURL = loadingURL
                     self.content = NSTextStorage(string: content)
-                    self.persistedContentHash = content.hashValue
+                    self.persistedContentSnapshot = content
                     self.canPreview = true
                     self.isEditable = !shouldReadOnly
                     self.isTruncated = shouldTruncate
@@ -439,6 +476,10 @@ final class EditorState: ObservableObject {
                     // 计算行数
                     self.totalLines = content.filter { $0 == "\n" }.count + 1
                     self.hoverText = nil
+                    self.inlayHintProvider.clear()
+                    self.codeActionProvider.clear()
+                    self.inlayHintRefreshTask?.cancel()
+                    self.inlayHintRefreshTask = nil
                     self.referenceResults = []
                     self.isReferencePanelPresented = false
                     self.selectedProblemDiagnostic = nil
@@ -521,7 +562,7 @@ final class EditorState: ObservableObject {
     private func resetState() {
         currentFileURL = nil
         content = nil
-        persistedContentHash = nil
+        persistedContentSnapshot = nil
         canPreview = false
         isBinaryFile = false
         isEditable = true
@@ -540,6 +581,11 @@ final class EditorState: ObservableObject {
         problemDiagnostics = []
         selectedProblemDiagnostic = nil
         isProblemsPanelPresented = false
+        inlayHintProvider.clear()
+        codeActionProvider.clear()
+        inlayHintRefreshTask?.cancel()
+        inlayHintRefreshTask = nil
+        focusedTextView = nil
         
         // 清理文件监听器
         cleanupFileWatcher()
@@ -569,7 +615,7 @@ final class EditorState: ObservableObject {
         
         currentFileURL = url
         content = nil
-        persistedContentHash = nil
+        persistedContentSnapshot = nil
         canPreview = false
         isBinaryFile = true
         isEditable = false
@@ -599,19 +645,24 @@ final class EditorState: ObservableObject {
     /// 通知内容已变更（由 TextViewCoordinator 调用）
     func notifyContentChanged() {
         guard let content else {
-            print("⚠️ [Editor] notifyContentChanged: content is nil")
-            return
-        }
-        guard let currentHash = persistedContentHash else {
-            print("⚠️ [Editor] notifyContentChanged: persistedContentHash is nil")
+            print("⚠️ [AutoSave] notifyContentChanged: content is nil, 无法检测变更")
             return
         }
         
         let contentString = content.string
-        let newHash = contentString.hashValue
-        print("✏️ [Editor] notifyContentChanged: newHash=\(newHash), persistedHash=\(currentHash), changed=\(newHash != currentHash), contentLength=\(contentString.count)")
+        let snapshotExists = persistedContentSnapshot != nil
+        let changed: Bool
+        if let snapshot = persistedContentSnapshot {
+            // 使用精确字符串比较，而非 hashValue（存在哈希碰撞风险）
+            changed = contentString != snapshot
+        } else {
+            // 快照为空说明尚未初始化，视为无变更
+            changed = false
+        }
         
-        if newHash != currentHash {
+        print("🔍 [AutoSave] notifyContentChanged | changed=\(changed) | snapshotExists=\(snapshotExists) | contentLen=\(contentString.count) | snapshotLen=\(persistedContentSnapshot?.count ?? -1) | fileURL=\(currentFileURL?.lastPathComponent ?? "nil")")
+        
+        if changed {
             hasUnsavedChanges = true
             saveState = .editing
             scheduleAutoSave(content: contentString)
@@ -821,14 +872,23 @@ final class EditorState: ObservableObject {
     
     /// 安排自动保存
     private func scheduleAutoSave(content: String) {
+        let hadPreviousTask = saveTask != nil
         saveTask?.cancel()
         
         let fileURL = currentFileURL
         
+        print("⏰ [AutoSave] scheduleAutoSave | hadPreviousTask=\(hadPreviousTask) | delay=\(Self.autoSaveDelay)s | contentLen=\(content.count) | fileURL=\(fileURL?.lastPathComponent ?? "nil")")
+        
         saveTask = Task { [weak self] in
+            print("⏰ [AutoSave] scheduleAutoSave Task 开始等待 \(Self.autoSaveDelay)s...")
             try? await Task.sleep(for: .seconds(Self.autoSaveDelay))
-            guard !Task.isCancelled else { return }
+            print("⏰ [AutoSave] scheduleAutoSave Task 醒来 | cancelled=\(Task.isCancelled) | self=\(self != nil)")
+            guard !Task.isCancelled else {
+                print("⏰ [AutoSave] scheduleAutoSave Task 被取消，跳过保存")
+                return
+            }
             await MainActor.run {
+                print("⏰ [AutoSave] scheduleAutoSave Task 准备执行 performSave | self=\(self != nil) | fileURL=\(fileURL?.lastPathComponent ?? "nil")")
                 self?.performSave(content: content, to: fileURL)
             }
         }
@@ -878,7 +938,7 @@ final class EditorState: ObservableObject {
                 }
                 
                 print("✅ [Editor] performSave: saved successfully")
-                persistedContentHash = content.hashValue
+                persistedContentSnapshot = content
                 hasUnsavedChanges = false
                 saveState = .saved
                 scheduleSuccessClear()
@@ -963,7 +1023,6 @@ final class EditorState: ObservableObject {
     /// 检查文件内容是否变化并重新加载
     private func reloadIfFileChangedExternally(url: URL, currentModDate: Date) {
         guard let currentContent = content?.string else { return }
-        let currentHash = currentContent.hashValue
         
         Task {
             do {
@@ -972,9 +1031,8 @@ final class EditorState: ObservableObject {
                 try fileHandle.close()
                 
                 guard let data, let newContent = String(data: data, encoding: .utf8) else { return }
-                let newHash = newContent.hashValue
                 
-                guard newHash != currentHash else {
+                guard newContent != currentContent else {
                     // 内容没变，只更新修改日期
                     self.lastKnownModificationDate = currentModDate
                     return
@@ -1001,7 +1059,7 @@ final class EditorState: ObservableObject {
             content = NSTextStorage(string: newContent)
         }
         
-        persistedContentHash = newContent.hashValue
+        persistedContentSnapshot = newContent
         lastKnownModificationDate = modificationDate
         hasUnsavedChanges = false
         saveState = .idle
