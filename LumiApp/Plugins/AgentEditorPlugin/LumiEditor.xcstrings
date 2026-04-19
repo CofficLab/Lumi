@@ -293,6 +293,12 @@
         }
       }
     },
+    "Editor is not ready" : {
+
+    },
+    "Empty workspace edit" : {
+
+    },
     "Enter a new symbol name:" : {
       "localizations" : {
         "en" : {
@@ -688,6 +694,9 @@
           }
         }
       }
+    },
+    "No applicable edits for this file" : {
+
     },
     "No Changes" : {
       "localizations" : {
@@ -1198,6 +1207,9 @@
 
     },
     "Show Source" : {
+
+    },
+    "This code action has no edit or command" : {
 
     },
     "Toggle Problems" : {

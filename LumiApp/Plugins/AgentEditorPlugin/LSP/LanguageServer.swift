@@ -111,6 +111,25 @@ final class LanguageServer: @unchecked Sendable {
                         itemDefaults: ["default1", "default2"]
                     )
                 ),
+                codeAction: CodeActionClientCapabilities(
+                    dynamicRegistration: true,
+                    codeActionLiteralSupport: CodeActionClientCapabilities.CodeActionLiteralSupport(
+                        codeActionKind: ValueSet(valueSet: [
+                            CodeActionKind.Quickfix,
+                            CodeActionKind.Refactor,
+                            CodeActionKind.RefactorExtract,
+                            CodeActionKind.RefactorInline,
+                            CodeActionKind.RefactorRewrite,
+                            CodeActionKind.Source,
+                            CodeActionKind.SourceOrganizeImports,
+                            CodeActionKind.SourceFixAll,
+                            CodeActionKind.Empty
+                        ])
+                    ),
+                    isPreferredSupport: true,
+                    disabledSupport: true,
+                    resolveSupport: CodeActionClientCapabilities.ResolveSupport(properties: ["edit", "command"])
+                ),
                 semanticTokens: SemanticTokensClientCapabilities(
                     dynamicRegistration: false,
                     requests: .init(range: false, delta: true),
@@ -121,7 +140,8 @@ final class LanguageServer: @unchecked Sendable {
                     multilineTokenSupport: true,
                     serverCancelSupport: false,
                     augmentsSyntaxTokens: true
-                )
+                ),
+                inlayHint: InlayHintClientCapabilities(dynamicRegistration: false)
             )
             
             let workspaceCaps = ClientCapabilities.Workspace(
@@ -135,7 +155,7 @@ final class LanguageServer: @unchecked Sendable {
                     tagSupport: nil,
                     resolveSupport: []
                 ),
-                executeCommand: nil,
+                executeCommand: GenericDynamicRegistration(dynamicRegistration: true),
                 workspaceFolders: true,
                 configuration: true,
                 semanticTokens: nil,
@@ -373,6 +393,10 @@ final class LanguageServer: @unchecked Sendable {
         )
         let response = try await server.codeAction(params)
         return parseCodeActionResponse(response)
+    }
+
+    func codeActionResolve(_ action: CodeAction) async throws -> CodeAction {
+        try await server.codeActionResolve(action)
     }
     
     func declaration(uri: String, line: Int, character: Int) async throws -> DeclarationResponse {

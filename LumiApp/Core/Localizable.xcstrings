@@ -2835,6 +2835,16 @@
         }
       }
     },
+    "L%lld %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "L%1$lld %2$@"
+          }
+        }
+      }
+    },
     "Last 60 seconds" : {
       "localizations" : {
         "zh-Hans" : {

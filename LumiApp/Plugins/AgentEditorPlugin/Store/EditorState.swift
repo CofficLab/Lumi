@@ -135,6 +135,33 @@ final class EditorState: ObservableObject {
     
     /// 跳转定义代理（右键和 Cmd+Click 共享）
     weak var jumpDelegate: EditorJumpToDefinitionDelegate?
+
+    /// 当前获得焦点的 `TextView`（Code Action、Inlay 可见范围等）
+    weak var focusedTextView: TextView?
+
+    private var inlayHintRefreshTask: Task<Void, Never>?
+
+    /// 在光标稳定后刷新可见区域内的 Inlay Hints
+    func scheduleInlayHintsRefreshIfNeeded(controller: TextViewController) {
+        inlayHintRefreshTask?.cancel()
+        guard LSPService.shared.supportsInlayHints else { return }
+        guard currentFileURL != nil else { return }
+        let uriSnapshot = currentFileURL?.absoluteString
+        inlayHintRefreshTask = Task { @MainActor [weak self, weak controller] in
+            try? await Task.sleep(for: .milliseconds(380))
+            guard let self, !Task.isCancelled else { return }
+            guard let uri = uriSnapshot ?? self.currentFileURL?.absoluteString else { return }
+            guard let tv = controller?.textView else { return }
+            guard let range = EditorInlayHintLayout.visibleDocumentLSPRange(in: tv) else { return }
+            await self.inlayHintProvider.requestHints(
+                uri: uri,
+                startLine: range.start.line,
+                startCharacter: range.start.character,
+                endLine: range.end.line,
+                endCharacter: range.end.character
+            )
+        }
+    }
     
     /// 当前文件是否可编辑
     @Published var isEditable: Bool = true
@@ -449,6 +476,10 @@ final class EditorState: ObservableObject {
                     // 计算行数
                     self.totalLines = content.filter { $0 == "\n" }.count + 1
                     self.hoverText = nil
+                    self.inlayHintProvider.clear()
+                    self.codeActionProvider.clear()
+                    self.inlayHintRefreshTask?.cancel()
+                    self.inlayHintRefreshTask = nil
                     self.referenceResults = []
                     self.isReferencePanelPresented = false
                     self.selectedProblemDiagnostic = nil
@@ -550,6 +581,11 @@ final class EditorState: ObservableObject {
         problemDiagnostics = []
         selectedProblemDiagnostic = nil
         isProblemsPanelPresented = false
+        inlayHintProvider.clear()
+        codeActionProvider.clear()
+        inlayHintRefreshTask?.cancel()
+        inlayHintRefreshTask = nil
+        focusedTextView = nil
         
         // 清理文件监听器
         cleanupFileWatcher()

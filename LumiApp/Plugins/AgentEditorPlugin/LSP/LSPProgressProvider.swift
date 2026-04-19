@@ -5,36 +5,55 @@ import LanguageServerProtocol
 /// LSP 进度通知提供者
 @MainActor
 final class LSPProgressProvider: ObservableObject {
-    
+
     @Published var activeTasks: [String: ProgressTask] = [:]
-    
+
     func updateProgress(token: String, value: LanguageServerProtocol.LSPAny?) {
+        guard let value else { return }
         guard case .hash(let dict) = value else { return }
-        guard case .string(let kindStr) = dict["kind"] else { return }
-        
+        guard let kindVal = dict["kind"], case .string(let kindStr) = kindVal else { return }
+
+        func stringValue(_ key: String) -> String? {
+            guard let v = dict[key] else { return nil }
+            if case .string(let s) = v { return s }
+            return nil
+        }
+
+        func numberValue(_ key: String) -> Double? {
+            guard let v = dict[key] else { return nil }
+            if case .number(let n) = v { return n }
+            return nil
+        }
+
+        func boolValue(_ key: String) -> Bool {
+            guard let v = dict[key] else { return false }
+            if case .bool(let b) = v { return b }
+            return false
+        }
+
         switch kindStr {
         case "begin":
-            let title = (dict["title"] as? String) ?? ""
-            let message = dict["message"] as? String
-            let percentage = (dict["percentage"] as? Double).map { Double($0) }
-            let cancellable = (dict["cancellable"] as? Bool) == true
+            let title = stringValue("title") ?? ""
+            let message = stringValue("message")
+            let percentage = numberValue("percentage")
+            let cancellable = boolValue("cancellable")
             let task = ProgressTask(
                 token: token, title: title, message: message,
                 percentage: percentage, cancellable: cancellable, state: .inProgress
             )
             activeTasks[token] = task
-            
+
         case "report":
             if var task = activeTasks[token] {
-                task.message = (dict["message"] as? String) ?? task.message
-                task.percentage = (dict["percentage"] as? Double).map { Double($0) }
+                task.message = stringValue("message") ?? task.message
+                task.percentage = numberValue("percentage") ?? task.percentage
                 task.state = .inProgress
                 activeTasks[token] = task
             }
-            
+
         case "end":
             if var task = activeTasks[token] {
-                task.message = (dict["message"] as? String) ?? task.message
+                task.message = stringValue("message") ?? task.message
                 task.state = .completed
                 activeTasks[token] = task
                 let token = token
@@ -43,10 +62,11 @@ final class LSPProgressProvider: ObservableObject {
                     await MainActor.run { self.activeTasks.removeValue(forKey: token) }
                 }
             }
-        default: break
+        default:
+            break
         }
     }
-    
+
     func clear() { activeTasks.removeAll() }
 }
 
@@ -59,7 +79,7 @@ struct ProgressTask: Identifiable, Equatable {
     var percentage: Double?
     let cancellable: Bool
     var state: TaskState
-    
+
     enum TaskState: Equatable {
         case inProgress, completed, cancelled
     }
@@ -69,7 +89,7 @@ struct ProgressTask: Identifiable, Equatable {
 
 struct LSPProgressIndicatorView: View {
     @ObservedObject var provider: LSPProgressProvider
-    
+
     var body: some View {
         ForEach(provider.activeTasks.values.sorted(by: { $0.token < $1.token })) { task in
             HStack(spacing: 8) {

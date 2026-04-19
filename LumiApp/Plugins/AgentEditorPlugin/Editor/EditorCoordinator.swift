@@ -26,6 +26,10 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
     nonisolated func prepareCoordinator(controller: TextViewController) {
         textViewController = controller
         jumpDelegate?.textViewController = controller
+        let st = state
+        DispatchQueue.main.async {
+            st?.focusedTextView = controller.textView
+        }
         print("🔧 [AutoSave] EditorCoordinator.prepareCoordinator | state=\(state != nil)")
     }
     
@@ -38,6 +42,7 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
                 print("⚠️ [AutoSave] EditorCoordinator.textViewDidChangeText: state is nil! Coordinator 已被释放")
             }
             state?.notifyContentChanged()
+            state?.scheduleInlayHintsRefreshIfNeeded(controller: controller)
         }
     }
     
@@ -135,6 +140,8 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
                     state.codeActionProvider.clear()
                 }
             }
+
+            state.scheduleInlayHintsRefreshIfNeeded(controller: controller)
         }
     }
     
@@ -142,8 +149,12 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
         print("🗑️ [AutoSave] EditorCoordinator.destroy | state=\(state != nil)")
         hoverTask?.cancel()
         hoverTask = nil
+        let st = state
         state = nil
         textViewController = nil
+        DispatchQueue.main.async {
+            st?.focusedTextView = nil
+        }
     }
     
     func textView(_ textView: TextView, willReplaceContentsIn range: NSRange, with string: String) {

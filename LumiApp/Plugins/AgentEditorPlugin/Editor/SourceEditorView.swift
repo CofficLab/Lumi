@@ -70,17 +70,20 @@ struct SourceEditorView: View {
            cursorCoordinator != nil,
            contextMenuCoordinator != nil {
             let config = cachedConfig ?? buildConfiguration()
-            SourceEditor(
-                content,
-                language: resolvedLanguage,
-                configuration: config,
-                state: multiCursorSafeBinding,
-                highlightProviders: activeHighlightProviders,
-                coordinators: activeCoordinators,
-                completionDelegate: completionDelegate,
-                jumpToDefinitionDelegate: jumpDelegate
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            VStack(spacing: 0) {
+                SourceEditor(
+                    content,
+                    language: resolvedLanguage,
+                    configuration: config,
+                    state: multiCursorSafeBinding,
+                    highlightProviders: activeHighlightProviders,
+                    coordinators: activeCoordinators,
+                    completionDelegate: completionDelegate,
+                    jumpToDefinitionDelegate: jumpDelegate
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                inlayHintsStrip
+            }
             .overlay(alignment: .topTrailing) {
                 hoverPreview
             }
@@ -111,11 +114,42 @@ struct SourceEditorView: View {
             CodeActionPanel(
                 actions: state.codeActionProvider.actions
             ) { action in
-                // 执行代码动作后关闭面板
-                state.codeActionProvider.clear()
+                Task { @MainActor in
+                    await state.codeActionProvider.performAction(
+                        action,
+                        textView: state.focusedTextView,
+                        documentURL: state.currentFileURL
+                    ) { message in
+                        state.showStatusToast(message, level: .warning)
+                    }
+                    state.codeActionProvider.clear()
+                }
             }
             .padding(.leading, 12)
             .padding(.top, 48)
+        }
+    }
+
+    @ViewBuilder
+    private var inlayHintsStrip: some View {
+        let hints = state.inlayHintProvider.hints
+        if hints.isEmpty {
+            EmptyView()
+        } else {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(hints.prefix(24)) { hint in
+                        Text("L\(hint.line + 1) \(hint.text)")
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .lineLimit(1)
+                    }
+                }
+                .padding(.horizontal, 8)
+            }
+            .frame(height: 22)
+            .frame(maxWidth: .infinity)
+            .background(AppUI.Color.semantic.textTertiary.opacity(0.06))
         }
     }
 
