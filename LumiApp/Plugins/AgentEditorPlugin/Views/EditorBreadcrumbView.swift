@@ -92,8 +92,6 @@ struct EditorBreadcrumbView: View {
     @State private var crumbWidth: CGFloat?
     /// 首段截断宽度
     @State private var firstCrumbWidth: CGFloat?
-    /// Markdown 预览 popover 显示状态
-    @State private var isMarkdownPreviewPresented = false
 
     /// 当前文件是否为 Markdown 格式
     private var isMarkdownFile: Bool {
@@ -184,16 +182,16 @@ struct EditorBreadcrumbView: View {
 
     // MARK: - Markdown Preview Button
 
-    /// Markdown 预览按钮：点击弹出 Popover 展示渲染效果
+    /// Markdown 预览/源码切换按钮
     @ViewBuilder
     private var markdownPreviewButton: some View {
         Button {
-            isMarkdownPreviewPresented.toggle()
+            state.isMarkdownPreviewMode.toggle()
         } label: {
-            Image(systemName: "eye")
+            Image(systemName: state.isMarkdownPreviewMode ? "doc.text" : "eye")
                 .font(.system(size: 10))
                 .foregroundColor(
-                    isMarkdownPreviewPresented
+                    state.isMarkdownPreviewMode
                         ? AppUI.Color.semantic.primary
                         : AppUI.Color.semantic.textSecondary
                 )
@@ -201,17 +199,17 @@ struct EditorBreadcrumbView: View {
                 .background(
                     RoundedRectangle(cornerRadius: 4)
                         .fill(
-                            isMarkdownPreviewPresented
+                            state.isMarkdownPreviewMode
                                 ? AppUI.Color.semantic.primary.opacity(0.1)
                                 : Color.clear
                         )
                 )
         }
         .buttonStyle(.plain)
-        .help(String(localized: "Preview Markdown", table: "LumiEditor"))
-        .popover(isPresented: $isMarkdownPreviewPresented, arrowEdge: .bottom) {
-            MarkdownPreview(state: state)
-        }
+        .help(state.isMarkdownPreviewMode
+            ? String(localized: "Show Source", table: "LumiEditor")
+            : String(localized: "Preview Markdown", table: "LumiEditor")
+        )
     }
 
     // MARK: - Truncation Logic

@@ -145,6 +145,14 @@ final class EditorState: ObservableObject {
     /// 当前文件是否可预览
     @Published var canPreview: Bool = false
 
+    /// 当前文件是否为 Markdown 预览模式
+    @Published var isMarkdownPreviewMode: Bool = false
+
+    /// 当前文件是否为 Markdown 格式
+    var isMarkdownFile: Bool {
+        fileExtension == "md" || fileExtension == "mdx"
+    }
+
     /// 当前文件是否为二进制/非文本文件（需要用 QuickLook 预览而非代码编辑器）
     @Published var isBinaryFile: Bool = false
     
