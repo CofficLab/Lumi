@@ -1,34 +1,27 @@
 import SwiftUI
+import BeautifulMermaid
 
 /// Markdown 块级元素渲染器
 /// 基于 Apple swift-markdown 框架，将 Markdown 文本解析为 SwiftUI 原生视图。
 /// 支持标题、段落、列表（含任务列表）、代码块、引用、表格、分隔线。
-/// 代码块通过 `MarkdownParser.isMermaidCodeBlock(language:)` 可识别 Mermaid 语言，
-/// 供调用方替换为原生 Mermaid 渲染。
+/// Mermaid 代码块通过 beautiful-mermaid-swift 原生渲染为图片。
 public struct MarkdownBlockRenderer: View {
 
     /// Markdown 原始文本
     private let markdown: String
     /// 渲染主题
     private let theme: MarkdownTheme
-    /// 可选的 Mermaid 代码块自定义渲染
-    /// 当返回 nil 时，使用默认的代码块渲染
-    private let mermaidRenderer: ((String) -> AnyView)?
 
     /// 创建 Markdown 渲染器
     /// - Parameters:
     ///   - markdown: Markdown 原始文本
     ///   - theme: 渲染主题，默认使用 `.standard`
-    ///   - mermaidRenderer: Mermaid 代码块自定义渲染器。传入 mermaid 源码字符串，返回自定义视图。
-    ///                      返回 nil 则使用默认代码块渲染。
     public init(
         markdown: String,
-        theme: MarkdownTheme = .standard,
-        mermaidRenderer: ((String) -> AnyView)? = nil
+        theme: MarkdownTheme = .standard
     ) {
         self.markdown = markdown
         self.theme = theme
-        self.mermaidRenderer = mermaidRenderer
     }
 
     @State private var blocks: [MarkdownBlock] = []
@@ -87,9 +80,16 @@ public struct MarkdownBlockRenderer: View {
             }
 
         case let .codeBlock(language, code):
-            if let renderer = mermaidRenderer,
-               MarkdownParser.isMermaidCodeBlock(language: language) {
-                renderer(code)
+            if MarkdownParser.isMermaidCodeBlock(language: language) {
+                MermaidDiagramView(source: code)
+                    .frame(maxHeight: 300)
+                    .padding(.vertical, 8)
+                    .background(theme.codeBlockBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .strokeBorder(Color.secondary.opacity(0.12), lineWidth: 1)
+                    )
             } else {
                 codeBlockView(language: language, code: code)
             }
